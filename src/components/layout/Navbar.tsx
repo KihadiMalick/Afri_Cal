@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useTranslation } from "@/hooks/useTranslation";
+import { createClient } from "@/lib/supabase";
 import LanguageSelector from "./LanguageSelector";
 
 export default function Navbar() {
   const { t, locale } = useTranslation();
   const params = useParams();
+  const router = useRouter();
+  const supabase = createClient();
   const currentLocale = (params?.locale as string) || locale;
 
   const navLinks = [
@@ -17,6 +20,12 @@ export default function Navbar() {
     { href: `/${currentLocale}/calendar`, label: t.nav.calendar },
     { href: `/${currentLocale}/profile`, label: t.nav.profile },
   ];
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push(`/${currentLocale}/login`);
+    router.refresh();
+  }
 
   return (
     <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
@@ -45,9 +54,15 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Language Selector */}
+          {/* Language Selector + Logout */}
           <div className="flex items-center gap-4">
             <LanguageSelector />
+            <button
+              onClick={handleLogout}
+              className="text-sm text-gray-500 hover:text-red-500 font-medium transition-colors hidden md:block"
+            >
+              {t.auth.logout}
+            </button>
           </div>
         </div>
       </div>

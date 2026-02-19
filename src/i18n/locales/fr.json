@@ -38,7 +38,14 @@
     "remaining": "Restantes",
     "consumed": "Consommées",
     "burned": "Brûlées",
-    "goal": "Objectif"
+    "goal": "Objectif",
+    "welcome": "Bonjour",
+    "bmr": "BMR",
+    "tdee": "TDEE",
+    "target": "Objectif",
+    "kcalPerDay": "kcal/jour",
+    "completeOnboarding": "Complétez votre profil pour voir vos objectifs",
+    "goToOnboarding": "Configurer mon profil"
   },
   "onboarding": {
     "welcome": "Bienvenue sur AfriCalo",
@@ -58,7 +65,14 @@
     "light": "Légèrement actif",
     "moderate": "Modérément actif",
     "active": "Très actif",
-    "complete": "Terminer la configuration"
+    "targetWeightLoss": "Poids à perdre (kg)",
+    "period": "Période",
+    "months1": "1 mois",
+    "months2": "2 mois",
+    "months3": "3 mois",
+    "complete": "Terminer la configuration",
+    "calculating": "Calcul en cours...",
+    "success": "Profil enregistré avec succès !"
   },
   "meals": {
     "title": "Mes repas",
