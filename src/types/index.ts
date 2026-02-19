@@ -9,6 +9,7 @@ export type {
 export interface CalorieCalculation {
   bmr: number;
   tdee: number;
+  deficit: number;
   dailyTarget: number;
 }
 

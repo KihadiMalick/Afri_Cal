@@ -3,7 +3,7 @@ export interface Database {
     Tables: {
       users_profile: {
         Row: UserProfile;
-        Insert: Omit<UserProfile, "id" | "created_at" | "updated_at">;
+        Insert: Omit<UserProfile, "id" | "created_at" | "updated_at" | "avatar_url"> & { avatar_url?: string | null };
         Update: Partial<Omit<UserProfile, "id">>;
       };
       meals: {
@@ -43,6 +43,8 @@ export interface UserProfile {
   gender: "male" | "female";
   goal: "lose" | "maintain" | "gain";
   activity_level: "sedentary" | "light" | "moderate" | "active";
+  target_months: 1 | 2 | 3;
+  target_weight_loss: number;
   daily_calorie_target: number;
   bmr: number;
   tdee: number;

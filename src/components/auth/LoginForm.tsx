@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase";
 import { getDictionary, type Locale } from "@/i18n";
 
 interface LoginFormProps {
@@ -9,9 +12,56 @@ interface LoginFormProps {
 
 export default function LoginForm({ locale }: LoginFormProps) {
   const t = getDictionary(locale);
+  const router = useRouter();
+  const supabase = createClient();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleEmailLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+      return;
+    }
+
+    router.push(`/${locale}/dashboard`);
+    router.refresh();
+  }
+
+  async function handleGoogleLogin() {
+    setError("");
+    const { error: authError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/${locale}/callback`,
+      },
+    });
+
+    if (authError) {
+      setError(authError.message);
+    }
+  }
 
   return (
-    <form className="space-y-4">
+    <form onSubmit={handleEmailLogin} className="space-y-4">
+      {error && (
+        <div className="bg-red-50 text-red-600 text-sm p-3 rounded-2xl border border-red-200">
+          {error}
+        </div>
+      )}
+
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
           {t.auth.email}
@@ -19,6 +69,9 @@ export default function LoginForm({ locale }: LoginFormProps) {
         <input
           id="email"
           type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="input-field"
           placeholder={t.auth.email}
         />
@@ -31,13 +84,17 @@ export default function LoginForm({ locale }: LoginFormProps) {
         <input
           id="password"
           type="password"
+          required
+          minLength={6}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           className="input-field"
           placeholder={t.auth.password}
         />
       </div>
 
-      <button type="submit" className="btn-primary w-full">
-        {t.auth.login}
+      <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+        {loading ? t.common.loading : t.auth.login}
       </button>
 
       <div className="relative my-6">
@@ -45,11 +102,17 @@ export default function LoginForm({ locale }: LoginFormProps) {
           <div className="w-full border-t border-gray-200" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white text-gray-400">ou</span>
+          <span className="px-2 bg-white text-gray-400">
+            {locale === "fr" ? "ou" : "or"}
+          </span>
         </div>
       </div>
 
-      <button type="button" className="btn-secondary w-full">
+      <button
+        type="button"
+        onClick={handleGoogleLogin}
+        className="btn-secondary w-full"
+      >
         {t.auth.googleLogin}
       </button>
 

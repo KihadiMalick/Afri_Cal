@@ -1,9 +1,22 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { locales, defaultLocale } from "@/i18n";
-import { PROTECTED_ROUTES } from "@/utils/constants";
+import { updateSession } from "@/lib/supabase-middleware";
 
-export function middleware(request: NextRequest) {
+const locales = ["fr", "en"];
+const defaultLocale = "fr";
+
+const PROTECTED_ROUTES = [
+  "/dashboard",
+  "/onboarding",
+  "/meals",
+  "/activities",
+  "/calendar",
+  "/profile",
+];
+
+const AUTH_ROUTES = ["/login", "/register"];
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Check if the pathname already has a locale
@@ -25,40 +38,39 @@ export function middleware(request: NextRequest) {
     );
   }
 
-  // Extract locale and path
+  // Extract locale and path without locale
   const segments = pathname.split("/");
   const locale = segments[1];
   const pathWithoutLocale = "/" + segments.slice(2).join("/");
 
-  // Check if this is a protected route
+  // Refresh session and get user
+  const { user, supabaseResponse } = await updateSession(request);
+
+  // If on protected route and NOT logged in -> redirect to login
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
     pathWithoutLocale.startsWith(route)
   );
 
-  if (isProtectedRoute) {
-    // Check for Supabase auth token in cookies
-    const supabaseToken = request.cookies.get("sb-access-token")?.value
-      || request.cookies.get("sb-refresh-token")?.value;
-
-    if (!supabaseToken) {
-      return NextResponse.redirect(
-        new URL(`/${locale}/login`, request.url)
-      );
-    }
+  if (isProtectedRoute && !user) {
+    const loginUrl = new URL(`/${locale}/login`, request.url);
+    return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  // If on auth route (login/register) and ALREADY logged in -> redirect to dashboard
+  const isAuthRoute = AUTH_ROUTES.some((route) =>
+    pathWithoutLocale.startsWith(route)
+  );
+
+  if (isAuthRoute && user) {
+    const dashboardUrl = new URL(`/${locale}/dashboard`, request.url);
+    return NextResponse.redirect(dashboardUrl);
+  }
+
+  return supabaseResponse;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon)
-     * - public folder
-     */
     "/((?!_next/static|_next/image|favicon.ico|images|icons).*)",
   ],
 };
