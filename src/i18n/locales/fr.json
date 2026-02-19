@@ -1,0 +1,95 @@
+{
+  "common": {
+    "appName": "AfriCalo",
+    "tagline": "Votre assistant africain de contrôle calorique",
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "back": "Retour",
+    "next": "Suivant",
+    "submit": "Valider",
+    "search": "Rechercher",
+    "noResults": "Aucun résultat"
+  },
+  "auth": {
+    "login": "Se connecter",
+    "register": "Créer un compte",
+    "logout": "Se déconnecter",
+    "email": "Adresse email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "googleLogin": "Continuer avec Google",
+    "noAccount": "Pas encore de compte ?",
+    "hasAccount": "Déjà un compte ?"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "meals": "Repas",
+    "activities": "Activités",
+    "calendar": "Calendrier",
+    "profile": "Profil"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "dailyCalories": "Calories du jour",
+    "remaining": "Restantes",
+    "consumed": "Consommées",
+    "burned": "Brûlées",
+    "goal": "Objectif"
+  },
+  "onboarding": {
+    "welcome": "Bienvenue sur AfriCalo",
+    "subtitle": "Configurons votre profil pour personnaliser votre expérience",
+    "age": "Âge",
+    "weight": "Poids (kg)",
+    "height": "Taille (cm)",
+    "gender": "Sexe",
+    "male": "Homme",
+    "female": "Femme",
+    "goal": "Objectif",
+    "loseWeight": "Perdre du poids",
+    "maintainWeight": "Maintenir le poids",
+    "gainWeight": "Prendre du poids",
+    "activityLevel": "Niveau d'activité",
+    "sedentary": "Sédentaire",
+    "light": "Légèrement actif",
+    "moderate": "Modérément actif",
+    "active": "Très actif",
+    "complete": "Terminer la configuration"
+  },
+  "meals": {
+    "title": "Mes repas",
+    "addMeal": "Ajouter un repas",
+    "scanMeal": "Scanner un repas",
+    "history": "Historique",
+    "breakfast": "Petit-déjeuner",
+    "lunch": "Déjeuner",
+    "dinner": "Dîner",
+    "snack": "Collation",
+    "calories": "Calories",
+    "name": "Nom du repas",
+    "description": "Description"
+  },
+  "activities": {
+    "title": "Activités sportives",
+    "addActivity": "Ajouter une activité",
+    "recommendation": "Recommandation",
+    "duration": "Durée (min)",
+    "caloriesBurned": "Calories brûlées",
+    "type": "Type d'activité"
+  },
+  "calendar": {
+    "title": "Calendrier",
+    "monthView": "Vue mensuelle",
+    "today": "Aujourd'hui"
+  },
+  "profile": {
+    "title": "Mon profil",
+    "editProfile": "Modifier le profil",
+    "settings": "Paramètres",
+    "language": "Langue"
+  }
+}
