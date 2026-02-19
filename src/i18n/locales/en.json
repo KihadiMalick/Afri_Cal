@@ -1,0 +1,95 @@
+{
+  "common": {
+    "appName": "AfriCalo",
+    "tagline": "Your African calorie control assistant",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "search": "Search",
+    "noResults": "No results"
+  },
+  "auth": {
+    "login": "Log in",
+    "register": "Create account",
+    "logout": "Log out",
+    "email": "Email address",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "forgotPassword": "Forgot password?",
+    "googleLogin": "Continue with Google",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "meals": "Meals",
+    "activities": "Activities",
+    "calendar": "Calendar",
+    "profile": "Profile"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "dailyCalories": "Daily Calories",
+    "remaining": "Remaining",
+    "consumed": "Consumed",
+    "burned": "Burned",
+    "goal": "Goal"
+  },
+  "onboarding": {
+    "welcome": "Welcome to AfriCalo",
+    "subtitle": "Let's set up your profile to personalize your experience",
+    "age": "Age",
+    "weight": "Weight (kg)",
+    "height": "Height (cm)",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "goal": "Goal",
+    "loseWeight": "Lose weight",
+    "maintainWeight": "Maintain weight",
+    "gainWeight": "Gain weight",
+    "activityLevel": "Activity level",
+    "sedentary": "Sedentary",
+    "light": "Lightly active",
+    "moderate": "Moderately active",
+    "active": "Very active",
+    "complete": "Complete setup"
+  },
+  "meals": {
+    "title": "My meals",
+    "addMeal": "Add a meal",
+    "scanMeal": "Scan a meal",
+    "history": "History",
+    "breakfast": "Breakfast",
+    "lunch": "Lunch",
+    "dinner": "Dinner",
+    "snack": "Snack",
+    "calories": "Calories",
+    "name": "Meal name",
+    "description": "Description"
+  },
+  "activities": {
+    "title": "Sports activities",
+    "addActivity": "Add activity",
+    "recommendation": "Recommendation",
+    "duration": "Duration (min)",
+    "caloriesBurned": "Calories burned",
+    "type": "Activity type"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "monthView": "Monthly view",
+    "today": "Today"
+  },
+  "profile": {
+    "title": "My profile",
+    "editProfile": "Edit profile",
+    "settings": "Settings",
+    "language": "Language"
+  }
+}
