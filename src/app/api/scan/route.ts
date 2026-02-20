@@ -33,10 +33,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "Clé API Claude non configurée. Ajoutez ANTHROPIC_API_KEY dans les variables d'environnement Vercel." },
+        { error: "Clé API Gemini non configurée. Ajoutez GEMINI_API_KEY dans les variables d'environnement Vercel." },
         { status: 500 }
       );
     }
@@ -44,12 +44,11 @@ export async function POST(request: NextRequest) {
     // ============================================
     // PROMPT IA - Modifiable ici pour ajuster
     // ============================================
-    const systemPrompt = `Tu es un expert en nutrition spécialisé dans la cuisine africaine.
+    const prompt = `Tu es un expert en nutrition spécialisé dans la cuisine africaine.
 Tu analyses des photos de repas pour estimer les calories, le poids et les ingrédients.
 Tu connais très bien les plats d'Afrique de l'Ouest, Centrale et de l'Est.
-Réponds UNIQUEMENT en JSON valide, sans texte avant ou après.`;
 
-    const userPrompt = `Analyse cette photo de repas et donne-moi les informations suivantes en JSON :
+Analyse cette photo de repas et donne-moi les informations suivantes en JSON :
 {
   "dish_name": "nom du plat identifié (en français)",
   "ingredients": ["liste", "des", "ingrédients", "visibles"],
@@ -64,50 +63,56 @@ Règles :
 - Calcule les calories totales pour la portion visible
 - Le score de confiance reflète ta certitude (0.9 = très sûr, 0.5 = incertain)
 - Si tu ne peux pas identifier le plat, donne ta meilleure estimation
-- Réponds UNIQUEMENT en JSON valide`;
+- Réponds uniquement avec le JSON, sans texte supplémentaire`;
 
-    // Use Haiku for faster responses (avoids Vercel 10s timeout on free plan)
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 1024,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: mimeType || "image/jpeg",
-                  data: imageBase64,
+    // Use Gemini 2.0 Flash for fast vision analysis
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-client": "genai-js/0.21.0",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: mimeType || "image/jpeg",
+                    data: imageBase64,
+                  },
                 },
-              },
-              {
-                type: "text",
-                text: userPrompt,
-              },
-            ],
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 1024,
+            responseMimeType: "application/json",
           },
-        ],
-        system: systemPrompt,
-      }),
-    });
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Claude API error:", response.status, errorText);
+      console.error("Gemini API error:", response.status, errorText);
 
-      // Give user-friendly error messages
-      if (response.status === 401) {
+      if (response.status === 400) {
         return NextResponse.json(
-          { error: "Clé API Claude invalide. Vérifiez ANTHROPIC_API_KEY dans Vercel." },
+          { error: "Image non supportée ou requête invalide. Essayez avec une autre photo." },
+          { status: 502 }
+        );
+      }
+      if (response.status === 401 || response.status === 403) {
+        return NextResponse.json(
+          { error: "Clé API Gemini invalide. Vérifiez GEMINI_API_KEY dans Vercel." },
           { status: 502 }
         );
       }
@@ -117,49 +122,41 @@ Règles :
           { status: 502 }
         );
       }
-      if (response.status === 400) {
-        // Parse error for more detail
-        let detail = "Image non supportée.";
-        try {
-          const errJson = JSON.parse(errorText);
-          detail = errJson?.error?.message || detail;
-        } catch { /* ignore */ }
-        return NextResponse.json(
-          { error: `Erreur API: ${detail}` },
-          { status: 502 }
-        );
-      }
 
       return NextResponse.json(
-        { error: `Erreur API Claude (${response.status}). Réessayez.` },
+        { error: `Erreur API Gemini (${response.status}). Réessayez.` },
         { status: 502 }
       );
     }
 
     const data = await response.json();
-    const textContent = data.content?.find(
-      (c: { type: string }) => c.type === "text"
-    );
+    const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!textContent?.text) {
+    if (!textContent) {
       return NextResponse.json(
         { error: "Réponse IA vide. Réessayez avec une photo plus claire." },
         { status: 502 }
       );
     }
 
-    // Parse JSON from Claude response
+    // Parse JSON from Gemini response
     let scanResult;
     try {
       // Extract JSON from response (handle markdown code blocks)
-      let jsonText = textContent.text.trim();
+      let jsonText = textContent.trim();
       const jsonMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (jsonMatch) {
         jsonText = jsonMatch[1].trim();
       }
+      // Also handle cases where response starts with { directly
+      const jsonStart = jsonText.indexOf("{");
+      const jsonEnd = jsonText.lastIndexOf("}");
+      if (jsonStart !== -1 && jsonEnd !== -1) {
+        jsonText = jsonText.slice(jsonStart, jsonEnd + 1);
+      }
       scanResult = JSON.parse(jsonText);
     } catch {
-      console.error("JSON parse error:", textContent.text);
+      console.error("JSON parse error:", textContent);
       return NextResponse.json(
         { error: "Réponse IA non valide. Réessayez." },
         { status: 502 }

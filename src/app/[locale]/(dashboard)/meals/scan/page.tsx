@@ -73,6 +73,7 @@ export default function MealScanPage() {
   const [scansRemaining, setScansRemaining] = useState(3);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const loadLimits = useCallback(async () => {
     const {
@@ -228,6 +229,7 @@ export default function MealScanPage() {
     setError("");
     setStep("upload");
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (galleryInputRef.current) galleryInputRef.current.value = "";
   }
 
   if (loading) {
@@ -290,6 +292,7 @@ export default function MealScanPage() {
                   setImagePreview("");
                   setImageBase64("");
                   if (fileInputRef.current) fileInputRef.current.value = "";
+                  if (galleryInputRef.current) galleryInputRef.current.value = "";
                 }}
                 className="absolute top-3 right-3 bg-dark-800/80 text-gray-100 rounded-full w-8 h-8 flex items-center justify-center text-sm backdrop-blur-sm"
               >
@@ -297,29 +300,52 @@ export default function MealScanPage() {
               </button>
             </div>
           ) : (
-            <label className="card flex flex-col items-center justify-center py-16 cursor-pointer border-2 border-dashed border-dark-400 hover:border-primary-500/50 transition-colors">
-              <div className="w-20 h-20 rounded-full bg-primary-600/10 flex items-center justify-center mb-4">
-                <span className="text-4xl">&#x1F4F7;</span>
-              </div>
-              <p className="text-gray-100 font-medium mb-1">
-                {locale === "fr"
-                  ? "Prenez une photo de votre repas"
-                  : "Take a photo of your meal"}
-              </p>
-              <p className="text-dark-200 text-xs">
-                {locale === "fr"
-                  ? "Appuyez pour choisir une image"
-                  : "Tap to choose an image"}
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Camera button */}
+              <label className="flex flex-col items-center justify-center gap-3 card border-2 border-dashed border-dark-400 hover:border-primary-500/50 py-10 cursor-pointer transition-colors">
+                <div className="w-16 h-16 rounded-full bg-primary-500/10 flex items-center justify-center">
+                  <span className="text-3xl">&#x1F4F7;</span>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-100 font-medium text-sm">
+                    {locale === "fr" ? "Caméra" : "Camera"}
+                  </p>
+                  <p className="text-dark-200 text-xs mt-0.5">
+                    {locale === "fr" ? "Prendre une photo" : "Take a photo"}
+                  </p>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </label>
+
+              {/* Gallery button */}
+              <label className="flex flex-col items-center justify-center gap-3 card border-2 border-dashed border-dark-400 hover:border-accent-500/50 py-10 cursor-pointer transition-colors">
+                <div className="w-16 h-16 rounded-full bg-accent-500/10 flex items-center justify-center">
+                  <span className="text-3xl">&#x1F5BC;&#xFE0F;</span>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-100 font-medium text-sm">
+                    {locale === "fr" ? "Galerie" : "Gallery"}
+                  </p>
+                  <p className="text-dark-200 text-xs mt-0.5">
+                    {locale === "fr" ? "Choisir depuis la galerie" : "Choose from gallery"}
+                  </p>
+                </div>
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </label>
+            </div>
           )}
 
           {/* Scan button */}
