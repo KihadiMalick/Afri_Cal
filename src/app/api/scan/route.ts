@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Increase serverless function timeout (requires Vercel Pro for >10s)
+export const maxDuration = 30;
+
 export async function POST(request: NextRequest) {
   try {
     let body;
@@ -63,6 +66,7 @@ Règles :
 - Si tu ne peux pas identifier le plat, donne ta meilleure estimation
 - Réponds UNIQUEMENT en JSON valide`;
 
+    // Use Haiku for faster responses (avoids Vercel 10s timeout on free plan)
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -71,7 +75,7 @@ Règles :
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5-20250929",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 1024,
         messages: [
           {
@@ -114,8 +118,14 @@ Règles :
         );
       }
       if (response.status === 400) {
+        // Parse error for more detail
+        let detail = "Image non supportée.";
+        try {
+          const errJson = JSON.parse(errorText);
+          detail = errJson?.error?.message || detail;
+        } catch { /* ignore */ }
         return NextResponse.json(
-          { error: "Image non supportée. Essayez avec une autre photo." },
+          { error: `Erreur API: ${detail}` },
           { status: 502 }
         );
       }
@@ -169,9 +179,11 @@ Règles :
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Scan API error:", error);
+    // Return actual error details to help debugging
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Scan API error:", message);
     return NextResponse.json(
-      { error: "Erreur serveur inattendue. Réessayez." },
+      { error: `Erreur: ${message}` },
       { status: 500 }
     );
   }
