@@ -140,13 +140,15 @@ export default function HomeScanWidget({
       const contentType = response.headers.get("content-type") || "";
       if (!contentType.includes("application/json")) {
         const text = await response.text();
-        throw new Error(text.slice(0, 100) || "Erreur serveur inattendue");
+        const statusMsg = `HTTP ${response.status}`;
+        const bodyMsg = text.trim().slice(0, 150) || "corps vide";
+        throw new Error(`Erreur serveur (${statusMsg}): ${bodyMsg}`);
       }
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erreur lors du scan");
+        throw new Error(data.error || `Erreur HTTP ${response.status}`);
       }
 
       let result: ScanResult = data;
