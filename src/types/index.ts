@@ -6,6 +6,10 @@ export type {
   DailySummary,
   DayStatus,
   WeightLog,
+  AfricanFood,
+  ScanHistory,
+  ScanCorrection,
+  UserScanLimit,
 } from "./database";
 
 export interface CalorieCalculation {
@@ -15,11 +19,14 @@ export interface CalorieCalculation {
   dailyTarget: number;
 }
 
-export interface MealScanResult {
-  name: string;
-  estimatedCalories: number;
+export interface ScanResult {
+  dish_name: string;
+  ingredients: string[];
+  estimated_weight_grams: number;
+  estimated_calories: number;
   confidence: number;
-  description: string;
+  matched_african_dish?: string;
+  adjusted_calories?: number;
 }
 
 export interface Badge {

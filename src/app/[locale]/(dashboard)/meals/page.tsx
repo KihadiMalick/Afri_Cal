@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { getDictionary, isValidLocale } from "@/i18n";
 import { updateDailySummary } from "@/utils/daily-summary";
@@ -72,12 +73,21 @@ export default function MealsPage() {
     <div className="space-y-6 animate-slide-up">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-100">{t.meals.title}</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="btn-primary text-sm"
-        >
-          {showForm ? t.common.cancel : t.meals.addMeal}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/${locale}/meals/scan`}
+            className="btn-accent text-sm py-2 px-4 flex items-center gap-1.5"
+          >
+            <span>&#x1F4F7;</span>
+            <span>{t.meals.scanMeal}</span>
+          </Link>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="btn-primary text-sm"
+          >
+            {showForm ? t.common.cancel : t.meals.addMeal}
+          </button>
+        </div>
       </div>
 
       {/* Date selector */}
