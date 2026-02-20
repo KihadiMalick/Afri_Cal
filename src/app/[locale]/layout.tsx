@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { locales, getDictionary, isValidLocale } from "@/i18n";
+import { getDictionary, isValidLocale } from "@/i18n";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 
-export async function generateStaticParams() {
-  return locales.map((locale) => ({ locale }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
