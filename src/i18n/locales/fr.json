@@ -85,7 +85,12 @@
     "snack": "Collation",
     "calories": "Calories",
     "name": "Nom du repas",
-    "description": "Description"
+    "description": "Description",
+    "protein": "Protéines",
+    "carbs": "Glucides",
+    "fat": "Lipides",
+    "mealType": "Type de repas",
+    "date": "Date"
   },
   "activities": {
     "title": "Activités sportives",
