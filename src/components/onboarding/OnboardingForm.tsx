@@ -121,14 +121,14 @@ export default function OnboardingForm({ locale }: OnboardingFormProps) {
   return (
     <form onSubmit={handleSubmit} className="card space-y-6">
       {error && (
-        <div className="bg-red-50 text-red-600 text-sm p-3 rounded-2xl border border-red-200">
+        <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-2xl border border-red-500/20">
           {error}
         </div>
       )}
 
       {/* Gender */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-dark-100 mb-2">
           {t.onboarding.gender}
         </label>
         <div className="grid grid-cols-2 gap-3">
@@ -140,7 +140,7 @@ export default function OnboardingForm({ locale }: OnboardingFormProps) {
               className={`px-4 py-3 rounded-2xl font-medium border transition-all ${
                 gender === g
                   ? "bg-primary-600 text-white border-primary-600"
-                  : "bg-white text-gray-700 border-gray-200 hover:border-primary-300"
+                  : "bg-dark-700 text-gray-200 border-dark-500 hover:border-primary-500/50"
               }`}
             >
               {g === "male" ? t.onboarding.male : t.onboarding.female}
@@ -151,7 +151,7 @@ export default function OnboardingForm({ locale }: OnboardingFormProps) {
 
       {/* Age */}
       <div>
-        <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="age" className="block text-sm font-medium text-dark-100 mb-1">
           {t.onboarding.age}
         </label>
         <input
@@ -169,7 +169,7 @@ export default function OnboardingForm({ locale }: OnboardingFormProps) {
 
       {/* Weight */}
       <div>
-        <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="weight" className="block text-sm font-medium text-dark-100 mb-1">
           {t.onboarding.weight}
         </label>
         <input
@@ -188,7 +188,7 @@ export default function OnboardingForm({ locale }: OnboardingFormProps) {
 
       {/* Height */}
       <div>
-        <label htmlFor="height" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="height" className="block text-sm font-medium text-dark-100 mb-1">
           {t.onboarding.height}
         </label>
         <input
@@ -207,7 +207,7 @@ export default function OnboardingForm({ locale }: OnboardingFormProps) {
 
       {/* Goal */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-dark-100 mb-2">
           {t.onboarding.goal}
         </label>
         <div className="space-y-2">
@@ -219,7 +219,7 @@ export default function OnboardingForm({ locale }: OnboardingFormProps) {
               className={`w-full px-4 py-3 rounded-2xl font-medium border text-left transition-all ${
                 goal === key
                   ? "bg-primary-600 text-white border-primary-600"
-                  : "bg-white text-gray-700 border-gray-200 hover:border-primary-300"
+                  : "bg-dark-700 text-gray-200 border-dark-500 hover:border-primary-500/50"
               }`}
             >
               {label}
@@ -232,7 +232,7 @@ export default function OnboardingForm({ locale }: OnboardingFormProps) {
       {goal === "lose" && (
         <>
           <div>
-            <label htmlFor="targetWeightLoss" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="targetWeightLoss" className="block text-sm font-medium text-dark-100 mb-1">
               {t.onboarding.targetWeightLoss}
             </label>
             <input
@@ -249,7 +249,7 @@ export default function OnboardingForm({ locale }: OnboardingFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-dark-100 mb-2">
               {t.onboarding.period}
             </label>
             <div className="grid grid-cols-3 gap-3">
@@ -261,7 +261,7 @@ export default function OnboardingForm({ locale }: OnboardingFormProps) {
                   className={`px-4 py-3 rounded-2xl font-medium border transition-all ${
                     targetMonths === m
                       ? "bg-primary-600 text-white border-primary-600"
-                      : "bg-white text-gray-700 border-gray-200 hover:border-primary-300"
+                      : "bg-dark-700 text-gray-200 border-dark-500 hover:border-primary-500/50"
                   }`}
                 >
                   {t.onboarding[`months${m}` as keyof typeof t.onboarding]}
@@ -274,7 +274,7 @@ export default function OnboardingForm({ locale }: OnboardingFormProps) {
 
       {/* Activity Level */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-dark-100 mb-2">
           {t.onboarding.activityLevel}
         </label>
         <div className="space-y-2">
@@ -286,7 +286,7 @@ export default function OnboardingForm({ locale }: OnboardingFormProps) {
               className={`w-full px-4 py-3 rounded-2xl font-medium border text-left transition-all ${
                 activityLevel === key
                   ? "bg-primary-600 text-white border-primary-600"
-                  : "bg-white text-gray-700 border-gray-200 hover:border-primary-300"
+                  : "bg-dark-700 text-gray-200 border-dark-500 hover:border-primary-500/50"
               }`}
             >
               {label}

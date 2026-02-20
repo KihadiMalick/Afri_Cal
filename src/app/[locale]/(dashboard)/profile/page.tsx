@@ -47,61 +47,64 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600" />
+        <div className="loader" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-lg mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t.profile.title}</h1>
+    <div className="max-w-lg mx-auto space-y-6 animate-slide-up">
+      <h1 className="text-2xl font-bold text-gray-100">{t.profile.title}</h1>
 
       {/* Profile card */}
       <div className="card flex flex-col items-center py-8">
-        <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center mb-4">
+        <div className="w-20 h-20 rounded-full bg-dark-600 flex items-center justify-center mb-4 ring-2 ring-primary-500/30">
           <span className="text-3xl">&#x1F464;</span>
         </div>
-        <p className="font-semibold text-gray-900">
+        <p className="font-semibold text-gray-100">
           {profile?.full_name || userEmail.split("@")[0]}
         </p>
-        <p className="text-gray-400 text-sm">{userEmail}</p>
+        <p className="text-dark-100 text-sm">{userEmail}</p>
+        {profile?.is_premium && (
+          <span className="premium-badge mt-2">Premium</span>
+        )}
       </div>
 
       {/* Stats */}
       {profile && (
         <div className="card space-y-3">
-          <div className="flex justify-between py-2 border-b border-gray-100">
-            <span className="text-gray-500">{t.dashboard.target}</span>
-            <span className="font-semibold text-primary-600">{profile.daily_calorie_target} kcal</span>
+          <div className="flex justify-between py-2 border-b border-dark-600">
+            <span className="text-dark-100">{t.dashboard.target}</span>
+            <span className="font-semibold text-primary-400">{profile.daily_calorie_target} kcal</span>
           </div>
-          <div className="flex justify-between py-2 border-b border-gray-100">
-            <span className="text-gray-500">{t.dashboard.bmr}</span>
-            <span className="font-medium">{Math.round(profile.bmr)} kcal</span>
+          <div className="flex justify-between py-2 border-b border-dark-600">
+            <span className="text-dark-100">{t.dashboard.bmr}</span>
+            <span className="font-medium text-gray-200">{Math.round(profile.bmr)} kcal</span>
           </div>
-          <div className="flex justify-between py-2 border-b border-gray-100">
-            <span className="text-gray-500">{t.dashboard.tdee}</span>
-            <span className="font-medium">{Math.round(profile.tdee)} kcal</span>
+          <div className="flex justify-between py-2 border-b border-dark-600">
+            <span className="text-dark-100">{t.dashboard.tdee}</span>
+            <span className="font-medium text-gray-200">{Math.round(profile.tdee)} kcal</span>
           </div>
-          <div className="flex justify-between py-2 border-b border-gray-100">
-            <span className="text-gray-500">{t.onboarding.weight}</span>
-            <span className="font-medium">{profile.weight} kg</span>
+          <div className="flex justify-between py-2 border-b border-dark-600">
+            <span className="text-dark-100">{t.onboarding.weight}</span>
+            <span className="font-medium text-gray-200">{profile.weight} kg</span>
           </div>
           <div className="flex justify-between py-2">
-            <span className="text-gray-500">{t.onboarding.height}</span>
-            <span className="font-medium">{profile.height} cm</span>
+            <span className="text-dark-100">{t.onboarding.height}</span>
+            <span className="font-medium text-gray-200">{profile.height} cm</span>
           </div>
         </div>
       )}
 
       {/* Actions */}
       <div className="card space-y-4">
-        <h2 className="text-lg font-semibold text-gray-800">
+        <h2 className="text-lg font-semibold text-gray-100">
           {t.profile.settings}
         </h2>
 
-        <div className="flex items-center justify-between py-2 border-b border-gray-100">
-          <span className="text-gray-600">{t.profile.language}</span>
-          <span className="text-gray-400 text-sm">{locale.toUpperCase()}</span>
+        <div className="flex items-center justify-between py-2 border-b border-dark-600">
+          <span className="text-dark-100">{t.profile.language}</span>
+          <span className="text-dark-200 text-sm">{locale.toUpperCase()}</span>
         </div>
 
         <Link href={`/${locale}/onboarding`} className="btn-primary w-full block text-center">
@@ -109,7 +112,8 @@ export default function ProfilePage() {
         </Link>
         <button
           onClick={handleLogout}
-          className="btn-secondary w-full text-red-500 border-red-200 hover:bg-red-50"
+          className="w-full py-3 rounded-2xl font-semibold border border-red-500/30 text-red-400
+                     hover:bg-red-500/10 transition-all duration-200"
         >
           {t.auth.logout}
         </button>

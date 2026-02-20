@@ -3,7 +3,7 @@ export interface Database {
     Tables: {
       users_profile: {
         Row: UserProfile;
-        Insert: Omit<UserProfile, "id" | "created_at" | "updated_at" | "avatar_url"> & { avatar_url?: string | null };
+        Insert: Omit<UserProfile, "id" | "created_at" | "updated_at" | "avatar_url" | "is_premium"> & { avatar_url?: string | null; is_premium?: boolean };
         Update: Partial<Omit<UserProfile, "id">>;
       };
       meals: {
@@ -20,6 +20,11 @@ export interface Database {
         Row: DailySummary;
         Insert: Omit<DailySummary, "id" | "created_at">;
         Update: Partial<Omit<DailySummary, "id">>;
+      };
+      weight_logs: {
+        Row: WeightLog;
+        Insert: Omit<WeightLog, "id" | "created_at">;
+        Update: Partial<Omit<WeightLog, "id">>;
       };
     };
     Views: Record<string, never>;
@@ -50,6 +55,7 @@ export interface UserProfile {
   tdee: number;
   avatar_url: string | null;
   onboarding_completed: boolean;
+  is_premium: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -91,5 +97,13 @@ export interface DailySummary {
   calorie_target: number;
   calorie_balance: number;
   status: DayStatus;
+  created_at: string;
+}
+
+export interface WeightLog {
+  id: string;
+  user_id: string;
+  weight: number;
+  date: string;
   created_at: string;
 }

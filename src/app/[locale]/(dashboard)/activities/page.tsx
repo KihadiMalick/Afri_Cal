@@ -69,62 +69,62 @@ export default function ActivitiesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600" />
+        <div className="loader" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-slide-up">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-100">
           {t.activities.title}
         </h1>
       </div>
 
       {/* Sport recommendation card */}
       <div className="card border-l-4 border-l-accent-400">
-        <h2 className="text-lg font-semibold text-gray-800 mb-2">
+        <h2 className="text-lg font-semibold text-gray-100 mb-2">
           {t.activities.recommendation}
         </h2>
         {recommendation ? (
           <div className="space-y-3">
-            <p className="text-sm text-red-500 font-medium">
+            <p className="text-sm text-red-400 font-medium">
               {locale === "fr"
                 ? `Surplus de ${recommendation.surplus} kcal aujourd'hui`
                 : `${recommendation.surplus} kcal surplus today`}
             </p>
             <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="bg-green-50 rounded-lg p-3">
-                <p className="text-2xl font-bold text-green-600">
+              <div className="bg-primary-500/10 rounded-2xl p-3">
+                <p className="text-2xl font-bold text-primary-400">
                   {recommendation.walkingKm}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-dark-100">
                   km {locale === "fr" ? "marche" : "walking"}
                 </p>
               </div>
-              <div className="bg-blue-50 rounded-lg p-3">
-                <p className="text-2xl font-bold text-blue-600">
+              <div className="bg-blue-500/10 rounded-2xl p-3">
+                <p className="text-2xl font-bold text-blue-400">
                   {recommendation.runningMinutes}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-dark-100">
                   min {locale === "fr" ? "course" : "running"}
                 </p>
               </div>
-              <div className="bg-purple-50 rounded-lg p-3">
-                <p className="text-2xl font-bold text-purple-600">
+              <div className="bg-purple-500/10 rounded-2xl p-3">
+                <p className="text-2xl font-bold text-purple-400">
                   {recommendation.steps}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-dark-100">
                   {locale === "fr" ? "pas" : "steps"}
                 </p>
               </div>
             </div>
           </div>
         ) : (
-          <p className="text-green-600 text-sm font-medium">
+          <p className="text-primary-400 text-sm font-medium">
             {locale === "fr"
-              ? "Aucun surplus ! Vous êtes dans l'objectif."
+              ? "Aucun surplus ! Vous etes dans l'objectif."
               : "No surplus! You're on target."}
           </p>
         )}
@@ -132,27 +132,27 @@ export default function ActivitiesPage() {
 
       {/* Today's activities */}
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">
-          {locale === "fr" ? "Activités du jour" : "Today's activities"}
+        <h2 className="text-lg font-semibold text-gray-100 mb-3">
+          {locale === "fr" ? "Activites du jour" : "Today's activities"}
         </h2>
         {activities.length === 0 ? (
-          <p className="text-gray-400 text-sm">{t.common.noResults}</p>
+          <p className="empty-state">{t.common.noResults}</p>
         ) : (
           <div className="space-y-2">
             {activities.map((activity) => (
               <div
                 key={activity.id}
-                className="flex items-center justify-between bg-gray-50 rounded-lg p-3"
+                className="flex items-center justify-between bg-dark-700 rounded-xl p-3"
               >
                 <div>
-                  <p className="font-medium text-gray-800">{activity.name}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-gray-100">{activity.name}</p>
+                  <p className="text-sm text-dark-100">
                     {activity.duration_minutes} min · {activity.calories_burned} kcal
                   </p>
                 </div>
                 <button
                   onClick={() => handleDeleteActivity(activity.id)}
-                  className="text-red-400 hover:text-red-600 text-sm"
+                  className="text-red-400 hover:text-red-300 text-sm transition-colors"
                 >
                   {t.common.delete}
                 </button>

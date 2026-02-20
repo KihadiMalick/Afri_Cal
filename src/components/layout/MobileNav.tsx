@@ -19,7 +19,7 @@ export default function MobileNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-800 border-t border-dark-600 z-50">
       <div className="flex items-center justify-around py-2">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
@@ -28,7 +28,7 @@ export default function MobileNav() {
               key={item.href}
               href={item.href}
               className={`flex flex-col items-center gap-1 px-3 py-1 text-xs font-medium transition-colors ${
-                isActive ? "text-primary-600" : "text-gray-400"
+                isActive ? "text-primary-400" : "text-dark-200"
               }`}
             >
               <span className="text-lg">{getIcon(item.icon)}</span>
