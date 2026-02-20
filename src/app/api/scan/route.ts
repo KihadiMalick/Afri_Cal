@@ -63,19 +63,21 @@ Règles :
 - Calcule les calories totales pour la portion visible
 - Le score de confiance reflète ta certitude (0.9 = très sûr, 0.5 = incertain)
 - Si tu ne peux pas identifier le plat, donne ta meilleure estimation
-- Réponds UNIQUEMENT en JSON valide, sans texte avant ou après`;
+- Réponds uniquement avec le JSON, sans texte supplémentaire`;
 
-    // Use Gemini 1.5 Flash for fast vision analysis
+    // Use Gemini 2.0 Flash for fast vision analysis
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-goog-api-client": "genai-js/0.21.0",
         },
         body: JSON.stringify({
           contents: [
             {
+              role: "user",
               parts: [
                 {
                   inlineData: {
@@ -92,6 +94,7 @@ Règles :
           generationConfig: {
             temperature: 0.1,
             maxOutputTokens: 1024,
+            responseMimeType: "application/json",
           },
         }),
       }
