@@ -26,6 +26,26 @@ export interface Database {
         Insert: Omit<WeightLog, "id" | "created_at">;
         Update: Partial<Omit<WeightLog, "id">>;
       };
+      african_food_database: {
+        Row: AfricanFood;
+        Insert: Omit<AfricanFood, "id" | "created_at">;
+        Update: Partial<Omit<AfricanFood, "id">>;
+      };
+      scan_history: {
+        Row: ScanHistory;
+        Insert: Omit<ScanHistory, "id" | "created_at">;
+        Update: Partial<Omit<ScanHistory, "id">>;
+      };
+      scan_corrections: {
+        Row: ScanCorrection;
+        Insert: Omit<ScanCorrection, "id" | "created_at">;
+        Update: Partial<Omit<ScanCorrection, "id">>;
+      };
+      user_scan_limits: {
+        Row: UserScanLimit;
+        Insert: UserScanLimit;
+        Update: Partial<UserScanLimit>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -106,4 +126,39 @@ export interface WeightLog {
   weight: number;
   date: string;
   created_at: string;
+}
+
+export interface AfricanFood {
+  id: string;
+  name: string;
+  country: string;
+  typical_ingredients: string[];
+  calories_per_100g: number;
+  density_estimate: number;
+  created_at: string;
+}
+
+export interface ScanHistory {
+  id: string;
+  user_id: string;
+  image_url: string | null;
+  detected_dish: string;
+  estimated_calories: number;
+  estimated_weight: number | null;
+  confidence_score: number;
+  created_at: string;
+}
+
+export interface ScanCorrection {
+  id: string;
+  scan_id: string;
+  corrected_dish: string | null;
+  corrected_calories: number | null;
+  created_at: string;
+}
+
+export interface UserScanLimit {
+  user_id: string;
+  scans_today: number;
+  last_reset_date: string;
 }

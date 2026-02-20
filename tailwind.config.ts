@@ -62,8 +62,10 @@ const config: Config = {
         "fade-in": "fadeIn 0.5s ease-out",
         "slide-up": "slideUp 0.4s ease-out",
         "scale-in": "scaleIn 0.3s ease-out",
-        "progress": "progress 1s ease-out",
+        progress: "progress 1s ease-out",
         "pulse-glow": "pulseGlow 2s ease-in-out infinite",
+        "scan-line": "scanLine 2s ease-in-out infinite",
+        particle: "particle 2s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
@@ -84,6 +86,16 @@ const config: Config = {
         pulseGlow: {
           "0%, 100%": { boxShadow: "0 0 10px rgba(16, 185, 129, 0.1)" },
           "50%": { boxShadow: "0 0 20px rgba(16, 185, 129, 0.25)" },
+        },
+        scanLine: {
+          "0%": { top: "0%" },
+          "50%": { top: "100%" },
+          "100%": { top: "0%" },
+        },
+        particle: {
+          "0%": { top: "100%", opacity: "0" },
+          "20%": { opacity: "0.8" },
+          "100%": { top: "0%", opacity: "0" },
         },
       },
     },
