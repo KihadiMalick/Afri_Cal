@@ -127,7 +127,7 @@ export default function CalendarView({ userId, t, locale }: CalendarViewProps) {
         <button onClick={prevMonth} className="btn-secondary text-sm px-3 py-1">
           &larr;
         </button>
-        <h2 className="text-lg font-bold text-gray-800">
+        <h2 className="text-lg font-bold text-gray-100">
           {monthNames[currentMonth]} {currentYear}
         </h2>
         <div className="flex gap-2">
@@ -141,7 +141,7 @@ export default function CalendarView({ userId, t, locale }: CalendarViewProps) {
       </div>
 
       {/* Legend */}
-      <div className="flex gap-4 text-xs text-gray-500">
+      <div className="flex gap-4 text-xs text-dark-100">
         <span className="flex items-center gap-1">
           <span className="w-3 h-3 rounded-full bg-green-400 inline-block" />
           {locale === "fr" ? "Sous objectif" : "Under target"}
@@ -162,7 +162,7 @@ export default function CalendarView({ userId, t, locale }: CalendarViewProps) {
         {dayNames.map((name) => (
           <div
             key={name}
-            className="text-center text-xs font-medium text-gray-500 py-2"
+            className="text-center text-xs font-medium text-dark-100 py-2"
           >
             {name}
           </div>
@@ -185,8 +185,8 @@ export default function CalendarView({ userId, t, locale }: CalendarViewProps) {
               className={`h-10 rounded-lg text-sm font-medium transition-colors ${
                 summary
                   ? STATUS_COLORS[summary.status as DayStatus]
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              } ${isToday ? "ring-2 ring-primary-600 ring-offset-1" : ""}`}
+                  : "bg-dark-700 text-gray-300 hover:bg-dark-600"
+              } ${isToday ? "ring-2 ring-primary-400 ring-offset-1 ring-offset-dark-800" : ""}`}
             >
               {day}
             </button>
@@ -196,20 +196,20 @@ export default function CalendarView({ userId, t, locale }: CalendarViewProps) {
 
       {/* Selected day detail */}
       {selectedDay && (
-        <div className="card border-l-4 border-l-primary-400">
-          <h3 className="font-semibold text-gray-800 mb-2">
+        <div className="card border-l-4 border-l-primary-500">
+          <h3 className="font-semibold text-gray-100 mb-2">
             {selectedDay.date}
           </h3>
           <div className="grid grid-cols-3 gap-3 text-center text-sm">
             <div>
-              <p className="text-gray-500">{t.dashboard.consumed}</p>
-              <p className="font-bold text-gray-800">
+              <p className="text-dark-100">{t.dashboard.consumed}</p>
+              <p className="font-bold text-gray-100">
                 {selectedDay.total_calories_consumed} kcal
               </p>
             </div>
             <div>
-              <p className="text-gray-500">{t.dashboard.target}</p>
-              <p className="font-bold text-gray-800">
+              <p className="text-dark-100">{t.dashboard.target}</p>
+              <p className="font-bold text-gray-100">
                 {selectedDay.calorie_target} kcal
               </p>
             </div>

@@ -34,15 +34,15 @@ export default function CalendarPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600" />
+        <div className="loader" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t.calendar.title}</h1>
-      <div className="card">
+    <div className="space-y-6 animate-slide-up">
+      <h1 className="text-2xl font-bold text-gray-100">{t.calendar.title}</h1>
+      <div className="card-static">
         <CalendarView userId={userId} t={t} locale={locale} />
       </div>
     </div>

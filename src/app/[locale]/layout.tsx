@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { locales, getDictionary, isValidLocale } from "@/i18n";
+import { getDictionary, isValidLocale } from "@/i18n";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 
-export async function generateStaticParams() {
-  return locales.map((locale) => ({ locale }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -32,7 +30,7 @@ export default function LocaleLayout({
 
   return (
     <html lang={locale}>
-      <body className="min-h-screen bg-gray-50">
+      <body className="min-h-screen bg-dark-900">
         <Navbar />
         <main className="pb-20 md:pb-0">{children}</main>
         <MobileNav />

@@ -68,13 +68,13 @@ export default function RegisterForm({ locale }: RegisterFormProps) {
   return (
     <form onSubmit={handleRegister} className="space-y-4">
       {error && (
-        <div className="bg-red-50 text-red-600 text-sm p-3 rounded-2xl border border-red-200">
+        <div className="bg-red-500/10 text-red-400 text-sm p-3 rounded-2xl border border-red-500/20">
           {error}
         </div>
       )}
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="email" className="block text-sm font-medium text-dark-100 mb-1">
           {t.auth.email}
         </label>
         <input
@@ -89,7 +89,7 @@ export default function RegisterForm({ locale }: RegisterFormProps) {
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="password" className="block text-sm font-medium text-dark-100 mb-1">
           {t.auth.password}
         </label>
         <input
@@ -105,7 +105,7 @@ export default function RegisterForm({ locale }: RegisterFormProps) {
       </div>
 
       <div>
-        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="confirmPassword" className="block text-sm font-medium text-dark-100 mb-1">
           {t.auth.confirmPassword}
         </label>
         <input
@@ -126,10 +126,10 @@ export default function RegisterForm({ locale }: RegisterFormProps) {
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
+          <div className="w-full border-t border-dark-500" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white text-gray-400">
+          <span className="px-2 bg-dark-800 text-dark-200">
             {locale === "fr" ? "ou" : "or"}
           </span>
         </div>
@@ -143,11 +143,11 @@ export default function RegisterForm({ locale }: RegisterFormProps) {
         {t.auth.googleLogin}
       </button>
 
-      <p className="text-center text-sm text-gray-500 mt-4">
+      <p className="text-center text-sm text-dark-100 mt-4">
         {t.auth.hasAccount}{" "}
         <Link
           href={`/${locale}/login`}
-          className="text-primary-600 font-medium hover:text-accent-500"
+          className="text-primary-400 font-medium hover:text-accent-400"
         >
           {t.auth.login}
         </Link>

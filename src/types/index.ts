@@ -5,6 +5,7 @@ export type {
   Activity,
   DailySummary,
   DayStatus,
+  WeightLog,
 } from "./database";
 
 export interface CalorieCalculation {
@@ -19,4 +20,15 @@ export interface MealScanResult {
   estimatedCalories: number;
   confidence: number;
   description: string;
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  nameFr: string;
+  description: string;
+  descriptionFr: string;
+  days: number;
+  icon: string;
+  unlocked: boolean;
 }

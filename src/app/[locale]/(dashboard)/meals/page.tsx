@@ -63,15 +63,15 @@ export default function MealsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600" />
+        <div className="loader" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-slide-up">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t.meals.title}</h1>
+        <h1 className="text-2xl font-bold text-gray-100">{t.meals.title}</h1>
         <button
           onClick={() => setShowForm(!showForm)}
           className="btn-primary text-sm"
@@ -92,8 +92,8 @@ export default function MealsPage() {
           className="input-field flex-1"
         />
         <div className="card py-2 px-4 text-center">
-          <p className="text-sm text-gray-500">{t.dashboard.consumed}</p>
-          <p className="text-lg font-bold text-primary-600">{totalCalories} kcal</p>
+          <p className="text-sm text-dark-100">{t.dashboard.consumed}</p>
+          <p className="text-lg font-bold text-primary-400">{totalCalories} kcal</p>
         </div>
       </div>
 
@@ -116,26 +116,26 @@ export default function MealsPage() {
         const typeMeals = mealsByType(type);
         return (
           <div key={type} className="card">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">
+            <h2 className="text-lg font-semibold text-gray-100 mb-3">
               {t.meals[type]}
               {typeMeals.length > 0 && (
-                <span className="text-sm font-normal text-gray-400 ml-2">
+                <span className="text-sm font-normal text-dark-100 ml-2">
                   ({typeMeals.reduce((s, m) => s + m.calories, 0)} kcal)
                 </span>
               )}
             </h2>
             {typeMeals.length === 0 ? (
-              <p className="text-gray-400 text-sm">{t.common.noResults}</p>
+              <p className="empty-state">{t.common.noResults}</p>
             ) : (
               <div className="space-y-2">
                 {typeMeals.map((meal) => (
                   <div
                     key={meal.id}
-                    className="flex items-center justify-between bg-gray-50 rounded-lg p-3"
+                    className="flex items-center justify-between bg-dark-700 rounded-xl p-3"
                   >
                     <div>
-                      <p className="font-medium text-gray-800">{meal.name}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-medium text-gray-100">{meal.name}</p>
+                      <p className="text-sm text-dark-100">
                         {meal.calories} kcal
                         {meal.protein > 0 && ` · P: ${meal.protein}g`}
                         {meal.carbs > 0 && ` · C: ${meal.carbs}g`}
@@ -144,7 +144,7 @@ export default function MealsPage() {
                     </div>
                     <button
                       onClick={() => handleDelete(meal.id, meal.date)}
-                      className="text-red-400 hover:text-red-600 text-sm"
+                      className="text-red-400 hover:text-red-300 text-sm transition-colors"
                     >
                       {t.common.delete}
                     </button>

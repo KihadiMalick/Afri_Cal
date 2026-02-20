@@ -77,7 +77,7 @@ export default function AddMealForm({
   return (
     <form onSubmit={handleSubmit} className="card space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-dark-100 mb-1">
           {t.meals.name} *
         </label>
         <input
@@ -91,7 +91,7 @@ export default function AddMealForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-dark-100 mb-1">
             {t.meals.calories} (kcal) *
           </label>
           <input
@@ -104,7 +104,7 @@ export default function AddMealForm({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-dark-100 mb-1">
             {t.meals.mealType}
           </label>
           <select
@@ -127,7 +127,7 @@ export default function AddMealForm({
 
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-dark-100 mb-1">
             {t.meals.protein} (g)
           </label>
           <input
@@ -139,7 +139,7 @@ export default function AddMealForm({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-dark-100 mb-1">
             {t.meals.carbs} (g)
           </label>
           <input
@@ -151,7 +151,7 @@ export default function AddMealForm({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-dark-100 mb-1">
             {t.meals.fat} (g)
           </label>
           <input
@@ -165,7 +165,7 @@ export default function AddMealForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-dark-100 mb-1">
           {t.meals.date}
         </label>
         <input

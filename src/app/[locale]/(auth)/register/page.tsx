@@ -10,12 +10,12 @@ export default function RegisterPage({
   const t = getDictionary(locale);
 
   return (
-    <div className="card">
+    <div className="card animate-scale-in">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-primary-600">
-          Afri<span className="text-accent-500">Calo</span>
+        <h1 className="text-3xl font-bold text-primary-400">
+          Afri<span className="text-accent-400">Calo</span>
         </h1>
-        <p className="text-gray-500 mt-2">{t.common.tagline}</p>
+        <p className="text-dark-100 mt-2">{t.common.tagline}</p>
       </div>
       <RegisterForm locale={locale} />
     </div>
