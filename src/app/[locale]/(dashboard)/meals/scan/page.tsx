@@ -15,6 +15,44 @@ import type { ScanResult } from "@/types";
 
 type ScanStep = "upload" | "scanning" | "result" | "correction" | "limit";
 
+// Compress image client-side to avoid Vercel body size limit (4.5MB)
+function compressImage(file: File, maxSize: number = 800): Promise<{ base64: string; mimeType: string }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let { width, height } = img;
+
+      // Resize to max dimension
+      if (width > maxSize || height > maxSize) {
+        if (width > height) {
+          height = Math.round((height * maxSize) / width);
+          width = maxSize;
+        } else {
+          width = Math.round((width * maxSize) / height);
+          height = maxSize;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Canvas non supporté"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convert to JPEG at 70% quality
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      const base64 = dataUrl.split(",")[1];
+      resolve({ base64, mimeType: "image/jpeg" });
+    };
+    img.onerror = () => reject(new Error("Impossible de lire l'image"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 export default function MealScanPage() {
   const params = useParams();
   const router = useRouter();
@@ -61,26 +99,24 @@ export default function MealScanPage() {
     loadLimits();
   }, [loadLimits]);
 
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setError("");
-    setMimeType(file.type || "image/jpeg");
 
     // Preview
     const previewUrl = URL.createObjectURL(file);
     setImagePreview(previewUrl);
 
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      // Remove data:image/xxx;base64, prefix
-      const base64 = result.split(",")[1];
-      setImageBase64(base64);
-    };
-    reader.readAsDataURL(file);
+    try {
+      // Compress image to avoid body size limit
+      const compressed = await compressImage(file);
+      setImageBase64(compressed.base64);
+      setMimeType(compressed.mimeType);
+    } catch {
+      setError("Impossible de traiter l'image. Réessayez.");
+    }
   }
 
   async function handleScan() {
@@ -96,12 +132,20 @@ export default function MealScanPage() {
         body: JSON.stringify({ imageBase64, mimeType }),
       });
 
+      // Handle non-JSON error responses (Vercel/infra errors)
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        const text = await response.text();
+        throw new Error(text.slice(0, 100) || "Erreur serveur inattendue");
+      }
+
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || "Erreur lors du scan");
       }
 
-      let result: ScanResult = await response.json();
+      let result: ScanResult = data;
 
       // Match with african food database
       result = await matchAfricanFood(supabase, result);

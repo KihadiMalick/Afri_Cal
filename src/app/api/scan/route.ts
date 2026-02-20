@@ -2,7 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { imageBase64, mimeType } = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Image trop grande ou requête invalide. Réessayez avec une photo plus petite." },
+        { status: 400 }
+      );
+    }
+
+    const { imageBase64, mimeType } = body;
 
     if (!imageBase64) {
       return NextResponse.json(
@@ -11,10 +21,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check base64 size (rough estimate: base64 is ~33% larger than binary)
+    const estimatedSizeMB = (imageBase64.length * 0.75) / (1024 * 1024);
+    if (estimatedSizeMB > 5) {
+      return NextResponse.json(
+        { error: "Image trop grande (max 5MB). Prenez une photo en mode normal." },
+        { status: 400 }
+      );
+    }
+
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "Clé API Claude non configurée" },
+        { error: "Clé API Claude non configurée. Ajoutez ANTHROPIC_API_KEY dans les variables d'environnement Vercel." },
         { status: 500 }
       );
     }
@@ -79,9 +98,30 @@ Règles :
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Claude API error:", errorText);
+      console.error("Claude API error:", response.status, errorText);
+
+      // Give user-friendly error messages
+      if (response.status === 401) {
+        return NextResponse.json(
+          { error: "Clé API Claude invalide. Vérifiez ANTHROPIC_API_KEY dans Vercel." },
+          { status: 502 }
+        );
+      }
+      if (response.status === 429) {
+        return NextResponse.json(
+          { error: "Trop de requêtes. Attendez quelques secondes et réessayez." },
+          { status: 502 }
+        );
+      }
+      if (response.status === 400) {
+        return NextResponse.json(
+          { error: "Image non supportée. Essayez avec une autre photo." },
+          { status: 502 }
+        );
+      }
+
       return NextResponse.json(
-        { error: "Erreur API Claude Vision" },
+        { error: `Erreur API Claude (${response.status}). Réessayez.` },
         { status: 502 }
       );
     }
@@ -93,7 +133,7 @@ Règles :
 
     if (!textContent?.text) {
       return NextResponse.json(
-        { error: "Réponse IA vide" },
+        { error: "Réponse IA vide. Réessayez avec une photo plus claire." },
         { status: 502 }
       );
     }
@@ -111,7 +151,7 @@ Règles :
     } catch {
       console.error("JSON parse error:", textContent.text);
       return NextResponse.json(
-        { error: "Réponse IA non valide" },
+        { error: "Réponse IA non valide. Réessayez." },
         { status: 502 }
       );
     }
@@ -131,7 +171,7 @@ Règles :
   } catch (error) {
     console.error("Scan API error:", error);
     return NextResponse.json(
-      { error: "Erreur serveur" },
+      { error: "Erreur serveur inattendue. Réessayez." },
       { status: 500 }
     );
   }
