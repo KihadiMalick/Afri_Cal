@@ -17,6 +17,7 @@ import WeightProjectionCard from "@/components/dashboard/WeightProjectionCard";
 import CaloriesChart from "@/components/charts/CaloriesChart";
 import WeightChart from "@/components/charts/WeightChart";
 import AddWeightForm from "@/components/weight/AddWeightForm";
+import HomeScanWidget from "@/components/scan/HomeScanWidget";
 import type { UserProfile, Meal, Badge } from "@/types";
 
 export default function DashboardPage() {
@@ -184,6 +185,9 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold text-gray-100">
         {t.dashboard.welcome}, {profile.full_name || userEmail.split("@")[0]}
       </h1>
+
+      {/* Scan widget - top of dashboard */}
+      <HomeScanWidget userId={userId} locale={locale} onMealAdded={loadDashboard} />
 
       {/* Score + Streak row */}
       <div className="grid grid-cols-2 gap-4">
