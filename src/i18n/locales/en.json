@@ -85,7 +85,12 @@
     "snack": "Snack",
     "calories": "Calories",
     "name": "Meal name",
-    "description": "Description"
+    "description": "Description",
+    "protein": "Protein",
+    "carbs": "Carbs",
+    "fat": "Fat",
+    "mealType": "Meal type",
+    "date": "Date"
   },
   "activities": {
     "title": "Sports activities",

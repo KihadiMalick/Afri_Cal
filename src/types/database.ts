@@ -8,7 +8,7 @@ export interface Database {
       };
       meals: {
         Row: Meal;
-        Insert: Omit<Meal, "id" | "created_at">;
+        Insert: Omit<Meal, "id" | "created_at" | "image_url" | "description"> & { image_url?: string | null; description?: string | null };
         Update: Partial<Omit<Meal, "id">>;
       };
       activities: {
@@ -61,6 +61,9 @@ export interface Meal {
   description: string | null;
   meal_type: "breakfast" | "lunch" | "dinner" | "snack";
   calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
   image_url: string | null;
   date: string;
   created_at: string;
@@ -77,6 +80,8 @@ export interface Activity {
   created_at: string;
 }
 
+export type DayStatus = "green" | "red" | "gold";
+
 export interface DailySummary {
   id: string;
   user_id: string;
@@ -85,5 +90,6 @@ export interface DailySummary {
   total_calories_burned: number;
   calorie_target: number;
   calorie_balance: number;
+  status: DayStatus;
   created_at: string;
 }

@@ -4,6 +4,7 @@ export type {
   Meal,
   Activity,
   DailySummary,
+  DayStatus,
 } from "./database";
 
 export interface CalorieCalculation {
