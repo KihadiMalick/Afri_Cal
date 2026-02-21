@@ -1,9 +1,10 @@
 "use client";
 
-import type { ScanResult } from "@/types";
+import { useState } from "react";
+import type { ScanPipelineResult } from "@/types/vision-pipeline";
 
 interface ScanResultCardProps {
-  result: ScanResult;
+  result: ScanPipelineResult;
   imagePreview: string;
   onCorrect: () => void;
   onAddMeal: () => void;
@@ -17,20 +18,23 @@ export default function ScanResultCard({
   onAddMeal,
   onNewScan,
 }: ScanResultCardProps) {
-  const finalCalories = result.adjusted_calories ?? result.estimated_calories;
-  const confidencePercent = Math.round(result.confidence * 100);
+  const [showDetails, setShowDetails] = useState(false);
+
+  const { nutrition, warnings, detected_meal_name, confidence_score, ingredients } = result;
+
+  const confidencePercent = Math.round(confidence_score * 100);
 
   const confidenceColor =
-    result.confidence >= 0.8
+    confidence_score >= 0.7
       ? "text-primary-400"
-      : result.confidence >= 0.5
+      : confidence_score >= 0.4
       ? "text-accent-400"
       : "text-red-400";
 
   const confidenceBarColor =
-    result.confidence >= 0.8
+    confidence_score >= 0.7
       ? "bg-primary-500"
-      : result.confidence >= 0.5
+      : confidence_score >= 0.4
       ? "bg-accent-500"
       : "bg-red-500";
 
@@ -42,86 +46,181 @@ export default function ScanResultCard({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imagePreview}
-            alt={result.dish_name}
+            alt={detected_meal_name}
             className="w-full h-full object-cover"
           />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-bold text-gray-100 truncate">
-            {result.dish_name}
+            {detected_meal_name}
           </h3>
-          {result.matched_african_dish && (
-            <div className="flex items-center gap-2 mt-1">
-              <span className="premium-badge text-[10px]">Base AfriCalo</span>
-              <span className="text-xs text-dark-100">
-                {result.matched_african_dish}
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 mt-1">
+            <span className="premium-badge text-[10px]">Scan IA</span>
+            <span className="text-xs text-dark-100">
+              {result.portion_size === "small"
+                ? "Petite portion"
+                : result.portion_size === "medium"
+                ? "Portion moyenne"
+                : "Grande portion"}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-dark-700 rounded-xl p-3 text-center">
-          <p className="text-xs text-dark-100 mb-1">Calories</p>
-          <p className="text-xl font-bold text-primary-400">
-            {Math.round(finalCalories)}
+      {/* Main stats grid */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Calories */}
+        <div className="col-span-2 bg-gradient-to-r from-primary-600/10 to-primary-500/5 border border-primary-500/20 rounded-xl p-4 text-center">
+          <p className="text-xs text-dark-100 mb-1">Calories totales</p>
+          <p className="text-3xl font-bold text-primary-400">
+            {nutrition.total_kcal}
           </p>
           <p className="text-[10px] text-dark-200">kcal</p>
         </div>
 
+        {/* Macros */}
         <div className="bg-dark-700 rounded-xl p-3 text-center">
-          <p className="text-xs text-dark-100 mb-1">Poids</p>
-          <p className="text-xl font-bold text-gray-100">
-            {result.estimated_weight_grams}
+          <p className="text-[10px] text-dark-200 mb-0.5">Proteines</p>
+          <p className="text-lg font-bold text-blue-400">
+            {nutrition.total_protein}g
           </p>
-          <p className="text-[10px] text-dark-200">grammes</p>
         </div>
-
         <div className="bg-dark-700 rounded-xl p-3 text-center">
-          <p className="text-xs text-dark-100 mb-1">Confiance</p>
-          <p className={`text-xl font-bold ${confidenceColor}`}>
-            {confidencePercent}%
+          <p className="text-[10px] text-dark-200 mb-0.5">Glucides</p>
+          <p className="text-lg font-bold text-amber-400">
+            {nutrition.total_carbs}g
           </p>
-          <div className="w-full bg-dark-500 rounded-full h-1 mt-1.5">
-            <div
-              className={`h-1 rounded-full transition-all duration-500 ${confidenceBarColor}`}
-              style={{ width: `${confidencePercent}%` }}
-            />
-          </div>
+        </div>
+        <div className="bg-dark-700 rounded-xl p-3 text-center">
+          <p className="text-[10px] text-dark-200 mb-0.5">Lipides</p>
+          <p className="text-lg font-bold text-orange-400">
+            {nutrition.total_fat}g
+          </p>
+        </div>
+        <div className="bg-dark-700 rounded-xl p-3 text-center">
+          <p className="text-[10px] text-dark-200 mb-0.5">Poids</p>
+          <p className="text-lg font-bold text-gray-100">
+            {nutrition.total_weight}g
+          </p>
         </div>
       </div>
 
-      {/* Ingredients */}
-      {result.ingredients.length > 0 && (
-        <div>
-          <p className="text-xs text-dark-100 mb-2 font-medium uppercase tracking-wide">
-            Ingrédients détectés
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {result.ingredients.map((ingredient, i) => (
-              <span
-                key={i}
-                className="bg-dark-700 text-dark-100 text-xs px-2.5 py-1 rounded-lg border border-dark-500"
-              >
-                {ingredient}
-              </span>
-            ))}
-          </div>
+      {/* Confidence */}
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-dark-100">Confiance</span>
+        <div className="flex-1 bg-dark-500 rounded-full h-2">
+          <div
+            className={`h-2 rounded-full transition-all duration-500 ${confidenceBarColor}`}
+            style={{ width: `${confidencePercent}%` }}
+          />
+        </div>
+        <span className={`text-sm font-bold ${confidenceColor}`}>
+          {confidencePercent}%
+        </span>
+      </div>
+
+      {/* Warnings */}
+      {warnings.length > 0 && (
+        <div className="space-y-2">
+          {warnings.map((w, i) => (
+            <div
+              key={i}
+              className={`rounded-xl p-3 text-xs ${
+                w.severity === "error"
+                  ? "bg-red-500/10 border border-red-500/20 text-red-400"
+                  : w.severity === "warning"
+                  ? "bg-amber-500/10 border border-amber-500/20 text-amber-400"
+                  : "bg-blue-500/10 border border-blue-500/20 text-blue-400"
+              }`}
+            >
+              {w.message}
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Adjusted calories note */}
-      {result.matched_african_dish && result.adjusted_calories && (
-        <div className="bg-primary-600/10 border border-primary-500/20 rounded-xl p-3">
-          <p className="text-xs text-primary-300">
-            <span className="font-semibold">&#x2728; Ajusté via base AfriCalo</span>
-            {" "}&#x2014; Calories recalculées à partir de notre base de plats africains
-            ({result.estimated_calories} &#x2192; {result.adjusted_calories} kcal)
+      {/* Ingredients list */}
+      <div>
+        <button
+          onClick={() => setShowDetails(!showDetails)}
+          className="flex items-center justify-between w-full text-left"
+        >
+          <p className="text-xs text-dark-100 font-medium uppercase tracking-wide">
+            Ingredients detectes ({ingredients.length})
           </p>
-        </div>
-      )}
+          <span className="text-dark-200 text-xs">
+            {showDetails ? "Masquer" : "Details"}
+          </span>
+        </button>
+
+        {/* Quick tags */}
+        {!showDetails && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {ingredients.map((ing, i) => (
+              <span
+                key={i}
+                className={`text-xs px-2.5 py-1 rounded-lg border ${
+                  ing.match_type === "exact"
+                    ? "bg-primary-500/10 text-primary-300 border-primary-500/20"
+                    : ing.match_type === "fuzzy"
+                    ? "bg-accent-500/10 text-accent-300 border-accent-500/20"
+                    : "bg-dark-700 text-dark-100 border-dark-500"
+                }`}
+              >
+                {ing.original_detected_name}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Detailed per-ingredient table */}
+        {showDetails && (
+          <div className="mt-3 space-y-2">
+            {nutrition.per_ingredient.map((ing, i) => (
+              <div
+                key={i}
+                className="bg-dark-700 rounded-xl p-3 flex items-center justify-between"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-100 truncate">
+                    {ing.name}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] text-dark-200">
+                      {ing.weight_grams}g
+                    </span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded ${
+                        ing.match_type === "exact"
+                          ? "bg-primary-500/20 text-primary-300"
+                          : ing.match_type === "fuzzy"
+                          ? "bg-accent-500/20 text-accent-300"
+                          : "bg-dark-500 text-dark-200"
+                      }`}
+                    >
+                      {ing.match_type === "exact"
+                        ? "Exact"
+                        : ing.match_type === "fuzzy"
+                        ? "Similaire"
+                        : ing.match_type === "category_fallback"
+                        ? "Categorie"
+                        : "Estime"}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-primary-400">
+                    {ing.kcal} kcal
+                  </p>
+                  <p className="text-[10px] text-dark-200">
+                    P{ing.protein} G{ing.carbs} L{ing.fat}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Action buttons */}
       <div className="flex flex-col gap-2.5 pt-2">

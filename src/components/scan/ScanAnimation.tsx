@@ -7,24 +7,47 @@ interface ScanAnimationProps {
 }
 
 const SCAN_STEPS = [
-  { fr: "Analyse de la structure...", en: "Analyzing structure..." },
-  { fr: "Détection des ingrédients...", en: "Detecting ingredients..." },
-  { fr: "Estimation de la densité...", en: "Estimating density..." },
-  { fr: "Calcul des calories...", en: "Calculating calories..." },
+  { fr: "Analyse de la photo...", en: "Analyzing photo..." },
+  { fr: "Detection des ingredients...", en: "Detecting ingredients..." },
+  { fr: "Estimation des portions...", en: "Estimating portions..." },
+  { fr: "Recherche dans la base nutritionnelle...", en: "Searching nutrition database..." },
+  { fr: "Calcul des macros...", en: "Calculating macros..." },
+  { fr: "Verification de coherence...", en: "Running coherence checks..." },
+];
+
+const FUN_MESSAGES = [
+  "Chopping...",
+  "Prepping...",
+  "Fooding...",
+  "Spooning...",
+  "Souping...",
+  "Seasoning...",
+  "Tasting...",
+  "Simmering...",
+  "Plating...",
 ];
 
 export default function ScanAnimation({ imagePreview }: ScanAnimationProps) {
   const [stepIndex, setStepIndex] = useState(0);
+  const [funIndex, setFunIndex] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const stepInterval = setInterval(() => {
       setStepIndex((prev) => {
         if (prev < SCAN_STEPS.length - 1) return prev + 1;
         return prev;
       });
     }, 700);
 
-    return () => clearInterval(interval);
+    return () => clearInterval(stepInterval);
+  }, []);
+
+  useEffect(() => {
+    const funInterval = setInterval(() => {
+      setFunIndex((prev) => (prev + 1) % FUN_MESSAGES.length);
+    }, 1200);
+
+    return () => clearInterval(funInterval);
   }, []);
 
   return (
@@ -55,6 +78,13 @@ export default function ScanAnimation({ imagePreview }: ScanAnimationProps) {
             <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-primary-400 rounded-tr-lg" />
             <div className="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-primary-400 rounded-bl-lg" />
             <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-primary-400 rounded-br-lg" />
+
+            {/* Fun rotating message */}
+            <div className="absolute bottom-8 left-0 right-0 flex justify-center">
+              <span className="bg-dark-900/70 text-primary-400 text-sm font-medium px-4 py-1.5 rounded-full backdrop-blur-sm animate-pulse">
+                {FUN_MESSAGES[funIndex]}
+              </span>
+            </div>
 
             {/* Particles */}
             <div className="absolute inset-0 overflow-hidden">
