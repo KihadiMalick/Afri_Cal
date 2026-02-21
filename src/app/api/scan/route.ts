@@ -3,15 +3,41 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/ge
 
 export const maxDuration = 60;
 
+// Reject non-POST methods with a clear JSON error (prevents empty 405 from infra)
+export async function GET() {
+  return NextResponse.json(
+    { error: "Méthode non autorisée. Utilisez POST avec un body JSON contenant imageBase64." },
+    { status: 405, headers: { Allow: "POST" } }
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // Guard: content-type must be application/json
+    const contentType = request.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      console.error("Scan route: mauvais Content-Type reçu:", contentType);
+      return NextResponse.json(
+        { error: "Content-Type doit être application/json." },
+        { status: 400 }
+      );
+    }
+
     // Parse request body
     let body: { imageBase64?: string; mimeType?: string };
     try {
-      body = await request.json();
+      const text = await request.text();
+      if (!text || !text.trim()) {
+        console.error("Scan route: corps de requête vide");
+        return NextResponse.json(
+          { error: "Corps de requête vide. Envoyez { imageBase64, mimeType } en JSON." },
+          { status: 400 }
+        );
+      }
+      body = JSON.parse(text);
     } catch {
       return NextResponse.json(
-        { error: "Requête invalide. Réessayez." },
+        { error: "JSON invalide dans le corps de la requête. Réessayez." },
         { status: 400 }
       );
     }

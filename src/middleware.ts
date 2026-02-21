@@ -71,6 +71,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|images|icons).*)",
+    // Exclude API routes, static files, and assets from locale middleware
+    // Without this exclusion, POST /api/scan gets redirected to /fr/api/scan
+    // which hits the [locale] page router and returns 405 with empty body.
+    "/((?!_next/static|_next/image|favicon.ico|images|icons|api).*)",
   ],
 };
