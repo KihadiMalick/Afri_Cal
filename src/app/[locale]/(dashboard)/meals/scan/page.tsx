@@ -5,13 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { isValidLocale } from "@/i18n";
 import { checkScanLimit, incrementScanCount } from "@/utils/scan-limits";
-import { matchAfricanFood } from "@/utils/african-food-match";
 import { updateDailySummary } from "@/utils/daily-summary";
+import { scanFood } from "@/lib/vision-pipeline";
 import ScanAnimation from "@/components/scan/ScanAnimation";
 import ScanResultCard from "@/components/scan/ScanResult";
 import CorrectionForm from "@/components/scan/CorrectionForm";
 import PremiumLimitMessage from "@/components/scan/PremiumLimitMessage";
-import type { ScanResult } from "@/types";
+import type { VisionDetectionResult, ScanPipelineResult } from "@/types/vision-pipeline";
 
 type ScanStep = "upload" | "scanning" | "result" | "correction" | "limit";
 
@@ -23,7 +23,6 @@ function compressImage(file: File, maxSize: number = 800): Promise<{ base64: str
       const canvas = document.createElement("canvas");
       let { width, height } = img;
 
-      // Resize to max dimension
       if (width > maxSize || height > maxSize) {
         if (width > height) {
           height = Math.round((height * maxSize) / width);
@@ -38,12 +37,11 @@ function compressImage(file: File, maxSize: number = 800): Promise<{ base64: str
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        reject(new Error("Canvas non supporté"));
+        reject(new Error("Canvas non supporte"));
         return;
       }
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Convert to JPEG at 70% quality
       const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
       const base64 = dataUrl.split(",")[1];
       resolve({ base64, mimeType: "image/jpeg" });
@@ -66,7 +64,7 @@ export default function MealScanPage() {
   const [imagePreview, setImagePreview] = useState("");
   const [imageBase64, setImageBase64] = useState("");
   const [mimeType, setMimeType] = useState("image/jpeg");
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [pipelineResult, setPipelineResult] = useState<ScanPipelineResult | null>(null);
   const [scanId, setScanId] = useState("");
   const [userId, setUserId] = useState("");
   const [scansUsed, setScansUsed] = useState(0);
@@ -106,17 +104,15 @@ export default function MealScanPage() {
 
     setError("");
 
-    // Preview
     const previewUrl = URL.createObjectURL(file);
     setImagePreview(previewUrl);
 
     try {
-      // Compress image to avoid body size limit
       const compressed = await compressImage(file);
       setImageBase64(compressed.base64);
       setMimeType(compressed.mimeType);
     } catch {
-      setError("Impossible de traiter l'image. Réessayez.");
+      setError("Impossible de traiter l'image. Reessayez.");
     }
   }
 
@@ -127,13 +123,13 @@ export default function MealScanPage() {
     setError("");
 
     try {
+      // Phase 1: Call vision API
       const response = await fetch("/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageBase64, mimeType }),
       });
 
-      // Handle non-JSON error responses (Vercel/infra errors)
       const contentType = response.headers.get("content-type") || "";
       if (!contentType.includes("application/json")) {
         const text = await response.text();
@@ -148,23 +144,21 @@ export default function MealScanPage() {
         throw new Error(data.error || `Erreur HTTP ${response.status}`);
       }
 
-      let result: ScanResult = data;
+      const detectionResult: VisionDetectionResult = data;
 
-      // Match with african food database
-      result = await matchAfricanFood(supabase, result);
+      // Phases 2-4: Run full pipeline (estimate, match, calculate, check)
+      const result = await scanFood(supabase, detectionResult);
 
       // Save scan to history
-      const finalCalories = result.adjusted_calories ?? result.estimated_calories;
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: scan } = await (supabase as any)
         .from("scan_history")
         .insert({
           user_id: userId,
-          detected_dish: result.dish_name,
-          estimated_calories: finalCalories,
-          estimated_weight: result.estimated_weight_grams,
-          confidence_score: result.confidence,
+          detected_dish: result.detected_meal_name,
+          estimated_calories: result.nutrition.total_kcal,
+          estimated_weight: result.nutrition.total_weight,
+          confidence_score: result.confidence_score,
         })
         .select("id")
         .single();
@@ -174,7 +168,7 @@ export default function MealScanPage() {
       // Increment scan count
       await incrementScanCount(supabase, userId);
 
-      setScanResult(result);
+      setPipelineResult(result);
       setScansUsed((prev) => prev + 1);
       setScansRemaining((prev) => Math.max(0, prev - 1));
       setStep("result");
@@ -185,37 +179,31 @@ export default function MealScanPage() {
   }
 
   async function handleAddMeal() {
-    if (!scanResult) return;
+    if (!pipelineResult) return;
 
-    const finalCalories =
-      scanResult.adjusted_calories ?? scanResult.estimated_calories;
+    const { nutrition, detected_meal_name, ingredients } = pipelineResult;
     const today = new Date().toISOString().split("T")[0];
+    const ingredientNames = ingredients.map((i) => i.original_detected_name).join(", ");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from("meals").insert({
       user_id: userId,
-      name: scanResult.dish_name,
+      name: detected_meal_name,
       meal_type: guessMealType(),
-      calories: Math.round(finalCalories),
-      protein: 0,
-      carbs: 0,
-      fat: 0,
+      calories: Math.round(nutrition.total_kcal),
+      protein: Math.round(nutrition.total_protein * 10) / 10,
+      carbs: Math.round(nutrition.total_carbs * 10) / 10,
+      fat: Math.round(nutrition.total_fat * 10) / 10,
       date: today,
-      description: `Scan IA - ${scanResult.ingredients.join(", ")}`,
+      description: `Scan IA - ${ingredientNames}`,
     });
 
     await updateDailySummary(supabase, userId, today);
     router.push(`/${locale}/meals`);
   }
 
-  function handleCorrection(correctedCalories: number, correctedDish: string) {
-    if (scanResult) {
-      setScanResult({
-        ...scanResult,
-        dish_name: correctedDish,
-        adjusted_calories: correctedCalories,
-      });
-    }
+  function handleCorrection(updatedResult: ScanPipelineResult) {
+    setPipelineResult(updatedResult);
     setStep("result");
   }
 
@@ -226,7 +214,7 @@ export default function MealScanPage() {
     }
     setImagePreview("");
     setImageBase64("");
-    setScanResult(null);
+    setPipelineResult(null);
     setScanId("");
     setError("");
     setStep("upload");
@@ -263,7 +251,7 @@ export default function MealScanPage() {
             </div>
             <span className="text-xs text-dark-100">
               {scansRemaining === Infinity
-                ? "Illimité"
+                ? "Illimite"
                 : `${scansRemaining} restant${scansRemaining > 1 ? "s" : ""}`}
             </span>
           </div>
@@ -280,13 +268,12 @@ export default function MealScanPage() {
       {/* Step: Upload */}
       {step === "upload" && (
         <div className="space-y-4">
-          {/* Image preview or upload area */}
           {imagePreview ? (
             <div className="relative rounded-2xl overflow-hidden border border-dark-500">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imagePreview}
-                alt="Aperçu"
+                alt="Apercu"
                 className="w-full aspect-square object-cover"
               />
               <button
@@ -310,7 +297,7 @@ export default function MealScanPage() {
                 </div>
                 <div className="text-center">
                   <p className="text-gray-100 font-medium text-sm">
-                    {locale === "fr" ? "Caméra" : "Camera"}
+                    {locale === "fr" ? "Camera" : "Camera"}
                   </p>
                   <p className="text-dark-200 text-xs mt-0.5">
                     {locale === "fr" ? "Prendre une photo" : "Take a photo"}
@@ -366,7 +353,7 @@ export default function MealScanPage() {
           {/* How it works */}
           <div className="card-static">
             <h3 className="text-sm font-semibold text-gray-100 mb-3">
-              {locale === "fr" ? "Comment ça marche ?" : "How does it work?"}
+              {locale === "fr" ? "Comment ca marche ?" : "How does it work?"}
             </h3>
             <div className="space-y-2.5">
               {[
@@ -381,15 +368,15 @@ export default function MealScanPage() {
                   icon: "2\uFE0F\u20E3",
                   text:
                     locale === "fr"
-                      ? "L'IA analyse les ingrédients et le poids"
-                      : "AI analyzes ingredients and weight",
+                      ? "L'IA detecte les ingredients et estime les portions"
+                      : "AI detects ingredients and estimates portions",
                 },
                 {
                   icon: "3\uFE0F\u20E3",
                   text:
                     locale === "fr"
-                      ? "Les calories sont ajustées avec notre base africaine"
-                      : "Calories are adjusted with our African database",
+                      ? "Les calories et macros sont calcules depuis notre base africaine"
+                      : "Calories and macros are calculated from our African database",
                 },
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-3">
@@ -408,9 +395,9 @@ export default function MealScanPage() {
       )}
 
       {/* Step: Result */}
-      {step === "result" && scanResult && (
+      {step === "result" && pipelineResult && (
         <ScanResultCard
-          result={scanResult}
+          result={pipelineResult}
           imagePreview={imagePreview}
           onCorrect={() => setStep("correction")}
           onAddMeal={handleAddMeal}
@@ -419,10 +406,10 @@ export default function MealScanPage() {
       )}
 
       {/* Step: Correction */}
-      {step === "correction" && scanResult && (
+      {step === "correction" && pipelineResult && (
         <CorrectionForm
           scanId={scanId}
-          result={scanResult}
+          result={pipelineResult}
           onCorrected={handleCorrection}
           onCancel={() => setStep("result")}
         />
@@ -483,7 +470,7 @@ function RecentScans({
   return (
     <div className="card-static">
       <h3 className="text-sm font-semibold text-gray-100 mb-3">
-        {locale === "fr" ? "Scans récents" : "Recent scans"}
+        {locale === "fr" ? "Scans recents" : "Recent scans"}
       </h3>
       <div className="space-y-2">
         {scans.map((scan) => (

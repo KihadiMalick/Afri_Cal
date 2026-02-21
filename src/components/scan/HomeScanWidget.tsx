@@ -4,12 +4,12 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { checkScanLimit, incrementScanCount } from "@/utils/scan-limits";
-import { matchAfricanFood } from "@/utils/african-food-match";
 import { updateDailySummary } from "@/utils/daily-summary";
+import { scanFood } from "@/lib/vision-pipeline";
 import ScanAnimation from "@/components/scan/ScanAnimation";
 import ScanResultCard from "@/components/scan/ScanResult";
 import CorrectionForm from "@/components/scan/CorrectionForm";
-import type { ScanResult } from "@/types";
+import type { VisionDetectionResult, ScanPipelineResult } from "@/types/vision-pipeline";
 
 type ScanStep = "idle" | "preview" | "scanning" | "result" | "correction" | "limit";
 
@@ -38,7 +38,7 @@ function compressImage(
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        reject(new Error("Canvas non supporté"));
+        reject(new Error("Canvas non supporte"));
         return;
       }
       ctx.drawImage(img, 0, 0, width, height);
@@ -80,7 +80,7 @@ export default function HomeScanWidget({
   const [imagePreview, setImagePreview] = useState("");
   const [imageBase64, setImageBase64] = useState("");
   const [mimeType, setMimeType] = useState("image/jpeg");
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [pipelineResult, setPipelineResult] = useState<ScanPipelineResult | null>(null);
   const [scanId, setScanId] = useState("");
   const [scansUsed, setScansUsed] = useState(0);
   const [scansRemaining, setScansRemaining] = useState(3);
@@ -118,7 +118,7 @@ export default function HomeScanWidget({
     } catch {
       setError(
         locale === "fr"
-          ? "Impossible de traiter l'image. Réessayez."
+          ? "Impossible de traiter l'image. Reessayez."
           : "Could not process the image. Try again."
       );
     }
@@ -131,6 +131,7 @@ export default function HomeScanWidget({
     setError("");
 
     try {
+      // Phase 1: Call vision API
       const response = await fetch("/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -151,20 +152,21 @@ export default function HomeScanWidget({
         throw new Error(data.error || `Erreur HTTP ${response.status}`);
       }
 
-      let result: ScanResult = data;
-      result = await matchAfricanFood(supabase, result);
+      const detectionResult: VisionDetectionResult = data;
 
-      const finalCalories = result.adjusted_calories ?? result.estimated_calories;
+      // Phases 2-4: Run full pipeline
+      const result = await scanFood(supabase, detectionResult);
 
+      // Save to scan history
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: scan } = await (supabase as any)
         .from("scan_history")
         .insert({
           user_id: userId,
-          detected_dish: result.dish_name,
-          estimated_calories: finalCalories,
-          estimated_weight: result.estimated_weight_grams,
-          confidence_score: result.confidence,
+          detected_dish: result.detected_meal_name,
+          estimated_calories: result.nutrition.total_kcal,
+          estimated_weight: result.nutrition.total_weight,
+          confidence_score: result.confidence_score,
         })
         .select("id")
         .single();
@@ -173,7 +175,7 @@ export default function HomeScanWidget({
 
       await incrementScanCount(supabase, userId);
 
-      setScanResult(result);
+      setPipelineResult(result);
       setScansUsed((prev) => prev + 1);
       setScansRemaining((prev) => Math.max(0, prev - 1));
       setStep("result");
@@ -184,23 +186,23 @@ export default function HomeScanWidget({
   }
 
   async function handleAddMeal() {
-    if (!scanResult) return;
+    if (!pipelineResult) return;
 
-    const finalCalories =
-      scanResult.adjusted_calories ?? scanResult.estimated_calories;
+    const { nutrition, detected_meal_name, ingredients } = pipelineResult;
     const today = new Date().toISOString().split("T")[0];
+    const ingredientNames = ingredients.map((i) => i.original_detected_name).join(", ");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from("meals").insert({
       user_id: userId,
-      name: scanResult.dish_name,
+      name: detected_meal_name,
       meal_type: guessMealType(),
-      calories: Math.round(finalCalories),
-      protein: 0,
-      carbs: 0,
-      fat: 0,
+      calories: Math.round(nutrition.total_kcal),
+      protein: Math.round(nutrition.total_protein * 10) / 10,
+      carbs: Math.round(nutrition.total_carbs * 10) / 10,
+      fat: Math.round(nutrition.total_fat * 10) / 10,
       date: today,
-      description: `Scan IA - ${scanResult.ingredients.join(", ")}`,
+      description: `Scan IA - ${ingredientNames}`,
     });
 
     await updateDailySummary(supabase, userId, today);
@@ -209,21 +211,15 @@ export default function HomeScanWidget({
     router.push(`/${locale}/meals`);
   }
 
-  function handleCorrection(correctedCalories: number, correctedDish: string) {
-    if (scanResult) {
-      setScanResult({
-        ...scanResult,
-        dish_name: correctedDish,
-        adjusted_calories: correctedCalories,
-      });
-    }
+  function handleCorrection(updatedResult: ScanPipelineResult) {
+    setPipelineResult(updatedResult);
     setStep("result");
   }
 
   function handleReset() {
     setImagePreview("");
     setImageBase64("");
-    setScanResult(null);
+    setPipelineResult(null);
     setScanId("");
     setError("");
     setStep("idle");
@@ -262,10 +258,10 @@ export default function HomeScanWidget({
   }
 
   // Result
-  if (step === "result" && scanResult) {
+  if (step === "result" && pipelineResult) {
     return (
       <ScanResultCard
-        result={scanResult}
+        result={pipelineResult}
         imagePreview={imagePreview}
         onCorrect={() => setStep("correction")}
         onAddMeal={handleAddMeal}
@@ -275,11 +271,11 @@ export default function HomeScanWidget({
   }
 
   // Correction form
-  if (step === "correction" && scanResult) {
+  if (step === "correction" && pipelineResult) {
     return (
       <CorrectionForm
         scanId={scanId}
-        result={scanResult}
+        result={pipelineResult}
         onCorrected={handleCorrection}
         onCancel={() => setStep("result")}
       />
@@ -300,7 +296,6 @@ export default function HomeScanWidget({
               : "Identify your calories with AI"}
           </p>
         </div>
-        {/* Scan counter */}
         <div className="flex items-center gap-1.5">
           <div className="flex gap-1">
             {[1, 2, 3].map((i) => (
@@ -315,7 +310,7 @@ export default function HomeScanWidget({
           <span className="text-xs text-dark-200">
             {scansRemaining === Infinity
               ? locale === "fr"
-                ? "Illimité"
+                ? "Illimite"
                 : "Unlimited"
               : `${scansRemaining} ${locale === "fr" ? "restant" : "left"}${scansRemaining > 1 ? "s" : ""}`}
           </span>
@@ -335,7 +330,7 @@ export default function HomeScanWidget({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imagePreview}
-            alt="Aperçu"
+            alt="Apercu"
             className="w-full aspect-video object-cover"
           />
           <button
@@ -350,13 +345,12 @@ export default function HomeScanWidget({
       {/* Camera / Gallery buttons (idle state) */}
       {step === "idle" && (
         <div className="grid grid-cols-2 gap-3">
-          {/* Camera button */}
           <label className="flex flex-col items-center justify-center gap-2 bg-dark-700 hover:bg-dark-600 border border-dark-500 hover:border-primary-500/40 rounded-2xl p-4 cursor-pointer transition-all">
             <div className="w-12 h-12 rounded-full bg-primary-500/10 flex items-center justify-center">
               <span className="text-2xl">&#x1F4F7;</span>
             </div>
             <span className="text-sm font-medium text-gray-100">
-              {locale === "fr" ? "Caméra" : "Camera"}
+              {locale === "fr" ? "Camera" : "Camera"}
             </span>
             <span className="text-xs text-dark-200 text-center">
               {locale === "fr" ? "Prendre une photo" : "Take a photo"}
@@ -371,7 +365,6 @@ export default function HomeScanWidget({
             />
           </label>
 
-          {/* Gallery button */}
           <label className="flex flex-col items-center justify-center gap-2 bg-dark-700 hover:bg-dark-600 border border-dark-500 hover:border-primary-500/40 rounded-2xl p-4 cursor-pointer transition-all">
             <div className="w-12 h-12 rounded-full bg-accent-500/10 flex items-center justify-center">
               <span className="text-2xl">&#x1F5BC;&#xFE0F;</span>
@@ -393,7 +386,7 @@ export default function HomeScanWidget({
         </div>
       )}
 
-      {/* Scan button (after image selected) */}
+      {/* Scan button */}
       {step === "preview" && imagePreview && (
         <button
           onClick={handleScan}
@@ -401,7 +394,7 @@ export default function HomeScanWidget({
         >
           <span>&#x2728;</span>
           <span>
-            {locale === "fr" ? "Analyser avec Gemini" : "Analyze with Gemini"}
+            {locale === "fr" ? "Analyser avec l'IA" : "Analyze with AI"}
           </span>
         </button>
       )}
