@@ -5,10 +5,14 @@
 
 -- Table: scan_corrections
 -- Stores every user correction with original + corrected data
+-- NOTE: scan_id is stored as plain UUID (no FK) to avoid
+--       dependency on scan_history table existence order.
 CREATE TABLE IF NOT EXISTS scan_corrections (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  scan_id UUID REFERENCES scan_history(id) ON DELETE SET NULL,
+
+  -- Soft reference to scan_history (no FK constraint to avoid dependency issues)
+  scan_id UUID,
 
   -- Original detection data
   original_detected_dish_name TEXT,
@@ -43,13 +47,16 @@ CREATE INDEX IF NOT EXISTS idx_scan_corrections_original_dish
 -- RLS: users can only see/modify their own corrections
 ALTER TABLE scan_corrections ENABLE ROW LEVEL SECURITY;
 
+-- Use table-qualified column name to avoid "column does not exist" errors
+DROP POLICY IF EXISTS "Users can view own corrections" ON scan_corrections;
 CREATE POLICY "Users can view own corrections"
   ON scan_corrections FOR SELECT
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = scan_corrections.user_id);
 
+DROP POLICY IF EXISTS "Users can insert own corrections" ON scan_corrections;
 CREATE POLICY "Users can insert own corrections"
   ON scan_corrections FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (auth.uid() = scan_corrections.user_id);
 
 -- ============================================================
 -- View: dish_correction_stats
