@@ -77,10 +77,10 @@ export async function POST(request: NextRequest) {
       ? (mimeType as "image/jpeg" | "image/png" | "image/gif" | "image/webp")
       : "image/jpeg";
 
-    // ─── Optimized prompt: short, strict, < 650 tokens target ───
+    // ─── AfriCalo Vision AI prompt: priority dish recognition ───
     const message = await client.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 512,
+      max_tokens: 600,
       messages: [
         {
           role: "user",
@@ -95,17 +95,24 @@ export async function POST(request: NextRequest) {
             },
             {
               type: "text",
-              text: `Analyse photo. JSON STRICT, rien d'autre.
-{"detected_dish_name":"nom|null","dish_confidence":0,"estimated_total_weight_g":0,"visual_cues":[""],"ingredients":[{"name":"","estimated_weight_g":0,"confidence":0,"visually_confirmed":true}],"texture":"","overall_confidence":0}
+              text: `Tu es AfriCalo Vision AI, specialiste cuisine africaine. JSON STRICT, rien d'autre.
+
+Etape 1: Qualite image. Si floue/sombre/coupee: {"image_quality":"insufficient"} et STOP.
+Etape 2: Reconnais le PLAT GLOBALEMENT (dressage, sauce, huile, couleur riz, decoupes, regroupements, indices regionaux).
+Etape 3: Extrais les ingredients VISIBLES uniquement (max 8).
+Etape 4: Analyse visuelle (huile, sauce, friture, grillades).
+Etape 5: Estime portion et remplissage assiette.
+
+Format:
+{"image_quality":"good","dish_name":"nom|null","confidence":0,"country_guess":"pays|null","ingredients":[{"name":"","estimated_quantity_grams":0,"confidence":0}],"visual_properties":{"oil_level":"low|medium|high","sauce_presence":false,"fried_elements":false,"grilled_elements":false},"portion_size":"small|medium|large","plate_fill_percentage":0}
+
 Regles:
-- detected_dish_name: nom africain/francais si reconnu, null si dish_confidence<70
-- dish_confidence/confidence/overall_confidence: 0-100
-- ingredients: VISIBLES uniquement, max 8, francais simple
-- estimated_weight_g: grammes par ingredient
-- texture: dry/saucy/oily/fried/grilled/mixed
-- visual_cues: 2-4 indices visuels courts
-- visually_confirmed: toujours true
-- Jamais de calories/macros
+- dish_name: nom africain/local si reconnu, null si confidence<60
+- confidence: 0-100
+- country_guess: Senegal, Cote d'Ivoire, Cameroun, Mali, Nigeria, Guinee, Burkina, Togo, Benin, Congo, Ghana, ou null
+- ingredients: VISIBLES uniquement, francais simple, max 8
+- estimated_quantity_grams: grammes par ingredient
+- Jamais de calories/macros dans la reponse
 - Aucun texte hors JSON`,
             },
           ],
@@ -147,6 +154,26 @@ Regles:
       );
     }
 
+    // ─── Handle insufficient image quality early return ───
+    const imageQuality = scanResult.image_quality === "insufficient" ? "insufficient" : "good";
+    if (imageQuality === "insufficient") {
+      return NextResponse.json({
+        image_quality: "insufficient",
+        dish_name: null,
+        confidence: 0,
+        country_guess: null,
+        ingredients: [],
+        visual_properties: {
+          oil_level: "low",
+          sauce_presence: false,
+          fried_elements: false,
+          grilled_elements: false,
+        },
+        portion_size: "medium",
+        plate_fill_percentage: 0,
+      });
+    }
+
     // ─── Validate and sanitize the structured result ───
 
     const rawIngredients = Array.isArray(scanResult.ingredients)
@@ -157,45 +184,57 @@ Regles:
       .slice(0, 8)
       .map((ing) => ({
         name: String(ing.name || "inconnu"),
-        estimated_weight_g: Math.max(5, Math.round(Number(ing.estimated_weight_g) || 30)),
+        estimated_quantity_grams: Math.max(5, Math.round(Number(ing.estimated_quantity_grams) || 30)),
         confidence: Math.min(100, Math.max(0, Math.round(Number(ing.confidence) || 50))),
-        visually_confirmed: true,
       }));
-
-    const texture = typeof scanResult.texture === "string" && scanResult.texture.trim()
-      ? scanResult.texture.trim()
-      : "mixed";
 
     const dishConfidence = Math.min(
       100,
-      Math.max(0, Math.round(Number(scanResult.dish_confidence) || 0))
+      Math.max(0, Math.round(Number(scanResult.confidence) || 0))
     );
 
-    const detectedDishName =
-      dishConfidence >= 70 && typeof scanResult.detected_dish_name === "string" && scanResult.detected_dish_name.trim()
-        ? scanResult.detected_dish_name.trim()
+    const dishName =
+      dishConfidence >= 60 && typeof scanResult.dish_name === "string" && scanResult.dish_name.trim()
+        ? scanResult.dish_name.trim()
         : null;
 
-    const rawCues = Array.isArray(scanResult.visual_cues)
-      ? (scanResult.visual_cues as unknown[])
-          .filter((c): c is string => typeof c === "string" && c.trim().length > 0)
-          .slice(0, 4)
-      : [];
+    const countryGuess =
+      typeof scanResult.country_guess === "string" && scanResult.country_guess.trim()
+        ? scanResult.country_guess.trim()
+        : null;
+
+    // Validate visual_properties
+    const rawVisual = (scanResult.visual_properties || {}) as Record<string, unknown>;
+    const oilLevel = ["low", "medium", "high"].includes(String(rawVisual.oil_level))
+      ? (String(rawVisual.oil_level) as "low" | "medium" | "high")
+      : "low";
+
+    const visualProperties = {
+      oil_level: oilLevel,
+      sauce_presence: rawVisual.sauce_presence === true,
+      fried_elements: rawVisual.fried_elements === true,
+      grilled_elements: rawVisual.grilled_elements === true,
+    };
+
+    // Validate portion_size
+    const portionSize = ["small", "medium", "large"].includes(String(scanResult.portion_size))
+      ? (String(scanResult.portion_size) as "small" | "medium" | "large")
+      : "medium";
+
+    const plateFillPercentage = Math.min(
+      100,
+      Math.max(0, Math.round(Number(scanResult.plate_fill_percentage) || 50))
+    );
 
     const final = {
-      detected_dish_name: detectedDishName,
-      dish_confidence: dishConfidence,
-      estimated_total_weight_g: Math.max(
-        50,
-        Math.round(Number(scanResult.estimated_total_weight_g) || 300)
-      ),
-      visual_cues: rawCues,
+      image_quality: "good" as const,
+      dish_name: dishName,
+      confidence: dishConfidence,
+      country_guess: countryGuess,
       ingredients,
-      texture,
-      overall_confidence: Math.min(
-        100,
-        Math.max(0, Math.round(Number(scanResult.overall_confidence) || 50))
-      ),
+      visual_properties: visualProperties,
+      portion_size: portionSize,
+      plate_fill_percentage: plateFillPercentage,
     };
 
     return NextResponse.json(final);

@@ -2,6 +2,7 @@ import type {
   VisionDetectionResult,
   EstimatedIngredient,
   TextureType,
+  VisualProperties,
 } from "@/types/vision-pipeline";
 
 /**
@@ -18,45 +19,17 @@ export const TEXTURE_CALORIE_ADJUSTMENTS: Record<TextureType, number> = {
 };
 
 /**
- * Map free-text texture from AI (French or English) to our typed TextureType.
+ * Derive a TextureType from the new visual_properties object.
+ * Priority: fried > oily (high) > grilled > saucy > oily (medium) > mixed
  */
-const TEXTURE_MAP: Record<string, TextureType> = {
-  // English
-  oily: "oily",
-  fried: "fried",
-  grilled: "grilled",
-  dry: "dry",
-  saucy: "saucy",
-  mixed: "mixed",
-  // French
-  huileux: "oily",
-  frit: "fried",
-  friture: "fried",
-  frite: "fried",
-  huile: "oily",
-  sec: "dry",
-  grille: "grilled",
-  roti: "grilled",
-  sauce: "saucy",
-  bouillon: "saucy",
-  soupe: "saucy",
-  mixte: "mixed",
-  melange: "mixed",
-};
-
-/**
- * Resolve the free-text texture string from AI to a typed TextureType.
- */
-export function resolveTextureType(texture: string): TextureType {
-  const normalized = texture
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-
-  for (const [key, value] of Object.entries(TEXTURE_MAP)) {
-    if (normalized.includes(key)) return value;
-  }
+export function resolveTextureFromVisualProperties(
+  visual: VisualProperties
+): TextureType {
+  if (visual.fried_elements) return "fried";
+  if (visual.oil_level === "high") return "oily";
+  if (visual.grilled_elements) return "grilled";
+  if (visual.sauce_presence) return "saucy";
+  if (visual.oil_level === "medium") return "oily";
   return "mixed";
 }
 
@@ -176,8 +149,8 @@ function normalizeText(s: string): string {
 /**
  * Phase 2: Map vision detection ingredients to EstimatedIngredient[].
  *
- * In the optimized format, Claude already provides estimated_weight_g
- * per ingredient, so we just normalize names and map the texture.
+ * Uses visual_properties to derive texture type and estimated_quantity_grams
+ * per ingredient from the AfriCalo Vision AI format.
  */
 export function estimateIngredientWeights(
   detection: VisionDetectionResult
@@ -185,7 +158,7 @@ export function estimateIngredientWeights(
   const ingredients = detection.ingredients;
   if (ingredients.length === 0) return [];
 
-  const globalTexture = resolveTextureType(detection.texture);
+  const globalTexture = resolveTextureFromVisualProperties(detection.visual_properties);
 
   return ingredients.map((ing) => {
     // Normalize name through synonym map
@@ -195,7 +168,7 @@ export function estimateIngredientWeights(
     return {
       normalized_name: normalizedName,
       original_name: ing.name,
-      estimated_weight_grams: Math.max(5, ing.estimated_weight_g),
+      estimated_weight_grams: Math.max(5, ing.estimated_quantity_grams),
       texture_type: globalTexture,
       confidence: ing.confidence / 100, // convert 0-100 to 0-1 for downstream
     };

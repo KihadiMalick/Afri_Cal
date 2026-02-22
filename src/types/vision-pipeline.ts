@@ -1,33 +1,47 @@
 // ============================================================
-// Vision Pipeline Types — AfriCalo Scan Intelligent
-// Optimized for minimal token usage + learning system
+// Vision Pipeline Types — AfriCalo Vision AI
+// Priority dish recognition + visual properties analysis
 // ============================================================
 
 /** Texture type for caloric density adjustment */
 export type TextureType = "oily" | "dry" | "saucy" | "fried" | "grilled" | "mixed";
 
-/** Portion size derived from total weight */
+/** Portion size derived from total weight or AI detection */
 export type PortionSize = "small" | "medium" | "large";
+
+/** Image quality assessment from AI */
+export type ImageQuality = "good" | "insufficient";
+
+/** Oil level in visual analysis */
+export type OilLevel = "low" | "medium" | "high";
 
 // ---- Phase 1: Vision Detection (strict JSON format from AI) ----
 
 /** Single ingredient detected by vision AI */
 export interface DetectedIngredient {
   name: string;
-  estimated_weight_g: number;
-  confidence: number;          // 0-100
-  visually_confirmed: boolean; // always true — AI only reports visible items
+  estimated_quantity_grams: number;
+  confidence: number; // 0-100
+}
+
+/** Visual properties detected by AI for caloric adjustment */
+export interface VisualProperties {
+  oil_level: OilLevel;
+  sauce_presence: boolean;
+  fried_elements: boolean;
+  grilled_elements: boolean;
 }
 
 /** Raw output from the vision API (Phase 1) — strict JSON-only format */
 export interface VisionDetectionResult {
-  detected_dish_name: string | null; // null if dish_confidence < 70
-  dish_confidence: number;           // 0-100
-  estimated_total_weight_g: number;
-  visual_cues: string[];             // 2-4 short visual cue phrases
+  image_quality: ImageQuality;
+  dish_name: string | null;         // null if confidence < 60
+  confidence: number;               // 0-100
+  country_guess: string | null;     // Senegal, Cote d'Ivoire, Cameroun, Mali, Nigeria, etc.
   ingredients: DetectedIngredient[];
-  texture: string;                   // "dry" | "saucy" | "oily" | "fried" | "grilled" | "mixed"
-  overall_confidence: number;        // 0-100
+  visual_properties: VisualProperties;
+  portion_size: PortionSize;
+  plate_fill_percentage: number;    // 0-100
 }
 
 // ---- Phase 2: Portion Estimation ----
@@ -123,8 +137,10 @@ export interface ScanPipelineResult {
   detected_meal_name: string;
   portion_size: PortionSize;
 
-  // Visual cues from AI
-  visual_cues: string[];
+  // Visual properties from AI
+  visual_properties: VisualProperties;
+  country_guess: string | null;
+  plate_fill_percentage: number;
 
   // Matched ingredients with nutrition
   ingredients: MatchedIngredient[];
