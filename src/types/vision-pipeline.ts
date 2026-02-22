@@ -1,33 +1,33 @@
 // ============================================================
 // Vision Pipeline Types — AfriCalo Scan Intelligent
-// Optimized for minimal token usage
+// Optimized for minimal token usage + learning system
 // ============================================================
 
 /** Texture type for caloric density adjustment */
-export type TextureType = "oily" | "dry" | "saucy" | "mixed";
-
-/** Certainty level for ingredient detection */
-export type CertaintyLevel = "high" | "medium" | "low";
+export type TextureType = "oily" | "dry" | "saucy" | "fried" | "grilled" | "mixed";
 
 /** Portion size derived from total weight */
 export type PortionSize = "small" | "medium" | "large";
 
-// ---- Phase 1: Vision Detection (optimized token format) ----
+// ---- Phase 1: Vision Detection (strict JSON format from AI) ----
 
 /** Single ingredient detected by vision AI */
 export interface DetectedIngredient {
   name: string;
   estimated_weight_g: number;
-  confidence: number; // 0-100
-  certainty: CertaintyLevel;
+  confidence: number;          // 0-100
+  visually_confirmed: boolean; // always true — AI only reports visible items
 }
 
-/** Raw output from the vision API (Phase 1) — optimized JSON-only format */
+/** Raw output from the vision API (Phase 1) — strict JSON-only format */
 export interface VisionDetectionResult {
+  detected_dish_name: string | null; // null if dish_confidence < 70
+  dish_confidence: number;           // 0-100
   estimated_total_weight_g: number;
+  visual_cues: string[];             // 2-4 short visual cue phrases
   ingredients: DetectedIngredient[];
-  texture: string; // dominant texture: "huileux", "sec", "sauce", "frit", etc.
-  overall_confidence: number; // 0-100
+  texture: string;                   // "dry" | "saucy" | "oily" | "fried" | "grilled" | "mixed"
+  overall_confidence: number;        // 0-100
 }
 
 // ---- Phase 2: Portion Estimation ----
@@ -54,7 +54,7 @@ export interface MatchedIngredient {
   fat_per_100g: number;
   fiber_per_100g: number;
   matched_weight_grams: number;
-  match_type: "exact" | "fuzzy" | "category_fallback" | "approximate_estimation";
+  match_type: "exact" | "fuzzy" | "learned" | "category_fallback" | "approximate_estimation";
   match_confidence: number;
 }
 
@@ -92,6 +92,29 @@ export interface CoherenceWarning {
   severity: "info" | "warning" | "error";
 }
 
+// ---- Learning System ----
+
+/** A stored correction for the learning system */
+export interface ScanCorrection {
+  id: string;
+  user_id: string;
+  scan_id: string | null;
+  original_detected_dish_name: string | null;
+  corrected_dish_name: string;
+  original_ingredients_json: DetectedIngredient[];
+  corrected_ingredients_json: MatchedIngredient[];
+  image_hash: string | null;
+  created_at: string;
+}
+
+/** Learning boost result from correction patterns */
+export interface LearningBoost {
+  suggested_dish_name: string | null;
+  ingredient_adjustments: Record<string, { boost_weight_g: number; correction_count: number }>;
+  correction_count: number;
+  confidence_boost: number; // 0-0.15 — added to match confidence
+}
+
 // ---- Pipeline Result ----
 
 /** Complete result of the scan pipeline */
@@ -99,6 +122,9 @@ export interface ScanPipelineResult {
   // Detection
   detected_meal_name: string;
   portion_size: PortionSize;
+
+  // Visual cues from AI
+  visual_cues: string[];
 
   // Matched ingredients with nutrition
   ingredients: MatchedIngredient[];
@@ -108,6 +134,9 @@ export interface ScanPipelineResult {
 
   // Coherence
   warnings: CoherenceWarning[];
+
+  // Learning
+  learning_applied: boolean;
 
   // Meta
   confidence_score: number;

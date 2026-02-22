@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase";
 import { isValidLocale } from "@/i18n";
 import { checkScanLimit, incrementScanCount } from "@/utils/scan-limits";
 import { updateDailySummary } from "@/utils/daily-summary";
+import { compressImageForScan, generateImageHash } from "@/utils/image-compression";
 import { scanFood } from "@/lib/vision-pipeline";
 import ScanAnimation from "@/components/scan/ScanAnimation";
 import ScanResultCard from "@/components/scan/ScanResult";
@@ -14,43 +15,6 @@ import PremiumLimitMessage from "@/components/scan/PremiumLimitMessage";
 import type { VisionDetectionResult, ScanPipelineResult } from "@/types/vision-pipeline";
 
 type ScanStep = "upload" | "scanning" | "result" | "correction" | "limit";
-
-// Compress image client-side: resize to max 1024px, JPEG quality 0.7, strip metadata via canvas
-function compressImage(file: File, maxSize: number = 1024): Promise<{ base64: string; mimeType: string }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      let { width, height } = img;
-
-      if (width > maxSize || height > maxSize) {
-        if (width > height) {
-          height = Math.round((height * maxSize) / width);
-          width = maxSize;
-        } else {
-          width = Math.round((width * maxSize) / height);
-          height = maxSize;
-        }
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("Canvas non supporte"));
-        return;
-      }
-      ctx.drawImage(img, 0, 0, width, height);
-
-      // toDataURL strips all EXIF/metadata, outputs clean JPEG
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-      const base64 = dataUrl.split(",")[1];
-      resolve({ base64, mimeType: "image/jpeg" });
-    };
-    img.onerror = () => reject(new Error("Impossible de lire l'image"));
-    img.src = URL.createObjectURL(file);
-  });
-}
 
 export default function MealScanPage() {
   const params = useParams();
@@ -64,6 +28,7 @@ export default function MealScanPage() {
   const [step, setStep] = useState<ScanStep>("upload");
   const [imagePreview, setImagePreview] = useState("");
   const [imageBase64, setImageBase64] = useState("");
+  const [imageHash, setImageHash] = useState<string | null>(null);
   const [mimeType, setMimeType] = useState("image/jpeg");
   const [pipelineResult, setPipelineResult] = useState<ScanPipelineResult | null>(null);
   const [scanId, setScanId] = useState("");
@@ -109,9 +74,15 @@ export default function MealScanPage() {
     setImagePreview(previewUrl);
 
     try {
-      const compressed = await compressImage(file);
+      const compressed = await compressImageForScan(file, {
+        maxSize: 1024,
+        quality: 0.75,
+      });
       setImageBase64(compressed.base64);
       setMimeType(compressed.mimeType);
+
+      // Generate image hash for learning system (async, non-blocking)
+      generateImageHash(compressed.base64).then(setImageHash);
     } catch {
       setError("Impossible de traiter l'image. Reessayez.");
     }
@@ -215,6 +186,7 @@ export default function MealScanPage() {
     }
     setImagePreview("");
     setImageBase64("");
+    setImageHash(null);
     setPipelineResult(null);
     setScanId("");
     setError("");
@@ -410,6 +382,8 @@ export default function MealScanPage() {
       {step === "correction" && pipelineResult && (
         <CorrectionForm
           scanId={scanId}
+          userId={userId}
+          imageHash={imageHash}
           result={pipelineResult}
           onCorrected={handleCorrection}
           onCancel={() => setStep("result")}

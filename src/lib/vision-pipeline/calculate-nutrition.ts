@@ -16,8 +16,8 @@ import { TEXTURE_CALORIE_ADJUSTMENTS } from "./estimate-portions";
  *   fat = fat_per_100g * (matched_weight / 100)
  *
  * Additional rules:
- * - If globalTexture is "oily" or texture per ingredient is oily → apply calorie adjustment
- * - If overall_confidence < 70 → apply correction factor to widen uncertainty
+ * - Global texture → apply calorie adjustment to all ingredients
+ * - If overall_confidence < 70 → apply conservative correction factor
  *
  * NEVER uses fixed calories from meals_master.
  * Always recalculates from ingredients_master data.
@@ -81,7 +81,7 @@ export function calculateNutrition(
   // - Average AI detection confidence
   // - Proportion of ingredients with good DB matches
   const wellMatchedCount = matchedIngredients.filter(
-    (i) => i.match_type === "exact" || i.match_type === "fuzzy"
+    (i) => i.match_type === "exact" || i.match_type === "fuzzy" || i.match_type === "learned"
   ).length;
   const matchRatio = matchedIngredients.length > 0
     ? wellMatchedCount / matchedIngredients.length

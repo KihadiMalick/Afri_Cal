@@ -9,24 +9,34 @@ import type {
  * Exported for use in calculate-nutrition module.
  */
 export const TEXTURE_CALORIE_ADJUSTMENTS: Record<TextureType, number> = {
-  oily: 1.15,   // +15% calories (frying adds oil absorption)
-  saucy: 1.05,  // +5% calories (sauce typically adds some fat)
-  dry: 0.95,    // -5% (grilling/baking renders some fat out)
-  mixed: 1.0,   // neutral
+  oily: 1.15,     // +15% calories (frying adds oil absorption)
+  fried: 1.20,    // +20% calories (deep frying)
+  saucy: 1.05,    // +5% calories (sauce typically adds some fat)
+  grilled: 0.95,  // -5% (grilling renders some fat out)
+  dry: 0.95,      // -5% (baking/dry heat renders some fat out)
+  mixed: 1.0,     // neutral
 };
 
 /**
- * Map free-text texture from AI (French) to our typed TextureType.
+ * Map free-text texture from AI (French or English) to our typed TextureType.
  */
 const TEXTURE_MAP: Record<string, TextureType> = {
+  // English
+  oily: "oily",
+  fried: "fried",
+  grilled: "grilled",
+  dry: "dry",
+  saucy: "saucy",
+  mixed: "mixed",
+  // French
   huileux: "oily",
-  frit: "oily",
-  friture: "oily",
-  frite: "oily",
+  frit: "fried",
+  friture: "fried",
+  frite: "fried",
   huile: "oily",
   sec: "dry",
-  grille: "dry",
-  roti: "dry",
+  grille: "grilled",
+  roti: "grilled",
   sauce: "saucy",
   bouillon: "saucy",
   soupe: "saucy",
