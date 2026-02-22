@@ -5,21 +5,6 @@ import type {
 } from "@/types/vision-pipeline";
 
 /**
- * Texture-based caloric density multipliers.
- * These adjust the effective weight for calorie calculation purposes:
- * - oily: fried/oil-heavy foods are calorically denser
- * - saucy: sauces have variable density depending on oil content
- * - dry: grilled/baked foods tend to be less calorically dense per gram
- * - mixed: no adjustment
- */
-const TEXTURE_WEIGHT_MULTIPLIERS: Record<TextureType, number> = {
-  oily: 1.0,   // weight stays same, caloric adjustment happens in nutrition calc
-  saucy: 1.0,
-  dry: 1.0,
-  mixed: 1.0,
-};
-
-/**
  * Caloric density adjustment factors applied during nutrition calculation.
  * Exported for use in calculate-nutrition module.
  */
@@ -29,6 +14,41 @@ export const TEXTURE_CALORIE_ADJUSTMENTS: Record<TextureType, number> = {
   dry: 0.95,    // -5% (grilling/baking renders some fat out)
   mixed: 1.0,   // neutral
 };
+
+/**
+ * Map free-text texture from AI (French) to our typed TextureType.
+ */
+const TEXTURE_MAP: Record<string, TextureType> = {
+  huileux: "oily",
+  frit: "oily",
+  friture: "oily",
+  frite: "oily",
+  huile: "oily",
+  sec: "dry",
+  grille: "dry",
+  roti: "dry",
+  sauce: "saucy",
+  bouillon: "saucy",
+  soupe: "saucy",
+  mixte: "mixed",
+  melange: "mixed",
+};
+
+/**
+ * Resolve the free-text texture string from AI to a typed TextureType.
+ */
+export function resolveTextureType(texture: string): TextureType {
+  const normalized = texture
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+  for (const [key, value] of Object.entries(TEXTURE_MAP)) {
+    if (normalized.includes(key)) return value;
+  }
+  return "mixed";
+}
 
 /**
  * Normalize common ingredient names from AI detection to French database format.
@@ -144,31 +164,20 @@ function normalizeText(s: string): string {
 }
 
 /**
- * Phase 2: Estimate ingredient weights from vision detection result.
+ * Phase 2: Map vision detection ingredients to EstimatedIngredient[].
  *
- * Takes the total estimated weight and distributes it among ingredients
- * based on their detected ratios. Normalizes names via synonym mapping.
+ * In the optimized format, Claude already provides estimated_weight_g
+ * per ingredient, so we just normalize names and map the texture.
  */
 export function estimateIngredientWeights(
   detection: VisionDetectionResult
 ): EstimatedIngredient[] {
-  const totalWeight = detection.estimated_total_weight_grams;
-  const ingredients = detection.ingredients_detected;
-
+  const ingredients = detection.ingredients;
   if (ingredients.length === 0) return [];
 
-  // Normalize ratios to sum to 1.0
-  const ratioSum = ingredients.reduce((sum, ing) => sum + ing.estimated_ratio, 0);
-  const normalizedRatios = ingredients.map((ing) => ({
-    ...ing,
-    estimated_ratio: ratioSum > 0 ? ing.estimated_ratio / ratioSum : 1 / ingredients.length,
-  }));
+  const globalTexture = resolveTextureType(detection.texture);
 
-  return normalizedRatios.map((ing) => {
-    const rawWeight = totalWeight * ing.estimated_ratio;
-    const textureMultiplier = TEXTURE_WEIGHT_MULTIPLIERS[ing.texture_type];
-    const estimatedWeight = Math.round(rawWeight * textureMultiplier);
-
+  return ingredients.map((ing) => {
     // Normalize name through synonym map
     const normalizedKey = normalizeText(ing.name);
     const normalizedName = SYNONYM_MAP[normalizedKey] || ing.name;
@@ -176,9 +185,9 @@ export function estimateIngredientWeights(
     return {
       normalized_name: normalizedName,
       original_name: ing.name,
-      estimated_weight_grams: Math.max(5, estimatedWeight), // minimum 5g
-      texture_type: ing.texture_type,
-      confidence: ing.confidence,
+      estimated_weight_grams: Math.max(5, ing.estimated_weight_g),
+      texture_type: globalTexture,
+      confidence: ing.confidence / 100, // convert 0-100 to 0-1 for downstream
     };
   });
 }

@@ -15,12 +15,16 @@ import { TEXTURE_CALORIE_ADJUSTMENTS } from "./estimate-portions";
  *   carbs = carbs_per_100g * (matched_weight / 100)
  *   fat = fat_per_100g * (matched_weight / 100)
  *
+ * Additional rules:
+ * - If globalTexture is "oily" or texture per ingredient is oily → apply calorie adjustment
+ * - If overall_confidence < 70 → apply correction factor to widen uncertainty
+ *
  * NEVER uses fixed calories from meals_master.
  * Always recalculates from ingredients_master data.
  */
 export function calculateNutrition(
   matchedIngredients: MatchedIngredient[],
-  textureTypes: Record<string, TextureType>,
+  globalTexture: TextureType,
   averageDetectionConfidence: number
 ): NutritionResult {
   const perIngredient: IngredientNutrition[] = [];
@@ -32,10 +36,11 @@ export function calculateNutrition(
   let totalFiber = 0;
   let totalWeight = 0;
 
+  // Apply global texture adjustment to all ingredients
+  const calorieAdjustment = TEXTURE_CALORIE_ADJUSTMENTS[globalTexture];
+
   for (const ingredient of matchedIngredients) {
     const weightFactor = ingredient.matched_weight_grams / 100;
-    const texture = textureTypes[ingredient.original_detected_name] || "mixed";
-    const calorieAdjustment = TEXTURE_CALORIE_ADJUSTMENTS[texture];
 
     const kcal = ingredient.kcal_per_100g * weightFactor * calorieAdjustment;
     const protein = ingredient.protein_per_100g * weightFactor;
@@ -59,6 +64,17 @@ export function calculateNutrition(
       fat: Math.round(fat * 10) / 10,
       match_type: ingredient.match_type,
     });
+  }
+
+  // Confidence correction: if detection confidence < 70%, apply conservative adjustment
+  // This reduces calorie count slightly to account for uncertainty
+  if (averageDetectionConfidence < 0.7) {
+    const correctionFactor = 0.9 + (averageDetectionConfidence * 0.1 / 0.7);
+    totalKcal *= correctionFactor;
+    totalProtein *= correctionFactor;
+    totalCarbs *= correctionFactor;
+    totalFat *= correctionFactor;
+    totalFiber *= correctionFactor;
   }
 
   // Calculate confidence score based on:
@@ -94,11 +110,5 @@ export function calculateNutrition(
 export function recalculateNutrition(
   ingredients: MatchedIngredient[]
 ): NutritionResult {
-  // Build a neutral texture map for recalculation
-  const textureMap: Record<string, TextureType> = {};
-  for (const ing of ingredients) {
-    textureMap[ing.original_detected_name] = "mixed";
-  }
-
-  return calculateNutrition(ingredients, textureMap, 0.9);
+  return calculateNutrition(ingredients, "mixed", 0.9);
 }

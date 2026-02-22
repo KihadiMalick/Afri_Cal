@@ -1,30 +1,33 @@
 // ============================================================
 // Vision Pipeline Types — AfriCalo Scan Intelligent
+// Optimized for minimal token usage
 // ============================================================
 
-/** Texture type detected by vision AI, affects caloric density adjustment */
+/** Texture type for caloric density adjustment */
 export type TextureType = "oily" | "dry" | "saucy" | "mixed";
 
-/** Portion size estimated from visual analysis */
+/** Certainty level for ingredient detection */
+export type CertaintyLevel = "high" | "medium" | "low";
+
+/** Portion size derived from total weight */
 export type PortionSize = "small" | "medium" | "large";
 
-// ---- Phase 1: Vision Detection ----
+// ---- Phase 1: Vision Detection (optimized token format) ----
 
 /** Single ingredient detected by vision AI */
 export interface DetectedIngredient {
   name: string;
-  confidence: number;
-  estimated_ratio: number; // 0-1, fraction of total plate
-  texture_type: TextureType;
+  estimated_weight_g: number;
+  confidence: number; // 0-100
+  certainty: CertaintyLevel;
 }
 
-/** Raw output from the vision API (Phase 1) */
+/** Raw output from the vision API (Phase 1) — optimized JSON-only format */
 export interface VisionDetectionResult {
-  detected_meal_name: string;
-  ingredients_detected: DetectedIngredient[];
-  estimated_total_weight_grams: number;
-  portion_size: PortionSize;
-  confidence: number;
+  estimated_total_weight_g: number;
+  ingredients: DetectedIngredient[];
+  texture: string; // dominant texture: "huileux", "sec", "sauce", "frit", etc.
+  overall_confidence: number; // 0-100
 }
 
 // ---- Phase 2: Portion Estimation ----
