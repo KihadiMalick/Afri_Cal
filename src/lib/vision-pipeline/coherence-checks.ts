@@ -53,13 +53,14 @@ export function runCoherenceChecks(
     });
   }
 
-  // 3. Oil detection check
-  const oilDetected = detection.ingredients_detected.some((ing) =>
-    ing.texture_type === "oily" ||
+  // 3. Oil detection check — use global texture from new format
+  const textureStr = detection.texture.toLowerCase();
+  const oilTexture = /huileux|frit|friture|oily|huile/.test(textureStr);
+  const oilInIngredients = detection.ingredients.some((ing) =>
     /huile|oil|beurre|butter|frit|fried|graisse|palme/i.test(ing.name)
   );
 
-  if (oilDetected) {
+  if (oilTexture || oilInIngredients) {
     const oilInMatched = matchedIngredients.some(
       (ing) =>
         /huile|oil|beurre|butter|graisse|margarine|palme/i.test(ing.name)

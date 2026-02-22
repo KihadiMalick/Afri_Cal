@@ -15,8 +15,8 @@ import type { VisionDetectionResult, ScanPipelineResult } from "@/types/vision-p
 
 type ScanStep = "upload" | "scanning" | "result" | "correction" | "limit";
 
-// Compress image client-side to avoid Vercel body size limit (4.5MB)
-function compressImage(file: File, maxSize: number = 800): Promise<{ base64: string; mimeType: string }> {
+// Compress image client-side: resize to max 1024px, JPEG quality 0.7, strip metadata via canvas
+function compressImage(file: File, maxSize: number = 1024): Promise<{ base64: string; mimeType: string }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -42,6 +42,7 @@ function compressImage(file: File, maxSize: number = 800): Promise<{ base64: str
       }
       ctx.drawImage(img, 0, 0, width, height);
 
+      // toDataURL strips all EXIF/metadata, outputs clean JPEG
       const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
       const base64 = dataUrl.split(",")[1];
       resolve({ base64, mimeType: "image/jpeg" });

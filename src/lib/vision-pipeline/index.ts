@@ -2,10 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   VisionDetectionResult,
   ScanPipelineResult,
-  TextureType,
+  PortionSize,
   MatchedIngredient,
 } from "@/types/vision-pipeline";
-import { estimateIngredientWeights } from "./estimate-portions";
+import { estimateIngredientWeights, resolveTextureType } from "./estimate-portions";
 import { matchIngredientsToDatabase } from "./match-ingredients";
 import { calculateNutrition, recalculateNutrition } from "./calculate-nutrition";
 import { runCoherenceChecks } from "./coherence-checks";
@@ -14,6 +14,29 @@ export { estimateIngredientWeights } from "./estimate-portions";
 export { matchIngredientsToDatabase } from "./match-ingredients";
 export { calculateNutrition, recalculateNutrition } from "./calculate-nutrition";
 export { runCoherenceChecks } from "./coherence-checks";
+
+/**
+ * Derive a meal name from the top ingredients.
+ * Since the optimized prompt no longer asks for meal name,
+ * we build one from the first 3 ingredient names.
+ */
+function deriveMealName(detection: VisionDetectionResult): string {
+  const names = detection.ingredients
+    .slice(0, 3)
+    .map((ing) => ing.name);
+
+  if (names.length === 0) return "Plat non identifie";
+  return names.join(", ");
+}
+
+/**
+ * Derive portion size from total weight.
+ */
+function derivePortionSize(weightG: number): PortionSize {
+  if (weightG < 250) return "small";
+  if (weightG <= 400) return "medium";
+  return "large";
+}
 
 /**
  * Main pipeline orchestrator: scanFood
@@ -30,7 +53,7 @@ export async function scanFood(
   supabase: SupabaseClient,
   detectionResult: VisionDetectionResult
 ): Promise<ScanPipelineResult> {
-  // Phase 2: Estimate portions
+  // Phase 2: Map ingredients (weights already provided by AI)
   const estimatedIngredients = estimateIngredientWeights(detectionResult);
 
   // Phase 3: Match with database
@@ -39,25 +62,16 @@ export async function scanFood(
     estimatedIngredients
   );
 
-  // Build texture map from detection
-  const textureMap: Record<string, TextureType> = {};
-  for (const ing of detectionResult.ingredients_detected) {
-    textureMap[ing.name] = ing.texture_type;
-  }
+  // Resolve global texture type
+  const globalTexture = resolveTextureType(detectionResult.texture);
 
-  // Average detection confidence
-  const avgConfidence =
-    detectionResult.ingredients_detected.length > 0
-      ? detectionResult.ingredients_detected.reduce(
-          (sum, ing) => sum + ing.confidence,
-          0
-        ) / detectionResult.ingredients_detected.length
-      : detectionResult.confidence;
+  // Average detection confidence (convert 0-100 to 0-1)
+  const avgConfidence = detectionResult.overall_confidence / 100;
 
-  // Phase 4: Calculate nutrition
+  // Phase 4: Calculate nutrition (backend-side)
   const nutrition = calculateNutrition(
     matchedIngredients,
-    textureMap,
+    globalTexture,
     avgConfidence
   );
 
@@ -70,12 +84,16 @@ export async function scanFood(
 
   // Overall confidence
   const confidenceScore = Math.round(
-    (detectionResult.confidence * 0.3 + nutrition.confidence_score * 0.7) * 100
+    (avgConfidence * 0.3 + nutrition.confidence_score * 0.7) * 100
   ) / 100;
 
+  // Derive meal name and portion size from detection data
+  const detectedMealName = deriveMealName(detectionResult);
+  const portionSize = derivePortionSize(detectionResult.estimated_total_weight_g);
+
   return {
-    detected_meal_name: detectionResult.detected_meal_name,
-    portion_size: detectionResult.portion_size,
+    detected_meal_name: detectedMealName,
+    portion_size: portionSize,
     ingredients: matchedIngredients,
     nutrition,
     warnings,
@@ -107,8 +125,9 @@ export function adjustIngredientsManually(
     currentResult.detection_raw
   );
 
+  const avgConfidence = currentResult.detection_raw.overall_confidence / 100;
   const confidenceScore = Math.round(
-    (currentResult.detection_raw.confidence * 0.3 + nutrition.confidence_score * 0.7) * 100
+    (avgConfidence * 0.3 + nutrition.confidence_score * 0.7) * 100
   ) / 100;
 
   return {

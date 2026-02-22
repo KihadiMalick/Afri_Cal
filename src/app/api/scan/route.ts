@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
 
     const message = await client.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 1024,
+      max_tokens: 512,
       messages: [
         {
           role: "user",
@@ -94,38 +94,17 @@ export async function POST(request: NextRequest) {
             },
             {
               type: "text",
-              text: `Tu es un expert en nutrition specialise dans la cuisine africaine et internationale.
-Analyse cette photo de repas et reponds UNIQUEMENT avec ce JSON (aucun texte avant ou apres, aucun markdown) :
-
-{
-  "detected_meal_name": "nom du plat",
-  "ingredients_detected": [
-    {
-      "name": "nom ingredient en francais",
-      "confidence": 0.85,
-      "estimated_ratio": 0.4,
-      "texture_type": "dry"
-    }
-  ],
-  "estimated_total_weight_grams": 350,
-  "portion_size": "medium",
-  "confidence": 0.8
-}
-
-Regles strictes :
-- detected_meal_name : nom africain traditionnel si identifie (Thieboudienne, Attieke, Mafe, Fufu, Jollof, Kedjenou, Ndole, Yassa...) sinon nom generique en francais
-- ingredients_detected : TOUS les ingredients visibles, chacun avec :
-  - name : nom en francais simple (ex: "riz blanc", "poulet", "oignon", "huile de palme", "tomate")
-  - confidence : ta certitude 0.0-1.0 pour cet ingredient
-  - estimated_ratio : fraction du plat total occupee par cet ingredient (0.0-1.0, la somme doit etre proche de 1.0)
-  - texture_type : "oily" (frit/huileux), "dry" (sec/grille), "saucy" (en sauce/liquide), "mixed" (melange)
-- estimated_total_weight_grams : poids total visible en grammes (nombre entier)
-- portion_size : "small" (< 250g), "medium" (250-400g), "large" (> 400g)
-- confidence : ta certitude globale 0.0-1.0
-- Si huile/beurre/friture visible, TOUJOURS inclure un ingredient huile/beurre avec sa portion
-- Si sauce visible, inclure la sauce comme ingredient
-- Minimum 3 ingredients, maximum 12
-- Les ratios doivent totaliser approximativement 1.0`,
+              text: `Identifie les aliments visibles. Reponds UNIQUEMENT en JSON, aucun texte.
+{"estimated_total_weight_g":0,"ingredients":[{"name":"","estimated_weight_g":0,"confidence":0,"certainty":"high"}],"texture":"","overall_confidence":0}
+Regles:
+- name: francais simple
+- estimated_weight_g: poids en grammes par ingredient
+- confidence: 0-100
+- certainty: high/medium/low
+- texture: dominante du plat (huileux/sec/sauce/frit/mixte)
+- overall_confidence: 0-100
+- Max 8 ingredients
+- Pas de phrase, pas d'explication`,
             },
           ],
         },
@@ -167,45 +146,38 @@ Regles strictes :
     }
 
     // Validate and sanitize the structured result
-    const rawIngredients = Array.isArray(scanResult.ingredients_detected)
-      ? (scanResult.ingredients_detected as Record<string, unknown>[])
+    const rawIngredients = Array.isArray(scanResult.ingredients)
+      ? (scanResult.ingredients as Record<string, unknown>[])
       : [];
 
     const ingredients = rawIngredients
-      .slice(0, 12)
+      .slice(0, 8)
       .map((ing) => ({
         name: String(ing.name || "inconnu"),
-        confidence: Math.min(1, Math.max(0, Number(ing.confidence) || 0.5)),
-        estimated_ratio: Math.min(1, Math.max(0, Number(ing.estimated_ratio) || 0.1)),
-        texture_type: (["oily", "dry", "saucy", "mixed"] as const).includes(
-          ing.texture_type as "oily" | "dry" | "saucy" | "mixed"
+        estimated_weight_g: Math.max(5, Math.round(Number(ing.estimated_weight_g) || 30)),
+        confidence: Math.min(100, Math.max(0, Math.round(Number(ing.confidence) || 50))),
+        certainty: (["high", "medium", "low"] as const).includes(
+          ing.certainty as "high" | "medium" | "low"
         )
-          ? (ing.texture_type as "oily" | "dry" | "saucy" | "mixed")
-          : "mixed" as const,
+          ? (ing.certainty as "high" | "medium" | "low")
+          : "medium" as const,
       }));
 
-    // Normalize ratios so they sum to 1.0
-    const ratioSum = ingredients.reduce((s, i) => s + i.estimated_ratio, 0);
-    if (ratioSum > 0) {
-      for (const ing of ingredients) {
-        ing.estimated_ratio = ing.estimated_ratio / ratioSum;
-      }
-    }
-
-    const portionSize = (["small", "medium", "large"] as const).includes(
-      scanResult.portion_size as "small" | "medium" | "large"
-    )
-      ? (scanResult.portion_size as "small" | "medium" | "large")
-      : "medium" as const;
+    const texture = typeof scanResult.texture === "string" && scanResult.texture.trim()
+      ? scanResult.texture.trim()
+      : "mixte";
 
     const final = {
-      detected_meal_name: String(scanResult.detected_meal_name || "Plat non identifie"),
-      ingredients_detected: ingredients,
-      estimated_total_weight_grams: Math.round(
-        Number(scanResult.estimated_total_weight_grams) || 300
+      estimated_total_weight_g: Math.max(
+        50,
+        Math.round(Number(scanResult.estimated_total_weight_g) || 300)
       ),
-      portion_size: portionSize,
-      confidence: Math.min(1, Math.max(0, Number(scanResult.confidence) || 0.5)),
+      ingredients,
+      texture,
+      overall_confidence: Math.min(
+        100,
+        Math.max(0, Math.round(Number(scanResult.overall_confidence) || 50))
+      ),
     };
 
     return NextResponse.json(final);
