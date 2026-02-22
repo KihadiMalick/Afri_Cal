@@ -11,10 +11,7 @@ import type {
  * Checks the calculated nutrition for plausibility and returns warnings
  * if the values seem off.
  *
- * Rules:
- * 1. If kcal total < 100 for a full meal -> alert
- * 2. If kcal total > 1500 for a single plate -> verify weight estimation
- * 3. If oil detected visually but no oil ingredient matched -> warn
+ * Uses visual_properties for oil/friture detection instead of free-text texture.
  */
 export function runCoherenceChecks(
   nutrition: NutritionResult,
@@ -53,17 +50,18 @@ export function runCoherenceChecks(
     });
   }
 
-  // 3. Oil detection check — use global texture + visual_cues + ingredient names
-  const textureStr = detection.texture.toLowerCase();
-  const oilTexture = /huileux|frit|friture|oily|fried|huile/.test(textureStr);
-  const oilInIngredients = detection.ingredients.some((ing) =>
+  // 3. Oil detection check — use visual_properties + ingredient names
+  const visual = detection.visual_properties;
+  const oilDetected =
+    visual.oil_level === "medium" ||
+    visual.oil_level === "high" ||
+    visual.fried_elements;
+
+  const oilInIngredientNames = detection.ingredients.some((ing) =>
     /huile|oil|beurre|butter|frit|fried|graisse|palme/i.test(ing.name)
   );
-  const oilInCues = (detection.visual_cues || []).some((cue) =>
-    /huile|oil|gras|frit|fried|brillant|shiny/i.test(cue)
-  );
 
-  if (oilTexture || oilInIngredients || oilInCues) {
+  if (oilDetected || oilInIngredientNames) {
     const oilInMatched = matchedIngredients.some(
       (ing) =>
         /huile|oil|beurre|butter|graisse|margarine|palme/i.test(ing.name)
@@ -80,12 +78,9 @@ export function runCoherenceChecks(
   }
 
   // 4. Check macro ratios for plausibility
-  const totalMacroGrams =
-    nutrition.total_protein + nutrition.total_carbs + nutrition.total_fat;
-
-  if (totalMacroGrams > 0) {
+  if (nutrition.total_kcal > 200) {
     const fatPercent = (nutrition.total_fat * 9) / nutrition.total_kcal;
-    if (fatPercent > 0.7 && nutrition.total_kcal > 200) {
+    if (fatPercent > 0.7) {
       warnings.push({
         type: "too_high",
         message:

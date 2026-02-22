@@ -123,6 +123,15 @@ export default function HomeScanWidget({
 
       const detectionResult: VisionDetectionResult = data;
 
+      // Handle insufficient image quality
+      if (detectionResult.image_quality === "insufficient") {
+        throw new Error(
+          locale === "fr"
+            ? "Image de qualite insuffisante (floue, sombre ou coupee). Reprenez la photo avec un meilleur eclairage."
+            : "Insufficient image quality (blurry, dark or cropped). Retake the photo with better lighting."
+        );
+      }
+
       // Phases 2-4: Run full pipeline
       const result = await scanFood(supabase, detectionResult);
 

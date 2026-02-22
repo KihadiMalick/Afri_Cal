@@ -20,7 +20,7 @@ export default function ScanResultCard({
 }: ScanResultCardProps) {
   const [showDetails, setShowDetails] = useState(false);
 
-  const { nutrition, warnings, detected_meal_name, confidence_score, ingredients, visual_cues, learning_applied } = result;
+  const { nutrition, warnings, detected_meal_name, confidence_score, ingredients, visual_properties, country_guess, plate_fill_percentage, learning_applied } = result;
 
   const confidencePercent = Math.round(confidence_score * 100);
 
@@ -37,6 +37,14 @@ export default function ScanResultCard({
       : confidence_score >= 0.4
       ? "bg-accent-500"
       : "bg-red-500";
+
+  // Build visual property tags
+  const visualTags: string[] = [];
+  if (visual_properties.oil_level === "high") visualTags.push("Huile abondante");
+  else if (visual_properties.oil_level === "medium") visualTags.push("Huile moyenne");
+  if (visual_properties.sauce_presence) visualTags.push("Sauce");
+  if (visual_properties.fried_elements) visualTags.push("Friture");
+  if (visual_properties.grilled_elements) visualTags.push("Grille");
 
   return (
     <div className="card animate-scale-in space-y-5">
@@ -59,6 +67,11 @@ export default function ScanResultCard({
             {learning_applied && (
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20">
                 Apprentissage
+              </span>
+            )}
+            {country_guess && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                {country_guess}
               </span>
             )}
             <span className="text-xs text-dark-100">
@@ -110,17 +123,22 @@ export default function ScanResultCard({
         </div>
       </div>
 
-      {/* Visual cues */}
-      {visual_cues && visual_cues.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {visual_cues.map((cue, i) => (
+      {/* Visual properties + plate fill */}
+      {(visualTags.length > 0 || plate_fill_percentage > 0) && (
+        <div className="flex flex-wrap gap-1.5 items-center">
+          {visualTags.map((tag, i) => (
             <span
               key={i}
               className="text-[10px] px-2 py-0.5 rounded-full bg-dark-600 text-dark-100 border border-dark-500"
             >
-              {cue}
+              {tag}
             </span>
           ))}
+          {plate_fill_percentage > 0 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-dark-600 text-dark-100 border border-dark-500">
+              Assiette {plate_fill_percentage}%
+            </span>
+          )}
         </div>
       )}
 

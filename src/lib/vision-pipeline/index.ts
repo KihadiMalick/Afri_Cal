@@ -2,10 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   VisionDetectionResult,
   ScanPipelineResult,
-  PortionSize,
   MatchedIngredient,
 } from "@/types/vision-pipeline";
-import { estimateIngredientWeights, resolveTextureType } from "./estimate-portions";
+import { estimateIngredientWeights, resolveTextureFromVisualProperties } from "./estimate-portions";
 import { matchIngredientsToDatabase } from "./match-ingredients";
 import { calculateNutrition, recalculateNutrition } from "./calculate-nutrition";
 import { runCoherenceChecks } from "./coherence-checks";
@@ -21,9 +20,9 @@ export { runCoherenceChecks } from "./coherence-checks";
  * Uses AI-detected dish name if available, otherwise builds from ingredients.
  */
 function deriveMealName(detection: VisionDetectionResult): string {
-  // Use AI-detected name if confidence was high enough
-  if (detection.detected_dish_name) {
-    return detection.detected_dish_name;
+  // Use AI-detected name if confidence was high enough (>= 60%)
+  if (detection.dish_name) {
+    return detection.dish_name;
   }
 
   // Fallback: build from top 3 ingredient names
@@ -36,15 +35,6 @@ function deriveMealName(detection: VisionDetectionResult): string {
 }
 
 /**
- * Derive portion size from total weight.
- */
-function derivePortionSize(weightG: number): PortionSize {
-  if (weightG < 250) return "small";
-  if (weightG <= 400) return "medium";
-  return "large";
-}
-
-/**
  * Main pipeline orchestrator: scanFood
  *
  * Executes the full scan pipeline:
@@ -54,7 +44,7 @@ function derivePortionSize(weightG: number): PortionSize {
  * 4. Applies learning boost from correction history
  * 5. Calculates nutrition dynamically (Phase 4)
  * 6. Runs coherence checks
- * 7. Returns complete result
+ * 7. Returns complete result with visual_properties + country_guess
  */
 export async function scanFood(
   supabase: SupabaseClient,
@@ -78,11 +68,11 @@ export async function scanFood(
     learningApplied = true;
   }
 
-  // Resolve global texture type
-  const globalTexture = resolveTextureType(detectionResult.texture);
+  // Derive texture from visual_properties
+  const globalTexture = resolveTextureFromVisualProperties(detectionResult.visual_properties);
 
   // Average detection confidence (convert 0-100 to 0-1)
-  const avgConfidence = detectionResult.overall_confidence / 100;
+  const avgConfidence = detectionResult.confidence / 100;
 
   // Phase 4: Calculate nutrition (backend-side)
   const nutrition = calculateNutrition(
@@ -115,12 +105,15 @@ export async function scanFood(
     detectedMealName = deriveMealName(detectionResult);
   }
 
-  const portionSize = derivePortionSize(detectionResult.estimated_total_weight_g);
+  // Use portion_size from AI detection directly
+  const portionSize = detectionResult.portion_size;
 
   return {
     detected_meal_name: detectedMealName,
     portion_size: portionSize,
-    visual_cues: detectionResult.visual_cues || [],
+    visual_properties: detectionResult.visual_properties,
+    country_guess: detectionResult.country_guess,
+    plate_fill_percentage: detectionResult.plate_fill_percentage,
     ingredients: matchedIngredients,
     nutrition,
     warnings,
@@ -153,7 +146,7 @@ export function adjustIngredientsManually(
     currentResult.detection_raw
   );
 
-  const avgConfidence = currentResult.detection_raw.overall_confidence / 100;
+  const avgConfidence = currentResult.detection_raw.confidence / 100;
   const confidenceScore = Math.round(
     (avgConfidence * 0.3 + nutrition.confidence_score * 0.7) * 100
   ) / 100;

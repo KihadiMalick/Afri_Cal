@@ -34,7 +34,7 @@ export async function saveCorrection(
   await (supabase as any).from("scan_corrections").insert({
     user_id: userId,
     scan_id: scanId || null,
-    original_detected_dish_name: originalDetection.detected_dish_name,
+    original_detected_dish_name: originalDetection.dish_name,
     original_ingredients_json: originalDetection.ingredients,
     corrected_dish_name: correctedDishName,
     corrected_ingredients_json: correctedIngredients.map((ing) => ({

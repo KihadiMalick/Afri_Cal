@@ -17,7 +17,7 @@ import { TEXTURE_CALORIE_ADJUSTMENTS } from "./estimate-portions";
  *
  * Additional rules:
  * - Global texture → apply calorie adjustment to all ingredients
- * - If overall_confidence < 70 → apply conservative correction factor
+ * - If confidence < 70 → apply conservative correction factor
  *
  * NEVER uses fixed calories from meals_master.
  * Always recalculates from ingredients_master data.
