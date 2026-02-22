@@ -151,9 +151,13 @@ export interface ScanHistory {
 
 export interface ScanCorrection {
   id: string;
-  scan_id: string;
-  corrected_dish: string | null;
-  corrected_calories: number | null;
+  user_id: string;
+  scan_id: string | null;
+  original_detected_dish_name: string | null;
+  original_ingredients_json: unknown[];
+  corrected_dish_name: string;
+  corrected_ingredients_json: unknown[];
+  image_hash: string | null;
   created_at: string;
 }
 
