@@ -20,7 +20,7 @@ export default function ScanResultCard({
 }: ScanResultCardProps) {
   const [showDetails, setShowDetails] = useState(false);
 
-  const { nutrition, warnings, detected_meal_name, confidence_score, ingredients } = result;
+  const { nutrition, warnings, detected_meal_name, confidence_score, ingredients, visual_cues, learning_applied } = result;
 
   const confidencePercent = Math.round(confidence_score * 100);
 
@@ -54,8 +54,13 @@ export default function ScanResultCard({
           <h3 className="text-lg font-bold text-gray-100 truncate">
             {detected_meal_name}
           </h3>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className="premium-badge text-[10px]">Scan IA</span>
+            {learning_applied && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20">
+                Apprentissage
+              </span>
+            )}
             <span className="text-xs text-dark-100">
               {result.portion_size === "small"
                 ? "Petite portion"
@@ -104,6 +109,20 @@ export default function ScanResultCard({
           </p>
         </div>
       </div>
+
+      {/* Visual cues */}
+      {visual_cues && visual_cues.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {visual_cues.map((cue, i) => (
+            <span
+              key={i}
+              className="text-[10px] px-2 py-0.5 rounded-full bg-dark-600 text-dark-100 border border-dark-500"
+            >
+              {cue}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Confidence */}
       <div className="flex items-center gap-3">
@@ -164,6 +183,8 @@ export default function ScanResultCard({
                     ? "bg-primary-500/10 text-primary-300 border-primary-500/20"
                     : ing.match_type === "fuzzy"
                     ? "bg-accent-500/10 text-accent-300 border-accent-500/20"
+                    : ing.match_type === "learned"
+                    ? "bg-green-500/10 text-green-300 border-green-500/20"
                     : "bg-dark-700 text-dark-100 border-dark-500"
                 }`}
               >
@@ -195,6 +216,8 @@ export default function ScanResultCard({
                           ? "bg-primary-500/20 text-primary-300"
                           : ing.match_type === "fuzzy"
                           ? "bg-accent-500/20 text-accent-300"
+                          : ing.match_type === "learned"
+                          ? "bg-green-500/20 text-green-300"
                           : "bg-dark-500 text-dark-200"
                       }`}
                     >
@@ -202,6 +225,8 @@ export default function ScanResultCard({
                         ? "Exact"
                         : ing.match_type === "fuzzy"
                         ? "Similaire"
+                        : ing.match_type === "learned"
+                        ? "Appris"
                         : ing.match_type === "category_fallback"
                         ? "Categorie"
                         : "Estime"}

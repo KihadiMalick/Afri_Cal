@@ -9,6 +9,7 @@ import { estimateIngredientWeights, resolveTextureType } from "./estimate-portio
 import { matchIngredientsToDatabase } from "./match-ingredients";
 import { calculateNutrition, recalculateNutrition } from "./calculate-nutrition";
 import { runCoherenceChecks } from "./coherence-checks";
+import { getLearningBoost, applyLearningBoost } from "@/lib/learning";
 
 export { estimateIngredientWeights } from "./estimate-portions";
 export { matchIngredientsToDatabase } from "./match-ingredients";
@@ -16,11 +17,16 @@ export { calculateNutrition, recalculateNutrition } from "./calculate-nutrition"
 export { runCoherenceChecks } from "./coherence-checks";
 
 /**
- * Derive a meal name from the top ingredients.
- * Since the optimized prompt no longer asks for meal name,
- * we build one from the first 3 ingredient names.
+ * Derive a meal name from detection data.
+ * Uses AI-detected dish name if available, otherwise builds from ingredients.
  */
 function deriveMealName(detection: VisionDetectionResult): string {
+  // Use AI-detected name if confidence was high enough
+  if (detection.detected_dish_name) {
+    return detection.detected_dish_name;
+  }
+
+  // Fallback: build from top 3 ingredient names
   const names = detection.ingredients
     .slice(0, 3)
     .map((ing) => ing.name);
@@ -45,9 +51,10 @@ function derivePortionSize(weightG: number): PortionSize {
  * 1. Takes the vision detection result (from API route)
  * 2. Estimates ingredient portions (Phase 2)
  * 3. Matches ingredients to Supabase database (Phase 3)
- * 4. Calculates nutrition dynamically (Phase 4)
- * 5. Runs coherence checks
- * 6. Returns complete result
+ * 4. Applies learning boost from correction history
+ * 5. Calculates nutrition dynamically (Phase 4)
+ * 6. Runs coherence checks
+ * 7. Returns complete result
  */
 export async function scanFood(
   supabase: SupabaseClient,
@@ -57,10 +64,19 @@ export async function scanFood(
   const estimatedIngredients = estimateIngredientWeights(detectionResult);
 
   // Phase 3: Match with database
-  const matchedIngredients = await matchIngredientsToDatabase(
+  let matchedIngredients = await matchIngredientsToDatabase(
     supabase,
     estimatedIngredients
   );
+
+  // Learning: Query correction history and apply boosts
+  let learningApplied = false;
+  const boost = await getLearningBoost(supabase, detectionResult);
+
+  if (boost.correction_count >= 2) {
+    matchedIngredients = applyLearningBoost(matchedIngredients, boost);
+    learningApplied = true;
+  }
 
   // Resolve global texture type
   const globalTexture = resolveTextureType(detectionResult.texture);
@@ -82,21 +98,33 @@ export async function scanFood(
     detectionResult
   );
 
-  // Overall confidence
-  const confidenceScore = Math.round(
+  // Overall confidence (with learning boost)
+  let confidenceScore = Math.round(
     (avgConfidence * 0.3 + nutrition.confidence_score * 0.7) * 100
   ) / 100;
 
-  // Derive meal name and portion size from detection data
-  const detectedMealName = deriveMealName(detectionResult);
+  if (learningApplied) {
+    confidenceScore = Math.min(1, confidenceScore + boost.confidence_boost);
+  }
+
+  // Derive meal name (use learning suggestion if strong enough, else AI/fallback)
+  let detectedMealName: string;
+  if (boost.suggested_dish_name && boost.correction_count >= 5) {
+    detectedMealName = boost.suggested_dish_name;
+  } else {
+    detectedMealName = deriveMealName(detectionResult);
+  }
+
   const portionSize = derivePortionSize(detectionResult.estimated_total_weight_g);
 
   return {
     detected_meal_name: detectedMealName,
     portion_size: portionSize,
+    visual_cues: detectionResult.visual_cues || [],
     ingredients: matchedIngredients,
     nutrition,
     warnings,
+    learning_applied: learningApplied,
     confidence_score: confidenceScore,
     detection_raw: detectionResult,
   };

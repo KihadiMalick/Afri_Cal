@@ -4,9 +4,12 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase";
 import type { ScanPipelineResult, MatchedIngredient } from "@/types/vision-pipeline";
 import { adjustIngredientsManually } from "@/lib/vision-pipeline";
+import { saveCorrection } from "@/lib/learning";
 
 interface CorrectionFormProps {
   scanId: string;
+  userId: string;
+  imageHash: string | null;
   result: ScanPipelineResult;
   onCorrected: (updatedResult: ScanPipelineResult) => void;
   onCancel: () => void;
@@ -14,6 +17,8 @@ interface CorrectionFormProps {
 
 export default function CorrectionForm({
   scanId,
+  userId,
+  imageHash,
   result,
   onCorrected,
   onCancel,
@@ -74,11 +79,14 @@ export default function CorrectionForm({
     );
     updatedResult.detected_meal_name = dishName;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from("scan_corrections").insert({
-      scan_id: scanId,
-      corrected_dish: dishName,
-      corrected_calories: updatedResult.nutrition.total_kcal,
+    // Save correction with full original + corrected data for learning
+    await saveCorrection(supabase, {
+      userId,
+      scanId: scanId || null,
+      originalDetection: result.detection_raw,
+      correctedDishName: dishName,
+      correctedIngredients: ingredients,
+      imageHash,
     });
 
     onCorrected(updatedResult);
