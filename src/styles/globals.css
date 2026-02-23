@@ -1,65 +1,418 @@
+/* ============================================================
+   AfriCalo — Global Styles — "Africount" Design System
+   Palette : crème · bois · terracotta · indigo · or
+   ============================================================ */
+
+/* 1. Import Google Fonts AVANT les directives Tailwind */
+@import url("https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Poppins:wght@500;600;700;800&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
-
+/* ============================================================
+   2. BASE LAYER — Reset & Fond global
+   ============================================================ */
 @layer base {
-  body {
-    @apply bg-dark-900 text-gray-100 font-sans antialiased;
+  *, *::before, *::after {
+    box-sizing: border-box;
   }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Corps principal : parchemin africain avec motif Adinkra fantôme */
+  body {
+    @apply bg-brand-cream text-brand-brown-dark font-sans antialiased;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='28' fill='none' stroke='rgba(74,52,46,0.05)' stroke-width='2'/%3E%3Ccircle cx='60' cy='60' r='16' fill='none' stroke='rgba(74,52,46,0.04)' stroke-width='1.5'/%3E%3Ccircle cx='60' cy='60' r='6' fill='none' stroke='rgba(74,52,46,0.04)' stroke-width='1'/%3E%3Cline x1='60' y1='28' x2='60' y2='36' stroke='rgba(74,52,46,0.05)' stroke-width='2'/%3E%3Cline x1='60' y1='84' x2='60' y2='92' stroke='rgba(74,52,46,0.05)' stroke-width='2'/%3E%3Cline x1='28' y1='60' x2='36' y2='60' stroke='rgba(74,52,46,0.05)' stroke-width='2'/%3E%3Cline x1='84' y1='60' x2='92' y2='60' stroke='rgba(74,52,46,0.05)' stroke-width='2'/%3E%3Cline x1='39' y1='39' x2='45' y2='45' stroke='rgba(74,52,46,0.03)' stroke-width='1.5'/%3E%3Cline x1='75' y1='75' x2='81' y2='81' stroke='rgba(74,52,46,0.03)' stroke-width='1.5'/%3E%3Cline x1='81' y1='39' x2='75' y2='45' stroke='rgba(74,52,46,0.03)' stroke-width='1.5'/%3E%3Cline x1='39' y1='81' x2='45' y2='75' stroke='rgba(74,52,46,0.03)' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-size: 120px 120px;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display text-brand-brown-dark;
+  }
+
+  /* Scrollbar customisée (ton bois) */
+  ::-webkit-scrollbar       { width: 6px; }
+  ::-webkit-scrollbar-track { background: #EDE8D0; }
+  ::-webkit-scrollbar-thumb { background: #A67860; border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #7C5842; }
 }
 
+/* ============================================================
+   3. COMPONENTS LAYER — Composants réutilisables
+   ============================================================ */
 @layer components {
+
+  /* ----------------------------------------------------------
+     BOUTON PRIMAIRE — Terracotta (action principale)
+     ---------------------------------------------------------- */
   .btn-primary {
-    @apply bg-primary-600 text-white px-6 py-3 rounded-2xl font-semibold
-           hover:bg-primary-500 hover:shadow-glow
-           active:scale-[0.98]
-           transition-all duration-200 ease-in-out
-           focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 focus:ring-offset-dark-800;
+    @apply inline-flex items-center justify-center gap-2
+           bg-brand-terracotta text-white
+           px-6 py-3 rounded-2xl font-bold font-sans text-sm
+           shadow-[0_4px_12px_rgba(217,142,79,0.38),_inset_0_1px_0_rgba(255,255,255,0.22)]
+           hover:bg-brand-terracotta-dark
+           hover:shadow-[0_6px_18px_rgba(184,114,58,0.42)]
+           active:scale-[0.97] active:translate-y-0.5
+           active:shadow-[0_1px_4px_rgba(74,52,46,0.30),_inset_0_2px_5px_rgba(74,52,46,0.18)]
+           transition-all duration-150 ease-in-out
+           focus:outline-none focus:ring-2 focus:ring-brand-terracotta/60 focus:ring-offset-2 focus:ring-offset-brand-cream
+           disabled:opacity-50 disabled:pointer-events-none;
   }
 
+  /* ----------------------------------------------------------
+     BOUTON SECONDAIRE — Crème bordé bois
+     ---------------------------------------------------------- */
   .btn-secondary {
-    @apply bg-dark-700 text-gray-200 border border-dark-500 px-6 py-3 rounded-2xl font-semibold
-           hover:bg-dark-600 hover:border-dark-400
-           active:scale-[0.98]
-           transition-all duration-200 ease-in-out
-           focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 focus:ring-offset-dark-800;
+    @apply inline-flex items-center justify-center gap-2
+           bg-brand-cream text-brand-brown-dark
+           border-2 border-brand-brown-light
+           px-6 py-3 rounded-2xl font-bold font-sans text-sm
+           shadow-[0_2px_8px_rgba(74,52,46,0.10)]
+           hover:bg-brand-cream-dark hover:border-brand-brown-wood
+           hover:shadow-[0_4px_14px_rgba(74,52,46,0.16)]
+           active:scale-[0.97] active:translate-y-0.5
+           active:shadow-[0_1px_3px_rgba(74,52,46,0.14),_inset_0_1px_4px_rgba(74,52,46,0.09)]
+           transition-all duration-150 ease-in-out
+           focus:outline-none focus:ring-2 focus:ring-brand-brown-wood/50 focus:ring-offset-2
+           disabled:opacity-50 disabled:pointer-events-none;
   }
 
+  /* ----------------------------------------------------------
+     BOUTON ACCENT — Indigo africain
+     ---------------------------------------------------------- */
   .btn-accent {
-    @apply bg-accent-500/10 text-accent-400 border border-accent-500/20 px-6 py-3 rounded-2xl font-semibold
-           hover:bg-accent-500/20 hover:shadow-glow-accent
-           active:scale-[0.98]
-           transition-all duration-200 ease-in-out;
+    @apply inline-flex items-center justify-center gap-2
+           bg-brand-indigo text-white
+           px-6 py-3 rounded-2xl font-bold font-sans text-sm
+           shadow-[0_4px_12px_rgba(48,63,159,0.30),_inset_0_1px_0_rgba(255,255,255,0.15)]
+           hover:bg-brand-indigo-light
+           hover:shadow-[0_6px_18px_rgba(48,63,159,0.38)]
+           active:scale-[0.97] active:translate-y-0.5
+           active:shadow-[0_1px_4px_rgba(26,35,126,0.35),_inset_0_2px_4px_rgba(26,35,126,0.20)]
+           transition-all duration-150 ease-in-out
+           focus:outline-none focus:ring-2 focus:ring-brand-indigo/50 focus:ring-offset-2
+           disabled:opacity-50 disabled:pointer-events-none;
   }
 
+  /* ----------------------------------------------------------
+     BOUTON CENTRAL "SCAN FOOD"
+     Effet de pression physique réaliste
+     ---------------------------------------------------------- */
+  .btn-scan {
+    @apply relative rounded-full select-none cursor-pointer
+           transition-all duration-150
+           shadow-btn-scan-rest
+           active:scale-[0.96] active:translate-y-1
+           active:shadow-btn-scan-pressed;
+    /* Dégradé terracotta chaud */
+    background: linear-gradient(145deg, #E8AB72 0%, #D98E4F 40%, #B8723A 100%);
+  }
+
+  /* Anneau décoratif Adinkra autour du bouton SCAN */
+  .btn-scan-ring {
+    @apply absolute inset-0 rounded-full border-[3px] border-brand-gold/35 pointer-events-none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='30' r='12' fill='none' stroke='rgba(228,192,110,0.50)' stroke-width='1.5'/%3E%3Ccircle cx='30' cy='30' r='6' fill='none' stroke='rgba(228,192,110,0.38)' stroke-width='1'/%3E%3Cline x1='30' y1='14' x2='30' y2='18' stroke='rgba(228,192,110,0.50)' stroke-width='1.5'/%3E%3Cline x1='30' y1='42' x2='30' y2='46' stroke='rgba(228,192,110,0.50)' stroke-width='1.5'/%3E%3Cline x1='14' y1='30' x2='18' y2='30' stroke='rgba(228,192,110,0.50)' stroke-width='1.5'/%3E%3Cline x1='42' y1='30' x2='46' y2='30' stroke='rgba(228,192,110,0.50)' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-size: 60px 60px;
+  }
+
+  /* ----------------------------------------------------------
+     CARTES (contenu principal)
+     ---------------------------------------------------------- */
   .card {
-    @apply bg-dark-800 rounded-2xl shadow-card border border-dark-600 p-6
-           hover:shadow-card-hover transition-all duration-300 animate-fade-in;
+    @apply bg-white/80 backdrop-blur-sm rounded-[1.25rem] shadow-card
+           border border-brand-brown-pale/28
+           p-5 transition-all duration-300 animate-fade-in
+           hover:shadow-card-hover hover:-translate-y-0.5;
   }
 
   .card-static {
-    @apply bg-dark-800 rounded-2xl shadow-card border border-dark-600 p-6 animate-fade-in;
+    @apply bg-white/80 backdrop-blur-sm rounded-[1.25rem] shadow-card
+           border border-brand-brown-pale/28
+           p-5 animate-fade-in;
   }
 
+  /* Carte "bois" (sections premium, highlight) */
+  .card-wood {
+    @apply rounded-[1.25rem] shadow-card border border-brand-brown-dark/18
+           p-5 text-brand-cream transition-all duration-300;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0' x2='100' y2='100' stroke='rgba(42,31,26,0.07)' stroke-width='0.5'/%3E%3Cline x1='20' y1='0' x2='120' y2='100' stroke='rgba(42,31,26,0.05)' stroke-width='0.5'/%3E%3Cline x1='40' y1='0' x2='140' y2='100' stroke='rgba(200,160,110,0.06)' stroke-width='0.5'/%3E%3C/svg%3E"),
+      linear-gradient(135deg, #8B6249 0%, #6B4832 55%, #7C5842 100%);
+  }
+
+  /* Carte terracotta (alerte, objectif) */
+  .card-terracotta {
+    @apply rounded-[1.25rem] p-5 text-white transition-all duration-300;
+    background: linear-gradient(135deg, #E8AB72 0%, #D98E4F 45%, #B8723A 100%);
+    box-shadow: 0 4px 20px rgba(217, 142, 79, 0.30);
+  }
+
+  /* ----------------------------------------------------------
+     SIDEBAR NAVIGATION — texture bois + état actif gravé
+     ---------------------------------------------------------- */
+  .sidebar {
+    @apply flex flex-col items-center py-6 gap-1.5
+           border-r border-brand-brown-dark/18;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0' x2='100' y2='100' stroke='rgba(42,31,26,0.07)' stroke-width='0.5'/%3E%3Cline x1='20' y1='0' x2='120' y2='100' stroke='rgba(42,31,26,0.05)' stroke-width='0.5'/%3E%3Cline x1='40' y1='0' x2='140' y2='100' stroke='rgba(200,160,110,0.06)' stroke-width='0.5'/%3E%3Cline x1='60' y1='0' x2='160' y2='100' stroke='rgba(42,31,26,0.04)' stroke-width='0.5'/%3E%3C/svg%3E"),
+      linear-gradient(180deg, #8B6249 0%, #6B4832 50%, #7C5842 100%);
+  }
+
+  /* Nav item — INACTIF */
+  .nav-item {
+    @apply relative flex flex-col items-center justify-center
+           w-14 h-14 rounded-2xl
+           text-brand-cream/55
+           transition-all duration-200 ease-in-out
+           cursor-pointer select-none;
+  }
+  .nav-item:hover {
+    @apply text-brand-cream/88 bg-white/10;
+  }
+
+  /* Nav item — ACTIF (gravé dans le bois) */
+  .nav-item-active {
+    @apply relative flex flex-col items-center justify-center
+           w-14 h-14 rounded-2xl
+           text-brand-gold
+           transition-all duration-200 ease-in-out
+           cursor-pointer select-none;
+    background-color: rgba(42, 31, 26, 0.38);
+    box-shadow:
+      inset 0 2px 5px rgba(42, 31, 26, 0.58),
+      inset 0 1px 2px rgba(42, 31, 26, 0.40),
+      0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  /* Indicateur actif : barre dorée à gauche */
+  .nav-item-active::before {
+    content: "";
+    @apply absolute left-0 top-1/2 -translate-y-1/2
+           w-[3px] h-6 rounded-r-full bg-brand-gold;
+    box-shadow: 0 0 10px rgba(228, 192, 110, 0.65);
+  }
+
+  /* ----------------------------------------------------------
+     BOTTOM TAB BAR (navigation mobile)
+     ---------------------------------------------------------- */
+  .tab-bar {
+    @apply flex items-center justify-around
+           border-t-2 border-brand-brown-pale/20
+           bg-brand-cream/95 backdrop-blur-md
+           px-2 py-2;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 22px rgba(74, 52, 46, 0.09);
+  }
+
+  .tab-item {
+    @apply flex flex-col items-center gap-0.5
+           px-3 py-2 rounded-xl
+           text-brand-brown-pale font-semibold
+           text-[10px] tracking-wide
+           transition-all duration-200 cursor-pointer;
+  }
+
+  .tab-item-active {
+    @apply text-brand-terracotta;
+  }
+
+  .tab-icon-active {
+    @apply bg-brand-terracotta/12 rounded-xl p-1;
+    box-shadow: 0 2px 8px rgba(217, 142, 79, 0.22);
+  }
+
+  /* ----------------------------------------------------------
+     CHAMPS DE SAISIE
+     ---------------------------------------------------------- */
   .input-field {
-    @apply w-full px-4 py-3 rounded-2xl border border-dark-500 bg-dark-700
-           text-gray-100 placeholder-dark-200
-           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+    @apply w-full px-4 py-3 rounded-2xl
+           border-2 border-brand-brown-pale/45
+           bg-white/72 backdrop-blur-sm
+           text-brand-brown-dark placeholder-brand-brown-pale
+           font-sans font-medium text-sm
+           shadow-[inset_0_1px_3px_rgba(74,52,46,0.07)]
+           focus:outline-none
+           focus:border-brand-terracotta
+           focus:bg-white/90
+           focus:shadow-[0_0_0_3px_rgba(217,142,79,0.20),_inset_0_1px_3px_rgba(74,52,46,0.07)]
            transition-all duration-200;
   }
 
+  /* ----------------------------------------------------------
+     BADGES
+     ---------------------------------------------------------- */
   .premium-badge {
-    @apply bg-gradient-to-r from-accent-500 to-accent-400 text-dark-900
-           px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider;
+    @apply inline-flex items-center gap-1
+           px-3 py-1 rounded-full
+           text-xs font-extrabold uppercase tracking-wider
+           text-brand-brown-dark;
+    background: linear-gradient(135deg, #F0D48A 0%, #E4C06E 50%, #C9A040 100%);
+    box-shadow: 0 2px 8px rgba(228, 192, 110, 0.38);
   }
 
+  .badge-terracotta {
+    @apply inline-flex items-center gap-1
+           bg-brand-terracotta/14 text-brand-terracotta-dark
+           border border-brand-terracotta/28
+           px-3 py-0.5 rounded-full text-xs font-bold;
+  }
+
+  .badge-indigo {
+    @apply inline-flex items-center gap-1
+           bg-brand-indigo/10 text-brand-indigo
+           border border-brand-indigo/22
+           px-3 py-0.5 rounded-full text-xs font-bold;
+  }
+
+  .badge-gold {
+    @apply inline-flex items-center gap-1
+           bg-brand-gold/18 text-brand-gold-dark
+           border border-brand-gold/30
+           px-3 py-0.5 rounded-full text-xs font-bold;
+  }
+
+  /* ----------------------------------------------------------
+     PROGRESS BARS
+     ---------------------------------------------------------- */
+  .progress-track {
+    @apply w-full h-3 rounded-full overflow-hidden bg-brand-cream-deeper;
+    box-shadow: inset 0 1px 3px rgba(74, 52, 46, 0.14);
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-700 ease-out;
+    background: linear-gradient(90deg, #D98E4F 0%, #E8AB72 100%);
+    box-shadow: 0 1px 4px rgba(217, 142, 79, 0.38);
+  }
+
+  .progress-fill-indigo {
+    @apply h-full rounded-full transition-all duration-700 ease-out;
+    background: linear-gradient(90deg, #303F9F 0%, #5C6BC0 100%);
+  }
+
+  .progress-fill-gold {
+    @apply h-full rounded-full transition-all duration-700 ease-out;
+    background: linear-gradient(90deg, #C9A040 0%, #E4C06E 100%);
+  }
+
+  /* ----------------------------------------------------------
+     STAT CARDS (mini widgets dashboard)
+     ---------------------------------------------------------- */
+  .stat-card {
+    @apply flex flex-col gap-1.5
+           bg-white/75 rounded-2xl p-4
+           border border-brand-brown-pale/22
+           shadow-[0_2px_12px_rgba(74,52,46,0.09)]
+           transition-all duration-200
+           hover:shadow-[0_4px_18px_rgba(74,52,46,0.14)]
+           hover:-translate-y-0.5;
+  }
+
+  .stat-value {
+    @apply text-2xl font-extrabold text-brand-brown-dark font-display leading-none;
+  }
+
+  .stat-label {
+    @apply text-[10px] font-bold text-brand-brown-pale uppercase tracking-widest;
+  }
+
+  /* ----------------------------------------------------------
+     EN-TÊTES DE SECTION
+     ---------------------------------------------------------- */
+  .section-title {
+    @apply text-base font-extrabold text-brand-brown-dark font-display
+           tracking-wide uppercase;
+  }
+
+  .section-subtitle {
+    @apply text-sm text-brand-brown-light font-semibold;
+  }
+
+  /* ----------------------------------------------------------
+     ÉTATS VIDES & LOADERS
+     ---------------------------------------------------------- */
   .empty-state {
-    @apply text-dark-200 text-sm text-center py-8;
+    @apply text-brand-brown-pale text-sm text-center py-10 font-semibold;
   }
 
   .loader {
-    @apply animate-spin rounded-full h-10 w-10 border-2 border-dark-500 border-t-primary-500;
+    @apply animate-spin rounded-full h-10 w-10
+           border-[3px] border-brand-cream-deeper border-t-brand-terracotta;
+  }
+
+  /* ----------------------------------------------------------
+     PILL DE MACRONUTRIMENT (protéines / glucides / lipides)
+     ---------------------------------------------------------- */
+  .macro-pill {
+    @apply flex flex-col items-center gap-0.5
+           bg-brand-cream-dark/60 rounded-xl px-3 py-2;
+  }
+
+  .macro-value {
+    @apply text-base font-extrabold text-brand-brown-dark font-display;
+  }
+
+  .macro-label {
+    @apply text-[9px] font-bold text-brand-brown-pale uppercase tracking-wider;
+  }
+}
+
+/* ============================================================
+   4. UTILITIES LAYER — Classes utilitaires personnalisées
+   ============================================================ */
+@layer utilities {
+  /* Fond crème dégradé (layout principal) */
+  .bg-cream-gradient {
+    background: linear-gradient(160deg, #F7F4E8 0%, #EDE8D0 100%);
+  }
+
+  /* Fond bois (sidebar, header bois) */
+  .bg-wood {
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0' x2='100' y2='100' stroke='rgba(42,31,26,0.07)' stroke-width='0.5'/%3E%3Cline x1='20' y1='0' x2='120' y2='100' stroke='rgba(42,31,26,0.05)' stroke-width='0.5'/%3E%3Cline x1='40' y1='0' x2='140' y2='100' stroke='rgba(200,160,110,0.06)' stroke-width='0.5'/%3E%3Cline x1='60' y1='0' x2='160' y2='100' stroke='rgba(42,31,26,0.04)' stroke-width='0.5'/%3E%3C/svg%3E"),
+      linear-gradient(180deg, #8B6249 0%, #6B4832 50%, #7C5842 100%);
+  }
+
+  /* Motif Adinkra en fond de page */
+  .bg-adinkra {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='28' fill='none' stroke='rgba(74,52,46,0.05)' stroke-width='2'/%3E%3Ccircle cx='60' cy='60' r='16' fill='none' stroke='rgba(74,52,46,0.04)' stroke-width='1.5'/%3E%3Ccircle cx='60' cy='60' r='6' fill='none' stroke='rgba(74,52,46,0.04)' stroke-width='1'/%3E%3Cline x1='60' y1='28' x2='60' y2='36' stroke='rgba(74,52,46,0.05)' stroke-width='2'/%3E%3Cline x1='60' y1='84' x2='60' y2='92' stroke='rgba(74,52,46,0.05)' stroke-width='2'/%3E%3Cline x1='28' y1='60' x2='36' y2='60' stroke='rgba(74,52,46,0.05)' stroke-width='2'/%3E%3Cline x1='84' y1='60' x2='92' y2='60' stroke='rgba(74,52,46,0.05)' stroke-width='2'/%3E%3C/svg%3E");
+    background-size: 120px 120px;
+  }
+
+  /* Ombre interne "gravée" (nav active) */
+  .shadow-sidebar-inset {
+    box-shadow:
+      inset 0 2px 5px rgba(42, 31, 26, 0.55),
+      inset 0 1px 2px rgba(42, 31, 26, 0.38),
+      0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+
+  /* Texte embossé (sur fond sombre, effet relief) */
+  .text-emboss {
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.12), 0 -1px 0 rgba(0, 0, 0, 0.22);
+  }
+
+  /* Texte gravé (sur fond clair, effet incrusté) */
+  .text-engrave {
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.65), 0 -1px 0 rgba(74, 52, 46, 0.18);
+  }
+
+  /* Diviseur décoratif (fondu sur les bords) */
+  .divider-warm {
+    border: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(74, 52, 46, 0.18), transparent);
+  }
+
+  /* Safe area iOS */
+  .safe-bottom {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0);
   }
 }
