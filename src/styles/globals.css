@@ -124,20 +124,20 @@
      ---------------------------------------------------------- */
   .card {
     @apply bg-white/80 backdrop-blur-sm rounded-[1.25rem] shadow-card
-           border border-brand-brown-pale/28
+           border border-brand-brown-pale/25
            p-5 transition-all duration-300 animate-fade-in
            hover:shadow-card-hover hover:-translate-y-0.5;
   }
 
   .card-static {
     @apply bg-white/80 backdrop-blur-sm rounded-[1.25rem] shadow-card
-           border border-brand-brown-pale/28
+           border border-brand-brown-pale/25
            p-5 animate-fade-in;
   }
 
   /* Carte "bois" (sections premium, highlight) */
   .card-wood {
-    @apply rounded-[1.25rem] shadow-card border border-brand-brown-dark/18
+    @apply rounded-[1.25rem] shadow-card border border-brand-brown-dark/20
            p-5 text-brand-cream transition-all duration-300;
     background-image:
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0' x2='100' y2='100' stroke='rgba(42,31,26,0.07)' stroke-width='0.5'/%3E%3Cline x1='20' y1='0' x2='120' y2='100' stroke='rgba(42,31,26,0.05)' stroke-width='0.5'/%3E%3Cline x1='40' y1='0' x2='140' y2='100' stroke='rgba(200,160,110,0.06)' stroke-width='0.5'/%3E%3C/svg%3E"),
@@ -156,7 +156,7 @@
      ---------------------------------------------------------- */
   .sidebar {
     @apply flex flex-col items-center py-6 gap-1.5
-           border-r border-brand-brown-dark/18;
+           border-r border-brand-brown-dark/20;
     background-image:
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0' x2='100' y2='100' stroke='rgba(42,31,26,0.07)' stroke-width='0.5'/%3E%3Cline x1='20' y1='0' x2='120' y2='100' stroke='rgba(42,31,26,0.05)' stroke-width='0.5'/%3E%3Cline x1='40' y1='0' x2='140' y2='100' stroke='rgba(200,160,110,0.06)' stroke-width='0.5'/%3E%3Cline x1='60' y1='0' x2='160' y2='100' stroke='rgba(42,31,26,0.04)' stroke-width='0.5'/%3E%3C/svg%3E"),
       linear-gradient(180deg, #8B6249 0%, #6B4832 50%, #7C5842 100%);
@@ -171,7 +171,7 @@
            cursor-pointer select-none;
   }
   .nav-item:hover {
-    @apply text-brand-cream/88 bg-white/10;
+    @apply text-brand-cream/90 bg-white/10;
   }
 
   /* Nav item — ACTIF (gravé dans le bois) */
@@ -221,7 +221,7 @@
   }
 
   .tab-icon-active {
-    @apply bg-brand-terracotta/12 rounded-xl p-1;
+    @apply bg-brand-terracotta/10 rounded-xl p-1;
     box-shadow: 0 2px 8px rgba(217, 142, 79, 0.22);
   }
 
@@ -231,7 +231,7 @@
   .input-field {
     @apply w-full px-4 py-3 rounded-2xl
            border-2 border-brand-brown-pale/45
-           bg-white/72 backdrop-blur-sm
+           bg-white/75 backdrop-blur-sm
            text-brand-brown-dark placeholder-brand-brown-pale
            font-sans font-medium text-sm
            shadow-[inset_0_1px_3px_rgba(74,52,46,0.07)]
@@ -256,21 +256,21 @@
 
   .badge-terracotta {
     @apply inline-flex items-center gap-1
-           bg-brand-terracotta/14 text-brand-terracotta-dark
-           border border-brand-terracotta/28
+           bg-brand-terracotta/15 text-brand-terracotta-dark
+           border border-brand-terracotta/25
            px-3 py-0.5 rounded-full text-xs font-bold;
   }
 
   .badge-indigo {
     @apply inline-flex items-center gap-1
            bg-brand-indigo/10 text-brand-indigo
-           border border-brand-indigo/22
+           border border-brand-indigo/20
            px-3 py-0.5 rounded-full text-xs font-bold;
   }
 
   .badge-gold {
     @apply inline-flex items-center gap-1
-           bg-brand-gold/18 text-brand-gold-dark
+           bg-brand-gold/20 text-brand-gold-dark
            border border-brand-gold/30
            px-3 py-0.5 rounded-full text-xs font-bold;
   }
@@ -305,7 +305,7 @@
   .stat-card {
     @apply flex flex-col gap-1.5
            bg-white/75 rounded-2xl p-4
-           border border-brand-brown-pale/22
+           border border-brand-brown-pale/20
            shadow-[0_2px_12px_rgba(74,52,46,0.09)]
            transition-all duration-200
            hover:shadow-[0_4px_18px_rgba(74,52,46,0.14)]
