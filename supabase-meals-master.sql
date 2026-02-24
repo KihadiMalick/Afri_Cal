@@ -1075,3 +1075,1663 @@ SELECT id, 'ingredient', 'Oignon rouge', 3 FROM public.meals_master WHERE name =
 -- FROM meals_master m
 -- LEFT JOIN meal_components_master mc ON mc.meal_id = m.id
 -- GROUP BY m.name ORDER BY m.name;
+
+-- ============================================================
+-- PHASE 3 — EXTENSION AFRIQUE DE L'OUEST
+-- PARTIE 1 : Bénin · Burkina Faso · Cap-Vert · Côte d'Ivoire
+--            Gambie · Ghana · Guinée · Guinée-Bissau
+-- ============================================================
+
+INSERT INTO public.meals_master
+(name, country_origin, region, category, description, kcal_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, source)
+VALUES
+
+-- ============================================================
+-- BÉNIN
+-- Sources : FAO West Africa FCT · USDA · Etude CREDESA Bénin
+-- ============================================================
+
+('Akassa', 'Bénin', 'Afrique de l''Ouest', 'Accompagnement',
+ 'Bouillie fermentée de maïs blanc moulue, emballée en feuille de bananier, base alimentaire du Bénin',
+ 92, 1.8, 21.2, 0.4, 1.2, 'FAO West Africa FCT / CREDESA Bénin'),
+
+('Ablo', 'Bénin', 'Afrique de l''Ouest', 'Accompagnement / Snack',
+ 'Galette de riz fermenté cuite à la vapeur, texture spongieuse, servie avec sauce ou poisson',
+ 145, 3.2, 30.5, 1.2, 1.5, 'FAO West Africa FCT / CREDESA Bénin'),
+
+('Abobô', 'Bénin', 'Afrique de l''Ouest', 'Plat principal',
+ 'Soupe de crabe ou crevettes en sauce de noix de palme avec légumes, plat côtier béninois',
+ 185, 12.2, 6.5, 12.8, 1.5, 'FAO West Africa FCT / USDA Adaptation'),
+
+('Kluiklui', 'Bénin', 'Afrique de l''Ouest', 'Snack',
+ 'Beignets de pâte d''arachide frits en forme de spirale, snack très populaire au Bénin',
+ 478, 17.5, 36.5, 30.5, 4.2, 'USDA FoodData Central / FAO Adaptation Bénin'),
+
+('Amiwo au Poisson', 'Bénin', 'Afrique de l''Ouest', 'Plat principal',
+ 'Boule de maïs cuite en sauce tomate rouge avec poisson fumé, version enrichie de l''amiwo',
+ 155, 10.2, 21.5, 3.8, 1.8, 'FAO West Africa FCT / CREDESA Bénin'),
+
+('Sauce Feuilles Bénin', 'Bénin', 'Afrique de l''Ouest', 'Plat principal',
+ 'Sauce aux feuilles de morelle noire (crincrin) avec poisson fumé et huile de palme',
+ 98, 6.5, 6.8, 5.5, 3.2, 'FAO West Africa FCT / CREDESA'),
+
+-- ============================================================
+-- BURKINA FASO
+-- Sources : FAO West Africa FCT · INSS Burkina Faso · USDA
+-- ============================================================
+
+('Babenda', 'Burkina Faso', 'Afrique de l''Ouest', 'Plat principal',
+ 'Feuilles vertes séchées (moringa, feuilles de baobab) cuites avec soumbala et arachides',
+ 168, 8.5, 9.2, 11.2, 4.0, 'FAO West Africa FCT / INSS Burkina Faso'),
+
+('Riz Gras Burkina', 'Burkina Faso', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz cuit dans bouillon de viande de mouton avec légumes et huile, plat de fête burkinabè',
+ 165, 7.8, 23.5, 4.8, 0.8, 'FAO West Africa FCT / INSS Burkina Faso'),
+
+('Dégué Burkina', 'Burkina Faso', 'Afrique de l''Ouest', 'Dessert / Petit-déjeuner',
+ 'Couscous de mil avec lait caillé sucré (yaourt local), dessert et petit-déjeuner traditionnel',
+ 162, 5.0, 28.5, 3.5, 1.5, 'FAO West Africa FCT / INSS Burkina Faso'),
+
+('Soupe de Feuilles au Soumbala', 'Burkina Faso', 'Afrique de l''Ouest', 'Soupe',
+ 'Bouillon aux feuilles de bao-bab et soumbala (graines de néré fermentées), épicé',
+ 78, 3.8, 9.5, 3.0, 2.8, 'FAO West Africa FCT / INSS Burkina Faso'),
+
+('Ragout d''Agneau Burkina', 'Burkina Faso', 'Afrique de l''Ouest', 'Plat principal',
+ 'Ragoût d''agneau aux légumes racines et arachides, servi avec tô de mil ou riz',
+ 178, 13.2, 11.5, 8.8, 1.5, 'FAO West Africa FCT / INSS Burkina Faso'),
+
+('Tô de Sorgho', 'Burkina Faso', 'Afrique de l''Ouest', 'Accompagnement',
+ 'Boule de sorgho cuite en pâte épaisse, variante du tô de mil, base alimentaire du Burkina',
+ 108, 3.0, 22.8, 1.0, 3.0, 'FAO West Africa FCT / INSS Burkina Faso'),
+
+-- ============================================================
+-- CAP-VERT
+-- Sources : FAO / USDA / Instituto Nacional de Saúde Pública Cap-Vert
+-- ============================================================
+
+('Cachupa Rica', 'Cap-Vert', 'Afrique de l''Ouest', 'Plat principal',
+ 'Ragoût emblématique du Cap-Vert : maïs concassé, haricots, viandes variées (porc, bœuf, chorizo)',
+ 175, 11.2, 22.5, 5.2, 4.5, 'USDA / Instituto Nacional Saúde Pública Cap-Vert'),
+
+('Cachupa Pobre', 'Cap-Vert', 'Afrique de l''Ouest', 'Plat principal',
+ 'Version végétarienne de la cachupa : maïs et haricots sans viande, plat quotidien des plus modestes',
+ 138, 6.5, 24.8, 2.2, 5.8, 'USDA / FAO / INSPV Cap-Vert'),
+
+('Caldo de Peixe Cap-Vert', 'Cap-Vert', 'Afrique de l''Ouest', 'Soupe',
+ 'Bouillon de poisson frais aux légumes (banane, manioc, patate douce), plat côtier cap-verdien',
+ 88, 10.2, 7.5, 2.5, 1.2, 'FAO / USDA Adaptation Cap-Vert'),
+
+('Xerém com Chouriço', 'Cap-Vert', 'Afrique de l''Ouest', 'Plat principal',
+ 'Gruau de maïs grossier (xerém) cuit avec chorizo cap-verdien et légumes, plat réconfortant',
+ 198, 9.2, 28.5, 5.8, 2.2, 'USDA / FAO Adaptation Cap-Vert'),
+
+('Pastéis de Atum Cap-Vert', 'Cap-Vert', 'Afrique de l''Ouest', 'Snack / Entrée',
+ 'Chaussons frits farcis au thon, oignons et épices, en-cas populaire dans les îles',
+ 242, 10.8, 21.5, 13.2, 1.2, 'USDA FoodData Central / FAO Adaptation'),
+
+('Arroz de Marisco Cap-Vert', 'Cap-Vert', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz aux fruits de mer (crevettes, palourdes, calamar), cuisiné à la tomate et ail',
+ 162, 11.5, 22.0, 3.5, 0.8, 'USDA / FAO Adaptation Cap-Vert'),
+
+-- ============================================================
+-- CÔTE D''IVOIRE (compléments)
+-- Sources : FAO West Africa FCT / CNRA Côte d''Ivoire
+-- ============================================================
+
+('Garba', 'Côte d''Ivoire', 'Afrique de l''Ouest', 'Plat principal',
+ 'Attiéké (semoule de manioc) servi avec thon albacore frit entier, tomates et piment, street food iconique d''Abidjan',
+ 192, 14.5, 23.5, 4.8, 1.8, 'FAO West Africa FCT / CNRA Côte d''Ivoire'),
+
+('Placali', 'Côte d''Ivoire', 'Afrique de l''Ouest', 'Accompagnement',
+ 'Pâte de manioc fermenté gélatineuse, accompagnement des sauces ivoiriennes, texture lisse',
+ 132, 0.8, 32.0, 0.3, 1.2, 'FAO West Africa FCT / CNRA Côte d''Ivoire'),
+
+('Soupe de Gombo Ivoirienne', 'Côte d''Ivoire', 'Afrique de l''Ouest', 'Soupe',
+ 'Soupe au gombo frais avec poisson fumé, escargot et huile de palme, accompagne le placali',
+ 98, 6.8, 7.5, 4.8, 3.5, 'FAO West Africa FCT'),
+
+('Alloco Poisson Frit', 'Côte d''Ivoire', 'Afrique de l''Ouest', 'Plat principal',
+ 'Plantain mûr frit accompagné de poisson frit entier et sauce pimentée, plat complet ivoirien',
+ 225, 13.5, 27.5, 7.5, 2.5, 'FAO West Africa FCT / USDA Adaptation'),
+
+('Djoumblé', 'Côte d''Ivoire', 'Afrique de l''Ouest', 'Soupe',
+ 'Soupe gluante aux feuilles de jute (corète), viande de bœuf et épices, plat nord ivoirien',
+ 92, 5.8, 7.8, 4.2, 3.8, 'FAO West Africa FCT'),
+
+('Foufou Igname', 'Côte d''Ivoire', 'Afrique de l''Ouest', 'Accompagnement',
+ 'Igname pilée en pâte lisse et élastique, variante ivoirienne servie avec sauces en feuilles',
+ 120, 1.8, 27.8, 0.3, 4.0, 'FAO West Africa FCT / CNRA Côte d''Ivoire'),
+
+-- ============================================================
+-- GAMBIE (compléments)
+-- Sources : FAO West Africa FCT / MRC Gambia / USDA
+-- ============================================================
+
+('Superkanja', 'Gambie', 'Afrique de l''Ouest', 'Plat principal',
+ 'Soupe épaisse au gombo avec huile de palme, poisson fumé et légumes, plat national gambien',
+ 148, 9.2, 8.5, 8.8, 4.2, 'FAO West Africa FCT / MRC Gambia'),
+
+('Plasas', 'Gambie', 'Afrique de l''Ouest', 'Plat principal',
+ 'Feuilles de manioc cuites avec huile de palme, viande de bœuf et poisson fumé, servi avec riz',
+ 158, 10.5, 7.2, 9.8, 3.8, 'FAO West Africa FCT / MRC Gambia'),
+
+('Afra Gambie', 'Gambie', 'Afrique de l''Ouest', 'Plat principal',
+ 'Viande de bœuf ou chèvre grillée sur braises aux épices, accompagnée de pain et oignons',
+ 215, 23.5, 2.2, 12.5, 0.2, 'USDA FoodData Central / MRC Gambia'),
+
+('Cheré', 'Gambie', 'Afrique de l''Ouest', 'Accompagnement / Dessert',
+ 'Couscous de mil cuit à la vapeur avec lait caillé et sucre, plat festif gambien',
+ 158, 4.5, 30.2, 2.8, 2.0, 'FAO West Africa FCT / MRC Gambia'),
+
+('Mbahal', 'Gambie', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz et haricots noirs cuits ensemble avec huile de palme et poisson fumé',
+ 165, 7.5, 25.5, 3.8, 3.2, 'FAO West Africa FCT / MRC Gambia'),
+
+-- ============================================================
+-- GHANA (compléments)
+-- Sources : FAO West Africa FCT / Ghana Health Service / USDA
+-- ============================================================
+
+('Light Soup Ghana', 'Ghana', 'Afrique de l''Ouest', 'Soupe',
+ 'Soupe claire au poulet ou poisson avec tomates, piment et épices, base de la cuisine ghanéenne',
+ 68, 5.8, 5.2, 2.5, 1.2, 'FAO West Africa FCT / Ghana Health Service'),
+
+('Groundnut Soup Ghana', 'Ghana', 'Afrique de l''Ouest', 'Soupe / Plat principal',
+ 'Soupe riche à la pâte d''arachide avec poulet ou bœuf, servie avec fufu ou riz',
+ 198, 11.8, 8.2, 14.5, 2.5, 'FAO West Africa FCT / Ghana Health Service'),
+
+('Kontomire Stew', 'Ghana', 'Afrique de l''Ouest', 'Plat principal',
+ 'Ragoût de feuilles de taro (kontomire) avec huile de palme, poisson fumé et œufs durs',
+ 145, 8.2, 7.2, 9.5, 3.8, 'FAO West Africa FCT / Ghana Health Service'),
+
+('Omo Tuo', 'Ghana', 'Afrique de l''Ouest', 'Accompagnement',
+ 'Boulettes de riz cuit mou et élastique, servies avec light soup ou groundnut soup',
+ 118, 2.5, 26.5, 0.5, 0.8, 'FAO West Africa FCT / Ghana Health Service'),
+
+('Red Red', 'Ghana', 'Afrique de l''Ouest', 'Plat principal',
+ 'Haricots noirs cuits en sauce tomate et huile de palme, servi avec alloco (plantain frit)',
+ 178, 7.8, 24.5, 6.5, 6.2, 'FAO West Africa FCT / USDA'),
+
+('Tilapia Frit Ghana', 'Ghana', 'Afrique de l''Ouest', 'Plat principal',
+ 'Tilapia entier épicé et frit, servi avec banku ou kenkey et sauce pimentée',
+ 215, 22.5, 3.5, 12.5, 0.5, 'USDA FoodData Central / FAO West Africa FCT'),
+
+-- ============================================================
+-- GUINÉE (compléments)
+-- Sources : FAO West Africa FCT / DNSP Guinée / USDA
+-- ============================================================
+
+('Soupe Kandia', 'Guinée', 'Afrique de l''Ouest', 'Plat principal',
+ 'Soupe de noix de palme avec poulet ou viande de bœuf et légumes, plat emblématique guinéen',
+ 188, 11.2, 7.8, 13.2, 2.5, 'FAO West Africa FCT / DNSP Guinée'),
+
+('Tiga Dèguè Guinée', 'Guinée', 'Afrique de l''Ouest', 'Plat principal',
+ 'Ragoût de viande en sauce arachide avec légumes (aubergine africaine, gombo), servi avec riz',
+ 195, 8.8, 11.5, 13.5, 2.2, 'FAO West Africa FCT / DNSP Guinée'),
+
+('Ragout de Chèvre Guinée', 'Guinée', 'Afrique de l''Ouest', 'Plat principal',
+ 'Ragoût de viande de chèvre aux épices locales et oignons, servi avec riz gras',
+ 188, 18.5, 4.2, 11.2, 0.5, 'USDA / FAO West Africa FCT'),
+
+('Fouti au Gombo', 'Guinée', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz blanc servi avec sauce gombo épaisse au poisson fumé, repas quotidien en Guinée',
+ 148, 7.5, 22.5, 3.5, 2.5, 'FAO West Africa FCT / DNSP Guinée'),
+
+('Riz au Poulet Guinée', 'Guinée', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz à la tomate avec poulet rôti aux épices locales, version guinéenne du riz gras',
+ 172, 10.5, 22.0, 5.5, 0.8, 'FAO West Africa FCT / DNSP Guinée'),
+
+-- ============================================================
+-- GUINÉE-BISSAU
+-- Sources : FAO West Africa FCT / WHO Guinea-Bissau / USDA
+-- ============================================================
+
+('Caldo de Mancarra', 'Guinée-Bissau', 'Afrique de l''Ouest', 'Plat principal',
+ 'Soupe épaisse à la pâte d''arachide avec poulet et légumes, plat national de Guinée-Bissau',
+ 192, 9.8, 10.2, 13.2, 2.2, 'FAO West Africa FCT / WHO Guinea-Bissau'),
+
+('Arroz de Marisco Guinée-Bissau', 'Guinée-Bissau', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz aux fruits de mer (crevettes, crabe) à la tomate, typique des zones côtières de Bissau',
+ 165, 12.2, 21.5, 3.8, 0.8, 'FAO West Africa FCT / USDA Adaptation'),
+
+('Benachin Guinée-Bissau', 'Guinée-Bissau', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz one-pot cuisiné avec viande et légumes en sauce tomate, variante bissau-guinéenne',
+ 152, 8.5, 21.5, 4.2, 1.2, 'FAO West Africa FCT / WHO Guinea-Bissau'),
+
+('Peixe Grelhado com Pirão', 'Guinée-Bissau', 'Afrique de l''Ouest', 'Plat principal',
+ 'Poisson grillé servi avec pirão (bouillie de farine de manioc cuite dans bouillon de poisson)',
+ 178, 18.8, 10.5, 7.2, 1.2, 'FAO West Africa FCT / USDA'),
+
+('Jamba Guinée-Bissau', 'Guinée-Bissau', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz fermenté cuit avec huile de palme et viande séchée, plat rural traditionnel',
+ 148, 4.2, 28.5, 2.8, 1.0, 'FAO West Africa FCT / WHO Guinea-Bissau'),
+
+('Mancarra Cozida', 'Guinée-Bissau', 'Afrique de l''Ouest', 'Accompagnement / Snack',
+ 'Arachides bouillies avec sel, en-cas très consommé dans toute la Guinée-Bissau',
+ 310, 13.5, 14.5, 23.5, 5.5, 'USDA FoodData Central');
+
+
+-- ============================================================
+-- MEAL COMPONENTS — BÉNIN
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de maïs (blanche)', 85 FROM public.meals_master WHERE name = 'Akassa';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Akassa';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 75 FROM public.meals_master WHERE name = 'Ablo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de maïs (blanche)', 15 FROM public.meals_master WHERE name = 'Ablo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Ablo';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crabe (cru)', 35 FROM public.meals_master WHERE name = 'Abobô';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 20 FROM public.meals_master WHERE name = 'Abobô';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 15 FROM public.meals_master WHERE name = 'Abobô';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Abobô';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gombo frais', 10 FROM public.meals_master WHERE name = 'Abobô';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 5 FROM public.meals_master WHERE name = 'Abobô';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crevettes séchées', 5 FROM public.meals_master WHERE name = 'Abobô';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Arachides / Cacahuètes (crues)', 70 FROM public.meals_master WHERE name = 'Kluiklui';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 20 FROM public.meals_master WHERE name = 'Kluiklui';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de blé T55', 8 FROM public.meals_master WHERE name = 'Kluiklui';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Kluiklui';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de maïs (blanche)', 40 FROM public.meals_master WHERE name = 'Amiwo au Poisson';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 20 FROM public.meals_master WHERE name = 'Amiwo au Poisson';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 18 FROM public.meals_master WHERE name = 'Amiwo au Poisson';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Amiwo au Poisson';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 8 FROM public.meals_master WHERE name = 'Amiwo au Poisson';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 4 FROM public.meals_master WHERE name = 'Amiwo au Poisson';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Amarante / Épinards africains', 50 FROM public.meals_master WHERE name = 'Sauce Feuilles Bénin';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 20 FROM public.meals_master WHERE name = 'Sauce Feuilles Bénin';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 15 FROM public.meals_master WHERE name = 'Sauce Feuilles Bénin';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Sauce Feuilles Bénin';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crevettes séchées', 5 FROM public.meals_master WHERE name = 'Sauce Feuilles Bénin';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 2 FROM public.meals_master WHERE name = 'Sauce Feuilles Bénin';
+
+-- ============================================================
+-- MEAL COMPONENTS — BURKINA FASO
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Amarante / Épinards africains', 40 FROM public.meals_master WHERE name = 'Babenda';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Arachides / Cacahuètes (crues)', 25 FROM public.meals_master WHERE name = 'Babenda';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 15 FROM public.meals_master WHERE name = 'Babenda';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Babenda';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 8 FROM public.meals_master WHERE name = 'Babenda';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 2 FROM public.meals_master WHERE name = 'Babenda';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 50 FROM public.meals_master WHERE name = 'Riz Gras Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Mouton / Agneau épaule (cru)', 25 FROM public.meals_master WHERE name = 'Riz Gras Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 10 FROM public.meals_master WHERE name = 'Riz Gras Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Riz Gras Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 5 FROM public.meals_master WHERE name = 'Riz Gras Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Riz Gras Burkina';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de mil', 55 FROM public.meals_master WHERE name = 'Dégué Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Lait de vache entier (3,5%)', 35 FROM public.meals_master WHERE name = 'Dégué Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sucre blanc', 8 FROM public.meals_master WHERE name = 'Dégué Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Vanille', 2 FROM public.meals_master WHERE name = 'Dégué Burkina';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Amarante / Épinards africains', 55 FROM public.meals_master WHERE name = 'Soupe de Feuilles au Soumbala';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 15 FROM public.meals_master WHERE name = 'Soupe de Feuilles au Soumbala';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 12 FROM public.meals_master WHERE name = 'Soupe de Feuilles au Soumbala';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 10 FROM public.meals_master WHERE name = 'Soupe de Feuilles au Soumbala';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 5 FROM public.meals_master WHERE name = 'Soupe de Feuilles au Soumbala';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Soupe de Feuilles au Soumbala';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Mouton / Agneau épaule (cru)', 45 FROM public.meals_master WHERE name = 'Ragout d''Agneau Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Arachides / Cacahuètes (crues)', 15 FROM public.meals_master WHERE name = 'Ragout d''Agneau Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 15 FROM public.meals_master WHERE name = 'Ragout d''Agneau Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 12 FROM public.meals_master WHERE name = 'Ragout d''Agneau Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 8 FROM public.meals_master WHERE name = 'Ragout d''Agneau Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 3 FROM public.meals_master WHERE name = 'Ragout d''Agneau Burkina';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Ragout d''Agneau Burkina';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de sorgho', 88 FROM public.meals_master WHERE name = 'Tô de Sorgho';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Tô de Sorgho';
+
+-- ============================================================
+-- MEAL COMPONENTS — CAP-VERT
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Maïs concassé (gritz)', 30 FROM public.meals_master WHERE name = 'Cachupa Rica';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Haricots rouges (secs)', 15 FROM public.meals_master WHERE name = 'Cachupa Rica';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Porc filet (cru)', 15 FROM public.meals_master WHERE name = 'Cachupa Rica';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 10 FROM public.meals_master WHERE name = 'Cachupa Rica';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Patate douce (crue)', 10 FROM public.meals_master WHERE name = 'Cachupa Rica';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Cachupa Rica';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 5 FROM public.meals_master WHERE name = 'Cachupa Rica';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Cachupa Rica';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 4 FROM public.meals_master WHERE name = 'Cachupa Rica';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Maïs concassé (gritz)', 45 FROM public.meals_master WHERE name = 'Cachupa Pobre';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Haricots rouges (secs)', 30 FROM public.meals_master WHERE name = 'Cachupa Pobre';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Patate douce (crue)', 10 FROM public.meals_master WHERE name = 'Cachupa Pobre';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Cachupa Pobre';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Cachupa Pobre';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 4 FROM public.meals_master WHERE name = 'Cachupa Pobre';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tilapia (cru)', 40 FROM public.meals_master WHERE name = 'Caldo de Peixe Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Patate douce (crue)', 20 FROM public.meals_master WHERE name = 'Caldo de Peixe Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Manioc frais', 15 FROM public.meals_master WHERE name = 'Caldo de Peixe Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Caldo de Peixe Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 8 FROM public.meals_master WHERE name = 'Caldo de Peixe Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 4 FROM public.meals_master WHERE name = 'Caldo de Peixe Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''olive vierge extra', 3 FROM public.meals_master WHERE name = 'Caldo de Peixe Cap-Vert';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Maïs concassé (gritz)', 55 FROM public.meals_master WHERE name = 'Xerém com Chouriço';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Porc filet (cru)', 25 FROM public.meals_master WHERE name = 'Xerém com Chouriço';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Xerém com Chouriço';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 5 FROM public.meals_master WHERE name = 'Xerém com Chouriço';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Xerém com Chouriço';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''olive vierge extra', 4 FROM public.meals_master WHERE name = 'Xerém com Chouriço';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de blé T55', 35 FROM public.meals_master WHERE name = 'Pastéis de Atum Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Thon (en conserve, égoutté)', 30 FROM public.meals_master WHERE name = 'Pastéis de Atum Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 18 FROM public.meals_master WHERE name = 'Pastéis de Atum Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Pastéis de Atum Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Pastéis de Atum Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Persil frais', 3 FROM public.meals_master WHERE name = 'Pastéis de Atum Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Œuf entier (poule)', 3 FROM public.meals_master WHERE name = 'Pastéis de Atum Cap-Vert';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 45 FROM public.meals_master WHERE name = 'Arroz de Marisco Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crevettes (crues)', 25 FROM public.meals_master WHERE name = 'Arroz de Marisco Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 12 FROM public.meals_master WHERE name = 'Arroz de Marisco Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Arroz de Marisco Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''olive vierge extra', 5 FROM public.meals_master WHERE name = 'Arroz de Marisco Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Arroz de Marisco Cap-Vert';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poivron rouge', 2 FROM public.meals_master WHERE name = 'Arroz de Marisco Cap-Vert';
+
+-- ============================================================
+-- MEAL COMPONENTS — CÔTE D''IVOIRE (compléments)
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gari (semoule manioc fermentée)', 40 FROM public.meals_master WHERE name = 'Garba';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Thon (en conserve, égoutté)', 35 FROM public.meals_master WHERE name = 'Garba';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Garba';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 8 FROM public.meals_master WHERE name = 'Garba';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 4 FROM public.meals_master WHERE name = 'Garba';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 3 FROM public.meals_master WHERE name = 'Garba';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Manioc frais', 90 FROM public.meals_master WHERE name = 'Placali';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Placali';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gombo frais', 40 FROM public.meals_master WHERE name = 'Soupe de Gombo Ivoirienne';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 20 FROM public.meals_master WHERE name = 'Soupe de Gombo Ivoirienne';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 15 FROM public.meals_master WHERE name = 'Soupe de Gombo Ivoirienne';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Soupe de Gombo Ivoirienne';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 8 FROM public.meals_master WHERE name = 'Soupe de Gombo Ivoirienne';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crevettes séchées', 5 FROM public.meals_master WHERE name = 'Soupe de Gombo Ivoirienne';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 2 FROM public.meals_master WHERE name = 'Soupe de Gombo Ivoirienne';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Plantain mûr (cru)', 45 FROM public.meals_master WHERE name = 'Alloco Poisson Frit';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tilapia (cru)', 35 FROM public.meals_master WHERE name = 'Alloco Poisson Frit';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 12 FROM public.meals_master WHERE name = 'Alloco Poisson Frit';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 5 FROM public.meals_master WHERE name = 'Alloco Poisson Frit';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 3 FROM public.meals_master WHERE name = 'Alloco Poisson Frit';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Amarante / Épinards africains', 45 FROM public.meals_master WHERE name = 'Djoumblé';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 20 FROM public.meals_master WHERE name = 'Djoumblé';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 15 FROM public.meals_master WHERE name = 'Djoumblé';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Djoumblé';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 5 FROM public.meals_master WHERE name = 'Djoumblé';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gombo frais', 5 FROM public.meals_master WHERE name = 'Djoumblé';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Igname blanche (crue)', 90 FROM public.meals_master WHERE name = 'Foufou Igname';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Foufou Igname';
+
+-- ============================================================
+-- MEAL COMPONENTS — GAMBIE (compléments)
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gombo frais', 30 FROM public.meals_master WHERE name = 'Superkanja';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 20 FROM public.meals_master WHERE name = 'Superkanja';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 18 FROM public.meals_master WHERE name = 'Superkanja';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 15 FROM public.meals_master WHERE name = 'Superkanja';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Superkanja';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 5 FROM public.meals_master WHERE name = 'Superkanja';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 4 FROM public.meals_master WHERE name = 'Superkanja';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Feuilles de manioc / isombé (fraîches)', 45 FROM public.meals_master WHERE name = 'Plasas';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 18 FROM public.meals_master WHERE name = 'Plasas';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 15 FROM public.meals_master WHERE name = 'Plasas';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 10 FROM public.meals_master WHERE name = 'Plasas';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Plasas';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 4 FROM public.meals_master WHERE name = 'Plasas';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 65 FROM public.meals_master WHERE name = 'Afra Gambie';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 15 FROM public.meals_master WHERE name = 'Afra Gambie';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 8 FROM public.meals_master WHERE name = 'Afra Gambie';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 5 FROM public.meals_master WHERE name = 'Afra Gambie';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gingembre frais', 4 FROM public.meals_master WHERE name = 'Afra Gambie';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 3 FROM public.meals_master WHERE name = 'Afra Gambie';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de mil', 60 FROM public.meals_master WHERE name = 'Cheré';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Lait de vache entier (3,5%)', 28 FROM public.meals_master WHERE name = 'Cheré';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sucre blanc', 10 FROM public.meals_master WHERE name = 'Cheré';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Cheré';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 40 FROM public.meals_master WHERE name = 'Mbahal';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Niébé / Cowpea (sec)', 30 FROM public.meals_master WHERE name = 'Mbahal';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 12 FROM public.meals_master WHERE name = 'Mbahal';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 10 FROM public.meals_master WHERE name = 'Mbahal';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 5 FROM public.meals_master WHERE name = 'Mbahal';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Mbahal';
+
+-- ============================================================
+-- MEAL COMPONENTS — GHANA (compléments)
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poulet (avec peau, cru)', 40 FROM public.meals_master WHERE name = 'Light Soup Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 25 FROM public.meals_master WHERE name = 'Light Soup Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 12 FROM public.meals_master WHERE name = 'Light Soup Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 10 FROM public.meals_master WHERE name = 'Light Soup Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gingembre frais', 6 FROM public.meals_master WHERE name = 'Light Soup Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 4 FROM public.meals_master WHERE name = 'Light Soup Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bouillon cube (générique)', 3 FROM public.meals_master WHERE name = 'Light Soup Ghana';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Arachides / Cacahuètes (crues)', 25 FROM public.meals_master WHERE name = 'Groundnut Soup Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poulet (avec peau, cru)', 35 FROM public.meals_master WHERE name = 'Groundnut Soup Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 15 FROM public.meals_master WHERE name = 'Groundnut Soup Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Groundnut Soup Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 8 FROM public.meals_master WHERE name = 'Groundnut Soup Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gingembre frais', 4 FROM public.meals_master WHERE name = 'Groundnut Soup Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Groundnut Soup Ghana';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Feuilles de taro (fraîches)', 40 FROM public.meals_master WHERE name = 'Kontomire Stew';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 18 FROM public.meals_master WHERE name = 'Kontomire Stew';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 15 FROM public.meals_master WHERE name = 'Kontomire Stew';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Œuf entier (poule)', 12 FROM public.meals_master WHERE name = 'Kontomire Stew';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Kontomire Stew';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 5 FROM public.meals_master WHERE name = 'Kontomire Stew';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Kontomire Stew';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 90 FROM public.meals_master WHERE name = 'Omo Tuo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Omo Tuo';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Niébé / Cowpea (sec)', 40 FROM public.meals_master WHERE name = 'Red Red';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Plantain mûr (cru)', 25 FROM public.meals_master WHERE name = 'Red Red';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 12 FROM public.meals_master WHERE name = 'Red Red';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 10 FROM public.meals_master WHERE name = 'Red Red';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 8 FROM public.meals_master WHERE name = 'Red Red';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 5 FROM public.meals_master WHERE name = 'Red Red';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tilapia (cru)', 65 FROM public.meals_master WHERE name = 'Tilapia Frit Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 15 FROM public.meals_master WHERE name = 'Tilapia Frit Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Tilapia Frit Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 5 FROM public.meals_master WHERE name = 'Tilapia Frit Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gingembre frais', 4 FROM public.meals_master WHERE name = 'Tilapia Frit Ghana';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 3 FROM public.meals_master WHERE name = 'Tilapia Frit Ghana';
+
+-- ============================================================
+-- MEAL COMPONENTS — GUINÉE (compléments)
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poulet (avec peau, cru)', 40 FROM public.meals_master WHERE name = 'Soupe Kandia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 25 FROM public.meals_master WHERE name = 'Soupe Kandia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gombo frais', 15 FROM public.meals_master WHERE name = 'Soupe Kandia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Soupe Kandia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 6 FROM public.meals_master WHERE name = 'Soupe Kandia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 4 FROM public.meals_master WHERE name = 'Soupe Kandia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Soupe Kandia';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 30 FROM public.meals_master WHERE name = 'Tiga Dèguè Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Beurre d''arachide / Pâte', 20 FROM public.meals_master WHERE name = 'Tiga Dèguè Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 15 FROM public.meals_master WHERE name = 'Tiga Dèguè Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Tiga Dèguè Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gombo frais', 10 FROM public.meals_master WHERE name = 'Tiga Dèguè Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Aubergine africaine', 8 FROM public.meals_master WHERE name = 'Tiga Dèguè Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 5 FROM public.meals_master WHERE name = 'Tiga Dèguè Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 2 FROM public.meals_master WHERE name = 'Tiga Dèguè Guinée';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Mouton / Agneau épaule (cru)', 55 FROM public.meals_master WHERE name = 'Ragout de Chèvre Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 15 FROM public.meals_master WHERE name = 'Ragout de Chèvre Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 12 FROM public.meals_master WHERE name = 'Ragout de Chèvre Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 8 FROM public.meals_master WHERE name = 'Ragout de Chèvre Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 5 FROM public.meals_master WHERE name = 'Ragout de Chèvre Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 3 FROM public.meals_master WHERE name = 'Ragout de Chèvre Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gingembre frais', 2 FROM public.meals_master WHERE name = 'Ragout de Chèvre Guinée';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 45 FROM public.meals_master WHERE name = 'Fouti au Gombo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gombo frais', 25 FROM public.meals_master WHERE name = 'Fouti au Gombo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 15 FROM public.meals_master WHERE name = 'Fouti au Gombo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 8 FROM public.meals_master WHERE name = 'Fouti au Gombo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 5 FROM public.meals_master WHERE name = 'Fouti au Gombo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 2 FROM public.meals_master WHERE name = 'Fouti au Gombo';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 45 FROM public.meals_master WHERE name = 'Riz au Poulet Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poulet (avec peau, cru)', 30 FROM public.meals_master WHERE name = 'Riz au Poulet Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 10 FROM public.meals_master WHERE name = 'Riz au Poulet Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Riz au Poulet Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 5 FROM public.meals_master WHERE name = 'Riz au Poulet Guinée';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Riz au Poulet Guinée';
+
+-- ============================================================
+-- MEAL COMPONENTS — GUINÉE-BISSAU
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poulet (avec peau, cru)', 35 FROM public.meals_master WHERE name = 'Caldo de Mancarra';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Beurre d''arachide / Pâte', 22 FROM public.meals_master WHERE name = 'Caldo de Mancarra';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 15 FROM public.meals_master WHERE name = 'Caldo de Mancarra';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Caldo de Mancarra';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 5 FROM public.meals_master WHERE name = 'Caldo de Mancarra';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 5 FROM public.meals_master WHERE name = 'Caldo de Mancarra';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 8 FROM public.meals_master WHERE name = 'Caldo de Mancarra';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 45 FROM public.meals_master WHERE name = 'Arroz de Marisco Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crevettes (crues)', 25 FROM public.meals_master WHERE name = 'Arroz de Marisco Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 12 FROM public.meals_master WHERE name = 'Arroz de Marisco Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Arroz de Marisco Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 4 FROM public.meals_master WHERE name = 'Arroz de Marisco Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''olive vierge extra', 4 FROM public.meals_master WHERE name = 'Arroz de Marisco Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poivron rouge', 2 FROM public.meals_master WHERE name = 'Arroz de Marisco Guinée-Bissau';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 52 FROM public.meals_master WHERE name = 'Benachin Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 22 FROM public.meals_master WHERE name = 'Benachin Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 10 FROM public.meals_master WHERE name = 'Benachin Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Benachin Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 5 FROM public.meals_master WHERE name = 'Benachin Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Benachin Guinée-Bissau';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tilapia (cru)', 45 FROM public.meals_master WHERE name = 'Peixe Grelhado com Pirão';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de manioc (sèche)', 25 FROM public.meals_master WHERE name = 'Peixe Grelhado com Pirão';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Peixe Grelhado com Pirão';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 6 FROM public.meals_master WHERE name = 'Peixe Grelhado com Pirão';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 5 FROM public.meals_master WHERE name = 'Peixe Grelhado com Pirão';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 5 FROM public.meals_master WHERE name = 'Peixe Grelhado com Pirão';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Citron', 4 FROM public.meals_master WHERE name = 'Peixe Grelhado com Pirão';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 65 FROM public.meals_master WHERE name = 'Jamba Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 15 FROM public.meals_master WHERE name = 'Jamba Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 12 FROM public.meals_master WHERE name = 'Jamba Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 5 FROM public.meals_master WHERE name = 'Jamba Guinée-Bissau';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 3 FROM public.meals_master WHERE name = 'Jamba Guinée-Bissau';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Arachides / Cacahuètes (crues)', 95 FROM public.meals_master WHERE name = 'Mancarra Cozida';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 5 FROM public.meals_master WHERE name = 'Mancarra Cozida';
+
+-- ============================================================
+-- PHASE 3 — EXTENSION AFRIQUE DE L'OUEST
+-- PARTIE 2 : Liberia · Mali · Mauritanie · Niger
+--            Nigeria · Sénégal · Sierra Leone · Togo
+-- ============================================================
+
+INSERT INTO public.meals_master
+(name, country_origin, region, category, description, kcal_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, source)
+VALUES
+
+-- ============================================================
+-- LIBERIA
+-- Sources : FAO West Africa FCT / WHO Liberia / USDA
+-- ============================================================
+
+('Palava Sauce', 'Liberia', 'Afrique de l''Ouest', 'Plat principal',
+ 'Feuilles de jute ou de manioc cuites en sauce avec viande fumée et huile de palme, plat national libérien',
+ 165, 10.2, 7.8, 10.8, 3.8, 'FAO West Africa FCT / WHO Liberia'),
+
+('Dumboy', 'Liberia', 'Afrique de l''Ouest', 'Accompagnement',
+ 'Manioc bouilli puis pilé en pâte élastique, équivalent libérien du fufu, servi avec soupes',
+ 128, 1.2, 30.5, 0.4, 2.0, 'FAO West Africa FCT / USDA Adaptation'),
+
+('Jollof Rice Liberia', 'Liberia', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz cuisiné en sauce tomate épicée avec poulet, version libérienne légèrement fumée',
+ 150, 8.8, 22.0, 3.8, 1.2, 'FAO West Africa FCT / WHO Liberia'),
+
+('Pepper Soup Liberia', 'Liberia', 'Afrique de l''Ouest', 'Soupe',
+ 'Bouillon très épicé de viande de chèvre ou bœuf aux épices locales, plat populaire libérien',
+ 65, 7.5, 2.5, 2.2, 0.5, 'FAO West Africa FCT / USDA'),
+
+('Cassava Leaf Stew Liberia', 'Liberia', 'Afrique de l''Ouest', 'Plat principal',
+ 'Feuilles de manioc pilées cuites avec poisson fumé et huile de palme, base de l''alimentation libérienne',
+ 158, 9.8, 8.8, 9.8, 4.2, 'FAO West Africa FCT / WHO Liberia'),
+
+('Kala', 'Liberia', 'Afrique de l''Ouest', 'Snack / Accompagnement',
+ 'Beignets de plantain mûr frits, en-cas populaire libérien consommé en rue',
+ 198, 1.5, 32.5, 7.5, 2.2, 'USDA FoodData Central / FAO Adaptation'),
+
+-- ============================================================
+-- MALI (compléments)
+-- Sources : FAO West Africa FCT / IER Mali / USDA
+-- ============================================================
+
+('Sombi Mali', 'Mali', 'Afrique de l''Ouest', 'Dessert / Petit-déjeuner',
+ 'Bouillie de riz au lait de vache sucré et vanille, dessert et petit-déjeuner malien',
+ 165, 4.5, 30.5, 3.0, 0.8, 'FAO West Africa FCT / IER Mali'),
+
+('Tiguadèguèna', 'Mali', 'Afrique de l''Ouest', 'Plat principal',
+ 'Ragoût de viande en sauce épaisse à la pâte d''arachide, aubergine africaine et gombo, servi avec riz',
+ 198, 9.0, 11.8, 13.5, 2.5, 'FAO West Africa FCT / IER Mali'),
+
+('Riz au Gras Mali', 'Mali', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz cuit dans bouillon de bœuf gras avec légumes et épices, plat festif malien',
+ 168, 8.5, 23.0, 5.2, 0.8, 'FAO West Africa FCT / IER Mali'),
+
+('Fonio au Beurre de Karité', 'Mali', 'Afrique de l''Ouest', 'Accompagnement',
+ 'Grain de fonio cuit à l''eau avec beurre de karité, céréale ancestrale du Sahel',
+ 122, 3.0, 25.5, 1.8, 1.5, 'FAO West Africa FCT / USDA / IER Mali'),
+
+('Dégué Mali', 'Mali', 'Afrique de l''Ouest', 'Dessert',
+ 'Couscous de mil fermenté avec lait caillé, sucre et parfum de vanille, dessert festif malien',
+ 168, 5.5, 29.5, 3.5, 1.5, 'FAO West Africa FCT / IER Mali'),
+
+-- ============================================================
+-- MAURITANIE
+-- Sources : FAO West Africa FCT / Enquête Nutritionnelle Mauritanie / USDA
+-- ============================================================
+
+('Thiéboudienne Mauritanienne', 'Mauritanie', 'Afrique de l''Ouest', 'Plat principal',
+ 'Version mauritanienne du riz au poisson : riz brisé, poisson de mer, légumes en sauce tomate',
+ 145, 8.8, 20.5, 3.5, 1.2, 'FAO West Africa FCT / Enquête Nutritionnelle Mauritanie'),
+
+('Assida Mauritanie', 'Mauritanie', 'Afrique de l''Ouest', 'Accompagnement / Petit-déjeuner',
+ 'Bouillie épaisse de blé ou sorgho au beurre de vache clarifié, petit-déjeuner mauritanien',
+ 118, 3.5, 23.5, 1.8, 2.0, 'FAO West Africa FCT / Enquête Nutritionnelle Mauritanie'),
+
+('Méchoui Mauritanien', 'Mauritanie', 'Afrique de l''Ouest', 'Plat principal',
+ 'Agneau entier ou demi-agneau rôti au four ou sur braises, plat de cérémonie mauritanien',
+ 232, 22.5, 0.0, 15.5, 0.0, 'USDA FoodData Central / FAO'),
+
+('Thiébou Yapp Mauritanien', 'Mauritanie', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz à la viande de bœuf ou d''agneau sauce tomate, version mauritanienne avec épices sahéliennes',
+ 162, 9.5, 21.5, 4.8, 1.0, 'FAO West Africa FCT / Enquête Nutritionnelle Mauritanie'),
+
+('Harees Mauritanie', 'Mauritanie', 'Afrique de l''Ouest', 'Plat principal',
+ 'Blé concassé cuit lentement avec viande de mouton jusqu''à consistance crémeuse, plat du Ramadan',
+ 165, 8.8, 20.5, 5.5, 1.2, 'FAO / USDA Adaptation Mauritanie'),
+
+('Zrig', 'Mauritanie', 'Afrique de l''Ouest', 'Boisson / Petit-déjeuner',
+ 'Mélange de lait de chamelle fermenté et eau avec dattes, boisson nutritive mauritanienne',
+ 68, 3.5, 8.5, 2.5, 0.0, 'FAO / Enquête Nutritionnelle Mauritanie'),
+
+-- ============================================================
+-- NIGER
+-- Sources : FAO West Africa FCT / Institut National de la Nutrition Niger / USDA
+-- ============================================================
+
+('Dambou', 'Niger', 'Afrique de l''Ouest', 'Accompagnement',
+ 'Couscous de mil cuit à la vapeur, accompagnement de base dans tout le Niger',
+ 148, 4.5, 28.5, 2.5, 2.8, 'FAO West Africa FCT / INN Niger'),
+
+('Masa Niger', 'Niger', 'Afrique de l''Ouest', 'Snack / Petit-déjeuner',
+ 'Galettes de riz fermenté frites dans huile végétale, petit-déjeuner et snack populaire au Niger',
+ 188, 5.5, 32.5, 5.2, 1.5, 'FAO West Africa FCT / INN Niger'),
+
+('Fura da Nono', 'Niger', 'Afrique de l''Ouest', 'Boisson / Petit-déjeuner',
+ 'Boules de mil fermenté (fura) mélangées avec lait caillé de vache (nono), boisson nutritive sahélienne',
+ 125, 5.2, 20.5, 2.8, 1.8, 'FAO West Africa FCT / INN Niger'),
+
+('Ragout de Mouton Niger', 'Niger', 'Afrique de l''Ouest', 'Plat principal',
+ 'Viande de mouton mijotée aux épices sahéliennes, tomates et oignons, servi avec riz ou dambou',
+ 185, 15.2, 8.5, 10.8, 1.2, 'FAO West Africa FCT / INN Niger'),
+
+('Tuo Masara', 'Niger', 'Afrique de l''Ouest', 'Accompagnement',
+ 'Boule de maïs blanc cuite en pâte épaisse, accompagnement des soupes au Niger et régions voisines',
+ 118, 2.8, 25.8, 0.8, 2.8, 'FAO West Africa FCT / INN Niger'),
+
+('Kilishi', 'Niger', 'Afrique de l''Ouest', 'Snack',
+ 'Viande de bœuf séchée et épicée à la pâte d''arachide et épices, variante nigérienne du biltong',
+ 312, 38.5, 10.5, 12.5, 1.5, 'USDA FoodData Central / FAO Adaptation Niger'),
+
+-- ============================================================
+-- NIGERIA (compléments)
+-- Sources : FAO West Africa FCT / USDA / Okeke et al. African Journal of Food Science
+-- ============================================================
+
+('Banga Soup', 'Nigeria', 'Afrique de l''Ouest', 'Soupe',
+ 'Soupe riche de noix de palme avec viande de bœuf, poisson fumé et épices banga, servie avec pounded yam',
+ 195, 11.5, 7.2, 14.5, 2.5, 'FAO West Africa FCT / Okeke et al. AJFS'),
+
+('Ogbono Soup', 'Nigeria', 'Afrique de l''Ouest', 'Soupe',
+ 'Soupe gluante aux graines d''ogbono (Irvingia gabonensis) moulues, viande et légumes verts',
+ 185, 11.2, 6.5, 13.5, 3.2, 'FAO West Africa FCT / USDA / Ajayi et al.'),
+
+('Efo Riro', 'Nigeria', 'Afrique de l''Ouest', 'Plat principal',
+ 'Ragoût de feuilles d''épinards africains (soko) à l''huile de palme, viande et poisson fumé, cuisine Yoruba',
+ 145, 10.2, 6.2, 9.8, 3.8, 'FAO West Africa FCT / USDA'),
+
+('Oha Soup', 'Nigeria', 'Afrique de l''Ouest', 'Soupe',
+ 'Soupe aux feuilles d''oha (Pterocarpus mildbraedii) avec cocoyam, viande et huile de palme, cuisine Igbo',
+ 165, 10.5, 7.0, 11.2, 2.8, 'FAO West Africa FCT / Okeke et al. AJFS'),
+
+('Abacha', 'Nigeria', 'Afrique de l''Ouest', 'Plat principal',
+ 'Salade africaine de manioc séché râpé avec huile de palme, poisson fumé, oignons et ugba, cuisine Igbo',
+ 178, 5.5, 22.5, 8.8, 3.2, 'FAO West Africa FCT / USDA Adaptation'),
+
+('Edikaikong Soup', 'Nigeria', 'Afrique de l''Ouest', 'Soupe',
+ 'Soupe concentrée aux feuilles de fluted pumpkin et waterleaf, huile de palme et fruits de mer, cuisine Efik',
+ 155, 10.8, 5.8, 10.5, 4.2, 'FAO West Africa FCT / Okeke et al. AJFS'),
+
+-- ============================================================
+-- SÉNÉGAL (compléments)
+-- Sources : FAO West Africa FCT / CNNTA Sénégal / USDA
+-- ============================================================
+
+('Ngalakh', 'Sénégal', 'Afrique de l''Ouest', 'Dessert',
+ 'Couscous de mil avec pâte d''arachide, jus de baobab et sucre, dessert de fête sénégalais',
+ 228, 5.8, 38.5, 6.8, 2.2, 'FAO West Africa FCT / CNNTA Sénégal'),
+
+('Pastels Sénégalais', 'Sénégal', 'Afrique de l''Ouest', 'Snack / Entrée',
+ 'Chaussons frits farcis au thon, oignons, persil et épices, street food iconique du Sénégal',
+ 245, 10.2, 22.5, 13.2, 1.5, 'FAO West Africa FCT / USDA / CNNTA Sénégal'),
+
+('Mbaxal u Saloum', 'Sénégal', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz au niébé cuisiné en sauce tomate avec poisson fumé, spécialité de la région du Saloum',
+ 172, 9.2, 22.5, 5.2, 3.5, 'FAO West Africa FCT / CNNTA Sénégal'),
+
+('Thiou Guinar', 'Sénégal', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz sénégalais au poulet en sauce tomate et légumes, version allégée et domestique du thiéboudienne',
+ 158, 10.2, 19.8, 4.5, 1.0, 'FAO West Africa FCT / CNNTA Sénégal'),
+
+('Bassi Salté', 'Sénégal', 'Afrique de l''Ouest', 'Plat principal',
+ 'Couscous de mil au lait caillé avec viande de bœuf ou mouton, spécialité festive sénégalaise',
+ 182, 9.0, 25.5, 5.2, 2.0, 'FAO West Africa FCT / CNNTA Sénégal'),
+
+-- ============================================================
+-- SIERRA LEONE
+-- Sources : FAO West Africa FCT / WHO Sierra Leone / USDA
+-- ============================================================
+
+('Cassava Leaves Stew Sierra Leone', 'Sierra Leone', 'Afrique de l''Ouest', 'Plat principal',
+ 'Feuilles de manioc pilées cuites avec viande de bœuf, poisson fumé et huile de palme, plat national',
+ 155, 9.2, 7.8, 9.5, 4.8, 'FAO West Africa FCT / WHO Sierra Leone'),
+
+('Groundnut Soup Sierra Leone', 'Sierra Leone', 'Afrique de l''Ouest', 'Soupe',
+ 'Soupe à la pâte d''arachide avec poulet et légumes, version sierra-léonaise plus légère',
+ 195, 10.8, 9.2, 14.2, 2.5, 'FAO West Africa FCT / WHO Sierra Leone'),
+
+('Jollof Rice Sierra Leone', 'Sierra Leone', 'Afrique de l''Ouest', 'Plat principal',
+ 'Riz sauce tomate épicée avec poulet, version sierra-léonaise avec épices locales et poisson fumé',
+ 148, 8.2, 21.5, 3.8, 1.2, 'FAO West Africa FCT / WHO Sierra Leone'),
+
+('Oleleh', 'Sierra Leone', 'Afrique de l''Ouest', 'Plat / Accompagnement',
+ 'Pudding de niébé mixé et fermenté cuit à la vapeur en feuille de bananier, plat traditionnel',
+ 155, 9.2, 16.5, 5.5, 4.5, 'FAO West Africa FCT / WHO Sierra Leone'),
+
+('Saka Saka Sierra Leone', 'Sierra Leone', 'Afrique de l''Ouest', 'Plat principal',
+ 'Feuilles de manioc et de patate douce pilées avec huile de palme et poisson fumé',
+ 138, 6.2, 10.2, 8.5, 4.8, 'FAO West Africa FCT / WHO Sierra Leone'),
+
+('Fufu Sierra Leone', 'Sierra Leone', 'Afrique de l''Ouest', 'Accompagnement',
+ 'Manioc et plantain pilés en pâte élastique, accompagnement standard des soupes sierra-léonaises',
+ 122, 1.2, 29.0, 0.4, 2.0, 'FAO West Africa FCT / USDA Adaptation'),
+
+-- ============================================================
+-- TOGO (compléments)
+-- Sources : FAO West Africa FCT / Ministère de la Santé Togo / USDA
+-- ============================================================
+
+('Akpan', 'Togo', 'Afrique de l''Ouest', 'Petit-déjeuner / Dessert',
+ 'Bouillie fermentée de maïs au lait caillé sucré, petit-déjeuner et dessert togolais',
+ 95, 3.2, 18.5, 1.2, 1.5, 'FAO West Africa FCT / Ministère Santé Togo'),
+
+('Sauce Gombo Togo', 'Togo', 'Afrique de l''Ouest', 'Sauce / Plat principal',
+ 'Soupe de gombo frais avec poisson fumé, crevettes séchées et huile de palme, accompagne l''akumé',
+ 88, 5.8, 7.2, 4.8, 3.5, 'FAO West Africa FCT / Ministère Santé Togo'),
+
+('Koklo Meme', 'Togo', 'Afrique de l''Ouest', 'Plat principal',
+ 'Poulet grillé entier aux épices togolaises sur braises, servi avec pâte et sauce pimentée',
+ 210, 22.8, 3.2, 12.5, 0.5, 'FAO West Africa FCT / USDA Adaptation'),
+
+('Akumé', 'Togo', 'Afrique de l''Ouest', 'Accompagnement',
+ 'Boule de maïs blanc cuite en pâte lisse et ferme, accompagnement central de la cuisine togolaise',
+ 125, 2.8, 26.8, 0.8, 1.8, 'FAO West Africa FCT / Ministère Santé Togo'),
+
+('Ragout de Mouton Togo', 'Togo', 'Afrique de l''Ouest', 'Plat principal',
+ 'Mouton mijoté aux épices et tomates avec légumes, plat de fête dans tout le Togo',
+ 182, 14.8, 7.2, 10.8, 1.2, 'FAO West Africa FCT / Ministère Santé Togo'),
+
+('Atiéké Crabe Togo', 'Togo', 'Afrique de l''Ouest', 'Plat principal',
+ 'Semoule de manioc fermentée servie avec crabe entier grillé et sauce pimentée, plat côtier lomé',
+ 158, 14.2, 18.5, 4.2, 1.5, 'FAO West Africa FCT / USDA Adaptation');
+
+
+-- ============================================================
+-- MEAL COMPONENTS — LIBERIA
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Feuilles de manioc / isombé (fraîches)', 38 FROM public.meals_master WHERE name = 'Palava Sauce';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 18 FROM public.meals_master WHERE name = 'Palava Sauce';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 18 FROM public.meals_master WHERE name = 'Palava Sauce';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 12 FROM public.meals_master WHERE name = 'Palava Sauce';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Palava Sauce';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 4 FROM public.meals_master WHERE name = 'Palava Sauce';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Palava Sauce';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Manioc frais', 90 FROM public.meals_master WHERE name = 'Dumboy';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Dumboy';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 52 FROM public.meals_master WHERE name = 'Jollof Rice Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poulet (avec peau, cru)', 22 FROM public.meals_master WHERE name = 'Jollof Rice Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 12 FROM public.meals_master WHERE name = 'Jollof Rice Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 6 FROM public.meals_master WHERE name = 'Jollof Rice Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 4 FROM public.meals_master WHERE name = 'Jollof Rice Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 2 FROM public.meals_master WHERE name = 'Jollof Rice Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 2 FROM public.meals_master WHERE name = 'Jollof Rice Liberia';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Mouton / Agneau épaule (cru)', 55 FROM public.meals_master WHERE name = 'Pepper Soup Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 15 FROM public.meals_master WHERE name = 'Pepper Soup Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Pepper Soup Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 8 FROM public.meals_master WHERE name = 'Pepper Soup Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gingembre frais', 8 FROM public.meals_master WHERE name = 'Pepper Soup Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bouillon cube (générique)', 4 FROM public.meals_master WHERE name = 'Pepper Soup Liberia';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Feuilles de manioc / isombé (fraîches)', 55 FROM public.meals_master WHERE name = 'Cassava Leaf Stew Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 15 FROM public.meals_master WHERE name = 'Cassava Leaf Stew Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 15 FROM public.meals_master WHERE name = 'Cassava Leaf Stew Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 8 FROM public.meals_master WHERE name = 'Cassava Leaf Stew Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 4 FROM public.meals_master WHERE name = 'Cassava Leaf Stew Liberia';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 3 FROM public.meals_master WHERE name = 'Cassava Leaf Stew Liberia';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Plantain mûr (cru)', 80 FROM public.meals_master WHERE name = 'Kala';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 15 FROM public.meals_master WHERE name = 'Kala';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Kala';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 3 FROM public.meals_master WHERE name = 'Kala';
+
+-- ============================================================
+-- MEAL COMPONENTS — MALI (compléments)
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 50 FROM public.meals_master WHERE name = 'Sombi Mali';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Lait de vache entier (3,5%)', 38 FROM public.meals_master WHERE name = 'Sombi Mali';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sucre blanc', 10 FROM public.meals_master WHERE name = 'Sombi Mali';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Sombi Mali';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 28 FROM public.meals_master WHERE name = 'Tiguadèguèna';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Beurre d''arachide / Pâte', 22 FROM public.meals_master WHERE name = 'Tiguadèguèna';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Aubergine africaine', 15 FROM public.meals_master WHERE name = 'Tiguadèguèna';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gombo frais', 12 FROM public.meals_master WHERE name = 'Tiguadèguèna';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 10 FROM public.meals_master WHERE name = 'Tiguadèguèna';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Tiguadèguèna';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 5 FROM public.meals_master WHERE name = 'Tiguadèguèna';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 50 FROM public.meals_master WHERE name = 'Riz au Gras Mali';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 25 FROM public.meals_master WHERE name = 'Riz au Gras Mali';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 10 FROM public.meals_master WHERE name = 'Riz au Gras Mali';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Riz au Gras Mali';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 5 FROM public.meals_master WHERE name = 'Riz au Gras Mali';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Riz au Gras Mali';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Fonio (cru)', 88 FROM public.meals_master WHERE name = 'Fonio au Beurre de Karité';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Fonio au Beurre de Karité';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de mil', 52 FROM public.meals_master WHERE name = 'Dégué Mali';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Lait de vache entier (3,5%)', 35 FROM public.meals_master WHERE name = 'Dégué Mali';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sucre blanc', 10 FROM public.meals_master WHERE name = 'Dégué Mali';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Vanille', 3 FROM public.meals_master WHERE name = 'Dégué Mali';
+
+-- ============================================================
+-- MEAL COMPONENTS — MAURITANIE
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz brisé (cru)', 42 FROM public.meals_master WHERE name = 'Thiéboudienne Mauritanienne';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tilapia (cru)', 25 FROM public.meals_master WHERE name = 'Thiéboudienne Mauritanienne';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Concentré de tomate', 8 FROM public.meals_master WHERE name = 'Thiéboudienne Mauritanienne';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 6 FROM public.meals_master WHERE name = 'Thiéboudienne Mauritanienne';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Thiéboudienne Mauritanienne';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Carotte', 5 FROM public.meals_master WHERE name = 'Thiéboudienne Mauritanienne';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Thiéboudienne Mauritanienne';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 3 FROM public.meals_master WHERE name = 'Thiéboudienne Mauritanienne';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de blé T55', 72 FROM public.meals_master WHERE name = 'Assida Mauritanie';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Beurre (doux)', 12 FROM public.meals_master WHERE name = 'Assida Mauritanie';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sucre blanc', 10 FROM public.meals_master WHERE name = 'Assida Mauritanie';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Assida Mauritanie';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Mouton / Agneau épaule (cru)', 85 FROM public.meals_master WHERE name = 'Méchoui Mauritanien';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 8 FROM public.meals_master WHERE name = 'Méchoui Mauritanien';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Cumin (graines)', 4 FROM public.meals_master WHERE name = 'Méchoui Mauritanien';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 3 FROM public.meals_master WHERE name = 'Méchoui Mauritanien';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 48 FROM public.meals_master WHERE name = 'Thiébou Yapp Mauritanien';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Mouton / Agneau épaule (cru)', 28 FROM public.meals_master WHERE name = 'Thiébou Yapp Mauritanien';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 10 FROM public.meals_master WHERE name = 'Thiébou Yapp Mauritanien';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Thiébou Yapp Mauritanien';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 4 FROM public.meals_master WHERE name = 'Thiébou Yapp Mauritanien';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Thiébou Yapp Mauritanien';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Couscous (cru)', 45 FROM public.meals_master WHERE name = 'Harees Mauritanie';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Mouton / Agneau épaule (cru)', 35 FROM public.meals_master WHERE name = 'Harees Mauritanie';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Harees Mauritanie';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Beurre (doux)', 5 FROM public.meals_master WHERE name = 'Harees Mauritanie';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Cumin (graines)', 3 FROM public.meals_master WHERE name = 'Harees Mauritanie';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Harees Mauritanie';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Lait de vache entier (3,5%)', 80 FROM public.meals_master WHERE name = 'Zrig';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sucre blanc', 12 FROM public.meals_master WHERE name = 'Zrig';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 3 FROM public.meals_master WHERE name = 'Zrig';
+
+-- ============================================================
+-- MEAL COMPONENTS — NIGER
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de mil', 88 FROM public.meals_master WHERE name = 'Dambou';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Dambou';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 65 FROM public.meals_master WHERE name = 'Masa Niger';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 18 FROM public.meals_master WHERE name = 'Masa Niger';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sucre blanc', 8 FROM public.meals_master WHERE name = 'Masa Niger';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Masa Niger';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de mil', 55 FROM public.meals_master WHERE name = 'Fura da Nono';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Lait de vache entier (3,5%)', 38 FROM public.meals_master WHERE name = 'Fura da Nono';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gingembre frais', 5 FROM public.meals_master WHERE name = 'Fura da Nono';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poivre noir moulu', 2 FROM public.meals_master WHERE name = 'Fura da Nono';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Mouton / Agneau épaule (cru)', 52 FROM public.meals_master WHERE name = 'Ragout de Mouton Niger';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 18 FROM public.meals_master WHERE name = 'Ragout de Mouton Niger';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 12 FROM public.meals_master WHERE name = 'Ragout de Mouton Niger';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 8 FROM public.meals_master WHERE name = 'Ragout de Mouton Niger';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 5 FROM public.meals_master WHERE name = 'Ragout de Mouton Niger';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 3 FROM public.meals_master WHERE name = 'Ragout de Mouton Niger';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gingembre frais', 2 FROM public.meals_master WHERE name = 'Ragout de Mouton Niger';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de maïs (blanche)', 88 FROM public.meals_master WHERE name = 'Tuo Masara';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Tuo Masara';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 55 FROM public.meals_master WHERE name = 'Kilishi';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Arachides rôties', 20 FROM public.meals_master WHERE name = 'Kilishi';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 10 FROM public.meals_master WHERE name = 'Kilishi';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Paprika doux', 8 FROM public.meals_master WHERE name = 'Kilishi';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gingembre frais', 4 FROM public.meals_master WHERE name = 'Kilishi';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Kilishi';
+
+-- ============================================================
+-- MEAL COMPONENTS — NIGERIA (compléments)
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 22 FROM public.meals_master WHERE name = 'Banga Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 28 FROM public.meals_master WHERE name = 'Banga Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 15 FROM public.meals_master WHERE name = 'Banga Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crevettes séchées', 8 FROM public.meals_master WHERE name = 'Banga Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Banga Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 8 FROM public.meals_master WHERE name = 'Banga Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 4 FROM public.meals_master WHERE name = 'Banga Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bouillon cube (générique)', 5 FROM public.meals_master WHERE name = 'Banga Soup';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 28 FROM public.meals_master WHERE name = 'Ogbono Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 18 FROM public.meals_master WHERE name = 'Ogbono Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 12 FROM public.meals_master WHERE name = 'Ogbono Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Amarante / Épinards africains', 15 FROM public.meals_master WHERE name = 'Ogbono Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Ogbono Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crevettes séchées', 8 FROM public.meals_master WHERE name = 'Ogbono Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 6 FROM public.meals_master WHERE name = 'Ogbono Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bouillon cube (générique)', 3 FROM public.meals_master WHERE name = 'Ogbono Soup';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Amarante / Épinards africains', 42 FROM public.meals_master WHERE name = 'Efo Riro';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 15 FROM public.meals_master WHERE name = 'Efo Riro';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 18 FROM public.meals_master WHERE name = 'Efo Riro';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 10 FROM public.meals_master WHERE name = 'Efo Riro';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 8 FROM public.meals_master WHERE name = 'Efo Riro';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 5 FROM public.meals_master WHERE name = 'Efo Riro';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crevettes séchées', 5 FROM public.meals_master WHERE name = 'Efo Riro';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 5 FROM public.meals_master WHERE name = 'Efo Riro';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Efo Riro';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Amarante / Épinards africains', 38 FROM public.meals_master WHERE name = 'Oha Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 18 FROM public.meals_master WHERE name = 'Oha Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 20 FROM public.meals_master WHERE name = 'Oha Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crevettes séchées', 8 FROM public.meals_master WHERE name = 'Oha Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Oha Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 5 FROM public.meals_master WHERE name = 'Oha Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bouillon cube (générique)', 3 FROM public.meals_master WHERE name = 'Oha Soup';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Manioc frais', 45 FROM public.meals_master WHERE name = 'Abacha';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 18 FROM public.meals_master WHERE name = 'Abacha';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 15 FROM public.meals_master WHERE name = 'Abacha';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Abacha';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crevettes séchées', 5 FROM public.meals_master WHERE name = 'Abacha';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 4 FROM public.meals_master WHERE name = 'Abacha';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Abacha';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Amarante / Épinards africains', 35 FROM public.meals_master WHERE name = 'Edikaikong Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 18 FROM public.meals_master WHERE name = 'Edikaikong Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 18 FROM public.meals_master WHERE name = 'Edikaikong Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crevettes (crues)', 10 FROM public.meals_master WHERE name = 'Edikaikong Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 8 FROM public.meals_master WHERE name = 'Edikaikong Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 5 FROM public.meals_master WHERE name = 'Edikaikong Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 4 FROM public.meals_master WHERE name = 'Edikaikong Soup';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crevettes séchées', 2 FROM public.meals_master WHERE name = 'Edikaikong Soup';
+
+-- ============================================================
+-- MEAL COMPONENTS — SÉNÉGAL (compléments)
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de mil', 38 FROM public.meals_master WHERE name = 'Ngalakh';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Beurre d''arachide / Pâte', 25 FROM public.meals_master WHERE name = 'Ngalakh';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sucre blanc', 18 FROM public.meals_master WHERE name = 'Ngalakh';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Lait de vache entier (3,5%)', 12 FROM public.meals_master WHERE name = 'Ngalakh';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Vanille', 4 FROM public.meals_master WHERE name = 'Ngalakh';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Noix de coco râpée (sèche)', 3 FROM public.meals_master WHERE name = 'Ngalakh';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de blé T55', 38 FROM public.meals_master WHERE name = 'Pastels Sénégalais';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Thon (en conserve, égoutté)', 28 FROM public.meals_master WHERE name = 'Pastels Sénégalais';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 18 FROM public.meals_master WHERE name = 'Pastels Sénégalais';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Pastels Sénégalais';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Pastels Sénégalais';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Persil frais', 3 FROM public.meals_master WHERE name = 'Pastels Sénégalais';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 38 FROM public.meals_master WHERE name = 'Mbaxal u Saloum';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Niébé / Cowpea (sec)', 25 FROM public.meals_master WHERE name = 'Mbaxal u Saloum';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 15 FROM public.meals_master WHERE name = 'Mbaxal u Saloum';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 8 FROM public.meals_master WHERE name = 'Mbaxal u Saloum';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 6 FROM public.meals_master WHERE name = 'Mbaxal u Saloum';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 5 FROM public.meals_master WHERE name = 'Mbaxal u Saloum';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 3 FROM public.meals_master WHERE name = 'Mbaxal u Saloum';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 48 FROM public.meals_master WHERE name = 'Thiou Guinar';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poulet (cuisse sans peau, cru)', 28 FROM public.meals_master WHERE name = 'Thiou Guinar';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 10 FROM public.meals_master WHERE name = 'Thiou Guinar';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Thiou Guinar';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 4 FROM public.meals_master WHERE name = 'Thiou Guinar';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Thiou Guinar';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Couscous (cru)', 40 FROM public.meals_master WHERE name = 'Bassi Salté';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Mouton / Agneau épaule (cru)', 25 FROM public.meals_master WHERE name = 'Bassi Salté';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Lait de vache entier (3,5%)', 18 FROM public.meals_master WHERE name = 'Bassi Salté';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Bassi Salté';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Beurre (doux)', 5 FROM public.meals_master WHERE name = 'Bassi Salté';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sucre blanc', 4 FROM public.meals_master WHERE name = 'Bassi Salté';
+
+-- ============================================================
+-- MEAL COMPONENTS — SIERRA LEONE
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Feuilles de manioc / isombé (fraîches)', 50 FROM public.meals_master WHERE name = 'Cassava Leaves Stew Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 15 FROM public.meals_master WHERE name = 'Cassava Leaves Stew Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Bœuf maigre (cru)', 15 FROM public.meals_master WHERE name = 'Cassava Leaves Stew Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 10 FROM public.meals_master WHERE name = 'Cassava Leaves Stew Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 5 FROM public.meals_master WHERE name = 'Cassava Leaves Stew Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 3 FROM public.meals_master WHERE name = 'Cassava Leaves Stew Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Cassava Leaves Stew Sierra Leone';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Arachides / Cacahuètes (crues)', 28 FROM public.meals_master WHERE name = 'Groundnut Soup Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poulet (avec peau, cru)', 35 FROM public.meals_master WHERE name = 'Groundnut Soup Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 15 FROM public.meals_master WHERE name = 'Groundnut Soup Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Groundnut Soup Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 6 FROM public.meals_master WHERE name = 'Groundnut Soup Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gingembre frais', 4 FROM public.meals_master WHERE name = 'Groundnut Soup Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Groundnut Soup Sierra Leone';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Riz blanc (cru)', 52 FROM public.meals_master WHERE name = 'Jollof Rice Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poulet (avec peau, cru)', 22 FROM public.meals_master WHERE name = 'Jollof Rice Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 12 FROM public.meals_master WHERE name = 'Jollof Rice Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 5 FROM public.meals_master WHERE name = 'Jollof Rice Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 5 FROM public.meals_master WHERE name = 'Jollof Rice Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 4 FROM public.meals_master WHERE name = 'Jollof Rice Sierra Leone';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Niébé / Cowpea (sec)', 58 FROM public.meals_master WHERE name = 'Oleleh';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 18 FROM public.meals_master WHERE name = 'Oleleh';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 12 FROM public.meals_master WHERE name = 'Oleleh';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 8 FROM public.meals_master WHERE name = 'Oleleh';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 4 FROM public.meals_master WHERE name = 'Oleleh';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Feuilles de manioc / isombé (fraîches)', 38 FROM public.meals_master WHERE name = 'Saka Saka Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Feuilles de manioc / isombé (fraîches)', 18 FROM public.meals_master WHERE name = 'Saka Saka Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 18 FROM public.meals_master WHERE name = 'Saka Saka Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 15 FROM public.meals_master WHERE name = 'Saka Saka Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 6 FROM public.meals_master WHERE name = 'Saka Saka Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 3 FROM public.meals_master WHERE name = 'Saka Saka Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Saka Saka Sierra Leone';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Manioc frais', 60 FROM public.meals_master WHERE name = 'Fufu Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Plantain vert (cru)', 38 FROM public.meals_master WHERE name = 'Fufu Sierra Leone';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Fufu Sierra Leone';
+
+-- ============================================================
+-- MEAL COMPONENTS — TOGO (compléments)
+-- ============================================================
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de maïs (blanche)', 55 FROM public.meals_master WHERE name = 'Akpan';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Lait de vache entier (3,5%)', 32 FROM public.meals_master WHERE name = 'Akpan';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sucre blanc', 10 FROM public.meals_master WHERE name = 'Akpan';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 3 FROM public.meals_master WHERE name = 'Akpan';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gombo frais', 42 FROM public.meals_master WHERE name = 'Sauce Gombo Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poisson fumé / Kong (générique)', 20 FROM public.meals_master WHERE name = 'Sauce Gombo Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de palme rouge', 15 FROM public.meals_master WHERE name = 'Sauce Gombo Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crevettes séchées', 8 FROM public.meals_master WHERE name = 'Sauce Gombo Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Sauce Gombo Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 5 FROM public.meals_master WHERE name = 'Sauce Gombo Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 2 FROM public.meals_master WHERE name = 'Sauce Gombo Togo';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Poulet (avec peau, cru)', 70 FROM public.meals_master WHERE name = 'Koklo Meme';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 10 FROM public.meals_master WHERE name = 'Koklo Meme';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 8 FROM public.meals_master WHERE name = 'Koklo Meme';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 5 FROM public.meals_master WHERE name = 'Koklo Meme';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gingembre frais', 4 FROM public.meals_master WHERE name = 'Koklo Meme';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 3 FROM public.meals_master WHERE name = 'Koklo Meme';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Farine de maïs (blanche)', 88 FROM public.meals_master WHERE name = 'Akumé';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Sel (chlorure de sodium)', 2 FROM public.meals_master WHERE name = 'Akumé';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Mouton / Agneau épaule (cru)', 50 FROM public.meals_master WHERE name = 'Ragout de Mouton Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 18 FROM public.meals_master WHERE name = 'Ragout de Mouton Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 12 FROM public.meals_master WHERE name = 'Ragout de Mouton Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile d''arachide', 8 FROM public.meals_master WHERE name = 'Ragout de Mouton Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Ail', 5 FROM public.meals_master WHERE name = 'Ragout de Mouton Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment séché', 4 FROM public.meals_master WHERE name = 'Ragout de Mouton Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gingembre frais', 3 FROM public.meals_master WHERE name = 'Ragout de Mouton Togo';
+
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Gari (semoule manioc fermentée)', 38 FROM public.meals_master WHERE name = 'Atiéké Crabe Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Crabe (cru)', 40 FROM public.meals_master WHERE name = 'Atiéké Crabe Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Oignon rouge', 8 FROM public.meals_master WHERE name = 'Atiéké Crabe Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Tomate fraîche', 6 FROM public.meals_master WHERE name = 'Atiéké Crabe Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Piment frais rouge', 5 FROM public.meals_master WHERE name = 'Atiéké Crabe Togo';
+INSERT INTO public.meal_components_master (meal_id, component_type, component_name, percentage_estimate)
+SELECT id, 'ingredient', 'Huile de tournesol', 3 FROM public.meals_master WHERE name = 'Atiéké Crabe Togo';
