@@ -1207,7 +1207,7 @@ VALUES
 -- Sources : FAO West Africa FCT / MRC Gambia / USDA
 -- ============================================================
 
-('Superkanja', 'Gambie', 'Afrique de l''Ouest', 'Plat principal',
+('Soupe kanja', 'Gambie', 'Afrique de l''Ouest', 'Plat principal',
  'Soupe épaisse au gombo avec huile de palme, poisson fumé et légumes, plat national gambien',
  148, 9.2, 8.5, 8.8, 4.2, 'FAO West Africa FCT / MRC Gambia'),
 
@@ -1219,7 +1219,7 @@ VALUES
  'Viande de bœuf ou chèvre grillée sur braises aux épices, accompagnée de pain et oignons',
  215, 23.5, 2.2, 12.5, 0.2, 'USDA FoodData Central / MRC Gambia'),
 
-('Cheré', 'Gambie', 'Afrique de l''Ouest', 'Accompagnement / Dessert',
+('Chéré', 'Gambie', 'Afrique de l''Ouest', 'Accompagnement / Dessert',
  'Couscous de mil cuit à la vapeur avec lait caillé et sucre, plat festif gambien',
  158, 4.5, 30.2, 2.8, 2.0, 'FAO West Africa FCT / MRC Gambia'),
 
