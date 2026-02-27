@@ -100,18 +100,20 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ── Loading ── */
+  /* ── Loading skeleton ── */
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-32">
-        <span
-          className="font-black text-2xl tracking-[.2em]"
-          style={{ fontFamily:"'Courier New',monospace" }}
-        >
-          <span style={{ color:"#8b949e" }}>L</span>
-          <span className="lixum-x">X</span>
-        </span>
-        <div className="lixum-spin" />
+      <div className="flex flex-col items-center px-3 pt-5 pb-10 md:px-7 md:pt-7 min-h-full">
+        <div className="w-full max-w-3xl flex justify-between items-center mb-6 md:mb-8">
+          <div className="lixum-skeleton h-8 w-36 rounded-2xl" />
+          <div className="lixum-skeleton h-6 w-28 rounded-xl" />
+        </div>
+        <div className="lixum-skeleton w-full max-w-3xl mb-5 rounded-[2rem]" style={{ height:"14rem" }} />
+        <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
+          {[0,1,2,3].map((i) => (
+            <div key={i} className="lixum-skeleton rounded-[1.75rem]" style={{ height:"13rem" }} />
+          ))}
+        </div>
       </div>
     );
   }
