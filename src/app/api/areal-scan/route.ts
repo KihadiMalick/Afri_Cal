@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase-server";
+import { createServerClient } from "@/lib/supabase-server";
 
 /* ══════════════════════════════════════════════════════════
    LIXUM AREAL SCAN API
@@ -14,7 +14,7 @@ export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = createServerClient();
 
     /* Auth check */
     const { data: { user } } = await supabase.auth.getUser();
