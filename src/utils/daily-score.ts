@@ -27,8 +27,8 @@ export function calculateDailyScore(
  * Retourne la couleur du score
  */
 export function getScoreColor(score: number): string {
-  if (score >= 100) return "#10b981"; // primary green
-  if (score >= 70) return "#fbbf24";  // accent gold
-  if (score >= 40) return "#f59e0b";  // orange
+  if (score >= 100) return "#D98E4F"; // terracotta
+  if (score >= 70) return "#E4C06E";  // gold
+  if (score >= 40) return "#B8723A";  // terracotta-dark
   return "#ef4444";                    // red
 }

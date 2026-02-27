@@ -51,8 +51,8 @@ export default function CaloriesChart({ data, locale }: CaloriesChartProps) {
       <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-auto">
         <defs>
           <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+            <stop offset="0%" stopColor="#D98E4F" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#D98E4F" stopOpacity="0" />
           </linearGradient>
         </defs>
 
@@ -63,7 +63,7 @@ export default function CaloriesChart({ data, locale }: CaloriesChartProps) {
         <path
           d={targetPath}
           fill="none"
-          stroke="#fbbf24"
+          stroke="#303F9F"
           strokeWidth="2"
           strokeDasharray="6 4"
           opacity="0.7"
@@ -73,7 +73,7 @@ export default function CaloriesChart({ data, locale }: CaloriesChartProps) {
         <path
           d={consumedPath}
           fill="none"
-          stroke="#10b981"
+          stroke="#D98E4F"
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -86,8 +86,8 @@ export default function CaloriesChart({ data, locale }: CaloriesChartProps) {
             cx={padding.left + i * xStep}
             cy={toY(d.consumed)}
             r="3"
-            fill="#10b981"
-            stroke="#1a1a1f"
+            fill="#D98E4F"
+            stroke="#F7F4E8"
             strokeWidth="1.5"
           />
         ))}
@@ -102,7 +102,7 @@ export default function CaloriesChart({ data, locale }: CaloriesChartProps) {
               x={padding.left + i * xStep}
               y={svgH - 5}
               textAnchor="middle"
-              fill="#7a7a88"
+              fill="#A67860"
               fontSize="10"
             >
               {label}
@@ -112,13 +112,13 @@ export default function CaloriesChart({ data, locale }: CaloriesChartProps) {
       </svg>
 
       {/* Legend */}
-      <div className="flex gap-4 mt-2 text-xs text-dark-100">
+      <div className="flex gap-4 mt-2 text-xs text-brand-brown-light">
         <span className="flex items-center gap-1">
-          <span className="w-3 h-[2px] bg-primary-500 inline-block" />
+          <span className="w-3 h-[2px] bg-brand-terracotta inline-block" />
           {locale === "fr" ? "Consomme" : "Consumed"}
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-3 h-[2px] bg-accent-400 inline-block border-dashed" style={{ borderTopWidth: 2, borderStyle: "dashed" }} />
+          <span className="w-3 h-[2px] bg-brand-indigo inline-block border-dashed" style={{ borderTopWidth: 2, borderStyle: "dashed" }} />
           {locale === "fr" ? "Objectif" : "Target"}
         </span>
       </div>

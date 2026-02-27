@@ -219,10 +219,10 @@ export default function HomeScanWidget({
     return (
       <div className="card text-center py-8">
         <p className="text-2xl mb-2">&#x1F451;</p>
-        <p className="text-sm font-semibold text-gray-100 mb-1">
+        <p className="text-sm font-semibold text-brand-brown-dark mb-1">
           {locale === "fr" ? "Limite de scans atteinte" : "Scan limit reached"}
         </p>
-        <p className="text-xs text-dark-200">
+        <p className="text-xs text-brand-brown-pale">
           {locale === "fr"
             ? "3 scans gratuits par jour. Revenez demain !"
             : "3 free scans per day. Come back tomorrow!"}
@@ -264,77 +264,73 @@ export default function HomeScanWidget({
   }
 
   return (
-    <div className="card space-y-4">
-      {/* Header with scan counter */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-bold text-gray-100">
-            {locale === "fr" ? "Scanner un repas" : "Scan a meal"}
-          </h2>
-          <p className="text-xs text-dark-200 mt-0.5">
-            {locale === "fr"
-              ? "Identifiez vos calories avec l'IA"
-              : "Identify your calories with AI"}
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="flex gap-1">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  i <= scansUsed ? "bg-primary-400" : "bg-dark-500"
-                }`}
-              />
-            ))}
-          </div>
-          <span className="text-xs text-dark-200">
-            {scansRemaining === Infinity
-              ? locale === "fr"
-                ? "Illimite"
-                : "Unlimited"
-              : `${scansRemaining} ${locale === "fr" ? "restant" : "left"}${scansRemaining > 1 ? "s" : ""}`}
-          </span>
-        </div>
-      </div>
-
+    <div className="space-y-4">
       {/* Error message */}
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-sm">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-500 text-sm">
           {error}
         </div>
       )}
 
       {/* Image preview */}
       {step === "preview" && imagePreview && (
-        <div className="relative rounded-2xl overflow-hidden border border-dark-500">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imagePreview}
-            alt="Apercu"
-            className="w-full aspect-video object-cover"
-          />
+        <div className="card space-y-4">
+          <div className="relative rounded-2xl overflow-hidden border border-brand-brown-pale/30">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imagePreview}
+              alt="Apercu"
+              className="w-full aspect-video object-cover"
+            />
+            <button
+              onClick={handleReset}
+              className="absolute top-3 right-3 bg-white/80 text-brand-brown-dark rounded-full w-8 h-8 flex items-center justify-center text-sm backdrop-blur-sm"
+            >
+              &#x2715;
+            </button>
+          </div>
           <button
-            onClick={handleReset}
-            className="absolute top-3 right-3 bg-dark-800/80 text-gray-100 rounded-full w-8 h-8 flex items-center justify-center text-sm backdrop-blur-sm"
+            onClick={handleScan}
+            className="btn-primary w-full text-center flex items-center justify-center gap-2"
           >
-            &#x2715;
+            <span>&#x2728;</span>
+            <span>
+              {locale === "fr" ? "Analyser avec l'IA" : "Analyze with AI"}
+            </span>
           </button>
         </div>
       )}
 
-      {/* Camera / Gallery buttons (idle state) */}
+      {/* SCAN FOOD — Big central button (idle state) */}
       {step === "idle" && (
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col items-center justify-center gap-2 bg-dark-700 hover:bg-dark-600 border border-dark-500 hover:border-primary-500/40 rounded-2xl p-4 cursor-pointer transition-all">
-            <div className="w-12 h-12 rounded-full bg-primary-500/10 flex items-center justify-center">
-              <span className="text-2xl">&#x1F4F7;</span>
+        <div className="flex flex-col items-center gap-4 py-2">
+          {/* Scan counter */}
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    i <= scansUsed ? "bg-brand-terracotta" : "bg-brand-cream-deeper"
+                  }`}
+                />
+              ))}
             </div>
-            <span className="text-sm font-medium text-gray-100">
-              {locale === "fr" ? "Camera" : "Camera"}
+            <span className="text-xs text-brand-brown-pale font-semibold">
+              {scansRemaining === Infinity
+                ? locale === "fr"
+                  ? "Illimite"
+                  : "Unlimited"
+                : `${scansRemaining} ${locale === "fr" ? "restant" : "left"}${scansRemaining > 1 ? "s" : ""}`}
             </span>
-            <span className="text-xs text-dark-200 text-center">
-              {locale === "fr" ? "Prendre une photo" : "Take a photo"}
+          </div>
+
+          {/* Big round SCAN button */}
+          <label className="btn-scan w-40 h-40 flex flex-col items-center justify-center gap-2 cursor-pointer">
+            <div className="btn-scan-ring" />
+            <span className="text-4xl relative z-10">&#x1F4F7;</span>
+            <span className="text-sm font-extrabold text-white relative z-10 uppercase tracking-wider">
+              {locale === "fr" ? "Scanner" : "Scan Food"}
             </span>
             <input
               ref={cameraInputRef}
@@ -346,16 +342,14 @@ export default function HomeScanWidget({
             />
           </label>
 
-          <label className="flex flex-col items-center justify-center gap-2 bg-dark-700 hover:bg-dark-600 border border-dark-500 hover:border-primary-500/40 rounded-2xl p-4 cursor-pointer transition-all">
-            <div className="w-12 h-12 rounded-full bg-accent-500/10 flex items-center justify-center">
-              <span className="text-2xl">&#x1F5BC;&#xFE0F;</span>
-            </div>
-            <span className="text-sm font-medium text-gray-100">
-              {locale === "fr" ? "Galerie" : "Gallery"}
-            </span>
-            <span className="text-xs text-dark-200 text-center">
-              {locale === "fr" ? "Choisir une image" : "Choose an image"}
-            </span>
+          <p className="text-xs text-brand-brown-pale font-medium">
+            {locale === "fr" ? "Identifiez vos calories avec l'IA" : "Identify your calories with AI"}
+          </p>
+
+          {/* Gallery option below */}
+          <label className="flex items-center gap-2 text-sm text-brand-terracotta font-semibold cursor-pointer hover:underline">
+            <span>&#x1F5BC;&#xFE0F;</span>
+            <span>{locale === "fr" ? "Choisir depuis la galerie" : "Choose from gallery"}</span>
             <input
               ref={galleryInputRef}
               type="file"
@@ -365,19 +359,6 @@ export default function HomeScanWidget({
             />
           </label>
         </div>
-      )}
-
-      {/* Scan button */}
-      {step === "preview" && imagePreview && (
-        <button
-          onClick={handleScan}
-          className="btn-primary w-full text-center flex items-center justify-center gap-2"
-        >
-          <span>&#x2728;</span>
-          <span>
-            {locale === "fr" ? "Analyser avec l'IA" : "Analyze with AI"}
-          </span>
-        </button>
       )}
     </div>
   );

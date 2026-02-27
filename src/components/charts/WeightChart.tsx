@@ -44,7 +44,7 @@ export default function WeightChart({ data, locale }: WeightChartProps) {
   // Trend direction
   const firstW = data[0].weight;
   const lastW = data[data.length - 1].weight;
-  const trendColor = lastW < firstW ? "#10b981" : lastW > firstW ? "#ef4444" : "#fbbf24";
+  const trendColor = lastW < firstW ? "#D98E4F" : lastW > firstW ? "#ef4444" : "#E4C06E";
 
   return (
     <div className="w-full">
@@ -63,8 +63,8 @@ export default function WeightChart({ data, locale }: WeightChartProps) {
           return (
             <g key={`y-${pct}`}>
               <line x1={padding.left} y1={y} x2={svgW - padding.right} y2={y}
-                stroke="#2a2a32" strokeWidth="1" />
-              <text x={padding.left - 5} y={y + 4} textAnchor="end" fill="#7a7a88" fontSize="10">
+                stroke="#EDE8D0" strokeWidth="1" />
+              <text x={padding.left - 5} y={y + 4} textAnchor="end" fill="#A67860" fontSize="10">
                 {Math.round(val * 10) / 10}
               </text>
             </g>
@@ -92,7 +92,7 @@ export default function WeightChart({ data, locale }: WeightChartProps) {
             cy={toY(d.weight)}
             r="3.5"
             fill={trendColor}
-            stroke="#1a1a1f"
+            stroke="#F7F4E8"
             strokeWidth="1.5"
           />
         ))}
@@ -106,7 +106,7 @@ export default function WeightChart({ data, locale }: WeightChartProps) {
               x={padding.left + i * xStep}
               y={svgH - 5}
               textAnchor="middle"
-              fill="#7a7a88"
+              fill="#A67860"
               fontSize="10"
             >
               {d.date.slice(5)}
@@ -115,7 +115,7 @@ export default function WeightChart({ data, locale }: WeightChartProps) {
         })}
       </svg>
 
-      <div className="flex justify-between text-xs text-dark-100 mt-1">
+      <div className="flex justify-between text-xs text-brand-brown-light mt-1">
         <span>{locale === "fr" ? "Debut" : "Start"}: {firstW} kg</span>
         <span>{locale === "fr" ? "Actuel" : "Current"}: {lastW} kg</span>
       </div>
