@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { getDictionary, isValidLocale } from "@/i18n";
 import { GLASS_CARD } from "@/components/lixum/LixumShell";
+import { useTheme } from "@/components/lixum/ThemeContext";
 import type { UserProfile } from "@/types";
 
 export default function ProfilePage() {
@@ -14,6 +15,9 @@ export default function ProfilePage() {
   const locale = isValidLocale(params?.locale as string) ? (params.locale as "fr" | "en") : "fr";
   const t      = getDictionary(locale);
   const supabase = createClient();
+
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
 
   const [profile,   setProfile]   = useState<UserProfile | null>(null);
   const [userEmail, setUserEmail] = useState("");
@@ -41,8 +45,16 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-32">
-        <div className="lixum-spin" />
+      <div className="flex flex-col items-center px-3 pt-5 pb-10 md:px-7 md:pt-7 min-h-full">
+        <div className="w-full max-w-lg">
+          <div className="mb-6">
+            <div className="lixum-skeleton h-9 w-36 rounded-2xl mb-2" />
+            <div className="lixum-skeleton h-4 w-48 rounded-xl" />
+          </div>
+          <div className="lixum-skeleton rounded-[1.75rem] mb-5" style={{ height:"12rem" }} />
+          <div className="lixum-skeleton rounded-[1.75rem] mb-5" style={{ height:"14rem" }} />
+          <div className="lixum-skeleton rounded-[1.75rem]" style={{ height:"12rem" }} />
+        </div>
       </div>
     );
   }
@@ -144,6 +156,28 @@ export default function ProfilePage() {
             >
               {locale.toUpperCase()}
             </span>
+          </div>
+
+          {/* Theme toggle */}
+          <div
+            className="flex justify-between items-center py-3 mb-3"
+            style={{ borderBottom:"1px solid rgba(255,255,255,.05)" }}
+          >
+            <span className="text-sm text-white/60 font-medium">
+              {locale === "fr" ? "Thème" : "Theme"}
+            </span>
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-2 text-xs font-black tracking-widest px-3 py-1 rounded-lg transition-all"
+              style={{
+                background: isDark ? "rgba(255,255,255,.06)"       : "rgba(5,150,80,.09)",
+                border:     isDark ? "1px solid rgba(255,255,255,.12)" : "1px solid rgba(5,150,80,.22)",
+                color:      isDark ? "rgba(255,255,255,.80)"        : "#047857",
+              }}
+            >
+              <span>{isDark ? "🌙" : "☀️"}</span>
+              <span>{isDark ? (locale === "fr" ? "SOMBRE" : "DARK") : (locale === "fr" ? "CLAIR" : "LIGHT")}</span>
+            </button>
           </div>
 
           {/* Edit profile */}

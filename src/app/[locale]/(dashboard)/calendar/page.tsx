@@ -29,8 +29,12 @@ export default function CalendarPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-32">
-        <div className="lixum-spin" />
+      <div className="flex flex-col items-center px-3 pt-5 pb-10 md:px-7 md:pt-7 min-h-full">
+        <div className="w-full max-w-3xl mb-6">
+          <div className="lixum-skeleton h-9 w-44 rounded-2xl mb-2" />
+          <div className="lixum-skeleton h-4 w-64 rounded-xl" />
+        </div>
+        <div className="lixum-skeleton w-full max-w-3xl rounded-[1.75rem]" style={{ height:"28rem" }} />
       </div>
     );
   }

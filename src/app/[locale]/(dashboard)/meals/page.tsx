@@ -57,8 +57,20 @@ export default function MealsPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-32">
-        <div className="lixum-spin" />
+      <div className="flex flex-col items-center px-3 pt-5 pb-10 md:px-7 md:pt-7 min-h-full">
+        <div className="w-full max-w-3xl flex justify-between items-start mb-6">
+          <div className="lixum-skeleton h-9 w-36 rounded-2xl" />
+          <div className="lixum-skeleton h-9 w-28 rounded-xl" />
+        </div>
+        <div className="w-full max-w-3xl flex gap-3 mb-5">
+          <div className="lixum-skeleton h-10 w-48 rounded-xl" />
+          <div className="lixum-skeleton h-10 w-28 rounded-xl" />
+        </div>
+        <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[0,1,2,3].map((i) => (
+            <div key={i} className="lixum-skeleton rounded-[1.75rem]" style={{ height:"11rem" }} />
+          ))}
+        </div>
       </div>
     );
   }
