@@ -257,10 +257,10 @@ export default function DashboardPage() {
             style={{ borderTop:"1px solid rgba(255,255,255,.06)" }}
           >
             {[
-              { label: locale === "fr" ? "Brûlés"   : "Burned",  value: todayBurned,             unit:"kcal", color:"#60a5fa"  },
-              { label: locale === "fr" ? "Restants" : "Left",    value: remaining,               unit:"kcal", color: remaining >= 0 ? "#00ff9d" : "#f87171" },
-              { label: "BMR",                                     value: Math.round(profile.bmr), unit:"kcal", color:"rgba(255,255,255,.75)" },
-              { label: locale === "fr" ? "Série"    : "Streak",  value: streak,                  unit: locale === "fr" ? "j" : "d", color:"#00ff9d" },
+              { label: locale === "fr" ? "Calories Brûlées" : "Cal. Burned",          value: todayBurned,             unit:"kcal", color:"#60a5fa"  },
+              { label: locale === "fr" ? "Restants"          : "Left",              value: remaining,               unit:"kcal", color: remaining >= 0 ? "#00ff9d" : "#f87171" },
+              { label: locale === "fr" ? "Métabolisme (BMR)" : "Base Metab. (BMR)", value: Math.round(profile.bmr), unit:"kcal", color:"rgba(255,255,255,.75)" },
+              { label: locale === "fr" ? "Score de Vitalité" : "Vitality Score",    value: streak,                  unit: locale === "fr" ? "j" : "d", color:"#00ff9d" },
             ].map((stat, i) => (
               <div
                 key={stat.label}

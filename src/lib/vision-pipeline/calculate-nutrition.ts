@@ -91,8 +91,16 @@ export function calculateNutrition(
     (averageDetectionConfidence * 0.4 + matchRatio * 0.6) * 100
   ) / 100;
 
+  /*
+   * LIXUM Accuracy Engine — strict calorie formula:
+   *   Calories Consommées = (Protéines × 4) + (Glucides × 4) + (Lipides × 9)
+   * This recalculates total_kcal from the macros to guarantee internal coherence.
+   * The macro-derived value replaces the raw kcal_per_100g sum.
+   */
+  const lixumKcal = totalProtein * 4 + totalCarbs * 4 + totalFat * 9;
+
   return {
-    total_kcal: Math.round(totalKcal),
+    total_kcal: Math.round(lixumKcal),
     total_protein: Math.round(totalProtein * 10) / 10,
     total_carbs: Math.round(totalCarbs * 10) / 10,
     total_fat: Math.round(totalFat * 10) / 10,

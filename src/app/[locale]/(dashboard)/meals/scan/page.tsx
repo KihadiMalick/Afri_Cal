@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { isValidLocale } from "@/i18n";
 import { checkScanLimit, incrementScanCount } from "@/utils/scan-limits";
@@ -250,6 +251,36 @@ export default function MealScanPage() {
       {/* Step: Upload */}
       {step === "upload" && (
         <div className="space-y-4">
+          {/* LIXUM Areal Scan 3D button */}
+          <Link
+            href={`/${locale}/meals/areal-scan`}
+            className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl mb-3 transition-all hover:brightness-110"
+            style={{
+              background: "linear-gradient(135deg,rgba(0,255,157,.10) 0%,rgba(0,255,157,.04) 100%)",
+              border: "1px solid rgba(0,255,157,.28)",
+              boxShadow: "0 0 18px rgba(0,255,157,.08)",
+            }}
+          >
+            <span className="text-2xl">🔬</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold" style={{ color: "#00ff9d" }}>
+                LIXUM Areal Scan 3D{" "}
+                <span
+                  className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                  style={{ background: "rgba(0,255,157,.14)", color: "#00ff9d" }}
+                >
+                  NOUVEAU
+                </span>
+              </p>
+              <p className="text-xs text-white/50 font-medium truncate">
+                {locale === "fr"
+                  ? "Scanner spatial 3D — précision maximale"
+                  : "3D spatial scan — maximum accuracy"}
+              </p>
+            </div>
+            <span style={{ color: "rgba(0,255,157,.6)", fontSize: 18 }}>→</span>
+          </Link>
+
           {imagePreview ? (
             <div className="relative rounded-2xl overflow-hidden border border-dark-500">
               {/* eslint-disable-next-line @next/next/no-img-element */}
