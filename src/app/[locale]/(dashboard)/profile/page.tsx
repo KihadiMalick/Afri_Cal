@@ -5,36 +5,29 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { getDictionary, isValidLocale } from "@/i18n";
+import { GLASS_CARD } from "@/components/lixum/LixumShell";
 import type { UserProfile } from "@/types";
 
 export default function ProfilePage() {
   const params = useParams();
   const router = useRouter();
   const locale = isValidLocale(params?.locale as string) ? (params.locale as "fr" | "en") : "fr";
-  const t = getDictionary(locale);
+  const t      = getDictionary(locale);
   const supabase = createClient();
 
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile,   setProfile]   = useState<UserProfile | null>(null);
   const [userEmail, setUserEmail] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading,   setLoading]   = useState(true);
 
   useEffect(() => {
     async function loadProfile() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
       setUserEmail(user.email || "");
-
-      const { data } = await supabase
-        .from("users_profile")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
-
+      const { data } = await supabase.from("users_profile").select("*").eq("user_id", user.id).single();
       if (data) setProfile(data as UserProfile);
       setLoading(false);
     }
-
     loadProfile();
   }, [supabase]);
 
@@ -44,79 +37,141 @@ export default function ProfilePage() {
     router.refresh();
   }
 
+  const displayName = profile?.full_name || userEmail.split("@")[0];
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="loader" />
+      <div className="flex items-center justify-center py-32">
+        <div className="lixum-spin" />
       </div>
     );
   }
 
+  const statRows = profile ? [
+    { label: t.dashboard.target, value: `${profile.daily_calorie_target} kcal`, color:"#f59e0b" },
+    { label: t.dashboard.bmr,    value: `${Math.round(profile.bmr)} kcal`,      color:"rgba(255,255,255,.80)" },
+    { label: t.dashboard.tdee,   value: `${Math.round(profile.tdee)} kcal`,     color:"rgba(255,255,255,.80)" },
+    { label: t.onboarding.weight,value: `${profile.weight} kg`,                 color:"#00ff9d" },
+    { label: t.onboarding.height,value: `${profile.height} cm`,                 color:"rgba(255,255,255,.80)" },
+  ] : [];
+
   return (
-    <div className="max-w-lg mx-auto space-y-6 animate-slide-up">
-      <h1 className="text-2xl font-bold text-gray-100">{t.profile.title}</h1>
+    <div className="flex flex-col items-center px-3 pt-5 pb-10 md:px-7 md:pt-7 min-h-full">
+      <div className="w-full max-w-lg">
 
-      {/* Profile card */}
-      <div className="card flex flex-col items-center py-8">
-        <div className="w-20 h-20 rounded-full bg-dark-600 flex items-center justify-center mb-4 ring-2 ring-primary-500/30">
-          <span className="text-3xl">&#x1F464;</span>
-        </div>
-        <p className="font-semibold text-gray-100">
-          {profile?.full_name || userEmail.split("@")[0]}
-        </p>
-        <p className="text-dark-100 text-sm">{userEmail}</p>
-        {profile?.is_premium && (
-          <span className="premium-badge mt-2">Premium</span>
-        )}
-      </div>
+        {/* ── HEADER ── */}
+        <header className="mb-6 lixum-animate">
+          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">{t.profile.title}</h1>
+          <p className="text-sm text-white/50 font-medium mt-0.5">
+            {locale === "fr" ? "Votre espace personnel" : "Your personal space"}
+          </p>
+        </header>
 
-      {/* Stats */}
-      {profile && (
-        <div className="card space-y-3">
-          <div className="flex justify-between py-2 border-b border-dark-600">
-            <span className="text-dark-100">{t.dashboard.target}</span>
-            <span className="font-semibold text-primary-400">{profile.daily_calorie_target} kcal</span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-dark-600">
-            <span className="text-dark-100">{t.dashboard.bmr}</span>
-            <span className="font-medium text-gray-200">{Math.round(profile.bmr)} kcal</span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-dark-600">
-            <span className="text-dark-100">{t.dashboard.tdee}</span>
-            <span className="font-medium text-gray-200">{Math.round(profile.tdee)} kcal</span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-dark-600">
-            <span className="text-dark-100">{t.onboarding.weight}</span>
-            <span className="font-medium text-gray-200">{profile.weight} kg</span>
-          </div>
-          <div className="flex justify-between py-2">
-            <span className="text-dark-100">{t.onboarding.height}</span>
-            <span className="font-medium text-gray-200">{profile.height} cm</span>
-          </div>
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="card space-y-4">
-        <h2 className="text-lg font-semibold text-gray-100">
-          {t.profile.settings}
-        </h2>
-
-        <div className="flex items-center justify-between py-2 border-b border-dark-600">
-          <span className="text-dark-100">{t.profile.language}</span>
-          <span className="text-dark-200 text-sm">{locale.toUpperCase()}</span>
-        </div>
-
-        <Link href={`/${locale}/onboarding`} className="btn-primary w-full block text-center">
-          {t.profile.editProfile}
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="w-full py-3 rounded-2xl font-semibold border border-red-500/30 text-red-400
-                     hover:bg-red-500/10 transition-all duration-200"
+        {/* ── AVATAR CARD ── */}
+        <div
+          className="lixum-card rounded-[1.75rem] p-7 flex flex-col items-center mb-5 lixum-animate"
+          style={{ animationDelay:".05s", ...GLASS_CARD }}
         >
-          {t.auth.logout}
-        </button>
+          {/* Avatar */}
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
+            style={{
+              background:"rgba(0,255,157,.06)",
+              border:"2px solid rgba(0,255,157,.25)",
+              boxShadow:"0 0 24px rgba(0,255,157,.15)",
+            }}
+          >
+            <span className="text-4xl select-none">👤</span>
+          </div>
+          <p className="text-xl font-black text-white tracking-tight">{displayName}</p>
+          <p className="text-sm text-white/45 font-medium mt-0.5">{userEmail}</p>
+          {profile?.is_premium && (
+            <span
+              className="mt-3 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest"
+              style={{
+                background:"rgba(245,158,11,.12)",
+                border:"1px solid rgba(245,158,11,.30)",
+                color:"#f59e0b",
+              }}
+            >
+              Premium
+            </span>
+          )}
+        </div>
+
+        {/* ── STATS CARD ── */}
+        {profile && (
+          <div
+            className="lixum-card rounded-[1.75rem] p-5 mb-5 lixum-animate"
+            style={{ animationDelay:".10s", ...GLASS_CARD }}
+          >
+            <h2 className="text-xs text-white/45 uppercase font-bold tracking-widest mb-4">
+              {locale === "fr" ? "Données biométriques" : "Biometric data"}
+            </h2>
+            <div className="space-y-1">
+              {statRows.map((row, i) => (
+                <div
+                  key={row.label}
+                  className="flex justify-between items-center py-3"
+                  style={{ borderBottom: i < statRows.length - 1 ? "1px solid rgba(255,255,255,.05)" : "none" }}
+                >
+                  <span className="text-sm text-white/60 font-medium">{row.label}</span>
+                  <span className="lixum-num text-sm font-bold" style={{ color:row.color }}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── SETTINGS CARD ── */}
+        <div
+          className="lixum-card rounded-[1.75rem] p-5 lixum-animate"
+          style={{ animationDelay:".15s", ...GLASS_CARD }}
+        >
+          <h2 className="text-xs text-white/45 uppercase font-bold tracking-widest mb-4">
+            {t.profile.settings}
+          </h2>
+
+          {/* Language */}
+          <div
+            className="flex justify-between items-center py-3 mb-3"
+            style={{ borderBottom:"1px solid rgba(255,255,255,.05)" }}
+          >
+            <span className="text-sm text-white/60 font-medium">{t.profile.language}</span>
+            <span
+              className="text-xs font-black tracking-widest px-2.5 py-1 rounded-lg"
+              style={{ background:"rgba(0,255,157,.08)", color:"#00ff9d", border:"1px solid rgba(0,255,157,.20)" }}
+            >
+              {locale.toUpperCase()}
+            </span>
+          </div>
+
+          {/* Edit profile */}
+          <Link
+            href={`/${locale}/onboarding`}
+            className="flex items-center justify-center w-full py-3 rounded-xl mb-3 text-sm font-bold transition-all"
+            style={{
+              background:"rgba(0,255,157,.10)",
+              border:"1px solid rgba(0,255,157,.25)",
+              color:"#00ff9d",
+            }}
+          >
+            {t.profile.editProfile}
+          </Link>
+
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center w-full py-3 rounded-xl text-sm font-bold transition-all"
+            style={{
+              background:"rgba(239,68,68,.06)",
+              border:"1px solid rgba(239,68,68,.20)",
+              color:"#f87171",
+            }}
+          >
+            {t.auth.logout}
+          </button>
+        </div>
       </div>
     </div>
   );
