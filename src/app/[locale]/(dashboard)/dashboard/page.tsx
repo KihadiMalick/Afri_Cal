@@ -93,6 +93,10 @@ const LIXUM_STYLES = `
     transform: scale(.990) translateY(-1px);
   }
 
+  /* Hide scrollbar on LIXUM main content — keeps scroll functional, track invisible */
+  .lixum-main { scrollbar-width: none; -ms-overflow-style: none; }
+  .lixum-main::-webkit-scrollbar { display: none; width: 0; }
+
   /* Staggered entrance */
   .lixum-animate { animation: lixum-fadein .40s ease-out both; }
 
@@ -361,17 +365,17 @@ export default function DashboardPage() {
                   )}
                   {/* Icon */}
                   <Icon
-                    size={22}
+                    size={30}
                     strokeWidth={isActive ? 2 : 1.5}
                     style={{
-                      color: isActive ? "#00ff9d" : "rgba(255,255,255,.28)",
+                      color: isActive ? "#00ff9d" : "rgba(255,255,255,.55)",
                       filter: isActive ? "drop-shadow(0 0 6px rgba(0,255,157,.7)) drop-shadow(0 0 14px rgba(0,255,157,.3))" : "none",
                       transition: "color .2s, filter .2s",
                     }}
                   />
                   {/* Label — desktop only */}
-                  <span className="hidden md:block text-[6px] uppercase font-black tracking-widest"
-                    style={{ color: isActive ? "rgba(0,255,157,.8)" : "rgba(255,255,255,.25)" }}>
+                  <span className="hidden md:block text-[9px] uppercase font-bold tracking-widest"
+                    style={{ color: isActive ? "rgba(0,255,157,.9)" : "rgba(255,255,255,.50)" }}>
                     {locale === "fr" ? labelFr : labelEn}
                   </span>
                 </Link>
@@ -382,25 +386,25 @@ export default function DashboardPage() {
           {/* ── Logout ── */}
           <button onClick={handleLogout}
             className="flex flex-col items-center gap-1.5 rounded-2xl w-full py-2.5 mt-3 flex-shrink-0 transition-all duration-200"
-            style={{ color: "rgba(255,255,255,.18)" }}
+            style={{ color: "rgba(255,255,255,.45)" }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLElement).style.color = "#f87171";
               (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(239,68,68,.05)";
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,.18)";
+              (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,.45)";
               (e.currentTarget as HTMLElement).style.backgroundColor = "";
             }}
           >
-            <LogOut size={20} strokeWidth={1.5} />
-            <span className="hidden md:block text-[6px] uppercase font-black tracking-widest">
+            <LogOut size={26} strokeWidth={1.5} />
+            <span className="hidden md:block text-[9px] uppercase font-bold tracking-widest">
               {locale === "fr" ? "Sortir" : "Exit"}
             </span>
           </button>
         </aside>
 
         {/* ════ MAIN CONTENT ════ */}
-        <main className="flex-1 overflow-y-auto relative">
+        <main className="lixum-main flex-1 overflow-y-auto relative">
 
           {/* Static ambient glow — not animated, zero perf cost */}
           <div className="pointer-events-none fixed top-0 left-[20%] w-72 h-72 rounded-full"
@@ -424,7 +428,7 @@ export default function DashboardPage() {
                 </p>
               </div>
               {/* User name only — bell removed */}
-              <span className="text-sm text-white/30 font-semibold truncate max-w-[10rem]">
+              <span className="text-base text-white/65 font-semibold truncate max-w-[12rem]">
                 {displayName}
               </span>
             </header>
@@ -440,7 +444,7 @@ export default function DashboardPage() {
                 {/* Top row */}
                 <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 mb-7">
                   <div className="space-y-1.5">
-                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[.22em]"
+                    <span className="text-xs md:text-sm font-bold uppercase tracking-[.18em]"
                       style={{ color: "#00ff9d", textShadow: "0 0 10px rgba(0,255,157,.4)" }}>
                       {locale === "fr" ? "Score de Vitalité" : "Vitality Score"}
                     </span>
@@ -450,28 +454,28 @@ export default function DashboardPage() {
                       </span>
                       <span className="lixum-x text-2xl md:text-3xl font-black">%</span>
                     </div>
-                    <p className="text-[10px] md:text-xs text-white/30 font-medium">
+                    <p className="text-xs md:text-sm text-white/55 font-medium">
                       {displayName}
                     </p>
                   </div>
 
                   <div className="flex gap-5 md:gap-8">
                     <div className="text-right">
-                      <p className="text-[8px] md:text-[9px] text-white/25 font-black uppercase tracking-wider mb-1">
+                      <p className="text-[10px] md:text-xs text-white/55 font-bold uppercase tracking-wider mb-1">
                         {locale === "fr" ? "Objectif" : "Goal"}
                       </p>
-                      <p className="lixum-num text-xl md:text-2xl font-black italic text-amber-400">
+                      <p className="lixum-num text-2xl md:text-3xl font-black text-amber-400">
                         {profile.daily_calorie_target.toLocaleString()}
-                        <span className="text-xs font-normal text-white/25 ml-0.5">kcal</span>
+                        <span className="text-sm font-medium text-white/45 ml-1">kcal</span>
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[8px] md:text-[9px] text-white/25 font-black uppercase tracking-wider mb-1">
+                      <p className="text-[10px] md:text-xs text-white/55 font-bold uppercase tracking-wider mb-1">
                         {locale === "fr" ? "Consommé" : "Consumed"}
                       </p>
-                      <p className="lixum-num text-xl md:text-2xl font-black italic text-amber-300">
+                      <p className="lixum-num text-2xl md:text-3xl font-black text-amber-300">
                         {todayConsumed.toLocaleString()}
-                        <span className="text-xs font-normal text-white/25 ml-0.5">kcal</span>
+                        <span className="text-sm font-medium text-white/45 ml-1">kcal</span>
                       </p>
                     </div>
                   </div>
@@ -498,13 +502,13 @@ export default function DashboardPage() {
                   ].map((stat, i) => (
                     <div key={stat.label} className={`text-center ${i < 3 ? "border-r" : ""}`}
                       style={{ borderColor: "rgba(255,255,255,.05)" }}>
-                      <p className="text-[7px] md:text-[8px] text-white/25 uppercase font-black tracking-wider mb-1.5">
+                      <p className="text-[10px] md:text-xs text-white/55 uppercase font-bold tracking-wider mb-1.5">
                         {stat.label}
                       </p>
-                      <p className="lixum-num font-black text-base md:text-lg leading-none" style={{ color: stat.color }}>
+                      <p className="lixum-num font-black text-lg md:text-xl leading-none" style={{ color: stat.color }}>
                         {stat.value}
                       </p>
-                      <p className="text-[7px] text-white/18 mt-0.5">{stat.unit}</p>
+                      <p className="text-[9px] text-white/45 mt-0.5">{stat.unit}</p>
                     </div>
                   ))}
                 </div>
@@ -518,17 +522,17 @@ export default function DashboardPage() {
               <div className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 flex flex-col min-h-[15rem] md:min-h-[17rem] lixum-animate cursor-default"
                 style={{ ...glassCard, animationDelay: ".10s" }}>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[9px] md:text-[10px] text-amber-500/80 font-black uppercase tracking-widest">
+                  <span className="text-xs md:text-sm text-amber-400 font-bold uppercase tracking-widest">
                     {locale === "fr" ? "Repas du Jour" : "Today's Meals"}
                   </span>
                   <Link href={`/${locale}/meals`} prefetch={true}
-                    className="text-[8px] md:text-[9px] text-white/20 hover:text-[#00ff9d] transition-colors uppercase font-black tracking-wider">
+                    className="text-[10px] md:text-xs text-white/50 hover:text-[#00ff9d] transition-colors uppercase font-bold tracking-wider">
                     {locale === "fr" ? "Tout voir" : "See all"} →
                   </Link>
                 </div>
 
                 {todayMeals.length === 0 ? (
-                  <p className="text-white/20 text-sm py-6 text-center flex-1">
+                  <p className="text-white/55 text-base font-semibold py-6 text-center flex-1">
                     {locale === "fr" ? "Aucun repas enregistré" : "No meals logged yet"}
                   </p>
                 ) : (
@@ -552,7 +556,7 @@ export default function DashboardPage() {
 
                 <div className="mt-auto pt-3" style={{ borderTop: "1px solid rgba(0,255,157,.05)" }}>
                   <Link href={`/${locale}/meals`} prefetch={true}
-                    className="text-[9px] md:text-[10px] text-amber-500/70 hover:text-amber-400 font-black uppercase tracking-wider transition-colors">
+                    className="text-xs md:text-sm text-amber-400/80 hover:text-amber-400 font-bold uppercase tracking-wider transition-colors">
                     → {locale === "fr" ? "Gérer mes repas" : "Manage meals"}
                   </Link>
                 </div>
@@ -562,20 +566,20 @@ export default function DashboardPage() {
               <div className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 flex flex-col overflow-hidden min-h-[15rem] md:min-h-[17rem] lixum-animate cursor-default"
                 style={{ ...glassCard, animationDelay: ".15s" }}>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[9px] md:text-[10px] text-amber-500/80 font-black uppercase tracking-widest">
+                  <span className="text-xs md:text-sm text-amber-400 font-bold uppercase tracking-widest">
                     {locale === "fr" ? "Activité & Énergie" : "Activity & Energy"}
                   </span>
                   <Link href={`/${locale}/activities`} prefetch={true}
-                    className="text-[8px] md:text-[9px] text-white/20 hover:text-[#00ff9d] transition-colors uppercase font-black tracking-wider">
+                    className="text-[10px] md:text-xs text-white/50 hover:text-[#00ff9d] transition-colors uppercase font-bold tracking-wider">
                     {locale === "fr" ? "Voir" : "View"} →
                   </Link>
                 </div>
 
-                <div className="lixum-num text-3xl md:text-4xl font-black leading-none" style={{ color: "#60a5fa" }}>
+                <div className="lixum-num text-4xl md:text-5xl font-black leading-none" style={{ color: "#60a5fa" }}>
                   {todayBurned}
-                  <span className="text-sm md:text-base font-normal text-white/25 ml-1.5">kcal</span>
+                  <span className="text-sm md:text-base font-medium text-white/50 ml-1.5">kcal</span>
                 </div>
-                <p className="text-[8px] md:text-[9px] text-white/25 mt-1">
+                <p className="text-xs text-white/50 mt-1 font-medium">
                   {locale === "fr" ? "brûlées aujourd'hui" : "burned today"}
                 </p>
 
@@ -604,14 +608,14 @@ export default function DashboardPage() {
               {/* Streak */}
               <div className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 min-h-[12rem] lixum-animate cursor-default"
                 style={{ ...glassCard, animationDelay: ".20s" }}>
-                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest block mb-3"
+                <span className="text-xs md:text-sm font-bold uppercase tracking-widest block mb-3"
                   style={{ color: "#00ff9d", textShadow: "0 0 8px rgba(0,255,157,.4)" }}>
                   {locale === "fr" ? "Série Verte — Santé" : "Green Streak — Health"}
                 </span>
 
                 <div className="lixum-num text-4xl md:text-5xl font-black leading-none" style={{ color: "#00ff9d" }}>
                   {streak}
-                  <span className="text-base md:text-lg font-normal text-white/25 ml-1.5">
+                  <span className="text-base md:text-lg font-medium text-white/50 ml-1.5">
                     {locale === "fr" ? "jours" : "days"}
                   </span>
                 </div>
@@ -641,19 +645,19 @@ export default function DashboardPage() {
               {/* Weight projection */}
               <div className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 min-h-[12rem] lixum-animate cursor-default"
                 style={{ ...glassCard, animationDelay: ".25s" }}>
-                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest block mb-3"
+                <span className="text-xs md:text-sm font-bold uppercase tracking-widest block mb-3"
                   style={{ color: "#00ff9d", textShadow: "0 0 8px rgba(0,255,157,.4)" }}>
                   {locale === "fr" ? "Santé — Poids Projeté" : "Health — Projected Weight"}
                 </span>
 
                 <div className="lixum-num text-4xl md:text-5xl font-black leading-none">
                   {projectedWeight.toFixed(1)}
-                  <span className="text-base md:text-lg font-normal text-white/25 ml-1.5">kg</span>
+                  <span className="text-base md:text-lg font-medium text-white/50 ml-1.5">kg</span>
                 </div>
 
-                <p className="text-xs md:text-sm text-white/25 mt-2">
+                <p className="text-sm text-white/55 mt-2 font-medium">
                   {locale === "fr" ? "Actuel :" : "Current:"}{" "}
-                  <span className="lixum-num text-white/45 font-bold">{profile.weight} kg</span>
+                  <span className="lixum-num text-white/70 font-bold">{profile.weight} kg</span>
                 </p>
 
                 <div className="mt-4 inline-flex items-center gap-1.5 text-xs md:text-sm font-black px-3 py-1.5 rounded-xl"
@@ -678,7 +682,7 @@ export default function DashboardPage() {
               <div className="w-full max-w-3xl mt-4 md:mt-5 lixum-animate" style={{ animationDelay: ".30s" }}>
                 <div className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 cursor-default"
                   style={{ background: "rgba(239,68,68,.05)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(239,68,68,.12)", boxShadow: "0 4px 24px rgba(0,0,0,.32)" }}>
-                  <p className="text-[9px] md:text-[10px] text-red-400/90 font-black uppercase tracking-widest mb-4">
+                  <p className="text-xs md:text-sm text-red-400 font-bold uppercase tracking-widest mb-4">
                     ⚡{" "}
                     {locale === "fr"
                       ? `Surplus calorique : ${recommendation.surplus} kcal — Bougez !`
@@ -693,7 +697,7 @@ export default function DashboardPage() {
                       <div key={item.label} className="rounded-2xl py-3 md:py-4 px-2"
                         style={{ background: "rgba(255,255,255,.04)" }}>
                         <p className="lixum-num text-xl md:text-2xl font-black text-amber-500">{item.value}</p>
-                        <p className="text-[8px] md:text-[9px] text-white/25 uppercase tracking-wide mt-0.5">{item.label}</p>
+                        <p className="text-[10px] md:text-xs text-white/50 uppercase tracking-wide mt-0.5 font-medium">{item.label}</p>
                       </div>
                     ))}
                   </div>
