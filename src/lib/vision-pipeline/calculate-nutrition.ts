@@ -29,7 +29,6 @@ export function calculateNutrition(
 ): NutritionResult {
   const perIngredient: IngredientNutrition[] = [];
 
-  let totalKcal = 0;
   let totalProtein = 0;
   let totalCarbs = 0;
   let totalFat = 0;
@@ -48,7 +47,6 @@ export function calculateNutrition(
     const fat = ingredient.fat_per_100g * weightFactor;
     const fiber = ingredient.fiber_per_100g * weightFactor;
 
-    totalKcal += kcal;
     totalProtein += protein;
     totalCarbs += carbs;
     totalFat += fat;
@@ -70,7 +68,6 @@ export function calculateNutrition(
   // This reduces calorie count slightly to account for uncertainty
   if (averageDetectionConfidence < 0.7) {
     const correctionFactor = 0.9 + (averageDetectionConfidence * 0.1 / 0.7);
-    totalKcal *= correctionFactor;
     totalProtein *= correctionFactor;
     totalCarbs *= correctionFactor;
     totalFat *= correctionFactor;
@@ -91,8 +88,16 @@ export function calculateNutrition(
     (averageDetectionConfidence * 0.4 + matchRatio * 0.6) * 100
   ) / 100;
 
+  /*
+   * LIXUM Accuracy Engine — strict calorie formula:
+   *   Calories Consommées = (Protéines × 4) + (Glucides × 4) + (Lipides × 9)
+   * This recalculates total_kcal from the macros to guarantee internal coherence.
+   * The macro-derived value replaces the raw kcal_per_100g sum.
+   */
+  const lixumKcal = totalProtein * 4 + totalCarbs * 4 + totalFat * 9;
+
   return {
-    total_kcal: Math.round(totalKcal),
+    total_kcal: Math.round(lixumKcal),
     total_protein: Math.round(totalProtein * 10) / 10,
     total_carbs: Math.round(totalCarbs * 10) / 10,
     total_fat: Math.round(totalFat * 10) / 10,
