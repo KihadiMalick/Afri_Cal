@@ -175,10 +175,7 @@ export default function DashboardPage() {
             <span className="lixum-x">X</span>
             <span style={{ color:"#8b949e" }}>UM</span>
           </h1>
-          <p
-            className="text-[9px] md:text-[11px] uppercase font-semibold mt-0.5 tracking-[.32em]"
-            style={{ color:"rgba(0,255,157,.55)" }}
-          >
+          <p className="lixum-bio-sub text-[9px] md:text-[11px] uppercase font-semibold mt-0.5 tracking-[.32em]">
             Bio-Digital Dashboard
           </p>
         </div>
@@ -273,10 +270,10 @@ export default function DashboardPage() {
                 <p className="text-[10px] md:text-xs text-white/60 uppercase font-bold tracking-wider mb-1.5">
                   {stat.label}
                 </p>
-                <p className="lixum-num font-black text-lg md:text-xl leading-none" style={{ color:stat.color }}>
+                <p className="lixum-num font-black text-4xl md:text-5xl leading-none" style={{ color:stat.color }}>
                   {stat.value}
                 </p>
-                <p className="text-[10px] text-white/50 mt-0.5">{stat.unit}</p>
+                <p className="text-[10px] text-white/50 mt-1">{stat.unit}</p>
               </div>
             ))}
           </div>
