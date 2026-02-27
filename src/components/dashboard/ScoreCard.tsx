@@ -15,7 +15,7 @@ export default function ScoreCard({ score, locale }: ScoreCardProps) {
 
   return (
     <div className="card text-center">
-      <p className="text-sm text-dark-100 mb-3">
+      <p className="text-sm text-brand-brown-light font-semibold mb-3">
         {locale === "fr" ? "Score du jour" : "Today's Score"}
       </p>
       <div className="relative inline-flex items-center justify-center">
@@ -26,7 +26,7 @@ export default function ScoreCard({ score, locale }: ScoreCardProps) {
             cy="50"
             r={radius}
             fill="none"
-            stroke="#2a2a32"
+            stroke="#EDE8D0"
             strokeWidth="6"
           />
           {/* Progress circle */}
@@ -49,7 +49,7 @@ export default function ScoreCard({ score, locale }: ScoreCardProps) {
           </span>
         </div>
       </div>
-      <p className="text-xs text-dark-200 mt-2">/ 100</p>
+      <p className="text-xs text-brand-brown-pale mt-2">/ 100</p>
     </div>
   );
 }

@@ -160,11 +160,11 @@ export default function DashboardPage() {
   if (!profile || !profile.onboarding_completed) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <h1 className="text-2xl font-bold text-gray-100">
+        <h1 className="text-2xl font-bold text-brand-brown-dark">
           {t.dashboard.welcome}, {userEmail.split("@")[0]}
         </h1>
         <div className="card text-center py-12">
-          <p className="text-dark-100 mb-6">{t.dashboard.completeOnboarding}</p>
+          <p className="text-brand-brown-light mb-6">{t.dashboard.completeOnboarding}</p>
           <Link href={`/${locale}/onboarding`} className="btn-primary">
             {t.dashboard.goToOnboarding}
           </Link>
@@ -178,11 +178,11 @@ export default function DashboardPage() {
   const recommendation = generateSportRecommendation(surplus);
 
   const progressPercent = Math.min(100, Math.round((todayConsumed / profile.daily_calorie_target) * 100));
-  const progressColor = surplus > 0 ? "bg-red-500" : surplus === 0 ? "bg-accent-400" : "bg-primary-500";
+  const progressColor = surplus > 0 ? "bg-red-500" : surplus === 0 ? "bg-brand-gold" : "bg-brand-terracotta";
 
   return (
     <div className="space-y-6 animate-slide-up">
-      <h1 className="text-2xl font-bold text-gray-100">
+      <h1 className="text-2xl font-bold text-brand-brown-dark font-display">
         {t.dashboard.welcome}, {profile.full_name || userEmail.split("@")[0]}
       </h1>
 
@@ -197,11 +197,11 @@ export default function DashboardPage() {
 
       {/* Progress bar */}
       <div className="card-static">
-        <div className="flex justify-between text-sm text-dark-100 mb-2">
+        <div className="flex justify-between text-sm text-brand-brown-light font-semibold mb-2">
           <span>{t.dashboard.dailyCalories}</span>
           <span>{todayConsumed} / {profile.daily_calorie_target} kcal</span>
         </div>
-        <div className="w-full bg-dark-600 rounded-full h-3">
+        <div className="progress-track">
           <div
             className={`${progressColor} h-3 rounded-full animate-progress`}
             style={{ width: `${progressPercent}%` }}
@@ -212,48 +212,48 @@ export default function DashboardPage() {
       {/* Calorie Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card text-center">
-          <p className="text-sm text-dark-100">{t.dashboard.target}</p>
-          <p className="text-2xl font-bold text-primary-400 mt-1">{profile.daily_calorie_target}</p>
-          <p className="text-xs text-dark-200">{t.dashboard.kcalPerDay}</p>
+          <p className="text-sm text-brand-brown-light font-semibold">{t.dashboard.target}</p>
+          <p className="text-2xl font-bold text-brand-terracotta mt-1">{profile.daily_calorie_target}</p>
+          <p className="text-xs text-brand-brown-pale">{t.dashboard.kcalPerDay}</p>
         </div>
         <div className="card text-center">
-          <p className="text-sm text-dark-100">{t.dashboard.consumed}</p>
-          <p className="text-2xl font-bold text-accent-400 mt-1">{todayConsumed}</p>
-          <p className="text-xs text-dark-200">kcal</p>
+          <p className="text-sm text-brand-brown-light font-semibold">{t.dashboard.consumed}</p>
+          <p className="text-2xl font-bold text-brand-gold-dark mt-1">{todayConsumed}</p>
+          <p className="text-xs text-brand-brown-pale">kcal</p>
         </div>
         <div className="card text-center">
-          <p className="text-sm text-dark-100">{t.dashboard.burned}</p>
-          <p className="text-2xl font-bold text-primary-400 mt-1">{todayBurned}</p>
-          <p className="text-xs text-dark-200">kcal</p>
+          <p className="text-sm text-brand-brown-light font-semibold">{t.dashboard.burned}</p>
+          <p className="text-2xl font-bold text-brand-indigo mt-1">{todayBurned}</p>
+          <p className="text-xs text-brand-brown-pale">kcal</p>
         </div>
         <div className="card text-center">
-          <p className="text-sm text-dark-100">{t.dashboard.remaining}</p>
-          <p className={`text-2xl font-bold mt-1 ${remaining >= 0 ? "text-gray-100" : "text-red-400"}`}>
+          <p className="text-sm text-brand-brown-light font-semibold">{t.dashboard.remaining}</p>
+          <p className={`text-2xl font-bold mt-1 ${remaining >= 0 ? "text-brand-brown-dark" : "text-red-500"}`}>
             {remaining}
           </p>
-          <p className="text-xs text-dark-200">kcal</p>
+          <p className="text-xs text-brand-brown-pale">kcal</p>
         </div>
       </div>
 
       {/* Sport recommendation */}
       {recommendation && (
         <div className="card border-l-4 border-l-red-500">
-          <h2 className="text-lg font-semibold text-gray-100 mb-2">{t.activities.recommendation}</h2>
-          <p className="text-sm text-red-400 mb-3">
+          <h2 className="text-lg font-semibold text-brand-brown-dark mb-2">{t.activities.recommendation}</h2>
+          <p className="text-sm text-red-500 mb-3">
             {locale === "fr" ? `Surplus de ${recommendation.surplus} kcal` : `${recommendation.surplus} kcal surplus`}
           </p>
           <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-primary-500/10 rounded-2xl p-3">
-              <p className="text-lg font-bold text-primary-400">{recommendation.walkingKm}</p>
-              <p className="text-xs text-dark-100">km {locale === "fr" ? "marche" : "walk"}</p>
+            <div className="bg-brand-terracotta/10 rounded-2xl p-3">
+              <p className="text-lg font-bold text-brand-terracotta">{recommendation.walkingKm}</p>
+              <p className="text-xs text-brand-brown-light">km {locale === "fr" ? "marche" : "walk"}</p>
             </div>
-            <div className="bg-blue-500/10 rounded-2xl p-3">
-              <p className="text-lg font-bold text-blue-400">{recommendation.runningMinutes}</p>
-              <p className="text-xs text-dark-100">min {locale === "fr" ? "course" : "run"}</p>
+            <div className="bg-brand-indigo/10 rounded-2xl p-3">
+              <p className="text-lg font-bold text-brand-indigo">{recommendation.runningMinutes}</p>
+              <p className="text-xs text-brand-brown-light">min {locale === "fr" ? "course" : "run"}</p>
             </div>
-            <div className="bg-purple-500/10 rounded-2xl p-3">
-              <p className="text-lg font-bold text-purple-400">{recommendation.steps}</p>
-              <p className="text-xs text-dark-100">{locale === "fr" ? "pas" : "steps"}</p>
+            <div className="bg-brand-gold/20 rounded-2xl p-3">
+              <p className="text-lg font-bold text-brand-gold-dark">{recommendation.steps}</p>
+              <p className="text-xs text-brand-brown-light">{locale === "fr" ? "pas" : "steps"}</p>
             </div>
           </div>
         </div>
@@ -261,7 +261,7 @@ export default function DashboardPage() {
 
       {/* Calories chart */}
       <div className="card-static">
-        <h2 className="text-lg font-semibold text-gray-100 mb-4">
+        <h2 className="text-lg font-semibold text-brand-brown-dark mb-4">
           {locale === "fr" ? "Calories 30 jours" : "Calories 30 days"}
         </h2>
         <CaloriesChart data={caloriesChartData} locale={locale} />
@@ -269,7 +269,7 @@ export default function DashboardPage() {
 
       {/* Weight tracking */}
       <div className="card-static">
-        <h2 className="text-lg font-semibold text-gray-100 mb-4">
+        <h2 className="text-lg font-semibold text-brand-brown-dark mb-4">
           {locale === "fr" ? "Suivi du poids" : "Weight Tracking"}
         </h2>
         <AddWeightForm userId={userId} locale={locale} onWeightAdded={() => loadDashboard()} />
@@ -289,14 +289,14 @@ export default function DashboardPage() {
       {/* BMR / TDEE */}
       <div className="grid grid-cols-2 gap-4">
         <div className="card text-center">
-          <p className="text-sm text-dark-100">{t.dashboard.bmr}</p>
-          <p className="text-xl font-bold text-gray-100 mt-1">{Math.round(profile.bmr)}</p>
-          <p className="text-xs text-dark-200">kcal</p>
+          <p className="text-sm text-brand-brown-light font-semibold">{t.dashboard.bmr}</p>
+          <p className="text-xl font-bold text-brand-brown-dark mt-1">{Math.round(profile.bmr)}</p>
+          <p className="text-xs text-brand-brown-pale">kcal</p>
         </div>
         <div className="card text-center">
-          <p className="text-sm text-dark-100">{t.dashboard.tdee}</p>
-          <p className="text-xl font-bold text-gray-100 mt-1">{Math.round(profile.tdee)}</p>
-          <p className="text-xs text-dark-200">kcal</p>
+          <p className="text-sm text-brand-brown-light font-semibold">{t.dashboard.tdee}</p>
+          <p className="text-xl font-bold text-brand-brown-dark mt-1">{Math.round(profile.tdee)}</p>
+          <p className="text-xs text-brand-brown-pale">kcal</p>
         </div>
       </div>
 
@@ -307,8 +307,8 @@ export default function DashboardPage() {
       <div className="grid md:grid-cols-2 gap-6">
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-100">{t.meals.title}</h2>
-            <Link href={`/${locale}/meals`} className="text-sm text-primary-400 hover:underline">
+            <h2 className="text-lg font-semibold text-brand-brown-dark">{t.meals.title}</h2>
+            <Link href={`/${locale}/meals`} className="text-sm text-brand-terracotta hover:underline font-semibold">
               {locale === "fr" ? "Voir tout" : "View all"}
             </Link>
           </div>
@@ -318,27 +318,27 @@ export default function DashboardPage() {
             <div className="space-y-2">
               {todayMeals.slice(0, 5).map((meal) => (
                 <div key={meal.id} className="flex justify-between text-sm">
-                  <span className="text-gray-200">{meal.name}</span>
-                  <span className="text-dark-100">{meal.calories} kcal</span>
+                  <span className="text-brand-brown-dark font-medium">{meal.name}</span>
+                  <span className="text-brand-brown-light">{meal.calories} kcal</span>
                 </div>
               ))}
               {todayMeals.length > 5 && (
-                <p className="text-xs text-dark-200">+{todayMeals.length - 5} {locale === "fr" ? "autres" : "more"}</p>
+                <p className="text-xs text-brand-brown-pale">+{todayMeals.length - 5} {locale === "fr" ? "autres" : "more"}</p>
               )}
             </div>
           )}
         </div>
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-100">{t.activities.title}</h2>
-            <Link href={`/${locale}/activities`} className="text-sm text-primary-400 hover:underline">
+            <h2 className="text-lg font-semibold text-brand-brown-dark">{t.activities.title}</h2>
+            <Link href={`/${locale}/activities`} className="text-sm text-brand-terracotta hover:underline font-semibold">
               {locale === "fr" ? "Voir tout" : "View all"}
             </Link>
           </div>
           {todayBurned === 0 ? (
             <p className="empty-state">{t.common.noResults}</p>
           ) : (
-            <p className="text-sm text-primary-400 font-medium">
+            <p className="text-sm text-brand-terracotta font-semibold">
               {todayBurned} kcal {locale === "fr" ? "brulees aujourd'hui" : "burned today"}
             </p>
           )}

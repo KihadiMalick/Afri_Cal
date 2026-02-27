@@ -30,7 +30,7 @@ export default function LocaleLayout({
 
   return (
     <html lang={locale}>
-      <body className="min-h-screen bg-dark-900">
+      <body className="min-h-screen bg-brand-cream">
         <Navbar />
         <main className="pb-20 md:pb-0">{children}</main>
         <MobileNav />

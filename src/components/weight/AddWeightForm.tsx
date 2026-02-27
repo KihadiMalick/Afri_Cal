@@ -34,7 +34,7 @@ export default function AddWeightForm({ userId, locale, onWeightAdded }: AddWeig
   return (
     <form onSubmit={handleSubmit} className="flex items-end gap-3">
       <div className="flex-1">
-        <label className="block text-xs font-medium text-dark-100 mb-1">
+        <label className="block text-xs font-medium text-brand-brown-light mb-1">
           {locale === "fr" ? "Poids (kg)" : "Weight (kg)"}
         </label>
         <input
@@ -50,7 +50,7 @@ export default function AddWeightForm({ userId, locale, onWeightAdded }: AddWeig
         />
       </div>
       <div className="flex-1">
-        <label className="block text-xs font-medium text-dark-100 mb-1">
+        <label className="block text-xs font-medium text-brand-brown-light mb-1">
           {locale === "fr" ? "Date" : "Date"}
         </label>
         <input

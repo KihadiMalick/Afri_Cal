@@ -19,7 +19,7 @@ export default function MobileNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-800 border-t border-dark-600 z-50">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-brand-cream/95 backdrop-blur-md border-t-2 border-brand-brown-pale/20 z-50" style={{ boxShadow: "0 -4px 22px rgba(74, 52, 46, 0.09)", paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
       <div className="flex items-center justify-around py-2">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
@@ -27,11 +27,13 @@ export default function MobileNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-1 px-3 py-1 text-xs font-medium transition-colors ${
-                isActive ? "text-primary-400" : "text-dark-200"
+              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[10px] font-semibold tracking-wide transition-all duration-200 ${
+                isActive ? "text-brand-terracotta" : "text-brand-brown-pale"
               }`}
             >
-              <span className="text-lg">{getIcon(item.icon)}</span>
+              <span className={`text-lg p-1 rounded-xl transition-all ${isActive ? "bg-brand-terracotta/10" : ""}`} style={isActive ? { boxShadow: "0 2px 8px rgba(217, 142, 79, 0.22)" } : undefined}>
+                {getIcon(item.icon)}
+              </span>
               <span>{item.label}</span>
             </Link>
           );

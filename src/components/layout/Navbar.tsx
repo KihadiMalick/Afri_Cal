@@ -28,15 +28,15 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-dark-800 border-b border-dark-600 sticky top-0 z-50">
+    <nav className="bg-brand-cream/95 backdrop-blur-md border-b border-brand-brown-pale/20 sticky top-0 z-50 shadow-[0_2px_12px_rgba(74,52,46,0.06)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link
             href={`/${currentLocale}/dashboard`}
             className="flex items-center gap-2"
           >
-            <span className="text-2xl font-bold text-primary-400">
-              Afri<span className="text-accent-400">Calo</span>
+            <span className="text-2xl font-bold font-display text-brand-terracotta">
+              Afri<span className="text-brand-gold-dark">Calo</span>
             </span>
           </Link>
 
@@ -45,7 +45,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-dark-100 hover:text-primary-400 font-medium transition-colors"
+                className="text-brand-brown-light hover:text-brand-terracotta font-semibold transition-colors"
               >
                 {link.label}
               </Link>
@@ -56,7 +56,7 @@ export default function Navbar() {
             <LanguageSelector />
             <button
               onClick={handleLogout}
-              className="text-sm text-dark-200 hover:text-red-400 font-medium transition-colors hidden md:block"
+              className="text-sm text-brand-brown-pale hover:text-red-500 font-semibold transition-colors hidden md:block"
             >
               {t.auth.logout}
             </button>
