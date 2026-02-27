@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -22,6 +22,21 @@ const NAV_ITEMS = [
 /* ── Circuit-board SVG tile ── */
 export const CIRCUIT_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cline x1='0' y1='20' x2='80' y2='20' stroke='rgba(0,255,157,0.10)' stroke-width='0.4'/%3E%3Cline x1='0' y1='60' x2='80' y2='60' stroke='rgba(0,255,157,0.10)' stroke-width='0.4'/%3E%3Cline x1='20' y1='0' x2='20' y2='80' stroke='rgba(0,255,157,0.10)' stroke-width='0.4'/%3E%3Cline x1='60' y1='0' x2='60' y2='80' stroke='rgba(0,255,157,0.10)' stroke-width='0.4'/%3E%3Ccircle cx='20' cy='20' r='2' fill='none' stroke='rgba(0,255,157,0.16)' stroke-width='0.5'/%3E%3Ccircle cx='60' cy='20' r='2' fill='none' stroke='rgba(0,255,157,0.16)' stroke-width='0.5'/%3E%3Ccircle cx='20' cy='60' r='2' fill='none' stroke='rgba(0,255,157,0.16)' stroke-width='0.5'/%3E%3Ccircle cx='60' cy='60' r='2' fill='none' stroke='rgba(0,255,157,0.16)' stroke-width='0.5'/%3E%3Cline x1='24' y1='20' x2='36' y2='20' stroke='rgba(0,255,157,0.07)' stroke-width='0.3'/%3E%3Cline x1='44' y1='60' x2='56' y2='60' stroke='rgba(0,255,157,0.07)' stroke-width='0.3'/%3E%3Cline x1='20' y1='24' x2='20' y2='36' stroke='rgba(0,255,157,0.07)' stroke-width='0.3'/%3E%3Cline x1='60' y1='44' x2='60' y2='56' stroke='rgba(0,255,157,0.07)' stroke-width='0.3'/%3E%3Crect x='36' y='36' width='8' height='8' fill='none' stroke='rgba(0,255,157,0.09)' stroke-width='0.4' rx='1'/%3E%3C/svg%3E")`;
 const CIRCUIT_BG_LIGHT = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cline x1='0' y1='20' x2='80' y2='20' stroke='rgba(0,150,80,0.12)' stroke-width='0.4'/%3E%3Cline x1='0' y1='60' x2='80' y2='60' stroke='rgba(0,150,80,0.12)' stroke-width='0.4'/%3E%3Cline x1='20' y1='0' x2='20' y2='80' stroke='rgba(0,150,80,0.12)' stroke-width='0.4'/%3E%3Cline x1='60' y1='0' x2='60' y2='80' stroke='rgba(0,150,80,0.12)' stroke-width='0.4'/%3E%3Ccircle cx='20' cy='20' r='2' fill='none' stroke='rgba(0,150,80,0.18)' stroke-width='0.5'/%3E%3Ccircle cx='60' cy='20' r='2' fill='none' stroke='rgba(0,150,80,0.18)' stroke-width='0.5'/%3E%3Ccircle cx='20' cy='60' r='2' fill='none' stroke='rgba(0,150,80,0.18)' stroke-width='0.5'/%3E%3Ccircle cx='60' cy='60' r='2' fill='none' stroke='rgba(0,150,80,0.18)' stroke-width='0.5'/%3E%3Crect x='36' y='36' width='8' height='8' fill='none' stroke='rgba(0,150,80,0.10)' stroke-width='0.4' rx='1'/%3E%3C/svg%3E")`;
+
+/* ── ECG waveform path (16 heartbeat cycles) ── */
+function buildECGPath(cycles = 16): string {
+  const W = 130, b = 35;
+  let d = `M 0,${b}`;
+  for (let i = 0; i < cycles; i++) {
+    const x = i * W;
+    d += ` L ${x+15},${b} L ${x+24},${b-7} L ${x+30},${b} L ${x+38},${b}`;
+    d += ` L ${x+42},${b+7} L ${x+47},4 L ${x+52},${b+12} L ${x+57},${b}`;
+    d += ` L ${x+69},${b} L ${x+75},${b-8} L ${x+82},${b-15} L ${x+89},${b-8} L ${x+95},${b}`;
+  }
+  d += ` L ${cycles * W + 10},${b}`;
+  return d;
+}
+const ECG_PATH = buildECGPath();
 
 /* ── Glass card style (uses CSS variables — auto-adapts to theme) ── */
 export const GLASS_CARD = {
@@ -56,10 +71,11 @@ export const LIXUM_STYLES = `
     --lx-vcard:  linear-gradient(135deg, rgba(255,255,255,.07) 0%, rgba(0,255,157,.04) 100%);
     --lx-vcb:    rgba(255,255,255,0.10);
     --lx-vcs:    0 8px 48px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.08);
-    --lx-t1:     rgba(255,255,255,0.94);
-    --lx-t2:     rgba(255,255,255,0.68);
-    --lx-t3:     rgba(255,255,255,0.48);
-    --lx-t4:     rgba(255,255,255,0.32);
+    --lx-t1:        rgba(255,255,255,0.94);
+    --lx-t2:        rgba(255,255,255,0.68);
+    --lx-t3:        rgba(255,255,255,0.48);
+    --lx-t4:        rgba(255,255,255,0.32);
+    --lx-accent-sub:rgba(0,255,157,.55);
   }
 
   /* ══ LIGHT THEME TOKENS ══ */
@@ -72,10 +88,11 @@ export const LIXUM_STYLES = `
     --lx-vcard:  linear-gradient(135deg, rgba(255,255,255,.92) 0%, rgba(0,200,100,.06) 100%);
     --lx-vcb:    rgba(0,150,70,0.22);
     --lx-vcs:    0 8px 48px rgba(0,80,40,.14), inset 0 1px 0 rgba(255,255,255,.95);
-    --lx-t1:     rgba(5,30,18,0.94);
-    --lx-t2:     rgba(5,30,18,0.68);
-    --lx-t3:     rgba(5,30,18,0.48);
-    --lx-t4:     rgba(5,30,18,0.32);
+    --lx-t1:        rgba(5,30,18,0.94);
+    --lx-t2:        rgba(5,30,18,0.68);
+    --lx-t3:        rgba(5,30,18,0.48);
+    --lx-t4:        rgba(5,30,18,0.32);
+    --lx-accent-sub:rgba(5,150,100,.68);
   }
 
   /* ══ TOKEN UTILITY CLASSES ══ */
@@ -313,6 +330,66 @@ export const LIXUM_STYLES = `
     border-left: 4px solid #059669 !important;
     box-shadow: 0 4px 20px rgba(0,80,40,.12) !important;
   }
+
+  /* ── Bio-sub accent utility ── */
+  .lixum-bio-sub { color: var(--lx-accent-sub); }
+
+  /* ══ Light theme: fix card text visibility ══ */
+  /* Inherit readable dark text on card roots */
+  .lixum-shell[data-theme="light"] .lixum-card        { color: var(--lx-t2); }
+  .lixum-shell[data-theme="light"] .lixum-vitality-card { color: var(--lx-t2); }
+  /* Override any inline rgba(255,255,255,…) colors inside cards */
+  .lixum-shell[data-theme="light"] .lixum-card [style*="rgba(255,255,255"],
+  .lixum-shell[data-theme="light"] .lixum-vitality-card [style*="rgba(255,255,255"] {
+    color: var(--lx-t2) !important;
+  }
+
+  /* ══ Page transition wipe ══ */
+  @keyframes lixum-pg-wipe {
+    0%   { transform: translateX(-105%); }
+    40%  { transform: translateX(0%);    }
+    60%  { transform: translateX(0%);    }
+    100% { transform: translateX(105%);  }
+  }
+  .lixum-page-wipe {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    will-change: transform;
+    animation: lixum-pg-wipe 0.54s cubic-bezier(0.4,0,0.2,1) forwards;
+  }
+
+  /* ══ ECG theme-change overlay ══ */
+  @keyframes lixum-ecg-overlay-fade {
+    0%   { opacity: 0; }
+    10%  { opacity: 1; }
+    78%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes lixum-ecg-sweep {
+    0%   { clip-path: inset(0 100% 0 0); }
+    52%  { clip-path: inset(0 0%   0 0); }
+    100% { clip-path: inset(0 0%   0 0); }
+  }
+  .lixum-ecg-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0,6,3,0.94);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    animation: lixum-ecg-overlay-fade 0.98s cubic-bezier(0.4,0,0.2,1) forwards;
+    pointer-events: none;
+  }
+  .lixum-ecg-svg {
+    width: 100%;
+    height: 80px;
+    flex-shrink: 0;
+    clip-path: inset(0 100% 0 0);
+    animation: lixum-ecg-sweep 0.98s cubic-bezier(0.4,0,0.2,1) forwards;
+  }
 `;
 
 /* ══════════════════════════════════════════════════════════
@@ -328,7 +405,7 @@ export default function LixumShell({ children }: { children: React.ReactNode }) 
 
 /* ── Inner shell — reads theme from context ── */
 function LixumShellContent({ children }: { children: React.ReactNode }) {
-  const { theme } = useTheme();
+  const { theme, transitioning } = useTheme();
   const params    = useParams();
   const router    = useRouter();
   const pathname  = usePathname();
@@ -336,6 +413,10 @@ function LixumShellContent({ children }: { children: React.ReactNode }) {
   const supabase  = createClient();
 
   const isDark = theme === "dark";
+
+  /* Page-wipe transition state */
+  const [wipeActive, setWipeActive] = useState(false);
+  const wipeRef = useRef(pathname);
 
   /* Theme-dependent values */
   const mainBg      = isDark ? "#020c07"  : "#eaf7f0";
@@ -375,6 +456,16 @@ function LixumShellContent({ children }: { children: React.ReactNode }) {
     ? "radial-gradient(circle, rgba(0,255,157,.18) 0%, rgba(0,255,157,.06) 40%, transparent 70%)"
     : "radial-gradient(circle, rgba(0,200,100,.12) 0%, rgba(0,200,100,.04) 40%, transparent 70%)";
   const ringColor      = isDark ? "rgba(0,255,157,.10)" : "rgba(0,180,90,.08)";
+
+  /* Page-wipe on route change */
+  useEffect(() => {
+    if (pathname !== wipeRef.current) {
+      wipeRef.current = pathname;
+      setWipeActive(true);
+      const t = setTimeout(() => setWipeActive(false), 580);
+      return () => clearTimeout(t);
+    }
+  }, [pathname]);
 
   /* Lock scroll on html + body */
   useEffect(() => {
@@ -523,11 +614,47 @@ function LixumShellContent({ children }: { children: React.ReactNode }) {
               filter:"blur(50px)",
             }}
           />
+          {/* ── Page transition wipe panel ── */}
+          {wipeActive && (
+            <div
+              className="lixum-page-wipe"
+              aria-hidden="true"
+              style={{
+                background: isDark
+                  ? "linear-gradient(90deg,transparent 0%,rgba(0,8,4,.94) 14%,rgba(0,8,4,.97) 40%,rgba(0,8,4,.97) 60%,rgba(0,8,4,.94) 86%,transparent 100%)"
+                  : "linear-gradient(90deg,transparent 0%,rgba(234,253,245,.95) 14%,rgba(234,253,245,.98) 40%,rgba(234,253,245,.98) 60%,rgba(234,253,245,.95) 86%,transparent 100%)",
+                boxShadow: isDark
+                  ? "inset 22px 0 32px rgba(0,255,157,.09),inset -22px 0 32px rgba(0,255,157,.09)"
+                  : "inset 22px 0 32px rgba(5,150,80,.12),inset -22px 0 32px rgba(5,150,80,.12)",
+              }}
+            />
+          )}
           {/* key={pathname} — forces remount on route change → re-triggers animation */}
           <div key={pathname} className="lixum-page-enter min-h-full">
             {children}
           </div>
         </main>
+
+        {/* ── ECG theme-change overlay (renders above everything) ── */}
+        {transitioning && (
+          <div className="lixum-ecg-overlay" aria-hidden="true">
+            <svg
+              className="lixum-ecg-svg"
+              viewBox="0 0 2090 60"
+              preserveAspectRatio="none"
+            >
+              <path
+                d={ECG_PATH}
+                fill="none"
+                stroke="#00ff9d"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ filter:"drop-shadow(0 0 6px #00ff9d) drop-shadow(0 0 18px rgba(0,255,157,.65))" }}
+              />
+            </svg>
+          </div>
+        )}
       </div>
     </>
   );
