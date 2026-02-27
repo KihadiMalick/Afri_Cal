@@ -32,6 +32,12 @@ const SIDEBAR_BG = `${CIRCUIT_BG}, linear-gradient(180deg, #010d06 0%, #020f08 5
 
 /* ── CSS injected once — keyframes + utility classes ── */
 const LIXUM_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+  /* Suppress native scrollbar on html/body — LIXUM is its own scroll context */
+  html::-webkit-scrollbar, body::-webkit-scrollbar { display: none !important; width: 0 !important; }
+  html, body { scrollbar-width: none !important; }
+
   @keyframes lixum-heartbeat {
     0%,100% { transform:translate(-50%,-50%) scale(1);    opacity:.50; }
     14%     { transform:translate(-50%,-50%) scale(1.18);  opacity:.85; }
@@ -122,11 +128,16 @@ export default function DashboardPage() {
   const [weightChange,      setWeightChange]     = useState(0);
   const [caloriesChartData, setCaloriesChartData]= useState<{ date: string; consumed: number; target: number }[]>([]);
 
-  /* ── Lock outer body scroll so old design never bleeds through ── */
+  /* ── Lock outer scroll (html + body) so old design never bleeds through ── */
   useEffect(() => {
-    const prev = document.body.style.overflow;
+    const prevBody = document.body.style.overflow;
+    const prevHtml = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevBody;
+      document.documentElement.style.overflow = prevHtml;
+    };
   }, []);
 
   /* ─── Data loading ── */
@@ -275,7 +286,7 @@ export default function DashboardPage() {
 
       {/* Full-screen LIXUM overlay — z-[60] covers standard Navbar/MobileNav */}
       <div className="fixed inset-0 z-[60] text-white flex overflow-hidden"
-        style={{ background: "#020c07", backgroundImage: CIRCUIT_BG, fontFamily: "Nunito, sans-serif" }}>
+        style={{ background: "#020c07", backgroundImage: CIRCUIT_BG, fontFamily: "'Outfit', 'Poppins', sans-serif" }}>
 
         {/* ════ HEARTBEAT PULSE — CSS only, GPU-composited ════ */}
         <div aria-hidden="true" className="pointer-events-none select-none">
@@ -407,14 +418,13 @@ export default function DashboardPage() {
                   <span className="lixum-x">X</span>
                   <span style={{ color: "#8b949e" }}>UM</span>
                 </h1>
-                <p className="text-[7px] md:text-[8px] uppercase font-black mt-0.5 tracking-[.38em]"
-                  style={{ color: "rgba(0,255,157,.45)", fontFamily: "'Courier New', monospace" }}>
+                <p className="text-[7px] md:text-[8px] uppercase font-semibold mt-0.5 tracking-[.38em]"
+                  style={{ color: "rgba(0,255,157,.45)" }}>
                   Bio-Digital Dashboard
                 </p>
               </div>
               {/* User name only — bell removed */}
-              <span className="text-sm text-white/30 font-semibold truncate max-w-[10rem]"
-                style={{ fontFamily: "'Courier New', monospace", letterSpacing: "0.05em" }}>
+              <span className="text-sm text-white/30 font-semibold truncate max-w-[10rem]">
                 {displayName}
               </span>
             </header>
@@ -440,8 +450,7 @@ export default function DashboardPage() {
                       </span>
                       <span className="lixum-x text-2xl md:text-3xl font-black">%</span>
                     </div>
-                    <p className="text-[10px] md:text-xs text-white/25 font-semibold"
-                      style={{ fontFamily: "'Courier New', monospace" }}>
+                    <p className="text-[10px] md:text-xs text-white/30 font-medium">
                       {displayName}
                     </p>
                   </div>
@@ -658,8 +667,8 @@ export default function DashboardPage() {
                   <span className="font-normal opacity-55">{locale === "fr" ? " /30j" : " /30d"}</span>
                 </div>
 
-                <p className="lixum-num text-[8px] md:text-[9px] text-white/18 mt-3">
-                  TDEE <span style={{ color: "rgba(255,255,255,.35)" }}>{Math.round(profile.tdee)}</span> kcal/j
+                <p className="text-[8px] md:text-[9px] text-white/25 mt-3 font-medium">
+                  TDEE <span className="lixum-num" style={{ color: "rgba(255,255,255,.45)" }}>{Math.round(profile.tdee)}</span> kcal/j
                 </p>
               </div>
             </div>
