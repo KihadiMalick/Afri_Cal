@@ -12,9 +12,7 @@ import { calculateWeightProjection } from "@/utils/weight-projection";
 import { getBadges } from "@/utils/badges";
 import type { UserProfile, Meal, Badge } from "@/types";
 
-/* ──────────────────────────────────────────────────────────
-   LIXUM — Sidebar nav items
-   ────────────────────────────────────────────────────────── */
+/* ── Nav items ── */
 const NAV_ITEMS = [
   { icon: "🏠", labelFr: "Accueil",   labelEn: "Home",       path: "dashboard"  },
   { icon: "🍜", labelFr: "Repas",     labelEn: "Meals",      path: "meals"      },
@@ -23,15 +21,53 @@ const NAV_ITEMS = [
   { icon: "👤", labelFr: "Profil",    labelEn: "Profile",    path: "profile"    },
 ];
 
-/* ── Coming-soon luxury bar items ── */
-const FUTURE_ITEMS = [
-  { icon: "🌍", labelFr: "Communauté", labelEn: "Community"  },
-  { icon: "📋", labelFr: "Registre",   labelEn: "Registry"   },
-  { icon: "🔗", labelFr: "Connect",    labelEn: "Connect"     },
-];
+/* ── Sidebar background: deep emerald-tinted dark wood ── */
+const SIDEBAR_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0' x2='100' y2='100' stroke='rgba(16,185,129,0.06)' stroke-width='0.6'/%3E%3Cline x1='20' y1='0' x2='120' y2='100' stroke='rgba(16,185,129,0.04)' stroke-width='0.5'/%3E%3Cline x1='40' y1='0' x2='140' y2='100' stroke='rgba(16,185,129,0.03)' stroke-width='0.4'/%3E%3C/svg%3E"), linear-gradient(180deg, #010d06 0%, #020f08 55%, #011009 100%)`;
 
-/* ── Dark wood sidebar background ── */
-const SIDEBAR_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cline x1='0' y1='0' x2='100' y2='100' stroke='rgba(60,30,10,0.18)' stroke-width='0.6'/%3E%3Cline x1='20' y1='0' x2='120' y2='100' stroke='rgba(60,30,10,0.12)' stroke-width='0.5'/%3E%3Cline x1='40' y1='0' x2='140' y2='100' stroke='rgba(80,40,15,0.09)' stroke-width='0.5'/%3E%3Cline x1='60' y1='0' x2='160' y2='100' stroke='rgba(60,30,10,0.07)' stroke-width='0.4'/%3E%3C/svg%3E"), linear-gradient(180deg, #1e0f07 0%, #130a04 50%, #1a0d06 100%)`;
+/* ── CSS-only keyframes injected once ── */
+const LIXUM_STYLES = `
+  @keyframes lixum-heartbeat {
+    0%,100% { transform:translate(-50%,-50%) scale(1);   opacity:.55; }
+    14%     { transform:translate(-50%,-50%) scale(1.18); opacity:.90; }
+    28%     { transform:translate(-50%,-50%) scale(.97);  opacity:.45; }
+    42%     { transform:translate(-50%,-50%) scale(1.09); opacity:.75; }
+    65%     { transform:translate(-50%,-50%) scale(1);    opacity:.55; }
+  }
+  @keyframes lixum-ring {
+    0%,100% { transform:translate(-50%,-50%) scale(1);   opacity:.18; }
+    14%     { transform:translate(-50%,-50%) scale(1.22); opacity:.32; }
+    42%     { transform:translate(-50%,-50%) scale(1.12); opacity:.24; }
+  }
+  @keyframes lixum-fadein {
+    from { opacity:0; transform:translateY(12px); }
+    to   { opacity:1; transform:translateY(0);    }
+  }
+  .lixum-card {
+    transition: transform .28s cubic-bezier(.25,.46,.45,.94),
+                box-shadow .28s cubic-bezier(.25,.46,.45,.94),
+                border-color .28s ease,
+                background .28s ease;
+  }
+  .lixum-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 48px rgba(16,185,129,.13), 0 4px 16px rgba(0,0,0,.35);
+    border-color: rgba(52,211,153,.22) !important;
+    background: rgba(16,185,129,.06) !important;
+  }
+  .lixum-card:active {
+    transform: scale(.985) translateY(-1px);
+    box-shadow: 0 6px 20px rgba(16,185,129,.08);
+  }
+  .lixum-vitality-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 60px rgba(16,185,129,.16), 0 6px 20px rgba(0,0,0,.4);
+    border-color: rgba(52,211,153,.28) !important;
+  }
+  .lixum-vitality-card:active {
+    transform: scale(.990) translateY(-1px);
+  }
+  .lixum-animate { animation: lixum-fadein .45s ease-out both; }
+`;
 
 /* ══════════════════════════════════════════════════════════
    LIXUM DASHBOARD
@@ -44,7 +80,7 @@ export default function DashboardPage() {
   const t        = getDictionary(locale);
   const supabase = createClient();
 
-  /* ─── State ─────────────────────────────────────────── */
+  /* ─── State ── */
   const [profile,           setProfile]          = useState<UserProfile | null>(null);
   const [loading,           setLoading]          = useState(true);
   const [userEmail,         setUserEmail]        = useState("");
@@ -58,7 +94,7 @@ export default function DashboardPage() {
   const [weightChange,      setWeightChange]     = useState(0);
   const [caloriesChartData, setCaloriesChartData]= useState<{ date: string; consumed: number; target: number }[]>([]);
 
-  /* ─── Data loading ───────────────────────────────────── */
+  /* ─── Data loading ── */
   async function loadDashboard() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push(`/${locale}/login`); return; }
@@ -113,7 +149,6 @@ export default function DashboardPage() {
         date: r.date, consumed: r.total_calories_consumed, target: r.calorie_target,
       }))
     );
-
     setLoading(false);
   }
 
@@ -128,174 +163,203 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ─── Loading ────────────────────────────────────────── */
+  /* ─── Loading ── */
   if (loading) {
     return (
-      <div className="fixed inset-0 z-[60] bg-[#080604] flex flex-col items-center justify-center gap-5">
-        {/* Green LX badge for vitality theme */}
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-white text-lg animate-pulse"
-          style={{ background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 0 28px rgba(16,185,129,0.55)" }}>
-          LX
+      <>
+        <style>{LIXUM_STYLES}</style>
+        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-5"
+          style={{ background: "#020c07" }}>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-white text-lg animate-pulse"
+            style={{ background: "linear-gradient(135deg,#10b981,#059669)", boxShadow: "0 0 28px rgba(16,185,129,.55)" }}>
+            LX
+          </div>
+          <div className="w-7 h-7 border-2 border-emerald-500/30 border-t-emerald-400 rounded-full animate-spin" />
         </div>
-        <div className="w-7 h-7 border-2 border-emerald-500/30 border-t-emerald-400 rounded-full animate-spin" />
-        <p className="text-[9px] text-emerald-400/60 uppercase tracking-[0.35em] font-black">
-          {locale === "fr" ? "Chargement..." : "Loading..."}
-        </p>
-      </div>
+      </>
     );
   }
 
-  /* ─── Onboarding gate ────────────────────────────────── */
+  /* ─── Onboarding gate ── */
   if (!profile || !profile.onboarding_completed) {
     return (
-      <div className="fixed inset-0 z-[60] bg-[#080604] flex flex-col items-center justify-center gap-6 p-8 text-white">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-white text-lg"
-          style={{ background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 0 24px rgba(16,185,129,0.5)" }}>
-          LX
+      <>
+        <style>{LIXUM_STYLES}</style>
+        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 p-8 text-white"
+          style={{ background: "#020c07" }}>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-white text-lg"
+            style={{ background: "linear-gradient(135deg,#10b981,#059669)", boxShadow: "0 0 24px rgba(16,185,129,.5)" }}>
+            LX
+          </div>
+          <h1 className="text-3xl font-black tracking-[.15em]">
+            LI<span className="text-emerald-400" style={{ textShadow: "0 0 14px rgba(52,211,153,.6)" }}>X</span>UM
+          </h1>
+          <p className="text-white/50 text-center max-w-xs">{t.dashboard.completeOnboarding}</p>
+          <Link href={`/${locale}/onboarding`}
+            className="font-black px-8 py-3 rounded-2xl text-white transition-colors"
+            style={{ background: "linear-gradient(135deg,#10b981,#059669)", boxShadow: "0 0 20px rgba(16,185,129,.4)" }}>
+            {t.dashboard.goToOnboarding}
+          </Link>
         </div>
-        <h1 className="text-3xl font-black tracking-[0.15em]">
-          LI<span className="text-emerald-400">X</span>UM
-        </h1>
-        <p className="text-white/50 text-center max-w-xs">{t.dashboard.completeOnboarding}</p>
-        <Link
-          href={`/${locale}/onboarding`}
-          className="font-black px-8 py-3 rounded-2xl text-white transition-colors"
-          style={{ background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 0 20px rgba(16,185,129,0.4)" }}
-        >
-          {t.dashboard.goToOnboarding}
-        </Link>
-      </div>
+      </>
     );
   }
 
-  /* ─── Derived values ─────────────────────────────────── */
+  /* ─── Derived ── */
   const remaining       = profile.daily_calorie_target - todayConsumed + todayBurned;
   const surplus         = todayConsumed - todayBurned - profile.daily_calorie_target;
   const recommendation  = generateSportRecommendation(surplus);
   const progressPercent = Math.min(100, Math.round((todayConsumed / profile.daily_calorie_target) * 100));
   const displayName     = profile.full_name || userEmail.split("@")[0];
 
-  /* ══════════════════════════════════════════════════════
-     RENDER
-     ══════════════════════════════════════════════════════ */
-  return (
-    <div
-      className="fixed inset-0 z-[60] bg-[#080604] text-white flex overflow-hidden"
-      style={{ fontFamily: "Nunito, sans-serif" }}
-    >
+  /* ── Shared glass card style ── */
+  const glassCard = {
+    background:    "rgba(16,185,129,0.03)",
+    backdropFilter:"blur(18px)",
+    WebkitBackdropFilter: "blur(18px)",
+    border:        "1px solid rgba(52,211,153,0.1)",
+    boxShadow:     "0 4px 24px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.05)",
+  };
 
-      {/* ══════════ SIDEBAR — always visible (mobile + desktop) ══════════ */}
-      <aside
-        className="flex flex-shrink-0 flex-col items-center pt-6 pb-4 w-14 md:w-[5.5rem]"
-        style={{
-          borderRadius: "0 28px 28px 0",
-          backgroundImage: SIDEBAR_BG,
-          borderRight: "1px solid rgba(255,255,255,0.04)",
-          boxShadow: "4px 0 28px rgba(0,0,0,0.6), inset -1px 0 0 rgba(255,255,255,0.025)",
-        }}
+  /* ── Vitality card style (slightly more opaque) ── */
+  const vitalityCard = {
+    background:    "linear-gradient(135deg, rgba(255,255,255,.065) 0%, rgba(16,185,129,.04) 100%)",
+    backdropFilter:"blur(28px)",
+    WebkitBackdropFilter: "blur(28px)",
+    border:        "1px solid rgba(52,211,153,.14)",
+    boxShadow:     "0 8px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.07)",
+  };
+
+  /* ══════════════════════════════════════════════════════════
+     RENDER
+     ══════════════════════════════════════════════════════════ */
+  return (
+    <>
+      {/* ── Inject CSS keyframes & card transitions once ── */}
+      <style>{LIXUM_STYLES}</style>
+
+      <div
+        className="fixed inset-0 z-[60] text-white flex overflow-hidden"
+        style={{ background: "#020c07", fontFamily: "Nunito, sans-serif" }}
       >
-        {/* ── Logo ── */}
-        <div
-          className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center font-black text-white text-sm select-none mb-0.5 flex-shrink-0"
+
+        {/* ════ HEARTBEAT BACKGROUND PULSE ════
+            Pure CSS animation — no JS, GPU-composited (transform + opacity only).
+            Two layers: inner core glow + outer expanding ring. */}
+        <div aria-hidden="true" className="pointer-events-none select-none">
+          {/* Core radial glow */}
+          <div style={{
+            position: "fixed",
+            top: "50%", left: "50%",
+            width: "60vmin", height: "60vmin",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(16,185,129,.22) 0%, rgba(16,185,129,.08) 40%, transparent 70%)",
+            animation: "lixum-heartbeat 4s cubic-bezier(.36,.07,.19,.97) infinite",
+            willChange: "transform, opacity",
+          }} />
+          {/* Expanding ring */}
+          <div style={{
+            position: "fixed",
+            top: "50%", left: "50%",
+            width: "80vmin", height: "80vmin",
+            borderRadius: "50%",
+            border: "1px solid rgba(52,211,153,.14)",
+            animation: "lixum-ring 4s cubic-bezier(.36,.07,.19,.97) infinite",
+            willChange: "transform, opacity",
+          }} />
+        </div>
+
+        {/* ════ SIDEBAR ════ */}
+        <aside
+          className="flex flex-shrink-0 flex-col items-center pt-7 pb-6 w-14 md:w-[5.5rem]"
           style={{
-            background: "linear-gradient(135deg, #10b981, #059669)",
-            boxShadow: "0 0 20px rgba(16,185,129,0.5), inset 0 1px 0 rgba(255,255,255,0.25)",
+            borderRadius: "0 28px 28px 0",
+            backgroundImage: SIDEBAR_BG,
+            borderRight: "1px solid rgba(52,211,153,.07)",
+            boxShadow: "4px 0 32px rgba(0,0,0,.55), inset -1px 0 0 rgba(52,211,153,.04)",
           }}
         >
-          LX
-        </div>
-        <p className="text-[5.5px] md:text-[6px] text-emerald-400/50 uppercase font-black tracking-[0.28em] mb-6 flex-shrink-0">
-          lixum
-        </p>
-
-        {/* ── Nav links ── */}
-        <nav className="flex flex-col items-center gap-0.5 w-full px-1 flex-1">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname.includes(`/${item.path}`);
-            return (
-              <Link
-                key={item.path}
-                href={`/${locale}/${item.path}`}
-                prefetch={true}
-                className={`relative flex flex-col items-center gap-1 w-full py-2.5 md:py-3 rounded-2xl transition-all duration-200 ${
-                  isActive
-                    ? "text-amber-400"
-                    : "text-white/30 hover:text-white/65 hover:bg-white/[0.04]"
-                }`}
-                style={
-                  isActive
-                    ? {
-                        backgroundColor: "rgba(10,5,2,0.65)",
-                        boxShadow:
-                          "inset 0 2px 6px rgba(0,0,0,0.55), inset 0 1px 2px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.03)",
-                      }
-                    : undefined
-                }
-              >
-                {/* Gold active indicator bar */}
-                {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.8)]" />
-                )}
-                <span className="text-base md:text-[1.2rem] leading-none">{item.icon}</span>
-                <span className="hidden md:block text-[6px] uppercase font-black tracking-widest">
-                  {locale === "fr" ? item.labelFr : item.labelEn}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* ── Bottom fill: divider + lang + logout ── */}
-        <div className="flex flex-col items-center gap-3 w-full px-1 flex-shrink-0 mt-2">
-          {/* Decorative divider */}
+          {/* Logo */}
           <div
-            className="w-6 h-px"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)" }}
-          />
-
-          {/* Language indicator */}
-          <div className="flex flex-col items-center gap-0.5 text-white/20">
-            <span className="text-[0.75rem] leading-none">🌐</span>
-            <span className="text-[5px] uppercase font-black tracking-wider hidden md:block">
-              {locale.toUpperCase()}
-            </span>
+            className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center font-black text-white text-sm md:text-base select-none flex-shrink-0 mb-1"
+            style={{
+              background: "linear-gradient(135deg,#10b981,#059669)",
+              boxShadow: "0 0 22px rgba(16,185,129,.52), inset 0 1px 0 rgba(255,255,255,.22)",
+            }}
+          >
+            LX
           </div>
+          <p className="text-[5.5px] md:text-[6px] text-emerald-400/45 uppercase font-black tracking-[.28em] mb-5 flex-shrink-0">
+            lixum
+          </p>
 
-          {/* Logout */}
+          {/* Nav — flex-1 so it fills all remaining vertical space */}
+          <nav className="flex flex-col items-center w-full px-1 flex-1 justify-around">
+            {NAV_ITEMS.map((item) => {
+              const isActive = pathname.includes(`/${item.path}`);
+              return (
+                <Link
+                  key={item.path}
+                  href={`/${locale}/${item.path}`}
+                  prefetch={true}
+                  className={`relative flex flex-col items-center gap-1.5 w-full rounded-2xl transition-all duration-200 py-2.5 ${
+                    isActive
+                      ? "text-amber-400"
+                      : "text-white/35 hover:text-white/70 hover:bg-white/[0.04]"
+                  }`}
+                  style={isActive ? {
+                    backgroundColor: "rgba(2,14,8,.7)",
+                    boxShadow: "inset 0 2px 8px rgba(0,0,0,.55), inset 0 1px 2px rgba(0,0,0,.4), 0 1px 0 rgba(52,211,153,.05)",
+                  } : undefined}
+                >
+                  {/* Active bar */}
+                  {isActive && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-emerald-400"
+                      style={{ boxShadow: "0 0 10px rgba(52,211,153,.8)" }} />
+                  )}
+                  {/* Icon — bigger to fill sidebar */}
+                  <span className="text-[1.6rem] md:text-[2rem] leading-none">{item.icon}</span>
+                  <span className="hidden md:block text-[6px] uppercase font-black tracking-widest opacity-80">
+                    {locale === "fr" ? item.labelFr : item.labelEn}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Logout — anchored at bottom */}
           <button
             onClick={handleLogout}
-            className="flex flex-col items-center gap-1 text-white/20 hover:text-red-400 transition-colors py-1"
+            className="flex flex-col items-center gap-1 text-white/20 hover:text-red-400 transition-all duration-200 mt-4 py-2 rounded-2xl w-full hover:bg-red-500/[0.06] flex-shrink-0"
           >
-            <span className="text-[0.9rem] md:text-[1rem]">🚪</span>
+            <span className="text-[1.3rem] md:text-[1.5rem]">🚪</span>
             <span className="hidden md:block text-[6px] uppercase font-black tracking-widest">
               {locale === "fr" ? "Sortir" : "Exit"}
             </span>
           </button>
+        </aside>
 
-          {/* Tiny version dot */}
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/30 mb-1" />
-        </div>
-      </aside>
-
-      {/* ══════════ RIGHT PANEL ══════════ */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-
-        {/* ── Scrollable main area ── */}
+        {/* ════ MAIN CONTENT ════ */}
         <main className="flex-1 overflow-y-auto relative">
 
-          {/* Ambient glow */}
-          <div className="pointer-events-none fixed top-[-8%] left-[15%] w-80 h-80 bg-orange-600 rounded-full blur-[110px] opacity-[0.07]" />
-          <div className="pointer-events-none fixed bottom-[8%] right-[-4%] w-64 h-64 bg-emerald-600 rounded-full blur-[130px] opacity-[0.04]" />
+          {/* Subtle static ambient glow (top-left) — not animated to keep it light */}
+          <div className="pointer-events-none fixed top-0 left-[15%] w-72 h-72 rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(16,185,129,.07) 0%, transparent 70%)", filter: "blur(40px)" }} />
 
-          <div className="flex flex-col items-center px-3 pt-4 pb-4 md:px-7 md:pt-7 min-h-full">
+          <div className="flex flex-col items-center px-3 pt-5 pb-8 md:px-7 md:pt-7 min-h-full">
 
-            {/* ─── HEADER ─── */}
-            <header className="w-full max-w-3xl flex justify-between items-center mb-6 md:mb-8">
+            {/* ── HEADER ── */}
+            <header className="w-full max-w-3xl flex justify-between items-center mb-6 md:mb-8 lixum-animate">
               <div>
-                <h1 className="text-xl md:text-2xl font-black tracking-[0.18em] leading-none">
-                  LI<span className="text-emerald-400" style={{ textShadow: "0 0 14px rgba(52,211,153,0.6)" }}>X</span>UM
+                <h1 className="text-xl md:text-2xl font-black tracking-[.18em] leading-none">
+                  LI
+                  <span className="text-emerald-400"
+                    style={{ textShadow: "0 0 16px rgba(52,211,153,.65)" }}>
+                    X
+                  </span>
+                  UM
                 </h1>
-                <p className="text-[7px] md:text-[8px] text-emerald-400/55 uppercase tracking-[0.38em] font-black mt-0.5">
+                <p className="text-[7px] md:text-[8px] text-emerald-400/50 uppercase tracking-[.38em] font-black mt-0.5">
                   Bio-Digital Dashboard
                 </p>
               </div>
@@ -303,44 +367,34 @@ export default function DashboardPage() {
                 <span className="hidden sm:block text-sm text-white/35 font-semibold truncate max-w-[8rem]">
                   {displayName}
                 </span>
-                <div className="relative bg-white/[0.05] p-2 md:p-2.5 rounded-2xl border border-white/[0.08] backdrop-blur-sm cursor-pointer hover:bg-white/[0.09] transition-colors">
+                <div className="relative p-2 md:p-2.5 rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
+                  style={{ ...glassCard }}>
                   <span className="text-base md:text-lg">🔔</span>
                 </div>
               </div>
             </header>
 
-            {/* ─── VITALITY CARD ─── */}
-            <section className="w-full max-w-3xl mb-5">
-              <div
-                className="relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-2xl group"
-                style={{
-                  background: "linear-gradient(135deg, rgba(255,255,255,0.085) 0%, rgba(255,255,255,0.018) 100%)",
-                  backdropFilter: "blur(28px)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                {/* Hover shimmer */}
-                <div className="absolute inset-0 rounded-[2rem] md:rounded-[2.5rem] bg-emerald-500/[0.03] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            {/* ── VITALITY CARD ── */}
+            <section className="w-full max-w-3xl mb-5 lixum-animate" style={{ animationDelay: ".05s" }}>
+              <div className="lixum-vitality-card relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 cursor-default"
+                style={vitalityCard}>
+                {/* Subtle inner glow highlight */}
+                <div className="absolute inset-0 rounded-[2rem] md:rounded-[2.5rem]"
+                  style={{ background: "radial-gradient(ellipse at 20% 10%, rgba(52,211,153,.06) 0%, transparent 55%)", pointerEvents: "none" }} />
 
-                {/* Top row — score + goals */}
+                {/* Top row */}
                 <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 mb-7">
                   <div className="space-y-1.5">
-                    {/* "Vitalité" label in green */}
-                    <span
-                      className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.22em]"
-                      style={{ color: "#34d399" }}
-                    >
+                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[.22em]"
+                      style={{ color: "#34d399" }}>
                       {locale === "fr" ? "Score de Vitalité" : "Vitality Score"}
                     </span>
                     <div className="flex items-baseline gap-2">
                       <span className="text-6xl md:text-7xl font-black tracking-tighter italic leading-none">
                         {dailyScore}
                       </span>
-                      {/* % in green — marker of life/health */}
-                      <span
-                        className="text-2xl md:text-3xl font-black"
-                        style={{ color: "#34d399", textShadow: "0 0 16px rgba(52,211,153,0.5)" }}
-                      >
+                      <span className="text-2xl md:text-3xl font-black"
+                        style={{ color: "#34d399", textShadow: "0 0 16px rgba(52,211,153,.5)" }}>
                         %
                       </span>
                     </div>
@@ -369,56 +423,29 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Progress bar — calories, stays orange */}
-                <div className="relative h-3.5 md:h-4 bg-white/[0.05] rounded-full overflow-hidden border border-white/[0.04] mb-7">
-                  <div
-                    className="h-full rounded-full transition-all duration-1000"
-                    style={{
-                      width: `${progressPercent}%`,
-                      background: "linear-gradient(90deg, #ea580c 0%, #f59e0b 55%, #eab308 100%)",
-                      boxShadow: "0 0 18px rgba(245,158,11,0.45)",
-                    }}
-                  />
+                {/* Progress bar */}
+                <div className="relative h-3.5 rounded-full overflow-hidden mb-7"
+                  style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.04)" }}>
+                  <div className="h-full rounded-full transition-all duration-1000" style={{
+                    width: `${progressPercent}%`,
+                    background: "linear-gradient(90deg,#ea580c,#f59e0b 55%,#eab308)",
+                    boxShadow: "0 0 18px rgba(245,158,11,.45)",
+                  }} />
                 </div>
 
                 {/* Stats row */}
-                <div className="relative grid grid-cols-4 gap-2 border-t border-white/[0.07] pt-5 md:pt-6">
+                <div className="relative grid grid-cols-4 gap-2 pt-5 md:pt-6"
+                  style={{ borderTop: "1px solid rgba(255,255,255,.06)" }}>
                   {[
-                    {
-                      label: locale === "fr" ? "Brûlés"   : "Burned",
-                      value: todayBurned,
-                      unit:  "kcal",
-                      color: "#60a5fa",   /* blue — energy/activity */
-                    },
-                    {
-                      label: locale === "fr" ? "Restants" : "Left",
-                      value: remaining,
-                      unit:  "kcal",
-                      color: remaining >= 0 ? "#34d399" : "#f87171",
-                    },
-                    {
-                      label: "BMR",
-                      value: Math.round(profile.bmr),
-                      unit:  "kcal",
-                      color: "rgba(255,255,255,0.75)",
-                    },
-                    {
-                      label: locale === "fr" ? "Série" : "Streak",
-                      value: streak,
-                      unit:  locale === "fr" ? "jours" : "days",
-                      color: "#34d399",   /* green — health streak */
-                    },
+                    { label: locale === "fr" ? "Brûlés"   : "Burned",  value: todayBurned,           unit: "kcal", color: "#60a5fa" },
+                    { label: locale === "fr" ? "Restants" : "Left",    value: remaining,             unit: "kcal", color: remaining >= 0 ? "#34d399" : "#f87171" },
+                    { label: "BMR",                                     value: Math.round(profile.bmr), unit: "kcal", color: "rgba(255,255,255,.7)" },
+                    { label: locale === "fr" ? "Série"    : "Streak",  value: streak,                unit: locale === "fr" ? "j" : "d", color: "#34d399" },
                   ].map((stat, i) => (
-                    <div
-                      key={stat.label}
-                      className={`text-center ${i < 3 ? "border-r border-white/[0.07]" : ""}`}
-                    >
-                      <p className="text-[7px] md:text-[8px] text-white/30 uppercase font-black tracking-wider mb-1.5">
-                        {stat.label}
-                      </p>
-                      <p className="font-black text-base md:text-lg leading-none" style={{ color: stat.color }}>
-                        {stat.value}
-                      </p>
+                    <div key={stat.label} className={`text-center ${i < 3 ? "border-r" : ""}`}
+                      style={{ borderColor: "rgba(255,255,255,.06)" }}>
+                      <p className="text-[7px] md:text-[8px] text-white/30 uppercase font-black tracking-wider mb-1.5">{stat.label}</p>
+                      <p className="font-black text-base md:text-lg leading-none" style={{ color: stat.color }}>{stat.value}</p>
                       <p className="text-[7px] text-white/20 mt-0.5">{stat.unit}</p>
                     </div>
                   ))}
@@ -426,39 +453,31 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            {/* ─── SECONDARY WIDGETS ─── */}
+            {/* ── WIDGET GRID ── */}
             <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
 
-              {/* Today's Meals */}
-              <div
-                className="rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 flex flex-col min-h-[14rem] md:min-h-[16rem]"
-                style={{ background: "rgba(255,255,255,0.022)", border: "1px solid rgba(255,255,255,0.055)" }}
-              >
+              {/* Meals */}
+              <div className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 flex flex-col min-h-[15rem] md:min-h-[17rem] lixum-animate cursor-default"
+                style={{ ...glassCard, animationDelay: ".10s" }}>
                 <div className="flex items-center justify-between mb-4">
-                  {/* Repas = food/energy → amber */}
                   <span className="text-[9px] md:text-[10px] text-amber-500 font-black uppercase tracking-widest italic">
                     {locale === "fr" ? "Repas du Jour" : "Today's Meals"}
                   </span>
-                  <Link
-                    href={`/${locale}/meals`}
-                    prefetch={true}
-                    className="text-[8px] md:text-[9px] text-white/25 hover:text-white/60 transition-colors uppercase font-black tracking-wider"
-                  >
+                  <Link href={`/${locale}/meals`} prefetch={true}
+                    className="text-[8px] md:text-[9px] text-white/25 hover:text-emerald-400 transition-colors uppercase font-black tracking-wider">
                     {locale === "fr" ? "Tout voir" : "See all"} →
                   </Link>
                 </div>
 
                 {todayMeals.length === 0 ? (
-                  <p className="text-white/25 text-xs md:text-sm py-6 text-center flex-1">
+                  <p className="text-white/25 text-sm py-6 text-center flex-1">
                     {locale === "fr" ? "Aucun repas enregistré" : "No meals logged yet"}
                   </p>
                 ) : (
                   <div className="flex-1 space-y-2">
                     {todayMeals.slice(0, 5).map((meal: Meal) => (
-                      <div
-                        key={meal.id}
-                        className="flex justify-between items-center text-xs md:text-sm py-2 border-b border-white/[0.05] last:border-0"
-                      >
+                      <div key={meal.id} className="flex justify-between items-center text-xs md:text-sm py-2"
+                        style={{ borderBottom: "1px solid rgba(52,211,153,.06)" }}>
                         <span className="text-white/65 font-semibold truncate mr-2">{meal.name}</span>
                         <span className="text-amber-400/90 font-black flex-shrink-0 tabular-nums">
                           {meal.calories} kcal
@@ -473,33 +492,23 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                {/* CTA goes to Meals page (scan is there) */}
-                <div className="mt-auto pt-3 border-t border-white/[0.05]">
-                  <Link
-                    href={`/${locale}/meals`}
-                    prefetch={true}
-                    className="text-[9px] md:text-[10px] text-amber-500 hover:text-amber-400 font-black uppercase tracking-wider transition-colors"
-                  >
+                <div className="mt-auto pt-3" style={{ borderTop: "1px solid rgba(52,211,153,.06)" }}>
+                  <Link href={`/${locale}/meals`} prefetch={true}
+                    className="text-[9px] md:text-[10px] text-amber-500 hover:text-amber-400 font-black uppercase tracking-wider transition-colors">
                     → {locale === "fr" ? "Gérer mes repas" : "Manage meals"}
                   </Link>
                 </div>
               </div>
 
-              {/* Activity — bar chart */}
-              <div
-                className="rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 flex flex-col overflow-hidden min-h-[14rem] md:min-h-[16rem]"
-                style={{ background: "rgba(255,255,255,0.022)", border: "1px solid rgba(255,255,255,0.055)" }}
-              >
+              {/* Activity */}
+              <div className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 flex flex-col overflow-hidden min-h-[15rem] md:min-h-[17rem] lixum-animate cursor-default"
+                style={{ ...glassCard, animationDelay: ".15s" }}>
                 <div className="flex items-center justify-between mb-4">
-                  {/* Activité = energy → amber */}
                   <span className="text-[9px] md:text-[10px] text-amber-500 font-black uppercase tracking-widest italic">
                     {locale === "fr" ? "Activité & Énergie" : "Activity & Energy"}
                   </span>
-                  <Link
-                    href={`/${locale}/activities`}
-                    prefetch={true}
-                    className="text-[8px] md:text-[9px] text-white/25 hover:text-white/60 transition-colors uppercase font-black tracking-wider"
-                  >
+                  <Link href={`/${locale}/activities`} prefetch={true}
+                    className="text-[8px] md:text-[9px] text-white/25 hover:text-emerald-400 transition-colors uppercase font-black tracking-wider">
                     {locale === "fr" ? "Voir" : "View"} →
                   </Link>
                 </div>
@@ -512,7 +521,7 @@ export default function DashboardPage() {
                   {locale === "fr" ? "brûlées aujourd'hui" : "burned today"}
                 </p>
 
-                {/* 7-day bar chart */}
+                {/* 7-day mini bar chart */}
                 <div className="flex items-end gap-1.5 h-16 md:h-20 mt-auto pt-4">
                   {(() => {
                     const raw: { date?: string; consumed: number; target?: number }[] =
@@ -524,31 +533,22 @@ export default function DashboardPage() {
                       const hPct   = Math.max(6, Math.round(((d.consumed || 0) / maxV) * 100));
                       const isLast = i === raw.length - 1;
                       return (
-                        <div
-                          key={i}
-                          className="flex-1 rounded-full transition-all"
-                          style={{
-                            height: `${hPct}%`,
-                            background:     isLast ? "#f59e0b" : "rgba(255,255,255,0.08)",
-                            boxShadow:      isLast ? "0 0 14px rgba(245,158,11,0.65)" : "none",
-                          }}
-                        />
+                        <div key={i} className="flex-1 rounded-full transition-all" style={{
+                          height: `${hPct}%`,
+                          background:  isLast ? "#f59e0b" : "rgba(255,255,255,.07)",
+                          boxShadow:   isLast ? "0 0 14px rgba(245,158,11,.65)" : "none",
+                        }} />
                       );
                     });
                   })()}
                 </div>
               </div>
 
-              {/* Green Streak + Badges — vitality → green */}
-              <div
-                className="rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 min-h-[12rem]"
-                style={{ background: "rgba(255,255,255,0.022)", border: "1px solid rgba(255,255,255,0.055)" }}
-              >
-                {/* "Santé / Vie" theme → green */}
-                <span
-                  className="text-[9px] md:text-[10px] font-black uppercase tracking-widest italic block mb-3"
-                  style={{ color: "#34d399" }}
-                >
+              {/* Streak & Badges — vitality → green */}
+              <div className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 min-h-[12rem] lixum-animate cursor-default"
+                style={{ ...glassCard, animationDelay: ".20s" }}>
+                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest italic block mb-3"
+                  style={{ color: "#34d399" }}>
                   {locale === "fr" ? "Série Verte — Santé" : "Green Streak — Health"}
                 </span>
 
@@ -559,25 +559,21 @@ export default function DashboardPage() {
                   </span>
                 </div>
 
-                <div className="w-full bg-white/[0.05] h-2 rounded-full overflow-hidden mt-4">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{
-                      width: `${Math.min(100, streak * 10)}%`,
-                      background: "linear-gradient(90deg, #059669, #34d399)",
-                      boxShadow:  "0 0 10px rgba(52,211,153,0.5)",
-                    }}
-                  />
+                <div className="w-full h-2 rounded-full overflow-hidden mt-4"
+                  style={{ background: "rgba(255,255,255,.04)" }}>
+                  <div className="h-full rounded-full transition-all duration-700" style={{
+                    width: `${Math.min(100, streak * 10)}%`,
+                    background: "linear-gradient(90deg,#059669,#34d399)",
+                    boxShadow: "0 0 10px rgba(52,211,153,.5)",
+                  }} />
                 </div>
 
                 {badges.length > 0 && (
                   <div className="flex gap-2.5 mt-5 flex-wrap">
                     {badges.slice(0, 5).map((badge: Badge) => (
-                      <span
-                        key={badge.id}
+                      <span key={badge.id}
                         title={locale === "fr" ? badge.nameFr : badge.name}
-                        className="text-2xl cursor-default hover:scale-110 transition-transform inline-block"
-                      >
+                        className="text-2xl cursor-default hover:scale-110 transition-transform inline-block">
                         {badge.icon}
                       </span>
                     ))}
@@ -585,15 +581,11 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              {/* Weight Projection — santé/vitalité → green */}
-              <div
-                className="rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 min-h-[12rem]"
-                style={{ background: "rgba(255,255,255,0.022)", border: "1px solid rgba(255,255,255,0.055)" }}
-              >
-                <span
-                  className="text-[9px] md:text-[10px] font-black uppercase tracking-widest italic block mb-3"
-                  style={{ color: "#34d399" }}
-                >
+              {/* Weight Projection — santé → green */}
+              <div className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 min-h-[12rem] lixum-animate cursor-default"
+                style={{ ...glassCard, animationDelay: ".25s" }}>
+                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest italic block mb-3"
+                  style={{ color: "#34d399" }}>
                   {locale === "fr" ? "Santé — Poids Projeté" : "Health — Projected Weight"}
                 </span>
 
@@ -607,25 +599,12 @@ export default function DashboardPage() {
                   <span className="text-white/55 font-bold">{profile.weight} kg</span>
                 </p>
 
-                <div
-                  className={`mt-4 inline-flex items-center gap-1.5 text-xs md:text-sm font-black px-3 py-1.5 rounded-full ${
-                    weightChange > 0
-                      ? "border border-red-500/20"
-                      : weightChange < 0
-                      ? "border border-emerald-500/25"
-                      : "border border-white/10"
-                  }`}
+                <div className="mt-4 inline-flex items-center gap-1.5 text-xs md:text-sm font-black px-3 py-1.5 rounded-full"
                   style={{
-                    background:
-                      weightChange > 0
-                        ? "rgba(239,68,68,0.1)"
-                        : weightChange < 0
-                        ? "rgba(16,185,129,0.1)"
-                        : "rgba(255,255,255,0.05)",
-                    color:
-                      weightChange > 0 ? "#f87171" : weightChange < 0 ? "#34d399" : "rgba(255,255,255,0.4)",
-                  }}
-                >
+                    background: weightChange > 0 ? "rgba(239,68,68,.09)" : weightChange < 0 ? "rgba(16,185,129,.09)" : "rgba(255,255,255,.05)",
+                    border:     `1px solid ${weightChange > 0 ? "rgba(239,68,68,.18)" : weightChange < 0 ? "rgba(52,211,153,.2)" : "rgba(255,255,255,.08)"}`,
+                    color:      weightChange > 0 ? "#f87171" : weightChange < 0 ? "#34d399" : "rgba(255,255,255,.4)",
+                  }}>
                   {weightChange > 0 ? "↑" : weightChange < 0 ? "↓" : "→"}
                   {" "}{Math.abs(weightChange).toFixed(1)} kg
                   <span className="font-normal opacity-60">{locale === "fr" ? " sur 30j" : " 30d"}</span>
@@ -637,13 +616,11 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* ─── SPORT RECOMMENDATION ─── */}
+            {/* ── SPORT RECOMMENDATION ── */}
             {recommendation && (
-              <div className="w-full max-w-3xl mt-4 md:mt-5">
-                <div
-                  className="rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6"
-                  style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}
-                >
+              <div className="w-full max-w-3xl mt-4 md:mt-5 lixum-animate" style={{ animationDelay: ".30s" }}>
+                <div className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 cursor-default"
+                  style={{ background: "rgba(239,68,68,.06)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", border: "1px solid rgba(239,68,68,.14)", boxShadow: "0 4px 24px rgba(0,0,0,.28)" }}>
                   <p className="text-[9px] md:text-[10px] text-red-400 font-black uppercase tracking-widest mb-4">
                     ⚡{" "}
                     {locale === "fr"
@@ -652,15 +629,14 @@ export default function DashboardPage() {
                   </p>
                   <div className="grid grid-cols-3 gap-3 md:gap-4 text-center">
                     {[
-                      { value: recommendation.walkingKm,      label: locale === "fr" ? "km marche"  : "km walk"  },
-                      { value: recommendation.runningMinutes,  label: locale === "fr" ? "min course" : "min run"  },
-                      { value: recommendation.steps,           label: locale === "fr" ? "pas"        : "steps"    },
+                      { value: recommendation.walkingKm,     label: locale === "fr" ? "km marche"  : "km walk"  },
+                      { value: recommendation.runningMinutes, label: locale === "fr" ? "min course" : "min run"  },
+                      { value: recommendation.steps,          label: locale === "fr" ? "pas"        : "steps"    },
                     ].map((item) => (
-                      <div key={item.label} className="bg-white/[0.04] rounded-2xl py-3 md:py-4 px-2">
+                      <div key={item.label} className="rounded-2xl py-3 md:py-4 px-2"
+                        style={{ background: "rgba(255,255,255,.04)" }}>
                         <p className="text-xl md:text-2xl font-black text-amber-500">{item.value}</p>
-                        <p className="text-[8px] md:text-[9px] text-white/30 uppercase tracking-wide mt-0.5">
-                          {item.label}
-                        </p>
+                        <p className="text-[8px] md:text-[9px] text-white/30 uppercase tracking-wide mt-0.5">{item.label}</p>
                       </div>
                     ))}
                   </div>
@@ -670,44 +646,7 @@ export default function DashboardPage() {
 
           </div>
         </main>
-
-        {/* ══════════ LUXURY BOTTOM BAR — future features ══════════ */}
-        <div
-          className="flex-shrink-0 flex items-center justify-around px-3 md:px-6"
-          style={{
-            height: "3.75rem",
-            background: "linear-gradient(180deg, rgba(8,6,4,0) 0%, rgba(6,4,2,0.98) 100%)",
-            borderTop: "1px solid rgba(255,255,255,0.04)",
-            backdropFilter: "blur(16px)",
-          }}
-        >
-          {/* Subtle decorative line above */}
-          <div
-            className="absolute inset-x-0 top-0 h-px"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(52,211,153,0.15), rgba(245,158,11,0.1), transparent)" }}
-          />
-
-          {FUTURE_ITEMS.map((item) => (
-            <div
-              key={item.labelFr}
-              className="flex flex-col items-center gap-0.5 cursor-not-allowed select-none opacity-40 hover:opacity-60 transition-opacity"
-              title={locale === "fr" ? "Bientôt disponible" : "Coming soon"}
-            >
-              <span className="text-base md:text-lg">{item.icon}</span>
-              <span className="text-[6px] md:text-[7px] uppercase font-black tracking-widest text-white/50">
-                {locale === "fr" ? item.labelFr : item.labelEn}
-              </span>
-              <span
-                className="text-[5px] uppercase font-black tracking-widest px-1.5 py-0.5 rounded-full"
-                style={{ background: "rgba(52,211,153,0.12)", color: "#34d399" }}
-              >
-                {locale === "fr" ? "bientôt" : "soon"}
-              </span>
-            </div>
-          ))}
-        </div>
-
       </div>
-    </div>
+    </>
   );
 }
