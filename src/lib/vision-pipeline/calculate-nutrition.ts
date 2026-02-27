@@ -29,7 +29,6 @@ export function calculateNutrition(
 ): NutritionResult {
   const perIngredient: IngredientNutrition[] = [];
 
-  let totalKcal = 0;
   let totalProtein = 0;
   let totalCarbs = 0;
   let totalFat = 0;
@@ -48,7 +47,6 @@ export function calculateNutrition(
     const fat = ingredient.fat_per_100g * weightFactor;
     const fiber = ingredient.fiber_per_100g * weightFactor;
 
-    totalKcal += kcal;
     totalProtein += protein;
     totalCarbs += carbs;
     totalFat += fat;
@@ -70,7 +68,6 @@ export function calculateNutrition(
   // This reduces calorie count slightly to account for uncertainty
   if (averageDetectionConfidence < 0.7) {
     const correctionFactor = 0.9 + (averageDetectionConfidence * 0.1 / 0.7);
-    totalKcal *= correctionFactor;
     totalProtein *= correctionFactor;
     totalCarbs *= correctionFactor;
     totalFat *= correctionFactor;

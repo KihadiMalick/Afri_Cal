@@ -136,6 +136,23 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
     void gamma; // used implicitly via cell coverage
   }, [captureFrame, locale, onScanComplete]);
 
+  /* ── Desktop fallback: simulate coverage automatically ── */
+  const startDesktopFallback = useCallback(() => {
+    setOrientSupport(false);
+    let fakeAz = 0; let fakeEl = 0;
+    const interval = setInterval(() => {
+      fakeAz = (fakeAz + 15) % 360;
+      if (fakeAz === 0) fakeEl = (fakeEl + 30) % 180;
+      const syntheticEvent = {
+        alpha: fakeAz,
+        beta:  fakeEl - 90,
+        gamma: 0,
+      } as DeviceOrientationEvent;
+      handleOrientation(syntheticEvent);
+    }, 120);
+    return () => clearInterval(interval);
+  }, [handleOrientation]);
+
   /* ── Request iOS permission & start orientation ── */
   const startOrientation = useCallback(async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -157,24 +174,7 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
       /* Desktop fallback: auto-increment coverage with timer */
       startDesktopFallback();
     }
-  }, [handleOrientation]);
-
-  /* ── Desktop fallback: simulate coverage automatically ── */
-  const startDesktopFallback = useCallback(() => {
-    setOrientSupport(false);
-    let fakeAz = 0; let fakeEl = 0;
-    const interval = setInterval(() => {
-      fakeAz = (fakeAz + 15) % 360;
-      if (fakeAz === 0) fakeEl = (fakeEl + 30) % 180;
-      const syntheticEvent = {
-        alpha: fakeAz,
-        beta:  fakeEl - 90,
-        gamma: 0,
-      } as DeviceOrientationEvent;
-      handleOrientation(syntheticEvent);
-    }, 120);
-    return () => clearInterval(interval);
-  }, [handleOrientation]);
+  }, [handleOrientation, startDesktopFallback]);
 
   /* ── Start camera ── */
   const startCamera = useCallback(async () => {
