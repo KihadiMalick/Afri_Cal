@@ -4,8 +4,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { CheckCircle, X, Zap, Sun } from "lucide-react";
 
 /* ══════════════════════════════════════════════════════════
-   LIXUM AREAL SCAN — v4 "The Swirl"
-   Gyroscope circular swirl · Wireframe Mesh Lidar · 10 captures
+   LIXUM AREAL SCAN — v5 "The Swirl"
+   Translation-based · DeviceMotionEvent · 5 cm/cliché
    ══════════════════════════════════════════════════════════ */
 
 export interface ArealScanProps {
@@ -14,21 +14,26 @@ export interface ArealScanProps {
   locale: "fr" | "en";
 }
 
-/* ── Swirl sectors (18 sectors × 20°) ── */
-const SWIRL_SECTORS  = 18;
-const COMPLETE_AT    = 12;   // 12/18 sectors (~67%) → done
-const TARGET_FRAMES  = 10;   // exactly 10 frames to capture
-const DONE_AT_PCT    = Math.round((COMPLETE_AT / SWIRL_SECTORS) * 100); // ≈ 67
+/* ── Capture targets ── */
+const TARGET_FRAMES  = 12;          // number of frames to capture
+
+/* ── Translation detection ── */
+const THRESHOLD_M    = 0.05;        // 5 cm displacement triggers a capture
+const VELOCITY_DECAY = 0.98;        // per-sample velocity decay (half-life ≈ 0.57 s)
+const GRAV_ALPHA     = 0.97;        // low-pass alpha for gravity estimation
+
+/* ── Gauge ── */
+const GAUGE_SECTORS  = TARGET_FRAMES; // one slice per captured frame
 
 /* ── Wireframe mesh ── */
-const MESH_COLS     = 22;   // grid columns
-const MESH_ROWS     = 16;   // grid rows
-const SAMPLE_W      = 44;   // offscreen brightness sample width
-const SAMPLE_H      = 32;   // offscreen brightness sample height
-const MESH_UPDATE_F = 4;    // frames between mesh resamples
-const MESH_MAX_ELEV = 8;    // max vertex elevation displacement (px)
+const MESH_COLS     = 22;
+const MESH_ROWS     = 16;
+const SAMPLE_W      = 44;
+const SAMPLE_H      = 32;
+const MESH_UPDATE_F = 4;
+const MESH_MAX_ELEV = 8;
 
-/* ── Low-light threshold (avg luma 0-1) ── */
+/* ── Low-light threshold ── */
 const DARK_THRESHOLD = 0.12;
 
 /* ── Inline keyframes ── */
@@ -49,7 +54,7 @@ const SCAN_STYLES = `
 
 /* ══════════════════════════════════════════════════════════ */
 export default function ArealScan({ onScanComplete, onCancel, locale }: ArealScanProps) {
-  /* ── Refs ── */
+  /* ── Camera / canvas refs ── */
   const videoRef       = useRef<HTMLVideoElement>(null);
   const canvasRef      = useRef<HTMLCanvasElement>(null);
   const sampleCanvRef  = useRef<HTMLCanvasElement | null>(null);
@@ -58,14 +63,19 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
   const frameTickRef   = useRef<number>(0);
   const meshElevRef    = useRef<Float32Array | null>(null);
   const avgBrightRef   = useRef<number>(0.5);
-  const coveredCells   = useRef<Set<number>>(new Set());
   const capturedFrames = useRef<string[]>([]);
   const streamRef      = useRef<MediaStream | null>(null);
 
-  /* ── State ── */
+  /* ── Motion integration refs ── */
+  const velRef      = useRef({ x: 0, y: 0, z: 0 });
+  const posRef      = useRef({ x: 0, y: 0, z: 0 });
+  const lastCapRef  = useRef({ x: 0, y: 0, z: 0 });
+  const gravRef     = useRef<{ x: number; y: number; z: number } | null>(null);
+  const lastMtRef   = useRef<number | null>(null);
+
+  /* ── UI state ── */
   const [uiPhase,    setUiPhase]    = useState<"intro" | "scanning" | "done">("intro");
   const [coverage,   setCoverage]   = useState(0);
-  const [visitedSet, setVisitedSet] = useState<Set<number>>(new Set());
   const [frameCount, setFrameCount] = useState(0);
   const [isDark,     setIsDark]     = useState(false);
   const [torchOn,    setTorchOn]    = useState(false);
@@ -89,13 +99,13 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
     if (!v || v.readyState < 2) return;
     if (!captureCanvRef.current) captureCanvRef.current = document.createElement("canvas");
     const cc = captureCanvRef.current;
-    cc.width  = Math.min(v.videoWidth, 640);
+    cc.width  = Math.min(v.videoWidth,  640);
     cc.height = Math.min(v.videoHeight, 480);
     cc.getContext("2d")?.drawImage(v, 0, 0, cc.width, cc.height);
     capturedFrames.current.push(cc.toDataURL("image/jpeg", 0.72));
   }, []);
 
-  /* ── Sample video brightness and build mesh elevation map ── */
+  /* ── Sample video brightness + mesh elevation ── */
   const updateMesh = useCallback(() => {
     const v = videoRef.current;
     if (!v || v.readyState < 2) return;
@@ -110,15 +120,14 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
     const { data } = ctx.getImageData(0, 0, SAMPLE_W, SAMPLE_H);
 
     const numVerts = (MESH_COLS + 1) * (MESH_ROWS + 1);
-    if (!meshElevRef.current || meshElevRef.current.length !== numVerts) {
+    if (!meshElevRef.current || meshElevRef.current.length !== numVerts)
       meshElevRef.current = new Float32Array(numVerts);
-    }
 
     let totalBright = 0;
     for (let r = 0; r <= MESH_ROWS; r++) {
       for (let c = 0; c <= MESH_COLS; c++) {
-        const sx = Math.round((c / MESH_COLS) * (SAMPLE_W - 1));
-        const sy = Math.round((r / MESH_ROWS) * (SAMPLE_H - 1));
+        const sx  = Math.round((c / MESH_COLS) * (SAMPLE_W - 1));
+        const sy  = Math.round((r / MESH_ROWS) * (SAMPLE_H - 1));
         const idx = (sy * SAMPLE_W + sx) * 4;
         const luma = (data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114) / 255;
         meshElevRef.current[r * (MESH_COLS + 1) + c] = luma;
@@ -134,18 +143,16 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
       const elev = meshElevRef.current;
       if (!elev) return;
 
-      /* Pre-compute vertex positions with brightness-driven elevation */
       const cx = W / 2, cy = H / 2;
-      const verts: [number, number, number][] = []; // [x, y, brightness]
+      const verts: [number, number, number][] = [];
       for (let r = 0; r <= MESH_ROWS; r++) {
         for (let c = 0; c <= MESH_COLS; c++) {
           const bx = (c / MESH_COLS) * W;
           const by = (r / MESH_ROWS) * H;
           const e  = elev[r * (MESH_COLS + 1) + c];
-          /* Bright areas → vertex pulled toward screen center (elevation) */
           const ddx  = bx - cx, ddy = by - cy;
           const dist = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
-          const disp = (e - 0.35) * MESH_MAX_ELEV; // center on mid-gray
+          const disp = (e - 0.35) * MESH_MAX_ELEV;
           verts.push([
             bx - (ddx / dist) * disp,
             by - (ddy / dist) * disp,
@@ -154,10 +161,8 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
         }
       }
 
-      /* Pulsing base alpha */
-      const pulse = Math.sin(t * 1.4) * 0.09 + 0.28; // 0.19…0.37
+      const pulse = Math.sin(t * 1.4) * 0.09 + 0.28;
 
-      /* Draw horizontal mesh lines */
       ctx.shadowColor = "#00ff9d";
       ctx.shadowBlur  = 5;
       for (let r = 0; r <= MESH_ROWS; r++) {
@@ -168,14 +173,11 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
           else         ctx.lineTo(vx, vy);
           void br;
         }
-        /* Lines brighter near vertical center */
         const rowFade = 1 - Math.abs(r - MESH_ROWS / 2) / (MESH_ROWS / 2) * 0.35;
         ctx.strokeStyle = `rgba(0,255,157,${(pulse * rowFade).toFixed(3)})`;
         ctx.lineWidth   = 0.65;
         ctx.stroke();
       }
-
-      /* Draw vertical mesh lines */
       for (let c = 0; c <= MESH_COLS; c++) {
         ctx.beginPath();
         for (let r = 0; r <= MESH_ROWS; r++) {
@@ -190,7 +192,6 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
       }
       ctx.shadowBlur = 0;
 
-      /* Bright elevation points at high-detail vertices */
       for (let r = 0; r <= MESH_ROWS; r++) {
         for (let c = 0; c <= MESH_COLS; c++) {
           const [vx, vy, br] = verts[r * (MESH_COLS + 1) + c];
@@ -206,7 +207,6 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
       }
       ctx.shadowBlur = 0;
 
-      /* Animated sweep line that follows the mesh surface */
       const sweepProgress = (Math.sin(t * 0.85) * 0.5 + 0.5);
       const sweepRow      = sweepProgress * MESH_ROWS;
       const r1 = Math.floor(sweepRow);
@@ -229,7 +229,6 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
       ctx.stroke();
       ctx.shadowBlur  = 0;
 
-      /* Corner brackets */
       const margin = 12;
       const bLen   = Math.min(W, H) * 0.06;
       ctx.shadowColor = "#00ff9d";
@@ -237,10 +236,10 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
       ctx.strokeStyle = `rgba(0,255,157,${(Math.sin(t * 0.5) * 0.08 + 0.85).toFixed(2)})`;
       ctx.lineWidth   = 2.2;
       const corners: [number, number, number, number][] = [
-        [margin,     margin,     1,  1],
-        [W - margin, margin,    -1,  1],
-        [margin,     H - margin, 1, -1],
-        [W - margin, H - margin,-1, -1],
+        [margin,     margin,      1,  1],
+        [W - margin, margin,     -1,  1],
+        [margin,     H - margin,  1, -1],
+        [W - margin, H - margin, -1, -1],
       ];
       for (const [x, y, sx, sy] of corners) {
         ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + sx * bLen, y); ctx.stroke();
@@ -263,44 +262,86 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
     ctx.clearRect(0, 0, W, H);
     frameTickRef.current++;
 
-    /* Resample brightness & update mesh */
     if (frameTickRef.current % MESH_UPDATE_F === 0) {
       updateMesh();
       setIsDark(avgBrightRef.current < DARK_THRESHOLD);
     }
 
     drawMesh(ctx, W, H, t);
-
     rafRef.current = requestAnimationFrame(animate);
   }, [updateMesh, drawMesh]);
 
-  /* ── Handle device orientation → swirl sector tracking ── */
-  const handleOrientation = useCallback(
-    (e: DeviceOrientationEvent) => {
-      const alpha = e.alpha ?? 0;
-      const sectorId = Math.floor(
-        (((alpha % 360) + 360) % 360 / 360) * SWIRL_SECTORS
-      );
+  /* ══════════════════════════════════════════════════════════
+     TRANSLATION DETECTION — DeviceMotionEvent
+     ══════════════════════════════════════════════════════════
+     1. Use accelerationIncludingGravity (always available on mobile)
+     2. Track gravity with a slow low-pass filter (α = 0.97)
+     3. Subtract gravity → linear acceleration
+     4. Integrate: a → velocity (with per-sample decay)
+     5. Integrate: velocity → position
+     6. When |pos - lastCapturePos| ≥ 5 cm → snap a frame
+     ══════════════════════════════════════════════════════════ */
+  const handleMotion = useCallback(
+    (e: DeviceMotionEvent) => {
+      if (capturedFrames.current.length >= TARGET_FRAMES) return;
 
-      if (!coveredCells.current.has(sectorId)) {
-        coveredCells.current.add(sectorId);
-        const sectorsCovered = coveredCells.current.size;
-        const pct = Math.round((sectorsCovered / SWIRL_SECTORS) * 100);
+      const ag = e.accelerationIncludingGravity;
+      if (!ag || ag.x == null || ag.y == null || ag.z == null) return;
+
+      const ax = ag.x as number;
+      const ay = ag.y as number;
+      const az = ag.z as number;
+
+      /* Init gravity estimate on first event (phone ~still at launch) */
+      if (!gravRef.current) {
+        gravRef.current = { x: ax, y: ay, z: az };
+        lastMtRef.current = e.timeStamp ?? performance.now();
+        return;
+      }
+
+      const now = e.timeStamp ?? performance.now();
+      const dt  = lastMtRef.current != null
+        ? Math.min((now - lastMtRef.current) / 1000, 0.05)
+        : 1 / 60;
+      lastMtRef.current = now;
+
+      /* Update gravity estimate (slow low-pass, α=0.97 ≈ time-constant 0.56 s) */
+      gravRef.current.x = gravRef.current.x * GRAV_ALPHA + ax * (1 - GRAV_ALPHA);
+      gravRef.current.y = gravRef.current.y * GRAV_ALPHA + ay * (1 - GRAV_ALPHA);
+      gravRef.current.z = gravRef.current.z * GRAV_ALPHA + az * (1 - GRAV_ALPHA);
+
+      /* Linear acceleration (gravity removed) */
+      const linX = ax - gravRef.current.x;
+      const linY = ay - gravRef.current.y;
+      const linZ = az - gravRef.current.z;
+
+      /* Integrate acceleration → velocity with decay (prevents unbounded drift) */
+      velRef.current.x = velRef.current.x * VELOCITY_DECAY + linX * dt;
+      velRef.current.y = velRef.current.y * VELOCITY_DECAY + linY * dt;
+      velRef.current.z = velRef.current.z * VELOCITY_DECAY + linZ * dt;
+
+      /* Integrate velocity → position */
+      posRef.current.x += velRef.current.x * dt;
+      posRef.current.y += velRef.current.y * dt;
+      posRef.current.z += velRef.current.z * dt;
+
+      /* Euclidean distance from the last capture position */
+      const dx   = posRef.current.x - lastCapRef.current.x;
+      const dy   = posRef.current.y - lastCapRef.current.y;
+      const dz   = posRef.current.z - lastCapRef.current.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+      if (dist >= THRESHOLD_M) {
+        captureFrame();
+        /* Reset displacement anchor to current position */
+        lastCapRef.current = { ...posRef.current };
+
+        const count = capturedFrames.current.length;
+        const pct   = Math.round((count / TARGET_FRAMES) * 100);
+        setFrameCount(count);
         setCoverage(pct);
-        setVisitedSet(new Set(coveredCells.current));
 
-        /* Capture at evenly-spaced intervals → exactly TARGET_FRAMES */
-        const targetNow = Math.min(
-          TARGET_FRAMES,
-          Math.ceil((sectorsCovered / COMPLETE_AT) * TARGET_FRAMES)
-        );
-        while (capturedFrames.current.length < targetNow) captureFrame();
-        setFrameCount(capturedFrames.current.length);
-
-        /* Done */
-        if (sectorsCovered >= COMPLETE_AT) {
-          while (capturedFrames.current.length < TARGET_FRAMES) captureFrame();
-          setFrameCount(TARGET_FRAMES);
+        if (count >= TARGET_FRAMES) {
           setUiPhase("done");
           onScanComplete([...capturedFrames.current].slice(0, TARGET_FRAMES), pct);
         }
@@ -309,32 +350,44 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
     [captureFrame, onScanComplete]
   );
 
-  /* ── Desktop fallback: auto-simulate swirl ── */
+  /* ── Desktop fallback: simulate captures at regular intervals ── */
   const startDesktopFallback = useCallback(() => {
-    let az = 0;
+    let count = 0;
     const iv = setInterval(() => {
-      az = (az + 22) % 360;
-      handleOrientation({ alpha: az, beta: 45, gamma: 0 } as DeviceOrientationEvent);
-    }, 90);
-    return () => clearInterval(iv);
-  }, [handleOrientation]);
+      if (count >= TARGET_FRAMES) { clearInterval(iv); return; }
+      captureFrame();
+      count++;
+      /* Push placeholder if camera not available */
+      if (capturedFrames.current.length < count) {
+        capturedFrames.current.push("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAARC");
+      }
+      const pct = Math.round((count / TARGET_FRAMES) * 100);
+      setFrameCount(count);
+      setCoverage(pct);
+      if (count >= TARGET_FRAMES) {
+        setUiPhase("done");
+        onScanComplete([...capturedFrames.current], pct);
+        clearInterval(iv);
+      }
+    }, 380);
+  }, [captureFrame, onScanComplete]);
 
-  /* ── Request orientation permission (iOS) ── */
-  const startOrientation = useCallback(async () => {
+  /* ── Request DeviceMotion permission (iOS 13+) then start ── */
+  const startMotion = useCallback(async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const DOE = DeviceOrientationEvent as any;
-    if (typeof DOE?.requestPermission === "function") {
+    const DME = DeviceMotionEvent as any;
+    if (typeof DME?.requestPermission === "function") {
       try {
-        const res = await DOE.requestPermission();
+        const res = await DME.requestPermission();
         if (res !== "granted") { startDesktopFallback(); return; }
       } catch { startDesktopFallback(); return; }
     }
-    if ("DeviceOrientationEvent" in window) {
-      window.addEventListener("deviceorientation", handleOrientation, true);
+    if ("DeviceMotionEvent" in window) {
+      window.addEventListener("devicemotion", handleMotion, true);
     } else {
       startDesktopFallback();
     }
-  }, [handleOrientation, startDesktopFallback]);
+  }, [handleMotion, startDesktopFallback]);
 
   /* ── Start rear camera ── */
   const startCamera = useCallback(async () => {
@@ -377,22 +430,22 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
   /* ── Cleanup ── */
   useEffect(() => () => {
     cancelAnimationFrame(rafRef.current);
-    window.removeEventListener("deviceorientation", handleOrientation, true);
+    window.removeEventListener("devicemotion", handleMotion, true);
     streamRef.current?.getTracks().forEach((t: MediaStreamTrack) => t.stop());
-  }, [handleOrientation]);
+  }, [handleMotion]);
 
   /* ── Start scan ── */
   const handleStart = useCallback(async () => {
     setUiPhase("scanning");
     await startCamera();
-    await startOrientation();
-  }, [startCamera, startOrientation]);
+    await startMotion();
+  }, [startCamera, startMotion]);
 
-  /* ── Swirl sector gauge ── */
-  const GAUGE_R = 26, GAUGE_CX = 34, GAUGE_CY = 34, GAP_DEG = 3;
-  const sectorArcs = Array.from({ length: SWIRL_SECTORS }, (_, i) => {
-    const sd = i * (360 / SWIRL_SECTORS) - 90;
-    const ed = sd + (360 / SWIRL_SECTORS) - GAP_DEG;
+  /* ── Frame gauge (12 arcs, one per captured frame) ── */
+  const GAUGE_R = 26, GAUGE_CX = 34, GAUGE_CY = 34, GAP_DEG = 4;
+  const sectorArcs = Array.from({ length: GAUGE_SECTORS }, (_, i) => {
+    const sd = i * (360 / GAUGE_SECTORS) - 90;
+    const ed = sd + (360 / GAUGE_SECTORS) - GAP_DEG;
     const pt = (d: number) => ({
       x: GAUGE_CX + GAUGE_R * Math.cos(d * Math.PI / 180),
       y: GAUGE_CY + GAUGE_R * Math.sin(d * Math.PI / 180),
@@ -401,7 +454,7 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
     return {
       i,
       path: `M ${GAUGE_CX} ${GAUGE_CY} L ${p1.x} ${p1.y} A ${GAUGE_R} ${GAUGE_R} 0 0 1 ${p2.x} ${p2.y} Z`,
-      visited: visitedSet.has(i),
+      captured: i < frameCount,
     };
   });
 
@@ -489,8 +542,8 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
 
             <p className="text-white/60 text-sm font-medium max-w-xs leading-relaxed">
               {locale === "fr"
-                ? "Tenez le téléphone au-dessus du plat et faites un mouvement circulaire du bras, comme pour verser de la sauce. Le maillage 3D s'adapte en temps réel."
-                : "Hold your phone above the dish and make a circular arm motion, like pouring sauce. The 3D wireframe mesh adapts in real time."}
+                ? "Tenez le téléphone vertical face au plat. Décrivez un cercle lent avec le bras (Ø 15–20 cm). Un cliché est pris automatiquement tous les 5 cm de déplacement."
+                : "Hold your phone upright, facing the dish. Sweep your arm in a slow circle overhead (Ø 6–8 in). A frame is captured automatically every 5 cm (2 in) of movement."}
             </p>
 
             {/* Instruction pill */}
@@ -515,8 +568,8 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
               </svg>
               <p className="text-xs font-semibold text-white/70">
                 {locale === "fr"
-                  ? "Geste circulaire · 1 à 2 tours · 10 clichés capturés"
-                  : "Circular swirl · 1 to 2 turns · 10 frames captured"}
+                  ? "Portrait vertical · Cercle Ø 15–20 cm · 1 cliché / 5 cm"
+                  : "Hold portrait · Ø 6–8 in circle · 1 frame / 5 cm"}
               </p>
             </div>
 
@@ -585,17 +638,17 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
               </div>
             )}
 
-            {/* Sector gauge */}
+            {/* Frame gauge (replaces sector gauge — 1 slice per captured frame) */}
             <div className="absolute top-2.5 right-2.5 z-20">
               <svg width="68" height="68" viewBox="0 0 68 68">
                 <circle cx={GAUGE_CX} cy={GAUGE_CY} r={GAUGE_R + 5} fill="rgba(0,0,0,.52)" />
-                {sectorArcs.map(({ i, path, visited }) => (
+                {sectorArcs.map(({ i, path, captured }) => (
                   <path
                     key={i}
                     d={path}
-                    fill={visited ? "#00ff9d" : "rgba(255,255,255,0.07)"}
+                    fill={captured ? "#00ff9d" : "rgba(255,255,255,0.07)"}
                     style={{
-                      filter: visited ? "drop-shadow(0 0 3px rgba(0,255,157,.6))" : "none",
+                      filter: captured ? "drop-shadow(0 0 3px rgba(0,255,157,.6))" : "none",
                       transition: "fill .2s ease",
                     }}
                   />
@@ -613,7 +666,7 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
               </svg>
             </div>
 
-            {/* Torch toggle button */}
+            {/* Torch toggle */}
             {torchAvail && !isDark && (
               <button
                 onClick={toggleTorch}
@@ -627,7 +680,7 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
               </button>
             )}
 
-            {/* Swirl instruction */}
+            {/* Motion instruction */}
             <div className="absolute bottom-2.5 left-0 right-0 flex justify-center z-20">
               <div
                 className="px-3 py-1.5 rounded-full flex items-center gap-2"
@@ -648,8 +701,8 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
                 </svg>
                 <p className="text-[11px] font-bold text-white/85">
                   {locale === "fr"
-                    ? "Geste circulaire au-dessus du plat"
-                    : "Circular swirl above the dish"}
+                    ? "Déplacez le bras en cercle · 5 cm / cliché"
+                    : "Move arm in circle · 5 cm / frame"}
                 </p>
               </div>
             </div>
@@ -659,20 +712,20 @@ export default function ArealScan({ onScanComplete, onCancel, locale }: ArealSca
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between px-0.5">
               <p className="text-xs font-bold text-white/60 uppercase tracking-wider">
-                {locale === "fr" ? "Couverture Swirl" : "Swirl Coverage"}
+                {locale === "fr" ? "Déplacement Swirl" : "Swirl Translation"}
               </p>
               <p
                 className="text-xs font-black"
                 style={{ color: "#00ff9d", fontFamily: "'Courier New',monospace" }}
               >
-                {coverage}% / {DONE_AT_PCT}%
+                {frameCount} / {TARGET_FRAMES}
               </p>
             </div>
             <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,.06)" }}>
               <div
                 className="h-full rounded-full"
                 style={{
-                  width: `${Math.min(100, (coverage / DONE_AT_PCT) * 100)}%`,
+                  width: `${coverage}%`,
                   background: "linear-gradient(90deg,#059669,#00ff9d)",
                   boxShadow: "0 0 8px rgba(0,255,157,.55)",
                   transition: "width .3s ease",
