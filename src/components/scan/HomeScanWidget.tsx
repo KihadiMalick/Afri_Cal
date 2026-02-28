@@ -219,10 +219,10 @@ export default function HomeScanWidget({
     return (
       <div className="card text-center py-8">
         <p className="text-2xl mb-2">&#x1F451;</p>
-        <p className="text-sm font-semibold text-brand-brown-dark mb-1">
+        <p className="text-sm font-semibold text-gray-100 mb-1">
           {locale === "fr" ? "Limite de scans atteinte" : "Scan limit reached"}
         </p>
-        <p className="text-xs text-brand-brown-pale">
+        <p className="text-xs text-dark-200">
           {locale === "fr"
             ? "3 scans gratuits par jour. Revenez demain !"
             : "3 free scans per day. Come back tomorrow!"}
@@ -275,7 +275,7 @@ export default function HomeScanWidget({
       {/* Image preview */}
       {step === "preview" && imagePreview && (
         <div className="card space-y-4">
-          <div className="relative rounded-2xl overflow-hidden border border-brand-brown-pale/30">
+          <div className="relative rounded-2xl overflow-hidden border border-dark-500">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imagePreview}
@@ -284,7 +284,7 @@ export default function HomeScanWidget({
             />
             <button
               onClick={handleReset}
-              className="absolute top-3 right-3 bg-white/80 text-brand-brown-dark rounded-full w-8 h-8 flex items-center justify-center text-sm backdrop-blur-sm"
+              className="absolute top-3 right-3 bg-dark-700/90 text-gray-100 rounded-full w-8 h-8 flex items-center justify-center text-sm backdrop-blur-sm"
             >
               &#x2715;
             </button>
@@ -311,12 +311,12 @@ export default function HomeScanWidget({
                 <div
                   key={i}
                   className={`w-2 h-2 rounded-full transition-colors ${
-                    i <= scansUsed ? "bg-brand-terracotta" : "bg-brand-cream-deeper"
+                    i <= scansUsed ? "bg-primary-400" : "bg-dark-500"
                   }`}
                 />
               ))}
             </div>
-            <span className="text-xs text-brand-brown-pale font-semibold">
+            <span className="text-xs text-dark-100 font-semibold">
               {scansRemaining === Infinity
                 ? locale === "fr"
                   ? "Illimite"
@@ -342,12 +342,12 @@ export default function HomeScanWidget({
             />
           </label>
 
-          <p className="text-xs text-brand-brown-pale font-medium">
+          <p className="text-xs text-dark-100 font-medium">
             {locale === "fr" ? "Identifiez vos calories avec l'IA" : "Identify your calories with AI"}
           </p>
 
           {/* Gallery option below */}
-          <label className="flex items-center gap-2 text-sm text-brand-terracotta font-semibold cursor-pointer hover:underline">
+          <label className="flex items-center gap-2 text-sm text-primary-400 font-semibold cursor-pointer hover:underline">
             <span>&#x1F5BC;&#xFE0F;</span>
             <span>{locale === "fr" ? "Choisir depuis la galerie" : "Choose from gallery"}</span>
             <input
