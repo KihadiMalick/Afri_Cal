@@ -149,7 +149,8 @@ export default function ArealScanPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from("meals").insert({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any).from("meals").insert({
           user_id:   user.id,
           name:      dishName ?? (locale === "fr" ? "Plat scanné (Areal Scan)" : "Scanned dish (Areal Scan)"),
           meal_type: "lunch",
