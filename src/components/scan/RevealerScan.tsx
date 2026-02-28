@@ -70,6 +70,7 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
   const [torchOn, setTorchOn]       = useState(false);
   const [torchAvail, setTorchAvail] = useState(false);
   const [flashVisible, setFlash]    = useState(false);
+  const [cameraError, setCameraError] = useState(false);
 
   /* ── Revealer engine (custom hook) ── */
   const {
@@ -113,7 +114,9 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
         const caps = (track as any).getCapabilities?.() ?? {};
         if (caps.torch) setTorchAvail(true);
       } catch { /* no torch */ }
-    } catch { /* desktop fallback — no camera */ }
+    } catch {
+      setCameraError(true);
+    }
   }, []);
 
   /* ── Toggle torch ── */
@@ -286,6 +289,33 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
               className="absolute inset-0 w-full h-full object-cover"
               playsInline muted autoPlay
             />
+
+            {/* Camera permission error overlay */}
+            {cameraError && (
+              <div
+                className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 px-6 text-center"
+                style={{ background: "rgba(5,8,5,0.97)" }}
+              >
+                <Eye size={36} style={{ color: "#00ff9d", opacity: 0.7 }} />
+                <p className="text-white font-bold text-sm">
+                  {locale === "fr"
+                    ? "Accès caméra refusé"
+                    : "Camera access denied"}
+                </p>
+                <p className="text-white/45 text-xs leading-relaxed">
+                  {locale === "fr"
+                    ? "Autorisez l'accès à la caméra dans les paramètres de votre navigateur, puis réessayez."
+                    : "Allow camera access in your browser settings, then try again."}
+                </p>
+                <button
+                  onClick={onCancel}
+                  className="mt-2 px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-wider"
+                  style={{ background: "rgba(0,255,157,.15)", color: "#00ff9d", border: "1px solid rgba(0,255,157,.3)" }}
+                >
+                  {locale === "fr" ? "Fermer" : "Close"}
+                </button>
+              </div>
+            )}
 
             {/* Canvas mask (on top of video) */}
             <canvas

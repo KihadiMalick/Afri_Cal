@@ -18,7 +18,8 @@ const MASK_COLOR          = "rgba(5,8,5,0.92)";
 const GRID_COLOR          = "rgba(0,255,157,0.10)";
 const GRID_SPACING        = 28;
 const ERASER_RADIUS       = 52;
-const ERASER_SOFT_EDGE    = 0.55;       // gradient falloff (0 = hard, 1 = very soft)
+const ERASER_SOFT_EDGE    = 0.55;       // hard-core fraction (0–1); soft zone = 1-ERASER_SOFT_EDGE
+const INITIAL_REVEAL_RADIUS = 90;       // px – pre-revealed circle shown at startup
 const SENSITIVITY_X       = 5.0;        // gamma → horizontal
 const SENSITIVITY_Y       = 4.5;        // beta  → vertical
 const SAMPLE_INTERVAL     = 6;          // sample transparency every N frames
@@ -110,15 +111,32 @@ export function useRevealerCanvas({
       }
     }
 
+    /* Pre-reveal a circle at center so the camera is visible from the start */
+    const cx = W / 2;
+    const cy = H / 2;
+    ctx.globalCompositeOperation = "destination-out";
+    const initGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, INITIAL_REVEAL_RADIUS);
+    initGrad.addColorStop(0,   "rgba(0,0,0,1)");
+    initGrad.addColorStop(0.7, "rgba(0,0,0,0.9)");
+    initGrad.addColorStop(1,   "rgba(0,0,0,0)");
+    ctx.fillStyle = initGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, INITIAL_REVEAL_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+
     maskDrawn.current = true;
   }, []);
 
   /* ── Erase a soft circle at (px, py) ── */
   const eraseAt = useCallback((ctx: CanvasRenderingContext2D, px: number, py: number) => {
     ctx.globalCompositeOperation = "destination-out";
-    const grad = ctx.createRadialGradient(px, py, ERASER_RADIUS * ERASER_SOFT_EDGE, px, py, ERASER_RADIUS);
-    grad.addColorStop(0, "rgba(0,0,0,1)");
-    grad.addColorStop(1, "rgba(0,0,0,0)");
+    // Inner radius must be 0 so the gradient fills solid from center outward.
+    // Hard core up to ERASER_SOFT_EDGE fraction, then fades to transparent at edge.
+    const grad = ctx.createRadialGradient(px, py, 0, px, py, ERASER_RADIUS);
+    grad.addColorStop(0,               "rgba(0,0,0,1)");
+    grad.addColorStop(ERASER_SOFT_EDGE,"rgba(0,0,0,1)");
+    grad.addColorStop(1,               "rgba(0,0,0,0)");
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.arc(px, py, ERASER_RADIUS, 0, Math.PI * 2);
