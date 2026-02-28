@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Zap, Check, Trash2, ChevronDown, ChevronUp,
+  AlertTriangle, RotateCcw, Weight, Flame, Beef, Wheat, Droplets,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { isValidLocale } from "@/i18n";
@@ -12,7 +13,7 @@ import { GLASS_CARD } from "@/components/lixum/LixumShell";
 import ArealScan from "@/components/scan/ArealScan";
 
 /* ══════════════════════════════════════════════════════════
-   LIXUM AREAL SCAN PAGE — v4
+   LIXUM AREAL SCAN PAGE — v6 "Precision Mapping"
    /[locale]/meals/areal-scan
    ══════════════════════════════════════════════════════════ */
 
@@ -28,7 +29,7 @@ interface IngredientState {
   fatPer100g: number;
   /** pending = grey  /  confirmed = white/green  /  removed = hidden */
   status: "pending" | "confirmed" | "removed";
-  /** ai = normal  /  ai_flagged = inconsistent with standard recipe */
+  /** ai = normal  /  ai_flagged = barred (inconsistent with standard recipe) */
   source: "ai" | "ai_flagged";
 }
 
@@ -41,8 +42,9 @@ interface NutrientSummary {
 }
 
 /* ══════════════════════════════════════════════════════════
-   calculateNutrients — runs on every user modification
+   Moteur de Calcul Dynamique LIXUM
    Strict formula: Calories = (Prot × 4) + (Carbs × 4) + (Fat × 9)
+   Recalculates instantly on every user modification
    ══════════════════════════════════════════════════════════ */
 function calculateNutrients(ingredients: IngredientState[]): NutrientSummary {
   let protein = 0, carbs = 0, fat = 0;
@@ -61,6 +63,28 @@ function calculateNutrients(ingredients: IngredientState[]): NutrientSummary {
   };
 }
 
+/* ── Vitality Score: 0-100 based on macro balance ── */
+function calculateVitalityScore(n: NutrientSummary): number {
+  if (n.calories === 0) return 0;
+  const protRatio = (n.protein * 4) / n.calories;
+  const carbRatio = (n.carbs * 4) / n.calories;
+  const fatRatio  = (n.fat * 9) / n.calories;
+
+  /* Ideal ranges: Protein 15-30%, Carbs 40-55%, Fat 20-35% */
+  let score = 100;
+  if (protRatio < 0.10) score -= 20;
+  else if (protRatio < 0.15) score -= 10;
+  else if (protRatio > 0.35) score -= 5;
+
+  if (carbRatio < 0.30) score -= 15;
+  else if (carbRatio > 0.60) score -= 10;
+
+  if (fatRatio < 0.15) score -= 10;
+  else if (fatRatio > 0.40) score -= 15;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
 /* ══════════════════════════════════════════════════════════ */
 export default function ArealScanPage() {
   const params   = useParams();
@@ -72,15 +96,17 @@ export default function ArealScanPage() {
   const [phase,       setPhase]       = useState<PagePhase>("idle");
   const [errorMsg,    setErrorMsg]    = useState("");
   const [uploadedPct, setUploadedPct] = useState(0);
-  const [scanId,      setScanId]      = useState("");
+  const [, setScanId] = useState("");
   const [framesCount, setFramesCount] = useState(0);
   const [dishName,    setDishName]    = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<IngredientState[]>([]);
+  const [estimatedWeight, setEstimatedWeight] = useState(0);
 
   /* Real-time nutrient summary — recalculates on every ingredient change */
   const nutrients = calculateNutrients(ingredients);
+  const vitalityScore = calculateVitalityScore(nutrients);
 
-  /* ── ArealScan callback when swirl is complete ── */
+  /* ── ArealScan callback when capture is complete ── */
   const handleScanComplete = useCallback(async (frames: string[], coverage: number) => {
     setPhase("uploading");
     try {
@@ -102,6 +128,7 @@ export default function ArealScanPage() {
         framesUploaded: number;
         coverage: number;
         dishName: string | null;
+        estimatedWeight: number;
         ingredients: IngredientState[];
       };
 
@@ -109,6 +136,7 @@ export default function ArealScanPage() {
       setScanId(result.scanId);
       setFramesCount(result.framesUploaded);
       setDishName(result.dishName);
+      setEstimatedWeight(result.estimatedWeight || 0);
       setIngredients(result.ingredients ?? []);
       setPhase(result.ingredients?.length > 0 ? "confirming" : "done");
     } catch (err) {
@@ -136,6 +164,12 @@ export default function ArealScanPage() {
     ));
   }, []);
 
+  const restoreIngredient = useCallback((idx: number) => {
+    setIngredients((prev: IngredientState[]) => prev.map((ing: IngredientState, i: number) =>
+      i === idx ? { ...ing, status: "pending" as const } : ing
+    ));
+  }, []);
+
   const setWeight = useCallback((idx: number, grams: number) => {
     setIngredients((prev: IngredientState[]) => prev.map((ing: IngredientState, i: number) =>
       i === idx ? { ...ing, weightGrams: Math.max(1, Math.min(1000, grams)) } : ing
@@ -145,7 +179,7 @@ export default function ArealScanPage() {
   /* ── Confirm all and save meal ── */
   const confirmAndSave = useCallback(async () => {
     const active = ingredients.filter((i: IngredientState) => i.status !== "removed");
-    const { calories } = calculateNutrients(active);
+    const n = calculateNutrients(active);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -154,13 +188,20 @@ export default function ArealScanPage() {
           user_id:   user.id,
           name:      dishName ?? (locale === "fr" ? "Plat scanné (Areal Scan)" : "Scanned dish (Areal Scan)"),
           meal_type: "lunch",
-          calories,
+          calories:  n.calories,
+          protein:   n.protein,
+          carbs:     n.carbs,
+          fat:       n.fat,
           date:      new Date().toISOString().split("T")[0],
         });
       }
     } catch { /* ignore save errors, still navigate */ }
     setPhase("done");
   }, [supabase, ingredients, dishName, locale]);
+
+  /* Count removed (barred) ingredients */
+  const removedIngredients = ingredients.filter((i: IngredientState) => i.status === "removed");
+  const activeIngredients  = ingredients.filter((i: IngredientState) => i.status !== "removed");
 
   /* ════════════════════════════════════════════════════════ */
   return (
@@ -181,11 +222,11 @@ export default function ArealScanPage() {
           <h1 className="font-black text-lg text-white tracking-wide">
             LIXUM{" "}
             <span style={{ color: "#00ff9d", textShadow: "0 0 10px rgba(0,255,157,.6)" }}>
-              Areal Scan
+              Precision
             </span>
           </h1>
           <p className="text-xs text-white/45 font-semibold uppercase tracking-widest">
-            {locale === "fr" ? "The Swirl · Scan Spatial 3D" : "The Swirl · 3D Spatial Scan"}
+            {locale === "fr" ? "Cartographie AR · Scan Spatial" : "AR Mapping · Spatial Scan"}
           </p>
         </div>
       </div>
@@ -213,12 +254,12 @@ export default function ArealScanPage() {
           </div>
           <div>
             <p className="text-white font-bold text-base mb-1">
-              {locale === "fr" ? "Analyse LIXUM en cours…" : "LIXUM Analysis in progress…"}
+              {locale === "fr" ? "Moteur de Précision LIXUM…" : "LIXUM Precision Engine…"}
             </p>
             <p className="text-white/45 text-sm font-medium">
               {locale === "fr"
-                ? "Identification du plat · Validation base de données"
-                : "Identifying dish · Database validation"}
+                ? "IA sans limite · Validation base de données"
+                : "Uncapped AI · Database validation"}
             </p>
           </div>
           <div className="w-full">
@@ -242,7 +283,9 @@ export default function ArealScanPage() {
         </div>
       )}
 
-      {/* ── Confirming ingredients ── */}
+      {/* ══════════════════════════════════════════════════════════
+         CONFIRMING PHASE — Results + Validation + Dynamic Calculation
+         ══════════════════════════════════════════════════════════ */}
       {phase === "confirming" && (
         <div className="flex flex-col gap-4">
 
@@ -253,42 +296,109 @@ export default function ArealScanPage() {
             )}
             <p className="text-xs text-white/40 font-semibold uppercase tracking-wider">
               {locale === "fr"
-                ? "Ingrédients détectés — À confirmer"
-                : "Detected ingredients — To confirm"}
+                ? "Résultats à confirmer · Modifiez pour recalculer"
+                : "Results to confirm · Edit to recalculate"}
             </p>
           </div>
 
-          {/* Real-time calorie summary card */}
+          {/* ── Dark Dashboard: Vitality Score + Real-time Macros ── */}
           <div
-            className="grid grid-cols-4 gap-2 p-4 rounded-2xl"
-            style={{ background: "rgba(0,255,157,.05)", border: "1px solid rgba(0,255,157,.14)" }}
+            className="p-4 rounded-2xl"
+            style={{
+              background: "linear-gradient(135deg, rgba(2,12,7,0.95) 0%, rgba(0,30,15,0.90) 100%)",
+              border: "1px solid rgba(0,255,157,.18)",
+              boxShadow: "0 0 30px rgba(0,255,157,.08)",
+            }}
           >
-            {/* Calories (spans 2 cols) */}
-            <div className="col-span-2 flex flex-col items-center justify-center">
-              <p
-                className="text-3xl font-black leading-none"
-                style={{ color: "#00ff9d", fontFamily: "'Courier New',monospace" }}
-              >
-                {nutrients.calories}
-              </p>
-              <p className="text-[10px] text-white/50 font-medium mt-0.5">kcal</p>
-            </div>
-            {/* Macros */}
-            {[
-              { label: locale === "fr" ? "Prot." : "Prot.", value: nutrients.protein, color: "#60a5fa" },
-              { label: locale === "fr" ? "Gluc." : "Carbs", value: nutrients.carbs,   color: "#fbbf24" },
-              { label: locale === "fr" ? "Lip."  : "Fat",   value: nutrients.fat,     color: "#fb923c" },
-            ].map(m => (
-              <div key={m.label} className="flex flex-col items-center justify-center">
-                <p
-                  className="text-lg font-black leading-none"
-                  style={{ color: m.color, fontFamily: "'Courier New',monospace" }}
+            {/* Vitality Score */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: "rgba(0,255,157,.10)", border: "1px solid rgba(0,255,157,.25)" }}
                 >
-                  {m.value}
-                </p>
-                <p className="text-[9px] text-white/40 font-medium mt-0.5">{m.label}</p>
+                  <Flame size={16} style={{ color: "#00ff9d" }} />
+                </div>
+                <div>
+                  <p className="text-[10px] text-white/40 font-bold uppercase tracking-wider">
+                    {locale === "fr" ? "Score Vitalité" : "Vitality Score"}
+                  </p>
+                </div>
               </div>
-            ))}
+              <div className="flex items-center gap-2">
+                <div
+                  className="h-2 w-24 rounded-full overflow-hidden"
+                  style={{ background: "rgba(255,255,255,.06)" }}
+                >
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${vitalityScore}%`,
+                      background: vitalityScore >= 70
+                        ? "linear-gradient(90deg,#059669,#00ff9d)"
+                        : vitalityScore >= 40
+                        ? "linear-gradient(90deg,#d97706,#fbbf24)"
+                        : "linear-gradient(90deg,#dc2626,#ef4444)",
+                      boxShadow: `0 0 6px ${vitalityScore >= 70 ? "rgba(0,255,157,.5)" : vitalityScore >= 40 ? "rgba(251,191,36,.5)" : "rgba(239,68,68,.5)"}`,
+                    }}
+                  />
+                </div>
+                <p
+                  className="text-sm font-black"
+                  style={{
+                    color: vitalityScore >= 70 ? "#00ff9d" : vitalityScore >= 40 ? "#fbbf24" : "#ef4444",
+                    fontFamily: "'Courier New',monospace",
+                  }}
+                >
+                  {vitalityScore}
+                </p>
+              </div>
+            </div>
+
+            {/* Calories (main) + Macros grid */}
+            <div className="grid grid-cols-4 gap-2">
+              {/* Calories (spans 1 col but bigger) */}
+              <div className="flex flex-col items-center justify-center py-2">
+                <p
+                  className="text-3xl font-black leading-none"
+                  style={{ color: "#00ff9d", fontFamily: "'Courier New',monospace", textShadow: "0 0 12px rgba(0,255,157,.4)" }}
+                >
+                  {nutrients.calories}
+                </p>
+                <p className="text-[9px] text-white/40 font-bold mt-1 uppercase tracking-wider">kcal</p>
+              </div>
+              {/* Macros */}
+              {[
+                { label: locale === "fr" ? "Prot." : "Prot.", value: nutrients.protein, unit: "g", color: "#60a5fa", Icon: Beef },
+                { label: locale === "fr" ? "Gluc." : "Carbs", value: nutrients.carbs,   unit: "g", color: "#fbbf24", Icon: Wheat },
+                { label: locale === "fr" ? "Lip."  : "Fat",   value: nutrients.fat,     unit: "g", color: "#fb923c", Icon: Droplets },
+              ].map(m => (
+                <div
+                  key={m.label}
+                  className="flex flex-col items-center justify-center py-2 rounded-xl"
+                  style={{ background: "rgba(255,255,255,.025)", border: "1px solid rgba(255,255,255,.05)" }}
+                >
+                  <m.Icon size={12} style={{ color: m.color, marginBottom: 2 }} />
+                  <p
+                    className="text-lg font-black leading-none"
+                    style={{ color: m.color, fontFamily: "'Courier New',monospace" }}
+                  >
+                    {m.value}
+                  </p>
+                  <p className="text-[8px] text-white/30 font-medium mt-0.5">{m.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Estimated weight */}
+            {estimatedWeight > 0 && (
+              <div className="flex items-center justify-center gap-1.5 mt-2">
+                <Weight size={11} style={{ color: "rgba(255,255,255,.3)" }} />
+                <p className="text-[10px] text-white/30 font-medium">
+                  {locale === "fr" ? "Poids estimé" : "Estimated weight"}: ~{estimatedWeight}g
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Strict formula note */}
@@ -296,10 +406,20 @@ export default function ArealScanPage() {
             Cal = (Prot. × 4) + (Gluc. × 4) + (Lip. × 9)
           </p>
 
-          {/* Ingredient list */}
+          {/* ── Active ingredient list (grey text = "À confirmer") ── */}
           <div className="flex flex-col gap-2.5">
-            {ingredients.map((ing: IngredientState, idx: number) =>
-              ing.status !== "removed" ? (
+            <div className="flex items-center justify-between px-0.5">
+              <p className="text-xs text-white/40 font-bold uppercase tracking-wider">
+                {locale === "fr" ? "Ingrédients détectés" : "Detected ingredients"}
+              </p>
+              <p className="text-[10px] font-medium" style={{ color: "rgba(107,114,128,1)" }}>
+                {locale === "fr" ? "Gris = À confirmer" : "Grey = To confirm"}
+              </p>
+            </div>
+
+            {activeIngredients.map((ing: IngredientState, _: number) => {
+              const idx = ingredients.indexOf(ing);
+              return (
                 <IngredientCard
                   key={`${ing.name}-${idx}`}
                   ingredient={ing}
@@ -308,14 +428,60 @@ export default function ArealScanPage() {
                   onRemove={() => removeIngredient(idx)}
                   onWeightChange={(g: number) => setWeight(idx, g)}
                 />
-              ) : null
-            )}
-            {ingredients.every((i: IngredientState) => i.status === "removed") && (
+              );
+            })}
+
+            {activeIngredients.length === 0 && (
               <p className="text-white/35 text-sm text-center py-4">
                 {locale === "fr" ? "Aucun ingrédient actif." : "No active ingredients."}
               </p>
             )}
           </div>
+
+          {/* ── Barred / removed ingredients (auto-striked by intelligence métier) ── */}
+          {removedIngredients.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 px-0.5">
+                <AlertTriangle size={12} style={{ color: "#fbbf24" }} />
+                <p className="text-[10px] text-yellow-400/70 font-bold uppercase tracking-wider">
+                  {locale === "fr"
+                    ? `${removedIngredients.length} ingrédient(s) barré(s) — incohérent(s) avec la recette`
+                    : `${removedIngredients.length} ingredient(s) struck — inconsistent with recipe`}
+                </p>
+              </div>
+              {removedIngredients.map((ing: IngredientState) => {
+                const idx = ingredients.indexOf(ing);
+                return (
+                  <div
+                    key={`removed-${ing.name}-${idx}`}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                    style={{
+                      background: "rgba(251,191,36,.04)",
+                      border: "1px solid rgba(251,191,36,.12)",
+                    }}
+                  >
+                    <p className="flex-1 text-sm font-medium line-through" style={{ color: "rgba(251,191,36,.5)" }}>
+                      {ing.name}
+                    </p>
+                    <p className="text-[10px] font-medium" style={{ color: "rgba(251,191,36,.4)" }}>
+                      {ing.weightGrams}g
+                    </p>
+                    <button
+                      onClick={() => restoreIngredient(idx)}
+                      title={locale === "fr" ? "Restaurer" : "Restore"}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                      style={{
+                        background: "rgba(251,191,36,.08)",
+                        border: "1px solid rgba(251,191,36,.18)",
+                      }}
+                    >
+                      <RotateCcw size={12} style={{ color: "rgba(251,191,36,.6)" }} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Confirm & save button */}
           <button
@@ -351,17 +517,25 @@ export default function ArealScanPage() {
             {locale === "fr" ? "Repas ajouté !" : "Meal added!"}
           </p>
 
-          <div className="grid grid-cols-2 gap-3 w-full">
+          <div className="grid grid-cols-3 gap-3 w-full">
             {[
               {
-                label: locale === "fr" ? "Clichés Swirl" : "Swirl frames",
-                value: framesCount,
+                label: locale === "fr" ? "Calories" : "Calories",
+                value: nutrients.calories,
+                unit: "kcal",
                 color: "#00ff9d",
               },
               {
-                label: locale === "fr" ? "ID du scan" : "Scan ID",
-                value: scanId.slice(-6),
+                label: locale === "fr" ? "Clichés" : "Frames",
+                value: framesCount,
+                unit: "",
                 color: "rgba(255,255,255,.65)",
+              },
+              {
+                label: locale === "fr" ? "Vitalité" : "Vitality",
+                value: vitalityScore,
+                unit: "/100",
+                color: vitalityScore >= 70 ? "#00ff9d" : "#fbbf24",
               },
             ].map(s => (
               <div
@@ -370,11 +544,12 @@ export default function ArealScanPage() {
                 style={{ background: "rgba(0,255,157,.05)", border: "1px solid rgba(0,255,157,.10)" }}
               >
                 <p
-                  className="font-black text-3xl"
+                  className="font-black text-2xl"
                   style={{ color: s.color, fontFamily: "'Courier New',monospace" }}
                 >
                   {s.value}
                 </p>
+                <p className="text-white/40 text-[9px] font-medium">{s.unit}</p>
                 <p className="text-white/50 text-xs font-medium">{s.label}</p>
               </div>
             ))}
@@ -420,12 +595,12 @@ export default function ArealScanPage() {
             className="text-xs font-bold uppercase tracking-widest mb-2"
             style={{ color: "rgba(0,255,157,.60)" }}
           >
-            {locale === "fr" ? "Moteur LIXUM · IA + Base de Données" : "LIXUM Engine · AI + Database"}
+            {locale === "fr" ? "Moteur de Précision LIXUM" : "LIXUM Precision Engine"}
           </p>
           <p className="text-white/50 text-xs leading-relaxed">
             {locale === "fr"
-              ? "L'IA identifie le plat, la base de données valide les ingrédients. Calories = (Prot × 4) + (Gluc × 4) + (Lip × 9). Chaque modification recalcule instantanément."
-              : "AI identifies the dish, the database validates ingredients. Calories = (Prot × 4) + (Carbs × 4) + (Fat × 9). Every edit recalculates instantly."}
+              ? "Phase 1 : L'IA analyse le plat en continu. Phase 2 : Placez 4 points pour définir les contours. 12 clichés multi-angles sont capturés automatiquement. L'intelligence métier barre les ingrédients incohérents. Calories = (Prot × 4) + (Gluc × 4) + (Lip × 9). Score de Vitalité en temps réel."
+              : "Phase 1: AI analyzes the dish continuously. Phase 2: Place 4 points to define contours. 12 multi-angle shots are captured automatically. Business intelligence strikes inconsistent ingredients. Calories = (Prot × 4) + (Carbs × 4) + (Fat × 9). Real-time Vitality Score."}
           </p>
         </div>
       )}
@@ -435,6 +610,7 @@ export default function ArealScanPage() {
 
 /* ══════════════════════════════════════════════════════════
    IngredientCard — per-ingredient confirmation widget
+   Text in grey (text-gray-500) = "À confirmer"
    ══════════════════════════════════════════════════════════ */
 interface IngredientCardProps {
   ingredient: IngredientState;
@@ -457,7 +633,7 @@ function IngredientCard({
   const isFlagged   = ingredient.source === "ai_flagged";
   const kcal        = Math.round(ingredient.kcalPer100g * ingredient.weightGrams / 100);
 
-  /* ── Colour scheme based on state ── */
+  /* ── Colour scheme: grey when pending ("À confirmer"), green when confirmed ── */
   const borderColor = isConfirmed
     ? "rgba(0,255,157,.38)"
     : isFlagged
@@ -470,16 +646,16 @@ function IngredientCard({
     ? "rgba(251,191,36,.04)"
     : "rgba(255,255,255,.025)";
 
-  /* Text is grey when pending, white when confirmed, yellow-tinted when flagged */
+  /* Grey text (text-gray-500 equivalent) when pending = "À confirmer" */
   const nameColor = isConfirmed
     ? "rgba(255,255,255,.95)"
     : isFlagged
     ? "rgba(251,191,36,.85)"
-    : "rgba(255,255,255,.45)";
+    : "rgba(107,114,128,1)"; /* text-gray-500 */
 
   const metaColor = isConfirmed
     ? "rgba(255,255,255,.50)"
-    : "rgba(255,255,255,.28)";
+    : "rgba(107,114,128,0.7)"; /* text-gray-500/70 */
 
   return (
     <div
@@ -500,6 +676,18 @@ function IngredientCard({
             <p className="text-[10px] font-medium" style={{ color: metaColor }}>
               {ingredient.weightGrams}g · {kcal} kcal
             </p>
+            {!isConfirmed && !isFlagged && (
+              <span
+                className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
+                style={{
+                  background: "rgba(107,114,128,.10)",
+                  color: "rgba(107,114,128,.8)",
+                  border: "1px solid rgba(107,114,128,.18)",
+                }}
+              >
+                {locale === "fr" ? "À confirmer" : "To confirm"}
+              </span>
+            )}
             {isFlagged && !isConfirmed && (
               <span
                 className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
@@ -526,7 +714,7 @@ function IngredientCard({
           style={{
             background: "rgba(0,0,0,.38)",
             border: `1px solid ${isConfirmed ? "rgba(0,255,157,.28)" : "rgba(255,255,255,.09)"}`,
-            color: isConfirmed ? "#00ff9d" : "rgba(255,255,255,.50)",
+            color: isConfirmed ? "#00ff9d" : "rgba(107,114,128,1)",
             fontFamily: "'Courier New',monospace",
           }}
         />
@@ -574,7 +762,7 @@ function IngredientCard({
         </button>
       </div>
 
-      {/* ── Weight slider ── */}
+      {/* ── Weight slider (curseur) ── */}
       <input
         type="range"
         min={1}
@@ -584,9 +772,9 @@ function IngredientCard({
         className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
         style={{
           background: `linear-gradient(90deg, ${
-            isConfirmed ? "#00ff9d" : "rgba(255,255,255,.28)"
+            isConfirmed ? "#00ff9d" : "rgba(107,114,128,.5)"
           } ${(ingredient.weightGrams / 500) * 100}%, rgba(255,255,255,.07) ${(ingredient.weightGrams / 500) * 100}%)`,
-          accentColor: isConfirmed ? "#00ff9d" : "rgba(255,255,255,.45)",
+          accentColor: isConfirmed ? "#00ff9d" : "rgba(107,114,128,.8)",
         }}
       />
 

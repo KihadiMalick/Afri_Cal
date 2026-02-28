@@ -3,14 +3,15 @@ import { createServerClient } from "@/lib/supabase-server";
 import Anthropic from "@anthropic-ai/sdk";
 
 /* ══════════════════════════════════════════════════════════
-   LIXUM AREAL SCAN API — v4
+   LIXUM AREAL SCAN API — v6 "Precision Mapping"
    POST /api/areal-scan
-   1. Uploads 10 frames to Supabase Storage
-   2. Runs Claude Haiku vision on best frame → dish + ingredients
+   1. Uploads frames to Supabase Storage
+   2. Runs Claude Haiku vision (no token cap) → dish + ingredients
    3. Queries meals_master + meal_components_master for standard recipe
    4. Cross-checks AI ingredients vs recipe → flags inconsistencies
-   5. Fetches nutrition from ingredients_master
-   6. Returns enriched result with "À confirmer" ingredient states
+   5. Auto-strikes incoherent ingredients (e.g. palm oil in Tieboudienne)
+   6. Fetches nutrition from ingredients_master
+   7. Returns enriched result with "À confirmer" ingredient states
    ══════════════════════════════════════════════════════════ */
 
 export const runtime    = "nodejs";
@@ -26,7 +27,7 @@ export interface IngredientResult {
   fatPer100g: number;
   /** pending = grey / confirmed = green / removed = hidden */
   status: "pending" | "confirmed" | "removed";
-  /** ai = normal · ai_flagged = inconsistent with standard recipe */
+  /** ai = normal · ai_flagged = barred (inconsistent with standard recipe) */
   source: "ai" | "ai_flagged";
 }
 
@@ -90,34 +91,79 @@ export async function POST(req: NextRequest) {
       if (!error) paths.push(path);
     }
 
-    /* ── 2. Vision analysis with Claude Haiku on best frame ── */
+    /* ── 2. Vision analysis with Claude Haiku — FULL POTENTIAL (no token cap) ── */
     let dishName: string | null    = null;
     let aiIngredients: Array<{ name: string; grams: number }> = [];
+    let estimatedWeight: number = 0;
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (apiKey && frames.length > 0) {
-      /* Use the middle frame → best balance of coverage vs early-frame noise */
-      const bestFrame   = frames[Math.floor(frames.length / 2)];
-      const base64Data  = bestFrame.replace(/^data:image\/\w+;base64,/, "");
+      /* Use multiple frames for better analysis:
+         - Frame 0: recon frame (initial overview)
+         - Middle frame: best single view
+         - Send both for comprehensive analysis */
+      const reconFrame = frames[0];
+      const bestFrame  = frames[Math.floor(frames.length / 2)];
+      const reconBase64 = reconFrame.replace(/^data:image\/\w+;base64,/, "");
+      const bestBase64  = bestFrame.replace(/^data:image\/\w+;base64,/, "");
 
       try {
         const client = new Anthropic({ apiKey });
         const msg = await client.messages.create({
-          model:      "claude-haiku-4-5-20251001",
-          max_tokens: 600,
+          model: "claude-haiku-4-5-20251001",
+          /* No max_tokens cap — use Claude Haiku's full potential for precision */
+          max_tokens: 4096,
           messages: [{
             role: "user",
             content: [
               {
                 type: "image",
-                source: { type: "base64", media_type: "image/jpeg", data: base64Data },
+                source: { type: "base64", media_type: "image/jpeg", data: reconBase64 },
+              },
+              {
+                type: "image",
+                source: { type: "base64", media_type: "image/jpeg", data: bestBase64 },
               },
               {
                 type: "text",
-                text: `Tu es AfriCalo Vision AI. JSON STRICT uniquement, aucun autre texte.
-Identifie ce plat africain et ses ingrédients visibles.
-Format: {"dish_name":"nom ou null","confidence":0-100,"ingredients":[{"name":"nom","grams":1-500}]}
-Règles: dish_name null si confidence<60. Noms en français minuscule. Max 8 ingrédients.`,
+                text: `Tu es le Moteur de Précision LIXUM — le système de vision alimentaire le plus avancé pour la cuisine africaine.
+
+MISSION: Analyse ces 2 images (vue d'ensemble + vue rapprochée) du même plat avec une précision maximale.
+
+INSTRUCTIONS DÉTAILLÉES:
+1. IDENTIFICATION: Identifie le plat principal (nom exact en cuisine africaine si possible). Si c'est un plat africain connu, donne le nom régional exact.
+2. INGRÉDIENTS: Liste TOUS les ingrédients visibles avec estimation précise du poids en grammes. Sois exhaustif.
+3. POIDS TOTAL: Estime le poids total de la portion visible.
+4. CONTEXTE: Si tu reconnais le pays/région d'origine, indique-le.
+5. CUISSON: Note le mode de cuisson visible (frit, grillé, bouilli, sauté, etc.).
+6. QUALITÉ VISUELLE: Évalue les propriétés visuelles (niveau d'huile, sauce, éléments frits/grillés).
+
+FORMAT JSON STRICT — aucun autre texte:
+{
+  "dish_name": "nom complet du plat ou null si confiance < 50",
+  "confidence": 0-100,
+  "country_guess": "pays ou null",
+  "estimated_total_weight_grams": 100-2000,
+  "cooking_method": "frit|grillé|bouilli|sauté|vapeur|cru|mixte",
+  "ingredients": [
+    {"name": "nom en français minuscule", "grams": 1-800, "confidence": 0-100}
+  ],
+  "visual_properties": {
+    "oil_level": "low|medium|high",
+    "sauce_presence": true/false,
+    "fried_elements": true/false,
+    "grilled_elements": true/false
+  },
+  "portion_size": "small|medium|large",
+  "plate_fill_percentage": 0-100,
+  "analysis_notes": "notes sur ce qui a été observé, particularités"
+}
+
+Règles:
+- Noms d'ingrédients en français minuscule.
+- Pas de limite d'ingrédients — liste TOUT ce qui est visible.
+- dish_name null si confidence < 50.
+- Sois précis sur les grammages, pas de valeurs par défaut.`,
               },
             ],
           }],
@@ -129,12 +175,12 @@ Règles: dish_name null si confidence<60. Noms en français minuscule. Max 8 ing
 
         if (s !== -1 && e !== -1) {
           const parsed = JSON.parse(stripped.slice(s, e + 1));
-          if ((parsed.confidence ?? 0) >= 60) dishName = String(parsed.dish_name || "").trim() || null;
+          if ((parsed.confidence ?? 0) >= 50) dishName = String(parsed.dish_name || "").trim() || null;
+          estimatedWeight = Number(parsed.estimated_total_weight_grams) || 0;
           aiIngredients = (Array.isArray(parsed.ingredients) ? parsed.ingredients : [])
-            .slice(0, 8)
             .map((i: Record<string, unknown>) => ({
               name:  String(i.name  || "").toLowerCase().trim(),
-              grams: Math.max(5, Math.min(500, Number(i.grams) || 30)),
+              grams: Math.max(5, Math.min(800, Number(i.grams) || 30)),
             }))
             .filter((i: { name: string; grams: number }) => i.name.length > 0);
         }
@@ -170,7 +216,7 @@ Règles: dish_name null si confidence<60. Noms en français minuscule. Max 8 ing
       }
     }
 
-    /* ── 4. DB coherence check: is each AI ingredient consistent with standard recipe? ── */
+    /* ── 4. DB coherence check + auto-strike inconsistent ingredients ── */
     const isConsistentWithRecipe = (ingName: string): boolean => {
       /* No recipe data → assume OK (can't flag what we don't know) */
       if (recipeComponents.length === 0) return true;
@@ -213,6 +259,7 @@ Règles: dish_name null si confidence<60. Noms en français minuscule. Max 8 ing
     };
 
     /* ── 6. Build ingredient confirmation list ── */
+    /*  Intelligence Métier: inconsistent ingredients are auto-striked (status: "removed") */
     const resultIngredients: IngredientResult[] = aiIngredients.map(ai => {
       const nutrition   = findNutrition(ai.name);
       const consistent  = isConsistentWithRecipe(ai.name);
@@ -226,7 +273,8 @@ Règles: dish_name null si confidence<60. Noms en français minuscule. Max 8 ing
         proteinPer100g: nutrition.protein_per_100g,
         carbsPer100g:   nutrition.carbs_per_100g,
         fatPer100g:     nutrition.fat_per_100g,
-        status:         "pending",
+        /* Inconsistent ingredients are auto-removed (barred) */
+        status:         consistent ? "pending" : "removed",
         source:         consistent ? "ai" : "ai_flagged",
       };
     });
@@ -237,7 +285,7 @@ Règles: dish_name null si confidence<60. Noms en français minuscule. Max 8 ing
       user_id:            user.id,
       detected_dish:      dishName ?? `Areal Scan 3D — ${paths.length} frames`,
       estimated_calories: 0,
-      estimated_weight:   0,
+      estimated_weight:   estimatedWeight,
       confidence_score:   coverage / 100,
     });
 
@@ -247,6 +295,7 @@ Règles: dish_name null si confidence<60. Noms en français minuscule. Max 8 ing
       framesUploaded: paths.length,
       coverage,
       dishName,
+      estimatedWeight,
       ingredients:    resultIngredients,
     });
 
