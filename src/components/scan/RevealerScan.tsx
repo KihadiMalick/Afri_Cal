@@ -2,19 +2,19 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
-  X, Zap, Sun, Eye, CheckCircle, Loader2,
-  Scan, Smartphone, Sparkles,
+  X, Zap, Sun, CheckCircle, Loader2,
+  Scan, Hand, Sparkles,
 } from "lucide-react";
 import { useRevealerCanvas } from "@/hooks/useRevealerCanvas";
 
 /* ══════════════════════════════════════════════════════════
-   LIXUM Revealer Scan — "Scratch-Card" Gyroscope Experience
+   LIXUM Revealer Scan — Scratch-Card v2
    ──────────────────────────────────────────────────────────
-   A dark holographic mask covers the camera feed.
-   The user physically moves their phone to "erase" the mask
-   and reveal the dish underneath — like a torch / scratch card.
-   Silent captures at every 10 % increment (10 frames total).
-   At 80 % revealed → success flash → send to vision API.
+   Gold scratch-card mask over camera feed.
+   User scratches with finger (touch) or tilts phone (gyro).
+   A golden circle in the center hints where to start.
+   10 silent captures as the surface is revealed.
+   80% → success flash → send to vision API.
    ══════════════════════════════════════════════════════════ */
 
 export interface RevealerScanProps {
@@ -23,7 +23,6 @@ export interface RevealerScanProps {
   locale: "fr" | "en";
 }
 
-/* ── Inline keyframes ── */
 const REVEALER_STYLES = `
 @keyframes revPulse {
   0%, 100% { opacity:.55; transform:scale(1); }
@@ -38,55 +37,51 @@ const REVEALER_STYLES = `
   60% { box-shadow: 0 0 60px 20px rgba(0,255,157,.35); }
   100% { box-shadow: 0 0 0 0 rgba(0,255,157,0); }
 }
-@keyframes revFadeUp {
-  from { opacity:0; transform:translateY(12px); }
-  to { opacity:1; transform:translateY(0); }
-}
-@keyframes revScanLine {
-  0% { top: 0%; }
-  100% { top: 100%; }
-}
 @keyframes revFloat {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-6px); }
 }
 @keyframes revGaugePulse {
-  0%, 100% { filter: drop-shadow(0 0 4px rgba(0,255,157,.3)); }
-  50% { filter: drop-shadow(0 0 12px rgba(0,255,157,.7)); }
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(212,175,55,.3)); }
+  50% { filter: drop-shadow(0 0 12px rgba(212,175,55,.7)); }
+}
+@keyframes scratchHint {
+  0%, 100% { opacity: .6; transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.08) rotate(-3deg); }
+  50% { opacity: 1; transform: scale(1.05) rotate(0deg); }
+  75% { transform: scale(1.08) rotate(3deg); }
 }
 `;
 
-/* ── Phase type ── */
 type Phase = "intro" | "reveal" | "success" | "uploading";
 
+/* Gold accent colour */
+const GOLD         = "#d4af37";
+const GOLD_LIGHT   = "rgba(212,175,55,.70)";
+const GOLD_FADED   = "rgba(212,175,55,.35)";
+
 export default function RevealerScan({ onComplete, onCancel, locale }: RevealerScanProps) {
-  /* ── Refs ── */
   const videoRef    = useRef<HTMLVideoElement>(null);
   const canvasRef   = useRef<HTMLCanvasElement>(null);
   const streamRef   = useRef<MediaStream | null>(null);
 
-  /* ── UI state ── */
   const [phase, setPhase]           = useState<Phase>("intro");
   const [torchOn, setTorchOn]       = useState(false);
   const [torchAvail, setTorchAvail] = useState(false);
   const [flashVisible, setFlash]    = useState(false);
 
-  /* ── Revealer engine (custom hook) ── */
   const {
     revealedPct,
     capturedCount,
-    gyroAvailable,
+    touchActive,
   } = useRevealerCanvas({
     canvasRef,
     videoRef,
     enabled: phase === "reveal",
     onComplete: (frames) => {
-      /* Green flash */
       setFlash(true);
       setTimeout(() => setFlash(false), 400);
-      /* Transition */
       setPhase("success");
-      /* Brief pause then send frames upstream */
       setTimeout(() => {
         setPhase("uploading");
         onComplete(frames);
@@ -94,7 +89,7 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
     },
   });
 
-  /* ── Start rear camera ── */
+  /* ── Start camera ── */
   const startCamera = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -106,17 +101,15 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-      /* Check torch */
       try {
         const track = stream.getVideoTracks()[0];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const caps = (track as any).getCapabilities?.() ?? {};
         if (caps.torch) setTorchAvail(true);
       } catch { /* no torch */ }
-    } catch { /* desktop fallback — no camera */ }
+    } catch { /* desktop */ }
   }, []);
 
-  /* ── Toggle torch ── */
   const toggleTorch = useCallback(async () => {
     const track = streamRef.current?.getVideoTracks()[0];
     if (!track) return;
@@ -127,35 +120,29 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
     } catch { /* noop */ }
   }, [torchOn]);
 
-  /* ── Begin reveal experience ── */
   const handleStart = useCallback(async () => {
     await startCamera();
     setPhase("reveal");
   }, [startCamera]);
 
-  /* ── Cleanup ── */
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach(t => t.stop());
   }, []);
 
-  /* ── Progress colour ── */
+  /* ── Progress colour: gold → green ── */
   const pctColor = revealedPct >= 80 ? "#00ff9d"
-    : revealedPct >= 50 ? "#fbbf24"
-    : "rgba(255,255,255,.6)";
+    : revealedPct >= 50 ? GOLD_LIGHT
+    : GOLD_FADED;
 
-  /* ── Progress ring (SVG) ── */
   const RING_R = 30, RING_CX = 36, RING_CY = 36;
   const circumference = 2 * Math.PI * RING_R;
   const dashOffset = circumference * (1 - revealedPct / 100);
 
-  /* ════════════════════════════════════════════════════════
-     RENDER
-     ════════════════════════════════════════════════════════ */
   return (
     <div style={{ fontFamily: "'Outfit','Poppins',sans-serif" }}>
       <style>{REVEALER_STYLES}</style>
 
-      {/* ── Close button ── */}
+      {/* Close */}
       <button
         onClick={onCancel}
         className="absolute top-2 right-2 z-40 p-2 rounded-full"
@@ -170,33 +157,30 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
         <div
           className="relative flex flex-col items-center gap-6 rounded-[2rem] overflow-hidden py-10 px-5 text-center"
           style={{
-            background: "rgba(5,8,5,0.96)",
-            border: "1px solid rgba(0,255,157,.15)",
+            background: "linear-gradient(135deg, rgba(30,28,20,0.98) 0%, rgba(15,14,10,0.98) 100%)",
+            border: `1px solid ${GOLD_FADED}`,
             minHeight: "26rem",
           }}
         >
-          {/* Matrix grid background (subtle) */}
-          <div className="absolute inset-0 opacity-[.04]" style={{
-            backgroundImage:
-              `linear-gradient(rgba(0,255,157,.5) 1px, transparent 1px),
-               linear-gradient(90deg, rgba(0,255,157,.5) 1px, transparent 1px)`,
-            backgroundSize: "28px 28px",
+          {/* Subtle cross-hatch */}
+          <div className="absolute inset-0 opacity-[.03]" style={{
+            backgroundImage: `repeating-linear-gradient(45deg, ${GOLD} 0, ${GOLD} 1px, transparent 0, transparent 6px)`,
           }} />
 
           <div className="relative z-10 flex flex-col items-center gap-5">
-            {/* Icon */}
+            {/* Scratch icon */}
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center"
               style={{
-                background: "rgba(0,255,157,.08)",
-                border: "1px solid rgba(0,255,157,.28)",
-                boxShadow: "0 0 32px rgba(0,255,157,.18)",
+                background: "rgba(212,175,55,.10)",
+                border: `2px solid ${GOLD_FADED}`,
+                boxShadow: "0 0 32px rgba(212,175,55,.15)",
                 animation: "revFloat 3s ease-in-out infinite",
               }}
             >
-              <Eye
-                size={38} strokeWidth={1.5}
-                style={{ color: "#00ff9d", filter: "drop-shadow(0 0 8px #00ff9d)" }}
+              <Hand
+                size={36} strokeWidth={1.5}
+                style={{ color: GOLD, filter: "drop-shadow(0 0 8px rgba(212,175,55,.6))" }}
               />
             </div>
 
@@ -209,46 +193,45 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
                 <span style={{ color: "#8b949e" }}>UM</span>
               </p>
               <p className="text-[11px] font-bold uppercase tracking-[.28em]"
-                style={{ color: "rgba(0,255,157,.55)" }}>
-                Revealer Scan
+                style={{ color: GOLD_LIGHT }}>
+                Scratch to Scan
               </p>
             </div>
 
-            {/* Description */}
             <p className="text-white/55 text-sm font-medium max-w-xs leading-relaxed">
               {locale === "fr"
-                ? "Bougez votre téléphone au-dessus du plat pour révéler la surface et capturer 10 angles uniques. L'IA analyse chaque couche dévoilée."
-                : "Move your phone over the plate to reveal the surface and capture 10 unique angles. AI analyzes each uncovered layer."}
+                ? "Grattez l'écran avec votre doigt pour révéler votre plat. L'IA capture 10 angles pendant que vous grattez."
+                : "Scratch the screen with your finger to reveal your dish. AI captures 10 angles as you scratch."}
             </p>
 
-            {/* How-to pills */}
+            {/* Instructions */}
             <div className="flex flex-col gap-2 w-full max-w-xs">
               {[
                 {
-                  Icon: Smartphone,
+                  Icon: Hand,
                   text: locale === "fr"
-                    ? "Inclinez le téléphone pour effacer le masque"
-                    : "Tilt phone to erase the mask",
+                    ? "Grattez avec le doigt sur le cercle doré"
+                    : "Scratch with finger on the golden circle",
                 },
                 {
                   Icon: Scan,
                   text: locale === "fr"
-                    ? "10 captures silencieuses pendant la révélation"
-                    : "10 silent captures during reveal",
+                    ? "10 captures silencieuses pendant le grattage"
+                    : "10 silent captures while scratching",
                 },
                 {
                   Icon: Sparkles,
                   text: locale === "fr"
-                    ? "80 % révélé = Analyse Vision IA complète"
-                    : "80% revealed = Full AI Vision analysis",
+                    ? "80 % gratté = Analyse complète IA"
+                    : "80% scratched = Full AI analysis",
                 },
               ].map((step, i) => (
                 <div
                   key={i}
                   className="flex items-center gap-3 px-3 py-2 rounded-xl"
-                  style={{ background: "rgba(0,255,157,.05)", border: "1px solid rgba(0,255,157,.10)" }}
+                  style={{ background: "rgba(212,175,55,.05)", border: `1px solid rgba(212,175,55,.12)` }}
                 >
-                  <step.Icon size={15} style={{ color: "#00ff9d", flexShrink: 0 }} />
+                  <step.Icon size={15} style={{ color: GOLD, flexShrink: 0 }} />
                   <p className="text-[11px] font-semibold text-white/50">{step.text}</p>
                 </div>
               ))}
@@ -256,22 +239,22 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
 
             <button
               onClick={handleStart}
-              className="mt-1 px-10 py-3.5 rounded-2xl font-black text-sm tracking-wider uppercase text-black transition-all hover:brightness-110 active:scale-[.97]"
+              className="mt-1 px-10 py-3.5 rounded-2xl font-black text-sm tracking-wider uppercase transition-all hover:brightness-110 active:scale-[.97]"
               style={{
-                background: "#00ff9d",
-                boxShadow: "0 0 28px rgba(0,255,157,.5), 0 4px 16px rgba(0,0,0,.3)",
+                background: `linear-gradient(135deg, ${GOLD} 0%, #c9a040 100%)`,
+                color: "#1a1700",
+                boxShadow: "0 0 28px rgba(212,175,55,.4), 0 4px 16px rgba(0,0,0,.3)",
               }}
             >
-              {locale === "fr" ? "Lancer le Revealer" : "Start Revealer"}
+              {locale === "fr" ? "Commencer à gratter" : "Start Scratching"}
             </button>
           </div>
         </div>
       )}
 
-      {/* ══ REVEAL PHASE (video + mask canvas) ══ */}
+      {/* ══ REVEAL (video + scratch-card canvas) ══ */}
       {(phase === "reveal" || phase === "success") && (
         <div className="flex flex-col gap-3">
-          {/* Camera + mask container */}
           <div
             className="relative w-full rounded-[1.75rem] overflow-hidden"
             style={{
@@ -280,21 +263,21 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
               animation: phase === "success" ? "revSuccessGlow 1s ease-out" : "none",
             }}
           >
-            {/* Live video (underneath everything) */}
+            {/* Video (underneath) */}
             <video
               ref={videoRef}
               className="absolute inset-0 w-full h-full object-cover"
               playsInline muted autoPlay
             />
 
-            {/* Canvas mask (on top of video) */}
+            {/* Canvas scratch mask (on top) */}
             <canvas
               ref={canvasRef}
               className="absolute inset-0 w-full h-full"
-              style={{ touchAction: "none" }}
+              style={{ touchAction: "none", cursor: "grab" }}
             />
 
-            {/* Success green flash overlay */}
+            {/* Green flash */}
             {flashVisible && (
               <div
                 className="absolute inset-0 z-20 pointer-events-none"
@@ -305,21 +288,13 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
               />
             )}
 
-            {/* ── Floating HUD ── */}
+            {/* ── HUD ── */}
 
             {/* Progress ring (top-right) */}
             <div className="absolute top-3 right-3 z-30" style={{ animation: "revGaugePulse 2s ease-in-out infinite" }}>
               <svg width="72" height="72" viewBox="0 0 72 72">
-                <circle
-                  cx={RING_CX} cy={RING_CY} r={RING_R + 4}
-                  fill="rgba(0,0,0,.55)"
-                />
-                {/* Track */}
-                <circle
-                  cx={RING_CX} cy={RING_CY} r={RING_R}
-                  fill="none" stroke="rgba(255,255,255,.07)" strokeWidth="3.5"
-                />
-                {/* Progress arc */}
+                <circle cx={RING_CX} cy={RING_CY} r={RING_R + 4} fill="rgba(0,0,0,.55)" />
+                <circle cx={RING_CX} cy={RING_CY} r={RING_R} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth="3.5" />
                 <circle
                   cx={RING_CX} cy={RING_CY} r={RING_R}
                   fill="none"
@@ -335,7 +310,6 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
                     filter: `drop-shadow(0 0 6px ${pctColor})`,
                   }}
                 />
-                {/* Center text */}
                 <text
                   x={RING_CX} y={RING_CY}
                   textAnchor="middle" dominantBaseline="middle"
@@ -347,25 +321,22 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
               </svg>
             </div>
 
-            {/* Capture counter (top-left) */}
+            {/* Captures (top-left) */}
             <div
               className="absolute top-3 left-3 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-              style={{ background: "rgba(0,0,0,.58)", border: "1px solid rgba(0,255,157,.18)" }}
+              style={{ background: "rgba(0,0,0,.58)", border: `1px solid ${GOLD_FADED}` }}
             >
-              <Scan size={12} style={{ color: "#00ff9d" }} />
-              <p
-                className="text-[11px] font-black"
-                style={{ color: "#00ff9d", fontFamily: "'Courier New',monospace" }}
-              >
-                {capturedCount}/{10}
+              <Scan size={12} style={{ color: GOLD }} />
+              <p className="text-[11px] font-black" style={{ color: GOLD, fontFamily: "'Courier New',monospace" }}>
+                {capturedCount}/10
               </p>
             </div>
 
-            {/* Gyro / instruction indicator (bottom center) */}
-            <div className="absolute bottom-3 left-0 right-0 flex justify-center z-30">
+            {/* Instruction (bottom center) */}
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center z-30 pointer-events-none">
               <div
                 className="px-4 py-2 rounded-full flex items-center gap-2"
-                style={{ background: "rgba(0,0,0,.62)", border: "1px solid rgba(0,255,157,.22)" }}
+                style={{ background: "rgba(0,0,0,.62)", border: `1px solid ${GOLD_FADED}` }}
               >
                 {phase === "success" ? (
                   <>
@@ -374,39 +345,34 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
                       {locale === "fr" ? "Surface révélée !" : "Surface revealed!"}
                     </p>
                   </>
-                ) : gyroAvailable ? (
+                ) : touchActive ? (
                   <>
-                    <Smartphone
-                      size={14}
-                      style={{ color: "#00ff9d", animation: "revPulse 1.5s ease-in-out infinite" }}
-                    />
-                    <p className="text-xs font-semibold text-white/70">
-                      {locale === "fr"
-                        ? "Bougez le téléphone pour révéler"
-                        : "Move phone to reveal"}
+                    <Hand size={14} style={{ color: GOLD }} />
+                    <p className="text-xs font-semibold" style={{ color: GOLD_LIGHT }}>
+                      {locale === "fr" ? "Continue de gratter..." : "Keep scratching..."}
                     </p>
                   </>
                 ) : (
                   <>
-                    <Eye
+                    <Hand
                       size={14}
-                      style={{ color: "#00ff9d", animation: "revPulse 1.5s ease-in-out infinite" }}
+                      style={{ color: GOLD, animation: "scratchHint 2s ease-in-out infinite" }}
                     />
-                    <p className="text-xs font-semibold text-white/70">
+                    <p className="text-xs font-semibold" style={{ color: GOLD_LIGHT }}>
                       {locale === "fr"
-                        ? "Déplacez la souris pour révéler"
-                        : "Move mouse to reveal"}
+                        ? "Grattez avec votre doigt"
+                        : "Scratch with your finger"}
                     </p>
                   </>
                 )}
               </div>
             </div>
 
-            {/* Torch toggle */}
+            {/* Torch */}
             {torchAvail && (
               <button
                 onClick={toggleTorch}
-                className="absolute bottom-3 right-3 z-30 w-9 h-9 rounded-xl flex items-center justify-center"
+                className="absolute bottom-3 right-3 z-30 w-9 h-9 rounded-xl flex items-center justify-center pointer-events-auto"
                 style={{
                   background: torchOn ? "rgba(251,191,36,.25)" : "rgba(0,0,0,.55)",
                   border: `1px solid ${torchOn ? "rgba(251,191,36,.5)" : "rgba(255,255,255,.12)"}`,
@@ -419,47 +385,39 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
             )}
           </div>
 
-          {/* ── Progress bar (below camera) ── */}
+          {/* Progress bar */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between px-1">
               <p className="text-xs font-bold text-white/50 uppercase tracking-wider">
                 {locale === "fr" ? "Analyse de Surface" : "Surface Analysis"}
               </p>
-              <p
-                className="text-xs font-black"
-                style={{ color: pctColor, fontFamily: "'Courier New',monospace" }}
-              >
+              <p className="text-xs font-black" style={{ color: pctColor, fontFamily: "'Courier New',monospace" }}>
                 {revealedPct} %
               </p>
             </div>
 
-            <div
-              className="w-full h-2.5 rounded-full overflow-hidden"
-              style={{ background: "rgba(255,255,255,.06)" }}
-            >
+            <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,.06)" }}>
               <div
                 className="h-full rounded-full transition-all duration-300"
                 style={{
                   width: `${revealedPct}%`,
                   background: revealedPct >= 80
                     ? "linear-gradient(90deg,#059669,#00ff9d)"
-                    : revealedPct >= 50
-                    ? "linear-gradient(90deg,#d97706,#fbbf24)"
-                    : "linear-gradient(90deg,rgba(255,255,255,.25),rgba(255,255,255,.5))",
+                    : `linear-gradient(90deg,${GOLD_FADED},${GOLD})`,
                   boxShadow: `0 0 8px ${pctColor}55`,
                 }}
               />
             </div>
 
-            {/* Capture dot indicators */}
+            {/* Capture dots */}
             <div className="flex items-center justify-between px-0.5 mt-0.5">
               {Array.from({ length: 10 }, (_, i) => (
                 <div
                   key={i}
                   className="w-2 h-2 rounded-full transition-all duration-200"
                   style={{
-                    background: i < capturedCount ? "#00ff9d" : "rgba(255,255,255,.08)",
-                    boxShadow: i < capturedCount ? "0 0 4px rgba(0,255,157,.5)" : "none",
+                    background: i < capturedCount ? GOLD : "rgba(255,255,255,.08)",
+                    boxShadow: i < capturedCount ? "0 0 4px rgba(212,175,55,.5)" : "none",
                   }}
                 />
               ))}
@@ -488,10 +446,7 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
         >
           <div
             className="w-16 h-16 rounded-full flex items-center justify-center"
-            style={{
-              background: "rgba(0,255,157,.08)",
-              border: "1px solid rgba(0,255,157,.25)",
-            }}
+            style={{ background: "rgba(0,255,157,.08)", border: "1px solid rgba(0,255,157,.25)" }}
           >
             <Loader2
               size={30} strokeWidth={1.5}
