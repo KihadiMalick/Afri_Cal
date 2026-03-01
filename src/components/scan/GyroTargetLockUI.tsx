@@ -210,7 +210,7 @@ export default function GyroTargetLockUI({ onComplete, onCancel, locale }: GyroT
       } catch {
         window.addEventListener("mousemove", handleMouseMove);
       }
-    } else if ("DeviceOrientationEvent" in window) {
+    } else if (typeof DeviceOrientationEvent !== "undefined") {
       window.addEventListener("deviceorientation", handleOrientation as EventListener);
       setGyroAvail(true);
     } else {
