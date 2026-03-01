@@ -11,7 +11,7 @@ import { calculateDailyScore } from "@/utils/daily-score";
 import { calculateGreenStreak } from "@/utils/streak";
 import { calculateWeightProjection } from "@/utils/weight-projection";
 import { getBadges } from "@/utils/badges";
-import { GLASS_CARD } from "@/components/lixum/LixumShell";
+
 import type { UserProfile, Meal, Badge } from "@/types";
 
 /* ══════════════════════════════════════════════════════════

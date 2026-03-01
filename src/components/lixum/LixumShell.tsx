@@ -433,7 +433,6 @@ function LixumShellContent({ children }: { children: React.ReactNode }) {
   const logoBoxShadow  = isDark
     ? "0 0 16px rgba(0,255,157,.14), inset 0 1px 0 rgba(255,255,255,.05)"
     : "0 0 12px rgba(0,150,70,.12), inset 0 1px 0 rgba(255,255,255,.80)";
-  const lxText         = isDark ? "#7d8590" : "#6b7280";
   const iconActive     = isDark ? "#00ff9d" : "#059669";
   const iconInactive   = isDark ? "rgba(255,255,255,.55)" : "rgba(5,30,18,.52)";
   const iconActiveGlow = isDark
