@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Home, UtensilsCrossed, Activity, CalendarDays, UserCircle, LogOut,
+  Home, UtensilsCrossed, Activity, CalendarDays, UserCircle, LogOut, Leaf,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { isValidLocale } from "@/i18n";
@@ -422,8 +422,8 @@ function LixumShellContent({ children }: { children: React.ReactNode }) {
   const mainBg      = isDark ? "#020c07"  : "#eaf7f0";
   const circuitBg   = isDark ? CIRCUIT_BG : CIRCUIT_BG_LIGHT;
   const sidebarGrad = isDark
-    ? `${CIRCUIT_BG}, linear-gradient(180deg, #010d06 0%, #020f08 55%, #011009 100%)`
-    : `${CIRCUIT_BG_LIGHT}, linear-gradient(180deg, #ecfdf5 0%, #e8fdf2 55%, #dcfce7 100%)`;
+    ? `linear-gradient(180deg, #051a0e 0%, #061c10 55%, #071e12 100%)`
+    : `linear-gradient(180deg, #ecfdf5 0%, #e8fdf2 55%, #dcfce7 100%)`;
   const sidebarBorder  = isDark ? "rgba(0,255,157,.07)" : "rgba(0,150,70,.14)";
   const sidebarShadow  = isDark
     ? "4px 0 32px rgba(0,0,0,.55), inset -1px 0 0 rgba(0,255,157,.04)"
@@ -532,13 +532,10 @@ function LixumShellContent({ children }: { children: React.ReactNode }) {
               className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center select-none mb-1"
               style={{ background:logoBoxBg, border:`1px solid ${logoBoxBorder}`, boxShadow:logoBoxShadow }}
             >
-              <span className="font-black text-xs md:text-sm" style={{ fontFamily:"'Courier New',monospace", letterSpacing:"0.05em" }}>
-                <span style={{ color:lxText }}>L</span>
-                <span className="lixum-x">X</span>
-              </span>
+              <Leaf size={20} strokeWidth={2} style={{ color:iconActive }} />
             </div>
-            <p className="text-[6px] md:text-[7px] uppercase font-bold tracking-[.28em]" style={{ color:lixumSubColor }}>
-              lixum
+            <p className="hidden md:block text-[7px] font-semibold tracking-[.10em]" style={{ color:lixumSubColor }}>
+              AfriCalo
             </p>
           </div>
 
@@ -572,7 +569,7 @@ function LixumShellContent({ children }: { children: React.ReactNode }) {
                     }}
                   />
                   <span
-                    className="hidden md:block text-[9px] uppercase font-bold tracking-widest"
+                    className="hidden md:block text-[9px] font-semibold tracking-wide"
                     style={{ color: isActive ? labelActive : labelInactive }}
                   >
                     {locale === "fr" ? labelFr : labelEn}
@@ -597,7 +594,7 @@ function LixumShellContent({ children }: { children: React.ReactNode }) {
             }}
           >
             <LogOut size={26} strokeWidth={1.5} />
-            <span className="hidden md:block text-[9px] uppercase font-bold tracking-widest">
+            <span className="hidden md:block text-[9px] font-semibold tracking-wide">
               {locale === "fr" ? "Sortir" : "Exit"}
             </span>
           </button>

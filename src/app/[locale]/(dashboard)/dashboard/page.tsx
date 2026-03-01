@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { UtensilsCrossed, Zap, Leaf, Scale } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { getDictionary, isValidLocale } from "@/i18n";
 import { generateSportRecommendation } from "@/utils/sport-recommendation";
@@ -122,13 +123,8 @@ export default function DashboardPage() {
   if (!profile || !profile.onboarding_completed) {
     return (
       <div className="flex flex-col items-center justify-center gap-6 p-8 py-24">
-        <h1
-          className="text-3xl font-black tracking-[.22em] leading-none"
-          style={{ fontFamily:"'Courier New',monospace" }}
-        >
-          <span style={{ color:"#8b949e" }}>LI</span>
-          <span className="lixum-x">X</span>
-          <span style={{ color:"#8b949e" }}>UM</span>
+        <h1 className="text-3xl font-black text-white leading-tight">
+          AfriCalo
         </h1>
         <p className="text-white/50 text-center max-w-xs text-base font-medium">{t.dashboard.completeOnboarding}</p>
         <Link
@@ -167,16 +163,11 @@ export default function DashboardPage() {
       {/* ── HEADER ── */}
       <header className="w-full max-w-3xl flex justify-between items-center mb-6 md:mb-8 lixum-animate">
         <div>
-          <h1
-            className="font-black tracking-[.22em] leading-none text-xl md:text-2xl"
-            style={{ fontFamily:"'Courier New',monospace" }}
-          >
-            <span style={{ color:"#8b949e" }}>LI</span>
-            <span className="lixum-x">X</span>
-            <span style={{ color:"#8b949e" }}>UM</span>
+          <h1 className="font-black text-xl md:text-2xl text-white leading-tight">
+            AfriCalo
           </h1>
-          <p className="lixum-bio-sub text-[9px] md:text-[11px] uppercase font-semibold mt-0.5 tracking-[.32em]">
-            Bio-Digital Dashboard
+          <p className="text-[11px] md:text-[12px] font-medium mt-0.5" style={{ color:"var(--lx-accent-sub)" }}>
+            {locale === "fr" ? "Tableau de bord santé" : "Health Dashboard"}
           </p>
         </div>
         <span className="text-base text-white/65 font-semibold truncate max-w-[12rem]">
@@ -283,88 +274,144 @@ export default function DashboardPage() {
       {/* ── WIDGET GRID ── */}
       <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
 
-        {/* Meals */}
+        {/* ── Repas du Jour ── */}
         <div
-          className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 flex flex-col min-h-[16rem] md:min-h-[17rem] lixum-animate cursor-default"
-          style={{ ...GLASS_CARD, animationDelay:".10s" }}
+          className="lixum-card rounded-2xl p-5 md:p-6 flex flex-col min-h-[16rem] md:min-h-[17rem] lixum-animate relative overflow-hidden cursor-default"
+          style={{
+            background:"linear-gradient(135deg, rgba(2,12,7,0.88) 0%, rgba(120,53,15,0.10) 100%)",
+            backdropFilter:"blur(24px)",
+            WebkitBackdropFilter:"blur(24px)",
+            border:"1px solid rgba(251,146,60,0.22)",
+            boxShadow:"0 4px 28px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05)",
+            animationDelay:".10s",
+          }}
         >
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-bold text-amber-400 uppercase tracking-widest">
-              {locale === "fr" ? "Repas du Jour" : "Today's Meals"}
-            </span>
+          <div className="absolute inset-0 pointer-events-none rounded-2xl"
+            style={{ background:"linear-gradient(135deg, rgba(251,146,60,0.05) 0%, transparent 55%)" }} />
+
+          {/* Header */}
+          <div className="relative flex items-center gap-3 mb-5">
+            <div style={{
+              width:"2.25rem", height:"2.25rem",
+              background:"rgba(251,146,60,0.13)",
+              border:"1px solid rgba(251,146,60,0.30)",
+              borderRadius:"0.75rem",
+              display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+            }}>
+              <UtensilsCrossed size={15} style={{ color:"#fb923c" }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white leading-tight">
+                {locale === "fr" ? "Repas du Jour" : "Today's Meals"}
+              </p>
+              <p className="text-[10px] text-white/40 mt-0.5 font-medium">
+                {todayConsumed > 0
+                  ? `${todayConsumed.toLocaleString()} kcal consommés`
+                  : locale === "fr" ? "Aucun repas enregistré" : "No meals yet"}
+              </p>
+            </div>
             <Link
               href={`/${locale}/meals`}
               prefetch={true}
-              className="text-xs text-white/50 hover:text-[#00ff9d] transition-colors uppercase font-bold tracking-wider"
+              className="text-[11px] text-white/35 hover:text-amber-400 transition-colors font-semibold flex-shrink-0"
             >
-              {locale === "fr" ? "Tout voir" : "See all"} →
+              {locale === "fr" ? "Tout voir →" : "See all →"}
             </Link>
           </div>
 
+          {/* Meal list */}
           {todayMeals.length === 0 ? (
-            <p className="text-white/55 text-base font-semibold py-6 text-center flex-1">
-              {locale === "fr" ? "Aucun repas enregistré" : "No meals logged yet"}
-            </p>
+            <div className="relative flex-1 flex items-center justify-center">
+              <p className="text-white/35 text-sm font-medium text-center">
+                {locale === "fr" ? "Ajoutez votre premier repas" : "Log your first meal"}
+              </p>
+            </div>
           ) : (
-            <div className="flex-1 space-y-2">
+            <div className="relative flex-1 space-y-2 overflow-hidden">
               {todayMeals.slice(0, 5).map((meal: Meal) => (
                 <div
                   key={meal.id}
-                  className="flex justify-between items-center py-1.5"
-                  style={{ borderBottom:"1px solid rgba(0,255,157,.05)" }}
+                  className="flex justify-between items-center py-2 px-3 rounded-xl"
+                  style={{ background:"rgba(251,146,60,0.05)", border:"1px solid rgba(251,146,60,0.09)" }}
                 >
-                  <span className="text-sm text-white/70 font-medium truncate mr-2">{meal.name}</span>
-                  <span className="lixum-num text-sm text-amber-400 font-bold flex-shrink-0">
-                    {meal.calories} kcal
+                  <span className="text-sm text-white/72 font-medium truncate mr-2">{meal.name}</span>
+                  <span className="text-sm text-amber-400 font-bold flex-shrink-0 tabular-nums">
+                    {meal.calories}
+                    <span className="text-[10px] font-normal text-white/35 ml-0.5">kcal</span>
                   </span>
                 </div>
               ))}
               {todayMeals.length > 5 && (
-                <p className="text-xs text-white/35 text-center pt-1">
+                <p className="text-xs text-white/30 text-center pt-1">
                   +{todayMeals.length - 5} {locale === "fr" ? "autres" : "more"}
                 </p>
               )}
             </div>
           )}
 
-          <div className="mt-auto pt-3" style={{ borderTop:"1px solid rgba(0,255,157,.05)" }}>
+          <div className="relative mt-auto pt-3" style={{ borderTop:"1px solid rgba(251,146,60,0.12)" }}>
             <Link
               href={`/${locale}/meals`}
               prefetch={true}
-              className="text-sm text-amber-400/80 hover:text-amber-400 font-bold uppercase tracking-wider transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-amber-400/70 hover:text-amber-400 font-semibold transition-colors"
             >
-              → {locale === "fr" ? "Gérer mes repas" : "Manage meals"}
+              <UtensilsCrossed size={13} />
+              {locale === "fr" ? "Gérer mes repas" : "Manage meals"}
             </Link>
           </div>
         </div>
 
-        {/* Activity */}
+        {/* ── Activité & Énergie ── */}
         <div
-          className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 flex flex-col overflow-hidden min-h-[16rem] md:min-h-[17rem] lixum-animate cursor-default"
-          style={{ ...GLASS_CARD, animationDelay:".15s" }}
+          className="lixum-card rounded-2xl p-5 md:p-6 flex flex-col overflow-hidden min-h-[16rem] md:min-h-[17rem] lixum-animate relative cursor-default"
+          style={{
+            background:"linear-gradient(135deg, rgba(2,12,7,0.88) 0%, rgba(30,58,138,0.10) 100%)",
+            backdropFilter:"blur(24px)",
+            WebkitBackdropFilter:"blur(24px)",
+            border:"1px solid rgba(96,165,250,0.22)",
+            boxShadow:"0 4px 28px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05)",
+            animationDelay:".15s",
+          }}
         >
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-bold text-amber-400 uppercase tracking-widest">
-              {locale === "fr" ? "Activité & Énergie" : "Activity & Energy"}
-            </span>
+          <div className="absolute inset-0 pointer-events-none rounded-2xl"
+            style={{ background:"linear-gradient(135deg, rgba(96,165,250,0.05) 0%, transparent 55%)" }} />
+
+          {/* Header */}
+          <div className="relative flex items-center gap-3 mb-5">
+            <div style={{
+              width:"2.25rem", height:"2.25rem",
+              background:"rgba(96,165,250,0.13)",
+              border:"1px solid rgba(96,165,250,0.30)",
+              borderRadius:"0.75rem",
+              display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+            }}>
+              <Zap size={15} style={{ color:"#60a5fa" }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white leading-tight">
+                {locale === "fr" ? "Activité & Énergie" : "Activity & Energy"}
+              </p>
+              <p className="text-[10px] text-white/40 mt-0.5 font-medium">
+                {locale === "fr" ? "Calories brûlées aujourd'hui" : "Burned today"}
+              </p>
+            </div>
             <Link
               href={`/${locale}/activities`}
               prefetch={true}
-              className="text-xs text-white/50 hover:text-[#00ff9d] transition-colors uppercase font-bold tracking-wider"
+              className="text-[11px] text-white/35 hover:text-blue-400 transition-colors font-semibold flex-shrink-0"
             >
-              {locale === "fr" ? "Voir" : "View"} →
+              {locale === "fr" ? "Voir →" : "View →"}
             </Link>
           </div>
 
-          <div className="lixum-num text-4xl md:text-5xl font-black leading-none" style={{ color:"#60a5fa" }}>
-            {todayBurned}
-            <span className="text-base font-medium text-white/55 ml-1.5">kcal</span>
+          <div className="relative mb-2">
+            <span className="text-4xl md:text-5xl font-black text-blue-400 tabular-nums leading-none">
+              {todayBurned}
+            </span>
+            <span className="text-base font-medium text-white/40 ml-1.5">kcal</span>
           </div>
-          <p className="text-sm text-white/55 mt-1 font-medium">
-            {locale === "fr" ? "brûlées aujourd'hui" : "burned today"}
-          </p>
 
-          <div className="flex items-end gap-1.5 h-16 md:h-20 mt-auto pt-4">
+          <div className="relative flex items-end gap-1.5 h-16 md:h-20 mt-auto">
             {(() => {
               const raw: { date?: string; consumed: number; target?: number }[] =
                 caloriesChartData.length > 0
@@ -372,13 +419,13 @@ export default function DashboardPage() {
                   : Array(7).fill({ consumed: 0 });
               const maxV = Math.max(...raw.map((d) => d.consumed || 0), 1);
               return raw.map((d, i: number) => {
-                const hPct   = Math.max(6, Math.round(((d.consumed || 0) / maxV) * 100));
+                const hPct   = Math.max(8, Math.round(((d.consumed || 0) / maxV) * 100));
                 const isLast = i === raw.length - 1;
                 return (
-                  <div key={i} className="flex-1 rounded-full transition-all" style={{
+                  <div key={i} className="flex-1 rounded-lg transition-all" style={{
                     height:`${hPct}%`,
-                    background: isLast ? "#f59e0b" : "rgba(255,255,255,.06)",
-                    boxShadow:  isLast ? "0 0 14px rgba(245,158,11,.6)" : "none",
+                    background: isLast ? "linear-gradient(180deg,#93c5fd,#3b82f6)" : "rgba(96,165,250,0.10)",
+                    boxShadow:  isLast ? "0 0 14px rgba(59,130,246,0.40)" : "none",
                   }} />
                 );
               });
@@ -386,38 +433,65 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Streak */}
+        {/* ── Série Verte — Santé ── */}
         <div
-          className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 min-h-[12rem] lixum-animate cursor-default"
-          style={{ ...GLASS_CARD, animationDelay:".20s" }}
+          className="lixum-card rounded-2xl p-5 md:p-6 min-h-[12rem] lixum-animate relative overflow-hidden cursor-default"
+          style={{
+            background:"linear-gradient(135deg, rgba(2,12,7,0.88) 0%, rgba(5,150,80,0.08) 100%)",
+            backdropFilter:"blur(24px)",
+            WebkitBackdropFilter:"blur(24px)",
+            border:"1px solid rgba(0,255,157,0.18)",
+            boxShadow:"0 4px 28px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05)",
+            animationDelay:".20s",
+          }}
         >
-          <span
-            className="text-sm font-bold uppercase tracking-widest block mb-3"
-            style={{ color:"#00ff9d", textShadow:"0 0 8px rgba(0,255,157,.4)" }}
-          >
-            {locale === "fr" ? "Série Verte — Santé" : "Green Streak — Health"}
-          </span>
-          <div className="lixum-num text-4xl md:text-5xl font-black leading-none" style={{ color:"#00ff9d" }}>
-            {streak}
-            <span className="text-lg font-medium text-white/55 ml-1.5">
+          <div className="absolute inset-0 pointer-events-none rounded-2xl"
+            style={{ background:"linear-gradient(135deg, rgba(0,255,157,0.04) 0%, transparent 55%)" }} />
+
+          {/* Header */}
+          <div className="relative flex items-center gap-3 mb-5">
+            <div style={{
+              width:"2.25rem", height:"2.25rem",
+              background:"rgba(0,255,157,0.10)",
+              border:"1px solid rgba(0,255,157,0.22)",
+              borderRadius:"0.75rem",
+              display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+            }}>
+              <Leaf size={15} style={{ color:"#00ff9d" }} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white leading-tight">
+                {locale === "fr" ? "Série Verte" : "Green Streak"}
+              </p>
+              <p className="text-[10px] text-white/40 mt-0.5 font-medium">
+                {locale === "fr" ? "Jours de santé consécutifs" : "Consecutive healthy days"}
+              </p>
+            </div>
+          </div>
+
+          <div className="relative flex items-baseline gap-2 mb-4">
+            <span className="text-4xl md:text-5xl font-black tabular-nums leading-none" style={{ color:"#00ff9d" }}>
+              {streak}
+            </span>
+            <span className="text-lg font-medium text-white/45">
               {locale === "fr" ? "jours" : "days"}
             </span>
           </div>
-          <div
-            className="w-full h-1.5 rounded-full overflow-hidden mt-4"
-            style={{ background:"rgba(255,255,255,.04)" }}
-          >
+
+          <div className="relative w-full h-2 rounded-full overflow-hidden mb-4"
+            style={{ background:"rgba(255,255,255,0.05)" }}>
             <div
               className="h-full rounded-full transition-all duration-700"
               style={{
                 width:`${Math.min(100, streak * 10)}%`,
                 background:"linear-gradient(90deg,#059669,#00ff9d)",
-                boxShadow:"0 0 10px rgba(0,255,157,.5)",
+                boxShadow:"0 0 10px rgba(0,255,157,0.4)",
               }}
             />
           </div>
+
           {badges.length > 0 && (
-            <div className="flex gap-2.5 mt-5 flex-wrap">
+            <div className="relative flex gap-2.5 flex-wrap">
               {badges.slice(0, 5).map((badge: Badge) => (
                 <span
                   key={badge.id}
@@ -431,42 +505,70 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Weight projection */}
+        {/* ── Santé — Poids Projeté ── */}
         <div
-          className="lixum-card rounded-[1.75rem] md:rounded-[2rem] p-5 md:p-6 min-h-[12rem] lixum-animate cursor-default"
-          style={{ ...GLASS_CARD, animationDelay:".25s" }}
+          className="lixum-card rounded-2xl p-5 md:p-6 min-h-[12rem] lixum-animate relative overflow-hidden cursor-default"
+          style={{
+            background:"linear-gradient(135deg, rgba(2,12,7,0.88) 0%, rgba(109,40,217,0.08) 100%)",
+            backdropFilter:"blur(24px)",
+            WebkitBackdropFilter:"blur(24px)",
+            border:"1px solid rgba(167,139,250,0.20)",
+            boxShadow:"0 4px 28px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05)",
+            animationDelay:".25s",
+          }}
         >
-          <span
-            className="text-sm font-bold uppercase tracking-widest block mb-3"
-            style={{ color:"#00ff9d", textShadow:"0 0 8px rgba(0,255,157,.4)" }}
-          >
-            {locale === "fr" ? "Santé — Poids Projeté" : "Health — Projected Weight"}
-          </span>
-          <div className="lixum-num text-4xl md:text-5xl font-black leading-none">
-            {projectedWeight.toFixed(1)}
-            <span className="text-lg font-medium text-white/55 ml-1.5">kg</span>
+          <div className="absolute inset-0 pointer-events-none rounded-2xl"
+            style={{ background:"linear-gradient(135deg, rgba(167,139,250,0.05) 0%, transparent 55%)" }} />
+
+          {/* Header */}
+          <div className="relative flex items-center gap-3 mb-5">
+            <div style={{
+              width:"2.25rem", height:"2.25rem",
+              background:"rgba(167,139,250,0.13)",
+              border:"1px solid rgba(167,139,250,0.28)",
+              borderRadius:"0.75rem",
+              display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+            }}>
+              <Scale size={15} style={{ color:"#a78bfa" }} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white leading-tight">
+                {locale === "fr" ? "Poids Projeté" : "Projected Weight"}
+              </p>
+              <p className="text-[10px] text-white/40 mt-0.5 font-medium">
+                {locale === "fr" ? "Projection sur 30 jours" : "30-day projection"}
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-white/60 mt-2 font-medium">
-            {locale === "fr" ? "Actuel :" : "Current:"}{" "}
-            <span className="lixum-num text-white/80 font-bold">{profile.weight} kg</span>
+
+          <div className="relative flex items-baseline gap-2 mb-3">
+            <span className="text-4xl md:text-5xl font-black text-white tabular-nums leading-none">
+              {projectedWeight.toFixed(1)}
+            </span>
+            <span className="text-lg font-medium text-white/45">kg</span>
+          </div>
+
+          <p className="relative text-sm text-white/45 mb-4 font-medium">
+            {locale === "fr" ? "Actuel : " : "Current: "}
+            <span className="text-white/70 font-semibold">{profile.weight} kg</span>
           </p>
+
           <div
-            className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold px-3 py-1.5 rounded-xl"
+            className="relative inline-flex items-center gap-2 text-sm font-bold px-3.5 py-2 rounded-xl"
             style={{
-              background: weightChange > 0 ? "rgba(239,68,68,.08)" : weightChange < 0 ? "rgba(0,255,157,.07)" : "rgba(255,255,255,.04)",
-              border:`1px solid ${weightChange > 0 ? "rgba(239,68,68,.16)" : weightChange < 0 ? "rgba(0,255,157,.18)" : "rgba(255,255,255,.07)"}`,
-              color: weightChange > 0 ? "#f87171" : weightChange < 0 ? "#00ff9d" : "rgba(255,255,255,.45)",
+              background: weightChange > 0 ? "rgba(239,68,68,0.08)" : weightChange < 0 ? "rgba(0,255,157,0.07)" : "rgba(255,255,255,0.04)",
+              border:`1px solid ${weightChange > 0 ? "rgba(239,68,68,0.18)" : weightChange < 0 ? "rgba(0,255,157,0.18)" : "rgba(255,255,255,0.07)"}`,
+              color: weightChange > 0 ? "#f87171" : weightChange < 0 ? "#00ff9d" : "rgba(255,255,255,0.40)",
             }}
           >
             {weightChange > 0 ? "↑" : weightChange < 0 ? "↓" : "→"}
-            <span className="lixum-num">{Math.abs(weightChange).toFixed(1)} kg</span>
+            <span className="tabular-nums">{Math.abs(weightChange).toFixed(1)} kg</span>
             <span className="font-normal opacity-55">{locale === "fr" ? " /30j" : " /30d"}</span>
           </div>
-          <p className="text-xs text-white/40 mt-3 font-medium">
+
+          <p className="relative text-[11px] text-white/30 mt-4 font-medium">
             TDEE{" "}
-            <span className="lixum-num" style={{ color:"rgba(255,255,255,.60)" }}>
-              {Math.round(profile.tdee)}
-            </span>{" "}
+            <span className="text-white/50 tabular-nums">{Math.round(profile.tdee)}</span>{" "}
             kcal/j
           </p>
         </div>
