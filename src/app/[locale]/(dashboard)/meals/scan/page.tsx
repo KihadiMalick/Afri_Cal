@@ -165,7 +165,7 @@ export default function MealScanPage() {
       setErrorMsg(err instanceof Error ? err.message : "Upload error");
       setPhase("error");
     }
-  }, [supabase, userId]);
+  }, [supabase, userId, scanMode]);
 
   const handleCancel = useCallback(() => {
     router.push(`/${locale}/meals`);
@@ -218,7 +218,7 @@ export default function MealScanPage() {
       }
     } catch { /* ignore save errors */ }
     setPhase("done");
-  }, [supabase, ingredients, dishName, locale]);
+  }, [supabase, ingredients, dishName, locale, scanMode]);
 
   const removedIngredients = ingredients.filter(i => i.status === "removed");
   const activeIngredients  = ingredients.filter(i => i.status !== "removed");
