@@ -1,8 +1,9 @@
-"use client";
-
 /* ═══════════════════════════════════════════════════════════
-   AUTH LAYOUT — Full immersion, zero nav bars
-   Split: form (left) + ALIXEN image (right)
+   AUTH LAYOUT — Server Component (no "use client")
+   Being a Server Component lets Next.js hoist the <style>
+   tag into <head> so CSS is applied BEFORE first paint —
+   zero flash of the locale layout's bg-brand-cream.
+   Split: form (left) + ALIXEN image (right, desktop only)
    Background: #0a0a0a with subtle data grid
 ═══════════════════════════════════════════════════════════ */
 
@@ -14,50 +15,86 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
-        /* ── Force dark background on entire page ── */
-        body { background: #0a0a0a !important; }
+        /* ══════════════════════════════════════════════════
+           HARD ISOLATION — override locale layout completely
+           ══════════════════════════════════════════════════ */
+        html, body {
+          background: #0a0a0a !important;
+          overflow-x: hidden !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        /* Remove MobileNav bottom padding injected by locale layout */
+        body > main,
+        body main {
+          padding: 0 !important;
+          margin: 0 !important;
+          background: transparent !important;
+        }
 
         /* ── Root split layout ── */
         .lx-auth-root {
           min-height: 100vh;
+          width: 100%;
           display: flex;
           background: #0a0a0a;
           font-family: 'Outfit', 'Poppins', sans-serif;
           position: relative;
-          overflow: hidden;
+          overflow: hidden;   /* clip Framer Motion x-slide overflow on mobile */
         }
 
         /* ── Left: scrollable form panel ── */
         .lx-form-panel {
           flex: 1;
           min-width: 0;
+          width: 100%;
           overflow-y: auto;
-          padding: 3rem 2rem;
+          overflow-x: hidden;
+          padding: 2.5rem 1.5rem 3rem;
           display: flex;
           flex-direction: column;
           justify-content: center;
           scrollbar-width: none;
-          max-width: 520px;
-          margin: 0 auto;
         }
         .lx-form-panel::-webkit-scrollbar { display: none; }
 
-        /* ── Right: ALIXEN image panel ── */
+        /* ── Mobile ALIXEN mini-banner (< 900px) ── */
+        .lx-alixen-mobile {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-bottom: 1.5rem;
+          padding: 0.6rem 0.9rem;
+          border-radius: 1rem;
+          background: rgba(0,255,157,0.04);
+          border: 1px solid rgba(0,255,157,0.10);
+        }
+        .lx-alixen-mobile-svg {
+          width: 44px;
+          height: 44px;
+          flex-shrink: 0;
+        }
+        .lx-alixen-mobile-text {
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(0,255,157,0.50);
+          font-family: 'Courier New', monospace;
+        }
+
+        /* ── Right: ALIXEN image panel (desktop only) ── */
         .lx-alixen-panel {
           display: none;
           position: relative;
           flex-shrink: 0;
         }
+
         @media (min-width: 900px) {
-          .lx-auth-root {
-            overflow: hidden;
-            min-height: 100vh;
-          }
           .lx-form-panel {
-            max-width: none;
             width: 52%;
+            flex: 0 0 52%;
             padding: 3rem 4rem;
-            margin: 0;
           }
           .lx-alixen-panel {
             display: flex;
@@ -65,17 +102,20 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             align-items: center;
             justify-content: flex-end;
             width: 48%;
+            flex: 0 0 48%;
             position: relative;
             overflow: hidden;
             background: rgba(0,255,157,0.015);
             border-left: 1px solid rgba(0,255,157,0.07);
           }
+          /* Hide mobile banner on desktop */
+          .lx-alixen-mobile {
+            display: none;
+          }
         }
 
         /* ── Speech bubble arrow (points RIGHT toward ALIXEN, desktop only) ── */
-        .lx-bubble-arrow {
-          display: none;
-        }
+        .lx-bubble-arrow { display: none; }
         @media (min-width: 900px) {
           .lx-bubble-arrow {
             display: block;
@@ -204,13 +244,20 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         .lx-orb-3 { animation: lx-orb 11s ease-in-out infinite 5s; }
       `}</style>
 
-      {/* Background — z-index covers locale layout bg-brand-cream */}
+      {/* Full-screen dark overlay — sits above locale layout entirely */}
       <div
-        className="fixed inset-0 overflow-y-auto"
-        style={{ background: "#0a0a0a", backgroundImage: GRID_SVG, zIndex: 9999 }}
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 9999,
+          background: "#0a0a0a",
+          backgroundImage: GRID_SVG,
+          overflowY: "auto",
+          overflowX: "hidden",
+        }}
       >
         {/* Ambient orbs */}
-        <div className="pointer-events-none fixed inset-0" aria-hidden="true">
+        <div style={{ pointerEvents: "none", position: "fixed", inset: 0 }} aria-hidden="true">
           <div className="lx-orb-1 absolute top-[12%] left-[8%] w-40 h-40 rounded-full"
             style={{ background: "radial-gradient(circle, rgba(0,255,157,0.04), transparent 70%)", filter: "blur(45px)" }} />
           <div className="lx-orb-2 absolute top-[60%] right-[6%] w-28 h-28 rounded-full"

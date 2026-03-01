@@ -546,6 +546,41 @@ export default function AlixenRegisterForm({ locale }: { locale: Locale }) {
 
       {/* ── Form panel (LEFT) ── */}
       <div className="lx-form-panel">
+
+        {/* Mobile ALIXEN avatar — hidden on desktop by CSS */}
+        <div className="lx-alixen-mobile">
+          <div style={{
+            width: 48, height: 48, borderRadius: "50%", overflow: "hidden",
+            position: "relative", flexShrink: 0,
+            background: "rgba(0,255,157,0.05)",
+            border: "1.5px solid rgba(0,255,157,0.22)",
+            boxShadow: "0 0 14px rgba(0,255,157,0.12)",
+          }}>
+            <svg viewBox="110 5 80 175" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
+              <circle cx="150" cy="138" r="40" fill="rgba(255,255,255,0.075)" stroke="rgba(255,255,255,0.14)" strokeWidth="1.5"/>
+              <path d="M131 98 Q121 62 117 32" stroke="rgba(255,255,255,0.38)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+              <circle cx="117" cy="30" r="5" fill="#00ff9d" opacity="0.9"/>
+              <path d="M141 93 Q136 57 134 22" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+              <circle cx="134" cy="20" r="6" fill="#00ff9d"/>
+              <path d="M150 90 Q150 53 150 16" stroke="rgba(255,255,255,0.62)" strokeWidth="3" fill="none" strokeLinecap="round"/>
+              <circle cx="150" cy="14" r="7" fill="#00ff9d"/>
+              <path d="M159 93 Q164 57 166 22" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+              <circle cx="166" cy="20" r="6" fill="#00ff9d"/>
+              <path d="M169 98 Q179 62 183 32" stroke="rgba(255,255,255,0.38)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+              <circle cx="183" cy="30" r="5" fill="#00ff9d" opacity="0.9"/>
+              <circle cx="136" cy="130" r="7" fill="rgba(0,255,157,0.13)" stroke="rgba(0,255,157,0.38)" strokeWidth="1.5"/>
+              <circle cx="136" cy="130" r="3" fill="#00ff9d" opacity="0.8"/>
+              <circle cx="164" cy="130" r="7" fill="rgba(0,255,157,0.13)" stroke="rgba(0,255,157,0.38)" strokeWidth="1.5"/>
+              <circle cx="164" cy="130" r="3" fill="#00ff9d" opacity="0.8"/>
+              <path d="M140 148 Q150 155 160 148 Q156 162 150 167 Q144 162 140 148 Z" fill="rgba(245,158,11,0.4)" stroke="rgba(245,158,11,0.6)" strokeWidth="1"/>
+            </svg>
+          </div>
+          <div>
+            <p className="lx-alixen-mobile-text">ALIXEN</p>
+            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.32)", marginTop: 2 }}>Guide Bio-Digital</p>
+          </div>
+        </div>
+
         {/* LIXUM header */}
         <div className="mb-8">
           <h1 className="lx-brand-title">
