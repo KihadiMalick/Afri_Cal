@@ -14,6 +14,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
+        /* ── Force dark background on entire page ── */
+        body { background: #0a0a0a !important; }
+
         /* ── Root split layout ── */
         .lx-auth-root {
           min-height: 100vh;
@@ -64,6 +67,27 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             width: 48%;
             position: relative;
             overflow: hidden;
+            background: rgba(0,255,157,0.015);
+            border-left: 1px solid rgba(0,255,157,0.07);
+          }
+        }
+
+        /* ── Speech bubble arrow (points RIGHT toward ALIXEN, desktop only) ── */
+        .lx-bubble-arrow {
+          display: none;
+        }
+        @media (min-width: 900px) {
+          .lx-bubble-arrow {
+            display: block;
+            position: absolute;
+            right: -13px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-top: 9px solid transparent;
+            border-bottom: 9px solid transparent;
+            border-left: 13px solid rgba(0,255,157,0.16);
           }
         }
 
@@ -180,10 +204,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         .lx-orb-3 { animation: lx-orb 11s ease-in-out infinite 5s; }
       `}</style>
 
-      {/* Background */}
+      {/* Background — z-index covers locale layout bg-brand-cream */}
       <div
         className="fixed inset-0 overflow-y-auto"
-        style={{ background: "#0a0a0a", backgroundImage: GRID_SVG }}
+        style={{ background: "#0a0a0a", backgroundImage: GRID_SVG, zIndex: 9999 }}
       >
         {/* Ambient orbs */}
         <div className="pointer-events-none fixed inset-0" aria-hidden="true">
