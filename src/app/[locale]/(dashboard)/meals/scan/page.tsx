@@ -13,6 +13,7 @@ import { checkScanLimit, incrementScanCount } from "@/utils/scan-limits";
 import { updateDailySummary } from "@/utils/daily-summary";
 import { GLASS_CARD } from "@/components/lixum/LixumShell";
 import RevealerScan from "@/components/scan/RevealerScan";
+import GyroTargetLockUI from "@/components/scan/GyroTargetLockUI";
 
 /* ══════════════════════════════════════════════════════════
    LIXUM Scan Page — v6 "Revealer Scan"
@@ -24,6 +25,7 @@ import RevealerScan from "@/components/scan/RevealerScan";
    ══════════════════════════════════════════════════════════ */
 
 type PagePhase = "idle" | "scanning" | "uploading" | "confirming" | "done" | "error" | "limit";
+type ScanMode  = "gyro" | "revealer";   // active scanner
 
 /* ── Ingredient state from API ── */
 interface IngredientState {
@@ -96,6 +98,7 @@ export default function MealScanPage() {
   const supabase = createClient();
 
   const [phase,       setPhase]       = useState<PagePhase>("idle");
+  const [scanMode,    setScanMode]    = useState<ScanMode>("gyro");
   const [errorMsg,    setErrorMsg]    = useState("");
   const [uploadedPct, setUploadedPct] = useState(0);
   const [framesCount, setFramesCount] = useState(0);
@@ -121,12 +124,15 @@ export default function MealScanPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ── RevealerScan → frames captured → send to vision API ── */
+  /* ── Scanner → frames captured → send to vision API ── */
   const handleRevealComplete = useCallback(async (frames: string[]) => {
     setPhase("uploading");
     try {
       setUploadedPct(20);
-      const res = await fetch("/api/vision/analyze", {
+      /* Gyro·Target·Lock → /api/vision/process (12 frames, 4 angles)
+         Revealer (legacy)  → /api/vision/analyze (10 frames)           */
+      const endpoint = scanMode === "gyro" ? "/api/vision/process" : "/api/vision/analyze";
+      const res = await fetch(endpoint, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ frames }),
@@ -159,7 +165,7 @@ export default function MealScanPage() {
       setErrorMsg(err instanceof Error ? err.message : "Upload error");
       setPhase("error");
     }
-  }, [supabase, userId]);
+  }, [supabase, userId, scanMode]);
 
   const handleCancel = useCallback(() => {
     router.push(`/${locale}/meals`);
@@ -198,7 +204,9 @@ export default function MealScanPage() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase as any).from("meals").insert({
           user_id:   user.id,
-          name:      dishName ?? (locale === "fr" ? "Plat scanné (Revealer)" : "Scanned dish (Revealer)"),
+          name:      dishName ?? (locale === "fr"
+            ? (scanMode === "gyro" ? "Plat scanné (Gyro·Lock)" : "Plat scanné (Revealer)")
+            : (scanMode === "gyro" ? "Scanned dish (Gyro·Lock)" : "Scanned dish (Revealer)")),
           meal_type: guessMealType(),
           calories:  n.calories,
           protein:   n.protein,
@@ -210,7 +218,7 @@ export default function MealScanPage() {
       }
     } catch { /* ignore save errors */ }
     setPhase("done");
-  }, [supabase, ingredients, dishName, locale]);
+  }, [supabase, ingredients, dishName, locale, scanMode]);
 
   const removedIngredients = ingredients.filter(i => i.status === "removed");
   const activeIngredients  = ingredients.filter(i => i.status !== "removed");
@@ -234,38 +242,53 @@ export default function MealScanPage() {
           <h1 className="font-black text-lg text-white tracking-wide">
             LIXUM{" "}
             <span style={{ color: "#00ff9d", textShadow: "0 0 10px rgba(0,255,157,.6)" }}>
-              Revealer
+              {scanMode === "gyro" ? "Target Lock" : "Revealer"}
             </span>
           </h1>
           <p className="text-xs text-white/45 font-semibold uppercase tracking-widest">
-            {locale === "fr" ? "Scanner Révélateur · Gyroscope" : "Revealer Scanner · Gyroscope"}
+            {scanMode === "gyro"
+              ? (locale === "fr" ? "Gyro · Target · Lock · 4 angles" : "Gyro · Target · Lock · 4 angles")
+              : (locale === "fr" ? "Scanner Révélateur · Gyroscope"   : "Revealer Scanner · Gyroscope")}
           </p>
         </div>
-        {phase === "idle" && scansRemaining !== Infinity && (
-          <div className="ml-auto flex items-center gap-1.5">
-            {[1, 2, 3].map(i => (
-              <div
-                key={i}
-                className="w-2 h-2 rounded-full"
-                style={{
-                  background: i <= (3 - scansRemaining) ? "#00ff9d" : "rgba(255,255,255,.10)",
-                }}
-              />
-            ))}
-            <span className="text-[10px] text-white/40 font-medium ml-1">
-              {scansRemaining} {locale === "fr" ? "restant" : "left"}{scansRemaining > 1 ? "s" : ""}
-            </span>
+        {phase === "idle" && (
+          <div className="ml-auto flex items-center gap-2">
+            {/* Mode toggle */}
+            <button
+              onClick={() => setScanMode(m => m === "gyro" ? "revealer" : "gyro")}
+              className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all"
+              style={{
+                background: scanMode === "gyro" ? "rgba(0,255,157,.12)" : "rgba(255,255,255,.06)",
+                border: `1px solid ${scanMode === "gyro" ? "rgba(0,255,157,.35)" : "rgba(255,255,255,.09)"}`,
+                color: scanMode === "gyro" ? "#00ff9d" : "rgba(255,255,255,.45)",
+              }}
+            >
+              {scanMode === "gyro" ? "⊕ GTL" : "◎ Rev"}
+            </button>
+
+            {scansRemaining !== Infinity && (
+              <div className="flex items-center gap-1.5">
+                {[1, 2, 3].map(i => (
+                  <div
+                    key={i}
+                    className="w-2 h-2 rounded-full"
+                    style={{ background: i <= (3 - scansRemaining) ? "#00ff9d" : "rgba(255,255,255,.10)" }}
+                  />
+                ))}
+                <span className="text-[10px] text-white/40 font-medium">
+                  {scansRemaining}{locale === "fr" ? "r" : "l"}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* ── Revealer Scan ── */}
+      {/* ── Scanner (Gyro·Target·Lock or Revealer) ── */}
       {(phase === "idle" || phase === "scanning") && (
-        <RevealerScan
-          locale={locale}
-          onComplete={handleRevealComplete}
-          onCancel={handleCancel}
-        />
+        scanMode === "gyro"
+          ? <GyroTargetLockUI locale={locale} onComplete={handleRevealComplete} onCancel={handleCancel} />
+          : <RevealerScan     locale={locale} onComplete={handleRevealComplete} onCancel={handleCancel} />
       )}
 
       {/* ── Uploading ── */}
@@ -285,7 +308,9 @@ export default function MealScanPage() {
               {locale === "fr" ? "Moteur Vision LIXUM…" : "LIXUM Vision Engine…"}
             </p>
             <p className="text-white/45 text-sm font-medium">
-              {locale === "fr" ? "10 clichés · Analyse IA sans limite" : "10 frames · Uncapped AI analysis"}
+              {scanMode === "gyro"
+                ? (locale === "fr" ? "12 clichés · 4 angles · Analyse IA" : "12 frames · 4 angles · AI analysis")
+                : (locale === "fr" ? "10 clichés · Analyse IA sans limite" : "10 frames · Uncapped AI analysis")}
             </p>
           </div>
           <div className="w-full">
