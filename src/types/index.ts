@@ -12,6 +12,19 @@ export type {
   UserScanLimit,
 } from "./database";
 
+export type {
+  TextureType,
+  PortionSize,
+  DetectedIngredient,
+  VisionDetectionResult,
+  EstimatedIngredient,
+  MatchedIngredient,
+  NutritionResult,
+  IngredientNutrition,
+  CoherenceWarning,
+  ScanPipelineResult,
+} from "./vision-pipeline";
+
 export interface CalorieCalculation {
   bmr: number;
   tdee: number;
@@ -19,6 +32,7 @@ export interface CalorieCalculation {
   dailyTarget: number;
 }
 
+/** @deprecated Use ScanPipelineResult from vision-pipeline instead */
 export interface ScanResult {
   dish_name: string;
   ingredients: string[];

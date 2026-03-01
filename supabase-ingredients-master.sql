@@ -110,7 +110,7 @@ VALUES
   ('Piment frais rouge',                 'Légumes',  40, 1.9,  8.8,  0.4, 1.5,  'USDA FoodData Central'),
   ('Piment séché',                       'Légumes', 282, 12.8, 49.7, 8.4, 27.2, 'USDA FoodData Central'),
   ('Amarante / Épinards africains',      'Légumes',  23, 2.5,  4.0,  0.3, 2.2,  'FAO West Africa FCT'),
-  ('Feuilles de manioc (fraîches)',      'Légumes', 102, 7.0,  18.6, 0.4, 3.7,  'FAO West Africa FCT'),
+  ('Feuilles de manioc / isombé (fraîches)',      'Légumes', 102, 7.0,  18.6, 0.4, 3.7,  'FAO West Africa FCT'),
   ('Feuilles de patate douce (fraîches)','Légumes',  84, 5.2,  17.0, 0.5, 3.0,  'FAO West Africa FCT'),
   ('Feuilles de baobab (fraîches)',      'Légumes',  63, 5.7,  12.0, 0.3, 8.0,  'FAO West Africa FCT'),
   ('Feuilles de moringa (fraîches)',     'Légumes',  64, 9.4,  8.3,  1.4, 2.0,  'FAO West Africa FCT'),
@@ -194,7 +194,7 @@ VALUES
   ('Canard (sans peau, cru)',            'Viandes', 140, 17.8, 0.0, 6.8,  0.0, 'USDA FoodData Central'),
   ('Pintade (cru)',                      'Viandes', 158, 20.6, 0.0, 8.1,  0.0, 'FAO West Africa FCT'),
   ('Lapin (cru)',                        'Viandes', 136, 20.1, 0.0, 5.5,  0.0, 'CIQUAL'),
-  ('Escargot (cru)',                     'Viandes',  90, 16.1, 2.0, 1.4,  0.0, 'USDA FoodData Central');
+  ('Escargot / Toufa (cru)',                     'Viandes',  90, 16.1, 2.0, 1.4,  0.0, 'USDA FoodData Central');
 
 
 -- =========================
@@ -215,16 +215,16 @@ VALUES
   ('Thon en conserve (eau)',             'Poissons & Fruits de mer', 116, 25.5, 0.0, 0.8,  0.0, 'USDA FoodData Central'),
   ('Sardine en conserve (huile)',        'Poissons & Fruits de mer', 208, 24.6, 0.0, 11.5, 0.0, 'USDA FoodData Central'),
   ('Poisson-chat / Silure (cru)',        'Poissons & Fruits de mer',  95, 16.4, 0.0, 2.8,  0.0, 'USDA FoodData Central'),
-  ('Poisson fumé (générique)',           'Poissons & Fruits de mer', 200, 35.0, 0.0, 5.0,  0.0, 'FAO West Africa FCT'),
-  ('Poisson séché / salé (générique)',   'Poissons & Fruits de mer', 290, 62.0, 0.0, 3.0,  0.0, 'FAO West Africa FCT'),
+  ('Poisson fumé / Kong (générique)',           'Poissons & Fruits de mer', 200, 35.0, 0.0, 5.0,  0.0, 'FAO West Africa FCT'),
+  ('Poisson séché / Gejj (générique)',   'Poissons & Fruits de mer', 290, 62.0, 0.0, 3.0,  0.0, 'FAO West Africa FCT'),
   ('Crabe (cru)',                        'Poissons & Fruits de mer',  83, 17.4, 0.0, 1.1,  0.0, 'USDA FoodData Central'),
-  ('Calmar (cru)',                       'Poissons & Fruits de mer',  92, 15.6, 3.1, 1.4,  0.0, 'USDA FoodData Central'),
+  ('Calamar (cru)',                       'Poissons & Fruits de mer',  92, 15.6, 3.1, 1.4,  0.0, 'USDA FoodData Central'),
   ('Moules (crues)',                     'Poissons & Fruits de mer',  86, 11.9, 3.7, 2.2,  0.0, 'USDA FoodData Central'),
-  ('Hareng (cru)',                       'Poissons & Fruits de mer', 158, 17.9, 0.0, 9.0,  0.0, 'USDA FoodData Central'),
+  ('Hareng / Yaboy (cru)',                       'Poissons & Fruits de mer', 158, 17.9, 0.0, 9.0,  0.0, 'USDA FoodData Central'),
   ('Saumon (cru)',                       'Poissons & Fruits de mer', 208, 20.4, 0.0, 13.4, 0.0, 'USDA FoodData Central'),
   ('Bar / Loup de mer (cru)',            'Poissons & Fruits de mer',  97, 18.4, 0.0, 2.0,  0.0, 'CIQUAL'),
   ('Daurade (crue)',                     'Poissons & Fruits de mer', 109, 20.3, 0.0, 2.7,  0.0, 'CIQUAL'),
-  ('Homard (cru)',                       'Poissons & Fruits de mer',  90, 18.8, 0.5, 0.9,  0.0, 'USDA FoodData Central');
+  ('Homard / Langouste (cru)',                       'Poissons & Fruits de mer',  90, 18.8, 0.5, 0.9,  0.0, 'USDA FoodData Central');
 
 
 -- =========================
