@@ -83,7 +83,107 @@ function StepDots({ current, total }: { current: number; total: number }) {
 }
 
 /* ─────────────────────────────────────────────────────────
-   ALIXEN speech bubble
+   ALIXEN SVG fallback (shown when PNG fails to load)
+───────────────────────────────────────────────────────── */
+function AlixenSVGFallback() {
+  return (
+    <svg viewBox="0 0 300 500" xmlns="http://www.w3.org/2000/svg"
+      style={{ width: "100%", maxHeight: "80vh", objectFit: "contain" }}>
+      <defs>
+        <radialGradient id="rBodyGlow" cx="50%" cy="55%" r="50%">
+          <stop offset="0%" stopColor="#00ff9d" stopOpacity="0.12"/>
+          <stop offset="100%" stopColor="#00ff9d" stopOpacity="0"/>
+        </radialGradient>
+        <radialGradient id="rTailGlow" cx="50%" cy="85%" r="55%">
+          <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.14"/>
+          <stop offset="100%" stopColor="#60a5fa" stopOpacity="0"/>
+        </radialGradient>
+        <filter id="rGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      {/* Ambient glow */}
+      <ellipse cx="150" cy="380" rx="110" ry="90" fill="url(#rTailGlow)"/>
+      <ellipse cx="150" cy="200" rx="85" ry="75" fill="url(#rBodyGlow)"/>
+
+      {/* Tail / peacock feathers */}
+      <path d="M150 375 Q140 420 128 488" stroke="#00ff9d" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.75"/>
+      <path d="M150 375 Q150 435 150 492" stroke="#00ff9d" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.9"/>
+      <path d="M150 375 Q160 420 172 488" stroke="#00ff9d" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.75"/>
+      <path d="M150 385 Q118 425 93 472" stroke="#60a5fa" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.6"/>
+      <path d="M150 385 Q182 425 207 472" stroke="#60a5fa" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.6"/>
+      <path d="M147 398 Q98 428 63 458" stroke="#f59e0b" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.45"/>
+      <path d="M153 398 Q202 428 237 458" stroke="#f59e0b" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.45"/>
+
+      {/* Feather eye-circles */}
+      <circle cx="128" cy="488" r="6" fill="none" stroke="#00ff9d" strokeWidth="1.5" opacity="0.6"/>
+      <circle cx="128" cy="488" r="2.5" fill="#00ff9d" opacity="0.85"/>
+      <circle cx="150" cy="492" r="7" fill="none" stroke="#00ff9d" strokeWidth="1.5" opacity="0.7"/>
+      <circle cx="150" cy="492" r="3" fill="#00ff9d" opacity="1" filter="url(#rGlow)"/>
+      <circle cx="172" cy="488" r="6" fill="none" stroke="#00ff9d" strokeWidth="1.5" opacity="0.6"/>
+      <circle cx="172" cy="488" r="2.5" fill="#00ff9d" opacity="0.85"/>
+      <circle cx="93" cy="472" r="5" fill="none" stroke="#60a5fa" strokeWidth="1.5" opacity="0.5"/>
+      <circle cx="207" cy="472" r="5" fill="none" stroke="#60a5fa" strokeWidth="1.5" opacity="0.5"/>
+
+      {/* Data platform / perch */}
+      <rect x="95" y="370" width="110" height="7" rx="3.5" fill="rgba(0,255,157,0.10)" stroke="rgba(0,255,157,0.22)" strokeWidth="1"/>
+      <circle cx="120" cy="373.5" r="2" fill="#00ff9d" opacity="0.55"/>
+      <circle cx="150" cy="373.5" r="2" fill="#00ff9d" opacity="0.75"/>
+      <circle cx="180" cy="373.5" r="2" fill="#00ff9d" opacity="0.55"/>
+
+      {/* Body */}
+      <ellipse cx="150" cy="278" rx="62" ry="92" fill="rgba(255,255,255,0.055)" stroke="rgba(255,255,255,0.11)" strokeWidth="1"/>
+
+      {/* Wings */}
+      <path d="M90 255 Q67 268 60 290 Q76 278 92 282" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.09)" strokeWidth="1"/>
+      <path d="M210 255 Q233 268 240 290 Q224 278 208 282" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.09)" strokeWidth="1"/>
+
+      {/* Vest / LX */}
+      <path d="M122 288 Q150 308 178 288 L173 330 Q150 343 127 330 Z" fill="rgba(0,255,157,0.04)" stroke="rgba(0,255,157,0.14)" strokeWidth="1"/>
+      <text x="150" y="316" textAnchor="middle" fontFamily="'Courier New', monospace" fontWeight="900" fontSize="13" fill="rgba(0,255,157,0.32)" letterSpacing="3">LX</text>
+
+      {/* Neck */}
+      <ellipse cx="150" cy="192" rx="28" ry="37" fill="rgba(255,255,255,0.065)" stroke="rgba(255,255,255,0.11)" strokeWidth="1"/>
+
+      {/* Head */}
+      <circle cx="150" cy="138" r="40" fill="rgba(255,255,255,0.075)" stroke="rgba(255,255,255,0.14)" strokeWidth="1.5"/>
+
+      {/* Hoopoe crest */}
+      <path d="M131 98 Q121 62 117 32" stroke="rgba(255,255,255,0.38)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      <circle cx="117" cy="30" r="5" fill="#00ff9d" opacity="0.85" filter="url(#rGlow)"/>
+      <path d="M141 93 Q136 57 134 22" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+      <circle cx="134" cy="20" r="6" fill="#00ff9d" opacity="1" filter="url(#rGlow)"/>
+      <path d="M150 90 Q150 53 150 16" stroke="rgba(255,255,255,0.62)" strokeWidth="3" fill="none" strokeLinecap="round"/>
+      <circle cx="150" cy="14" r="7" fill="#00ff9d" opacity="1" filter="url(#rGlow)"/>
+      <path d="M159 93 Q164 57 166 22" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+      <circle cx="166" cy="20" r="6" fill="#00ff9d" opacity="1" filter="url(#rGlow)"/>
+      <path d="M169 98 Q179 62 183 32" stroke="rgba(255,255,255,0.38)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      <circle cx="183" cy="30" r="5" fill="#00ff9d" opacity="0.85" filter="url(#rGlow)"/>
+
+      {/* Eyes */}
+      <circle cx="136" cy="130" r="8" fill="rgba(0,255,157,0.13)" stroke="rgba(0,255,157,0.38)" strokeWidth="1.5"/>
+      <circle cx="136" cy="130" r="3.5" fill="#00ff9d" opacity="0.78"/>
+      <circle cx="164" cy="130" r="8" fill="rgba(0,255,157,0.13)" stroke="rgba(0,255,157,0.38)" strokeWidth="1.5"/>
+      <circle cx="164" cy="130" r="3.5" fill="#00ff9d" opacity="0.78"/>
+
+      {/* Beak */}
+      <path d="M140 148 Q150 156 160 148 Q156 163 150 168 Q144 163 140 148 Z" fill="rgba(245,158,11,0.38)" stroke="rgba(245,158,11,0.58)" strokeWidth="1"/>
+
+      {/* Floating data particles */}
+      <circle cx="72" cy="195" r="2" fill="#00ff9d" opacity="0.28"/>
+      <circle cx="58" cy="248" r="1.5" fill="#60a5fa" opacity="0.28"/>
+      <circle cx="228" cy="178" r="2" fill="#00ff9d" opacity="0.28"/>
+      <circle cx="242" cy="232" r="1.5" fill="#60a5fa" opacity="0.28"/>
+      <circle cx="78" cy="165" r="1" fill="#f59e0b" opacity="0.38"/>
+      <circle cx="222" cy="158" r="1" fill="#f59e0b" opacity="0.38"/>
+    </svg>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   ALIXEN speech bubble (arrow points RIGHT toward ALIXEN)
 ───────────────────────────────────────────────────────── */
 function AlixenBubble({ text, sub }: { text: string; sub?: string }) {
   return (
@@ -91,21 +191,27 @@ function AlixenBubble({ text, sub }: { text: string; sub?: string }) {
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.15, duration: 0.35 }}
-      className="mb-6 rounded-2xl px-5 py-4 relative"
-      style={{
-        background: "rgba(0,255,157,0.05)",
-        border: "1px solid rgba(0,255,157,0.16)",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.25)",
-      }}
+      className="mb-6 relative"
     >
-      <p className="text-sm font-medium leading-relaxed" style={{ color: "rgba(255,255,255,0.85)" }}>
-        {text}
-      </p>
-      {sub && (
-        <p className="text-xs mt-2 leading-relaxed italic" style={{ color: "rgba(255,255,255,0.45)" }}>
-          {sub}
+      <div
+        className="rounded-2xl px-5 py-4"
+        style={{
+          background: "rgba(0,255,157,0.05)",
+          border: "1px solid rgba(0,255,157,0.16)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.25)",
+        }}
+      >
+        <p className="text-sm font-medium leading-relaxed" style={{ color: "rgba(255,255,255,0.85)" }}>
+          {text}
         </p>
-      )}
+        {sub && (
+          <p className="text-xs mt-2 leading-relaxed italic" style={{ color: "rgba(255,255,255,0.45)" }}>
+            {sub}
+          </p>
+        )}
+      </div>
+      {/* Arrow pointing RIGHT — visible only on desktop when ALIXEN panel is shown */}
+      <div className="lx-bubble-arrow" aria-hidden="true" />
     </motion.div>
   );
 }
@@ -309,6 +415,7 @@ export default function AlixenRegisterForm({ locale }: { locale: Locale }) {
   const [dir, setDir]           = useState(1);
   const [syncing, setSyncing]   = useState(false);
   const [error, setError]       = useState("");
+  const [imgError, setImgError] = useState(false);
 
   /* Step 1 */
   const [fullName, setFullName]         = useState("");
@@ -437,26 +544,7 @@ export default function AlixenRegisterForm({ locale }: { locale: Locale }) {
   return (
     <div className="lx-auth-root">
 
-      {/* ── ALIXEN fixed right panel (visible on step 0 on large screens) ── */}
-      <div
-        className="lx-alixen-panel"
-        style={{ opacity: step === 0 ? 1 : 0.25, transition: "opacity 0.5s ease" }}
-        aria-hidden="true"
-      >
-        <div className="lx-alixen-glow" />
-        <div className="relative w-full h-full flex items-end justify-center pb-8">
-          <Image
-            src="/ALIXEN (1).png"
-            alt="ALIXEN"
-            fill
-            style={{ objectFit: "contain", objectPosition: "bottom center" }}
-            priority
-          />
-        </div>
-        <p className="lx-alixen-label">ALIXEN</p>
-      </div>
-
-      {/* ── Form panel ── */}
+      {/* ── Form panel (LEFT) ── */}
       <div className="lx-form-panel">
         {/* LIXUM header */}
         <div className="mb-8">
@@ -663,6 +751,32 @@ export default function AlixenRegisterForm({ locale }: { locale: Locale }) {
             {locale === "fr" ? "Se connecter" : "Log in"}
           </Link>
         </p>
+      </div>
+
+      {/* ── ALIXEN panel (RIGHT) — desktop only ── */}
+      <div
+        className="lx-alixen-panel"
+        style={{ opacity: step === 0 ? 1 : 0.3, transition: "opacity 0.6s ease" }}
+        aria-hidden="true"
+      >
+        <div className="lx-alixen-glow" />
+        <div className="relative w-full h-full flex items-end justify-center pb-8">
+          {imgError ? (
+            <div style={{ width: "85%", maxWidth: 340, paddingBottom: "2rem" }}>
+              <AlixenSVGFallback />
+            </div>
+          ) : (
+            <Image
+              src="/ALIXEN (1).png"
+              alt="ALIXEN"
+              fill
+              style={{ objectFit: "contain", objectPosition: "bottom center" }}
+              priority
+              onError={() => setImgError(true)}
+            />
+          )}
+        </div>
+        <p className="lx-alixen-label">ALIXEN</p>
       </div>
     </div>
   );
