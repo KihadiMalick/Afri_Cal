@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Home, UtensilsCrossed, Activity, CalendarDays, UserCircle, LogOut, Leaf,
+  Home, UtensilsCrossed, Activity, CalendarDays, UserCircle, LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { isValidLocale } from "@/i18n";
@@ -422,8 +422,8 @@ function LixumShellContent({ children }: { children: React.ReactNode }) {
   const mainBg      = isDark ? "#020c07"  : "#eaf7f0";
   const circuitBg   = isDark ? CIRCUIT_BG : CIRCUIT_BG_LIGHT;
   const sidebarGrad = isDark
-    ? `linear-gradient(180deg, #051a0e 0%, #061c10 55%, #071e12 100%)`
-    : `linear-gradient(180deg, #ecfdf5 0%, #e8fdf2 55%, #dcfce7 100%)`;
+    ? `${CIRCUIT_BG}, linear-gradient(180deg, #010d06 0%, #020f08 55%, #011009 100%)`
+    : `${CIRCUIT_BG_LIGHT}, linear-gradient(180deg, #ecfdf5 0%, #e8fdf2 55%, #dcfce7 100%)`;
   const sidebarBorder  = isDark ? "rgba(0,255,157,.07)" : "rgba(0,150,70,.14)";
   const sidebarShadow  = isDark
     ? "4px 0 32px rgba(0,0,0,.55), inset -1px 0 0 rgba(0,255,157,.04)"
@@ -433,6 +433,7 @@ function LixumShellContent({ children }: { children: React.ReactNode }) {
   const logoBoxShadow  = isDark
     ? "0 0 16px rgba(0,255,157,.14), inset 0 1px 0 rgba(255,255,255,.05)"
     : "0 0 12px rgba(0,150,70,.12), inset 0 1px 0 rgba(255,255,255,.80)";
+  const lxText         = isDark ? "#7d8590" : "#6b7280";
   const iconActive     = isDark ? "#00ff9d" : "#059669";
   const iconInactive   = isDark ? "rgba(255,255,255,.55)" : "rgba(5,30,18,.52)";
   const iconActiveGlow = isDark
@@ -531,10 +532,13 @@ function LixumShellContent({ children }: { children: React.ReactNode }) {
               className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center select-none mb-1"
               style={{ background:logoBoxBg, border:`1px solid ${logoBoxBorder}`, boxShadow:logoBoxShadow }}
             >
-              <Leaf size={20} strokeWidth={2} style={{ color:iconActive }} />
+              <span className="font-black text-xs md:text-sm" style={{ fontFamily:"'Courier New',monospace", letterSpacing:"0.05em" }}>
+                <span style={{ color:lxText }}>L</span>
+                <span className="lixum-x">X</span>
+              </span>
             </div>
-            <p className="hidden md:block text-[7px] font-semibold tracking-[.10em]" style={{ color:lixumSubColor }}>
-              AfriCalo
+            <p className="text-[6px] md:text-[7px] uppercase font-bold tracking-[.28em]" style={{ color:lixumSubColor }}>
+              lixum
             </p>
           </div>
 
@@ -568,7 +572,7 @@ function LixumShellContent({ children }: { children: React.ReactNode }) {
                     }}
                   />
                   <span
-                    className="hidden md:block text-[9px] font-semibold tracking-wide"
+                    className="hidden md:block text-[9px] uppercase font-bold tracking-widest"
                     style={{ color: isActive ? labelActive : labelInactive }}
                   >
                     {locale === "fr" ? labelFr : labelEn}
@@ -593,7 +597,7 @@ function LixumShellContent({ children }: { children: React.ReactNode }) {
             }}
           >
             <LogOut size={26} strokeWidth={1.5} />
-            <span className="hidden md:block text-[9px] font-semibold tracking-wide">
+            <span className="hidden md:block text-[9px] uppercase font-bold tracking-widest">
               {locale === "fr" ? "Sortir" : "Exit"}
             </span>
           </button>

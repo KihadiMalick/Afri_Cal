@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const supabase = createClient();
 
   /* ── State ── */
+  const [activeCard,        setActiveCard]       = useState<string | null>(null);
   const [profile,           setProfile]          = useState<UserProfile | null>(null);
   const [loading,           setLoading]          = useState(true);
   const [userEmail,         setUserEmail]        = useState("");
@@ -123,8 +124,13 @@ export default function DashboardPage() {
   if (!profile || !profile.onboarding_completed) {
     return (
       <div className="flex flex-col items-center justify-center gap-6 p-8 py-24">
-        <h1 className="text-3xl font-black text-white leading-tight">
-          AfriCalo
+        <h1
+          className="text-3xl font-black tracking-[.22em] leading-none"
+          style={{ fontFamily:"'Courier New',monospace" }}
+        >
+          <span style={{ color:"#8b949e" }}>LI</span>
+          <span className="lixum-x">X</span>
+          <span style={{ color:"#8b949e" }}>UM</span>
         </h1>
         <p className="text-white/50 text-center max-w-xs text-base font-medium">{t.dashboard.completeOnboarding}</p>
         <Link
@@ -163,11 +169,16 @@ export default function DashboardPage() {
       {/* ── HEADER ── */}
       <header className="w-full max-w-3xl flex justify-between items-center mb-6 md:mb-8 lixum-animate">
         <div>
-          <h1 className="font-black text-xl md:text-2xl text-white leading-tight">
-            AfriCalo
+          <h1
+            className="font-black tracking-[.22em] leading-none text-xl md:text-2xl"
+            style={{ fontFamily:"'Courier New',monospace" }}
+          >
+            <span style={{ color:"#8b949e" }}>LI</span>
+            <span className="lixum-x">X</span>
+            <span style={{ color:"#8b949e" }}>UM</span>
           </h1>
-          <p className="text-[11px] md:text-[12px] font-medium mt-0.5" style={{ color:"var(--lx-accent-sub)" }}>
-            {locale === "fr" ? "Tableau de bord santé" : "Health Dashboard"}
+          <p className="lixum-bio-sub text-[9px] md:text-[11px] uppercase font-semibold mt-0.5 tracking-[.32em]">
+            Bio-Digital Dashboard
           </p>
         </div>
         <span className="text-base text-white/65 font-semibold truncate max-w-[12rem]">
@@ -272,19 +283,27 @@ export default function DashboardPage() {
       </section>
 
       {/* ── WIDGET GRID ── */}
-      <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
+      <div
+        className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5"
+        onClick={() => setActiveCard(null)}
+      >
 
         {/* ── Repas du Jour ── */}
         <div
-          className="lixum-card rounded-2xl p-5 md:p-6 flex flex-col min-h-[16rem] md:min-h-[17rem] lixum-animate relative overflow-hidden cursor-default"
+          className="rounded-2xl p-5 md:p-6 flex flex-col min-h-[16rem] md:min-h-[17rem] lixum-animate relative overflow-hidden cursor-pointer select-none"
           style={{
             background:"linear-gradient(135deg, rgba(2,12,7,0.88) 0%, rgba(120,53,15,0.10) 100%)",
             backdropFilter:"blur(24px)",
             WebkitBackdropFilter:"blur(24px)",
-            border:"1px solid rgba(251,146,60,0.22)",
-            boxShadow:"0 4px 28px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05)",
+            border:`1px solid ${activeCard === "meals" ? "rgba(251,146,60,0.55)" : "rgba(251,146,60,0.22)"}`,
+            boxShadow: activeCard === "meals"
+              ? "0 28px 64px rgba(251,146,60,0.20), 0 8px 28px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.12)"
+              : "0 4px 28px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05)",
+            transform: activeCard === "meals" ? "translateY(-10px) scale(1.018)" : "translateY(0) scale(1)",
+            transition:"transform 0.40s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.38s ease, border-color 0.30s ease",
             animationDelay:".10s",
           }}
+          onClick={(e) => { e.stopPropagation(); setActiveCard(activeCard === "meals" ? null : "meals"); }}
         >
           <div className="absolute inset-0 pointer-events-none rounded-2xl"
             style={{ background:"linear-gradient(135deg, rgba(251,146,60,0.05) 0%, transparent 55%)" }} />
@@ -363,15 +382,20 @@ export default function DashboardPage() {
 
         {/* ── Activité & Énergie ── */}
         <div
-          className="lixum-card rounded-2xl p-5 md:p-6 flex flex-col overflow-hidden min-h-[16rem] md:min-h-[17rem] lixum-animate relative cursor-default"
+          className="rounded-2xl p-5 md:p-6 flex flex-col overflow-hidden min-h-[16rem] md:min-h-[17rem] lixum-animate relative cursor-pointer select-none"
           style={{
             background:"linear-gradient(135deg, rgba(2,12,7,0.88) 0%, rgba(30,58,138,0.10) 100%)",
             backdropFilter:"blur(24px)",
             WebkitBackdropFilter:"blur(24px)",
-            border:"1px solid rgba(96,165,250,0.22)",
-            boxShadow:"0 4px 28px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05)",
+            border:`1px solid ${activeCard === "activity" ? "rgba(96,165,250,0.55)" : "rgba(96,165,250,0.22)"}`,
+            boxShadow: activeCard === "activity"
+              ? "0 28px 64px rgba(96,165,250,0.18), 0 8px 28px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.12)"
+              : "0 4px 28px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05)",
+            transform: activeCard === "activity" ? "translateY(-10px) scale(1.018)" : "translateY(0) scale(1)",
+            transition:"transform 0.40s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.38s ease, border-color 0.30s ease",
             animationDelay:".15s",
           }}
+          onClick={(e) => { e.stopPropagation(); setActiveCard(activeCard === "activity" ? null : "activity"); }}
         >
           <div className="absolute inset-0 pointer-events-none rounded-2xl"
             style={{ background:"linear-gradient(135deg, rgba(96,165,250,0.05) 0%, transparent 55%)" }} />
@@ -435,15 +459,20 @@ export default function DashboardPage() {
 
         {/* ── Série Verte — Santé ── */}
         <div
-          className="lixum-card rounded-2xl p-5 md:p-6 min-h-[12rem] lixum-animate relative overflow-hidden cursor-default"
+          className="rounded-2xl p-5 md:p-6 min-h-[12rem] lixum-animate relative overflow-hidden cursor-pointer select-none"
           style={{
             background:"linear-gradient(135deg, rgba(2,12,7,0.88) 0%, rgba(5,150,80,0.08) 100%)",
             backdropFilter:"blur(24px)",
             WebkitBackdropFilter:"blur(24px)",
-            border:"1px solid rgba(0,255,157,0.18)",
-            boxShadow:"0 4px 28px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05)",
+            border:`1px solid ${activeCard === "streak" ? "rgba(0,255,157,0.50)" : "rgba(0,255,157,0.18)"}`,
+            boxShadow: activeCard === "streak"
+              ? "0 28px 64px rgba(0,255,157,0.16), 0 8px 28px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.12)"
+              : "0 4px 28px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05)",
+            transform: activeCard === "streak" ? "translateY(-10px) scale(1.018)" : "translateY(0) scale(1)",
+            transition:"transform 0.40s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.38s ease, border-color 0.30s ease",
             animationDelay:".20s",
           }}
+          onClick={(e) => { e.stopPropagation(); setActiveCard(activeCard === "streak" ? null : "streak"); }}
         >
           <div className="absolute inset-0 pointer-events-none rounded-2xl"
             style={{ background:"linear-gradient(135deg, rgba(0,255,157,0.04) 0%, transparent 55%)" }} />
@@ -507,15 +536,20 @@ export default function DashboardPage() {
 
         {/* ── Santé — Poids Projeté ── */}
         <div
-          className="lixum-card rounded-2xl p-5 md:p-6 min-h-[12rem] lixum-animate relative overflow-hidden cursor-default"
+          className="rounded-2xl p-5 md:p-6 min-h-[12rem] lixum-animate relative overflow-hidden cursor-pointer select-none"
           style={{
             background:"linear-gradient(135deg, rgba(2,12,7,0.88) 0%, rgba(109,40,217,0.08) 100%)",
             backdropFilter:"blur(24px)",
             WebkitBackdropFilter:"blur(24px)",
-            border:"1px solid rgba(167,139,250,0.20)",
-            boxShadow:"0 4px 28px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05)",
+            border:`1px solid ${activeCard === "weight" ? "rgba(167,139,250,0.52)" : "rgba(167,139,250,0.20)"}`,
+            boxShadow: activeCard === "weight"
+              ? "0 28px 64px rgba(167,139,250,0.16), 0 8px 28px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.12)"
+              : "0 4px 28px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05)",
+            transform: activeCard === "weight" ? "translateY(-10px) scale(1.018)" : "translateY(0) scale(1)",
+            transition:"transform 0.40s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.38s ease, border-color 0.30s ease",
             animationDelay:".25s",
           }}
+          onClick={(e) => { e.stopPropagation(); setActiveCard(activeCard === "weight" ? null : "weight"); }}
         >
           <div className="absolute inset-0 pointer-events-none rounded-2xl"
             style={{ background:"linear-gradient(135deg, rgba(167,139,250,0.05) 0%, transparent 55%)" }} />
