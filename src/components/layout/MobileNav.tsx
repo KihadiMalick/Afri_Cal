@@ -4,11 +4,16 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useTranslation } from "@/hooks/useTranslation";
 
+const AUTH_ROUTES = ["/login", "/register", "/callback"];
+
 export default function MobileNav() {
   const { t, locale } = useTranslation();
   const params = useParams();
   const pathname = usePathname();
   const currentLocale = (params?.locale as string) || locale;
+
+  // Hide on auth pages for full immersion
+  if (AUTH_ROUTES.some(r => pathname.includes(r))) return null;
 
   const navItems = [
     { href: `/${currentLocale}/dashboard`, label: t.nav.dashboard, icon: "home" },
