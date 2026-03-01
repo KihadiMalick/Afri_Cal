@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   X, Zap, Sun, CheckCircle, Loader2,
-  Scan, Hand, Sparkles,
+  Scan, Hand, Sparkles, Eye,
 } from "lucide-react";
 import { useRevealerCanvas } from "@/hooks/useRevealerCanvas";
 
@@ -69,6 +69,7 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
   const [torchOn, setTorchOn]       = useState(false);
   const [torchAvail, setTorchAvail] = useState(false);
   const [flashVisible, setFlash]    = useState(false);
+  const [cameraError, setCameraError] = useState(false);
 
   const {
     revealedPct,
@@ -107,7 +108,7 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
         const caps = (track as any).getCapabilities?.() ?? {};
         if (caps.torch) setTorchAvail(true);
       } catch { /* no torch */ }
-    } catch { /* desktop */ }
+    } catch { setCameraError(true); }
   }, []);
 
   const toggleTorch = useCallback(async () => {
@@ -151,6 +152,24 @@ export default function RevealerScan({ onComplete, onCancel, locale }: RevealerS
       >
         <X size={17} strokeWidth={2} />
       </button>
+
+      {/* ══ CAMERA ERROR ══ */}
+      {cameraError && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 rounded-[2rem]"
+          style={{ background: "rgba(15,14,10,0.97)" }}>
+          <Eye size={48} color={GOLD} strokeWidth={1.5} />
+          <p className="text-sm text-center px-6" style={{ color: "rgba(255,255,255,.7)" }}>
+            {locale === "fr"
+              ? "Accès caméra refusé.\nVérifie les permissions dans les réglages."
+              : "Camera access denied.\nCheck permissions in settings."}
+          </p>
+          <button onClick={() => { setCameraError(false); onCancel(); }}
+            className="mt-2 px-5 py-2 rounded-full text-sm font-medium"
+            style={{ background: GOLD, color: "#0f0e0a" }}>
+            {locale === "fr" ? "Fermer" : "Close"}
+          </button>
+        </div>
+      )}
 
       {/* ══ INTRO ══ */}
       {phase === "intro" && (
