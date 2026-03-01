@@ -1,17 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "@/hooks/useTranslation";
 import { createClient } from "@/lib/supabase";
 import LanguageSelector from "./LanguageSelector";
 
+const AUTH_ROUTES = ["/login", "/register", "/callback"];
+
 export default function Navbar() {
   const { t, locale } = useTranslation();
   const params = useParams();
+  const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
   const currentLocale = (params?.locale as string) || locale;
+
+  // Hide on auth pages for full immersion
+  if (AUTH_ROUTES.some(r => pathname.includes(r))) return null;
 
   const navLinks = [
     { href: `/${currentLocale}/dashboard`, label: t.nav.dashboard },
