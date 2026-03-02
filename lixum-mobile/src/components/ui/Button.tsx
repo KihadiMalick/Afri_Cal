@@ -59,7 +59,7 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'secondary' ? colors.brown.dark : colors.neutral.white}
+          color={variant === 'secondary' ? colors.lixum.text : colors.neutral.black}
           size="small"
         />
       ) : (
@@ -76,15 +76,15 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
   },
   primary: {
-    backgroundColor: colors.terracotta.main,
+    backgroundColor: colors.lixum.neon,
   },
   secondary: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: colors.brown.wood,
+    borderColor: colors.lixum.borderLight,
   },
   accent: {
-    backgroundColor: colors.indigo.main,
+    backgroundColor: colors.lixum.cyan,
   },
   danger: {
     backgroundColor: colors.semantic.error,
@@ -111,13 +111,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   text_primary: {
-    color: colors.neutral.white,
+    color: colors.neutral.black,
   },
   text_secondary: {
-    color: colors.brown.dark,
+    color: colors.lixum.text,
   },
   text_accent: {
-    color: colors.neutral.white,
+    color: colors.neutral.black,
   },
   text_danger: {
     color: colors.neutral.white,

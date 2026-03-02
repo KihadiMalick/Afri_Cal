@@ -150,7 +150,7 @@ function normalizeText(s: string): string {
  * Phase 2: Map vision detection ingredients to EstimatedIngredient[].
  *
  * Uses visual_properties to derive texture type and estimated_quantity_grams
- * per ingredient from the AfriCalo Vision AI format.
+ * per ingredient from the LIXUM Vision AI format.
  */
 export function estimateIngredientWeights(
   detection: VisionDetectionResult

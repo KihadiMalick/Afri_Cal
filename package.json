@@ -1,32 +1,13 @@
 {
-  "name": "africalo",
-  "version": "0.1.0",
+  "name": "lixum",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
-    "@google/generative-ai": "^0.21.0",
-    "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.96.0",
-    "framer-motion": "^12.34.3",
-    "lucide-react": "^0.575.0",
-    "next": "14.2.35",
-    "react": "^18",
-    "react-dom": "^18"
-  },
-  "devDependencies": {
-    "@types/node": "20.19.35",
-    "@types/react": "18.3.28",
-    "@types/react-dom": "^18",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.35",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "typescript": "5.9.3"
+    "install": "cd lixum-mobile && npm install",
+    "start": "cd lixum-mobile && npx expo start --tunnel",
+    "start:lan": "cd lixum-mobile && npx expo start",
+    "start:web": "cd lixum-mobile && npx expo start --web",
+    "lint": "cd lixum-mobile && npm run lint",
+    "typecheck": "cd lixum-mobile && npm run typecheck"
   }
 }

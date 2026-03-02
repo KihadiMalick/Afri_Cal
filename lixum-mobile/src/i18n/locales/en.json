@@ -1,7 +1,7 @@
 {
   "common": {
-    "appName": "AfriCalo",
-    "tagline": "Your African calorie control assistant",
+    "appName": "LIXUM",
+    "tagline": "Your smart calorie tracking assistant",
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
@@ -52,7 +52,7 @@
     "projectedWeight": "Projected Weight"
   },
   "onboarding": {
-    "welcome": "Welcome to AfriCalo",
+    "welcome": "Welcome to LIXUM",
     "subtitle": "Let's set up your profile to personalize your experience",
     "age": "Age",
     "weight": "Weight (kg)",
