@@ -1,6 +1,5 @@
 /**
  * LIXUM Design System - Shadows
- * Adapted from Tailwind box-shadow config
  */
 
 import { Platform } from 'react-native';
@@ -8,9 +7,9 @@ import { Platform } from 'react-native';
 export const shadows = {
   card: Platform.select({
     ios: {
-      shadowColor: '#4A342E',
+      shadowColor: '#000000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.11,
+      shadowOpacity: 0.15,
       shadowRadius: 16,
     },
     android: {
@@ -21,9 +20,9 @@ export const shadows = {
 
   cardHover: Platform.select({
     ios: {
-      shadowColor: '#4A342E',
+      shadowColor: '#000000',
       shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.16,
+      shadowOpacity: 0.2,
       shadowRadius: 24,
     },
     android: {
@@ -34,7 +33,7 @@ export const shadows = {
 
   button: Platform.select({
     ios: {
-      shadowColor: '#B8723A',
+      shadowColor: '#00ff9d',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,
@@ -59,33 +58,21 @@ export const shadows = {
   }),
 
   glow: {
-    terracotta: Platform.select({
-      ios: {
-        shadowColor: '#D98E4F',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.4,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 8,
-      },
-      default: {},
-    }),
-    gold: Platform.select({
-      ios: {
-        shadowColor: '#E4C06E',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.4,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 8,
-      },
-      default: {},
-    }),
     neon: Platform.select({
       ios: {
         shadowColor: '#00ff9d',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 8,
+      },
+      default: {},
+    }),
+    cyan: Platform.select({
+      ios: {
+        shadowColor: '#00e5ff',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.4,
         shadowRadius: 16,

@@ -8,7 +8,6 @@ import { CalendarScreen } from '@/screens/calendar/CalendarScreen';
 import { ProfileScreen } from '@/screens/profile/ProfileScreen';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
-import { colors } from '@/theme/colors';
 import { layout } from '@/theme/spacing';
 import type { MainTabParamList } from '@/types';
 
@@ -35,7 +34,7 @@ export function MainNavigator() {
             {TAB_ICONS[route.name] || '\u{2B50}'}
           </Text>
         ),
-        tabBarActiveTintColor: mode === 'dark' ? colors.lixum.neon : colors.terracotta.main,
+        tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.textSecondary,
         tabBarStyle: {
           backgroundColor: theme.tabBar,

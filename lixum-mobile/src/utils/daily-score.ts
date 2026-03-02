@@ -12,8 +12,8 @@ export function calculateDailyScore(
 }
 
 export function getScoreColor(score: number): string {
-  if (score >= 100) return "#D98E4F";
-  if (score >= 70) return "#E4C06E";
-  if (score >= 40) return "#B8723A";
+  if (score >= 100) return "#00ff9d";
+  if (score >= 70) return "#00e5ff";
+  if (score >= 40) return "#f59e0b";
   return "#ef4444";
 }

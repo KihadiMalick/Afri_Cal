@@ -4,7 +4,7 @@ export { spacing, borderRadius, layout } from './spacing';
 export { shadows } from './shadows';
 
 /**
- * Theme configuration for dark (LIXUM) and light (Africount) modes
+ * Theme configuration for dark and light LIXUM modes
  */
 export const darkTheme = {
   mode: 'dark' as const,
@@ -22,16 +22,16 @@ export const darkTheme = {
 
 export const lightTheme = {
   mode: 'light' as const,
-  background: '#F7F4E8',
-  surface: '#FFFFFF',
-  surfaceSecondary: '#EDE8D0',
-  border: '#D8D0B0',
-  text: '#4A342E',
-  textSecondary: '#6B4C3B',
-  accent: '#D98E4F',
-  accentDim: 'rgba(217, 142, 79, 0.15)',
-  tabBar: '#FFFFFF',
-  card: '#FFFFFF',
+  background: '#f5f5f5',
+  surface: '#ffffff',
+  surfaceSecondary: '#eeeeee',
+  border: '#d4d4d4',
+  text: '#1a1a1a',
+  textSecondary: '#555555',
+  accent: '#00cc7d',
+  accentDim: 'rgba(0, 204, 125, 0.15)',
+  tabBar: '#ffffff',
+  card: '#ffffff',
 };
 
 export type ThemeMode = 'dark' | 'light';
