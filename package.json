@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "mobile:install": "cd lixum-mobile && npm install",
+    "mobile:start": "cd lixum-mobile && npx expo start --tunnel",
+    "mobile:start:lan": "cd lixum-mobile && npx expo start"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
