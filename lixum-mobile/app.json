@@ -36,6 +36,11 @@
         "USE_FINGERPRINT"
       ]
     },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./src/assets/images/icon.png"
+    },
     "plugins": [
       "expo-camera",
       "expo-sensors",
