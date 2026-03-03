@@ -28,6 +28,13 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 const MONO = { fontFamily: 'Courier New' as const, fontVariant: ['tabular-nums'] as ('tabular-nums')[] };
 
 /* ------------------------------------------------------------------ */
+/*  Number formatting (1200 → 1,200)                                   */
+/* ------------------------------------------------------------------ */
+const fmtNum = (n: number) => {
+  try { return n.toLocaleString('fr-FR'); } catch { return String(n); }
+};
+
+/* ------------------------------------------------------------------ */
 /*  Bilingual micro-copy                                               */
 /* ------------------------------------------------------------------ */
 const L = {
@@ -35,19 +42,23 @@ const L = {
     vitalityLabel: 'SCORE DE VITALITE',
     goal: 'Objectif',
     consumed: 'Consomme',
-    burned: 'BRULEES',
+    burned: 'CALORIES\nBRULEES',
     remaining: 'RESTANTS',
-    bmr: 'BMR',
-    streak: 'SERIE',
+    bmr: 'METABOLISME\n(BMR)',
+    vitalityShort: 'SCORE DE\nVITALITE',
     kcal: 'kcal',
-    mealsLabel: 'REPAS DU JOUR',
-    activityLabel: 'ACTIVITE',
-    streakLabel: 'SERIE VERTE',
-    weightLabel: 'POIDS PROJETE',
+    mealsLabel: 'Repas du Jour',
+    activityLabel: 'Activite & Energie',
+    streakLabel: 'Serie Verte',
+    weightLabel: 'Poids Projete',
     days: 'jours',
+    day: 'j',
     kg: 'kg',
-    seeAll: 'Voir tout >',
+    manageMeals: 'Gerer mes repas',
     noMeals: 'Aucun repas',
+    consumedSummary: 'kcal consommes',
+    current: 'Actuel',
+    per30d: '/30j',
     sportTitle: 'RECOMMANDATION SPORT',
     walking: 'Marche',
     running: 'Course',
@@ -61,19 +72,23 @@ const L = {
     vitalityLabel: 'VITALITY SCORE',
     goal: 'Goal',
     consumed: 'Consumed',
-    burned: 'BURNED',
+    burned: 'CALORIES\nBURNED',
     remaining: 'REMAINING',
-    bmr: 'BMR',
-    streak: 'STREAK',
+    bmr: 'METABOLISM\n(BMR)',
+    vitalityShort: 'VITALITY\nSCORE',
     kcal: 'kcal',
-    mealsLabel: 'TODAY\'S MEALS',
-    activityLabel: 'ACTIVITY',
-    streakLabel: 'GREEN STREAK',
-    weightLabel: 'PROJECTED WEIGHT',
+    mealsLabel: 'Today\'s Meals',
+    activityLabel: 'Activity & Energy',
+    streakLabel: 'Green Streak',
+    weightLabel: 'Projected Weight',
     days: 'days',
+    day: 'd',
     kg: 'kg',
-    seeAll: 'See all >',
+    manageMeals: 'Manage meals',
     noMeals: 'No meals yet',
+    consumedSummary: 'kcal consumed',
+    current: 'Current',
+    per30d: '/30d',
     sportTitle: 'SPORT RECOMMENDATION',
     walking: 'Walking',
     running: 'Running',
@@ -183,7 +198,7 @@ export function DashboardScreen() {
         {/*  1. HEADER                                                */}
         {/* ======================================================== */}
         <View style={s.header}>
-          <LixumLogo size={16} showSub={false} />
+          <LixumLogo size={16} showSub />
           <Text style={[s.headerName, { color: tk.t2 }]}>
             {displayName}
           </Text>
@@ -200,9 +215,14 @@ export function DashboardScreen() {
               <Text style={[s.vitalityLabel, { color: tk.accent }]}>
                 {txt.vitalityLabel}
               </Text>
-              <Text style={[s.vitalityNumber, { color: tk.accent }]}>
-                {dailyScore}
-              </Text>
+              <View style={s.vitalityScoreRow}>
+                <Text style={[s.vitalityNumber, { color: tk.accent }]}>
+                  {dailyScore}
+                </Text>
+                <Text style={[s.vitalityPercent, { color: tk.accent }]}>
+                  {' %'}
+                </Text>
+              </View>
               <Text style={[s.vitalityUser, { color: tk.t2 }]}>
                 {displayName}
               </Text>
@@ -214,7 +234,10 @@ export function DashboardScreen() {
                   {txt.goal}
                 </Text>
                 <Text style={[s.vitalityColValue, { color: tk.amber }]}>
-                  {target}
+                  {fmtNum(target)}
+                </Text>
+                <Text style={[s.vitalityColUnit, { color: tk.t4 }]}>
+                  {txt.kcal}
                 </Text>
               </View>
               <View style={[s.vitalityColDivider, { backgroundColor: tk.cardBorder }]} />
@@ -223,50 +246,29 @@ export function DashboardScreen() {
                   {txt.consumed}
                 </Text>
                 <Text style={[s.vitalityColValue, { color: tk.amber }]}>
-                  {consumed}
+                  {fmtNum(consumed)}
+                </Text>
+                <Text style={[s.vitalityColUnit, { color: tk.t4 }]}>
+                  {txt.kcal}
                 </Text>
               </View>
             </View>
           </View>
 
-          {/* -- Progress bar --------------------------------------- */}
+          {/* -- Progress bar (red → orange → yellow → green) ------- */}
           <ProgressBar
             percent={progressPct}
             height={10}
-            gradientColors={[tk.amberDark, tk.amber, tk.amberLight]}
+            gradientColors={['#ef4444', '#f97316', '#eab308', '#22c55e']}
             style={{ marginTop: 16, marginBottom: 16 }}
           />
 
-          {/* -- Stats row (4 columns with dividers) ---------------- */}
+          {/* -- Stats row (4 mini glass cards) ---------------------- */}
           <View style={s.statsRow}>
-            <StatCell
-              label={txt.burned}
-              value={burned}
-              unit={txt.kcal}
-              tk={tk}
-              showBorder
-            />
-            <StatCell
-              label={txt.remaining}
-              value={remaining}
-              unit={txt.kcal}
-              tk={tk}
-              showBorder
-            />
-            <StatCell
-              label={txt.bmr}
-              value={Math.round(profile.bmr)}
-              unit={txt.kcal}
-              tk={tk}
-              showBorder
-            />
-            <StatCell
-              label={txt.streak}
-              value={streak}
-              unit={txt.days}
-              tk={tk}
-              showBorder={false}
-            />
+            <StatCell label={txt.burned} value={burned} unit={txt.kcal} tk={tk} />
+            <StatCell label={txt.remaining} value={remaining} unit={txt.kcal} tk={tk} />
+            <StatCell label={txt.bmr} value={Math.round(profile.bmr)} unit={txt.kcal} tk={tk} />
+            <StatCell label={txt.vitalityShort} value={streak} unit={txt.day} tk={tk} />
           </View>
         </GlassCard>
 
@@ -279,6 +281,9 @@ export function DashboardScreen() {
             <GlassCard padding="sm">
               <Text style={[s.widgetLabel, { color: tk.amber }]}>
                 {txt.mealsLabel}
+              </Text>
+              <Text style={[s.widgetSubtitle, { color: tk.t3 }]}>
+                {fmtNum(consumed)} {txt.consumedSummary}
               </Text>
               {meals.length === 0 ? (
                 <Text style={[s.widgetEmpty, { color: tk.t4 }]}>
@@ -297,18 +302,16 @@ export function DashboardScreen() {
                       {meal.name}
                     </Text>
                     <Text style={[s.mealCal, { color: tk.amber }]}>
-                      {meal.calories}
+                      {meal.calories} {txt.kcal}
                     </Text>
                   </View>
                 ))
               )}
-              {meals.length > 0 && (
-                <TouchableOpacity style={s.seeAllWrap} activeOpacity={0.7}>
-                  <Text style={[s.seeAll, { color: tk.accent }]}>
-                    {txt.seeAll}
-                  </Text>
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity style={s.seeAllWrap} activeOpacity={0.7}>
+                <Text style={[s.seeAll, { color: tk.accent }]}>
+                  {txt.manageMeals}
+                </Text>
+              </TouchableOpacity>
             </GlassCard>
           </View>
 
@@ -324,7 +327,7 @@ export function DashboardScreen() {
               <Text style={[s.activityUnit, { color: tk.t4 }]}>
                 {txt.kcal}
               </Text>
-              {/* Mini bar chart placeholder (7 bars) */}
+              {/* Mini bar chart (7 bars) */}
               <View style={s.miniChart}>
                 {[0.3, 0.5, 0.7, 1, 0.6, 0.4, 0.8].map((h, i) => (
                   <View
@@ -361,6 +364,9 @@ export function DashboardScreen() {
                 gradientColors={['#059669', '#34d399', '#6ee7b7']}
                 style={{ marginTop: 8 }}
               />
+              <Text style={s.streakEmojis}>
+                {'🌿🔥🏆'}
+              </Text>
             </GlassCard>
           </View>
 
@@ -375,6 +381,9 @@ export function DashboardScreen() {
               </Text>
               <Text style={[s.weightUnit, { color: tk.t4 }]}>
                 {txt.kg}
+              </Text>
+              <Text style={[s.weightCurrent, { color: tk.t3 }]}>
+                {txt.current}: {profile.weight} {txt.kg}
               </Text>
               {/* Change badge */}
               <View
@@ -400,8 +409,7 @@ export function DashboardScreen() {
                     },
                   ]}
                 >
-                  {weightDelta <= 0 ? '' : '+'}
-                  {weightDelta.toFixed(1)} {txt.kg}
+                  {weightDelta <= 0 ? '↓' : '↑'} {Math.abs(weightDelta).toFixed(1)} {txt.kg} {txt.per30d}
                 </Text>
               </View>
             </GlassCard>
@@ -468,29 +476,30 @@ export function DashboardScreen() {
 /*  SUB-COMPONENTS                                                     */
 /* ================================================================== */
 
-/** Single stat cell inside the vitality card bottom row */
+/** Single stat cell — mini glass card inside the vitality card */
 function StatCell({
   label,
   value,
   unit,
   tk,
-  showBorder,
 }: {
   label: string;
   value: number;
   unit: string;
   tk: ReturnType<typeof useTokens>;
-  showBorder: boolean;
 }) {
   return (
     <View
       style={[
         s.statCell,
-        showBorder && { borderRightWidth: 1, borderRightColor: tk.cardBorder },
+        {
+          backgroundColor: 'rgba(255,255,255,0.04)',
+          borderColor: tk.cardBorder,
+        },
       ]}
     >
-      <Text style={[s.statLabel, { color: tk.t2 }]}>{label}</Text>
-      <Text style={[s.statValue, { color: tk.t1 }]}>{value}</Text>
+      <Text style={[s.statLabel, { color: tk.t3 }]}>{label}</Text>
+      <Text style={[s.statValue, { color: tk.t1 }]}>{fmtNum(value)}</Text>
       <Text style={[s.statUnit, { color: tk.t4 }]}>{unit}</Text>
     </View>
   );
@@ -586,11 +595,21 @@ const s = StyleSheet.create({
     letterSpacing: 2,
     marginBottom: 4,
   },
+  vitalityScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
   vitalityNumber: {
     fontSize: 60,
     fontWeight: '900',
     ...MONO,
     lineHeight: 66,
+  },
+  vitalityPercent: {
+    fontSize: 28,
+    fontWeight: '800',
+    ...MONO,
+    marginLeft: 4,
   },
   vitalityUser: {
     fontSize: 14,
@@ -618,36 +637,46 @@ const s = StyleSheet.create({
     fontWeight: '800',
     ...MONO,
   },
+  vitalityColUnit: {
+    fontSize: 9,
+    fontWeight: '500',
+    marginTop: 2,
+  },
   vitalityColDivider: {
     width: 1,
     height: 32,
     opacity: 0.5,
   },
 
-  /* --- Stats row -------------------------------------------------- */
+  /* --- Stats row (mini glass cards) ------------------------------- */
   statsRow: {
     flexDirection: 'row',
+    gap: 6,
   },
   statCell: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 14,
+    borderWidth: 1,
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '800',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
     marginBottom: 4,
+    textAlign: 'center',
   },
   statValue: {
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: '900',
     ...MONO,
-    lineHeight: 40,
+    lineHeight: 32,
   },
   statUnit: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '500',
     marginTop: 2,
   },
@@ -664,10 +693,14 @@ const s = StyleSheet.create({
     flexBasis: '46%' as any,
   },
   widgetLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    marginBottom: 4,
+  },
+  widgetSubtitle: {
+    fontSize: 11,
+    fontWeight: '500',
     marginBottom: 8,
   },
   widgetEmpty: {
@@ -747,6 +780,12 @@ const s = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 4,
   },
+  streakEmojis: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: 8,
+    letterSpacing: 8,
+  },
 
   /* --- Weight widget ---------------------------------------------- */
   weightBig: {
@@ -760,6 +799,11 @@ const s = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1,
+    marginBottom: 4,
+  },
+  weightCurrent: {
+    fontSize: 11,
+    fontWeight: '500',
     marginBottom: 6,
   },
   changeBadge: {
