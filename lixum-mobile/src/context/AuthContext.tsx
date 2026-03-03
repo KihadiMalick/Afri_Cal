@@ -60,6 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(user);
       if (user) ensureLixumId(user.id);
       setLoading(false);
+    }).catch((err) => {
+      console.error('[Auth] getUser failed:', err);
+      setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -75,18 +78,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) console.error('[Auth] signIn failed:', error.message);
     return { error: error as Error | null };
   };
 
   const signUp = async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({ email, password });
-    if (!error) {
+    if (error) {
+      console.error('[Auth] signUp failed:', error.message);
+    } else {
       const { data: { user: newUser } } = await supabase.auth.getUser();
       if (newUser) {
-        await (supabase as any).from('users_profile').upsert({
+        const { error: profileError } = await (supabase as any).from('users_profile').upsert({
           user_id: newUser.id,
           lixum_id: generateLixumId(),
         }, { onConflict: 'user_id' });
+        if (profileError) console.error('[Auth] profile upsert failed:', profileError.message);
       }
     }
     return { error: error as Error | null };
