@@ -57,7 +57,6 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
   Dashboard: undefined;
-  Meals: undefined;
   Activities: undefined;
   Calendar: undefined;
   Profile: undefined;
@@ -65,7 +64,7 @@ export type MainTabParamList = {
 
 export type MealsStackParamList = {
   MealsList: undefined;
-  Scan: undefined;
+  Scan: { imageUri?: string; imageBase64?: string };
   AddMeal: undefined;
   MealHistory: undefined;
   Recipes: undefined;

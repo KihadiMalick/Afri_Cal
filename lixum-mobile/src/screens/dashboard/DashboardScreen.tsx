@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
 import { usePreloadedData } from '@/context/DataPreloadContext';
@@ -21,6 +22,57 @@ import { spacing, borderRadius } from '@/theme/spacing';
 import type { RootStackParamList } from '@/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+/** Barre de progression circulaire avec SVG */
+function CircularProgress({
+  progress,
+  size = 140,
+  strokeWidth = 10,
+  color,
+  bgColor,
+  children,
+}: {
+  progress: number;
+  size?: number;
+  strokeWidth?: number;
+  color: string;
+  bgColor: string;
+  children?: React.ReactNode;
+}) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clampedProgress = Math.min(1, Math.max(0, progress));
+  const strokeDashoffset = circumference * (1 - clampedProgress);
+
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={size} height={size} style={{ position: 'absolute' }}>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={bgColor}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+        />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={progress > 1 ? '#ef4444' : color}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          strokeDasharray={`${circumference}`}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          rotation="-90"
+          origin={`${size / 2}, ${size / 2}`}
+        />
+      </Svg>
+      {children}
+    </View>
+  );
+}
 
 export function DashboardScreen() {
   const { theme } = useTheme();
@@ -71,11 +123,12 @@ export function DashboardScreen() {
   const remaining = Math.max(0, target - consumed + burned);
   const netConsumed = consumed - burned;
   const overshootKcal = Math.max(0, netConsumed - target);
-  const progress = Math.min(1, consumed / target);
+  const progress = target > 0 ? consumed / target : 0;
 
   const dailyScore = calculateDailyScore(consumed, burned, target);
+  const lixumId = (profile as any).lixum_id || '';
 
-  // Show overshoot alert once when calories exceed target
+  // Alerte dépassement calorique
   useEffect(() => {
     if (overshootKcal > 0 && !overshootShownRef.current) {
       overshootShownRef.current = true;
@@ -91,56 +144,56 @@ export function DashboardScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accent} />
         }
       >
-        {/* Header */}
+        {/* Header avec LXM ID */}
         <View style={styles.header}>
-          <Text style={[styles.greeting, { color: theme.textSecondary }]}>
-            {t.dashboard.welcome} {'👋'}
-          </Text>
-          <Text style={[styles.title, { color: theme.text }]}>
-            {profile.full_name || t.dashboard.title}
-          </Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.greeting, { color: theme.textSecondary }]}>
+              {t.dashboard.welcome} {'👋'}
+            </Text>
+            <Text style={[styles.title, { color: theme.text }]}>
+              {profile.full_name || t.dashboard.title}
+            </Text>
+          </View>
+          {lixumId ? (
+            <View style={[styles.lixumBadge, { borderColor: accent + '44', backgroundColor: accent + '12' }]}>
+              <Text style={[styles.lixumText, { color: accent }]}>{lixumId}</Text>
+            </View>
+          ) : null}
         </View>
 
-        {/* Calories Card */}
+        {/* Carte calories avec barre circulaire */}
         <Card style={styles.caloriesCard}>
           <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
             {t.dashboard.dailyCalories}
           </Text>
-          <View style={styles.caloriesRow}>
-            <View style={styles.caloriesMain}>
-              <Text style={[styles.caloriesBig, { color: accent }]}>
-                {remaining}
+
+          <View style={styles.circularRow}>
+            <CircularProgress
+              progress={progress}
+              size={140}
+              strokeWidth={12}
+              color={accent}
+              bgColor={theme.border}
+            >
+              <Text style={[styles.circularValue, { color: accent }]}>{remaining}</Text>
+              <Text style={[styles.circularLabel, { color: theme.textSecondary }]}>
+                {locale === 'fr' ? 'restant' : 'left'}
               </Text>
-              <Text style={[styles.caloriesUnit, { color: theme.textSecondary }]}>
-                {t.dashboard.remaining}
-              </Text>
-            </View>
-            <View style={styles.progressBarContainer}>
-              <View style={[styles.progressBarBg, { backgroundColor: theme.border }]}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    {
-                      width: `${progress * 100}%`,
-                      backgroundColor: progress > 1 ? '#ef4444' : accent,
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={[styles.progressText, { color: theme.textSecondary }]}>
-                {consumed} / {target} kcal
-              </Text>
+            </CircularProgress>
+
+            <View style={styles.circularStats}>
+              <CircularStat icon={'🍽️'} label={locale === 'fr' ? 'Consommées' : 'Consumed'} value={`${consumed}`} color="#f59e0b" />
+              <CircularStat icon={'🏃'} label={locale === 'fr' ? 'Brûlées' : 'Burned'} value={`${burned}`} color="#60a5fa" />
+              <CircularStat icon={'🎯'} label={locale === 'fr' ? 'Objectif' : 'Goal'} value={`${target}`} color={accent} />
             </View>
           </View>
 
-          <View style={styles.statsRow}>
-            <StatItem label={t.dashboard.consumed} value={`${consumed}`} color="#f59e0b" />
-            <StatItem label={t.dashboard.burned} value={`${burned}`} color="#60a5fa" />
-            <StatItem label={t.dashboard.goal} value={`${target}`} color={accent} />
-          </View>
+          <Text style={[styles.progressText, { color: theme.textSecondary }]}>
+            {consumed} / {target} kcal
+          </Text>
         </Card>
 
-        {/* Discipline/day Score Card */}
+        {/* Score de discipline */}
         <Card style={styles.vitalityCard}>
           <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
             {t.dashboard.vitalityScore}
@@ -158,7 +211,7 @@ export function DashboardScreen() {
           </View>
         </Card>
 
-        {/* Streak + Weight Row */}
+        {/* Streak + Poids projeté */}
         <View style={styles.miniCardsRow}>
           <Card style={styles.miniCard}>
             <Text style={{ fontSize: 22 }}>{'🔥'}</Text>
@@ -167,7 +220,6 @@ export function DashboardScreen() {
               {locale === 'fr' ? 'jours' : 'days'}
             </Text>
           </Card>
-
           <Card style={styles.miniCard}>
             <Text style={{ fontSize: 22 }}>{'⚖️'}</Text>
             <Text style={[styles.miniValue, { color: '#a78bfa' }]}>{projectedWeight.toFixed(1)}</Text>
@@ -177,7 +229,7 @@ export function DashboardScreen() {
           </Card>
         </View>
 
-        {/* BMR / TDEE stats */}
+        {/* BMR / TDEE */}
         <Card>
           <View style={styles.bioRow}>
             <BioStat label={t.dashboard.bmr} value={`${Math.round(profile.bmr)}`} />
@@ -186,7 +238,7 @@ export function DashboardScreen() {
           </View>
         </Card>
 
-        {/* Today's Meals */}
+        {/* Repas du jour */}
         <Card style={styles.mealsCard}>
           <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
             {t.dashboard.todayMeals}
@@ -211,7 +263,7 @@ export function DashboardScreen() {
         </Card>
       </ScrollView>
 
-      {/* Calorie Overshoot Alert */}
+      {/* Alerte dépassement calorique */}
       <CalorieOvershootAlert
         visible={showOvershoot}
         overshootKcal={overshootKcal}
@@ -221,11 +273,15 @@ export function DashboardScreen() {
   );
 }
 
-function StatItem({ label, value, color }: { label: string; value: string; color: string }) {
+function CircularStat({ icon, label, value, color }: { icon: string; label: string; value: string; color: string }) {
+  const { theme } = useTheme();
   return (
-    <View style={styles.statItem}>
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+    <View style={styles.circularStatItem}>
+      <Text style={{ fontSize: 14 }}>{icon}</Text>
+      <View>
+        <Text style={[styles.circularStatValue, { color }]}>{value}</Text>
+        <Text style={[styles.circularStatLabel, { color: theme.textSecondary }]}>{label}</Text>
+      </View>
     </View>
   );
 }
@@ -243,24 +299,28 @@ function BioStat({ label, value, color }: { label: string; value: string; color?
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing['4xl'] },
-  header: { marginBottom: spacing.sm },
+
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
   greeting: { fontSize: 14, fontWeight: '500' },
   title: { fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
+  lixumBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+  },
+  lixumText: { fontSize: 11, fontWeight: '900', letterSpacing: 2, fontFamily: 'monospace' },
 
-  caloriesCard: { gap: spacing.lg },
+  caloriesCard: { gap: spacing.md },
   sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 },
-  caloriesRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
-  caloriesMain: { alignItems: 'center' },
-  caloriesBig: { fontSize: 48, fontWeight: '900', fontVariant: ['tabular-nums'] },
-  caloriesUnit: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
-  progressBarContainer: { flex: 1, gap: spacing.xs },
-  progressBarBg: { height: 8, borderRadius: 4, overflow: 'hidden' },
-  progressBarFill: { height: '100%', borderRadius: 4 },
-  progressText: { fontSize: 12, fontWeight: '600', fontVariant: ['tabular-nums'] },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
-  statItem: { alignItems: 'center', gap: 2 },
-  statValue: { fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  statLabel: { fontSize: 10, fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: 0.8 },
+  circularRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
+  circularValue: { fontSize: 32, fontWeight: '900', fontVariant: ['tabular-nums'] },
+  circularLabel: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  circularStats: { flex: 1, gap: spacing.md },
+  circularStatItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  circularStatValue: { fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  circularStatLabel: { fontSize: 10, fontWeight: '600' },
+  progressText: { fontSize: 12, fontWeight: '600', fontVariant: ['tabular-nums'], textAlign: 'center' },
 
   vitalityCard: { gap: spacing.md },
   vitalityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
