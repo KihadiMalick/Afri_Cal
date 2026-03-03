@@ -37,14 +37,21 @@ function generateLixumId(): string {
 
 /** Vérifie et assigne un lixum_id si l'utilisateur n'en a pas */
 async function ensureLixumId(userId: string) {
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('users_profile')
     .select('lixum_id')
     .eq('user_id', userId)
     .single();
 
-  if (data && !data.lixum_id) {
-    await (supabase as any)
+  if (!data) {
+    // Profil inexistant : créer un enregistrement minimal
+    await supabase.from('users_profile').upsert({
+      user_id: userId,
+      lixum_id: generateLixumId(),
+    } as any, { onConflict: 'user_id' });
+  } else if (!data.lixum_id) {
+    // Profil existant sans lixum_id : mettre à jour
+    await supabase
       .from('users_profile')
       .update({ lixum_id: generateLixumId() })
       .eq('user_id', userId);
@@ -83,18 +90,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) {
       console.error('[Auth] signUp failed:', error.message);
-    } else {
-      const { data: { user: newUser } } = await supabase.auth.getUser();
-      if (newUser) {
-        const { error: profileError } = await (supabase as any).from('users_profile').upsert({
-          user_id: newUser.id,
-          lixum_id: generateLixumId(),
-        }, { onConflict: 'user_id' });
-        if (profileError) console.error('[Auth] profile upsert failed:', profileError.message);
-      }
+    } else if (data.user) {
+      const { error: profileError } = await supabase.from('users_profile').upsert({
+        user_id: data.user.id,
+        lixum_id: generateLixumId(),
+      } as any, { onConflict: 'user_id' });
+      if (profileError) console.error('[Auth] profile upsert failed:', profileError.message);
     }
     return { error: error as Error | null };
   };
