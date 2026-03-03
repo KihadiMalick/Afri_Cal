@@ -76,6 +76,7 @@ export interface UserProfile {
   avatar_url: string | null;
   onboarding_completed: boolean;
   is_premium: boolean;
+  lixum_id: string | null;
   created_at: string;
   updated_at: string;
 }
