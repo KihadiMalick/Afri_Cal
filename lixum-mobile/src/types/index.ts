@@ -70,3 +70,21 @@ export type MealsStackParamList = {
   MealHistory: undefined;
   Recipes: undefined;
 };
+
+export type ActivitiesStackParamList = {
+  ActivitiesList: undefined;
+  ActivityDetail: { sport: SportActivity };
+};
+
+export interface SportActivity {
+  id: string;
+  name: string;
+  name_fr: string;
+  image_url: string;
+  calories_per_5min: number;
+  difficulty: 'easy' | 'medium' | 'intense';
+  benefits: string[];
+  muscle_groups: string[];
+  description: string;
+  description_fr: string;
+}

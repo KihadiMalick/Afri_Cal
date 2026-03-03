@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { useLocale } from '@/context/LocaleContext';
 import { usePreloadedData } from '@/context/DataPreloadContext';
 import { Card } from '@/components/ui';
 import { DashboardSkeleton } from '@/components/ui/LoadingSkeleton';
+import { CalorieOvershootAlert } from '@/components/CalorieOvershootAlert';
 import { calculateDailyScore } from '@/utils/daily-score';
 import { spacing, borderRadius } from '@/theme/spacing';
 import type { RootStackParamList } from '@/types';
@@ -28,6 +29,8 @@ export function DashboardScreen() {
   const { profile, todayMeals: meals, todaySummary: summary, streak, projectedWeight, ready, refresh } = usePreloadedData();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [showOvershoot, setShowOvershoot] = useState(false);
+  const overshootShownRef = useRef(false);
   const accent = theme.accent;
 
   const onRefresh = async () => {
@@ -66,9 +69,19 @@ export function DashboardScreen() {
   const burned = summary?.total_calories_burned ?? 0;
   const target = profile.daily_calorie_target;
   const remaining = Math.max(0, target - consumed + burned);
+  const netConsumed = consumed - burned;
+  const overshootKcal = Math.max(0, netConsumed - target);
   const progress = Math.min(1, consumed / target);
 
   const dailyScore = calculateDailyScore(consumed, burned, target);
+
+  // Show overshoot alert once when calories exceed target
+  useEffect(() => {
+    if (overshootKcal > 0 && !overshootShownRef.current) {
+      overshootShownRef.current = true;
+      setShowOvershoot(true);
+    }
+  }, [overshootKcal]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -197,6 +210,13 @@ export function DashboardScreen() {
           )}
         </Card>
       </ScrollView>
+
+      {/* Calorie Overshoot Alert */}
+      <CalorieOvershootAlert
+        visible={showOvershoot}
+        overshootKcal={overshootKcal}
+        onClose={() => setShowOvershoot(false)}
+      />
     </SafeAreaView>
   );
 }
