@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
+import { useBiometric } from '@/hooks/useBiometric';
 import { Input, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -23,23 +24,34 @@ import type { AuthStackParamList } from '@/types';
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
 export function LoginScreen() {
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const { theme } = useTheme();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const { isEnabled: biometricEnabled, authenticate, biometricType } = useBiometric();
   const navigation = useNavigation<Nav>();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) return;
     setLoading(true);
     const { error } = await signIn(email.trim(), password);
     setLoading(false);
-    if (error) {
-      Alert.alert('Error', error.message);
-    }
+    if (error) Alert.alert('Error', error.message);
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    const { error } = await signInWithGoogle();
+    setGoogleLoading(false);
+    if (error) Alert.alert('Error', error.message);
+  };
+
+  const handleBiometricLogin = async () => {
+    await authenticate(t.auth.biometricPrompt);
   };
 
   return (
@@ -94,6 +106,39 @@ export function LoginScreen() {
               fullWidth
               size="lg"
             />
+
+            {/* Séparateur */}
+            <View style={styles.separator}>
+              <View style={[styles.separatorLine, { backgroundColor: theme.border }]} />
+              <Text style={[styles.separatorText, { color: theme.textSecondary }]}>
+                {locale === 'fr' ? 'ou' : 'or'}
+              </Text>
+              <View style={[styles.separatorLine, { backgroundColor: theme.border }]} />
+            </View>
+
+            {/* Google */}
+            <TouchableOpacity
+              style={[styles.googleBtn, { borderColor: theme.border }]}
+              onPress={handleGoogleLogin}
+              disabled={googleLoading}
+            >
+              <Text style={{ fontSize: 18, fontWeight: '800', color: '#4285F4' }}>G</Text>
+              <Text style={[styles.googleBtnText, { color: theme.text }]}>
+                {googleLoading ? '...' : t.auth.googleLogin}
+              </Text>
+            </TouchableOpacity>
+
+            {biometricEnabled && (
+              <TouchableOpacity
+                style={[styles.biometricBtn, { borderColor: theme.accent + '44' }]}
+                onPress={handleBiometricLogin}
+              >
+                <Text style={{ fontSize: 24 }}>{biometricType === 'face' ? '🔐' : '👆'}</Text>
+                <Text style={[styles.biometricText, { color: theme.accent }]}>
+                  {t.auth.biometricLogin}
+                </Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               onPress={() => navigation.navigate('Register')}
@@ -155,7 +200,34 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     alignItems: 'center',
   },
+  separator: { flexDirection: 'row', alignItems: 'center', marginVertical: spacing.lg },
+  separatorLine: { flex: 1, height: 1 },
+  separatorText: { marginHorizontal: spacing.md, fontSize: 13, fontWeight: '600' },
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderRadius: 12,
+  },
+  googleBtnText: { fontSize: 15, fontWeight: '700' },
   switchText: {
     fontSize: 14,
+  },
+  biometricBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderRadius: 12,
+  },
+  biometricText: {
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

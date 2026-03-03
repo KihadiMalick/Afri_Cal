@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,73 +10,36 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
+import { usePreloadedData } from '@/context/DataPreloadContext';
 import { Card } from '@/components/ui';
 import { DashboardSkeleton } from '@/components/ui/LoadingSkeleton';
-import { supabase } from '@/lib/supabase';
+import { CalorieOvershootAlert } from '@/components/CalorieOvershootAlert';
 import { calculateDailyScore } from '@/utils/daily-score';
-import { calculateGreenStreak } from '@/utils/streak';
-import { calculateWeightProjection } from '@/utils/weight-projection';
 import { spacing, borderRadius } from '@/theme/spacing';
-import type { UserProfile, Meal, DailySummary, RootStackParamList } from '@/types';
+import type { RootStackParamList } from '@/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export function DashboardScreen() {
-  const { user } = useAuth();
-  const { theme, mode } = useTheme();
+  const { theme } = useTheme();
   const { t, locale } = useLocale();
   const navigation = useNavigation<Nav>();
+  const { profile, todayMeals: meals, todaySummary: summary, streak, projectedWeight, ready, refresh } = usePreloadedData();
 
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [meals, setMeals] = useState<Meal[]>([]);
-  const [summary, setSummary] = useState<DailySummary | null>(null);
-  const [streak, setStreak] = useState(0);
-  const [projectedWeight, setProjectedWeight] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  const todayStr = new Date().toISOString().split('T')[0];
+  const [showOvershoot, setShowOvershoot] = useState(false);
+  const overshootShownRef = useRef(false);
   const accent = theme.accent;
-
-  const loadData = useCallback(async () => {
-    if (!user) return;
-
-    const [profileRes, mealsRes, summaryRes] = await Promise.all([
-      supabase.from('users_profile').select('*').eq('user_id', user.id).single(),
-      supabase.from('meals').select('*').eq('user_id', user.id).eq('date', todayStr)
-        .order('created_at', { ascending: false }),
-      (supabase as any).from('daily_summary').select('*').eq('user_id', user.id).eq('date', todayStr).single(),
-    ]);
-
-    if (profileRes.data) {
-      const p = profileRes.data as UserProfile;
-      setProfile(p);
-      // Load streak and projection in parallel
-      const [streakVal, projectionVal] = await Promise.all([
-        calculateGreenStreak(supabase as any, user.id),
-        calculateWeightProjection(supabase as any, user.id, p.weight),
-      ]);
-      setStreak(streakVal);
-      setProjectedWeight(projectionVal.projectedWeight);
-    }
-    if (mealsRes.data) setMeals(mealsRes.data as Meal[]);
-    if (summaryRes.data) setSummary(summaryRes.data as DailySummary);
-
-    setLoading(false);
-  }, [user, todayStr]);
-
-  useEffect(() => { loadData(); }, [loadData]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    await refresh();
     setRefreshing(false);
   };
 
-  if (loading) {
+  if (!ready) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <DashboardSkeleton />
@@ -106,9 +69,19 @@ export function DashboardScreen() {
   const burned = summary?.total_calories_burned ?? 0;
   const target = profile.daily_calorie_target;
   const remaining = Math.max(0, target - consumed + burned);
+  const netConsumed = consumed - burned;
+  const overshootKcal = Math.max(0, netConsumed - target);
   const progress = Math.min(1, consumed / target);
 
   const dailyScore = calculateDailyScore(consumed, burned, target);
+
+  // Show overshoot alert once when calories exceed target
+  useEffect(() => {
+    if (overshootKcal > 0 && !overshootShownRef.current) {
+      overshootShownRef.current = true;
+      setShowOvershoot(true);
+    }
+  }, [overshootKcal]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -121,7 +94,7 @@ export function DashboardScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.greeting, { color: theme.textSecondary }]}>
-            {t.dashboard.welcome} 👋
+            {t.dashboard.welcome} {'👋'}
           </Text>
           <Text style={[styles.title, { color: theme.text }]}>
             {profile.full_name || t.dashboard.title}
@@ -142,7 +115,6 @@ export function DashboardScreen() {
                 {t.dashboard.remaining}
               </Text>
             </View>
-            {/* Progress ring placeholder - simple bar */}
             <View style={styles.progressBarContainer}>
               <View style={[styles.progressBarBg, { backgroundColor: theme.border }]}>
                 <View
@@ -168,7 +140,7 @@ export function DashboardScreen() {
           </View>
         </Card>
 
-        {/* Vitality Score Card */}
+        {/* Discipline/day Score Card */}
         <Card style={styles.vitalityCard}>
           <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
             {t.dashboard.vitalityScore}
@@ -189,7 +161,7 @@ export function DashboardScreen() {
         {/* Streak + Weight Row */}
         <View style={styles.miniCardsRow}>
           <Card style={styles.miniCard}>
-            <Text style={{ fontSize: 22 }}>🔥</Text>
+            <Text style={{ fontSize: 22 }}>{'🔥'}</Text>
             <Text style={[styles.miniValue, { color: accent }]}>{streak}</Text>
             <Text style={[styles.miniLabel, { color: theme.textSecondary }]}>
               {locale === 'fr' ? 'jours' : 'days'}
@@ -197,7 +169,7 @@ export function DashboardScreen() {
           </Card>
 
           <Card style={styles.miniCard}>
-            <Text style={{ fontSize: 22 }}>⚖️</Text>
+            <Text style={{ fontSize: 22 }}>{'⚖️'}</Text>
             <Text style={[styles.miniValue, { color: '#a78bfa' }]}>{projectedWeight.toFixed(1)}</Text>
             <Text style={[styles.miniLabel, { color: theme.textSecondary }]}>
               {t.dashboard.projectedWeight}
@@ -238,6 +210,13 @@ export function DashboardScreen() {
           )}
         </Card>
       </ScrollView>
+
+      {/* Calorie Overshoot Alert */}
+      <CalorieOvershootAlert
+        visible={showOvershoot}
+        overshootKcal={overshootKcal}
+        onClose={() => setShowOvershoot(false)}
+      />
     </SafeAreaView>
   );
 }

@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, StyleSheet } from 'react-native';
 import { DashboardScreen } from '@/screens/dashboard/DashboardScreen';
 import { MealsNavigator } from './MealsNavigator';
-import { ActivitiesScreen } from '@/screens/activities/ActivitiesScreen';
+import { ActivitiesNavigator } from './ActivitiesNavigator';
 import { CalendarScreen } from '@/screens/calendar/CalendarScreen';
 import { ProfileScreen } from '@/screens/profile/ProfileScreen';
 import { useTheme } from '@/context/ThemeContext';
@@ -15,7 +15,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const TAB_ICONS: Record<string, string> = {
   Dashboard: '\u{1F4CA}',
-  Meals: '\u{1F372}',
+  Meals: '\u{1F4F7}',
   Activities: '\u{1F3C3}',
   Calendar: '\u{1F4C5}',
   Profile: '\u{1F464}',
@@ -23,7 +23,7 @@ const TAB_ICONS: Record<string, string> = {
 
 export function MainNavigator() {
   const { theme, mode } = useTheme();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
   return (
     <Tab.Navigator
@@ -57,11 +57,11 @@ export function MainNavigator() {
       <Tab.Screen
         name="Meals"
         component={MealsNavigator}
-        options={{ tabBarLabel: t.nav.meals }}
+        options={{ tabBarLabel: locale === 'fr' ? 'Scan' : 'Scan' }}
       />
       <Tab.Screen
         name="Activities"
-        component={ActivitiesScreen}
+        component={ActivitiesNavigator}
         options={{ tabBarLabel: t.nav.activities }}
       />
       <Tab.Screen

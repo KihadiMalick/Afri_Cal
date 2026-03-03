@@ -18,7 +18,9 @@
       "bundleIdentifier": "com.lixum.app",
       "infoPlist": {
         "NSCameraUsageDescription": "LIXUM uses the camera to scan and analyze your meals",
-        "NSMotionUsageDescription": "LIXUM uses motion sensors for the gyroscope meal scanner"
+        "NSMotionUsageDescription": "LIXUM uses motion sensors for the gyroscope meal scanner",
+        "NSFaceIDUsageDescription": "LIXUM uses Face ID for quick and secure login",
+        "NSPhotoLibraryUsageDescription": "LIXUM uses your photo library to upload meal photos"
       }
     },
     "android": {
@@ -29,13 +31,17 @@
       "package": "com.lixum.app",
       "permissions": [
         "CAMERA",
-        "HIGH_SAMPLING_RATE_SENSORS"
+        "HIGH_SAMPLING_RATE_SENSORS",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
       ]
     },
     "plugins": [
       "expo-camera",
       "expo-sensors",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-local-authentication",
+      "expo-image-picker"
     ]
   }
 }

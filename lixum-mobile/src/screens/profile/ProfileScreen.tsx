@@ -16,6 +16,7 @@ import { useLocale } from '@/context/LocaleContext';
 import { Card, Button } from '@/components/ui';
 import { DashboardSkeleton } from '@/components/ui/LoadingSkeleton';
 import { supabase } from '@/lib/supabase';
+import { useBiometric } from '@/hooks/useBiometric';
 import { spacing, borderRadius } from '@/theme/spacing';
 import type { UserProfile, RootStackParamList } from '@/types';
 
@@ -27,8 +28,10 @@ export function ProfileScreen() {
   const { t, locale, setLocale } = useLocale();
   const navigation = useNavigation<Nav>();
 
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [lixumId, setLixumId] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const { isAvailable: biometricAvailable, isEnabled: biometricEnabled, biometricType, toggleBiometric } = useBiometric();
 
   const accent = theme.accent;
 
@@ -36,7 +39,10 @@ export function ProfileScreen() {
     async function loadProfile() {
       if (!user) return;
       const { data } = await supabase.from('users_profile').select('*').eq('user_id', user.id).single();
-      if (data) setProfile(data as UserProfile);
+      if (data) {
+        setProfile(data as UserProfile);
+        setLixumId((data as any).lixum_id || '');
+      }
       setLoading(false);
     }
     loadProfile();
@@ -88,6 +94,11 @@ export function ProfileScreen() {
             <Text style={{ fontSize: 40 }}>👤</Text>
           </View>
           <Text style={[styles.displayName, { color: theme.text }]}>{displayName}</Text>
+          {lixumId ? (
+            <View style={[styles.lixumIdBadge, { borderColor: accent + '44', backgroundColor: accent + '12' }]}>
+              <Text style={[styles.lixumIdText, { color: accent }]}>{lixumId}</Text>
+            </View>
+          ) : null}
           <Text style={[styles.email, { color: theme.textSecondary }]}>{user?.email}</Text>
           {profile?.is_premium && (
             <View style={[styles.premiumBadge, { borderColor: '#f59e0b44' }]}>
@@ -150,6 +161,33 @@ export function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Biometric Login */}
+          {biometricAvailable && (
+            <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
+              <View>
+                <Text style={[styles.settingLabel, { color: theme.textSecondary }]}>{t.profile.biometric}</Text>
+                <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 2 }}>
+                  {biometricType === 'face' ? (locale === 'fr' ? 'Face ID' : 'Face ID') : (locale === 'fr' ? 'Empreinte digitale' : 'Fingerprint')}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.biometricToggle,
+                  {
+                    backgroundColor: biometricEnabled ? accent + '22' : theme.surfaceSecondary,
+                    borderColor: biometricEnabled ? accent + '66' : theme.border,
+                  },
+                ]}
+                onPress={toggleBiometric}
+              >
+                <Text style={{ fontSize: 14 }}>{biometricEnabled ? '🔓' : '🔒'}</Text>
+                <Text style={[styles.themeBadgeText, { color: biometricEnabled ? accent : theme.textSecondary }]}>
+                  {biometricEnabled ? t.profile.biometricEnabled : t.profile.biometricDisabled}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Edit Profile */}
           <Button
             title={t.profile.editProfile}
@@ -191,6 +229,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,255,157,0.06)',
   },
   displayName: { fontSize: 20, fontWeight: '900' },
+  lixumIdBadge: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.sm, borderWidth: 1, marginTop: spacing.xs },
+  lixumIdText: { fontSize: 13, fontWeight: '900', letterSpacing: 2, fontFamily: 'monospace' },
   email: { fontSize: 13, fontWeight: '500' },
   premiumBadge: {
     paddingHorizontal: spacing.md,
@@ -214,4 +254,5 @@ const styles = StyleSheet.create({
   langBadgeText: { fontSize: 12, fontWeight: '800', letterSpacing: 2 },
   themeBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.sm, borderWidth: 1 },
   themeBadgeText: { fontSize: 12, fontWeight: '700' },
+  biometricToggle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.sm, borderWidth: 1 },
 });

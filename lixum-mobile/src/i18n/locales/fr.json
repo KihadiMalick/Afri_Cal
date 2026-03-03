@@ -23,7 +23,9 @@
     "forgotPassword": "Mot de passe oublié ?",
     "googleLogin": "Continuer avec Google",
     "noAccount": "Pas encore de compte ?",
-    "hasAccount": "Déjà un compte ?"
+    "hasAccount": "Déjà un compte ?",
+    "biometricLogin": "Connexion biométrique",
+    "biometricPrompt": "Confirmez votre identité"
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -35,18 +37,18 @@
   "dashboard": {
     "title": "Tableau de bord",
     "dailyCalories": "Calories du jour",
-    "remaining": "Restantes",
+    "remaining": "Calories Restantes/Objectif",
     "consumed": "Consommées",
-    "burned": "Brûlées",
+    "burned": "Calories Brûlées/Sport",
     "goal": "Objectif",
     "welcome": "Bonjour",
-    "bmr": "BMR",
+    "bmr": "Besoin Vital Minimum (BMR)/jour",
     "tdee": "TDEE",
     "target": "Objectif",
     "kcalPerDay": "kcal/jour",
     "completeOnboarding": "Complétez votre profil pour voir vos objectifs",
     "goToOnboarding": "Configurer mon profil",
-    "vitalityScore": "Score Vitalité",
+    "vitalityScore": "Discipline/jour",
     "todayMeals": "Repas du jour",
     "greenStreak": "Série verte",
     "projectedWeight": "Poids projeté"
@@ -96,7 +98,8 @@
     "mealType": "Type de repas",
     "date": "Date",
     "totalCalories": "Calories totales",
-    "noMeals": "Aucun repas enregistré"
+    "noMeals": "Aucun repas enregistré",
+    "recipes": "Recettes"
   },
   "activities": {
     "title": "Activités sportives",
@@ -119,7 +122,16 @@
     "language": "Langue",
     "theme": "Thème",
     "darkMode": "Mode sombre",
-    "lightMode": "Mode clair"
+    "lightMode": "Mode clair",
+    "biometric": "Connexion biométrique",
+    "biometricEnabled": "Activée",
+    "biometricDisabled": "Désactivée"
+  },
+  "recipes": {
+    "title": "Recettes",
+    "general": "Générales",
+    "recommendations": "Recommandations",
+    "comingSoon": "Contenu à venir..."
   },
   "scan": {
     "title": "Scanner un repas",

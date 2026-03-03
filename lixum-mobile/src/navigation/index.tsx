@@ -25,14 +25,20 @@ export function RootNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          animation: 'slide_from_left',
+          animationDuration: 200,
+        }}
+      >
         {user ? (
           <>
             <Stack.Screen name="Main" component={MainNavigator} />
             <Stack.Screen
               name="Onboarding"
               component={OnboardingScreen}
-              options={{ animation: 'slide_from_bottom' }}
+              options={{ animation: 'slide_from_bottom', animationDuration: 250 }}
             />
           </>
         ) : (
