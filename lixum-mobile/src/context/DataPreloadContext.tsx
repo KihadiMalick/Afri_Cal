@@ -47,7 +47,7 @@ export function DataPreloadProvider({ children }: { children: React.ReactNode })
       supabase.from('users_profile').select('*').eq('user_id', user.id).single(),
       supabase.from('meals').select('*').eq('user_id', user.id).eq('date', todayStr)
         .order('created_at', { ascending: false }),
-      (supabase as any).from('daily_summary').select('*').eq('user_id', user.id).eq('date', todayStr).single(),
+      supabase.from('daily_summary').select('*').eq('user_id', user.id).eq('date', todayStr).single(),
     ]);
 
     const p = profileRes.data as UserProfile | null;
