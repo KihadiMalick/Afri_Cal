@@ -156,6 +156,24 @@ export function MealsScreen() {
             ))
           )}
         </Card>
+
+        {/* Recipes Section */}
+        <TouchableOpacity
+          style={[styles.recipesBtn, { backgroundColor: theme.surface, borderColor: accent + '44' }]}
+          onPress={() => navigation.navigate('Recipes')}
+          activeOpacity={0.7}
+        >
+          <Text style={{ fontSize: 28 }}>{'🍲'}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.recipesBtnTitle, { color: theme.text }]}>
+              {t.meals.recipes}
+            </Text>
+            <Text style={[styles.recipesBtnSub, { color: theme.textSecondary }]}>
+              {locale === 'fr' ? 'Découvrir des idées de repas' : 'Discover meal ideas'}
+            </Text>
+          </View>
+          <Text style={[styles.recipesArrow, { color: accent }]}>{'>'}</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -186,4 +204,15 @@ const styles = StyleSheet.create({
   mealCalContainer: { alignItems: 'flex-end' },
   mealCal: { fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'] },
   mealCalUnit: { fontSize: 10, fontWeight: '600' },
+  recipesBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  recipesBtnTitle: { fontSize: 16, fontWeight: '800' },
+  recipesBtnSub: { fontSize: 12, fontWeight: '500', marginTop: 2 },
+  recipesArrow: { fontSize: 22, fontWeight: '700' },
 });

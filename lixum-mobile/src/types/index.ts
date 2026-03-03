@@ -68,4 +68,5 @@ export type MealsStackParamList = {
   Scan: undefined;
   AddMeal: undefined;
   MealHistory: undefined;
+  Recipes: undefined;
 };

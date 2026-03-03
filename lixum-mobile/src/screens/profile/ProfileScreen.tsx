@@ -16,6 +16,7 @@ import { useLocale } from '@/context/LocaleContext';
 import { Card, Button } from '@/components/ui';
 import { DashboardSkeleton } from '@/components/ui/LoadingSkeleton';
 import { supabase } from '@/lib/supabase';
+import { useBiometric } from '@/hooks/useBiometric';
 import { spacing, borderRadius } from '@/theme/spacing';
 import type { UserProfile, RootStackParamList } from '@/types';
 
@@ -29,6 +30,7 @@ export function ProfileScreen() {
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const { isAvailable: biometricAvailable, isEnabled: biometricEnabled, biometricType, toggleBiometric } = useBiometric();
 
   const accent = theme.accent;
 
@@ -150,6 +152,33 @@ export function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Biometric Login */}
+          {biometricAvailable && (
+            <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
+              <View>
+                <Text style={[styles.settingLabel, { color: theme.textSecondary }]}>{t.profile.biometric}</Text>
+                <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 2 }}>
+                  {biometricType === 'face' ? (locale === 'fr' ? 'Face ID' : 'Face ID') : (locale === 'fr' ? 'Empreinte digitale' : 'Fingerprint')}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.biometricToggle,
+                  {
+                    backgroundColor: biometricEnabled ? accent + '22' : theme.surfaceSecondary,
+                    borderColor: biometricEnabled ? accent + '66' : theme.border,
+                  },
+                ]}
+                onPress={toggleBiometric}
+              >
+                <Text style={{ fontSize: 14 }}>{biometricEnabled ? '🔓' : '🔒'}</Text>
+                <Text style={[styles.themeBadgeText, { color: biometricEnabled ? accent : theme.textSecondary }]}>
+                  {biometricEnabled ? t.profile.biometricEnabled : t.profile.biometricDisabled}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Edit Profile */}
           <Button
             title={t.profile.editProfile}
@@ -214,4 +243,5 @@ const styles = StyleSheet.create({
   langBadgeText: { fontSize: 12, fontWeight: '800', letterSpacing: 2 },
   themeBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.sm, borderWidth: 1 },
   themeBadgeText: { fontSize: 12, fontWeight: '700' },
+  biometricToggle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.sm, borderWidth: 1 },
 });

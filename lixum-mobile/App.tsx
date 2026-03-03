@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { LocaleProvider } from '@/context/LocaleContext';
+import { DataPreloadProvider } from '@/context/DataPreloadContext';
 import { RootNavigator } from '@/navigation';
 
 function AppContent() {
@@ -25,7 +26,9 @@ export default function App() {
         <ThemeProvider>
           <LocaleProvider>
             <AuthProvider>
-              <AppContent />
+              <DataPreloadProvider>
+                <AppContent />
+              </DataPreloadProvider>
             </AuthProvider>
           </LocaleProvider>
         </ThemeProvider>

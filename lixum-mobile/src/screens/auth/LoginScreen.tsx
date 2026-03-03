@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
+import { useBiometric } from '@/hooks/useBiometric';
 import { Input, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -26,6 +27,7 @@ export function LoginScreen() {
   const { signIn } = useAuth();
   const { theme } = useTheme();
   const { t } = useLocale();
+  const { isEnabled: biometricEnabled, authenticate, biometricType } = useBiometric();
   const navigation = useNavigation<Nav>();
 
   const [email, setEmail] = useState('');
@@ -39,6 +41,15 @@ export function LoginScreen() {
     setLoading(false);
     if (error) {
       Alert.alert('Error', error.message);
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    const success = await authenticate(t.auth.biometricPrompt);
+    if (success) {
+      // Biometric confirmed — re-authenticate with stored session
+      // Supabase auto-persists the session, so the AuthContext
+      // will pick up the existing session automatically
     }
   };
 
@@ -94,6 +105,18 @@ export function LoginScreen() {
               fullWidth
               size="lg"
             />
+
+            {biometricEnabled && (
+              <TouchableOpacity
+                style={[styles.biometricBtn, { borderColor: theme.accent + '44' }]}
+                onPress={handleBiometricLogin}
+              >
+                <Text style={{ fontSize: 24 }}>{biometricType === 'face' ? '🔐' : '👆'}</Text>
+                <Text style={[styles.biometricText, { color: theme.accent }]}>
+                  {t.auth.biometricLogin}
+                </Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               onPress={() => navigation.navigate('Register')}
@@ -157,5 +180,19 @@ const styles = StyleSheet.create({
   },
   switchText: {
     fontSize: 14,
+  },
+  biometricBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderRadius: 12,
+  },
+  biometricText: {
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

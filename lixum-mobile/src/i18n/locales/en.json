@@ -23,7 +23,9 @@
     "forgotPassword": "Forgot password?",
     "googleLogin": "Continue with Google",
     "noAccount": "Don't have an account?",
-    "hasAccount": "Already have an account?"
+    "hasAccount": "Already have an account?",
+    "biometricLogin": "Biometric login",
+    "biometricPrompt": "Confirm your identity"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -35,18 +37,18 @@
   "dashboard": {
     "title": "Dashboard",
     "dailyCalories": "Daily Calories",
-    "remaining": "Remaining",
+    "remaining": "Remaining/Goal",
     "consumed": "Consumed",
-    "burned": "Burned",
+    "burned": "Burned/Sport",
     "goal": "Goal",
     "welcome": "Hello",
-    "bmr": "BMR",
+    "bmr": "Vital Minimum (BMR)/day",
     "tdee": "TDEE",
     "target": "Target",
     "kcalPerDay": "kcal/day",
     "completeOnboarding": "Complete your profile to see your goals",
     "goToOnboarding": "Set up my profile",
-    "vitalityScore": "Vitality Score",
+    "vitalityScore": "Discipline/day",
     "todayMeals": "Today's Meals",
     "greenStreak": "Green Streak",
     "projectedWeight": "Projected Weight"
@@ -96,7 +98,8 @@
     "mealType": "Meal type",
     "date": "Date",
     "totalCalories": "Total calories",
-    "noMeals": "No meals recorded"
+    "noMeals": "No meals recorded",
+    "recipes": "Recipes"
   },
   "activities": {
     "title": "Sports activities",
@@ -119,7 +122,16 @@
     "language": "Language",
     "theme": "Theme",
     "darkMode": "Dark mode",
-    "lightMode": "Light mode"
+    "lightMode": "Light mode",
+    "biometric": "Biometric login",
+    "biometricEnabled": "Enabled",
+    "biometricDisabled": "Disabled"
+  },
+  "recipes": {
+    "title": "Recipes",
+    "general": "General",
+    "recommendations": "Recommendations",
+    "comingSoon": "Content coming soon..."
   },
   "scan": {
     "title": "Scan a meal",
