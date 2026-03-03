@@ -11,9 +11,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@/context/AuthContext';
+import { useTokens } from '@/context/ThemeContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
-import { Card, Button } from '@/components/ui';
+import { GlassCard } from '@/components/ui';
 import { DashboardSkeleton } from '@/components/ui/LoadingSkeleton';
 import { supabase } from '@/lib/supabase';
 import { useBiometric } from '@/hooks/useBiometric';
@@ -24,7 +25,8 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export function ProfileScreen() {
   const { user, signOut } = useAuth();
-  const { theme, mode, toggleTheme } = useTheme();
+  const tk = useTokens();
+  const { mode, toggleTheme } = useTheme();
   const { t, locale, setLocale } = useLocale();
   const navigation = useNavigation<Nav>();
 
@@ -32,8 +34,6 @@ export function ProfileScreen() {
   const [lixumId, setLixumId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const { isAvailable: biometricAvailable, isEnabled: biometricEnabled, biometricType, toggleBiometric } = useBiometric();
-
-  const accent = theme.accent;
 
   useEffect(() => {
     async function loadProfile() {
@@ -51,7 +51,7 @@ export function ProfileScreen() {
   const handleLogout = () => {
     Alert.alert(
       t.auth.logout,
-      locale === 'fr' ? 'Voulez-vous vous déconnecter ?' : 'Do you want to log out?',
+      locale === 'fr' ? 'Voulez-vous vous d\u00e9connecter ?' : 'Do you want to log out?',
       [
         { text: t.common.cancel, style: 'cancel' },
         { text: t.auth.logout, style: 'destructive', onPress: signOut },
@@ -63,99 +63,122 @@ export function ProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <DashboardSkeleton />
       </SafeAreaView>
     );
   }
 
   const statRows = profile ? [
-    { label: t.dashboard.target, value: `${profile.daily_calorie_target} kcal`, color: '#f59e0b' },
-    { label: t.dashboard.bmr, value: `${Math.round(profile.bmr)} kcal`, color: theme.text },
-    { label: t.dashboard.tdee, value: `${Math.round(profile.tdee)} kcal`, color: theme.text },
-    { label: t.onboarding.weight, value: `${profile.weight} kg`, color: accent },
-    { label: t.onboarding.height, value: `${profile.height} cm`, color: theme.text },
+    { label: t.dashboard.target, value: `${profile.daily_calorie_target} kcal`, color: tk.amber },
+    { label: t.dashboard.bmr, value: `${Math.round(profile.bmr)} kcal`, color: tk.t1 },
+    { label: t.dashboard.tdee, value: `${Math.round(profile.tdee)} kcal`, color: tk.t1 },
+    { label: t.onboarding.weight, value: `${profile.weight} kg`, color: tk.accent },
+    { label: t.onboarding.height, value: `${profile.height} cm`, color: tk.t1 },
   ] : [];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.text }]}>{t.profile.title}</Text>
-          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+          <Text style={[styles.title, { color: tk.t1 }]}>{t.profile.title}</Text>
+          <Text style={[styles.subtitle, { color: tk.accentSub }]}>
             {locale === 'fr' ? 'Votre espace personnel' : 'Your personal space'}
           </Text>
         </View>
 
-        {/* Avatar Card */}
-        <Card style={styles.avatarCard}>
-          <View style={[styles.avatarCircle, { borderColor: accent + '44' }]}>
-            <Text style={{ fontSize: 40 }}>👤</Text>
+        {/* ── Avatar Card ── */}
+        <GlassCard style={styles.avatarCard}>
+          {/* Avatar circle with glow */}
+          <View style={styles.avatarGlowWrap}>
+            <View
+              style={[
+                styles.avatarCircle,
+                {
+                  backgroundColor: 'rgba(0,255,157,0.06)',
+                  borderColor: 'rgba(0,255,157,0.25)',
+                },
+              ]}
+            >
+              <Text style={styles.avatarEmoji}>{'\u{1F464}'}</Text>
+            </View>
           </View>
-          <Text style={[styles.displayName, { color: theme.text }]}>{displayName}</Text>
+
+          {/* Display name */}
+          <Text style={[styles.displayName, { color: tk.t1 }]}>{displayName}</Text>
+
+          {/* LXM ID badge */}
           {lixumId ? (
-            <View style={[styles.lixumIdBadge, { borderColor: accent + '44', backgroundColor: accent + '12' }]}>
-              <Text style={[styles.lixumIdText, { color: accent }]}>{lixumId}</Text>
+            <View style={[styles.lixumIdBadge, { backgroundColor: tk.accent + '14', borderColor: tk.accent + '44' }]}>
+              <Text style={[styles.lixumIdText, { color: tk.accent }]}>{lixumId}</Text>
             </View>
           ) : null}
-          <Text style={[styles.email, { color: theme.textSecondary }]}>{user?.email}</Text>
+
+          {/* Email */}
+          <Text style={[styles.email, { color: tk.t3 }]}>{user?.email}</Text>
+
+          {/* Premium badge */}
           {profile?.is_premium && (
-            <View style={[styles.premiumBadge, { borderColor: '#f59e0b44' }]}>
-              <Text style={styles.premiumText}>PREMIUM</Text>
+            <View style={[styles.premiumBadge, { backgroundColor: tk.amber + '14', borderColor: tk.amber + '44' }]}>
+              <Text style={[styles.premiumIcon]}>{'\u2B50'}</Text>
+              <Text style={[styles.premiumText, { color: tk.amber }]}>PREMIUM</Text>
             </View>
           )}
-        </Card>
+        </GlassCard>
 
-        {/* Stats Card */}
+        {/* ── Biometric Data Card ── */}
         {profile && (
-          <Card>
-            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
-              {locale === 'fr' ? 'Données biométriques' : 'Biometric data'}
+          <GlassCard>
+            <Text style={[styles.sectionLabel, { color: tk.t3 }]}>
+              {locale === 'fr' ? 'Donn\u00e9es biom\u00e9triques' : 'Biometric data'}
             </Text>
             {statRows.map((row, i) => (
               <View
                 key={row.label}
                 style={[
                   styles.statRow,
-                  i < statRows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border },
+                  i < statRows.length - 1 && styles.statRowBorder,
                 ]}
               >
-                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{row.label}</Text>
+                <Text style={[styles.statLabel, { color: tk.t3 }]}>{row.label}</Text>
                 <Text style={[styles.statValue, { color: row.color }]}>{row.value}</Text>
               </View>
             ))}
-          </Card>
+          </GlassCard>
         )}
 
-        {/* Settings Card */}
-        <Card style={styles.settingsCard}>
-          <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
+        {/* ── Settings Card ── */}
+        <GlassCard style={styles.settingsCard}>
+          <Text style={[styles.sectionLabel, { color: tk.t3 }]}>
             {t.profile.settings}
           </Text>
 
           {/* Language */}
-          <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
-            <Text style={[styles.settingLabel, { color: theme.textSecondary }]}>{t.profile.language}</Text>
+          <View style={styles.settingRow}>
+            <Text style={[styles.settingLabel, { color: tk.t3 }]}>{t.profile.language}</Text>
             <TouchableOpacity
-              style={[styles.langBadge, { borderColor: accent + '44', backgroundColor: accent + '14' }]}
+              style={[styles.localeBadge, { backgroundColor: tk.accent + '14', borderColor: tk.accent + '44' }]}
               onPress={() => setLocale(locale === 'fr' ? 'en' : 'fr')}
+              activeOpacity={0.7}
             >
-              <Text style={[styles.langBadgeText, { color: accent }]}>
+              <Text style={[styles.localeBadgeText, { color: tk.accent }]}>
                 {locale.toUpperCase()}
               </Text>
             </TouchableOpacity>
           </View>
+          <View style={styles.settingDivider} />
 
           {/* Theme */}
-          <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
-            <Text style={[styles.settingLabel, { color: theme.textSecondary }]}>{t.profile.theme}</Text>
+          <View style={styles.settingRow}>
+            <Text style={[styles.settingLabel, { color: tk.t3 }]}>{t.profile.theme}</Text>
             <TouchableOpacity
-              style={[styles.themeBadge, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border }]}
+              style={[styles.themeBadge, { backgroundColor: tk.cardBg, borderColor: tk.cardBorder }]}
               onPress={toggleTheme}
+              activeOpacity={0.7}
             >
-              <Text style={{ fontSize: 14 }}>{mode === 'dark' ? '🌙' : '☀️'}</Text>
-              <Text style={[styles.themeBadgeText, { color: theme.text }]}>
+              <Text style={styles.themeIcon}>{mode === 'dark' ? '\u{1F319}' : '\u2600\uFE0F'}</Text>
+              <Text style={[styles.themeBadgeText, { color: tk.t1 }]}>
                 {mode === 'dark' ? t.profile.darkMode : t.profile.lightMode}
               </Text>
             </TouchableOpacity>
@@ -163,62 +186,111 @@ export function ProfileScreen() {
 
           {/* Biometric Login */}
           {biometricAvailable && (
-            <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
-              <View>
-                <Text style={[styles.settingLabel, { color: theme.textSecondary }]}>{t.profile.biometric}</Text>
-                <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 2 }}>
-                  {biometricType === 'face' ? (locale === 'fr' ? 'Face ID' : 'Face ID') : (locale === 'fr' ? 'Empreinte digitale' : 'Fingerprint')}
-                </Text>
+            <>
+              <View style={styles.settingDivider} />
+              <View style={styles.settingRow}>
+                <View style={styles.settingLabelGroup}>
+                  <Text style={[styles.settingLabel, { color: tk.t3 }]}>{t.profile.biometric}</Text>
+                  <Text style={[styles.settingSublabel, { color: tk.t4 }]}>
+                    {biometricType === 'face'
+                      ? 'Face ID'
+                      : (locale === 'fr' ? 'Empreinte digitale' : 'Fingerprint')}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.biometricToggle,
+                    {
+                      backgroundColor: biometricEnabled ? tk.accent + '18' : tk.cardBg,
+                      borderColor: biometricEnabled ? tk.accent + '55' : tk.cardBorder,
+                    },
+                  ]}
+                  onPress={toggleBiometric}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.biometricIcon}>
+                    {biometricEnabled ? '\u{1F513}' : '\u{1F512}'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.themeBadgeText,
+                      { color: biometricEnabled ? tk.accent : tk.t3 },
+                    ]}
+                  >
+                    {biometricEnabled ? t.profile.biometricEnabled : t.profile.biometricDisabled}
+                  </Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                style={[
-                  styles.biometricToggle,
-                  {
-                    backgroundColor: biometricEnabled ? accent + '22' : theme.surfaceSecondary,
-                    borderColor: biometricEnabled ? accent + '66' : theme.border,
-                  },
-                ]}
-                onPress={toggleBiometric}
-              >
-                <Text style={{ fontSize: 14 }}>{biometricEnabled ? '🔓' : '🔒'}</Text>
-                <Text style={[styles.themeBadgeText, { color: biometricEnabled ? accent : theme.textSecondary }]}>
-                  {biometricEnabled ? t.profile.biometricEnabled : t.profile.biometricDisabled}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            </>
           )}
 
-          {/* Edit Profile */}
-          <Button
-            title={t.profile.editProfile}
-            onPress={() => navigation.navigate('Onboarding')}
-            variant="secondary"
-            fullWidth
-            style={{ marginTop: spacing.md }}
-          />
+          {/* Spacer before buttons */}
+          <View style={styles.buttonSpacer} />
 
-          {/* Logout */}
-          <Button
-            title={t.auth.logout}
+          {/* Edit Profile Button */}
+          <TouchableOpacity
+            style={[styles.editBtn, { backgroundColor: tk.accent }]}
+            onPress={() => navigation.navigate('Onboarding')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.editBtnText}>{t.profile.editProfile}</Text>
+          </TouchableOpacity>
+
+          {/* Logout Button */}
+          <TouchableOpacity
+            style={[styles.logoutBtn, { backgroundColor: tk.red + '12', borderColor: tk.red + '30' }]}
             onPress={handleLogout}
-            variant="danger"
-            fullWidth
-            style={{ marginTop: spacing.sm }}
-          />
-        </Card>
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.logoutBtnText, { color: tk.red }]}>{t.auth.logout}</Text>
+          </TouchableOpacity>
+        </GlassCard>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing['4xl'] },
-  header: { marginBottom: spacing.xs },
-  title: { fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
-  subtitle: { fontSize: 13, fontWeight: '500', marginTop: 2 },
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  scroll: {
+    padding: spacing.lg,
+    gap: spacing.lg,
+    paddingBottom: spacing['4xl'],
+  },
 
-  avatarCard: { alignItems: 'center', gap: spacing.sm },
+  /* -- Header -- */
+  header: {
+    marginBottom: spacing.xs,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+    letterSpacing: 0.4,
+  },
+
+  /* -- Avatar Card -- */
+  avatarCard: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing['2xl'],
+  },
+  avatarGlowWrap: {
+    shadowColor: '#00ff9d',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
+    marginBottom: spacing.xs,
+  },
   avatarCircle: {
     width: 80,
     height: 80,
@@ -226,33 +298,182 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,255,157,0.06)',
   },
-  displayName: { fontSize: 20, fontWeight: '900' },
-  lixumIdBadge: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.sm, borderWidth: 1, marginTop: spacing.xs },
-  lixumIdText: { fontSize: 13, fontWeight: '900', letterSpacing: 2, fontFamily: 'monospace' },
-  email: { fontSize: 13, fontWeight: '500' },
-  premiumBadge: {
+  avatarEmoji: {
+    fontSize: 36,
+  },
+  displayName: {
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: -0.3,
+  },
+  lixumIdBadge: {
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.xs + 1,
     borderRadius: borderRadius.full,
     borderWidth: 1,
-    backgroundColor: 'rgba(245,158,11,0.12)',
+  },
+  lixumIdText: {
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 2,
+    fontFamily: 'Courier New',
+    fontVariant: ['tabular-nums'],
+  },
+  email: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  premiumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 1,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
     marginTop: spacing.xs,
   },
-  premiumText: { color: '#f59e0b', fontSize: 11, fontWeight: '800', letterSpacing: 2 },
+  premiumIcon: {
+    fontSize: 12,
+  },
+  premiumText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 2,
+  },
 
-  sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: spacing.md },
-  statRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.md },
-  statLabel: { fontSize: 14, fontWeight: '500' },
-  statValue: { fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  /* -- Section Label -- */
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: spacing.md,
+  },
 
-  settingsCard: { gap: 0 },
-  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth },
-  settingLabel: { fontSize: 14, fontWeight: '500' },
-  langBadge: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.sm, borderWidth: 1 },
-  langBadgeText: { fontSize: 12, fontWeight: '800', letterSpacing: 2 },
-  themeBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.sm, borderWidth: 1 },
-  themeBadgeText: { fontSize: 12, fontWeight: '700' },
-  biometricToggle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.sm, borderWidth: 1 },
+  /* -- Stat Rows -- */
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  statRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  statLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  statValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'Courier New',
+    fontVariant: ['tabular-nums'],
+  },
+
+  /* -- Settings Card -- */
+  settingsCard: {
+    gap: 0,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  settingDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  settingLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  settingLabelGroup: {
+    gap: 2,
+  },
+  settingSublabel: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+
+  /* -- Locale Badge -- */
+  localeBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 1,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+  },
+  localeBadgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 2,
+  },
+
+  /* -- Theme Badge -- */
+  themeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 1,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+  },
+  themeIcon: {
+    fontSize: 14,
+  },
+  themeBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  /* -- Biometric Toggle -- */
+  biometricToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 1,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+  },
+  biometricIcon: {
+    fontSize: 14,
+  },
+
+  /* -- Buttons -- */
+  buttonSpacer: {
+    height: spacing.lg,
+  },
+  editBtn: {
+    width: '100%',
+    height: 48,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editBtnText: {
+    color: '#000',
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  logoutBtn: {
+    width: '100%',
+    height: 48,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+  },
+  logoutBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
 });

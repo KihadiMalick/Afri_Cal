@@ -5,20 +5,17 @@ import { ScanScreen } from '@/screens/meals/ScanScreen';
 import { AddMealScreen } from '@/screens/meals/AddMealScreen';
 import { RecipesScreen } from '@/screens/meals/RecipesScreen';
 import type { MealsStackParamList } from '@/types';
-import { useTheme } from '@/context/ThemeContext';
 
 const Stack = createNativeStackNavigator<MealsStackParamList>();
 
 export function MealsNavigator() {
-  const { theme } = useTheme();
-
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        animation: 'slide_from_left',
+        animation: 'fade',
         animationDuration: 200,
-        contentStyle: { backgroundColor: theme.background },
+        contentStyle: { backgroundColor: 'transparent' },
       }}
     >
       <Stack.Screen name="MealsList" component={MealsScreen} />

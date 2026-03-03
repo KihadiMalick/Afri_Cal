@@ -1,24 +1,25 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { AuthNavigator } from './AuthNavigator';
 import { MainNavigator } from './MainNavigator';
 import { OnboardingScreen } from '@/screens/onboarding/OnboardingScreen';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
+import { SkeletonLoader } from '@/components/ui/LoadingSkeleton';
 import type { RootStackParamList } from '@/types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
   const { user, loading } = useAuth();
-  const { theme } = useTheme();
 
   if (loading) {
     return (
-      <View style={[styles.loading, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.accent} />
+      <View style={[styles.loading, { backgroundColor: 'transparent' }]}>
+        <SkeletonLoader width={120} height={120} radius={60} />
+        <SkeletonLoader width={200} height={20} radius={10} style={{ marginTop: 24 }} />
+        <SkeletonLoader width={150} height={14} radius={7} style={{ marginTop: 12 }} />
       </View>
     );
   }
@@ -28,8 +29,9 @@ export function RootNavigator() {
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
-          animation: 'slide_from_left',
-          animationDuration: 200,
+          animation: 'fade',
+          animationDuration: 250,
+          contentStyle: { backgroundColor: 'transparent' },
         }}
       >
         {user ? (
@@ -54,5 +56,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 8,
   },
 });

@@ -7,7 +7,7 @@ import {
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useTokens } from '@/context/ThemeContext';
 import { borderRadius, spacing } from '@/theme/spacing';
 
 interface ButtonProps {
@@ -33,37 +33,54 @@ export function Button({
   style,
   textStyle,
 }: ButtonProps) {
-  const buttonStyles = [
-    styles.base,
-    styles[variant],
-    styles[`size_${size}`],
-    fullWidth && styles.fullWidth,
-    disabled && styles.disabled,
-    style,
-  ];
+  const tk = useTokens();
 
-  const textStyles = [
-    styles.text,
-    styles[`text_${variant}`],
-    styles[`textSize_${size}`],
-    disabled && styles.textDisabled,
-    textStyle,
-  ];
+  const variantStyles: Record<string, ViewStyle> = {
+    primary: { backgroundColor: tk.accent },
+    secondary: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: tk.cardBorder },
+    accent: { backgroundColor: tk.accent },
+    danger: { backgroundColor: tk.red },
+  };
+
+  const textColorMap: Record<string, string> = {
+    primary: '#000000',
+    secondary: tk.t1,
+    accent: '#000000',
+    danger: '#FFFFFF',
+  };
+
+  const sizeStyles: Record<string, ViewStyle> = {
+    sm: { paddingVertical: spacing.sm, paddingHorizontal: spacing.lg },
+    md: { paddingVertical: spacing.md, paddingHorizontal: spacing.xl },
+    lg: { paddingVertical: spacing.lg, paddingHorizontal: spacing['2xl'] },
+  };
+
+  const textSizes: Record<string, number> = { sm: 13, md: 15, lg: 17 };
 
   return (
     <TouchableOpacity
-      style={buttonStyles}
+      style={[
+        styles.base,
+        variantStyles[variant],
+        sizeStyles[size],
+        fullWidth && styles.fullWidth,
+        disabled && styles.disabled,
+        style,
+      ]}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.7}
     >
       {loading ? (
-        <ActivityIndicator
-          color={variant === 'secondary' ? colors.lixum.text : colors.neutral.black}
-          size="small"
-        />
+        <ActivityIndicator color={textColorMap[variant]} size="small" />
       ) : (
-        <Text style={textStyles}>{title}</Text>
+        <Text style={[
+          styles.text,
+          { color: textColorMap[variant], fontSize: textSizes[size] },
+          textStyle,
+        ]}>
+          {title}
+        </Text>
       )}
     </TouchableOpacity>
   );
@@ -75,32 +92,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: borderRadius.md,
   },
-  primary: {
-    backgroundColor: colors.lixum.neon,
-  },
-  secondary: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: colors.lixum.borderLight,
-  },
-  accent: {
-    backgroundColor: colors.lixum.cyan,
-  },
-  danger: {
-    backgroundColor: colors.semantic.error,
-  },
-  size_sm: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
-  size_md: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-  },
-  size_lg: {
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing['2xl'],
-  },
   fullWidth: {
     width: '100%',
   },
@@ -108,30 +99,6 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   text: {
-    fontWeight: '600',
-  },
-  text_primary: {
-    color: colors.neutral.black,
-  },
-  text_secondary: {
-    color: colors.lixum.text,
-  },
-  text_accent: {
-    color: colors.neutral.black,
-  },
-  text_danger: {
-    color: colors.neutral.white,
-  },
-  textSize_sm: {
-    fontSize: 13,
-  },
-  textSize_md: {
-    fontSize: 15,
-  },
-  textSize_lg: {
-    fontSize: 17,
-  },
-  textDisabled: {
-    opacity: 0.7,
+    fontWeight: '700',
   },
 });

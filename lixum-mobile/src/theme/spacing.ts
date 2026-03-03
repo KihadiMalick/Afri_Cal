@@ -1,5 +1,5 @@
 /**
- * LIXUM Design System - Spacing & Layout
+ * LIXUM Design System — Spacing & Layout
  */
 
 export const spacing = {
@@ -22,19 +22,21 @@ export const borderRadius = {
   md: 12,
   lg: 16,
   xl: 20,
-  card: 20,    // 1.25rem
-  cardSm: 14,  // 0.875rem
+  '2xl': 24,
+  card: 28,
+  cardLg: 32,
+  cardXl: 40,
   full: 9999,
 } as const;
 
 export const layout = {
   screenPaddingH: 16,
   screenPaddingV: 16,
-  cardPadding: 16,
-  cardPaddingSm: 12,
-  cardPaddingLg: 20,
-  tabBarHeight: 64,
+  cardPadding: 20,
+  cardPaddingSm: 16,
+  cardPaddingLg: 24,
+  tabBarHeight: 70,
   headerHeight: 56,
   sidebarWidth: 56,
-  sidebarWidthExpanded: 72,
+  sidebarWidthTablet: 88,
 } as const;

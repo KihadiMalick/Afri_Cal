@@ -1,45 +1,40 @@
 /**
- * LIXUM Design System - Color Tokens
- * Dark-first design with neon green accent
+ * LIXUM Design System — Color Tokens (legacy compat)
+ * Use tokens.ts (DARK/LIGHT) for the new Afro-Futuristic design
  */
+export { DARK, LIGHT } from './tokens';
+export type { LixumTokens } from './tokens';
 
 export const colors = {
-  // LIXUM Core
   lixum: {
-    bg: '#0a0a0a',
-    surface: '#111111',
-    surfaceLight: '#1a1a1a',
-    border: '#222222',
-    borderLight: '#333333',
+    bg: '#020c07',
+    surface: 'rgba(2,12,7,0.80)',
+    surfaceLight: 'rgba(255,255,255,0.07)',
+    border: 'rgba(255,255,255,0.11)',
+    borderLight: 'rgba(255,255,255,0.10)',
     neon: '#00ff9d',
-    neonDim: 'rgba(0, 255, 157, 0.15)',
-    neonSubtle: 'rgba(0, 255, 157, 0.08)',
+    neonDim: 'rgba(0,255,157,0.15)',
+    neonSubtle: 'rgba(0,255,157,0.08)',
     cyan: '#00e5ff',
-    cyanDim: 'rgba(0, 229, 255, 0.15)',
-    text: '#e0e0e0',
-    textMuted: '#888888',
+    cyanDim: 'rgba(0,229,255,0.15)',
+    text: 'rgba(255,255,255,0.94)',
+    textMuted: 'rgba(255,255,255,0.68)',
   },
-
-  // LIXUM Light Mode
   light: {
-    bg: '#f5f5f5',
-    surface: '#ffffff',
-    surfaceSecondary: '#eeeeee',
-    border: '#d4d4d4',
-    borderLight: '#e0e0e0',
-    text: '#1a1a1a',
-    textSecondary: '#555555',
+    bg: '#eaf7f0',
+    surface: 'rgba(255,255,255,0.92)',
+    surfaceSecondary: 'rgba(0,200,100,0.06)',
+    border: 'rgba(0,140,70,0.22)',
+    borderLight: 'rgba(0,150,70,0.22)',
+    text: 'rgba(5,30,18,0.94)',
+    textSecondary: 'rgba(5,30,18,0.68)',
   },
-
-  // Semantic
   semantic: {
-    success: '#22c55e',
-    error: '#ef4444',
+    success: '#34d399',
+    error: '#f87171',
     warning: '#f59e0b',
-    info: '#3b82f6',
+    info: '#60a5fa',
   },
-
-  // Neutral
   neutral: {
     white: '#FFFFFF',
     black: '#000000',
