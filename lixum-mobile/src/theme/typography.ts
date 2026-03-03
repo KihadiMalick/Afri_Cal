@@ -1,108 +1,49 @@
 /**
- * LIXUM Design System - Typography
- * Display: Poppins | Body: Nunito
- *
- * Note: Load fonts via expo-font in App.tsx before rendering
- * For now, use system fonts with fallback
+ * LIXUM Design System — Typography
+ * Primary: Outfit (Google Font) | Mono: Courier New
  */
 
-import { Platform } from 'react-native';
+export const FONTS = {
+  display:    'Outfit_900Black',
+  heading:    'Outfit_700Bold',
+  subheading: 'Outfit_600SemiBold',
+  body:       'Outfit_400Regular',
+  medium:     'Outfit_500Medium',
+  light:      'Outfit_300Light',
+  mono:       'Courier New',
+} as const;
 
-const fontFamily = {
-  display: Platform.select({
-    ios: 'System',
-    android: 'sans-serif-medium',
-    default: 'System',
-  }),
-  body: Platform.select({
-    ios: 'System',
-    android: 'sans-serif',
-    default: 'System',
-  }),
-};
+export const FONT_SIZES = {
+  tag:    6,
+  badge:  7,
+  tiny:   9,
+  micro:  10,
+  xxs:    11,
+  xs:     12,
+  sm:     14,
+  base:   16,
+  md:     18,
+  lg:     20,
+  xl:     24,
+  '2xl':  30,
+  '3xl':  36,
+  '4xl':  36,
+  '5xl':  48,
+  '6xl':  60,
+  '7xl':  72,
+} as const;
+
+export const LETTER_SPACING = {
+  normal:  0,
+  wide:    1,
+  wider:   2,
+  widest:  3,
+  logoSub: 4.5,
+  mono:    3.5,
+} as const;
 
 export const typography = {
-  fontFamily,
-
-  // Heading sizes
-  h1: {
-    fontFamily: fontFamily.display,
-    fontSize: 32,
-    lineHeight: 40,
-    fontWeight: '700' as const,
-  },
-  h2: {
-    fontFamily: fontFamily.display,
-    fontSize: 24,
-    lineHeight: 32,
-    fontWeight: '600' as const,
-  },
-  h3: {
-    fontFamily: fontFamily.display,
-    fontSize: 20,
-    lineHeight: 28,
-    fontWeight: '600' as const,
-  },
-  h4: {
-    fontFamily: fontFamily.display,
-    fontSize: 18,
-    lineHeight: 24,
-    fontWeight: '600' as const,
-  },
-
-  // Body sizes
-  bodyLg: {
-    fontFamily: fontFamily.body,
-    fontSize: 18,
-    lineHeight: 28,
-    fontWeight: '400' as const,
-  },
-  body: {
-    fontFamily: fontFamily.body,
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '400' as const,
-  },
-  bodySm: {
-    fontFamily: fontFamily.body,
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '400' as const,
-  },
-  bodyXs: {
-    fontFamily: fontFamily.body,
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '400' as const,
-  },
-
-  // Labels
-  label: {
-    fontFamily: fontFamily.body,
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '600' as const,
-  },
-  labelSm: {
-    fontFamily: fontFamily.body,
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '600' as const,
-  },
-
-  // Special
-  caption: {
-    fontFamily: fontFamily.body,
-    fontSize: 11,
-    lineHeight: 14,
-    fontWeight: '400' as const,
-  },
-  overline: {
-    fontFamily: fontFamily.display,
-    fontSize: 10,
-    lineHeight: 14,
-    fontWeight: '700' as const,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase' as const,
-  },
+  FONTS,
+  FONT_SIZES,
+  LETTER_SPACING,
 } as const;

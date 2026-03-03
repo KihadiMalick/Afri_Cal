@@ -7,15 +7,15 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import { useTheme } from '@/context/ThemeContext';
+import { useTokens } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
 import { spacing, borderRadius } from '@/theme/spacing';
 
 interface SportRecommendation {
   name: string;
   icon: string;
-  duration: number; // minutes
-  distance?: number; // km (for walking/running)
+  duration: number;
+  distance?: number;
   caloriesPerMin: number;
 }
 
@@ -26,40 +26,31 @@ interface CalorieOvershootAlertProps {
   onSelectActivity?: (activityName: string, duration: number) => void;
 }
 
-/**
- * Calculates sport recommendations to compensate for calorie overshoot.
- * Always returns: walking, running, and a best-fit intense sport.
- */
 function getRecommendations(overshootKcal: number, locale: string): SportRecommendation[] {
-  // Walking: ~4 kcal/min, ~5 km/h average speed
   const walkingMinutes = Math.ceil(overshootKcal / 4);
   const walkingKm = Math.round((walkingMinutes / 60) * 5 * 10) / 10;
-
-  // Running: ~10 kcal/min, ~9 km/h average speed
   const runningMinutes = Math.ceil(overshootKcal / 10);
   const runningKm = Math.round((runningMinutes / 60) * 9 * 10) / 10;
-
-  // Best-fit intense sport: HIIT at ~12 kcal/min
   const hiitMinutes = Math.ceil(overshootKcal / 12);
 
   return [
     {
       name: locale === 'fr' ? 'Marche' : 'Walking',
-      icon: '🚶',
+      icon: '\u{1F6B6}',
       duration: walkingMinutes,
       distance: walkingKm,
       caloriesPerMin: 4,
     },
     {
-      name: locale === 'fr' ? 'Course à pied' : 'Running',
-      icon: '🏃',
+      name: locale === 'fr' ? 'Course a pied' : 'Running',
+      icon: '\u{1F3C3}',
       duration: runningMinutes,
       distance: runningKm,
       caloriesPerMin: 10,
     },
     {
       name: 'HIIT',
-      icon: '💪',
+      icon: '\u{1F4AA}',
       duration: hiitMinutes,
       caloriesPerMin: 12,
     },
@@ -72,9 +63,8 @@ export function CalorieOvershootAlert({
   onClose,
   onSelectActivity,
 }: CalorieOvershootAlertProps) {
-  const { theme } = useTheme();
+  const tk = useTokens();
   const { locale } = useLocale();
-  const accent = theme.accent;
 
   if (overshootKcal <= 0) return null;
 
@@ -83,30 +73,26 @@ export function CalorieOvershootAlert({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={[styles.modal, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          {/* Warning icon */}
+        <View style={[styles.modal, { backgroundColor: tk.cardBg, borderColor: tk.redBorder }]}>
           <View style={styles.warningIcon}>
-            <Text style={{ fontSize: 42 }}>{'⚠️'}</Text>
+            <Text style={{ fontSize: 42 }}>{'\u{26A0}\u{FE0F}'}</Text>
           </View>
 
-          {/* Title */}
-          <Text style={[styles.title, { color: '#ef4444' }]}>
+          <Text style={[styles.title, { color: tk.red }]}>
             {locale === 'fr'
-              ? 'Objectif calorique dépassé !'
+              ? 'Objectif calorique depasse !'
               : 'Calorie goal exceeded!'}
           </Text>
 
-          {/* Overshoot amount */}
-          <Text style={[styles.overshootText, { color: theme.text }]}>
+          <Text style={[styles.overshootText, { color: tk.t1 }]}>
             {locale === 'fr'
-              ? `Tu as dépassé ton objectif de ${overshootKcal} calories aujourd'hui !`
+              ? `Tu as depasse ton objectif de ${overshootKcal} calories aujourd'hui !`
               : `You exceeded your goal by ${overshootKcal} calories today!`}
           </Text>
 
-          {/* Recommendations section */}
-          <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
+          <Text style={[styles.sectionLabel, { color: tk.t3 }]}>
             {locale === 'fr'
-              ? 'Activités recommandées pour compenser'
+              ? 'Activites recommandees pour compenser'
               : 'Recommended activities to compensate'}
           </Text>
 
@@ -117,8 +103,8 @@ export function CalorieOvershootAlert({
                 style={[
                   styles.recCard,
                   {
-                    backgroundColor: theme.background,
-                    borderColor: i === 2 ? accent + '66' : theme.border,
+                    backgroundColor: tk.rowBg,
+                    borderColor: i === 2 ? tk.accent + '66' : tk.cardBorder,
                     borderWidth: i === 2 ? 2 : 1,
                   },
                 ]}
@@ -127,16 +113,16 @@ export function CalorieOvershootAlert({
               >
                 <Text style={styles.recIcon}>{rec.icon}</Text>
                 <View style={styles.recInfo}>
-                  <Text style={[styles.recName, { color: theme.text }]}>{rec.name}</Text>
-                  <Text style={[styles.recDetails, { color: theme.textSecondary }]}>
+                  <Text style={[styles.recName, { color: tk.t1 }]}>{rec.name}</Text>
+                  <Text style={[styles.recDetails, { color: tk.t3 }]}>
                     {rec.duration} min
-                    {rec.distance ? ` · ${rec.distance} km` : ''}
-                    {' · '}{overshootKcal} kcal
+                    {rec.distance ? ` \u{00B7} ${rec.distance} km` : ''}
+                    {' \u{00B7} '}{overshootKcal} kcal
                   </Text>
                 </View>
                 {i === 2 && (
-                  <View style={[styles.bestBadge, { backgroundColor: accent + '22', borderColor: accent + '66' }]}>
-                    <Text style={[styles.bestText, { color: accent }]}>
+                  <View style={[styles.bestBadge, { backgroundColor: tk.accent + '22', borderColor: tk.accent + '66' }]}>
+                    <Text style={[styles.bestText, { color: tk.accent }]}>
                       {locale === 'fr' ? 'OPTIMAL' : 'BEST'}
                     </Text>
                   </View>
@@ -145,12 +131,11 @@ export function CalorieOvershootAlert({
             ))}
           </ScrollView>
 
-          {/* Close button */}
           <TouchableOpacity
-            style={[styles.closeBtn, { borderColor: theme.border }]}
+            style={[styles.closeBtn, { borderColor: tk.cardBorder }]}
             onPress={onClose}
           >
-            <Text style={[styles.closeBtnText, { color: theme.textSecondary }]}>
+            <Text style={[styles.closeBtnText, { color: tk.t3 }]}>
               {locale === 'fr' ? 'Fermer' : 'Close'}
             </Text>
           </TouchableOpacity>
@@ -170,7 +155,7 @@ const styles = StyleSheet.create({
   },
   modal: {
     width: '100%',
-    borderRadius: 20,
+    borderRadius: 28,
     borderWidth: 1,
     padding: spacing.xl,
     alignItems: 'center',
@@ -203,13 +188,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: 16,
     marginBottom: spacing.sm,
   },
   recIcon: { fontSize: 28, marginRight: spacing.md },
   recInfo: { flex: 1 },
   recName: { fontSize: 15, fontWeight: '700' },
-  recDetails: { fontSize: 12, fontWeight: '500', marginTop: 2 },
+  recDetails: { fontSize: 12, fontWeight: '500', marginTop: 2, fontFamily: 'Courier New' },
   bestBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,

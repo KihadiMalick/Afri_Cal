@@ -1,5 +1,5 @@
 /**
- * LIXUM Design System - Shadows
+ * LIXUM Design System — Shadows (Afro-Futuristic)
  */
 
 import { Platform } from 'react-native';
@@ -8,25 +8,25 @@ export const shadows = {
   card: Platform.select({
     ios: {
       shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.42,
+      shadowRadius: 14,
     },
     android: {
-      elevation: 4,
+      elevation: 6,
     },
     default: {},
   }),
 
-  cardHover: Platform.select({
+  vitalityCard: Platform.select({
     ios: {
       shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.2,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.45,
       shadowRadius: 24,
     },
     android: {
-      elevation: 8,
+      elevation: 10,
     },
     default: {},
   }),
@@ -62,19 +62,7 @@ export const shadows = {
       ios: {
         shadowColor: '#00ff9d',
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.4,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 8,
-      },
-      default: {},
-    }),
-    cyan: Platform.select({
-      ios: {
-        shadowColor: '#00e5ff',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.4,
+        shadowOpacity: 0.6,
         shadowRadius: 16,
       },
       android: {

@@ -6,8 +6,7 @@ import {
   StyleSheet,
   type TextInputProps,
 } from 'react-native';
-import { useTheme } from '@/context/ThemeContext';
-import { colors } from '@/theme/colors';
+import { useTokens } from '@/context/ThemeContext';
 import { borderRadius, spacing } from '@/theme/spacing';
 
 interface InputProps extends TextInputProps {
@@ -16,12 +15,12 @@ interface InputProps extends TextInputProps {
 }
 
 export function Input({ label, error, style, ...props }: InputProps) {
-  const { theme, mode } = useTheme();
+  const tk = useTokens();
 
   return (
     <View style={styles.container}>
       {label && (
-        <Text style={[styles.label, { color: theme.textSecondary }]}>
+        <Text style={[styles.label, { color: tk.t3 }]}>
           {label}
         </Text>
       )}
@@ -29,16 +28,16 @@ export function Input({ label, error, style, ...props }: InputProps) {
         style={[
           styles.input,
           {
-            backgroundColor: mode === 'dark' ? theme.surfaceSecondary : colors.neutral.white,
-            color: theme.text,
-            borderColor: error ? colors.semantic.error : theme.border,
+            backgroundColor: tk.inputBg,
+            color: tk.t1,
+            borderColor: error ? tk.red : tk.cardBorder,
           },
           style,
         ]}
-        placeholderTextColor={theme.textSecondary}
+        placeholderTextColor={tk.t4}
         {...props}
       />
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error && <Text style={[styles.error, { color: tk.red }]}>{error}</Text>}
     </View>
   );
 }
@@ -60,7 +59,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   error: {
-    color: colors.semantic.error,
     fontSize: 12,
     marginTop: spacing.xs,
   },
