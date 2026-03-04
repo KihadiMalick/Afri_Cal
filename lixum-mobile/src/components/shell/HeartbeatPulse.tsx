@@ -6,16 +6,16 @@ import Animated, {
 } from 'react-native-reanimated';
 
 /**
- * Three smooth diffuse glow dots that pulse softly at different
- * positions on the screen, like bio-digital signal indicators.
+ * Three smooth diffuse glow dots — metallic steel + emerald accent.
+ * Two steel gray glows + one subtle emerald for depth.
  */
 export function HeartbeatPulse() {
   const { width, height } = useWindowDimensions();
 
   const dots = [
-    { x: width * 0.2, y: height * 0.25, size: 180, color: 'rgba(0,255,157,0.08)', delay: 0 },
-    { x: width * 0.75, y: height * 0.5, size: 140, color: 'rgba(0,255,157,0.06)', delay: 1200 },
-    { x: width * 0.35, y: height * 0.78, size: 160, color: 'rgba(0,255,157,0.07)', delay: 2400 },
+    { x: width * 0.2, y: height * 0.25, size: 200, color: 'rgba(120,130,150,0.04)', delay: 0 },
+    { x: width * 0.75, y: height * 0.5, size: 160, color: 'rgba(0,229,160,0.03)', delay: 1200 },
+    { x: width * 0.35, y: height * 0.78, size: 180, color: 'rgba(120,130,150,0.03)', delay: 2400 },
   ];
 
   return (

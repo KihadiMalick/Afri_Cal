@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -123,7 +123,7 @@ const TABS: { key: TabKey; Icon: typeof IconHome; label: string }[] = [
 ];
 
 /* ================================================================== */
-/*  MAIN NAVIGATOR                                                     */
+/*  MAIN NAVIGATOR — Metallic Brushed Sidebar                          */
 /* ================================================================== */
 export function MainNavigator() {
   const tk = useTokens();
@@ -141,13 +141,12 @@ export function MainNavigator() {
 
   return (
     <View style={styles.root}>
-      {/* ---- SIDEBAR (icons only, no labels) ---- */}
-      <View style={[styles.sidebar, { backgroundColor: 'rgba(8,15,13,0.90)', borderRightColor: 'rgba(0,201,150,0.08)' }]}>
-        {/* Logo mark at top */}
-        <View style={[styles.logoMark, { backgroundColor: 'rgba(0,201,150,0.06)', borderColor: 'rgba(0,201,150,0.20)' }]}>
-          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-            <Path d="M4 4l8 8-8 8M12 4l8 8-8 8" stroke="#00E5A0" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
+      {/* ---- SIDEBAR — brushed steel panel ---- */}
+      <View style={[styles.sidebar, webSidebarBlur]}>
+        {/* LX Logo mark — brushed metal with emerald ring */}
+        <View style={styles.logoMark}>
+          <Text style={styles.logoL}>L</Text>
+          <Text style={styles.logoX}>X</Text>
         </View>
 
         {/* Nav icons */}
@@ -159,13 +158,13 @@ export function MainNavigator() {
                 key={key}
                 style={[
                   styles.navItem,
-                  active && { backgroundColor: 'rgba(0,201,150,0.07)' },
+                  active && styles.navItemActive,
                 ]}
                 onPress={() => setActiveTab(key)}
                 activeOpacity={0.7}
               >
-                {active && <View style={[styles.activeBar, { backgroundColor: '#00E5A0' }]} />}
-                <Icon color={active ? '#00E5A0' : 'rgba(255,255,255,0.40)'} size={22} />
+                {active && <View style={styles.activeBar} />}
+                <Icon color={active ? '#00E5A0' : 'rgba(160,170,185,0.40)'} size={22} />
               </TouchableOpacity>
             );
           })}
@@ -185,6 +184,15 @@ export function MainNavigator() {
 /* ================================================================== */
 const SIDEBAR_W = 56;
 
+const webSidebarBlur = Platform.select({
+  web: {
+    // @ts-ignore
+    backdropFilter: 'blur(20px) saturate(150%)',
+    WebkitBackdropFilter: 'blur(20px) saturate(150%)',
+  } as any,
+  default: {},
+});
+
 const styles = StyleSheet.create({
   root: {
     flex: 1,
@@ -193,25 +201,46 @@ const styles = StyleSheet.create({
   sidebar: {
     width: SIDEBAR_W,
     borderRightWidth: 1,
+    borderRightColor: 'rgba(120,130,150,0.06)',
+    backgroundColor: 'rgba(8,10,14,0.92)',
     alignItems: 'center',
     paddingTop: Platform.OS === 'ios' ? 52 : 16,
+  },
+  logoMark: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: 'rgba(0,229,160,0.25)',
+    backgroundColor: 'rgba(0,229,160,0.04)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    flexDirection: 'row',
     ...Platform.select({
       web: {
         // @ts-ignore
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
+        boxShadow: '0 0 14px rgba(0,229,160,0.10), inset 0 0 8px rgba(0,229,160,0.05)',
       } as any,
       default: {},
     }),
   },
-  logoMark: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
+  logoL: {
+    fontFamily: Platform.OS === 'web' ? 'Outfit_700Bold, sans-serif' : 'Outfit_700Bold',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#9CA3AF',
+    letterSpacing: 0.5,
+  },
+  logoX: {
+    fontFamily: Platform.OS === 'web' ? 'Outfit_900Black, sans-serif' : 'Outfit_900Black',
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#00E5A0',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0,229,160,0.5)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   navItems: {
     flex: 1,
@@ -227,12 +256,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     position: 'relative',
   },
+  navItemActive: {
+    backgroundColor: 'rgba(0,229,160,0.06)',
+  },
   activeBar: {
     position: 'absolute',
     left: -6,
     width: 3,
     height: 20,
     borderRadius: 2,
+    backgroundColor: '#00E5A0',
+    ...Platform.select({
+      web: {
+        // @ts-ignore
+        boxShadow: '0 0 8px rgba(0,229,160,0.30)',
+      } as any,
+      default: {},
+    }),
   },
   content: {
     flex: 1,
