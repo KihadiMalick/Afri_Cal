@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Platform, type ViewStyle } from 'react-native';
+import { View, StyleSheet, type ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, Easing,
 } from 'react-native-reanimated';
@@ -14,9 +14,9 @@ interface ProgressBarProps {
 
 export function ProgressBar({
   percent,
-  height = 4,
+  height = 8,
   style,
-  gradientColors = ['#FF4444', '#FF8C00', '#FFD700', '#00C896'],
+  gradientColors = ['#2A303B', '#00897B', '#00BFA6', '#00D984'],
 }: ProgressBarProps) {
   const fillAnim = useSharedValue(0);
 
@@ -47,15 +47,12 @@ export function ProgressBar({
 
 const styles = StyleSheet.create({
   track: {
-    borderRadius: 9999,
-    borderWidth: 1,
-    borderColor: '#3A3A3A',
-    backgroundColor: '#1A1A1A',
+    borderRadius: 4,
+    backgroundColor: '#1C2330',
     overflow: 'hidden',
-    position: 'relative',
   },
   fill: {
-    borderRadius: 9999,
+    borderRadius: 4,
     overflow: 'hidden',
   },
 });

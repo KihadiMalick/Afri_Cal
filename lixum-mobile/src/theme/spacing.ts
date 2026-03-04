@@ -37,6 +37,6 @@ export const layout = {
   cardPaddingLg: 24,
   tabBarHeight: 70,
   headerHeight: 56,
-  sidebarWidth: 56,
+  sidebarWidth: 70,
   sidebarWidthTablet: 88,
 } as const;

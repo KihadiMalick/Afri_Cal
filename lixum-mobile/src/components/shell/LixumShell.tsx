@@ -1,20 +1,24 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { useTokens } from '@/context/ThemeContext';
-import { CircuitBackground } from './CircuitBackground';
-import { HeartbeatPulse } from './HeartbeatPulse';
+import { LinearGradient } from 'expo-linear-gradient';
 
+/**
+ * LixumShell — Full-screen gradient background.
+ * Replaces all geometric SVG/circuit patterns with a smooth vertical gradient.
+ */
 export function LixumShell({ children }: { children: React.ReactNode }) {
-  const tokens = useTokens();
-
   return (
-    <View style={[styles.container, { backgroundColor: tokens.mainBg }]}>
-      <CircuitBackground />
-      <HeartbeatPulse />
+    <LinearGradient
+      colors={['#0D1117', '#0F1923', '#0D1117', '#0A0F14']}
+      locations={[0, 0.35, 0.7, 1]}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      style={styles.container}
+    >
       <View style={styles.content}>
         {children}
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 

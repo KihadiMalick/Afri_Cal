@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { useTokens } from '@/context/ThemeContext';
 
 const FONT_BOLD = Platform.OS === 'web' ? 'Poppins_700Bold, sans-serif' : 'Poppins_700Bold';
 const FONT_BLACK = Platform.OS === 'web' ? 'Poppins_900Black, sans-serif' : 'Poppins_900Black';
@@ -10,18 +9,14 @@ interface NeonXProps {
   size?: number;
 }
 
-/**
- * Brushed metal "LX" logo mark with emerald ring glow.
- */
 export function NeonX({ size = 16 }: NeonXProps) {
-  const tk = useTokens();
   return (
     <View style={styles.container}>
       <Text style={[styles.letter, { fontSize: size, color: '#9CA3AF' }]}>L</Text>
       <Text style={[styles.xLetter, {
         fontSize: size,
-        color: tk.accent,
-        textShadowColor: 'rgba(0,200,150,0.5)',
+        color: '#00D984',
+        textShadowColor: 'rgba(0,217,132,0.5)',
         textShadowOffset: { width: 0, height: 0 },
         textShadowRadius: 10,
       }]}>X</Text>
@@ -32,18 +27,13 @@ export function NeonX({ size = 16 }: NeonXProps) {
 export function LixumLogo({ size = 14, showSub = true }: { size?: number; showSub?: boolean }) {
   return (
     <View style={styles.logoWrap}>
-      {/* Brushed metal LX with emerald ring */}
       <View style={styles.logoRing}>
         <NeonX size={size} />
       </View>
       {showSub && (
         <View style={styles.logoTextCol}>
-          <Text style={styles.brandName}>
-            LIXUM
-          </Text>
-          <Text style={styles.subText}>
-            BIO-DIGITAL DASHBOARD
-          </Text>
+          <Text style={styles.brandName}>LIXUM</Text>
+          <Text style={styles.subText}>BIO-DIGITAL DASHBOARD</Text>
         </View>
       )}
     </View>
@@ -74,15 +64,15 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: 'rgba(0,200,150,0.25)',
-    backgroundColor: 'rgba(0,200,150,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,217,132,0.25)',
+    backgroundColor: 'rgba(0,217,132,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
     ...Platform.select({
       web: {
         // @ts-ignore
-        boxShadow: '0 0 12px rgba(0,200,150,0.10), inset 0 0 8px rgba(0,200,150,0.05)',
+        boxShadow: '0 0 12px rgba(0,217,132,0.10), inset 0 0 8px rgba(0,217,132,0.05)',
       } as any,
       default: {},
     }),
@@ -94,7 +84,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     letterSpacing: 4,
-    color: '#E8E8E8',
+    color: '#EAEEF3',
     fontFamily: FONT_BOLD,
   },
   subText: {
@@ -102,7 +92,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: 3,
-    color: '#888888',
+    color: '#555E6C',
     fontFamily: FONT_MEDIUM,
   },
 });

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
-import { NavigationContainer } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { DashboardScreen } from '@/screens/dashboard/DashboardScreen';
 import { MealsScreen } from '@/screens/meals/MealsScreen';
@@ -12,30 +12,26 @@ import { ActivitiesScreen } from '@/screens/activities/ActivitiesScreen';
 import { ActivityDetailScreen } from '@/screens/activities/ActivityDetailScreen';
 import { CalendarScreen } from '@/screens/calendar/CalendarScreen';
 import { ProfileScreen } from '@/screens/profile/ProfileScreen';
-import { useTokens } from '@/context/ThemeContext';
 import type { MealsStackParamList, ActivitiesStackParamList } from '@/types';
 
 const FONT_BOLD = Platform.OS === 'web' ? 'Poppins_700Bold, sans-serif' : 'Poppins_700Bold';
 const FONT_BLACK = Platform.OS === 'web' ? 'Poppins_900Black, sans-serif' : 'Poppins_900Black';
 
 /* ================================================================== */
-/*  PREMIUM SVG ICONS                                                  */
+/*  PREMIUM SVG ICONS (size 28)                                        */
 /* ================================================================== */
-function IconHome({ color, size = 22 }: { color: string; size?: number }) {
+function IconHome({ color, size = 28 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
         d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-5a1 1 0 00-1-1h-2a1 1 0 00-1 1v5H6a1 1 0 01-1-1v-9.5z"
-        stroke={color}
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"
       />
     </Svg>
   );
 }
 
-function IconMeals({ color, size = 22 }: { color: string; size?: number }) {
+function IconMeals({ color, size = 28 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Circle cx="12" cy="13" r="7" stroke={color} strokeWidth={1.6} />
@@ -45,21 +41,18 @@ function IconMeals({ color, size = 22 }: { color: string; size?: number }) {
   );
 }
 
-function IconActivity({ color, size = 22 }: { color: string; size?: number }) {
+function IconActivity({ color, size = 28 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
         d="M13 2L4.09 12.26a1 1 0 00.72 1.69H11l-1 8 8.91-10.26a1 1 0 00-.72-1.69H13l1-8z"
-        stroke={color}
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"
       />
     </Svg>
   );
 }
 
-function IconCalendar({ color, size = 22 }: { color: string; size?: number }) {
+function IconCalendar({ color, size = 28 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Rect x="3" y="4" width="18" height="17" rx="2" stroke={color} strokeWidth={1.6} />
@@ -73,22 +66,17 @@ function IconCalendar({ color, size = 22 }: { color: string; size?: number }) {
   );
 }
 
-function IconProfile({ color, size = 22 }: { color: string; size?: number }) {
+function IconProfile({ color, size = 28 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Circle cx="12" cy="8" r="4" stroke={color} strokeWidth={1.6} />
-      <Path
-        d="M4 21c0-3.31 3.58-6 8-6s8 2.69 8 6"
-        stroke={color}
-        strokeWidth={1.6}
-        strokeLinecap="round"
-      />
+      <Path d="M4 21c0-3.31 3.58-6 8-6s8 2.69 8 6" stroke={color} strokeWidth={1.6} strokeLinecap="round" />
     </Svg>
   );
 }
 
 /* ================================================================== */
-/*  SUB-NAVIGATORS (stacks inside sidebar content)                     */
+/*  SUB-NAVIGATORS                                                     */
 /* ================================================================== */
 const MealsStack = createNativeStackNavigator<MealsStackParamList>();
 function MealsNav() {
@@ -113,23 +101,22 @@ function ActivitiesNav() {
 }
 
 /* ================================================================== */
-/*  SIDEBAR ITEM CONFIG                                                */
+/*  TAB CONFIG                                                         */
 /* ================================================================== */
 type TabKey = 'dashboard' | 'meals' | 'activities' | 'calendar' | 'profile';
 
-const TABS: { key: TabKey; Icon: typeof IconHome; label: string }[] = [
-  { key: 'dashboard', Icon: IconHome, label: 'Accueil' },
-  { key: 'meals', Icon: IconMeals, label: 'Repas' },
-  { key: 'activities', Icon: IconActivity, label: 'Activites' },
-  { key: 'calendar', Icon: IconCalendar, label: 'Calendrier' },
-  { key: 'profile', Icon: IconProfile, label: 'Profil' },
+const TABS: { key: TabKey; Icon: typeof IconHome }[] = [
+  { key: 'dashboard', Icon: IconHome },
+  { key: 'meals', Icon: IconMeals },
+  { key: 'activities', Icon: IconActivity },
+  { key: 'calendar', Icon: IconCalendar },
+  { key: 'profile', Icon: IconProfile },
 ];
 
 /* ================================================================== */
-/*  MAIN NAVIGATOR — Premium Metallic Sidebar                          */
+/*  MAIN NAVIGATOR                                                     */
 /* ================================================================== */
 export function MainNavigator() {
-  const tk = useTokens();
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
 
   const renderContent = () => {
@@ -144,35 +131,35 @@ export function MainNavigator() {
 
   return (
     <View style={styles.root}>
-      {/* ---- SIDEBAR — dark steel panel ---- */}
-      <View style={[styles.sidebar, webSidebarBlur]}>
-        {/* LX Logo mark — brushed metal with emerald ring */}
+      {/* ---- SIDEBAR — gradient background ---- */}
+      <LinearGradient
+        colors={['#0D1117', '#151B23', '#0D1117']}
+        style={styles.sidebar}
+      >
+        {/* LX Logo mark */}
         <View style={styles.logoMark}>
           <Text style={styles.logoL}>L</Text>
           <Text style={styles.logoX}>X</Text>
         </View>
 
-        {/* Nav icons — only icons, no labels */}
+        {/* Nav icons — space-evenly distributed */}
         <View style={styles.navItems}>
           {TABS.map(({ key, Icon }) => {
             const active = activeTab === key;
             return (
               <TouchableOpacity
                 key={key}
-                style={[
-                  styles.navItem,
-                  active && styles.navItemActive,
-                ]}
+                style={styles.navItem}
                 onPress={() => setActiveTab(key)}
                 activeOpacity={0.7}
               >
                 {active && <View style={styles.activeBar} />}
-                <Icon color={active ? '#00C896' : '#555555'} size={22} />
+                <Icon color={active ? '#00D984' : '#555E6C'} size={28} />
               </TouchableOpacity>
             );
           })}
         </View>
-      </View>
+      </LinearGradient>
 
       {/* ---- CONTENT ---- */}
       <View style={styles.content}>
@@ -185,16 +172,7 @@ export function MainNavigator() {
 /* ================================================================== */
 /*  STYLES                                                             */
 /* ================================================================== */
-const SIDEBAR_W = 56;
-
-const webSidebarBlur = Platform.select({
-  web: {
-    // @ts-ignore
-    backdropFilter: 'blur(20px) saturate(150%)',
-    WebkitBackdropFilter: 'blur(20px) saturate(150%)',
-  } as any,
-  default: {},
-});
+const SIDEBAR_W = 70;
 
 const styles = StyleSheet.create({
   root: {
@@ -203,76 +181,73 @@ const styles = StyleSheet.create({
   },
   sidebar: {
     width: SIDEBAR_W,
-    borderRightWidth: 1,
-    borderRightColor: '#1A1A1A',
-    backgroundColor: '#0A0A0A',
+    height: '100%' as any,
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 52 : 16,
+    justifyContent: 'space-between',
+    paddingVertical: 20,
+    borderRightWidth: 1,
+    borderRightColor: '#1C2330',
   },
   logoMark: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    borderWidth: 1.5,
-    borderColor: 'rgba(0,200,150,0.25)',
-    backgroundColor: 'rgba(0,200,150,0.04)',
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0,217,132,0.25)',
+    backgroundColor: 'rgba(0,217,132,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
     flexDirection: 'row',
     ...Platform.select({
       web: {
         // @ts-ignore
-        boxShadow: '0 0 14px rgba(0,200,150,0.10), inset 0 0 8px rgba(0,200,150,0.05)',
+        boxShadow: '0 0 14px rgba(0,217,132,0.10), inset 0 0 8px rgba(0,217,132,0.05)',
       } as any,
       default: {},
     }),
   },
   logoL: {
     fontFamily: FONT_BOLD,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#9CA3AF',
     letterSpacing: 0.5,
   },
   logoX: {
     fontFamily: FONT_BLACK,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '900',
-    color: '#00C896',
+    color: '#00D984',
     letterSpacing: 0.5,
-    textShadowColor: 'rgba(0,200,150,0.5)',
+    textShadowColor: 'rgba(0,217,132,0.5)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
   },
   navItems: {
     flex: 1,
+    justifyContent: 'space-evenly',
     alignItems: 'center',
-    paddingTop: 4,
+    width: '100%' as any,
+    marginTop: 20,
   },
   navItem: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: '100%' as any,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
     position: 'relative',
-  },
-  navItemActive: {
-    backgroundColor: 'rgba(0,200,150,0.06)',
   },
   activeBar: {
     position: 'absolute',
-    left: -6,
+    left: 0,
     width: 3,
-    height: 20,
+    height: 28,
     borderRadius: 2,
-    backgroundColor: '#00C896',
+    backgroundColor: '#00D984',
     ...Platform.select({
       web: {
         // @ts-ignore
-        boxShadow: '0 0 8px rgba(0,200,150,0.30)',
+        boxShadow: '0 0 8px rgba(0,217,132,0.30)',
       } as any,
       default: {},
     }),
