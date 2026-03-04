@@ -9,16 +9,16 @@ export { shadows } from './shadows';
  */
 export const darkTheme = {
   mode: 'dark' as const,
-  background: '#0D0D0D',
-  surface: '#1A1A1A',
-  surfaceSecondary: '#252525',
-  border: '#3A3A3A',
-  text: '#E8E8E8',
-  textSecondary: '#888888',
-  accent: '#00C896',
-  accentDim: 'rgba(0,200,150,0.12)',
-  tabBar: 'rgba(13,13,13,0.95)',
-  card: '#1A1A1A',
+  background: '#0D1117',
+  surface: '#1B1F26',
+  surfaceSecondary: '#252B35',
+  border: '#3E4855',
+  text: '#EAEEF3',
+  textSecondary: '#8892A0',
+  accent: '#00D984',
+  accentDim: 'rgba(0,217,132,0.12)',
+  tabBar: 'rgba(13,17,23,0.95)',
+  card: '#1B1F26',
 };
 
 export type Theme = typeof darkTheme;
