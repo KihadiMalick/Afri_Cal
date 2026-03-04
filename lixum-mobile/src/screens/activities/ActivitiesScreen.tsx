@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTokens } from '@/context/ThemeContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
 import { GlassCard, SkeletonLoader } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
@@ -36,7 +35,6 @@ const DIFFICULTY_LABELS_FR: Record<string, string> = {
 
 export function ActivitiesScreen() {
   const tk = useTokens();
-  const { mode } = useTheme();
   const { locale } = useLocale();
   const navigation = useNavigation<Nav>();
 
@@ -91,7 +89,7 @@ export function ActivitiesScreen() {
             <View
               style={[
                 styles.imageFadeBottom,
-                { backgroundColor: mode === 'dark' ? 'rgba(2,12,7,0.65)' : 'rgba(255,255,255,0.55)' },
+                { backgroundColor: 'rgba(2,12,7,0.65)' },
               ]}
             />
             {/* Difficulty badge floating on image */}

@@ -4,11 +4,11 @@ import Animated, {
   useSharedValue, useAnimatedStyle,
   withRepeat, withSequence, withTiming, Easing,
 } from 'react-native-reanimated';
-import { useTheme } from '@/context/ThemeContext';
+
+const PULSE_COLOR = 'rgba(0,255,157,0.18)';
+const RING_COLOR = 'rgba(0,255,157,0.10)';
 
 export function HeartbeatPulse() {
-  const { mode } = useTheme();
-  const isDark = mode === 'dark';
   const { width, height } = useWindowDimensions();
   const size = Math.min(width, height) * 0.55;
   const sizeRing = Math.min(width, height) * 0.78;
@@ -45,18 +45,15 @@ export function HeartbeatPulse() {
     transform: [{ scale: ringScale.value }],
   }));
 
-  const pulseColor = isDark ? 'rgba(0,255,157,0.18)' : 'rgba(0,200,100,0.12)';
-  const ringColor = isDark ? 'rgba(0,255,157,0.10)' : 'rgba(0,180,90,0.08)';
-
   return (
     <View style={[StyleSheet.absoluteFill, styles.container]} pointerEvents="none">
       <Animated.View style={[{
         width: size, height: size, borderRadius: size / 2,
-        backgroundColor: pulseColor, position: 'absolute',
+        backgroundColor: PULSE_COLOR, position: 'absolute',
       }, pulseStyle]} />
       <Animated.View style={[{
         width: sizeRing, height: sizeRing, borderRadius: sizeRing / 2,
-        borderWidth: 1, borderColor: ringColor,
+        borderWidth: 1, borderColor: RING_COLOR,
         backgroundColor: 'transparent', position: 'absolute',
       }, ringStyle]} />
     </View>

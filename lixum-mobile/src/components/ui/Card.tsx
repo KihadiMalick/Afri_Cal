@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, type ViewStyle } from 'react-native';
+import { View, StyleSheet, Platform, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTokens } from '@/context/ThemeContext';
-import { shadows } from '@/theme/shadows';
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -11,6 +10,10 @@ interface GlassCardProps {
   padding?: 'sm' | 'md' | 'lg';
 }
 
+/**
+ * Glass-morphism card — semi-transparent so the dark background
+ * and circuit lines show through, like a glass tablet.
+ */
 export function GlassCard({ children, vitality = false, style, padding = 'md' }: GlassCardProps) {
   const tk = useTokens();
   const pad = padding === 'sm' ? 16 : padding === 'lg' ? 24 : 20;
@@ -18,10 +21,18 @@ export function GlassCard({ children, vitality = false, style, padding = 'md' }:
   if (vitality) {
     return (
       <LinearGradient
-        colors={[tk.vCardBg1, tk.vCardBg2]}
+        colors={['rgba(0,255,157,0.06)', 'rgba(0,255,157,0.02)']}
         start={{ x: 0.15, y: 0.08 }}
         end={{ x: 0.85, y: 0.92 }}
-        style={[styles.vitalityCard, { borderColor: tk.vCardBorder, padding: pad }, shadows.vitalityCard, style]}
+        style={[
+          styles.vitalityCard,
+          {
+            borderColor: 'rgba(0,255,157,0.18)',
+            padding: pad,
+          },
+          glassWebShadow,
+          style,
+        ]}
       >
         {children}
       </LinearGradient>
@@ -29,7 +40,18 @@ export function GlassCard({ children, vitality = false, style, padding = 'md' }:
   }
 
   return (
-    <View style={[styles.card, { backgroundColor: tk.cardBg, borderColor: tk.cardBorder, padding: pad }, shadows.card, style]}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: 'rgba(255,255,255,0.04)',
+          borderColor: 'rgba(255,255,255,0.10)',
+          padding: pad,
+        },
+        glassWebShadow,
+        style,
+      ]}
+    >
       {children}
     </View>
   );
@@ -39,6 +61,15 @@ export function GlassCard({ children, vitality = false, style, padding = 'md' }:
 export function Card({ children, padding = 'md', style }: { children: React.ReactNode; padding?: 'sm' | 'md' | 'lg'; style?: ViewStyle }) {
   return <GlassCard padding={padding} style={style}>{children}</GlassCard>;
 }
+
+const glassWebShadow: ViewStyle = Platform.select({
+  web: {
+    // @ts-ignore — web-only backdrop filter for true glass effect
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+  } as any,
+  default: {},
+});
 
 const styles = StyleSheet.create({
   card: {

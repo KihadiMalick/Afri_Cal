@@ -12,18 +12,16 @@ import {
   Outfit_900Black,
 } from '@expo-google-fonts/outfit';
 import { AuthProvider } from '@/context/AuthContext';
-import { ThemeProvider, useTheme } from '@/context/ThemeContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 import { LocaleProvider } from '@/context/LocaleContext';
 import { DataPreloadProvider } from '@/context/DataPreloadContext';
 import { LixumShell } from '@/components/shell';
 import { RootNavigator } from '@/navigation';
 
 function AppContent() {
-  const { mode } = useTheme();
-
   return (
     <LixumShell>
-      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style="light" />
       <RootNavigator />
     </LixumShell>
   );
