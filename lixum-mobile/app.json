@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./src/assets/images/icon.png",
     "scheme": "lixum",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./src/assets/images/splash.png",
@@ -39,7 +39,8 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./src/assets/images/icon.png"
+      "favicon": "./src/assets/images/icon.png",
+      "backgroundColor": "#020c07"
     },
     "plugins": [
       "expo-camera",

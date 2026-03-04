@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, StyleSheet } from 'react-native';
 import { AuthNavigator } from './AuthNavigator';
@@ -8,6 +8,17 @@ import { OnboardingScreen } from '@/screens/onboarding/OnboardingScreen';
 import { useAuth } from '@/context/AuthContext';
 import { SkeletonLoader } from '@/components/ui/LoadingSkeleton';
 import type { RootStackParamList } from '@/types';
+
+/** Force all navigation backgrounds to be transparent/dark */
+const LixumNavTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: 'transparent',
+    card: 'transparent',
+    border: 'transparent',
+  },
+};
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -25,7 +36,7 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={LixumNavTheme}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,

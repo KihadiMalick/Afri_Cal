@@ -13,6 +13,7 @@ export function AuthNavigator() {
         headerShown: false,
         animation: 'slide_from_left',
         animationDuration: 200,
+        contentStyle: { backgroundColor: 'transparent' },
       }}
     >
       <Stack.Screen name="Login" component={LoginScreen} />
