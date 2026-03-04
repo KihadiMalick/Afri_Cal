@@ -9,14 +9,12 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
+import { useTokens } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
-import { Input, Button } from '@/components/ui';
-import { colors } from '@/theme/colors';
+import { Input, Button, GlassCard, LixumLogo } from '@/components/ui';
 import { spacing } from '@/theme/spacing';
 import type { AuthStackParamList } from '@/types';
 
@@ -24,8 +22,8 @@ type Nav = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
 export function RegisterScreen() {
   const { signUp } = useAuth();
-  const { theme } = useTheme();
-  const { t } = useLocale();
+  const tk = useTokens();
+  const { t, locale } = useLocale();
   const navigation = useNavigation<Nav>();
 
   const [email, setEmail] = useState('');
@@ -36,7 +34,10 @@ export function RegisterScreen() {
   const handleRegister = async () => {
     if (!email.trim() || !password.trim()) return;
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert(
+        locale === 'fr' ? 'Erreur' : 'Error',
+        locale === 'fr' ? 'Les mots de passe ne correspondent pas' : 'Passwords do not match',
+      );
       return;
     }
     setLoading(true);
@@ -48,7 +49,7 @@ export function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
@@ -56,23 +57,26 @@ export function RegisterScreen() {
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {/* Logo */}
+          {/* Logo & Branding */}
           <View style={styles.logoContainer}>
-            <View style={[styles.logoBadge, { borderColor: colors.lixum.neon + '33' }]}>
-              <Text style={styles.logoText}>
-                <Text style={{ color: '#8b949e' }}>LI</Text>
-                <Text style={{ color: colors.lixum.neon }}>X</Text>
-                <Text style={{ color: '#8b949e' }}>UM</Text>
-              </Text>
+            <View style={[styles.logoBadge, { backgroundColor: tk.logoBoxBg, borderColor: tk.logoBoxBorder }]}>
+              <LixumLogo size={22} showSub={false} />
             </View>
-            <Text style={[styles.title, { color: theme.text }]}>
-              {t.auth.register}
-            </Text>
           </View>
 
-          {/* Form */}
-          <View style={styles.form}>
+          {/* Form Card */}
+          <GlassCard padding="lg">
+            <Text style={[styles.formTitle, { color: tk.t1 }]}>
+              {locale === 'fr' ? 'Creer un compte' : 'Create Account'}
+            </Text>
+            <Text style={[styles.formSubtitle, { color: tk.t3 }]}>
+              {locale === 'fr'
+                ? 'Commence ton suivi nutritionnel'
+                : 'Start your nutrition tracking journey'}
+            </Text>
+
             <Input
               label={t.auth.email}
               value={email}
@@ -87,7 +91,7 @@ export function RegisterScreen() {
               label={t.auth.password}
               value={password}
               onChangeText={setPassword}
-              placeholder="••••••••"
+              placeholder={'\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}
               secureTextEntry
               autoComplete="password-new"
             />
@@ -96,7 +100,7 @@ export function RegisterScreen() {
               label={t.auth.confirmPassword}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              placeholder="••••••••"
+              placeholder={'\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}
               secureTextEntry
             />
 
@@ -107,32 +111,33 @@ export function RegisterScreen() {
               fullWidth
               size="lg"
             />
+          </GlassCard>
 
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.switchAuth}
-            >
-              <Text style={[styles.switchText, { color: theme.textSecondary }]}>
-                {t.auth.hasAccount}{' '}
-                <Text style={{ color: theme.accent, fontWeight: '700' }}>
-                  {t.auth.login}
-                </Text>
+          {/* Switch to login */}
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.switchAuth}
+          >
+            <Text style={[styles.switchText, { color: tk.t3 }]}>
+              {t.auth.hasAccount}{' '}
+              <Text style={{ color: tk.accent, fontWeight: '700' }}>
+                {t.auth.login}
               </Text>
-            </TouchableOpacity>
-          </View>
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: 'transparent' },
   flex: { flex: 1 },
   content: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: spacing['2xl'],
+    paddingHorizontal: spacing.xl,
     paddingVertical: spacing['3xl'],
   },
   logoContainer: {
@@ -140,31 +145,26 @@ const styles = StyleSheet.create({
     marginBottom: spacing['3xl'],
   },
   logoBadge: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
+    width: 88,
+    height: 88,
+    borderRadius: 24,
     borderWidth: 1,
-    backgroundColor: 'rgba(0,255,157,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  logoText: {
-    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+  formTitle: {
     fontSize: 24,
     fontWeight: '900',
-    letterSpacing: 2,
+    marginBottom: 4,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    marginTop: spacing.sm,
-  },
-  form: {
-    width: '100%',
+  formSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: spacing.xl,
   },
   switchAuth: {
-    marginTop: spacing.xl,
+    marginTop: spacing['2xl'],
     alignItems: 'center',
   },
   switchText: {

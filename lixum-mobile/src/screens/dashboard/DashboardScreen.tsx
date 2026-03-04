@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { Component, useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTokens } from '@/context/ThemeContext';
@@ -18,19 +17,42 @@ import { DashboardSkeleton } from '@/components/ui/LoadingSkeleton';
 import { CalorieOvershootAlert } from '@/components/CalorieOvershootAlert';
 import { calculateDailyScore } from '@/utils/daily-score';
 import { generateSportRecommendation } from '@/utils/sport-recommendation';
-import type { RootStackParamList } from '@/types';
+import type { MealsStackParamList } from '@/types';
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
-
-/* ------------------------------------------------------------------ */
-/*  Mono number styling helper                                         */
-/* ------------------------------------------------------------------ */
-const MONO = { fontFamily: 'Courier New' as const, fontVariant: ['tabular-nums'] as ('tabular-nums')[] };
+type Nav = NativeStackNavigationProp<MealsStackParamList>;
 
 /* ------------------------------------------------------------------ */
-/*  Number formatting (1200 → 1,200)                                   */
+/*  Error Boundary — catches crashes and shows the error              */
+/* ------------------------------------------------------------------ */
+interface EBState { error: Error | null }
+class DashboardErrorBoundary extends Component<{ children: React.ReactNode }, EBState> {
+  state: EBState = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+          <Text style={{ color: '#f87171', fontSize: 18, fontWeight: '700', marginBottom: 12 }}>
+            Dashboard Error
+          </Text>
+          <Text style={{ color: '#ccc', fontSize: 13, textAlign: 'center' }}>
+            {this.state.error.message}
+          </Text>
+          <Text style={{ color: '#888', fontSize: 11, textAlign: 'center', marginTop: 8 }}>
+            {this.state.error.stack?.slice(0, 300)}
+          </Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Number formatting (1200 → 1 200)                                   */
 /* ------------------------------------------------------------------ */
 const fmtNum = (n: number) => {
+  if (n == null || isNaN(n)) return '0';
   try { return n.toLocaleString('fr-FR'); } catch { return String(n); }
 };
 
@@ -101,9 +123,17 @@ const L = {
 };
 
 /* ================================================================== */
-/*  DASHBOARD SCREEN                                                   */
+/*  DASHBOARD SCREEN (wrapped in ErrorBoundary)                        */
 /* ================================================================== */
 export function DashboardScreen() {
+  return (
+    <DashboardErrorBoundary>
+      <DashboardContent />
+    </DashboardErrorBoundary>
+  );
+}
+
+function DashboardContent() {
   const tk = useTokens();
   const { locale } = useLocale();
   const navigation = useNavigation<Nav>();
@@ -123,6 +153,27 @@ export function DashboardScreen() {
   const [showOvershoot, setShowOvershoot] = useState(false);
   const overshootShownRef = useRef(false);
 
+  /* --- Computed values (safe defaults when profile is null) ------- */
+  const consumed = summary?.total_calories_consumed ?? (meals || []).reduce((a, m) => a + (m?.calories ?? 0), 0);
+  const burned = summary?.total_calories_burned ?? 0;
+  const target = profile?.daily_calorie_target ?? 0;
+  const remaining = Math.max(0, target - consumed + burned);
+  const netConsumed = consumed - burned;
+  const overshootKcal = Math.max(0, netConsumed - target);
+  const progressPct = target > 0 ? Math.min((consumed / target) * 100, 100) : 0;
+  const dailyScore = calculateDailyScore(consumed, burned, target);
+  const displayName = profile?.full_name?.split(' ')[0] || 'User';
+  const weightDelta = projectedWeight - (profile?.weight ?? 0);
+  const sportRec = generateSportRecommendation(overshootKcal);
+
+  /* --- Overshoot alert trigger (MUST be before any return) -------- */
+  useEffect(() => {
+    if (overshootKcal > 0 && !overshootShownRef.current) {
+      overshootShownRef.current = true;
+      setShowOvershoot(true);
+    }
+  }, [overshootKcal]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await refresh();
@@ -132,57 +183,36 @@ export function DashboardScreen() {
   /* --- Loading ---------------------------------------------------- */
   if (!ready) {
     return (
-      <SafeAreaView style={s.safe}>
+      <View style={s.container}>
         <DashboardSkeleton />
-      </SafeAreaView>
+      </View>
     );
   }
 
   /* --- Onboarding prompt ------------------------------------------ */
   if (!profile) {
     return (
-      <SafeAreaView style={s.safe}>
+      <View style={s.container}>
         <View style={s.onboardingWrap}>
           <Text style={[s.onboardingText, { color: tk.t1 }]}>
             {txt.completeOnboarding}
           </Text>
           <TouchableOpacity
             style={[s.onboardingBtn, { backgroundColor: tk.accent }]}
-            onPress={() => navigation.navigate('Onboarding')}
+            onPress={() => navigation.navigate('MealsList')}
           >
             <Text style={s.onboardingBtnLabel}>{txt.goToOnboarding}</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
-
-  /* --- Computed values -------------------------------------------- */
-  const consumed = summary?.total_calories_consumed ?? meals.reduce((a, m) => a + m.calories, 0);
-  const burned = summary?.total_calories_burned ?? 0;
-  const target = profile.daily_calorie_target;
-  const remaining = Math.max(0, target - consumed + burned);
-  const netConsumed = consumed - burned;
-  const overshootKcal = Math.max(0, netConsumed - target);
-  const progressPct = target > 0 ? Math.min((consumed / target) * 100, 100) : 0;
-  const dailyScore = calculateDailyScore(consumed, burned, target);
-  const displayName = profile.full_name?.split(' ')[0] || 'User';
-  const weightDelta = projectedWeight - profile.weight;
-  const sportRec = generateSportRecommendation(overshootKcal);
-
-  /* --- Overshoot alert trigger ------------------------------------ */
-  useEffect(() => {
-    if (overshootKcal > 0 && !overshootShownRef.current) {
-      overshootShownRef.current = true;
-      setShowOvershoot(true);
-    }
-  }, [overshootKcal]);
 
   /* ================================================================ */
   /*  RENDER                                                           */
   /* ================================================================ */
   return (
-    <SafeAreaView style={s.safe}>
+    <View style={s.container}>
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
@@ -255,7 +285,7 @@ export function DashboardScreen() {
             </View>
           </View>
 
-          {/* -- Progress bar (red → orange → yellow → green) ------- */}
+          {/* -- Progress bar (red -> orange -> yellow -> green) ----- */}
           <ProgressBar
             percent={progressPct}
             height={10}
@@ -267,7 +297,7 @@ export function DashboardScreen() {
           <View style={s.statsRow}>
             <StatCell label={txt.burned} value={burned} unit={txt.kcal} tk={tk} />
             <StatCell label={txt.remaining} value={remaining} unit={txt.kcal} tk={tk} />
-            <StatCell label={txt.bmr} value={Math.round(profile.bmr)} unit={txt.kcal} tk={tk} />
+            <StatCell label={txt.bmr} value={Math.round(profile?.bmr ?? 0)} unit={txt.kcal} tk={tk} />
             <StatCell label={txt.vitalityShort} value={streak} unit={txt.day} tk={tk} />
           </View>
         </GlassCard>
@@ -285,12 +315,12 @@ export function DashboardScreen() {
               <Text style={[s.widgetSubtitle, { color: tk.t3 }]}>
                 {fmtNum(consumed)} {txt.consumedSummary}
               </Text>
-              {meals.length === 0 ? (
+              {(meals || []).length === 0 ? (
                 <Text style={[s.widgetEmpty, { color: tk.t4 }]}>
                   {txt.noMeals}
                 </Text>
               ) : (
-                meals.slice(0, 3).map((meal) => (
+                (meals || []).slice(0, 3).map((meal) => (
                   <View
                     key={meal.id}
                     style={[s.mealRow, { borderBottomColor: tk.cardBorder }]}
@@ -307,7 +337,11 @@ export function DashboardScreen() {
                   </View>
                 ))
               )}
-              <TouchableOpacity style={s.seeAllWrap} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={s.seeAllWrap}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('MealsList')}
+              >
                 <Text style={[s.seeAll, { color: tk.accent }]}>
                   {txt.manageMeals}
                 </Text>
@@ -364,9 +398,6 @@ export function DashboardScreen() {
                 gradientColors={['#059669', '#34d399', '#6ee7b7']}
                 style={{ marginTop: 8 }}
               />
-              <Text style={s.streakEmojis}>
-                {'🌿🔥🏆'}
-              </Text>
             </GlassCard>
           </View>
 
@@ -377,13 +408,13 @@ export function DashboardScreen() {
                 {txt.weightLabel}
               </Text>
               <Text style={[s.weightBig, { color: tk.accent }]}>
-                {projectedWeight.toFixed(1)}
+                {(projectedWeight ?? 0).toFixed(1)}
               </Text>
               <Text style={[s.weightUnit, { color: tk.t4 }]}>
                 {txt.kg}
               </Text>
               <Text style={[s.weightCurrent, { color: tk.t3 }]}>
-                {txt.current}: {profile.weight} {txt.kg}
+                {txt.current}: {profile?.weight ?? 0} {txt.kg}
               </Text>
               {/* Change badge */}
               <View
@@ -409,7 +440,7 @@ export function DashboardScreen() {
                     },
                   ]}
                 >
-                  {weightDelta <= 0 ? '↓' : '↑'} {Math.abs(weightDelta).toFixed(1)} {txt.kg} {txt.per30d}
+                  {weightDelta <= 0 ? '\u2193' : '\u2191'} {Math.abs(weightDelta).toFixed(1)} {txt.kg} {txt.per30d}
                 </Text>
               </View>
             </GlassCard>
@@ -468,7 +499,7 @@ export function DashboardScreen() {
         overshootKcal={overshootKcal}
         onClose={() => setShowOvershoot(false)}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -476,7 +507,7 @@ export function DashboardScreen() {
 /*  SUB-COMPONENTS                                                     */
 /* ================================================================== */
 
-/** Single stat cell — mini glass card inside the vitality card */
+/** Single stat cell */
 function StatCell({
   label,
   value,
@@ -505,7 +536,7 @@ function StatCell({
   );
 }
 
-/** Single sport metric box inside the sport recommendation card */
+/** Single sport metric box */
 function SportMetricBox({
   label,
   value,
@@ -533,7 +564,7 @@ function SportMetricBox({
 /* ================================================================== */
 const s = StyleSheet.create({
   /* --- Layout ----------------------------------------------------- */
-  safe: {
+  container: {
     flex: 1,
     backgroundColor: 'transparent',
   },
@@ -541,7 +572,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 8,
     paddingBottom: 48,
-    gap: 12,
   },
 
   /* --- Header ----------------------------------------------------- */
@@ -550,6 +580,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 4,
+    marginBottom: 12,
   },
   headerName: {
     fontSize: 16,
@@ -602,13 +633,13 @@ const s = StyleSheet.create({
   vitalityNumber: {
     fontSize: 60,
     fontWeight: '900',
-    ...MONO,
+    fontFamily: 'Courier New',
     lineHeight: 66,
   },
   vitalityPercent: {
     fontSize: 28,
     fontWeight: '800',
-    ...MONO,
+    fontFamily: 'Courier New',
     marginLeft: 4,
   },
   vitalityUser: {
@@ -619,11 +650,11 @@ const s = StyleSheet.create({
   vitalityTargets: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
     paddingTop: 6,
   },
   vitalityCol: {
     alignItems: 'center',
+    marginHorizontal: 6,
   },
   vitalityColLabel: {
     fontSize: 10,
@@ -635,7 +666,7 @@ const s = StyleSheet.create({
   vitalityColValue: {
     fontSize: 24,
     fontWeight: '800',
-    ...MONO,
+    fontFamily: 'Courier New',
   },
   vitalityColUnit: {
     fontSize: 9,
@@ -651,7 +682,6 @@ const s = StyleSheet.create({
   /* --- Stats row (mini glass cards) ------------------------------- */
   statsRow: {
     flexDirection: 'row',
-    gap: 6,
   },
   statCell: {
     flex: 1,
@@ -660,6 +690,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 4,
     borderRadius: 14,
     borderWidth: 1,
+    marginHorizontal: 3,
   },
   statLabel: {
     fontSize: 8,
@@ -672,7 +703,7 @@ const s = StyleSheet.create({
   statValue: {
     fontSize: 28,
     fontWeight: '900',
-    ...MONO,
+    fontFamily: 'Courier New',
     lineHeight: 32,
   },
   statUnit: {
@@ -685,12 +716,11 @@ const s = StyleSheet.create({
   widgetGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    marginTop: 12,
   },
   widgetHalf: {
-    width: '48%' as any,
-    flexGrow: 1,
-    flexBasis: '46%' as any,
+    width: '50%',
+    padding: 6,
   },
   widgetLabel: {
     fontSize: 13,
@@ -727,7 +757,7 @@ const s = StyleSheet.create({
   mealCal: {
     fontSize: 13,
     fontWeight: '700',
-    ...MONO,
+    fontFamily: 'Courier New',
   },
   seeAllWrap: {
     marginTop: 8,
@@ -743,7 +773,7 @@ const s = StyleSheet.create({
   activityBig: {
     fontSize: 36,
     fontWeight: '900',
-    ...MONO,
+    fontFamily: 'Courier New',
     lineHeight: 40,
   },
   activityUnit: {
@@ -756,7 +786,6 @@ const s = StyleSheet.create({
   miniChart: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 4,
     height: 32,
     marginTop: 4,
   },
@@ -764,13 +793,14 @@ const s = StyleSheet.create({
     flex: 1,
     borderRadius: 3,
     minWidth: 6,
+    marginHorizontal: 2,
   },
 
   /* --- Streak widget ---------------------------------------------- */
   streakBig: {
     fontSize: 48,
     fontWeight: '900',
-    ...MONO,
+    fontFamily: 'Courier New',
     lineHeight: 52,
   },
   streakUnit: {
@@ -780,18 +810,12 @@ const s = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 4,
   },
-  streakEmojis: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 8,
-    letterSpacing: 8,
-  },
 
   /* --- Weight widget ---------------------------------------------- */
   weightBig: {
     fontSize: 36,
     fontWeight: '900',
-    ...MONO,
+    fontFamily: 'Courier New',
     lineHeight: 40,
   },
   weightUnit: {
@@ -816,7 +840,7 @@ const s = StyleSheet.create({
   changeBadgeText: {
     fontSize: 11,
     fontWeight: '800',
-    ...MONO,
+    fontFamily: 'Courier New',
   },
 
   /* --- Sport recommendation --------------------------------------- */
@@ -824,6 +848,7 @@ const s = StyleSheet.create({
     borderRadius: 28,
     borderWidth: 1,
     padding: 20,
+    marginTop: 12,
   },
   sportTitle: {
     fontSize: 11,
@@ -835,12 +860,11 @@ const s = StyleSheet.create({
   sportSubtitle: {
     fontSize: 12,
     fontWeight: '600',
-    ...MONO,
+    fontFamily: 'Courier New',
     marginBottom: 12,
   },
   sportMetrics: {
     flexDirection: 'row',
-    gap: 8,
   },
   sportBox: {
     flex: 1,
@@ -848,6 +872,7 @@ const s = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 14,
     borderWidth: 1,
+    marginHorizontal: 4,
   },
   sportBoxLabel: {
     fontSize: 9,
@@ -859,7 +884,7 @@ const s = StyleSheet.create({
   sportBoxValue: {
     fontSize: 22,
     fontWeight: '900',
-    ...MONO,
+    fontFamily: 'Courier New',
     lineHeight: 26,
   },
   sportBoxUnit: {
