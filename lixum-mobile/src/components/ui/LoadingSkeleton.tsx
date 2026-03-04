@@ -5,8 +5,6 @@ import Animated, {
   withRepeat, withTiming, interpolate,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '@/context/ThemeContext';
-
 interface SkeletonProps {
   width?: number | string;
   height?: number;
@@ -15,8 +13,6 @@ interface SkeletonProps {
 }
 
 export function SkeletonLoader({ width = '100%', height = 20, radius = 24, style }: SkeletonProps) {
-  const { mode } = useTheme();
-  const isDark = mode === 'dark';
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -34,15 +30,11 @@ export function SkeletonLoader({ width = '100%', height = 20, radius = 24, style
   return (
     <View style={[{ width: width as any, height, borderRadius: radius, overflow: 'hidden' }, style]}>
       <View style={[StyleSheet.absoluteFill, {
-        backgroundColor: isDark ? 'rgba(0,255,157,0.04)' : 'rgba(0,140,70,0.06)',
+        backgroundColor: 'rgba(0,255,157,0.04)',
       }]} />
       <Animated.View style={[StyleSheet.absoluteFill, animStyle]}>
         <LinearGradient
-          colors={
-            isDark
-              ? ['transparent', 'rgba(0,255,157,0.10)', 'rgba(0,255,157,0.07)', 'transparent']
-              : ['transparent', 'rgba(0,140,70,0.16)', 'rgba(0,140,70,0.10)', 'transparent']
-          }
+          colors={['transparent', 'rgba(0,255,157,0.10)', 'rgba(0,255,157,0.07)', 'transparent']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{ width: '100%', height: '100%' }}

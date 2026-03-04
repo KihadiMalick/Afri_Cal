@@ -12,7 +12,6 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@/context/AuthContext';
 import { useTokens } from '@/context/ThemeContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
 import { GlassCard } from '@/components/ui';
 import { DashboardSkeleton } from '@/components/ui/LoadingSkeleton';
@@ -26,7 +25,6 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function ProfileScreen() {
   const { user, signOut } = useAuth();
   const tk = useTokens();
-  const { mode, toggleTheme } = useTheme();
   const { t, locale, setLocale } = useLocale();
   const navigation = useNavigation<Nav>();
 
@@ -169,20 +167,6 @@ export function ProfileScreen() {
           </View>
           <View style={styles.settingDivider} />
 
-          {/* Theme */}
-          <View style={styles.settingRow}>
-            <Text style={[styles.settingLabel, { color: tk.t3 }]}>{t.profile.theme}</Text>
-            <TouchableOpacity
-              style={[styles.themeBadge, { backgroundColor: tk.cardBg, borderColor: tk.cardBorder }]}
-              onPress={toggleTheme}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.themeIcon}>{mode === 'dark' ? '\u{1F319}' : '\u2600\uFE0F'}</Text>
-              <Text style={[styles.themeBadgeText, { color: tk.t1 }]}>
-                {mode === 'dark' ? t.profile.darkMode : t.profile.lightMode}
-              </Text>
-            </TouchableOpacity>
-          </View>
 
           {/* Biometric Login */}
           {biometricAvailable && (

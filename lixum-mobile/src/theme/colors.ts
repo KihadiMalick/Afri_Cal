@@ -1,8 +1,8 @@
 /**
- * LIXUM Design System — Color Tokens (legacy compat)
- * Use tokens.ts (DARK/LIGHT) for the new Afro-Futuristic design
+ * LIXUM Design System — Color Tokens
+ * Dark-only Afro-Futuristic design
  */
-export { DARK, LIGHT } from './tokens';
+export { DARK } from './tokens';
 export type { LixumTokens } from './tokens';
 
 export const colors = {
@@ -19,15 +19,6 @@ export const colors = {
     cyanDim: 'rgba(0,229,255,0.15)',
     text: 'rgba(255,255,255,0.94)',
     textMuted: 'rgba(255,255,255,0.68)',
-  },
-  light: {
-    bg: '#eaf7f0',
-    surface: 'rgba(255,255,255,0.92)',
-    surfaceSecondary: 'rgba(0,200,100,0.06)',
-    border: 'rgba(0,140,70,0.22)',
-    borderLight: 'rgba(0,150,70,0.22)',
-    text: 'rgba(5,30,18,0.94)',
-    textSecondary: 'rgba(5,30,18,0.68)',
   },
   semantic: {
     success: '#34d399',
