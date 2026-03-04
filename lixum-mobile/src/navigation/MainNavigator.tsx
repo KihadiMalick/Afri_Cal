@@ -141,16 +141,16 @@ export function MainNavigator() {
 
   return (
     <View style={styles.root}>
-      {/* ---- SIDEBAR ---- */}
-      <View style={[styles.sidebar, { backgroundColor: 'rgba(2,12,7,0.85)', borderRightColor: tk.sidebarBorder }]}>
+      {/* ---- SIDEBAR (icons only, no labels) ---- */}
+      <View style={[styles.sidebar, { backgroundColor: 'rgba(8,15,13,0.90)', borderRightColor: 'rgba(0,201,150,0.08)' }]}>
         {/* Logo mark at top */}
-        <View style={[styles.logoMark, { backgroundColor: tk.logoBoxBg, borderColor: tk.logoBoxBorder }]}>
+        <View style={[styles.logoMark, { backgroundColor: 'rgba(0,201,150,0.06)', borderColor: 'rgba(0,201,150,0.20)' }]}>
           <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-            <Path d="M4 4l8 8-8 8M12 4l8 8-8 8" stroke={tk.accent} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+            <Path d="M4 4l8 8-8 8M12 4l8 8-8 8" stroke="#00E5A0" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
           </Svg>
         </View>
 
-        {/* Nav items */}
+        {/* Nav icons */}
         <View style={styles.navItems}>
           {TABS.map(({ key, Icon }) => {
             const active = activeTab === key;
@@ -159,13 +159,13 @@ export function MainNavigator() {
                 key={key}
                 style={[
                   styles.navItem,
-                  active && { backgroundColor: tk.navActiveBg },
+                  active && { backgroundColor: 'rgba(0,201,150,0.07)' },
                 ]}
                 onPress={() => setActiveTab(key)}
                 activeOpacity={0.7}
               >
-                {active && <View style={[styles.activeBar, { backgroundColor: tk.accent }]} />}
-                <Icon color={active ? tk.accent : tk.iconInactive} size={22} />
+                {active && <View style={[styles.activeBar, { backgroundColor: '#00E5A0' }]} />}
+                <Icon color={active ? '#00E5A0' : 'rgba(255,255,255,0.40)'} size={22} />
               </TouchableOpacity>
             );
           })}
