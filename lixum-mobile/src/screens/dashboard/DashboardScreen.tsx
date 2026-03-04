@@ -123,6 +123,27 @@ export function DashboardScreen() {
   const [showOvershoot, setShowOvershoot] = useState(false);
   const overshootShownRef = useRef(false);
 
+  /* --- Computed values (safe defaults when profile is null) ------- */
+  const consumed = summary?.total_calories_consumed ?? meals.reduce((a, m) => a + m.calories, 0);
+  const burned = summary?.total_calories_burned ?? 0;
+  const target = profile?.daily_calorie_target ?? 0;
+  const remaining = Math.max(0, target - consumed + burned);
+  const netConsumed = consumed - burned;
+  const overshootKcal = Math.max(0, netConsumed - target);
+  const progressPct = target > 0 ? Math.min((consumed / target) * 100, 100) : 0;
+  const dailyScore = calculateDailyScore(consumed, burned, target);
+  const displayName = profile?.full_name?.split(' ')[0] || 'User';
+  const weightDelta = projectedWeight - (profile?.weight ?? 0);
+  const sportRec = generateSportRecommendation(overshootKcal);
+
+  /* --- Overshoot alert trigger (MUST be before any return) -------- */
+  useEffect(() => {
+    if (overshootKcal > 0 && !overshootShownRef.current) {
+      overshootShownRef.current = true;
+      setShowOvershoot(true);
+    }
+  }, [overshootKcal]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await refresh();
@@ -156,27 +177,6 @@ export function DashboardScreen() {
       </SafeAreaView>
     );
   }
-
-  /* --- Computed values -------------------------------------------- */
-  const consumed = summary?.total_calories_consumed ?? meals.reduce((a, m) => a + m.calories, 0);
-  const burned = summary?.total_calories_burned ?? 0;
-  const target = profile.daily_calorie_target;
-  const remaining = Math.max(0, target - consumed + burned);
-  const netConsumed = consumed - burned;
-  const overshootKcal = Math.max(0, netConsumed - target);
-  const progressPct = target > 0 ? Math.min((consumed / target) * 100, 100) : 0;
-  const dailyScore = calculateDailyScore(consumed, burned, target);
-  const displayName = profile.full_name?.split(' ')[0] || 'User';
-  const weightDelta = projectedWeight - profile.weight;
-  const sportRec = generateSportRecommendation(overshootKcal);
-
-  /* --- Overshoot alert trigger ------------------------------------ */
-  useEffect(() => {
-    if (overshootKcal > 0 && !overshootShownRef.current) {
-      overshootShownRef.current = true;
-      setShowOvershoot(true);
-    }
-  }, [overshootKcal]);
 
   /* ================================================================ */
   /*  RENDER                                                           */
