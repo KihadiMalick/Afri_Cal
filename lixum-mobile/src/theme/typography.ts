@@ -1,15 +1,15 @@
 /**
  * LIXUM Design System — Typography
- * Primary: Outfit (Google Font) | Mono: Courier New
+ * Primary: Poppins (Google Font) — friendly, premium, readable
  */
 
 export const FONTS = {
-  display:    'Outfit_900Black',
-  heading:    'Outfit_700Bold',
-  subheading: 'Outfit_600SemiBold',
-  body:       'Outfit_400Regular',
-  medium:     'Outfit_500Medium',
-  light:      'Outfit_300Light',
+  display:    'Poppins_900Black',
+  heading:    'Poppins_700Bold',
+  subheading: 'Poppins_600SemiBold',
+  body:       'Poppins_400Regular',
+  medium:     'Poppins_500Medium',
+  light:      'Poppins_300Light',
   mono:       'Courier New',
 } as const;
 

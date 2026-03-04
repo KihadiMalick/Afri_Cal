@@ -5,6 +5,7 @@ import Animated, {
   withRepeat, withTiming, interpolate,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+
 interface SkeletonProps {
   width?: number | string;
   height?: number;
@@ -12,7 +13,7 @@ interface SkeletonProps {
   style?: ViewStyle;
 }
 
-export function SkeletonLoader({ width = '100%', height = 20, radius = 24, style }: SkeletonProps) {
+export function SkeletonLoader({ width = '100%', height = 20, radius = 16, style }: SkeletonProps) {
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -28,13 +29,13 @@ export function SkeletonLoader({ width = '100%', height = 20, radius = 24, style
   }));
 
   return (
-    <View style={[{ width: width as any, height, borderRadius: radius, overflow: 'hidden' }, style]}>
+    <View style={[{ width: width as any, height, borderRadius: radius, overflow: 'hidden', borderWidth: 1, borderColor: '#2A2A2A' }, style]}>
       <View style={[StyleSheet.absoluteFill, {
-        backgroundColor: 'rgba(0,255,157,0.04)',
+        backgroundColor: '#1A1A1A',
       }]} />
       <Animated.View style={[StyleSheet.absoluteFill, animStyle]}>
         <LinearGradient
-          colors={['transparent', 'rgba(0,255,157,0.10)', 'rgba(0,255,157,0.07)', 'transparent']}
+          colors={['transparent', 'rgba(0,200,150,0.08)', 'rgba(0,200,150,0.05)', 'transparent']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{ width: '100%', height: '100%' }}
@@ -50,20 +51,31 @@ export const LoadingSkeleton = SkeletonLoader;
 export function DashboardSkeleton() {
   return (
     <View style={skStyles.container}>
-      <SkeletonLoader height={180} radius={32} style={skStyles.item} />
-      <View style={skStyles.row}>
-        <SkeletonLoader height={100} radius={28} style={skStyles.flex} />
-        <SkeletonLoader height={100} radius={28} style={skStyles.flex} />
+      {/* Header skeleton */}
+      <View style={skStyles.headerRow}>
+        <SkeletonLoader width={140} height={36} radius={10} />
+        <SkeletonLoader width={80} height={20} radius={8} />
       </View>
-      <SkeletonLoader height={120} radius={28} style={skStyles.item} />
-      <SkeletonLoader height={200} radius={28} style={skStyles.item} />
+      {/* Vitality card */}
+      <SkeletonLoader height={200} radius={16} style={skStyles.item} />
+      {/* 3 metric cards */}
+      <View style={skStyles.row}>
+        <SkeletonLoader height={110} radius={14} style={skStyles.flex} />
+        <SkeletonLoader height={110} radius={14} style={skStyles.flex} />
+        <SkeletonLoader height={110} radius={14} style={skStyles.flex} />
+      </View>
+      {/* Meals card */}
+      <SkeletonLoader height={140} radius={16} style={skStyles.item} />
+      {/* Activity card */}
+      <SkeletonLoader height={160} radius={16} style={skStyles.item} />
     </View>
   );
 }
 
 const skStyles = StyleSheet.create({
-  container: { padding: 16, gap: 16 },
+  container: { padding: 20, gap: 20 },
   item: { marginBottom: 0 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   row: { flexDirection: 'row', gap: 12 },
   flex: { flex: 1 },
 });

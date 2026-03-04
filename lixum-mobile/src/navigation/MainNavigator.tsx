@@ -15,6 +15,9 @@ import { ProfileScreen } from '@/screens/profile/ProfileScreen';
 import { useTokens } from '@/context/ThemeContext';
 import type { MealsStackParamList, ActivitiesStackParamList } from '@/types';
 
+const FONT_BOLD = Platform.OS === 'web' ? 'Poppins_700Bold, sans-serif' : 'Poppins_700Bold';
+const FONT_BLACK = Platform.OS === 'web' ? 'Poppins_900Black, sans-serif' : 'Poppins_900Black';
+
 /* ================================================================== */
 /*  PREMIUM SVG ICONS                                                  */
 /* ================================================================== */
@@ -123,7 +126,7 @@ const TABS: { key: TabKey; Icon: typeof IconHome; label: string }[] = [
 ];
 
 /* ================================================================== */
-/*  MAIN NAVIGATOR — Metallic Brushed Sidebar                          */
+/*  MAIN NAVIGATOR — Premium Metallic Sidebar                          */
 /* ================================================================== */
 export function MainNavigator() {
   const tk = useTokens();
@@ -141,7 +144,7 @@ export function MainNavigator() {
 
   return (
     <View style={styles.root}>
-      {/* ---- SIDEBAR — brushed steel panel ---- */}
+      {/* ---- SIDEBAR — dark steel panel ---- */}
       <View style={[styles.sidebar, webSidebarBlur]}>
         {/* LX Logo mark — brushed metal with emerald ring */}
         <View style={styles.logoMark}>
@@ -149,7 +152,7 @@ export function MainNavigator() {
           <Text style={styles.logoX}>X</Text>
         </View>
 
-        {/* Nav icons */}
+        {/* Nav icons — only icons, no labels */}
         <View style={styles.navItems}>
           {TABS.map(({ key, Icon }) => {
             const active = activeTab === key;
@@ -164,7 +167,7 @@ export function MainNavigator() {
                 activeOpacity={0.7}
               >
                 {active && <View style={styles.activeBar} />}
-                <Icon color={active ? '#00E5A0' : 'rgba(160,170,185,0.40)'} size={22} />
+                <Icon color={active ? '#00C896' : '#555555'} size={22} />
               </TouchableOpacity>
             );
           })}
@@ -201,8 +204,8 @@ const styles = StyleSheet.create({
   sidebar: {
     width: SIDEBAR_W,
     borderRightWidth: 1,
-    borderRightColor: 'rgba(120,130,150,0.06)',
-    backgroundColor: 'rgba(8,10,14,0.92)',
+    borderRightColor: '#1A1A1A',
+    backgroundColor: '#0A0A0A',
     alignItems: 'center',
     paddingTop: Platform.OS === 'ios' ? 52 : 16,
   },
@@ -211,8 +214,8 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 11,
     borderWidth: 1.5,
-    borderColor: 'rgba(0,229,160,0.25)',
-    backgroundColor: 'rgba(0,229,160,0.04)',
+    borderColor: 'rgba(0,200,150,0.25)',
+    backgroundColor: 'rgba(0,200,150,0.04)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
@@ -220,25 +223,25 @@ const styles = StyleSheet.create({
     ...Platform.select({
       web: {
         // @ts-ignore
-        boxShadow: '0 0 14px rgba(0,229,160,0.10), inset 0 0 8px rgba(0,229,160,0.05)',
+        boxShadow: '0 0 14px rgba(0,200,150,0.10), inset 0 0 8px rgba(0,200,150,0.05)',
       } as any,
       default: {},
     }),
   },
   logoL: {
-    fontFamily: Platform.OS === 'web' ? 'Outfit_700Bold, sans-serif' : 'Outfit_700Bold',
+    fontFamily: FONT_BOLD,
     fontSize: 15,
     fontWeight: '700',
     color: '#9CA3AF',
     letterSpacing: 0.5,
   },
   logoX: {
-    fontFamily: Platform.OS === 'web' ? 'Outfit_900Black, sans-serif' : 'Outfit_900Black',
+    fontFamily: FONT_BLACK,
     fontSize: 15,
     fontWeight: '900',
-    color: '#00E5A0',
+    color: '#00C896',
     letterSpacing: 0.5,
-    textShadowColor: 'rgba(0,229,160,0.5)',
+    textShadowColor: 'rgba(0,200,150,0.5)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
   },
@@ -257,7 +260,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   navItemActive: {
-    backgroundColor: 'rgba(0,229,160,0.06)',
+    backgroundColor: 'rgba(0,200,150,0.06)',
   },
   activeBar: {
     position: 'absolute',
@@ -265,11 +268,11 @@ const styles = StyleSheet.create({
     width: 3,
     height: 20,
     borderRadius: 2,
-    backgroundColor: '#00E5A0',
+    backgroundColor: '#00C896',
     ...Platform.select({
       web: {
         // @ts-ignore
-        boxShadow: '0 0 8px rgba(0,229,160,0.30)',
+        boxShadow: '0 0 8px rgba(0,200,150,0.30)',
       } as any,
       default: {},
     }),
