@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, type ViewStyle } from 'react-native';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming,
+  useSharedValue, useAnimatedStyle, withTiming, Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 interface ProgressBarProps {
@@ -20,7 +20,10 @@ export function ProgressBar({
   const fillAnim = useSharedValue(0);
 
   useEffect(() => {
-    fillAnim.value = withTiming(Math.min(percent, 100) / 100, { duration: 1000 });
+    fillAnim.value = withTiming(Math.min(percent, 100) / 100, {
+      duration: 1200,
+      easing: Easing.out(Easing.ease),
+    });
   }, [percent]);
 
   const fillStyle = useAnimatedStyle(() => ({
