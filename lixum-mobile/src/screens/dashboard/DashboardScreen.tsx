@@ -70,8 +70,8 @@ const fmtNum = (n: number) => {
 const L = {
   fr: {
     vitalityLabel: 'SCORE DE VITALITÉ',
-    goal: 'objectif',
-    consumed: 'consommés',
+    goal: 'OBJECTIF',
+    consumed: 'CONSOMMÉ',
     remaining: 'restants',
     kcal: 'kcal',
     mealsLabel: 'REPAS DU JOUR',
@@ -87,11 +87,15 @@ const L = {
     steps: 'Pas',
     km: 'km',
     min: 'min',
+    caloriesBurned: 'CALORIES BRÛLÉES',
+    caloriesRemaining: 'RESTANTS',
+    vitalityScore: 'SCORE VITALITÉ',
+    days: 'j',
   },
   en: {
     vitalityLabel: 'VITALITY SCORE',
-    goal: 'goal',
-    consumed: 'consumed',
+    goal: 'GOAL',
+    consumed: 'CONSUMED',
     remaining: 'remaining',
     kcal: 'kcal',
     mealsLabel: 'TODAY\'S MEAL',
@@ -107,6 +111,10 @@ const L = {
     steps: 'Steps',
     km: 'km',
     min: 'min',
+    caloriesBurned: 'CALORIES BURNED',
+    caloriesRemaining: 'REMAINING',
+    vitalityScore: 'VITALITY SCORE',
+    days: 'd',
   },
 };
 
@@ -134,7 +142,6 @@ function useCountUp(target: number, duration: number = 800) {
     const tick = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       setDisplay(Math.round(from + (target - from) * eased));
       if (progress < 1) {
@@ -187,10 +194,8 @@ function DashboardContent() {
   const displayName = profile?.full_name?.split(' ')[0] || 'User';
   const sportRec = generateSportRecommendation(overshootKcal);
 
-  // Last/main meal for the simplified card
   const lastMeal = (meals || []).length > 0 ? (meals || [])[(meals || []).length - 1] : null;
 
-  // Animated score count-up
   const animatedScore = useCountUp(ready && profile ? dailyScore : 0, 800);
 
   /* --- Overshoot alert trigger --------------------------------------- */
@@ -252,7 +257,7 @@ function DashboardContent() {
         }
       >
         {/* ========================================================== */}
-        {/*  HEADER — username right-aligned + emerald dot              */}
+        {/*  HEADER — LX logo left + username right (metallic engraved) */}
         {/* ========================================================== */}
         <Animated.View
           entering={FadeInDown.duration(400).delay(0)}
@@ -260,15 +265,15 @@ function DashboardContent() {
         >
           <LixumLogo size={16} showSub />
           <View style={s.headerRight}>
-            <View style={[s.onlineDot, { backgroundColor: '#00E5A0' }]} />
-            <Text style={[s.headerName, { color: tk.t2 }]}>
+            <View style={s.onlineDot} />
+            <Text style={s.headerName}>
               {displayName}
             </Text>
           </View>
         </Animated.View>
 
         {/* ========================================================== */}
-        {/*  CARD 1 — VITALITY SCORE (Hero, full width)                */}
+        {/*  CARD 1 — VITALITY SCORE (Hero, full width, smoked glass)  */}
         {/* ========================================================== */}
         <Animated.View entering={FadeInDown.duration(500).delay(100)}>
           <GlassCard vitality padding="lg">
@@ -277,10 +282,10 @@ function DashboardContent() {
               {txt.vitalityLabel}
             </Text>
 
-            {/* Giant centered score */}
+            {/* Giant centered score in emerald */}
             <View style={s.heroScoreWrap}>
-              <Text style={[s.heroScore, { color: '#00E5A0' }]}>
-                {animatedScore}
+              <Text style={s.heroScore}>
+                {animatedScore}%
               </Text>
             </View>
 
@@ -292,106 +297,81 @@ function DashboardContent() {
               style={{ marginTop: 20, marginBottom: 16 }}
             />
 
-            {/* 3 inline micro-stats */}
-            <Text style={s.heroMicroStats}>
-              {fmtNum(target)} {txt.kcal} {txt.goal}  ·  {fmtNum(consumed)} {txt.kcal} {txt.consumed}  ·  {fmtNum(remaining)} {txt.kcal} {txt.remaining}
-            </Text>
+            {/* Objective + Consumed in metallic orange */}
+            <View style={s.heroStatsRow}>
+              <Text style={s.heroStatLabel}>
+                {txt.goal}{' '}
+                <Text style={s.heroStatValue}>{fmtNum(target)} {txt.kcal}</Text>
+              </Text>
+              <Text style={s.heroStatDot}> · </Text>
+              <Text style={s.heroStatLabel}>
+                {txt.consumed}{' '}
+                <Text style={s.heroStatValue}>{fmtNum(consumed)} {txt.kcal}</Text>
+              </Text>
+              <Text style={s.heroStatDot}> · </Text>
+              <Text style={s.heroMicroRemaining}>
+                {fmtNum(remaining)} {txt.kcal} {txt.remaining}
+              </Text>
+            </View>
           </GlassCard>
         </Animated.View>
 
         {/* ========================================================== */}
-        {/*  CARDS 2 & 3 — REPAS + ACTIVITÉ side by side               */}
+        {/*  3 METAL BUTTON CARDS — Brushed panels with neon backlight */}
         {/* ========================================================== */}
-        <View style={[s.bottomRow, isSmall && s.bottomRowStacked]}>
-          {/* ---- Card 2: REPAS DU JOUR (55%) ---- */}
+        <View style={[s.metalCardsRow, isSmall && s.metalCardsStacked]}>
+          {/* ---- Card: Calories Brûlées ---- */}
           <Animated.View
             entering={FadeInDown.duration(500).delay(200)}
-            style={[
-              s.cardLeft,
-              isSmall && s.cardFullWidth,
-            ]}
+            style={[s.metalCardWrap, isSmall && s.metalCardFull]}
           >
-            <GlassCard padding="md">
-              <Text style={s.cardLabel}>
-                {txt.mealsLabel}
-              </Text>
-
-              {lastMeal ? (
-                <>
-                  <Text
-                    style={[s.mealName, { color: tk.t1 }]}
-                    numberOfLines={1}
-                  >
-                    {lastMeal.name}
-                  </Text>
-                  <Text style={[s.mealCalories, { color: '#00E5A0' }]}>
-                    {fmtNum(consumed)} {txt.kcal}
-                  </Text>
-                </>
-              ) : (
-                <Text style={[s.mealEmpty, { color: tk.t4 }]}>
-                  {txt.noMeals}
+            <TouchableOpacity activeOpacity={0.85} style={s.metalCardTouch}>
+              <GlassCard metalButton padding="md">
+                <Text style={s.metalCardLabel}>
+                  {txt.caloriesBurned}
                 </Text>
-              )}
-
-              <TouchableOpacity
-                style={s.manageMealsWrap}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('MealsList')}
-              >
-                <Text style={s.manageMealsText}>
-                  {txt.manageMeals}
+                <Text style={[s.metalCardValue, { color: burned > 0 ? '#00E5A0' : 'rgba(255,255,255,0.25)' }]}>
+                  {burned}
                 </Text>
-              </TouchableOpacity>
-            </GlassCard>
+                <Text style={s.metalCardUnit}>{txt.kcal}</Text>
+              </GlassCard>
+            </TouchableOpacity>
           </Animated.View>
 
-          {/* ---- Card 3: ACTIVITÉ (40%) ---- */}
+          {/* ---- Card: Restants ---- */}
           <Animated.View
             entering={FadeInDown.duration(500).delay(300)}
-            style={[
-              s.cardRight,
-              isSmall && s.cardFullWidth,
-            ]}
+            style={[s.metalCardWrap, isSmall && s.metalCardFull]}
           >
-            <GlassCard padding="md">
-              <Text style={s.cardLabel}>
-                {txt.activityLabel}
-              </Text>
+            <TouchableOpacity activeOpacity={0.85} style={s.metalCardTouch}>
+              <GlassCard metalButton padding="md">
+                <Text style={s.metalCardLabel}>
+                  {txt.caloriesRemaining}
+                </Text>
+                <Text style={[s.metalCardValue, { color: '#00E5A0' }]}>
+                  {fmtNum(remaining)}
+                </Text>
+                <Text style={s.metalCardUnit}>{txt.kcal}</Text>
+              </GlassCard>
+            </TouchableOpacity>
+          </Animated.View>
 
-              <Text
-                style={[
-                  s.activityBig,
-                  { color: burned > 0 ? '#00E5A0' : tk.t1, opacity: burned > 0 ? 1 : 0.3 },
-                ]}
-              >
-                {burned}
-              </Text>
-              <Text style={s.activityUnit}>
-                {txt.burnedLabel}
-              </Text>
-
-              {/* 7-bar sparkline */}
-              <View style={s.sparkline}>
-                {[0.2, 0.4, 0.3, 0.6, 0.5, 0.25, 1].map((h, i) => {
-                  const isToday = i === 6;
-                  return (
-                    <View
-                      key={i}
-                      style={[
-                        s.sparkBar,
-                        {
-                          height: h * 32,
-                          backgroundColor: isToday
-                            ? '#00E5A0'
-                            : 'rgba(255,255,255,0.10)',
-                        },
-                      ]}
-                    />
-                  );
-                })}
-              </View>
-            </GlassCard>
+          {/* ---- Card: Score de Vitalité ---- */}
+          <Animated.View
+            entering={FadeInDown.duration(500).delay(400)}
+            style={[s.metalCardWrap, isSmall && s.metalCardFull]}
+          >
+            <TouchableOpacity activeOpacity={0.85} style={s.metalCardTouch}>
+              <GlassCard metalButton padding="md">
+                <Text style={s.metalCardLabel}>
+                  {txt.vitalityScore}
+                </Text>
+                <Text style={[s.metalCardValue, { color: '#00E5A0' }]}>
+                  {streak ?? 0}
+                </Text>
+                <Text style={s.metalCardUnit}>{txt.days}</Text>
+              </GlassCard>
+            </TouchableOpacity>
           </Animated.View>
         </View>
 
@@ -399,16 +379,8 @@ function DashboardContent() {
         {/*  SPORT RECOMMENDATION (conditional)                        */}
         {/* ========================================================== */}
         {sportRec && overshootKcal > 0 && (
-          <Animated.View entering={FadeInDown.duration(500).delay(400)}>
-            <View
-              style={[
-                s.sportCard,
-                {
-                  backgroundColor: 'rgba(239,68,68,0.04)',
-                  borderColor: 'rgba(239,68,68,0.12)',
-                },
-              ]}
-            >
+          <Animated.View entering={FadeInDown.duration(500).delay(500)}>
+            <View style={s.sportCard}>
               <Text style={[s.sportTitle, { color: tk.red }]}>
                 {txt.sportTitle}
               </Text>
@@ -480,9 +452,16 @@ function SportMetricBox({
 }
 
 /* ================================================================== */
-/*  STYLES                                                             */
+/*  STYLES — Metallic Brushed Industrial Premium                       */
 /* ================================================================== */
 const EMERALD = '#00E5A0';
+const METAL_ORANGE = '#D4915C';
+
+const FONT_BODY = Platform.OS === 'web' ? 'Outfit_400Regular, sans-serif' : 'Outfit_400Regular';
+const FONT_MEDIUM = Platform.OS === 'web' ? 'Outfit_500Medium, sans-serif' : 'Outfit_500Medium';
+const FONT_SEMI = Platform.OS === 'web' ? 'Outfit_600SemiBold, sans-serif' : 'Outfit_600SemiBold';
+const FONT_BOLD = Platform.OS === 'web' ? 'Outfit_700Bold, sans-serif' : 'Outfit_700Bold';
+const FONT_BLACK = Platform.OS === 'web' ? 'Outfit_900Black, sans-serif' : 'Outfit_900Black';
 
 const s = StyleSheet.create({
   /* --- Layout ------------------------------------------------------- */
@@ -513,11 +492,21 @@ const s = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginRight: 8,
+    backgroundColor: EMERALD,
+    ...Platform.select({
+      web: {
+        // @ts-ignore
+        boxShadow: '0 0 6px rgba(0,229,160,0.40)',
+      } as any,
+      default: {},
+    }),
   },
   headerName: {
-    fontSize: 15,
+    fontSize: 14,
+    fontFamily: FONT_SEMI,
     fontWeight: '600',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
+    color: '#9CA3AF',
   },
 
   /* --- Onboarding --------------------------------------------------- */
@@ -529,6 +518,7 @@ const s = StyleSheet.create({
   },
   onboardingText: {
     fontSize: 16,
+    fontFamily: FONT_BODY,
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -539,6 +529,7 @@ const s = StyleSheet.create({
   },
   onboardingBtnLabel: {
     color: '#000',
+    fontFamily: FONT_BOLD,
     fontWeight: '700',
     fontSize: 15,
   },
@@ -547,11 +538,12 @@ const s = StyleSheet.create({
   /*  CARD 1 — VITALITY SCORE (Hero)                                    */
   /* ================================================================== */
   heroLabel: {
-    fontSize: 11,
+    fontSize: 10,
+    fontFamily: FONT_BOLD,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 3,
-    color: 'rgba(255,255,255,0.50)',
+    letterSpacing: 4,
+    color: 'rgba(160,170,185,0.50)',
     textAlign: 'center',
     marginBottom: 4,
   },
@@ -560,115 +552,113 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   heroScore: {
-    fontSize: 80,
+    fontSize: 76,
+    fontFamily: FONT_BLACK,
     fontWeight: '900',
-    lineHeight: 88,
+    lineHeight: 84,
     textAlign: 'center',
+    color: EMERALD,
     ...Platform.select({
       web: {
         // @ts-ignore
-        textShadow: '0 0 40px rgba(0,229,160,0.30)',
+        textShadow: '0 0 40px rgba(0,229,160,0.25), 0 0 80px rgba(0,229,160,0.10)',
       } as any,
       default: {},
     }),
   },
-  heroMicroStats: {
-    fontSize: 12,
+  heroStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 2,
+  },
+  heroStatLabel: {
+    fontSize: 11,
+    fontFamily: FONT_SEMI,
+    fontWeight: '600',
+    color: METAL_ORANGE,
+    letterSpacing: 0.5,
+  },
+  heroStatValue: {
+    fontSize: 11,
+    fontFamily: FONT_BOLD,
+    fontWeight: '700',
+    color: METAL_ORANGE,
+  },
+  heroStatDot: {
+    fontSize: 11,
+    color: 'rgba(160,170,185,0.30)',
+  },
+  heroMicroRemaining: {
+    fontSize: 11,
+    fontFamily: FONT_MEDIUM,
     fontWeight: '500',
-    color: 'rgba(255,255,255,0.45)',
-    textAlign: 'center',
+    color: 'rgba(160,170,185,0.45)',
     letterSpacing: 0.3,
   },
 
   /* ================================================================== */
-  /*  CARDS 2 & 3 — Bottom row                                         */
+  /*  METAL BUTTON CARDS — 3 in a row                                   */
   /* ================================================================== */
-  bottomRow: {
+  metalCardsRow: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
   },
-  bottomRowStacked: {
+  metalCardsStacked: {
     flexDirection: 'column',
   },
-  cardLeft: {
-    flex: 55,
+  metalCardWrap: {
+    flex: 1,
   },
-  cardRight: {
-    flex: 45,
-  },
-  cardFullWidth: {
+  metalCardFull: {
     flex: undefined,
     width: '100%',
   },
-
-  /* Shared card label */
-  cardLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 3,
-    color: 'rgba(255,255,255,0.50)',
-    marginBottom: 12,
+  metalCardTouch: {
+    flex: 1,
+    ...Platform.select({
+      web: {
+        // @ts-ignore
+        cursor: 'pointer',
+        transition: 'transform 0.2s cubic-bezier(0.4,0,0.2,1)',
+      } as any,
+      default: {},
+    }),
   },
-
-  /* ================================================================== */
-  /*  CARD 2 — REPAS DU JOUR                                           */
-  /* ================================================================== */
-  mealName: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  mealCalories: {
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 16,
-  },
-  mealEmpty: {
-    fontSize: 14,
-    fontWeight: '500',
-    paddingVertical: 20,
-  },
-  manageMealsWrap: {
-    marginTop: 'auto' as any,
-  },
-  manageMealsText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: EMERALD,
-    letterSpacing: 0.3,
-  },
-
-  /* ================================================================== */
-  /*  CARD 3 — ACTIVITÉ                                                */
-  /* ================================================================== */
-  activityBig: {
-    fontSize: 52,
-    fontWeight: '900',
-    lineHeight: 56,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  activityUnit: {
-    fontSize: 10,
+  metalCardLabel: {
+    fontSize: 9,
+    fontFamily: FONT_BOLD,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 2,
-    color: 'rgba(255,255,255,0.40)',
+    color: 'rgba(160,170,185,0.50)',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  sparkline: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    height: 36,
-    gap: 4,
-    marginTop: 'auto' as any,
+  metalCardValue: {
+    fontSize: 40,
+    fontFamily: FONT_BLACK,
+    fontWeight: '900',
+    lineHeight: 44,
+    textAlign: 'center',
+    ...Platform.select({
+      web: {
+        // @ts-ignore
+        textShadow: '0 0 20px rgba(0,229,160,0.20)',
+      } as any,
+      default: {},
+    }),
   },
-  sparkBar: {
-    flex: 1,
-    borderRadius: 3,
-    minWidth: 6,
+  metalCardUnit: {
+    fontSize: 9,
+    fontFamily: FONT_SEMI,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    color: 'rgba(160,170,185,0.35)',
+    textAlign: 'center',
+    marginTop: 4,
   },
 
   /* ================================================================== */
@@ -678,9 +668,12 @@ const s = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     padding: 20,
+    backgroundColor: 'rgba(239,68,68,0.04)',
+    borderColor: 'rgba(239,68,68,0.12)',
   },
   sportTitle: {
-    fontSize: 11,
+    fontSize: 10,
+    fontFamily: FONT_BOLD,
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 2,
@@ -688,6 +681,7 @@ const s = StyleSheet.create({
   },
   sportSubtitle: {
     fontSize: 12,
+    fontFamily: FONT_SEMI,
     fontWeight: '600',
     marginBottom: 12,
   },
@@ -704,6 +698,7 @@ const s = StyleSheet.create({
   },
   sportBoxLabel: {
     fontSize: 9,
+    fontFamily: FONT_BOLD,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -711,11 +706,13 @@ const s = StyleSheet.create({
   },
   sportBoxValue: {
     fontSize: 22,
+    fontFamily: FONT_BLACK,
     fontWeight: '900',
     lineHeight: 26,
   },
   sportBoxUnit: {
     fontSize: 9,
+    fontFamily: FONT_SEMI,
     fontWeight: '600',
     marginTop: 2,
   },

@@ -1,24 +1,24 @@
 /**
  * LIXUM Design System — Color Tokens
- * Dark-only Afro-Futuristic design
+ * Dark metallic industrial design
  */
 export { DARK } from './tokens';
 export type { LixumTokens } from './tokens';
 
 export const colors = {
   lixum: {
-    bg: '#020c07',
-    surface: 'rgba(2,12,7,0.80)',
-    surfaceLight: 'rgba(255,255,255,0.07)',
-    border: 'rgba(255,255,255,0.11)',
-    borderLight: 'rgba(255,255,255,0.10)',
-    neon: '#00ff9d',
-    neonDim: 'rgba(0,255,157,0.15)',
-    neonSubtle: 'rgba(0,255,157,0.08)',
+    bg: '#0A0C0F',
+    surface: 'rgba(18,22,28,0.80)',
+    surfaceLight: 'rgba(255,255,255,0.04)',
+    border: 'rgba(120,130,150,0.10)',
+    borderLight: 'rgba(120,130,150,0.06)',
+    neon: '#00E5A0',
+    neonDim: 'rgba(0,229,160,0.12)',
+    neonSubtle: 'rgba(0,229,160,0.06)',
     cyan: '#00e5ff',
-    cyanDim: 'rgba(0,229,255,0.15)',
+    cyanDim: 'rgba(0,229,255,0.12)',
     text: 'rgba(255,255,255,0.94)',
-    textMuted: 'rgba(255,255,255,0.68)',
+    textMuted: 'rgba(200,210,225,0.68)',
   },
   semantic: {
     success: '#34d399',

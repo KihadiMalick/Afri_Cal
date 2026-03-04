@@ -1,48 +1,48 @@
 /**
- * LIXUM Design Tokens — Premium Glassmorphism
- * Dark-only theme with emerald accent (#00C896 / #00E5A0)
+ * LIXUM Design Tokens — Metallic Brushed Industrial
+ * Dark metallic grays + emerald accent (#00C896 / #00E5A0)
  */
 
 export const DARK = {
-  // Backgrounds
-  mainBg:        '#080F0D',
-  sidebarBg1:    '#060D0A',
-  sidebarBg2:    '#070E0B',
-  sidebarBg3:    '#060D0A',
-  inputBg:       'rgba(0,8,4,0.58)',
-  rowBg:         'rgba(255,255,255,0.04)',
+  // Backgrounds — metallic dark gradients
+  mainBg:        '#0A0C0F',
+  sidebarBg1:    '#08090C',
+  sidebarBg2:    '#0A0B0E',
+  sidebarBg3:    '#08090C',
+  inputBg:       'rgba(12,14,18,0.75)',
+  rowBg:         'rgba(255,255,255,0.03)',
 
-  // Cards (premium glass — circuit lines show through)
-  cardBg:        'rgba(255,255,255,0.04)',
-  cardBorder:    'rgba(0,201,150,0.15)',
-  vCardBg1:      'rgba(0,201,150,0.08)',
-  vCardBg2:      'rgba(0,201,150,0.03)',
-  vCardBorder:   'rgba(0,201,150,0.22)',
+  // Cards — brushed metal panels
+  cardBg:        'rgba(18,22,28,0.65)',
+  cardBorder:    'rgba(120,130,150,0.12)',
+  vCardBg1:      'rgba(0,201,150,0.06)',
+  vCardBg2:      'rgba(12,16,22,0.80)',
+  vCardBorder:   'rgba(0,201,150,0.18)',
 
-  // Text hierarchy
-  t1:            'rgba(255,255,255,0.96)',
-  t2:            'rgba(255,255,255,0.75)',
-  t3:            'rgba(255,255,255,0.55)',
-  t4:            'rgba(255,255,255,0.38)',
+  // Text hierarchy — high contrast on dark metal
+  t1:            'rgba(255,255,255,0.95)',
+  t2:            'rgba(200,210,225,0.78)',
+  t3:            'rgba(160,170,185,0.60)',
+  t4:            'rgba(120,130,150,0.45)',
 
   // Accent (Emerald)
   accent:        '#00E5A0',
-  accentSub:     'rgba(0,200,150,0.55)',
-  accentGlow:    'rgba(0,229,160,0.40)',
+  accentSub:     'rgba(0,200,150,0.50)',
+  accentGlow:    'rgba(0,229,160,0.35)',
 
-  // Sidebar
-  sidebarBorder:    'rgba(0,201,150,0.08)',
-  logoBoxBg:        'rgba(0,201,150,0.06)',
-  logoBoxBorder:    'rgba(0,201,150,0.20)',
-  logoLetter:       '#7d8590',
-  navActiveBg:      'rgba(0,201,150,0.07)',
+  // Sidebar — brushed steel
+  sidebarBorder:    'rgba(120,130,150,0.08)',
+  logoBoxBg:        'rgba(0,229,160,0.04)',
+  logoBoxBorder:    'rgba(0,229,160,0.22)',
+  logoLetter:       '#9CA3AF',
+  navActiveBg:      'rgba(0,201,150,0.08)',
   navHoverBg:       'rgba(255,255,255,0.03)',
   iconActive:       '#00E5A0',
-  iconInactive:     'rgba(255,255,255,0.40)',
-  labelActive:      'rgba(0,229,160,0.92)',
-  labelInactive:    'rgba(255,255,255,0.40)',
-  lixumSubColor:    'rgba(0,229,160,0.42)',
-  logoutColor:      'rgba(255,255,255,0.45)',
+  iconInactive:     'rgba(160,170,185,0.40)',
+  labelActive:      'rgba(0,229,160,0.90)',
+  labelInactive:    'rgba(160,170,185,0.40)',
+  lixumSubColor:    'rgba(0,229,160,0.40)',
+  logoutColor:      'rgba(160,170,185,0.45)',
   indicatorColor:   '#00E5A0',
 
   // Semantic
@@ -56,17 +56,20 @@ export const DARK = {
   redBg:         'rgba(239,68,68,0.06)',
   redBorder:     'rgba(239,68,68,0.20)',
 
-  // Pulse
-  pulseCenter:   'rgba(0,229,160,0.18)',
-  pulseEdge:     'rgba(0,229,160,0.06)',
-  ringBorder:    'rgba(0,229,160,0.10)',
+  // Metallic orange accent (for objectives/consumption labels)
+  metalOrange:   '#D4915C',
+
+  // Pulse — subtle emerald
+  pulseCenter:   'rgba(0,229,160,0.12)',
+  pulseEdge:     'rgba(0,229,160,0.04)',
+  ringBorder:    'rgba(0,229,160,0.08)',
 
   // ECG overlay
-  ecgOverlay:    'rgba(0,6,3,0.94)',
+  ecgOverlay:    'rgba(4,5,8,0.94)',
 
-  // Tab bar
-  tabBarBg:      'rgba(8,15,13,0.95)',
-  tabBarBorder:  'rgba(0,201,150,0.08)',
+  // Tab bar — dark steel
+  tabBarBg:      'rgba(10,12,15,0.95)',
+  tabBarBorder:  'rgba(120,130,150,0.08)',
 } as const;
 
 export type LixumTokens = {

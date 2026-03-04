@@ -60,7 +60,7 @@ export function ECGOverlay() {
         <AnimatedPath
           d={ECG_PATH}
           fill="none"
-          stroke="#00ff9d"
+          stroke="#00E5A0"
           strokeWidth={2.5}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
     zIndex: 9999,
-    backgroundColor: 'rgba(0,6,3,0.94)',
+    backgroundColor: 'rgba(4,5,8,0.94)',
     alignItems: 'center',
     justifyContent: 'center',
   },
