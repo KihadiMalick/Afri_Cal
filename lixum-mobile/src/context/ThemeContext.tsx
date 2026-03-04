@@ -7,16 +7,12 @@ interface ThemeContextType {
   theme: Theme;
   mode: 'dark';
   tokens: LixumTokens;
-  transitioning: false;
-  toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
   theme: darkTheme,
   mode: 'dark',
   tokens: DARK as LixumTokens,
-  transitioning: false,
-  toggleTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -26,8 +22,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         theme: darkTheme,
         mode: 'dark',
         tokens: DARK as LixumTokens,
-        transitioning: false,
-        toggleTheme: () => {},
       }}
     >
       {children}
