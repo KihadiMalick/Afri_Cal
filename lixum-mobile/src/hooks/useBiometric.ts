@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Platform } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -10,6 +11,9 @@ export function useBiometric() {
   const [biometricType, setBiometricType] = useState<string>('');
 
   useEffect(() => {
+    // Biometric n'est pas disponible sur le web
+    if (Platform.OS === 'web') return;
+
     (async () => {
       const compatible = await LocalAuthentication.hasHardwareAsync();
       const enrolled = await LocalAuthentication.isEnrolledAsync();
@@ -36,7 +40,7 @@ export function useBiometric() {
   }, [isEnabled]);
 
   const authenticate = useCallback(async (promptMessage?: string): Promise<boolean> => {
-    if (!isAvailable || !isEnabled) return false;
+    if (Platform.OS === 'web' || !isAvailable || !isEnabled) return false;
 
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: promptMessage || 'Confirmez votre identité',
