@@ -63,6 +63,7 @@ export type MainTabParamList = {
 };
 
 export type MealsStackParamList = {
+  HomeDashboard: undefined;
   MealsList: undefined;
   Scan: { imageUri?: string; imageBase64?: string };
   AddMeal: undefined;
