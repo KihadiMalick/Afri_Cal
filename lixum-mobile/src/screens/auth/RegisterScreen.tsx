@@ -111,20 +111,20 @@ export function RegisterScreen() {
               fullWidth
               size="lg"
             />
-          </GlassCard>
 
-          {/* Switch to login */}
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.switchAuth}
-          >
-            <Text style={[styles.switchText, { color: tk.t3 }]}>
-              {t.auth.hasAccount}{' '}
-              <Text style={{ color: tk.accent, fontWeight: '700' }}>
-                {t.auth.login}
+            {/* Switch to login — inside the card */}
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.switchAuth}
+            >
+              <Text style={[styles.switchText, { color: tk.t3 }]}>
+                {t.auth.hasAccount}{' '}
+                <Text style={{ color: tk.accent, fontWeight: '700' }}>
+                  {t.auth.login}
+                </Text>
               </Text>
-            </Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </GlassCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

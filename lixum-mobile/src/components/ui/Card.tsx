@@ -13,6 +13,7 @@ interface GlassCardProps {
 /**
  * Glass-morphism card — semi-transparent so the dark background
  * and circuit lines show through, like a glass tablet.
+ * Slightly more opaque for better text readability.
  */
 export function GlassCard({ children, vitality = false, style, padding = 'md' }: GlassCardProps) {
   const tk = useTokens();
@@ -21,13 +22,13 @@ export function GlassCard({ children, vitality = false, style, padding = 'md' }:
   if (vitality) {
     return (
       <LinearGradient
-        colors={['rgba(0,255,157,0.06)', 'rgba(0,255,157,0.02)']}
+        colors={['rgba(0,255,157,0.08)', 'rgba(0,255,157,0.03)']}
         start={{ x: 0.15, y: 0.08 }}
         end={{ x: 0.85, y: 0.92 }}
         style={[
           styles.vitalityCard,
           {
-            borderColor: 'rgba(0,255,157,0.18)',
+            borderColor: 'rgba(0,255,157,0.22)',
             padding: pad,
           },
           glassWebShadow,
@@ -44,8 +45,8 @@ export function GlassCard({ children, vitality = false, style, padding = 'md' }:
       style={[
         styles.card,
         {
-          backgroundColor: 'rgba(255,255,255,0.04)',
-          borderColor: 'rgba(255,255,255,0.10)',
+          backgroundColor: 'rgba(255,255,255,0.06)',
+          borderColor: 'rgba(255,255,255,0.12)',
           padding: pad,
         },
         glassWebShadow,
@@ -65,8 +66,8 @@ export function Card({ children, padding = 'md', style }: { children: React.Reac
 const glassWebShadow: ViewStyle = Platform.select({
   web: {
     // @ts-ignore — web-only backdrop filter for true glass effect
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
   } as any,
   default: {},
 });

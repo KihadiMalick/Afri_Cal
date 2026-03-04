@@ -143,20 +143,20 @@ export function LoginScreen() {
                 </Text>
               </TouchableOpacity>
             )}
-          </GlassCard>
 
-          {/* Switch to register */}
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Register')}
-            style={styles.switchAuth}
-          >
-            <Text style={[styles.switchText, { color: tk.t3 }]}>
-              {t.auth.noAccount}{' '}
-              <Text style={{ color: tk.accent, fontWeight: '700' }}>
-                {t.auth.register}
+            {/* Switch to register — inside the card */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Register')}
+              style={styles.switchAuth}
+            >
+              <Text style={[styles.switchText, { color: tk.t3 }]}>
+                {t.auth.noAccount}{' '}
+                <Text style={{ color: tk.accent, fontWeight: '700' }}>
+                  {t.auth.register}
+                </Text>
               </Text>
-            </Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </GlassCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
