@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, type ViewStyle } from 'react-native';
+import { View, StyleSheet, Platform, type ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+
 interface ProgressBarProps {
   percent: number;
   height?: number;
@@ -13,9 +14,9 @@ interface ProgressBarProps {
 
 export function ProgressBar({
   percent,
-  height = 14,
+  height = 4,
   style,
-  gradientColors = ['#ea580c', '#f59e0b', '#eab308'],
+  gradientColors = ['#FF4444', '#FF8C00', '#FFD700', '#00C896'],
 }: ProgressBarProps) {
   const fillAnim = useSharedValue(0);
 
@@ -31,7 +32,7 @@ export function ProgressBar({
   }));
 
   return (
-    <View style={[styles.track, { height, backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.04)' }, style]}>
+    <View style={[styles.track, { height }, style]}>
       <Animated.View style={[styles.fill, { height }, fillStyle]}>
         <LinearGradient
           colors={gradientColors as any}
@@ -48,7 +49,10 @@ const styles = StyleSheet.create({
   track: {
     borderRadius: 9999,
     borderWidth: 1,
+    borderColor: '#3A3A3A',
+    backgroundColor: '#1A1A1A',
     overflow: 'hidden',
+    position: 'relative',
   },
   fill: {
     borderRadius: 9999,
