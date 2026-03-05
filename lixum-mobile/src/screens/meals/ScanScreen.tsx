@@ -9,10 +9,19 @@ import {
   Image,
   ScrollView,
   TextInput,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+
+// expo-camera n'est pas disponible sur le web
+let CameraView: any = null;
+let useCameraPermissions: any = () => [{ granted: false }, () => {}];
+if (Platform.OS !== 'web') {
+  const cam = require('expo-camera');
+  CameraView = cam.CameraView;
+  useCameraPermissions = cam.useCameraPermissions;
+}
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocale } from '@/context/LocaleContext';
@@ -47,7 +56,7 @@ export function ScanScreen() {
   const { t, locale } = useLocale();
   const navigation = useNavigation();
   const route = useRoute<any>();
-  const cameraRef = useRef<CameraView>(null);
+  const cameraRef = useRef<any>(null);
 
   // Image passée depuis la galerie
   const passedImageUri = route.params?.imageUri as string | undefined;
@@ -200,8 +209,8 @@ export function ScanScreen() {
     navigation.goBack();
   };
 
-  // Permission non accordée (mode caméra uniquement)
-  if (!passedImageUri && !permission?.granted) {
+  // Permission non accordée (mode caméra uniquement, natif seulement)
+  if (Platform.OS !== 'web' && !passedImageUri && !permission?.granted) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={styles.permissionContainer}>
@@ -226,7 +235,23 @@ export function ScanScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Phase Caméra */}
-      {phase === 'camera' && (
+      {phase === 'camera' && Platform.OS === 'web' && (
+        <View style={styles.permissionContainer}>
+          <Text style={{ fontSize: 48 }}>{'📷'}</Text>
+          <Text style={[styles.permTitle, { color: theme.text }]}>
+            {locale === 'fr' ? 'Caméra non disponible sur le web' : 'Camera not available on web'}
+          </Text>
+          <Text style={[styles.permDesc, { color: theme.textSecondary }]}>
+            {locale === 'fr'
+              ? 'Utilisez la galerie photo ou l\'app mobile pour scanner vos repas'
+              : 'Use the photo gallery or mobile app to scan your meals'}
+          </Text>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={{ color: accent, fontSize: 15, fontWeight: '600' }}>{t.common.back}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {phase === 'camera' && Platform.OS !== 'web' && (
         <View style={styles.cameraContainer}>
           <CameraView ref={cameraRef} style={styles.camera} facing="back" />
           <View style={styles.cameraHud}>
