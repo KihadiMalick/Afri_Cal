@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 /**
@@ -7,6 +7,15 @@ import { LinearGradient } from 'expo-linear-gradient';
  * Replaces all geometric SVG/circuit patterns with a smooth vertical gradient.
  */
 export function LixumShell({ children }: { children: React.ReactNode }) {
+  // On web, LinearGradient may not render — use a dark fallback
+  if (Platform.OS === 'web') {
+    return (
+      <View style={[styles.container, { backgroundColor: '#0D1117' }]}>
+        <View style={styles.content}>{children}</View>
+      </View>
+    );
+  }
+
   return (
     <LinearGradient
       colors={['#0D1117', '#0F1923', '#0D1117', '#0A0F14']}
