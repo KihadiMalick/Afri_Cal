@@ -14,7 +14,7 @@ const LixumNavTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    background: 'transparent',
+    background: '#0D1117',
     card: 'transparent',
     border: 'transparent',
   },
