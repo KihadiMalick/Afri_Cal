@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Platform,
-  useWindowDimensions,
   Animated as RNAnimated,
+  Easing,
   LayoutChangeEvent,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -21,10 +21,9 @@ import Svg, { Path, Line as SvgLine } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocale } from '@/context/LocaleContext';
 import { usePreloadedData } from '@/context/DataPreloadContext';
-import { GlassCard, LixumLogo, ProgressBar } from '@/components/ui';
+import { GlassCard, LixumLogo } from '@/components/ui';
 import { DashboardSkeleton } from '@/components/ui/LoadingSkeleton';
 import { CalorieOvershootAlert } from '@/components/CalorieOvershootAlert';
-import { calculateDailyScore } from '@/utils/daily-score';
 import { generateSportRecommendation } from '@/utils/sport-recommendation';
 import type { MealsStackParamList } from '@/types';
 
@@ -85,7 +84,8 @@ const L = {
     steps: 'Pas',
     km: 'km',
     min: 'min',
-    caloriesBurned: 'CALORIES BRÛLÉES',
+    caloriesBurned: "CALORIES\nBRÛLÉES",
+    caloriesConsumed: 'CONSOMMÉ',
     caloriesRemaining: 'RESTANTS',
     bmrLabel: 'MÉTABOLISME (BMR)',
     vitalityScore: 'SCORE VITALITÉ',
@@ -115,7 +115,8 @@ const L = {
     steps: 'Steps',
     km: 'km',
     min: 'min',
-    caloriesBurned: 'CALORIES BURNED',
+    caloriesBurned: "CALORIES\nBURNED",
+    caloriesConsumed: 'CONSUMED',
     caloriesRemaining: 'REMAINING',
     bmrLabel: 'METABOLISM (BMR)',
     vitalityScore: 'VITALITY SCORE',
@@ -135,7 +136,7 @@ function ECGChart({ consumed, burned, remaining, goal }: {
   consumed: number; burned: number; remaining: number; goal: number;
 }) {
   const [chartWidth, setChartWidth] = useState(300);
-  const chartHeight = 100;
+  const chartHeight = 80;
   const { locale } = useLocale();
   const txt = L[locale] ?? L.fr;
 
@@ -145,25 +146,26 @@ function ECGChart({ consumed, burned, remaining, goal }: {
 
   const generateECGPath = (value: number, maxVal: number, offsetY: number = 0) => {
     const intensity = Math.min(value / Math.max(maxVal, 1), 1);
-    const peakHeight = 15 + (intensity * 30);
+    const peakHeight = 8 + (intensity * 22);
     const baseline = chartHeight / 2 + offsetY;
-    const segmentWidth = chartWidth / 5;
+    const segments = 6;
+    const segmentWidth = chartWidth / segments;
 
     let path = `M 0 ${baseline}`;
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < segments; i++) {
       const x = i * segmentWidth;
-      path += ` L ${x + segmentWidth * 0.15} ${baseline}`;
-      path += ` L ${x + segmentWidth * 0.25} ${baseline + peakHeight * 0.3}`;
-      path += ` L ${x + segmentWidth * 0.35} ${baseline - peakHeight}`;
-      path += ` L ${x + segmentWidth * 0.45} ${baseline + peakHeight * 0.5}`;
-      path += ` L ${x + segmentWidth * 0.55} ${baseline}`;
-      path += ` L ${x + segmentWidth} ${baseline}`;
+      path += ` L ${x + segmentWidth * 0.12} ${baseline}`;
+      path += ` L ${x + segmentWidth * 0.22} ${baseline + peakHeight * 0.25}`;
+      path += ` L ${x + segmentWidth * 0.32} ${baseline - peakHeight}`;
+      path += ` L ${x + segmentWidth * 0.40} ${baseline + peakHeight * 0.4}`;
+      path += ` L ${x + segmentWidth * 0.50} ${baseline}`;
+      path += ` L ${x + segmentWidth * 1.0} ${baseline}`;
     }
     return path;
   };
 
   return (
-    <View style={{ marginVertical: 16 }} onLayout={onLayout}>
+    <View style={{ marginVertical: 10 }} onLayout={onLayout}>
       <Svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
         {/* Baseline */}
         <SvgLine
@@ -172,18 +174,18 @@ function ECGChart({ consumed, burned, remaining, goal }: {
         />
         {/* Remaining (gray, background) */}
         <Path
-          d={generateECGPath(remaining, goal, 2)}
-          fill="none" stroke="#3E4855" strokeWidth="1.5" opacity="0.5"
+          d={generateECGPath(remaining, goal, 3)}
+          fill="none" stroke="#3E4855" strokeWidth="1.5" strokeLinecap="round" opacity={0.6}
         />
         {/* Burned (turquoise) */}
         <Path
           d={generateECGPath(burned, goal, 0)}
-          fill="none" stroke="#00BFA6" strokeWidth="1.8" opacity="0.7"
+          fill="none" stroke="#00BFA6" strokeWidth="2" strokeLinecap="round" opacity={0.8}
         />
         {/* Consumed (emerald, front) */}
         <Path
-          d={generateECGPath(consumed, goal, -1)}
-          fill="none" stroke="#00D984" strokeWidth="2" opacity="0.9"
+          d={generateECGPath(consumed, goal, -3)}
+          fill="none" stroke="#00D984" strokeWidth="2.5" strokeLinecap="round" opacity={1}
         />
       </Svg>
 
@@ -207,30 +209,88 @@ function ECGChart({ consumed, burned, remaining, goal }: {
 }
 
 const ecgStyles = StyleSheet.create({
-  legend: { flexDirection: 'row', justifyContent: 'center', marginTop: 8, gap: 16 },
+  legend: { flexDirection: 'row', justifyContent: 'center', marginTop: 8, gap: 14 },
   legendItem: { flexDirection: 'row', alignItems: 'center' },
-  legendDot: { width: 10, height: 3, borderRadius: 1, marginRight: 6 },
-  legendText: { color: '#8892A0', fontSize: 10, fontFamily: FONT_MEDIUM },
+  legendDot: { width: 10, height: 2.5, borderRadius: 1, marginRight: 5 },
+  legendText: { color: '#8892A0', fontSize: 9, fontFamily: FONT_MEDIUM },
 });
 
 /* ================================================================== */
-/*  STAT CARD with press animation                                     */
+/*  STATUS DOT — pulsing live indicator                                */
 /* ================================================================== */
-function StatCard({ label, value, unit, onPress }: {
+const getStatusColor = (target: number, consumed: number, burned: number) => {
+  const deficit = consumed - target;
+  const hasActivity = burned > 0;
+  if (hasActivity && deficit <= 50) return '#00D984';   // green
+  if (!hasActivity && consumed <= target) return '#FFA94D'; // orange
+  return '#FF4D4D'; // red
+};
+
+function StatusDot({ color }: { color: string }) {
+  const pulseAnim = useRef(new RNAnimated.Value(1)).current;
+
+  useEffect(() => {
+    const pulse = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(pulseAnim, {
+          toValue: 0.3,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, []);
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <RNAnimated.View style={{
+        position: 'absolute',
+        width: 16, height: 16, borderRadius: 8,
+        backgroundColor: color,
+        opacity: RNAnimated.multiply(pulseAnim, new RNAnimated.Value(0.3)),
+      }} />
+      <RNAnimated.View style={{
+        width: 8, height: 8, borderRadius: 4,
+        backgroundColor: color,
+        opacity: pulseAnim,
+        marginLeft: 4,
+        marginRight: 8,
+      }} />
+    </View>
+  );
+}
+
+/* ================================================================== */
+/*  STAT BUTTON — keyboard-press bevel effect                          */
+/* ================================================================== */
+function StatButton({ label, value, unit, onPress }: {
   label: string; value: number | string; unit: string; onPress?: () => void;
 }) {
   const scaleAnim = useRef(new RNAnimated.Value(1)).current;
 
   const onPressIn = () => {
     RNAnimated.spring(scaleAnim, {
-      toValue: 0.97,
+      toValue: 0.95,
       useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
     }).start();
   };
   const onPressOut = () => {
     RNAnimated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
+      speed: 30,
+      bounciness: 6,
     }).start();
   };
 
@@ -240,14 +300,61 @@ function StatCard({ label, value, unit, onPress }: {
       onPressIn={onPressIn}
       onPressOut={onPressOut}
     >
-      <RNAnimated.View style={{ transform: [{ scale: scaleAnim }] }}>
-        <GlassCard metalButton padding="md">
-          <Text style={s.statLabel}>{label}</Text>
-          <Text style={s.statValue}>
-            {typeof value === 'number' ? fmtNum(value) : value}
-          </Text>
-          <Text style={s.statUnit}>{unit}</Text>
-        </GlassCard>
+      <RNAnimated.View style={{
+        transform: [{ scale: scaleAnim }],
+        flex: 1,
+        marginHorizontal: 4,
+      }}>
+        {/* Outer bevel frame */}
+        <View style={{
+          borderRadius: 12,
+          borderWidth: 1.5,
+          borderTopColor: '#5A6577',
+          borderLeftColor: '#4A5568',
+          borderRightColor: '#2A303B',
+          borderBottomColor: '#1A1F26',
+          padding: 2,
+          backgroundColor: '#13161B',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.6,
+          shadowRadius: 10,
+          elevation: 10,
+        }}>
+          {/* Inner emerald liseré */}
+          <View style={{
+            borderRadius: 10,
+            borderWidth: 0.8,
+            borderColor: 'rgba(0, 217, 132, 0.2)',
+            overflow: 'hidden',
+          }}>
+            <LinearGradient
+              colors={['#2E3440', '#1E232B', '#252B35', '#1E232B']}
+              locations={[0, 0.35, 0.65, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                paddingVertical: 14,
+                paddingHorizontal: 8,
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: 95,
+              }}
+            >
+              {/* Top highlight */}
+              <View style={{
+                position: 'absolute', top: 0, left: 12, right: 12,
+                height: 1, backgroundColor: '#6B7B8D', opacity: 0.3,
+              }} />
+
+              <Text style={s.statLabel}>{label}</Text>
+              <Text style={s.statValue}>
+                {typeof value === 'number' ? fmtNum(value) : value}
+              </Text>
+              <Text style={s.statUnit}>{unit}</Text>
+            </LinearGradient>
+          </View>
+        </View>
       </RNAnimated.View>
     </TouchableWithoutFeedback>
   );
@@ -294,9 +401,6 @@ function DashboardContent() {
   const { locale } = useLocale();
   const navigation = useNavigation<Nav>();
   const txt = L[locale] ?? L.fr;
-  const { width: screenWidth } = useWindowDimensions();
-  const isSmall = screenWidth < 600;
-
   const {
     profile,
     todayMeals: meals,
@@ -317,8 +421,6 @@ function DashboardContent() {
   const remaining = Math.max(0, target - consumed + burned);
   const netConsumed = consumed - burned;
   const overshootKcal = Math.max(0, netConsumed - target);
-  const progressPct = target > 0 ? Math.min((consumed / target) * 100, 100) : 0;
-  const bmr = profile?.bmr ?? 0;
   const displayName = profile?.full_name?.split(' ')[0] || 'User';
   const sportRec = generateSportRecommendation(overshootKcal);
 
@@ -373,7 +475,7 @@ function DashboardContent() {
         <Animated.View entering={FadeInDown.duration(400).delay(0)} style={s.header}>
           <LixumLogo size={16} showSub />
           <View style={s.headerRight}>
-            <View style={s.onlineDot} />
+            <StatusDot color={getStatusColor(target, consumed, burned)} />
             <Text style={s.headerName}>{displayName}</Text>
           </View>
         </Animated.View>
@@ -382,7 +484,7 @@ function DashboardContent() {
         {/*  CARD 1 — VITALITY SCORE with ECG (NOT clickable)             */}
         {/* ============================================================ */}
         <Animated.View entering={FadeInDown.duration(500).delay(100)}>
-          <GlassCard vitality padding="lg">
+          <GlassCard vitality padding="md">
             {/* Header: label + objective/consumed */}
             <View style={s.heroTopRow}>
               <Text style={s.heroLabel}>{txt.vitalityLabel}</Text>
@@ -400,68 +502,32 @@ function DashboardContent() {
               </View>
             </View>
 
-            {/* ECG Chart (replaces the big 100%) */}
+            {/* ECG Chart — 3 distinct lines */}
             <ECGChart consumed={consumed} burned={burned} remaining={remaining} goal={target} />
-
-            {/* Username */}
-            <Text style={s.heroUsername}>{displayName}</Text>
-
-            {/* Progress bar — premium gradient */}
-            <ProgressBar
-              percent={progressPct}
-              height={8}
-              gradientColors={['#2A303B', '#00897B', '#00BFA6', '#00D984']}
-              style={{ marginTop: 12, marginBottom: 10 }}
-            />
-
-            {/* Micro stats below bar */}
-            <View style={s.heroMicroRow}>
-              <Text style={s.heroMicroText}>
-                {fmtNum(target)} kcal objectif
-              </Text>
-              <Text style={s.heroMicroText}>
-                {fmtNum(consumed)} kcal consommé
-              </Text>
-              <Text style={s.heroMicroHighlight}>
-                {fmtNum(remaining)} kcal {txt.remaining}
-              </Text>
-            </View>
           </GlassCard>
         </Animated.View>
 
         {/* ============================================================ */}
-        {/*  4 STAT CARDS — 2x2 Grid (ONLY clickable elements)            */}
+        {/*  3 STAT BUTTONS — single row (ONLY clickable elements)         */}
         {/* ============================================================ */}
         <Animated.View entering={FadeInDown.duration(500).delay(200)}>
-          <View style={s.statsGrid}>
-            <View style={[s.statsGridItem, isSmall && s.statsGridItemSmall]}>
-              <StatCard
-                label={txt.caloriesBurned}
-                value={burned}
-                unit="KCAL"
-              />
-            </View>
-            <View style={[s.statsGridItem, isSmall && s.statsGridItemSmall]}>
-              <StatCard
-                label={txt.caloriesRemaining}
-                value={remaining}
-                unit="KCAL"
-              />
-            </View>
-            <View style={[s.statsGridItem, isSmall && s.statsGridItemSmall]}>
-              <StatCard
-                label={txt.bmrLabel}
-                value={bmr}
-                unit="KCAL"
-              />
-            </View>
-            <View style={[s.statsGridItem, isSmall && s.statsGridItemSmall]}>
-              <StatCard
-                label={txt.vitalityScore}
-                value={streak ?? 0}
-                unit={txt.days.toUpperCase()}
-              />
-            </View>
+          <View style={s.statsRow}>
+            <StatButton
+              label={txt.caloriesBurned}
+              value={burned}
+              unit="KCAL"
+            />
+            <StatButton
+              label={txt.caloriesConsumed}
+              value={consumed}
+              unit="KCAL"
+              onPress={() => navigation.navigate('MealsList')}
+            />
+            <StatButton
+              label={txt.caloriesRemaining}
+              value={remaining}
+              unit="KCAL"
+            />
           </View>
         </Animated.View>
 
@@ -605,7 +671,7 @@ const EMERALD = '#00D984';
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
-  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 120, gap: 16 },
+  scroll: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 100, gap: 14 },
 
   /* --- Header --- */
   header: {
@@ -616,15 +682,8 @@ const s = StyleSheet.create({
     paddingBottom: 12,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
-  onlineDot: {
-    width: 8, height: 8, borderRadius: 4, marginRight: 8, backgroundColor: EMERALD,
-    ...Platform.select({
-      web: { boxShadow: '0 0 6px rgba(0,217,132,0.40)' } as any,
-      default: {},
-    }),
-  },
   headerName: {
-    fontSize: 13, fontFamily: FONT_SEMI, fontWeight: '600', letterSpacing: 0.5, color: '#8892A0',
+    fontSize: 12, fontFamily: FONT_SEMI, fontWeight: '500', letterSpacing: 0.5, color: '#8892A0',
   },
 
   /* --- Onboarding --- */
@@ -638,44 +697,37 @@ const s = StyleSheet.create({
   /* ================================================================ */
   heroTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
   heroLabel: {
-    fontSize: 12, fontFamily: FONT_SEMI, fontWeight: '600',
-    textTransform: 'uppercase', letterSpacing: 2, color: '#8892A0',
+    fontSize: 11, fontFamily: FONT_SEMI, fontWeight: '600',
+    textTransform: 'uppercase', letterSpacing: 2, color: '#8892A0', maxWidth: 120,
   },
-  heroStatsRight: { flexDirection: 'row', gap: 24 },
+  heroStatsRight: { flexDirection: 'row', gap: 20 },
   heroStatCol: { alignItems: 'center' },
   heroStatLabel: {
-    fontSize: 10, fontFamily: FONT_SEMI, fontWeight: '600',
-    letterSpacing: 1.5, textTransform: 'uppercase', color: '#8892A0', marginBottom: 2,
+    fontSize: 9, fontFamily: FONT_SEMI, fontWeight: '600',
+    letterSpacing: 1, textTransform: 'uppercase', color: '#555E6C', marginBottom: 2,
   },
   heroStatValue: {
-    fontSize: 24, fontFamily: FONT_BLACK, fontWeight: '800', color: EMERALD, marginTop: 2,
+    fontSize: 20, fontFamily: FONT_BLACK, fontWeight: '800', color: EMERALD, marginTop: 2,
   },
-  heroStatUnit: { fontSize: 11, fontFamily: FONT_MEDIUM, color: '#555E6C' },
-  heroUsername: {
-    fontSize: 13, fontFamily: FONT_MEDIUM, fontWeight: '500', color: '#555E6C', marginBottom: 12,
-  },
-  heroMicroRow: { flexDirection: 'row', justifyContent: 'center', gap: 12, flexWrap: 'wrap' },
-  heroMicroText: { fontSize: 12, fontFamily: FONT_BODY, color: '#555E6C' },
-  heroMicroHighlight: { fontSize: 12, fontFamily: FONT_BOLD, fontWeight: '700', color: EMERALD },
+  heroStatUnit: { fontSize: 10, fontFamily: FONT_MEDIUM, color: '#555E6C' },
 
   /* ================================================================ */
-  /*  4 STAT CARDS — 2x2 grid                                         */
+  /*  3 STAT BUTTONS — single row                                      */
   /* ================================================================ */
-  statsGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between',
+  statsRow: {
+    flexDirection: 'row', justifyContent: 'space-between',
   },
-  statsGridItem: { width: '48%' as any, marginBottom: 12 },
-  statsGridItemSmall: { width: '48%' as any },
   statLabel: {
-    fontSize: 10, fontFamily: FONT_SEMI, fontWeight: '600',
-    letterSpacing: 1.5, textAlign: 'center', textTransform: 'uppercase', color: '#8892A0',
+    fontSize: 9, fontFamily: FONT_SEMI, fontWeight: '600',
+    letterSpacing: 1.2, textAlign: 'center', textTransform: 'uppercase',
+    color: '#8892A0', lineHeight: 13,
   },
   statValue: {
-    fontSize: 30, fontFamily: FONT_BLACK, fontWeight: '800', marginTop: 8,
+    fontSize: 24, fontFamily: FONT_BLACK, fontWeight: '800', marginTop: 6,
     color: EMERALD, textAlign: 'center',
   },
   statUnit: {
-    fontSize: 11, fontFamily: FONT_MEDIUM, letterSpacing: 1, marginTop: 2,
+    fontSize: 10, fontFamily: FONT_MEDIUM, letterSpacing: 1.5, marginTop: 2,
     color: '#555E6C', textAlign: 'center',
   },
 

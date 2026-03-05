@@ -154,7 +154,7 @@ export function MainNavigator() {
                 activeOpacity={0.7}
               >
                 {active && <View style={styles.activeBar} />}
-                <Icon color={active ? '#00D984' : '#555E6C'} size={28} />
+                <Icon color={active ? '#00D984' : '#555E6C'} size={26} />
               </TouchableOpacity>
             );
           })}
