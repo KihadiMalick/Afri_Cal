@@ -1,7 +1,9 @@
-// LIXUM - Login Page Test v2.1
+// LIXUM - Login Page Test v2.2
 // Copier-coller dans App.js sur snack.expo.dev
 // Dependance: expo-linear-gradient
 // Logo: mettre logo-lx.png dans le dossier assets du Snack
+//
+// v2.2 — Glassmorphism card, glass buttons, logo 150x150, biometrique turquoise
 
 import React, { useState } from 'react';
 import {
@@ -16,7 +18,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const COLORS = {
+var COLORS = {
   bgDeep: '#080A0E',
   bgPrimary: '#0D1117',
   bgSecondary: '#151B23',
@@ -31,13 +33,14 @@ const COLORS = {
   emeraldDark: '#00A866',
   emeraldDeep: '#006B40',
   emeraldMuted: 'rgba(0, 217, 132, 0.15)',
+  turquoise: '#00BFA6',
   textPrimary: '#EAEEF3',
   textSecondary: '#8892A0',
   textMuted: '#555E6C',
   textPlaceholder: '#3E4855',
 };
 
-const texts = {
+var texts = {
   fr: {
     tagline: 'VOTRE TABLEAU DE BORD VITAL',
     title: 'Connexion',
@@ -74,15 +77,24 @@ const texts = {
   },
 };
 
-const logoImage = require('./assets/logo-lx.png');
+var logoImage = require('./assets/logo-lx.png');
 
 export default function App() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [lang, setLang] = useState('fr');
-  const t = texts[lang];
+  var _email = useState('');
+  var email = _email[0];
+  var setEmail = _email[1];
 
-  const handleLogin = function () {
+  var _password = useState('');
+  var password = _password[0];
+  var setPassword = _password[1];
+
+  var _lang = useState('fr');
+  var lang = _lang[0];
+  var setLang = _lang[1];
+
+  var t = texts[lang];
+
+  var handleLogin = function () {
     if (!email || !password) {
       Alert.alert(t.errorTitle, t.errorEmpty);
       return;
@@ -90,15 +102,15 @@ export default function App() {
     Alert.alert('Test Login', 'Email: ' + email);
   };
 
-  const handleGoogleLogin = function () {
+  var handleGoogleLogin = function () {
     Alert.alert('Google', 'Google OAuth - a implementer');
   };
 
-  const handleBiometric = function () {
+  var handleBiometric = function () {
     Alert.alert('Biometrique', 'Biometric login - a implementer');
   };
 
-  const handleRegister = function () {
+  var handleRegister = function () {
     Alert.alert('Navigation', 'Aller vers /register');
   };
 
@@ -145,29 +157,6 @@ export default function App() {
     );
   }
 
-  // Lignes texture brossee
-  function BrushedLines() {
-    var lines = [];
-    var positions = [60, 120, 180, 240, 300, 360];
-    for (var i = 0; i < positions.length; i++) {
-      lines.push(
-        <View
-          key={i}
-          style={{
-            position: 'absolute',
-            top: positions[i],
-            left: 10,
-            right: 10,
-            height: 0.5,
-            backgroundColor: '#6B7B8D',
-            opacity: 0.04 + (i % 2) * 0.02,
-          }}
-        />
-      );
-    }
-    return lines;
-  }
-
   return (
     <LinearGradient
       colors={['#080A0E', '#0D1117', '#0F1923', '#0D1117', '#080A0E']}
@@ -182,38 +171,50 @@ export default function App() {
       >
         <LangSwitch />
 
-        <View style={{ alignItems: 'center', marginBottom: 12 }}>
+        {/* CORRECTION 3 — Logo 150x150 */}
+        <View style={{ alignItems: 'center', marginBottom: 14 }}>
           <View style={styles.logoWrap}>
             <Image
               source={logoImage}
               style={styles.logoImage}
-              resizeMode="contain"
+              resizeMode="cover"
             />
           </View>
         </View>
 
         <Text style={styles.tagline}>{t.tagline}</Text>
 
+        {/* CORRECTION 4 — Carte Glassmorphism */}
         <View style={styles.cardShadow}>
           <View style={styles.cardBevel}>
             <LinearGradient
-              colors={['#3A4250', '#4A5568', '#3E4855', '#2E3440', '#252B35', '#1E232B']}
-              locations={[0, 0.12, 0.3, 0.55, 0.8, 1]}
+              colors={[
+                'rgba(58, 66, 80, 0.65)',
+                'rgba(42, 48, 59, 0.55)',
+                'rgba(30, 35, 43, 0.60)',
+                'rgba(27, 31, 38, 0.70)',
+              ]}
+              locations={[0, 0.3, 0.6, 1]}
               start={{ x: 0.5, y: 0 }}
               end={{ x: 0.5, y: 1 }}
               style={styles.card}
             >
-              <View style={styles.cardReflectWrap}>
+              <View style={styles.glassReflectWrap}>
                 <LinearGradient
-                  colors={['rgba(107, 123, 141, 0.25)', 'rgba(107, 123, 141, 0.08)', 'rgba(107, 123, 141, 0)']}
+                  colors={[
+                    'rgba(255, 255, 255, 0.10)',
+                    'rgba(255, 255, 255, 0.03)',
+                    'rgba(255, 255, 255, 0)',
+                  ]}
                   start={{ x: 0.5, y: 0 }}
                   end={{ x: 0.5, y: 1 }}
                   style={{ flex: 1 }}
                 />
               </View>
 
-              <View style={styles.cardShine} />
-              <BrushedLines />
+              <View style={styles.glassHighlight} />
+
+              <View style={styles.glassDiagonalReflect} />
 
               <Text style={styles.title}>{t.title}</Text>
               <Text style={styles.subtitle}>{t.subtitle}</Text>
@@ -243,23 +244,16 @@ export default function App() {
                 />
               </View>
 
+              {/* CORRECTION 1 — Bouton Se connecter Glass */}
               <TouchableOpacity
-                activeOpacity={0.8}
+                activeOpacity={0.7}
                 onPress={handleLogin}
                 style={styles.btnConnectWrap}
               >
-                <View style={styles.btnConnectBorder}>
-                  <LinearGradient
-                    colors={['#00D984', '#00C278', '#00A866', '#00895A']}
-                    locations={[0, 0.3, 0.7, 1]}
-                    start={{ x: 0.5, y: 0 }}
-                    end={{ x: 0.5, y: 1 }}
-                    style={styles.btnConnectInner}
-                  >
-                    <View style={styles.btnShine} />
-                    <View style={styles.btnHighlight} />
-                    <Text style={styles.btnConnectText}>{t.loginButton}</Text>
-                  </LinearGradient>
+                <View style={styles.btnConnectGlass}>
+                  <View style={styles.btnConnectGlassReflet} />
+                  <View style={styles.btnConnectGlassLine} />
+                  <Text style={styles.btnConnectText}>{t.loginButton}</Text>
                 </View>
               </TouchableOpacity>
 
@@ -281,13 +275,15 @@ export default function App() {
                 </View>
               </TouchableOpacity>
 
+              {/* CORRECTION 2 — Bouton Biometrique Turquoise */}
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={handleBiometric}
                 style={{ marginBottom: 20 }}
               >
                 <View style={styles.btnBio}>
-                  <View style={styles.btnBioShine} />
+                  <View style={styles.btnBioReflet} />
+                  <Text style={{ fontSize: 18 }}>&#x1F512;</Text>
                   <Text style={styles.btnBioText}>{t.biometricButton}</Text>
                 </View>
               </TouchableOpacity>
@@ -316,6 +312,8 @@ var styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 40,
   },
+
+  // Lang switch
   langRow: {
     width: '100%',
     alignItems: 'flex-end',
@@ -359,10 +357,12 @@ var styles = StyleSheet.create({
     width: 1,
     backgroundColor: '#3E4855',
   },
+
+  // CORRECTION 3 — Logo 150x150
   logoWrap: {
-    width: 120,
-    height: 120,
-    borderRadius: 26,
+    width: 150,
+    height: 150,
+    borderRadius: 30,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.7,
@@ -372,10 +372,11 @@ var styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logoImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 26,
+    width: 150,
+    height: 150,
+    borderRadius: 30,
   },
+
   tagline: {
     color: '#555E6C',
     fontSize: 10,
@@ -385,23 +386,26 @@ var styles = StyleSheet.create({
     marginBottom: 24,
     textTransform: 'uppercase',
   },
+
+  // CORRECTION 4 — Carte Glassmorphism
   cardShadow: {
     width: '100%',
     maxWidth: 400,
-    borderRadius: 18,
+    borderRadius: 20,
+    marginTop: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.65,
+    shadowOpacity: 0.5,
     shadowRadius: 24,
-    elevation: 16,
+    elevation: 14,
   },
   cardBevel: {
-    borderRadius: 18,
-    borderWidth: 1.5,
-    borderTopColor: '#6B7B8D',
-    borderLeftColor: '#5A6577',
-    borderRightColor: '#2A303B',
-    borderBottomColor: '#1A1F26',
+    borderRadius: 20,
+    borderWidth: 1.2,
+    borderTopColor: 'rgba(107, 123, 141, 0.5)',
+    borderLeftColor: 'rgba(107, 123, 141, 0.25)',
+    borderRightColor: 'rgba(42, 48, 59, 0.5)',
+    borderBottomColor: 'rgba(26, 31, 38, 0.6)',
     overflow: 'hidden',
   },
   card: {
@@ -409,23 +413,36 @@ var styles = StyleSheet.create({
     paddingTop: 28,
     paddingBottom: 24,
   },
-  cardReflectWrap: {
+  glassReflectWrap: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 40,
+    height: 50,
     overflow: 'hidden',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
-  cardShine: {
+  glassHighlight: {
     position: 'absolute',
     top: 0,
-    left: 16,
-    right: 16,
+    left: 12,
+    right: 12,
     height: 1,
-    backgroundColor: '#8892A0',
-    opacity: 0.5,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 1,
   },
+  glassDiagonalReflect: {
+    position: 'absolute',
+    top: -60,
+    left: -30,
+    width: 180,
+    height: 180,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: 90,
+    transform: [{ rotate: '45deg' }],
+  },
+
   title: {
     color: '#EAEEF3',
     fontSize: 24,
@@ -447,12 +464,12 @@ var styles = StyleSheet.create({
   inputWrap: {
     borderRadius: 12,
     marginBottom: 18,
-    backgroundColor: '#0D1117',
+    backgroundColor: 'rgba(13, 17, 23, 0.8)',
     borderWidth: 1.2,
-    borderTopColor: '#0A0D12',
-    borderLeftColor: '#0D1015',
-    borderRightColor: '#2A303B',
-    borderBottomColor: '#3E4855',
+    borderTopColor: 'rgba(10, 13, 18, 0.9)',
+    borderLeftColor: 'rgba(13, 16, 21, 0.9)',
+    borderRightColor: 'rgba(42, 48, 59, 0.6)',
+    borderBottomColor: 'rgba(62, 72, 85, 0.5)',
   },
   input: {
     color: '#EAEEF3',
@@ -460,55 +477,53 @@ var styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
+
+  // CORRECTION 1 — Bouton Se connecter Glass
   btnConnectWrap: {
-    borderRadius: 14,
     marginBottom: 20,
-    shadowColor: '#00D984',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  btnConnectBorder: {
     borderRadius: 14,
-    borderWidth: 1.5,
-    borderTopColor: '#00FFB2',
-    borderLeftColor: '#00D984',
-    borderRightColor: '#00895A',
-    borderBottomColor: '#006B40',
-    overflow: 'hidden',
+    shadowColor: '#00D984',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  btnConnectInner: {
+  btnConnectGlass: {
+    borderRadius: 14,
+    borderWidth: 1.3,
+    borderColor: 'rgba(0, 217, 132, 0.4)',
+    backgroundColor: 'rgba(0, 217, 132, 0.08)',
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     position: 'relative',
   },
-  btnShine: {
+  btnConnectGlassReflet: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    backgroundColor: 'rgba(0, 217, 132, 0.04)',
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+  },
+  btnConnectGlassLine: {
     position: 'absolute',
     top: 0,
     left: 20,
     right: 20,
     height: 1,
-    backgroundColor: '#00FFB2',
-    opacity: 0.5,
-  },
-  btnHighlight: {
-    position: 'absolute',
-    top: 1,
-    left: '20%',
-    right: '20%',
-    height: 15,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    backgroundColor: 'rgba(0, 217, 132, 0.3)',
   },
   btnConnectText: {
-    color: '#0D1117',
+    color: '#00D984',
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 1,
   },
+
   separator: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -517,7 +532,7 @@ var styles = StyleSheet.create({
   sepLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#2A303B',
+    backgroundColor: 'rgba(42, 48, 59, 0.8)',
   },
   sepText: {
     color: '#555E6C',
@@ -526,16 +541,19 @@ var styles = StyleSheet.create({
     marginHorizontal: 14,
     letterSpacing: 2,
   },
+
   btnGoogle: {
     borderRadius: 12,
     borderWidth: 1.2,
-    borderColor: '#3E4855',
-    backgroundColor: '#151B23',
+    borderColor: 'rgba(62, 72, 85, 0.6)',
+    backgroundColor: 'rgba(21, 27, 35, 0.7)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
     gap: 10,
+    position: 'relative',
+    overflow: 'hidden',
   },
   btnGoogleShine: {
     position: 'absolute',
@@ -543,8 +561,7 @@ var styles = StyleSheet.create({
     left: 20,
     right: 20,
     height: 1,
-    backgroundColor: '#6B7B8D',
-    opacity: 0.15,
+    backgroundColor: 'rgba(107, 123, 141, 0.15)',
   },
   googleG: {
     color: '#EAEEF3',
@@ -556,31 +573,35 @@ var styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+
+  // CORRECTION 2 — Bouton Biometrique Turquoise
   btnBio: {
     borderRadius: 12,
     borderWidth: 1.2,
-    borderColor: 'rgba(0, 217, 132, 0.25)',
-    backgroundColor: 'rgba(0, 217, 132, 0.06)',
+    borderColor: 'rgba(0, 191, 166, 0.3)',
+    backgroundColor: 'rgba(0, 191, 166, 0.06)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
     gap: 10,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  btnBioShine: {
+  btnBioReflet: {
     position: 'absolute',
     top: 0,
-    left: 20,
-    right: 20,
-    height: 1,
-    backgroundColor: '#00D984',
-    opacity: 0.12,
+    left: 0,
+    right: 0,
+    height: '50%',
+    backgroundColor: 'rgba(0, 191, 166, 0.03)',
   },
   btnBioText: {
-    color: '#00D984',
+    color: '#00BFA6',
     fontSize: 14,
     fontWeight: '600',
   },
+
   registerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
