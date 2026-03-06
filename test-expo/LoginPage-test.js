@@ -1,26 +1,7 @@
-/**
- * LIXUM - Login Page Test v2 (Logo PNG + Metal Brosse + Switch Langue)
- *
- * Usage: Copier-coller ce contenu dans App.js sur snack.expo.dev
- * Dependances Snack: ajouter "expo-linear-gradient" dans package.json
- *
- * LOGO: Par defaut le logo est code en dur (metal brosse).
- * Pour utiliser ton PNG a la place:
- *   1. Cree un dossier "assets" dans Snack (panneau gauche)
- *   2. Upload logo-lx.png dedans
- *   3. Mets USE_PNG_LOGO = true (ligne ~40)
- *   4. Decommente la ligne require
- *
- * Version: 2.0
- * Date: 2026-03-06
- * Status: TEST - A valider avant integration dans le repo final
- * Changelog:
- *   v2.0 - Logo PNG au lieu du logo code en couches
- *        - Carte connexion metal brosse amelioree (gradient clair → sombre)
- *        - Switch FR/EN en haut a droite
- *        - Tous les textes traduits via dictionnaire
- *        - Tagline changee: "VOTRE TABLEAU DE BORD VITAL"
- */
+// LIXUM - Login Page Test v2.1
+// Copier-coller dans App.js sur snack.expo.dev
+// Dependance: expo-linear-gradient
+// Logo: mettre logo-lx.png dans le dossier assets du Snack
 
 import React, { useState } from 'react';
 import {
@@ -35,12 +16,6 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-// === LOGO CONFIG ===
-// Mettre true + decommenter le require quand le PNG est upload dans assets/
-const USE_PNG_LOGO = false;
-// const LOGO_SOURCE = require('./assets/logo-lx.png');
-
-// === PALETTE LIXUM PREMIUM ===
 const COLORS = {
   bgDeep: '#080A0E',
   bgPrimary: '#0D1117',
@@ -62,7 +37,6 @@ const COLORS = {
   textPlaceholder: '#3E4855',
 };
 
-// === DICTIONNAIRE DE TRADUCTION ===
 const texts = {
   fr: {
     tagline: 'VOTRE TABLEAU DE BORD VITAL',
@@ -71,7 +45,7 @@ const texts = {
     emailLabel: 'Email',
     emailPlaceholder: 'email@example.com',
     passwordLabel: 'Mot de passe',
-    passwordPlaceholder: '••••••••',
+    passwordPlaceholder: '........',
     loginButton: 'Se connecter',
     separator: 'OU',
     googleButton: 'Continuer avec Google',
@@ -88,7 +62,7 @@ const texts = {
     emailLabel: 'Email',
     emailPlaceholder: 'email@example.com',
     passwordLabel: 'Password',
-    passwordPlaceholder: '••••••••',
+    passwordPlaceholder: '........',
     loginButton: 'Sign In',
     separator: 'OR',
     googleButton: 'Continue with Google',
@@ -100,33 +74,99 @@ const texts = {
   },
 };
 
+const logoImage = require('./assets/logo-lx.png');
+
 export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [lang, setLang] = useState('fr');
-
   const t = texts[lang];
 
-  // --- Handlers (remplacer par la vraie logique Supabase dans le repo final) ---
-  const handleLogin = () => {
+  const handleLogin = function () {
     if (!email || !password) {
       Alert.alert(t.errorTitle, t.errorEmpty);
       return;
     }
-    Alert.alert('Test Login', `Email: ${email}`);
+    Alert.alert('Test Login', 'Email: ' + email);
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = function () {
     Alert.alert('Google', 'Google OAuth - a implementer');
   };
 
-  const handleBiometric = () => {
+  const handleBiometric = function () {
     Alert.alert('Biometrique', 'Biometric login - a implementer');
   };
 
-  const handleRegister = () => {
+  const handleRegister = function () {
     Alert.alert('Navigation', 'Aller vers /register');
   };
+
+  // Switch langue FR/EN
+  function LangSwitch() {
+    return (
+      <View style={styles.langRow}>
+        <View style={styles.langCapsule}>
+          <TouchableOpacity onPress={function () { setLang('fr'); }} activeOpacity={0.7}>
+            {lang === 'fr' ? (
+              <LinearGradient
+                colors={['#00D984', '#00C278', '#00A866']}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={styles.langBtnActive}
+              >
+                <Text style={styles.langTextActive}>FR</Text>
+              </LinearGradient>
+            ) : (
+              <View style={styles.langBtnInactive}>
+                <Text style={styles.langTextInactive}>FR</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <View style={styles.langSep} />
+          <TouchableOpacity onPress={function () { setLang('en'); }} activeOpacity={0.7}>
+            {lang === 'en' ? (
+              <LinearGradient
+                colors={['#00D984', '#00C278', '#00A866']}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={styles.langBtnActive}
+              >
+                <Text style={styles.langTextActive}>EN</Text>
+              </LinearGradient>
+            ) : (
+              <View style={styles.langBtnInactive}>
+                <Text style={styles.langTextInactive}>EN</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Lignes texture brossee
+  function BrushedLines() {
+    var lines = [];
+    var positions = [60, 120, 180, 240, 300, 360];
+    for (var i = 0; i < positions.length; i++) {
+      lines.push(
+        <View
+          key={i}
+          style={{
+            position: 'absolute',
+            top: positions[i],
+            left: 10,
+            right: 10,
+            height: 0.5,
+            backgroundColor: '#6B7B8D',
+            opacity: 0.04 + (i % 2) * 0.02,
+          }}
+        />
+      );
+    }
+    return lines;
+  }
 
   return (
     <LinearGradient
@@ -140,146 +180,44 @@ export default function App() {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        {/* ====== SWITCH DE LANGUE FR | EN ====== */}
-        <View style={styles.langRow}>
-          <View style={styles.langCapsule}>
-            {/* Bouton FR */}
-            <TouchableOpacity onPress={() => setLang('fr')} activeOpacity={0.7}>
-              {lang === 'fr' ? (
-                <LinearGradient
-                  colors={['#00D984', '#00C278', '#00A866']}
-                  start={{ x: 0.5, y: 0 }}
-                  end={{ x: 0.5, y: 1 }}
-                  style={styles.langBtnActive}
-                >
-                  <Text style={styles.langTextActive}>FR</Text>
-                </LinearGradient>
-              ) : (
-                <View style={styles.langBtnInactive}>
-                  <Text style={styles.langTextInactive}>FR</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+        <LangSwitch />
 
-            {/* Separateur */}
-            <View style={styles.langSep} />
-
-            {/* Bouton EN */}
-            <TouchableOpacity onPress={() => setLang('en')} activeOpacity={0.7}>
-              {lang === 'en' ? (
-                <LinearGradient
-                  colors={['#00D984', '#00C278', '#00A866']}
-                  start={{ x: 0.5, y: 0 }}
-                  end={{ x: 0.5, y: 1 }}
-                  style={styles.langBtnActive}
-                >
-                  <Text style={styles.langTextActive}>EN</Text>
-                </LinearGradient>
-              ) : (
-                <View style={styles.langBtnInactive}>
-                  <Text style={styles.langTextInactive}>EN</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+        <View style={{ alignItems: 'center', marginBottom: 12 }}>
+          <View style={styles.logoWrap}>
+            <Image
+              source={logoImage}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
         </View>
 
-        {/* ====== LOGO ====== */}
-        <View style={{ alignItems: 'center', marginBottom: 12 }}>
-          {USE_PNG_LOGO ? (
-            /* Mode PNG — decommenter LOGO_SOURCE en haut du fichier */
-            <View style={styles.logoWrap}>
-              <Image
-                source={null /* remplacer par LOGO_SOURCE */}
-                style={styles.logoImage}
-                resizeMode="cover"
-              />
-            </View>
-          ) : (
-            /* Mode code — logo metal brosse premium */
-            <View style={styles.logoOuter}>
-              <View style={styles.logoMiddle}>
-                <LinearGradient
-                  colors={['#2E3440', '#1E232B', '#262C36', '#1E232B', '#1A1F27']}
-                  locations={[0, 0.25, 0.5, 0.75, 1]}
-                  start={{ x: 0.2, y: 0 }}
-                  end={{ x: 0.8, y: 1 }}
-                  style={styles.logoInner}
-                >
-                  <View style={styles.logoShine} />
-                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                    <Text style={styles.logoL}>L</Text>
-                    <Text style={styles.logoX}>X</Text>
-                  </View>
-                  <View style={[styles.dot, { top: 6, left: 6 }]} />
-                  <View style={[styles.dot, { top: 6, right: 6 }]} />
-                  <View style={[styles.dot, { bottom: 6, left: 6 }]} />
-                  <View style={[styles.dot, { bottom: 6, right: 6 }]} />
-                </LinearGradient>
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* TAGLINE */}
         <Text style={styles.tagline}>{t.tagline}</Text>
 
-        {/* ====== CARTE CONNEXION — Metal brosse ameliore ====== */}
         <View style={styles.cardShadow}>
-          {/* Cadre exterieur bisaute */}
           <View style={styles.cardBevel}>
             <LinearGradient
-              colors={[
-                '#3A4250',
-                '#4A5568',
-                '#3E4855',
-                '#2E3440',
-                '#252B35',
-                '#1E232B',
-              ]}
+              colors={['#3A4250', '#4A5568', '#3E4855', '#2E3440', '#252B35', '#1E232B']}
               locations={[0, 0.12, 0.3, 0.55, 0.8, 1]}
               start={{ x: 0.5, y: 0 }}
               end={{ x: 0.5, y: 1 }}
               style={styles.card}
             >
-              {/* Reflet diffus en haut (40px) */}
               <View style={styles.cardReflectWrap}>
                 <LinearGradient
-                  colors={[
-                    'rgba(107, 123, 141, 0.25)',
-                    'rgba(107, 123, 141, 0.08)',
-                    'rgba(107, 123, 141, 0)',
-                  ]}
+                  colors={['rgba(107, 123, 141, 0.25)', 'rgba(107, 123, 141, 0.08)', 'rgba(107, 123, 141, 0)']}
                   start={{ x: 0.5, y: 0 }}
                   end={{ x: 0.5, y: 1 }}
                   style={{ flex: 1 }}
                 />
               </View>
 
-              {/* Ligne highlight nette 1px */}
               <View style={styles.cardShine} />
+              <BrushedLines />
 
-              {/* Lignes texture brossee */}
-              {[60, 120, 180, 240, 300, 360].map((topPos, i) => (
-                <View
-                  key={i}
-                  style={{
-                    position: 'absolute',
-                    top: topPos,
-                    left: 10,
-                    right: 10,
-                    height: 0.5,
-                    backgroundColor: '#6B7B8D',
-                    opacity: 0.04 + (i % 2) * 0.02,
-                  }}
-                />
-              ))}
-
-              {/* Titre */}
               <Text style={styles.title}>{t.title}</Text>
               <Text style={styles.subtitle}>{t.subtitle}</Text>
 
-              {/* ── EMAIL ── */}
               <Text style={styles.label}>{t.emailLabel}</Text>
               <View style={styles.inputWrap}>
                 <TextInput
@@ -293,20 +231,18 @@ export default function App() {
                 />
               </View>
 
-              {/* ── MOT DE PASSE ── */}
               <Text style={styles.label}>{t.passwordLabel}</Text>
               <View style={[styles.inputWrap, { marginBottom: 24 }]}>
                 <TextInput
                   placeholder={t.passwordPlaceholder}
                   placeholderTextColor={COLORS.textPlaceholder}
-                  secureTextEntry
+                  secureTextEntry={true}
                   value={password}
                   onChangeText={setPassword}
                   style={styles.input}
                 />
               </View>
 
-              {/* ── BOUTON SE CONNECTER — Gradient premium ── */}
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={handleLogin}
@@ -327,14 +263,12 @@ export default function App() {
                 </View>
               </TouchableOpacity>
 
-              {/* ── SEPARATEUR OU ── */}
               <View style={styles.separator}>
                 <View style={styles.sepLine} />
                 <Text style={styles.sepText}>{t.separator}</Text>
                 <View style={styles.sepLine} />
               </View>
 
-              {/* ── BOUTON GOOGLE — Metal outlined ── */}
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={handleGoogleLogin}
@@ -347,7 +281,6 @@ export default function App() {
                 </View>
               </TouchableOpacity>
 
-              {/* ── BOUTON BIOMETRIQUE — Emeraude translucide ── */}
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={handleBiometric}
@@ -355,12 +288,10 @@ export default function App() {
               >
                 <View style={styles.btnBio}>
                   <View style={styles.btnBioShine} />
-                  <Text style={{ fontSize: 18 }}>🔒</Text>
                   <Text style={styles.btnBioText}>{t.biometricButton}</Text>
                 </View>
               </TouchableOpacity>
 
-              {/* ── LIEN S'INSCRIRE ── */}
               <View style={styles.registerRow}>
                 <Text style={{ color: COLORS.textMuted, fontSize: 14 }}>
                   {t.noAccount}{' '}
@@ -377,8 +308,7 @@ export default function App() {
   );
 }
 
-// === STYLES ===
-const styles = StyleSheet.create({
+var styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
@@ -386,8 +316,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 40,
   },
-
-  /* ── Switch Langue ── */
   langRow: {
     width: '100%',
     alignItems: 'flex-end',
@@ -431,89 +359,22 @@ const styles = StyleSheet.create({
     width: 1,
     backgroundColor: '#3E4855',
   },
-
-  /* ── Logo PNG (quand USE_PNG_LOGO = true) ── */
   logoWrap: {
-    width: 110,
-    height: 110,
-    borderRadius: 24,
+    width: 120,
+    height: 120,
+    borderRadius: 26,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.7,
     shadowRadius: 20,
     elevation: 16,
-  },
-  logoImage: {
-    width: 110,
-    height: 110,
-    borderRadius: 24,
-  },
-
-  /* ── Logo code (quand USE_PNG_LOGO = false) ── */
-  logoOuter: {
-    width: 100,
-    height: 100,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderTopColor: '#6B7B8D',
-    borderLeftColor: '#5A6577',
-    borderRightColor: '#2A303B',
-    borderBottomColor: '#1A1F26',
-    backgroundColor: '#13161B',
-    padding: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.7,
-    shadowRadius: 20,
-    elevation: 16,
-  },
-  logoMiddle: {
-    flex: 1,
-    borderRadius: 18,
-    borderWidth: 1.2,
-    borderColor: 'rgba(0, 217, 132, 0.35)',
-    overflow: 'hidden',
-  },
-  logoInner: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
   },
-  logoShine: {
-    position: 'absolute',
-    top: 0,
-    left: 15,
-    right: 15,
-    height: 1,
-    backgroundColor: '#6B7B8D',
-    opacity: 0.4,
-  },
-  logoL: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#8892A0',
-    letterSpacing: -1,
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 3,
-  },
-  logoX: {
-    fontSize: 36,
-    fontWeight: '900',
-    color: '#00A866',
-    letterSpacing: -1,
-    textShadowColor: 'rgba(0, 217, 132, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  dot: {
-    position: 'absolute',
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#00D984',
-    opacity: 0.5,
+  logoImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 26,
   },
   tagline: {
     color: '#555E6C',
@@ -524,8 +385,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     textTransform: 'uppercase',
   },
-
-  /* ── Carte Connexion — Metal brosse ameliore ── */
   cardShadow: {
     width: '100%',
     maxWidth: 400,
@@ -535,7 +394,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.65,
     shadowRadius: 24,
     elevation: 16,
-    marginTop: 0,
   },
   cardBevel: {
     borderRadius: 18,
@@ -569,20 +427,18 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   title: {
-    color: COLORS.textPrimary,
+    color: '#EAEEF3',
     fontSize: 24,
     fontWeight: '700',
     marginBottom: 6,
   },
   subtitle: {
-    color: COLORS.textSecondary,
+    color: '#8892A0',
     fontSize: 14,
     marginBottom: 24,
   },
-
-  /* ── Inputs — Effet encastre metal ── */
   label: {
-    color: COLORS.textSecondary,
+    color: '#8892A0',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 8,
@@ -591,7 +447,7 @@ const styles = StyleSheet.create({
   inputWrap: {
     borderRadius: 12,
     marginBottom: 18,
-    backgroundColor: COLORS.bgPrimary,
+    backgroundColor: '#0D1117',
     borderWidth: 1.2,
     borderTopColor: '#0A0D12',
     borderLeftColor: '#0D1015',
@@ -599,13 +455,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#3E4855',
   },
   input: {
-    color: COLORS.textPrimary,
+    color: '#EAEEF3',
     fontSize: 15,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-
-  /* ── Bouton Se connecter — Gradient premium ── */
   btnConnectWrap: {
     borderRadius: 14,
     marginBottom: 20,
@@ -650,13 +504,11 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 20,
   },
   btnConnectText: {
-    color: COLORS.bgPrimary,
+    color: '#0D1117',
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 1,
   },
-
-  /* ── Separateur OU ── */
   separator: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -674,8 +526,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 14,
     letterSpacing: 2,
   },
-
-  /* ── Bouton Google — Metal outlined ── */
   btnGoogle: {
     borderRadius: 12,
     borderWidth: 1.2,
@@ -697,17 +547,15 @@ const styles = StyleSheet.create({
     opacity: 0.15,
   },
   googleG: {
-    color: COLORS.textPrimary,
+    color: '#EAEEF3',
     fontSize: 18,
     fontWeight: '700',
   },
   btnGoogleText: {
-    color: COLORS.textPrimary,
+    color: '#EAEEF3',
     fontSize: 14,
     fontWeight: '600',
   },
-
-  /* ── Bouton Biometrique — Emeraude translucide ── */
   btnBio: {
     borderRadius: 12,
     borderWidth: 1.2,
@@ -729,19 +577,17 @@ const styles = StyleSheet.create({
     opacity: 0.12,
   },
   btnBioText: {
-    color: COLORS.emerald,
+    color: '#00D984',
     fontSize: 14,
     fontWeight: '600',
   },
-
-  /* ── Lien S'inscrire ── */
   registerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
   registerLink: {
-    color: COLORS.emerald,
+    color: '#00D984',
     fontSize: 14,
     fontWeight: '700',
   },
