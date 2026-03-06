@@ -1,10 +1,11 @@
-// LIXUM - Login Page Test v3.0
+// LIXUM - Login Page v4.0 (nettoyee)
 // Copier-coller dans App.js sur snack.expo.dev
 // Dependances: expo-linear-gradient, expo-blur, @expo/vector-icons
 // Logo: mettre logo-lx.png dans le dossier assets du Snack
 //
-// v3.0 — Logo 190, header unifie, BlurView glassmorphism, fingerprint icon,
-//         bouton glass transparent, glow emeraude, points lumineux coins
+// v4.0 — Nettoyage : supprime biometrique + lien inscription
+//         Ajoute bouton Retour en bas
+//         Garde : email, password, se connecter, OU, Google
 
 import React, { useState } from 'react';
 import {
@@ -33,9 +34,7 @@ var texts = {
     loginButton: 'Se connecter',
     separator: 'OU',
     googleButton: 'Continuer avec Google',
-    biometricButton: 'Connexion biometrique',
-    noAccount: 'Pas de compte ?',
-    signUp: "S'inscrire",
+    back: 'Retour',
     errorTitle: 'Erreur',
     errorEmpty: 'Remplis tous les champs',
   },
@@ -50,9 +49,7 @@ var texts = {
     loginButton: 'Sign In',
     separator: 'OR',
     googleButton: 'Continue with Google',
-    biometricButton: 'Biometric Login',
-    noAccount: "Don't have an account?",
-    signUp: 'Sign Up',
+    back: 'Back',
     errorTitle: 'Error',
     errorEmpty: 'Please fill in all fields',
   },
@@ -87,12 +84,9 @@ export default function App() {
     Alert.alert('Google', 'Google OAuth - a implementer');
   };
 
-  var handleBiometric = function () {
-    Alert.alert('Biometrique', 'Biometric login - a implementer');
-  };
-
-  var handleRegister = function () {
-    Alert.alert('Navigation', 'Aller vers /register');
+  var handleBack = function () {
+    // TODO: remplacer par router.back()
+    Alert.alert('Navigation', 'Retour vers la page Welcome');
   };
 
   return (
@@ -108,7 +102,6 @@ export default function App() {
         keyboardShouldPersistTaps="handled"
       >
 
-        {/* CORRECTION 2 — Header unifie : logo centre + switch FR/EN en haut a droite */}
         <View style={styles.headerRow}>
           <View style={styles.logoWrap}>
             <Image
@@ -159,7 +152,6 @@ export default function App() {
 
         <Text style={styles.tagline}>{t.tagline}</Text>
 
-        {/* CORRECTION 3 — Carte glassmorphism avec glow emeraude */}
         <View style={styles.cardOuter}>
           <View style={styles.cardGlow} />
           <View style={styles.cardBevel}>
@@ -220,7 +212,6 @@ export default function App() {
                   />
                 </View>
 
-                {/* CORRECTION 4 — Bouton Se connecter glass transparent */}
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={handleLogin}
@@ -242,7 +233,7 @@ export default function App() {
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={handleGoogleLogin}
-                  style={{ marginBottom: 12 }}
+                  style={{ marginBottom: 8 }}
                 >
                   <View style={styles.btnGoogle}>
                     <View style={styles.btnGoogleShine} />
@@ -250,34 +241,20 @@ export default function App() {
                     <Text style={styles.btnGoogleText}>{t.googleButton}</Text>
                   </View>
                 </TouchableOpacity>
-
-                {/* CORRECTION 5 — Bouton biometrique avec icone empreinte */}
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={handleBiometric}
-                  style={{ marginBottom: 20, backgroundColor: 'transparent' }}
-                >
-                  <View style={styles.btnBio}>
-                    <View style={styles.btnBioReflet} />
-                    <Ionicons name="finger-print" size={20} color="#00BFA6" />
-                    <Text style={styles.btnBioText}>{t.biometricButton}</Text>
-                  </View>
-                </TouchableOpacity>
-
-                {/* CORRECTION 6 — Marge bas S'inscrire */}
-                <View style={styles.registerRow}>
-                  <Text style={{ color: '#555E6C', fontSize: 14 }}>
-                    {t.noAccount}{' '}
-                  </Text>
-                  <TouchableOpacity onPress={handleRegister}>
-                    <Text style={styles.registerLink}>{t.signUp}</Text>
-                  </TouchableOpacity>
-                </View>
               </View>
 
             </BlurView>
           </View>
         </View>
+
+        <TouchableOpacity
+          onPress={handleBack}
+          style={styles.backButton}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={16} color="#555E6C" />
+          <Text style={styles.backText}>{t.back}</Text>
+        </TouchableOpacity>
 
       </ScrollView>
     </LinearGradient>
@@ -285,7 +262,6 @@ export default function App() {
 }
 
 var styles = StyleSheet.create({
-  // CORRECTION 6 — ScrollView padding
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
@@ -295,7 +271,6 @@ var styles = StyleSheet.create({
     paddingBottom: 60,
   },
 
-  // CORRECTION 2 — Header unifie
   headerRow: {
     width: '100%',
     flexDirection: 'row',
@@ -306,7 +281,6 @@ var styles = StyleSheet.create({
     position: 'relative',
   },
 
-  // CORRECTION 1 — Logo 190x190
   logoWrap: {
     width: 190,
     height: 190,
@@ -323,7 +297,6 @@ var styles = StyleSheet.create({
     borderRadius: 38,
   },
 
-  // Switch FR/EN positionne en haut a droite du logo
   langAbsolute: {
     position: 'absolute',
     top: 0,
@@ -377,13 +350,12 @@ var styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
-  // CORRECTION 3 — Carte glassmorphism
   cardOuter: {
     width: '100%',
     maxWidth: 400,
     borderRadius: 20,
     marginTop: 8,
-    marginBottom: 40,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,
@@ -454,7 +426,6 @@ var styles = StyleSheet.create({
     transform: [{ rotate: '45deg' }],
   },
 
-  // Points lumineux aux coins
   cornerTL: {
     position: 'absolute', top: 8, left: 8,
     width: 4, height: 4, borderRadius: 2,
@@ -511,7 +482,6 @@ var styles = StyleSheet.create({
     paddingVertical: 14,
   },
 
-  // CORRECTION 4 — Bouton Se connecter glass transparent
   btnConnectWrap: {
     marginBottom: 20,
     borderRadius: 14,
@@ -608,45 +578,16 @@ var styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // CORRECTION 5 — Bouton biometrique turquoise + empreinte
-  btnBio: {
-    borderRadius: 12,
-    borderWidth: 1.2,
-    borderColor: 'rgba(0, 191, 166, 0.3)',
-    backgroundColor: 'rgba(0, 191, 166, 0.06)',
+  backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    gap: 10,
-    position: 'relative',
-    overflow: 'hidden',
+    marginTop: 16,
+    paddingVertical: 8,
   },
-  btnBioReflet: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-    backgroundColor: 'rgba(0, 191, 166, 0.03)',
-  },
-  btnBioText: {
-    color: '#00BFA6',
+  backText: {
+    color: '#555E6C',
     fontSize: 14,
-    fontWeight: '600',
-  },
-
-  // CORRECTION 6 — Marge bas S'inscrire
-  registerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 20,
-  },
-  registerLink: {
-    color: '#00D984',
-    fontSize: 14,
-    fontWeight: '700',
+    marginLeft: 6,
   },
 });
