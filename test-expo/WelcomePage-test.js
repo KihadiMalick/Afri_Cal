@@ -1,13 +1,14 @@
-// LIXUM - Welcome Onboarding (Tinder-Style Swipe Cards) v1.0
+// LIXUM - Welcome Onboarding (Tinder-Style) v2.0
 // Copier-coller dans App.js sur snack.expo.dev
 // Dependances: expo-linear-gradient, react-native-gesture-handler,
-//              react-native-reanimated, @expo/vector-icons
+//              react-native-reanimated, @expo/vector-icons, react-native-svg
 // Logo: mettre logo-lx.png dans le dossier assets du Snack
 //
-// Navigation simulee : "Commencer" et "Se connecter" affichent une Alert
-// (a remplacer par router.push quand on aura le vrai routing)
+// v2.0 — Cartes opaques, logo 100x100, CTA cache pendant swipes,
+//         textes courts avec icones, SVG ScanX, page finale en carte,
+//         swipe hint anime, FadeInDown
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,6 +17,8 @@ import {
   Image,
   TouchableOpacity,
   Alert,
+  Animated as RNAnimated,
+  Easing,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -27,7 +30,8 @@ import Animated, {
   runOnJS,
   interpolate,
   Extrapolation,
-  Easing,
+  Easing as REasing,
+  FadeInDown,
 } from 'react-native-reanimated';
 import {
   GestureDetector,
@@ -36,65 +40,107 @@ import {
 } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Path, Circle, Line } from 'react-native-svg';
 
 var SCREEN_WIDTH = Dimensions.get('window').width;
 var SCREEN_HEIGHT = Dimensions.get('window').height;
 var CARD_WIDTH = SCREEN_WIDTH - 48;
-var CARD_HEIGHT = SCREEN_HEIGHT * 0.48;
+var CARD_HEIGHT = SCREEN_HEIGHT * 0.52;
 var SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 var logoImage = require('./assets/logo-lx.png');
 
 // ============================================================
-// TRADUCTIONS
+// TRADUCTIONS — textes courts avec icones
 // ============================================================
 
 var texts = {
   fr: {
     tagline: 'VOTRE TABLEAU DE BORD VITAL',
-
     slide1Title: 'SCAN X',
-    slide1Subtitle: 'Technologie de reconnaissance avancee',
-    slide1Body: 'Ce n\'est pas un simple scanner.\n\nSCAN X analyse vos repas sous\nmultiples angles en temps reel.\n\nComposition nutritionnelle detaillee\nen moins de 3 secondes.\n\nProteines. Glucides. Lipides.\nChaque molecule compte.',
-
+    slide1Subtitle: 'Reconnaissance avancee',
+    slide1Lines: [
+      { icon: 'scan-outline', text: 'Analyse multi-angles en temps reel' },
+      { icon: 'timer-outline', text: 'Resultats en moins de 3 secondes' },
+      { icon: 'nutrition-outline', text: 'Proteines \u00B7 Glucides \u00B7 Lipides' },
+      { icon: 'sparkles-outline', text: 'Chaque molecule compte' },
+    ],
     slide2Title: 'NUTRITION SOURCEE',
     slide2Subtitle: 'Donnees scientifiques certifiees',
-    slide2Body: 'Nos donnees nutritionnelles proviennent\nde sources institutionnelles verifiees :\n\n\u25C6  USDA \u2014 Departement Agriculture US\n\u25C6  FAO \u2014 Organisation Nations Unies\n\u25C6  ANSES \u2014 Agence Nationale Securite\n\nDes recettes intelligentes qui s\'adaptent\na votre humeur et votre metabolisme.\n\nPas d\'approximation. De la science.',
-
+    slide2Lines: [
+      { icon: 'shield-checkmark-outline', text: 'Sources : USDA \u00B7 FAO \u00B7 ANSES' },
+      { icon: 'restaurant-outline', text: 'Recettes adaptees a votre humeur' },
+      { icon: 'body-outline', text: 'Ajustees a votre metabolisme' },
+      { icon: 'beaker-outline', text: 'Pas d\'approximation, de la science' },
+    ],
     slide3Title: 'DASHBOARD VITAL',
     slide3Subtitle: 'Votre hygiene de vie, quantifiee',
-    slide3Body: 'Un tableau de bord qui ne ment pas.\n\nScore de vitalite en temps reel.\nSuivi de vos calories consommees,\nbrulees et restantes.\n\nChaque decision alimentaire impacte\nvotre courbe. Chaque activite sportive\nla transforme.\n\nReprenez le controle.\nVotre corps vous remerciera.',
-
+    slide3Lines: [
+      { icon: 'pulse-outline', text: 'Score de vitalite en temps reel' },
+      { icon: 'flame-outline', text: 'Calories consommees et brulees' },
+      { icon: 'trending-up-outline', text: 'Chaque decision impacte votre courbe' },
+      { icon: 'fitness-outline', text: 'Reprenez le controle' },
+    ],
     cta: 'Commencer',
     hasAccount: 'Deja un compte ?',
     signIn: 'Se connecter',
-    swipeHint: 'Swipez',
     readyTitle: 'Pret a commencer ?',
     readySub: 'Rejoignez LIXUM et reprenez\nle controle de votre vitalite',
   },
   en: {
     tagline: 'YOUR VITAL DASHBOARD',
-
     slide1Title: 'SCAN X',
-    slide1Subtitle: 'Advanced recognition technology',
-    slide1Body: 'This is not a simple scanner.\n\nSCAN X analyzes your meals from\nmultiple angles in real-time.\n\nDetailed nutritional breakdown\nin under 3 seconds.\n\nProteins. Carbs. Fats.\nEvery molecule matters.',
-
+    slide1Subtitle: 'Advanced recognition',
+    slide1Lines: [
+      { icon: 'scan-outline', text: 'Multi-angle real-time analysis' },
+      { icon: 'timer-outline', text: 'Results in under 3 seconds' },
+      { icon: 'nutrition-outline', text: 'Proteins \u00B7 Carbs \u00B7 Fats' },
+      { icon: 'sparkles-outline', text: 'Every molecule matters' },
+    ],
     slide2Title: 'VERIFIED NUTRITION',
     slide2Subtitle: 'Certified scientific data',
-    slide2Body: 'Our nutritional data comes from\nverified institutional sources:\n\n\u25C6  USDA \u2014 US Dept. of Agriculture\n\u25C6  FAO \u2014 United Nations Organization\n\u25C6  ANSES \u2014 French Safety Agency\n\nSmart recipes that adapt to your\nmood, goals, and metabolism.\n\nNo guesswork. Pure science.',
-
+    slide2Lines: [
+      { icon: 'shield-checkmark-outline', text: 'Sources: USDA \u00B7 FAO \u00B7 ANSES' },
+      { icon: 'restaurant-outline', text: 'Recipes adapted to your mood' },
+      { icon: 'body-outline', text: 'Adjusted to your metabolism' },
+      { icon: 'beaker-outline', text: 'No guesswork, pure science' },
+    ],
     slide3Title: 'VITAL DASHBOARD',
     slide3Subtitle: 'Your lifestyle, quantified',
-    slide3Body: 'A dashboard that doesn\'t lie.\n\nReal-time vitality score.\nTrack your calories consumed,\nburned, and remaining.\n\nEvery food decision impacts\nyour curve. Every workout\ntransforms it.\n\nTake back control.\nYour body will thank you.',
-
+    slide3Lines: [
+      { icon: 'pulse-outline', text: 'Real-time vitality score' },
+      { icon: 'flame-outline', text: 'Calories consumed & burned' },
+      { icon: 'trending-up-outline', text: 'Every decision impacts your curve' },
+      { icon: 'fitness-outline', text: 'Take back control' },
+    ],
     cta: 'Get Started',
     hasAccount: 'Already have an account?',
     signIn: 'Sign in',
-    swipeHint: 'Swipe',
     readyTitle: 'Ready to start?',
     readySub: 'Join LIXUM and take back\ncontrol of your vitality',
   },
 };
+
+// ============================================================
+// ICONE SVG — SCAN X (diagonales croisees + viseur)
+// ============================================================
+
+function ScanXIcon(props) {
+  var size = props.size || 56;
+  var color = props.color || '#00D984';
+  return (
+    <Svg width={size} height={size} viewBox="0 0 56 56">
+      <Circle cx="28" cy="28" r="26" fill="rgba(0,0,0,0.3)" stroke={color + '50'} strokeWidth="1.5" />
+      <Line x1="14" y1="14" x2="42" y2="42" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+      <Line x1="42" y1="14" x2="14" y2="42" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+      <Path d="M 10 18 L 10 10 L 18 10" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Path d="M 38 10 L 46 10 L 46 18" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Path d="M 10 38 L 10 46 L 18 46" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Path d="M 38 46 L 46 46 L 46 38" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Circle cx="28" cy="28" r="3" fill={color} opacity="0.6" />
+    </Svg>
+  );
+}
 
 // ============================================================
 // ICONE ANIMEE (pulse + glow)
@@ -109,15 +155,15 @@ function SlideIcon(props) {
   useEffect(function () {
     pulse.value = withRepeat(
       withSequence(
-        withTiming(1.08, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+        withTiming(1.08, { duration: 1500, easing: REasing.inOut(REasing.ease) }),
+        withTiming(1, { duration: 1500, easing: REasing.inOut(REasing.ease) })
       ),
       -1, true
     );
     glow.value = withRepeat(
       withSequence(
-        withTiming(0.5, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.2, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+        withTiming(0.5, { duration: 2000, easing: REasing.inOut(REasing.ease) }),
+        withTiming(0.2, { duration: 2000, easing: REasing.inOut(REasing.ease) })
       ),
       -1, true
     );
@@ -131,10 +177,6 @@ function SlideIcon(props) {
     return { opacity: glow.value };
   });
 
-  var iconName = 'scan';
-  if (type === 'nutrition') iconName = 'flask';
-  if (type === 'dashboard') iconName = 'pulse';
-
   return (
     <View style={{ alignItems: 'center', marginBottom: 16 }}>
       <Animated.View style={[{
@@ -146,24 +188,100 @@ function SlideIcon(props) {
         top: -15,
       }, glowStyle]} />
 
-      <Animated.View style={[{
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
-        borderWidth: 1.5,
-        borderColor: color + '50',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }, pulseStyle]}>
-        <Ionicons name={iconName} size={28} color={color} />
+      <Animated.View style={[{ width: 56, height: 56 }, pulseStyle]}>
+        {type === 'scan' && (
+          <ScanXIcon size={56} color={color} />
+        )}
+        {type === 'nutrition' && (
+          <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
+            <Svg width={56} height={56} viewBox="0 0 56 56">
+              <Circle cx="28" cy="28" r="26" fill="rgba(0,0,0,0.3)" stroke={color + '50'} strokeWidth="1.5" />
+            </Svg>
+            <Ionicons name="flask" size={26} color={color} style={{ position: 'absolute' }} />
+          </View>
+        )}
+        {type === 'dashboard' && (
+          <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
+            <Svg width={56} height={56} viewBox="0 0 56 56">
+              <Circle cx="28" cy="28" r="26" fill="rgba(0,0,0,0.3)" stroke={color + '50'} strokeWidth="1.5" />
+            </Svg>
+            <Ionicons name="pulse" size={26} color={color} style={{ position: 'absolute' }} />
+          </View>
+        )}
       </Animated.View>
     </View>
   );
 }
 
 // ============================================================
-// CARTE SWIPEABLE
+// SWIPE HINT — doigt anime (visible uniquement slide 0)
+// ============================================================
+
+function SwipeHint(props) {
+  var visible = props.visible;
+  var translateX = useRef(new RNAnimated.Value(0)).current;
+  var opacity = useRef(new RNAnimated.Value(1)).current;
+  var loopRef = useRef(null);
+
+  useEffect(function () {
+    if (!visible) {
+      RNAnimated.timing(opacity, {
+        toValue: 0, duration: 300, useNativeDriver: true,
+      }).start();
+      if (loopRef.current) loopRef.current.stop();
+      return;
+    }
+
+    loopRef.current = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.delay(500),
+        RNAnimated.timing(translateX, {
+          toValue: -60, duration: 800,
+          easing: Easing.inOut(Easing.ease), useNativeDriver: true,
+        }),
+        RNAnimated.timing(translateX, {
+          toValue: 0, duration: 500,
+          easing: Easing.inOut(Easing.ease), useNativeDriver: true,
+        }),
+        RNAnimated.delay(1000),
+      ])
+    );
+    loopRef.current.start();
+    return function () {
+      if (loopRef.current) loopRef.current.stop();
+    };
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <RNAnimated.View style={{
+      position: 'absolute',
+      bottom: 60,
+      right: 40,
+      transform: [{ translateX: translateX }],
+      opacity: opacity,
+      zIndex: 100,
+    }}>
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(0, 217, 132, 0.2)',
+      }}>
+        <Ionicons name="hand-left-outline" size={18} color="#00D984" />
+        <Ionicons name="arrow-back" size={12} color="#00D984" style={{ marginLeft: 4 }} />
+      </View>
+    </RNAnimated.View>
+  );
+}
+
+// ============================================================
+// CARTE SWIPEABLE — OPAQUE
 // ============================================================
 
 function SwipeCard(props) {
@@ -172,7 +290,6 @@ function SwipeCard(props) {
   var totalCards = props.totalCards;
   var currentIndex = props.currentIndex;
   var onSwipe = props.onSwipe;
-  var lang = props.lang;
 
   var translateX = useSharedValue(0);
   var translateY = useSharedValue(0);
@@ -235,7 +352,7 @@ function SwipeCard(props) {
       <Animated.View
         style={[
           styles.cardOuter,
-          { zIndex: totalCards - index },
+          { zIndex: totalCards - index, backgroundColor: '#0D1117' },
           isTopCard ? topCardStyle : stackStyle,
         ]}
       >
@@ -263,12 +380,7 @@ function SwipeCard(props) {
           overflow: 'hidden',
         }}>
           <LinearGradient
-            colors={[
-              'rgba(50, 58, 72, 0.75)',
-              'rgba(35, 41, 52, 0.70)',
-              'rgba(27, 31, 38, 0.80)',
-              'rgba(21, 27, 35, 0.85)',
-            ]}
+            colors={['#323A48', '#232932', '#1B1F26', '#161A21']}
             locations={[0, 0.3, 0.6, 1]}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
@@ -310,8 +422,32 @@ function SwipeCard(props) {
               <Text style={styles.slideSubtitle}>{slide.subtitle}</Text>
             </View>
 
-            <View style={{ flex: 1, justifyContent: 'center' }}>
-              <Text style={styles.slideBody}>{slide.body}</Text>
+            <View style={{ flex: 1, justifyContent: 'center', gap: 14 }}>
+              {slide.lines.map(function (line, i) {
+                return (
+                  <View key={i} style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}>
+                    <View style={{
+                      width: 32, height: 32, borderRadius: 16,
+                      backgroundColor: slide.color + '15',
+                      borderWidth: 1,
+                      borderColor: slide.color + '25',
+                      alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Ionicons name={line.icon} size={16} color={slide.color} />
+                    </View>
+                    <Text style={{
+                      color: '#EAEEF3', fontSize: 13, fontWeight: '500',
+                      flex: 1, lineHeight: 18,
+                    }}>
+                      {line.text}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
 
             <View style={styles.badgesRow}>
@@ -324,20 +460,6 @@ function SwipeCard(props) {
               })}
             </View>
 
-            <View style={{
-              position: 'absolute',
-              bottom: 10,
-              right: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              opacity: 0.4,
-            }}>
-              <Ionicons name="arrow-forward" size={14} color="#8892A0" />
-              <Text style={{ color: '#8892A0', fontSize: 10, marginLeft: 4 }}>
-                {lang === 'fr' ? 'Swipez' : 'Swipe'}
-              </Text>
-            </View>
-
           </LinearGradient>
         </View>
       </Animated.View>
@@ -346,7 +468,7 @@ function SwipeCard(props) {
 }
 
 // ============================================================
-// PAGE WELCOME (assemblage)
+// PAGE WELCOME
 // ============================================================
 
 export default function App() {
@@ -365,7 +487,7 @@ export default function App() {
       key: 'scan',
       title: t.slide1Title,
       subtitle: t.slide1Subtitle,
-      body: t.slide1Body,
+      lines: t.slide1Lines,
       badges: ['AI-POWERED', 'REAL-TIME', 'MULTI-ANGLE'],
       color: '#00D984',
     },
@@ -373,7 +495,7 @@ export default function App() {
       key: 'nutrition',
       title: t.slide2Title,
       subtitle: t.slide2Subtitle,
-      body: t.slide2Body,
+      lines: t.slide2Lines,
       badges: ['USDA', 'FAO', 'ANSES'],
       color: '#00BFA6',
     },
@@ -381,7 +503,7 @@ export default function App() {
       key: 'dashboard',
       title: t.slide3Title,
       subtitle: t.slide3Subtitle,
-      body: t.slide3Body,
+      lines: t.slide3Lines,
       badges: ['REAL-TIME', 'ECG', 'AI COACH'],
       color: '#00D984',
     },
@@ -396,12 +518,10 @@ export default function App() {
   }, [slides.length]);
 
   var handleGetStarted = function () {
-    // TODO: remplacer par router.push('/register')
     Alert.alert('Navigation', 'Aller vers la page Inscription');
   };
 
   var handleSignIn = function () {
-    // TODO: remplacer par router.push('/login')
     Alert.alert('Navigation', 'Aller vers la page Connexion');
   };
 
@@ -419,15 +539,15 @@ export default function App() {
         <View style={styles.page}>
 
           <View style={styles.header}>
-            <View style={styles.logoSmallContainer}>
+            <View style={styles.logoContainer}>
               <Image
                 source={logoImage}
-                style={styles.logoSmall}
+                style={styles.logo}
                 resizeMode="cover"
               />
             </View>
 
-            <View style={{ position: 'absolute', right: 0, top: 0 }}>
+            <View style={styles.langAbsolute}>
               <View style={styles.langSwitch}>
                 <TouchableOpacity onPress={function () { setLang('fr'); }} activeOpacity={0.7}>
                   {lang === 'fr' ? (
@@ -470,28 +590,79 @@ export default function App() {
 
           <View style={styles.cardsZone}>
             {!allSwiped ? (
-              slides.slice().reverse().map(function (slide, reverseIndex) {
-                var actualIndex = slides.length - 1 - reverseIndex;
-                return (
-                  <SwipeCard
-                    key={slide.key}
-                    slide={slide}
-                    index={actualIndex}
-                    totalCards={slides.length}
-                    currentIndex={currentIndex}
-                    onSwipe={handleSwipe}
-                    lang={lang}
-                  />
-                );
-              })
-            ) : (
-              <View style={styles.finalMessage}>
-                <Ionicons name="checkmark-circle" size={60} color="#00D984" />
-                <Text style={styles.finalTitle}>{t.readyTitle}</Text>
-                <Text style={styles.finalSubtitle}>{t.readySub}</Text>
+              <View style={{ width: CARD_WIDTH, height: CARD_HEIGHT }}>
+                {slides.slice().reverse().map(function (slide, reverseIndex) {
+                  var actualIndex = slides.length - 1 - reverseIndex;
+                  return (
+                    <SwipeCard
+                      key={slide.key}
+                      slide={slide}
+                      index={actualIndex}
+                      totalCards={slides.length}
+                      currentIndex={currentIndex}
+                      onSwipe={handleSwipe}
+                    />
+                  );
+                })}
+                <SwipeHint visible={currentIndex === 0} />
               </View>
-            )}
+            ) : (
+              <Animated.View
+                entering={FadeInDown.duration(600).springify()}
+                style={{
+                  width: CARD_WIDTH,
+                  borderRadius: 20,
+                  borderWidth: 1.2,
+                  borderTopColor: 'rgba(138, 146, 160, 0.35)',
+                  borderLeftColor: 'rgba(107, 123, 141, 0.2)',
+                  borderRightColor: 'rgba(42, 48, 59, 0.4)',
+                  borderBottomColor: 'rgba(26, 31, 38, 0.5)',
+                  overflow: 'hidden',
+                }}
+              >
+                <LinearGradient
+                  colors={['#323A48', '#232932', '#1B1F26', '#161A21']}
+                  locations={[0, 0.3, 0.6, 1]}
+                  start={{ x: 0.5, y: 0 }}
+                  end={{ x: 0.5, y: 1 }}
+                  style={{
+                    paddingVertical: 40,
+                    paddingHorizontal: 24,
+                    alignItems: 'center',
+                  }}
+                >
+                  <View style={{
+                    position: 'absolute', top: 0, left: 14, right: 14,
+                    height: 1, backgroundColor: 'rgba(255,255,255,0.1)',
+                  }} />
 
+                  <View style={{
+                    width: 70, height: 70, borderRadius: 35,
+                    backgroundColor: 'rgba(0, 217, 132, 0.12)',
+                    borderWidth: 2, borderColor: '#00D984',
+                    alignItems: 'center', justifyContent: 'center',
+                    marginBottom: 20,
+                  }}>
+                    <Ionicons name="checkmark" size={36} color="#00D984" />
+                  </View>
+
+                  <Text style={{
+                    color: '#EAEEF3', fontSize: 22, fontWeight: '700',
+                    textAlign: 'center', marginBottom: 10,
+                  }}>
+                    {t.readyTitle}
+                  </Text>
+                  <Text style={{
+                    color: '#8892A0', fontSize: 14, textAlign: 'center', lineHeight: 22,
+                  }}>
+                    {t.readySub}
+                  </Text>
+                </LinearGradient>
+              </Animated.View>
+            )}
+          </View>
+
+          <View style={styles.bottomZone}>
             <View style={styles.dotsContainer}>
               {slides.map(function (_, i) {
                 var isActive = i === currentIndex;
@@ -511,27 +682,29 @@ export default function App() {
                 );
               })}
             </View>
-          </View>
 
-          <View style={styles.ctaContainer}>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={handleGetStarted}
-              style={styles.ctaButton}
-            >
-              <View style={styles.ctaInner}>
-                <View style={styles.ctaReflet} />
-                <View style={styles.ctaHighlight} />
-                <Text style={styles.ctaText}>{t.cta}</Text>
-              </View>
-            </TouchableOpacity>
+            {allSwiped ? (
+              <Animated.View entering={FadeInDown.duration(500).springify()}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleGetStarted}
+                  style={styles.ctaButton}
+                >
+                  <View style={styles.ctaInner}>
+                    <View style={styles.ctaReflet} />
+                    <View style={styles.ctaHighlight} />
+                    <Text style={styles.ctaText}>{t.cta}</Text>
+                  </View>
+                </TouchableOpacity>
 
-            <View style={styles.signInRow}>
-              <Text style={styles.signInLabel}>{t.hasAccount} </Text>
-              <TouchableOpacity onPress={handleSignIn}>
-                <Text style={styles.signInLink}>{t.signIn}</Text>
-              </TouchableOpacity>
-            </View>
+                <View style={styles.signInRow}>
+                  <Text style={styles.signInLabel}>{t.hasAccount} </Text>
+                  <TouchableOpacity onPress={handleSignIn}>
+                    <Text style={styles.signInLink}>{t.signIn}</Text>
+                  </TouchableOpacity>
+                </View>
+              </Animated.View>
+            ) : null}
           </View>
 
         </View>
@@ -552,32 +725,38 @@ var styles = StyleSheet.create({
     paddingBottom: 30,
   },
 
-  // Header
   header: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    marginTop: 8,
     marginBottom: 6,
-    paddingTop: 36,
+    paddingTop: 30,
   },
-  logoSmallContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
+  logoContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 22,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.6,
+    shadowRadius: 14,
+    elevation: 12,
   },
-  logoSmall: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
+  logo: {
+    width: 100,
+    height: 100,
+    borderRadius: 22,
   },
 
-  // Lang switch
+  langAbsolute: {
+    position: 'absolute',
+    right: 0,
+    top: '50%',
+    marginTop: 0,
+  },
   langSwitch: {
     flexDirection: 'row',
     borderRadius: 10,
@@ -607,29 +786,28 @@ var styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
-  // Tagline
   tagline: {
     color: '#555E6C',
     fontSize: 9,
     fontWeight: '600',
     letterSpacing: 4,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
     textTransform: 'uppercase',
   },
 
-  // Cards zone
   cardsZone: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 10,
   },
   cardOuter: {
     position: 'absolute',
     alignSelf: 'center',
+    borderRadius: 20,
   },
 
-  // Slide content
   iconContainer: {
     alignItems: 'center',
     marginBottom: 12,
@@ -650,15 +828,7 @@ var styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 4,
   },
-  slideBody: {
-    color: '#8892A0',
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'center',
-    letterSpacing: 0.3,
-  },
 
-  // Badges
   badgesRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -678,48 +848,25 @@ var styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
-  // Dots
+  bottomZone: {
+    paddingBottom: 10,
+    minHeight: 120,
+  },
   dotsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
-    position: 'absolute',
-    bottom: -30,
+    marginBottom: 16,
   },
   dot: {
     height: 8,
     borderRadius: 4,
   },
 
-  // Final message
-  finalMessage: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  finalTitle: {
-    color: '#EAEEF3',
-    fontSize: 22,
-    fontWeight: '700',
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  finalSubtitle: {
-    color: '#8892A0',
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-
-  // CTA buttons
-  ctaContainer: {
-    marginTop: 20,
-    paddingBottom: 10,
-  },
   ctaButton: {
     borderRadius: 14,
-    marginBottom: 16,
+    marginBottom: 14,
     shadowColor: '#00D984',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.15,
@@ -756,7 +903,6 @@ var styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
-  // Sign in
   signInRow: {
     flexDirection: 'row',
     justifyContent: 'center',
