@@ -1,12 +1,23 @@
 /**
- * LIXUM - Login Page Test (Premium Metal Brushed Design)
+ * LIXUM - Login Page Test v2 (Logo PNG + Metal Brosse + Switch Langue)
  *
  * Usage: Copier-coller ce contenu dans App.js sur snack.expo.dev
- * Dependance Snack: ajouter "expo-linear-gradient" dans package.json du Snack
+ * Dependances Snack: ajouter "expo-linear-gradient" dans package.json
  *
- * Version: 1.0
- * Date: 2026-03-05
+ * IMPORTANT pour le logo:
+ *   1. Dans Snack Expo, cree un dossier "assets" (panneau gauche)
+ *   2. Upload ton image logo-lx.png dedans
+ *   3. Le require('./assets/logo-lx.png') fonctionnera automatiquement
+ *
+ * Version: 2.0
+ * Date: 2026-03-06
  * Status: TEST - A valider avant integration dans le repo final
+ * Changelog:
+ *   v2.0 - Logo PNG au lieu du logo code en couches
+ *        - Carte connexion metal brosse amelioree (gradient clair → sombre)
+ *        - Switch FR/EN en haut a droite
+ *        - Tous les textes traduits via dictionnaire
+ *        - Tagline changee: "VOTRE TABLEAU DE BORD VITAL"
  */
 
 import React, { useState } from 'react';
@@ -18,6 +29,7 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -43,14 +55,55 @@ const COLORS = {
   textPlaceholder: '#3E4855',
 };
 
+// === DICTIONNAIRE DE TRADUCTION ===
+const texts = {
+  fr: {
+    tagline: 'VOTRE TABLEAU DE BORD VITAL',
+    title: 'Connexion',
+    subtitle: 'Accede a ton dashboard de vitalite',
+    emailLabel: 'Email',
+    emailPlaceholder: 'email@example.com',
+    passwordLabel: 'Mot de passe',
+    passwordPlaceholder: '••••••••',
+    loginButton: 'Se connecter',
+    separator: 'OU',
+    googleButton: 'Continuer avec Google',
+    biometricButton: 'Connexion biometrique',
+    noAccount: 'Pas de compte ?',
+    signUp: "S'inscrire",
+    errorTitle: 'Erreur',
+    errorEmpty: 'Remplis tous les champs',
+  },
+  en: {
+    tagline: 'YOUR VITAL DASHBOARD',
+    title: 'Sign In',
+    subtitle: 'Access your vitality dashboard',
+    emailLabel: 'Email',
+    emailPlaceholder: 'email@example.com',
+    passwordLabel: 'Password',
+    passwordPlaceholder: '••••••••',
+    loginButton: 'Sign In',
+    separator: 'OR',
+    googleButton: 'Continue with Google',
+    biometricButton: 'Biometric Login',
+    noAccount: "Don't have an account?",
+    signUp: 'Sign Up',
+    errorTitle: 'Error',
+    errorEmpty: 'Please fill in all fields',
+  },
+};
+
 export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [lang, setLang] = useState('fr');
+
+  const t = texts[lang];
 
   // --- Handlers (remplacer par la vraie logique Supabase dans le repo final) ---
   const handleLogin = () => {
     if (!email || !password) {
-      Alert.alert('Erreur', 'Remplis tous les champs');
+      Alert.alert(t.errorTitle, t.errorEmpty);
       return;
     }
     Alert.alert('Test Login', `Email: ${email}`);
@@ -61,7 +114,7 @@ export default function App() {
   };
 
   const handleBiometric = () => {
-    Alert.alert('Biometrique', 'Connexion biometrique - a implementer');
+    Alert.alert('Biometrique', 'Biometric login - a implementer');
   };
 
   const handleRegister = () => {
@@ -80,68 +133,124 @@ export default function App() {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        {/* ====== LOGO LX PREMIUM — 3 couches ====== */}
-        <View style={{ alignItems: 'center', marginBottom: 16 }}>
-          {/* COUCHE 1 — Cadre exterieur bisaute (bord argente) */}
-          <View style={styles.logoOuter}>
-            {/* COUCHE 2 — Lisere emeraude */}
-            <View style={styles.logoMiddle}>
-              {/* COUCHE 3 — Surface metal brosse */}
-              <LinearGradient
-                colors={['#2E3440', '#1E232B', '#262C36', '#1E232B', '#1A1F27']}
-                locations={[0, 0.25, 0.5, 0.75, 1]}
-                start={{ x: 0.2, y: 0 }}
-                end={{ x: 0.8, y: 1 }}
-                style={styles.logoInner}
-              >
-                {/* Reflet lumiere haut */}
-                <View style={styles.logoShine} />
-                {/* Highlight centre-haut */}
-                <View style={styles.logoHighlight} />
-
-                {/* Texte LX */}
-                <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                  <Text style={styles.logoL}>L</Text>
-                  <Text style={styles.logoX}>X</Text>
+        {/* ====== SWITCH DE LANGUE FR | EN ====== */}
+        <View style={styles.langRow}>
+          <View style={styles.langCapsule}>
+            {/* Bouton FR */}
+            <TouchableOpacity onPress={() => setLang('fr')} activeOpacity={0.7}>
+              {lang === 'fr' ? (
+                <LinearGradient
+                  colors={['#00D984', '#00C278', '#00A866']}
+                  start={{ x: 0.5, y: 0 }}
+                  end={{ x: 0.5, y: 1 }}
+                  style={styles.langBtnActive}
+                >
+                  <Text style={styles.langTextActive}>FR</Text>
+                </LinearGradient>
+              ) : (
+                <View style={styles.langBtnInactive}>
+                  <Text style={styles.langTextInactive}>FR</Text>
                 </View>
+              )}
+            </TouchableOpacity>
 
-                {/* 4 points lumineux emeraude aux coins */}
-                <View style={[styles.dot, { top: 6, left: 6 }]} />
-                <View style={[styles.dot, { top: 6, right: 6 }]} />
-                <View style={[styles.dot, { bottom: 6, left: 6 }]} />
-                <View style={[styles.dot, { bottom: 6, right: 6 }]} />
-              </LinearGradient>
-            </View>
+            {/* Separateur */}
+            <View style={styles.langSep} />
+
+            {/* Bouton EN */}
+            <TouchableOpacity onPress={() => setLang('en')} activeOpacity={0.7}>
+              {lang === 'en' ? (
+                <LinearGradient
+                  colors={['#00D984', '#00C278', '#00A866']}
+                  start={{ x: 0.5, y: 0 }}
+                  end={{ x: 0.5, y: 1 }}
+                  style={styles.langBtnActive}
+                >
+                  <Text style={styles.langTextActive}>EN</Text>
+                </LinearGradient>
+              ) : (
+                <View style={styles.langBtnInactive}>
+                  <Text style={styles.langTextInactive}>EN</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ====== LOGO — Image PNG ====== */}
+        <View style={{ alignItems: 'center', marginBottom: 12 }}>
+          <View style={styles.logoWrap}>
+            <Image
+              source={require('./assets/logo-lx.png')}
+              style={styles.logoImage}
+              resizeMode="cover"
+            />
           </View>
         </View>
 
         {/* TAGLINE */}
-        <Text style={styles.tagline}>TRACK YOUR VITALITY</Text>
+        <Text style={styles.tagline}>{t.tagline}</Text>
 
-        {/* ====== CARTE CONNEXION — Metal brosse ====== */}
+        {/* ====== CARTE CONNEXION — Metal brosse ameliore ====== */}
         <View style={styles.cardShadow}>
-          <View style={{ borderRadius: 16, overflow: 'hidden' }}>
+          {/* Cadre exterieur bisaute */}
+          <View style={styles.cardBevel}>
             <LinearGradient
-              colors={['#2E3440', '#1B1F26', '#1E232B', '#1B1F26']}
-              locations={[0, 0.3, 0.6, 1]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              colors={[
+                '#3A4250',
+                '#4A5568',
+                '#3E4855',
+                '#2E3440',
+                '#252B35',
+                '#1E232B',
+              ]}
+              locations={[0, 0.12, 0.3, 0.55, 0.8, 1]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
               style={styles.card}
             >
-              {/* Reflet metallique superieur */}
+              {/* Reflet diffus en haut (40px) */}
+              <View style={styles.cardReflectWrap}>
+                <LinearGradient
+                  colors={[
+                    'rgba(107, 123, 141, 0.25)',
+                    'rgba(107, 123, 141, 0.08)',
+                    'rgba(107, 123, 141, 0)',
+                  ]}
+                  start={{ x: 0.5, y: 0 }}
+                  end={{ x: 0.5, y: 1 }}
+                  style={{ flex: 1 }}
+                />
+              </View>
+
+              {/* Ligne highlight nette 1px */}
               <View style={styles.cardShine} />
 
+              {/* Lignes texture brossee */}
+              {[60, 120, 180, 240, 300, 360].map((topPos, i) => (
+                <View
+                  key={i}
+                  style={{
+                    position: 'absolute',
+                    top: topPos,
+                    left: 10,
+                    right: 10,
+                    height: 0.5,
+                    backgroundColor: '#6B7B8D',
+                    opacity: 0.04 + (i % 2) * 0.02,
+                  }}
+                />
+              ))}
+
               {/* Titre */}
-              <Text style={styles.title}>Connexion</Text>
-              <Text style={styles.subtitle}>
-                Accede a ton dashboard de vitalite
-              </Text>
+              <Text style={styles.title}>{t.title}</Text>
+              <Text style={styles.subtitle}>{t.subtitle}</Text>
 
               {/* ── EMAIL ── */}
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{t.emailLabel}</Text>
               <View style={styles.inputWrap}>
                 <TextInput
-                  placeholder="email@example.com"
+                  placeholder={t.emailPlaceholder}
                   placeholderTextColor={COLORS.textPlaceholder}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -152,10 +261,10 @@ export default function App() {
               </View>
 
               {/* ── MOT DE PASSE ── */}
-              <Text style={styles.label}>Mot de passe</Text>
+              <Text style={styles.label}>{t.passwordLabel}</Text>
               <View style={[styles.inputWrap, { marginBottom: 24 }]}>
                 <TextInput
-                  placeholder="••••••••"
+                  placeholder={t.passwordPlaceholder}
                   placeholderTextColor={COLORS.textPlaceholder}
                   secureTextEntry
                   value={password}
@@ -180,7 +289,7 @@ export default function App() {
                   >
                     <View style={styles.btnShine} />
                     <View style={styles.btnHighlight} />
-                    <Text style={styles.btnConnectText}>Se connecter</Text>
+                    <Text style={styles.btnConnectText}>{t.loginButton}</Text>
                   </LinearGradient>
                 </View>
               </TouchableOpacity>
@@ -188,7 +297,7 @@ export default function App() {
               {/* ── SEPARATEUR OU ── */}
               <View style={styles.separator}>
                 <View style={styles.sepLine} />
-                <Text style={styles.sepText}>OU</Text>
+                <Text style={styles.sepText}>{t.separator}</Text>
                 <View style={styles.sepLine} />
               </View>
 
@@ -201,9 +310,7 @@ export default function App() {
                 <View style={styles.btnGoogle}>
                   <View style={styles.btnGoogleShine} />
                   <Text style={styles.googleG}>G</Text>
-                  <Text style={styles.btnGoogleText}>
-                    Continuer avec Google
-                  </Text>
+                  <Text style={styles.btnGoogleText}>{t.googleButton}</Text>
                 </View>
               </TouchableOpacity>
 
@@ -216,17 +323,17 @@ export default function App() {
                 <View style={styles.btnBio}>
                   <View style={styles.btnBioShine} />
                   <Text style={{ fontSize: 18 }}>🔒</Text>
-                  <Text style={styles.btnBioText}>Connexion biometrique</Text>
+                  <Text style={styles.btnBioText}>{t.biometricButton}</Text>
                 </View>
               </TouchableOpacity>
 
               {/* ── LIEN S'INSCRIRE ── */}
               <View style={styles.registerRow}>
                 <Text style={{ color: COLORS.textMuted, fontSize: 14 }}>
-                  Pas de compte ?{' '}
+                  {t.noAccount}{' '}
                 </Text>
                 <TouchableOpacity onPress={handleRegister}>
-                  <Text style={styles.registerLink}>S'inscrire</Text>
+                  <Text style={styles.registerLink}>{t.signUp}</Text>
                 </TouchableOpacity>
               </View>
             </LinearGradient>
@@ -247,121 +354,119 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
 
-  /* ── Logo LX Premium ── */
-  logoOuter: {
-    width: 100,
-    height: 100,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderTopColor: '#6B7B8D',
-    borderLeftColor: '#5A6577',
-    borderRightColor: '#2A303B',
-    borderBottomColor: '#1A1F26',
-    backgroundColor: '#13161B',
-    padding: 3,
+  /* ── Switch Langue ── */
+  langRow: {
+    width: '100%',
+    alignItems: 'flex-end',
+    marginBottom: 16,
+    paddingTop: 8,
+  },
+  langCapsule: {
+    flexDirection: 'row',
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1.2,
+    borderColor: '#3E4855',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  langBtnActive: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+  },
+  langTextActive: {
+    color: '#0D1117',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  langBtnInactive: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    backgroundColor: '#1B1F26',
+  },
+  langTextInactive: {
+    color: '#555E6C',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1,
+  },
+  langSep: {
+    width: 1,
+    backgroundColor: '#3E4855',
+  },
+
+  /* ── Logo PNG ── */
+  logoWrap: {
+    width: 110,
+    height: 110,
+    borderRadius: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.7,
     shadowRadius: 20,
     elevation: 16,
   },
-  logoMiddle: {
-    flex: 1,
-    borderRadius: 18,
-    borderWidth: 1.2,
-    borderColor: 'rgba(0, 217, 132, 0.35)',
-    overflow: 'hidden',
-    shadowColor: '#00D984',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-  },
-  logoInner: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  logoShine: {
-    position: 'absolute',
-    top: 0,
-    left: 15,
-    right: 15,
-    height: 1,
-    backgroundColor: '#6B7B8D',
-    opacity: 0.4,
-  },
-  logoHighlight: {
-    position: 'absolute',
-    top: 8,
-    left: '30%',
-    right: '30%',
-    height: 20,
-    backgroundColor: 'rgba(107, 123, 141, 0.08)',
-    borderRadius: 10,
-  },
-  logoL: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#8892A0',
-    letterSpacing: -1,
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 3,
-  },
-  logoX: {
-    fontSize: 36,
-    fontWeight: '900',
-    color: '#00A866',
-    letterSpacing: -1,
-    textShadowColor: 'rgba(0, 217, 132, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  dot: {
-    position: 'absolute',
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#00D984',
-    opacity: 0.5,
+  logoImage: {
+    width: 110,
+    height: 110,
+    borderRadius: 24,
   },
   tagline: {
     color: '#555E6C',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-    letterSpacing: 5,
+    letterSpacing: 4,
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 24,
+    textTransform: 'uppercase',
   },
 
-  /* ── Carte Connexion ── */
+  /* ── Carte Connexion — Metal brosse ameliore ── */
   cardShadow: {
     width: '100%',
     maxWidth: 400,
-    borderRadius: 16,
+    borderRadius: 18,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    elevation: 14,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.65,
+    shadowRadius: 24,
+    elevation: 16,
+    marginTop: 0,
+  },
+  cardBevel: {
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderTopColor: '#6B7B8D',
+    borderLeftColor: '#5A6577',
+    borderRightColor: '#2A303B',
+    borderBottomColor: '#1A1F26',
+    overflow: 'hidden',
   },
   card: {
     paddingHorizontal: 22,
     paddingTop: 28,
     paddingBottom: 24,
-    borderWidth: 1.2,
-    borderColor: '#3E4855',
-    borderRadius: 16,
+  },
+  cardReflectWrap: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 40,
+    overflow: 'hidden',
   },
   cardShine: {
     position: 'absolute',
     top: 0,
-    left: 24,
-    right: 24,
+    left: 16,
+    right: 16,
     height: 1,
-    backgroundColor: '#6B7B8D',
-    opacity: 0.35,
+    backgroundColor: '#8892A0',
+    opacity: 0.5,
   },
   title: {
     color: COLORS.textPrimary,
