@@ -4,10 +4,12 @@
  * Usage: Copier-coller ce contenu dans App.js sur snack.expo.dev
  * Dependances Snack: ajouter "expo-linear-gradient" dans package.json
  *
- * IMPORTANT pour le logo:
- *   1. Dans Snack Expo, cree un dossier "assets" (panneau gauche)
- *   2. Upload ton image logo-lx.png dedans
- *   3. Le require('./assets/logo-lx.png') fonctionnera automatiquement
+ * LOGO: Par defaut le logo est code en dur (metal brosse).
+ * Pour utiliser ton PNG a la place:
+ *   1. Cree un dossier "assets" dans Snack (panneau gauche)
+ *   2. Upload logo-lx.png dedans
+ *   3. Mets USE_PNG_LOGO = true (ligne ~40)
+ *   4. Decommente la ligne require
  *
  * Version: 2.0
  * Date: 2026-03-06
@@ -32,6 +34,11 @@ import {
   Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+
+// === LOGO CONFIG ===
+// Mettre true + decommenter le require quand le PNG est upload dans assets/
+const USE_PNG_LOGO = false;
+// const LOGO_SOURCE = require('./assets/logo-lx.png');
 
 // === PALETTE LIXUM PREMIUM ===
 const COLORS = {
@@ -177,15 +184,41 @@ export default function App() {
           </View>
         </View>
 
-        {/* ====== LOGO — Image PNG ====== */}
+        {/* ====== LOGO ====== */}
         <View style={{ alignItems: 'center', marginBottom: 12 }}>
-          <View style={styles.logoWrap}>
-            <Image
-              source={require('./assets/logo-lx.png')}
-              style={styles.logoImage}
-              resizeMode="cover"
-            />
-          </View>
+          {USE_PNG_LOGO ? (
+            /* Mode PNG — decommenter LOGO_SOURCE en haut du fichier */
+            <View style={styles.logoWrap}>
+              <Image
+                source={null /* remplacer par LOGO_SOURCE */}
+                style={styles.logoImage}
+                resizeMode="cover"
+              />
+            </View>
+          ) : (
+            /* Mode code — logo metal brosse premium */
+            <View style={styles.logoOuter}>
+              <View style={styles.logoMiddle}>
+                <LinearGradient
+                  colors={['#2E3440', '#1E232B', '#262C36', '#1E232B', '#1A1F27']}
+                  locations={[0, 0.25, 0.5, 0.75, 1]}
+                  start={{ x: 0.2, y: 0 }}
+                  end={{ x: 0.8, y: 1 }}
+                  style={styles.logoInner}
+                >
+                  <View style={styles.logoShine} />
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                    <Text style={styles.logoL}>L</Text>
+                    <Text style={styles.logoX}>X</Text>
+                  </View>
+                  <View style={[styles.dot, { top: 6, left: 6 }]} />
+                  <View style={[styles.dot, { top: 6, right: 6 }]} />
+                  <View style={[styles.dot, { bottom: 6, left: 6 }]} />
+                  <View style={[styles.dot, { bottom: 6, right: 6 }]} />
+                </LinearGradient>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* TAGLINE */}
@@ -399,7 +432,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3E4855',
   },
 
-  /* ── Logo PNG ── */
+  /* ── Logo PNG (quand USE_PNG_LOGO = true) ── */
   logoWrap: {
     width: 110,
     height: 110,
@@ -414,6 +447,73 @@ const styles = StyleSheet.create({
     width: 110,
     height: 110,
     borderRadius: 24,
+  },
+
+  /* ── Logo code (quand USE_PNG_LOGO = false) ── */
+  logoOuter: {
+    width: 100,
+    height: 100,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderTopColor: '#6B7B8D',
+    borderLeftColor: '#5A6577',
+    borderRightColor: '#2A303B',
+    borderBottomColor: '#1A1F26',
+    backgroundColor: '#13161B',
+    padding: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.7,
+    shadowRadius: 20,
+    elevation: 16,
+  },
+  logoMiddle: {
+    flex: 1,
+    borderRadius: 18,
+    borderWidth: 1.2,
+    borderColor: 'rgba(0, 217, 132, 0.35)',
+    overflow: 'hidden',
+  },
+  logoInner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  logoShine: {
+    position: 'absolute',
+    top: 0,
+    left: 15,
+    right: 15,
+    height: 1,
+    backgroundColor: '#6B7B8D',
+    opacity: 0.4,
+  },
+  logoL: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#8892A0',
+    letterSpacing: -1,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 3,
+  },
+  logoX: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#00A866',
+    letterSpacing: -1,
+    textShadowColor: 'rgba(0, 217, 132, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  dot: {
+    position: 'absolute',
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#00D984',
+    opacity: 0.5,
   },
   tagline: {
     color: '#555E6C',
