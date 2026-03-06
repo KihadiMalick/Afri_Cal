@@ -1,9 +1,10 @@
-// LIXUM - Login Page Test v2.2
+// LIXUM - Login Page Test v3.0
 // Copier-coller dans App.js sur snack.expo.dev
-// Dependance: expo-linear-gradient
+// Dependances: expo-linear-gradient, expo-blur, @expo/vector-icons
 // Logo: mettre logo-lx.png dans le dossier assets du Snack
 //
-// v2.2 — Glassmorphism card, glass buttons, logo 150x150, biometrique turquoise
+// v3.0 — Logo 190, header unifie, BlurView glassmorphism, fingerprint icon,
+//         bouton glass transparent, glow emeraude, points lumineux coins
 
 import React, { useState } from 'react';
 import {
@@ -17,28 +18,8 @@ import {
   Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-
-var COLORS = {
-  bgDeep: '#080A0E',
-  bgPrimary: '#0D1117',
-  bgSecondary: '#151B23',
-  bgTertiary: '#1C2330',
-  metalLight: '#3A4250',
-  metalMid: '#2A303B',
-  metalDark: '#1B1F26',
-  metalBorder: '#3E4855',
-  metalShine: '#6B7B8D',
-  emerald: '#00D984',
-  emeraldBright: '#00FFB2',
-  emeraldDark: '#00A866',
-  emeraldDeep: '#006B40',
-  emeraldMuted: 'rgba(0, 217, 132, 0.15)',
-  turquoise: '#00BFA6',
-  textPrimary: '#EAEEF3',
-  textSecondary: '#8892A0',
-  textMuted: '#555E6C',
-  textPlaceholder: '#3E4855',
-};
+import { BlurView } from 'expo-blur';
+import { Ionicons } from '@expo/vector-icons';
 
 var texts = {
   fr: {
@@ -114,49 +95,6 @@ export default function App() {
     Alert.alert('Navigation', 'Aller vers /register');
   };
 
-  // Switch langue FR/EN
-  function LangSwitch() {
-    return (
-      <View style={styles.langRow}>
-        <View style={styles.langCapsule}>
-          <TouchableOpacity onPress={function () { setLang('fr'); }} activeOpacity={0.7}>
-            {lang === 'fr' ? (
-              <LinearGradient
-                colors={['#00D984', '#00C278', '#00A866']}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
-                style={styles.langBtnActive}
-              >
-                <Text style={styles.langTextActive}>FR</Text>
-              </LinearGradient>
-            ) : (
-              <View style={styles.langBtnInactive}>
-                <Text style={styles.langTextInactive}>FR</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <View style={styles.langSep} />
-          <TouchableOpacity onPress={function () { setLang('en'); }} activeOpacity={0.7}>
-            {lang === 'en' ? (
-              <LinearGradient
-                colors={['#00D984', '#00C278', '#00A866']}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
-                style={styles.langBtnActive}
-              >
-                <Text style={styles.langTextActive}>EN</Text>
-              </LinearGradient>
-            ) : (
-              <View style={styles.langBtnInactive}>
-                <Text style={styles.langTextInactive}>EN</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <LinearGradient
       colors={['#080A0E', '#0D1117', '#0F1923', '#0D1117', '#080A0E']}
@@ -169,10 +107,9 @@ export default function App() {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        <LangSwitch />
 
-        {/* CORRECTION 3 — Logo 150x150 */}
-        <View style={{ alignItems: 'center', marginBottom: 14 }}>
+        {/* CORRECTION 2 — Header unifie : logo centre + switch FR/EN en haut a droite */}
+        <View style={styles.headerRow}>
           <View style={styles.logoWrap}>
             <Image
               source={logoImage}
@@ -180,25 +117,59 @@ export default function App() {
               resizeMode="cover"
             />
           </View>
+
+          <View style={styles.langAbsolute}>
+            <View style={styles.langCapsule}>
+              <TouchableOpacity onPress={function () { setLang('fr'); }} activeOpacity={0.7}>
+                {lang === 'fr' ? (
+                  <LinearGradient
+                    colors={['#00D984', '#00C278', '#00A866']}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}
+                    style={styles.langBtnActive}
+                  >
+                    <Text style={styles.langTextActive}>FR</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={styles.langBtnInactive}>
+                    <Text style={styles.langTextInactive}>FR</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <View style={styles.langSep} />
+              <TouchableOpacity onPress={function () { setLang('en'); }} activeOpacity={0.7}>
+                {lang === 'en' ? (
+                  <LinearGradient
+                    colors={['#00D984', '#00C278', '#00A866']}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}
+                    style={styles.langBtnActive}
+                  >
+                    <Text style={styles.langTextActive}>EN</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={styles.langBtnInactive}>
+                    <Text style={styles.langTextInactive}>EN</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
 
         <Text style={styles.tagline}>{t.tagline}</Text>
 
-        {/* CORRECTION 4 — Carte Glassmorphism */}
-        <View style={styles.cardShadow}>
+        {/* CORRECTION 3 — Carte glassmorphism avec glow emeraude */}
+        <View style={styles.cardOuter}>
+          <View style={styles.cardGlow} />
           <View style={styles.cardBevel}>
-            <LinearGradient
-              colors={[
-                'rgba(58, 66, 80, 0.65)',
-                'rgba(42, 48, 59, 0.55)',
-                'rgba(30, 35, 43, 0.60)',
-                'rgba(27, 31, 38, 0.70)',
-              ]}
-              locations={[0, 0.3, 0.6, 1]}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
+            <BlurView
+              intensity={25}
+              tint="dark"
               style={styles.card}
             >
+              <View style={styles.cardOverlay} />
+
               <View style={styles.glassReflectWrap}>
                 <LinearGradient
                   colors={[
@@ -213,112 +184,150 @@ export default function App() {
               </View>
 
               <View style={styles.glassHighlight} />
-
               <View style={styles.glassDiagonalReflect} />
 
-              <Text style={styles.title}>{t.title}</Text>
-              <Text style={styles.subtitle}>{t.subtitle}</Text>
+              <View style={styles.cornerTL} />
+              <View style={styles.cornerTR} />
+              <View style={styles.cornerBL} />
+              <View style={styles.cornerBR} />
 
-              <Text style={styles.label}>{t.emailLabel}</Text>
-              <View style={styles.inputWrap}>
-                <TextInput
-                  placeholder={t.emailPlaceholder}
-                  placeholderTextColor={COLORS.textPlaceholder}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  value={email}
-                  onChangeText={setEmail}
-                  style={styles.input}
-                />
-              </View>
+              <View style={{ zIndex: 1 }}>
+                <Text style={styles.title}>{t.title}</Text>
+                <Text style={styles.subtitle}>{t.subtitle}</Text>
 
-              <Text style={styles.label}>{t.passwordLabel}</Text>
-              <View style={[styles.inputWrap, { marginBottom: 24 }]}>
-                <TextInput
-                  placeholder={t.passwordPlaceholder}
-                  placeholderTextColor={COLORS.textPlaceholder}
-                  secureTextEntry={true}
-                  value={password}
-                  onChangeText={setPassword}
-                  style={styles.input}
-                />
-              </View>
-
-              {/* CORRECTION 1 — Bouton Se connecter Glass */}
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={handleLogin}
-                style={styles.btnConnectWrap}
-              >
-                <View style={styles.btnConnectGlass}>
-                  <View style={styles.btnConnectGlassReflet} />
-                  <View style={styles.btnConnectGlassLine} />
-                  <Text style={styles.btnConnectText}>{t.loginButton}</Text>
+                <Text style={styles.label}>{t.emailLabel}</Text>
+                <View style={styles.inputWrap}>
+                  <TextInput
+                    placeholder={t.emailPlaceholder}
+                    placeholderTextColor="#3E4855"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={email}
+                    onChangeText={setEmail}
+                    style={styles.input}
+                  />
                 </View>
-              </TouchableOpacity>
 
-              <View style={styles.separator}>
-                <View style={styles.sepLine} />
-                <Text style={styles.sepText}>{t.separator}</Text>
-                <View style={styles.sepLine} />
-              </View>
-
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={handleGoogleLogin}
-                style={{ marginBottom: 12 }}
-              >
-                <View style={styles.btnGoogle}>
-                  <View style={styles.btnGoogleShine} />
-                  <Text style={styles.googleG}>G</Text>
-                  <Text style={styles.btnGoogleText}>{t.googleButton}</Text>
+                <Text style={styles.label}>{t.passwordLabel}</Text>
+                <View style={[styles.inputWrap, { marginBottom: 24 }]}>
+                  <TextInput
+                    placeholder={t.passwordPlaceholder}
+                    placeholderTextColor="#3E4855"
+                    secureTextEntry={true}
+                    value={password}
+                    onChangeText={setPassword}
+                    style={styles.input}
+                  />
                 </View>
-              </TouchableOpacity>
 
-              {/* CORRECTION 2 — Bouton Biometrique Turquoise */}
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={handleBiometric}
-                style={{ marginBottom: 20 }}
-              >
-                <View style={styles.btnBio}>
-                  <View style={styles.btnBioReflet} />
-                  <Text style={{ fontSize: 18 }}>&#x1F512;</Text>
-                  <Text style={styles.btnBioText}>{t.biometricButton}</Text>
-                </View>
-              </TouchableOpacity>
-
-              <View style={styles.registerRow}>
-                <Text style={{ color: COLORS.textMuted, fontSize: 14 }}>
-                  {t.noAccount}{' '}
-                </Text>
-                <TouchableOpacity onPress={handleRegister}>
-                  <Text style={styles.registerLink}>{t.signUp}</Text>
+                {/* CORRECTION 4 — Bouton Se connecter glass transparent */}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleLogin}
+                  style={styles.btnConnectWrap}
+                >
+                  <View style={styles.btnConnectGlass}>
+                    <View style={styles.btnConnectGlassReflet} />
+                    <View style={styles.btnConnectGlassLine} />
+                    <Text style={styles.btnConnectText}>{t.loginButton}</Text>
+                  </View>
                 </TouchableOpacity>
+
+                <View style={styles.separator}>
+                  <View style={styles.sepLine} />
+                  <Text style={styles.sepText}>{t.separator}</Text>
+                  <View style={styles.sepLine} />
+                </View>
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleGoogleLogin}
+                  style={{ marginBottom: 12 }}
+                >
+                  <View style={styles.btnGoogle}>
+                    <View style={styles.btnGoogleShine} />
+                    <Text style={styles.googleG}>G</Text>
+                    <Text style={styles.btnGoogleText}>{t.googleButton}</Text>
+                  </View>
+                </TouchableOpacity>
+
+                {/* CORRECTION 5 — Bouton biometrique avec icone empreinte */}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleBiometric}
+                  style={{ marginBottom: 20, backgroundColor: 'transparent' }}
+                >
+                  <View style={styles.btnBio}>
+                    <View style={styles.btnBioReflet} />
+                    <Ionicons name="finger-print" size={20} color="#00BFA6" />
+                    <Text style={styles.btnBioText}>{t.biometricButton}</Text>
+                  </View>
+                </TouchableOpacity>
+
+                {/* CORRECTION 6 — Marge bas S'inscrire */}
+                <View style={styles.registerRow}>
+                  <Text style={{ color: '#555E6C', fontSize: 14 }}>
+                    {t.noAccount}{' '}
+                  </Text>
+                  <TouchableOpacity onPress={handleRegister}>
+                    <Text style={styles.registerLink}>{t.signUp}</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </LinearGradient>
+
+            </BlurView>
           </View>
         </View>
+
       </ScrollView>
     </LinearGradient>
   );
 }
 
 var styles = StyleSheet.create({
+  // CORRECTION 6 — ScrollView padding
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 40,
+    paddingTop: 20,
+    paddingBottom: 60,
   },
 
-  // Lang switch
-  langRow: {
+  // CORRECTION 2 — Header unifie
+  headerRow: {
     width: '100%',
-    alignItems: 'flex-end',
-    marginBottom: 16,
-    paddingTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    marginBottom: 10,
+    position: 'relative',
+  },
+
+  // CORRECTION 1 — Logo 190x190
+  logoWrap: {
+    width: 190,
+    height: 190,
+    borderRadius: 38,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.7,
+    shadowRadius: 20,
+    elevation: 16,
+  },
+  logoImage: {
+    width: 190,
+    height: 190,
+    borderRadius: 38,
+  },
+
+  // Switch FR/EN positionne en haut a droite du logo
+  langAbsolute: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
   },
   langCapsule: {
     flexDirection: 'row',
@@ -333,23 +342,23 @@ var styles = StyleSheet.create({
     elevation: 6,
   },
   langBtnActive: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   langTextActive: {
     color: '#0D1117',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,
   },
   langBtnInactive: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     backgroundColor: '#1B1F26',
   },
   langTextInactive: {
     color: '#555E6C',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     letterSpacing: 1,
   },
@@ -358,60 +367,65 @@ var styles = StyleSheet.create({
     backgroundColor: '#3E4855',
   },
 
-  // CORRECTION 3 — Logo 150x150
-  logoWrap: {
-    width: 150,
-    height: 150,
-    borderRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.7,
-    shadowRadius: 20,
-    elevation: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoImage: {
-    width: 150,
-    height: 150,
-    borderRadius: 30,
-  },
-
   tagline: {
     color: '#555E6C',
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 4,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
     textTransform: 'uppercase',
   },
 
-  // CORRECTION 4 — Carte Glassmorphism
-  cardShadow: {
+  // CORRECTION 3 — Carte glassmorphism
+  cardOuter: {
     width: '100%',
     maxWidth: 400,
     borderRadius: 20,
-    marginTop: 0,
+    marginTop: 8,
+    marginBottom: 40,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,
     shadowRadius: 24,
     elevation: 14,
   },
+  cardGlow: {
+    position: 'absolute',
+    top: -1,
+    left: -1,
+    right: -1,
+    bottom: -1,
+    borderRadius: 21,
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 217, 132, 0.15)',
+    shadowColor: '#00D984',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 2,
+  },
   cardBevel: {
     borderRadius: 20,
     borderWidth: 1.2,
-    borderTopColor: 'rgba(107, 123, 141, 0.5)',
+    borderTopColor: 'rgba(138, 146, 160, 0.4)',
     borderLeftColor: 'rgba(107, 123, 141, 0.25)',
-    borderRightColor: 'rgba(42, 48, 59, 0.5)',
-    borderBottomColor: 'rgba(26, 31, 38, 0.6)',
+    borderRightColor: 'rgba(42, 48, 59, 0.4)',
+    borderBottomColor: 'rgba(26, 31, 38, 0.5)',
     overflow: 'hidden',
   },
   card: {
     paddingHorizontal: 22,
     paddingTop: 28,
-    paddingBottom: 24,
+    paddingBottom: 28,
+  },
+  cardOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(21, 27, 35, 0.55)',
   },
   glassReflectWrap: {
     position: 'absolute',
@@ -420,8 +434,6 @@ var styles = StyleSheet.create({
     right: 0,
     height: 50,
     overflow: 'hidden',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
   },
   glassHighlight: {
     position: 'absolute',
@@ -429,8 +441,7 @@ var styles = StyleSheet.create({
     left: 12,
     right: 12,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   glassDiagonalReflect: {
     position: 'absolute',
@@ -441,6 +452,28 @@ var styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.02)',
     borderRadius: 90,
     transform: [{ rotate: '45deg' }],
+  },
+
+  // Points lumineux aux coins
+  cornerTL: {
+    position: 'absolute', top: 8, left: 8,
+    width: 4, height: 4, borderRadius: 2,
+    backgroundColor: 'rgba(0, 217, 132, 0.3)',
+  },
+  cornerTR: {
+    position: 'absolute', top: 8, right: 8,
+    width: 4, height: 4, borderRadius: 2,
+    backgroundColor: 'rgba(0, 217, 132, 0.3)',
+  },
+  cornerBL: {
+    position: 'absolute', bottom: 8, left: 8,
+    width: 4, height: 4, borderRadius: 2,
+    backgroundColor: 'rgba(0, 217, 132, 0.2)',
+  },
+  cornerBR: {
+    position: 'absolute', bottom: 8, right: 8,
+    width: 4, height: 4, borderRadius: 2,
+    backgroundColor: 'rgba(0, 217, 132, 0.2)',
   },
 
   title: {
@@ -478,15 +511,16 @@ var styles = StyleSheet.create({
     paddingVertical: 14,
   },
 
-  // CORRECTION 1 — Bouton Se connecter Glass
+  // CORRECTION 4 — Bouton Se connecter glass transparent
   btnConnectWrap: {
     marginBottom: 20,
     borderRadius: 14,
+    backgroundColor: 'transparent',
     shadowColor: '#00D984',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
-    elevation: 4,
+    elevation: 0,
   },
   btnConnectGlass: {
     borderRadius: 14,
@@ -574,7 +608,7 @@ var styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // CORRECTION 2 — Bouton Biometrique Turquoise
+  // CORRECTION 5 — Bouton biometrique turquoise + empreinte
   btnBio: {
     borderRadius: 12,
     borderWidth: 1.2,
@@ -602,10 +636,13 @@ var styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  // CORRECTION 6 — Marge bas S'inscrire
   registerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 20,
   },
   registerLink: {
     color: '#00D984',
