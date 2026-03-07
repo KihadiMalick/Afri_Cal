@@ -4,9 +4,8 @@
 //              react-native-reanimated, @expo/vector-icons, react-native-svg
 // Logo: mettre logo-lx.png dans le dossier assets du Snack
 //
-// v6.0 — Cartes Pokemon premium avec bordures metalliques,
-//         max 2 cartes rendues, drapeaux au niveau logo,
-//         fond gris gradient partout, CARD_H 0.44
+// v7.0 — Espacements finaux : Bienvenue plus grand, tagline marge,
+//         SwipeHint remonte, dots et Se connecter remontes, paddingBottom 24
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
@@ -414,7 +413,7 @@ function PokemonCard(props) {
 
                 <View>
                   {isTopCard && currentIndex === 0 ? (
-                    <View style={{ alignItems: 'center', marginBottom: 8 }}>
+                    <View style={{ alignItems: 'center', marginBottom: 14 }}>
                       <SwipeHint lang={lang} />
                     </View>
                   ) : null}
@@ -555,8 +554,8 @@ export default function App() {
           </View>
 
           <Text style={{
-            color: '#8892A0', fontSize: 13, fontWeight: '400',
-            letterSpacing: 1, textAlign: 'center',
+            color: '#8892A0', fontSize: 16, fontWeight: '500',
+            letterSpacing: 0.5, textAlign: 'center',
             marginTop: 4, marginBottom: 2,
           }}>
             {t.welcome}
@@ -573,7 +572,7 @@ export default function App() {
           <Text style={{
             color: '#555E6C', fontSize: 9, fontWeight: '600',
             letterSpacing: 4, textAlign: 'center',
-            marginBottom: 12, textTransform: 'uppercase',
+            marginTop: 8, marginBottom: 20, textTransform: 'uppercase',
           }}>
             {t.tagline}
           </Text>
@@ -682,7 +681,7 @@ export default function App() {
           <View style={{
             flexDirection: 'row', justifyContent: 'center',
             alignItems: 'center', gap: 8,
-            marginTop: 14, marginBottom: 12,
+            marginTop: 10, marginBottom: 6,
           }}>
             {slides.map(function (_, i) {
               return (
@@ -697,7 +696,7 @@ export default function App() {
 
           {allSwiped ? (
             <Animated.View entering={FadeInDown.delay(200).duration(400).springify()}
-              style={{ marginTop: 8, marginBottom: 20, alignItems: 'center' }}>
+              style={{ marginTop: 8, marginBottom: 16, alignItems: 'center' }}>
               <TouchableOpacity onPress={handleSignIn} activeOpacity={0.7}
                 style={{
                   flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 24,
@@ -725,6 +724,6 @@ var styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 40,
-    paddingBottom: 20,
+    paddingBottom: 24,
   },
 });
