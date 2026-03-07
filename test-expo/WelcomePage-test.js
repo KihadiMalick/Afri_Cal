@@ -1,11 +1,11 @@
-// LIXUM - Welcome Onboarding (Tinder-Style) v3.1
+// LIXUM - Welcome Onboarding (Tinder-Style) v5.0
 // Copier-coller dans App.js sur snack.expo.dev
 // Dependances: expo-linear-gradient, react-native-gesture-handler,
 //              react-native-reanimated, @expo/vector-icons, react-native-svg
 // Logo: mettre logo-lx.png dans le dossier assets du Snack
 //
-// v3.1 — Drapeaux sur ligne Bienvenue, cartes 100% opaques fix definitif,
-//         bouton "Rejoindre LIXUM" dans carte finale, background double gradient
+// v5.0 — Drapeaux absolus aux bords, LIXUM blanc, pas de glow bar,
+//         cartes 100% opaques bg solide, cartes plus hautes, meilleurs margins
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
@@ -44,7 +44,7 @@ import Svg, { Path, Circle, Line } from 'react-native-svg';
 var SCREEN_WIDTH = Dimensions.get('window').width;
 var SCREEN_HEIGHT = Dimensions.get('window').height;
 var CARD_WIDTH = SCREEN_WIDTH - 48;
-var CARD_HEIGHT = SCREEN_HEIGHT * 0.46;
+var CARD_HEIGHT = SCREEN_HEIGHT * 0.56;
 var SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 var logoImage = require('./assets/logo-lx.png');
@@ -209,7 +209,7 @@ function SlideIcon(props) {
 }
 
 // ============================================================
-// SWIPE HINT
+// SWIPE HINT — positionne a l interieur de la carte
 // ============================================================
 
 function SwipeHint(props) {
@@ -241,7 +241,7 @@ function SwipeHint(props) {
 
   return (
     <RNAnimated.View style={{
-      position: 'absolute', bottom: 55, right: 30,
+      position: 'absolute', bottom: 48, right: 30,
       transform: [{ translateX: translateX }], opacity: opacity, zIndex: 100,
     }}>
       <View style={{
@@ -259,7 +259,7 @@ function SwipeHint(props) {
 }
 
 // ============================================================
-// CARTE SWIPEABLE — FIX DEFINITIF OPAQUE
+// CARTE SWIPEABLE — RADICALEMENT OPAQUE bg solide #1A2028
 // ============================================================
 
 function SwipeCard(props) {
@@ -334,15 +334,15 @@ function SwipeCard(props) {
       >
         <View style={{
           width: CARD_WIDTH, height: CARD_HEIGHT,
-          backgroundColor: '#131920',
+          backgroundColor: '#1A2028',
           borderRadius: 20, overflow: 'hidden', position: 'relative',
         }}>
           <LinearGradient
-            colors={['#2E3640', '#252C36', '#1D222B', '#171C24']}
-            locations={[0, 0.3, 0.6, 1]}
+            colors={['rgba(46,54,64,0.6)', 'rgba(37,44,54,0.3)', 'transparent']}
+            locations={[0, 0.4, 1]}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
-            style={StyleSheet.absoluteFillObject}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 120, borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
           />
 
           <View style={{
@@ -475,166 +475,171 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <LinearGradient
-        colors={['#1A2030', '#121820', '#0D1117', '#121820', '#1A2030']}
-        locations={[0, 0.25, 0.5, 0.75, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={{ flex: 1 }}
-      >
+      <View style={{ flex: 1, backgroundColor: '#1A2028' }}>
         <LinearGradient
-          colors={['rgba(30,38,50,0.3)', 'rgba(0,0,0,0)', 'rgba(30,38,50,0.3)']}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={{ flex: 1 }}
-        >
-          <View style={styles.content}>
+          colors={['rgba(30,38,50,0.5)', 'transparent']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 120 }}
+        />
 
-            <View style={{ alignItems: 'center', marginTop: 12, marginBottom: 10 }}>
-              <View style={styles.logoContainer}>
-                <Image source={logoImage} style={styles.logo} resizeMode="cover" />
+        <View style={styles.content}>
+
+          <View style={{ alignItems: 'center', marginTop: 12, marginBottom: 10 }}>
+            <View style={styles.logoContainer}>
+              <Image source={logoImage} style={styles.logo} resizeMode="cover" />
+            </View>
+          </View>
+
+          <View style={{
+            position: 'relative',
+            width: '100%', marginBottom: 2, paddingHorizontal: 4,
+            alignItems: 'center', justifyContent: 'center',
+            minHeight: 36,
+          }}>
+            <TouchableOpacity
+              onPress={function () { setLang('en'); }} activeOpacity={0.7}
+              style={{ position: 'absolute', left: 0 }}
+            >
+              <View style={[styles.flagBtn, {
+                borderColor: lang === 'en' ? 'rgba(0,217,132,0.4)' : 'rgba(62,72,85,0.5)',
+                backgroundColor: lang === 'en' ? 'rgba(0,217,132,0.08)' : 'rgba(27,31,38,0.6)',
+              }]}>
+                <Text style={{ fontSize: 12 }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</Text>
+                <Text style={[styles.flagLabel, { color: lang === 'en' ? '#00D984' : '#555E6C' }]}>EN</Text>
               </View>
-              <View style={styles.logoGlow} />
-            </View>
+            </TouchableOpacity>
 
-            <View style={{
-              flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-              width: '100%', marginBottom: 2, paddingHorizontal: 4,
-            }}>
-              <TouchableOpacity onPress={function () { setLang('en'); }} activeOpacity={0.7}>
-                <View style={[styles.flagBtn, {
-                  borderColor: lang === 'en' ? 'rgba(0,217,132,0.4)' : 'rgba(62,72,85,0.5)',
-                  backgroundColor: lang === 'en' ? 'rgba(0,217,132,0.08)' : 'rgba(27,31,38,0.6)',
-                }]}>
-                  <Text style={{ fontSize: 14 }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</Text>
-                  <Text style={[styles.flagLabel, { color: lang === 'en' ? '#00D984' : '#555E6C' }]}>EN</Text>
-                </View>
-              </TouchableOpacity>
+            <Text style={styles.welcomeText}>{t.welcome}</Text>
 
-              <Text style={styles.welcomeText}>{t.welcome}</Text>
+            <TouchableOpacity
+              onPress={function () { setLang('fr'); }} activeOpacity={0.7}
+              style={{ position: 'absolute', right: 0 }}
+            >
+              <View style={[styles.flagBtn, {
+                borderColor: lang === 'fr' ? 'rgba(0,217,132,0.4)' : 'rgba(62,72,85,0.5)',
+                backgroundColor: lang === 'fr' ? 'rgba(0,217,132,0.08)' : 'rgba(27,31,38,0.6)',
+              }]}>
+                <Text style={{ fontSize: 12 }}>{'\uD83C\uDDEB\uD83C\uDDF7'}</Text>
+                <Text style={[styles.flagLabel, { color: lang === 'fr' ? '#00D984' : '#555E6C' }]}>FR</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
 
-              <TouchableOpacity onPress={function () { setLang('fr'); }} activeOpacity={0.7}>
-                <View style={[styles.flagBtn, {
-                  borderColor: lang === 'fr' ? 'rgba(0,217,132,0.4)' : 'rgba(62,72,85,0.5)',
-                  backgroundColor: lang === 'fr' ? 'rgba(0,217,132,0.08)' : 'rgba(27,31,38,0.6)',
-                }]}>
-                  <Text style={{ fontSize: 14 }}>{'\uD83C\uDDEB\uD83C\uDDF7'}</Text>
-                  <Text style={[styles.flagLabel, { color: lang === 'fr' ? '#00D984' : '#555E6C' }]}>FR</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
+          <Text style={styles.brandName}>{t.brandName}</Text>
+          <Text style={styles.tagline}>{t.tagline}</Text>
 
-            <Text style={styles.brandName}>{t.brandName}</Text>
-            <Text style={styles.tagline}>{t.tagline}</Text>
-
-            <View style={styles.cardsZone}>
-              {!allSwiped ? (
-                <View style={{ width: CARD_WIDTH, height: CARD_HEIGHT }}>
-                  {slides.slice().reverse().map(function (slide, reverseIndex) {
-                    var actualIndex = slides.length - 1 - reverseIndex;
-                    return (
-                      <SwipeCard
-                        key={slide.key} slide={slide} index={actualIndex}
-                        totalCards={slides.length} currentIndex={currentIndex}
-                        onSwipe={handleSwipe}
-                      />
-                    );
-                  })}
-                  <SwipeHint visible={currentIndex === 0} lang={lang} />
-                </View>
-              ) : (
-                <Animated.View entering={FadeInDown.duration(600).springify()}
-                  style={{ width: CARD_WIDTH, borderRadius: 20, overflow: 'hidden' }}>
-                  <View style={{
-                    backgroundColor: '#131920', borderRadius: 20, overflow: 'hidden',
-                    borderWidth: 1.2,
-                    borderTopColor: 'rgba(138,146,160,0.3)',
-                    borderLeftColor: 'rgba(107,123,141,0.15)',
-                    borderRightColor: 'rgba(42,48,59,0.3)',
-                    borderBottomColor: 'rgba(26,31,38,0.4)',
-                  }}>
-                    <LinearGradient
-                      colors={['#2E3640', '#252C36', '#1D222B', '#171C24']}
-                      locations={[0, 0.3, 0.6, 1]}
-                      start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
-                      style={{ paddingVertical: 36, paddingHorizontal: 24, alignItems: 'center' }}
-                    >
-                      <View style={{ position: 'absolute', top: 0, left: 14, right: 14, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' }} />
-
-                      <View style={{
-                        width: 64, height: 64, borderRadius: 32,
-                        backgroundColor: 'rgba(0,217,132,0.10)',
-                        borderWidth: 1.5, borderColor: '#00D984',
-                        alignItems: 'center', justifyContent: 'center', marginBottom: 20,
-                      }}>
-                        <Ionicons name="checkmark" size={32} color="#00D984" />
-                      </View>
-
-                      <Text style={{
-                        color: '#EAEEF3', fontSize: 22, fontWeight: '700',
-                        textAlign: 'center', marginBottom: 24,
-                      }}>
-                        {t.readyTitle}
-                      </Text>
-
-                      <TouchableOpacity activeOpacity={0.7} onPress={handleJoin}
-                        style={{ width: '100%', borderRadius: 14 }}>
-                        <View style={{
-                          borderRadius: 14, borderWidth: 1.3, borderColor: 'rgba(0,217,132,0.4)',
-                          backgroundColor: 'rgba(0,217,132,0.10)', paddingVertical: 16,
-                          alignItems: 'center', overflow: 'hidden',
-                        }}>
-                          <View style={{
-                            position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
-                            backgroundColor: 'rgba(0,217,132,0.04)',
-                            borderTopLeftRadius: 14, borderTopRightRadius: 14,
-                          }} />
-                          <View style={{
-                            position: 'absolute', top: 0, left: 20, right: 20, height: 1,
-                            backgroundColor: 'rgba(0,217,132,0.25)',
-                          }} />
-                          <Text style={{ color: '#00D984', fontSize: 16, fontWeight: '700', letterSpacing: 1 }}>
-                            {t.joinBtn}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    </LinearGradient>
-                  </View>
-                </Animated.View>
-              )}
-            </View>
-
-            <View style={styles.bottomZone}>
-              <View style={styles.dotsContainer}>
-                {slides.map(function (_, i) {
+          <View style={styles.cardsZone}>
+            {!allSwiped ? (
+              <View style={{ width: CARD_WIDTH, height: CARD_HEIGHT }}>
+                {slides.slice().reverse().map(function (slide, reverseIndex) {
+                  var actualIndex = slides.length - 1 - reverseIndex;
                   return (
-                    <View key={i} style={[styles.dot, {
-                      backgroundColor: i === currentIndex ? '#00D984' : i < currentIndex ? '#00A866' : '#3E4855',
-                      width: i === currentIndex ? 24 : 8,
-                    }]} />
+                    <SwipeCard
+                      key={slide.key} slide={slide} index={actualIndex}
+                      totalCards={slides.length} currentIndex={currentIndex}
+                      onSwipe={handleSwipe}
+                    />
                   );
                 })}
+                <SwipeHint visible={currentIndex === 0} lang={lang} />
               </View>
+            ) : (
+              <Animated.View entering={FadeInDown.duration(600).springify()}
+                style={{ width: CARD_WIDTH, borderRadius: 20, overflow: 'hidden' }}>
+                <View style={{
+                  backgroundColor: '#1A2028', borderRadius: 20, overflow: 'hidden',
+                  borderWidth: 1.2,
+                  borderTopColor: 'rgba(138,146,160,0.3)',
+                  borderLeftColor: 'rgba(107,123,141,0.15)',
+                  borderRightColor: 'rgba(42,48,59,0.3)',
+                  borderBottomColor: 'rgba(26,31,38,0.4)',
+                }}>
+                  <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 120, borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden' }}>
+                    <LinearGradient
+                      colors={['rgba(46,54,64,0.6)', 'rgba(37,44,54,0.3)', 'transparent']}
+                      locations={[0, 0.4, 1]}
+                      start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
+                      style={{ flex: 1 }}
+                    />
+                  </View>
 
-              {allSwiped ? (
-                <Animated.View entering={FadeInDown.delay(200).duration(400).springify()}
-                  style={{ marginTop: 20, marginBottom: 30, alignItems: 'center' }}>
-                  <TouchableOpacity onPress={handleSignIn} activeOpacity={0.7}
-                    style={{
-                      flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 24,
-                      borderRadius: 12, borderWidth: 1, borderColor: 'rgba(62,72,85,0.4)',
-                      backgroundColor: 'rgba(27,31,38,0.4)', gap: 6,
+                  <View style={{ position: 'absolute', top: 0, left: 14, right: 14, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' }} />
+
+                  <View style={{ paddingVertical: 36, paddingHorizontal: 24, alignItems: 'center' }}>
+                    <View style={{
+                      width: 64, height: 64, borderRadius: 32,
+                      backgroundColor: 'rgba(0,217,132,0.10)',
+                      borderWidth: 1.5, borderColor: '#00D984',
+                      alignItems: 'center', justifyContent: 'center', marginBottom: 20,
                     }}>
-                    <Text style={{ color: '#8892A0', fontSize: 14, fontWeight: '500' }}>{t.hasAccount}</Text>
-                    <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '700' }}>{t.signIn}</Text>
-                  </TouchableOpacity>
-                </Animated.View>
-              ) : null}
+                      <Ionicons name="checkmark" size={32} color="#00D984" />
+                    </View>
+
+                    <Text style={{
+                      color: '#EAEEF3', fontSize: 22, fontWeight: '700',
+                      textAlign: 'center', marginBottom: 24,
+                    }}>
+                      {t.readyTitle}
+                    </Text>
+
+                    <TouchableOpacity activeOpacity={0.7} onPress={handleJoin}
+                      style={{ width: '100%', borderRadius: 14 }}>
+                      <View style={{
+                        borderRadius: 14, borderWidth: 1.3, borderColor: 'rgba(0,217,132,0.4)',
+                        backgroundColor: 'rgba(0,217,132,0.10)', paddingVertical: 16,
+                        alignItems: 'center', overflow: 'hidden',
+                      }}>
+                        <View style={{
+                          position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
+                          backgroundColor: 'rgba(0,217,132,0.04)',
+                          borderTopLeftRadius: 14, borderTopRightRadius: 14,
+                        }} />
+                        <View style={{
+                          position: 'absolute', top: 0, left: 20, right: 20, height: 1,
+                          backgroundColor: 'rgba(0,217,132,0.25)',
+                        }} />
+                        <Text style={{ color: '#00D984', fontSize: 16, fontWeight: '700', letterSpacing: 1 }}>
+                          {t.joinBtn}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Animated.View>
+            )}
+          </View>
+
+          <View style={styles.bottomZone}>
+            <View style={styles.dotsContainer}>
+              {slides.map(function (_, i) {
+                return (
+                  <View key={i} style={[styles.dot, {
+                    backgroundColor: i === currentIndex ? '#00D984' : i < currentIndex ? '#00A866' : '#3E4855',
+                    width: i === currentIndex ? 24 : 8,
+                  }]} />
+                );
+              })}
             </View>
 
+            {allSwiped ? (
+              <Animated.View entering={FadeInDown.delay(200).duration(400).springify()}
+                style={{ marginTop: 20, marginBottom: 30, alignItems: 'center' }}>
+                <TouchableOpacity onPress={handleSignIn} activeOpacity={0.7}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 24,
+                    borderRadius: 12, borderWidth: 1, borderColor: 'rgba(62,72,85,0.4)',
+                    backgroundColor: 'rgba(27,31,38,0.4)', gap: 6,
+                  }}>
+                  <Text style={{ color: '#8892A0', fontSize: 14, fontWeight: '500' }}>{t.hasAccount}</Text>
+                  <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '700' }}>{t.signIn}</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            ) : null}
           </View>
-        </LinearGradient>
-      </LinearGradient>
+
+        </View>
+      </View>
     </GestureHandlerRootView>
   );
 }
@@ -648,7 +653,7 @@ var styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 40,
-    paddingBottom: 10,
+    paddingBottom: 40,
   },
 
   logoContainer: {
@@ -659,18 +664,14 @@ var styles = StyleSheet.create({
   logo: {
     width: 120, height: 120, borderRadius: 26,
   },
-  logoGlow: {
-    width: 80, height: 8, backgroundColor: '#00D984',
-    opacity: 0.06, borderRadius: 20, marginTop: -4,
-  },
 
   flagBtn: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 10, paddingVertical: 6,
-    borderRadius: 8, borderWidth: 1.2, gap: 5,
+    paddingHorizontal: 8, paddingVertical: 5,
+    borderRadius: 8, borderWidth: 1.2, gap: 4,
   },
   flagLabel: {
-    fontSize: 10, fontWeight: '700', letterSpacing: 1,
+    fontSize: 9, fontWeight: '700', letterSpacing: 1,
   },
 
   welcomeText: {
@@ -678,13 +679,14 @@ var styles = StyleSheet.create({
     letterSpacing: 1, textAlign: 'center',
   },
   brandName: {
-    color: '#00D984', fontSize: 22, fontWeight: '800',
-    letterSpacing: 4, textAlign: 'center', marginTop: 2,
+    color: '#EAEEF3', fontSize: 26, fontWeight: '900',
+    letterSpacing: 6, textAlign: 'center', marginTop: 2,
+    marginBottom: 14,
   },
   tagline: {
     color: '#555E6C', fontSize: 9, fontWeight: '600',
     letterSpacing: 4, textAlign: 'center',
-    marginTop: 4, marginBottom: 14, textTransform: 'uppercase',
+    marginTop: 0, marginBottom: 14, textTransform: 'uppercase',
   },
 
   cardsZone: {
