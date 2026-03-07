@@ -444,6 +444,82 @@ function PokemonCard(props) {
 }
 
 // ============================================================
+// SHIMMER BUTTON — effet lumière glissante dorée
+// ============================================================
+
+function ShimmerButton(props) {
+  var onPress = props.onPress;
+  var text = props.text;
+  var shimmerX = useRef(new RNAnimated.Value(-200)).current;
+
+  useEffect(function () {
+    var loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.delay(2000),
+        RNAnimated.timing(shimmerX, {
+          toValue: 400,
+          duration: 1200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(shimmerX, {
+          toValue: -200,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return function () { loop.stop(); };
+  }, []);
+
+  return (
+    <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={{ width: '100%', borderRadius: 14 }}>
+      <View style={{
+        borderRadius: 14, overflow: 'hidden',
+        shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25, shadowRadius: 10, elevation: 6,
+      }}>
+        <LinearGradient
+          colors={['#D4AF37', '#C5A028', '#A68B1B', '#8B7516']}
+          locations={[0, 0.3, 0.7, 1]}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={{ paddingVertical: 16, alignItems: 'center', position: 'relative' }}
+        >
+          {/* Reflet statique en haut */}
+          <View style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
+            backgroundColor: 'rgba(255,255,255,0.12)',
+            borderTopLeftRadius: 14, borderTopRightRadius: 14,
+          }} />
+
+          {/* Ligne de highlight dorée */}
+          <View style={{
+            position: 'absolute', top: 0, left: 20, right: 20,
+            height: 1, backgroundColor: 'rgba(255, 223, 100, 0.5)',
+          }} />
+
+          {/* SHIMMER — bande de lumière qui glisse */}
+          <RNAnimated.View style={{
+            position: 'absolute',
+            top: 0, bottom: 0,
+            width: 60,
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+            transform: [{ translateX: shimmerX }, { skewX: '-20deg' }],
+          }} />
+
+          <Text style={{
+            color: '#0D1117', fontSize: 16, fontWeight: '800', letterSpacing: 1.5,
+          }}>
+            {text}
+          </Text>
+        </LinearGradient>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ============================================================
 // PAGE WELCOME
 // ============================================================
 
@@ -572,7 +648,7 @@ export default function App() {
           <Text style={{
             color: '#555E6C', fontSize: 9, fontWeight: '600',
             letterSpacing: 4, textAlign: 'center',
-            marginTop: 8, marginBottom: 20, textTransform: 'uppercase',
+            marginTop: 14, marginBottom: 18, textTransform: 'uppercase',
           }}>
             {t.tagline}
           </Text>
@@ -604,73 +680,117 @@ export default function App() {
               </View>
             ) : (
               <Animated.View entering={FadeInDown.duration(600).springify()}>
+
+                {/* CADRE EXTÉRIEUR — DORÉ BISEAUTÉ */}
                 <View style={{
-                  width: CARD_W + 8, height: CARD_H + 8,
-                  borderRadius: 24, padding: 4,
+                  width: CARD_W + 8,
+                  height: CARD_H + 8,
+                  borderRadius: 24,
+                  padding: 4,
                   borderWidth: 2,
-                  borderTopColor: '#8892A0',
-                  borderLeftColor: '#6B7B8D',
-                  borderRightColor: '#3E4855',
-                  borderBottomColor: '#2A303B',
-                  backgroundColor: '#2A303B',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 8 },
-                  shadowOpacity: 0.6,
+                  borderTopColor: '#D4AF37',
+                  borderLeftColor: '#C5A028',
+                  borderRightColor: '#8B7516',
+                  borderBottomColor: '#6B5A10',
+                  backgroundColor: '#5A4C12',
+                  shadowColor: '#D4AF37',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
                   shadowRadius: 16,
                   elevation: 14,
                   alignSelf: 'center',
                 }}>
-                  <View style={{
-                    flex: 1, borderRadius: 20, borderWidth: 1.5,
-                    borderColor: 'rgba(0,217,132,0.35)', overflow: 'hidden',
-                  }}>
-                    <View style={{
-                      flex: 1, backgroundColor: '#151B23', borderRadius: 18,
-                      paddingVertical: 30, paddingHorizontal: 24, alignItems: 'center',
-                      justifyContent: 'center',
-                    }}>
-                      <View style={{
-                        position: 'absolute', top: 0, left: 16, right: 16,
-                        height: 1, backgroundColor: 'rgba(136,146,160,0.25)',
-                      }} />
 
+                  {/* LISERÉ DORÉ intérieur */}
+                  <View style={{
+                    flex: 1,
+                    borderRadius: 20,
+                    borderWidth: 1.5,
+                    borderColor: 'rgba(212, 175, 55, 0.4)',
+                    overflow: 'hidden',
+                  }}>
+
+                    {/* SURFACE INTÉRIEURE */}
+                    <View style={{
+                      flex: 1,
+                      backgroundColor: '#151B23',
+                      borderRadius: 18,
+                    }}>
+
+                      {/* Gradient doré subtil en haut */}
                       <View style={{
-                        width: 60, height: 60, borderRadius: 30,
-                        backgroundColor: 'rgba(0,217,132,0.10)',
-                        borderWidth: 1.5, borderColor: '#00D984',
-                        alignItems: 'center', justifyContent: 'center', marginBottom: 18,
+                        position: 'absolute', top: 0, left: 0, right: 0, height: 120,
+                        borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden',
                       }}>
-                        <Ionicons name="checkmark" size={30} color="#00D984" />
+                        <LinearGradient
+                          colors={['rgba(212, 175, 55, 0.08)', 'rgba(212, 175, 55, 0.03)', 'rgba(212, 175, 55, 0)']}
+                          start={{ x: 0.5, y: 0 }}
+                          end={{ x: 0.5, y: 1 }}
+                          style={{ flex: 1 }}
+                        />
                       </View>
 
-                      <Text style={{
-                        color: '#EAEEF3', fontSize: 20, fontWeight: '700',
-                        textAlign: 'center', marginBottom: 22,
-                      }}>
-                        {t.readyTitle}
-                      </Text>
+                      {/* Reflet doré en haut */}
+                      <View style={{
+                        position: 'absolute', top: 0, left: 16, right: 16,
+                        height: 1, backgroundColor: '#D4AF37', opacity: 0.25,
+                      }} />
 
-                      <TouchableOpacity activeOpacity={0.7} onPress={handleJoin}
-                        style={{ width: '100%', borderRadius: 14 }}>
+                      {/* Points dorés aux coins */}
+                      <View style={{ position: 'absolute', top: 8, left: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.4)' }} />
+                      <View style={{ position: 'absolute', top: 8, right: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.4)' }} />
+                      <View style={{ position: 'absolute', bottom: 8, left: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.3)' }} />
+                      <View style={{ position: 'absolute', bottom: 8, right: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.3)' }} />
+
+                      {/* CONTENU */}
+                      <View style={{
+                        flex: 1,
+                        paddingVertical: 28,
+                        paddingHorizontal: 24,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+
+                        {/* Icône check DORÉE */}
                         <View style={{
-                          borderRadius: 14, borderWidth: 1.3, borderColor: 'rgba(0,217,132,0.4)',
-                          backgroundColor: 'rgba(0,217,132,0.10)', paddingVertical: 15,
-                          alignItems: 'center', overflow: 'hidden',
+                          width: 64, height: 64, borderRadius: 32,
+                          backgroundColor: 'rgba(212, 175, 55, 0.08)',
+                          borderWidth: 1.5, borderColor: '#D4AF37',
+                          alignItems: 'center', justifyContent: 'center',
+                          marginBottom: 18,
+                          shadowColor: '#D4AF37',
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: 0.2,
+                          shadowRadius: 12,
                         }}>
-                          <View style={{
-                            position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
-                            backgroundColor: 'rgba(0,217,132,0.04)',
-                            borderTopLeftRadius: 14, borderTopRightRadius: 14,
-                          }} />
-                          <View style={{
-                            position: 'absolute', top: 0, left: 20, right: 20, height: 1,
-                            backgroundColor: 'rgba(0,217,132,0.25)',
-                          }} />
-                          <Text style={{ color: '#00D984', fontSize: 15, fontWeight: '700', letterSpacing: 1 }}>
-                            {t.joinBtn}
-                          </Text>
+                          <Ionicons name="checkmark" size={30} color="#D4AF37" />
                         </View>
-                      </TouchableOpacity>
+
+                        {/* Titre */}
+                        <Text style={{
+                          color: '#EAEEF3', fontSize: 20, fontWeight: '700',
+                          textAlign: 'center', marginBottom: 6,
+                        }}>
+                          {t.readyTitle}
+                        </Text>
+
+                        {/* Sous-texte doré */}
+                        <Text style={{
+                          color: '#D4AF37', fontSize: 12, fontWeight: '500',
+                          textAlign: 'center', marginBottom: 22, letterSpacing: 1,
+                          opacity: 0.7,
+                        }}>
+                          {lang === 'fr' ? '\u2726 ACC\u00c8S PRIVIL\u00c8GE \u2726' : '\u2726 PREMIUM ACCESS \u2726'}
+                        </Text>
+
+                        {/* BOUTON DORÉ avec shimmer */}
+                        <ShimmerButton
+                          onPress={handleJoin}
+                          text={t.joinBtn}
+                          lang={lang}
+                        />
+
+                      </View>
                     </View>
                   </View>
                 </View>
@@ -681,7 +801,7 @@ export default function App() {
           <View style={{
             flexDirection: 'row', justifyContent: 'center',
             alignItems: 'center', gap: 8,
-            marginTop: 10, marginBottom: 6,
+            marginTop: 6, marginBottom: 4,
           }}>
             {slides.map(function (_, i) {
               return (
@@ -696,7 +816,7 @@ export default function App() {
 
           {allSwiped ? (
             <Animated.View entering={FadeInDown.delay(200).duration(400).springify()}
-              style={{ marginTop: 8, marginBottom: 16, alignItems: 'center' }}>
+              style={{ marginTop: 4, marginBottom: 8, alignItems: 'center' }}>
               <TouchableOpacity onPress={handleSignIn} activeOpacity={0.7}
                 style={{
                   flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 24,
@@ -724,6 +844,6 @@ var styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 40,
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
 });
