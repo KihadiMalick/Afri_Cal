@@ -18,6 +18,9 @@ import {
   Alert,
   Animated as RNAnimated,
   Easing,
+  SafeAreaView,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -39,7 +42,7 @@ import {
 } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Path, Circle, Line } from 'react-native-svg';
+import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
 
 var SCREEN_WIDTH = Dimensions.get('window').width;
 var SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -125,6 +128,82 @@ var texts = {
     swipeHint: 'Swipe',
   },
 };
+
+// ============================================================
+// BACKGROUND TECH — grille + points + crochets HUD
+// ============================================================
+
+function TechBackground() {
+  var W = SCREEN_WIDTH;
+  var H = SCREEN_HEIGHT;
+  var gridSpacing = 50;
+  var lines = [];
+  var dots = [];
+
+  // Lignes horizontales
+  for (var y = 0; y < H; y += gridSpacing) {
+    lines.push(
+      <Line key={'h-' + y} x1="0" y1={y} x2={W} y2={y}
+        stroke="rgba(62, 72, 85, 0.15)" strokeWidth="0.5" />
+    );
+  }
+
+  // Lignes verticales
+  for (var x = 0; x < W; x += gridSpacing) {
+    lines.push(
+      <Line key={'v-' + x} x1={x} y1="0" x2={x} y2={H}
+        stroke="rgba(62, 72, 85, 0.15)" strokeWidth="0.5" />
+    );
+  }
+
+  // Points aux intersections (1 sur 2)
+  for (var x2 = 0; x2 < W; x2 += gridSpacing * 2) {
+    for (var y2 = 0; y2 < H; y2 += gridSpacing * 2) {
+      dots.push(
+        <Circle key={'d-' + x2 + '-' + y2} cx={x2} cy={y2} r="1.5"
+          fill="rgba(0, 217, 132, 0.08)" />
+      );
+    }
+  }
+
+  return (
+    <Svg
+      width={W} height={H}
+      style={{ position: 'absolute', top: 0, left: 0 }}
+      pointerEvents="none"
+    >
+      {lines}
+      {dots}
+
+      {/* Coin haut-gauche */}
+      <Line x1="20" y1="60" x2="20" y2="80" stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
+      <Line x1="20" y1="60" x2="40" y2="60" stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
+
+      {/* Coin haut-droit */}
+      <Line x1={W - 20} y1="60" x2={W - 20} y2="80" stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
+      <Line x1={W - 20} y1="60" x2={W - 40} y2="60" stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
+
+      {/* Coin bas-gauche */}
+      <Line x1="20" y1={H - 60} x2="20" y2={H - 80} stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
+      <Line x1="20" y1={H - 60} x2="40" y2={H - 60} stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
+
+      {/* Coin bas-droit */}
+      <Line x1={W - 20} y1={H - 60} x2={W - 20} y2={H - 80} stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
+      <Line x1={W - 20} y1={H - 60} x2={W - 40} y2={H - 60} stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
+
+      {/* Tirets tech décoratifs */}
+      <Line x1="60" y1={H * 0.35} x2="90" y2={H * 0.35}
+        stroke="rgba(0,217,132,0.08)" strokeWidth="1" strokeDasharray="4 3" />
+      <Line x1={W - 90} y1={H * 0.35} x2={W - 60} y2={H * 0.35}
+        stroke="rgba(0,217,132,0.08)" strokeWidth="1" strokeDasharray="4 3" />
+
+      <Line x1="60" y1={H * 0.42} x2="80" y2={H * 0.42}
+        stroke="rgba(62,72,85,0.2)" strokeWidth="0.5" />
+      <Line x1={W - 80} y1={H * 0.42} x2={W - 60} y2={H * 0.42}
+        stroke="rgba(62,72,85,0.2)" strokeWidth="0.5" />
+    </Svg>
+  );
+}
 
 // ============================================================
 // ICONE SVG — SCAN X
@@ -567,270 +646,290 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <LinearGradient
-        colors={['#1C2435', '#1A2030', '#1C2435']}
-        locations={[0, 0.5, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={{ flex: 1 }}
-      >
-        <View style={styles.content}>
-
-          <View style={{
-            width: '100%',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-            marginTop: 8,
-            marginBottom: 6,
-          }}>
-            <TouchableOpacity
-              onPress={function () { setLang('en'); }}
-              activeOpacity={0.7}
-              style={{ position: 'absolute', left: 0 }}
-            >
-              <View style={{
-                flexDirection: 'row', alignItems: 'center',
-                paddingHorizontal: 7, paddingVertical: 4,
-                borderRadius: 6, borderWidth: 1, gap: 3,
-                borderColor: lang === 'en' ? 'rgba(0,217,132,0.4)' : 'rgba(62,72,85,0.5)',
-                backgroundColor: lang === 'en' ? 'rgba(0,217,132,0.08)' : 'rgba(27,31,38,0.6)',
-              }}>
-                <Text style={{ fontSize: 11 }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</Text>
-                <Text style={{ color: lang === 'en' ? '#00D984' : '#555E6C', fontSize: 8, fontWeight: '700', letterSpacing: 0.5 }}>EN</Text>
-              </View>
-            </TouchableOpacity>
-
-            <View style={{
-              width: 140, height: 140, borderRadius: 30,
-              shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.5, shadowRadius: 14, elevation: 12,
-            }}>
-              <Image source={logoImage}
-                style={{ width: 140, height: 140, borderRadius: 30 }} resizeMode="cover" />
-            </View>
-
-            <TouchableOpacity
-              onPress={function () { setLang('fr'); }}
-              activeOpacity={0.7}
-              style={{ position: 'absolute', right: 0 }}
-            >
-              <View style={{
-                flexDirection: 'row', alignItems: 'center',
-                paddingHorizontal: 7, paddingVertical: 4,
-                borderRadius: 6, borderWidth: 1, gap: 3,
-                borderColor: lang === 'fr' ? 'rgba(0,217,132,0.4)' : 'rgba(62,72,85,0.5)',
-                backgroundColor: lang === 'fr' ? 'rgba(0,217,132,0.08)' : 'rgba(27,31,38,0.6)',
-              }}>
-                <Text style={{ fontSize: 11 }}>{'\uD83C\uDDEB\uD83C\uDDF7'}</Text>
-                <Text style={{ color: lang === 'fr' ? '#00D984' : '#555E6C', fontSize: 8, fontWeight: '700', letterSpacing: 0.5 }}>FR</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={{
-            color: '#8892A0', fontSize: 16, fontWeight: '500',
-            letterSpacing: 0.5, textAlign: 'center',
-            marginTop: 4, marginBottom: 2,
-          }}>
-            {t.welcome}
-          </Text>
-
-          <Text style={{
-            color: '#EAEEF3', fontSize: 26, fontWeight: '900',
-            letterSpacing: 6, textAlign: 'center',
-            marginBottom: 12,
-          }}>
-            {t.brandName}
-          </Text>
-
-          <Text style={{
-            color: '#555E6C', fontSize: 9, fontWeight: '600',
-            letterSpacing: 4, textAlign: 'center',
-            marginTop: 14, marginBottom: 18, textTransform: 'uppercase',
-          }}>
-            {t.tagline}
-          </Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#1C2435' }}>
+        <LinearGradient
+          colors={['#1C2435', '#1A2030', '#1C2435']}
+          locations={[0, 0.5, 1]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{ flex: 1 }}
+        >
+          {/* Motifs tech en arrière-plan */}
+          <TechBackground />
 
           <View style={{
             flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 0,
+            paddingHorizontal: 24,
+            paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 4 : 8,
+            paddingBottom: 8,
           }}>
-            {!allSwiped ? (
-              <View style={{ width: CARD_W + 8, height: CARD_H + 8 }}>
-                {slides.map(function (slide, index) {
-                  if (index < currentIndex) return null;
-                  if (index > currentIndex + 1) return null;
-                  var isTopCard = index === currentIndex;
-                  return (
-                    <PokemonCard
-                      key={slide.key}
-                      slide={slide}
-                      index={index}
-                      isTopCard={isTopCard}
-                      currentIndex={currentIndex}
-                      onSwipe={handleSwipe}
-                      lang={lang}
-                    />
-                  );
-                })}
-              </View>
-            ) : (
-              <Animated.View entering={FadeInDown.duration(600).springify()}>
 
-                {/* CADRE EXTÉRIEUR — DORÉ BISEAUTÉ */}
+            {/* HEADER : Logo + Drapeaux */}
+            <View style={{
+              width: '100%',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              marginTop: 8,
+              marginBottom: 6,
+            }}>
+              <TouchableOpacity
+                onPress={function () { setLang('en'); }}
+                activeOpacity={0.7}
+                style={{ position: 'absolute', left: 0 }}
+              >
                 <View style={{
-                  width: CARD_W + 8,
-                  height: CARD_H + 8,
-                  borderRadius: 24,
-                  padding: 4,
-                  borderWidth: 2,
-                  borderTopColor: '#D4AF37',
-                  borderLeftColor: '#C5A028',
-                  borderRightColor: '#8B7516',
-                  borderBottomColor: '#6B5A10',
-                  backgroundColor: '#5A4C12',
-                  shadowColor: '#D4AF37',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 16,
-                  elevation: 14,
-                  alignSelf: 'center',
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingHorizontal: 7, paddingVertical: 4,
+                  borderRadius: 6, borderWidth: 1, gap: 3,
+                  borderColor: lang === 'en' ? 'rgba(0,217,132,0.4)' : 'rgba(62,72,85,0.5)',
+                  backgroundColor: lang === 'en' ? 'rgba(0,217,132,0.08)' : 'rgba(27,31,38,0.6)',
                 }}>
+                  <Text style={{ fontSize: 11 }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</Text>
+                  <Text style={{ color: lang === 'en' ? '#00D984' : '#555E6C', fontSize: 8, fontWeight: '700', letterSpacing: 0.5 }}>EN</Text>
+                </View>
+              </TouchableOpacity>
 
-                  {/* LISERÉ DORÉ intérieur */}
+              <View style={{
+                width: 140, height: 140, borderRadius: 30,
+                shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.5, shadowRadius: 14, elevation: 12,
+              }}>
+                <Image source={logoImage}
+                  style={{ width: 140, height: 140, borderRadius: 30 }} resizeMode="cover" />
+              </View>
+
+              <TouchableOpacity
+                onPress={function () { setLang('fr'); }}
+                activeOpacity={0.7}
+                style={{ position: 'absolute', right: 0 }}
+              >
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingHorizontal: 7, paddingVertical: 4,
+                  borderRadius: 6, borderWidth: 1, gap: 3,
+                  borderColor: lang === 'fr' ? 'rgba(0,217,132,0.4)' : 'rgba(62,72,85,0.5)',
+                  backgroundColor: lang === 'fr' ? 'rgba(0,217,132,0.08)' : 'rgba(27,31,38,0.6)',
+                }}>
+                  <Text style={{ fontSize: 11 }}>{'\uD83C\uDDEB\uD83C\uDDF7'}</Text>
+                  <Text style={{ color: lang === 'fr' ? '#00D984' : '#555E6C', fontSize: 8, fontWeight: '700', letterSpacing: 0.5 }}>FR</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Bienvenue + LIXUM */}
+            <Text style={{
+              color: '#8892A0', fontSize: 16, fontWeight: '500',
+              letterSpacing: 0.5, textAlign: 'center',
+              marginTop: 4, marginBottom: 2,
+            }}>
+              {t.welcome}
+            </Text>
+
+            <Text style={{
+              color: '#EAEEF3', fontSize: 26, fontWeight: '900',
+              letterSpacing: 6, textAlign: 'center',
+              marginBottom: 12,
+            }}>
+              {t.brandName}
+            </Text>
+
+            {/* Tagline — CORRECTION 2 : marginTop: 20 */}
+            <Text style={{
+              color: '#555E6C', fontSize: 9, fontWeight: '600',
+              letterSpacing: 4, textAlign: 'center',
+              marginTop: 20, marginBottom: 10, textTransform: 'uppercase',
+            }}>
+              {t.tagline}
+            </Text>
+
+            {/* ZONE CARTES — flex: 1 prend tout l'espace disponible */}
+            <View style={{
+              flex: 1,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              {!allSwiped ? (
+                <View style={{ width: CARD_W + 8, height: CARD_H + 8 }}>
+                  {slides.map(function (slide, index) {
+                    if (index < currentIndex) return null;
+                    if (index > currentIndex + 1) return null;
+                    var isTopCard = index === currentIndex;
+                    return (
+                      <PokemonCard
+                        key={slide.key}
+                        slide={slide}
+                        index={index}
+                        isTopCard={isTopCard}
+                        currentIndex={currentIndex}
+                        onSwipe={handleSwipe}
+                        lang={lang}
+                      />
+                    );
+                  })}
+                </View>
+              ) : (
+                <Animated.View entering={FadeInDown.duration(600).springify()}>
+
+                  {/* CADRE EXTÉRIEUR — DORÉ BISEAUTÉ */}
                   <View style={{
-                    flex: 1,
-                    borderRadius: 20,
-                    borderWidth: 1.5,
-                    borderColor: 'rgba(212, 175, 55, 0.4)',
-                    overflow: 'hidden',
+                    width: CARD_W + 8,
+                    height: CARD_H + 8,
+                    borderRadius: 24,
+                    padding: 4,
+                    borderWidth: 2,
+                    borderTopColor: '#D4AF37',
+                    borderLeftColor: '#C5A028',
+                    borderRightColor: '#8B7516',
+                    borderBottomColor: '#6B5A10',
+                    backgroundColor: '#5A4C12',
+                    shadowColor: '#D4AF37',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 16,
+                    elevation: 14,
+                    alignSelf: 'center',
                   }}>
 
-                    {/* SURFACE INTÉRIEURE */}
+                    {/* LISERÉ DORÉ intérieur */}
                     <View style={{
                       flex: 1,
-                      backgroundColor: '#151B23',
-                      borderRadius: 18,
+                      borderRadius: 20,
+                      borderWidth: 1.5,
+                      borderColor: 'rgba(212, 175, 55, 0.4)',
+                      overflow: 'hidden',
                     }}>
 
-                      {/* Gradient doré subtil en haut */}
-                      <View style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, height: 120,
-                        borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden',
-                      }}>
-                        <LinearGradient
-                          colors={['rgba(212, 175, 55, 0.08)', 'rgba(212, 175, 55, 0.03)', 'rgba(212, 175, 55, 0)']}
-                          start={{ x: 0.5, y: 0 }}
-                          end={{ x: 0.5, y: 1 }}
-                          style={{ flex: 1 }}
-                        />
-                      </View>
-
-                      {/* Reflet doré en haut */}
-                      <View style={{
-                        position: 'absolute', top: 0, left: 16, right: 16,
-                        height: 1, backgroundColor: '#D4AF37', opacity: 0.25,
-                      }} />
-
-                      {/* Points dorés aux coins */}
-                      <View style={{ position: 'absolute', top: 8, left: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.4)' }} />
-                      <View style={{ position: 'absolute', top: 8, right: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.4)' }} />
-                      <View style={{ position: 'absolute', bottom: 8, left: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.3)' }} />
-                      <View style={{ position: 'absolute', bottom: 8, right: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.3)' }} />
-
-                      {/* CONTENU */}
+                      {/* SURFACE INTÉRIEURE */}
                       <View style={{
                         flex: 1,
-                        paddingVertical: 28,
-                        paddingHorizontal: 24,
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        backgroundColor: '#151B23',
+                        borderRadius: 18,
                       }}>
 
-                        {/* Icône check DORÉE */}
+                        {/* Gradient doré subtil en haut */}
                         <View style={{
-                          width: 64, height: 64, borderRadius: 32,
-                          backgroundColor: 'rgba(212, 175, 55, 0.08)',
-                          borderWidth: 1.5, borderColor: '#D4AF37',
-                          alignItems: 'center', justifyContent: 'center',
-                          marginBottom: 18,
-                          shadowColor: '#D4AF37',
-                          shadowOffset: { width: 0, height: 0 },
-                          shadowOpacity: 0.2,
-                          shadowRadius: 12,
+                          position: 'absolute', top: 0, left: 0, right: 0, height: 120,
+                          borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden',
                         }}>
-                          <Ionicons name="checkmark" size={30} color="#D4AF37" />
+                          <LinearGradient
+                            colors={['rgba(212, 175, 55, 0.08)', 'rgba(212, 175, 55, 0.03)', 'rgba(212, 175, 55, 0)']}
+                            start={{ x: 0.5, y: 0 }}
+                            end={{ x: 0.5, y: 1 }}
+                            style={{ flex: 1 }}
+                          />
                         </View>
 
-                        {/* Titre */}
-                        <Text style={{
-                          color: '#EAEEF3', fontSize: 20, fontWeight: '700',
-                          textAlign: 'center', marginBottom: 6,
+                        {/* Reflet doré en haut */}
+                        <View style={{
+                          position: 'absolute', top: 0, left: 16, right: 16,
+                          height: 1, backgroundColor: '#D4AF37', opacity: 0.25,
+                        }} />
+
+                        {/* Points dorés aux coins */}
+                        <View style={{ position: 'absolute', top: 8, left: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.4)' }} />
+                        <View style={{ position: 'absolute', top: 8, right: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.4)' }} />
+                        <View style={{ position: 'absolute', bottom: 8, left: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.3)' }} />
+                        <View style={{ position: 'absolute', bottom: 8, right: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.3)' }} />
+
+                        {/* CONTENU */}
+                        <View style={{
+                          flex: 1,
+                          paddingVertical: 28,
+                          paddingHorizontal: 24,
+                          alignItems: 'center',
+                          justifyContent: 'center',
                         }}>
-                          {t.readyTitle}
-                        </Text>
 
-                        {/* Sous-texte doré */}
-                        <Text style={{
-                          color: '#D4AF37', fontSize: 12, fontWeight: '500',
-                          textAlign: 'center', marginBottom: 22, letterSpacing: 1,
-                          opacity: 0.7,
-                        }}>
-                          {lang === 'fr' ? '\u2726 ACC\u00c8S PRIVIL\u00c8GE \u2726' : '\u2726 PREMIUM ACCESS \u2726'}
-                        </Text>
+                          {/* Icône check DORÉE */}
+                          <View style={{
+                            width: 64, height: 64, borderRadius: 32,
+                            backgroundColor: 'rgba(212, 175, 55, 0.08)',
+                            borderWidth: 1.5, borderColor: '#D4AF37',
+                            alignItems: 'center', justifyContent: 'center',
+                            marginBottom: 18,
+                            shadowColor: '#D4AF37',
+                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: 0.2,
+                            shadowRadius: 12,
+                          }}>
+                            <Ionicons name="checkmark" size={30} color="#D4AF37" />
+                          </View>
 
-                        {/* BOUTON DORÉ avec shimmer */}
-                        <ShimmerButton
-                          onPress={handleJoin}
-                          text={t.joinBtn}
-                          lang={lang}
-                        />
+                          {/* Titre */}
+                          <Text style={{
+                            color: '#EAEEF3', fontSize: 20, fontWeight: '700',
+                            textAlign: 'center', marginBottom: 6,
+                          }}>
+                            {t.readyTitle}
+                          </Text>
 
+                          {/* Sous-texte doré */}
+                          <Text style={{
+                            color: '#D4AF37', fontSize: 12, fontWeight: '500',
+                            textAlign: 'center', marginBottom: 22, letterSpacing: 1,
+                            opacity: 0.7,
+                          }}>
+                            {lang === 'fr' ? '\u2726 ACC\u00c8S PRIVIL\u00c8GE \u2726' : '\u2726 PREMIUM ACCESS \u2726'}
+                          </Text>
+
+                          {/* BOUTON DORÉ avec shimmer */}
+                          <ShimmerButton
+                            onPress={handleJoin}
+                            text={t.joinBtn}
+                            lang={lang}
+                          />
+
+                        </View>
                       </View>
                     </View>
                   </View>
-                </View>
-              </Animated.View>
-            )}
+                </Animated.View>
+              )}
+            </View>
+
+            {/* ZONE BASSE — FIXE, toujours visible, JAMAIS sous la barre nav */}
+            <View style={{ paddingTop: 6 }}>
+              {/* Dots */}
+              <View style={{
+                flexDirection: 'row', justifyContent: 'center',
+                alignItems: 'center', gap: 8,
+                marginBottom: 8,
+              }}>
+                {slides.map(function (_, i) {
+                  return (
+                    <View key={i} style={{
+                      height: 8, borderRadius: 4,
+                      backgroundColor: i === currentIndex ? '#00D984' : i < currentIndex ? '#00A866' : '#3E4855',
+                      width: i === currentIndex ? 24 : 8,
+                    }} />
+                  );
+                })}
+              </View>
+
+              {/* "Déjà un compte ? Se connecter" — visible uniquement après swipes */}
+              {allSwiped ? (
+                <Animated.View entering={FadeInDown.delay(200).duration(400).springify()}>
+                  <TouchableOpacity onPress={handleSignIn} activeOpacity={0.7}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                      paddingVertical: 10, paddingHorizontal: 20,
+                      borderRadius: 10, borderWidth: 1,
+                      borderColor: 'rgba(62,72,85,0.4)',
+                      backgroundColor: 'rgba(27,31,38,0.4)',
+                      gap: 6,
+                    }}>
+                    <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '500' }}>{t.hasAccount}</Text>
+                    <Text style={{ color: '#00D984', fontSize: 13, fontWeight: '700' }}>{t.signIn}</Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              ) : null}
+            </View>
+
           </View>
-
-          <View style={{
-            flexDirection: 'row', justifyContent: 'center',
-            alignItems: 'center', gap: 8,
-            marginTop: 6, marginBottom: 4,
-          }}>
-            {slides.map(function (_, i) {
-              return (
-                <View key={i} style={{
-                  height: 8, borderRadius: 4,
-                  backgroundColor: i === currentIndex ? '#00D984' : i < currentIndex ? '#00A866' : '#3E4855',
-                  width: i === currentIndex ? 24 : 8,
-                }} />
-              );
-            })}
-          </View>
-
-          {allSwiped ? (
-            <Animated.View entering={FadeInDown.delay(200).duration(400).springify()}
-              style={{ marginTop: 4, marginBottom: 8, alignItems: 'center' }}>
-              <TouchableOpacity onPress={handleSignIn} activeOpacity={0.7}
-                style={{
-                  flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 24,
-                  borderRadius: 12, borderWidth: 1, borderColor: 'rgba(62,72,85,0.4)',
-                  backgroundColor: 'rgba(27,31,38,0.4)', gap: 6,
-                }}>
-                <Text style={{ color: '#8892A0', fontSize: 14, fontWeight: '500' }}>{t.hasAccount}</Text>
-                <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '700' }}>{t.signIn}</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          ) : null}
-
-        </View>
-      </LinearGradient>
+        </LinearGradient>
+      </SafeAreaView>
     </GestureHandlerRootView>
   );
 }
@@ -839,11 +938,4 @@ export default function App() {
 // STYLES
 // ============================================================
 
-var styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 16,
-  },
-});
+var styles = StyleSheet.create({});
