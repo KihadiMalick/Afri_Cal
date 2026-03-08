@@ -175,22 +175,6 @@ function TechBackground() {
       {lines}
       {dots}
 
-      {/* Coin haut-gauche */}
-      <Line x1="20" y1="60" x2="20" y2="80" stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
-      <Line x1="20" y1="60" x2="40" y2="60" stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
-
-      {/* Coin haut-droit */}
-      <Line x1={W - 20} y1="60" x2={W - 20} y2="80" stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
-      <Line x1={W - 20} y1="60" x2={W - 40} y2="60" stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
-
-      {/* Coin bas-gauche */}
-      <Line x1="20" y1={H - 60} x2="20" y2={H - 80} stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
-      <Line x1="20" y1={H - 60} x2="40" y2={H - 60} stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
-
-      {/* Coin bas-droit */}
-      <Line x1={W - 20} y1={H - 60} x2={W - 20} y2={H - 80} stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
-      <Line x1={W - 20} y1={H - 60} x2={W - 40} y2={H - 60} stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
-
       {/* Tirets tech décoratifs */}
       <Line x1="60" y1={H * 0.35} x2="90" y2={H * 0.35}
         stroke="rgba(0,217,132,0.15)" strokeWidth="1" strokeDasharray="4 3" />
