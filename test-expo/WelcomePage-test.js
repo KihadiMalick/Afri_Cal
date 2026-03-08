@@ -47,7 +47,7 @@ import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
 var SCREEN_WIDTH = Dimensions.get('window').width;
 var SCREEN_HEIGHT = Dimensions.get('window').height;
 var CARD_W = SCREEN_WIDTH - 56;
-var CARD_H = SCREEN_HEIGHT * 0.44;
+var CARD_H = SCREEN_HEIGHT * 0.38;
 var SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 var logoImage = require('./assets/logo-lx.png');
@@ -660,7 +660,7 @@ export default function App() {
           <View style={{
             flex: 1,
             paddingHorizontal: 24,
-            paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 4 : 8,
+            paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 4,
             paddingBottom: 8,
           }}>
 
@@ -671,8 +671,8 @@ export default function App() {
               alignItems: 'center',
               justifyContent: 'center',
               position: 'relative',
-              marginTop: 8,
-              marginBottom: 6,
+              marginTop: 4,
+              marginBottom: 4,
             }}>
               <TouchableOpacity
                 onPress={function () { setLang('en'); }}
@@ -693,8 +693,7 @@ export default function App() {
 
               <View style={{
                 width: 140, height: 140, borderRadius: 30,
-                shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.5, shadowRadius: 14, elevation: 12,
+                overflow: 'hidden',
               }}>
                 <Image source={logoImage}
                   style={{ width: 140, height: 140, borderRadius: 30 }} resizeMode="cover" />
@@ -722,7 +721,7 @@ export default function App() {
             <Text style={{
               color: '#8892A0', fontSize: 16, fontWeight: '500',
               letterSpacing: 0.5, textAlign: 'center',
-              marginTop: 4, marginBottom: 2,
+              marginTop: 4, marginBottom: 0,
             }}>
               {t.welcome}
             </Text>
@@ -730,7 +729,7 @@ export default function App() {
             <Text style={{
               color: '#EAEEF3', fontSize: 26, fontWeight: '900',
               letterSpacing: 6, textAlign: 'center',
-              marginBottom: 12,
+              marginBottom: 6,
             }}>
               {t.brandName}
             </Text>
@@ -739,7 +738,7 @@ export default function App() {
             <Text style={{
               color: '#555E6C', fontSize: 9, fontWeight: '600',
               letterSpacing: 4, textAlign: 'center',
-              marginTop: 20, marginBottom: 10, textTransform: 'uppercase',
+              marginTop: 4, marginBottom: 8, textTransform: 'uppercase',
             }}>
               {t.tagline}
             </Text>
@@ -836,7 +835,7 @@ export default function App() {
                         {/* CONTENU */}
                         <View style={{
                           flex: 1,
-                          paddingVertical: 28,
+                          paddingVertical: 20,
                           paddingHorizontal: 24,
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -848,7 +847,7 @@ export default function App() {
                             backgroundColor: 'rgba(212, 175, 55, 0.08)',
                             borderWidth: 1.5, borderColor: '#D4AF37',
                             alignItems: 'center', justifyContent: 'center',
-                            marginBottom: 18,
+                            marginBottom: 14,
                             shadowColor: '#D4AF37',
                             shadowOffset: { width: 0, height: 0 },
                             shadowOpacity: 0.2,
@@ -860,18 +859,9 @@ export default function App() {
                           {/* Titre */}
                           <Text style={{
                             color: '#EAEEF3', fontSize: 20, fontWeight: '700',
-                            textAlign: 'center', marginBottom: 6,
+                            textAlign: 'center', marginBottom: 18,
                           }}>
                             {t.readyTitle}
-                          </Text>
-
-                          {/* Sous-texte doré */}
-                          <Text style={{
-                            color: '#D4AF37', fontSize: 12, fontWeight: '500',
-                            textAlign: 'center', marginBottom: 22, letterSpacing: 1,
-                            opacity: 0.7,
-                          }}>
-                            {lang === 'fr' ? '\u2726 ACC\u00c8S PRIVIL\u00c8GE \u2726' : '\u2726 PREMIUM ACCESS \u2726'}
                           </Text>
 
                           {/* BOUTON DORÉ avec shimmer */}
