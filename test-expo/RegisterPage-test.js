@@ -4,7 +4,7 @@
 //              react-native-svg, react-native-safe-area-context
 // Memes dependances que WelcomePage-test.js
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -332,13 +332,28 @@ function GlassCard(props) {
 // ============================================================
 
 function PremiumInput(props) {
-  var _focused = useState(false);
-  var focused = _focused[0]; var setFocused = _focused[1];
+  var borderRef = useRef(null);
+
+  var handleFocus = useCallback(function () {
+    if (borderRef.current) {
+      borderRef.current.setNativeProps({
+        style: { borderColor: C.emerald, borderWidth: 1.5 },
+      });
+    }
+  }, []);
+
+  var handleBlur = useCallback(function () {
+    if (borderRef.current) {
+      borderRef.current.setNativeProps({
+        style: { borderColor: C.metalBorder, borderWidth: 1 },
+      });
+    }
+  }, []);
 
   return (
     <View style={{ marginBottom: props.noMargin ? 0 : 12 }}>
       {props.label ? <Text style={s.inputLabel}>{props.label}</Text> : null}
-      <View style={[s.inputPremium, focused && s.inputPremiumFocused, props.valid && s.inputValid]}>
+      <View ref={borderRef} style={[s.inputPremium, props.valid && s.inputValid]}>
         <TextInput
           value={props.value}
           onChangeText={props.onChangeText}
@@ -348,8 +363,8 @@ function PremiumInput(props) {
           keyboardType={props.keyboardType}
           autoCapitalize={props.autoCapitalize}
           secureTextEntry={props.secureTextEntry}
-          onFocus={function () { setFocused(true); }}
-          onBlur={function () { setFocused(false); }}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
         />
       </View>
     </View>
