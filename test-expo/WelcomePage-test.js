@@ -65,25 +65,25 @@ var texts = {
     slide1Title: 'SCAN X',
     slide1Subtitle: 'Le meilleur outil de scan du march\u00e9',
     slide1Lines: [
-      { icon: 'scan-outline', text: 'Analyses multi-angles en temps r\u00e9el' },
-      { icon: 'hardware-chip-outline', text: 'R\u00e9sultats avec moteur de calcul robuste' },
-      { icon: 'nutrition-outline', text: 'Prot\u00e9ines \u00B7 Glucides \u00B7 Lipides d\u00e9taill\u00e9s' },
+      { icon: 'aperture-outline', text: 'Analyses multi-angles en temps r\u00e9el' },
+      { icon: 'cube-outline', text: 'R\u00e9sultats avec moteur de calcul robuste' },
+      { icon: 'analytics-outline', text: 'Prot\u00e9ines \u00B7 Glucides \u00B7 Lipides d\u00e9taill\u00e9s' },
     ],
 
     slide2Title: 'NUTRITION SOURC\u00c9E',
     slide2Subtitle: 'Des donn\u00e9es que vous pouvez v\u00e9rifier',
     slide2Lines: [
-      { icon: 'shield-checkmark-outline', text: 'Sources certifi\u00e9es : USDA \u00B7 FAO \u00B7 ANSES' },
-      { icon: 'restaurant-outline', text: 'Recettes adapt\u00e9es \u00e0 votre humeur' },
-      { icon: 'flask-outline', text: 'Z\u00e9ro approximation, que de la science' },
+      { icon: 'ribbon-outline', text: 'Sources certifi\u00e9es : USDA \u00B7 FAO \u00B7 ANSES' },
+      { icon: 'color-palette-outline', text: 'Recettes adapt\u00e9es \u00e0 votre humeur' },
+      { icon: 'git-network-outline', text: 'Z\u00e9ro approximation, que de la science' },
     ],
 
     slide3Title: 'DASHBOARD VITAL',
     slide3Subtitle: 'Votre hygi\u00e8ne de vie, quantifi\u00e9e',
     slide3Lines: [
-      { icon: 'pulse-outline', text: 'Score de vitalit\u00e9 en temps r\u00e9el' },
-      { icon: 'flame-outline', text: 'Suivi calories consomm\u00e9es et br\u00fbl\u00e9es' },
-      { icon: 'trending-up-outline', text: 'Reprenez le contr\u00f4le de votre courbe' },
+      { icon: 'radio-outline', text: 'Score de vitalit\u00e9 en temps r\u00e9el' },
+      { icon: 'bonfire-outline', text: 'Suivi calories consomm\u00e9es et br\u00fbl\u00e9es' },
+      { icon: 'rocket-outline', text: 'Reprenez le contr\u00f4le de votre courbe' },
     ],
 
     hasAccount: 'D\u00e9j\u00e0 un compte ?',
@@ -100,25 +100,25 @@ var texts = {
     slide1Title: 'SCAN X',
     slide1Subtitle: 'The best scanning tool on the market',
     slide1Lines: [
-      { icon: 'scan-outline', text: 'Multi-angle real-time analysis' },
-      { icon: 'hardware-chip-outline', text: 'Results powered by robust engine' },
-      { icon: 'nutrition-outline', text: 'Proteins \u00B7 Carbs \u00B7 Fats detailed' },
+      { icon: 'aperture-outline', text: 'Multi-angle real-time analysis' },
+      { icon: 'cube-outline', text: 'Results powered by robust engine' },
+      { icon: 'analytics-outline', text: 'Proteins \u00B7 Carbs \u00B7 Fats detailed' },
     ],
 
     slide2Title: 'VERIFIED NUTRITION',
     slide2Subtitle: 'Data you can actually verify',
     slide2Lines: [
-      { icon: 'shield-checkmark-outline', text: 'Certified sources: USDA \u00B7 FAO \u00B7 ANSES' },
-      { icon: 'restaurant-outline', text: 'Recipes adapted to your mood' },
-      { icon: 'flask-outline', text: 'Zero guesswork, pure science' },
+      { icon: 'ribbon-outline', text: 'Certified sources: USDA \u00B7 FAO \u00B7 ANSES' },
+      { icon: 'color-palette-outline', text: 'Recipes adapted to your mood' },
+      { icon: 'git-network-outline', text: 'Zero guesswork, pure science' },
     ],
 
     slide3Title: 'VITAL DASHBOARD',
     slide3Subtitle: 'Your lifestyle, quantified',
     slide3Lines: [
-      { icon: 'pulse-outline', text: 'Real-time vitality score' },
-      { icon: 'flame-outline', text: 'Track calories consumed & burned' },
-      { icon: 'trending-up-outline', text: 'Take back control of your curve' },
+      { icon: 'radio-outline', text: 'Real-time vitality score' },
+      { icon: 'bonfire-outline', text: 'Track calories consumed & burned' },
+      { icon: 'rocket-outline', text: 'Take back control of your curve' },
     ],
 
     hasAccount: 'Already have an account?',
@@ -144,7 +144,7 @@ function TechBackground() {
   for (var y = 0; y < H; y += gridSpacing) {
     lines.push(
       <Line key={'h-' + y} x1="0" y1={y} x2={W} y2={y}
-        stroke="rgba(62, 72, 85, 0.15)" strokeWidth="0.5" />
+        stroke="rgba(62, 72, 85, 0.25)" strokeWidth="0.5" />
     );
   }
 
@@ -152,7 +152,7 @@ function TechBackground() {
   for (var x = 0; x < W; x += gridSpacing) {
     lines.push(
       <Line key={'v-' + x} x1={x} y1="0" x2={x} y2={H}
-        stroke="rgba(62, 72, 85, 0.15)" strokeWidth="0.5" />
+        stroke="rgba(62, 72, 85, 0.25)" strokeWidth="0.5" />
     );
   }
 
@@ -161,7 +161,7 @@ function TechBackground() {
     for (var y2 = 0; y2 < H; y2 += gridSpacing * 2) {
       dots.push(
         <Circle key={'d-' + x2 + '-' + y2} cx={x2} cy={y2} r="1.5"
-          fill="rgba(0, 217, 132, 0.08)" />
+          fill="rgba(0, 217, 132, 0.14)" />
       );
     }
   }
@@ -176,31 +176,90 @@ function TechBackground() {
       {dots}
 
       {/* Coin haut-gauche */}
-      <Line x1="20" y1="60" x2="20" y2="80" stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
-      <Line x1="20" y1="60" x2="40" y2="60" stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
+      <Line x1="20" y1="60" x2="20" y2="80" stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
+      <Line x1="20" y1="60" x2="40" y2="60" stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
 
       {/* Coin haut-droit */}
-      <Line x1={W - 20} y1="60" x2={W - 20} y2="80" stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
-      <Line x1={W - 20} y1="60" x2={W - 40} y2="60" stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
+      <Line x1={W - 20} y1="60" x2={W - 20} y2="80" stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
+      <Line x1={W - 20} y1="60" x2={W - 40} y2="60" stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
 
       {/* Coin bas-gauche */}
-      <Line x1="20" y1={H - 60} x2="20" y2={H - 80} stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
-      <Line x1="20" y1={H - 60} x2="40" y2={H - 60} stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
+      <Line x1="20" y1={H - 60} x2="20" y2={H - 80} stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
+      <Line x1="20" y1={H - 60} x2="40" y2={H - 60} stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
 
       {/* Coin bas-droit */}
-      <Line x1={W - 20} y1={H - 60} x2={W - 20} y2={H - 80} stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
-      <Line x1={W - 20} y1={H - 60} x2={W - 40} y2={H - 60} stroke="rgba(0,217,132,0.12)" strokeWidth="1" />
+      <Line x1={W - 20} y1={H - 60} x2={W - 20} y2={H - 80} stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
+      <Line x1={W - 20} y1={H - 60} x2={W - 40} y2={H - 60} stroke="rgba(0,217,132,0.22)" strokeWidth="1.2" />
 
       {/* Tirets tech décoratifs */}
       <Line x1="60" y1={H * 0.35} x2="90" y2={H * 0.35}
-        stroke="rgba(0,217,132,0.08)" strokeWidth="1" strokeDasharray="4 3" />
+        stroke="rgba(0,217,132,0.15)" strokeWidth="1" strokeDasharray="4 3" />
       <Line x1={W - 90} y1={H * 0.35} x2={W - 60} y2={H * 0.35}
-        stroke="rgba(0,217,132,0.08)" strokeWidth="1" strokeDasharray="4 3" />
+        stroke="rgba(0,217,132,0.15)" strokeWidth="1" strokeDasharray="4 3" />
 
       <Line x1="60" y1={H * 0.42} x2="80" y2={H * 0.42}
         stroke="rgba(62,72,85,0.2)" strokeWidth="0.5" />
       <Line x1={W - 80} y1={H * 0.42} x2={W - 60} y2={H * 0.42}
         stroke="rgba(62,72,85,0.2)" strokeWidth="0.5" />
+    </Svg>
+  );
+}
+
+// ============================================================
+// CIRCUIT PATTERN — motifs circuit imprimé dans les cartes
+// ============================================================
+
+function CircuitPattern(props) {
+  var width = props.width;
+  var height = props.height;
+  var color = props.color || 'rgba(0, 217, 132, 0.06)';
+  return (
+    <Svg
+      width={width} height={height}
+      style={{ position: 'absolute', top: 0, left: 0 }}
+      pointerEvents="none"
+    >
+      <Line x1="20" y1={height * 0.15} x2={width * 0.35} y2={height * 0.15}
+        stroke={color} strokeWidth="0.8" />
+      <Circle cx={width * 0.35} cy={height * 0.15} r="2" fill={color} />
+      <Line x1={width * 0.35} y1={height * 0.15} x2={width * 0.35} y2={height * 0.25}
+        stroke={color} strokeWidth="0.8" />
+
+      <Line x1={width * 0.65} y1={height * 0.12} x2={width - 20} y2={height * 0.12}
+        stroke={color} strokeWidth="0.8" />
+      <Circle cx={width * 0.65} cy={height * 0.12} r="2" fill={color} />
+      <Line x1={width * 0.65} y1={height * 0.12} x2={width * 0.65} y2={height * 0.20}
+        stroke={color} strokeWidth="0.8" />
+      <Line x1={width * 0.65} y1={height * 0.20} x2={width * 0.75} y2={height * 0.20}
+        stroke={color} strokeWidth="0.8" />
+      <Circle cx={width * 0.75} cy={height * 0.20} r="1.5" fill={color} />
+
+      <Line x1="15" y1={height * 0.50} x2="15" y2={height * 0.60}
+        stroke={color} strokeWidth="0.8" />
+      <Line x1="15" y1={height * 0.60} x2={width * 0.20} y2={height * 0.60}
+        stroke={color} strokeWidth="0.8" />
+      <Rect x={width * 0.20 - 3} y={height * 0.60 - 3} width="6" height="6" rx="1"
+        fill="none" stroke={color} strokeWidth="0.8" />
+
+      <Line x1={width * 0.70} y1={height * 0.75} x2={width - 15} y2={height * 0.75}
+        stroke={color} strokeWidth="0.8" />
+      <Line x1={width - 15} y1={height * 0.75} x2={width - 15} y2={height * 0.85}
+        stroke={color} strokeWidth="0.8" />
+      <Circle cx={width - 15} cy={height * 0.85} r="2" fill={color} />
+
+      <Line x1={width * 0.15} y1={height * 0.82} x2={width * 0.30} y2={height * 0.82}
+        stroke={color} strokeWidth="0.8" />
+      <Line x1={width * 0.30} y1={height * 0.82} x2={width * 0.30} y2={height * 0.90}
+        stroke={color} strokeWidth="0.8" />
+      <Rect x={width * 0.30 - 3} y={height * 0.90 - 3} width="6" height="6" rx="1"
+        fill="none" stroke={color} strokeWidth="0.8" />
+      <Line x1={width * 0.30 + 3} y1={height * 0.90} x2={width * 0.45} y2={height * 0.90}
+        stroke={color} strokeWidth="0.8" />
+      <Circle cx={width * 0.45} cy={height * 0.90} r="1.5" fill={color} />
+
+      <Circle cx={width * 0.50} cy={height * 0.30} r="1" fill={color} />
+      <Circle cx={width * 0.85} cy={height * 0.45} r="1" fill={color} />
+      <Circle cx={width * 0.25} cy={height * 0.70} r="1" fill={color} />
     </Svg>
   );
 }
@@ -271,7 +330,7 @@ function SlideIcon(props) {
             <Svg width={52} height={52} viewBox="0 0 56 56">
               <Circle cx="28" cy="28" r="26" fill="rgba(0,0,0,0.3)" stroke={color + '50'} strokeWidth="1.5" />
             </Svg>
-            <Ionicons name="flask" size={24} color={color} style={{ position: 'absolute' }} />
+            <Ionicons name="flask-outline" size={28} color={color} style={{ position: 'absolute' }} />
           </View>
         )}
         {type === 'dashboard' && (
@@ -279,7 +338,7 @@ function SlideIcon(props) {
             <Svg width={52} height={52} viewBox="0 0 56 56">
               <Circle cx="28" cy="28" r="26" fill="rgba(0,0,0,0.3)" stroke={color + '50'} strokeWidth="1.5" />
             </Svg>
-            <Ionicons name="pulse" size={24} color={color} style={{ position: 'absolute' }} />
+            <Ionicons name="stats-chart-outline" size={28} color={color} style={{ position: 'absolute' }} />
           </View>
         )}
       </Animated.View>
@@ -318,10 +377,11 @@ function SwipeHint(props) {
         paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20,
         borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)', gap: 6,
       }}>
-        <Text style={{ color: '#00D984', fontSize: 11, fontWeight: '600' }}>
+        <Text style={{ color: '#00D984', fontSize: 10, fontWeight: '600' }}>
           {lang === 'fr' ? 'Glissez' : 'Swipe'}
         </Text>
-        <Ionicons name="arrow-back" size={13} color="#00D984" />
+        <Ionicons name="chevron-back-outline" size={12} color="#00D984" />
+        <Ionicons name="chevron-back-outline" size={12} color="#00D984" style={{ marginLeft: -6, opacity: 0.5 }} />
       </View>
     </RNAnimated.View>
   );
@@ -426,6 +486,11 @@ function PokemonCard(props) {
               backgroundColor: '#151B23',
               borderRadius: 18,
             }}>
+              <CircuitPattern
+                width={CARD_W}
+                height={CARD_H}
+                color="rgba(0, 217, 132, 0.05)"
+              />
               <View style={{
                 position: 'absolute', top: 0, left: 0, right: 0, height: 110,
                 borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden',
@@ -472,12 +537,12 @@ function PokemonCard(props) {
                     return (
                       <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                         <View style={{
-                          width: 34, height: 34, borderRadius: 17,
-                          backgroundColor: 'rgba(0,217,132,0.10)',
-                          borderWidth: 1, borderColor: 'rgba(0,217,132,0.18)',
+                          width: 36, height: 36, borderRadius: 10,
+                          backgroundColor: 'rgba(0,217,132,0.08)',
+                          borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
                           alignItems: 'center', justifyContent: 'center',
                         }}>
-                          <Ionicons name={line.icon} size={16} color="#00D984" />
+                          <Ionicons name={line.icon} size={17} color="#00D984" />
                         </View>
                         <Text style={{
                           color: '#EAEEF3', fontSize: 12.5, fontWeight: '500',
@@ -647,10 +712,10 @@ export default function App() {
   return (
     <SafeAreaProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#1C2435' }} edges={['top', 'bottom', 'left', 'right']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#1E2A3A' }} edges={['top', 'bottom', 'left', 'right']}>
         <LinearGradient
-          colors={['#1C2435', '#1A2030', '#1C2435']}
-          locations={[0, 0.5, 1]}
+          colors={['#1E2A3A', '#1C2535', '#1A2232', '#1C2535', '#1E2A3A']}
+          locations={[0, 0.25, 0.5, 0.75, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
           style={{ flex: 1 }}
@@ -673,7 +738,7 @@ export default function App() {
               justifyContent: 'center',
               position: 'relative',
               marginTop: 4,
-              marginBottom: 4,
+              marginBottom: 2,
             }}>
               <TouchableOpacity
                 onPress={function () { setLang('en'); }}
@@ -722,7 +787,7 @@ export default function App() {
             <Text style={{
               color: '#8892A0', fontSize: 16, fontWeight: '500',
               letterSpacing: 0.5, textAlign: 'center',
-              marginTop: 4, marginBottom: 0,
+              marginTop: 2, marginBottom: 0,
             }}>
               {t.welcome}
             </Text>
@@ -730,19 +795,56 @@ export default function App() {
             <Text style={{
               color: '#EAEEF3', fontSize: 26, fontWeight: '900',
               letterSpacing: 6, textAlign: 'center',
-              marginBottom: 6,
+              marginTop: 0, marginBottom: 4,
             }}>
               {t.brandName}
             </Text>
 
-            {/* Tagline — CORRECTION 2 : marginTop: 20 */}
-            <Text style={{
-              color: '#555E6C', fontSize: 9, fontWeight: '600',
-              letterSpacing: 4, textAlign: 'center',
-              marginTop: 4, marginBottom: 8, textTransform: 'uppercase',
+            {/* === TAGLINE AVEC EFFET BANDEAU === */}
+            <View style={{
+              alignItems: 'center',
+              marginTop: 6,
+              marginBottom: 10,
+              position: 'relative',
+              height: 30,
+              justifyContent: 'center',
             }}>
-              {t.tagline}
-            </Text>
+              <LinearGradient
+                colors={[
+                  'rgba(0, 217, 132, 0)',
+                  'rgba(0, 217, 132, 0.06)',
+                  'rgba(0, 217, 132, 0.10)',
+                  'rgba(0, 217, 132, 0.06)',
+                  'rgba(0, 217, 132, 0)',
+                ]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={{
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  borderRadius: 4,
+                }}
+              />
+              <View style={{
+                position: 'absolute', top: 0, left: '15%', right: '15%',
+                height: 0.5,
+                backgroundColor: 'rgba(0, 217, 132, 0.15)',
+              }} />
+              <View style={{
+                position: 'absolute', bottom: 0, left: '15%', right: '15%',
+                height: 0.5,
+                backgroundColor: 'rgba(0, 217, 132, 0.15)',
+              }} />
+              <Text style={{
+                color: '#6B7B8D',
+                fontSize: 9,
+                fontWeight: '600',
+                letterSpacing: 4,
+                textAlign: 'center',
+              }}>
+                {t.tagline}
+              </Text>
+            </View>
 
             {/* ZONE CARTES — flex: 1 prend tout l'espace disponible */}
             <View style={{
@@ -807,6 +909,11 @@ export default function App() {
                         backgroundColor: '#151B23',
                         borderRadius: 18,
                       }}>
+                        <CircuitPattern
+                          width={CARD_W}
+                          height={CARD_H}
+                          color="rgba(212, 175, 55, 0.05)"
+                        />
 
                         {/* Gradient doré subtil en haut */}
                         <View style={{
@@ -854,7 +961,7 @@ export default function App() {
                             shadowOpacity: 0.2,
                             shadowRadius: 12,
                           }}>
-                            <Ionicons name="checkmark" size={30} color="#D4AF37" />
+                            <Ionicons name="checkmark-done-outline" size={30} color="#D4AF37" />
                           </View>
 
                           {/* Titre */}
