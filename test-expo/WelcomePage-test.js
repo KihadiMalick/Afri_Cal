@@ -726,7 +726,7 @@ export default function App() {
           <View style={{
             flex: 1,
             paddingHorizontal: 24,
-            paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 4,
+            paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
             paddingBottom: 8,
           }}>
 
@@ -737,8 +737,8 @@ export default function App() {
               alignItems: 'center',
               justifyContent: 'center',
               position: 'relative',
-              marginTop: 4,
-              marginBottom: 2,
+              marginTop: 0,
+              marginBottom: 0,
             }}>
               <TouchableOpacity
                 onPress={function () { setLang('en'); }}
@@ -787,7 +787,7 @@ export default function App() {
             <Text style={{
               color: '#8892A0', fontSize: 16, fontWeight: '500',
               letterSpacing: 0.5, textAlign: 'center',
-              marginTop: 2, marginBottom: 0,
+              marginTop: 0, marginBottom: 0,
             }}>
               {t.welcome}
             </Text>
@@ -803,8 +803,8 @@ export default function App() {
             {/* === TAGLINE AVEC EFFET BANDEAU === */}
             <View style={{
               alignItems: 'center',
-              marginTop: 6,
-              marginBottom: 10,
+              marginTop: 2,
+              marginBottom: 6,
               position: 'relative',
               height: 30,
               justifyContent: 'center',
