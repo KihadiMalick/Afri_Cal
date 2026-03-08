@@ -18,10 +18,10 @@ import {
   Alert,
   Animated as RNAnimated,
   Easing,
-  SafeAreaView,
   Platform,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -47,7 +47,7 @@ import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
 var SCREEN_WIDTH = Dimensions.get('window').width;
 var SCREEN_HEIGHT = Dimensions.get('window').height;
 var CARD_W = SCREEN_WIDTH - 56;
-var CARD_H = SCREEN_HEIGHT * 0.38;
+var CARD_H = SCREEN_HEIGHT * 0.48;
 var SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 var logoImage = require('./assets/logo-lx.png');
@@ -645,8 +645,9 @@ export default function App() {
   var allSwiped = currentIndex >= slides.length;
 
   return (
+    <SafeAreaProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#1C2435' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#1C2435' }} edges={['top', 'bottom', 'left', 'right']}>
         <LinearGradient
           colors={['#1C2435', '#1A2030', '#1C2435']}
           locations={[0, 0.5, 1]}
@@ -880,7 +881,7 @@ export default function App() {
             </View>
 
             {/* ZONE BASSE — FIXE, toujours visible, JAMAIS sous la barre nav */}
-            <View style={{ paddingTop: 6 }}>
+            <View style={{ paddingTop: 6, paddingBottom: Platform.OS === 'android' ? 12 : 0 }}>
               {/* Dots */}
               <View style={{
                 flexDirection: 'row', justifyContent: 'center',
@@ -921,6 +922,7 @@ export default function App() {
         </LinearGradient>
       </SafeAreaView>
     </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
 
