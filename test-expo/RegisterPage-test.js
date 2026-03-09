@@ -1,4 +1,4 @@
-// LIXUM - Register Page (Multi-Phase Wizard) v2.0 — Premium
+// LIXUM - Register Page (Multi-Phase Wizard) v3.0 — Premium 7 Phases
 // Copier-coller dans App.js sur snack.expo.dev
 // Dependances: expo-linear-gradient, @expo/vector-icons,
 //              react-native-svg, react-native-safe-area-context
@@ -25,6 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle as SvgCircle, Line, Rect } from 'react-native-svg';
 
 var SCREEN_WIDTH = Dimensions.get('window').width;
+var SCREEN_HEIGHT = Dimensions.get('window').height;
 
 // ============================================================
 // COULEURS
@@ -48,21 +49,21 @@ var C = {
 };
 
 // ============================================================
-// TRADUCTIONS
+// TRADUCTIONS — 7 PHASES
 // ============================================================
 
 var texts = {
   fr: {
-    stepNames: ['Identit\u00e9', 'Morphologie', 'Objectif', 'D\u00e9couverte'],
-    stepDescs: ['Vos informations', 'Votre corps', 'Votre parcours', 'Vos macros'],
+    stepNames: ['Identit\u00e9', 'Corps', 'Activit\u00e9', 'R\u00e9gime', 'Objectif', 'Macros', 'Bonus'],
+    stepDescs: ['Vos informations', 'Votre corps', 'Votre niveau', 'Alimentation', 'Votre parcours', 'Vos macros', 'Gamification'],
     // Phase 1
     p1Title: 'Cr\u00e9er votre compte',
     p1Subtitle: 'Vos informations personnelles',
     identityLabel: 'IDENTIT\u00c9',
     emailLabel: 'EMAIL',
     securityLabel: 'S\u00c9CURIT\u00c9',
-    firstName: 'Pr\u00e9nom',
-    lastName: 'Nom',
+    fullName: 'Nom complet',
+    fullNamePlaceholder: 'Pr\u00e9nom et Nom',
     email: 'Email',
     emailConfirm: 'Confirmer l\'email',
     password: 'Mot de passe',
@@ -71,28 +72,44 @@ var texts = {
     emailNoMatch: 'Les emails ne correspondent pas',
     passRules: 'Minimum 8 caract\u00e8res',
     // Phase 2
-    p2Title: 'Votre morphologie',
-    p2Subtitle: 'Pour calculer votre m\u00e9tabolisme de base',
+    p2Title: 'Votre corps',
+    p2Subtitle: 'Scrollez pour s\u00e9lectionner',
     weightLabel: 'POIDS',
     heightLabel: 'TAILLE',
     ageLabel: '\u00c2GE',
     genderLabel: 'SEXE',
     male: 'Homme',
     female: 'Femme',
+    metric: 'M\u00e9trique',
+    imperial: 'Imp\u00e9rial',
     kg: 'kg',
+    lb: 'lb',
     cm: 'cm',
+    inUnit: 'in',
     years: 'ans',
-    activityLabel: 'Niveau d\'activit\u00e9',
-    activityLevels: [
-      { label: 'S\u00e9dentaire', desc: 'Peu ou pas d\'exercice', icon: 'bed-outline' },
-      { label: 'L\u00e9g\u00e8rement actif', desc: '1-2 fois/semaine', icon: 'walk-outline' },
-      { label: 'Mod\u00e9r\u00e9ment actif', desc: '3-5 fois/semaine', icon: 'bicycle-outline' },
-      { label: 'Tr\u00e8s actif', desc: '6-7 fois/semaine', icon: 'barbell-outline' },
-      { label: 'Extr\u00eamement actif', desc: 'Athl\u00e8te / travail physique', icon: 'flame-outline' },
-    ],
     // Phase 3
-    p3Title: 'Votre objectif',
-    p3Subtitle: 'Personnalisez votre parcours',
+    p3Title: 'Votre activit\u00e9',
+    p3Subtitle: 'S\u00e9lectionnez votre niveau habituel',
+    activityLevels: [
+      { label: 'S\u00e9dentaire', desc: 'Peu ou pas d\'exercice', icon: 'bed-outline', emoji: '\uD83D\uDECB\uFE0F' },
+      { label: 'L\u00e9g\u00e8rement actif', desc: '1-2 fois/semaine', icon: 'walk-outline', emoji: '\uD83D\uDEB6' },
+      { label: 'Mod\u00e9r\u00e9ment actif', desc: '3-5 fois/semaine', icon: 'bicycle-outline', emoji: '\uD83D\uDEB4' },
+      { label: 'Tr\u00e8s actif', desc: '6-7 fois/semaine', icon: 'barbell-outline', emoji: '\uD83D\uDCAA' },
+      { label: 'Extr\u00eamement actif', desc: 'Athl\u00e8te / travail physique', icon: 'flame-outline', emoji: '\uD83D\uDD25' },
+    ],
+    // Phase 4
+    p4Title: 'Votre r\u00e9gime',
+    p4Subtitle: 'Pour des recommandations cibl\u00e9es',
+    diets: [
+      { key: 'classic', label: 'Classique', desc: 'Aucune restriction alimentaire', icon: '\uD83C\uDF57', detail: 'Tous les groupes alimentaires' },
+      { key: 'pescatarian', label: 'Pescatarien', desc: 'Poisson mais pas de viande', icon: '\uD83D\uDC1F', detail: 'Riche en om\u00e9ga-3 et prot\u00e9ines marines' },
+      { key: 'vegetarian', label: 'V\u00e9g\u00e9tarien', desc: 'Pas de viande ni poisson', icon: '\uD83E\uDD6C', detail: 'Produits laitiers et \u0153ufs autoris\u00e9s' },
+      { key: 'vegan', label: 'V\u00e9gan', desc: 'Aucun produit animal', icon: '\uD83C\uDF31', detail: 'Prot\u00e9ines v\u00e9g\u00e9tales uniquement' },
+      { key: 'keto', label: 'C\u00e9tog\u00e8ne', desc: 'Faible en glucides, riche en graisses', icon: '\uD83E\uDD51', detail: 'Force le corps \u00e0 br\u00fbler les graisses' },
+    ],
+    // Phase 5
+    p5Title: 'Votre objectif',
+    p5Subtitle: 'Personnalisez votre parcours',
     goals: [
       { key: 'lose', label: 'Perte de poids', icon: 'trending-down-outline', color: '#00BFA6' },
       { key: 'maintain', label: 'Maintien', icon: 'swap-horizontal-outline', color: '#00D984' },
@@ -109,31 +126,44 @@ var texts = {
     fat: 'Lipides',
     gUnit: 'g',
     weeks: 'semaines',
-    // Phase 4
-    p4Title: 'Saviez-vous que ?',
-    p4Subtitle: 'Comprendre votre tableau de bord',
+    // Phase 6
+    p6Title: 'Saviez-vous que ?',
+    p6Subtitle: 'Comprendre votre tableau de bord',
     slides: function (calc) {
       return [
-        { icon: 'flame-outline', color: '#D4AF37', title: 'BMR', subtitle: 'M\u00e9tabolisme de Base', value: calc.bmr + ' kcal', explanation: 'C\'est l\'\u00e9nergie minimale que votre corps br\u00fble au repos pour maintenir ses fonctions vitales : respiration, circulation sanguine, r\u00e9gulation de la temp\u00e9rature.', funFact: 'Votre cerveau seul consomme environ 20% de votre BMR.' },
-        { icon: 'flash-outline', color: '#00D984', title: 'TDEE', subtitle: 'D\u00e9pense \u00c9nerg\u00e9tique Totale', value: calc.tdee + ' kcal', explanation: 'C\'est votre BMR + les calories br\u00fbl\u00e9es par votre activit\u00e9 physique quotidienne. C\'est LE chiffre cl\u00e9 : mangez moins \u2192 perte. Mangez plus \u2192 prise.', funFact: 'Une heure de marche rapide br\u00fble environ 300 kcal.' },
-        { icon: 'fish-outline', color: '#00BFA6', title: 'Prot\u00e9ines', subtitle: 'Les b\u00e2tisseurs du corps', value: calc.macros.protein + 'g / jour', explanation: 'Les prot\u00e9ines r\u00e9parent vos muscles, renforcent votre syst\u00e8me immunitaire et vous gardent rassasi\u00e9 plus longtemps. 1g = 4 kcal.', funFact: 'Vos cheveux, ongles et peau sont principalement faits de prot\u00e9ines.' },
-        { icon: 'leaf-outline', color: '#00D984', title: 'Glucides', subtitle: 'Le carburant de l\'\u00e9nergie', value: calc.macros.carbs + 'g / jour', explanation: 'Les glucides sont la source d\'\u00e9nergie pr\u00e9f\u00e9r\u00e9e de votre cerveau et de vos muscles. Ils ne sont pas l\'ennemi \u2014 c\'est l\'exc\u00e8s qui l\'est. 1g = 4 kcal.', funFact: 'Votre cerveau consomme environ 120g de glucides par jour.' },
-        { icon: 'water-outline', color: '#D4AF37', title: 'Lipides', subtitle: 'Les r\u00e9serves essentielles', value: calc.macros.fat + 'g / jour', explanation: 'Les lipides prot\u00e8gent vos organes, transportent les vitamines et produisent vos hormones. Tr\u00e8s denses en \u00e9nergie : 1g = 9 kcal.', funFact: '60% de votre cerveau est compos\u00e9 de graisses.' },
+        { icon: 'flame-outline', color: '#D4AF37', title: 'BMR', subtitle: 'M\u00e9tabolisme de Base', value: calc.bmr + ' kcal', type: 'bmr', explanation: 'C\'est l\'\u00e9nergie minimale que votre corps br\u00fble au repos pour maintenir ses fonctions vitales : respiration, circulation sanguine, r\u00e9gulation de la temp\u00e9rature.', funFact: 'Votre cerveau seul consomme environ 20% de votre BMR.' },
+        { icon: 'flash-outline', color: '#00D984', title: 'TDEE', subtitle: 'D\u00e9pense \u00c9nerg\u00e9tique Totale', value: calc.tdee + ' kcal', type: 'tdee', explanation: 'C\'est votre BMR + les calories br\u00fbl\u00e9es par votre activit\u00e9 physique quotidienne. C\'est LE chiffre cl\u00e9 : mangez moins \u2192 perte. Mangez plus \u2192 prise.', funFact: 'Une heure de marche rapide br\u00fble environ 300 kcal.' },
+        { icon: 'fish-outline', color: '#00BFA6', title: 'Prot\u00e9ines', subtitle: 'Les b\u00e2tisseurs du corps', value: calc.macros.protein + 'g / jour', type: 'protein', explanation: 'Les prot\u00e9ines r\u00e9parent vos muscles, renforcent votre syst\u00e8me immunitaire et vous gardent rassasi\u00e9 plus longtemps. 1g = 4 kcal.', funFact: 'Vos cheveux, ongles et peau sont principalement faits de prot\u00e9ines.' },
+        { icon: 'leaf-outline', color: '#00D984', title: 'Glucides', subtitle: 'Le carburant de l\'\u00e9nergie', value: calc.macros.carbs + 'g / jour', type: 'carbs', explanation: 'Les glucides sont la source d\'\u00e9nergie pr\u00e9f\u00e9r\u00e9e de votre cerveau et de vos muscles. Ils ne sont pas l\'ennemi \u2014 c\'est l\'exc\u00e8s qui l\'est. 1g = 4 kcal.', funFact: 'Votre cerveau consomme environ 120g de glucides par jour.' },
+        { icon: 'water-outline', color: '#D4AF37', title: 'Lipides', subtitle: 'Les r\u00e9serves essentielles', value: calc.macros.fat + 'g / jour', type: 'fat', explanation: 'Les lipides prot\u00e8gent vos organes, transportent les vitamines et produisent vos hormones. Tr\u00e8s denses en \u00e9nergie : 1g = 9 kcal.', funFact: '60% de votre cerveau est compos\u00e9 de graisses.' },
       ];
     },
+    // Phase 7
+    p7Title: 'Caract\u00e8res LIXUM',
+    p7Subtitle: 'Collectez des cartes, d\u00e9bloquez des pouvoirs',
+    howItWorks: 'COMMENT \u00c7A MARCHE',
+    howItWorksText: '\uD83C\uDFA1 Tournez la roue chaque jour\n\uD83D\uDC8E Gagnez des LX Gems et des cartes\n\uD83C\uDCCF Chaque carte d\u00e9bloque un pouvoir unique\n\uD83D\uDD04 Transf\u00e9rez vos cartes \u00e0 d\'autres membres',
+    charactersFooter: '12 caract\u00e8res \u00e0 d\u00e9couvrir \u00B7 3 niveaux de raret\u00e9',
+    firstSpin: '\uD83C\uDFA1 Votre premi\u00e8re roue vous attend !',
+    teaserCards: [
+      { name: 'GOLD CHICKEN', animal: '\uD83D\uDC14', level: 'STANDARD', power: 'Recettes personnalis\u00e9es', duration: '7j' },
+      { name: 'RUBY TIGER', animal: '\uD83D\uDC2F', level: 'RARE', power: 'Recettes + Sport combin\u00e9s', duration: '14j' },
+      { name: 'LICORNUM', animal: '\uD83E\uDD84', level: '\u00c9LITE', power: 'TOUT Premium', duration: '30j' },
+    ],
+    // Nav
     next: 'Suivant',
     createAccount: 'Cr\u00e9er mon compte',
   },
   en: {
-    stepNames: ['Identity', 'Body', 'Goal', 'Discover'],
-    stepDescs: ['Your info', 'Your body', 'Your journey', 'Your macros'],
+    stepNames: ['Identity', 'Body', 'Activity', 'Diet', 'Goal', 'Macros', 'Bonus'],
+    stepDescs: ['Your info', 'Your body', 'Your level', 'Nutrition', 'Your journey', 'Your macros', 'Gamification'],
     p1Title: 'Create your account',
     p1Subtitle: 'Your personal information',
     identityLabel: 'IDENTITY',
     emailLabel: 'EMAIL',
     securityLabel: 'SECURITY',
-    firstName: 'First name',
-    lastName: 'Last name',
+    fullName: 'Full name',
+    fullNamePlaceholder: 'First and Last name',
     email: 'Email',
     emailConfirm: 'Confirm email',
     password: 'Password',
@@ -141,27 +171,41 @@ var texts = {
     emailMatch: 'Emails match \u2713',
     emailNoMatch: 'Emails do not match',
     passRules: 'Minimum 8 characters',
-    p2Title: 'Your body metrics',
-    p2Subtitle: 'To calculate your basal metabolism',
+    p2Title: 'Your body',
+    p2Subtitle: 'Scroll to select',
     weightLabel: 'WEIGHT',
     heightLabel: 'HEIGHT',
     ageLabel: 'AGE',
     genderLabel: 'GENDER',
     male: 'Male',
     female: 'Female',
+    metric: 'Metric',
+    imperial: 'Imperial',
     kg: 'kg',
+    lb: 'lb',
     cm: 'cm',
-    years: 'yrs',
-    activityLabel: 'Activity level',
+    inUnit: 'in',
+    years: 'y',
+    p3Title: 'Your activity',
+    p3Subtitle: 'Select your usual level',
     activityLevels: [
-      { label: 'Sedentary', desc: 'Little or no exercise', icon: 'bed-outline' },
-      { label: 'Lightly active', desc: '1-2 times/week', icon: 'walk-outline' },
-      { label: 'Moderately active', desc: '3-5 times/week', icon: 'bicycle-outline' },
-      { label: 'Very active', desc: '6-7 times/week', icon: 'barbell-outline' },
-      { label: 'Extremely active', desc: 'Athlete / physical job', icon: 'flame-outline' },
+      { label: 'Sedentary', desc: 'Little or no exercise', icon: 'bed-outline', emoji: '\uD83D\uDECB\uFE0F' },
+      { label: 'Lightly active', desc: '1-2 times/week', icon: 'walk-outline', emoji: '\uD83D\uDEB6' },
+      { label: 'Moderately active', desc: '3-5 times/week', icon: 'bicycle-outline', emoji: '\uD83D\uDEB4' },
+      { label: 'Very active', desc: '6-7 times/week', icon: 'barbell-outline', emoji: '\uD83D\uDCAA' },
+      { label: 'Extremely active', desc: 'Athlete / physical job', icon: 'flame-outline', emoji: '\uD83D\uDD25' },
     ],
-    p3Title: 'Your goal',
-    p3Subtitle: 'Customize your journey',
+    p4Title: 'Your diet',
+    p4Subtitle: 'For targeted recommendations',
+    diets: [
+      { key: 'classic', label: 'Classic', desc: 'No dietary restrictions', icon: '\uD83C\uDF57', detail: 'All food groups' },
+      { key: 'pescatarian', label: 'Pescatarian', desc: 'Fish but no meat', icon: '\uD83D\uDC1F', detail: 'Rich in omega-3' },
+      { key: 'vegetarian', label: 'Vegetarian', desc: 'No meat or fish', icon: '\uD83E\uDD6C', detail: 'Dairy and eggs allowed' },
+      { key: 'vegan', label: 'Vegan', desc: 'No animal products', icon: '\uD83C\uDF31', detail: 'Plant-based proteins only' },
+      { key: 'keto', label: 'Ketogenic', desc: 'Low carb, high fat', icon: '\uD83E\uDD51', detail: 'Forces body to burn fat' },
+    ],
+    p5Title: 'Your goal',
+    p5Subtitle: 'Customize your journey',
     goals: [
       { key: 'lose', label: 'Weight loss', icon: 'trending-down-outline', color: '#00BFA6' },
       { key: 'maintain', label: 'Stay fit', icon: 'swap-horizontal-outline', color: '#00D984' },
@@ -178,17 +222,28 @@ var texts = {
     fat: 'Fat',
     gUnit: 'g',
     weeks: 'weeks',
-    p4Title: 'Did you know?',
-    p4Subtitle: 'Understanding your dashboard',
+    p6Title: 'Did you know?',
+    p6Subtitle: 'Understanding your dashboard',
     slides: function (calc) {
       return [
-        { icon: 'flame-outline', color: '#D4AF37', title: 'BMR', subtitle: 'Basal Metabolic Rate', value: calc.bmr + ' kcal', explanation: 'The minimum energy your body burns at rest to maintain vital functions: breathing, blood flow, temperature regulation.', funFact: 'Your brain alone uses about 20% of your BMR.' },
-        { icon: 'flash-outline', color: '#00D984', title: 'TDEE', subtitle: 'Total Daily Energy Expenditure', value: calc.tdee + ' kcal', explanation: 'Your BMR + calories burned through daily physical activity. THE key number: eat less \u2192 lose. Eat more \u2192 gain.', funFact: 'One hour of brisk walking burns about 300 kcal.' },
-        { icon: 'fish-outline', color: '#00BFA6', title: 'Protein', subtitle: 'The body builders', value: calc.macros.protein + 'g / day', explanation: 'Proteins repair muscles, strengthen your immune system, and keep you full longer. 1g = 4 kcal.', funFact: 'Your hair, nails and skin are mainly made of proteins.' },
-        { icon: 'leaf-outline', color: '#00D984', title: 'Carbs', subtitle: 'The energy fuel', value: calc.macros.carbs + 'g / day', explanation: 'Carbs are the preferred energy source for your brain and muscles. They\'re not the enemy \u2014 excess is. 1g = 4 kcal.', funFact: 'Your brain uses about 120g of carbs per day.' },
-        { icon: 'water-outline', color: '#D4AF37', title: 'Fats', subtitle: 'Essential reserves', value: calc.macros.fat + 'g / day', explanation: 'Fats protect organs, transport vitamins, and produce hormones. Very energy-dense: 1g = 9 kcal.', funFact: '60% of your brain is made of fat.' },
+        { icon: 'flame-outline', color: '#D4AF37', title: 'BMR', subtitle: 'Basal Metabolic Rate', value: calc.bmr + ' kcal', type: 'bmr', explanation: 'The minimum energy your body burns at rest to maintain vital functions: breathing, blood flow, temperature regulation.', funFact: 'Your brain alone uses about 20% of your BMR.' },
+        { icon: 'flash-outline', color: '#00D984', title: 'TDEE', subtitle: 'Total Daily Energy Expenditure', value: calc.tdee + ' kcal', type: 'tdee', explanation: 'Your BMR + calories burned through daily physical activity. THE key number: eat less \u2192 lose. Eat more \u2192 gain.', funFact: 'One hour of brisk walking burns about 300 kcal.' },
+        { icon: 'fish-outline', color: '#00BFA6', title: 'Protein', subtitle: 'The body builders', value: calc.macros.protein + 'g / day', type: 'protein', explanation: 'Proteins repair muscles, strengthen your immune system, and keep you full longer. 1g = 4 kcal.', funFact: 'Your hair, nails and skin are mainly made of proteins.' },
+        { icon: 'leaf-outline', color: '#00D984', title: 'Carbs', subtitle: 'The energy fuel', value: calc.macros.carbs + 'g / day', type: 'carbs', explanation: 'Carbs are the preferred energy source for your brain and muscles. They\'re not the enemy \u2014 excess is. 1g = 4 kcal.', funFact: 'Your brain uses about 120g of carbs per day.' },
+        { icon: 'water-outline', color: '#D4AF37', title: 'Fats', subtitle: 'Essential reserves', value: calc.macros.fat + 'g / day', type: 'fat', explanation: 'Fats protect organs, transport vitamins, and produce hormones. Very energy-dense: 1g = 9 kcal.', funFact: '60% of your brain is made of fat.' },
       ];
     },
+    p7Title: 'LIXUM Characters',
+    p7Subtitle: 'Collect cards, unlock powers',
+    howItWorks: 'HOW IT WORKS',
+    howItWorksText: '\uD83C\uDFA1 Spin the wheel daily\n\uD83D\uDC8E Earn LX Gems and cards\n\uD83C\uDCCF Each card unlocks a unique power\n\uD83D\uDD04 Transfer cards to other members',
+    charactersFooter: '12 characters to discover \u00B7 3 rarity levels',
+    firstSpin: '\uD83C\uDFA1 Your first spin awaits!',
+    teaserCards: [
+      { name: 'GOLD CHICKEN', animal: '\uD83D\uDC14', level: 'STANDARD', power: 'Custom recipes', duration: '7d' },
+      { name: 'RUBY TIGER', animal: '\uD83D\uDC2F', level: 'RARE', power: 'Recipes + Sport combined', duration: '14d' },
+      { name: 'LICORNUM', animal: '\uD83E\uDD84', level: 'ELITE', power: 'ALL Premium', duration: '30d' },
+    ],
     next: 'Next',
     createAccount: 'Create my account',
   },
@@ -295,7 +350,7 @@ function CircularProgress(props) {
 }
 
 // ============================================================
-// GLASS CARD — carte flottante metallique
+// GLASS CARD
 // ============================================================
 
 function GlassCard(props) {
@@ -328,7 +383,7 @@ function GlassCard(props) {
 }
 
 // ============================================================
-// PREMIUM INPUT — avec focus glow
+// PREMIUM INPUT — avec focus glow via useRef (no re-render)
 // ============================================================
 
 function PremiumInput(props) {
@@ -372,55 +427,113 @@ function PremiumInput(props) {
 }
 
 // ============================================================
-// GAUGE CIRCLE — jauge circulaire +/-
+// SCROLL PICKER — vertical scroll avec effet de grossissement
 // ============================================================
 
-function GaugeCircle(props) {
-  return (
-    <View style={{ alignItems: 'center' }}>
-      <Text style={{ color: C.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 1.5, marginBottom: 8 }}>
-        {props.label}
-      </Text>
-      <View style={{
-        width: props.size || 110, height: props.size || 110, borderRadius: (props.size || 110) / 2,
-        borderWidth: 2, borderColor: (props.color || C.emerald) + '33',
-        backgroundColor: C.bgInput, alignItems: 'center', justifyContent: 'center',
-        shadowColor: props.color || C.emerald, shadowOpacity: 0.08, shadowRadius: 12,
-        shadowOffset: { width: 0, height: 0 },
-      }}>
-        <Text style={{ color: props.color || C.emerald, fontSize: props.fontSize || 30, fontWeight: '800' }}>
-          {props.value || '\u2014'}
+var ITEM_HEIGHT = 45;
+
+function ScrollPicker(props) {
+  var values = props.values;
+  var selectedValue = props.selectedValue;
+  var onSelect = props.onSelect;
+  var unit = props.unit;
+  var color = props.color || C.emerald;
+  var height = props.height || 180;
+
+  var flatListRef = useRef(null);
+  var visibleItems = Math.floor(height / ITEM_HEIGHT);
+  var paddingItems = Math.floor(visibleItems / 2);
+
+  var paddedValues = [];
+  var i;
+  for (i = 0; i < paddingItems; i++) { paddedValues.push(null); }
+  for (i = 0; i < values.length; i++) { paddedValues.push(values[i]); }
+  for (i = 0; i < paddingItems; i++) { paddedValues.push(null); }
+
+  var initialIndex = values.indexOf(selectedValue);
+  if (initialIndex < 0) initialIndex = 0;
+  initialIndex = initialIndex + paddingItems;
+
+  var onMomentumScrollEnd = useCallback(function (event) {
+    var idx = Math.round(event.nativeEvent.contentOffset.y / ITEM_HEIGHT);
+    if (idx >= 0 && idx < values.length) {
+      onSelect(values[idx]);
+    }
+  }, [values, onSelect]);
+
+  var getItemLayout = useCallback(function (data, index) {
+    return { length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index: index };
+  }, []);
+
+  var renderItem = useCallback(function (info) {
+    var item = info.item;
+    if (item === null) return <View style={{ height: ITEM_HEIGHT }} />;
+    var isSelected = item === selectedValue;
+    return (
+      <View style={{ height: ITEM_HEIGHT, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{
+          color: isSelected ? color : C.textMuted,
+          fontSize: isSelected ? 28 : 18,
+          fontWeight: isSelected ? '800' : '400',
+          opacity: isSelected ? 1 : 0.5,
+        }}>
+          {item}{isSelected ? ' ' + unit : ''}
         </Text>
-        <Text style={{ color: C.textMuted, fontSize: props.unitSize || 10 }}>{props.unit}</Text>
       </View>
-      <View style={{ flexDirection: 'row', gap: props.btnGap || 20, marginTop: 8 }}>
-        <TouchableOpacity onPress={props.onMinus}>
-          <View style={{
-            width: props.btnSize || 34, height: props.btnSize || 34, borderRadius: (props.btnSize || 34) / 2,
-            backgroundColor: (props.color || C.emerald) + '0F',
-            borderWidth: 1, borderColor: (props.color || C.emerald) + '33',
-            alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Ionicons name="remove" size={props.btnIconSize || 16} color={props.color || C.emerald} />
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={props.onPlus}>
-          <View style={{
-            width: props.btnSize || 34, height: props.btnSize || 34, borderRadius: (props.btnSize || 34) / 2,
-            backgroundColor: (props.color || C.emerald) + '0F',
-            borderWidth: 1, borderColor: (props.color || C.emerald) + '33',
-            alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Ionicons name="add" size={props.btnIconSize || 16} color={props.color || C.emerald} />
-          </View>
-        </TouchableOpacity>
-      </View>
+    );
+  }, [selectedValue, color, unit]);
+
+  var keyExtractor = useCallback(function (item, idx) {
+    return (item === null ? 'pad' : String(item)) + '-' + idx;
+  }, []);
+
+  return (
+    <View style={{ height: height, overflow: 'hidden', position: 'relative' }}>
+      {/* Ligne de selection au centre */}
+      <View style={{
+        position: 'absolute',
+        top: height / 2 - ITEM_HEIGHT / 2,
+        left: 0, right: 0,
+        height: ITEM_HEIGHT,
+        borderTopWidth: 1, borderBottomWidth: 1,
+        borderColor: color + '30',
+        backgroundColor: color + '08',
+        borderRadius: 8,
+        zIndex: 0,
+      }} />
+
+      {/* Degrade fondu en haut */}
+      <LinearGradient
+        colors={['#1A2232', 'rgba(26,34,50,0)']}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 50, zIndex: 2 }}
+        pointerEvents="none"
+      />
+
+      {/* Degrade fondu en bas */}
+      <LinearGradient
+        colors={['rgba(26,34,50,0)', '#1A2232']}
+        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 50, zIndex: 2 }}
+        pointerEvents="none"
+      />
+
+      <FlatList
+        ref={flatListRef}
+        data={paddedValues}
+        keyExtractor={keyExtractor}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={ITEM_HEIGHT}
+        decelerationRate="fast"
+        initialScrollIndex={initialIndex}
+        getItemLayout={getItemLayout}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        renderItem={renderItem}
+      />
     </View>
   );
 }
 
 // ============================================================
-// PHASE 1 — IDENTITE (cartes glass)
+// PHASE 1 — IDENTITE (Nom complet + Email + Securite)
 // ============================================================
 
 function Phase1Identity(props) {
@@ -436,16 +549,9 @@ function Phase1Identity(props) {
 
       {/* Carte Identite */}
       <GlassCard sectionIcon="person-outline" sectionLabel={t.identityLabel}>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <View style={{ flex: 1 }}>
-            <PremiumInput label={t.firstName} value={formData.firstName}
-              onChangeText={function (v) { update('firstName', v); }} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <PremiumInput label={t.lastName} value={formData.lastName}
-              onChangeText={function (v) { update('lastName', v); }} />
-          </View>
-        </View>
+        <PremiumInput label={t.fullName} value={formData.fullName}
+          onChangeText={function (v) { update('fullName', v); }}
+          placeholder={t.fullNamePlaceholder} />
       </GlassCard>
 
       {/* Carte Email */}
@@ -481,158 +587,307 @@ function Phase1Identity(props) {
 }
 
 // ============================================================
-// PHASE 2 — MORPHOLOGIE (jauges circulaires)
+// PHASE 2 — MORPHOLOGIE (Scroll Pickers + Metric/Imperial + Sexe)
 // ============================================================
 
-function Phase2Morphology(props) {
+function Phase2Body(props) {
   var formData = props.formData; var setFormData = props.setFormData; var t = props.t;
+  var unitSystem = props.unitSystem; var setUnitSystem = props.setUnitSystem;
 
   function update(key, val) { var n = Object.assign({}, formData); n[key] = val; setFormData(n); }
 
-  function updateNum(key, delta, min, max) {
-    var cur = parseInt(formData[key]) || (key === 'weight' ? 70 : key === 'height' ? 175 : 25);
-    update(key, String(Math.max(min, Math.min(max, cur + delta))));
+  // Generer les valeurs selon le systeme
+  var weightValues = [];
+  var heightValues = [];
+  var ageValues = [];
+  var wi, hi, ai;
+
+  if (unitSystem === 'metric') {
+    for (wi = 30; wi <= 200; wi++) { weightValues.push(wi); }
+    for (hi = 120; hi <= 220; hi++) { heightValues.push(hi); }
+  } else {
+    for (wi = 66; wi <= 436; wi++) { weightValues.push(wi); }
+    for (hi = 48; hi <= 96; hi++) { heightValues.push(hi); }
   }
+  for (ai = 12; ai <= 94; ai++) { ageValues.push(ai); }
+
+  var weightUnit = unitSystem === 'metric' ? t.kg : t.lb;
+  var heightUnit = unitSystem === 'metric' ? t.cm : t.inUnit;
 
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
       showsVerticalScrollIndicator={false}>
 
-      {/* Poids + Taille cote a cote */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 }}>
-        <GaugeCircle
-          label={t.weightLabel} value={formData.weight} unit={t.kg} color={C.emerald}
-          onMinus={function () { updateNum('weight', -1, 30, 200); }}
-          onPlus={function () { updateNum('weight', 1, 30, 200); }}
-        />
-        <GaugeCircle
-          label={t.heightLabel} value={formData.height} unit={t.cm} color={C.turquoise}
-          onMinus={function () { updateNum('height', -1, 100, 230); }}
-          onPlus={function () { updateNum('height', 1, 100, 230); }}
-        />
+      {/* Icone phase */}
+      <View style={{ alignItems: 'center', marginBottom: 12 }}>
+        <View style={s.phaseIcon}>
+          <Ionicons name="body-outline" size={24} color={C.emerald} />
+        </View>
+        <Text style={[s.phaseTitle, { marginTop: 8 }]}>{t.p2Title}</Text>
+        <Text style={s.phaseSubtitle}>{t.p2Subtitle}</Text>
       </View>
 
-      {/* Age + Sexe cote a cote */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 24, alignItems: 'flex-start' }}>
-        <GaugeCircle
-          label={t.ageLabel} value={formData.age} unit={t.years} color={C.gold}
-          size={80} fontSize={24} unitSize={9} btnSize={30} btnIconSize={14} btnGap={16}
-          onMinus={function () { updateNum('age', -1, 10, 99); }}
-          onPlus={function () { updateNum('age', 1, 10, 99); }}
-        />
+      {/* Switch Metric/Imperial */}
+      <View style={{
+        flexDirection: 'row', alignSelf: 'center',
+        borderRadius: 12, overflow: 'hidden',
+        borderWidth: 1.2, borderColor: C.metalBorder,
+        marginBottom: 20,
+      }}>
+        <TouchableOpacity onPress={function () { setUnitSystem('metric'); }}>
+          {unitSystem === 'metric' ? (
+            <LinearGradient colors={[C.emerald, C.emeraldDark]}
+              style={{ paddingHorizontal: 20, paddingVertical: 10 }}>
+              <Text style={{ color: C.bgDeep, fontSize: 12, fontWeight: '800' }}>{t.metric}</Text>
+            </LinearGradient>
+          ) : (
+            <View style={{ paddingHorizontal: 20, paddingVertical: 10, backgroundColor: C.bgInput }}>
+              <Text style={{ color: C.textMuted, fontSize: 12, fontWeight: '600' }}>{t.metric}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <View style={{ width: 1, backgroundColor: C.metalBorder }} />
+        <TouchableOpacity onPress={function () { setUnitSystem('imperial'); }}>
+          {unitSystem === 'imperial' ? (
+            <LinearGradient colors={[C.emerald, C.emeraldDark]}
+              style={{ paddingHorizontal: 20, paddingVertical: 10 }}>
+              <Text style={{ color: C.bgDeep, fontSize: 12, fontWeight: '800' }}>{t.imperial}</Text>
+            </LinearGradient>
+          ) : (
+            <View style={{ paddingHorizontal: 20, paddingVertical: 10, backgroundColor: C.bgInput }}>
+              <Text style={{ color: C.textMuted, fontSize: 12, fontWeight: '600' }}>{t.imperial}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
 
-        {/* Sexe — deux cercles avec texte explicite */}
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: C.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 1.5, marginBottom: 8 }}>
-            {t.genderLabel}
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <TouchableOpacity onPress={function () { update('gender', 'male'); }}>
-              <View style={{
-                width: 72, height: 72, borderRadius: 36,
-                borderWidth: 1.5,
-                borderColor: formData.gender === 'male' ? C.emerald : 'rgba(62,72,85,0.3)',
-                backgroundColor: formData.gender === 'male' ? 'rgba(0,217,132,0.10)' : C.bgInput,
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Ionicons name="male" size={20}
-                  color={formData.gender === 'male' ? C.emerald : C.textMuted} />
-                <Text style={{
-                  color: formData.gender === 'male' ? C.emerald : C.textMuted,
-                  fontSize: 8, fontWeight: '700', marginTop: 2, letterSpacing: 0.5,
-                }}>
-                  {t.male}
-                </Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={function () { update('gender', 'female'); }}>
-              <View style={{
-                width: 72, height: 72, borderRadius: 36,
-                borderWidth: 1.5,
-                borderColor: formData.gender === 'female' ? C.turquoise : 'rgba(62,72,85,0.3)',
-                backgroundColor: formData.gender === 'female' ? 'rgba(0,191,166,0.10)' : C.bgInput,
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Ionicons name="female" size={20}
-                  color={formData.gender === 'female' ? C.turquoise : C.textMuted} />
-                <Text style={{
-                  color: formData.gender === 'female' ? C.turquoise : C.textMuted,
-                  fontSize: 8, fontWeight: '700', marginTop: 2, letterSpacing: 0.5,
-                }}>
-                  {t.female}
-                </Text>
-              </View>
-            </TouchableOpacity>
+      {/* 3 SCROLL PICKERS en ligne */}
+      <View style={{
+        flexDirection: 'row', justifyContent: 'space-between',
+        marginBottom: 24, gap: 8,
+      }}>
+        {/* Poids */}
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <Text style={s.scrollPickerLabel}>{t.weightLabel}</Text>
+          <View style={[s.scrollPickerContainer, { borderColor: 'rgba(0,217,132,0.15)' }]}>
+            <ScrollPicker
+              values={weightValues}
+              selectedValue={parseInt(formData.weight) || 70}
+              onSelect={function (v) { update('weight', String(v)); }}
+              unit={weightUnit}
+              color={C.emerald}
+              height={170}
+            />
+          </View>
+        </View>
+
+        {/* Taille */}
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <Text style={s.scrollPickerLabel}>{t.heightLabel}</Text>
+          <View style={[s.scrollPickerContainer, { borderColor: 'rgba(0,191,166,0.15)' }]}>
+            <ScrollPicker
+              values={heightValues}
+              selectedValue={parseInt(formData.height) || 175}
+              onSelect={function (v) { update('height', String(v)); }}
+              unit={heightUnit}
+              color={C.turquoise}
+              height={170}
+            />
+          </View>
+        </View>
+
+        {/* Age */}
+        <View style={{ flex: 0.7, alignItems: 'center' }}>
+          <Text style={s.scrollPickerLabel}>{t.ageLabel}</Text>
+          <View style={[s.scrollPickerContainer, { borderColor: 'rgba(212,175,55,0.15)' }]}>
+            <ScrollPicker
+              values={ageValues}
+              selectedValue={parseInt(formData.age) || 25}
+              onSelect={function (v) { update('age', String(v)); }}
+              unit={t.years}
+              color={C.gold}
+              height={170}
+            />
           </View>
         </View>
       </View>
 
-      {/* Niveau d'activite avec barre verticale */}
-      <Text style={[s.inputLabel, { marginBottom: 12 }]}>{t.activityLabel}</Text>
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        {/* Barre verticale */}
-        <View style={{ width: 4, borderRadius: 2, backgroundColor: 'rgba(62,72,85,0.2)', overflow: 'hidden' }}>
-          <LinearGradient
-            colors={['#00A866', '#00D984', '#00FFB2']}
-            start={{ x: 0, y: 1 }} end={{ x: 0, y: 0 }}
-            style={{
-              width: '100%',
-              height: ((formData.activityLevel + 1) / 5 * 100) + '%',
-              position: 'absolute', bottom: 0, borderRadius: 2,
-            }}
-          />
-        </View>
+      {/* SEXE — deux cercles avec texte explicite */}
+      <Text style={[s.scrollPickerLabel, { textAlign: 'center', marginBottom: 10 }]}>
+        {t.genderLabel}
+      </Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20 }}>
+        <TouchableOpacity onPress={function () { update('gender', 'male'); }}>
+          <View style={{
+            width: 70, height: 70, borderRadius: 35,
+            borderWidth: 1.5,
+            borderColor: formData.gender === 'male' ? C.emerald : 'rgba(62,72,85,0.3)',
+            backgroundColor: formData.gender === 'male' ? 'rgba(0,217,132,0.10)' : C.bgInput,
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Ionicons name="male" size={24} color={formData.gender === 'male' ? C.emerald : C.textMuted} />
+          </View>
+          <Text style={{
+            color: formData.gender === 'male' ? C.emerald : C.textMuted,
+            fontSize: 10, fontWeight: '600', textAlign: 'center', marginTop: 6,
+          }}>{t.male}</Text>
+        </TouchableOpacity>
 
-        {/* Les 5 niveaux */}
-        <View style={{ flex: 1 }}>
-          {t.activityLevels.map(function (level, i) {
-            var isSelected = formData.activityLevel === i;
-            return (
-              <TouchableOpacity key={i} onPress={function () { update('activityLevel', i); }}
-                activeOpacity={0.7} style={{ marginBottom: 8 }}>
-                <View style={{
-                  flexDirection: 'row', alignItems: 'center',
-                  paddingVertical: 12, paddingHorizontal: 14,
-                  borderRadius: 10, borderWidth: 1.2,
-                  borderColor: isSelected ? 'rgba(0,217,132,0.4)' : C.metalBorder,
-                  backgroundColor: isSelected ? 'rgba(0,217,132,0.06)' : C.bgDeep,
-                  gap: 12,
-                }}>
-                  <View style={{
-                    width: 36, height: 36, borderRadius: 10,
-                    backgroundColor: isSelected ? 'rgba(0,217,132,0.12)' : 'rgba(62,72,85,0.2)',
-                    borderWidth: 1, borderColor: isSelected ? 'rgba(0,217,132,0.25)' : 'rgba(62,72,85,0.3)',
-                    alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <Ionicons name={level.icon} size={18} color={isSelected ? C.emerald : C.textMuted} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: isSelected ? C.emerald : C.textPrimary, fontSize: 13, fontWeight: '600' }}>
-                      {level.label}
-                    </Text>
-                    <Text style={{ color: C.textMuted, fontSize: 10, marginTop: 1 }}>{level.desc}</Text>
-                  </View>
-                  {isSelected ? <Ionicons name="checkmark-circle" size={20} color={C.emerald} /> : null}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <TouchableOpacity onPress={function () { update('gender', 'female'); }}>
+          <View style={{
+            width: 70, height: 70, borderRadius: 35,
+            borderWidth: 1.5,
+            borderColor: formData.gender === 'female' ? C.turquoise : 'rgba(62,72,85,0.3)',
+            backgroundColor: formData.gender === 'female' ? 'rgba(0,191,166,0.10)' : C.bgInput,
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Ionicons name="female" size={24} color={formData.gender === 'female' ? C.turquoise : C.textMuted} />
+          </View>
+          <Text style={{
+            color: formData.gender === 'female' ? C.turquoise : C.textMuted,
+            fontSize: 10, fontWeight: '600', textAlign: 'center', marginTop: 6,
+          }}>{t.female}</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
 }
 
 // ============================================================
-// PHASE 3 — OBJECTIF
+// PHASE 3 — NIVEAU D'ACTIVITE (page dediee)
 // ============================================================
 
-function Phase3Goals(props) {
+function Phase3Activity(props) {
+  var formData = props.formData; var setFormData = props.setFormData; var t = props.t;
+
+  function update(key, val) { var n = Object.assign({}, formData); n[key] = val; setFormData(n); }
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+      showsVerticalScrollIndicator={false}>
+      <View style={{ alignItems: 'center', marginBottom: 16 }}>
+        <View style={s.phaseIcon}>
+          <Ionicons name="fitness-outline" size={24} color={C.emerald} />
+        </View>
+        <Text style={[s.phaseTitle, { marginTop: 8 }]}>{t.p3Title}</Text>
+        <Text style={s.phaseSubtitle}>{t.p3Subtitle}</Text>
+      </View>
+
+      {t.activityLevels.map(function (level, i) {
+        var sel = formData.activityLevel === i;
+        return (
+          <TouchableOpacity key={i} onPress={function () { update('activityLevel', i); }}
+            activeOpacity={0.7} style={{ marginBottom: 10 }}>
+            <View style={{
+              flexDirection: 'row', alignItems: 'center',
+              paddingVertical: 14, paddingHorizontal: 16,
+              borderRadius: 14, borderWidth: 1.2,
+              borderColor: sel ? 'rgba(0,217,132,0.4)' : 'rgba(62,72,85,0.3)',
+              backgroundColor: sel ? 'rgba(0,217,132,0.06)' : C.bgInput,
+              gap: 14,
+            }}>
+              <View style={{
+                width: 46, height: 46, borderRadius: 12,
+                backgroundColor: sel ? 'rgba(0,217,132,0.12)' : 'rgba(62,72,85,0.15)',
+                borderWidth: 1, borderColor: sel ? 'rgba(0,217,132,0.25)' : 'rgba(62,72,85,0.2)',
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Text style={{ fontSize: 22 }}>{level.emoji}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{
+                  color: sel ? C.emerald : C.textPrimary,
+                  fontSize: 14, fontWeight: '700',
+                }}>{level.label}</Text>
+                <Text style={{ color: C.textMuted, fontSize: 11, marginTop: 2 }}>{level.desc}</Text>
+              </View>
+              {sel ? <Ionicons name="checkmark-circle" size={22} color={C.emerald} /> : null}
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+// ============================================================
+// PHASE 4 — REGIME ALIMENTAIRE (5 options)
+// ============================================================
+
+function Phase4Diet(props) {
+  var formData = props.formData; var setFormData = props.setFormData; var t = props.t;
+
+  function update(key, val) { var n = Object.assign({}, formData); n[key] = val; setFormData(n); }
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+      showsVerticalScrollIndicator={false}>
+      <View style={{ alignItems: 'center', marginBottom: 16 }}>
+        <View style={[s.phaseIcon, { backgroundColor: 'rgba(0,191,166,0.08)', borderColor: 'rgba(0,191,166,0.2)' }]}>
+          <Ionicons name="restaurant-outline" size={24} color={C.turquoise} />
+        </View>
+        <Text style={[s.phaseTitle, { marginTop: 8 }]}>{t.p4Title}</Text>
+        <Text style={s.phaseSubtitle}>{t.p4Subtitle}</Text>
+      </View>
+
+      {t.diets.map(function (diet) {
+        var sel = formData.diet === diet.key;
+        return (
+          <TouchableOpacity key={diet.key}
+            onPress={function () { update('diet', diet.key); }}
+            activeOpacity={0.7} style={{ marginBottom: 10 }}>
+            <View style={{
+              flexDirection: 'row', alignItems: 'center',
+              paddingVertical: 16, paddingHorizontal: 16,
+              borderRadius: 14, borderWidth: 1.2,
+              borderColor: sel ? 'rgba(0,217,132,0.4)' : 'rgba(62,72,85,0.3)',
+              backgroundColor: sel ? 'rgba(0,217,132,0.06)' : C.bgInput,
+              gap: 14, overflow: 'hidden',
+            }}>
+              {sel ? (
+                <LinearGradient
+                  colors={['rgba(0,217,132,0.08)', 'rgba(0,217,132,0.02)', 'transparent']}
+                  style={StyleSheet.absoluteFill} />
+              ) : null}
+
+              <View style={{
+                width: 50, height: 50, borderRadius: 14,
+                backgroundColor: sel ? 'rgba(0,217,132,0.10)' : 'rgba(62,72,85,0.12)',
+                borderWidth: 1,
+                borderColor: sel ? 'rgba(0,217,132,0.2)' : 'rgba(62,72,85,0.2)',
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Text style={{ fontSize: 24 }}>{diet.icon}</Text>
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={{
+                  color: sel ? C.emerald : C.textPrimary,
+                  fontSize: 15, fontWeight: '700',
+                }}>{diet.label}</Text>
+                <Text style={{ color: C.textSecondary, fontSize: 11, marginTop: 2 }}>{diet.desc}</Text>
+                <Text style={{ color: C.textMuted, fontSize: 9, marginTop: 3, fontStyle: 'italic' }}>{diet.detail}</Text>
+              </View>
+
+              {sel ? <Ionicons name="checkmark-circle" size={22} color={C.emerald} /> : null}
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+// ============================================================
+// PHASE 5 — OBJECTIF (Perte/Maintien/Prise + kg + rythme)
+// ============================================================
+
+function Phase5Goals(props) {
   var formData = props.formData; var setFormData = props.setFormData;
   var calculations = props.calculations; var t = props.t;
 
   var paceIcons = ['rocket-outline', 'speedometer-outline', 'leaf-outline'];
-  var paceColors = ['#D4AF37', '#00D984', '#00BFA6'];
+  var paceColors = [C.gold, C.emerald, C.turquoise];
 
   function update(key, val) { var n = Object.assign({}, formData); n[key] = val; setFormData(n); }
 
@@ -640,7 +895,16 @@ function Phase3Goals(props) {
     <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
       showsVerticalScrollIndicator={false}>
 
-      {/* 3 cartes objectif avec gradient */}
+      {/* Icone phase */}
+      <View style={{ alignItems: 'center', marginBottom: 12 }}>
+        <View style={[s.phaseIcon, { backgroundColor: 'rgba(212,175,55,0.08)', borderColor: 'rgba(212,175,55,0.2)' }]}>
+          <Ionicons name="flag-outline" size={24} color={C.gold} />
+        </View>
+        <Text style={[s.phaseTitle, { marginTop: 8 }]}>{t.p5Title}</Text>
+        <Text style={s.phaseSubtitle}>{t.p5Subtitle}</Text>
+      </View>
+
+      {/* 3 cartes objectif */}
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
         {t.goals.map(function (g) {
           var selected = formData.goal === g.key;
@@ -762,7 +1026,7 @@ function Phase3Goals(props) {
             );
           })}
 
-          {/* Resume VOTRE PLAN — carte doree */}
+          {/* Resume VOTRE PLAN */}
           <View style={{
             marginTop: 16, borderRadius: 14, overflow: 'hidden',
             borderWidth: 1.5,
@@ -815,10 +1079,52 @@ function Phase3Goals(props) {
 }
 
 // ============================================================
-// PHASE 4 — EDUCATION (cards compactes)
+// FOOD ICONS BACKGROUND — emojis aliments disperses
 // ============================================================
 
-function Phase4Education(props) {
+var FOOD_MAP = {
+  bmr: ['\uD83E\uDEC0', '\uD83E\uDDE0', '\uD83D\uDCA4', '\uD83E\uDEC1', '\uD83D\uDD0B'],
+  tdee: ['\uD83C\uDFC3', '\uD83D\uDEB4', '\uD83C\uDFCB\uFE0F', '\uD83E\uDDD8', '\u26A1'],
+  protein: ['\uD83E\uDD69', '\uD83C\uDF57', '\uD83E\uDD5A', '\uD83D\uDC1F', '\uD83E\uDDC0'],
+  carbs: ['\uD83C\uDF5A', '\uD83C\uDF5E', '\uD83C\uDF4C', '\uD83E\uDD54', '\uD83C\uDF5D'],
+  fat: ['\uD83E\uDD51', '\uD83E\uDED2', '\uD83E\uDD5C', '\uD83E\uDDC8', '\uD83D\uDC1F'],
+};
+
+var FOOD_POSITIONS = [
+  { top: '55%', left: '8%', size: 36, opacity: 0.08, rotate: '-15deg' },
+  { top: '62%', right: '12%', size: 30, opacity: 0.06, rotate: '10deg' },
+  { top: '72%', left: '25%', size: 40, opacity: 0.07, rotate: '-5deg' },
+  { top: '78%', right: '30%', size: 28, opacity: 0.05, rotate: '20deg' },
+  { top: '85%', left: '50%', size: 34, opacity: 0.06, rotate: '-10deg' },
+];
+
+function FoodIconsBackground(props) {
+  var foods = FOOD_MAP[props.type] || [];
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {foods.map(function (emoji, i) {
+        var pos = FOOD_POSITIONS[i];
+        return (
+          <Text key={i} style={{
+            position: 'absolute',
+            top: pos.top, left: pos.left, right: pos.right,
+            fontSize: pos.size,
+            opacity: pos.opacity,
+            transform: [{ rotate: pos.rotate }],
+          }}>
+            {emoji}
+          </Text>
+        );
+      })}
+    </View>
+  );
+}
+
+// ============================================================
+// PHASE 6 — EDUCATION (cards compactes + food emojis)
+// ============================================================
+
+function Phase6Education(props) {
   var calculations = props.calculations; var t = props.t;
   var slides = t.slides(calculations);
 
@@ -828,8 +1134,8 @@ function Phase4Education(props) {
         <View style={[s.phaseIcon, { backgroundColor: 'rgba(212,175,55,0.08)', borderColor: 'rgba(212,175,55,0.2)' }]}>
           <Ionicons name="bulb-outline" size={24} color={C.gold} />
         </View>
-        <Text style={[s.phaseTitle, { marginTop: 8 }]}>{t.p4Title}</Text>
-        <Text style={s.phaseSubtitle}>{t.p4Subtitle}</Text>
+        <Text style={[s.phaseTitle, { marginTop: 8 }]}>{t.p6Title}</Text>
+        <Text style={s.phaseSubtitle}>{t.p6Subtitle}</Text>
       </View>
 
       <FlatList
@@ -849,7 +1155,10 @@ function Phase4Education(props) {
             }}>
               <CircuitPattern width={SCREEN_WIDTH - 60} height={350} color={item.color + '06'} />
 
-              {/* Header compact — valeur a droite */}
+              {/* Food emojis en fond */}
+              <FoodIconsBackground type={item.type} />
+
+              {/* Header compact */}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <View style={{
                   width: 36, height: 36, borderRadius: 10,
@@ -871,7 +1180,7 @@ function Phase4Education(props) {
                 </View>
               </View>
 
-              <Text style={{ color: C.textPrimary, fontSize: 11, lineHeight: 17, marginBottom: 10 }}>
+              <Text style={{ color: C.textPrimary, fontSize: 12.5, lineHeight: 19, marginBottom: 10 }}>
                 {item.explanation}
               </Text>
 
@@ -894,6 +1203,150 @@ function Phase4Education(props) {
 }
 
 // ============================================================
+// PHASE 7 — CARACTERES LIXUM (Teaser Gamification)
+// ============================================================
+
+var TEASER_LEVEL_COLORS = {
+  STANDARD: C.textSecondary,
+  RARE: C.emerald,
+  '\u00c9LITE': C.gold,
+  ELITE: C.gold,
+};
+
+var TEASER_BORDER_COLORS = {
+  STANDARD: C.metalShine,
+  RARE: C.emerald,
+  '\u00c9LITE': C.gold,
+  ELITE: C.gold,
+};
+
+function Phase7Characters(props) {
+  var t = props.t;
+  var cards = t.teaserCards;
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+      showsVerticalScrollIndicator={false}>
+
+      {/* Header */}
+      <View style={{ alignItems: 'center', marginBottom: 20 }}>
+        <View style={{
+          width: 50, height: 50, borderRadius: 12,
+          backgroundColor: 'rgba(212,175,55,0.08)',
+          borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Ionicons name="diamond-outline" size={24} color={C.gold} />
+        </View>
+        <Text style={[s.phaseTitle, { marginTop: 8 }]}>{t.p7Title}</Text>
+        <Text style={s.phaseSubtitle}>{t.p7Subtitle}</Text>
+      </View>
+
+      {/* Explication rapide */}
+      <View style={{
+        backgroundColor: 'rgba(212,175,55,0.04)',
+        borderRadius: 12, padding: 14,
+        borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)',
+        marginBottom: 20,
+      }}>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+          <Ionicons name="sparkles" size={16} color={C.gold} />
+          <Text style={{ color: C.gold, fontSize: 11, fontWeight: '700', letterSpacing: 1 }}>
+            {t.howItWorks}
+          </Text>
+        </View>
+        <Text style={{ color: C.textSecondary, fontSize: 11, lineHeight: 17 }}>
+          {t.howItWorksText}
+        </Text>
+      </View>
+
+      {/* 3 CARTES TEASER */}
+      {cards.map(function (card, i) {
+        var levelColor = TEASER_LEVEL_COLORS[card.level] || C.textSecondary;
+        var borderColor = TEASER_BORDER_COLORS[card.level] || C.metalShine;
+        return (
+          <View key={i} style={{ marginBottom: 12 }}>
+            <View style={{
+              borderRadius: 16, padding: 3,
+              borderWidth: 1.5,
+              borderTopColor: borderColor + '80',
+              borderLeftColor: borderColor + '50',
+              borderRightColor: borderColor + '30',
+              borderBottomColor: borderColor + '20',
+              backgroundColor: borderColor + '10',
+            }}>
+              <View style={{
+                borderRadius: 13, borderWidth: 1,
+                borderColor: borderColor + '25',
+                backgroundColor: '#0F1318',
+                overflow: 'hidden',
+              }}>
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  padding: 14, gap: 14,
+                }}>
+                  {/* Animal emoji */}
+                  <View style={{
+                    width: 56, height: 56, borderRadius: 14,
+                    backgroundColor: borderColor + '10',
+                    borderWidth: 1, borderColor: borderColor + '20',
+                    alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Text style={{ fontSize: 28 }}>{card.animal}</Text>
+                  </View>
+
+                  <View style={{ flex: 1 }}>
+                    {/* Badge niveau */}
+                    <View style={{
+                      alignSelf: 'flex-start',
+                      paddingHorizontal: 8, paddingVertical: 2,
+                      borderRadius: 4, marginBottom: 4,
+                      backgroundColor: levelColor + '15',
+                      borderWidth: 1, borderColor: levelColor + '30',
+                    }}>
+                      <Text style={{
+                        color: levelColor, fontSize: 8,
+                        fontWeight: '800', letterSpacing: 1.5,
+                      }}>{card.level}</Text>
+                    </View>
+
+                    <Text style={{
+                      color: C.textPrimary, fontSize: 14, fontWeight: '800',
+                      letterSpacing: 1,
+                    }}>{card.name}</Text>
+
+                    <Text style={{ color: C.textSecondary, fontSize: 10, marginTop: 3 }}>
+                      {card.power} {'\u00B7'} {card.duration}
+                    </Text>
+                  </View>
+
+                  <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
+                </View>
+              </View>
+            </View>
+          </View>
+        );
+      })}
+
+      {/* Texte d'accroche */}
+      <View style={{ alignItems: 'center', marginTop: 8 }}>
+        <Text style={{
+          color: C.textMuted, fontSize: 11, textAlign: 'center', fontStyle: 'italic',
+        }}>
+          {t.charactersFooter}
+        </Text>
+        <Text style={{
+          color: C.gold, fontSize: 12, fontWeight: '700',
+          marginTop: 6, letterSpacing: 1,
+        }}>
+          {t.firstSpin}
+        </Text>
+      </View>
+    </ScrollView>
+  );
+}
+
+// ============================================================
 // BOUTONS NAVIGATION PREMIUM
 // ============================================================
 
@@ -904,13 +1357,17 @@ function NavigationButtons(props) {
 
   var canNext = function () {
     if (step === 1) {
-      return formData.firstName && formData.lastName &&
+      return formData.fullName && formData.fullName.trim().length >= 3 &&
         formData.email && formData.email === formData.emailConfirm &&
         formData.password && formData.password.length >= 8 &&
         formData.password === formData.passwordConfirm;
     }
     if (step === 2) return formData.weight && formData.height && formData.age;
-    if (step === 3) return formData.goal !== '';
+    if (step === 3) return true;
+    if (step === 4) return formData.diet !== '';
+    if (step === 5) return formData.goal !== '';
+    if (step === 6) return true;
+    if (step === 7) return true;
     return true;
   };
   var enabled = canNext();
@@ -964,7 +1421,7 @@ function NavigationButtons(props) {
 }
 
 // ============================================================
-// APP PRINCIPALE
+// APP PRINCIPALE — 7 PHASES
 // ============================================================
 
 export default function App() {
@@ -974,15 +1431,25 @@ export default function App() {
   var _step = useState(1);
   var step = _step[0]; var setStep = _step[1];
 
-  var totalSteps = 4;
+  var _unitSystem = useState('metric');
+  var unitSystem = _unitSystem[0]; var setUnitSystem = _unitSystem[1];
+
+  var totalSteps = 7;
   var t = texts[lang];
 
   var _formData = useState({
-    firstName: '', lastName: '',
+    // Phase 1
+    fullName: '',
     email: '', emailConfirm: '',
     password: '', passwordConfirm: '',
-    weight: '', height: '', age: '',
-    gender: 'male', activityLevel: 2,
+    // Phase 2
+    weight: '70', height: '175', age: '25',
+    gender: 'male',
+    // Phase 3
+    activityLevel: 2,
+    // Phase 4
+    diet: 'classic',
+    // Phase 5
     goal: '', targetKg: 5, timelineDays: 90, paceMode: 1,
   });
   var formData = _formData[0]; var setFormData = _formData[1];
@@ -996,7 +1463,7 @@ export default function App() {
   var handleRegister = function () {
     Alert.alert(
       lang === 'fr' ? 'Inscription simul\u00e9e' : 'Registration simulated',
-      'BMR: ' + calculations.bmr + ' kcal\nTDEE: ' + calculations.tdee + ' kcal\nObjectif: ' + calculations.dailyTarget + ' kcal/jour'
+      'BMR: ' + calculations.bmr + ' kcal\nTDEE: ' + calculations.tdee + ' kcal\nObjectif: ' + calculations.dailyTarget + ' kcal/jour\nR\u00e9gime: ' + formData.diet + '\nNom: ' + formData.fullName
     );
   };
 
@@ -1020,7 +1487,7 @@ export default function App() {
                 flexDirection: 'row', alignItems: 'center',
                 paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, gap: 14,
               }}>
-                <CircularProgress step={step} total={4} />
+                <CircularProgress step={step} total={totalSteps} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: C.textPrimary, fontSize: 15, fontWeight: '700' }}>
                     {t.stepNames[step - 1]}
@@ -1058,15 +1525,18 @@ export default function App() {
                 <LinearGradient
                   colors={['#00A866', '#00D984']}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={{ height: '100%', width: (step / 4 * 100) + '%', borderRadius: 1 }} />
+                  style={{ height: '100%', width: (step / totalSteps * 100) + '%', borderRadius: 1 }} />
               </View>
 
               {/* Contenu de la phase */}
               <View style={{ flex: 1 }}>
                 {step === 1 ? <Phase1Identity formData={formData} setFormData={setFormData} t={t} /> : null}
-                {step === 2 ? <Phase2Morphology formData={formData} setFormData={setFormData} t={t} /> : null}
-                {step === 3 ? <Phase3Goals formData={formData} setFormData={setFormData} calculations={calculations} t={t} /> : null}
-                {step === 4 ? <Phase4Education calculations={calculations} t={t} /> : null}
+                {step === 2 ? <Phase2Body formData={formData} setFormData={setFormData} t={t} unitSystem={unitSystem} setUnitSystem={setUnitSystem} /> : null}
+                {step === 3 ? <Phase3Activity formData={formData} setFormData={setFormData} t={t} /> : null}
+                {step === 4 ? <Phase4Diet formData={formData} setFormData={setFormData} t={t} /> : null}
+                {step === 5 ? <Phase5Goals formData={formData} setFormData={setFormData} calculations={calculations} t={t} /> : null}
+                {step === 6 ? <Phase6Education calculations={calculations} t={t} /> : null}
+                {step === 7 ? <Phase7Characters t={t} /> : null}
               </View>
 
               {/* Boutons navigation */}
@@ -1108,20 +1578,21 @@ var s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(62,72,85,0.3)',
   },
-  inputPremiumFocused: {
-    borderColor: 'rgba(0,217,132,0.4)',
-    backgroundColor: '#0D1218',
-    shadowColor: '#00D984',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
   inputValid: {
     borderColor: 'rgba(0, 217, 132, 0.3)',
   },
   inputText: {
     color: '#EAEEF3', fontSize: 14,
     paddingHorizontal: 14, paddingVertical: 12,
+  },
+  scrollPickerLabel: {
+    color: '#8892A0', fontSize: 9, fontWeight: '700',
+    letterSpacing: 2, marginBottom: 8,
+  },
+  scrollPickerContainer: {
+    borderRadius: 14, overflow: 'hidden',
+    borderWidth: 1,
+    backgroundColor: '#0A0E14',
+    width: '100%',
   },
 });
