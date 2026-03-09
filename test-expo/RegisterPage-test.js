@@ -1,4 +1,4 @@
-// LIXUM - Register Page (Multi-Phase Wizard) v2.0 — Premium
+// LIXUM - Register Page (Multi-Phase Wizard) v5.0 — Premium 10 Phases
 // Copier-coller dans App.js sur snack.expo.dev
 // Dependances: expo-linear-gradient, @expo/vector-icons,
 //              react-native-svg, react-native-safe-area-context
@@ -9,6 +9,7 @@ import {
   View,
   Text,
   TextInput,
+  Image,
   StyleSheet,
   Dimensions,
   TouchableOpacity,
@@ -53,16 +54,13 @@ var C = {
 
 var texts = {
   fr: {
-    stepNames: ['Identit\u00e9', 'Morphologie', 'Objectif', 'D\u00e9couverte'],
-    stepDescs: ['Vos informations', 'Votre corps', 'Votre parcours', 'Vos macros'],
     // Phase 1
     p1Title: 'Cr\u00e9er votre compte',
     p1Subtitle: 'Vos informations personnelles',
     identityLabel: 'IDENTIT\u00c9',
     emailLabel: 'EMAIL',
     securityLabel: 'S\u00c9CURIT\u00c9',
-    firstName: 'Pr\u00e9nom',
-    lastName: 'Nom',
+    fullName: 'Nom complet',
     email: 'Email',
     emailConfirm: 'Confirmer l\'email',
     password: 'Mot de passe',
@@ -82,6 +80,7 @@ var texts = {
     kg: 'kg',
     cm: 'cm',
     years: 'ans',
+    // Phase 3
     activityLabel: 'Niveau d\'activit\u00e9',
     activityLevels: [
       { label: 'S\u00e9dentaire', desc: 'Peu ou pas d\'exercice', icon: 'bed-outline' },
@@ -90,9 +89,18 @@ var texts = {
       { label: 'Tr\u00e8s actif', desc: '6-7 fois/semaine', icon: 'barbell-outline' },
       { label: 'Extr\u00eamement actif', desc: 'Athl\u00e8te / travail physique', icon: 'flame-outline' },
     ],
-    // Phase 3
-    p3Title: 'Votre objectif',
-    p3Subtitle: 'Personnalisez votre parcours',
+    // Phase 4
+    dietLabel: 'R\u00e9gime alimentaire',
+    diets: [
+      { key: 'classic', label: 'Classique', desc: 'Aucune restriction', icon: 'restaurant-outline', color: '#00D984' },
+      { key: 'vegetarian', label: 'V\u00e9g\u00e9tarien', desc: 'Sans viande ni poisson', icon: 'leaf-outline', color: '#00BFA6' },
+      { key: 'vegan', label: 'V\u00e9gan', desc: 'Aucun produit animal', icon: 'flower-outline', color: '#00D984' },
+      { key: 'keto', label: 'K\u00e9to', desc: 'Faible en glucides, riche en lipides', icon: 'flame-outline', color: '#D4AF37' },
+      { key: 'halal', label: 'Halal', desc: 'Conforme aux pr\u00e9ceptes islamiques', icon: 'moon-outline', color: '#00BFA6' },
+    ],
+    // Phase 5
+    p5Title: 'Votre objectif',
+    p5Subtitle: 'Personnalisez votre parcours',
     goals: [
       { key: 'lose', label: 'Perte de poids', icon: 'trending-down-outline', color: '#00BFA6' },
       { key: 'maintain', label: 'Maintien', icon: 'swap-horizontal-outline', color: '#00D984' },
@@ -109,31 +117,28 @@ var texts = {
     fat: 'Lipides',
     gUnit: 'g',
     weeks: 'semaines',
-    // Phase 4
-    p4Title: 'Saviez-vous que ?',
-    p4Subtitle: 'Comprendre votre tableau de bord',
+    // Phase 6
+    p6Title: 'Saviez-vous que ?',
+    p6Subtitle: 'Comprendre votre tableau de bord',
     slides: function (calc) {
       return [
-        { icon: 'flame-outline', color: '#D4AF37', title: 'BMR', subtitle: 'M\u00e9tabolisme de Base', value: calc.bmr + ' kcal', explanation: 'C\'est l\'\u00e9nergie minimale que votre corps br\u00fble au repos pour maintenir ses fonctions vitales : respiration, circulation sanguine, r\u00e9gulation de la temp\u00e9rature.', funFact: 'Votre cerveau seul consomme environ 20% de votre BMR.' },
-        { icon: 'flash-outline', color: '#00D984', title: 'TDEE', subtitle: 'D\u00e9pense \u00c9nerg\u00e9tique Totale', value: calc.tdee + ' kcal', explanation: 'C\'est votre BMR + les calories br\u00fbl\u00e9es par votre activit\u00e9 physique quotidienne. C\'est LE chiffre cl\u00e9 : mangez moins \u2192 perte. Mangez plus \u2192 prise.', funFact: 'Une heure de marche rapide br\u00fble environ 300 kcal.' },
-        { icon: 'fish-outline', color: '#00BFA6', title: 'Prot\u00e9ines', subtitle: 'Les b\u00e2tisseurs du corps', value: calc.macros.protein + 'g / jour', explanation: 'Les prot\u00e9ines r\u00e9parent vos muscles, renforcent votre syst\u00e8me immunitaire et vous gardent rassasi\u00e9 plus longtemps. 1g = 4 kcal.', funFact: 'Vos cheveux, ongles et peau sont principalement faits de prot\u00e9ines.' },
-        { icon: 'leaf-outline', color: '#00D984', title: 'Glucides', subtitle: 'Le carburant de l\'\u00e9nergie', value: calc.macros.carbs + 'g / jour', explanation: 'Les glucides sont la source d\'\u00e9nergie pr\u00e9f\u00e9r\u00e9e de votre cerveau et de vos muscles. Ils ne sont pas l\'ennemi \u2014 c\'est l\'exc\u00e8s qui l\'est. 1g = 4 kcal.', funFact: 'Votre cerveau consomme environ 120g de glucides par jour.' },
-        { icon: 'water-outline', color: '#D4AF37', title: 'Lipides', subtitle: 'Les r\u00e9serves essentielles', value: calc.macros.fat + 'g / jour', explanation: 'Les lipides prot\u00e8gent vos organes, transportent les vitamines et produisent vos hormones. Tr\u00e8s denses en \u00e9nergie : 1g = 9 kcal.', funFact: '60% de votre cerveau est compos\u00e9 de graisses.' },
+        { icon: 'flame-outline', color: '#D4AF37', title: 'BMR', subtitle: 'M\u00e9tabolisme de Base', value: calc.bmr + ' kcal', explanation: 'C\'est l\'\u00e9nergie minimale que votre corps br\u00fble au repos pour maintenir ses fonctions vitales : respiration, circulation sanguine, r\u00e9gulation de la temp\u00e9rature.\n\nM\u00eame allong\u00e9 toute la journ\u00e9e, votre corps consomme cette \u00e9nergie. Le BMR repr\u00e9sente environ 60 \u00e0 75% de votre d\u00e9pense calorique totale.\n\nIl est influenc\u00e9 par votre \u00e2ge, votre poids, votre taille et votre sexe.', funFact: 'Votre cerveau seul consomme environ 20% de votre BMR.' },
+        { icon: 'flash-outline', color: '#00D984', title: 'TDEE', subtitle: 'D\u00e9pense \u00c9nerg\u00e9tique Totale', value: calc.tdee + ' kcal', explanation: 'C\'est votre BMR + les calories br\u00fbl\u00e9es par votre activit\u00e9 physique quotidienne.\n\nC\'est LE chiffre cl\u00e9 : si vous mangez moins que votre TDEE, vous perdez du poids. Si vous mangez plus, vous en gagnez.\n\nVotre TDEE change selon votre niveau d\'activit\u00e9 et votre composition corporelle.', funFact: 'Une heure de marche rapide br\u00fble environ 300 kcal.' },
+        { icon: 'fish-outline', color: '#00BFA6', title: 'Prot\u00e9ines', subtitle: 'Les b\u00e2tisseurs du corps', value: calc.macros.protein + 'g / jour', explanation: 'Les prot\u00e9ines r\u00e9parent vos muscles, renforcent votre syst\u00e8me immunitaire et vous gardent rassasi\u00e9 plus longtemps.\n\n1g de prot\u00e9ine = 4 kcal.\n\nSources principales : viande, poisson, \u0153ufs, l\u00e9gumineuses. Visez entre 1.6g et 2.2g par kg de poids corporel si vous \u00eates actif.', funFact: 'Vos cheveux, ongles et peau sont principalement faits de prot\u00e9ines.' },
+        { icon: 'leaf-outline', color: '#00D984', title: 'Glucides', subtitle: 'Le carburant de l\'\u00e9nergie', value: calc.macros.carbs + 'g / jour', explanation: 'Les glucides sont la source d\'\u00e9nergie pr\u00e9f\u00e9r\u00e9e de votre cerveau et de vos muscles pendant l\'effort.\n\n1g de glucide = 4 kcal.\n\nIls ne sont pas l\'ennemi \u2014 c\'est l\'exc\u00e8s qui l\'est. Privil\u00e9giez les glucides complexes : riz complet, patates douces, avoine.', funFact: 'Votre cerveau consomme environ 120g de glucides par jour.' },
+        { icon: 'water-outline', color: '#D4AF37', title: 'Lipides', subtitle: 'Les r\u00e9serves essentielles', value: calc.macros.fat + 'g / jour', explanation: 'Les lipides prot\u00e8gent vos organes, transportent les vitamines A, D, E, K et produisent vos hormones.\n\n1g de lipide = 9 kcal \u2014 tr\u00e8s denses en \u00e9nergie.\n\nLes bonnes graisses (om\u00e9ga-3, huile d\'olive, avocat) sont essentielles au fonctionnement de votre cerveau.', funFact: '60% de votre cerveau est compos\u00e9 de graisses.' },
       ];
     },
     next: 'Suivant',
     createAccount: 'Cr\u00e9er mon compte',
   },
   en: {
-    stepNames: ['Identity', 'Body', 'Goal', 'Discover'],
-    stepDescs: ['Your info', 'Your body', 'Your journey', 'Your macros'],
     p1Title: 'Create your account',
     p1Subtitle: 'Your personal information',
     identityLabel: 'IDENTITY',
     emailLabel: 'EMAIL',
     securityLabel: 'SECURITY',
-    firstName: 'First name',
-    lastName: 'Last name',
+    fullName: 'Full name',
     email: 'Email',
     emailConfirm: 'Confirm email',
     password: 'Password',
@@ -160,8 +165,16 @@ var texts = {
       { label: 'Very active', desc: '6-7 times/week', icon: 'barbell-outline' },
       { label: 'Extremely active', desc: 'Athlete / physical job', icon: 'flame-outline' },
     ],
-    p3Title: 'Your goal',
-    p3Subtitle: 'Customize your journey',
+    dietLabel: 'Diet type',
+    diets: [
+      { key: 'classic', label: 'Classic', desc: 'No restrictions', icon: 'restaurant-outline', color: '#00D984' },
+      { key: 'vegetarian', label: 'Vegetarian', desc: 'No meat or fish', icon: 'leaf-outline', color: '#00BFA6' },
+      { key: 'vegan', label: 'Vegan', desc: 'No animal products', icon: 'flower-outline', color: '#00D984' },
+      { key: 'keto', label: 'Keto', desc: 'Low carb, high fat', icon: 'flame-outline', color: '#D4AF37' },
+      { key: 'halal', label: 'Halal', desc: 'Islamic dietary laws', icon: 'moon-outline', color: '#00BFA6' },
+    ],
+    p5Title: 'Your goal',
+    p5Subtitle: 'Customize your journey',
     goals: [
       { key: 'lose', label: 'Weight loss', icon: 'trending-down-outline', color: '#00BFA6' },
       { key: 'maintain', label: 'Stay fit', icon: 'swap-horizontal-outline', color: '#00D984' },
@@ -178,15 +191,15 @@ var texts = {
     fat: 'Fat',
     gUnit: 'g',
     weeks: 'weeks',
-    p4Title: 'Did you know?',
-    p4Subtitle: 'Understanding your dashboard',
+    p6Title: 'Did you know?',
+    p6Subtitle: 'Understanding your dashboard',
     slides: function (calc) {
       return [
-        { icon: 'flame-outline', color: '#D4AF37', title: 'BMR', subtitle: 'Basal Metabolic Rate', value: calc.bmr + ' kcal', explanation: 'The minimum energy your body burns at rest to maintain vital functions: breathing, blood flow, temperature regulation.', funFact: 'Your brain alone uses about 20% of your BMR.' },
-        { icon: 'flash-outline', color: '#00D984', title: 'TDEE', subtitle: 'Total Daily Energy Expenditure', value: calc.tdee + ' kcal', explanation: 'Your BMR + calories burned through daily physical activity. THE key number: eat less \u2192 lose. Eat more \u2192 gain.', funFact: 'One hour of brisk walking burns about 300 kcal.' },
-        { icon: 'fish-outline', color: '#00BFA6', title: 'Protein', subtitle: 'The body builders', value: calc.macros.protein + 'g / day', explanation: 'Proteins repair muscles, strengthen your immune system, and keep you full longer. 1g = 4 kcal.', funFact: 'Your hair, nails and skin are mainly made of proteins.' },
-        { icon: 'leaf-outline', color: '#00D984', title: 'Carbs', subtitle: 'The energy fuel', value: calc.macros.carbs + 'g / day', explanation: 'Carbs are the preferred energy source for your brain and muscles. They\'re not the enemy \u2014 excess is. 1g = 4 kcal.', funFact: 'Your brain uses about 120g of carbs per day.' },
-        { icon: 'water-outline', color: '#D4AF37', title: 'Fats', subtitle: 'Essential reserves', value: calc.macros.fat + 'g / day', explanation: 'Fats protect organs, transport vitamins, and produce hormones. Very energy-dense: 1g = 9 kcal.', funFact: '60% of your brain is made of fat.' },
+        { icon: 'flame-outline', color: '#D4AF37', title: 'BMR', subtitle: 'Basal Metabolic Rate', value: calc.bmr + ' kcal', explanation: 'This is the minimum energy your body burns at rest to maintain vital functions: breathing, blood circulation, temperature regulation.\n\nEven lying down all day, your body consumes this energy. BMR represents about 60-75% of your total caloric expenditure.\n\nIt\'s influenced by your age, weight, height and gender.', funFact: 'Your brain alone consumes about 20% of your BMR.' },
+        { icon: 'flash-outline', color: '#00D984', title: 'TDEE', subtitle: 'Total Daily Energy Expenditure', value: calc.tdee + ' kcal', explanation: 'This is your BMR + calories burned by your daily physical activity.\n\nThis is THE key number: eat less than your TDEE and you lose weight. Eat more and you gain.\n\nYour TDEE changes based on your activity level and body composition.', funFact: 'One hour of brisk walking burns about 300 kcal.' },
+        { icon: 'fish-outline', color: '#00BFA6', title: 'Proteins', subtitle: 'The body builders', value: calc.macros.protein + 'g / day', explanation: 'Proteins repair your muscles, strengthen your immune system and keep you full longer.\n\n1g of protein = 4 kcal.\n\nMain sources: meat, fish, eggs, legumes. Aim for 1.6-2.2g per kg of body weight if active.', funFact: 'Your hair, nails and skin are mainly made of proteins.' },
+        { icon: 'leaf-outline', color: '#00D984', title: 'Carbs', subtitle: 'The energy fuel', value: calc.macros.carbs + 'g / day', explanation: 'Carbohydrates are the preferred energy source for your brain and muscles during exercise.\n\n1g of carb = 4 kcal.\n\nThey\'re not the enemy \u2014 excess is. Choose complex carbs: brown rice, sweet potatoes, oats.', funFact: 'Your brain consumes about 120g of carbs per day.' },
+        { icon: 'water-outline', color: '#D4AF37', title: 'Fats', subtitle: 'The essential reserves', value: calc.macros.fat + 'g / day', explanation: 'Fats protect your organs, transport vitamins A, D, E, K and produce your hormones.\n\n1g of fat = 9 kcal \u2014 very energy dense.\n\nGood fats (omega-3, olive oil, avocado) are essential for brain function.', funFact: '60% of your brain is made of fat.' },
       ];
     },
     next: 'Next',
@@ -420,7 +433,17 @@ function GaugeCircle(props) {
 }
 
 // ============================================================
-// PHASE 1 — IDENTITE (cartes glass)
+// CHARACTER IMAGES
+// ============================================================
+
+var characterImages = {
+  'GOLD CHICKEN': require('../../assets/ChickenCharacter.png'),
+  'RUBY TIGER': require('../../assets/TigerCharacter.png'),
+  'LICORNUM': require('../../assets/LicornumCharacter.png'),
+};
+
+// ============================================================
+// PHASE 1 — IDENTITE (nom complet + email + password)
 // ============================================================
 
 function Phase1Identity(props) {
@@ -436,16 +459,8 @@ function Phase1Identity(props) {
 
       {/* Carte Identite */}
       <GlassCard sectionIcon="person-outline" sectionLabel={t.identityLabel}>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <View style={{ flex: 1 }}>
-            <PremiumInput label={t.firstName} value={formData.firstName}
-              onChangeText={function (v) { update('firstName', v); }} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <PremiumInput label={t.lastName} value={formData.lastName}
-              onChangeText={function (v) { update('lastName', v); }} />
-          </View>
-        </View>
+        <PremiumInput label={t.fullName} value={formData.fullName}
+          onChangeText={function (v) { update('fullName', v); }} />
       </GlassCard>
 
       {/* Carte Email */}
@@ -481,7 +496,7 @@ function Phase1Identity(props) {
 }
 
 // ============================================================
-// PHASE 2 — MORPHOLOGIE (jauges circulaires)
+// PHASE 2 — MORPHOLOGIE (jauges circulaires) — Age centre
 // ============================================================
 
 function Phase2Morphology(props) {
@@ -512,14 +527,16 @@ function Phase2Morphology(props) {
         />
       </View>
 
-      {/* Age + Sexe cote a cote */}
+      {/* Age centre + Sexe cote a cote */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 24, alignItems: 'flex-start' }}>
-        <GaugeCircle
-          label={t.ageLabel} value={formData.age} unit={t.years} color={C.gold}
-          size={80} fontSize={24} unitSize={9} btnSize={30} btnIconSize={14} btnGap={16}
-          onMinus={function () { updateNum('age', -1, 10, 99); }}
-          onPlus={function () { updateNum('age', 1, 10, 99); }}
-        />
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <GaugeCircle
+            label={t.ageLabel} value={formData.age} unit={t.years} color={C.gold}
+            size={80} fontSize={24} unitSize={9} btnSize={30} btnIconSize={14} btnGap={16}
+            onMinus={function () { updateNum('age', -1, 10, 99); }}
+            onPlus={function () { updateNum('age', 1, 10, 99); }}
+          />
+        </View>
 
         {/* Sexe — deux cercles avec texte explicite */}
         <View style={{ alignItems: 'center' }}>
@@ -540,6 +557,7 @@ function Phase2Morphology(props) {
                 <Text style={{
                   color: formData.gender === 'male' ? C.emerald : C.textMuted,
                   fontSize: 8, fontWeight: '700', marginTop: 2, letterSpacing: 0.5,
+                  textAlign: 'center', width: '100%',
                 }}>
                   {t.male}
                 </Text>
@@ -558,6 +576,7 @@ function Phase2Morphology(props) {
                 <Text style={{
                   color: formData.gender === 'female' ? C.turquoise : C.textMuted,
                   fontSize: 8, fontWeight: '700', marginTop: 2, letterSpacing: 0.5,
+                  textAlign: 'center', width: '100%',
                 }}>
                   {t.female}
                 </Text>
@@ -566,8 +585,35 @@ function Phase2Morphology(props) {
           </View>
         </View>
       </View>
+    </ScrollView>
+  );
+}
 
-      {/* Niveau d'activite avec barre verticale */}
+// ============================================================
+// PHASE 3 — NIVEAU D'ACTIVITE
+// ============================================================
+
+function Phase3Activity(props) {
+  var formData = props.formData; var setFormData = props.setFormData; var t = props.t;
+
+  function update(key, val) { var n = Object.assign({}, formData); n[key] = val; setFormData(n); }
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+      showsVerticalScrollIndicator={false}>
+
+      <View style={{ alignItems: 'center', marginBottom: 16 }}>
+        <View style={[s.phaseIcon, { backgroundColor: 'rgba(0,217,132,0.08)', borderColor: 'rgba(0,217,132,0.2)' }]}>
+          <Ionicons name="fitness-outline" size={24} color={C.emerald} />
+        </View>
+        <Text style={[s.phaseTitle, { marginTop: 8 }]}>
+          {props.lang === 'fr' ? 'Votre activit\u00e9' : 'Your activity'}
+        </Text>
+        <Text style={s.phaseSubtitle}>
+          {props.lang === 'fr' ? 'Quel est votre rythme ?' : 'What is your rhythm?'}
+        </Text>
+      </View>
+
       <Text style={[s.inputLabel, { marginBottom: 12 }]}>{t.activityLabel}</Text>
       <View style={{ flexDirection: 'row', gap: 10 }}>
         {/* Barre verticale */}
@@ -624,10 +670,71 @@ function Phase2Morphology(props) {
 }
 
 // ============================================================
-// PHASE 3 — OBJECTIF
+// PHASE 4 — REGIME ALIMENTAIRE
 // ============================================================
 
-function Phase3Goals(props) {
+function Phase4Diet(props) {
+  var formData = props.formData; var setFormData = props.setFormData; var t = props.t;
+
+  function update(key, val) { var n = Object.assign({}, formData); n[key] = val; setFormData(n); }
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+      showsVerticalScrollIndicator={false}>
+
+      <View style={{ alignItems: 'center', marginBottom: 16 }}>
+        <View style={[s.phaseIcon, { backgroundColor: 'rgba(0,191,166,0.08)', borderColor: 'rgba(0,191,166,0.2)' }]}>
+          <Ionicons name="nutrition-outline" size={24} color={C.turquoise} />
+        </View>
+        <Text style={[s.phaseTitle, { marginTop: 8 }]}>
+          {props.lang === 'fr' ? 'Votre alimentation' : 'Your diet'}
+        </Text>
+        <Text style={s.phaseSubtitle}>
+          {props.lang === 'fr' ? 'Quel r\u00e9gime suivez-vous ?' : 'What diet do you follow?'}
+        </Text>
+      </View>
+
+      {t.diets.map(function (diet) {
+        var selected = formData.diet === diet.key;
+        return (
+          <TouchableOpacity key={diet.key} onPress={function () { update('diet', diet.key); }}
+            activeOpacity={0.7} style={{ marginBottom: 10 }}>
+            <View style={{
+              flexDirection: 'row', alignItems: 'center',
+              paddingVertical: 14, paddingHorizontal: 14,
+              borderRadius: 12, borderWidth: 1.2,
+              borderColor: selected ? diet.color + '50' : C.metalBorder,
+              backgroundColor: selected ? diet.color + '08' : C.bgDeep,
+              gap: 12,
+            }}>
+              <View style={{
+                width: 42, height: 42, borderRadius: 12,
+                backgroundColor: selected ? diet.color + '15' : 'rgba(62,72,85,0.2)',
+                borderWidth: 1, borderColor: selected ? diet.color + '30' : 'rgba(62,72,85,0.3)',
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Ionicons name={diet.icon} size={20} color={selected ? diet.color : C.textMuted} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: selected ? diet.color : C.textPrimary, fontSize: 14, fontWeight: '700' }}>
+                  {diet.label}
+                </Text>
+                <Text style={{ color: C.textMuted, fontSize: 10, marginTop: 2 }}>{diet.desc}</Text>
+              </View>
+              {selected ? <Ionicons name="checkmark-circle" size={20} color={diet.color} /> : null}
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+// ============================================================
+// PHASE 5 — OBJECTIF
+// ============================================================
+
+function Phase5Goals(props) {
   var formData = props.formData; var setFormData = props.setFormData;
   var calculations = props.calculations; var t = props.t;
 
@@ -815,10 +922,10 @@ function Phase3Goals(props) {
 }
 
 // ============================================================
-// PHASE 4 — EDUCATION (cards compactes)
+// PHASE 6 — EDUCATION (cards enrichies + fun fact en bas)
 // ============================================================
 
-function Phase4Education(props) {
+function Phase6Education(props) {
   var calculations = props.calculations; var t = props.t;
   var slides = t.slides(calculations);
 
@@ -828,8 +935,8 @@ function Phase4Education(props) {
         <View style={[s.phaseIcon, { backgroundColor: 'rgba(212,175,55,0.08)', borderColor: 'rgba(212,175,55,0.2)' }]}>
           <Ionicons name="bulb-outline" size={24} color={C.gold} />
         </View>
-        <Text style={[s.phaseTitle, { marginTop: 8 }]}>{t.p4Title}</Text>
-        <Text style={s.phaseSubtitle}>{t.p4Subtitle}</Text>
+        <Text style={[s.phaseTitle, { marginTop: 8 }]}>{t.p6Title}</Text>
+        <Text style={s.phaseSubtitle}>{t.p6Subtitle}</Text>
       </View>
 
       <FlatList
@@ -846,6 +953,7 @@ function Phase4Education(props) {
               backgroundColor: C.bgCard, borderWidth: 1.2,
               borderColor: item.color + '20',
               paddingVertical: 16, paddingHorizontal: 18, overflow: 'hidden',
+              minHeight: 350,
             }}>
               <CircuitPattern width={SCREEN_WIDTH - 60} height={350} color={item.color + '06'} />
 
@@ -871,13 +979,14 @@ function Phase4Education(props) {
                 </View>
               </View>
 
-              <Text style={{ color: C.textPrimary, fontSize: 11, lineHeight: 17, marginBottom: 10 }}>
+              <Text style={{ color: C.textPrimary, fontSize: 13.5, lineHeight: 21, marginBottom: 10 }}>
                 {item.explanation}
               </Text>
 
               <View style={{
                 flexDirection: 'row', alignItems: 'center', gap: 6,
                 backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: 8,
+                marginTop: 'auto', marginBottom: 50,
               }}>
                 <Ionicons name="sparkles" size={12} color={item.color} />
                 <Text style={{ color: C.textSecondary, fontSize: 10, flex: 1, fontStyle: 'italic' }}>
@@ -894,6 +1003,575 @@ function Phase4Education(props) {
 }
 
 // ============================================================
+// PHASE 7 — SOURCES & DONNEES
+// ============================================================
+
+function Phase7Sources(props) {
+  var lang = props.lang;
+  var sources = [
+    {
+      name: 'USDA',
+      fullName: lang === 'fr' ? 'D\u00e9partement de l\'Agriculture des \u00c9tats-Unis' : 'United States Dept. of Agriculture',
+      desc: lang === 'fr' ? 'Base FoodData Central \u2014 Plus de 300 000 aliments r\u00e9f\u00e9renc\u00e9s' : 'FoodData Central \u2014 Over 300,000 referenced foods',
+      icon: 'shield-checkmark-outline',
+      color: '#00D984',
+      flag: '\uD83C\uDDFA\uD83C\uDDF8',
+    },
+    {
+      name: 'FAO / OMS',
+      fullName: lang === 'fr' ? 'Organisation des Nations Unies pour l\'Alimentation' : 'United Nations Food & Agriculture Org.',
+      desc: lang === 'fr' ? 'Standards internationaux sur les besoins nutritionnels' : 'International standards for nutritional needs',
+      icon: 'globe-outline',
+      color: '#00BFA6',
+      flag: '\uD83C\uDDFA\uD83C\uDDF3',
+    },
+    {
+      name: 'ANSES',
+      fullName: lang === 'fr' ? 'Agence Nationale de S\u00e9curit\u00e9 Sanitaire (France)' : 'French National Safety Agency',
+      desc: lang === 'fr' ? 'Table de composition CIQUAL \u2014 R\u00e9f\u00e9rence europ\u00e9enne' : 'CIQUAL composition table \u2014 European reference',
+      icon: 'medical-outline',
+      color: '#00D984',
+      flag: '\uD83C\uDDEB\uD83C\uDDF7',
+    },
+    {
+      name: lang === 'fr' ? 'Donn\u00e9es locales' : 'Local data',
+      fullName: lang === 'fr' ? 'Institutions alimentaires r\u00e9gionales' : 'Regional food institutions',
+      desc: lang === 'fr' ? 'Aliments traditionnels africains, asiatiques et sud-am\u00e9ricains int\u00e9gr\u00e9s' : 'Traditional African, Asian and South American foods integrated',
+      icon: 'earth-outline',
+      color: '#D4AF37',
+      flag: '\uD83C\uDF0D',
+    },
+  ];
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+      showsVerticalScrollIndicator={false}>
+
+      <View style={{ alignItems: 'center', marginBottom: 16 }}>
+        <View style={{
+          width: 50, height: 50, borderRadius: 12,
+          backgroundColor: 'rgba(0,217,132,0.08)',
+          borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Ionicons name="server-outline" size={24} color="#00D984" />
+        </View>
+        <Text style={{ color: '#EAEEF3', fontSize: 22, fontWeight: '700', textAlign: 'center', marginTop: 8, marginBottom: 4 }}>
+          {lang === 'fr' ? 'Nos sources' : 'Our sources'}
+        </Text>
+        <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center' }}>
+          {lang === 'fr' ? 'Des donn\u00e9es v\u00e9rifiables et certifi\u00e9es' : 'Verifiable and certified data'}
+        </Text>
+      </View>
+
+      {/* Bandeau "Base de donnees LIXUM" */}
+      <View style={{
+        backgroundColor: 'rgba(0,217,132,0.04)',
+        borderRadius: 12, padding: 14, marginBottom: 16,
+        borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)',
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <Ionicons name="cube-outline" size={16} color="#00D984" />
+          <Text style={{ color: '#00D984', fontSize: 11, fontWeight: '700', letterSpacing: 1.5 }}>
+            {lang === 'fr' ? 'BASE DE DONN\u00c9ES LIXUM' : 'LIXUM DATABASE'}
+          </Text>
+        </View>
+        <Text style={{ color: '#8892A0', fontSize: 12, lineHeight: 18 }}>
+          {lang === 'fr'
+            ? 'Notre base nutritionnelle combine les donn\u00e9es des institutions ci-dessous, v\u00e9rifi\u00e9es et mises \u00e0 jour r\u00e9guli\u00e8rement. Chaque aliment est contr\u00f4l\u00e9 par notre algorithme de coh\u00e9rence.'
+            : 'Our nutritional database combines data from the institutions below, verified and regularly updated. Each food is checked by our consistency algorithm.'}
+        </Text>
+      </View>
+
+      {/* Les 4 sources */}
+      {sources.map(function (src, i) {
+        return (
+          <View key={i} style={{
+            flexDirection: 'row', alignItems: 'center',
+            padding: 14, borderRadius: 14,
+            backgroundColor: '#0A0E14',
+            borderWidth: 1, borderColor: src.color + '15',
+            marginBottom: 10, gap: 12,
+          }}>
+            <View style={{
+              width: 46, height: 46, borderRadius: 12,
+              backgroundColor: src.color + '10',
+              borderWidth: 1, borderColor: src.color + '20',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Text style={{ fontSize: 22 }}>{src.flag}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: '#EAEEF3', fontSize: 14, fontWeight: '700' }}>{src.name}</Text>
+              <Text style={{ color: '#8892A0', fontSize: 10, marginTop: 1 }}>{src.fullName}</Text>
+              <Text style={{ color: '#555E6C', fontSize: 9, marginTop: 3, fontStyle: 'italic' }}>{src.desc}</Text>
+            </View>
+            <Ionicons name={src.icon} size={18} color={src.color} />
+          </View>
+        );
+      })}
+
+      {/* Formules utilisees */}
+      <View style={{
+        marginTop: 8, padding: 14, borderRadius: 12,
+        backgroundColor: 'rgba(212,175,55,0.04)',
+        borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)',
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <Ionicons name="calculator-outline" size={14} color="#D4AF37" />
+          <Text style={{ color: '#D4AF37', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>
+            {lang === 'fr' ? 'FORMULES SCIENTIFIQUES' : 'SCIENTIFIC FORMULAS'}
+          </Text>
+        </View>
+        <Text style={{ color: '#8892A0', fontSize: 11, lineHeight: 17 }}>
+          {lang === 'fr'
+            ? '\u2022 BMR : Mifflin-St Jeor (la plus pr\u00e9cise selon les \u00e9tudes)\n\u2022 TDEE : BMR \u00d7 coefficient d\'activit\u00e9 valid\u00e9\n\u2022 Macros : ratios adapt\u00e9s selon l\'objectif (WHO/OMS)\n\u2022 1 kg graisse \u2248 7 700 kcal (consensus scientifique)'
+            : '\u2022 BMR: Mifflin-St Jeor (most accurate per studies)\n\u2022 TDEE: BMR \u00d7 validated activity coefficient\n\u2022 Macros: ratios adapted per goal (WHO)\n\u2022 1 kg fat \u2248 7,700 kcal (scientific consensus)'}
+        </Text>
+      </View>
+    </ScrollView>
+  );
+}
+
+// ============================================================
+// PHASE 8 — NOTIFICATIONS & CONFIDENTIALITE
+// ============================================================
+
+function Phase8Privacy(props) {
+  var formData = props.formData; var setFormData = props.setFormData; var lang = props.lang;
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+      showsVerticalScrollIndicator={false}>
+
+      <View style={{ alignItems: 'center', marginBottom: 16 }}>
+        <View style={{
+          width: 50, height: 50, borderRadius: 12,
+          backgroundColor: 'rgba(0,191,166,0.08)',
+          borderWidth: 1, borderColor: 'rgba(0,191,166,0.2)',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Ionicons name="shield-checkmark-outline" size={24} color="#00BFA6" />
+        </View>
+        <Text style={{ color: '#EAEEF3', fontSize: 22, fontWeight: '700', textAlign: 'center', marginTop: 8, marginBottom: 4 }}>
+          {lang === 'fr' ? 'S\u00e9curit\u00e9 & Notifications' : 'Security & Notifications'}
+        </Text>
+        <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center' }}>
+          {lang === 'fr' ? 'Vos donn\u00e9es, notre priorit\u00e9' : 'Your data, our priority'}
+        </Text>
+      </View>
+
+      {/* === SECTION NOTIFICATIONS === */}
+      <View style={{
+        borderRadius: 14, padding: 16, marginBottom: 14,
+        backgroundColor: '#0A0E14',
+        borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <Ionicons name="notifications-outline" size={18} color="#00D984" />
+          <Text style={{ color: '#00D984', fontSize: 12, fontWeight: '700', letterSpacing: 1 }}>
+            NOTIFICATIONS
+          </Text>
+        </View>
+
+        <Text style={{ color: '#8892A0', fontSize: 12, lineHeight: 18, marginBottom: 14 }}>
+          {lang === 'fr'
+            ? 'Recevez des rappels personnalis\u00e9s pour vos repas, vos objectifs et vos r\u00e9compenses quotidiennes.'
+            : 'Get personalized reminders for meals, goals, and daily rewards.'}
+        </Text>
+
+        {/* Toggle notifications */}
+        {[
+          {
+            key: 'notifMeals',
+            label: lang === 'fr' ? 'Rappels de repas' : 'Meal reminders',
+            desc: lang === 'fr' ? 'Petit-d\u00e9jeuner, d\u00e9jeuner, d\u00eener' : 'Breakfast, lunch, dinner',
+            icon: 'restaurant-outline',
+          },
+          {
+            key: 'notifGoals',
+            label: lang === 'fr' ? 'Suivi d\'objectifs' : 'Goal tracking',
+            desc: lang === 'fr' ? 'Alertes quand vous approchez votre quota' : 'Alerts when approaching your quota',
+            icon: 'flag-outline',
+          },
+          {
+            key: 'notifRewards',
+            label: lang === 'fr' ? 'R\u00e9compenses & Roue' : 'Rewards & Spin',
+            desc: lang === 'fr' ? 'N\'oubliez pas votre tour gratuit' : 'Don\'t forget your free spin',
+            icon: 'gift-outline',
+          },
+        ].map(function (notif) {
+          var enabled = formData[notif.key] !== false;
+          return (
+            <TouchableOpacity
+              key={notif.key}
+              onPress={function () { var n = Object.assign({}, formData); n[notif.key] = !enabled; setFormData(n); }}
+              activeOpacity={0.7}
+              style={{ marginBottom: 10 }}
+            >
+              <View style={{
+                flexDirection: 'row', alignItems: 'center', gap: 12,
+                paddingVertical: 10, paddingHorizontal: 12,
+                borderRadius: 10,
+                backgroundColor: enabled ? 'rgba(0,217,132,0.04)' : 'transparent',
+                borderWidth: 1,
+                borderColor: enabled ? 'rgba(0,217,132,0.2)' : 'rgba(62,72,85,0.2)',
+              }}>
+                <Ionicons name={notif.icon} size={18} color={enabled ? '#00D984' : '#555E6C'} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: enabled ? '#EAEEF3' : '#8892A0', fontSize: 13, fontWeight: '600' }}>
+                    {notif.label}
+                  </Text>
+                  <Text style={{ color: '#555E6C', fontSize: 9, marginTop: 1 }}>{notif.desc}</Text>
+                </View>
+                {/* Toggle visuel */}
+                <View style={{
+                  width: 42, height: 24, borderRadius: 12,
+                  backgroundColor: enabled ? '#00D984' : 'rgba(62,72,85,0.3)',
+                  padding: 2, justifyContent: 'center',
+                }}>
+                  <View style={{
+                    width: 20, height: 20, borderRadius: 10,
+                    backgroundColor: '#EAEEF3',
+                    alignSelf: enabled ? 'flex-end' : 'flex-start',
+                    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 2, shadowOffset: { width: 0, height: 1 },
+                  }} />
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* === SECTION CONFIDENTIALITE === */}
+      <View style={{
+        borderRadius: 14, padding: 16,
+        backgroundColor: '#0A0E14',
+        borderWidth: 1, borderColor: 'rgba(0,191,166,0.15)',
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <Ionicons name="lock-closed-outline" size={18} color="#00BFA6" />
+          <Text style={{ color: '#00BFA6', fontSize: 12, fontWeight: '700', letterSpacing: 1 }}>
+            {lang === 'fr' ? 'VOS DONN\u00c9ES' : 'YOUR DATA'}
+          </Text>
+        </View>
+
+        {[
+          {
+            icon: 'cloud-done-outline',
+            title: lang === 'fr' ? 'Stockage s\u00e9curis\u00e9' : 'Secure storage',
+            desc: lang === 'fr' ? 'Vos donn\u00e9es sont chiffr\u00e9es et h\u00e9berg\u00e9es sur des serveurs conformes RGPD.' : 'Your data is encrypted and hosted on GDPR-compliant servers.',
+          },
+          {
+            icon: 'eye-off-outline',
+            title: lang === 'fr' ? 'Jamais vendues' : 'Never sold',
+            desc: lang === 'fr' ? 'Vos informations personnelles ne sont jamais partag\u00e9es ni vendues \u00e0 des tiers.' : 'Your personal information is never shared or sold to third parties.',
+          },
+          {
+            icon: 'trash-outline',
+            title: lang === 'fr' ? 'Droit \u00e0 l\'oubli' : 'Right to be forgotten',
+            desc: lang === 'fr' ? 'Vous pouvez supprimer votre compte et toutes vos donn\u00e9es \u00e0 tout moment.' : 'You can delete your account and all data at any time.',
+          },
+          {
+            icon: 'finger-print',
+            title: lang === 'fr' ? 'Authentification s\u00e9curis\u00e9e' : 'Secure authentication',
+            desc: lang === 'fr' ? 'Connexion prot\u00e9g\u00e9e avec chiffrement de bout en bout.' : 'Protected login with end-to-end encryption.',
+          },
+        ].map(function (item, i) {
+          return (
+            <View key={i} style={{
+              flexDirection: 'row', gap: 10, marginBottom: i < 3 ? 12 : 0,
+              alignItems: 'flex-start',
+            }}>
+              <View style={{
+                width: 32, height: 32, borderRadius: 8,
+                backgroundColor: 'rgba(0,191,166,0.08)',
+                borderWidth: 1, borderColor: 'rgba(0,191,166,0.15)',
+                alignItems: 'center', justifyContent: 'center',
+                marginTop: 2,
+              }}>
+                <Ionicons name={item.icon} size={15} color="#00BFA6" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '600' }}>{item.title}</Text>
+                <Text style={{ color: '#555E6C', fontSize: 10, marginTop: 2, lineHeight: 15 }}>{item.desc}</Text>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </ScrollView>
+  );
+}
+
+// ============================================================
+// PHASE 9 — PARRAINAGE / CODE PROMO
+// ============================================================
+
+function Phase9Referral(props) {
+  var formData = props.formData; var setFormData = props.setFormData; var lang = props.lang;
+
+  function update(key, val) { var n = Object.assign({}, formData); n[key] = val; setFormData(n); }
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+      showsVerticalScrollIndicator={false}>
+
+      <View style={{ alignItems: 'center', marginBottom: 20 }}>
+        <View style={{
+          width: 50, height: 50, borderRadius: 12,
+          backgroundColor: 'rgba(212,175,55,0.08)',
+          borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Ionicons name="people-outline" size={24} color="#D4AF37" />
+        </View>
+        <Text style={{ color: '#EAEEF3', fontSize: 22, fontWeight: '700', textAlign: 'center', marginTop: 8, marginBottom: 4 }}>
+          {lang === 'fr' ? 'Parrainage' : 'Referral'}
+        </Text>
+        <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center' }}>
+          {lang === 'fr' ? 'Vous avez un code promo ?' : 'Do you have a promo code?'}
+        </Text>
+      </View>
+
+      {/* Illustration / accroche */}
+      <View style={{
+        backgroundColor: 'rgba(212,175,55,0.04)',
+        borderRadius: 14, padding: 16, marginBottom: 20,
+        borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)',
+        alignItems: 'center',
+      }}>
+        <Text style={{ fontSize: 40, marginBottom: 10 }}>{'\uD83C\uDF81'}</Text>
+        <Text style={{ color: '#EAEEF3', fontSize: 15, fontWeight: '700', textAlign: 'center', marginBottom: 6 }}>
+          {lang === 'fr' ? 'Bonus de bienvenue' : 'Welcome bonus'}
+        </Text>
+        <Text style={{ color: '#8892A0', fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
+          {lang === 'fr'
+            ? 'Si un influenceur ou un ami vous a recommand\u00e9 LIXUM, entrez son code pour recevoir des LX Gems bonus.'
+            : 'If an influencer or friend recommended LIXUM, enter their code to receive bonus LX Gems.'}
+        </Text>
+      </View>
+
+      {/* Champ code promo */}
+      <Text style={{
+        color: '#8892A0', fontSize: 12, fontWeight: '600',
+        marginBottom: 8, letterSpacing: 0.5,
+      }}>
+        {lang === 'fr' ? 'Code promo / parrainage' : 'Promo / referral code'}
+      </Text>
+
+      <View style={{
+        borderRadius: 12, backgroundColor: '#0A0E14',
+        borderWidth: 1.2,
+        borderColor: formData.referralCode ? 'rgba(212,175,55,0.3)' : 'rgba(62,72,85,0.3)',
+        flexDirection: 'row', alignItems: 'center',
+        paddingHorizontal: 14,
+        marginBottom: 12,
+      }}>
+        <Ionicons name="ticket-outline" size={18}
+          color={formData.referralCode ? '#D4AF37' : '#555E6C'} style={{ marginRight: 10 }} />
+        <TextInput
+          value={formData.referralCode}
+          onChangeText={function (v) { update('referralCode', v.toUpperCase()); }}
+          placeholder={lang === 'fr' ? 'Ex: LIXUM-INFLUENCEUR' : 'Ex: LIXUM-INFLUENCER'}
+          placeholderTextColor="#3E4855"
+          autoCapitalize="characters"
+          style={{
+            flex: 1, color: '#EAEEF3', fontSize: 15,
+            fontWeight: '700', letterSpacing: 1,
+            paddingVertical: 14,
+          }}
+        />
+      </View>
+
+      {/* Message optionnel */}
+      <Text style={{
+        color: '#555E6C', fontSize: 10, textAlign: 'center',
+        fontStyle: 'italic', marginBottom: 20,
+      }}>
+        {lang === 'fr'
+          ? 'Ce champ est optionnel. Vous pouvez passer cette \u00e9tape.'
+          : 'This field is optional. You can skip this step.'}
+      </Text>
+
+      {/* Avantages du parrainage */}
+      <View style={{
+        borderRadius: 12, padding: 14,
+        backgroundColor: '#0A0E14',
+        borderWidth: 1, borderColor: 'rgba(62,72,85,0.2)',
+      }}>
+        <Text style={{ color: '#8892A0', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10 }}>
+          {lang === 'fr' ? 'AVANTAGES PARRAINAGE' : 'REFERRAL BENEFITS'}
+        </Text>
+        {[
+          {
+            icon: 'diamond',
+            color: '#00D984',
+            text: lang === 'fr' ? '+100 LX Gems de bienvenue' : '+100 LX Gems welcome bonus',
+          },
+          {
+            icon: 'star-outline',
+            color: '#D4AF37',
+            text: lang === 'fr' ? 'Acc\u00e8s \u00e0 un tour de roue bonus' : 'Access to a bonus spin',
+          },
+          {
+            icon: 'heart-outline',
+            color: '#00BFA6',
+            text: lang === 'fr' ? 'Votre parrain re\u00e7oit aussi des Gems' : 'Your referrer also receives Gems',
+          },
+        ].map(function (item, i) {
+          return (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: i < 2 ? 10 : 0 }}>
+              <Ionicons name={item.icon} size={16} color={item.color} />
+              <Text style={{ color: '#EAEEF3', fontSize: 12, flex: 1 }}>{item.text}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </ScrollView>
+  );
+}
+
+// ============================================================
+// PHASE 10 — CARACTERES LIXUM (teaser gamification)
+// ============================================================
+
+function Phase10Characters(props) {
+  var lang = props.lang;
+
+  var cards = [
+    {
+      name: 'GOLD CHICKEN',
+      animal: '\uD83D\uDC14',
+      color: '#D4AF37',
+      rarity: lang === 'fr' ? 'L\u00e9gendaire' : 'Legendary',
+      power: lang === 'fr' ? 'Double les LX Gems pendant 24h' : 'Doubles LX Gems for 24h',
+    },
+    {
+      name: 'RUBY TIGER',
+      animal: '\uD83D\uDC2F',
+      color: '#FF4D4D',
+      rarity: lang === 'fr' ? '\u00c9pique' : 'Epic',
+      power: lang === 'fr' ? 'D\u00e9bloque LIXUM SCAN' : 'Unlocks LIXUM SCAN',
+    },
+    {
+      name: 'LICORNUM',
+      animal: '\uD83E\uDD84',
+      color: '#00D984',
+      rarity: lang === 'fr' ? 'Mythique' : 'Mythic',
+      power: lang === 'fr' ? 'Acc\u00e8s VIP \u00e0 toutes les recettes' : 'VIP access to all recipes',
+    },
+  ];
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+      showsVerticalScrollIndicator={false}>
+
+      <View style={{ alignItems: 'center', marginBottom: 16 }}>
+        <View style={{
+          width: 50, height: 50, borderRadius: 12,
+          backgroundColor: 'rgba(212,175,55,0.08)',
+          borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Ionicons name="game-controller-outline" size={24} color="#D4AF37" />
+        </View>
+        <Text style={{ color: '#EAEEF3', fontSize: 22, fontWeight: '700', textAlign: 'center', marginTop: 8, marginBottom: 4 }}>
+          {lang === 'fr' ? 'Caract\u00e8res LIXUM' : 'LIXUM Characters'}
+        </Text>
+        <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center' }}>
+          {lang === 'fr' ? 'Collectionnez, \u00e9changez, progressez' : 'Collect, trade, progress'}
+        </Text>
+      </View>
+
+      {/* Explication gamification */}
+      <View style={{
+        backgroundColor: 'rgba(0,217,132,0.04)',
+        borderRadius: 12, padding: 14, marginBottom: 16,
+        borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)',
+      }}>
+        <View style={{ gap: 6 }}>
+          {[
+            { emoji: '\uD83C\uDFA1', text: lang === 'fr' ? 'Tournez la roue chaque jour' : 'Spin the wheel daily' },
+            { emoji: '\uD83C\uDFAF', text: lang === 'fr' ? 'Accomplissez des missions' : 'Complete missions' },
+            { icon: 'diamond', color: '#00D984', text: lang === 'fr' ? 'Gagnez des LX Gems et des cartes' : 'Earn LX Gems and cards' },
+            { emoji: '\uD83C\uDCCF', text: lang === 'fr' ? 'Chaque carte d\u00e9bloque un pouvoir unique' : 'Each card unlocks a unique power' },
+            { emoji: '\uD83D\uDD04', text: lang === 'fr' ? 'Transf\u00e9rez vos cartes \u00e0 d\'autres membres' : 'Transfer cards to other members' },
+          ].map(function (line, i) {
+            return (
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                {line.emoji ? (
+                  <Text style={{ fontSize: 13 }}>{line.emoji}</Text>
+                ) : (
+                  <Ionicons name={line.icon} size={13} color={line.color} />
+                )}
+                <Text style={{ color: '#8892A0', fontSize: 11, flex: 1 }}>{line.text}</Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Les 3 cartes personnages */}
+      {cards.map(function (card, i) {
+        return (
+          <View key={i} style={{
+            flexDirection: 'row', alignItems: 'center',
+            padding: 14, borderRadius: 14,
+            backgroundColor: '#0A0E14',
+            borderWidth: 1, borderColor: card.color + '20',
+            marginBottom: 10, gap: 12,
+            overflow: 'hidden',
+          }}>
+            <LinearGradient
+              colors={[card.color + '10', 'transparent']}
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+            />
+            <View style={{
+              width: 50, height: 50, borderRadius: 12,
+              backgroundColor: card.color + '15',
+              borderWidth: 1, borderColor: card.color + '30',
+              alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden',
+            }}>
+              {characterImages[card.name] ? (
+                <Image source={characterImages[card.name]}
+                  style={{ width: 50, height: 50, borderRadius: 12 }} resizeMode="cover" />
+              ) : (
+                <Text style={{ fontSize: 28 }}>{card.animal}</Text>
+              )}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: card.color, fontSize: 13, fontWeight: '800', letterSpacing: 1 }}>{card.name}</Text>
+              <Text style={{ color: '#8892A0', fontSize: 9, marginTop: 2 }}>{card.rarity}</Text>
+              <Text style={{ color: '#555E6C', fontSize: 9, marginTop: 1, fontStyle: 'italic' }}>{card.power}</Text>
+            </View>
+            <Ionicons name="sparkles" size={16} color={card.color} />
+          </View>
+        );
+      })}
+
+      {/* Note teaser */}
+      <View style={{
+        marginTop: 8, padding: 12, borderRadius: 10,
+        backgroundColor: 'rgba(212,175,55,0.04)',
+        borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)',
+        alignItems: 'center',
+      }}>
+        <Text style={{ color: '#D4AF37', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>
+          {lang === 'fr' ? 'DISPONIBLE D\u00c8S VOTRE INSCRIPTION' : 'AVAILABLE UPON REGISTRATION'}
+        </Text>
+        <Text style={{ color: '#8892A0', fontSize: 10, textAlign: 'center' }}>
+          {lang === 'fr'
+            ? 'Votre premier tour de roue gratuit vous attend !'
+            : 'Your first free spin awaits!'}
+        </Text>
+      </View>
+    </ScrollView>
+  );
+}
+
+// ============================================================
 // BOUTONS NAVIGATION PREMIUM
 // ============================================================
 
@@ -903,15 +1581,24 @@ function NavigationButtons(props) {
   var onComplete = props.onComplete; var t = props.t;
 
   var canNext = function () {
-    if (step === 1) {
-      return formData.firstName && formData.lastName &&
-        formData.email && formData.email === formData.emailConfirm &&
-        formData.password && formData.password.length >= 8 &&
-        formData.password === formData.passwordConfirm;
+    switch (step) {
+      case 1:
+        return formData.fullName.trim().length >= 3 &&
+          formData.email && formData.email === formData.emailConfirm &&
+          formData.password && formData.password.length >= 8 &&
+          formData.password === formData.passwordConfirm;
+      case 2:
+        return formData.weight && formData.height && formData.age;
+      case 3: return true;  // activite a valeur par defaut
+      case 4: return formData.diet !== '';
+      case 5: return formData.goal !== '';
+      case 6: return true;  // education
+      case 7: return true;  // sources (lecture)
+      case 8: return true;  // notifications (optionnel)
+      case 9: return true;  // parrainage (optionnel)
+      case 10: return true; // teaser
+      default: return true;
     }
-    if (step === 2) return formData.weight && formData.height && formData.age;
-    if (step === 3) return formData.goal !== '';
-    return true;
   };
   var enabled = canNext();
 
@@ -964,7 +1651,7 @@ function NavigationButtons(props) {
 }
 
 // ============================================================
-// APP PRINCIPALE
+// APP PRINCIPALE — 10 PHASES
 // ============================================================
 
 export default function App() {
@@ -974,16 +1661,43 @@ export default function App() {
   var _step = useState(1);
   var step = _step[0]; var setStep = _step[1];
 
-  var totalSteps = 4;
+  var totalSteps = 10;
   var t = texts[lang];
 
+  var stepInfo = lang === 'fr' ? [
+    { title: 'Identit\u00e9', subtitle: 'Vos informations' },
+    { title: 'Corps', subtitle: 'Votre morphologie' },
+    { title: 'Activit\u00e9', subtitle: 'Votre rythme' },
+    { title: 'R\u00e9gime', subtitle: 'Votre alimentation' },
+    { title: 'Objectif', subtitle: 'Votre parcours' },
+    { title: 'Macros', subtitle: 'Vos nutriments' },
+    { title: 'Sources', subtitle: 'Nos donn\u00e9es' },
+    { title: 'S\u00e9curit\u00e9', subtitle: 'Vos donn\u00e9es' },
+    { title: 'Parrainage', subtitle: 'Code promo' },
+    { title: 'Bonus', subtitle: 'Gamification' },
+  ] : [
+    { title: 'Identity', subtitle: 'Your info' },
+    { title: 'Body', subtitle: 'Your metrics' },
+    { title: 'Activity', subtitle: 'Your rhythm' },
+    { title: 'Diet', subtitle: 'Your food' },
+    { title: 'Goal', subtitle: 'Your journey' },
+    { title: 'Macros', subtitle: 'Your nutrients' },
+    { title: 'Sources', subtitle: 'Our data' },
+    { title: 'Security', subtitle: 'Your data' },
+    { title: 'Referral', subtitle: 'Promo code' },
+    { title: 'Bonus', subtitle: 'Gamification' },
+  ];
+
   var _formData = useState({
-    firstName: '', lastName: '',
+    fullName: '',
     email: '', emailConfirm: '',
     password: '', passwordConfirm: '',
-    weight: '', height: '', age: '',
+    weight: '70', height: '175', age: '25',
     gender: 'male', activityLevel: 2,
+    diet: 'classic',
     goal: '', targetKg: 5, timelineDays: 90, paceMode: 1,
+    notifMeals: true, notifGoals: true, notifRewards: true,
+    referralCode: '',
   });
   var formData = _formData[0]; var setFormData = _formData[1];
 
@@ -994,9 +1708,10 @@ export default function App() {
       formData.paceMode, formData.timelineDays]);
 
   var handleRegister = function () {
+    var bonusGems = formData.referralCode ? 150 : 50;
     Alert.alert(
       lang === 'fr' ? 'Inscription simul\u00e9e' : 'Registration simulated',
-      'BMR: ' + calculations.bmr + ' kcal\nTDEE: ' + calculations.tdee + ' kcal\nObjectif: ' + calculations.dailyTarget + ' kcal/jour'
+      'BMR: ' + calculations.bmr + ' kcal\nTDEE: ' + calculations.tdee + ' kcal\nObjectif: ' + calculations.dailyTarget + ' kcal/jour\nLX Gems: ' + bonusGems
     );
   };
 
@@ -1018,15 +1733,15 @@ export default function App() {
               {/* Header : cercle progress + nom etape + drapeaux */}
               <View style={{
                 flexDirection: 'row', alignItems: 'center',
-                paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, gap: 14,
+                paddingHorizontal: 20, paddingTop: 8, paddingBottom: 6, gap: 14,
               }}>
-                <CircularProgress step={step} total={4} />
+                <CircularProgress step={step} total={totalSteps} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: C.textPrimary, fontSize: 15, fontWeight: '700' }}>
-                    {t.stepNames[step - 1]}
+                    {stepInfo[step - 1].title}
                   </Text>
                   <Text style={{ color: C.textMuted, fontSize: 10, marginTop: 2 }}>
-                    {t.stepDescs[step - 1]}
+                    {stepInfo[step - 1].subtitle}
                   </Text>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
@@ -1053,20 +1768,43 @@ export default function App() {
                 </View>
               </View>
 
+              {/* Dots indicateurs au lieu de labels */}
+              <View style={{
+                flexDirection: 'row', justifyContent: 'center',
+                gap: 4, marginTop: 6, marginBottom: 2,
+              }}>
+                {Array.from({ length: 10 }).map(function (_, i) {
+                  return (
+                    <View key={i} style={{
+                      width: i + 1 === step ? 16 : 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: i + 1 <= step ? '#00D984' : 'rgba(62,72,85,0.3)',
+                    }} />
+                  );
+                })}
+              </View>
+
               {/* Mini barre fine */}
-              <View style={{ height: 2, backgroundColor: 'rgba(62,72,85,0.2)', marginHorizontal: 20, marginBottom: 8 }}>
+              <View style={{ height: 2, backgroundColor: 'rgba(62,72,85,0.2)', marginHorizontal: 20, marginBottom: 8, marginTop: 6 }}>
                 <LinearGradient
                   colors={['#00A866', '#00D984']}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={{ height: '100%', width: (step / 4 * 100) + '%', borderRadius: 1 }} />
+                  style={{ height: '100%', width: (step / totalSteps * 100) + '%', borderRadius: 1 }} />
               </View>
 
               {/* Contenu de la phase */}
               <View style={{ flex: 1 }}>
-                {step === 1 ? <Phase1Identity formData={formData} setFormData={setFormData} t={t} /> : null}
-                {step === 2 ? <Phase2Morphology formData={formData} setFormData={setFormData} t={t} /> : null}
-                {step === 3 ? <Phase3Goals formData={formData} setFormData={setFormData} calculations={calculations} t={t} /> : null}
-                {step === 4 ? <Phase4Education calculations={calculations} t={t} /> : null}
+                {step === 1 ? <Phase1Identity formData={formData} setFormData={setFormData} t={t} lang={lang} /> : null}
+                {step === 2 ? <Phase2Morphology formData={formData} setFormData={setFormData} t={t} lang={lang} /> : null}
+                {step === 3 ? <Phase3Activity formData={formData} setFormData={setFormData} t={t} lang={lang} /> : null}
+                {step === 4 ? <Phase4Diet formData={formData} setFormData={setFormData} t={t} lang={lang} /> : null}
+                {step === 5 ? <Phase5Goals formData={formData} setFormData={setFormData} calculations={calculations} t={t} lang={lang} /> : null}
+                {step === 6 ? <Phase6Education calculations={calculations} t={t} lang={lang} /> : null}
+                {step === 7 ? <Phase7Sources lang={lang} /> : null}
+                {step === 8 ? <Phase8Privacy formData={formData} setFormData={setFormData} lang={lang} /> : null}
+                {step === 9 ? <Phase9Referral formData={formData} setFormData={setFormData} lang={lang} /> : null}
+                {step === 10 ? <Phase10Characters lang={lang} /> : null}
               </View>
 
               {/* Boutons navigation */}
