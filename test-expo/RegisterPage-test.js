@@ -92,11 +92,11 @@ var texts = {
     // Phase 4
     dietLabel: 'R\u00e9gime alimentaire',
     diets: [
-      { key: 'classic', label: 'Classique', desc: 'Aucune restriction', icon: 'restaurant-outline', color: '#00D984' },
-      { key: 'vegetarian', label: 'V\u00e9g\u00e9tarien', desc: 'Sans viande ni poisson', icon: 'leaf-outline', color: '#00BFA6' },
-      { key: 'vegan', label: 'V\u00e9gan', desc: 'Aucun produit animal', icon: 'flower-outline', color: '#00D984' },
-      { key: 'keto', label: 'K\u00e9to', desc: 'Faible en glucides, riche en lipides', icon: 'flame-outline', color: '#D4AF37' },
-      { key: 'halal', label: 'Halal', desc: 'Conforme aux pr\u00e9ceptes islamiques', icon: 'moon-outline', color: '#00BFA6' },
+      { key: 'classic', label: 'Classique', desc: 'Aucune restriction', icon: 'restaurant-outline', emoji: '\uD83C\uDF57', color: '#00D984' },
+      { key: 'vegetarian', label: 'V\u00e9g\u00e9tarien', desc: 'Sans viande ni poisson', icon: 'leaf-outline', emoji: '\uD83E\uDD6C', color: '#00BFA6' },
+      { key: 'vegan', label: 'V\u00e9gan', desc: 'Aucun produit animal', icon: 'flower-outline', emoji: '\uD83C\uDF31', color: '#00D984' },
+      { key: 'keto', label: 'K\u00e9to', desc: 'Faible en glucides, riche en lipides', icon: 'flame-outline', emoji: '\uD83E\uDD51', color: '#D4AF37' },
+      { key: 'halal', label: 'Halal', desc: 'Conforme aux pr\u00e9ceptes islamiques', icon: 'moon-outline', emoji: '\uD83C\uDF19', color: '#00BFA6' },
     ],
     // Phase 5
     p5Title: 'Votre objectif',
@@ -122,11 +122,11 @@ var texts = {
     p6Subtitle: 'Comprendre votre tableau de bord',
     slides: function (calc) {
       return [
-        { icon: 'flame-outline', color: '#D4AF37', title: 'BMR', subtitle: 'M\u00e9tabolisme de Base', value: calc.bmr + ' kcal', explanation: 'C\'est l\'\u00e9nergie minimale que votre corps br\u00fble au repos pour maintenir ses fonctions vitales : respiration, circulation sanguine, r\u00e9gulation de la temp\u00e9rature.\n\nM\u00eame allong\u00e9 toute la journ\u00e9e, votre corps consomme cette \u00e9nergie. Le BMR repr\u00e9sente environ 60 \u00e0 75% de votre d\u00e9pense calorique totale.\n\nIl est influenc\u00e9 par votre \u00e2ge, votre poids, votre taille et votre sexe.', funFact: 'Votre cerveau seul consomme environ 20% de votre BMR.' },
-        { icon: 'flash-outline', color: '#00D984', title: 'TDEE', subtitle: 'D\u00e9pense \u00c9nerg\u00e9tique Totale', value: calc.tdee + ' kcal', explanation: 'C\'est votre BMR + les calories br\u00fbl\u00e9es par votre activit\u00e9 physique quotidienne.\n\nC\'est LE chiffre cl\u00e9 : si vous mangez moins que votre TDEE, vous perdez du poids. Si vous mangez plus, vous en gagnez.\n\nVotre TDEE change selon votre niveau d\'activit\u00e9 et votre composition corporelle.', funFact: 'Une heure de marche rapide br\u00fble environ 300 kcal.' },
-        { icon: 'fish-outline', color: '#00BFA6', title: 'Prot\u00e9ines', subtitle: 'Les b\u00e2tisseurs du corps', value: calc.macros.protein + 'g / jour', explanation: 'Les prot\u00e9ines r\u00e9parent vos muscles, renforcent votre syst\u00e8me immunitaire et vous gardent rassasi\u00e9 plus longtemps.\n\n1g de prot\u00e9ine = 4 kcal.\n\nSources principales : viande, poisson, \u0153ufs, l\u00e9gumineuses. Visez entre 1.6g et 2.2g par kg de poids corporel si vous \u00eates actif.', funFact: 'Vos cheveux, ongles et peau sont principalement faits de prot\u00e9ines.' },
-        { icon: 'leaf-outline', color: '#00D984', title: 'Glucides', subtitle: 'Le carburant de l\'\u00e9nergie', value: calc.macros.carbs + 'g / jour', explanation: 'Les glucides sont la source d\'\u00e9nergie pr\u00e9f\u00e9r\u00e9e de votre cerveau et de vos muscles pendant l\'effort.\n\n1g de glucide = 4 kcal.\n\nIls ne sont pas l\'ennemi \u2014 c\'est l\'exc\u00e8s qui l\'est. Privil\u00e9giez les glucides complexes : riz complet, patates douces, avoine.', funFact: 'Votre cerveau consomme environ 120g de glucides par jour.' },
-        { icon: 'water-outline', color: '#D4AF37', title: 'Lipides', subtitle: 'Les r\u00e9serves essentielles', value: calc.macros.fat + 'g / jour', explanation: 'Les lipides prot\u00e8gent vos organes, transportent les vitamines A, D, E, K et produisent vos hormones.\n\n1g de lipide = 9 kcal \u2014 tr\u00e8s denses en \u00e9nergie.\n\nLes bonnes graisses (om\u00e9ga-3, huile d\'olive, avocat) sont essentielles au fonctionnement de votre cerveau.', funFact: '60% de votre cerveau est compos\u00e9 de graisses.' },
+        { icon: 'flame-outline', color: '#D4AF37', type: 'bmr', title: 'BMR', subtitle: 'M\u00e9tabolisme de Base', value: calc.bmr + ' kcal', explanation: 'C\'est l\'\u00e9nergie minimale que votre corps br\u00fble au repos pour maintenir ses fonctions vitales : respiration, circulation sanguine, r\u00e9gulation de la temp\u00e9rature.\n\nM\u00eame allong\u00e9 toute la journ\u00e9e, votre corps consomme cette \u00e9nergie. Le BMR repr\u00e9sente environ 60 \u00e0 75% de votre d\u00e9pense calorique totale.\n\nIl est influenc\u00e9 par votre \u00e2ge, votre poids, votre taille et votre sexe.', funFact: 'Votre cerveau seul consomme environ 20% de votre BMR.' },
+        { icon: 'flash-outline', color: '#00D984', type: 'tdee', title: 'TDEE', subtitle: 'D\u00e9pense \u00c9nerg\u00e9tique Totale', value: calc.tdee + ' kcal', explanation: 'C\'est votre BMR + les calories br\u00fbl\u00e9es par votre activit\u00e9 physique quotidienne.\n\nC\'est LE chiffre cl\u00e9 : si vous mangez moins que votre TDEE, vous perdez du poids. Si vous mangez plus, vous en gagnez.\n\nVotre TDEE change selon votre niveau d\'activit\u00e9 et votre composition corporelle.', funFact: 'Une heure de marche rapide br\u00fble environ 300 kcal.' },
+        { icon: 'fish-outline', color: '#00BFA6', type: 'protein', title: 'Prot\u00e9ines', subtitle: 'Les b\u00e2tisseurs du corps', value: calc.macros.protein + 'g / jour', explanation: 'Les prot\u00e9ines r\u00e9parent vos muscles, renforcent votre syst\u00e8me immunitaire et vous gardent rassasi\u00e9 plus longtemps.\n\n1g de prot\u00e9ine = 4 kcal.\n\nSources principales : viande, poisson, \u0153ufs, l\u00e9gumineuses. Visez entre 1.6g et 2.2g par kg de poids corporel si vous \u00eates actif.', funFact: 'Vos cheveux, ongles et peau sont principalement faits de prot\u00e9ines.' },
+        { icon: 'leaf-outline', color: '#00D984', type: 'carbs', title: 'Glucides', subtitle: 'Le carburant de l\'\u00e9nergie', value: calc.macros.carbs + 'g / jour', explanation: 'Les glucides sont la source d\'\u00e9nergie pr\u00e9f\u00e9r\u00e9e de votre cerveau et de vos muscles pendant l\'effort.\n\n1g de glucide = 4 kcal.\n\nIls ne sont pas l\'ennemi \u2014 c\'est l\'exc\u00e8s qui l\'est. Privil\u00e9giez les glucides complexes : riz complet, patates douces, avoine.', funFact: 'Votre cerveau consomme environ 120g de glucides par jour.' },
+        { icon: 'water-outline', color: '#D4AF37', type: 'fat', title: 'Lipides', subtitle: 'Les r\u00e9serves essentielles', value: calc.macros.fat + 'g / jour', explanation: 'Les lipides prot\u00e8gent vos organes, transportent les vitamines A, D, E, K et produisent vos hormones.\n\n1g de lipide = 9 kcal \u2014 tr\u00e8s denses en \u00e9nergie.\n\nLes bonnes graisses (om\u00e9ga-3, huile d\'olive, avocat) sont essentielles au fonctionnement de votre cerveau.', funFact: '60% de votre cerveau est compos\u00e9 de graisses.' },
       ];
     },
     next: 'Suivant',
@@ -167,11 +167,11 @@ var texts = {
     ],
     dietLabel: 'Diet type',
     diets: [
-      { key: 'classic', label: 'Classic', desc: 'No restrictions', icon: 'restaurant-outline', color: '#00D984' },
-      { key: 'vegetarian', label: 'Vegetarian', desc: 'No meat or fish', icon: 'leaf-outline', color: '#00BFA6' },
-      { key: 'vegan', label: 'Vegan', desc: 'No animal products', icon: 'flower-outline', color: '#00D984' },
-      { key: 'keto', label: 'Keto', desc: 'Low carb, high fat', icon: 'flame-outline', color: '#D4AF37' },
-      { key: 'halal', label: 'Halal', desc: 'Islamic dietary laws', icon: 'moon-outline', color: '#00BFA6' },
+      { key: 'classic', label: 'Classic', desc: 'No restrictions', icon: 'restaurant-outline', emoji: '\uD83C\uDF57', color: '#00D984' },
+      { key: 'vegetarian', label: 'Vegetarian', desc: 'No meat or fish', icon: 'leaf-outline', emoji: '\uD83E\uDD6C', color: '#00BFA6' },
+      { key: 'vegan', label: 'Vegan', desc: 'No animal products', icon: 'flower-outline', emoji: '\uD83C\uDF31', color: '#00D984' },
+      { key: 'keto', label: 'Keto', desc: 'Low carb, high fat', icon: 'flame-outline', emoji: '\uD83E\uDD51', color: '#D4AF37' },
+      { key: 'halal', label: 'Halal', desc: 'Islamic dietary laws', icon: 'moon-outline', emoji: '\uD83C\uDF19', color: '#00BFA6' },
     ],
     p5Title: 'Your goal',
     p5Subtitle: 'Customize your journey',
@@ -195,11 +195,11 @@ var texts = {
     p6Subtitle: 'Understanding your dashboard',
     slides: function (calc) {
       return [
-        { icon: 'flame-outline', color: '#D4AF37', title: 'BMR', subtitle: 'Basal Metabolic Rate', value: calc.bmr + ' kcal', explanation: 'This is the minimum energy your body burns at rest to maintain vital functions: breathing, blood circulation, temperature regulation.\n\nEven lying down all day, your body consumes this energy. BMR represents about 60-75% of your total caloric expenditure.\n\nIt\'s influenced by your age, weight, height and gender.', funFact: 'Your brain alone consumes about 20% of your BMR.' },
-        { icon: 'flash-outline', color: '#00D984', title: 'TDEE', subtitle: 'Total Daily Energy Expenditure', value: calc.tdee + ' kcal', explanation: 'This is your BMR + calories burned by your daily physical activity.\n\nThis is THE key number: eat less than your TDEE and you lose weight. Eat more and you gain.\n\nYour TDEE changes based on your activity level and body composition.', funFact: 'One hour of brisk walking burns about 300 kcal.' },
-        { icon: 'fish-outline', color: '#00BFA6', title: 'Proteins', subtitle: 'The body builders', value: calc.macros.protein + 'g / day', explanation: 'Proteins repair your muscles, strengthen your immune system and keep you full longer.\n\n1g of protein = 4 kcal.\n\nMain sources: meat, fish, eggs, legumes. Aim for 1.6-2.2g per kg of body weight if active.', funFact: 'Your hair, nails and skin are mainly made of proteins.' },
-        { icon: 'leaf-outline', color: '#00D984', title: 'Carbs', subtitle: 'The energy fuel', value: calc.macros.carbs + 'g / day', explanation: 'Carbohydrates are the preferred energy source for your brain and muscles during exercise.\n\n1g of carb = 4 kcal.\n\nThey\'re not the enemy \u2014 excess is. Choose complex carbs: brown rice, sweet potatoes, oats.', funFact: 'Your brain consumes about 120g of carbs per day.' },
-        { icon: 'water-outline', color: '#D4AF37', title: 'Fats', subtitle: 'The essential reserves', value: calc.macros.fat + 'g / day', explanation: 'Fats protect your organs, transport vitamins A, D, E, K and produce your hormones.\n\n1g of fat = 9 kcal \u2014 very energy dense.\n\nGood fats (omega-3, olive oil, avocado) are essential for brain function.', funFact: '60% of your brain is made of fat.' },
+        { icon: 'flame-outline', color: '#D4AF37', type: 'bmr', title: 'BMR', subtitle: 'Basal Metabolic Rate', value: calc.bmr + ' kcal', explanation: 'This is the minimum energy your body burns at rest to maintain vital functions: breathing, blood circulation, temperature regulation.\n\nEven lying down all day, your body consumes this energy. BMR represents about 60-75% of your total caloric expenditure.\n\nIt\'s influenced by your age, weight, height and gender.', funFact: 'Your brain alone consumes about 20% of your BMR.' },
+        { icon: 'flash-outline', color: '#00D984', type: 'tdee', title: 'TDEE', subtitle: 'Total Daily Energy Expenditure', value: calc.tdee + ' kcal', explanation: 'This is your BMR + calories burned by your daily physical activity.\n\nThis is THE key number: eat less than your TDEE and you lose weight. Eat more and you gain.\n\nYour TDEE changes based on your activity level and body composition.', funFact: 'One hour of brisk walking burns about 300 kcal.' },
+        { icon: 'fish-outline', color: '#00BFA6', type: 'protein', title: 'Proteins', subtitle: 'The body builders', value: calc.macros.protein + 'g / day', explanation: 'Proteins repair your muscles, strengthen your immune system and keep you full longer.\n\n1g of protein = 4 kcal.\n\nMain sources: meat, fish, eggs, legumes. Aim for 1.6-2.2g per kg of body weight if active.', funFact: 'Your hair, nails and skin are mainly made of proteins.' },
+        { icon: 'leaf-outline', color: '#00D984', type: 'carbs', title: 'Carbs', subtitle: 'The energy fuel', value: calc.macros.carbs + 'g / day', explanation: 'Carbohydrates are the preferred energy source for your brain and muscles during exercise.\n\n1g of carb = 4 kcal.\n\nThey\'re not the enemy \u2014 excess is. Choose complex carbs: brown rice, sweet potatoes, oats.', funFact: 'Your brain consumes about 120g of carbs per day.' },
+        { icon: 'water-outline', color: '#D4AF37', type: 'fat', title: 'Fats', subtitle: 'The essential reserves', value: calc.macros.fat + 'g / day', explanation: 'Fats protect your organs, transport vitamins A, D, E, K and produce your hormones.\n\n1g of fat = 9 kcal \u2014 very energy dense.\n\nGood fats (omega-3, olive oil, avocado) are essential for brain function.', funFact: '60% of your brain is made of fat.' },
       ];
     },
     next: 'Next',
@@ -433,6 +433,138 @@ function GaugeCircle(props) {
 }
 
 // ============================================================
+// SCROLL PICKER — roue verticale avec fondu
+// ============================================================
+
+var ScrollPicker = function (pickerProps) {
+  var values = pickerProps.values;
+  var selectedValue = pickerProps.selectedValue;
+  var onSelect = pickerProps.onSelect;
+  var unit = pickerProps.unit;
+  var color = pickerProps.color || '#00D984';
+  var pickerHeight = pickerProps.height || 170;
+  var ITEM_HEIGHT = 45;
+  var visibleItems = Math.floor(pickerHeight / ITEM_HEIGHT);
+  var paddingItems = Math.floor(visibleItems / 2);
+  var flatListRef = useRef(null);
+
+  var paddedValues = []
+    .concat(Array(paddingItems).fill(null))
+    .concat(values)
+    .concat(Array(paddingItems).fill(null));
+
+  var initialIndex = Math.max(0, values.indexOf(selectedValue));
+
+  var onMomentumScrollEnd = function (event) {
+    var index = Math.round(event.nativeEvent.contentOffset.y / ITEM_HEIGHT);
+    if (index >= 0 && index < values.length) {
+      onSelect(values[index]);
+    }
+  };
+
+  return (
+    <View style={{ height: pickerHeight, overflow: 'hidden', position: 'relative' }}>
+      {/* Ligne de selection au centre */}
+      <View style={{
+        position: 'absolute',
+        top: pickerHeight / 2 - ITEM_HEIGHT / 2,
+        left: 0, right: 0,
+        height: ITEM_HEIGHT,
+        borderTopWidth: 1, borderBottomWidth: 1,
+        borderColor: color + '30',
+        backgroundColor: color + '08',
+        borderRadius: 8,
+        zIndex: 0,
+      }} />
+
+      {/* Fondu en haut */}
+      <LinearGradient
+        colors={['#1A2232', 'rgba(26,34,50,0)']}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 50, zIndex: 2 }}
+        pointerEvents="none"
+      />
+
+      {/* Fondu en bas */}
+      <LinearGradient
+        colors={['rgba(26,34,50,0)', '#1A2232']}
+        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 50, zIndex: 2 }}
+        pointerEvents="none"
+      />
+
+      <FlatList
+        ref={flatListRef}
+        data={paddedValues}
+        keyExtractor={function (item, i) { return item + '-' + i; }}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={ITEM_HEIGHT}
+        decelerationRate="fast"
+        initialScrollIndex={initialIndex > 0 ? initialIndex + paddingItems : paddingItems}
+        getItemLayout={function (_, index) { return { length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index: index }; }}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        renderItem={function (info) {
+          var item = info.item;
+          if (item === null) return <View style={{ height: ITEM_HEIGHT }} />;
+          var isSelected = item === selectedValue;
+          return (
+            <View style={{ height: ITEM_HEIGHT, alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+              <Text style={{
+                color: isSelected ? color : '#555E6C',
+                fontSize: isSelected ? 26 : 16,
+                fontWeight: isSelected ? '800' : '400',
+                opacity: isSelected ? 1 : 0.4,
+                textAlign: 'center',
+              }}>
+                {item}{isSelected ? ' ' + unit : ''}
+              </Text>
+            </View>
+          );
+        }}
+      />
+    </View>
+  );
+};
+
+// ============================================================
+// FOOD ICONS BACKGROUND — emojis transparents en fond de carte
+// ============================================================
+
+var FoodIconsBackground = function (foodProps) {
+  var type = foodProps.type;
+  var foodMap = {
+    bmr: ['\uD83E\uDEC0', '\uD83E\uDDE0', '\uD83D\uDCA4', '\uD83E\uDEC1', '\uD83D\uDD0B'],
+    tdee: ['\uD83C\uDFC3', '\uD83D\uDEB4', '\uD83C\uDFCB\uFE0F', '\uD83E\uDDD8', '\u26A1'],
+    protein: ['\uD83E\uDD69', '\uD83C\uDF57', '\uD83E\uDD5A', '\uD83D\uDC1F', '\uD83E\uDDC0'],
+    carbs: ['\uD83C\uDF5A', '\uD83C\uDF5E', '\uD83C\uDF4C', '\uD83E\uDD54', '\uD83C\uDF5D'],
+    fat: ['\uD83E\uDD51', '\uD83E\uDED2', '\uD83E\uDD5C', '\uD83E\uDDC8', '\uD83D\uDC1F'],
+  };
+  var foods = foodMap[type] || [];
+  var positions = [
+    { top: '58%', left: '5%', size: 38, opacity: 0.09, rotate: '-15deg' },
+    { top: '65%', right: '8%', size: 32, opacity: 0.07, rotate: '10deg' },
+    { top: '74%', left: '22%', size: 42, opacity: 0.08, rotate: '-5deg' },
+    { top: '80%', right: '25%', size: 30, opacity: 0.06, rotate: '20deg' },
+    { top: '88%', left: '45%', size: 36, opacity: 0.07, rotate: '-10deg' },
+  ];
+
+  var elements = [];
+  for (var i = 0; i < foods.length; i++) {
+    var pos = positions[i];
+    elements.push(
+      <Text key={i} style={{
+        position: 'absolute',
+        top: pos.top, left: pos.left, right: pos.right,
+        fontSize: pos.size,
+        opacity: pos.opacity,
+        transform: [{ rotate: pos.rotate }],
+      }}>
+        {foods[i]}
+      </Text>
+    );
+  }
+  return <>{elements}</>;
+};
+
+// ============================================================
 // CHARACTER IMAGES
 // ============================================================
 
@@ -513,32 +645,68 @@ function Phase2Morphology(props) {
     <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
       showsVerticalScrollIndicator={false}>
 
-      {/* Poids + Taille cote a cote */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 }}>
-        <GaugeCircle
-          label={t.weightLabel} value={formData.weight} unit={t.kg} color={C.emerald}
-          onMinus={function () { updateNum('weight', -1, 30, 200); }}
-          onPlus={function () { updateNum('weight', 1, 30, 200); }}
-        />
-        <GaugeCircle
-          label={t.heightLabel} value={formData.height} unit={t.cm} color={C.turquoise}
-          onMinus={function () { updateNum('height', -1, 100, 230); }}
-          onPlus={function () { updateNum('height', 1, 100, 230); }}
-        />
-      </View>
-
-      {/* Age centre + Sexe cote a cote */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 24, alignItems: 'flex-start' }}>
+      {/* 3 SCROLL PICKERS en ligne */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24, gap: 8 }}>
+        {/* Poids — EMERAUDE */}
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <GaugeCircle
-            label={t.ageLabel} value={formData.age} unit={t.years} color={C.gold}
-            size={80} fontSize={24} unitSize={9} btnSize={30} btnIconSize={14} btnGap={16}
-            onMinus={function () { updateNum('age', -1, 10, 99); }}
-            onPlus={function () { updateNum('age', 1, 10, 99); }}
-          />
+          <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', letterSpacing: 2, marginBottom: 8 }}>
+            {t.weightLabel}
+          </Text>
+          <View style={{
+            borderRadius: 14, overflow: 'hidden', width: '100%',
+            borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)', backgroundColor: '#0A0E14',
+          }}>
+            <ScrollPicker
+              values={Array.from({ length: 171 }, function (_, i) { return 30 + i; })}
+              selectedValue={parseInt(formData.weight) || 70}
+              onSelect={function (v) { update('weight', String(v)); }}
+              unit={t.kg}
+              color="#00D984"
+            />
+          </View>
         </View>
 
-        {/* Sexe — deux cercles avec texte explicite */}
+        {/* Taille — TURQUOISE */}
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', letterSpacing: 2, marginBottom: 8 }}>
+            {t.heightLabel}
+          </Text>
+          <View style={{
+            borderRadius: 14, overflow: 'hidden', width: '100%',
+            borderWidth: 1, borderColor: 'rgba(0,191,166,0.15)', backgroundColor: '#0A0E14',
+          }}>
+            <ScrollPicker
+              values={Array.from({ length: 101 }, function (_, i) { return 120 + i; })}
+              selectedValue={parseInt(formData.height) || 175}
+              onSelect={function (v) { update('height', String(v)); }}
+              unit={t.cm}
+              color="#00BFA6"
+            />
+          </View>
+        </View>
+
+        {/* Age — DORE */}
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', letterSpacing: 2, marginBottom: 8 }}>
+            {t.ageLabel}
+          </Text>
+          <View style={{
+            borderRadius: 14, overflow: 'hidden', width: '100%',
+            borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)', backgroundColor: '#0A0E14',
+          }}>
+            <ScrollPicker
+              values={Array.from({ length: 83 }, function (_, i) { return 12 + i; })}
+              selectedValue={parseInt(formData.age) || 25}
+              onSelect={function (v) { update('age', String(v)); }}
+              unit={t.years}
+              color="#D4AF37"
+            />
+          </View>
+        </View>
+      </View>
+
+      {/* Sexe — deux cercles avec texte explicite */}
+      <View style={{ marginBottom: 24 }}>
         <View style={{ alignItems: 'center' }}>
           <Text style={{ color: C.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 1.5, marginBottom: 8 }}>
             {t.genderLabel}
@@ -708,12 +876,12 @@ function Phase4Diet(props) {
               gap: 12,
             }}>
               <View style={{
-                width: 42, height: 42, borderRadius: 12,
-                backgroundColor: selected ? diet.color + '15' : 'rgba(62,72,85,0.2)',
-                borderWidth: 1, borderColor: selected ? diet.color + '30' : 'rgba(62,72,85,0.3)',
+                width: 50, height: 50, borderRadius: 14,
+                backgroundColor: selected ? diet.color + '10' : 'rgba(62,72,85,0.12)',
+                borderWidth: 1, borderColor: selected ? diet.color + '20' : 'rgba(62,72,85,0.2)',
                 alignItems: 'center', justifyContent: 'center',
               }}>
-                <Ionicons name={diet.icon} size={20} color={selected ? diet.color : C.textMuted} />
+                <Text style={{ fontSize: 26 }}>{diet.emoji}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: selected ? diet.color : C.textPrimary, fontSize: 14, fontWeight: '700' }}>
@@ -953,9 +1121,10 @@ function Phase6Education(props) {
               backgroundColor: C.bgCard, borderWidth: 1.2,
               borderColor: item.color + '20',
               paddingVertical: 16, paddingHorizontal: 18, overflow: 'hidden',
-              minHeight: 350,
+              minHeight: 350, position: 'relative',
             }}>
               <CircuitPattern width={SCREEN_WIDTH - 60} height={350} color={item.color + '06'} />
+              <FoodIconsBackground type={item.type} />
 
               {/* Header compact — valeur a droite */}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
