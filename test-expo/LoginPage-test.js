@@ -351,8 +351,6 @@ export default function App() {
               <View style={{ alignItems: 'center', marginBottom: 6 }}>
                 <View style={{
                   width: 100, height: 100, borderRadius: 22,
-                  shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
-                  shadowOpacity: 0.5, shadowRadius: 14, elevation: 12,
                 }}>
                   {LogoImg ? (
                     <Image
@@ -427,11 +425,6 @@ export default function App() {
                       autoCapitalize="none"
                       style={s.inputText}
                     />
-                    {email.length > 0 ? (
-                      <TouchableOpacity onPress={function () { setEmail(''); }}>
-                        <Ionicons name="close-circle" size={16} color={C.textMuted} />
-                      </TouchableOpacity>
-                    ) : null}
                   </View>
 
                   {/* INPUT MOT DE PASSE */}
