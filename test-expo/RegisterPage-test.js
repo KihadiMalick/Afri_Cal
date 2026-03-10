@@ -4,7 +4,7 @@
 //              react-native-svg, react-native-safe-area-context
 // Memes dependances que WelcomePage-test.js
 
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,9 @@ import {
   Platform,
   StatusBar,
   KeyboardAvoidingView,
+  Animated,
+  PanResponder,
+  Easing,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -83,20 +86,20 @@ var texts = {
     // Phase 3
     activityLabel: 'Niveau d\'activit\u00e9',
     activityLevels: [
-      { label: 'S\u00e9dentaire', desc: 'Peu ou pas d\'exercice', icon: 'bed-outline' },
-      { label: 'L\u00e9g\u00e8rement actif', desc: '1-2 fois/semaine', icon: 'walk-outline' },
-      { label: 'Mod\u00e9r\u00e9ment actif', desc: '3-5 fois/semaine', icon: 'bicycle-outline' },
-      { label: 'Tr\u00e8s actif', desc: '6-7 fois/semaine', icon: 'barbell-outline' },
-      { label: 'Extr\u00eamement actif', desc: 'Athl\u00e8te / travail physique', icon: 'flame-outline' },
+      { label: 'S\u00e9dentaire', desc: 'Peu ou pas d\'exercice', icon: 'bed-outline', emoji: '\uD83D\uDECB\uFE0F' },
+      { label: 'L\u00e9g\u00e8rement actif', desc: '1-2 fois/semaine', icon: 'walk-outline', emoji: '\uD83D\uDEB6\u200D\u2642\uFE0F' },
+      { label: 'Mod\u00e9r\u00e9ment actif', desc: '3-5 fois/semaine', icon: 'bicycle-outline', emoji: '\uD83D\uDEB4\u200D\u2642\uFE0F' },
+      { label: 'Tr\u00e8s actif', desc: '6-7 fois/semaine', icon: 'barbell-outline', emoji: '\uD83C\uDFCB\uFE0F\u200D\u2642\uFE0F' },
+      { label: 'Extr\u00eamement actif', desc: 'Athl\u00e8te / travail physique', icon: 'flame-outline', emoji: '\uD83D\uDD25' },
     ],
     // Phase 4
     dietLabel: 'R\u00e9gime alimentaire',
     diets: [
-      { key: 'classic', label: 'Classique', desc: 'Aucune restriction', icon: 'restaurant-outline', color: '#00D984' },
-      { key: 'vegetarian', label: 'V\u00e9g\u00e9tarien', desc: 'Sans viande ni poisson', icon: 'leaf-outline', color: '#00BFA6' },
-      { key: 'vegan', label: 'V\u00e9gan', desc: 'Aucun produit animal', icon: 'flower-outline', color: '#00D984' },
-      { key: 'keto', label: 'K\u00e9to', desc: 'Faible en glucides, riche en lipides', icon: 'flame-outline', color: '#D4AF37' },
-      { key: 'halal', label: 'Halal', desc: 'Conforme aux pr\u00e9ceptes islamiques', icon: 'moon-outline', color: '#00BFA6' },
+      { key: 'classic', label: 'Classique', desc: 'Aucune restriction', icon: 'restaurant-outline', emoji: '\uD83C\uDF57', color: '#00D984' },
+      { key: 'vegetarian', label: 'V\u00e9g\u00e9tarien', desc: 'Sans viande ni poisson', icon: 'leaf-outline', emoji: '\uD83E\uDD6C', color: '#00BFA6' },
+      { key: 'vegan', label: 'V\u00e9gan', desc: 'Aucun produit animal', icon: 'flower-outline', emoji: '\uD83C\uDF31', color: '#00D984' },
+      { key: 'keto', label: 'K\u00e9to', desc: 'Faible en glucides, riche en lipides', icon: 'flame-outline', emoji: '\uD83E\uDD51', color: '#D4AF37' },
+      { key: 'halal', label: 'Halal', desc: 'Conforme aux pr\u00e9ceptes islamiques', icon: 'moon-outline', emoji: '\uD83C\uDF19', color: '#00BFA6' },
     ],
     // Phase 5
     p5Title: 'Votre objectif',
@@ -122,11 +125,11 @@ var texts = {
     p6Subtitle: 'Comprendre votre tableau de bord',
     slides: function (calc) {
       return [
-        { icon: 'flame-outline', color: '#D4AF37', title: 'BMR', subtitle: 'M\u00e9tabolisme de Base', value: calc.bmr + ' kcal', explanation: 'C\'est l\'\u00e9nergie minimale que votre corps br\u00fble au repos pour maintenir ses fonctions vitales : respiration, circulation sanguine, r\u00e9gulation de la temp\u00e9rature.\n\nM\u00eame allong\u00e9 toute la journ\u00e9e, votre corps consomme cette \u00e9nergie. Le BMR repr\u00e9sente environ 60 \u00e0 75% de votre d\u00e9pense calorique totale.\n\nIl est influenc\u00e9 par votre \u00e2ge, votre poids, votre taille et votre sexe.', funFact: 'Votre cerveau seul consomme environ 20% de votre BMR.' },
-        { icon: 'flash-outline', color: '#00D984', title: 'TDEE', subtitle: 'D\u00e9pense \u00c9nerg\u00e9tique Totale', value: calc.tdee + ' kcal', explanation: 'C\'est votre BMR + les calories br\u00fbl\u00e9es par votre activit\u00e9 physique quotidienne.\n\nC\'est LE chiffre cl\u00e9 : si vous mangez moins que votre TDEE, vous perdez du poids. Si vous mangez plus, vous en gagnez.\n\nVotre TDEE change selon votre niveau d\'activit\u00e9 et votre composition corporelle.', funFact: 'Une heure de marche rapide br\u00fble environ 300 kcal.' },
-        { icon: 'fish-outline', color: '#00BFA6', title: 'Prot\u00e9ines', subtitle: 'Les b\u00e2tisseurs du corps', value: calc.macros.protein + 'g / jour', explanation: 'Les prot\u00e9ines r\u00e9parent vos muscles, renforcent votre syst\u00e8me immunitaire et vous gardent rassasi\u00e9 plus longtemps.\n\n1g de prot\u00e9ine = 4 kcal.\n\nSources principales : viande, poisson, \u0153ufs, l\u00e9gumineuses. Visez entre 1.6g et 2.2g par kg de poids corporel si vous \u00eates actif.', funFact: 'Vos cheveux, ongles et peau sont principalement faits de prot\u00e9ines.' },
-        { icon: 'leaf-outline', color: '#00D984', title: 'Glucides', subtitle: 'Le carburant de l\'\u00e9nergie', value: calc.macros.carbs + 'g / jour', explanation: 'Les glucides sont la source d\'\u00e9nergie pr\u00e9f\u00e9r\u00e9e de votre cerveau et de vos muscles pendant l\'effort.\n\n1g de glucide = 4 kcal.\n\nIls ne sont pas l\'ennemi \u2014 c\'est l\'exc\u00e8s qui l\'est. Privil\u00e9giez les glucides complexes : riz complet, patates douces, avoine.', funFact: 'Votre cerveau consomme environ 120g de glucides par jour.' },
-        { icon: 'water-outline', color: '#D4AF37', title: 'Lipides', subtitle: 'Les r\u00e9serves essentielles', value: calc.macros.fat + 'g / jour', explanation: 'Les lipides prot\u00e8gent vos organes, transportent les vitamines A, D, E, K et produisent vos hormones.\n\n1g de lipide = 9 kcal \u2014 tr\u00e8s denses en \u00e9nergie.\n\nLes bonnes graisses (om\u00e9ga-3, huile d\'olive, avocat) sont essentielles au fonctionnement de votre cerveau.', funFact: '60% de votre cerveau est compos\u00e9 de graisses.' },
+        { icon: 'flame-outline', color: '#D4AF37', type: 'bmr', title: 'BMR', subtitle: 'M\u00e9tabolisme de Base', value: calc.bmr + ' kcal', explanation: 'C\'est l\'\u00e9nergie minimale que votre corps br\u00fble au repos pour maintenir ses fonctions vitales : respiration, circulation sanguine, r\u00e9gulation de la temp\u00e9rature.\n\nM\u00eame allong\u00e9 toute la journ\u00e9e, votre corps consomme cette \u00e9nergie. Le BMR repr\u00e9sente environ 60 \u00e0 75% de votre d\u00e9pense calorique totale.\n\nIl est influenc\u00e9 par votre \u00e2ge, votre poids, votre taille et votre sexe.', funFact: 'Votre cerveau seul consomme environ 20% de votre BMR.' },
+        { icon: 'flash-outline', color: '#00D984', type: 'tdee', title: 'TDEE', subtitle: 'D\u00e9pense \u00c9nerg\u00e9tique Totale', value: calc.tdee + ' kcal', explanation: 'C\'est votre BMR + les calories br\u00fbl\u00e9es par votre activit\u00e9 physique quotidienne.\n\nC\'est LE chiffre cl\u00e9 : si vous mangez moins que votre TDEE, vous perdez du poids. Si vous mangez plus, vous en gagnez.\n\nVotre TDEE change selon votre niveau d\'activit\u00e9 et votre composition corporelle.', funFact: 'Une heure de marche rapide br\u00fble environ 300 kcal.' },
+        { icon: 'fish-outline', color: '#00BFA6', type: 'protein', title: 'Prot\u00e9ines', subtitle: 'Les b\u00e2tisseurs du corps', value: calc.macros.protein + 'g / jour', explanation: 'Les prot\u00e9ines r\u00e9parent vos muscles, renforcent votre syst\u00e8me immunitaire et vous gardent rassasi\u00e9 plus longtemps.\n\n1g de prot\u00e9ine = 4 kcal.\n\nSources principales : viande, poisson, \u0153ufs, l\u00e9gumineuses. Visez entre 1.6g et 2.2g par kg de poids corporel si vous \u00eates actif.', funFact: 'Vos cheveux, ongles et peau sont principalement faits de prot\u00e9ines.' },
+        { icon: 'leaf-outline', color: '#00D984', type: 'carbs', title: 'Glucides', subtitle: 'Le carburant de l\'\u00e9nergie', value: calc.macros.carbs + 'g / jour', explanation: 'Les glucides sont la source d\'\u00e9nergie pr\u00e9f\u00e9r\u00e9e de votre cerveau et de vos muscles pendant l\'effort.\n\n1g de glucide = 4 kcal.\n\nIls ne sont pas l\'ennemi \u2014 c\'est l\'exc\u00e8s qui l\'est. Privil\u00e9giez les glucides complexes : riz complet, patates douces, avoine.', funFact: 'Votre cerveau consomme environ 120g de glucides par jour.' },
+        { icon: 'water-outline', color: '#D4AF37', type: 'fat', title: 'Lipides', subtitle: 'Les r\u00e9serves essentielles', value: calc.macros.fat + 'g / jour', explanation: 'Les lipides prot\u00e8gent vos organes, transportent les vitamines A, D, E, K et produisent vos hormones.\n\n1g de lipide = 9 kcal \u2014 tr\u00e8s denses en \u00e9nergie.\n\nLes bonnes graisses (om\u00e9ga-3, huile d\'olive, avocat) sont essentielles au fonctionnement de votre cerveau.', funFact: '60% de votre cerveau est compos\u00e9 de graisses.' },
       ];
     },
     next: 'Suivant',
@@ -159,19 +162,19 @@ var texts = {
     years: 'yrs',
     activityLabel: 'Activity level',
     activityLevels: [
-      { label: 'Sedentary', desc: 'Little or no exercise', icon: 'bed-outline' },
-      { label: 'Lightly active', desc: '1-2 times/week', icon: 'walk-outline' },
-      { label: 'Moderately active', desc: '3-5 times/week', icon: 'bicycle-outline' },
-      { label: 'Very active', desc: '6-7 times/week', icon: 'barbell-outline' },
-      { label: 'Extremely active', desc: 'Athlete / physical job', icon: 'flame-outline' },
+      { label: 'Sedentary', desc: 'Little or no exercise', icon: 'bed-outline', emoji: '\uD83D\uDECB\uFE0F' },
+      { label: 'Lightly active', desc: '1-2 times/week', icon: 'walk-outline', emoji: '\uD83D\uDEB6\u200D\u2642\uFE0F' },
+      { label: 'Moderately active', desc: '3-5 times/week', icon: 'bicycle-outline', emoji: '\uD83D\uDEB4\u200D\u2642\uFE0F' },
+      { label: 'Very active', desc: '6-7 times/week', icon: 'barbell-outline', emoji: '\uD83C\uDFCB\uFE0F\u200D\u2642\uFE0F' },
+      { label: 'Extremely active', desc: 'Athlete / physical job', icon: 'flame-outline', emoji: '\uD83D\uDD25' },
     ],
     dietLabel: 'Diet type',
     diets: [
-      { key: 'classic', label: 'Classic', desc: 'No restrictions', icon: 'restaurant-outline', color: '#00D984' },
-      { key: 'vegetarian', label: 'Vegetarian', desc: 'No meat or fish', icon: 'leaf-outline', color: '#00BFA6' },
-      { key: 'vegan', label: 'Vegan', desc: 'No animal products', icon: 'flower-outline', color: '#00D984' },
-      { key: 'keto', label: 'Keto', desc: 'Low carb, high fat', icon: 'flame-outline', color: '#D4AF37' },
-      { key: 'halal', label: 'Halal', desc: 'Islamic dietary laws', icon: 'moon-outline', color: '#00BFA6' },
+      { key: 'classic', label: 'Classic', desc: 'No restrictions', icon: 'restaurant-outline', emoji: '\uD83C\uDF57', color: '#00D984' },
+      { key: 'vegetarian', label: 'Vegetarian', desc: 'No meat or fish', icon: 'leaf-outline', emoji: '\uD83E\uDD6C', color: '#00BFA6' },
+      { key: 'vegan', label: 'Vegan', desc: 'No animal products', icon: 'flower-outline', emoji: '\uD83C\uDF31', color: '#00D984' },
+      { key: 'keto', label: 'Keto', desc: 'Low carb, high fat', icon: 'flame-outline', emoji: '\uD83E\uDD51', color: '#D4AF37' },
+      { key: 'halal', label: 'Halal', desc: 'Islamic dietary laws', icon: 'moon-outline', emoji: '\uD83C\uDF19', color: '#00BFA6' },
     ],
     p5Title: 'Your goal',
     p5Subtitle: 'Customize your journey',
@@ -195,11 +198,11 @@ var texts = {
     p6Subtitle: 'Understanding your dashboard',
     slides: function (calc) {
       return [
-        { icon: 'flame-outline', color: '#D4AF37', title: 'BMR', subtitle: 'Basal Metabolic Rate', value: calc.bmr + ' kcal', explanation: 'This is the minimum energy your body burns at rest to maintain vital functions: breathing, blood circulation, temperature regulation.\n\nEven lying down all day, your body consumes this energy. BMR represents about 60-75% of your total caloric expenditure.\n\nIt\'s influenced by your age, weight, height and gender.', funFact: 'Your brain alone consumes about 20% of your BMR.' },
-        { icon: 'flash-outline', color: '#00D984', title: 'TDEE', subtitle: 'Total Daily Energy Expenditure', value: calc.tdee + ' kcal', explanation: 'This is your BMR + calories burned by your daily physical activity.\n\nThis is THE key number: eat less than your TDEE and you lose weight. Eat more and you gain.\n\nYour TDEE changes based on your activity level and body composition.', funFact: 'One hour of brisk walking burns about 300 kcal.' },
-        { icon: 'fish-outline', color: '#00BFA6', title: 'Proteins', subtitle: 'The body builders', value: calc.macros.protein + 'g / day', explanation: 'Proteins repair your muscles, strengthen your immune system and keep you full longer.\n\n1g of protein = 4 kcal.\n\nMain sources: meat, fish, eggs, legumes. Aim for 1.6-2.2g per kg of body weight if active.', funFact: 'Your hair, nails and skin are mainly made of proteins.' },
-        { icon: 'leaf-outline', color: '#00D984', title: 'Carbs', subtitle: 'The energy fuel', value: calc.macros.carbs + 'g / day', explanation: 'Carbohydrates are the preferred energy source for your brain and muscles during exercise.\n\n1g of carb = 4 kcal.\n\nThey\'re not the enemy \u2014 excess is. Choose complex carbs: brown rice, sweet potatoes, oats.', funFact: 'Your brain consumes about 120g of carbs per day.' },
-        { icon: 'water-outline', color: '#D4AF37', title: 'Fats', subtitle: 'The essential reserves', value: calc.macros.fat + 'g / day', explanation: 'Fats protect your organs, transport vitamins A, D, E, K and produce your hormones.\n\n1g of fat = 9 kcal \u2014 very energy dense.\n\nGood fats (omega-3, olive oil, avocado) are essential for brain function.', funFact: '60% of your brain is made of fat.' },
+        { icon: 'flame-outline', color: '#D4AF37', type: 'bmr', title: 'BMR', subtitle: 'Basal Metabolic Rate', value: calc.bmr + ' kcal', explanation: 'This is the minimum energy your body burns at rest to maintain vital functions: breathing, blood circulation, temperature regulation.\n\nEven lying down all day, your body consumes this energy. BMR represents about 60-75% of your total caloric expenditure.\n\nIt\'s influenced by your age, weight, height and gender.', funFact: 'Your brain alone consumes about 20% of your BMR.' },
+        { icon: 'flash-outline', color: '#00D984', type: 'tdee', title: 'TDEE', subtitle: 'Total Daily Energy Expenditure', value: calc.tdee + ' kcal', explanation: 'This is your BMR + calories burned by your daily physical activity.\n\nThis is THE key number: eat less than your TDEE and you lose weight. Eat more and you gain.\n\nYour TDEE changes based on your activity level and body composition.', funFact: 'One hour of brisk walking burns about 300 kcal.' },
+        { icon: 'fish-outline', color: '#00BFA6', type: 'protein', title: 'Proteins', subtitle: 'The body builders', value: calc.macros.protein + 'g / day', explanation: 'Proteins repair your muscles, strengthen your immune system and keep you full longer.\n\n1g of protein = 4 kcal.\n\nMain sources: meat, fish, eggs, legumes. Aim for 1.6-2.2g per kg of body weight if active.', funFact: 'Your hair, nails and skin are mainly made of proteins.' },
+        { icon: 'leaf-outline', color: '#00D984', type: 'carbs', title: 'Carbs', subtitle: 'The energy fuel', value: calc.macros.carbs + 'g / day', explanation: 'Carbohydrates are the preferred energy source for your brain and muscles during exercise.\n\n1g of carb = 4 kcal.\n\nThey\'re not the enemy \u2014 excess is. Choose complex carbs: brown rice, sweet potatoes, oats.', funFact: 'Your brain consumes about 120g of carbs per day.' },
+        { icon: 'water-outline', color: '#D4AF37', type: 'fat', title: 'Fats', subtitle: 'The essential reserves', value: calc.macros.fat + 'g / day', explanation: 'Fats protect your organs, transport vitamins A, D, E, K and produce your hormones.\n\n1g of fat = 9 kcal \u2014 very energy dense.\n\nGood fats (omega-3, olive oil, avocado) are essential for brain function.', funFact: '60% of your brain is made of fat.' },
       ];
     },
     next: 'Next',
@@ -433,13 +436,208 @@ function GaugeCircle(props) {
 }
 
 // ============================================================
+// SCROLL PICKER — roue verticale avec fondu
+// ============================================================
+
+var ScrollPicker = function (pickerProps) {
+  var values = pickerProps.values;
+  var selectedValue = pickerProps.selectedValue;
+  var onSelect = pickerProps.onSelect;
+  var unit = pickerProps.unit;
+  var color = pickerProps.color || '#00D984';
+  var pickerHeight = pickerProps.height || 260;
+  var ITEM_H = 50;
+  var scrollRef = useRef(null);
+  var paddingTop = pickerHeight / 2 - ITEM_H / 2;
+  var paddingBottom = pickerHeight / 2 - ITEM_H / 2;
+  var isScrollingRef = useRef(false);
+
+  var initialIdx = Math.max(0, values.indexOf(selectedValue));
+
+  useEffect(function () {
+    var timer = setTimeout(function () {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo({
+          y: initialIdx * ITEM_H,
+          animated: false,
+        });
+      }
+    }, 100);
+    return function () { clearTimeout(timer); };
+  }, [initialIdx, ITEM_H]);
+
+  var snapToNearest = useCallback(function (event) {
+    var y = event.nativeEvent.contentOffset.y;
+    var idx = Math.round(y / ITEM_H);
+    var clamped = Math.max(0, Math.min(idx, values.length - 1));
+
+    if (values[clamped] !== selectedValue) {
+      onSelect(values[clamped]);
+    }
+    isScrollingRef.current = false;
+  }, [values, selectedValue, onSelect, ITEM_H]);
+
+  var handleScrollEndDrag = useCallback(function (event) {
+    var velocity = event.nativeEvent.velocity;
+    // Only snap manually if there is no momentum (user lifted finger gently)
+    if (!velocity || (Math.abs(velocity.y) < 0.1)) {
+      snapToNearest(event);
+    } else {
+      // Momentum will handle it via onMomentumScrollEnd
+      isScrollingRef.current = true;
+    }
+  }, [snapToNearest]);
+
+  var handleMomentumEnd = useCallback(function (event) {
+    snapToNearest(event);
+  }, [snapToNearest]);
+
+  var items = [];
+  for (var i = 0; i < values.length; i++) {
+    var val = values[i];
+    var isSelected = val === selectedValue;
+    items.push(
+      <View key={val + '-' + i} style={{
+        height: ITEM_H,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <Text style={{
+          color: isSelected ? color : '#555E6C',
+          fontSize: isSelected ? 26 : 15,
+          fontWeight: isSelected ? '800' : '400',
+          opacity: isSelected ? 1 : 0.3,
+          textAlign: 'center',
+        }}>
+          {isSelected ? val + ' ' + unit : '' + val}
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{
+      height: pickerHeight, overflow: 'hidden', position: 'relative',
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: color + '18',
+      backgroundColor: '#0A0E14',
+    }}>
+      {/* Bande de selection au centre — simple barre coloree */}
+      <View style={{
+        position: 'absolute',
+        top: pickerHeight / 2 - ITEM_H / 2,
+        left: 6, right: 6,
+        height: ITEM_H,
+        borderRadius: 10,
+        backgroundColor: color + '0D',
+        zIndex: 0,
+      }}>
+        {/* Barre laterale gauche coloree */}
+        <View style={{
+          position: 'absolute', left: 0, top: 8, bottom: 8,
+          width: 3, borderRadius: 2, backgroundColor: color,
+        }} />
+      </View>
+
+      {/* Fondu haut */}
+      <LinearGradient
+        colors={['#0A0E14', 'rgba(10,14,20,0.7)', 'rgba(10,14,20,0)']}
+        style={{
+          position: 'absolute', top: 0, left: 0, right: 0,
+          height: pickerHeight * 0.35, zIndex: 3,
+          borderTopLeftRadius: 14, borderTopRightRadius: 14,
+        }}
+        pointerEvents="none"
+      />
+
+      {/* Fondu bas */}
+      <LinearGradient
+        colors={['rgba(10,14,20,0)', 'rgba(10,14,20,0.7)', '#0A0E14']}
+        style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          height: pickerHeight * 0.35, zIndex: 3,
+          borderBottomLeftRadius: 14, borderBottomRightRadius: 14,
+        }}
+        pointerEvents="none"
+      />
+
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={ITEM_H}
+        decelerationRate={0.92}
+        bounces={false}
+        overScrollMode="never"
+        onMomentumScrollEnd={handleMomentumEnd}
+        onScrollEndDrag={handleScrollEndDrag}
+        contentContainerStyle={{
+          paddingTop: paddingTop,
+          paddingBottom: paddingBottom,
+        }}
+      >
+        {items}
+      </ScrollView>
+    </View>
+  );
+};
+
+// ============================================================
+// FOOD ICONS BACKGROUND — emojis transparents en fond de carte
+// ============================================================
+
+var FoodIconsBackground = function (foodProps) {
+  var type = foodProps.type;
+  var foodMap = {
+    bmr: ['\uD83E\uDEC0', '\uD83E\uDDE0', '\uD83D\uDCA4', '\uD83E\uDEC1', '\uD83D\uDD0B'],
+    tdee: ['\uD83C\uDFC3', '\uD83D\uDEB4', '\uD83C\uDFCB\uFE0F', '\uD83E\uDDD8', '\u26A1'],
+    protein: ['\uD83E\uDD69', '\uD83C\uDF57', '\uD83E\uDD5A', '\uD83D\uDC1F', '\uD83E\uDDC0'],
+    carbs: ['\uD83C\uDF5A', '\uD83C\uDF5E', '\uD83C\uDF4C', '\uD83E\uDD54', '\uD83C\uDF5D'],
+    fat: ['\uD83E\uDD51', '\uD83E\uDED2', '\uD83E\uDD5C', '\uD83E\uDDC8', '\uD83D\uDC1F'],
+  };
+  var foods = foodMap[type] || [];
+  var positions = [
+    { top: '58%', left: '5%', size: 38, opacity: 0.09, rotate: '-15deg' },
+    { top: '65%', right: '8%', size: 32, opacity: 0.07, rotate: '10deg' },
+    { top: '74%', left: '22%', size: 42, opacity: 0.08, rotate: '-5deg' },
+    { top: '80%', right: '25%', size: 30, opacity: 0.06, rotate: '20deg' },
+    { top: '88%', left: '45%', size: 36, opacity: 0.07, rotate: '-10deg' },
+  ];
+
+  var elements = [];
+  for (var i = 0; i < foods.length; i++) {
+    var pos = positions[i];
+    elements.push(
+      <Text key={i} style={{
+        position: 'absolute',
+        top: pos.top, left: pos.left, right: pos.right,
+        fontSize: pos.size,
+        opacity: pos.opacity,
+        transform: [{ rotate: pos.rotate }],
+      }}>
+        {foods[i]}
+      </Text>
+    );
+  }
+  return <>{elements}</>;
+};
+
+// ============================================================
 // CHARACTER IMAGES
 // ============================================================
 
+// IMAGES — chemin depuis la racine Snack Expo (App.js -> ./assets/)
+var ChickenImg = null;
+var TigerImg = null;
+var LicornumImg = null;
+try { ChickenImg = require('./assets/ChickenCharacter.png'); } catch (e) { ChickenImg = null; }
+try { TigerImg = require('./assets/TigerCharacter.png'); } catch (e) { TigerImg = null; }
+try { LicornumImg = require('./assets/LicornumCharacter.png'); } catch (e) { LicornumImg = null; }
+
 var characterImages = {
-  'GOLD CHICKEN': require('../../assets/ChickenCharacter.png'),
-  'RUBY TIGER': require('../../assets/TigerCharacter.png'),
-  'LICORNUM': require('../../assets/LicornumCharacter.png'),
+  'GOLD CHICKEN': ChickenImg,
+  'RUBY TIGER': TigerImg,
+  'LICORNUM': LicornumImg,
 };
 
 // ============================================================
@@ -496,96 +694,260 @@ function Phase1Identity(props) {
 }
 
 // ============================================================
-// PHASE 2 — MORPHOLOGIE (jauges circulaires) — Age centre
+// GOAL ICONS BACKGROUND — emojis fitness en fond Phase 5
+// ============================================================
+
+function GoalIconsBackground() {
+  var icons = ['\uD83C\uDFAF', '\uD83C\uDFC6', '\uD83D\uDCCA', '\uD83D\uDC8E', '\u26A1', '\uD83D\uDD25'];
+  var positions = [
+    { bottom: '5%', left: '8%', size: 36, opacity: 0.06, rotate: '-12deg' },
+    { bottom: '15%', right: '10%', size: 30, opacity: 0.05, rotate: '8deg' },
+    { bottom: '8%', left: '40%', size: 28, opacity: 0.04, rotate: '-5deg' },
+    { bottom: '22%', right: '35%', size: 32, opacity: 0.05, rotate: '15deg' },
+    { bottom: '18%', left: '20%', size: 26, opacity: 0.04, rotate: '-8deg' },
+    { bottom: '3%', right: '15%', size: 34, opacity: 0.03, rotate: '10deg' },
+  ];
+  var elements = [];
+  for (var i = 0; i < icons.length; i++) {
+    var pos = positions[i];
+    elements.push(
+      <Text key={'goal' + i} style={{
+        position: 'absolute', bottom: pos.bottom, left: pos.left, right: pos.right,
+        fontSize: pos.size, opacity: pos.opacity,
+        transform: [{ rotate: pos.rotate }],
+      }}>{icons[i]}</Text>
+    );
+  }
+  return <>{elements}</>;
+}
+
+// ============================================================
+// PHASE 2 — CORPS / MORPHOLOGIE — ScrollPickers + Doigt anime
 // ============================================================
 
 function Phase2Morphology(props) {
   var formData = props.formData; var setFormData = props.setFormData; var t = props.t;
+  var lang = props.lang;
+
+  var unitWeightState = useState('kg');
+  var unitWeight = unitWeightState[0]; var setUnitWeight = unitWeightState[1];
+  var unitHeightState = useState('cm');
+  var unitHeight = unitHeightState[0]; var setUnitHeight = unitHeightState[1];
 
   function update(key, val) { var n = Object.assign({}, formData); n[key] = val; setFormData(n); }
 
-  function updateNum(key, delta, min, max) {
-    var cur = parseInt(formData[key]) || (key === 'weight' ? 70 : key === 'height' ? 175 : 25);
-    update(key, String(Math.max(min, Math.min(max, cur + delta))));
+  // Mini switch inline
+  function renderUnitSwitch(left, right, value, onChange) {
+    return (
+      <View style={{
+        flexDirection: 'row', alignSelf: 'center',
+        borderRadius: 6, overflow: 'hidden',
+        borderWidth: 1, borderColor: 'rgba(62,72,85,0.3)',
+        marginBottom: 8,
+      }}>
+        <TouchableOpacity onPress={function () { onChange(left.key); }}>
+          <View style={{
+            paddingHorizontal: 12, paddingVertical: 4,
+            backgroundColor: value === left.key ? 'rgba(0,217,132,0.15)' : 'transparent',
+          }}>
+            <Text style={{
+              color: value === left.key ? '#00D984' : '#555E6C',
+              fontSize: 9, fontWeight: '700', letterSpacing: 1,
+            }}>{left.label}</Text>
+          </View>
+        </TouchableOpacity>
+        <View style={{ width: 1, backgroundColor: 'rgba(62,72,85,0.3)' }} />
+        <TouchableOpacity onPress={function () { onChange(right.key); }}>
+          <View style={{
+            paddingHorizontal: 12, paddingVertical: 4,
+            backgroundColor: value === right.key ? 'rgba(0,217,132,0.15)' : 'transparent',
+          }}>
+            <Text style={{
+              color: value === right.key ? '#00D984' : '#555E6C',
+              fontSize: 9, fontWeight: '700', letterSpacing: 1,
+            }}>{right.label}</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
-  return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
-      showsVerticalScrollIndicator={false}>
+  // Valeurs selon unite
+  var weightVals = unitWeight === 'kg'
+    ? Array.from({ length: 171 }, function (_, i) { return 30 + i; })
+    : Array.from({ length: 371 }, function (_, i) { return 66 + i; });
+  var heightVals = unitHeight === 'cm'
+    ? Array.from({ length: 101 }, function (_, i) { return 120 + i; })
+    : Array.from({ length: 49 }, function (_, i) { return 48 + i; });
+  var ageVals = Array.from({ length: 83 }, function (_, i) { return 12 + i; });
 
-      {/* Poids + Taille cote a cote */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 }}>
-        <GaugeCircle
-          label={t.weightLabel} value={formData.weight} unit={t.kg} color={C.emerald}
-          onMinus={function () { updateNum('weight', -1, 30, 200); }}
-          onPlus={function () { updateNum('weight', 1, 30, 200); }}
-        />
-        <GaugeCircle
-          label={t.heightLabel} value={formData.height} unit={t.cm} color={C.turquoise}
-          onMinus={function () { updateNum('height', -1, 100, 230); }}
-          onPlus={function () { updateNum('height', 1, 100, 230); }}
-        />
+  // Body icons background inline
+  var bodyIcons = ['\u2696\uFE0F', '\uD83D\uDCCF', '\uD83C\uDF82', '\uD83D\uDCAA', '\uD83D\uDCD0', '\uD83E\uDE7A'];
+  var bodyPositions = [
+    { bottom: '4%', left: '5%', size: 32, opacity: 0.05, rotate: '-10deg' },
+    { bottom: '10%', right: '8%', size: 26, opacity: 0.04, rotate: '12deg' },
+    { bottom: '2%', left: '40%', size: 30, opacity: 0.04, rotate: '-5deg' },
+    { bottom: '16%', right: '25%', size: 24, opacity: 0.03, rotate: '18deg' },
+    { bottom: '7%', left: '65%', size: 28, opacity: 0.04, rotate: '-12deg' },
+    { bottom: '14%', left: '15%', size: 22, opacity: 0.03, rotate: '8deg' },
+  ];
+
+  return (
+    <View style={{ flex: 1, paddingHorizontal: 20, position: 'relative' }}>
+
+      {/* Icones transparentes background */}
+      {bodyIcons.map(function (emoji, i) {
+        var pos = bodyPositions[i];
+        return (
+          <Text key={'bi' + i} style={{
+            position: 'absolute', bottom: pos.bottom, left: pos.left, right: pos.right,
+            fontSize: pos.size, opacity: pos.opacity,
+            transform: [{ rotate: pos.rotate }],
+            zIndex: 0,
+          }}>{emoji}</Text>
+        );
+      })}
+
+      {/* TITRES en ligne — avec marge pour les fleches */}
+      <View style={{
+        flexDirection: 'row', justifyContent: 'space-between',
+        marginBottom: 2, paddingLeft: 30, paddingRight: 4,
+      }}>
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3 }}>
+            {t.weightLabel}
+          </Text>
+        </View>
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3 }}>
+            {t.heightLabel}
+          </Text>
+        </View>
+        <View style={{ flex: 0.8, alignItems: 'center' }}>
+          <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3 }}>
+            {t.ageLabel}
+          </Text>
+        </View>
       </View>
 
-      {/* Age centre + Sexe cote a cote */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 24, alignItems: 'flex-start' }}>
+      {/* SWITCHES en ligne */}
+      <View style={{
+        flexDirection: 'row', justifyContent: 'space-between',
+        marginBottom: 6, paddingLeft: 30, paddingRight: 4,
+      }}>
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <GaugeCircle
-            label={t.ageLabel} value={formData.age} unit={t.years} color={C.gold}
-            size={80} fontSize={24} unitSize={9} btnSize={30} btnIconSize={14} btnGap={16}
-            onMinus={function () { updateNum('age', -1, 10, 99); }}
-            onPlus={function () { updateNum('age', 1, 10, 99); }}
+          {renderUnitSwitch({ key: 'kg', label: 'KG' }, { key: 'lb', label: 'LB' }, unitWeight, setUnitWeight)}
+        </View>
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          {renderUnitSwitch({ key: 'cm', label: 'CM' }, { key: 'in', label: 'IN' }, unitHeight, setUnitHeight)}
+        </View>
+        <View style={{ flex: 0.8, alignItems: 'center' }}>
+          <View style={{ height: 26 }} />
+        </View>
+      </View>
+
+      {/* 3 SCROLL PICKERS avec fleches directionnelles a gauche */}
+      <View style={{
+        flexDirection: 'row', flex: 1, maxHeight: 300,
+      }}>
+        {/* Fleche bidirectionnelle a gauche */}
+        <View style={{
+          width: 22, justifyContent: 'center', alignItems: 'center',
+          marginRight: 6,
+        }}>
+          <Ionicons name="chevron-up" size={16} color="#8892A0" style={{ marginBottom: 8 }} />
+          <View style={{
+            width: 2, height: 40, borderRadius: 1,
+            backgroundColor: 'rgba(136,146,160,0.25)',
+          }} />
+          <Ionicons name="chevron-down" size={16} color="#8892A0" style={{ marginTop: 8 }} />
+        </View>
+
+        {/* Les 3 pickers */}
+        <View style={{ flex: 1 }}>
+          <ScrollPicker
+            values={weightVals}
+            selectedValue={parseInt(formData.weight) || (unitWeight === 'kg' ? 70 : 154)}
+            onSelect={function (v) { update('weight', String(v)); }}
+            unit={unitWeight}
+            color="#00D984"
+            height={280}
           />
         </View>
-
-        {/* Sexe — deux cercles avec texte explicite */}
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: C.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 1.5, marginBottom: 8 }}>
-            {t.genderLabel}
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <TouchableOpacity onPress={function () { update('gender', 'male'); }}>
-              <View style={{
-                width: 72, height: 72, borderRadius: 36,
-                borderWidth: 1.5,
-                borderColor: formData.gender === 'male' ? C.emerald : 'rgba(62,72,85,0.3)',
-                backgroundColor: formData.gender === 'male' ? 'rgba(0,217,132,0.10)' : C.bgInput,
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Ionicons name="male" size={20}
-                  color={formData.gender === 'male' ? C.emerald : C.textMuted} />
-                <Text style={{
-                  color: formData.gender === 'male' ? C.emerald : C.textMuted,
-                  fontSize: 8, fontWeight: '700', marginTop: 2, letterSpacing: 0.5,
-                  textAlign: 'center', width: '100%',
-                }}>
-                  {t.male}
-                </Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={function () { update('gender', 'female'); }}>
-              <View style={{
-                width: 72, height: 72, borderRadius: 36,
-                borderWidth: 1.5,
-                borderColor: formData.gender === 'female' ? C.turquoise : 'rgba(62,72,85,0.3)',
-                backgroundColor: formData.gender === 'female' ? 'rgba(0,191,166,0.10)' : C.bgInput,
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Ionicons name="female" size={20}
-                  color={formData.gender === 'female' ? C.turquoise : C.textMuted} />
-                <Text style={{
-                  color: formData.gender === 'female' ? C.turquoise : C.textMuted,
-                  fontSize: 8, fontWeight: '700', marginTop: 2, letterSpacing: 0.5,
-                  textAlign: 'center', width: '100%',
-                }}>
-                  {t.female}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+        <View style={{ width: 8 }} />
+        <View style={{ flex: 1 }}>
+          <ScrollPicker
+            values={heightVals}
+            selectedValue={parseInt(formData.height) || (unitHeight === 'cm' ? 175 : 69)}
+            onSelect={function (v) { update('height', String(v)); }}
+            unit={unitHeight}
+            color="#00BFA6"
+            height={280}
+          />
+        </View>
+        <View style={{ width: 8 }} />
+        <View style={{ flex: 0.8 }}>
+          <ScrollPicker
+            values={ageVals}
+            selectedValue={parseInt(formData.age) || 25}
+            onSelect={function (v) { update('age', String(v)); }}
+            unit={lang === 'fr' ? 'ans' : 'y'}
+            color="#D4AF37"
+            height={280}
+          />
         </View>
       </View>
-    </ScrollView>
+
+      {/* SEXE */}
+      <Text style={{
+        color: '#EAEEF3', fontSize: 12, fontWeight: '800',
+        letterSpacing: 3, textAlign: 'center',
+        marginTop: 16, marginBottom: 12,
+      }}>SEXE</Text>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, marginBottom: 10 }}>
+        {[
+          { key: 'male', icon: 'male', label: lang === 'fr' ? 'Homme' : 'Male',
+            color: '#4A90D9', bgGrad: ['#4A90D9', '#2E6BB5'] },
+          { key: 'female', icon: 'female', label: lang === 'fr' ? 'Femme' : 'Female',
+            color: '#E875A0', bgGrad: ['#E875A0', '#C95A82'] },
+        ].map(function (g) {
+          var sel = formData.gender === g.key;
+          return (
+            <TouchableOpacity key={g.key} onPress={function () { update('gender', g.key); }} activeOpacity={0.7}>
+              <View style={{ alignItems: 'center' }}>
+                {sel ? (
+                  <View style={{
+                    position: 'absolute', top: -3, left: -3, right: -3, bottom: -22,
+                    borderRadius: 43, borderWidth: 1.5, borderColor: g.color + '35',
+                    shadowColor: g.color, shadowOpacity: 0.2, shadowRadius: 10,
+                  }} />
+                ) : null}
+                <View style={{
+                  width: 76, height: 76, borderRadius: 38, overflow: 'hidden',
+                  borderWidth: sel ? 0 : 1.5, borderColor: 'rgba(62,72,85,0.3)',
+                }}>
+                  {sel ? (
+                    <LinearGradient colors={g.bgGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                      style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name={g.icon} size={30} color="#FFFFFF" />
+                    </LinearGradient>
+                  ) : (
+                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0A0E14' }}>
+                      <Ionicons name={g.icon} size={26} color="#555E6C" />
+                    </View>
+                  )}
+                </View>
+                <Text style={{
+                  color: sel ? g.color : '#555E6C',
+                  fontSize: 11, fontWeight: '700', textAlign: 'center', marginTop: 6,
+                }}>{g.label}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
@@ -645,12 +1007,12 @@ function Phase3Activity(props) {
                   gap: 12,
                 }}>
                   <View style={{
-                    width: 36, height: 36, borderRadius: 10,
-                    backgroundColor: isSelected ? 'rgba(0,217,132,0.12)' : 'rgba(62,72,85,0.2)',
-                    borderWidth: 1, borderColor: isSelected ? 'rgba(0,217,132,0.25)' : 'rgba(62,72,85,0.3)',
+                    width: 46, height: 46, borderRadius: 12,
+                    backgroundColor: isSelected ? 'rgba(0,217,132,0.12)' : 'rgba(62,72,85,0.15)',
+                    borderWidth: 1, borderColor: isSelected ? 'rgba(0,217,132,0.25)' : 'rgba(62,72,85,0.2)',
                     alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Ionicons name={level.icon} size={18} color={isSelected ? C.emerald : C.textMuted} />
+                    <Text style={{ fontSize: 24 }}>{level.emoji}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: isSelected ? C.emerald : C.textPrimary, fontSize: 13, fontWeight: '600' }}>
@@ -708,12 +1070,12 @@ function Phase4Diet(props) {
               gap: 12,
             }}>
               <View style={{
-                width: 42, height: 42, borderRadius: 12,
-                backgroundColor: selected ? diet.color + '15' : 'rgba(62,72,85,0.2)',
-                borderWidth: 1, borderColor: selected ? diet.color + '30' : 'rgba(62,72,85,0.3)',
+                width: 50, height: 50, borderRadius: 14,
+                backgroundColor: selected ? diet.color + '10' : 'rgba(62,72,85,0.12)',
+                borderWidth: 1, borderColor: selected ? diet.color + '20' : 'rgba(62,72,85,0.2)',
                 alignItems: 'center', justifyContent: 'center',
               }}>
-                <Ionicons name={diet.icon} size={20} color={selected ? diet.color : C.textMuted} />
+                <Text style={{ fontSize: 26 }}>{diet.emoji}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: selected ? diet.color : C.textPrimary, fontSize: 14, fontWeight: '700' }}>
@@ -744,7 +1106,7 @@ function Phase5Goals(props) {
   function update(key, val) { var n = Object.assign({}, formData); n[key] = val; setFormData(n); }
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, position: 'relative', minHeight: '100%' }}
       showsVerticalScrollIndicator={false}>
 
       {/* 3 cartes objectif avec gradient */}
@@ -917,6 +1279,8 @@ function Phase5Goals(props) {
           </View>
         </View>
       ) : null}
+
+      <GoalIconsBackground />
     </ScrollView>
   );
 }
@@ -953,9 +1317,10 @@ function Phase6Education(props) {
               backgroundColor: C.bgCard, borderWidth: 1.2,
               borderColor: item.color + '20',
               paddingVertical: 16, paddingHorizontal: 18, overflow: 'hidden',
-              minHeight: 350,
+              minHeight: 350, position: 'relative',
             }}>
               <CircuitPattern width={SCREEN_WIDTH - 60} height={350} color={item.color + '06'} />
+              <FoodIconsBackground type={item.type} />
 
               {/* Header compact — valeur a droite */}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -1433,138 +1798,409 @@ function Phase9Referral(props) {
 }
 
 // ============================================================
-// PHASE 10 — CARACTERES LIXUM (teaser gamification)
+// SHIMMER TEXT — texte avec bande de lumiere animee
+// ============================================================
+
+function ShimmerText(shimmerProps) {
+  var shimmerX = useRef(new Animated.Value(-100)).current;
+
+  useEffect(function () {
+    var loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(2500),
+        Animated.timing(shimmerX, {
+          toValue: 350,
+          duration: 2000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(shimmerX, {
+          toValue: -100,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return function () { loop.stop(); };
+  }, [shimmerX]);
+
+  var shimmerOffset = Animated.add(shimmerX, 12);
+
+  return (
+    <View style={{ overflow: 'hidden', position: 'relative' }}>
+      <Text style={shimmerProps.style}>{shimmerProps.text}</Text>
+      {/* Bande large et douce */}
+      <Animated.View style={{
+        position: 'absolute',
+        top: -5, bottom: -5,
+        width: 25,
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        borderRadius: 10,
+        transform: [
+          { translateX: shimmerX },
+          { skewX: '-25deg' },
+        ],
+      }} />
+      {/* Bande fine et brillante */}
+      <Animated.View style={{
+        position: 'absolute',
+        top: -5, bottom: -5,
+        width: 8,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        borderRadius: 4,
+        transform: [
+          { translateX: shimmerOffset },
+          { skewX: '-25deg' },
+        ],
+      }} />
+    </View>
+  );
+}
+
+// ============================================================
+// CHARACTER SWIPE CARD — carte swipeable style Tinder
+// ============================================================
+
+function CharacterSwipeCard(props) {
+  var character = props.character;
+  var isTop = props.isTop;
+  var onSwipe = props.onSwipe;
+  var CARD_W = SCREEN_WIDTH - 80;
+
+  var pan = useRef(new Animated.ValueXY()).current;
+
+  var panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: function () { return isTop; },
+      onMoveShouldSetPanResponder: function (_, g) { return isTop && Math.abs(g.dx) > 5; },
+      onPanResponderMove: Animated.event(
+        [null, { dx: pan.x, dy: pan.y }],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: function (_, gesture) {
+        if (Math.abs(gesture.dx) > SCREEN_WIDTH * 0.25) {
+          var dir = gesture.dx > 0 ? 1 : -1;
+          Animated.timing(pan, {
+            toValue: { x: dir * SCREEN_WIDTH * 1.5, y: gesture.dy },
+            duration: 300,
+            useNativeDriver: false,
+          }).start(function () {
+            onSwipe();
+          });
+        } else {
+          Animated.spring(pan, {
+            toValue: { x: 0, y: 0 },
+            friction: 6,
+            useNativeDriver: false,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  var rotate = pan.x.interpolate({
+    inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
+    outputRange: ['-12deg', '0deg', '12deg'],
+    extrapolate: 'clamp',
+  });
+
+  var cardStyle = isTop
+    ? { transform: [{ translateX: pan.x }, { translateY: pan.y }, { rotate: rotate }] }
+    : { transform: [{ scale: 0.95 }, { translateY: 8 }], opacity: 0.5 };
+
+  return (
+    <Animated.View
+      {...(isTop ? panResponder.panHandlers : {})}
+      style={[{ position: 'absolute', zIndex: isTop ? 10 : 5 }, cardStyle]}
+    >
+      {/* CADRE METALLIQUE selon le niveau */}
+      <View style={{
+        width: CARD_W,
+        borderRadius: 20,
+        padding: 4,
+        borderWidth: 2.5,
+        borderTopColor: character.borderColors[0] + 'CC',
+        borderLeftColor: character.borderColors[1] + '99',
+        borderRightColor: character.borderColors[2] + '99',
+        borderBottomColor: character.borderColors[2] + '66',
+        backgroundColor: character.borderColors[2] + '30',
+        shadowColor: character.borderColors[0],
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+        elevation: 12,
+      }}>
+        {/* Lisere interieur */}
+        <View style={{
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: character.borderColors[0] + '30',
+          overflow: 'hidden',
+          backgroundColor: '#0F1318',
+        }}>
+          {/* IMAGE DU CARACTERE — prend tout l'espace */}
+          <View style={{ height: 240, backgroundColor: '#0A0E14' }}>
+            {character.image ? (
+              <Image
+                source={character.image}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderTopLeftRadius: 15,
+                  borderTopRightRadius: 15,
+                }}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={{
+                flex: 1, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: character.borderColors[2] + '15',
+              }}>
+                <Text style={{ fontSize: 80 }}>{character.fallbackEmoji}</Text>
+              </View>
+            )}
+
+            {/* Badge niveau en haut a gauche PAR-DESSUS l'image */}
+            <View style={{
+              position: 'absolute', top: 10, left: 10,
+              paddingHorizontal: 10, paddingVertical: 4,
+              borderRadius: 6,
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              borderWidth: 1, borderColor: character.levelColor + '40',
+            }}>
+              <Text style={{
+                color: character.levelColor,
+                fontSize: 9, fontWeight: '800', letterSpacing: 2,
+              }}>
+                {character.level}
+              </Text>
+            </View>
+          </View>
+
+          {/* ZONE INFOS en bas */}
+          <View style={{
+            padding: 14,
+            backgroundColor: '#0F1318',
+            borderTopWidth: 1,
+            borderTopColor: character.borderColors[0] + '15',
+          }}>
+            <Text style={{
+              color: '#EAEEF3', fontSize: 18, fontWeight: '800',
+              letterSpacing: 2, marginBottom: 4,
+            }}>
+              {character.name}
+            </Text>
+            <Text style={{
+              color: character.levelColor, fontSize: 11, fontWeight: '600',
+            }}>
+              {character.power}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
+// ============================================================
+// PHASE 10 — CARACTERES LIXUM — Swipe Tinder
 // ============================================================
 
 function Phase10Characters(props) {
   var lang = props.lang;
+  var charIndexState = useState(0);
+  var charIndex = charIndexState[0];
+  var setCharIndex = charIndexState[1];
 
-  var cards = [
+  var characters = [
     {
       name: 'GOLD CHICKEN',
-      animal: '\uD83D\uDC14',
-      color: '#D4AF37',
-      rarity: lang === 'fr' ? 'L\u00e9gendaire' : 'Legendary',
-      power: lang === 'fr' ? 'Double les LX Gems pendant 24h' : 'Doubles LX Gems for 24h',
+      level: lang === 'fr' ? '\u00c9LITE' : 'ELITE',
+      levelColor: '#D4AF37',
+      borderColors: ['#D4AF37', '#C5A028', '#8B7516'],
+      power: lang === 'fr' ? 'Recettes personnalis\u00e9es \u00b7 1 mois' : 'Custom recipes \u00b7 1 month',
+      image: ChickenImg,
+      fallbackEmoji: '\uD83D\uDC14',
     },
     {
       name: 'RUBY TIGER',
-      animal: '\uD83D\uDC2F',
-      color: '#FF4D4D',
-      rarity: lang === 'fr' ? '\u00c9pique' : 'Epic',
-      power: lang === 'fr' ? 'D\u00e9bloque LIXUM SCAN' : 'Unlocks LIXUM SCAN',
+      level: 'RARE',
+      levelColor: '#00D984',
+      borderColors: ['#00D984', '#00A866', '#006B40'],
+      power: lang === 'fr' ? 'D\u00e9bloque LIXUM SCAN \u00b7 14j' : 'Unlocks LIXUM SCAN \u00b7 14d',
+      image: TigerImg,
+      fallbackEmoji: '\uD83D\uDC2F',
     },
     {
       name: 'LICORNUM',
-      animal: '\uD83E\uDD84',
-      color: '#00D984',
-      rarity: lang === 'fr' ? 'Mythique' : 'Mythic',
-      power: lang === 'fr' ? 'Acc\u00e8s VIP \u00e0 toutes les recettes' : 'VIP access to all recipes',
+      level: lang === 'fr' ? 'MYTHIQUE' : 'MYTHIC',
+      levelColor: '#00BFA6',
+      borderColors: ['#00BFA6', '#00897B', '#005F56'],
+      power: lang === 'fr' ? 'TOUT Premium \u00b7 30j' : 'ALL Premium \u00b7 30d',
+      image: LicornumImg,
+      fallbackEmoji: '\uD83E\uDD84',
     },
   ];
+
+  var allSwiped = charIndex >= characters.length;
+
+  var handleCharSwipe = function () {
+    setCharIndex(function (prev) { return Math.min(prev + 1, characters.length); });
+  };
 
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
       showsVerticalScrollIndicator={false}>
 
-      <View style={{ alignItems: 'center', marginBottom: 16 }}>
+      {/* Header */}
+      <View style={{ alignItems: 'center', marginBottom: 14 }}>
         <View style={{
           width: 50, height: 50, borderRadius: 12,
           backgroundColor: 'rgba(212,175,55,0.08)',
           borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
           alignItems: 'center', justifyContent: 'center',
         }}>
-          <Ionicons name="game-controller-outline" size={24} color="#D4AF37" />
+          <Ionicons name="diamond-outline" size={24} color="#D4AF37" />
         </View>
-        <Text style={{ color: '#EAEEF3', fontSize: 22, fontWeight: '700', textAlign: 'center', marginTop: 8, marginBottom: 4 }}>
+        <Text style={{ color: '#EAEEF3', fontSize: 22, fontWeight: '700', textAlign: 'center', marginTop: 8 }}>
           {lang === 'fr' ? 'Caract\u00e8res LIXUM' : 'LIXUM Characters'}
         </Text>
-        <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center' }}>
-          {lang === 'fr' ? 'Collectionnez, \u00e9changez, progressez' : 'Collect, trade, progress'}
-        </Text>
+        <ShimmerText
+          text={lang === 'fr'
+            ? 'Collectionnez des cartes\net d\u00e9bloquez des Pouvoirs'
+            : 'Collect cards\nand unlock Powers'}
+          style={{
+            color: '#D4AF37',
+            fontSize: 14,
+            fontWeight: '700',
+            textAlign: 'center',
+            lineHeight: 20,
+            letterSpacing: 0.5,
+          }}
+        />
       </View>
 
-      {/* Explication gamification */}
+      {/* ZONE SWIPE — cartes empilees */}
       <View style={{
-        backgroundColor: 'rgba(0,217,132,0.04)',
-        borderRadius: 12, padding: 14, marginBottom: 16,
-        borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)',
+        height: 370,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 14,
       }}>
-        <View style={{ gap: 6 }}>
+        {!allSwiped ? (
+          characters.slice(0).reverse().map(function (char, reverseIdx) {
+            var actualIdx = characters.length - 1 - reverseIdx;
+            if (actualIdx < charIndex) return null;
+            if (actualIdx > charIndex + 1) return null;
+
+            var isTop = actualIdx === charIndex;
+
+            return (
+              <CharacterSwipeCard
+                key={char.name + '-' + charIndex}
+                character={char}
+                isTop={isTop}
+                onSwipe={handleCharSwipe}
+              />
+            );
+          })
+        ) : (
+          <View style={{
+            alignItems: 'center', justifyContent: 'center',
+            padding: 24,
+          }}>
+            <Ionicons name="sparkles" size={36} color="#D4AF37" />
+            <Text style={{
+              color: '#EAEEF3', fontSize: 18, fontWeight: '700',
+              textAlign: 'center', marginTop: 12,
+            }}>
+              {lang === 'fr' ? 'Et bien d\'autres \u00e0 d\u00e9couvrir...' : 'And many more to discover...'}
+            </Text>
+            <Text style={{
+              color: '#8892A0', fontSize: 12, textAlign: 'center', marginTop: 6,
+            }}>
+              {lang === 'fr' ? '12 caract\u00e8res \u00b7 3 niveaux de raret\u00e9' : '12 characters \u00b7 3 rarity levels'}
+            </Text>
+          </View>
+        )}
+
+        {/* Swipe hint sur la premiere carte */}
+        {charIndex === 0 && !allSwiped ? (
+          <View style={{
+            position: 'absolute', bottom: 10, zIndex: 20,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            paddingHorizontal: 12, paddingVertical: 6,
+            borderRadius: 16, borderWidth: 1,
+            borderColor: 'rgba(212,175,55,0.2)',
+            flexDirection: 'row', alignItems: 'center', gap: 4,
+          }}>
+            <Ionicons name="chevron-back" size={12} color="#D4AF37" />
+            <Text style={{ color: '#D4AF37', fontSize: 10, fontWeight: '600' }}>
+              {lang === 'fr' ? 'Swipez' : 'Swipe'}
+            </Text>
+            <Ionicons name="chevron-forward" size={12} color="#D4AF37" />
+          </View>
+        ) : null}
+      </View>
+
+      {/* Dots indicateurs */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, marginBottom: 14 }}>
+        {characters.map(function (_, i) {
+          return (
+            <View key={i} style={{
+              width: i === charIndex ? 20 : 6, height: 6, borderRadius: 3,
+              backgroundColor: i === charIndex ? '#D4AF37' : i < charIndex ? '#8B7516' : 'rgba(62,72,85,0.3)',
+            }} />
+          );
+        })}
+      </View>
+
+      {/* Comment ca marche */}
+      <View style={{
+        backgroundColor: 'rgba(212,175,55,0.04)',
+        borderRadius: 12, padding: 14,
+        borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)',
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <Ionicons name="sparkles" size={14} color="#D4AF37" />
+          <Text style={{ color: '#D4AF37', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>
+            {lang === 'fr' ? 'COMMENT \u00c7A MARCHE' : 'HOW IT WORKS'}
+          </Text>
+        </View>
+        <View style={{ gap: 5 }}>
           {[
             { emoji: '\uD83C\uDFA1', text: lang === 'fr' ? 'Tournez la roue chaque jour' : 'Spin the wheel daily' },
             { emoji: '\uD83C\uDFAF', text: lang === 'fr' ? 'Accomplissez des missions' : 'Complete missions' },
             { icon: 'diamond', color: '#00D984', text: lang === 'fr' ? 'Gagnez des LX Gems et des cartes' : 'Earn LX Gems and cards' },
-            { emoji: '\uD83C\uDCCF', text: lang === 'fr' ? 'Chaque carte d\u00e9bloque un pouvoir unique' : 'Each card unlocks a unique power' },
-            { emoji: '\uD83D\uDD04', text: lang === 'fr' ? 'Transf\u00e9rez vos cartes \u00e0 d\'autres membres' : 'Transfer cards to other members' },
+            { emoji: '\uD83C\uDCCF', text: lang === 'fr' ? 'Chaque carte d\u00e9bloque un pouvoir' : 'Each card unlocks a power' },
+            { emoji: '\uD83D\uDD04', text: lang === 'fr' ? 'Transf\u00e9rez vos cartes entre membres' : 'Transfer cards between members' },
           ].map(function (line, i) {
             return (
               <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 {line.emoji ? (
-                  <Text style={{ fontSize: 13 }}>{line.emoji}</Text>
+                  <Text style={{ fontSize: 12 }}>{line.emoji}</Text>
                 ) : (
-                  <Ionicons name={line.icon} size={13} color={line.color} />
+                  <Ionicons name={line.icon} size={12} color={line.color} />
                 )}
-                <Text style={{ color: '#8892A0', fontSize: 11, flex: 1 }}>{line.text}</Text>
+                <Text style={{ color: '#8892A0', fontSize: 10, flex: 1 }}>{line.text}</Text>
               </View>
             );
           })}
         </View>
       </View>
 
-      {/* Les 3 cartes personnages */}
-      {cards.map(function (card, i) {
-        return (
-          <View key={i} style={{
-            flexDirection: 'row', alignItems: 'center',
-            padding: 14, borderRadius: 14,
-            backgroundColor: '#0A0E14',
-            borderWidth: 1, borderColor: card.color + '20',
-            marginBottom: 10, gap: 12,
-            overflow: 'hidden',
-          }}>
-            <LinearGradient
-              colors={[card.color + '10', 'transparent']}
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-            />
-            <View style={{
-              width: 50, height: 50, borderRadius: 12,
-              backgroundColor: card.color + '15',
-              borderWidth: 1, borderColor: card.color + '30',
-              alignItems: 'center', justifyContent: 'center',
-              overflow: 'hidden',
-            }}>
-              {characterImages[card.name] ? (
-                <Image source={characterImages[card.name]}
-                  style={{ width: 50, height: 50, borderRadius: 12 }} resizeMode="cover" />
-              ) : (
-                <Text style={{ fontSize: 28 }}>{card.animal}</Text>
-              )}
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: card.color, fontSize: 13, fontWeight: '800', letterSpacing: 1 }}>{card.name}</Text>
-              <Text style={{ color: '#8892A0', fontSize: 9, marginTop: 2 }}>{card.rarity}</Text>
-              <Text style={{ color: '#555E6C', fontSize: 9, marginTop: 1, fontStyle: 'italic' }}>{card.power}</Text>
-            </View>
-            <Ionicons name="sparkles" size={16} color={card.color} />
-          </View>
-        );
-      })}
-
-      {/* Note teaser */}
+      {/* Accroche finale */}
       <View style={{
-        marginTop: 8, padding: 12, borderRadius: 10,
-        backgroundColor: 'rgba(212,175,55,0.04)',
-        borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)',
-        alignItems: 'center',
+        alignItems: 'center', marginTop: 12,
+        backgroundColor: 'rgba(0,217,132,0.04)',
+        borderRadius: 10, padding: 12,
+        borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)',
       }}>
-        <Text style={{ color: '#D4AF37', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>
-          {lang === 'fr' ? 'DISPONIBLE D\u00c8S VOTRE INSCRIPTION' : 'AVAILABLE UPON REGISTRATION'}
-        </Text>
-        <Text style={{ color: '#8892A0', fontSize: 10, textAlign: 'center' }}>
+        <Text style={{ color: '#00D984', fontSize: 11, fontWeight: '700', letterSpacing: 1, textAlign: 'center' }}>
           {lang === 'fr'
-            ? 'Votre premier tour de roue gratuit vous attend !'
-            : 'Your first free spin awaits!'}
+            ? '\uD83C\uDFA1 Votre premier tour de roue gratuit vous attend !'
+            : '\uD83C\uDFA1 Your first free spin awaits!'}
         </Text>
       </View>
     </ScrollView>
