@@ -450,6 +450,7 @@ var ScrollPicker = function (pickerProps) {
   var scrollRef = useRef(null);
   var paddingTop = pickerHeight / 2 - ITEM_H / 2;
   var paddingBottom = pickerHeight / 2 - ITEM_H / 2;
+  var isScrollingRef = useRef(false);
 
   var initialIdx = Math.max(0, values.indexOf(selectedValue));
 
@@ -465,22 +466,31 @@ var ScrollPicker = function (pickerProps) {
     return function () { clearTimeout(timer); };
   }, [initialIdx, ITEM_H]);
 
-  var handleScrollEnd = useCallback(function (event) {
+  var snapToNearest = useCallback(function (event) {
     var y = event.nativeEvent.contentOffset.y;
     var idx = Math.round(y / ITEM_H);
     var clamped = Math.max(0, Math.min(idx, values.length - 1));
 
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        y: clamped * ITEM_H,
-        animated: true,
-      });
-    }
-
     if (values[clamped] !== selectedValue) {
       onSelect(values[clamped]);
     }
+    isScrollingRef.current = false;
   }, [values, selectedValue, onSelect, ITEM_H]);
+
+  var handleScrollEndDrag = useCallback(function (event) {
+    var velocity = event.nativeEvent.velocity;
+    // Only snap manually if there is no momentum (user lifted finger gently)
+    if (!velocity || (Math.abs(velocity.y) < 0.1)) {
+      snapToNearest(event);
+    } else {
+      // Momentum will handle it via onMomentumScrollEnd
+      isScrollingRef.current = true;
+    }
+  }, [snapToNearest]);
+
+  var handleMomentumEnd = useCallback(function (event) {
+    snapToNearest(event);
+  }, [snapToNearest]);
 
   var items = [];
   for (var i = 0; i < values.length; i++) {
@@ -513,18 +523,22 @@ var ScrollPicker = function (pickerProps) {
       borderColor: color + '18',
       backgroundColor: '#0A0E14',
     }}>
-      {/* Bande de selection au centre */}
+      {/* Bande de selection au centre — simple barre coloree */}
       <View style={{
         position: 'absolute',
         top: pickerHeight / 2 - ITEM_H / 2,
         left: 6, right: 6,
         height: ITEM_H,
         borderRadius: 10,
-        borderWidth: 1.5,
-        borderColor: color + '30',
-        backgroundColor: color + '06',
+        backgroundColor: color + '0D',
         zIndex: 0,
-      }} />
+      }}>
+        {/* Barre laterale gauche coloree */}
+        <View style={{
+          position: 'absolute', left: 0, top: 8, bottom: 8,
+          width: 3, borderRadius: 2, backgroundColor: color,
+        }} />
+      </View>
 
       {/* Fondu haut */}
       <LinearGradient
@@ -552,10 +566,11 @@ var ScrollPicker = function (pickerProps) {
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_H}
-        decelerationRate="fast"
+        decelerationRate={0.92}
         bounces={false}
-        onMomentumScrollEnd={handleScrollEnd}
-        onScrollEndDrag={handleScrollEnd}
+        overScrollMode="never"
+        onMomentumScrollEnd={handleMomentumEnd}
+        onScrollEndDrag={handleScrollEndDrag}
         contentContainerStyle={{
           paddingTop: paddingTop,
           paddingBottom: paddingBottom,
@@ -721,27 +736,6 @@ function Phase2Morphology(props) {
 
   function update(key, val) { var n = Object.assign({}, formData); n[key] = val; setFormData(n); }
 
-  // Animation du doigt
-  var fingerY = useRef(new Animated.Value(0)).current;
-
-  useEffect(function () {
-    var loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(fingerY, {
-          toValue: 20, duration: 600,
-          easing: Easing.inOut(Easing.ease), useNativeDriver: true,
-        }),
-        Animated.timing(fingerY, {
-          toValue: 0, duration: 600,
-          easing: Easing.inOut(Easing.ease), useNativeDriver: true,
-        }),
-        Animated.delay(1500),
-      ])
-    );
-    loop.start();
-    return function () { loop.stop(); };
-  }, [fingerY]);
-
   // Mini switch inline
   function renderUnitSwitch(left, right, value, onChange) {
     return (
@@ -814,26 +808,10 @@ function Phase2Morphology(props) {
         );
       })}
 
-      {/* HEADER — Instruction avec doigt anime */}
-      <View style={{
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        marginBottom: 14, gap: 8,
-      }}>
-        <Animated.View style={{ transform: [{ translateY: fingerY }] }}>
-          <Ionicons name="finger-print" size={18} color="#00D984" />
-        </Animated.View>
-        <Text style={{
-          color: '#8892A0', fontSize: 12, fontWeight: '500',
-          fontStyle: 'italic',
-        }}>
-          {lang === 'fr' ? 'Scrollez pour modifier' : 'Scroll to adjust'}
-        </Text>
-      </View>
-
-      {/* TITRES en ligne */}
+      {/* TITRES en ligne — avec marge pour les fleches */}
       <View style={{
         flexDirection: 'row', justifyContent: 'space-between',
-        marginBottom: 2, paddingHorizontal: 4,
+        marginBottom: 2, paddingLeft: 30, paddingRight: 4,
       }}>
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3 }}>
@@ -855,7 +833,7 @@ function Phase2Morphology(props) {
       {/* SWITCHES en ligne */}
       <View style={{
         flexDirection: 'row', justifyContent: 'space-between',
-        marginBottom: 6, paddingHorizontal: 4,
+        marginBottom: 6, paddingLeft: 30, paddingRight: 4,
       }}>
         <View style={{ flex: 1, alignItems: 'center' }}>
           {renderUnitSwitch({ key: 'kg', label: 'KG' }, { key: 'lb', label: 'LB' }, unitWeight, setUnitWeight)}
@@ -868,11 +846,24 @@ function Phase2Morphology(props) {
         </View>
       </View>
 
-      {/* 3 SCROLL PICKERS */}
+      {/* 3 SCROLL PICKERS avec fleches directionnelles a gauche */}
       <View style={{
-        flexDirection: 'row', justifyContent: 'space-between',
-        gap: 8, flex: 1, maxHeight: 300,
+        flexDirection: 'row', flex: 1, maxHeight: 300,
       }}>
+        {/* Fleche bidirectionnelle a gauche */}
+        <View style={{
+          width: 22, justifyContent: 'center', alignItems: 'center',
+          marginRight: 6,
+        }}>
+          <Ionicons name="chevron-up" size={16} color="#8892A0" style={{ marginBottom: 8 }} />
+          <View style={{
+            width: 2, height: 40, borderRadius: 1,
+            backgroundColor: 'rgba(136,146,160,0.25)',
+          }} />
+          <Ionicons name="chevron-down" size={16} color="#8892A0" style={{ marginTop: 8 }} />
+        </View>
+
+        {/* Les 3 pickers */}
         <View style={{ flex: 1 }}>
           <ScrollPicker
             values={weightVals}
@@ -883,6 +874,7 @@ function Phase2Morphology(props) {
             height={280}
           />
         </View>
+        <View style={{ width: 8 }} />
         <View style={{ flex: 1 }}>
           <ScrollPicker
             values={heightVals}
@@ -893,6 +885,7 @@ function Phase2Morphology(props) {
             height={280}
           />
         </View>
+        <View style={{ width: 8 }} />
         <View style={{ flex: 0.8 }}>
           <ScrollPicker
             values={ageVals}
