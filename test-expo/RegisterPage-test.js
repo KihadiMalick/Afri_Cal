@@ -19,6 +19,8 @@ import {
   Platform,
   StatusBar,
   KeyboardAvoidingView,
+  Animated,
+  PanResponder,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -568,10 +570,18 @@ var FoodIconsBackground = function (foodProps) {
 // CHARACTER IMAGES
 // ============================================================
 
+// IMAGES — chemin depuis la racine Snack Expo (App.js -> ./assets/)
+var ChickenImg = null;
+var TigerImg = null;
+var LicornumImg = null;
+try { ChickenImg = require('./assets/ChickenCharacter.png'); } catch (e) { ChickenImg = null; }
+try { TigerImg = require('./assets/TigerCharacter.png'); } catch (e) { TigerImg = null; }
+try { LicornumImg = require('./assets/LicornumCharacter.png'); } catch (e) { LicornumImg = null; }
+
 var characterImages = {
-  'GOLD CHICKEN': require('../../assets/ChickenCharacter.png'),
-  'RUBY TIGER': require('../../assets/TigerCharacter.png'),
-  'LICORNUM': require('../../assets/LicornumCharacter.png'),
+  'GOLD CHICKEN': ChickenImg,
+  'RUBY TIGER': TigerImg,
+  'LICORNUM': LicornumImg,
 };
 
 // ============================================================
@@ -1602,138 +1612,338 @@ function Phase9Referral(props) {
 }
 
 // ============================================================
-// PHASE 10 — CARACTERES LIXUM (teaser gamification)
+// CHARACTER SWIPE CARD — carte swipeable style Tinder
+// ============================================================
+
+function CharacterSwipeCard(props) {
+  var character = props.character;
+  var isTop = props.isTop;
+  var onSwipe = props.onSwipe;
+  var CARD_W = SCREEN_WIDTH - 80;
+
+  var pan = useRef(new Animated.ValueXY()).current;
+
+  var panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: function () { return isTop; },
+      onMoveShouldSetPanResponder: function (_, g) { return isTop && Math.abs(g.dx) > 5; },
+      onPanResponderMove: Animated.event(
+        [null, { dx: pan.x, dy: pan.y }],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: function (_, gesture) {
+        if (Math.abs(gesture.dx) > SCREEN_WIDTH * 0.25) {
+          var dir = gesture.dx > 0 ? 1 : -1;
+          Animated.timing(pan, {
+            toValue: { x: dir * SCREEN_WIDTH * 1.5, y: gesture.dy },
+            duration: 300,
+            useNativeDriver: false,
+          }).start(function () {
+            onSwipe();
+          });
+        } else {
+          Animated.spring(pan, {
+            toValue: { x: 0, y: 0 },
+            friction: 6,
+            useNativeDriver: false,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  var rotate = pan.x.interpolate({
+    inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
+    outputRange: ['-12deg', '0deg', '12deg'],
+    extrapolate: 'clamp',
+  });
+
+  var cardStyle = isTop
+    ? { transform: [{ translateX: pan.x }, { translateY: pan.y }, { rotate: rotate }] }
+    : { transform: [{ scale: 0.95 }, { translateY: 8 }], opacity: 0.5 };
+
+  return (
+    <Animated.View
+      {...(isTop ? panResponder.panHandlers : {})}
+      style={[{ position: 'absolute', zIndex: isTop ? 10 : 5 }, cardStyle]}
+    >
+      {/* CADRE METALLIQUE selon le niveau */}
+      <View style={{
+        width: CARD_W,
+        borderRadius: 20,
+        padding: 4,
+        borderWidth: 2.5,
+        borderTopColor: character.borderColors[0] + 'CC',
+        borderLeftColor: character.borderColors[1] + '99',
+        borderRightColor: character.borderColors[2] + '99',
+        borderBottomColor: character.borderColors[2] + '66',
+        backgroundColor: character.borderColors[2] + '30',
+        shadowColor: character.borderColors[0],
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+        elevation: 12,
+      }}>
+        {/* Lisere interieur */}
+        <View style={{
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: character.borderColors[0] + '30',
+          overflow: 'hidden',
+          backgroundColor: '#0F1318',
+        }}>
+          {/* IMAGE DU CARACTERE — prend tout l'espace */}
+          <View style={{ height: 240, backgroundColor: '#0A0E14' }}>
+            {character.image ? (
+              <Image
+                source={character.image}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderTopLeftRadius: 15,
+                  borderTopRightRadius: 15,
+                }}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={{
+                flex: 1, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: character.borderColors[2] + '15',
+              }}>
+                <Text style={{ fontSize: 80 }}>{character.fallbackEmoji}</Text>
+              </View>
+            )}
+
+            {/* Badge niveau en haut a gauche PAR-DESSUS l'image */}
+            <View style={{
+              position: 'absolute', top: 10, left: 10,
+              paddingHorizontal: 10, paddingVertical: 4,
+              borderRadius: 6,
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              borderWidth: 1, borderColor: character.levelColor + '40',
+            }}>
+              <Text style={{
+                color: character.levelColor,
+                fontSize: 9, fontWeight: '800', letterSpacing: 2,
+              }}>
+                {character.level}
+              </Text>
+            </View>
+          </View>
+
+          {/* ZONE INFOS en bas */}
+          <View style={{
+            padding: 14,
+            backgroundColor: '#0F1318',
+            borderTopWidth: 1,
+            borderTopColor: character.borderColors[0] + '15',
+          }}>
+            <Text style={{
+              color: '#EAEEF3', fontSize: 18, fontWeight: '800',
+              letterSpacing: 2, marginBottom: 4,
+            }}>
+              {character.name}
+            </Text>
+            <Text style={{
+              color: character.levelColor, fontSize: 11, fontWeight: '600',
+            }}>
+              {character.power}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
+// ============================================================
+// PHASE 10 — CARACTERES LIXUM — Swipe Tinder
 // ============================================================
 
 function Phase10Characters(props) {
   var lang = props.lang;
+  var charIndexState = useState(0);
+  var charIndex = charIndexState[0];
+  var setCharIndex = charIndexState[1];
 
-  var cards = [
+  var characters = [
     {
       name: 'GOLD CHICKEN',
-      animal: '\uD83D\uDC14',
-      color: '#D4AF37',
-      rarity: lang === 'fr' ? 'L\u00e9gendaire' : 'Legendary',
-      power: lang === 'fr' ? 'Double les LX Gems pendant 24h' : 'Doubles LX Gems for 24h',
+      level: lang === 'fr' ? '\u00c9LITE' : 'ELITE',
+      levelColor: '#D4AF37',
+      borderColors: ['#D4AF37', '#C5A028', '#8B7516'],
+      power: lang === 'fr' ? 'Recettes personnalis\u00e9es \u00b7 1 mois' : 'Custom recipes \u00b7 1 month',
+      image: ChickenImg,
+      fallbackEmoji: '\uD83D\uDC14',
     },
     {
       name: 'RUBY TIGER',
-      animal: '\uD83D\uDC2F',
-      color: '#FF4D4D',
-      rarity: lang === 'fr' ? '\u00c9pique' : 'Epic',
-      power: lang === 'fr' ? 'D\u00e9bloque LIXUM SCAN' : 'Unlocks LIXUM SCAN',
+      level: 'RARE',
+      levelColor: '#00D984',
+      borderColors: ['#00D984', '#00A866', '#006B40'],
+      power: lang === 'fr' ? 'D\u00e9bloque LIXUM SCAN \u00b7 14j' : 'Unlocks LIXUM SCAN \u00b7 14d',
+      image: TigerImg,
+      fallbackEmoji: '\uD83D\uDC2F',
     },
     {
       name: 'LICORNUM',
-      animal: '\uD83E\uDD84',
-      color: '#00D984',
-      rarity: lang === 'fr' ? 'Mythique' : 'Mythic',
-      power: lang === 'fr' ? 'Acc\u00e8s VIP \u00e0 toutes les recettes' : 'VIP access to all recipes',
+      level: lang === 'fr' ? 'MYTHIQUE' : 'MYTHIC',
+      levelColor: '#00BFA6',
+      borderColors: ['#00BFA6', '#00897B', '#005F56'],
+      power: lang === 'fr' ? 'TOUT Premium \u00b7 30j' : 'ALL Premium \u00b7 30d',
+      image: LicornumImg,
+      fallbackEmoji: '\uD83E\uDD84',
     },
   ];
+
+  var allSwiped = charIndex >= characters.length;
+
+  var handleCharSwipe = function () {
+    setCharIndex(function (prev) { return Math.min(prev + 1, characters.length); });
+  };
 
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
       showsVerticalScrollIndicator={false}>
 
-      <View style={{ alignItems: 'center', marginBottom: 16 }}>
+      {/* Header */}
+      <View style={{ alignItems: 'center', marginBottom: 14 }}>
         <View style={{
           width: 50, height: 50, borderRadius: 12,
           backgroundColor: 'rgba(212,175,55,0.08)',
           borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
           alignItems: 'center', justifyContent: 'center',
         }}>
-          <Ionicons name="game-controller-outline" size={24} color="#D4AF37" />
+          <Ionicons name="diamond-outline" size={24} color="#D4AF37" />
         </View>
-        <Text style={{ color: '#EAEEF3', fontSize: 22, fontWeight: '700', textAlign: 'center', marginTop: 8, marginBottom: 4 }}>
+        <Text style={{ color: '#EAEEF3', fontSize: 22, fontWeight: '700', textAlign: 'center', marginTop: 8 }}>
           {lang === 'fr' ? 'Caract\u00e8res LIXUM' : 'LIXUM Characters'}
         </Text>
-        <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center' }}>
-          {lang === 'fr' ? 'Collectionnez, \u00e9changez, progressez' : 'Collect, trade, progress'}
+        <Text style={{ color: '#8892A0', fontSize: 12, textAlign: 'center', marginTop: 2 }}>
+          {lang === 'fr' ? 'Swipez pour d\u00e9couvrir' : 'Swipe to discover'}
         </Text>
       </View>
 
-      {/* Explication gamification */}
+      {/* ZONE SWIPE — cartes empilees */}
       <View style={{
-        backgroundColor: 'rgba(0,217,132,0.04)',
-        borderRadius: 12, padding: 14, marginBottom: 16,
-        borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)',
+        height: 370,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 14,
       }}>
-        <View style={{ gap: 6 }}>
+        {!allSwiped ? (
+          characters.slice(0).reverse().map(function (char, reverseIdx) {
+            var actualIdx = characters.length - 1 - reverseIdx;
+            if (actualIdx < charIndex) return null;
+            if (actualIdx > charIndex + 1) return null;
+
+            var isTop = actualIdx === charIndex;
+
+            return (
+              <CharacterSwipeCard
+                key={char.name}
+                character={char}
+                isTop={isTop}
+                onSwipe={handleCharSwipe}
+              />
+            );
+          })
+        ) : (
+          <View style={{
+            alignItems: 'center', justifyContent: 'center',
+            padding: 24,
+          }}>
+            <Ionicons name="sparkles" size={36} color="#D4AF37" />
+            <Text style={{
+              color: '#EAEEF3', fontSize: 18, fontWeight: '700',
+              textAlign: 'center', marginTop: 12,
+            }}>
+              {lang === 'fr' ? 'Et bien d\'autres \u00e0 d\u00e9couvrir...' : 'And many more to discover...'}
+            </Text>
+            <Text style={{
+              color: '#8892A0', fontSize: 12, textAlign: 'center', marginTop: 6,
+            }}>
+              {lang === 'fr' ? '12 caract\u00e8res \u00b7 3 niveaux de raret\u00e9' : '12 characters \u00b7 3 rarity levels'}
+            </Text>
+          </View>
+        )}
+
+        {/* Swipe hint sur la premiere carte */}
+        {charIndex === 0 && !allSwiped ? (
+          <View style={{
+            position: 'absolute', bottom: 10, zIndex: 20,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            paddingHorizontal: 12, paddingVertical: 6,
+            borderRadius: 16, borderWidth: 1,
+            borderColor: 'rgba(212,175,55,0.2)',
+            flexDirection: 'row', alignItems: 'center', gap: 4,
+          }}>
+            <Ionicons name="chevron-back" size={12} color="#D4AF37" />
+            <Text style={{ color: '#D4AF37', fontSize: 10, fontWeight: '600' }}>
+              {lang === 'fr' ? 'Swipez' : 'Swipe'}
+            </Text>
+            <Ionicons name="chevron-forward" size={12} color="#D4AF37" />
+          </View>
+        ) : null}
+      </View>
+
+      {/* Dots indicateurs */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, marginBottom: 14 }}>
+        {characters.map(function (_, i) {
+          return (
+            <View key={i} style={{
+              width: i === charIndex ? 20 : 6, height: 6, borderRadius: 3,
+              backgroundColor: i === charIndex ? '#D4AF37' : i < charIndex ? '#8B7516' : 'rgba(62,72,85,0.3)',
+            }} />
+          );
+        })}
+      </View>
+
+      {/* Comment ca marche */}
+      <View style={{
+        backgroundColor: 'rgba(212,175,55,0.04)',
+        borderRadius: 12, padding: 14,
+        borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)',
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <Ionicons name="sparkles" size={14} color="#D4AF37" />
+          <Text style={{ color: '#D4AF37', fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>
+            {lang === 'fr' ? 'COMMENT \u00c7A MARCHE' : 'HOW IT WORKS'}
+          </Text>
+        </View>
+        <View style={{ gap: 5 }}>
           {[
             { emoji: '\uD83C\uDFA1', text: lang === 'fr' ? 'Tournez la roue chaque jour' : 'Spin the wheel daily' },
             { emoji: '\uD83C\uDFAF', text: lang === 'fr' ? 'Accomplissez des missions' : 'Complete missions' },
             { icon: 'diamond', color: '#00D984', text: lang === 'fr' ? 'Gagnez des LX Gems et des cartes' : 'Earn LX Gems and cards' },
-            { emoji: '\uD83C\uDCCF', text: lang === 'fr' ? 'Chaque carte d\u00e9bloque un pouvoir unique' : 'Each card unlocks a unique power' },
-            { emoji: '\uD83D\uDD04', text: lang === 'fr' ? 'Transf\u00e9rez vos cartes \u00e0 d\'autres membres' : 'Transfer cards to other members' },
+            { emoji: '\uD83C\uDCCF', text: lang === 'fr' ? 'Chaque carte d\u00e9bloque un pouvoir' : 'Each card unlocks a power' },
+            { emoji: '\uD83D\uDD04', text: lang === 'fr' ? 'Transf\u00e9rez vos cartes entre membres' : 'Transfer cards between members' },
           ].map(function (line, i) {
             return (
               <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 {line.emoji ? (
-                  <Text style={{ fontSize: 13 }}>{line.emoji}</Text>
+                  <Text style={{ fontSize: 12 }}>{line.emoji}</Text>
                 ) : (
-                  <Ionicons name={line.icon} size={13} color={line.color} />
+                  <Ionicons name={line.icon} size={12} color={line.color} />
                 )}
-                <Text style={{ color: '#8892A0', fontSize: 11, flex: 1 }}>{line.text}</Text>
+                <Text style={{ color: '#8892A0', fontSize: 10, flex: 1 }}>{line.text}</Text>
               </View>
             );
           })}
         </View>
       </View>
 
-      {/* Les 3 cartes personnages */}
-      {cards.map(function (card, i) {
-        return (
-          <View key={i} style={{
-            flexDirection: 'row', alignItems: 'center',
-            padding: 14, borderRadius: 14,
-            backgroundColor: '#0A0E14',
-            borderWidth: 1, borderColor: card.color + '20',
-            marginBottom: 10, gap: 12,
-            overflow: 'hidden',
-          }}>
-            <LinearGradient
-              colors={[card.color + '10', 'transparent']}
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-            />
-            <View style={{
-              width: 50, height: 50, borderRadius: 12,
-              backgroundColor: card.color + '15',
-              borderWidth: 1, borderColor: card.color + '30',
-              alignItems: 'center', justifyContent: 'center',
-              overflow: 'hidden',
-            }}>
-              {characterImages[card.name] ? (
-                <Image source={characterImages[card.name]}
-                  style={{ width: 50, height: 50, borderRadius: 12 }} resizeMode="cover" />
-              ) : (
-                <Text style={{ fontSize: 28 }}>{card.animal}</Text>
-              )}
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: card.color, fontSize: 13, fontWeight: '800', letterSpacing: 1 }}>{card.name}</Text>
-              <Text style={{ color: '#8892A0', fontSize: 9, marginTop: 2 }}>{card.rarity}</Text>
-              <Text style={{ color: '#555E6C', fontSize: 9, marginTop: 1, fontStyle: 'italic' }}>{card.power}</Text>
-            </View>
-            <Ionicons name="sparkles" size={16} color={card.color} />
-          </View>
-        );
-      })}
-
-      {/* Note teaser */}
+      {/* Accroche finale */}
       <View style={{
-        marginTop: 8, padding: 12, borderRadius: 10,
-        backgroundColor: 'rgba(212,175,55,0.04)',
-        borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)',
-        alignItems: 'center',
+        alignItems: 'center', marginTop: 12,
+        backgroundColor: 'rgba(0,217,132,0.04)',
+        borderRadius: 10, padding: 12,
+        borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)',
       }}>
-        <Text style={{ color: '#D4AF37', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>
-          {lang === 'fr' ? 'DISPONIBLE D\u00c8S VOTRE INSCRIPTION' : 'AVAILABLE UPON REGISTRATION'}
-        </Text>
-        <Text style={{ color: '#8892A0', fontSize: 10, textAlign: 'center' }}>
+        <Text style={{ color: '#00D984', fontSize: 11, fontWeight: '700', letterSpacing: 1, textAlign: 'center' }}>
           {lang === 'fr'
-            ? 'Votre premier tour de roue gratuit vous attend !'
-            : 'Your first free spin awaits!'}
+            ? '\uD83C\uDFA1 Votre premier tour de roue gratuit vous attend !'
+            : '\uD83C\uDFA1 Your first free spin awaits!'}
         </Text>
       </View>
     </ScrollView>
