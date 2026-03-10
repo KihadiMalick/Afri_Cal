@@ -463,7 +463,7 @@ var ScrollPicker = function (pickerProps) {
       }
     }, 100);
     return function () { clearTimeout(timer); };
-  }, []);
+  }, [initialIdx, ITEM_H]);
 
   var handleScrollEnd = useCallback(function (event) {
     var y = event.nativeEvent.contentOffset.y;
@@ -480,7 +480,7 @@ var ScrollPicker = function (pickerProps) {
     if (values[clamped] !== selectedValue) {
       onSelect(values[clamped]);
     }
-  }, [values, selectedValue, onSelect]);
+  }, [values, selectedValue, onSelect, ITEM_H]);
 
   var items = [];
   for (var i = 0; i < values.length; i++) {
@@ -740,7 +740,7 @@ function Phase2Morphology(props) {
     );
     loop.start();
     return function () { loop.stop(); };
-  }, []);
+  }, [fingerY]);
 
   // Mini switch inline
   function renderUnitSwitch(left, right, value, onChange) {
@@ -1830,7 +1830,7 @@ function ShimmerText(shimmerProps) {
     );
     loop.start();
     return function () { loop.stop(); };
-  }, []);
+  }, [shimmerX]);
 
   var shimmerOffset = Animated.add(shimmerX, 12);
 
