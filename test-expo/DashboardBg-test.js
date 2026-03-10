@@ -386,42 +386,35 @@ const CircuitBoardUltimate = () => {
           pointerEvents="none"
           style={{
             position: 'absolute',
-            left: pos.x - 14,
-            top: pos.y - 14,
-            width: 28,
-            height: 28,
+            left: pos.x - 6,
+            top: pos.y - 6,
+            width: 12,
+            height: 12,
             opacity: ledAnims[i],
           }}
         >
-          {/* Halo externe diffus */}
+          {/* Halo diffus */}
           <View style={{
             position: 'absolute',
-            top: -8, left: -8, right: -8, bottom: -8,
-            borderRadius: 22,
-            backgroundColor: 'rgba(0, 217, 132, 0.10)',
-          }} />
-          {/* Halo moyen */}
-          <View style={{
-            position: 'absolute',
-            top: 2, left: 2, right: 2, bottom: 2,
-            borderRadius: 12,
-            backgroundColor: 'rgba(0, 217, 132, 0.22)',
+            top: -3, left: -3, right: -3, bottom: -3,
+            borderRadius: 9,
+            backgroundColor: 'rgba(0, 217, 132, 0.08)',
           }} />
           {/* Point central LED */}
           <View style={{
             position: 'absolute',
-            top: 9, left: 9,
-            width: 10, height: 10,
-            borderRadius: 5,
-            backgroundColor: 'rgba(0, 217, 132, 0.85)',
-          }} />
-          {/* Reflet blanc vif au centre */}
-          <View style={{
-            position: 'absolute',
-            top: 11, left: 11,
+            top: 3, left: 3,
             width: 6, height: 6,
             borderRadius: 3,
-            backgroundColor: 'rgba(200, 255, 230, 0.5)',
+            backgroundColor: 'rgba(0, 217, 132, 0.15)',
+          }} />
+          {/* Micro-dot vif */}
+          <View style={{
+            position: 'absolute',
+            top: 4, left: 4,
+            width: 4, height: 4,
+            borderRadius: 2,
+            backgroundColor: 'rgba(0, 217, 132, 0.85)',
           }} />
         </RNAnimated.View>
       ))}
