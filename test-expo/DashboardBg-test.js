@@ -5,7 +5,7 @@
 // Memes dependances que les autres fichiers test
 
 import React, { useEffect, useRef, useMemo } from 'react';
-import { View, Dimensions, Text, StyleSheet, StatusBar, Animated as RNAnimated, Easing } from 'react-native';
+import { View, Dimensions, Text, StyleSheet, StatusBar, Animated as RNAnimated } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Rect, Path, G } from 'react-native-svg';
@@ -165,41 +165,67 @@ const generateCircuitBoard = (width, height) => {
 // COMPOSANT PRINCIPAL — CircuitBoardUltimate
 // ============================================
 const CircuitBoardUltimate = () => {
-  // 3 animations de pulsation decalees
-  const pulse1 = useRef(new RNAnimated.Value(0)).current;
-  const pulse2 = useRef(new RNAnimated.Value(0)).current;
-  const pulse3 = useRef(new RNAnimated.Value(0)).current;
+  const circuit = useMemo(() => generateCircuitBoard(W, H), []);
+
+  // ============================================
+  // SYSTÈME LED BLINK — 3 points secs désordonnés
+  // ============================================
+  const LED_POSITIONS = useMemo(() => [
+    { x: W * 0.15, y: H * 0.12 },
+    { x: W * 0.82, y: H * 0.42 },
+    { x: W * 0.25, y: H * 0.78 },
+  ], []);
+
+  const led0 = useRef(new RNAnimated.Value(0)).current;
+  const led1 = useRef(new RNAnimated.Value(0)).current;
+  const led2 = useRef(new RNAnimated.Value(0)).current;
+  const ledAnims = [led0, led1, led2];
 
   useEffect(() => {
-    const createPulse = (anim, delay) => {
-      return RNAnimated.loop(
-        RNAnimated.sequence([
-          RNAnimated.delay(delay),
-          RNAnimated.timing(anim, {
-            toValue: 1, duration: 2500,
-            easing: Easing.inOut(Easing.sin), useNativeDriver: false,
-          }),
-          RNAnimated.timing(anim, {
-            toValue: 0, duration: 2500,
-            easing: Easing.inOut(Easing.sin), useNativeDriver: false,
-          }),
-        ])
-      );
+    const timers = [];
+
+    const blinkLed = (anim) => {
+      const pause = 1500 + Math.random() * 3000;
+      const timer = setTimeout(() => {
+        RNAnimated.timing(anim, {
+          toValue: 1, duration: 50, useNativeDriver: false,
+        }).start(() => {
+          const onTimer = setTimeout(() => {
+            RNAnimated.timing(anim, {
+              toValue: 0, duration: 80, useNativeDriver: false,
+            }).start(() => {
+              if (Math.random() < 0.3) {
+                const dblTimer = setTimeout(() => {
+                  RNAnimated.timing(anim, {
+                    toValue: 1, duration: 50, useNativeDriver: false,
+                  }).start(() => {
+                    const dblOffTimer = setTimeout(() => {
+                      RNAnimated.timing(anim, {
+                        toValue: 0, duration: 80, useNativeDriver: false,
+                      }).start(() => blinkLed(anim));
+                    }, 100);
+                    timers.push(dblOffTimer);
+                  });
+                }, 120);
+                timers.push(dblTimer);
+              } else {
+                blinkLed(anim);
+              }
+            });
+          }, 120);
+          timers.push(onTimer);
+        });
+      }, pause);
+      timers.push(timer);
     };
 
-    const a1 = createPulse(pulse1, 0);
-    const a2 = createPulse(pulse2, 800);
-    const a3 = createPulse(pulse3, 1600);
-    a1.start(); a2.start(); a3.start();
+    ledAnims.forEach((anim, i) => {
+      const startDelay = setTimeout(() => blinkLed(anim), i * 800 + Math.random() * 1000);
+      timers.push(startDelay);
+    });
 
-    return () => { a1.stop(); a2.stop(); a3.stop(); };
+    return () => timers.forEach(t => clearTimeout(t));
   }, []);
-
-  const glow1 = pulse1.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.9] });
-  const glow2 = pulse2.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.9] });
-  const glow3 = pulse3.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.9] });
-
-  const circuit = useMemo(() => generateCircuitBoard(W, H), []);
 
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
@@ -352,109 +378,53 @@ const CircuitBoardUltimate = () => {
       </Svg>
 
       {/* ============================================ */}
-      {/* COUCHE 4 — POINTS LUMINEUX EMERAUDE          */}
-      {/* 3 vagues decalees pour un effet "donnees     */}
-      {/* qui circulent dans le reseau"                */}
+      {/* COUCHE 4 — LED BLINKS (3 points secs)        */}
       {/* ============================================ */}
-
-      {/* Vague 1 */}
-      <RNAnimated.View style={{
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        opacity: glow1,
-      }}>
-        <Svg width={W} height={H}>
-          {circuit.nodes
-            .filter(n => n.type === 'glow')
-            .filter((_, i) => i % 3 === 0)
-            .map((node, i) => (
-              <G key={`g1-${i}`}>
-                {/* Halo large diffus */}
-                <Circle cx={node.x} cy={node.y} r="14"
-                  fill="rgba(0, 217, 132, 0.08)" />
-                {/* Halo moyen */}
-                <Circle cx={node.x} cy={node.y} r="7"
-                  fill="rgba(0, 217, 132, 0.15)" />
-                {/* Point central brillant */}
-                <Circle cx={node.x} cy={node.y} r="2.5"
-                  fill="rgba(0, 217, 132, 0.7)" />
-                {/* Point blanc au centre (highlight) */}
-                <Circle cx={node.x} cy={node.y} r="1"
-                  fill="rgba(180, 255, 220, 0.6)" />
-              </G>
-            ))}
-        </Svg>
-      </RNAnimated.View>
-
-      {/* Vague 2 — decalee */}
-      <RNAnimated.View style={{
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        opacity: glow2,
-      }}>
-        <Svg width={W} height={H}>
-          {circuit.nodes
-            .filter(n => n.type === 'glow')
-            .filter((_, i) => i % 3 === 1)
-            .map((node, i) => (
-              <G key={`g2-${i}`}>
-                <Circle cx={node.x} cy={node.y} r="12"
-                  fill="rgba(0, 217, 132, 0.06)" />
-                <Circle cx={node.x} cy={node.y} r="6"
-                  fill="rgba(0, 217, 132, 0.12)" />
-                <Circle cx={node.x} cy={node.y} r="2"
-                  fill="rgba(0, 217, 132, 0.6)" />
-                <Circle cx={node.x} cy={node.y} r="0.8"
-                  fill="rgba(180, 255, 220, 0.5)" />
-              </G>
-            ))}
-        </Svg>
-      </RNAnimated.View>
-
-      {/* Vague 3 — decalee encore */}
-      <RNAnimated.View style={{
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        opacity: glow3,
-      }}>
-        <Svg width={W} height={H}>
-          {circuit.nodes
-            .filter(n => n.type === 'glow')
-            .filter((_, i) => i % 3 === 2)
-            .map((node, i) => (
-              <G key={`g3-${i}`}>
-                <Circle cx={node.x} cy={node.y} r="10"
-                  fill="rgba(0, 217, 132, 0.05)" />
-                <Circle cx={node.x} cy={node.y} r="5"
-                  fill="rgba(0, 217, 132, 0.10)" />
-                <Circle cx={node.x} cy={node.y} r="2"
-                  fill="rgba(0, 217, 132, 0.55)" />
-                <Circle cx={node.x} cy={node.y} r="0.8"
-                  fill="rgba(150, 255, 200, 0.45)" />
-              </G>
-            ))}
-        </Svg>
-      </RNAnimated.View>
-
-      {/* ============================================ */}
-      {/* COUCHE 5 — LIGNES LUMINEUSES le long des     */}
-      {/* traces principales (effet "energie qui       */}
-      {/* circule dans les fils")                      */}
-      {/* ============================================ */}
-      <RNAnimated.View style={{
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        opacity: pulse1.interpolate({ inputRange: [0, 1], outputRange: [0.08, 0.20] }),
-      }}>
-        <Svg width={W} height={H}>
-          {circuit.traces.slice(0, 10).map((t, i) => (
-            <Path key={`glow-trace-${i}`}
-              d={t.path}
-              fill="none"
-              stroke="rgba(0, 217, 132, 0.12)"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          ))}
-        </Svg>
-      </RNAnimated.View>
+      {LED_POSITIONS.map((pos, i) => (
+        <RNAnimated.View
+          key={`led-blink-${i}`}
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: pos.x - 14,
+            top: pos.y - 14,
+            width: 28,
+            height: 28,
+            opacity: ledAnims[i],
+          }}
+        >
+          {/* Halo externe diffus */}
+          <View style={{
+            position: 'absolute',
+            top: -8, left: -8, right: -8, bottom: -8,
+            borderRadius: 22,
+            backgroundColor: 'rgba(0, 217, 132, 0.10)',
+          }} />
+          {/* Halo moyen */}
+          <View style={{
+            position: 'absolute',
+            top: 2, left: 2, right: 2, bottom: 2,
+            borderRadius: 12,
+            backgroundColor: 'rgba(0, 217, 132, 0.22)',
+          }} />
+          {/* Point central LED */}
+          <View style={{
+            position: 'absolute',
+            top: 9, left: 9,
+            width: 10, height: 10,
+            borderRadius: 5,
+            backgroundColor: 'rgba(0, 217, 132, 0.85)',
+          }} />
+          {/* Reflet blanc vif au centre */}
+          <View style={{
+            position: 'absolute',
+            top: 11, left: 11,
+            width: 6, height: 6,
+            borderRadius: 3,
+            backgroundColor: 'rgba(200, 255, 230, 0.5)',
+          }} />
+        </RNAnimated.View>
+      ))}
 
       {/* ============================================ */}
       {/* COUCHE 6 — Vignette sombre sur les bords     */}
@@ -511,6 +481,16 @@ export default function App() {
         <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom', 'left', 'right']}>
 
           <CircuitBoardUltimate />
+
+          {/* VOILE DÉPOLI — adoucit les circuits, derrière les cartes */}
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(13, 17, 23, 0.3)',
+            }}
+          />
 
           {/* Contenu test pour voir le contraste */}
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
