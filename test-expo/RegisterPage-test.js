@@ -4,7 +4,7 @@
 //              react-native-svg, react-native-safe-area-context
 // Memes dependances que WelcomePage-test.js
 
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import {
   KeyboardAvoidingView,
   Animated,
   PanResponder,
+  Easing,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -85,11 +86,11 @@ var texts = {
     // Phase 3
     activityLabel: 'Niveau d\'activit\u00e9',
     activityLevels: [
-      { label: 'S\u00e9dentaire', desc: 'Peu ou pas d\'exercice', icon: 'bed-outline' },
-      { label: 'L\u00e9g\u00e8rement actif', desc: '1-2 fois/semaine', icon: 'walk-outline' },
-      { label: 'Mod\u00e9r\u00e9ment actif', desc: '3-5 fois/semaine', icon: 'bicycle-outline' },
-      { label: 'Tr\u00e8s actif', desc: '6-7 fois/semaine', icon: 'barbell-outline' },
-      { label: 'Extr\u00eamement actif', desc: 'Athl\u00e8te / travail physique', icon: 'flame-outline' },
+      { label: 'S\u00e9dentaire', desc: 'Peu ou pas d\'exercice', icon: 'bed-outline', emoji: '\uD83D\uDECB\uFE0F' },
+      { label: 'L\u00e9g\u00e8rement actif', desc: '1-2 fois/semaine', icon: 'walk-outline', emoji: '\uD83D\uDEB6\u200D\u2642\uFE0F' },
+      { label: 'Mod\u00e9r\u00e9ment actif', desc: '3-5 fois/semaine', icon: 'bicycle-outline', emoji: '\uD83D\uDEB4\u200D\u2642\uFE0F' },
+      { label: 'Tr\u00e8s actif', desc: '6-7 fois/semaine', icon: 'barbell-outline', emoji: '\uD83C\uDFCB\uFE0F\u200D\u2642\uFE0F' },
+      { label: 'Extr\u00eamement actif', desc: 'Athl\u00e8te / travail physique', icon: 'flame-outline', emoji: '\uD83D\uDD25' },
     ],
     // Phase 4
     dietLabel: 'R\u00e9gime alimentaire',
@@ -161,11 +162,11 @@ var texts = {
     years: 'yrs',
     activityLabel: 'Activity level',
     activityLevels: [
-      { label: 'Sedentary', desc: 'Little or no exercise', icon: 'bed-outline' },
-      { label: 'Lightly active', desc: '1-2 times/week', icon: 'walk-outline' },
-      { label: 'Moderately active', desc: '3-5 times/week', icon: 'bicycle-outline' },
-      { label: 'Very active', desc: '6-7 times/week', icon: 'barbell-outline' },
-      { label: 'Extremely active', desc: 'Athlete / physical job', icon: 'flame-outline' },
+      { label: 'Sedentary', desc: 'Little or no exercise', icon: 'bed-outline', emoji: '\uD83D\uDECB\uFE0F' },
+      { label: 'Lightly active', desc: '1-2 times/week', icon: 'walk-outline', emoji: '\uD83D\uDEB6\u200D\u2642\uFE0F' },
+      { label: 'Moderately active', desc: '3-5 times/week', icon: 'bicycle-outline', emoji: '\uD83D\uDEB4\u200D\u2642\uFE0F' },
+      { label: 'Very active', desc: '6-7 times/week', icon: 'barbell-outline', emoji: '\uD83C\uDFCB\uFE0F\u200D\u2642\uFE0F' },
+      { label: 'Extremely active', desc: 'Athlete / physical job', icon: 'flame-outline', emoji: '\uD83D\uDD25' },
     ],
     dietLabel: 'Diet type',
     diets: [
@@ -444,8 +445,8 @@ var ScrollPicker = function (pickerProps) {
   var onSelect = pickerProps.onSelect;
   var unit = pickerProps.unit;
   var color = pickerProps.color || '#00D984';
-  var pickerHeight = pickerProps.height || 170;
-  var ITEM_HEIGHT = 45;
+  var pickerHeight = pickerProps.height || 220;
+  var ITEM_HEIGHT = 52;
   var visibleItems = Math.floor(pickerHeight / ITEM_HEIGHT);
   var paddingItems = Math.floor(visibleItems / 2);
   var flatListRef = useRef(null);
@@ -511,7 +512,7 @@ var ScrollPicker = function (pickerProps) {
             <View style={{ height: ITEM_HEIGHT, alignItems: 'center', justifyContent: 'center', width: '100%' }}>
               <Text style={{
                 color: isSelected ? color : '#555E6C',
-                fontSize: isSelected ? 26 : 16,
+                fontSize: isSelected ? 30 : 17,
                 fontWeight: isSelected ? '800' : '400',
                 opacity: isSelected ? 1 : 0.4,
                 textAlign: 'center',
@@ -659,7 +660,7 @@ function Phase2Morphology(props) {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24, gap: 8 }}>
         {/* Poids — EMERAUDE */}
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', letterSpacing: 2, marginBottom: 8 }}>
+          <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3, marginBottom: 10 }}>
             {t.weightLabel}
           </Text>
           <View style={{
@@ -678,7 +679,7 @@ function Phase2Morphology(props) {
 
         {/* Taille — TURQUOISE */}
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', letterSpacing: 2, marginBottom: 8 }}>
+          <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3, marginBottom: 10 }}>
             {t.heightLabel}
           </Text>
           <View style={{
@@ -697,7 +698,7 @@ function Phase2Morphology(props) {
 
         {/* Age — DORE */}
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', letterSpacing: 2, marginBottom: 8 }}>
+          <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3, marginBottom: 10 }}>
             {t.ageLabel}
           </Text>
           <View style={{
@@ -715,53 +716,77 @@ function Phase2Morphology(props) {
         </View>
       </View>
 
-      {/* Sexe — deux cercles avec texte explicite */}
-      <View style={{ marginBottom: 24 }}>
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: C.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 1.5, marginBottom: 8 }}>
-            {t.genderLabel}
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <TouchableOpacity onPress={function () { update('gender', 'male'); }}>
-              <View style={{
-                width: 72, height: 72, borderRadius: 36,
-                borderWidth: 1.5,
-                borderColor: formData.gender === 'male' ? C.emerald : 'rgba(62,72,85,0.3)',
-                backgroundColor: formData.gender === 'male' ? 'rgba(0,217,132,0.10)' : C.bgInput,
-                alignItems: 'center', justifyContent: 'center',
+      {/* SEXE — Design premium avec gradient */}
+      <Text style={{
+        color: '#EAEEF3', fontSize: 12, fontWeight: '800',
+        letterSpacing: 3, textAlign: 'center', marginTop: 20, marginBottom: 14,
+      }}>
+        {t.genderLabel}
+      </Text>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, marginBottom: 24 }}>
+        {[
+          { key: 'male', icon: 'male', label: t.male, color: '#00D984', bgGrad: ['#00D984', '#00A866'] },
+          { key: 'female', icon: 'female', label: t.female, color: '#00BFA6', bgGrad: ['#00BFA6', '#00897B'] },
+        ].map(function (g) {
+          var sel = formData.gender === g.key;
+          return (
+            <TouchableOpacity key={g.key} onPress={function () { update('gender', g.key); }} activeOpacity={0.7}>
+              <Animated.View style={{
+                transform: [{ scale: sel ? 1.05 : 1 }],
+                alignItems: 'center',
               }}>
-                <Ionicons name="male" size={20}
-                  color={formData.gender === 'male' ? C.emerald : C.textMuted} />
-                <Text style={{
-                  color: formData.gender === 'male' ? C.emerald : C.textMuted,
-                  fontSize: 8, fontWeight: '700', marginTop: 2, letterSpacing: 0.5,
-                  textAlign: 'center', width: '100%',
+                {/* Cercle exterieur glow */}
+                {sel ? (
+                  <View style={{
+                    position: 'absolute', top: -4, left: -4, right: -4, bottom: -28,
+                    borderRadius: 44,
+                    borderWidth: 1.5,
+                    borderColor: g.color + '40',
+                    shadowColor: g.color,
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 12,
+                  }} />
+                ) : null}
+
+                <View style={{
+                  width: 80, height: 80, borderRadius: 40,
+                  overflow: 'hidden',
+                  borderWidth: sel ? 0 : 1.5,
+                  borderColor: 'rgba(62,72,85,0.3)',
                 }}>
-                  {t.male}
-                </Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={function () { update('gender', 'female'); }}>
-              <View style={{
-                width: 72, height: 72, borderRadius: 36,
-                borderWidth: 1.5,
-                borderColor: formData.gender === 'female' ? C.turquoise : 'rgba(62,72,85,0.3)',
-                backgroundColor: formData.gender === 'female' ? 'rgba(0,191,166,0.10)' : C.bgInput,
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Ionicons name="female" size={20}
-                  color={formData.gender === 'female' ? C.turquoise : C.textMuted} />
+                  {sel ? (
+                    <LinearGradient
+                      colors={g.bgGrad}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                      style={{
+                        flex: 1, alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons name={g.icon} size={32} color="#0D1117" />
+                    </LinearGradient>
+                  ) : (
+                    <View style={{
+                      flex: 1, alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: '#0A0E14',
+                    }}>
+                      <Ionicons name={g.icon} size={28} color="#555E6C" />
+                    </View>
+                  )}
+                </View>
+
                 <Text style={{
-                  color: formData.gender === 'female' ? C.turquoise : C.textMuted,
-                  fontSize: 8, fontWeight: '700', marginTop: 2, letterSpacing: 0.5,
-                  textAlign: 'center', width: '100%',
+                  color: sel ? g.color : '#555E6C',
+                  fontSize: 12, fontWeight: '700',
+                  textAlign: 'center', marginTop: 8,
                 }}>
-                  {t.female}
+                  {g.label}
                 </Text>
-              </View>
+              </Animated.View>
             </TouchableOpacity>
-          </View>
-        </View>
+          );
+        })}
       </View>
     </ScrollView>
   );
@@ -823,12 +848,12 @@ function Phase3Activity(props) {
                   gap: 12,
                 }}>
                   <View style={{
-                    width: 36, height: 36, borderRadius: 10,
-                    backgroundColor: isSelected ? 'rgba(0,217,132,0.12)' : 'rgba(62,72,85,0.2)',
-                    borderWidth: 1, borderColor: isSelected ? 'rgba(0,217,132,0.25)' : 'rgba(62,72,85,0.3)',
+                    width: 46, height: 46, borderRadius: 12,
+                    backgroundColor: isSelected ? 'rgba(0,217,132,0.12)' : 'rgba(62,72,85,0.15)',
+                    borderWidth: 1, borderColor: isSelected ? 'rgba(0,217,132,0.25)' : 'rgba(62,72,85,0.2)',
                     alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Ionicons name={level.icon} size={18} color={isSelected ? C.emerald : C.textMuted} />
+                    <Text style={{ fontSize: 24 }}>{level.emoji}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: isSelected ? C.emerald : C.textPrimary, fontSize: 13, fontWeight: '600' }}>
@@ -1612,6 +1637,51 @@ function Phase9Referral(props) {
 }
 
 // ============================================================
+// SHIMMER TEXT — texte avec bande de lumiere animee
+// ============================================================
+
+function ShimmerText(shimmerProps) {
+  var shimmerX = useRef(new Animated.Value(-200)).current;
+
+  useEffect(function () {
+    var loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(2000),
+        Animated.timing(shimmerX, {
+          toValue: 400,
+          duration: 1500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(shimmerX, {
+          toValue: -200,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return function () { loop.stop(); };
+  }, []);
+
+  return (
+    <View style={{ overflow: 'hidden', position: 'relative' }}>
+      <Text style={shimmerProps.style}>{shimmerProps.text}</Text>
+      <Animated.View style={{
+        position: 'absolute',
+        top: -10, bottom: -10,
+        width: 40,
+        backgroundColor: 'rgba(255,255,255,0.12)',
+        transform: [
+          { translateX: shimmerX },
+          { skewX: '-20deg' },
+        ],
+      }} />
+    </View>
+  );
+}
+
+// ============================================================
 // CHARACTER SWIPE CARD — carte swipeable style Tinder
 // ============================================================
 
@@ -1819,9 +1889,19 @@ function Phase10Characters(props) {
         <Text style={{ color: '#EAEEF3', fontSize: 22, fontWeight: '700', textAlign: 'center', marginTop: 8 }}>
           {lang === 'fr' ? 'Caract\u00e8res LIXUM' : 'LIXUM Characters'}
         </Text>
-        <Text style={{ color: '#8892A0', fontSize: 12, textAlign: 'center', marginTop: 2 }}>
-          {lang === 'fr' ? 'Swipez pour d\u00e9couvrir' : 'Swipe to discover'}
-        </Text>
+        <ShimmerText
+          text={lang === 'fr'
+            ? 'Collectionnez des cartes\net d\u00e9bloquez des Pouvoirs'
+            : 'Collect cards\nand unlock Powers'}
+          style={{
+            color: '#D4AF37',
+            fontSize: 14,
+            fontWeight: '700',
+            textAlign: 'center',
+            lineHeight: 20,
+            letterSpacing: 0.5,
+          }}
+        />
       </View>
 
       {/* ZONE SWIPE — cartes empilees */}
@@ -1841,7 +1921,7 @@ function Phase10Characters(props) {
 
             return (
               <CharacterSwipeCard
-                key={char.name}
+                key={char.name + '-' + charIndex}
                 character={char}
                 isTop={isTop}
                 onSwipe={handleCharSwipe}
