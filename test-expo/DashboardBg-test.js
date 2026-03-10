@@ -107,13 +107,20 @@ const generateCircuitBoard = (width, height) => {
   });
 
   // === CHIPS — rectangles de composants IC ===
-  const chipCount = 12;
+  const chipCount = 6;
   for (let i = 0; i < chipCount; i++) {
     const seed = i * 31 + 200;
-    const cx = 30 + seededRandom(seed) * (width - 60);
-    const cy = 30 + seededRandom(seed + 1) * (height - 60);
-    const w = 16 + seededRandom(seed + 2) * 24; // 16-40
-    const h = 10 + seededRandom(seed + 3) * 16; // 10-26
+    // Pousse les chips vers les bords de l'ecran
+    const rawX = seededRandom(seed);
+    const rawY = seededRandom(seed + 1);
+    const cx = rawX < 0.5
+      ? 15 + rawX * width * 0.35
+      : width - 15 - (1 - rawX) * width * 0.35;
+    const cy = rawY < 0.5
+      ? 20 + rawY * height * 0.3
+      : height - 20 - (1 - rawY) * height * 0.3;
+    const w = 12 + seededRandom(seed + 2) * 16; // 12-28
+    const h = 8 + seededRandom(seed + 3) * 10;  // 8-18
     const pins = 2 + Math.floor(seededRandom(seed + 4) * 4); // 2-5 pins de chaque cote
 
     chips.push({ x: cx - w / 2, y: cy - h / 2, w, h, pins, seed });
@@ -204,28 +211,48 @@ const CircuitBoardUltimate = () => {
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
-      {/* Leger halo central */}
+      {/* GLOW AMBIANT — large, doux, donne de la profondeur */}
       <View style={{
         position: 'absolute',
-        top: H * 0.2, left: W * 0.15, right: W * 0.15,
-        height: H * 0.3, borderRadius: H * 0.15,
+        top: H * 0.10, left: -W * 0.2, right: -W * 0.2,
+        height: H * 0.50, borderRadius: H * 0.25,
+        backgroundColor: 'rgba(0, 217, 132, 0.020)',
+      }}/>
+      {/* Second glow plus concentre */}
+      <View style={{
+        position: 'absolute',
+        top: H * 0.20, left: W * 0.05, right: W * 0.05,
+        height: H * 0.30, borderRadius: H * 0.15,
         backgroundColor: 'rgba(0, 217, 132, 0.015)',
-      }} />
+      }}/>
+      {/* Point de lumiere chaud au centre-haut */}
+      <View style={{
+        position: 'absolute',
+        top: H * 0.28, left: W * 0.25, right: W * 0.25,
+        height: H * 0.12, borderRadius: H * 0.06,
+        backgroundColor: 'rgba(0, 217, 132, 0.025)',
+      }}/>
 
       {/* ============================================ */}
       {/* COUCHE 1 — TRACES PRINCIPALES (epaisses)    */}
       {/* ============================================ */}
       <Svg width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
-        {circuit.traces.map((t, i) => (
-          <Path key={`mt-${i}`}
-            d={t.path}
-            fill="none"
-            stroke="rgba(80, 95, 115, 0.22)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        ))}
+        {circuit.traces.map((t, i) => {
+          // Les 8 premières traces sont les "artères" — plus épaisses et lumineuses
+          const isMain = i < 8;
+          return (
+            <Path key={`mt-${i}`}
+              d={t.path}
+              fill="none"
+              stroke={isMain
+                ? "rgba(90, 110, 135, 0.30)"
+                : "rgba(70, 85, 105, 0.12)"}
+              strokeWidth={isMain ? 2.5 : 1}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          );
+        })}
       </Svg>
 
       {/* ============================================ */}
@@ -236,8 +263,8 @@ const CircuitBoardUltimate = () => {
           <Path key={`tt-${i}`}
             d={t.path}
             fill="none"
-            stroke="rgba(70, 85, 105, 0.14)"
-            strokeWidth="0.8"
+            stroke="rgba(60, 75, 95, 0.08)"
+            strokeWidth="0.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -447,6 +474,21 @@ const CircuitBoardUltimate = () => {
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
         pointerEvents="none"
       />
+
+      {/* Zone centrale propre — masque le circuit au centre */}
+      <View style={{
+        position: 'absolute',
+        top: H * 0.25, left: W * 0.05, right: W * 0.05,
+        height: H * 0.45, borderRadius: 30,
+        backgroundColor: 'rgba(12, 18, 25, 0.35)',
+      }} pointerEvents="none" />
+      {/* Deuxieme zone plus petite et plus opaque */}
+      <View style={{
+        position: 'absolute',
+        top: H * 0.32, left: W * 0.10, right: W * 0.10,
+        height: H * 0.30, borderRadius: 25,
+        backgroundColor: 'rgba(12, 18, 25, 0.20)',
+      }} pointerEvents="none" />
     </View>
   );
 };
