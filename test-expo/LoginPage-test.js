@@ -4,7 +4,7 @@
 //              react-native-svg, react-native-safe-area-context
 // Memes dependances que WelcomePage-test.js et RegisterPage-test.js
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -63,7 +63,7 @@ var texts = {
     forgot: 'Mot de passe oubli\u00e9 ?',
     back: 'Retour',
     errorTitle: 'Erreur',
-    errorEmpty: 'Veuillez remplir tous les champs',
+    errorEmpty: 'Veuillez remplir email et mot de passe (8 caract\u00e8res min)',
     successTitle: 'Connexion simul\u00e9e',
     successMsg: 'Bienvenue sur LIXUM !',
   },
@@ -79,7 +79,7 @@ var texts = {
     forgot: 'Forgot password?',
     back: 'Back',
     errorTitle: 'Error',
-    errorEmpty: 'Please fill all fields',
+    errorEmpty: 'Please fill email and password (8 chars min)',
     successTitle: 'Login simulated',
     successMsg: 'Welcome to LIXUM!',
   },
@@ -89,147 +89,49 @@ var texts = {
 // GEOMETRIC BACKGROUND — Polygones tech futuristes
 // ============================================================
 
-function GeometricBackground(props) {
-  var w = props.width;
-  var h = props.height;
+function GeometricBackground() {
+  var w = W;
+  var h = H;
 
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-      {/* Gradient de base */}
       <LinearGradient
         colors={['#0F1A2B', '#142236', '#0F1A2B', '#0D1520']}
         locations={[0, 0.35, 0.7, 1]}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
-
-      {/* Polygones geometriques */}
       <Svg width={w} height={h} style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
-        {/* Grands triangles de fond — tres subtils */}
-        <Polygon
-          points={
-            '0,0 ' + (w * 0.6) + ',0 ' + (w * 0.3) + ',' + (h * 0.35)
-          }
-          fill="rgba(0, 217, 132, 0.02)"
-          stroke="rgba(0, 217, 132, 0.04)"
-          strokeWidth="0.5"
-        />
-        <Polygon
-          points={
-            w + ',0 ' + w + ',' + (h * 0.4) + ' ' + (w * 0.5) + ',' + (h * 0.15)
-          }
-          fill="rgba(0, 191, 166, 0.02)"
-          stroke="rgba(0, 191, 166, 0.03)"
-          strokeWidth="0.5"
-        />
-        <Polygon
-          points={
-            '0,' + (h * 0.6) + ' ' + (w * 0.4) + ',' + (h * 0.45) + ' ' + (w * 0.2) + ',' + h
-          }
-          fill="rgba(0, 217, 132, 0.015)"
-          stroke="rgba(0, 217, 132, 0.03)"
-          strokeWidth="0.5"
-        />
-        <Polygon
-          points={
-            w + ',' + (h * 0.5) + ' ' + (w * 0.6) + ',' + h + ' ' + w + ',' + h
-          }
-          fill="rgba(0, 191, 166, 0.015)"
-          stroke="rgba(0, 191, 166, 0.03)"
-          strokeWidth="0.5"
-        />
-
-        {/* Triangles moyens — un peu plus visibles */}
-        <Polygon
-          points={
-            (w * 0.1) + ',' + (h * 0.2) + ' ' +
-            (w * 0.35) + ',' + (h * 0.1) + ' ' +
-            (w * 0.25) + ',' + (h * 0.35)
-          }
-          fill="rgba(0, 217, 132, 0.025)"
-          stroke="rgba(0, 217, 132, 0.05)"
-          strokeWidth="0.8"
-        />
-        <Polygon
-          points={
-            (w * 0.65) + ',' + (h * 0.25) + ' ' +
-            (w * 0.9) + ',' + (h * 0.15) + ' ' +
-            (w * 0.8) + ',' + (h * 0.4)
-          }
-          fill="rgba(0, 191, 166, 0.02)"
-          stroke="rgba(0, 191, 166, 0.04)"
-          strokeWidth="0.8"
-        />
-        <Polygon
-          points={
-            (w * 0.3) + ',' + (h * 0.65) + ' ' +
-            (w * 0.55) + ',' + (h * 0.55) + ' ' +
-            (w * 0.45) + ',' + (h * 0.8)
-          }
-          fill="rgba(0, 217, 132, 0.02)"
-          stroke="rgba(0, 217, 132, 0.04)"
-          strokeWidth="0.8"
-        />
-        <Polygon
-          points={
-            (w * 0.7) + ',' + (h * 0.6) + ' ' +
-            (w * 0.95) + ',' + (h * 0.7) + ' ' +
-            (w * 0.85) + ',' + (h * 0.85)
-          }
-          fill="rgba(212, 175, 55, 0.012)"
-          stroke="rgba(212, 175, 55, 0.025)"
-          strokeWidth="0.5"
-        />
-
-        {/* Petits triangles decoratifs */}
-        <Polygon
-          points={
-            (w * 0.5) + ',' + (h * 0.05) + ' ' +
-            (w * 0.55) + ',' + (h * 0.02) + ' ' +
-            (w * 0.53) + ',' + (h * 0.08)
-          }
-          fill="rgba(0, 217, 132, 0.04)"
-        />
-        <Polygon
-          points={
-            (w * 0.15) + ',' + (h * 0.5) + ' ' +
-            (w * 0.2) + ',' + (h * 0.47) + ' ' +
-            (w * 0.18) + ',' + (h * 0.53)
-          }
-          fill="rgba(0, 191, 166, 0.04)"
-        />
-        <Polygon
-          points={
-            (w * 0.85) + ',' + (h * 0.9) + ' ' +
-            (w * 0.9) + ',' + (h * 0.87) + ' ' +
-            (w * 0.88) + ',' + (h * 0.93)
-          }
-          fill="rgba(0, 217, 132, 0.03)"
-        />
-
-        {/* Lignes de connexion entre les polygones */}
-        <Line
-          x1={w * 0.3} y1={h * 0.35}
-          x2={w * 0.5} y2={h * 0.15}
-          stroke="rgba(0, 217, 132, 0.04)" strokeWidth="0.5"
-        />
-        <Line
-          x1={w * 0.8} y1={h * 0.4}
-          x2={w * 0.6} y2={h * 0.55}
-          stroke="rgba(0, 191, 166, 0.03)" strokeWidth="0.5"
-        />
-        <Line
-          x1={w * 0.2} y1={h * 0.7}
-          x2={w * 0.45} y2={h * 0.8}
-          stroke="rgba(0, 217, 132, 0.03)" strokeWidth="0.5"
-        />
-
-        {/* Petits points aux intersections */}
-        <SvgCircle cx={w * 0.3} cy={h * 0.35} r="2" fill="rgba(0, 217, 132, 0.08)" />
-        <SvgCircle cx={w * 0.5} cy={h * 0.15} r="2" fill="rgba(0, 217, 132, 0.08)" />
-        <SvgCircle cx={w * 0.8} cy={h * 0.4} r="1.5" fill="rgba(0, 191, 166, 0.06)" />
-        <SvgCircle cx={w * 0.25} cy={h * 0.35} r="1.5" fill="rgba(0, 217, 132, 0.06)" />
-        <SvgCircle cx={w * 0.6} cy={h * 0.55} r="2" fill="rgba(0, 191, 166, 0.07)" />
-        <SvgCircle cx={w * 0.45} cy={h * 0.8} r="1.5" fill="rgba(0, 217, 132, 0.05)" />
+        <Polygon points={'0,0 ' + (w * 0.6) + ',0 ' + (w * 0.3) + ',' + (h * 0.35)}
+          fill="rgba(0,217,132,0.02)" stroke="rgba(0,217,132,0.04)" strokeWidth="0.5" />
+        <Polygon points={w + ',0 ' + w + ',' + (h * 0.4) + ' ' + (w * 0.5) + ',' + (h * 0.15)}
+          fill="rgba(0,191,166,0.02)" stroke="rgba(0,191,166,0.03)" strokeWidth="0.5" />
+        <Polygon points={'0,' + (h * 0.6) + ' ' + (w * 0.4) + ',' + (h * 0.45) + ' ' + (w * 0.2) + ',' + h}
+          fill="rgba(0,217,132,0.015)" stroke="rgba(0,217,132,0.03)" strokeWidth="0.5" />
+        <Polygon points={w + ',' + (h * 0.5) + ' ' + (w * 0.6) + ',' + h + ' ' + w + ',' + h}
+          fill="rgba(0,191,166,0.015)" stroke="rgba(0,191,166,0.03)" strokeWidth="0.5" />
+        <Polygon points={(w * 0.1) + ',' + (h * 0.2) + ' ' + (w * 0.35) + ',' + (h * 0.1) + ' ' + (w * 0.25) + ',' + (h * 0.35)}
+          fill="rgba(0,217,132,0.025)" stroke="rgba(0,217,132,0.05)" strokeWidth="0.8" />
+        <Polygon points={(w * 0.65) + ',' + (h * 0.25) + ' ' + (w * 0.9) + ',' + (h * 0.15) + ' ' + (w * 0.8) + ',' + (h * 0.4)}
+          fill="rgba(0,191,166,0.02)" stroke="rgba(0,191,166,0.04)" strokeWidth="0.8" />
+        <Polygon points={(w * 0.3) + ',' + (h * 0.65) + ' ' + (w * 0.55) + ',' + (h * 0.55) + ' ' + (w * 0.45) + ',' + (h * 0.8)}
+          fill="rgba(0,217,132,0.02)" stroke="rgba(0,217,132,0.04)" strokeWidth="0.8" />
+        <Polygon points={(w * 0.7) + ',' + (h * 0.6) + ' ' + (w * 0.95) + ',' + (h * 0.7) + ' ' + (w * 0.85) + ',' + (h * 0.85)}
+          fill="rgba(212,175,55,0.012)" stroke="rgba(212,175,55,0.025)" strokeWidth="0.5" />
+        <Polygon points={(w * 0.5) + ',' + (h * 0.05) + ' ' + (w * 0.55) + ',' + (h * 0.02) + ' ' + (w * 0.53) + ',' + (h * 0.08)}
+          fill="rgba(0,217,132,0.04)" />
+        <Polygon points={(w * 0.15) + ',' + (h * 0.5) + ' ' + (w * 0.2) + ',' + (h * 0.47) + ' ' + (w * 0.18) + ',' + (h * 0.53)}
+          fill="rgba(0,191,166,0.04)" />
+        <Polygon points={(w * 0.85) + ',' + (h * 0.9) + ' ' + (w * 0.9) + ',' + (h * 0.87) + ' ' + (w * 0.88) + ',' + (h * 0.93)}
+          fill="rgba(0,217,132,0.03)" />
+        <Line x1={w * 0.3} y1={h * 0.35} x2={w * 0.5} y2={h * 0.15} stroke="rgba(0,217,132,0.04)" strokeWidth="0.5" />
+        <Line x1={w * 0.8} y1={h * 0.4} x2={w * 0.6} y2={h * 0.55} stroke="rgba(0,191,166,0.03)" strokeWidth="0.5" />
+        <Line x1={w * 0.2} y1={h * 0.7} x2={w * 0.45} y2={h * 0.8} stroke="rgba(0,217,132,0.03)" strokeWidth="0.5" />
+        <SvgCircle cx={w * 0.3} cy={h * 0.35} r="2" fill="rgba(0,217,132,0.08)" />
+        <SvgCircle cx={w * 0.5} cy={h * 0.15} r="2" fill="rgba(0,217,132,0.08)" />
+        <SvgCircle cx={w * 0.8} cy={h * 0.4} r="1.5" fill="rgba(0,191,166,0.06)" />
+        <SvgCircle cx={w * 0.25} cy={h * 0.35} r="1.5" fill="rgba(0,217,132,0.06)" />
+        <SvgCircle cx={w * 0.6} cy={h * 0.55} r="2" fill="rgba(0,191,166,0.07)" />
+        <SvgCircle cx={w * 0.45} cy={h * 0.8} r="1.5" fill="rgba(0,217,132,0.05)" />
       </Svg>
     </View>
   );
@@ -252,66 +154,11 @@ function GoogleIcon(props) {
 }
 
 // ============================================================
-// LOGO — avec fallback si image absente
+// LOGO
 // ============================================================
 
 var LogoImg = null;
 try { LogoImg = require('./assets/logo-lx.png'); } catch (e) { LogoImg = null; }
-
-// ============================================================
-// APP PRINCIPALE — LOGIN PAGE
-// ============================================================
-
-// ============================================================
-// INPUT COMPONENT — gere son propre focus via refs (zero re-render parent)
-// ============================================================
-
-function FocusInput(props) {
-  var borderRef = useRef(null);
-  var iconRef = useRef(null);
-
-  var handleFocus = useCallback(function () {
-    if (borderRef.current) {
-      borderRef.current.setNativeProps({
-        style: { borderColor: 'rgba(0,217,132,0.35)' },
-      });
-    }
-  }, []);
-
-  var handleBlur = useCallback(function () {
-    if (borderRef.current) {
-      borderRef.current.setNativeProps({
-        style: { borderColor: 'rgba(62,72,85,0.3)' },
-      });
-    }
-  }, []);
-
-  return (
-    <View style={{ marginBottom: props.noMargin ? 6 : 14 }}>
-      <Text style={s.inputLabel}>{props.label}</Text>
-      <View ref={borderRef} style={s.inputRow}>
-        <Ionicons
-          name={props.icon} size={16}
-          color={C.textMuted}
-          style={{ marginRight: 8 }}
-        />
-        <TextInput
-          value={props.value}
-          onChangeText={props.onChangeText}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          placeholder={props.placeholder}
-          placeholderTextColor={C.metalBorder}
-          keyboardType={props.keyboardType}
-          autoCapitalize={props.autoCapitalize}
-          secureTextEntry={props.secureTextEntry}
-          style={s.inputText}
-        />
-        {props.rightIcon ? props.rightIcon : null}
-      </View>
-    </View>
-  );
-}
 
 // ============================================================
 // APP PRINCIPALE — LOGIN PAGE
@@ -334,17 +181,16 @@ export default function App() {
   var loading = _loading[0]; var setLoading = _loading[1];
 
   var t = texts[lang];
-  var canLogin = email.length > 0 && password.length >= 8;
 
   var handleLogin = function () {
-    if (!email || password.length < 8) return;
+    if (!email || password.length < 8) {
+      Alert.alert(t.errorTitle, t.errorEmpty);
+      return;
+    }
     setLoading(true);
     setTimeout(function () {
       setLoading(false);
-      Alert.alert(
-        texts[lang].successTitle,
-        texts[lang].successMsg
-      );
+      Alert.alert(t.successTitle, t.successMsg);
     }, 1200);
   };
 
@@ -363,8 +209,7 @@ export default function App() {
         <StatusBar barStyle="light-content" backgroundColor="#0F1A2B" />
         <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom', 'left', 'right']}>
 
-          {/* BACKGROUND GEOMETRIQUE */}
-          <GeometricBackground width={W} height={H} />
+          <GeometricBackground />
 
           <KeyboardAvoidingView
             style={{ flex: 1 }}
@@ -380,7 +225,7 @@ export default function App() {
               showsVerticalScrollIndicator={false}
             >
 
-              {/* DRAPEAUX — haut droite */}
+              {/* DRAPEAUX */}
               <View style={{
                 flexDirection: 'row', gap: 6, justifyContent: 'flex-end',
                 marginBottom: 10, marginTop: 10,
@@ -428,92 +273,93 @@ export default function App() {
               </View>
 
               {/* CARTE GLASSMORPHISM */}
-              <View style={s.glassCard}>
-                {/* Reflet glass haut */}
+              <View style={styles.glassCard}>
                 <View style={{
                   position: 'absolute', top: 0, left: 0, right: 0, height: 50,
-                  zIndex: 0,
                 }}>
                   <LinearGradient
                     colors={['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.02)', 'transparent']}
                     style={{ flex: 1, borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
                   />
                 </View>
-                {/* Lisere lumineux */}
                 <View style={{
                   position: 'absolute', top: 0, left: 12, right: 12,
                   height: 1, backgroundColor: 'rgba(255,255,255,0.08)',
                 }} />
 
-                <View style={{ padding: 22, paddingTop: 26, zIndex: 1 }}>
+                <View style={{ padding: 22, paddingTop: 26 }}>
 
-                  {/* Titre */}
-                  <Text style={{
-                    color: C.textPrimary, fontSize: 24, fontWeight: '700', marginBottom: 4,
-                  }}>
+                  <Text style={{ color: C.textPrimary, fontSize: 24, fontWeight: '700', marginBottom: 4 }}>
                     {t.title}
                   </Text>
-                  <Text style={{
-                    color: C.textSecondary, fontSize: 13, marginBottom: 22,
-                  }}>
+                  <Text style={{ color: C.textSecondary, fontSize: 13, marginBottom: 22 }}>
                     {t.subtitle}
                   </Text>
 
-                  {/* INPUT EMAIL */}
-                  <FocusInput
-                    label={t.email}
-                    icon="mail-outline"
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholder={t.emailPlaceholder}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
+                  {/* ===== EMAIL ===== */}
+                  <Text style={styles.label}>{t.email}</Text>
+                  <View style={styles.inputBox}>
+                    <Ionicons name="mail-outline" size={16} color={C.textMuted} style={{ marginRight: 10 }} />
+                    <TextInput
+                      value={email}
+                      onChangeText={function (v) { setEmail(v); }}
+                      placeholder={t.emailPlaceholder}
+                      placeholderTextColor={C.metalBorder}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      style={styles.input}
+                    />
+                  </View>
 
-                  {/* INPUT MOT DE PASSE */}
-                  <FocusInput
-                    label={t.password}
-                    icon="lock-closed-outline"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                    noMargin
-                    rightIcon={
-                      <TouchableOpacity onPress={function () { setShowPassword(!showPassword); }}>
-                        <Ionicons
-                          name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                          size={18} color={C.textMuted}
-                        />
-                      </TouchableOpacity>
-                    }
-                  />
+                  {/* ===== MOT DE PASSE ===== */}
+                  <Text style={styles.label}>{t.password}</Text>
+                  <View style={styles.inputBox}>
+                    <Ionicons name="lock-closed-outline" size={16} color={C.textMuted} style={{ marginRight: 10 }} />
+                    <TextInput
+                      value={password}
+                      onChangeText={function (v) { setPassword(v); }}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      style={styles.input}
+                    />
+                    <TouchableOpacity
+                      onPress={function () { setShowPassword(!showPassword); }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Ionicons
+                        name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                        size={18} color={C.textMuted}
+                      />
+                    </TouchableOpacity>
+                  </View>
 
                   {/* Mot de passe oublie */}
-                  <TouchableOpacity style={{ alignSelf: 'flex-end', marginBottom: 18 }}>
+                  <TouchableOpacity style={{ alignSelf: 'flex-end', marginBottom: 18, marginTop: -4 }}>
                     <Text style={{ color: C.emerald, fontSize: 11, fontWeight: '600' }}>
                       {t.forgot}
                     </Text>
                   </TouchableOpacity>
 
-                  {/* BOUTON SE CONNECTER — glass emeraude */}
+                  {/* ===== BOUTON SE CONNECTER ===== */}
                   <TouchableOpacity
                     onPress={handleLogin}
-                    disabled={!canLogin || loading}
+                    disabled={loading}
                     activeOpacity={0.7}
-                    style={{ marginBottom: 16, opacity: canLogin ? 1 : 0.4 }}
+                    style={{ marginBottom: 16 }}
                   >
-                    <View style={s.loginBtn}>
-                      {/* Reflet subtil haut du bouton */}
+                    <View style={[
+                      styles.loginBtn,
+                      (!email || password.length < 8) && { opacity: 0.4 },
+                    ]}>
                       <View style={{
                         position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
                         backgroundColor: 'rgba(0,217,132,0.03)',
                         borderTopLeftRadius: 12, borderTopRightRadius: 12,
                       }} />
                       {loading ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                          <Ionicons name="sync-outline" size={16} color={C.emerald} />
-                          <Text style={{ color: C.emerald, fontSize: 14, fontWeight: '600' }}>...</Text>
-                        </View>
+                        <Text style={{ color: C.emerald, fontSize: 15, fontWeight: '700' }}>...</Text>
                       ) : (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Ionicons name="log-in-outline" size={18} color={C.emerald} />
@@ -528,10 +374,7 @@ export default function App() {
                   {/* SEPARATEUR */}
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
                     <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(62,72,85,0.3)' }} />
-                    <Text style={{
-                      color: C.textMuted, fontSize: 11,
-                      marginHorizontal: 12, letterSpacing: 2,
-                    }}>
+                    <Text style={{ color: C.textMuted, fontSize: 11, marginHorizontal: 12, letterSpacing: 2 }}>
                       {t.or}
                     </Text>
                     <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(62,72,85,0.3)' }} />
@@ -539,7 +382,7 @@ export default function App() {
 
                   {/* BOUTON GOOGLE */}
                   <TouchableOpacity onPress={handleGoogleLogin} activeOpacity={0.7}>
-                    <View style={s.googleBtn}>
+                    <View style={styles.googleBtn}>
                       <GoogleIcon size={18} />
                       <Text style={{ color: C.textPrimary, fontSize: 13, fontWeight: '600' }}>
                         {t.google}
@@ -554,7 +397,7 @@ export default function App() {
               <TouchableOpacity
                 onPress={function () {
                   Alert.alert(
-                    lang === 'fr' ? 'Navigation' : 'Navigation',
+                    'Navigation',
                     lang === 'fr' ? 'Retour vers la page d\'accueil' : 'Back to welcome page'
                   );
                 }}
@@ -580,7 +423,7 @@ export default function App() {
 // STYLES
 // ============================================================
 
-var s = StyleSheet.create({
+var styles = StyleSheet.create({
   glassCard: {
     borderRadius: 20,
     overflow: 'hidden',
@@ -591,28 +434,28 @@ var s = StyleSheet.create({
     borderBottomColor: 'rgba(26,31,38,0.4)',
     backgroundColor: 'rgba(21, 27, 35, 0.85)',
   },
-  inputLabel: {
+  label: {
     color: '#8892A0',
     fontSize: 11,
     fontWeight: '600',
     marginBottom: 6,
     letterSpacing: 1.2,
   },
-  inputRow: {
-    borderRadius: 10,
-    marginBottom: 14,
-    backgroundColor: '#0A0E14',
-    borderWidth: 1.2,
-    borderColor: 'rgba(62,72,85,0.3)',
+  inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#0A0E14',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(62,72,85,0.3)',
     paddingHorizontal: 12,
+    marginBottom: 14,
   },
-  inputText: {
+  input: {
     flex: 1,
     color: '#EAEEF3',
     fontSize: 14,
-    paddingVertical: 13,
+    paddingVertical: Platform.OS === 'ios' ? 14 : 12,
   },
   loginBtn: {
     borderRadius: 12,
