@@ -16,6 +16,7 @@ import {
   Platform,
   StatusBar,
   KeyboardAvoidingView,
+  ScrollView,
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
@@ -261,6 +262,61 @@ try { LogoImg = require('./assets/logo-lx.png'); } catch (e) { LogoImg = null; }
 // APP PRINCIPALE — LOGIN PAGE
 // ============================================================
 
+// ============================================================
+// INPUT COMPONENT — gere son propre focus via refs (zero re-render parent)
+// ============================================================
+
+function FocusInput(props) {
+  var borderRef = useRef(null);
+  var iconRef = useRef(null);
+
+  var handleFocus = useCallback(function () {
+    if (borderRef.current) {
+      borderRef.current.setNativeProps({
+        style: { borderColor: 'rgba(0,217,132,0.35)' },
+      });
+    }
+  }, []);
+
+  var handleBlur = useCallback(function () {
+    if (borderRef.current) {
+      borderRef.current.setNativeProps({
+        style: { borderColor: 'rgba(62,72,85,0.3)' },
+      });
+    }
+  }, []);
+
+  return (
+    <View style={{ marginBottom: props.noMargin ? 6 : 14 }}>
+      <Text style={s.inputLabel}>{props.label}</Text>
+      <View ref={borderRef} style={s.inputRow}>
+        <Ionicons
+          name={props.icon} size={16}
+          color={C.textMuted}
+          style={{ marginRight: 8 }}
+        />
+        <TextInput
+          value={props.value}
+          onChangeText={props.onChangeText}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          placeholder={props.placeholder}
+          placeholderTextColor={C.metalBorder}
+          keyboardType={props.keyboardType}
+          autoCapitalize={props.autoCapitalize}
+          secureTextEntry={props.secureTextEntry}
+          style={s.inputText}
+        />
+        {props.rightIcon ? props.rightIcon : null}
+      </View>
+    </View>
+  );
+}
+
+// ============================================================
+// APP PRINCIPALE — LOGIN PAGE
+// ============================================================
+
 export default function App() {
   var _lang = useState('fr');
   var lang = _lang[0]; var setLang = _lang[1];
@@ -274,33 +330,32 @@ export default function App() {
   var _showPassword = useState(false);
   var showPassword = _showPassword[0]; var setShowPassword = _showPassword[1];
 
-  var _focusedField = useState(null);
-  var focusedField = _focusedField[0]; var setFocusedField = _focusedField[1];
-
   var _loading = useState(false);
   var loading = _loading[0]; var setLoading = _loading[1];
 
   var t = texts[lang];
   var canLogin = email.length > 0 && password.length >= 8;
 
-  var handleLogin = useCallback(function () {
-    if (!canLogin) return;
+  var handleLogin = function () {
+    if (!email || password.length < 8) return;
     setLoading(true);
-    // Simule un appel reseau
     setTimeout(function () {
       setLoading(false);
-      Alert.alert(t.successTitle, t.successMsg);
+      Alert.alert(
+        texts[lang].successTitle,
+        texts[lang].successMsg
+      );
     }, 1200);
-  }, [canLogin, t]);
+  };
 
-  var handleGoogleLogin = useCallback(function () {
+  var handleGoogleLogin = function () {
     Alert.alert(
       'Google Auth',
       lang === 'fr'
         ? 'L\'authentification Google sera connect\u00e9e \u00e0 Supabase.'
         : 'Google authentication will be connected to Supabase.'
     );
-  }, [lang]);
+  };
 
   return (
     <SafeAreaProvider>
@@ -314,16 +369,21 @@ export default function App() {
           <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
           >
-            <View style={{
-              flex: 1, paddingHorizontal: 24,
-              justifyContent: 'center',
-            }}>
+            <ScrollView
+              contentContainerStyle={{
+                flexGrow: 1, paddingHorizontal: 24,
+                justifyContent: 'center',
+              }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
 
               {/* DRAPEAUX — haut droite */}
               <View style={{
-                position: 'absolute', top: 10, right: 0,
-                flexDirection: 'row', gap: 6, zIndex: 10,
+                flexDirection: 'row', gap: 6, justifyContent: 'flex-end',
+                marginBottom: 10, marginTop: 10,
               }}>
                 <TouchableOpacity onPress={function () { setLang('en'); }}>
                   <View style={{
@@ -349,26 +409,22 @@ export default function App() {
 
               {/* LOGO */}
               <View style={{ alignItems: 'center', marginBottom: 6 }}>
-                <View style={{
-                  width: 100, height: 100, borderRadius: 22,
-                }}>
-                  {LogoImg ? (
-                    <Image
-                      source={LogoImg}
-                      style={{ width: 100, height: 100, borderRadius: 22 }}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={{
-                      width: 100, height: 100, borderRadius: 22,
-                      backgroundColor: 'rgba(0,217,132,0.08)',
-                      borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.2)',
-                      alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <Text style={{ fontSize: 28, fontWeight: '900', color: C.emerald, letterSpacing: 2 }}>LX</Text>
-                    </View>
-                  )}
-                </View>
+                {LogoImg ? (
+                  <Image
+                    source={LogoImg}
+                    style={{ width: 100, height: 100, borderRadius: 22 }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={{
+                    width: 100, height: 100, borderRadius: 22,
+                    backgroundColor: 'rgba(0,217,132,0.08)',
+                    borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.2)',
+                    alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Text style={{ fontSize: 28, fontWeight: '900', color: C.emerald, letterSpacing: 2 }}>LX</Text>
+                  </View>
+                )}
               </View>
 
               {/* CARTE GLASSMORPHISM */}
@@ -404,56 +460,33 @@ export default function App() {
                   </Text>
 
                   {/* INPUT EMAIL */}
-                  <Text style={s.inputLabel}>{t.email}</Text>
-                  <View style={[
-                    s.inputRow,
-                    focusedField === 'email' && s.inputRowFocused,
-                  ]}>
-                    <Ionicons
-                      name="mail-outline" size={16}
-                      color={focusedField === 'email' ? C.emerald : C.textMuted}
-                      style={{ marginRight: 8 }}
-                    />
-                    <TextInput
-                      value={email}
-                      onChangeText={setEmail}
-                      onFocus={function () { setFocusedField('email'); }}
-                      onBlur={function () { setFocusedField(null); }}
-                      placeholder={t.emailPlaceholder}
-                      placeholderTextColor={C.metalBorder}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      style={s.inputText}
-                    />
-                  </View>
+                  <FocusInput
+                    label={t.email}
+                    icon="mail-outline"
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder={t.emailPlaceholder}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
 
                   {/* INPUT MOT DE PASSE */}
-                  <Text style={s.inputLabel}>{t.password}</Text>
-                  <View style={[
-                    s.inputRow,
-                    { marginBottom: 6 },
-                    focusedField === 'pass' && s.inputRowFocused,
-                  ]}>
-                    <Ionicons
-                      name="lock-closed-outline" size={16}
-                      color={focusedField === 'pass' ? C.emerald : C.textMuted}
-                      style={{ marginRight: 8 }}
-                    />
-                    <TextInput
-                      value={password}
-                      onChangeText={setPassword}
-                      onFocus={function () { setFocusedField('pass'); }}
-                      onBlur={function () { setFocusedField(null); }}
-                      secureTextEntry={!showPassword}
-                      style={s.inputText}
-                    />
-                    <TouchableOpacity onPress={function () { setShowPassword(!showPassword); }}>
-                      <Ionicons
-                        name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                        size={18} color={C.textMuted}
-                      />
-                    </TouchableOpacity>
-                  </View>
+                  <FocusInput
+                    label={t.password}
+                    icon="lock-closed-outline"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    noMargin
+                    rightIcon={
+                      <TouchableOpacity onPress={function () { setShowPassword(!showPassword); }}>
+                        <Ionicons
+                          name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                          size={18} color={C.textMuted}
+                        />
+                      </TouchableOpacity>
+                    }
+                  />
 
                   {/* Mot de passe oublie */}
                   <TouchableOpacity style={{ alignSelf: 'flex-end', marginBottom: 18 }}>
@@ -527,14 +560,14 @@ export default function App() {
                 }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
-                  justifyContent: 'center', marginTop: 16, gap: 6,
+                  justifyContent: 'center', marginTop: 16, marginBottom: 20, gap: 6,
                 }}
               >
                 <Ionicons name="arrow-back" size={16} color={C.textMuted} />
                 <Text style={{ color: C.textMuted, fontSize: 13 }}>{t.back}</Text>
               </TouchableOpacity>
 
-            </View>
+            </ScrollView>
           </KeyboardAvoidingView>
 
         </SafeAreaView>
@@ -574,14 +607,6 @@ var s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-  },
-  inputRowFocused: {
-    borderColor: 'rgba(0,217,132,0.35)',
-    shadowColor: '#00D984',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
   },
   inputText: {
     flex: 1,
