@@ -19,23 +19,23 @@ var H = Dimensions.get('window').height;
 
 function generateTriangles(width, height) {
   var triangles = [];
-  var cols = 8;
-  var rows = 14;
+  var cols = 14;
+  var rows = 24;
   var cellW = width / cols;
   var cellH = height / rows;
 
   for (var row = 0; row < rows; row++) {
     for (var col = 0; col < cols; col++) {
       var seed = row * cols + col;
-      var jitterX = ((Math.sin(seed * 127.1) * 43758.5453) % 1) * cellW * 0.3;
-      var jitterY = ((Math.sin(seed * 269.5) * 43758.5453) % 1) * cellH * 0.3;
+      var jitterX = ((Math.sin(seed * 127.1) * 43758.5453) % 1) * cellW * 0.15;
+      var jitterY = ((Math.sin(seed * 269.5) * 43758.5453) % 1) * cellH * 0.15;
 
       var x = col * cellW + jitterX;
       var y = row * cellH + jitterY;
-      var x2 = (col + 1) * cellW + ((Math.sin((seed + 1) * 127.1) * 43758.5453) % 1) * cellW * 0.3;
-      var y2 = row * cellH + ((Math.sin((seed + 1) * 269.5) * 43758.5453) % 1) * cellH * 0.3;
-      var x3 = (col + 0.5) * cellW + ((Math.sin((seed + 2) * 127.1) * 43758.5453) % 1) * cellW * 0.2;
-      var y3 = (row + 1) * cellH + ((Math.sin((seed + 2) * 269.5) * 43758.5453) % 1) * cellH * 0.3;
+      var x2 = (col + 1) * cellW + ((Math.sin((seed + 1) * 127.1) * 43758.5453) % 1) * cellW * 0.15;
+      var y2 = row * cellH + ((Math.sin((seed + 1) * 269.5) * 43758.5453) % 1) * cellH * 0.15;
+      var x3 = (col + 0.5) * cellW + ((Math.sin((seed + 2) * 127.1) * 43758.5453) % 1) * cellW * 0.1;
+      var y3 = (row + 1) * cellH + ((Math.sin((seed + 2) * 269.5) * 43758.5453) % 1) * cellH * 0.15;
 
       // Distance du centre-haut
       var centerX = width / 2;
@@ -56,8 +56,8 @@ function generateTriangles(width, height) {
       });
 
       // Triangle 2 (bas — miroir)
-      var x4 = (col + 1) * cellW + ((Math.sin((seed + 3) * 127.1) * 43758.5453) % 1) * cellW * 0.3;
-      var y4 = (row + 1) * cellH + ((Math.sin((seed + 3) * 269.5) * 43758.5453) % 1) * cellH * 0.3;
+      var x4 = (col + 1) * cellW + ((Math.sin((seed + 3) * 127.1) * 43758.5453) % 1) * cellW * 0.15;
+      var y4 = (row + 1) * cellH + ((Math.sin((seed + 3) * 269.5) * 43758.5453) % 1) * cellH * 0.15;
       triangles.push({
         points: x2 + ',' + y2 + ' ' + x3 + ',' + y3 + ' ' + x4 + ',' + y4,
         intensity: intensity * 0.85,
@@ -73,8 +73,8 @@ function getTriangleColor(intensity, hueShift, seed) {
   if (intensity < 0.05) {
     var brightness = 12 + Math.floor(seed % 5);
     return {
-      fill: 'rgba(' + brightness + ',' + (brightness + 3) + ',' + (brightness + 8) + ',0.3)',
-      stroke: 'rgba(' + (brightness + 10) + ',' + (brightness + 15) + ',' + (brightness + 25) + ',0.08)',
+      fill: 'rgba(' + brightness + ',' + (brightness + 3) + ',' + (brightness + 8) + ',0.15)',
+      stroke: 'rgba(' + (brightness + 10) + ',' + (brightness + 15) + ',' + (brightness + 25) + ',0.03)',
     };
   }
 
@@ -82,9 +82,9 @@ function getTriangleColor(intensity, hueShift, seed) {
   var g = Math.floor(180 + hueShift * 37);
   var b = Math.floor(100 + hueShift * 32);
 
-  var fillOpacity = intensity * 0.18;
-  var strokeOpacity = intensity * 0.12;
-  var facetVar = ((Math.sin(seed * 3.7) + 1) / 2) * 0.06;
+  var fillOpacity = intensity * 0.07;
+  var strokeOpacity = intensity * 0.05;
+  var facetVar = ((Math.sin(seed * 3.7) + 1) / 2) * 0.02;
 
   return {
     fill: 'rgba(' + r + ',' + g + ',' + b + ',' + (fillOpacity + facetVar) + ')',
@@ -212,7 +212,7 @@ export default function App() {
             <View style={s.testCard}>
               <View style={s.cardShine} />
               <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '600', letterSpacing: 2 }}>
-                SCORE DE VITALIT\u00c9
+                {'SCORE DE VITALIT\u00C9'}
               </Text>
               <Text style={{ color: '#00D984', fontSize: 42, fontWeight: '800', marginTop: 8 }}>
                 2 330
