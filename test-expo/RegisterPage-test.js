@@ -447,23 +447,36 @@ var ScrollPicker = function (pickerProps) {
   var color = pickerProps.color || '#00D984';
   var pickerHeight = pickerProps.height || 220;
   var ITEM_HEIGHT = 52;
-  var visibleItems = Math.floor(pickerHeight / ITEM_HEIGHT);
-  var paddingItems = Math.floor(visibleItems / 2);
   var flatListRef = useRef(null);
 
-  var paddedValues = []
-    .concat(Array(paddingItems).fill(null))
-    .concat(values)
-    .concat(Array(paddingItems).fill(null));
+  var paddingCount = Math.floor(pickerHeight / ITEM_HEIGHT / 2);
 
-  var initialIndex = Math.max(0, values.indexOf(selectedValue));
+  var data = useMemo(function () {
+    var result = [];
+    var i;
+    for (i = 0; i < paddingCount; i++) { result.push({ empty: true, _idx: 'top' + i }); }
+    for (i = 0; i < values.length; i++) { result.push({ value: values[i] }); }
+    for (i = 0; i < paddingCount; i++) { result.push({ empty: true, _idx: 'bot' + i }); }
+    return result;
+  }, [values, paddingCount]);
 
-  var onMomentumScrollEnd = function (event) {
-    var index = Math.round(event.nativeEvent.contentOffset.y / ITEM_HEIGHT);
-    if (index >= 0 && index < values.length) {
-      onSelect(values[index]);
+  var initialIdx = values.indexOf(selectedValue);
+  var initialOffset = initialIdx >= 0 ? initialIdx * ITEM_HEIGHT : 0;
+
+  var handleScrollEnd = useCallback(function (event) {
+    var offsetY = event.nativeEvent.contentOffset.y;
+    var index = Math.round(offsetY / ITEM_HEIGHT);
+    var clampedIndex = Math.max(0, Math.min(index, values.length - 1));
+    if (values[clampedIndex] !== selectedValue) {
+      onSelect(values[clampedIndex]);
     }
-  };
+    if (flatListRef.current) {
+      flatListRef.current.scrollToOffset({
+        offset: clampedIndex * ITEM_HEIGHT,
+        animated: true,
+      });
+    }
+  }, [values, selectedValue, onSelect]);
 
   return (
     <View style={{ height: pickerHeight, overflow: 'hidden', position: 'relative' }}>
@@ -471,53 +484,54 @@ var ScrollPicker = function (pickerProps) {
       <View style={{
         position: 'absolute',
         top: pickerHeight / 2 - ITEM_HEIGHT / 2,
-        left: 0, right: 0,
+        left: 4, right: 4,
         height: ITEM_HEIGHT,
-        borderTopWidth: 1, borderBottomWidth: 1,
-        borderColor: color + '30',
+        borderTopWidth: 1.5, borderBottomWidth: 1.5,
+        borderColor: color + '35',
         backgroundColor: color + '08',
-        borderRadius: 8,
+        borderRadius: 10,
         zIndex: 0,
       }} />
 
-      {/* Fondu en haut */}
+      {/* Fondu haut */}
       <LinearGradient
-        colors={['#1A2232', 'rgba(26,34,50,0)']}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 50, zIndex: 2 }}
+        colors={['#1A2232', 'rgba(26,34,50,0.8)', 'rgba(26,34,50,0)']}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 70, zIndex: 2 }}
         pointerEvents="none"
       />
-
-      {/* Fondu en bas */}
+      {/* Fondu bas */}
       <LinearGradient
-        colors={['rgba(26,34,50,0)', '#1A2232']}
-        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 50, zIndex: 2 }}
+        colors={['rgba(26,34,50,0)', 'rgba(26,34,50,0.8)', '#1A2232']}
+        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 70, zIndex: 2 }}
         pointerEvents="none"
       />
 
       <FlatList
         ref={flatListRef}
-        data={paddedValues}
-        keyExtractor={function (item, i) { return item + '-' + i; }}
+        data={data}
+        keyExtractor={function (item, i) { return (item.empty ? 'empty' : item.value) + '-' + i; }}
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_HEIGHT}
         decelerationRate="fast"
-        initialScrollIndex={initialIndex > 0 ? initialIndex + paddingItems : paddingItems}
+        bounces={false}
+        contentOffset={{ x: 0, y: initialOffset }}
         getItemLayout={function (_, index) { return { length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index: index }; }}
-        onMomentumScrollEnd={onMomentumScrollEnd}
+        onMomentumScrollEnd={handleScrollEnd}
+        onScrollEndDrag={handleScrollEnd}
         renderItem={function (info) {
           var item = info.item;
-          if (item === null) return <View style={{ height: ITEM_HEIGHT }} />;
-          var isSelected = item === selectedValue;
+          if (item.empty) return <View style={{ height: ITEM_HEIGHT }} />;
+          var isSelected = item.value === selectedValue;
           return (
-            <View style={{ height: ITEM_HEIGHT, alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+            <View style={{ height: ITEM_HEIGHT, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{
                 color: isSelected ? color : '#555E6C',
-                fontSize: isSelected ? 30 : 17,
+                fontSize: isSelected ? 28 : 16,
                 fontWeight: isSelected ? '800' : '400',
-                opacity: isSelected ? 1 : 0.4,
+                opacity: isSelected ? 1 : 0.35,
                 textAlign: 'center',
               }}>
-                {item}{isSelected ? ' ' + unit : ''}
+                {isSelected ? item.value + ' ' + unit : '' + item.value}
               </Text>
             </View>
           );
@@ -639,77 +653,192 @@ function Phase1Identity(props) {
 }
 
 // ============================================================
-// PHASE 2 — MORPHOLOGIE (jauges circulaires) — Age centre
+// BODY ICONS BACKGROUND — emojis mesure en fond Phase 2
+// ============================================================
+
+function BodyIconsBackground() {
+  var icons = ['\u2696\uFE0F', '\uD83D\uDCCF', '\uD83C\uDF82', '\uD83D\uDCAA', '\uD83D\uDCD0', '\uD83E\uDE7A'];
+  var positions = [
+    { bottom: '8%', left: '5%', size: 34, opacity: 0.06, rotate: '-10deg' },
+    { bottom: '15%', right: '8%', size: 28, opacity: 0.05, rotate: '15deg' },
+    { bottom: '5%', left: '35%', size: 32, opacity: 0.04, rotate: '-5deg' },
+    { bottom: '20%', right: '30%', size: 26, opacity: 0.05, rotate: '10deg' },
+    { bottom: '12%', left: '60%', size: 30, opacity: 0.04, rotate: '-15deg' },
+    { bottom: '25%', left: '15%', size: 24, opacity: 0.03, rotate: '20deg' },
+  ];
+  var elements = [];
+  for (var i = 0; i < icons.length; i++) {
+    var pos = positions[i];
+    elements.push(
+      <Text key={'body' + i} style={{
+        position: 'absolute', bottom: pos.bottom, left: pos.left, right: pos.right,
+        fontSize: pos.size, opacity: pos.opacity,
+        transform: [{ rotate: pos.rotate }],
+      }}>{icons[i]}</Text>
+    );
+  }
+  return <>{elements}</>;
+}
+
+// ============================================================
+// GOAL ICONS BACKGROUND — emojis fitness en fond Phase 5
+// ============================================================
+
+function GoalIconsBackground() {
+  var icons = ['\uD83C\uDFAF', '\uD83C\uDFC6', '\uD83D\uDCCA', '\uD83D\uDC8E', '\u26A1', '\uD83D\uDD25'];
+  var positions = [
+    { bottom: '5%', left: '8%', size: 36, opacity: 0.06, rotate: '-12deg' },
+    { bottom: '15%', right: '10%', size: 30, opacity: 0.05, rotate: '8deg' },
+    { bottom: '8%', left: '40%', size: 28, opacity: 0.04, rotate: '-5deg' },
+    { bottom: '22%', right: '35%', size: 32, opacity: 0.05, rotate: '15deg' },
+    { bottom: '18%', left: '20%', size: 26, opacity: 0.04, rotate: '-8deg' },
+    { bottom: '3%', right: '15%', size: 34, opacity: 0.03, rotate: '10deg' },
+  ];
+  var elements = [];
+  for (var i = 0; i < icons.length; i++) {
+    var pos = positions[i];
+    elements.push(
+      <Text key={'goal' + i} style={{
+        position: 'absolute', bottom: pos.bottom, left: pos.left, right: pos.right,
+        fontSize: pos.size, opacity: pos.opacity,
+        transform: [{ rotate: pos.rotate }],
+      }}>{icons[i]}</Text>
+    );
+  }
+  return <>{elements}</>;
+}
+
+// ============================================================
+// UNIT SWITCH — mini toggle kg/lb, cm/in
+// ============================================================
+
+function UnitSwitch(switchProps) {
+  var left = switchProps.left;
+  var right = switchProps.right;
+  var value = switchProps.value;
+  var onChange = switchProps.onChange;
+  return (
+    <View style={{
+      flexDirection: 'row', alignSelf: 'center',
+      borderRadius: 6, overflow: 'hidden',
+      borderWidth: 1, borderColor: 'rgba(62,72,85,0.3)',
+      marginBottom: 6,
+    }}>
+      <TouchableOpacity onPress={function () { onChange(left.key); }}>
+        <View style={{
+          paddingHorizontal: 10, paddingVertical: 3,
+          backgroundColor: value === left.key ? 'rgba(0,217,132,0.15)' : 'transparent',
+        }}>
+          <Text style={{
+            color: value === left.key ? '#00D984' : '#555E6C',
+            fontSize: 8, fontWeight: '700',
+          }}>{left.label}</Text>
+        </View>
+      </TouchableOpacity>
+      <View style={{ width: 1, backgroundColor: 'rgba(62,72,85,0.3)' }} />
+      <TouchableOpacity onPress={function () { onChange(right.key); }}>
+        <View style={{
+          paddingHorizontal: 10, paddingVertical: 3,
+          backgroundColor: value === right.key ? 'rgba(0,217,132,0.15)' : 'transparent',
+        }}>
+          <Text style={{
+            color: value === right.key ? '#00D984' : '#555E6C',
+            fontSize: 8, fontWeight: '700',
+          }}>{right.label}</Text>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// ============================================================
+// PHASE 2 — MORPHOLOGIE — ScrollPickers + UnitSwitch
 // ============================================================
 
 function Phase2Morphology(props) {
   var formData = props.formData; var setFormData = props.setFormData; var t = props.t;
+  var lang = props.lang;
+
+  var unitWeightState = useState('kg');
+  var unitWeight = unitWeightState[0]; var setUnitWeight = unitWeightState[1];
+  var unitHeightState = useState('cm');
+  var unitHeight = unitHeightState[0]; var setUnitHeight = unitHeightState[1];
 
   function update(key, val) { var n = Object.assign({}, formData); n[key] = val; setFormData(n); }
 
-  function updateNum(key, delta, min, max) {
-    var cur = parseInt(formData[key]) || (key === 'weight' ? 70 : key === 'height' ? 175 : 25);
-    update(key, String(Math.max(min, Math.min(max, cur + delta))));
-  }
+  var scrollContainerStyle = function (borderColor) {
+    return {
+      borderRadius: 14, overflow: 'hidden', width: '100%',
+      borderWidth: 1, borderColor: borderColor + '15', backgroundColor: '#0A0E14',
+    };
+  };
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, position: 'relative', minHeight: '100%' }}
       showsVerticalScrollIndicator={false}>
 
-      {/* 3 SCROLL PICKERS en ligne */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24, gap: 8 }}>
-        {/* Poids — EMERAUDE */}
+      {/* 3 SCROLL PICKERS en ligne avec switches */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8, marginBottom: 20 }}>
+        {/* POIDS */}
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3, marginBottom: 10 }}>
             {t.weightLabel}
           </Text>
-          <View style={{
-            borderRadius: 14, overflow: 'hidden', width: '100%',
-            borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)', backgroundColor: '#0A0E14',
-          }}>
+          <UnitSwitch
+            left={{ key: 'kg', label: 'KG' }}
+            right={{ key: 'lb', label: 'LB' }}
+            value={unitWeight}
+            onChange={setUnitWeight}
+          />
+          <View style={scrollContainerStyle('#00D984')}>
             <ScrollPicker
-              values={Array.from({ length: 171 }, function (_, i) { return 30 + i; })}
-              selectedValue={parseInt(formData.weight) || 70}
+              values={unitWeight === 'kg'
+                ? Array.from({ length: 171 }, function (_, i) { return 30 + i; })
+                : Array.from({ length: 371 }, function (_, i) { return 66 + i; })}
+              selectedValue={parseInt(formData.weight) || (unitWeight === 'kg' ? 70 : 154)}
               onSelect={function (v) { update('weight', String(v)); }}
-              unit={t.kg}
+              unit={unitWeight}
               color="#00D984"
             />
           </View>
         </View>
 
-        {/* Taille — TURQUOISE */}
+        {/* TAILLE */}
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3, marginBottom: 10 }}>
             {t.heightLabel}
           </Text>
-          <View style={{
-            borderRadius: 14, overflow: 'hidden', width: '100%',
-            borderWidth: 1, borderColor: 'rgba(0,191,166,0.15)', backgroundColor: '#0A0E14',
-          }}>
+          <UnitSwitch
+            left={{ key: 'cm', label: 'CM' }}
+            right={{ key: 'in', label: 'IN' }}
+            value={unitHeight}
+            onChange={setUnitHeight}
+          />
+          <View style={scrollContainerStyle('#00BFA6')}>
             <ScrollPicker
-              values={Array.from({ length: 101 }, function (_, i) { return 120 + i; })}
-              selectedValue={parseInt(formData.height) || 175}
+              values={unitHeight === 'cm'
+                ? Array.from({ length: 101 }, function (_, i) { return 120 + i; })
+                : Array.from({ length: 49 }, function (_, i) { return 48 + i; })}
+              selectedValue={parseInt(formData.height) || (unitHeight === 'cm' ? 175 : 69)}
               onSelect={function (v) { update('height', String(v)); }}
-              unit={t.cm}
+              unit={unitHeight}
               color="#00BFA6"
             />
           </View>
         </View>
 
-        {/* Age — DORE */}
+        {/* AGE — pas de switch */}
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3, marginBottom: 10 }}>
             {t.ageLabel}
           </Text>
-          <View style={{
-            borderRadius: 14, overflow: 'hidden', width: '100%',
-            borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)', backgroundColor: '#0A0E14',
-          }}>
+          <View style={{ height: 22 }} />
+          <View style={scrollContainerStyle('#D4AF37')}>
             <ScrollPicker
               values={Array.from({ length: 83 }, function (_, i) { return 12 + i; })}
               selectedValue={parseInt(formData.age) || 25}
               onSelect={function (v) { update('age', String(v)); }}
-              unit={t.years}
+              unit={lang === 'fr' ? 'ans' : 'y'}
               color="#D4AF37"
             />
           </View>
@@ -726,8 +855,8 @@ function Phase2Morphology(props) {
 
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, marginBottom: 24 }}>
         {[
-          { key: 'male', icon: 'male', label: t.male, color: '#00D984', bgGrad: ['#00D984', '#00A866'] },
-          { key: 'female', icon: 'female', label: t.female, color: '#00BFA6', bgGrad: ['#00BFA6', '#00897B'] },
+          { key: 'male', icon: 'male', label: t.male, color: '#4A90D9', bgGrad: ['#4A90D9', '#2E6BB5'] },
+          { key: 'female', icon: 'female', label: t.female, color: '#E875A0', bgGrad: ['#E875A0', '#C95A82'] },
         ].map(function (g) {
           var sel = formData.gender === g.key;
           return (
@@ -764,7 +893,7 @@ function Phase2Morphology(props) {
                         flex: 1, alignItems: 'center', justifyContent: 'center',
                       }}
                     >
-                      <Ionicons name={g.icon} size={32} color="#0D1117" />
+                      <Ionicons name={g.icon} size={32} color="#FFFFFF" />
                     </LinearGradient>
                   ) : (
                     <View style={{
@@ -788,6 +917,8 @@ function Phase2Morphology(props) {
           );
         })}
       </View>
+
+      <BodyIconsBackground />
     </ScrollView>
   );
 }
@@ -947,7 +1078,7 @@ function Phase5Goals(props) {
   function update(key, val) { var n = Object.assign({}, formData); n[key] = val; setFormData(n); }
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, position: 'relative', minHeight: '100%' }}
       showsVerticalScrollIndicator={false}>
 
       {/* 3 cartes objectif avec gradient */}
@@ -1120,6 +1251,8 @@ function Phase5Goals(props) {
           </View>
         </View>
       ) : null}
+
+      <GoalIconsBackground />
     </ScrollView>
   );
 }
@@ -1641,20 +1774,20 @@ function Phase9Referral(props) {
 // ============================================================
 
 function ShimmerText(shimmerProps) {
-  var shimmerX = useRef(new Animated.Value(-200)).current;
+  var shimmerX = useRef(new Animated.Value(-100)).current;
 
   useEffect(function () {
     var loop = Animated.loop(
       Animated.sequence([
-        Animated.delay(2000),
+        Animated.delay(2500),
         Animated.timing(shimmerX, {
-          toValue: 400,
-          duration: 1500,
+          toValue: 350,
+          duration: 2000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(shimmerX, {
-          toValue: -200,
+          toValue: -100,
           duration: 0,
           useNativeDriver: true,
         }),
@@ -1664,17 +1797,33 @@ function ShimmerText(shimmerProps) {
     return function () { loop.stop(); };
   }, []);
 
+  var shimmerOffset = Animated.add(shimmerX, 12);
+
   return (
     <View style={{ overflow: 'hidden', position: 'relative' }}>
       <Text style={shimmerProps.style}>{shimmerProps.text}</Text>
+      {/* Bande large et douce */}
       <Animated.View style={{
         position: 'absolute',
-        top: -10, bottom: -10,
-        width: 40,
-        backgroundColor: 'rgba(255,255,255,0.12)',
+        top: -5, bottom: -5,
+        width: 25,
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        borderRadius: 10,
         transform: [
           { translateX: shimmerX },
-          { skewX: '-20deg' },
+          { skewX: '-25deg' },
+        ],
+      }} />
+      {/* Bande fine et brillante */}
+      <Animated.View style={{
+        position: 'absolute',
+        top: -5, bottom: -5,
+        width: 8,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        borderRadius: 4,
+        transform: [
+          { translateX: shimmerOffset },
+          { skewX: '-25deg' },
         ],
       }} />
     </View>
