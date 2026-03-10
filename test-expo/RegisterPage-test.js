@@ -445,98 +445,124 @@ var ScrollPicker = function (pickerProps) {
   var onSelect = pickerProps.onSelect;
   var unit = pickerProps.unit;
   var color = pickerProps.color || '#00D984';
-  var pickerHeight = pickerProps.height || 220;
-  var ITEM_HEIGHT = 52;
-  var flatListRef = useRef(null);
+  var pickerHeight = pickerProps.height || 260;
+  var ITEM_H = 50;
+  var scrollRef = useRef(null);
+  var paddingTop = pickerHeight / 2 - ITEM_H / 2;
+  var paddingBottom = pickerHeight / 2 - ITEM_H / 2;
 
-  var paddingCount = Math.floor(pickerHeight / ITEM_HEIGHT / 2);
+  var initialIdx = Math.max(0, values.indexOf(selectedValue));
 
-  var data = useMemo(function () {
-    var result = [];
-    var i;
-    for (i = 0; i < paddingCount; i++) { result.push({ empty: true, _idx: 'top' + i }); }
-    for (i = 0; i < values.length; i++) { result.push({ value: values[i] }); }
-    for (i = 0; i < paddingCount; i++) { result.push({ empty: true, _idx: 'bot' + i }); }
-    return result;
-  }, [values, paddingCount]);
-
-  var initialIdx = values.indexOf(selectedValue);
-  var initialOffset = initialIdx >= 0 ? initialIdx * ITEM_HEIGHT : 0;
+  useEffect(function () {
+    var timer = setTimeout(function () {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo({
+          y: initialIdx * ITEM_H,
+          animated: false,
+        });
+      }
+    }, 100);
+    return function () { clearTimeout(timer); };
+  }, []);
 
   var handleScrollEnd = useCallback(function (event) {
-    var offsetY = event.nativeEvent.contentOffset.y;
-    var index = Math.round(offsetY / ITEM_HEIGHT);
-    var clampedIndex = Math.max(0, Math.min(index, values.length - 1));
-    if (values[clampedIndex] !== selectedValue) {
-      onSelect(values[clampedIndex]);
-    }
-    if (flatListRef.current) {
-      flatListRef.current.scrollToOffset({
-        offset: clampedIndex * ITEM_HEIGHT,
+    var y = event.nativeEvent.contentOffset.y;
+    var idx = Math.round(y / ITEM_H);
+    var clamped = Math.max(0, Math.min(idx, values.length - 1));
+
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        y: clamped * ITEM_H,
         animated: true,
       });
     }
+
+    if (values[clamped] !== selectedValue) {
+      onSelect(values[clamped]);
+    }
   }, [values, selectedValue, onSelect]);
 
+  var items = [];
+  for (var i = 0; i < values.length; i++) {
+    var val = values[i];
+    var isSelected = val === selectedValue;
+    items.push(
+      <View key={val + '-' + i} style={{
+        height: ITEM_H,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <Text style={{
+          color: isSelected ? color : '#555E6C',
+          fontSize: isSelected ? 26 : 15,
+          fontWeight: isSelected ? '800' : '400',
+          opacity: isSelected ? 1 : 0.3,
+          textAlign: 'center',
+        }}>
+          {isSelected ? val + ' ' + unit : '' + val}
+        </Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={{ height: pickerHeight, overflow: 'hidden', position: 'relative' }}>
-      {/* Ligne de selection au centre */}
+    <View style={{
+      height: pickerHeight, overflow: 'hidden', position: 'relative',
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: color + '18',
+      backgroundColor: '#0A0E14',
+    }}>
+      {/* Bande de selection au centre */}
       <View style={{
         position: 'absolute',
-        top: pickerHeight / 2 - ITEM_HEIGHT / 2,
-        left: 4, right: 4,
-        height: ITEM_HEIGHT,
-        borderTopWidth: 1.5, borderBottomWidth: 1.5,
-        borderColor: color + '35',
-        backgroundColor: color + '08',
+        top: pickerHeight / 2 - ITEM_H / 2,
+        left: 6, right: 6,
+        height: ITEM_H,
         borderRadius: 10,
+        borderWidth: 1.5,
+        borderColor: color + '30',
+        backgroundColor: color + '06',
         zIndex: 0,
       }} />
 
       {/* Fondu haut */}
       <LinearGradient
-        colors={['#1A2232', 'rgba(26,34,50,0.8)', 'rgba(26,34,50,0)']}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 70, zIndex: 2 }}
-        pointerEvents="none"
-      />
-      {/* Fondu bas */}
-      <LinearGradient
-        colors={['rgba(26,34,50,0)', 'rgba(26,34,50,0.8)', '#1A2232']}
-        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 70, zIndex: 2 }}
+        colors={['#0A0E14', 'rgba(10,14,20,0.7)', 'rgba(10,14,20,0)']}
+        style={{
+          position: 'absolute', top: 0, left: 0, right: 0,
+          height: pickerHeight * 0.35, zIndex: 3,
+          borderTopLeftRadius: 14, borderTopRightRadius: 14,
+        }}
         pointerEvents="none"
       />
 
-      <FlatList
-        ref={flatListRef}
-        data={data}
-        keyExtractor={function (item, i) { return (item.empty ? 'empty' : item.value) + '-' + i; }}
+      {/* Fondu bas */}
+      <LinearGradient
+        colors={['rgba(10,14,20,0)', 'rgba(10,14,20,0.7)', '#0A0E14']}
+        style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          height: pickerHeight * 0.35, zIndex: 3,
+          borderBottomLeftRadius: 14, borderBottomRightRadius: 14,
+        }}
+        pointerEvents="none"
+      />
+
+      <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
-        snapToInterval={ITEM_HEIGHT}
+        snapToInterval={ITEM_H}
         decelerationRate="fast"
         bounces={false}
-        contentOffset={{ x: 0, y: initialOffset }}
-        getItemLayout={function (_, index) { return { length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index: index }; }}
         onMomentumScrollEnd={handleScrollEnd}
         onScrollEndDrag={handleScrollEnd}
-        renderItem={function (info) {
-          var item = info.item;
-          if (item.empty) return <View style={{ height: ITEM_HEIGHT }} />;
-          var isSelected = item.value === selectedValue;
-          return (
-            <View style={{ height: ITEM_HEIGHT, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{
-                color: isSelected ? color : '#555E6C',
-                fontSize: isSelected ? 28 : 16,
-                fontWeight: isSelected ? '800' : '400',
-                opacity: isSelected ? 1 : 0.35,
-                textAlign: 'center',
-              }}>
-                {isSelected ? item.value + ' ' + unit : '' + item.value}
-              </Text>
-            </View>
-          );
+        contentContainerStyle={{
+          paddingTop: paddingTop,
+          paddingBottom: paddingBottom,
         }}
-      />
+      >
+        {items}
+      </ScrollView>
     </View>
   );
 };
@@ -653,34 +679,6 @@ function Phase1Identity(props) {
 }
 
 // ============================================================
-// BODY ICONS BACKGROUND — emojis mesure en fond Phase 2
-// ============================================================
-
-function BodyIconsBackground() {
-  var icons = ['\u2696\uFE0F', '\uD83D\uDCCF', '\uD83C\uDF82', '\uD83D\uDCAA', '\uD83D\uDCD0', '\uD83E\uDE7A'];
-  var positions = [
-    { bottom: '8%', left: '5%', size: 34, opacity: 0.06, rotate: '-10deg' },
-    { bottom: '15%', right: '8%', size: 28, opacity: 0.05, rotate: '15deg' },
-    { bottom: '5%', left: '35%', size: 32, opacity: 0.04, rotate: '-5deg' },
-    { bottom: '20%', right: '30%', size: 26, opacity: 0.05, rotate: '10deg' },
-    { bottom: '12%', left: '60%', size: 30, opacity: 0.04, rotate: '-15deg' },
-    { bottom: '25%', left: '15%', size: 24, opacity: 0.03, rotate: '20deg' },
-  ];
-  var elements = [];
-  for (var i = 0; i < icons.length; i++) {
-    var pos = positions[i];
-    elements.push(
-      <Text key={'body' + i} style={{
-        position: 'absolute', bottom: pos.bottom, left: pos.left, right: pos.right,
-        fontSize: pos.size, opacity: pos.opacity,
-        transform: [{ rotate: pos.rotate }],
-      }}>{icons[i]}</Text>
-    );
-  }
-  return <>{elements}</>;
-}
-
-// ============================================================
 // GOAL ICONS BACKGROUND — emojis fitness en fond Phase 5
 // ============================================================
 
@@ -709,50 +707,7 @@ function GoalIconsBackground() {
 }
 
 // ============================================================
-// UNIT SWITCH — mini toggle kg/lb, cm/in
-// ============================================================
-
-function UnitSwitch(switchProps) {
-  var left = switchProps.left;
-  var right = switchProps.right;
-  var value = switchProps.value;
-  var onChange = switchProps.onChange;
-  return (
-    <View style={{
-      flexDirection: 'row', alignSelf: 'center',
-      borderRadius: 6, overflow: 'hidden',
-      borderWidth: 1, borderColor: 'rgba(62,72,85,0.3)',
-      marginBottom: 6,
-    }}>
-      <TouchableOpacity onPress={function () { onChange(left.key); }}>
-        <View style={{
-          paddingHorizontal: 10, paddingVertical: 3,
-          backgroundColor: value === left.key ? 'rgba(0,217,132,0.15)' : 'transparent',
-        }}>
-          <Text style={{
-            color: value === left.key ? '#00D984' : '#555E6C',
-            fontSize: 8, fontWeight: '700',
-          }}>{left.label}</Text>
-        </View>
-      </TouchableOpacity>
-      <View style={{ width: 1, backgroundColor: 'rgba(62,72,85,0.3)' }} />
-      <TouchableOpacity onPress={function () { onChange(right.key); }}>
-        <View style={{
-          paddingHorizontal: 10, paddingVertical: 3,
-          backgroundColor: value === right.key ? 'rgba(0,217,132,0.15)' : 'transparent',
-        }}>
-          <Text style={{
-            color: value === right.key ? '#00D984' : '#555E6C',
-            fontSize: 8, fontWeight: '700',
-          }}>{right.label}</Text>
-        </View>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-// ============================================================
-// PHASE 2 — MORPHOLOGIE — ScrollPickers + UnitSwitch
+// PHASE 2 — CORPS / MORPHOLOGIE — ScrollPickers + Doigt anime
 // ============================================================
 
 function Phase2Morphology(props) {
@@ -766,160 +721,240 @@ function Phase2Morphology(props) {
 
   function update(key, val) { var n = Object.assign({}, formData); n[key] = val; setFormData(n); }
 
-  var scrollContainerStyle = function (borderColor) {
-    return {
-      borderRadius: 14, overflow: 'hidden', width: '100%',
-      borderWidth: 1, borderColor: borderColor + '15', backgroundColor: '#0A0E14',
-    };
-  };
+  // Animation du doigt
+  var fingerY = useRef(new Animated.Value(0)).current;
+
+  useEffect(function () {
+    var loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(fingerY, {
+          toValue: 20, duration: 600,
+          easing: Easing.inOut(Easing.ease), useNativeDriver: true,
+        }),
+        Animated.timing(fingerY, {
+          toValue: 0, duration: 600,
+          easing: Easing.inOut(Easing.ease), useNativeDriver: true,
+        }),
+        Animated.delay(1500),
+      ])
+    );
+    loop.start();
+    return function () { loop.stop(); };
+  }, []);
+
+  // Mini switch inline
+  function renderUnitSwitch(left, right, value, onChange) {
+    return (
+      <View style={{
+        flexDirection: 'row', alignSelf: 'center',
+        borderRadius: 6, overflow: 'hidden',
+        borderWidth: 1, borderColor: 'rgba(62,72,85,0.3)',
+        marginBottom: 8,
+      }}>
+        <TouchableOpacity onPress={function () { onChange(left.key); }}>
+          <View style={{
+            paddingHorizontal: 12, paddingVertical: 4,
+            backgroundColor: value === left.key ? 'rgba(0,217,132,0.15)' : 'transparent',
+          }}>
+            <Text style={{
+              color: value === left.key ? '#00D984' : '#555E6C',
+              fontSize: 9, fontWeight: '700', letterSpacing: 1,
+            }}>{left.label}</Text>
+          </View>
+        </TouchableOpacity>
+        <View style={{ width: 1, backgroundColor: 'rgba(62,72,85,0.3)' }} />
+        <TouchableOpacity onPress={function () { onChange(right.key); }}>
+          <View style={{
+            paddingHorizontal: 12, paddingVertical: 4,
+            backgroundColor: value === right.key ? 'rgba(0,217,132,0.15)' : 'transparent',
+          }}>
+            <Text style={{
+              color: value === right.key ? '#00D984' : '#555E6C',
+              fontSize: 9, fontWeight: '700', letterSpacing: 1,
+            }}>{right.label}</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Valeurs selon unite
+  var weightVals = unitWeight === 'kg'
+    ? Array.from({ length: 171 }, function (_, i) { return 30 + i; })
+    : Array.from({ length: 371 }, function (_, i) { return 66 + i; });
+  var heightVals = unitHeight === 'cm'
+    ? Array.from({ length: 101 }, function (_, i) { return 120 + i; })
+    : Array.from({ length: 49 }, function (_, i) { return 48 + i; });
+  var ageVals = Array.from({ length: 83 }, function (_, i) { return 12 + i; });
+
+  // Body icons background inline
+  var bodyIcons = ['\u2696\uFE0F', '\uD83D\uDCCF', '\uD83C\uDF82', '\uD83D\uDCAA', '\uD83D\uDCD0', '\uD83E\uDE7A'];
+  var bodyPositions = [
+    { bottom: '4%', left: '5%', size: 32, opacity: 0.05, rotate: '-10deg' },
+    { bottom: '10%', right: '8%', size: 26, opacity: 0.04, rotate: '12deg' },
+    { bottom: '2%', left: '40%', size: 30, opacity: 0.04, rotate: '-5deg' },
+    { bottom: '16%', right: '25%', size: 24, opacity: 0.03, rotate: '18deg' },
+    { bottom: '7%', left: '65%', size: 28, opacity: 0.04, rotate: '-12deg' },
+    { bottom: '14%', left: '15%', size: 22, opacity: 0.03, rotate: '8deg' },
+  ];
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, position: 'relative', minHeight: '100%' }}
-      showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1, paddingHorizontal: 20, position: 'relative' }}>
 
-      {/* 3 SCROLL PICKERS en ligne avec switches */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8, marginBottom: 20 }}>
-        {/* POIDS */}
+      {/* Icones transparentes background */}
+      {bodyIcons.map(function (emoji, i) {
+        var pos = bodyPositions[i];
+        return (
+          <Text key={'bi' + i} style={{
+            position: 'absolute', bottom: pos.bottom, left: pos.left, right: pos.right,
+            fontSize: pos.size, opacity: pos.opacity,
+            transform: [{ rotate: pos.rotate }],
+            zIndex: 0,
+          }}>{emoji}</Text>
+        );
+      })}
+
+      {/* HEADER — Instruction avec doigt anime */}
+      <View style={{
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        marginBottom: 14, gap: 8,
+      }}>
+        <Animated.View style={{ transform: [{ translateY: fingerY }] }}>
+          <Ionicons name="finger-print" size={18} color="#00D984" />
+        </Animated.View>
+        <Text style={{
+          color: '#8892A0', fontSize: 12, fontWeight: '500',
+          fontStyle: 'italic',
+        }}>
+          {lang === 'fr' ? 'Scrollez pour modifier' : 'Scroll to adjust'}
+        </Text>
+      </View>
+
+      {/* TITRES en ligne */}
+      <View style={{
+        flexDirection: 'row', justifyContent: 'space-between',
+        marginBottom: 2, paddingHorizontal: 4,
+      }}>
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3, marginBottom: 10 }}>
+          <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3 }}>
             {t.weightLabel}
           </Text>
-          <UnitSwitch
-            left={{ key: 'kg', label: 'KG' }}
-            right={{ key: 'lb', label: 'LB' }}
-            value={unitWeight}
-            onChange={setUnitWeight}
-          />
-          <View style={scrollContainerStyle('#00D984')}>
-            <ScrollPicker
-              values={unitWeight === 'kg'
-                ? Array.from({ length: 171 }, function (_, i) { return 30 + i; })
-                : Array.from({ length: 371 }, function (_, i) { return 66 + i; })}
-              selectedValue={parseInt(formData.weight) || (unitWeight === 'kg' ? 70 : 154)}
-              onSelect={function (v) { update('weight', String(v)); }}
-              unit={unitWeight}
-              color="#00D984"
-            />
-          </View>
         </View>
-
-        {/* TAILLE */}
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3, marginBottom: 10 }}>
+          <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3 }}>
             {t.heightLabel}
           </Text>
-          <UnitSwitch
-            left={{ key: 'cm', label: 'CM' }}
-            right={{ key: 'in', label: 'IN' }}
-            value={unitHeight}
-            onChange={setUnitHeight}
-          />
-          <View style={scrollContainerStyle('#00BFA6')}>
-            <ScrollPicker
-              values={unitHeight === 'cm'
-                ? Array.from({ length: 101 }, function (_, i) { return 120 + i; })
-                : Array.from({ length: 49 }, function (_, i) { return 48 + i; })}
-              selectedValue={parseInt(formData.height) || (unitHeight === 'cm' ? 175 : 69)}
-              onSelect={function (v) { update('height', String(v)); }}
-              unit={unitHeight}
-              color="#00BFA6"
-            />
-          </View>
         </View>
-
-        {/* AGE — pas de switch */}
-        <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3, marginBottom: 10 }}>
+        <View style={{ flex: 0.8, alignItems: 'center' }}>
+          <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 3 }}>
             {t.ageLabel}
           </Text>
-          <View style={{ height: 22 }} />
-          <View style={scrollContainerStyle('#D4AF37')}>
-            <ScrollPicker
-              values={Array.from({ length: 83 }, function (_, i) { return 12 + i; })}
-              selectedValue={parseInt(formData.age) || 25}
-              onSelect={function (v) { update('age', String(v)); }}
-              unit={lang === 'fr' ? 'ans' : 'y'}
-              color="#D4AF37"
-            />
-          </View>
         </View>
       </View>
 
-      {/* SEXE — Design premium avec gradient */}
+      {/* SWITCHES en ligne */}
+      <View style={{
+        flexDirection: 'row', justifyContent: 'space-between',
+        marginBottom: 6, paddingHorizontal: 4,
+      }}>
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          {renderUnitSwitch({ key: 'kg', label: 'KG' }, { key: 'lb', label: 'LB' }, unitWeight, setUnitWeight)}
+        </View>
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          {renderUnitSwitch({ key: 'cm', label: 'CM' }, { key: 'in', label: 'IN' }, unitHeight, setUnitHeight)}
+        </View>
+        <View style={{ flex: 0.8, alignItems: 'center' }}>
+          <View style={{ height: 26 }} />
+        </View>
+      </View>
+
+      {/* 3 SCROLL PICKERS */}
+      <View style={{
+        flexDirection: 'row', justifyContent: 'space-between',
+        gap: 8, flex: 1, maxHeight: 300,
+      }}>
+        <View style={{ flex: 1 }}>
+          <ScrollPicker
+            values={weightVals}
+            selectedValue={parseInt(formData.weight) || (unitWeight === 'kg' ? 70 : 154)}
+            onSelect={function (v) { update('weight', String(v)); }}
+            unit={unitWeight}
+            color="#00D984"
+            height={280}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <ScrollPicker
+            values={heightVals}
+            selectedValue={parseInt(formData.height) || (unitHeight === 'cm' ? 175 : 69)}
+            onSelect={function (v) { update('height', String(v)); }}
+            unit={unitHeight}
+            color="#00BFA6"
+            height={280}
+          />
+        </View>
+        <View style={{ flex: 0.8 }}>
+          <ScrollPicker
+            values={ageVals}
+            selectedValue={parseInt(formData.age) || 25}
+            onSelect={function (v) { update('age', String(v)); }}
+            unit={lang === 'fr' ? 'ans' : 'y'}
+            color="#D4AF37"
+            height={280}
+          />
+        </View>
+      </View>
+
+      {/* SEXE */}
       <Text style={{
         color: '#EAEEF3', fontSize: 12, fontWeight: '800',
-        letterSpacing: 3, textAlign: 'center', marginTop: 20, marginBottom: 14,
-      }}>
-        {t.genderLabel}
-      </Text>
+        letterSpacing: 3, textAlign: 'center',
+        marginTop: 16, marginBottom: 12,
+      }}>SEXE</Text>
 
-      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, marginBottom: 24 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, marginBottom: 10 }}>
         {[
-          { key: 'male', icon: 'male', label: t.male, color: '#4A90D9', bgGrad: ['#4A90D9', '#2E6BB5'] },
-          { key: 'female', icon: 'female', label: t.female, color: '#E875A0', bgGrad: ['#E875A0', '#C95A82'] },
+          { key: 'male', icon: 'male', label: lang === 'fr' ? 'Homme' : 'Male',
+            color: '#4A90D9', bgGrad: ['#4A90D9', '#2E6BB5'] },
+          { key: 'female', icon: 'female', label: lang === 'fr' ? 'Femme' : 'Female',
+            color: '#E875A0', bgGrad: ['#E875A0', '#C95A82'] },
         ].map(function (g) {
           var sel = formData.gender === g.key;
           return (
             <TouchableOpacity key={g.key} onPress={function () { update('gender', g.key); }} activeOpacity={0.7}>
-              <Animated.View style={{
-                transform: [{ scale: sel ? 1.05 : 1 }],
-                alignItems: 'center',
-              }}>
-                {/* Cercle exterieur glow */}
+              <View style={{ alignItems: 'center' }}>
                 {sel ? (
                   <View style={{
-                    position: 'absolute', top: -4, left: -4, right: -4, bottom: -28,
-                    borderRadius: 44,
-                    borderWidth: 1.5,
-                    borderColor: g.color + '40',
-                    shadowColor: g.color,
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 12,
+                    position: 'absolute', top: -3, left: -3, right: -3, bottom: -22,
+                    borderRadius: 43, borderWidth: 1.5, borderColor: g.color + '35',
+                    shadowColor: g.color, shadowOpacity: 0.2, shadowRadius: 10,
                   }} />
                 ) : null}
-
                 <View style={{
-                  width: 80, height: 80, borderRadius: 40,
-                  overflow: 'hidden',
-                  borderWidth: sel ? 0 : 1.5,
-                  borderColor: 'rgba(62,72,85,0.3)',
+                  width: 76, height: 76, borderRadius: 38, overflow: 'hidden',
+                  borderWidth: sel ? 0 : 1.5, borderColor: 'rgba(62,72,85,0.3)',
                 }}>
                   {sel ? (
-                    <LinearGradient
-                      colors={g.bgGrad}
-                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                      style={{
-                        flex: 1, alignItems: 'center', justifyContent: 'center',
-                      }}
-                    >
-                      <Ionicons name={g.icon} size={32} color="#FFFFFF" />
+                    <LinearGradient colors={g.bgGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                      style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name={g.icon} size={30} color="#FFFFFF" />
                     </LinearGradient>
                   ) : (
-                    <View style={{
-                      flex: 1, alignItems: 'center', justifyContent: 'center',
-                      backgroundColor: '#0A0E14',
-                    }}>
-                      <Ionicons name={g.icon} size={28} color="#555E6C" />
+                    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0A0E14' }}>
+                      <Ionicons name={g.icon} size={26} color="#555E6C" />
                     </View>
                   )}
                 </View>
-
                 <Text style={{
                   color: sel ? g.color : '#555E6C',
-                  fontSize: 12, fontWeight: '700',
-                  textAlign: 'center', marginTop: 8,
-                }}>
-                  {g.label}
-                </Text>
-              </Animated.View>
+                  fontSize: 11, fontWeight: '700', textAlign: 'center', marginTop: 6,
+                }}>{g.label}</Text>
+              </View>
             </TouchableOpacity>
           );
         })}
       </View>
-
-      <BodyIconsBackground />
-    </ScrollView>
+    </View>
   );
 }
 
