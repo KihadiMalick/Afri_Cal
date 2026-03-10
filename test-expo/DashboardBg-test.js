@@ -1,173 +1,276 @@
-// LIXUM - Dashboard Background Test — Low-Poly Emeraude
+// LIXUM - Dashboard Background Test — Circuit Board Gris + Points Emeraude
 // Copier-coller dans App.js sur snack.expo.dev
 // Dependances: expo-linear-gradient, @expo/vector-icons,
 //              react-native-svg, react-native-safe-area-context
 // Memes dependances que les autres fichiers test
 
-import React, { useMemo } from 'react';
-import { View, Dimensions, Text, StyleSheet, StatusBar } from 'react-native';
+import React, { useEffect, useRef, useMemo } from 'react';
+import { View, Dimensions, Text, StyleSheet, StatusBar, Animated as RNAnimated, Easing } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Polygon } from 'react-native-svg';
+import Svg, { Line, Circle, Rect, Path } from 'react-native-svg';
 
 var W = Dimensions.get('window').width;
 var H = Dimensions.get('window').height;
 
 // ============================================================
-// GENERATION DES TRIANGLES LOW-POLY
+// CIRCUIT BOARD BACKGROUND — Metallique + Emeraude
 // ============================================================
 
-function generateTriangles(width, height) {
-  var triangles = [];
-  var cols = 14;
-  var rows = 24;
-  var cellW = width / cols;
-  var cellH = height / rows;
+function CircuitBoardBackground() {
+  // Animation pour les points lumineux qui pulsent
+  var glowAnim = useRef(new RNAnimated.Value(0)).current;
 
-  for (var row = 0; row < rows; row++) {
-    for (var col = 0; col < cols; col++) {
-      var seed = row * cols + col;
-      var jitterX = ((Math.sin(seed * 127.1) * 43758.5453) % 1) * cellW * 0.15;
-      var jitterY = ((Math.sin(seed * 269.5) * 43758.5453) % 1) * cellH * 0.15;
-
-      var x = col * cellW + jitterX;
-      var y = row * cellH + jitterY;
-      var x2 = (col + 1) * cellW + ((Math.sin((seed + 1) * 127.1) * 43758.5453) % 1) * cellW * 0.15;
-      var y2 = row * cellH + ((Math.sin((seed + 1) * 269.5) * 43758.5453) % 1) * cellH * 0.15;
-      var x3 = (col + 0.5) * cellW + ((Math.sin((seed + 2) * 127.1) * 43758.5453) % 1) * cellW * 0.1;
-      var y3 = (row + 1) * cellH + ((Math.sin((seed + 2) * 269.5) * 43758.5453) % 1) * cellH * 0.15;
-
-      // Distance du centre-haut
-      var centerX = width / 2;
-      var centerY = height * 0.15;
-      var distX = Math.abs((x + x2) / 2 - centerX) / (width / 2);
-      var distY = Math.abs((y + y2) / 2 - centerY) / height;
-      var dist = Math.min(1, Math.sqrt(distX * distX + distY * distY));
-
-      var intensity = Math.max(0, 1 - dist * 1.2);
-      var hueShift = (Math.sin(seed * 0.7) + 1) / 2;
-
-      // Triangle 1 (haut)
-      triangles.push({
-        points: x + ',' + y + ' ' + x2 + ',' + y2 + ' ' + x3 + ',' + y3,
-        intensity: intensity,
-        hueShift: hueShift,
-        seed: seed,
-      });
-
-      // Triangle 2 (bas — miroir)
-      var x4 = (col + 1) * cellW + ((Math.sin((seed + 3) * 127.1) * 43758.5453) % 1) * cellW * 0.15;
-      var y4 = (row + 1) * cellH + ((Math.sin((seed + 3) * 269.5) * 43758.5453) % 1) * cellH * 0.15;
-      triangles.push({
-        points: x2 + ',' + y2 + ' ' + x3 + ',' + y3 + ' ' + x4 + ',' + y4,
-        intensity: intensity * 0.85,
-        hueShift: hueShift,
-        seed: seed + 100,
-      });
-    }
-  }
-  return triangles;
-}
-
-function getTriangleColor(intensity, hueShift, seed) {
-  if (intensity < 0.05) {
-    var brightness = 12 + Math.floor(seed % 5);
-    return {
-      fill: 'rgba(' + brightness + ',' + (brightness + 3) + ',' + (brightness + 8) + ',0.15)',
-      stroke: 'rgba(' + (brightness + 10) + ',' + (brightness + 15) + ',' + (brightness + 25) + ',0.03)',
-    };
-  }
-
-  var r = 0;
-  var g = Math.floor(180 + hueShift * 37);
-  var b = Math.floor(100 + hueShift * 32);
-
-  var fillOpacity = intensity * 0.07;
-  var strokeOpacity = intensity * 0.05;
-  var facetVar = ((Math.sin(seed * 3.7) + 1) / 2) * 0.02;
-
-  return {
-    fill: 'rgba(' + r + ',' + g + ',' + b + ',' + (fillOpacity + facetVar) + ')',
-    stroke: 'rgba(' + r + ',' + Math.min(255, g + 30) + ',' + Math.min(255, b + 20) + ',' + strokeOpacity + ')',
-  };
-}
-
-// ============================================================
-// LOW-POLY BACKGROUND COMPONENT
-// ============================================================
-
-function LowPolyBackground() {
-  var triangles = useMemo(function () {
-    return generateTriangles(W, H);
+  useEffect(function () {
+    var loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(glowAnim, {
+          toValue: 1, duration: 2000,
+          easing: Easing.inOut(Easing.ease), useNativeDriver: false,
+        }),
+        RNAnimated.timing(glowAnim, {
+          toValue: 0, duration: 2000,
+          easing: Easing.inOut(Easing.ease), useNativeDriver: false,
+        }),
+      ])
+    );
+    loop.start();
+    return function () { loop.stop(); };
   }, []);
 
-  var triangleElements = [];
-  for (var i = 0; i < triangles.length; i++) {
-    var tri = triangles[i];
-    var colors = getTriangleColor(tri.intensity, tri.hueShift, tri.seed);
-    triangleElements.push(
-      <Polygon
-        key={i}
-        points={tri.points}
-        fill={colors.fill}
-        stroke={colors.stroke}
-        strokeWidth="0.5"
-      />
-    );
-  }
+  // Interpolation pour l'opacite du glow
+  var glowOpacity = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.15, 0.45],
+  });
 
-  // Lignes horizontales brossees (effet metal)
-  var brushLines = [];
-  for (var j = 0; j < 30; j++) {
-    var lineY = j * (H / 30);
-    brushLines.push(
-      <Polygon
-        key={'line-' + j}
-        points={'0,' + lineY + ' ' + W + ',' + lineY + ' ' + W + ',' + (lineY + 0.5) + ' 0,' + (lineY + 0.5)}
-        fill="rgba(107,123,141,0.015)"
-      />
-    );
-  }
+  // Generer le reseau de circuits
+  var circuits = useMemo(function () {
+    var nodePositions = [];
+
+    // Grille de base avec decalage aleatoire
+    var gridSpacing = 55;
+
+    for (var x = 20; x < W - 20; x += gridSpacing) {
+      for (var y = 30; y < H - 30; y += gridSpacing) {
+        // Decalage pseudo-aleatoire
+        var seed = x * 127 + y * 311;
+        var jx = ((Math.sin(seed) * 43758.5453) % 1) * 20 - 10;
+        var jy = ((Math.cos(seed) * 43758.5453) % 1) * 20 - 10;
+        var nx = x + jx;
+        var ny = y + jy;
+
+        // Seulement ~40% des positions ont un node
+        if (((Math.sin(seed * 1.7) + 1) / 2) > 0.6) continue;
+
+        // Distance du centre pour varier l'intensite
+        var distFromCenter = Math.sqrt(
+          Math.pow((nx - W / 2) / (W / 2), 2) +
+          Math.pow((ny - H / 2) / (H / 2), 2)
+        );
+
+        // Type de node : petit point, moyen, ou composant
+        var nodeType = ((Math.sin(seed * 2.3) + 1) / 2);
+
+        nodePositions.push({ x: nx, y: ny, dist: distFromCenter, type: nodeType, seed: seed });
+      }
+    }
+
+    // Creer les lignes de connexion entre nodes proches
+    var paths = [];
+    for (var i = 0; i < nodePositions.length; i++) {
+      for (var j = i + 1; j < nodePositions.length; j++) {
+        var a = nodePositions[i];
+        var b = nodePositions[j];
+        var dist = Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+
+        // Connecter seulement les nodes proches (< 80px)
+        if (dist < 80 && dist > 30) {
+          // Seulement ~30% des connexions possibles
+          if (((Math.sin(a.seed + b.seed) + 1) / 2) > 0.7) continue;
+
+          // Style de ligne : droite OU avec un coude a 90 degres
+          var hasElbow = ((Math.sin(a.seed * 3.1 + b.seed) + 1) / 2) > 0.5;
+
+          paths.push({
+            x1: a.x, y1: a.y,
+            x2: b.x, y2: b.y,
+            hasElbow: hasElbow,
+            intensity: Math.max(0, 1 - (a.dist + b.dist) / 2),
+          });
+        }
+      }
+    }
+
+    return { nodes: nodePositions, paths: paths };
+  }, []);
 
   return (
     <View style={s.bgContainer}>
-      {/* Gradient de base sombre */}
+      {/* FOND GRADIENT GRIS METALLIQUE */}
       <LinearGradient
-        colors={['#0D1520', '#111D2B', '#0F1925', '#0B1018']}
-        locations={[0, 0.3, 0.6, 1]}
+        colors={['#1A1F28', '#1E2530', '#222A35', '#1E2530', '#1A1F28']}
+        locations={[0, 0.25, 0.5, 0.75, 1]}
         style={s.bgFull}
       />
 
-      {/* Polygones low-poly */}
-      <Svg width={W} height={H} style={s.bgSvg} pointerEvents="none">
-        {triangleElements}
+      {/* Leger gradient plus clair au centre (effet de profondeur) */}
+      <View style={{
+        position: 'absolute',
+        top: H * 0.15,
+        left: W * 0.1,
+        right: W * 0.1,
+        height: H * 0.35,
+        borderRadius: H * 0.2,
+        backgroundColor: 'rgba(42, 50, 65, 0.15)',
+      }} />
+
+      {/* CIRCUIT BOARD SVG */}
+      <Svg width={W} height={H} style={s.bgSvg}>
+
+        {/* LIGNES DE CIRCUIT */}
+        {circuits.paths.map(function (path, i) {
+          var opacity = 0.06 + path.intensity * 0.06;
+
+          if (path.hasElbow) {
+            var midX = path.x2;
+            var midY = path.y1;
+            return (
+              <Path
+                key={'p-' + i}
+                d={'M ' + path.x1 + ' ' + path.y1 + ' L ' + midX + ' ' + midY + ' L ' + path.x2 + ' ' + path.y2}
+                fill="none"
+                stroke={'rgba(107, 123, 141, ' + opacity + ')'}
+                strokeWidth="0.8"
+              />
+            );
+          }
+
+          return (
+            <Line
+              key={'p-' + i}
+              x1={path.x1} y1={path.y1}
+              x2={path.x2} y2={path.y2}
+              stroke={'rgba(107, 123, 141, ' + opacity + ')'}
+              strokeWidth="0.8"
+            />
+          );
+        })}
+
+        {/* NODES — Points de connexion */}
+        {circuits.nodes.map(function (node, i) {
+          var intensity = Math.max(0, 1 - node.dist);
+
+          if (node.type > 0.8) {
+            // COMPOSANT — petit carre (simule un chip/resistance)
+            return (
+              <React.Fragment key={'n-' + i}>
+                <Rect
+                  x={node.x - 4} y={node.y - 3}
+                  width="8" height="6" rx="1"
+                  fill="none"
+                  stroke={'rgba(107, 123, 141, ' + (0.08 + intensity * 0.06) + ')'}
+                  strokeWidth="0.8"
+                />
+              </React.Fragment>
+            );
+          }
+
+          if (node.type > 0.5) {
+            // POINT MOYEN — cercle avec bordure
+            return (
+              <Circle
+                key={'n-' + i}
+                cx={node.x} cy={node.y} r="2.5"
+                fill="none"
+                stroke={'rgba(107, 123, 141, ' + (0.08 + intensity * 0.06) + ')'}
+                strokeWidth="0.8"
+              />
+            );
+          }
+
+          // PETIT POINT — juste un dot
+          return (
+            <Circle
+              key={'n-' + i}
+              cx={node.x} cy={node.y} r="1.2"
+              fill={'rgba(107, 123, 141, ' + (0.10 + intensity * 0.08) + ')'}
+            />
+          );
+        })}
       </Svg>
 
-      {/* Glow emeraude central en haut */}
-      <View style={{
-        position: 'absolute',
-        top: -80,
-        left: W * 0.15,
-        right: W * 0.15,
-        height: 250,
-        borderRadius: 125,
-        backgroundColor: 'rgba(0,217,132,0.06)',
-      }} />
+      {/* POINTS LUMINEUX EMERAUDE — pulsent avec l'animation */}
+      <RNAnimated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: glowOpacity }}>
+        <Svg width={W} height={H}>
+          {circuits.nodes
+            .filter(function (_, i) { return i % 7 === 0; })
+            .map(function (node, i) {
+              var intensity = Math.max(0, 1 - node.dist * 0.8);
+              if (intensity < 0.1) return null;
 
-      {/* Second glow plus petit et plus intense */}
-      <View style={{
-        position: 'absolute',
-        top: -40,
-        left: W * 0.25,
-        right: W * 0.25,
-        height: 150,
-        borderRadius: 75,
-        backgroundColor: 'rgba(0,217,132,0.04)',
-      }} />
+              return (
+                <React.Fragment key={'g-' + i}>
+                  {/* Halo glow */}
+                  <Circle
+                    cx={node.x} cy={node.y} r="6"
+                    fill={'rgba(0, 217, 132, ' + (intensity * 0.08) + ')'}
+                  />
+                  {/* Point brillant central */}
+                  <Circle
+                    cx={node.x} cy={node.y} r="2"
+                    fill={'rgba(0, 217, 132, ' + (intensity * 0.35) + ')'}
+                  />
+                </React.Fragment>
+              );
+            })}
+        </Svg>
+      </RNAnimated.View>
 
-      {/* Lignes horizontales brossees */}
+      {/* DEUXIEME VAGUE de points lumineux (decalee dans le temps) */}
+      <RNAnimated.View style={{
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+        opacity: glowAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.35, 0.1],
+        }),
+      }}>
+        <Svg width={W} height={H}>
+          {circuits.nodes
+            .filter(function (_, i) { return i % 7 === 3; })
+            .map(function (node, i) {
+              var intensity = Math.max(0, 1 - node.dist * 0.8);
+              if (intensity < 0.1) return null;
+
+              return (
+                <React.Fragment key={'g2-' + i}>
+                  <Circle
+                    cx={node.x} cy={node.y} r="5"
+                    fill={'rgba(0, 217, 132, ' + (intensity * 0.06) + ')'}
+                  />
+                  <Circle
+                    cx={node.x} cy={node.y} r="1.5"
+                    fill={'rgba(0, 217, 132, ' + (intensity * 0.30) + ')'}
+                  />
+                </React.Fragment>
+              );
+            })}
+        </Svg>
+      </RNAnimated.View>
+
+      {/* LIGNES HORIZONTALES BROSSEES — effet metal subtil */}
       <Svg width={W} height={H} style={s.bgSvg} pointerEvents="none">
-        {brushLines}
+        {Array.from({ length: 40 }).map(function (_, i) {
+          return (
+            <Line
+              key={'brush-' + i}
+              x1="0" y1={i * (H / 40)}
+              x2={W} y2={i * (H / 40)}
+              stroke="rgba(107, 123, 141, 0.012)"
+              strokeWidth="0.5"
+            />
+          );
+        })}
       </Svg>
     </View>
   );
@@ -186,11 +289,11 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: '#0D1520' }}>
-        <StatusBar barStyle="light-content" backgroundColor="#0D1520" />
+      <View style={{ flex: 1, backgroundColor: '#1A1F28' }}>
+        <StatusBar barStyle="light-content" backgroundColor="#1A1F28" />
         <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom', 'left', 'right']}>
 
-          <LowPolyBackground />
+          <CircuitBoardBackground />
 
           {/* Contenu test pour voir le contraste */}
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
