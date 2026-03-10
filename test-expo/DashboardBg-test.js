@@ -1,4 +1,4 @@
-// LIXUM - Dashboard Background Test — Circuit Board Gris + Points Emeraude
+// LIXUM - Dashboard Background Test — Circuit Board ULTIMATE
 // Copier-coller dans App.js sur snack.expo.dev
 // Dependances: expo-linear-gradient, @expo/vector-icons,
 //              react-native-svg, react-native-safe-area-context
@@ -8,273 +8,448 @@ import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Dimensions, Text, StyleSheet, StatusBar, Animated as RNAnimated, Easing } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Line, Circle, Rect, Path } from 'react-native-svg';
+import Svg, { Line, Circle, Rect, Path, G } from 'react-native-svg';
 
-var W = Dimensions.get('window').width;
-var H = Dimensions.get('window').height;
+const { width: W, height: H } = Dimensions.get('window');
 
-// ============================================================
-// CIRCUIT BOARD BACKGROUND — Metallique + Emeraude
-// ============================================================
+// ============================================
+// UTILITAIRE — pseudo-random deterministe
+// ============================================
+const seededRandom = (seed) => {
+  const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
+};
 
-function CircuitBoardBackground() {
-  // Animation pour les points lumineux qui pulsent
-  var glowAnim = useRef(new RNAnimated.Value(0)).current;
+// ============================================
+// GENERATEUR DE CIRCUIT BOARD
+// ============================================
+const generateCircuitBoard = (width, height) => {
+  const traces = [];       // Lignes principales (epaisses)
+  const thinTraces = [];   // Lignes secondaires (fines)
+  const nodes = [];        // Points de connexion
+  const chips = [];        // Composants IC (rectangles)
+  const dotGrids = [];     // Grilles de petits points
+  const hexagons = [];     // Formes hexagonales
 
-  useEffect(function () {
-    var loop = RNAnimated.loop(
-      RNAnimated.sequence([
-        RNAnimated.timing(glowAnim, {
-          toValue: 1, duration: 2000,
-          easing: Easing.inOut(Easing.ease), useNativeDriver: false,
-        }),
-        RNAnimated.timing(glowAnim, {
-          toValue: 0, duration: 2000,
-          easing: Easing.inOut(Easing.ease), useNativeDriver: false,
-        }),
-      ])
-    );
-    loop.start();
-    return function () { loop.stop(); };
-  }, []);
+  // === TRACES PRINCIPALES — lignes epaisses avec coudes 90° ===
+  const mainTraceCount = 25;
+  for (let i = 0; i < mainTraceCount; i++) {
+    const seed = i * 17 + 42;
+    const startX = seededRandom(seed) * width;
+    const startY = seededRandom(seed + 1) * height;
+    const segments = 3 + Math.floor(seededRandom(seed + 2) * 4); // 3-6 segments
 
-  // Interpolation pour l'opacite du glow
-  var glowOpacity = glowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.15, 0.45],
+    let path = `M ${startX} ${startY}`;
+    let cx = startX;
+    let cy = startY;
+    const points = [{ x: cx, y: cy }];
+
+    for (let s = 0; s < segments; s++) {
+      const isHorizontal = s % 2 === 0;
+      const length = 40 + seededRandom(seed + s * 3 + 10) * 120;
+      const direction = seededRandom(seed + s * 3 + 11) > 0.5 ? 1 : -1;
+
+      if (isHorizontal) {
+        cx += length * direction;
+        cx = Math.max(10, Math.min(width - 10, cx));
+      } else {
+        cy += length * direction;
+        cy = Math.max(10, Math.min(height - 10, cy));
+      }
+      path += ` L ${cx} ${cy}`;
+      points.push({ x: cx, y: cy });
+    }
+
+    traces.push({ path, points, seed });
+  }
+
+  // === TRACES SECONDAIRES — plus fines, plus nombreuses ===
+  const thinTraceCount = 40;
+  for (let i = 0; i < thinTraceCount; i++) {
+    const seed = i * 23 + 100;
+    const startX = seededRandom(seed) * width;
+    const startY = seededRandom(seed + 1) * height;
+    const segments = 2 + Math.floor(seededRandom(seed + 2) * 3);
+
+    let path = `M ${startX} ${startY}`;
+    let cx = startX;
+    let cy = startY;
+
+    for (let s = 0; s < segments; s++) {
+      const isH = s % 2 === (seededRandom(seed + 5) > 0.5 ? 0 : 1);
+      const len = 20 + seededRandom(seed + s * 5 + 20) * 80;
+      const dir = seededRandom(seed + s * 5 + 21) > 0.5 ? 1 : -1;
+
+      if (isH) {
+        cx += len * dir;
+        cx = Math.max(5, Math.min(width - 5, cx));
+      } else {
+        cy += len * dir;
+        cy = Math.max(5, Math.min(height - 5, cy));
+      }
+      path += ` L ${cx} ${cy}`;
+    }
+
+    thinTraces.push({ path, seed });
+  }
+
+  // === NODES — points de connexion aux extremites des traces ===
+  traces.forEach((trace) => {
+    trace.points.forEach((pt, idx) => {
+      if (seededRandom(trace.seed + idx * 7) > 0.3) {
+        nodes.push({
+          x: pt.x, y: pt.y,
+          type: seededRandom(trace.seed + idx * 13) > 0.6 ? 'glow' : 'normal',
+          size: 1.5 + seededRandom(trace.seed + idx * 11) * 2,
+        });
+      }
+    });
   });
 
-  // Generer le reseau de circuits
-  var circuits = useMemo(function () {
-    var nodePositions = [];
+  // === CHIPS — rectangles de composants IC ===
+  const chipCount = 12;
+  for (let i = 0; i < chipCount; i++) {
+    const seed = i * 31 + 200;
+    const cx = 30 + seededRandom(seed) * (width - 60);
+    const cy = 30 + seededRandom(seed + 1) * (height - 60);
+    const w = 16 + seededRandom(seed + 2) * 24; // 16-40
+    const h = 10 + seededRandom(seed + 3) * 16; // 10-26
+    const pins = 2 + Math.floor(seededRandom(seed + 4) * 4); // 2-5 pins de chaque cote
 
-    // Grille de base avec decalage aleatoire
-    var gridSpacing = 55;
+    chips.push({ x: cx - w / 2, y: cy - h / 2, w, h, pins, seed });
+  }
 
-    for (var x = 20; x < W - 20; x += gridSpacing) {
-      for (var y = 30; y < H - 30; y += gridSpacing) {
-        // Decalage pseudo-aleatoire
-        var seed = x * 127 + y * 311;
-        var jx = ((Math.sin(seed) * 43758.5453) % 1) * 20 - 10;
-        var jy = ((Math.cos(seed) * 43758.5453) % 1) * 20 - 10;
-        var nx = x + jx;
-        var ny = y + jy;
+  // === GRILLES DE POINTS — petits carres de dots ===
+  const gridCount = 8;
+  for (let i = 0; i < gridCount; i++) {
+    const seed = i * 37 + 300;
+    const gx = 20 + seededRandom(seed) * (width - 60);
+    const gy = 20 + seededRandom(seed + 1) * (height - 60);
+    const cols = 3 + Math.floor(seededRandom(seed + 2) * 4); // 3-6
+    const rows = 2 + Math.floor(seededRandom(seed + 3) * 3); // 2-4
+    const spacing = 5 + seededRandom(seed + 4) * 4;
 
-        // Seulement ~40% des positions ont un node
-        if (((Math.sin(seed * 1.7) + 1) / 2) > 0.6) continue;
+    dotGrids.push({ x: gx, y: gy, cols, rows, spacing, seed });
+  }
 
-        // Distance du centre pour varier l'intensite
-        var distFromCenter = Math.sqrt(
-          Math.pow((nx - W / 2) / (W / 2), 2) +
-          Math.pow((ny - H / 2) / (H / 2), 2)
-        );
+  // === HEXAGONES — formes geometriques ===
+  const hexCount = 5;
+  for (let i = 0; i < hexCount; i++) {
+    const seed = i * 43 + 400;
+    const cx = 40 + seededRandom(seed) * (width - 80);
+    const cy = 40 + seededRandom(seed + 1) * (height - 80);
+    const r = 12 + seededRandom(seed + 2) * 18;
 
-        // Type de node : petit point, moyen, ou composant
-        var nodeType = ((Math.sin(seed * 2.3) + 1) / 2);
-
-        nodePositions.push({ x: nx, y: ny, dist: distFromCenter, type: nodeType, seed: seed });
-      }
+    let path = '';
+    for (let a = 0; a < 6; a++) {
+      const angle = (Math.PI / 3) * a - Math.PI / 6;
+      const px = cx + r * Math.cos(angle);
+      const py = cy + r * Math.sin(angle);
+      path += (a === 0 ? 'M' : 'L') + ` ${px} ${py}`;
     }
+    path += ' Z';
+    hexagons.push({ path, cx, cy, r, seed });
+  }
 
-    // Creer les lignes de connexion entre nodes proches
-    var paths = [];
-    for (var i = 0; i < nodePositions.length; i++) {
-      for (var j = i + 1; j < nodePositions.length; j++) {
-        var a = nodePositions[i];
-        var b = nodePositions[j];
-        var dist = Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+  return { traces, thinTraces, nodes, chips, dotGrids, hexagons };
+};
 
-        // Connecter seulement les nodes proches (< 80px)
-        if (dist < 80 && dist > 30) {
-          // Seulement ~30% des connexions possibles
-          if (((Math.sin(a.seed + b.seed) + 1) / 2) > 0.7) continue;
+// ============================================
+// COMPOSANT PRINCIPAL — CircuitBoardUltimate
+// ============================================
+const CircuitBoardUltimate = () => {
+  // 3 animations de pulsation decalees
+  const pulse1 = useRef(new RNAnimated.Value(0)).current;
+  const pulse2 = useRef(new RNAnimated.Value(0)).current;
+  const pulse3 = useRef(new RNAnimated.Value(0)).current;
 
-          // Style de ligne : droite OU avec un coude a 90 degres
-          var hasElbow = ((Math.sin(a.seed * 3.1 + b.seed) + 1) / 2) > 0.5;
+  useEffect(() => {
+    const createPulse = (anim, delay) => {
+      return RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.delay(delay),
+          RNAnimated.timing(anim, {
+            toValue: 1, duration: 2500,
+            easing: Easing.inOut(Easing.sine), useNativeDriver: false,
+          }),
+          RNAnimated.timing(anim, {
+            toValue: 0, duration: 2500,
+            easing: Easing.inOut(Easing.sine), useNativeDriver: false,
+          }),
+        ])
+      );
+    };
 
-          paths.push({
-            x1: a.x, y1: a.y,
-            x2: b.x, y2: b.y,
-            hasElbow: hasElbow,
-            intensity: Math.max(0, 1 - (a.dist + b.dist) / 2),
-          });
-        }
-      }
-    }
+    const a1 = createPulse(pulse1, 0);
+    const a2 = createPulse(pulse2, 800);
+    const a3 = createPulse(pulse3, 1600);
+    a1.start(); a2.start(); a3.start();
 
-    return { nodes: nodePositions, paths: paths };
+    return () => { a1.stop(); a2.stop(); a3.stop(); };
   }, []);
 
+  const glow1 = pulse1.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.9] });
+  const glow2 = pulse2.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.9] });
+  const glow3 = pulse3.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.9] });
+
+  const circuit = useMemo(() => generateCircuitBoard(W, H), []);
+
   return (
-    <View style={s.bgContainer}>
-      {/* FOND GRADIENT GRIS METALLIQUE */}
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+
+      {/* FOND GRADIENT GRIS-BLEU SOMBRE */}
       <LinearGradient
-        colors={['#1A1F28', '#1E2530', '#222A35', '#1E2530', '#1A1F28']}
-        locations={[0, 0.25, 0.5, 0.75, 1]}
-        style={s.bgFull}
+        colors={['#0C1219', '#101820', '#0E1A25', '#101820', '#0C1219']}
+        locations={[0, 0.3, 0.5, 0.7, 1]}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
-      {/* Leger gradient plus clair au centre (effet de profondeur) */}
+      {/* Leger halo central */}
       <View style={{
         position: 'absolute',
-        top: H * 0.15,
-        left: W * 0.1,
-        right: W * 0.1,
-        height: H * 0.35,
-        borderRadius: H * 0.2,
-        backgroundColor: 'rgba(42, 50, 65, 0.15)',
+        top: H * 0.2, left: W * 0.15, right: W * 0.15,
+        height: H * 0.3, borderRadius: H * 0.15,
+        backgroundColor: 'rgba(0, 217, 132, 0.015)',
       }} />
 
-      {/* CIRCUIT BOARD SVG */}
-      <Svg width={W} height={H} style={s.bgSvg}>
+      {/* ============================================ */}
+      {/* COUCHE 1 — TRACES PRINCIPALES (epaisses)    */}
+      {/* ============================================ */}
+      <Svg width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
+        {circuit.traces.map((t, i) => (
+          <Path key={`mt-${i}`}
+            d={t.path}
+            fill="none"
+            stroke="rgba(80, 95, 115, 0.22)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ))}
+      </Svg>
 
-        {/* LIGNES DE CIRCUIT */}
-        {circuits.paths.map(function (path, i) {
-          var opacity = 0.06 + path.intensity * 0.06;
+      {/* ============================================ */}
+      {/* COUCHE 2 — TRACES SECONDAIRES (fines)       */}
+      {/* ============================================ */}
+      <Svg width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
+        {circuit.thinTraces.map((t, i) => (
+          <Path key={`tt-${i}`}
+            d={t.path}
+            fill="none"
+            stroke="rgba(70, 85, 105, 0.14)"
+            strokeWidth="0.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ))}
+      </Svg>
 
-          if (path.hasElbow) {
-            var midX = path.x2;
-            var midY = path.y1;
-            return (
-              <Path
-                key={'p-' + i}
-                d={'M ' + path.x1 + ' ' + path.y1 + ' L ' + midX + ' ' + midY + ' L ' + path.x2 + ' ' + path.y2}
-                fill="none"
-                stroke={'rgba(107, 123, 141, ' + opacity + ')'}
-                strokeWidth="0.8"
-              />
-            );
-          }
+      {/* ============================================ */}
+      {/* COUCHE 3 — COMPOSANTS (chips, grids, hex)   */}
+      {/* ============================================ */}
+      <Svg width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
 
-          return (
-            <Line
-              key={'p-' + i}
-              x1={path.x1} y1={path.y1}
-              x2={path.x2} y2={path.y2}
-              stroke={'rgba(107, 123, 141, ' + opacity + ')'}
+        {/* CHIPS — rectangles IC avec pins */}
+        {circuit.chips.map((chip, i) => (
+          <G key={`chip-${i}`}>
+            {/* Corps du chip */}
+            <Rect
+              x={chip.x} y={chip.y}
+              width={chip.w} height={chip.h}
+              rx="2"
+              fill="rgba(15, 22, 32, 0.6)"
+              stroke="rgba(80, 95, 115, 0.20)"
               strokeWidth="0.8"
             />
-          );
-        })}
-
-        {/* NODES — Points de connexion */}
-        {circuits.nodes.map(function (node, i) {
-          var intensity = Math.max(0, 1 - node.dist);
-
-          if (node.type > 0.8) {
-            // COMPOSANT — petit carre (simule un chip/resistance)
-            return (
-              <React.Fragment key={'n-' + i}>
-                <Rect
-                  x={node.x - 4} y={node.y - 3}
-                  width="8" height="6" rx="1"
-                  fill="none"
-                  stroke={'rgba(107, 123, 141, ' + (0.08 + intensity * 0.06) + ')'}
-                  strokeWidth="0.8"
-                />
-              </React.Fragment>
-            );
-          }
-
-          if (node.type > 0.5) {
-            // POINT MOYEN — cercle avec bordure
-            return (
-              <Circle
-                key={'n-' + i}
-                cx={node.x} cy={node.y} r="2.5"
-                fill="none"
-                stroke={'rgba(107, 123, 141, ' + (0.08 + intensity * 0.06) + ')'}
-                strokeWidth="0.8"
-              />
-            );
-          }
-
-          // PETIT POINT — juste un dot
-          return (
-            <Circle
-              key={'n-' + i}
-              cx={node.x} cy={node.y} r="1.2"
-              fill={'rgba(107, 123, 141, ' + (0.10 + intensity * 0.08) + ')'}
-            />
-          );
-        })}
-      </Svg>
-
-      {/* POINTS LUMINEUX EMERAUDE — pulsent avec l'animation */}
-      <RNAnimated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: glowOpacity }}>
-        <Svg width={W} height={H}>
-          {circuits.nodes
-            .filter(function (_, i) { return i % 7 === 0; })
-            .map(function (node, i) {
-              var intensity = Math.max(0, 1 - node.dist * 0.8);
-              if (intensity < 0.1) return null;
-
+            {/* Pins haut */}
+            {Array.from({ length: chip.pins }).map((_, p) => {
+              const px = chip.x + (chip.w / (chip.pins + 1)) * (p + 1);
               return (
-                <React.Fragment key={'g-' + i}>
-                  {/* Halo glow */}
-                  <Circle
-                    cx={node.x} cy={node.y} r="6"
-                    fill={'rgba(0, 217, 132, ' + (intensity * 0.08) + ')'}
-                  />
-                  {/* Point brillant central */}
-                  <Circle
-                    cx={node.x} cy={node.y} r="2"
-                    fill={'rgba(0, 217, 132, ' + (intensity * 0.35) + ')'}
-                  />
-                </React.Fragment>
+                <Line key={`ph-${i}-${p}`}
+                  x1={px} y1={chip.y - 4} x2={px} y2={chip.y}
+                  stroke="rgba(80, 95, 115, 0.18)" strokeWidth="0.8"
+                />
               );
             })}
-        </Svg>
-      </RNAnimated.View>
+            {/* Pins bas */}
+            {Array.from({ length: chip.pins }).map((_, p) => {
+              const px = chip.x + (chip.w / (chip.pins + 1)) * (p + 1);
+              return (
+                <Line key={`pb-${i}-${p}`}
+                  x1={px} y1={chip.y + chip.h} x2={px} y2={chip.y + chip.h + 4}
+                  stroke="rgba(80, 95, 115, 0.18)" strokeWidth="0.8"
+                />
+              );
+            })}
+            {/* Petit cercle dans le coin du chip (marqueur) */}
+            <Circle
+              cx={chip.x + 3} cy={chip.y + 3} r="1"
+              fill="rgba(80, 95, 115, 0.25)"
+            />
+          </G>
+        ))}
 
-      {/* DEUXIEME VAGUE de points lumineux (decalee dans le temps) */}
+        {/* GRILLES DE POINTS */}
+        {circuit.dotGrids.map((grid, i) => (
+          <G key={`grid-${i}`}>
+            {Array.from({ length: grid.rows }).map((_, r) =>
+              Array.from({ length: grid.cols }).map((_, c) => (
+                <Circle key={`gd-${i}-${r}-${c}`}
+                  cx={grid.x + c * grid.spacing}
+                  cy={grid.y + r * grid.spacing}
+                  r="1"
+                  fill="rgba(80, 95, 115, 0.20)"
+                />
+              ))
+            )}
+          </G>
+        ))}
+
+        {/* HEXAGONES */}
+        {circuit.hexagons.map((hex, i) => (
+          <Path key={`hex-${i}`}
+            d={hex.path}
+            fill="none"
+            stroke="rgba(80, 95, 115, 0.12)"
+            strokeWidth="0.8"
+          />
+        ))}
+
+        {/* NODES — points de connexion normaux (gris) */}
+        {circuit.nodes.filter(n => n.type === 'normal').map((node, i) => (
+          <Circle key={`nn-${i}`}
+            cx={node.x} cy={node.y} r={node.size}
+            fill="rgba(80, 95, 115, 0.25)"
+          />
+        ))}
+      </Svg>
+
+      {/* ============================================ */}
+      {/* COUCHE 4 — POINTS LUMINEUX EMERAUDE          */}
+      {/* 3 vagues decalees pour un effet "donnees     */}
+      {/* qui circulent dans le reseau"                */}
+      {/* ============================================ */}
+
+      {/* Vague 1 */}
       <RNAnimated.View style={{
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        opacity: glowAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0.35, 0.1],
-        }),
+        opacity: glow1,
       }}>
         <Svg width={W} height={H}>
-          {circuits.nodes
-            .filter(function (_, i) { return i % 7 === 3; })
-            .map(function (node, i) {
-              var intensity = Math.max(0, 1 - node.dist * 0.8);
-              if (intensity < 0.1) return null;
-
-              return (
-                <React.Fragment key={'g2-' + i}>
-                  <Circle
-                    cx={node.x} cy={node.y} r="5"
-                    fill={'rgba(0, 217, 132, ' + (intensity * 0.06) + ')'}
-                  />
-                  <Circle
-                    cx={node.x} cy={node.y} r="1.5"
-                    fill={'rgba(0, 217, 132, ' + (intensity * 0.30) + ')'}
-                  />
-                </React.Fragment>
-              );
-            })}
+          {circuit.nodes
+            .filter(n => n.type === 'glow')
+            .filter((_, i) => i % 3 === 0)
+            .map((node, i) => (
+              <G key={`g1-${i}`}>
+                {/* Halo large diffus */}
+                <Circle cx={node.x} cy={node.y} r="14"
+                  fill="rgba(0, 217, 132, 0.08)" />
+                {/* Halo moyen */}
+                <Circle cx={node.x} cy={node.y} r="7"
+                  fill="rgba(0, 217, 132, 0.15)" />
+                {/* Point central brillant */}
+                <Circle cx={node.x} cy={node.y} r="2.5"
+                  fill="rgba(0, 217, 132, 0.7)" />
+                {/* Point blanc au centre (highlight) */}
+                <Circle cx={node.x} cy={node.y} r="1"
+                  fill="rgba(180, 255, 220, 0.6)" />
+              </G>
+            ))}
         </Svg>
       </RNAnimated.View>
 
-      {/* LIGNES HORIZONTALES BROSSEES — effet metal subtil */}
-      <Svg width={W} height={H} style={s.bgSvg} pointerEvents="none">
-        {Array.from({ length: 40 }).map(function (_, i) {
-          return (
-            <Line
-              key={'brush-' + i}
-              x1="0" y1={i * (H / 40)}
-              x2={W} y2={i * (H / 40)}
-              stroke="rgba(107, 123, 141, 0.012)"
-              strokeWidth="0.5"
+      {/* Vague 2 — decalee */}
+      <RNAnimated.View style={{
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+        opacity: glow2,
+      }}>
+        <Svg width={W} height={H}>
+          {circuit.nodes
+            .filter(n => n.type === 'glow')
+            .filter((_, i) => i % 3 === 1)
+            .map((node, i) => (
+              <G key={`g2-${i}`}>
+                <Circle cx={node.x} cy={node.y} r="12"
+                  fill="rgba(0, 217, 132, 0.06)" />
+                <Circle cx={node.x} cy={node.y} r="6"
+                  fill="rgba(0, 217, 132, 0.12)" />
+                <Circle cx={node.x} cy={node.y} r="2"
+                  fill="rgba(0, 217, 132, 0.6)" />
+                <Circle cx={node.x} cy={node.y} r="0.8"
+                  fill="rgba(180, 255, 220, 0.5)" />
+              </G>
+            ))}
+        </Svg>
+      </RNAnimated.View>
+
+      {/* Vague 3 — decalee encore */}
+      <RNAnimated.View style={{
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+        opacity: glow3,
+      }}>
+        <Svg width={W} height={H}>
+          {circuit.nodes
+            .filter(n => n.type === 'glow')
+            .filter((_, i) => i % 3 === 2)
+            .map((node, i) => (
+              <G key={`g3-${i}`}>
+                <Circle cx={node.x} cy={node.y} r="10"
+                  fill="rgba(0, 217, 132, 0.05)" />
+                <Circle cx={node.x} cy={node.y} r="5"
+                  fill="rgba(0, 217, 132, 0.10)" />
+                <Circle cx={node.x} cy={node.y} r="2"
+                  fill="rgba(0, 217, 132, 0.55)" />
+                <Circle cx={node.x} cy={node.y} r="0.8"
+                  fill="rgba(150, 255, 200, 0.45)" />
+              </G>
+            ))}
+        </Svg>
+      </RNAnimated.View>
+
+      {/* ============================================ */}
+      {/* COUCHE 5 — LIGNES LUMINEUSES le long des     */}
+      {/* traces principales (effet "energie qui       */}
+      {/* circule dans les fils")                      */}
+      {/* ============================================ */}
+      <RNAnimated.View style={{
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+        opacity: pulse1.interpolate({ inputRange: [0, 1], outputRange: [0.08, 0.20] }),
+      }}>
+        <Svg width={W} height={H}>
+          {circuit.traces.slice(0, 10).map((t, i) => (
+            <Path key={`glow-trace-${i}`}
+              d={t.path}
+              fill="none"
+              stroke="rgba(0, 217, 132, 0.12)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
-          );
-        })}
-      </Svg>
+          ))}
+        </Svg>
+      </RNAnimated.View>
+
+      {/* ============================================ */}
+      {/* COUCHE 6 — Vignette sombre sur les bords     */}
+      {/* (focus le regard au centre)                  */}
+      {/* ============================================ */}
+      <LinearGradient
+        colors={['rgba(12,18,25,0.7)', 'rgba(12,18,25,0)', 'rgba(12,18,25,0)', 'rgba(12,18,25,0.7)']}
+        locations={[0, 0.25, 0.75, 1]}
+        start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={['rgba(12,18,25,0.5)', 'rgba(12,18,25,0)', 'rgba(12,18,25,0)', 'rgba(12,18,25,0.5)']}
+        locations={[0, 0.2, 0.8, 1]}
+        start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        pointerEvents="none"
+      />
     </View>
   );
-}
+};
 
 // ============================================================
 // APP — PAGE TEST
@@ -289,11 +464,11 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: '#1A1F28' }}>
-        <StatusBar barStyle="light-content" backgroundColor="#1A1F28" />
+      <View style={{ flex: 1, backgroundColor: '#0C1219' }}>
+        <StatusBar barStyle="light-content" backgroundColor="#0C1219" />
         <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom', 'left', 'right']}>
 
-          <CircuitBoardBackground />
+          <CircuitBoardUltimate />
 
           {/* Contenu test pour voir le contraste */}
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
@@ -357,18 +532,6 @@ export default function App() {
 // ============================================================
 
 var s = StyleSheet.create({
-  bgContainer: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-  },
-  bgFull: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-  },
-  bgSvg: {
-    position: 'absolute',
-    top: 0, left: 0,
-  },
   testCard: {
     width: '100%',
     borderRadius: 16,
