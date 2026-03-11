@@ -1,4 +1,4 @@
-// LIXUM - Dashboard Background Test — Circuit Board ULTIMATE
+// LIXUM - Dashboard Background Test — Nebula Grid Premium
 // Copier-coller dans App.js sur snack.expo.dev
 // Dependances: expo-linear-gradient, @expo/vector-icons,
 //              react-native-svg, react-native-safe-area-context
@@ -23,157 +23,41 @@ const seededRandom = (seed) => {
   const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
 };
-
 // ============================================
-// GENERATEUR DE CIRCUIT BOARD
+// COMPOSANT — Nebula Grid Background
 // ============================================
-const generateCircuitBoard = (width, height) => {
-  const traces = [];       // Lignes principales (epaisses)
-  const thinTraces = [];   // Lignes secondaires (fines)
-  const nodes = [];        // Points de connexion
-  const chips = [];        // Composants IC (rectangles)
-  const dotGrids = [];     // Grilles de petits points
-  const hexagons = [];     // Formes hexagonales
+const NEBULA_GRID_SPACING = 40;
+const NEBULA_DOT_COUNT = 12;
 
-  // === TRACES PRINCIPALES — lignes epaisses avec coudes 90° ===
-  const mainTraceCount = 25;
-  for (let i = 0; i < mainTraceCount; i++) {
-    const seed = i * 17 + 42;
-    const startX = seededRandom(seed) * width;
-    const startY = seededRandom(seed + 1) * height;
-    const segments = 3 + Math.floor(seededRandom(seed + 2) * 4); // 3-6 segments
-
-    let path = `M ${startX} ${startY}`;
-    let cx = startX;
-    let cy = startY;
-    const points = [{ x: cx, y: cy }];
-
-    for (let s = 0; s < segments; s++) {
-      const isHorizontal = s % 2 === 0;
-      const length = 40 + seededRandom(seed + s * 3 + 10) * 120;
-      const direction = seededRandom(seed + s * 3 + 11) > 0.5 ? 1 : -1;
-
-      if (isHorizontal) {
-        cx += length * direction;
-        cx = Math.max(10, Math.min(width - 10, cx));
-      } else {
-        cy += length * direction;
-        cy = Math.max(10, Math.min(height - 10, cy));
-      }
-      path += ` L ${cx} ${cy}`;
-      points.push({ x: cx, y: cy });
-    }
-
-    traces.push({ path, points, seed });
+const nebulaGridLines = (() => {
+  const lines = [];
+  // Horizontal grid lines
+  for (let y = 0; y < H; y += NEBULA_GRID_SPACING) {
+    lines.push({ x1: 0, y1: y, x2: W, y2: y, horizontal: true });
   }
-
-  // === TRACES SECONDAIRES — plus fines, plus nombreuses ===
-  const thinTraceCount = 40;
-  for (let i = 0; i < thinTraceCount; i++) {
-    const seed = i * 23 + 100;
-    const startX = seededRandom(seed) * width;
-    const startY = seededRandom(seed + 1) * height;
-    const segments = 2 + Math.floor(seededRandom(seed + 2) * 3);
-
-    let path = `M ${startX} ${startY}`;
-    let cx = startX;
-    let cy = startY;
-
-    for (let s = 0; s < segments; s++) {
-      const isH = s % 2 === (seededRandom(seed + 5) > 0.5 ? 0 : 1);
-      const len = 20 + seededRandom(seed + s * 5 + 20) * 80;
-      const dir = seededRandom(seed + s * 5 + 21) > 0.5 ? 1 : -1;
-
-      if (isH) {
-        cx += len * dir;
-        cx = Math.max(5, Math.min(width - 5, cx));
-      } else {
-        cy += len * dir;
-        cy = Math.max(5, Math.min(height - 5, cy));
-      }
-      path += ` L ${cx} ${cy}`;
-    }
-
-    thinTraces.push({ path, seed });
+  // Vertical grid lines
+  for (let x = 0; x < W; x += NEBULA_GRID_SPACING) {
+    lines.push({ x1: x, y1: 0, x2: x, y2: H, horizontal: false });
   }
+  return lines;
+})();
 
-  // === NODES — points de connexion aux extremites des traces ===
-  traces.forEach((trace) => {
-    trace.points.forEach((pt, idx) => {
-      if (seededRandom(trace.seed + idx * 7) > 0.3) {
-        nodes.push({
-          x: pt.x, y: pt.y,
-          type: seededRandom(trace.seed + idx * 13) > 0.6 ? 'glow' : 'normal',
-          size: 1.5 + seededRandom(trace.seed + idx * 11) * 2,
-        });
-      }
+const nebulaDots = (() => {
+  const dots = [];
+  for (let i = 0; i < NEBULA_DOT_COUNT; i++) {
+    const seed = i * 29 + 77;
+    dots.push({
+      x: seededRandom(seed) * W,
+      y: seededRandom(seed + 1) * H,
+      r: 1.5 + seededRandom(seed + 2) * 2.5,
+      color: ['#00D984', '#4DA6FF', '#FF8C42', '#5DFFB4'][i % 4],
     });
-  });
-
-  // === CHIPS — rectangles de composants IC ===
-  const chipCount = 6;
-  for (let i = 0; i < chipCount; i++) {
-    const seed = i * 31 + 200;
-    // Pousse les chips vers les bords de l'ecran
-    const rawX = seededRandom(seed);
-    const rawY = seededRandom(seed + 1);
-    const cx = rawX < 0.5
-      ? 15 + rawX * width * 0.35
-      : width - 15 - (1 - rawX) * width * 0.35;
-    const cy = rawY < 0.5
-      ? 20 + rawY * height * 0.3
-      : height - 20 - (1 - rawY) * height * 0.3;
-    const w = 12 + seededRandom(seed + 2) * 16; // 12-28
-    const h = 8 + seededRandom(seed + 3) * 10;  // 8-18
-    const pins = 2 + Math.floor(seededRandom(seed + 4) * 4); // 2-5 pins de chaque cote
-
-    chips.push({ x: cx - w / 2, y: cy - h / 2, w, h, pins, seed });
   }
+  return dots;
+})();
 
-  // === GRILLES DE POINTS — petits carres de dots ===
-  const gridCount = 8;
-  for (let i = 0; i < gridCount; i++) {
-    const seed = i * 37 + 300;
-    const gx = 20 + seededRandom(seed) * (width - 60);
-    const gy = 20 + seededRandom(seed + 1) * (height - 60);
-    const cols = 3 + Math.floor(seededRandom(seed + 2) * 4); // 3-6
-    const rows = 2 + Math.floor(seededRandom(seed + 3) * 3); // 2-4
-    const spacing = 5 + seededRandom(seed + 4) * 4;
-
-    dotGrids.push({ x: gx, y: gy, cols, rows, spacing, seed });
-  }
-
-  // === HEXAGONES — formes geometriques ===
-  const hexCount = 5;
-  for (let i = 0; i < hexCount; i++) {
-    const seed = i * 43 + 400;
-    const cx = 40 + seededRandom(seed) * (width - 80);
-    const cy = 40 + seededRandom(seed + 1) * (height - 80);
-    const r = 12 + seededRandom(seed + 2) * 18;
-
-    let path = '';
-    for (let a = 0; a < 6; a++) {
-      const angle = (Math.PI / 3) * a - Math.PI / 6;
-      const px = cx + r * Math.cos(angle);
-      const py = cy + r * Math.sin(angle);
-      path += (a === 0 ? 'M' : 'L') + ` ${px} ${py}`;
-    }
-    path += ' Z';
-    hexagons.push({ path, cx, cy, r, seed });
-  }
-
-  return { traces, thinTraces, nodes, chips, dotGrids, hexagons };
-};
-
-// ============================================
-// COMPOSANT PRINCIPAL — CircuitBoardUltimate
-// ============================================
-const CircuitBoardUltimate = () => {
-  const circuit = useMemo(() => generateCircuitBoard(W, H), []);
-
-  // ============================================
-  // SYSTÈME LED BLINK — 3 points secs désordonnés
-  // ============================================
+const NebulaGridBackground = () => {
+  // LED blink animations — 3 glow dots
   const LED_POSITIONS = useMemo(() => [
     { x: W * 0.15, y: H * 0.12 },
     { x: W * 0.82, y: H * 0.42 },
@@ -187,14 +71,13 @@ const CircuitBoardUltimate = () => {
 
   useEffect(() => {
     const timers = [];
-
     const blinkLed = (anim) => {
       const pause = 1500 + Math.random() * 3000;
       const timer = setTimeout(() => {
         RNAnimated.timing(anim, {
           toValue: 1, duration: 50, useNativeDriver: false,
         }).start(() => {
-          const onTimer = setTimeout(() => {
+          const offTimer = setTimeout(() => {
             RNAnimated.timing(anim, {
               toValue: 0, duration: 80, useNativeDriver: false,
             }).start(() => {
@@ -203,12 +86,12 @@ const CircuitBoardUltimate = () => {
                   RNAnimated.timing(anim, {
                     toValue: 1, duration: 50, useNativeDriver: false,
                   }).start(() => {
-                    const dblOffTimer = setTimeout(() => {
+                    const dblOff = setTimeout(() => {
                       RNAnimated.timing(anim, {
                         toValue: 0, duration: 80, useNativeDriver: false,
                       }).start(() => blinkLed(anim));
                     }, 100);
-                    timers.push(dblOffTimer);
+                    timers.push(dblOff);
                   });
                 }, 120);
                 timers.push(dblTimer);
@@ -217,293 +100,141 @@ const CircuitBoardUltimate = () => {
               }
             });
           }, 120);
-          timers.push(onTimer);
+          timers.push(offTimer);
         });
       }, pause);
       timers.push(timer);
     };
-
     ledAnims.forEach((anim, i) => {
       const startDelay = setTimeout(() => blinkLed(anim), i * 800 + Math.random() * 1000);
       timers.push(startDelay);
     });
-
     return () => timers.forEach(t => clearTimeout(t));
   }, []);
 
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
 
-      {/* FOND GRADIENT METALLIC DARK → DEEP BLACK */}
+      {/* FOND — multi-stop deep space gradient */}
       <LinearGradient
-        colors={['#1A2030', '#141A24', '#0D1117']}
-        locations={[0, 0.5, 1]}
+        colors={['#0F1923', '#0C1219', '#080D14', '#060A10']}
+        locations={[0, 0.35, 0.7, 1]}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
-      {/* GLOW AMBIANT — large halo émeraude */}
-      <View style={{
-        position: 'absolute',
-        top: H * 0.08, left: -W * 0.15, right: -W * 0.15,
-        height: H * 0.55, borderRadius: H * 0.28,
-        backgroundColor: 'rgba(0, 217, 132, 0.035)',
-      }}/>
-      {/* Second glow plus concentré */}
-      <View style={{
-        position: 'absolute',
-        top: H * 0.18, left: W * 0.05, right: W * 0.05,
-        height: H * 0.35, borderRadius: H * 0.18,
-        backgroundColor: 'rgba(0, 217, 132, 0.030)',
-      }}/>
-      {/* Point radiant central — glow émeraude visible */}
-      <View style={{
-        position: 'absolute',
-        top: H * 0.22, left: W * 0.15, right: W * 0.15,
-        height: H * 0.20, borderRadius: H * 0.10,
-        backgroundColor: 'rgba(0, 217, 132, 0.06)',
-      }}/>
-      {/* Micro spot lumineux au coeur */}
-      <View style={{
-        position: 'absolute',
-        top: H * 0.30, left: W * 0.30, right: W * 0.30,
-        height: H * 0.08, borderRadius: H * 0.04,
-        backgroundColor: 'rgba(0, 217, 132, 0.045)',
-      }}/>
+      {/* Nebula halos — colored glows */}
+      <View pointerEvents="none" style={{
+        position: 'absolute', top: H * 0.05, left: -W * 0.1, right: -W * 0.1,
+        height: H * 0.45, borderRadius: H * 0.23,
+        backgroundColor: 'rgba(0, 217, 132, 0.03)',
+      }} />
+      <View pointerEvents="none" style={{
+        position: 'absolute', top: H * 0.55, left: W * 0.2,
+        width: W * 0.5, height: H * 0.25, borderRadius: H * 0.12,
+        backgroundColor: 'rgba(77, 166, 255, 0.025)',
+      }} />
+      <View pointerEvents="none" style={{
+        position: 'absolute', top: H * 0.15, left: W * 0.3, right: W * 0.3,
+        height: H * 0.2, borderRadius: H * 0.1,
+        backgroundColor: 'rgba(0, 217, 132, 0.05)',
+      }} />
 
-      {/* ============================================ */}
-      {/* COUCHE 1 — TRACES PRINCIPALES (epaisses)    */}
-      {/* ============================================ */}
+      {/* SVG — grid lines + glow dots */}
       <Svg width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
-        {circuit.traces.map((t, i) => {
-          // Les 8 premières traces sont les "artères" — plus épaisses et lumineuses
-          const isMain = i < 8;
-          return (
-            <Path key={`mt-${i}`}
-              d={t.path}
-              fill="none"
-              stroke={isMain
-                ? "rgba(90, 110, 135, 0.30)"
-                : "rgba(70, 85, 105, 0.12)"}
-              strokeWidth={isMain ? 2.5 : 1}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          );
-        })}
-      </Svg>
-
-      {/* ============================================ */}
-      {/* COUCHE 2 — TRACES SECONDAIRES (fines)       */}
-      {/* ============================================ */}
-      <Svg width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
-        {circuit.thinTraces.map((t, i) => (
-          <Path key={`tt-${i}`}
-            d={t.path}
-            fill="none"
-            stroke="rgba(60, 75, 95, 0.08)"
-            strokeWidth="0.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {/* Grid lines */}
+        {nebulaGridLines.map((line, i) => (
+          <Line key={`ng-${i}`}
+            x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2}
+            stroke="rgba(80, 100, 130, 0.06)"
+            strokeWidth={0.5}
           />
         ))}
-      </Svg>
-
-      {/* ============================================ */}
-      {/* COUCHE 3 — COMPOSANTS (chips, grids, hex)   */}
-      {/* ============================================ */}
-      <Svg width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
-
-        {/* CHIPS — rectangles IC avec pins */}
-        {circuit.chips.map((chip, i) => (
-          <G key={`chip-${i}`}>
-            {/* Corps du chip */}
-            <Rect
-              x={chip.x} y={chip.y}
-              width={chip.w} height={chip.h}
-              rx="2"
-              fill="rgba(15, 22, 32, 0.6)"
-              stroke="rgba(80, 95, 115, 0.20)"
-              strokeWidth="0.8"
-            />
-            {/* Pins haut */}
-            {Array.from({ length: chip.pins }).map((_, p) => {
-              const px = chip.x + (chip.w / (chip.pins + 1)) * (p + 1);
-              return (
-                <Line key={`ph-${i}-${p}`}
-                  x1={px} y1={chip.y - 4} x2={px} y2={chip.y}
-                  stroke="rgba(80, 95, 115, 0.18)" strokeWidth="0.8"
-                />
-              );
-            })}
-            {/* Pins bas */}
-            {Array.from({ length: chip.pins }).map((_, p) => {
-              const px = chip.x + (chip.w / (chip.pins + 1)) * (p + 1);
-              return (
-                <Line key={`pb-${i}-${p}`}
-                  x1={px} y1={chip.y + chip.h} x2={px} y2={chip.y + chip.h + 4}
-                  stroke="rgba(80, 95, 115, 0.18)" strokeWidth="0.8"
-                />
-              );
-            })}
-            {/* Petit cercle dans le coin du chip (marqueur) */}
-            <Circle
-              cx={chip.x + 3} cy={chip.y + 3} r="1"
-              fill="rgba(80, 95, 115, 0.25)"
-            />
+        {/* Glow dots at intersections — colored */}
+        {nebulaDots.map((dot, i) => (
+          <G key={`nd-${i}`}>
+            <Circle cx={dot.x} cy={dot.y} r={dot.r * 3} fill={dot.color} opacity={0.06} />
+            <Circle cx={dot.x} cy={dot.y} r={dot.r} fill={dot.color} opacity={0.25} />
           </G>
         ))}
-
-        {/* GRILLES DE POINTS */}
-        {circuit.dotGrids.map((grid, i) => (
-          <G key={`grid-${i}`}>
-            {Array.from({ length: grid.rows }).map((_, r) =>
-              Array.from({ length: grid.cols }).map((_, c) => (
-                <Circle key={`gd-${i}-${r}-${c}`}
-                  cx={grid.x + c * grid.spacing}
-                  cy={grid.y + r * grid.spacing}
-                  r="1"
-                  fill="rgba(80, 95, 115, 0.20)"
-                />
-              ))
-            )}
-          </G>
-        ))}
-
-        {/* HEXAGONES */}
-        {circuit.hexagons.map((hex, i) => (
-          <Path key={`hex-${i}`}
-            d={hex.path}
-            fill="none"
-            stroke="rgba(80, 95, 115, 0.12)"
-            strokeWidth="0.8"
-          />
-        ))}
-
-        {/* NODES — points de connexion normaux (gris) */}
-        {circuit.nodes.filter(n => n.type === 'normal').map((node, i) => (
-          <Circle key={`nn-${i}`}
-            cx={node.x} cy={node.y} r={node.size}
-            fill="rgba(80, 95, 115, 0.25)"
-          />
-        ))}
       </Svg>
 
-      {/* ============================================ */}
-      {/* COUCHE 4 — LED BLINKS (3 points secs)        */}
-      {/* ============================================ */}
+      {/* LED blink animations */}
       {LED_POSITIONS.map((pos, i) => (
         <RNAnimated.View
-          key={`led-blink-${i}`}
+          key={`led-${i}`}
           pointerEvents="none"
           style={{
             position: 'absolute',
-            left: pos.x - 6,
-            top: pos.y - 6,
-            width: 12,
-            height: 12,
+            left: pos.x - 6, top: pos.y - 6,
+            width: 12, height: 12,
             opacity: ledAnims[i],
           }}
         >
-          {/* Halo diffus */}
           <View style={{
-            position: 'absolute',
-            top: -3, left: -3, right: -3, bottom: -3,
-            borderRadius: 9,
-            backgroundColor: 'rgba(0, 217, 132, 0.08)',
+            position: 'absolute', top: -3, left: -3, right: -3, bottom: -3,
+            borderRadius: 9, backgroundColor: 'rgba(0, 217, 132, 0.08)',
           }} />
-          {/* Point central LED */}
           <View style={{
-            position: 'absolute',
-            top: 3, left: 3,
-            width: 6, height: 6,
-            borderRadius: 3,
+            position: 'absolute', top: 3, left: 3,
+            width: 6, height: 6, borderRadius: 3,
             backgroundColor: 'rgba(0, 217, 132, 0.15)',
           }} />
-          {/* Micro-dot vif */}
           <View style={{
-            position: 'absolute',
-            top: 4, left: 4,
-            width: 4, height: 4,
-            borderRadius: 2,
+            position: 'absolute', top: 4, left: 4,
+            width: 4, height: 4, borderRadius: 2,
             backgroundColor: 'rgba(0, 217, 132, 0.85)',
           }} />
         </RNAnimated.View>
       ))}
 
-      {/* ============================================ */}
-      {/* COUCHE 6 — Vignette sombre sur les bords     */}
-      {/* (focus le regard au centre)                  */}
-      {/* ============================================ */}
+      {/* Vignette — subtle edge darkening */}
       <LinearGradient
-        colors={['rgba(12,18,25,0.7)', 'rgba(12,18,25,0)', 'rgba(12,18,25,0)', 'rgba(12,18,25,0.7)']}
+        colors={['rgba(8,13,20,0.6)', 'rgba(8,13,20,0)', 'rgba(8,13,20,0)', 'rgba(8,13,20,0.6)']}
         locations={[0, 0.25, 0.75, 1]}
         start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
         pointerEvents="none"
       />
-      <LinearGradient
-        colors={['rgba(12,18,25,0.5)', 'rgba(12,18,25,0)', 'rgba(12,18,25,0)', 'rgba(12,18,25,0.5)']}
-        locations={[0, 0.2, 0.8, 1]}
-        start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-        pointerEvents="none"
-      />
-
-      {/* Zone centrale propre — masque le circuit au centre */}
-      <View style={{
-        position: 'absolute',
-        top: H * 0.25, left: W * 0.05, right: W * 0.05,
-        height: H * 0.45, borderRadius: 30,
-        backgroundColor: 'rgba(12, 18, 25, 0.35)',
-      }} pointerEvents="none" />
-      {/* Deuxieme zone plus petite et plus opaque */}
-      <View style={{
-        position: 'absolute',
-        top: H * 0.32, left: W * 0.10, right: W * 0.10,
-        height: H * 0.30, borderRadius: 25,
-        backgroundColor: 'rgba(12, 18, 25, 0.20)',
-      }} pointerEvents="none" />
     </View>
   );
 };
 
 // ============================================================
-// COMPOSANT — Icône Gem SVG (émeraude taillée premium)
+// COMPOSANT — LixGemIcon (émeraude taillée — viewBox 0 0 20 24)
 // ============================================================
-const GemIcon = ({ size = 20 }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24">
+const LixGemIcon = ({ width = 20, height = 22 }) => (
+  <Svg width={width} height={height} viewBox="0 0 20 24">
     <Defs>
-      <SvgGradient id="gemBodyGrad" x1="0" y1="0" x2="0.2" y2="1">
+      <SvgGradient id="lixGemBody" x1="0" y1="0" x2="0.3" y2="1">
         <Stop offset="0%" stopColor="#5DFFB4" />
-        <Stop offset="30%" stopColor="#00D984" />
-        <Stop offset="65%" stopColor="#00A866" />
+        <Stop offset="35%" stopColor="#00D984" />
+        <Stop offset="70%" stopColor="#00A866" />
         <Stop offset="100%" stopColor="#005C38" />
       </SvgGradient>
-      <SvgGradient id="gemTopGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+      <SvgGradient id="lixGemTop" x1="0.5" y1="0" x2="0.5" y2="1">
         <Stop offset="0%" stopColor="#8AFFDA" />
         <Stop offset="100%" stopColor="#00D984" />
       </SvgGradient>
     </Defs>
-    {/* Corps principal — pentagone taillé */}
-    <Polygon points="12,2 3,9 7,22 17,22 21,9" fill="url(#gemBodyGrad)" />
+    {/* Corps principal — pentagone */}
+    <Polygon points="10,1 1,8 4,22 16,22 19,8" fill="url(#lixGemBody)" />
     {/* Couronne supérieure */}
-    <Polygon points="12,2 3,9 21,9" fill="url(#gemTopGrad)" />
-    {/* Facette table centrale */}
-    <Polygon points="8,9 16,9 14.5,5.5 9.5,5.5" fill="#5DFFB4" opacity={0.35} />
-    {/* Facettes inférieures — gauche */}
-    <Polygon points="3,9 7,22 12,9" fill="#00BF78" opacity={0.25} />
-    {/* Facettes inférieures — droite */}
-    <Polygon points="21,9 17,22 12,9" fill="#007A4A" opacity={0.35} />
-    {/* Facette centrale basse */}
-    <Polygon points="7,22 17,22 12,9" fill="#009960" opacity={0.2} />
-    {/* Ceinture (girdle) */}
-    <Line x1="3" y1="9" x2="21" y2="9" stroke="#8AFFDA" strokeWidth={0.6} opacity={0.5} />
-    {/* Reflet brillant principal */}
-    <Polygon points="10,4 12,2.5 14,4 12,6" fill="white" opacity={0.5} />
-    {/* Éclat secondaire */}
-    <Circle cx="6.5" cy="7.5" r={0.7} fill="white" opacity={0.35} />
-    {/* Éclat tertiaire */}
-    <Circle cx="16" cy="13" r={0.5} fill="white" opacity={0.2} />
+    <Polygon points="10,1 1,8 19,8" fill="url(#lixGemTop)" />
+    {/* Table centrale */}
+    <Polygon points="6,8 14,8 12.5,4.5 7.5,4.5" fill="#5DFFB4" opacity={0.4} />
+    {/* Facette gauche */}
+    <Polygon points="1,8 4,22 10,8" fill="#00BF78" opacity={0.25} />
+    {/* Facette droite */}
+    <Polygon points="19,8 16,22 10,8" fill="#007A4A" opacity={0.35} />
+    {/* Facette bas centre */}
+    <Polygon points="4,22 16,22 10,8" fill="#009960" opacity={0.2} />
+    {/* Ceinture */}
+    <Line x1="1" y1="8" x2="19" y2="8" stroke="#8AFFDA" strokeWidth={0.7} opacity={0.5} />
+    {/* Reflet principal */}
+    <Polygon points="8,3 10,1.5 12,3 10,5" fill="white" opacity={0.55} />
+    {/* Éclats */}
+    <Circle cx="4.5" cy="6.5" r={0.8} fill="white" opacity={0.4} />
+    <Circle cx="14" cy="12" r={0.6} fill="white" opacity={0.25} />
   </Svg>
 );
 
@@ -616,17 +347,18 @@ const StarIcon = () => (
 );
 
 const GoalFlag = () => (
-  <Svg width={18} height={18} viewBox="0 0 24 24">
+  <Svg width={20} height={20} viewBox="0 0 24 24">
     <Defs>
       <SvgGradient id="flagGrad" x1="0" y1="0" x2="1" y2="1">
         <Stop offset="0%" stopColor="#FFD700" />
+        <Stop offset="50%" stopColor="#FFAA00" />
         <Stop offset="100%" stopColor="#D4AF37" />
       </SvgGradient>
     </Defs>
-    <Line x1="5" y1="3" x2="5" y2="21" stroke="#D4AF37" strokeWidth={1.8} strokeLinecap="round" />
-    <Path d="M5 3C5 3 8 2 11 4C14 6 17 5 19 3V12C17 14 14 15 11 13C8 11 5 12 5 12V3Z" fill="url(#flagGrad)" opacity={0.85} />
-    <Path d="M7 4C9 3.5 11 4 13 5.5" fill="none" stroke="white" strokeWidth={0.5} opacity={0.4} />
-    <Circle cx="5" cy="21" r="1.5" fill="#D4AF37" />
+    <Line x1="5" y1="3" x2="5" y2="21" stroke="#D4AF37" strokeWidth={2} strokeLinecap="round" />
+    <Path d="M5 3C5 3 8 2 11 4C14 6 17 5 19 3V13C17 15 14 16 11 14C8 12 5 13 5 13V3Z" fill="url(#flagGrad)" opacity={0.9} />
+    <Path d="M7 4.5C9 4 11 4.5 13 6" fill="none" stroke="white" strokeWidth={0.6} opacity={0.45} />
+    <Circle cx="5" cy="21" r="1.8" fill="#D4AF37" />
   </Svg>
 );
 
@@ -679,7 +411,7 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
       {/* Lix counter — droite */}
       <TouchableOpacity onPress={onLixPress} activeOpacity={0.7} style={s.lixBtn}>
         <View style={{ position: 'relative' }}>
-          <GemIcon size={20} />
+          <LixGemIcon width={20} height={22} />
           {notifCount > 0 && (
             <View style={s.notifBadge}>
               <Text style={s.notifBadgeText}>{notifCount}</Text>
@@ -819,7 +551,7 @@ const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
   const svgH = 200;
   const labelSpace = 24;
   const thirdW = cW / 3;
-  const maxCalorie = 3000;
+  const maxCalorie = 2500;
   const maxValue = maxCalorie;
 
   const domes = [
@@ -844,7 +576,7 @@ const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
   // Render order: blue (back) → green (mid) → orange (front)
   const renderOrder = [2, 0, 1];
 
-  const scaleTicks = [1000, 2000, 3000];
+  const scaleTicks = [500, 1000, 1500, 2000, 2500];
 
   return (
     <View>
@@ -862,11 +594,11 @@ const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
               width: thirdW,
               textAlign: 'center',
               color: dome.color,
-              fontSize: 18,
-              fontWeight: '800',
-              textShadowColor: 'rgba(0,0,0,0.8)',
-              textShadowOffset: { width: 0, height: 1 },
-              textShadowRadius: 4,
+              fontSize: 20,
+              fontWeight: '900',
+              textShadowColor: dome.color,
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 10,
               zIndex: 10,
             }}>
               {dome.value.toLocaleString('fr-FR')}
@@ -886,7 +618,7 @@ const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
           </Defs>
 
           {/* Lignes de grille horizontales — derrière les dômes */}
-          {[500, 1000, 1500, 2000, 2500, 3000].map((val) => {
+          {[500, 1000, 1500, 2000, 2500].map((val) => {
             const y = svgH - (val / maxCalorie) * (svgH - 10);
             return (
               <Line
@@ -1572,8 +1304,8 @@ const TABS = [
 
 const BottomTabs = ({ activeTab, onTabPress }) => (
   <LinearGradient
-    colors={['rgba(13, 17, 23, 0.0)', 'rgba(13, 17, 23, 0.7)', 'rgba(13, 17, 23, 0.97)']}
-    locations={[0, 0.25, 1]}
+    colors={['rgba(13,17,23,0)', 'rgba(10,14,20,0.85)', 'rgba(8,11,16,0.98)']}
+    locations={[0, 0.3, 1]}
     start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
     style={s.tabBar}
   >
@@ -1679,8 +1411,8 @@ export default function App() {
       <View style={{ flex: 1, backgroundColor: '#0C1219' }}>
         <StatusBar barStyle="light-content" backgroundColor="#0C1219" />
 
-        {/* Background circuit board */}
-        <CircuitBoardUltimate />
+        {/* Background Nebula Grid */}
+        <NebulaGridBackground />
 
         {/* Voile dépoli */}
         <View
@@ -1691,18 +1423,6 @@ export default function App() {
             backgroundColor: 'rgba(13, 17, 23, 0.3)',
           }}
         />
-
-        {/* Glow radial émeraude — profondeur lumineuse */}
-        <View pointerEvents="none" style={{
-          position: 'absolute', top: '15%', left: W / 2 - 160,
-          width: 320, height: 320, borderRadius: 160,
-          backgroundColor: 'rgba(0, 217, 132, 0.04)',
-        }} />
-        <View pointerEvents="none" style={{
-          position: 'absolute', top: '20%', left: W / 2 - 80,
-          width: 160, height: 160, borderRadius: 80,
-          backgroundColor: 'rgba(0, 217, 132, 0.06)',
-        }} />
 
         {/* Contenu principal */}
         <SafeAreaView style={{ flex: 1 }} edges={['top']}>
