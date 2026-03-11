@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Line, Circle, Rect, Path, G, Defs, LinearGradient as SvgGradient, Stop, Polygon, ClipPath, Ellipse } from 'react-native-svg';
+import Svg, { Line, Circle, Rect, Path, G, Defs, LinearGradient as SvgLinearGradient, Stop, Polygon, ClipPath, Ellipse, Text as SvgText } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width: W, height: H } = Dimensions.get('window');
@@ -122,21 +122,21 @@ const NebulaGridBackground = () => {
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
-      {/* Nebula halos — colored glows */}
+      {/* Nebula halos — quasi invisibles */}
       <View pointerEvents="none" style={{
         position: 'absolute', top: H * 0.05, left: -W * 0.1, right: -W * 0.1,
         height: H * 0.45, borderRadius: H * 0.23,
-        backgroundColor: 'rgba(0, 217, 132, 0.03)',
+        backgroundColor: 'rgba(0, 217, 132, 0.012)',
       }} />
       <View pointerEvents="none" style={{
         position: 'absolute', top: H * 0.55, left: W * 0.2,
         width: W * 0.5, height: H * 0.25, borderRadius: H * 0.12,
-        backgroundColor: 'rgba(77, 166, 255, 0.025)',
+        backgroundColor: 'rgba(77, 166, 255, 0.008)',
       }} />
       <View pointerEvents="none" style={{
         position: 'absolute', top: H * 0.15, left: W * 0.3, right: W * 0.3,
         height: H * 0.2, borderRadius: H * 0.1,
-        backgroundColor: 'rgba(0, 217, 132, 0.05)',
+        backgroundColor: 'rgba(0, 217, 132, 0.012)',
       }} />
 
       {/* SVG — grid lines + glow dots */}
@@ -145,7 +145,7 @@ const NebulaGridBackground = () => {
         {nebulaGridLines.map((line, i) => (
           <Line key={`ng-${i}`}
             x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2}
-            stroke="rgba(80, 100, 130, 0.06)"
+            stroke="rgba(0, 217, 132, 0.018)"
             strokeWidth={0.5}
           />
         ))}
@@ -205,36 +205,25 @@ const NebulaGridBackground = () => {
 const LixGemIcon = ({ width = 20, height = 22 }) => (
   <Svg width={width} height={height} viewBox="0 0 20 24">
     <Defs>
-      <SvgGradient id="lixGemBody" x1="0" y1="0" x2="0.3" y2="1">
+      <SvgLinearGradient id="lixGemBody" x1="0" y1="0" x2="0.2" y2="1">
         <Stop offset="0%" stopColor="#5DFFB4" />
-        <Stop offset="35%" stopColor="#00D984" />
-        <Stop offset="70%" stopColor="#00A866" />
+        <Stop offset="30%" stopColor="#00D984" />
+        <Stop offset="65%" stopColor="#00A866" />
         <Stop offset="100%" stopColor="#005C38" />
-      </SvgGradient>
-      <SvgGradient id="lixGemTop" x1="0.5" y1="0" x2="0.5" y2="1">
+      </SvgLinearGradient>
+      <SvgLinearGradient id="lixGemCrown" x1="0.5" y1="0" x2="0.5" y2="1">
         <Stop offset="0%" stopColor="#8AFFDA" />
         <Stop offset="100%" stopColor="#00D984" />
-      </SvgGradient>
+      </SvgLinearGradient>
     </Defs>
-    {/* Corps principal — pentagone */}
-    <Polygon points="10,1 1,8 4,22 16,22 19,8" fill="url(#lixGemBody)" />
-    {/* Couronne supérieure */}
-    <Polygon points="10,1 1,8 19,8" fill="url(#lixGemTop)" />
-    {/* Table centrale */}
-    <Polygon points="6,8 14,8 12.5,4.5 7.5,4.5" fill="#5DFFB4" opacity={0.4} />
-    {/* Facette gauche */}
-    <Polygon points="1,8 4,22 10,8" fill="#00BF78" opacity={0.25} />
-    {/* Facette droite */}
-    <Polygon points="19,8 16,22 10,8" fill="#007A4A" opacity={0.35} />
-    {/* Facette bas centre */}
-    <Polygon points="4,22 16,22 10,8" fill="#009960" opacity={0.2} />
-    {/* Ceinture */}
-    <Line x1="1" y1="8" x2="19" y2="8" stroke="#8AFFDA" strokeWidth={0.7} opacity={0.5} />
-    {/* Reflet principal */}
-    <Polygon points="8,3 10,1.5 12,3 10,5" fill="white" opacity={0.55} />
-    {/* Éclats */}
-    <Circle cx="4.5" cy="6.5" r={0.8} fill="white" opacity={0.4} />
-    <Circle cx="14" cy="12" r={0.6} fill="white" opacity={0.25} />
+    <Polygon points="10,1 2,8 5.5,22 14.5,22 18,8" fill="url(#lixGemBody)" />
+    <Polygon points="10,1 2,8 18,8" fill="url(#lixGemCrown)" />
+    <Polygon points="6.5,8 13.5,8 12,5 8,5" fill="#5DFFB4" opacity={0.35} />
+    <Polygon points="2,8 5.5,22 10,8" fill="#00BF78" opacity={0.25} />
+    <Polygon points="18,8 14.5,22 10,8" fill="#007A4A" opacity={0.35} />
+    <Line x1="2" y1="8" x2="18" y2="8" stroke="#8AFFDA" strokeWidth={0.5} opacity={0.5} />
+    <Polygon points="8.5,3.5 10,1.5 11.5,3.5 10,5.5" fill="white" opacity={0.5} />
+    <Circle cx="5.5" cy="6.5" r={0.6} fill="white" opacity={0.35} />
   </Svg>
 );
 
@@ -244,10 +233,10 @@ const LixGemIcon = ({ width = 20, height = 22 }) => (
 const HeartIcon = () => (
   <Svg width={28} height={28} viewBox="0 0 24 24">
     <Defs>
-      <SvgGradient id="heartGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+      <SvgLinearGradient id="heartGrad" x1="0.5" y1="0" x2="0.5" y2="1">
         <Stop offset="0%" stopColor="#FF6B8A" />
         <Stop offset="100%" stopColor="#FF3B5C" />
-      </SvgGradient>
+      </SvgLinearGradient>
     </Defs>
     <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="url(#heartGrad)" />
     <Ellipse cx="8" cy="7.5" rx="2.5" ry="1.8" fill="white" opacity={0.25} />
@@ -257,11 +246,11 @@ const HeartIcon = () => (
 const FlameIcon = () => (
   <Svg width={28} height={28} viewBox="0 0 24 24">
     <Defs>
-      <SvgGradient id="flameGrad" x1="0.5" y1="1" x2="0.5" y2="0">
+      <SvgLinearGradient id="flameGrad" x1="0.5" y1="1" x2="0.5" y2="0">
         <Stop offset="0%" stopColor="#FF4500" />
         <Stop offset="50%" stopColor="#FF8C42" />
         <Stop offset="100%" stopColor="#FFD700" />
-      </SvgGradient>
+      </SvgLinearGradient>
     </Defs>
     <Path d="M12 2C8.5 7 4 9.5 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8c0-2-1-3.5-2-5-.5 1.5-1.5 2.5-3 3-1-4-3-6.5-3-10z" fill="url(#flameGrad)" />
     <Path d="M12 22c-2.21 0-4-1.79-4-4 0-2 2-3.5 3-5.5.5 1 1.5 1.5 2.5 2 .5-1.5 1-3 .5-4.5 1 1.5 2 3.5 2 5.5 0 1.5-.5 2.5-1.5 3.5-.5.5-1.5 1-2.5 1z" fill="#FFD700" opacity={0.5} />
@@ -271,10 +260,10 @@ const FlameIcon = () => (
 const BoltIcon = () => (
   <Svg width={28} height={28} viewBox="0 0 24 24">
     <Defs>
-      <SvgGradient id="boltGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+      <SvgLinearGradient id="boltGrad" x1="0.5" y1="0" x2="0.5" y2="1">
         <Stop offset="0%" stopColor="#FFE066" />
         <Stop offset="100%" stopColor="#FFB800" />
-      </SvgGradient>
+      </SvgLinearGradient>
     </Defs>
     <Path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="url(#boltGrad)" />
     <Path d="M11 5l-4 7h3.5l-.5 4 4.5-6H11l.5-5z" fill="white" opacity={0.15} />
@@ -284,10 +273,10 @@ const BoltIcon = () => (
 const DropletIcon = ({ size = 20 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24">
     <Defs>
-      <SvgGradient id="dropGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+      <SvgLinearGradient id="dropGrad" x1="0.5" y1="0" x2="0.5" y2="1">
         <Stop offset="0%" stopColor="#7DD3FC" />
         <Stop offset="100%" stopColor="#0EA5E9" />
-      </SvgGradient>
+      </SvgLinearGradient>
     </Defs>
     <Path d="M12 2C12 2 5 11 5 16c0 3.87 3.13 7 7 7s7-3.13 7-7c0-5-7-14-7-14z" fill="url(#dropGrad)" />
     <Ellipse cx="9.5" cy="15" rx="2" ry="2.5" fill="white" opacity={0.2} />
@@ -306,10 +295,10 @@ const PlateIcon = () => (
 const LightbulbIcon = () => (
   <Svg width={22} height={22} viewBox="0 0 24 24">
     <Defs>
-      <SvgGradient id="bulbGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+      <SvgLinearGradient id="bulbGrad" x1="0.5" y1="0" x2="0.5" y2="1">
         <Stop offset="0%" stopColor="#FFE066" />
         <Stop offset="100%" stopColor="#FFB800" />
-      </SvgGradient>
+      </SvgLinearGradient>
     </Defs>
     <Path d="M12 2C8.13 2 5 5.13 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.87-3.13-7-7-7z" fill="url(#bulbGrad)" />
     <Rect x="9" y="19" width="6" height="1.5" rx="0.75" fill="#FFB800" opacity={0.7} />
@@ -321,10 +310,10 @@ const LightbulbIcon = () => (
 const StatsIcon = () => (
   <Svg width={22} height={22} viewBox="0 0 24 24">
     <Defs>
-      <SvgGradient id="statsGrad" x1="0" y1="1" x2="0" y2="0">
+      <SvgLinearGradient id="statsGrad" x1="0" y1="1" x2="0" y2="0">
         <Stop offset="0%" stopColor="#00A866" />
         <Stop offset="100%" stopColor="#00D984" />
-      </SvgGradient>
+      </SvgLinearGradient>
     </Defs>
     <Rect x="3" y="14" width="4" height="8" rx="1" fill="url(#statsGrad)" opacity={0.6} />
     <Rect x="10" y="8" width="4" height="14" rx="1" fill="url(#statsGrad)" opacity={0.8} />
@@ -349,16 +338,14 @@ const StarIcon = () => (
 const GoalFlag = () => (
   <Svg width={20} height={20} viewBox="0 0 24 24">
     <Defs>
-      <SvgGradient id="flagGrad" x1="0" y1="0" x2="1" y2="1">
-        <Stop offset="0%" stopColor="#FFD700" />
-        <Stop offset="50%" stopColor="#FFAA00" />
+      <SvgLinearGradient id="flagGold" x1="0" y1="0" x2="1" y2="1">
+        <Stop offset="0%" stopColor="#FFE066" />
         <Stop offset="100%" stopColor="#D4AF37" />
-      </SvgGradient>
+      </SvgLinearGradient>
     </Defs>
-    <Line x1="5" y1="3" x2="5" y2="21" stroke="#D4AF37" strokeWidth={2} strokeLinecap="round" />
-    <Path d="M5 3C5 3 8 2 11 4C14 6 17 5 19 3V13C17 15 14 16 11 14C8 12 5 13 5 13V3Z" fill="url(#flagGrad)" opacity={0.9} />
-    <Path d="M7 4.5C9 4 11 4.5 13 6" fill="none" stroke="white" strokeWidth={0.6} opacity={0.45} />
-    <Circle cx="5" cy="21" r="1.8" fill="#D4AF37" />
+    <Line x1="5" y1="2" x2="5" y2="22" stroke="#D4AF37" strokeWidth={2} strokeLinecap="round" />
+    <Path d="M5 3C5 3 8 1.5 11 4C14 6.5 17 5 19 3V13C17 15 14 16 11 13.5C8 11 5 12.5 5 12.5V3Z" fill="url(#flagGold)" />
+    <Circle cx="5" cy="22" r="1.2" fill="#D4AF37" />
   </Svg>
 );
 
@@ -543,153 +530,156 @@ const MOCK_GENERAL_DATA = [
 ];
 
 // ============================================================
-// COMPOSANT — Graphe 3 Dômes Premium Side-by-Side
+// COMPOSANT — Barre Cristal 3D Isométrique
 // ============================================================
-const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
-  const SCALE_WIDTH = 35;
-  const cW = W - 64 - SCALE_WIDTH;
-  const svgH = 200;
-  const labelSpace = 24;
-  const thirdW = cW / 3;
-  const maxCalorie = 2500;
-  const maxValue = maxCalorie;
+const CrystalBar = ({ x, barWidth, barHeight, baseY, color, colorDark, colorLight, glowColor, value, label }) => {
+  const depth = 14;
+  const topSkew = 10;
+  const uid = label.replace(/[^a-zA-Z]/g, '');
 
-  const domes = [
-    { value: consomme, label: 'Consommé', color: '#00D984', gradId: 'domeGradGreen' },
-    { value: brule, label: 'Brûlé / Sport', color: '#FF8C42', gradId: 'domeGradOrange' },
-    { value: reste, label: 'Reste à récupérer', color: '#4DA6FF', gradId: 'domeGradBlue' },
-  ];
-
-  const getDomeH = (v) => (v / maxValue) * (svgH - 10);
-
-  const buildDomePath = (idx, value) => {
-    const x1 = idx * thirdW;
-    const x2 = (idx + 1) * thirdW;
-    const midX = (x1 + x2) / 2;
-    const h = getDomeH(value);
-    const topY = svgH - h;
-    const baseY = svgH;
-    const cp = thirdW * 0.3;
-    return `M ${x1} ${baseY} C ${x1 + cp} ${baseY} ${x1 + cp} ${topY} ${midX} ${topY} C ${x2 - cp} ${topY} ${x2 - cp} ${baseY} ${x2} ${baseY} Z`;
-  };
-
-  // Render order: blue (back) → green (mid) → orange (front)
-  const renderOrder = [2, 0, 1];
-
-  const scaleTicks = [500, 1000, 1500, 2000, 2500];
+  const frontPath = `M ${x} ${baseY} L ${x} ${baseY - barHeight} L ${x + barWidth} ${baseY - barHeight} L ${x + barWidth} ${baseY} Z`;
+  const rightPath = `M ${x + barWidth} ${baseY} L ${x + barWidth} ${baseY - barHeight} L ${x + barWidth + depth} ${baseY - barHeight - topSkew} L ${x + barWidth + depth} ${baseY - topSkew} Z`;
+  const topPath = `M ${x} ${baseY - barHeight} L ${x + barWidth} ${baseY - barHeight} L ${x + barWidth + depth} ${baseY - barHeight - topSkew} L ${x + depth} ${baseY - barHeight - topSkew} Z`;
 
   return (
-    <View>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-      <View style={{ height: svgH + labelSpace, flex: 1 }}>
-        {/* Valeurs au sommet de chaque dôme */}
-        {domes.map((dome, i) => {
-          const h = getDomeH(dome.value);
-          const topY = svgH - h;
+    <>
+      <Defs>
+        <SvgLinearGradient id={`front_${uid}`} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor={colorLight} stopOpacity={0.9} />
+          <Stop offset="50%" stopColor={color} stopOpacity={0.75} />
+          <Stop offset="100%" stopColor={colorDark} stopOpacity={0.85} />
+        </SvgLinearGradient>
+        <SvgLinearGradient id={`right_${uid}`} x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0%" stopColor={colorDark} stopOpacity={0.6} />
+          <Stop offset="100%" stopColor={colorDark} stopOpacity={0.3} />
+        </SvgLinearGradient>
+        <SvgLinearGradient id={`top_${uid}`} x1="0" y1="1" x2="1" y2="0">
+          <Stop offset="0%" stopColor={color} stopOpacity={0.6} />
+          <Stop offset="100%" stopColor={colorLight} stopOpacity={0.9} />
+        </SvgLinearGradient>
+        <SvgLinearGradient id={`glow_${uid}`} x1="0.5" y1="0" x2="0.5" y2="1">
+          <Stop offset="0%" stopColor={glowColor} stopOpacity={0.5} />
+          <Stop offset="40%" stopColor={glowColor} stopOpacity={0.15} />
+          <Stop offset="100%" stopColor={glowColor} stopOpacity={0} />
+        </SvgLinearGradient>
+      </Defs>
+
+      {/* Glow derrière */}
+      <Rect x={x + barWidth * 0.1} y={baseY - barHeight - 10} width={barWidth * 0.8} height={barHeight + 10} rx={barWidth * 0.2} fill={color} opacity={0.08} />
+
+      {/* Face avant */}
+      <Path d={frontPath} fill={`url(#front_${uid})`} />
+
+      {/* Glow intérieur */}
+      <Rect x={x + barWidth * 0.25} y={baseY - barHeight + 5} width={barWidth * 0.5} height={Math.max(0, barHeight - 10)} rx={4} fill={`url(#glow_${uid})`} />
+
+      {/* Face droite */}
+      <Path d={rightPath} fill={`url(#right_${uid})`} />
+
+      {/* Face supérieure */}
+      <Path d={topPath} fill={`url(#top_${uid})`} />
+
+      {/* Reflet brillant sur face supérieure */}
+      <Path
+        d={`M ${x + 4} ${baseY - barHeight - 1} L ${x + barWidth * 0.6} ${baseY - barHeight - 1} L ${x + barWidth * 0.6 + depth * 0.5} ${baseY - barHeight - topSkew * 0.5 - 1} L ${x + depth * 0.5 + 4} ${baseY - barHeight - topSkew * 0.5 - 1} Z`}
+        fill="white" opacity={0.15}
+      />
+
+      {/* Arêtes */}
+      <Line x1={x + barWidth} y1={baseY} x2={x + barWidth} y2={baseY - barHeight} stroke={colorLight} strokeWidth={0.8} opacity={0.4} />
+      <Line x1={x} y1={baseY - barHeight} x2={x + barWidth} y2={baseY - barHeight} stroke={colorLight} strokeWidth={0.8} opacity={0.3} />
+
+      {/* Gemme lumineuse au sommet */}
+      <Rect x={x + barWidth * 0.3 + depth * 0.3} y={baseY - barHeight - topSkew * 0.55 - 4} width={barWidth * 0.35} height={6} rx={3} fill={colorLight} opacity={0.6} />
+
+      {/* Valeur au-dessus — glow */}
+      <SvgText x={x + barWidth / 2 + depth / 2} y={baseY - barHeight - topSkew - 12} fontSize={16} fontWeight="800" fill={color} opacity={0.35} textAnchor="middle">
+        {value.toLocaleString('fr-FR')}
+      </SvgText>
+      {/* Valeur au-dessus — net */}
+      <SvgText x={x + barWidth / 2 + depth / 2} y={baseY - barHeight - topSkew - 12} fontSize={16} fontWeight="800" fill={color} textAnchor="middle">
+        {value.toLocaleString('fr-FR')}
+      </SvgText>
+
+      {/* Label en dessous */}
+      <SvgText x={x + barWidth / 2 + depth / 2} y={baseY + 16} fontSize={10} fill="#8892A0" textAnchor="middle">
+        {label}
+      </SvgText>
+    </>
+  );
+};
+
+// ============================================================
+// COMPOSANT — Graphe Barres Cristal 3D
+// ============================================================
+const CrystalBarsChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
+  const GRAPH_SVG_WIDTH = W - 80;
+  const GRAPH_HEIGHT = 210;
+  const BASE_Y = GRAPH_HEIGHT - 5;
+  const BAR_WIDTH = 55;
+  const BAR_GAP = 15;
+  const maxCalorie = 2500;
+  const maxHeight = GRAPH_HEIGHT - 50;
+
+  const hConsomme = (consomme / maxCalorie) * maxHeight;
+  const hBrule = (brule / maxCalorie) * maxHeight;
+  const hReste = (reste / maxCalorie) * maxHeight;
+
+  const totalWidth = BAR_WIDTH * 3 + BAR_GAP * 2 + 14 * 3;
+  const startX = (GRAPH_SVG_WIDTH - totalWidth) / 2;
+  const bar1X = startX;
+  const bar2X = startX + BAR_WIDTH + 14 + BAR_GAP;
+  const bar3X = startX + (BAR_WIDTH + 14 + BAR_GAP) * 2;
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+      <Svg width={GRAPH_SVG_WIDTH} height={GRAPH_HEIGHT + 25}>
+        {/* Lignes de grille */}
+        {[500, 1000, 1500, 2000, 2500].map((val) => {
+          const y = BASE_Y - (val / maxCalorie) * maxHeight;
           return (
-            <Text key={`dv-${i}`} style={{
-              position: 'absolute',
-              top: topY + labelSpace - 24,
-              left: i * thirdW,
-              width: thirdW,
-              textAlign: 'center',
-              color: dome.color,
-              fontSize: 20,
-              fontWeight: '900',
-              textShadowColor: dome.color,
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 10,
-              zIndex: 10,
-            }}>
-              {dome.value.toLocaleString('fr-FR')}
-            </Text>
+            <Line key={val} x1={0} y1={y} x2={GRAPH_SVG_WIDTH} y2={y}
+              stroke="rgba(255, 255, 255, 0.05)" strokeWidth={1} strokeDasharray="4 8"
+            />
           );
         })}
 
-        {/* SVG — lignes de grille + 3 dômes */}
-        <Svg width={cW} height={svgH} style={{ position: 'absolute', bottom: 0, left: 0 }}>
-          <Defs>
-            {domes.map((dome) => (
-              <SvgGradient key={dome.gradId} id={dome.gradId} x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={dome.color} stopOpacity="0.7" />
-                <Stop offset="1" stopColor={dome.color} stopOpacity="0.05" />
-              </SvgGradient>
-            ))}
-          </Defs>
+        {/* Barre 1 — Consommé (vert) */}
+        <CrystalBar x={bar1X} barWidth={BAR_WIDTH} barHeight={hConsomme} baseY={BASE_Y}
+          color="#00D984" colorDark="#00854F" colorLight="#5DFFB4" glowColor="#00FFAA"
+          value={consomme} label="Consommé"
+        />
 
-          {/* Lignes de grille horizontales — derrière les dômes */}
-          {[500, 1000, 1500, 2000, 2500].map((val) => {
-            const y = svgH - (val / maxCalorie) * (svgH - 10);
-            return (
-              <Line
-                key={`grid-${val}`}
-                x1={0}
-                y1={y}
-                x2={cW}
-                y2={y}
-                stroke="rgba(255, 255, 255, 0.06)"
-                strokeWidth={1}
-                strokeDasharray="4 6"
-              />
-            );
-          })}
+        {/* Barre 2 — Brûlé / Sport (orange) */}
+        <CrystalBar x={bar2X} barWidth={BAR_WIDTH} barHeight={hBrule} baseY={BASE_Y}
+          color="#FF8C42" colorDark="#CC6020" colorLight="#FFB87A" glowColor="#FFAA60"
+          value={brule} label="Brûlé / Sport"
+        />
 
-          {renderOrder.map((idx) => {
-            const dome = domes[idx];
-            const path = buildDomePath(idx, dome.value);
-            const midX = idx * thirdW + thirdW / 2;
-            const h = getDomeH(dome.value);
-            const topY = svgH - h;
-            return (
-              <G key={`dome-${idx}`}>
-                {/* Glow ellipse derrière le dôme */}
-                <Ellipse
-                  cx={midX}
-                  cy={svgH - h * 0.4}
-                  rx={thirdW * 0.5}
-                  ry={h * 0.4}
-                  fill={dome.color}
-                  opacity={0.12}
-                />
-                {/* Stroke glow (large, transparent) */}
-                <Path d={path} fill="none" stroke={dome.color} strokeWidth={6} opacity={0.12} />
-                {/* Dôme principal */}
-                <Path d={path} fill={`url(#${dome.gradId})`} stroke={dome.color} strokeWidth={2.5} />
-                {/* Point sommet */}
-                <Circle cx={midX} cy={topY} r={3} fill={dome.color} />
-              </G>
-            );
-          })}
-        </Svg>
-      </View>
+        {/* Barre 3 — Reste (bleu) */}
+        <CrystalBar x={bar3X} barWidth={BAR_WIDTH} barHeight={hReste} baseY={BASE_Y}
+          color="#4DA6FF" colorDark="#2B7ACC" colorLight="#8DCAFF" glowColor="#70BBFF"
+          value={reste} label="Reste"
+        />
+      </Svg>
 
-      {/* Colonne paliers à droite */}
-      <View style={{ width: SCALE_WIDTH, height: svgH + labelSpace, position: 'relative' }}>
-        {scaleTicks.map(val => {
-          const bottomOffset = (val / maxCalorie) * (svgH - 10);
+      {/* Échelle paliers à droite */}
+      <View style={{ width: 35, height: GRAPH_HEIGHT, justifyContent: 'flex-end' }}>
+        {[500, 1000, 1500, 2000, 2500].map((val) => {
+          const bottomPos = (val / maxCalorie) * maxHeight;
           return (
-            <Text key={`scale-${val}`} style={{
+            <Text key={val} style={{
               position: 'absolute',
-              bottom: bottomOffset - 5,
-              left: 4,
+              bottom: bottomPos - 6,
+              right: 0,
               fontSize: 9,
               color: '#8892A0',
               opacity: 0.6,
             }}>
-              {val.toLocaleString('fr-FR')}
+              {val >= 1000 ? `${val / 1000}k` : val}
             </Text>
           );
         })}
-      </View>
-      </View>
-
-      {/* Labels sous les dômes */}
-      <View style={{ flexDirection: 'row', marginTop: 6 }}>
-        {domes.map((dome, i) => (
-          <View key={`dl-${i}`} style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={{ color: '#8892A0', fontSize: 11, textAlign: 'center' }}>{dome.label}</Text>
-          </View>
-        ))}
       </View>
     </View>
   );
@@ -826,11 +816,11 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubble
           <ClipPath id={clipId}>
             <Path d={svgPath} />
           </ClipPath>
-          <SvgGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
+          <SvgLinearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
             <Stop offset="0" stopColor="#006994" stopOpacity="0.9" />
             <Stop offset="0.5" stopColor="#00BCD4" stopOpacity="0.8" />
             <Stop offset="1" stopColor="#4DA6FF" stopOpacity="0.7" />
-          </SvgGradient>
+          </SvgLinearGradient>
         </Defs>
         <G clipPath={`url(#${clipId})`}>
           <Rect x="0" y={waterTop} width="100" height={waterHeight} fill={`url(#${gradId})`} />
@@ -1096,14 +1086,14 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <Text style={s.cardLabel}>BILAN ÉNERGÉTIQUE</Text>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ color: '#8892A0', fontSize: 11 }}>Objectif de Calories</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <GoalFlag />
-              <Text style={{ color: '#EAEEF3', fontSize: 16, fontWeight: '800' }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
+              <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '800' }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
             </View>
           </View>
         </View>
 
-        <EnergyDomesChart consomme={consumedTotal} brule={burnedTotal} reste={remaining} />
+        <CrystalBarsChart consomme={consumedTotal} brule={burnedTotal} reste={remaining} />
 
         {/* Onglets Journalier / Général */}
         <View style={s.chartTabsRow}>
