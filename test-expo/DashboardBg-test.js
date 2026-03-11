@@ -473,27 +473,33 @@ const CircuitBoardUltimate = () => {
 const GemIcon = ({ size = 22 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24">
     <Defs>
-      <SvgGradient id="gemBody" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0" stopColor="#00FF9D" stopOpacity="1" />
-        <Stop offset="0.5" stopColor="#00D984" stopOpacity="1" />
-        <Stop offset="1" stopColor="#008F57" stopOpacity="1" />
+      <SvgGradient id="gemMain" x1="0" y1="0" x2="0.3" y2="1">
+        <Stop offset="0%" stopColor="#5DFFB4" />
+        <Stop offset="35%" stopColor="#00D984" />
+        <Stop offset="70%" stopColor="#00A866" />
+        <Stop offset="100%" stopColor="#006B40" />
+      </SvgGradient>
+      <SvgGradient id="gemTop" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0%" stopColor="#7AFFC8" />
+        <Stop offset="100%" stopColor="#00D984" />
       </SvgGradient>
     </Defs>
-    {/* Corps principal */}
-    <Path d="M12 2L4 9L12 22L20 9L12 2Z" fill="url(#gemBody)" />
-    {/* Facette supérieure — couronne lumineuse */}
-    <Path d="M12 2L4 9H20L12 2Z" fill="#00FF9D" opacity={0.8} />
-    {/* Facettes internes — lignes de taille */}
-    <Line x1="12" y1="2" x2="8" y2="9" stroke="#00FFB0" strokeWidth="0.5" opacity={0.6} />
-    <Line x1="12" y1="2" x2="16" y2="9" stroke="#00FFB0" strokeWidth="0.5" opacity={0.6} />
-    <Line x1="12" y1="22" x2="4" y2="9" stroke="#006B40" strokeWidth="0.5" opacity={0.4} />
-    <Line x1="12" y1="22" x2="20" y2="9" stroke="#006B40" strokeWidth="0.5" opacity={0.4} />
-    {/* Facette centrale sombre pour profondeur */}
-    <Path d="M8 9L12 22L16 9Z" fill="#006B40" opacity={0.2} />
-    {/* Brillance — reflet diamant */}
-    <Path d="M10 5L12 3L14 5L12 7Z" fill="white" opacity={0.45} />
-    {/* Micro reflet secondaire */}
-    <Circle cx="7" cy="8" r="0.8" fill="white" opacity={0.3} />
+    {/* Corps de la gemme — hexagone taillé */}
+    <Path d="M12 2L4.5 8.5L8 22H16L19.5 8.5L12 2Z" fill="url(#gemMain)" />
+    {/* Facette supérieure — couronne */}
+    <Path d="M12 2L4.5 8.5H19.5L12 2Z" fill="url(#gemTop)" />
+    {/* Table centrale — facette plate du haut */}
+    <Path d="M8.5 8.5H15.5L14 6H10L8.5 8.5Z" fill="#5DFFB4" opacity={0.5} />
+    {/* Facettes latérales gauche */}
+    <Path d="M4.5 8.5L8 22L12 8.5H4.5Z" fill="#00BF78" opacity={0.3} />
+    {/* Facettes latérales droite */}
+    <Path d="M19.5 8.5H12L16 22L19.5 8.5Z" fill="#008F57" opacity={0.4} />
+    {/* Ligne de girdle (ceinture) */}
+    <Line x1="4.5" y1="8.5" x2="19.5" y2="8.5" stroke="#7AFFC8" strokeWidth="0.5" opacity={0.6} />
+    {/* Reflet brillant — highlight */}
+    <Path d="M9.5 4.5L12 2.5L14.5 4.5L12 6.5Z" fill="white" opacity={0.45} />
+    {/* Petit éclat secondaire */}
+    <Circle cx="7" cy="7" r="0.8" fill="white" opacity={0.3} />
   </Svg>
 );
 
@@ -680,12 +686,14 @@ const MOCK_GENERAL_DATA = [
 // ============================================================
 // COMPOSANT — Graphe 3 Dômes Premium Side-by-Side
 // ============================================================
-const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1318 }) => {
-  const cW = W - 64;
+const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
+  const SCALE_WIDTH = 35;
+  const cW = W - 64 - SCALE_WIDTH;
   const svgH = 160;
   const labelSpace = 28;
   const thirdW = cW / 3;
-  const maxValue = Math.max(consomme, brule, reste);
+  const maxCalorie = 3000;
+  const maxValue = maxCalorie;
 
   const domes = [
     { value: consomme, label: 'Consommé', color: '#00D984', gradId: 'domeGradGreen' },
@@ -709,9 +717,12 @@ const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1318 }) => {
   // Render order: blue (back) → green (mid) → orange (front)
   const renderOrder = [2, 0, 1];
 
+  const scaleTicks = [500, 1000, 1500, 2000, 2500, 3000].filter(v => v <= maxCalorie);
+
   return (
     <View>
-      <View style={{ height: svgH + labelSpace }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+      <View style={{ height: svgH + labelSpace, flex: 1 }}>
         {/* Valeurs au sommet de chaque dôme */}
         {domes.map((dome, i) => {
           const h = getDomeH(dome.value);
@@ -736,7 +747,7 @@ const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1318 }) => {
           );
         })}
 
-        {/* SVG — 3 dômes */}
+        {/* SVG — lignes de grille + 3 dômes */}
         <Svg width={cW} height={svgH} style={{ position: 'absolute', bottom: 0, left: 0 }}>
           <Defs>
             {domes.map((dome) => (
@@ -747,6 +758,23 @@ const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1318 }) => {
             ))}
           </Defs>
 
+          {/* Lignes de grille horizontales — derrière les dômes */}
+          {[500, 1000, 1500, 2000, 2500, 3000].map((val) => {
+            const y = svgH - (val / maxCalorie) * (svgH - 10);
+            return (
+              <Line
+                key={`grid-${val}`}
+                x1={0}
+                y1={y}
+                x2={cW}
+                y2={y}
+                stroke="rgba(255, 255, 255, 0.06)"
+                strokeWidth={1}
+                strokeDasharray="4 6"
+              />
+            );
+          })}
+
           {renderOrder.map((idx) => {
             const dome = domes[idx];
             const path = buildDomePath(idx, dome.value);
@@ -755,12 +783,31 @@ const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1318 }) => {
             const topY = svgH - h;
             return (
               <G key={`dome-${idx}`}>
-                <Circle cx={midX} cy={topY} r={20} fill={dome.color} opacity={0.15} />
+                <Circle cx={midX} cy={topY} r={3} fill={dome.color} />
                 <Path d={path} fill={`url(#${dome.gradId})`} stroke={dome.color} strokeWidth={2.5} />
               </G>
             );
           })}
         </Svg>
+      </View>
+
+      {/* Colonne paliers à droite */}
+      <View style={{ width: SCALE_WIDTH, height: svgH + labelSpace, position: 'relative' }}>
+        {scaleTicks.map(val => {
+          const bottomOffset = (val / maxCalorie) * (svgH - 10);
+          return (
+            <Text key={`scale-${val}`} style={{
+              position: 'absolute',
+              bottom: bottomOffset - 5,
+              left: 4,
+              fontSize: 9,
+              color: '#8892A0',
+            }}>
+              {val >= 1000 ? val.toLocaleString('fr-FR') : val}
+            </Text>
+          );
+        })}
+      </View>
       </View>
 
       {/* Labels sous les dômes */}
@@ -1136,7 +1183,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
             <TouchableOpacity
               style={s.resetBtn}
               activeOpacity={0.7}
-              onPress={() => { setCurrentMl(0); setHydroLogs([]); }}
+              onPress={() => { setCurrentMl(0); }}
             >
               <Text style={s.resetBtnText}>🔄 RÉINITIALISER</Text>
             </TouchableOpacity>
@@ -1157,7 +1204,8 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
     : streakDays >= 7 ? '#00D984'
     : streakDays >= 3 ? '#00BFA6' : '#8892A0';
 
-  const remaining = Math.max(0, DAILY_OBJECTIVE - (consumedTotal - burnedExtra));
+  // Reste = Objectif - (Consommé - Brûlé total) → 2330 - (1585 - 870) = 1615
+  const remaining = Math.max(0, DAILY_OBJECTIVE - (consumedTotal - burnedTotal));
 
   return (
     <ScrollView
@@ -1172,7 +1220,14 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <Text style={s.cardLabel}>BILAN ÉNERGÉTIQUE</Text>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ color: '#8892A0', fontSize: 11 }}>Objectif de Calories</Text>
-            <Text style={{ color: '#EAEEF3', fontSize: 16, fontWeight: '800' }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Svg width={16} height={16} viewBox="0 0 24 24" style={{ marginRight: 4 }}>
+                <Path d="M5 2V22" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" />
+                <Path d="M5 4H18L15 8L18 12H5V4Z" fill="#D4AF37" opacity={0.8} />
+                <Path d="M5 4H18L15 8L18 12H5V4Z" stroke="#D4AF37" strokeWidth="1" fill="none" />
+              </Svg>
+              <Text style={{ color: '#EAEEF3', fontSize: 16, fontWeight: '800' }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
+            </View>
           </View>
         </View>
 
@@ -1355,7 +1410,8 @@ const TABS = [
 
 const BottomTabs = ({ activeTab, onTabPress }) => (
   <LinearGradient
-    colors={['transparent', 'rgba(13, 17, 23, 0.8)', '#0D1117']}
+    colors={['rgba(26, 32, 48, 0.0)', 'rgba(0, 217, 132, 0.06)', 'rgba(13, 17, 23, 0.98)']}
+    locations={[0, 0.3, 1]}
     start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
     style={s.tabBar}
   >
@@ -1565,15 +1621,16 @@ const s = StyleSheet.create({
     letterSpacing: 2, textAlign: 'center', marginBottom: 14,
   },
   sectionTitle: {
-    color: '#8892A0', fontSize: 12, fontWeight: '700',
-    letterSpacing: 1.5, marginTop: 18, marginBottom: 8, marginLeft: 4,
+    color: '#EAEEF3', fontSize: 15, fontWeight: '700',
+    letterSpacing: 0.5, marginTop: 18, marginBottom: 8, marginLeft: 4,
   },
 
   // === GLASS CARD ===
   glassCard: {
     borderRadius: 16, padding: 16,
-    backgroundColor: 'rgba(21,27,35,0.75)',
+    backgroundColor: 'rgba(21,27,35,0.8)',
     borderWidth: 1,
+    borderColor: 'rgba(62, 72, 85, 0.5)',
     borderTopColor: 'rgba(138,146,160,0.20)',
     borderLeftColor: 'rgba(107,123,141,0.10)',
     borderRightColor: 'rgba(42,48,59,0.20)',
@@ -1718,7 +1775,7 @@ const s = StyleSheet.create({
   macroTag: { color: '#8892A0', fontSize: 11, fontWeight: '600' },
 
   // === ADVICE CARD ===
-  adviceText: { color: '#C0C8D4', fontSize: 13, fontStyle: 'italic', lineHeight: 20 },
+  adviceText: { color: '#8892A0', fontSize: 12, fontStyle: 'italic', lineHeight: 20 },
   adviceLink: {
     flexDirection: 'row', alignItems: 'center', marginTop: 10,
   },
@@ -1749,9 +1806,9 @@ const s = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(80,95,115,0.08)',
+    borderTopColor: 'rgba(0, 217, 132, 0.15)',
     paddingTop: 10,
-    paddingBottom: Platform.OS === 'ios' ? 0 : 8,
+    paddingBottom: Platform.OS === 'ios' ? 0 : 48,
   },
   tabItem: {
     flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4,
