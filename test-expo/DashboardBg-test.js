@@ -7,11 +7,11 @@
 import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import {
   View, Dimensions, Text, StyleSheet, StatusBar,
-  Animated as RNAnimated, ScrollView, TouchableOpacity, Platform,
+  Animated as RNAnimated, ScrollView, TouchableOpacity, Platform, Modal,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Line, Circle, Rect, Path, G, Defs, LinearGradient as SvgGradient, Stop, Polygon } from 'react-native-svg';
+import Svg, { Line, Circle, Rect, Path, G, Defs, LinearGradient as SvgGradient, Stop, Polygon, ClipPath } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width: W, height: H } = Dimensions.get('window');
@@ -651,9 +651,225 @@ const ECGChart = () => {
 };
 
 // ============================================================
+// COMPOSANT — Silhouette SVG avec remplissage eau
+// ============================================================
+const MALE_PATH = 'M50,8 C50,8 42,8 42,16 C42,24 50,24 50,24 C50,24 58,24 58,16 C58,8 50,8 50,8 Z M50,26 L38,32 L32,60 L38,62 L42,42 L46,80 L42,120 L46,122 L50,90 L54,122 L58,120 L54,80 L58,42 L62,62 L68,60 L62,32 Z';
+const FEMALE_PATH = 'M50,8 C50,8 42,8 42,16 C42,24 50,26 50,26 C50,26 58,24 58,16 C58,8 50,8 50,8 Z M50,28 L40,34 L34,55 L40,58 L38,42 L44,70 L38,75 L42,78 L46,80 L42,120 L46,122 L50,90 L54,122 L58,120 L54,80 L58,78 L62,75 L56,70 L62,42 L60,58 L66,55 L60,34 Z';
+
+const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme' }) => {
+  const fillAnim = useRef(new RNAnimated.Value(fillPercent)).current;
+  const svgPath = gender === 'femme' ? FEMALE_PATH : MALE_PATH;
+  const vbH = 130;
+  const ratio = height / vbH;
+  const svgW = Math.round(100 * ratio);
+
+  useEffect(() => {
+    RNAnimated.timing(fillAnim, {
+      toValue: fillPercent, duration: 400, useNativeDriver: false,
+    }).start();
+  }, [fillPercent]);
+
+  const fillY = fillAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: [vbH, 0],
+  });
+
+  return (
+    <View style={{ width: svgW, height }}>
+      {/* Static empty silhouette */}
+      <Svg width={svgW} height={height} viewBox="0 0 100 130" style={{ position: 'absolute' }}>
+        <Path d={svgPath} fill="#2A3040" opacity={0.5} />
+      </Svg>
+      {/* Filled silhouette with clipPath */}
+      <Svg width={svgW} height={height} viewBox="0 0 100 130" style={{ position: 'absolute' }}>
+        <Defs>
+          <ClipPath id="silClip">
+            <Path d={svgPath} />
+          </ClipPath>
+          <SvgGradient id="waterGrad" x1="0" y1="1" x2="0" y2="0">
+            <Stop offset="0" stopColor="#006994" stopOpacity="0.9" />
+            <Stop offset="0.5" stopColor="#00BCD4" stopOpacity="0.8" />
+            <Stop offset="1" stopColor="#4DA6FF" stopOpacity="0.7" />
+          </SvgGradient>
+        </Defs>
+        <G clipPath="url(#silClip)">
+          <Rect x="0" y={vbH * (1 - fillPercent / 100)} width="100" height={vbH * (fillPercent / 100)} fill="url(#waterGrad)" />
+        </G>
+      </Svg>
+    </View>
+  );
+};
+
+// ============================================================
+// COMPOSANT — Carte Hydratation compacte (dashboard)
+// ============================================================
+const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress }) => {
+  const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
+  const glasses = Math.round(currentMl / 250);
+  const totalGlasses = Math.round(goalMl / 250);
+  const liters = (currentMl / 1000).toFixed(1);
+  const goalL = (goalMl / 1000).toFixed(1);
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={s.hydrationCard}>
+      {/* Mini silhouette gauche */}
+      <SilhouetteFill fillPercent={percent} height={56} gender={gender} />
+
+      {/* Infos droite */}
+      <View style={{ flex: 1, marginLeft: 14 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text style={s.hydrationTitle}>{'\u{1F4A7}'} HYDRATATION</Text>
+          <Text style={s.hydrationLiters}>{liters} / {goalL}L</Text>
+        </View>
+
+        {/* Barre de progression */}
+        <View style={s.hydroBar}>
+          <LinearGradient
+            colors={['#4DA6FF', '#00BCD4']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={[s.hydroBarFill, { width: percent + '%' }]}
+          />
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 3 }}>
+          <Text style={s.hydroGlasses}>{glasses}/{totalGlasses} verres {'\u{1F95B}'}</Text>
+          <Text style={s.hydroPercent}>{percent}%</Text>
+        </View>
+        <Text style={{ color: '#555E6C', fontSize: 10, marginTop: 4 }}>Tap pour ajouter \u2192</Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+// ============================================================
+// COMPOSANT — Page Hydratation Fullscreen (Modal)
+// ============================================================
+const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gender }) => {
+  const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
+  const glasses = Math.round(currentMl / 250);
+  const totalGlasses = Math.round(goalMl / 250);
+  const [logs, setLogs] = useState([
+    { time: '08:30', amount: 250, type: 'eau' },
+    { time: '10:15', amount: 500, type: 'eau' },
+    { time: '12:45', amount: 250, type: 'eau' },
+    { time: '15:00', amount: 500, type: 'eau' },
+  ]);
+
+  const addWater = (ml) => {
+    setCurrentMl(prev => prev + ml);
+    const now = new Date();
+    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    setLogs(prev => [...prev, { time: timeStr, amount: ml, type: 'eau' }]);
+  };
+
+  const palierLabels = gender === 'homme'
+    ? ['0.6L', '1.25L', '1.9L', '2.5L']
+    : ['0.5L', '1L', '1.5L', '2L'];
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent={false}>
+      <View style={{ flex: 1, backgroundColor: '#0C1219' }}>
+        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+          {/* Header */}
+          <View style={s.modalHeader}>
+            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+              <Ionicons name="chevron-back" size={24} color="#EAEEF3" />
+            </TouchableOpacity>
+            <Text style={s.modalTitle}>HYDRATATION</Text>
+            <Text style={{ fontSize: 20 }}>{'\u{1F4A7}'}</Text>
+          </View>
+
+          <ScrollView contentContainerStyle={{ alignItems: 'center', paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+            <Text style={s.hydroModalSubtitle}>MON HYDRATATION{'\n'}AUJOURD'HUI</Text>
+
+            {/* Grande silhouette avec marqueurs */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 20 }}>
+              <SilhouetteFill fillPercent={percent} height={220} gender={gender} />
+              {/* Marqueurs paliers */}
+              <View style={{ marginLeft: 16, height: 220, justifyContent: 'space-between', paddingVertical: 8 }}>
+                {palierLabels.slice().reverse().map((label, i) => {
+                  const palierPct = (4 - i) * 25;
+                  const reached = percent >= palierPct;
+                  return (
+                    <View key={i} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={{ width: 12, height: 1, backgroundColor: reached ? '#4DA6FF' : '#2A3040' }} />
+                      <Text style={{ color: reached ? '#4DA6FF' : '#555E6C', fontSize: 11, marginLeft: 6, fontWeight: reached ? '700' : '400' }}>{label}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Compteur */}
+            <Text style={s.hydroBigCount}>
+              <Text style={{ color: '#4DA6FF' }}>{currentMl.toLocaleString('fr-FR')}</Text>
+              <Text style={{ color: '#555E6C' }}> / {goalMl.toLocaleString('fr-FR')} ml</Text>
+            </Text>
+
+            {/* Barre large */}
+            <View style={[s.hydroBar, { width: W - 64, height: 10, marginTop: 10 }]}>
+              <LinearGradient
+                colors={['#4DA6FF', '#00BCD4']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={[s.hydroBarFill, { width: percent + '%', height: 10 }]}
+              />
+            </View>
+            <Text style={{ color: '#4DA6FF', fontSize: 14, fontWeight: '700', marginTop: 6 }}>{percent}% \u2022 {glasses}/{totalGlasses} verres</Text>
+
+            {/* Bouton principal */}
+            <TouchableOpacity style={s.addWaterBtn} activeOpacity={0.7} onPress={() => addWater(250)}>
+              <Text style={s.addWaterBtnText}>AJOUTER DE L'EAU {'\u{1F4A7}'}</Text>
+            </TouchableOpacity>
+
+            {/* Boutons quantité rapide */}
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+              {[{ ml: 250, icon: '\u{1F95B}', label: '250ml' }, { ml: 500, icon: '\u{1F964}', label: '500ml' }, { ml: 1000, icon: '\u{1FAD7}', label: '1L' }].map((item) => (
+                <TouchableOpacity key={item.ml} style={s.qtyBtn} activeOpacity={0.7} onPress={() => addWater(item.ml)}>
+                  <Text style={{ fontSize: 20 }}>{item.icon}</Text>
+                  <Text style={s.qtyBtnText}>{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Boisson personnalisée PRO */}
+            <TouchableOpacity style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center' }} activeOpacity={0.7}>
+              <Text style={{ color: '#8892A0', fontSize: 12 }}>Ou ajouter une boisson... </Text>
+              <View style={s.proBadge}>
+                <Ionicons name="lock-closed" size={8} color="#D4AF37" />
+                <Text style={{ color: '#D4AF37', fontSize: 9, fontWeight: '700', marginLeft: 2 }}>PRO</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Historique */}
+            <View style={{ width: W - 64, marginTop: 24 }}>
+              <Text style={{ color: '#8892A0', fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 10 }}>{'\u2500'} Historique aujourd'hui {'\u2500'}</Text>
+              {logs.map((log, i) => (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
+                  <Text style={{ color: '#555E6C', fontSize: 12, width: 50 }}>{log.time}</Text>
+                  <Text style={{ fontSize: 14 }}>{'\u{1F4A7}'}</Text>
+                  <Text style={{ color: '#C0C8D4', fontSize: 13, marginLeft: 6 }}>{log.amount}ml {log.type}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Réinitialiser */}
+            <TouchableOpacity
+              style={s.resetBtn}
+              activeOpacity={0.7}
+              onPress={() => { setCurrentMl(0); setLogs([]); }}
+            >
+              <Text style={s.resetBtnText}>{'\u{1F504}'} R\u00C9INITIALISER</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
+};
+
+// ============================================================
 // COMPOSANT — Dashboard Content (page Accueil)
 // ============================================================
-const DashboardContent = () => {
+const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender }) => {
   const streakDays = 12;
   const streakColor = streakDays >= 14 ? '#D4AF37'
     : streakDays >= 7 ? '#00D984'
@@ -718,6 +934,14 @@ const DashboardContent = () => {
           <Text style={s.miniCardUnit}>kcal</Text>
         </View>
       </View>
+
+      {/* ====== CARTE HYDRATATION COMPACTE ====== */}
+      <HydrationCardCompact
+        currentMl={hydrationMl}
+        goalMl={hydrationGoal}
+        gender={gender}
+        onPress={onHydrationPress}
+      />
 
       {/* ====== INDICATEUR SCROLL ====== */}
       <View style={{ alignItems: 'center', marginTop: 14, marginBottom: 6 }}>
@@ -882,13 +1106,24 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [moodFilled, setMoodFilled] = useState(false);
+  const [hydrationMl, setHydrationMl] = useState(1500);
+  const [hydroModalVisible, setHydroModalVisible] = useState(false);
   const lixCount = 150;
-  const notifCount = 1; // 1 = Spin Wheel quotidien disponible
+  const notifCount = 1;
+  const gender = 'homme'; // mock — from Supabase profile
+  const hydrationGoal = gender === 'homme' ? 2500 : 2000;
 
   const renderPage = () => {
     switch (activeTab) {
       case 'home':
-        return <DashboardContent />;
+        return (
+          <DashboardContent
+            onHydrationPress={() => setHydroModalVisible(true)}
+            hydrationMl={hydrationMl}
+            hydrationGoal={hydrationGoal}
+            gender={gender}
+          />
+        );
       case 'meals':
         return <PlaceholderPage icon={'\u{1F37D}\uFE0F'} title="Repas" />;
       case 'activity':
@@ -936,6 +1171,16 @@ export default function App() {
         <SafeAreaView edges={['bottom']} style={{ backgroundColor: 'transparent' }}>
           <BottomTabs activeTab={activeTab} onTabPress={setActiveTab} />
         </SafeAreaView>
+
+        {/* Modal Hydratation fullscreen */}
+        <HydrationModal
+          visible={hydroModalVisible}
+          onClose={() => setHydroModalVisible(false)}
+          currentMl={hydrationMl}
+          setCurrentMl={setHydrationMl}
+          goalMl={hydrationGoal}
+          gender={gender}
+        />
       </View>
     </SafeAreaProvider>
   );
@@ -1059,6 +1304,64 @@ const s = StyleSheet.create({
   },
   miniValue: { fontSize: 22, fontWeight: '800', marginTop: 2 },
   miniCardUnit: { color: '#8892A0', fontSize: 10, marginTop: 2 },
+
+  // === HYDRATION CARD (compact) ===
+  hydrationCard: {
+    backgroundColor: 'rgba(21,27,35,0.7)',
+    borderRadius: 16, borderWidth: 1, borderColor: 'rgba(62,72,85,0.3)',
+    padding: 14, marginTop: 12,
+    flexDirection: 'row', alignItems: 'center',
+  },
+  hydrationTitle: {
+    color: '#EAEEF3', fontSize: 12, fontWeight: '700', letterSpacing: 1,
+  },
+  hydrationLiters: {
+    color: '#4DA6FF', fontSize: 13, fontWeight: '800',
+  },
+  hydroBar: {
+    height: 8, borderRadius: 4, marginTop: 8,
+    backgroundColor: '#2A3040', overflow: 'hidden',
+  },
+  hydroBarFill: { height: '100%', borderRadius: 4 },
+  hydroGlasses: { color: '#8892A0', fontSize: 10 },
+  hydroPercent: { color: '#4DA6FF', fontSize: 11, fontWeight: '700' },
+
+  // === HYDRATION MODAL ===
+  modalHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 12,
+  },
+  modalTitle: {
+    color: '#EAEEF3', fontSize: 18, fontWeight: '800', letterSpacing: 2,
+  },
+  hydroModalSubtitle: {
+    color: '#8892A0', fontSize: 13, fontWeight: '600', letterSpacing: 1.5,
+    textAlign: 'center', marginTop: 12, lineHeight: 20,
+  },
+  hydroBigCount: { fontSize: 26, fontWeight: '800', marginTop: 8 },
+  addWaterBtn: {
+    backgroundColor: '#00D984', borderRadius: 12,
+    paddingVertical: 14, paddingHorizontal: 40, marginTop: 20,
+  },
+  addWaterBtnText: {
+    color: '#0C1219', fontSize: 14, fontWeight: '800', letterSpacing: 1,
+  },
+  qtyBtn: {
+    backgroundColor: 'rgba(21,27,35,0.7)', borderRadius: 12,
+    borderWidth: 1, borderColor: 'rgba(62,72,85,0.3)',
+    paddingVertical: 12, paddingHorizontal: 18, alignItems: 'center',
+  },
+  qtyBtnText: { color: '#C0C8D4', fontSize: 12, fontWeight: '600', marginTop: 4 },
+  proBadge: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(212,175,55,0.12)', borderRadius: 6,
+    paddingHorizontal: 6, paddingVertical: 2,
+  },
+  resetBtn: {
+    marginTop: 30, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(80,95,115,0.2)',
+    paddingVertical: 12, paddingHorizontal: 30,
+  },
+  resetBtnText: { color: '#8892A0', fontSize: 12, fontWeight: '600' },
 
   // === FUN BUTTONS (Mood + Spin) ===
   funButton: {
