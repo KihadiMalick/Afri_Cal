@@ -241,26 +241,33 @@ const CircuitBoardUltimate = () => {
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
-      {/* GLOW AMBIANT — large, doux, donne de la profondeur */}
+      {/* GLOW AMBIANT — large halo émeraude */}
       <View style={{
         position: 'absolute',
-        top: H * 0.10, left: -W * 0.2, right: -W * 0.2,
-        height: H * 0.50, borderRadius: H * 0.25,
-        backgroundColor: 'rgba(0, 217, 132, 0.020)',
+        top: H * 0.08, left: -W * 0.15, right: -W * 0.15,
+        height: H * 0.55, borderRadius: H * 0.28,
+        backgroundColor: 'rgba(0, 217, 132, 0.035)',
       }}/>
-      {/* Second glow plus concentre */}
+      {/* Second glow plus concentré */}
       <View style={{
         position: 'absolute',
-        top: H * 0.20, left: W * 0.05, right: W * 0.05,
-        height: H * 0.30, borderRadius: H * 0.15,
-        backgroundColor: 'rgba(0, 217, 132, 0.015)',
+        top: H * 0.18, left: W * 0.05, right: W * 0.05,
+        height: H * 0.35, borderRadius: H * 0.18,
+        backgroundColor: 'rgba(0, 217, 132, 0.030)',
       }}/>
-      {/* Point de lumiere chaud au centre-haut */}
+      {/* Point radiant central — glow émeraude visible */}
       <View style={{
         position: 'absolute',
-        top: H * 0.28, left: W * 0.25, right: W * 0.25,
-        height: H * 0.12, borderRadius: H * 0.06,
-        backgroundColor: 'rgba(0, 217, 132, 0.025)',
+        top: H * 0.22, left: W * 0.15, right: W * 0.15,
+        height: H * 0.20, borderRadius: H * 0.10,
+        backgroundColor: 'rgba(0, 217, 132, 0.06)',
+      }}/>
+      {/* Micro spot lumineux au coeur */}
+      <View style={{
+        position: 'absolute',
+        top: H * 0.30, left: W * 0.30, right: W * 0.30,
+        height: H * 0.08, borderRadius: H * 0.04,
+        backgroundColor: 'rgba(0, 217, 132, 0.045)',
       }}/>
 
       {/* ============================================ */}
@@ -461,30 +468,32 @@ const CircuitBoardUltimate = () => {
 };
 
 // ============================================================
-// COMPOSANT — Icône Gem SVG (diamant émeraude style jeu vidéo)
+// COMPOSANT — Icône Gem SVG (émeraude taillée premium)
 // ============================================================
 const GemIcon = ({ size = 22 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24">
     <Defs>
-      <SvgGradient id="gemGrad" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0" stopColor="#00D984" stopOpacity="1" />
-        <Stop offset="1" stopColor="#00A866" stopOpacity="1" />
-      </SvgGradient>
-      <SvgGradient id="gemShine" x1="0" y1="0" x2="1" y2="1">
-        <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0.6" />
-        <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+      <SvgGradient id="gemBody" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0" stopColor="#00FF9D" stopOpacity="1" />
+        <Stop offset="0.5" stopColor="#00D984" stopOpacity="1" />
+        <Stop offset="1" stopColor="#008F57" stopOpacity="1" />
       </SvgGradient>
     </Defs>
-    {/* Corps du diamant */}
-    <Polygon points="12,2 22,9 12,22 2,9" fill="url(#gemGrad)" />
-    {/* Facette supérieure */}
-    <Polygon points="12,2 22,9 12,9 2,9" fill="rgba(255,255,255,0.15)" />
-    {/* Reflet shine haut-gauche */}
-    <Polygon points="2,9 7,9 12,2" fill="url(#gemShine)" />
-    {/* Ligne facette milieu */}
-    <Line x1="2" y1="9" x2="22" y2="9" stroke="rgba(0,180,100,0.4)" strokeWidth="0.5" />
-    <Line x1="7" y1="9" x2="12" y2="22" stroke="rgba(0,180,100,0.25)" strokeWidth="0.3" />
-    <Line x1="17" y1="9" x2="12" y2="22" stroke="rgba(0,180,100,0.25)" strokeWidth="0.3" />
+    {/* Corps principal */}
+    <Path d="M12 2L4 9L12 22L20 9L12 2Z" fill="url(#gemBody)" />
+    {/* Facette supérieure — couronne lumineuse */}
+    <Path d="M12 2L4 9H20L12 2Z" fill="#00FF9D" opacity={0.8} />
+    {/* Facettes internes — lignes de taille */}
+    <Line x1="12" y1="2" x2="8" y2="9" stroke="#00FFB0" strokeWidth="0.5" opacity={0.6} />
+    <Line x1="12" y1="2" x2="16" y2="9" stroke="#00FFB0" strokeWidth="0.5" opacity={0.6} />
+    <Line x1="12" y1="22" x2="4" y2="9" stroke="#006B40" strokeWidth="0.5" opacity={0.4} />
+    <Line x1="12" y1="22" x2="20" y2="9" stroke="#006B40" strokeWidth="0.5" opacity={0.4} />
+    {/* Facette centrale sombre pour profondeur */}
+    <Path d="M8 9L12 22L16 9Z" fill="#006B40" opacity={0.2} />
+    {/* Brillance — reflet diamant */}
+    <Path d="M10 5L12 3L14 5L12 7Z" fill="white" opacity={0.45} />
+    {/* Micro reflet secondaire */}
+    <Circle cx="7" cy="8" r="0.8" fill="white" opacity={0.3} />
   </Svg>
 );
 
@@ -644,16 +653,12 @@ const ACTIVITY_LABELS = {
 
 const MOCK_DAILY_DATA = {
   consumed: [
-    {h:6,k:0},{h:7,k:50},{h:8,k:200},{h:9,k:420},{h:10,k:650},
-    {h:11,k:850},{h:12,k:1050},{h:13,k:1200},{h:14,k:1320},
-    {h:15,k:1400},{h:16,k:1460},{h:17,k:1500},{h:18,k:1540},
-    {h:19,k:1565},{h:20,k:1580},{h:21,k:1585},
+    0, 0, 80, 150, 320, 480, 650, 820, 980, 1100,
+    1200, 1300, 1380, 1440, 1500, 1540, 1560, 1575, 1580, 1585
   ],
   burned: [
-    {h:6,k:0},{h:7,k:30},{h:8,k:80},{h:9,k:150},{h:10,k:250},
-    {h:11,k:350},{h:12,k:450},{h:13,k:540},{h:14,k:620},
-    {h:15,k:700},{h:16,k:760},{h:17,k:810},{h:18,k:840},
-    {h:19,k:855},{h:20,k:865},{h:21,k:870},
+    0, 0, 0, 0, 50, 120, 200, 350, 500, 580,
+    650, 700, 750, 790, 820, 840, 855, 862, 868, 870
   ],
 };
 
@@ -673,69 +678,67 @@ const MOCK_GENERAL_DATA = [
 ];
 
 // ============================================================
-// COMPOSANT — Graphe Area Fill Bilan Énergétique (dômes lisses)
+// COMPOSANT — Graphe Area Fill Bilan Énergétique (stock chart)
 // ============================================================
-const AreaFillChart = ({ mode = 'daily', consumedTotal, burnedTotal }) => {
+const AreaFillChart = ({ mode = 'daily' }) => {
   const objective = DAILY_OBJECTIVE;
   const cW = W - 64;
-  const cH = 180;
-  const maxK = mode === 'daily' ? 2600 : 2800;
-
-  const xP = (val, min, max) => ((val - min) / (max - min)) * cW;
+  const cH = 160;
+  const maxK = 2600;
   const yP = (k) => cH - (k / maxK) * cH;
 
-  let consumedPts, burnedPts, remainingPts, xLabels;
+  // Convert flat arrays → {x, y} points
+  const toPoints = (arr) => arr.map((k, i) => ({
+    x: (i / (arr.length - 1)) * cW,
+    y: yP(k),
+  }));
+
+  let consumedPts, burnedPts, remainingPts;
 
   if (mode === 'daily') {
-    const hMin = 6, hMax = 21;
-    consumedPts = MOCK_DAILY_DATA.consumed.map(p => ({ x: xP(p.h, hMin, hMax), y: yP(p.k) }));
-    burnedPts = MOCK_DAILY_DATA.burned.map(p => ({ x: xP(p.h, hMin, hMax), y: yP(p.k) }));
-    const remainData = MOCK_DAILY_DATA.consumed.map(p => ({ h: p.h, k: Math.max(0, objective - p.k) }));
-    remainingPts = remainData.map(p => ({ x: xP(p.h, hMin, hMax), y: yP(p.k) }));
-    xLabels = [6,9,12,15,18,21].map(h => ({ x: xP(h, hMin, hMax), label: `${h}h` }));
+    const cArr = MOCK_DAILY_DATA.consumed;
+    const bArr = MOCK_DAILY_DATA.burned;
+    const rArr = cArr.map((c, i) => Math.max(0, objective - (c - bArr[i])));
+    consumedPts = toPoints(cArr);
+    burnedPts = toPoints(bArr);
+    remainingPts = toPoints(rArr);
   } else {
-    const wMin = 1, wMax = 12;
-    consumedPts = MOCK_GENERAL_DATA.map(w => ({ x: xP(w.week, wMin, wMax), y: yP(w.avgConsumed) }));
-    burnedPts = MOCK_GENERAL_DATA.map(w => ({ x: xP(w.week, wMin, wMax), y: yP(w.avgBurned) }));
-    const remainGen = MOCK_GENERAL_DATA.map(w => ({
-      week: w.week, k: Math.max(0, objective - w.avgConsumed + w.avgBurned),
-    }));
-    remainingPts = remainGen.map(w => ({ x: xP(w.week, wMin, wMax), y: yP(w.k) }));
-    xLabels = [1,3,6,9,12].map(w => ({ x: xP(w, wMin, wMax), label: `S${w}` }));
+    const cArr = MOCK_GENERAL_DATA.map(w => w.avgConsumed);
+    const bArr = MOCK_GENERAL_DATA.map(w => w.avgBurned);
+    const rArr = cArr.map((c, i) => Math.max(0, objective - (c - bArr[i])));
+    consumedPts = toPoints(cArr);
+    burnedPts = toPoints(bArr);
+    remainingPts = toPoints(rArr);
   }
 
-  const objY = yP(objective);
-
-  // Build area fill path: smooth curve + close to bottom
+  // Build area fill path: smooth curve → close to bottom
   const areaPath = (pts) => {
     const curve = smoothPath(pts);
     if (!curve || pts.length < 2) return '';
-    const lastPt = pts[pts.length - 1];
-    const firstPt = pts[0];
-    return `${curve} L ${lastPt.x.toFixed(1)},${cH} L ${firstPt.x.toFixed(1)},${cH} Z`;
+    return `${curve} L ${pts[pts.length - 1].x.toFixed(1)},${cH} L ${pts[0].x.toFixed(1)},${cH} Z`;
   };
 
-  const lastConsumed = consumedPts[consumedPts.length - 1];
-  const lastBurned = burnedPts[burnedPts.length - 1];
-  const lastRemaining = remainingPts[remainingPts.length - 1];
+  const lastC = consumedPts[consumedPts.length - 1];
+  const lastB = burnedPts[burnedPts.length - 1];
+  const lastR = remainingPts[remainingPts.length - 1];
 
   return (
-    <View style={{ position: 'relative' }}>
+    <View>
       <Svg width={cW} height={cH}>
         <Defs>
           <SvgGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#00D984" stopOpacity="0.5" />
-            <Stop offset="0.6" stopColor="#00D984" stopOpacity="0.15" />
+            <Stop offset="0" stopColor="#00D984" stopOpacity="0.45" />
+            <Stop offset="0.5" stopColor="#00D984" stopOpacity="0.12" />
             <Stop offset="1" stopColor="#00D984" stopOpacity="0" />
           </SvgGradient>
           <SvgGradient id="gradOrange" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#FF8C42" stopOpacity="0.6" />
-            <Stop offset="0.6" stopColor="#FF8C42" stopOpacity="0.18" />
+            <Stop offset="0" stopColor="#FF8C42" stopOpacity="0.55" />
+            <Stop offset="0.5" stopColor="#FF8C42" stopOpacity="0.15" />
             <Stop offset="1" stopColor="#FF8C42" stopOpacity="0" />
           </SvgGradient>
           <SvgGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor="#4DA6FF" stopOpacity="0.3" />
-            <Stop offset="0.6" stopColor="#4DA6FF" stopOpacity="0.1" />
+            <Stop offset="0.5" stopColor="#4DA6FF" stopOpacity="0.08" />
             <Stop offset="1" stopColor="#4DA6FF" stopOpacity="0" />
           </SvgGradient>
         </Defs>
@@ -746,51 +749,29 @@ const AreaFillChart = ({ mode = 'daily', consumedTotal, burnedTotal }) => {
             stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
         ))}
 
-        {/* Ligne objectif pointillée */}
-        <Line x1={0} y1={objY} x2={cW} y2={objY}
-          stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="4,4" />
-
-        {/* === Dômes superposés avec profondeur === */}
-        {/* Arrière-plan : Restant (bleu) — dôme le plus large/haut */}
+        {/* Arrière-plan : Reste à récupérer (bleu) — descend */}
         <Path d={areaPath(remainingPts)} fill="url(#gradBlue)" />
         <Path d={smoothPath(remainingPts)} fill="none" stroke="#4DA6FF"
           strokeWidth="2" strokeLinecap="round" />
 
-        {/* Milieu : Consommé (vert) — dôme moyen */}
+        {/* Milieu : Consommé (vert) — monte */}
         <Path d={areaPath(consumedPts)} fill="url(#gradGreen)" />
         <Path d={smoothPath(consumedPts)} fill="none" stroke="#00D984"
           strokeWidth="2" strokeLinecap="round" />
 
-        {/* Avant-plan : Brûlé (orange) — dôme le plus petit */}
+        {/* Avant-plan : Brûlé / Sport (orange) — monte bas */}
         <Path d={areaPath(burnedPts)} fill="url(#gradOrange)" />
         <Path d={smoothPath(burnedPts)} fill="none" stroke="#FF8C42"
           strokeWidth="2" strokeLinecap="round" />
 
-        {/* Points lumineux aux derniers points */}
-        {lastRemaining && <>
-          <Circle cx={lastRemaining.x} cy={lastRemaining.y} r={5} fill="#4DA6FF" opacity={0.15} />
-          <Circle cx={lastRemaining.x} cy={lastRemaining.y} r={2.5} fill="#4DA6FF" opacity={0.7} />
-        </>}
-        {lastConsumed && <>
-          <Circle cx={lastConsumed.x} cy={lastConsumed.y} r={6} fill="#00D984" opacity={0.15} />
-          <Circle cx={lastConsumed.x} cy={lastConsumed.y} r={3} fill="#00D984" opacity={0.8} />
-        </>}
-        {lastBurned && <>
-          <Circle cx={lastBurned.x} cy={lastBurned.y} r={5} fill="#FF8C42" opacity={0.15} />
-          <Circle cx={lastBurned.x} cy={lastBurned.y} r={2.5} fill="#FF8C42" opacity={0.8} />
-        </>}
+        {/* Points lumineux terminaux */}
+        <Circle cx={lastR.x} cy={lastR.y} r={4} fill="#4DA6FF" opacity={0.12} />
+        <Circle cx={lastR.x} cy={lastR.y} r={2} fill="#4DA6FF" opacity={0.7} />
+        <Circle cx={lastC.x} cy={lastC.y} r={5} fill="#00D984" opacity={0.12} />
+        <Circle cx={lastC.x} cy={lastC.y} r={2.5} fill="#00D984" opacity={0.8} />
+        <Circle cx={lastB.x} cy={lastB.y} r={4} fill="#FF8C42" opacity={0.12} />
+        <Circle cx={lastB.x} cy={lastB.y} r={2} fill="#FF8C42" opacity={0.8} />
       </Svg>
-
-      {/* Label objectif */}
-      <Text style={{ position: 'absolute', right: 0, top: objY - 14,
-        color: '#555E6C', fontSize: 9 }}>{objective.toLocaleString('fr-FR')} kcal</Text>
-
-      {/* Axe X */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingHorizontal: 2 }}>
-        {xLabels.map((l, i) => (
-          <Text key={i} style={{ color: '#8892A0', fontSize: 10 }}>{l.label}</Text>
-        ))}
-      </View>
     </View>
   );
 };
@@ -1177,7 +1158,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
     : streakDays >= 7 ? '#00D984'
     : streakDays >= 3 ? '#00BFA6' : '#8892A0';
 
-  const remaining = Math.max(0, DAILY_OBJECTIVE - consumedTotal + burnedExtra);
+  const remaining = Math.max(0, DAILY_OBJECTIVE - (consumedTotal - burnedExtra));
 
   return (
     <ScrollView
@@ -1187,11 +1168,16 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
       <GlassCard>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        {/* Header: titre + objectif */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
           <Text style={s.cardLabel}>BILAN ÉNERGÉTIQUE</Text>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={{ color: '#8892A0', fontSize: 11 }}>Objectif de Calories</Text>
+            <Text style={{ color: '#EAEEF3', fontSize: 16, fontWeight: '800' }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
+          </View>
         </View>
 
-        <AreaFillChart mode={chartMode} consumedTotal={consumedTotal} burnedTotal={burnedTotal} />
+        <AreaFillChart mode={chartMode} />
 
         {/* Légende */}
         <View style={s.legendRow}>
@@ -1202,12 +1188,12 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           </View>
           <View style={s.legendItem}>
             <View style={[s.legendDot, { backgroundColor: '#FF8C42' }]} />
-            <Text style={s.legendLabel}>Brûlé</Text>
+            <Text style={s.legendLabel}>Brûlé / Sport</Text>
             <Text style={[s.legendValue, { color: '#FF8C42' }]}>{burnedTotal.toLocaleString('fr-FR')}</Text>
           </View>
           <View style={s.legendItem}>
             <View style={[s.legendDot, { backgroundColor: '#4DA6FF' }]} />
-            <Text style={s.legendLabel}>Reste</Text>
+            <Text style={s.legendLabel}>Reste à récupérer</Text>
             <Text style={[s.legendValue, { color: '#4DA6FF' }]}>{remaining.toLocaleString('fr-FR')}</Text>
           </View>
         </View>
