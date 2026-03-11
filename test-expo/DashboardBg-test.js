@@ -234,10 +234,10 @@ const CircuitBoardUltimate = () => {
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
 
-      {/* FOND GRADIENT GRIS-BLEU SOMBRE */}
+      {/* FOND GRADIENT METALLIC DARK → DEEP BLACK */}
       <LinearGradient
-        colors={['#0C1219', '#101820', '#0E1A25', '#101820', '#0C1219']}
-        locations={[0, 0.3, 0.5, 0.7, 1]}
+        colors={['#1A2030', '#141A24', '#0D1117']}
+        locations={[0, 0.5, 1]}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
@@ -576,77 +576,276 @@ const GlassCard = ({ children, style }) => (
 );
 
 // ============================================================
-// COMPOSANT — Graphe ECG Bilan Énergétique
+// UTILITAIRE — Bézier smooth path
 // ============================================================
-const ECGChart = () => {
-  const objective = 2330;
-  const cW = W - 64; // 16 margin + 16 padding each side
-  const cH = 170;
-  const maxK = 2600;
-  const hMin = 6, hMax = 21;
+function smoothPath(points) {
+  if (points.length < 2) return '';
+  let d = `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`;
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const cpx1 = prev.x + (curr.x - prev.x) * 0.4;
+    const cpy1 = prev.y;
+    const cpx2 = curr.x - (curr.x - prev.x) * 0.4;
+    const cpy2 = curr.y;
+    d += ` C ${cpx1.toFixed(1)},${cpy1.toFixed(1)} ${cpx2.toFixed(1)},${cpy2.toFixed(1)} ${curr.x.toFixed(1)},${curr.y.toFixed(1)}`;
+  }
+  return d;
+}
 
-  const xP = (h) => ((h - hMin) / (hMax - hMin)) * cW;
+// ============================================================
+// DONNÉES — Mock calories/activités
+// ============================================================
+const DAILY_OBJECTIVE = 2330;
+
+const ACTIVITIES_KCAL_PER_HOUR = {
+  'marche_rapide': 420,
+  'course': 860,
+  'velo': 640,
+  'natation': 770,
+  'musculation': 450,
+  'yoga': 250,
+  'corde_a_sauter': 900,
+  'football': 680,
+  'basketball': 720,
+  'danse': 500,
+};
+
+const WATER_LOSS_PER_HOUR_ML = 700;
+
+function calculateWaterLoss(durationMin, intensity) {
+  const hours = durationMin / 60;
+  const mult = { leger: 0.6, modere: 1.0, intense: 1.4 };
+  return Math.round(hours * WATER_LOSS_PER_HOUR_ML * (mult[intensity] || 1.0));
+}
+
+function suggestActivities(surplusKcal) {
+  return Object.entries(ACTIVITIES_KCAL_PER_HOUR)
+    .map(([activity, kcalPerHour]) => ({
+      activity,
+      minutesNeeded: Math.ceil((surplusKcal / kcalPerHour) * 60),
+      kcalBurned: surplusKcal,
+    }))
+    .filter(a => a.minutesNeeded <= 120)
+    .sort((a, b) => a.minutesNeeded - b.minutesNeeded)
+    .slice(0, 4);
+}
+
+const ACTIVITY_ICONS = {
+  marche_rapide: '🚶', course: '🏃', velo: '🚴', natation: '🏊',
+  musculation: '🏋️', yoga: '🧘', corde_a_sauter: '⏭', football: '⚽',
+  basketball: '🏀', danse: '💃',
+};
+const ACTIVITY_LABELS = {
+  marche_rapide: 'Marche rapide', course: 'Course', velo: 'Vélo', natation: 'Natation',
+  musculation: 'Musculation', yoga: 'Yoga', corde_a_sauter: 'Corde à sauter',
+  football: 'Football', basketball: 'Basketball', danse: 'Danse',
+};
+
+const MOCK_DAILY_DATA = {
+  consumed: [
+    {h:6,k:0},{h:7,k:50},{h:8,k:200},{h:9,k:420},{h:10,k:650},
+    {h:11,k:850},{h:12,k:1050},{h:13,k:1200},{h:14,k:1320},
+    {h:15,k:1400},{h:16,k:1460},{h:17,k:1500},{h:18,k:1540},
+    {h:19,k:1565},{h:20,k:1580},{h:21,k:1585},
+  ],
+  burned: [
+    {h:6,k:0},{h:7,k:30},{h:8,k:80},{h:9,k:150},{h:10,k:250},
+    {h:11,k:350},{h:12,k:450},{h:13,k:540},{h:14,k:620},
+    {h:15,k:700},{h:16,k:760},{h:17,k:810},{h:18,k:840},
+    {h:19,k:855},{h:20,k:865},{h:21,k:870},
+  ],
+};
+
+const MOCK_GENERAL_DATA = [
+  { week: 1, avgConsumed: 2100, avgBurned: 350 },
+  { week: 2, avgConsumed: 2250, avgBurned: 420 },
+  { week: 3, avgConsumed: 2180, avgBurned: 380 },
+  { week: 4, avgConsumed: 2300, avgBurned: 450 },
+  { week: 5, avgConsumed: 2150, avgBurned: 500 },
+  { week: 6, avgConsumed: 2280, avgBurned: 480 },
+  { week: 7, avgConsumed: 2200, avgBurned: 520 },
+  { week: 8, avgConsumed: 2350, avgBurned: 550 },
+  { week: 9, avgConsumed: 2280, avgBurned: 500 },
+  { week: 10, avgConsumed: 2310, avgBurned: 480 },
+  { week: 11, avgConsumed: 2330, avgBurned: 520 },
+  { week: 12, avgConsumed: 2320, avgBurned: 550 },
+];
+
+// ============================================================
+// COMPOSANT — Graphe Area Fill Bilan Énergétique (dômes lisses)
+// ============================================================
+const AreaFillChart = ({ mode = 'daily', consumedTotal, burnedTotal }) => {
+  const objective = DAILY_OBJECTIVE;
+  const cW = W - 64;
+  const cH = 180;
+  const maxK = mode === 'daily' ? 2600 : 2800;
+
+  const xP = (val, min, max) => ((val - min) / (max - min)) * cW;
   const yP = (k) => cH - (k / maxK) * cH;
 
-  const consumed = [
-    {h:6,k:0},{h:8,k:0},{h:8.5,k:420},{h:12,k:420},
-    {h:12.5,k:870},{h:16,k:870},{h:16.5,k:1050},
-    {h:19,k:1050},{h:19.5,k:1585},{h:21,k:1585},
-  ];
-  const burned = [
-    {h:6,k:60},{h:8,k:120},{h:10,k:200},{h:12,k:320},
-    {h:14,k:440},{h:15,k:620},{h:16,k:680},{h:18,k:760},
-    {h:20,k:840},{h:21,k:870},
-  ];
-  const remaining = consumed.map(p => ({h:p.h, k:Math.max(0, objective-p.k)}));
+  let consumedPts, burnedPts, remainingPts, xLabels;
 
-  const toPath = (data) => data.map((p,i) =>
-    `${i===0?'M':'L'}${xP(p.h).toFixed(1)},${yP(p.k).toFixed(1)}`
-  ).join(' ');
+  if (mode === 'daily') {
+    const hMin = 6, hMax = 21;
+    consumedPts = MOCK_DAILY_DATA.consumed.map(p => ({ x: xP(p.h, hMin, hMax), y: yP(p.k) }));
+    burnedPts = MOCK_DAILY_DATA.burned.map(p => ({ x: xP(p.h, hMin, hMax), y: yP(p.k) }));
+    const remainData = MOCK_DAILY_DATA.consumed.map(p => ({ h: p.h, k: Math.max(0, objective - p.k) }));
+    remainingPts = remainData.map(p => ({ x: xP(p.h, hMin, hMax), y: yP(p.k) }));
+    xLabels = [6,9,12,15,18,21].map(h => ({ x: xP(h, hMin, hMax), label: `${h}h` }));
+  } else {
+    const wMin = 1, wMax = 12;
+    consumedPts = MOCK_GENERAL_DATA.map(w => ({ x: xP(w.week, wMin, wMax), y: yP(w.avgConsumed) }));
+    burnedPts = MOCK_GENERAL_DATA.map(w => ({ x: xP(w.week, wMin, wMax), y: yP(w.avgBurned) }));
+    const remainGen = MOCK_GENERAL_DATA.map(w => ({
+      week: w.week, k: Math.max(0, objective - w.avgConsumed + w.avgBurned),
+    }));
+    remainingPts = remainGen.map(w => ({ x: xP(w.week, wMin, wMax), y: yP(w.k) }));
+    xLabels = [1,3,6,9,12].map(w => ({ x: xP(w, wMin, wMax), label: `S${w}` }));
+  }
 
   const objY = yP(objective);
+
+  // Build area fill path: smooth curve + close to bottom
+  const areaPath = (pts) => {
+    const curve = smoothPath(pts);
+    if (!curve || pts.length < 2) return '';
+    const lastPt = pts[pts.length - 1];
+    const firstPt = pts[0];
+    return `${curve} L ${lastPt.x.toFixed(1)},${cH} L ${firstPt.x.toFixed(1)},${cH} Z`;
+  };
+
+  const lastConsumed = consumedPts[consumedPts.length - 1];
+  const lastBurned = burnedPts[burnedPts.length - 1];
+  const lastRemaining = remainingPts[remainingPts.length - 1];
 
   return (
     <View style={{ position: 'relative' }}>
       <Svg width={cW} height={cH}>
-        {/* Grille horizontale */}
+        <Defs>
+          <SvgGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#00D984" stopOpacity="0.5" />
+            <Stop offset="0.6" stopColor="#00D984" stopOpacity="0.15" />
+            <Stop offset="1" stopColor="#00D984" stopOpacity="0" />
+          </SvgGradient>
+          <SvgGradient id="gradOrange" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#FF8C42" stopOpacity="0.6" />
+            <Stop offset="0.6" stopColor="#FF8C42" stopOpacity="0.18" />
+            <Stop offset="1" stopColor="#FF8C42" stopOpacity="0" />
+          </SvgGradient>
+          <SvgGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#4DA6FF" stopOpacity="0.3" />
+            <Stop offset="0.6" stopColor="#4DA6FF" stopOpacity="0.1" />
+            <Stop offset="1" stopColor="#4DA6FF" stopOpacity="0" />
+          </SvgGradient>
+        </Defs>
+
+        {/* Grille horizontale ultra fine */}
         {[500,1000,1500,2000].map(v => (
           <Line key={`g${v}`} x1={0} y1={yP(v)} x2={cW} y2={yP(v)}
             stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
         ))}
-        {/* Ligne objectif */}
+
+        {/* Ligne objectif pointillée */}
         <Line x1={0} y1={objY} x2={cW} y2={objY}
           stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="4,4" />
 
-        {/* Glow consumed */}
-        <Path d={toPath(consumed)} fill="none" stroke="#00D984"
-          strokeWidth="8" strokeLinecap="round" opacity={0.08} />
-        {/* Glow burned */}
-        <Path d={toPath(burned)} fill="none" stroke="#FF8C42"
-          strokeWidth="6" strokeLinecap="round" opacity={0.06} />
+        {/* === Dômes superposés avec profondeur === */}
+        {/* Arrière-plan : Restant (bleu) — dôme le plus large/haut */}
+        <Path d={areaPath(remainingPts)} fill="url(#gradBlue)" />
+        <Path d={smoothPath(remainingPts)} fill="none" stroke="#4DA6FF"
+          strokeWidth="2" strokeLinecap="round" />
 
-        {/* Remaining — pointillé bleu */}
-        <Path d={toPath(remaining)} fill="none" stroke="#4DA6FF"
-          strokeWidth="1.5" strokeLinecap="round" strokeDasharray="6,4" />
-        {/* Burned — orange */}
-        <Path d={toPath(burned)} fill="none" stroke="#FF8C42"
-          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        {/* Consumed — émeraude (dessus) */}
-        <Path d={toPath(consumed)} fill="none" stroke="#00D984"
-          strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Milieu : Consommé (vert) — dôme moyen */}
+        <Path d={areaPath(consumedPts)} fill="url(#gradGreen)" />
+        <Path d={smoothPath(consumedPts)} fill="none" stroke="#00D984"
+          strokeWidth="2" strokeLinecap="round" />
+
+        {/* Avant-plan : Brûlé (orange) — dôme le plus petit */}
+        <Path d={areaPath(burnedPts)} fill="url(#gradOrange)" />
+        <Path d={smoothPath(burnedPts)} fill="none" stroke="#FF8C42"
+          strokeWidth="2" strokeLinecap="round" />
+
+        {/* Points lumineux aux derniers points */}
+        {lastRemaining && <>
+          <Circle cx={lastRemaining.x} cy={lastRemaining.y} r={5} fill="#4DA6FF" opacity={0.15} />
+          <Circle cx={lastRemaining.x} cy={lastRemaining.y} r={2.5} fill="#4DA6FF" opacity={0.7} />
+        </>}
+        {lastConsumed && <>
+          <Circle cx={lastConsumed.x} cy={lastConsumed.y} r={6} fill="#00D984" opacity={0.15} />
+          <Circle cx={lastConsumed.x} cy={lastConsumed.y} r={3} fill="#00D984" opacity={0.8} />
+        </>}
+        {lastBurned && <>
+          <Circle cx={lastBurned.x} cy={lastBurned.y} r={5} fill="#FF8C42" opacity={0.15} />
+          <Circle cx={lastBurned.x} cy={lastBurned.y} r={2.5} fill="#FF8C42" opacity={0.8} />
+        </>}
       </Svg>
 
       {/* Label objectif */}
       <Text style={{ position: 'absolute', right: 0, top: objY - 14,
-        color: '#555E6C', fontSize: 9 }}>objectif</Text>
+        color: '#555E6C', fontSize: 9 }}>{objective.toLocaleString('fr-FR')} kcal</Text>
 
       {/* Axe X */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingHorizontal: 2 }}>
-        {[6,9,12,15,18,21].map(h => (
-          <Text key={h} style={{ color: '#555E6C', fontSize: 10 }}>{h}h</Text>
+        {xLabels.map((l, i) => (
+          <Text key={i} style={{ color: '#8892A0', fontSize: 10 }}>{l.label}</Text>
         ))}
       </View>
     </View>
+  );
+};
+
+// ============================================================
+// COMPOSANT — Alerte Dépassement d'objectif
+// ============================================================
+const SurplusAlertModal = ({ visible, onClose, surplus, onAddActivity }) => {
+  const suggestions = useMemo(() => suggestActivities(surplus), [surplus]);
+
+  return (
+    <Modal visible={visible} animationType="fade" transparent>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 24 }}>
+        <View style={{ backgroundColor: '#151B23', borderRadius: 20, padding: 24, borderWidth: 1, borderColor: 'rgba(255,107,74,0.3)' }}>
+          <Text style={{ color: '#FF6B4A', fontSize: 16, fontWeight: '800', textAlign: 'center', marginBottom: 16 }}>
+            ⚠️ DÉPASSEMENT D'OBJECTIF
+          </Text>
+
+          <View style={{ backgroundColor: 'rgba(255,107,74,0.08)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+            <Text style={{ color: '#C0C8D4', fontSize: 13 }}>Bilan net du jour : <Text style={{ color: '#FF6B4A', fontWeight: '700' }}>{(DAILY_OBJECTIVE + surplus).toLocaleString('fr-FR')} kcal</Text></Text>
+            <Text style={{ color: '#C0C8D4', fontSize: 13, marginTop: 4 }}>Objectif : <Text style={{ fontWeight: '700' }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text></Text>
+            <Text style={{ color: '#FF6B4A', fontSize: 15, fontWeight: '800', marginTop: 6 }}>Surplus : +{surplus} kcal</Text>
+          </View>
+
+          <Text style={{ color: '#8892A0', fontSize: 12, fontWeight: '600', marginBottom: 10 }}>
+            💡 Pour compenser, essayez :
+          </Text>
+
+          {suggestions.map((s, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: i < suggestions.length - 1 ? 1 : 0, borderBottomColor: 'rgba(80,95,115,0.1)' }}>
+              <Text style={{ fontSize: 16, width: 28 }}>{ACTIVITY_ICONS[s.activity] || '🏃'}</Text>
+              <Text style={{ flex: 1, color: '#C0C8D4', fontSize: 13 }}>{ACTIVITY_LABELS[s.activity]}</Text>
+              <Text style={{ color: '#8892A0', fontSize: 12 }}>{s.minutesNeeded} min</Text>
+              <Text style={{ color: '#00D984', fontSize: 12, fontWeight: '700', width: 60, textAlign: 'right' }}>-{s.kcalBurned}</Text>
+            </View>
+          ))}
+
+          <TouchableOpacity
+            style={{ backgroundColor: '#00D984', borderRadius: 12, paddingVertical: 14, marginTop: 18, alignItems: 'center' }}
+            activeOpacity={0.7}
+            onPress={() => { onAddActivity && onAddActivity(); onClose(); }}
+          >
+            <Text style={{ color: '#0C1219', fontSize: 14, fontWeight: '800', letterSpacing: 1 }}>AJOUTER UNE ACTIVITÉ</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{ borderRadius: 12, borderWidth: 1, borderColor: 'rgba(80,95,115,0.3)', paddingVertical: 12, marginTop: 10, alignItems: 'center' }}
+            activeOpacity={0.7}
+            onPress={onClose}
+          >
+            <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '600' }}>OK, J'AI COMPRIS</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
   );
 };
 
@@ -656,12 +855,28 @@ const ECGChart = () => {
 const MALE_PATH = 'M50,8 C50,8 42,8 42,16 C42,24 50,24 50,24 C50,24 58,24 58,16 C58,8 50,8 50,8 Z M50,26 L38,32 L32,60 L38,62 L42,42 L46,80 L42,120 L46,122 L50,90 L54,122 L58,120 L54,80 L58,42 L62,62 L68,60 L62,32 Z';
 const FEMALE_PATH = 'M50,8 C50,8 42,8 42,16 C42,24 50,26 50,26 C50,26 58,24 58,16 C58,8 50,8 50,8 Z M50,28 L40,34 L34,55 L40,58 L38,42 L44,70 L38,75 L42,78 L46,80 L42,120 L46,122 L50,90 L54,122 L58,120 L54,80 L58,78 L62,75 L56,70 L62,42 L60,58 L66,55 L60,34 Z';
 
-const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme' }) => {
+const BUBBLE_CONFIG = [
+  { cx: 35, size: 3, duration: 2000, delay: 0 },
+  { cx: 50, size: 2, duration: 2500, delay: 800 },
+  { cx: 42, size: 4, duration: 3000, delay: 400 },
+  { cx: 55, size: 2.5, duration: 2200, delay: 1200 },
+  { cx: 38, size: 1.5, duration: 1800, delay: 600 },
+  { cx: 58, size: 2, duration: 2600, delay: 1000 },
+  { cx: 46, size: 3.5, duration: 2800, delay: 200 },
+];
+
+const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubbles = false }) => {
   const fillAnim = useRef(new RNAnimated.Value(fillPercent)).current;
   const svgPath = gender === 'femme' ? FEMALE_PATH : MALE_PATH;
   const vbH = 130;
   const ratio = height / vbH;
   const svgW = Math.round(100 * ratio);
+  const clipId = `silClip_${height}_${gender}`;
+  const gradId = `waterGrad_${height}_${gender}`;
+
+  // Bubble animations
+  const bubbleAnims = useRef(BUBBLE_CONFIG.map(() => new RNAnimated.Value(0))).current;
+  const [bubblePositions, setBubblePositions] = useState(BUBBLE_CONFIG.map(() => 0));
 
   useEffect(() => {
     RNAnimated.timing(fillAnim, {
@@ -669,10 +884,35 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme' }) => {
     }).start();
   }, [fillPercent]);
 
-  const fillY = fillAnim.interpolate({
-    inputRange: [0, 100],
-    outputRange: [vbH, 0],
-  });
+  useEffect(() => {
+    if (!showBubbles || fillPercent < 10) return;
+    const timers = [];
+    bubbleAnims.forEach((anim, i) => {
+      const cfg = BUBBLE_CONFIG[i];
+      const startTimer = setTimeout(() => {
+        const loop = () => {
+          anim.setValue(0);
+          RNAnimated.timing(anim, {
+            toValue: 1, duration: cfg.duration, useNativeDriver: false,
+          }).start(() => loop());
+        };
+        loop();
+        // Track position for rendering
+        anim.addListener(({ value }) => {
+          setBubblePositions(prev => {
+            const next = [...prev];
+            next[i] = value;
+            return next;
+          });
+        });
+      }, cfg.delay);
+      timers.push(startTimer);
+    });
+    return () => { timers.forEach(t => clearTimeout(t)); bubbleAnims.forEach(a => a.removeAllListeners()); };
+  }, [showBubbles, fillPercent > 10]);
+
+  const waterTop = vbH * (1 - fillPercent / 100);
+  const waterHeight = vbH * (fillPercent / 100);
 
   return (
     <View style={{ width: svgW, height }}>
@@ -680,20 +920,37 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme' }) => {
       <Svg width={svgW} height={height} viewBox="0 0 100 130" style={{ position: 'absolute' }}>
         <Path d={svgPath} fill="#2A3040" opacity={0.5} />
       </Svg>
-      {/* Filled silhouette with clipPath */}
+      {/* Filled silhouette with clipPath + bubbles */}
       <Svg width={svgW} height={height} viewBox="0 0 100 130" style={{ position: 'absolute' }}>
         <Defs>
-          <ClipPath id="silClip">
+          <ClipPath id={clipId}>
             <Path d={svgPath} />
           </ClipPath>
-          <SvgGradient id="waterGrad" x1="0" y1="1" x2="0" y2="0">
+          <SvgGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
             <Stop offset="0" stopColor="#006994" stopOpacity="0.9" />
             <Stop offset="0.5" stopColor="#00BCD4" stopOpacity="0.8" />
             <Stop offset="1" stopColor="#4DA6FF" stopOpacity="0.7" />
           </SvgGradient>
         </Defs>
-        <G clipPath="url(#silClip)">
-          <Rect x="0" y={vbH * (1 - fillPercent / 100)} width="100" height={vbH * (fillPercent / 100)} fill="url(#waterGrad)" />
+        <G clipPath={`url(#${clipId})`}>
+          <Rect x="0" y={waterTop} width="100" height={waterHeight} fill={`url(#${gradId})`} />
+          {/* Animated bubbles inside water */}
+          {showBubbles && fillPercent >= 10 && BUBBLE_CONFIG.map((cfg, i) => {
+            const progress = bubblePositions[i] || 0;
+            const bubbleY = waterTop + waterHeight - (progress * waterHeight);
+            const oscillation = Math.sin(progress * Math.PI * 4) * 3;
+            const opacity = progress < 0.8 ? 0.3 : 0.3 * (1 - (progress - 0.8) / 0.2);
+            return (
+              <Circle
+                key={`bubble-${i}`}
+                cx={cfg.cx + oscillation}
+                cy={bubbleY}
+                r={cfg.size}
+                fill="#FFFFFF"
+                opacity={Math.max(0, opacity)}
+              />
+            );
+          })}
         </G>
       </Svg>
     </View>
@@ -703,7 +960,7 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme' }) => {
 // ============================================================
 // COMPOSANT — Carte Hydratation compacte (dashboard)
 // ============================================================
-const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress }) => {
+const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }) => {
   const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
   const glasses = Math.round(currentMl / 250);
   const totalGlasses = Math.round(goalMl / 250);
@@ -718,7 +975,7 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress }) => {
       {/* Infos droite */}
       <View style={{ flex: 1, marginLeft: 14 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={s.hydrationTitle}>{'\u{1F4A7}'} HYDRATATION</Text>
+          <Text style={s.hydrationTitle}>💧 HYDRATATION</Text>
           <Text style={s.hydrationLiters}>{liters} / {goalL}L</Text>
         </View>
 
@@ -731,10 +988,23 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress }) => {
           />
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 3 }}>
-          <Text style={s.hydroGlasses}>{glasses}/{totalGlasses} verres {'\u{1F95B}'}</Text>
+          <Text style={s.hydroGlasses}>{glasses}/{totalGlasses} verres 🥛</Text>
           <Text style={s.hydroPercent}>{percent}%</Text>
         </View>
-        <Text style={{ color: '#555E6C', fontSize: 10, marginTop: 4 }}>Tap pour ajouter \u2192</Text>
+
+        {/* Sport water loss alert */}
+        {sportAlert ? (
+          <Text style={{ color: '#FF8C42', fontSize: 10, marginTop: 4 }}>{sportAlert}</Text>
+        ) : (
+          <Text style={{ color: '#555E6C', fontSize: 10, marginTop: 4 }}>Tap pour ajouter →</Text>
+        )}
+
+        {/* Low hydration warning */}
+        {percent < 30 && percent > 0 && (
+          <Text style={{ color: '#FF3B30', fontSize: 10, fontWeight: '700', marginTop: 2 }}>
+            ⚠️ Pensez à vous réhydrater ! 💧
+          </Text>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -743,27 +1013,40 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress }) => {
 // ============================================================
 // COMPOSANT — Page Hydratation Fullscreen (Modal)
 // ============================================================
-const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gender }) => {
+const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gender, hydroLogs, setHydroLogs }) => {
   const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
   const glasses = Math.round(currentMl / 250);
   const totalGlasses = Math.round(goalMl / 250);
-  const [logs, setLogs] = useState([
-    { time: '08:30', amount: 250, type: 'eau' },
-    { time: '10:15', amount: 500, type: 'eau' },
-    { time: '12:45', amount: 250, type: 'eau' },
-    { time: '15:00', amount: 500, type: 'eau' },
-  ]);
+
+  const getTimeStr = () => {
+    const now = new Date();
+    return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+  };
 
   const addWater = (ml) => {
     setCurrentMl(prev => prev + ml);
-    const now = new Date();
-    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    setLogs(prev => [...prev, { time: timeStr, amount: ml, type: 'eau' }]);
+    setHydroLogs(prev => [...prev, { time: getTimeStr(), amount: ml, type: 'eau', icon: '💧' }]);
+  };
+
+  const removeWater = (ml) => {
+    setCurrentMl(prev => Math.max(0, prev - ml));
+    setHydroLogs(prev => {
+      const idx = [...prev].reverse().findIndex(l => l.amount === ml && l.type === 'eau');
+      if (idx === -1) return prev;
+      const realIdx = prev.length - 1 - idx;
+      return [...prev.slice(0, realIdx), ...prev.slice(realIdx + 1)];
+    });
   };
 
   const palierLabels = gender === 'homme'
     ? ['0.6L', '1.25L', '1.9L', '2.5L']
     : ['0.5L', '1L', '1.5L', '2L'];
+
+  const quantities = [
+    { ml: 50, icon: '🥛', label: '50ml' },
+    { ml: 250, icon: '🥤', label: '250ml' },
+    { ml: 1000, icon: '🫗', label: '1L' },
+  ];
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false}>
@@ -775,15 +1058,15 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
               <Ionicons name="chevron-back" size={24} color="#EAEEF3" />
             </TouchableOpacity>
             <Text style={s.modalTitle}>HYDRATATION</Text>
-            <Text style={{ fontSize: 20 }}>{'\u{1F4A7}'}</Text>
+            <Text style={{ fontSize: 20 }}>💧</Text>
           </View>
 
           <ScrollView contentContainerStyle={{ alignItems: 'center', paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
             <Text style={s.hydroModalSubtitle}>MON HYDRATATION{'\n'}AUJOURD'HUI</Text>
 
-            {/* Grande silhouette avec marqueurs */}
+            {/* Grande silhouette avec marqueurs + bulles */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 20 }}>
-              <SilhouetteFill fillPercent={percent} height={220} gender={gender} />
+              <SilhouetteFill fillPercent={percent} height={220} gender={gender} showBubbles />
               {/* Marqueurs paliers */}
               <View style={{ marginLeft: 16, height: 220, justifyContent: 'space-between', paddingVertical: 8 }}>
                 {palierLabels.slice().reverse().map((label, i) => {
@@ -813,51 +1096,69 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                 style={[s.hydroBarFill, { width: percent + '%', height: 10 }]}
               />
             </View>
-            <Text style={{ color: '#4DA6FF', fontSize: 14, fontWeight: '700', marginTop: 6 }}>{percent}% \u2022 {glasses}/{totalGlasses} verres</Text>
+            <Text style={{ color: '#4DA6FF', fontSize: 14, fontWeight: '700', marginTop: 6 }}>{percent}% • {glasses}/{totalGlasses} verres</Text>
 
-            {/* Bouton principal */}
-            <TouchableOpacity style={s.addWaterBtn} activeOpacity={0.7} onPress={() => addWater(250)}>
-              <Text style={s.addWaterBtnText}>AJOUTER DE L'EAU {'\u{1F4A7}'}</Text>
-            </TouchableOpacity>
+            {/* Low hydration warning */}
+            {percent < 30 && percent > 0 && (
+              <View style={{ backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10, padding: 10, marginTop: 10, width: W - 64 }}>
+                <Text style={{ color: '#FF3B30', fontSize: 12, fontWeight: '700', textAlign: 'center' }}>
+                  ⚠️ Pensez à vous réhydrater ! 💧
+                </Text>
+              </View>
+            )}
 
-            {/* Boutons quantité rapide */}
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
-              {[{ ml: 250, icon: '\u{1F95B}', label: '250ml' }, { ml: 500, icon: '\u{1F964}', label: '500ml' }, { ml: 1000, icon: '\u{1FAD7}', label: '1L' }].map((item) => (
-                <TouchableOpacity key={item.ml} style={s.qtyBtn} activeOpacity={0.7} onPress={() => addWater(item.ml)}>
-                  <Text style={{ fontSize: 20 }}>{item.icon}</Text>
-                  <Text style={s.qtyBtnText}>{item.label}</Text>
-                </TouchableOpacity>
+            {/* Boutons quantité avec + (tap) et − */}
+            <View style={{ flexDirection: 'row', gap: 14, marginTop: 20 }}>
+              {quantities.map((item) => (
+                <View key={item.ml} style={{ alignItems: 'center' }}>
+                  <TouchableOpacity style={s.qtyBtn} activeOpacity={0.7} onPress={() => addWater(item.ml)}>
+                    <Text style={{ fontSize: 22 }}>{item.icon}</Text>
+                    <Text style={s.qtyBtnText}>{item.label}</Text>
+                  </TouchableOpacity>
+                  {/* Bouton minus */}
+                  <TouchableOpacity style={s.minusBtn} activeOpacity={0.7} onPress={() => removeWater(item.ml)}>
+                    <Text style={s.minusBtnText}>−</Text>
+                  </TouchableOpacity>
+                </View>
               ))}
             </View>
 
-            {/* Boisson personnalisée PRO */}
-            <TouchableOpacity style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center' }} activeOpacity={0.7}>
-              <Text style={{ color: '#8892A0', fontSize: 12 }}>Ou ajouter une boisson... </Text>
-              <View style={s.proBadge}>
-                <Ionicons name="lock-closed" size={8} color="#D4AF37" />
-                <Text style={{ color: '#D4AF37', fontSize: 9, fontWeight: '700', marginLeft: 2 }}>PRO</Text>
+            {/* Bouton AJOUTER BOISSONS — PRO */}
+            <TouchableOpacity style={s.addBeverageBtn} activeOpacity={0.7}>
+              <Text style={s.addBeverageBtnText}>AJOUTER BOISSONS 🥤</Text>
+              <View style={s.proBadgeLg}>
+                <Ionicons name="lock-closed" size={10} color="#D4AF37" />
+                <Text style={{ color: '#D4AF37', fontSize: 10, fontWeight: '800', marginLeft: 3 }}>PRO</Text>
               </View>
             </TouchableOpacity>
+            <Text style={{ color: '#555E6C', fontSize: 10, marginTop: 4, textAlign: 'center' }}>
+              L'IA analyse la composition en eau de toute boisson
+            </Text>
 
             {/* Historique */}
             <View style={{ width: W - 64, marginTop: 24 }}>
-              <Text style={{ color: '#8892A0', fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 10 }}>{'\u2500'} Historique aujourd'hui {'\u2500'}</Text>
-              {logs.map((log, i) => (
+              <Text style={{ color: '#8892A0', fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 10 }}>━ Historique aujourd'hui ━</Text>
+              {hydroLogs.map((log, i) => (
                 <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
                   <Text style={{ color: '#555E6C', fontSize: 12, width: 50 }}>{log.time}</Text>
-                  <Text style={{ fontSize: 14 }}>{'\u{1F4A7}'}</Text>
-                  <Text style={{ color: '#C0C8D4', fontSize: 13, marginLeft: 6 }}>{log.amount}ml {log.type}</Text>
+                  <Text style={{ fontSize: 14 }}>{log.icon || '💧'}</Text>
+                  <Text style={{ color: log.amount < 0 ? '#FF8C42' : '#C0C8D4', fontSize: 13, marginLeft: 6, flex: 1 }}>
+                    {log.amount > 0 ? '+' : ''}{log.amount}ml {log.type}
+                  </Text>
                 </View>
               ))}
+              {hydroLogs.length === 0 && (
+                <Text style={{ color: '#555E6C', fontSize: 12, fontStyle: 'italic' }}>Aucune entrée aujourd'hui</Text>
+              )}
             </View>
 
             {/* Réinitialiser */}
             <TouchableOpacity
               style={s.resetBtn}
               activeOpacity={0.7}
-              onPress={() => { setCurrentMl(0); setLogs([]); }}
+              onPress={() => { setCurrentMl(0); setHydroLogs([]); }}
             >
-              <Text style={s.resetBtnText}>{'\u{1F504}'} R\u00C9INITIALISER</Text>
+              <Text style={s.resetBtnText}>🔄 RÉINITIALISER</Text>
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
@@ -869,11 +1170,14 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 // ============================================================
 // COMPOSANT — Dashboard Content (page Accueil)
 // ============================================================
-const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender }) => {
+const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal }) => {
+  const [chartMode, setChartMode] = useState('daily');
   const streakDays = 12;
   const streakColor = streakDays >= 14 ? '#D4AF37'
     : streakDays >= 7 ? '#00D984'
     : streakDays >= 3 ? '#00BFA6' : '#8892A0';
+
+  const remaining = Math.max(0, DAILY_OBJECTIVE - consumedTotal + burnedExtra);
 
   return (
     <ScrollView
@@ -881,32 +1185,49 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20, paddingTop: 8 }}
       showsVerticalScrollIndicator={false}
     >
-      {/* ====== CARTE PRINCIPALE — Bilan Énergétique ECG ====== */}
+      {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
       <GlassCard>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <Text style={s.cardLabel}>BILAN \u00C9NERG\u00C9TIQUE</Text>
-          <Text style={{ color: '#555E6C', fontSize: 12 }}>Auj. \u25BC</Text>
+          <Text style={s.cardLabel}>BILAN ÉNERGÉTIQUE</Text>
         </View>
 
-        <ECGChart />
+        <AreaFillChart mode={chartMode} consumedTotal={consumedTotal} burnedTotal={burnedTotal} />
 
         {/* Légende */}
         <View style={s.legendRow}>
           <View style={s.legendItem}>
             <View style={[s.legendDot, { backgroundColor: '#00D984' }]} />
-            <Text style={s.legendLabel}>Consomm\u00E9</Text>
-            <Text style={[s.legendValue, { color: '#00D984' }]}>1 585</Text>
+            <Text style={s.legendLabel}>Consommé</Text>
+            <Text style={[s.legendValue, { color: '#00D984' }]}>{consumedTotal.toLocaleString('fr-FR')}</Text>
           </View>
           <View style={s.legendItem}>
             <View style={[s.legendDot, { backgroundColor: '#FF8C42' }]} />
-            <Text style={s.legendLabel}>Br\u00FBl\u00E9</Text>
-            <Text style={[s.legendValue, { color: '#FF8C42' }]}>840</Text>
+            <Text style={s.legendLabel}>Brûlé</Text>
+            <Text style={[s.legendValue, { color: '#FF8C42' }]}>{burnedTotal.toLocaleString('fr-FR')}</Text>
           </View>
           <View style={s.legendItem}>
             <View style={[s.legendDot, { backgroundColor: '#4DA6FF' }]} />
             <Text style={s.legendLabel}>Reste</Text>
-            <Text style={[s.legendValue, { color: '#4DA6FF' }]}>745</Text>
+            <Text style={[s.legendValue, { color: '#4DA6FF' }]}>{remaining.toLocaleString('fr-FR')}</Text>
           </View>
+        </View>
+
+        {/* Onglets Journalier / Général */}
+        <View style={s.chartTabsRow}>
+          <TouchableOpacity
+            style={[s.chartTab, chartMode === 'daily' && s.chartTabActive]}
+            onPress={() => setChartMode('daily')}
+            activeOpacity={0.7}
+          >
+            <Text style={[s.chartTabText, chartMode === 'daily' && s.chartTabTextActive]}>Journalier</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.chartTab, chartMode === 'general' && s.chartTabActive]}
+            onPress={() => setChartMode('general')}
+            activeOpacity={0.7}
+          >
+            <Text style={[s.chartTabText, chartMode === 'general' && s.chartTabTextActive]}>Général</Text>
+          </TouchableOpacity>
         </View>
       </GlassCard>
 
@@ -914,21 +1235,21 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
         {/* BMR */}
         <View style={s.miniCard}>
-          <Text style={{ fontSize: 20 }}>{'\u2764\uFE0F'}</Text>
+          <Text style={{ fontSize: 20 }}>❤️</Text>
           <Text style={s.miniCardTitle}>BMR</Text>
           <Text style={[s.miniValue, { color: '#00D984' }]}>1 826</Text>
           <Text style={s.miniCardUnit}>kcal</Text>
         </View>
         {/* Discipline */}
         <View style={s.miniCard}>
-          <Text style={{ fontSize: 20 }}>{'\u{1F525}'}</Text>
+          <Text style={{ fontSize: 20 }}>🔥</Text>
           <Text style={s.miniCardTitle}>DISCIPLINE</Text>
           <Text style={[s.miniValue, { color: streakColor, fontSize: 26 }]}>{streakDays}</Text>
-          <Text style={s.miniCardUnit}>jours s\u00E9rie</Text>
+          <Text style={s.miniCardUnit}>jours série</Text>
         </View>
         {/* TDEE */}
         <View style={s.miniCard}>
-          <Text style={{ fontSize: 20 }}>{'\u26A1'}</Text>
+          <Text style={{ fontSize: 20 }}>⚡</Text>
           <Text style={s.miniCardTitle}>TDEE</Text>
           <Text style={[s.miniValue, { color: '#00D984' }]}>2 830</Text>
           <Text style={s.miniCardUnit}>kcal</Text>
@@ -941,65 +1262,62 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         goalMl={hydrationGoal}
         gender={gender}
         onPress={onHydrationPress}
+        sportAlert={sportAlert}
       />
-
-      {/* ====== INDICATEUR SCROLL ====== */}
-      <View style={{ alignItems: 'center', marginTop: 14, marginBottom: 6 }}>
-        <Text style={{ color: '#555E6C', fontSize: 11 }}>{'\u2195'} glisser pour plus</Text>
-      </View>
 
       {/* ======================================================= */}
       {/* BELOW THE FOLD — Zone scrollable                        */}
       {/* ======================================================= */}
 
       {/* DERNIER REPAS */}
-      <Text style={s.sectionTitle}>{'\u{1F37D}\uFE0F'} DERNIER REPAS</Text>
+      <Text style={s.sectionTitle}>🍽️ DERNIER REPAS</Text>
       <GlassCard>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View style={s.mealPhoto}>
             <Ionicons name="camera-outline" size={24} color="#555E6C" />
           </View>
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={s.mealName}>Poulet grill\u00E9 + Riz</Text>
-            <Text style={s.mealMeta}>450 kcal \u2022 12h30</Text>
+            <Text style={s.mealName}>Poulet grillé + Riz</Text>
+            <Text style={s.mealMeta}>450 kcal • 12h30</Text>
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
-              <Text style={s.macroTag}>{'\u{1F4AA}'} 35g</Text>
-              <Text style={s.macroTag}>{'\u{1F35A}'} 20g</Text>
-              <Text style={s.macroTag}>{'\u{1F9C8}'} 15g</Text>
+              <Text style={s.macroTag}>💪 35g</Text>
+              <Text style={s.macroTag}>🍚 20g</Text>
+              <Text style={s.macroTag}>🧈 15g</Text>
             </View>
           </View>
         </View>
       </GlassCard>
 
       {/* CONSEIL DU JOUR */}
-      <Text style={s.sectionTitle}>{'\u{1F4A1}'} CONSEIL DU JOUR</Text>
+      <Text style={s.sectionTitle}>💡 CONSEIL DU JOUR</Text>
       <GlassCard>
         <Text style={s.adviceText}>
-          {'"Journ\u00E9e nuageuse ? Essayez un bon Gratin de l\u00E9gumes pour le r\u00E9confort !"'}
+          {'"Journée nuageuse ? Essayez un bon Gratin de légumes pour le réconfort !"'}
         </Text>
         <TouchableOpacity style={s.adviceLink} activeOpacity={0.7}>
-          <Text style={s.adviceLinkText}>Voir Recettes {'\u{1F37D}\uFE0F'}</Text>
+          <Text style={s.adviceLinkText}>Voir Recettes 🍽️</Text>
           <Ionicons name="chevron-forward" size={14} color="#00D984" />
         </TouchableOpacity>
       </GlassCard>
 
-      {/* SUGGESTION ACTIVITÉ */}
-      <Text style={s.sectionTitle}>{'\u{1F3C3}'} SUGGESTION ACTIVIT\u00C9</Text>
-      <GlassCard>
-        <Text style={s.surplusText}>Surplus : +320 kcal</Text>
-        <View style={{ gap: 8, marginTop: 10 }}>
-          <View style={s.activityRow}>
-            <Text style={{ fontSize: 16 }}>{'\u{1F6B6}'}</Text>
-            <Text style={s.activityText}>40 min marche rapide</Text>
-            <Text style={s.activityKcal}>-320 kcal</Text>
-          </View>
-          <View style={s.activityRow}>
-            <Text style={{ fontSize: 16 }}>{'\u{1F3C3}'}</Text>
-            <Text style={s.activityText}>25 min course</Text>
-            <Text style={s.activityKcal}>-320 kcal</Text>
-          </View>
-        </View>
-      </GlassCard>
+      {/* SUGGESTION ACTIVITÉ (dynamique basée sur surplus) */}
+      {consumedTotal - burnedExtra > DAILY_OBJECTIVE && (
+        <>
+          <Text style={s.sectionTitle}>🏃 SUGGESTION ACTIVITÉ</Text>
+          <GlassCard>
+            <Text style={s.surplusText}>Surplus : +{consumedTotal - burnedExtra - DAILY_OBJECTIVE} kcal</Text>
+            <View style={{ gap: 8, marginTop: 10 }}>
+              {suggestActivities(consumedTotal - burnedExtra - DAILY_OBJECTIVE).slice(0, 2).map((sug, i) => (
+                <View key={i} style={s.activityRow}>
+                  <Text style={{ fontSize: 16 }}>{ACTIVITY_ICONS[sug.activity] || '🏃'}</Text>
+                  <Text style={s.activityText}>{sug.minutesNeeded} min {ACTIVITY_LABELS[sug.activity]}</Text>
+                  <Text style={s.activityKcal}>-{sug.kcalBurned} kcal</Text>
+                </View>
+              ))}
+            </View>
+          </GlassCard>
+        </>
+      )}
 
       {/* STATS AVANCÉES — FLOUTÉES */}
       <Text style={s.sectionTitle}>{'\u{1F4CA}'} MES STATS (7 jours)</Text>
@@ -1019,7 +1337,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         {/* Overlay cadenas */}
         <View style={s.lockOverlay}>
           <Ionicons name="lock-closed" size={28} color="#8892A0" />
-          <Text style={s.lockText}>D\u00E9bloquer</Text>
+          <Text style={s.lockText}>Débloquer</Text>
           <View style={s.lockPriceRow}>
             <GemIcon size={14} />
             <Text style={s.lockPrice}> 200 Lix</Text>
@@ -1064,13 +1382,17 @@ const PlaceholderPage = ({ icon, title, locked }) => (
 const TABS = [
   { key: 'home', label: 'Accueil', iconActive: 'home', iconInactive: 'home-outline' },
   { key: 'meals', label: 'Repas', iconActive: 'restaurant', iconInactive: 'restaurant-outline' },
-  { key: 'activity', label: 'Activit\u00E9', iconActive: 'fitness', iconInactive: 'fitness-outline' },
+  { key: 'activity', label: 'Activité', iconActive: 'fitness', iconInactive: 'fitness-outline' },
   { key: 'calendar', label: 'Calendrier', iconActive: 'calendar', iconInactive: 'calendar-outline', locked: true },
   { key: 'profile', label: 'Profil', iconActive: 'person', iconInactive: 'person-outline' },
 ];
 
 const BottomTabs = ({ activeTab, onTabPress }) => (
-  <View style={s.tabBar}>
+  <LinearGradient
+    colors={['transparent', 'rgba(13, 17, 23, 0.8)', '#0D1117']}
+    start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+    style={s.tabBar}
+  >
     {TABS.map((tab) => {
       const active = activeTab === tab.key;
       return (
@@ -1096,7 +1418,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
         </TouchableOpacity>
       );
     })}
-  </View>
+  </LinearGradient>
 );
 
 // ============================================================
@@ -1108,10 +1430,35 @@ export default function App() {
   const [moodFilled, setMoodFilled] = useState(false);
   const [hydrationMl, setHydrationMl] = useState(1500);
   const [hydroModalVisible, setHydroModalVisible] = useState(false);
+  const [surplusAlertVisible, setSurplusAlertVisible] = useState(false);
+  const [hydroLogs, setHydroLogs] = useState([
+    { time: '08:30', amount: 250, type: 'eau', icon: '💧' },
+    { time: '10:15', amount: 500, type: 'eau', icon: '💧' },
+    { time: '12:45', amount: 250, type: 'eau', icon: '💧' },
+    { time: '15:00', amount: 500, type: 'eau', icon: '💧' },
+  ]);
+
+  // Mock sport activities done today
+  const [activities, setActivities] = useState([
+    { name: 'course', durationMin: 40, intensity: 'intense', kcalBurned: 573 },
+  ]);
+
   const lixCount = 150;
   const notifCount = 1;
-  const gender = 'homme'; // mock — from Supabase profile
+  const gender = 'homme';
   const hydrationGoal = gender === 'homme' ? 2500 : 2000;
+
+  // Calorie logic
+  const consumedTotal = 1585; // mock — from scanned meals
+  const burnedExtra = activities.reduce((sum, a) => sum + a.kcalBurned, 0);
+  const burnedTotal = 870; // BMR spread + sport
+  const surplus = Math.max(0, consumedTotal - burnedExtra - DAILY_OBJECTIVE);
+
+  // Sport → hydration water loss
+  const sportWaterLoss = activities.reduce((sum, a) => sum + calculateWaterLoss(a.durationMin, a.intensity), 0);
+  const sportAlert = sportWaterLoss > 0
+    ? `🏃 -${sportWaterLoss}ml (${activities.map(a => ACTIVITY_LABELS[a.name] || a.name).join(', ')})`
+    : null;
 
   const renderPage = () => {
     switch (activeTab) {
@@ -1122,16 +1469,20 @@ export default function App() {
             hydrationMl={hydrationMl}
             hydrationGoal={hydrationGoal}
             gender={gender}
+            burnedExtra={burnedExtra}
+            sportAlert={sportAlert}
+            consumedTotal={consumedTotal}
+            burnedTotal={burnedTotal}
           />
         );
       case 'meals':
-        return <PlaceholderPage icon={'\u{1F37D}\uFE0F'} title="Repas" />;
+        return <PlaceholderPage icon={'🍽️'} title="Repas" />;
       case 'activity':
-        return <PlaceholderPage icon={'\u{1F3C3}'} title="Activit\u00E9" />;
+        return <PlaceholderPage icon={'🏃'} title="Activité" />;
       case 'calendar':
-        return <PlaceholderPage icon={'\u{1F4C5}'} title="Calendrier" locked />;
+        return <PlaceholderPage icon={'📅'} title="Calendrier" locked />;
       case 'profile':
-        return <PlaceholderPage icon={'\u{1F464}'} title="Profil" />;
+        return <PlaceholderPage icon={'👤'} title="Profil" />;
       default:
         return null;
     }
@@ -1145,7 +1496,7 @@ export default function App() {
         {/* Background circuit board */}
         <CircuitBoardUltimate />
 
-        {/* Voile d\u00E9poli */}
+        {/* Voile dépoli */}
         <View
           pointerEvents="none"
           style={{
@@ -1180,6 +1531,16 @@ export default function App() {
           setCurrentMl={setHydrationMl}
           goalMl={hydrationGoal}
           gender={gender}
+          hydroLogs={hydroLogs}
+          setHydroLogs={setHydroLogs}
+        />
+
+        {/* Surplus alert modal */}
+        <SurplusAlertModal
+          visible={surplusAlertVisible}
+          onClose={() => setSurplusAlertVisible(false)}
+          surplus={surplus}
+          onAddActivity={() => setActiveTab('activity')}
         />
       </View>
     </SafeAreaProvider>
@@ -1421,10 +1782,9 @@ const s = StyleSheet.create({
   // === BOTTOM TAB BAR ===
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(21,27,35,0.85)',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(80,95,115,0.12)',
-    paddingTop: 6,
+    borderTopColor: 'rgba(80,95,115,0.08)',
+    paddingTop: 10,
     paddingBottom: Platform.OS === 'ios' ? 0 : 8,
   },
   tabItem: {
@@ -1438,5 +1798,50 @@ const s = StyleSheet.create({
     position: 'absolute', top: -3, right: -6,
     backgroundColor: 'rgba(21,27,35,0.9)', borderRadius: 6,
     width: 12, height: 12, justifyContent: 'center', alignItems: 'center',
+  },
+
+  // === CHART TABS (Journalier / Général) ===
+  chartTabsRow: {
+    flexDirection: 'row', justifyContent: 'center', gap: 4, marginTop: 14,
+  },
+  chartTab: {
+    paddingVertical: 8, paddingHorizontal: 20, borderRadius: 8,
+  },
+  chartTabActive: {
+    backgroundColor: 'rgba(0,217,132,0.12)',
+    borderBottomWidth: 2, borderBottomColor: '#00D984',
+  },
+  chartTabText: {
+    color: '#8892A0', fontSize: 12, fontWeight: '600',
+  },
+  chartTabTextActive: {
+    color: '#00D984',
+  },
+
+  // === MINUS BUTTON (hydration) ===
+  minusBtn: {
+    marginTop: 6, width: 28, height: 28, borderRadius: 14,
+    backgroundColor: 'rgba(30,35,45,0.8)',
+    borderWidth: 1, borderColor: 'rgba(255,59,48,0.4)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  minusBtnText: {
+    color: '#FF3B30', fontSize: 18, fontWeight: '700', lineHeight: 20,
+  },
+
+  // === ADD BEVERAGE BUTTON (PRO) ===
+  addBeverageBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: 'rgba(21,27,35,0.8)', borderRadius: 14,
+    borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)',
+    paddingVertical: 14, paddingHorizontal: 24, marginTop: 18,
+  },
+  addBeverageBtnText: {
+    color: '#C0C8D4', fontSize: 13, fontWeight: '700', letterSpacing: 0.5,
+  },
+  proBadgeLg: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: 8,
+    paddingHorizontal: 8, paddingVertical: 3,
   },
 });
