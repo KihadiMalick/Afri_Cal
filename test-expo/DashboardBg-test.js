@@ -234,10 +234,10 @@ const CircuitBoardUltimate = () => {
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
 
-      {/* FOND GRADIENT GRIS-BLEU SOMBRE */}
+      {/* FOND GRADIENT METALLIC DARK → DEEP BLACK */}
       <LinearGradient
-        colors={['#0C1219', '#101820', '#0E1A25', '#101820', '#0C1219']}
-        locations={[0, 0.3, 0.5, 0.7, 1]}
+        colors={['#1A2030', '#141A24', '#0D1117']}
+        locations={[0, 0.5, 1]}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
@@ -644,15 +644,16 @@ const ACTIVITY_LABELS = {
 
 const MOCK_DAILY_DATA = {
   consumed: [
-    {h:6,k:0},{h:7,k:0},{h:8,k:80},{h:8.5,k:420},{h:9,k:420},{h:10,k:420},
-    {h:11,k:420},{h:12,k:480},{h:12.5,k:870},{h:13,k:870},{h:14,k:870},
-    {h:15,k:870},{h:16,k:920},{h:16.5,k:1050},{h:17,k:1050},{h:18,k:1050},
-    {h:19,k:1100},{h:19.5,k:1585},{h:20,k:1585},{h:21,k:1585},
+    {h:6,k:0},{h:7,k:50},{h:8,k:200},{h:9,k:420},{h:10,k:650},
+    {h:11,k:850},{h:12,k:1050},{h:13,k:1200},{h:14,k:1320},
+    {h:15,k:1400},{h:16,k:1460},{h:17,k:1500},{h:18,k:1540},
+    {h:19,k:1565},{h:20,k:1580},{h:21,k:1585},
   ],
   burned: [
-    {h:6,k:60},{h:7,k:90},{h:8,k:120},{h:9,k:160},{h:10,k:200},{h:11,k:260},
-    {h:12,k:320},{h:13,k:380},{h:14,k:440},{h:15,k:580},{h:15.5,k:620},
-    {h:16,k:680},{h:17,k:720},{h:18,k:760},{h:19,k:800},{h:20,k:840},{h:21,k:870},
+    {h:6,k:0},{h:7,k:30},{h:8,k:80},{h:9,k:150},{h:10,k:250},
+    {h:11,k:350},{h:12,k:450},{h:13,k:540},{h:14,k:620},
+    {h:15,k:700},{h:16,k:760},{h:17,k:810},{h:18,k:840},
+    {h:19,k:855},{h:20,k:865},{h:21,k:870},
   ],
 };
 
@@ -672,7 +673,7 @@ const MOCK_GENERAL_DATA = [
 ];
 
 // ============================================================
-// COMPOSANT — Graphe Area Fill Bilan Énergétique
+// COMPOSANT — Graphe Area Fill Bilan Énergétique (dômes lisses)
 // ============================================================
 const AreaFillChart = ({ mode = 'daily', consumedTotal, burnedTotal }) => {
   const objective = DAILY_OBJECTIVE;
@@ -705,7 +706,7 @@ const AreaFillChart = ({ mode = 'daily', consumedTotal, burnedTotal }) => {
 
   const objY = yP(objective);
 
-  // Build area fill paths (curve + close bottom)
+  // Build area fill path: smooth curve + close to bottom
   const areaPath = (pts) => {
     const curve = smoothPath(pts);
     if (!curve || pts.length < 2) return '';
@@ -723,20 +724,23 @@ const AreaFillChart = ({ mode = 'daily', consumedTotal, burnedTotal }) => {
       <Svg width={cW} height={cH}>
         <Defs>
           <SvgGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#00D984" stopOpacity="0.4" />
+            <Stop offset="0" stopColor="#00D984" stopOpacity="0.5" />
+            <Stop offset="0.6" stopColor="#00D984" stopOpacity="0.15" />
             <Stop offset="1" stopColor="#00D984" stopOpacity="0" />
           </SvgGradient>
           <SvgGradient id="gradOrange" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#FF8C42" stopOpacity="0.35" />
+            <Stop offset="0" stopColor="#FF8C42" stopOpacity="0.6" />
+            <Stop offset="0.6" stopColor="#FF8C42" stopOpacity="0.18" />
             <Stop offset="1" stopColor="#FF8C42" stopOpacity="0" />
           </SvgGradient>
           <SvgGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor="#4DA6FF" stopOpacity="0.3" />
+            <Stop offset="0.6" stopColor="#4DA6FF" stopOpacity="0.1" />
             <Stop offset="1" stopColor="#4DA6FF" stopOpacity="0" />
           </SvgGradient>
         </Defs>
 
-        {/* Grille horizontale */}
+        {/* Grille horizontale ultra fine */}
         {[500,1000,1500,2000].map(v => (
           <Line key={`g${v}`} x1={0} y1={yP(v)} x2={cW} y2={yP(v)}
             stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
@@ -746,31 +750,34 @@ const AreaFillChart = ({ mode = 'daily', consumedTotal, burnedTotal }) => {
         <Line x1={0} y1={objY} x2={cW} y2={objY}
           stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="4,4" />
 
-        {/* === Area Fills === */}
+        {/* === Dômes superposés avec profondeur === */}
+        {/* Arrière-plan : Restant (bleu) — dôme le plus large/haut */}
         <Path d={areaPath(remainingPts)} fill="url(#gradBlue)" />
-        <Path d={areaPath(burnedPts)} fill="url(#gradOrange)" />
-        <Path d={areaPath(consumedPts)} fill="url(#gradGreen)" />
-
-        {/* === Courbes === */}
         <Path d={smoothPath(remainingPts)} fill="none" stroke="#4DA6FF"
           strokeWidth="2" strokeLinecap="round" />
+
+        {/* Milieu : Consommé (vert) — dôme moyen */}
+        <Path d={areaPath(consumedPts)} fill="url(#gradGreen)" />
+        <Path d={smoothPath(consumedPts)} fill="none" stroke="#00D984"
+          strokeWidth="2" strokeLinecap="round" />
+
+        {/* Avant-plan : Brûlé (orange) — dôme le plus petit */}
+        <Path d={areaPath(burnedPts)} fill="url(#gradOrange)" />
         <Path d={smoothPath(burnedPts)} fill="none" stroke="#FF8C42"
           strokeWidth="2" strokeLinecap="round" />
-        <Path d={smoothPath(consumedPts)} fill="none" stroke="#00D984"
-          strokeWidth="2.5" strokeLinecap="round" />
 
         {/* Points lumineux aux derniers points */}
+        {lastRemaining && <>
+          <Circle cx={lastRemaining.x} cy={lastRemaining.y} r={5} fill="#4DA6FF" opacity={0.15} />
+          <Circle cx={lastRemaining.x} cy={lastRemaining.y} r={2.5} fill="#4DA6FF" opacity={0.7} />
+        </>}
         {lastConsumed && <>
-          <Circle cx={lastConsumed.x} cy={lastConsumed.y} r={8} fill="#00D984" opacity={0.2} />
-          <Circle cx={lastConsumed.x} cy={lastConsumed.y} r={4} fill="#00D984" opacity={0.8} />
+          <Circle cx={lastConsumed.x} cy={lastConsumed.y} r={6} fill="#00D984" opacity={0.15} />
+          <Circle cx={lastConsumed.x} cy={lastConsumed.y} r={3} fill="#00D984" opacity={0.8} />
         </>}
         {lastBurned && <>
-          <Circle cx={lastBurned.x} cy={lastBurned.y} r={6} fill="#FF8C42" opacity={0.2} />
-          <Circle cx={lastBurned.x} cy={lastBurned.y} r={3} fill="#FF8C42" opacity={0.8} />
-        </>}
-        {lastRemaining && <>
-          <Circle cx={lastRemaining.x} cy={lastRemaining.y} r={6} fill="#4DA6FF" opacity={0.2} />
-          <Circle cx={lastRemaining.x} cy={lastRemaining.y} r={3} fill="#4DA6FF" opacity={0.8} />
+          <Circle cx={lastBurned.x} cy={lastBurned.y} r={5} fill="#FF8C42" opacity={0.15} />
+          <Circle cx={lastBurned.x} cy={lastBurned.y} r={2.5} fill="#FF8C42" opacity={0.8} />
         </>}
       </Svg>
 
@@ -1258,11 +1265,6 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         sportAlert={sportAlert}
       />
 
-      {/* ====== INDICATEUR SCROLL ====== */}
-      <View style={{ alignItems: 'center', marginTop: 14, marginBottom: 6 }}>
-        <Text style={{ color: '#555E6C', fontSize: 11 }}>↕ glisser pour plus</Text>
-      </View>
-
       {/* ======================================================= */}
       {/* BELOW THE FOLD — Zone scrollable                        */}
       {/* ======================================================= */}
@@ -1386,7 +1388,11 @@ const TABS = [
 ];
 
 const BottomTabs = ({ activeTab, onTabPress }) => (
-  <View style={s.tabBar}>
+  <LinearGradient
+    colors={['transparent', 'rgba(13, 17, 23, 0.8)', '#0D1117']}
+    start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+    style={s.tabBar}
+  >
     {TABS.map((tab) => {
       const active = activeTab === tab.key;
       return (
@@ -1412,7 +1418,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
         </TouchableOpacity>
       );
     })}
-  </View>
+  </LinearGradient>
 );
 
 // ============================================================
@@ -1776,10 +1782,9 @@ const s = StyleSheet.create({
   // === BOTTOM TAB BAR ===
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(21,27,35,0.85)',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(80,95,115,0.12)',
-    paddingTop: 6,
+    borderTopColor: 'rgba(80,95,115,0.08)',
+    paddingTop: 10,
     paddingBottom: Platform.OS === 'ios' ? 0 : 8,
   },
   tabItem: {
