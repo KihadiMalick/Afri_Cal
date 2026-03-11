@@ -678,100 +678,99 @@ const MOCK_GENERAL_DATA = [
 ];
 
 // ============================================================
-// COMPOSANT — Graphe Area Fill Bilan Énergétique (stock chart)
+// COMPOSANT — Graphe 3 Dômes Premium Side-by-Side
 // ============================================================
-const AreaFillChart = ({ mode = 'daily' }) => {
-  const objective = DAILY_OBJECTIVE;
+const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1318 }) => {
   const cW = W - 64;
-  const cH = 160;
-  const maxK = 2600;
-  const yP = (k) => cH - (k / maxK) * cH;
+  const svgH = 160;
+  const labelSpace = 28;
+  const thirdW = cW / 3;
+  const maxValue = Math.max(consomme, brule, reste);
 
-  // Convert flat arrays → {x, y} points
-  const toPoints = (arr) => arr.map((k, i) => ({
-    x: (i / (arr.length - 1)) * cW,
-    y: yP(k),
-  }));
+  const domes = [
+    { value: consomme, label: 'Consommé', color: '#00D984', gradId: 'domeGradGreen' },
+    { value: brule, label: 'Brûlé / Sport', color: '#FF8C42', gradId: 'domeGradOrange' },
+    { value: reste, label: 'Reste à récupérer', color: '#4DA6FF', gradId: 'domeGradBlue' },
+  ];
 
-  let consumedPts, burnedPts, remainingPts;
+  const getDomeH = (v) => (v / maxValue) * (svgH - 10);
 
-  if (mode === 'daily') {
-    const cArr = MOCK_DAILY_DATA.consumed;
-    const bArr = MOCK_DAILY_DATA.burned;
-    const rArr = cArr.map((c, i) => Math.max(0, objective - (c - bArr[i])));
-    consumedPts = toPoints(cArr);
-    burnedPts = toPoints(bArr);
-    remainingPts = toPoints(rArr);
-  } else {
-    const cArr = MOCK_GENERAL_DATA.map(w => w.avgConsumed);
-    const bArr = MOCK_GENERAL_DATA.map(w => w.avgBurned);
-    const rArr = cArr.map((c, i) => Math.max(0, objective - (c - bArr[i])));
-    consumedPts = toPoints(cArr);
-    burnedPts = toPoints(bArr);
-    remainingPts = toPoints(rArr);
-  }
-
-  // Build area fill path: smooth curve → close to bottom
-  const areaPath = (pts) => {
-    const curve = smoothPath(pts);
-    if (!curve || pts.length < 2) return '';
-    return `${curve} L ${pts[pts.length - 1].x.toFixed(1)},${cH} L ${pts[0].x.toFixed(1)},${cH} Z`;
+  const buildDomePath = (idx, value) => {
+    const x1 = idx * thirdW;
+    const x2 = (idx + 1) * thirdW;
+    const midX = (x1 + x2) / 2;
+    const h = getDomeH(value);
+    const topY = svgH - h;
+    const baseY = svgH;
+    const cp = thirdW * 0.3;
+    return `M ${x1} ${baseY} C ${x1 + cp} ${baseY} ${x1 + cp} ${topY} ${midX} ${topY} C ${x2 - cp} ${topY} ${x2 - cp} ${baseY} ${x2} ${baseY} Z`;
   };
 
-  const lastC = consumedPts[consumedPts.length - 1];
-  const lastB = burnedPts[burnedPts.length - 1];
-  const lastR = remainingPts[remainingPts.length - 1];
+  // Render order: blue (back) → green (mid) → orange (front)
+  const renderOrder = [2, 0, 1];
 
   return (
     <View>
-      <Svg width={cW} height={cH}>
-        <Defs>
-          <SvgGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#00D984" stopOpacity="0.45" />
-            <Stop offset="0.5" stopColor="#00D984" stopOpacity="0.12" />
-            <Stop offset="1" stopColor="#00D984" stopOpacity="0" />
-          </SvgGradient>
-          <SvgGradient id="gradOrange" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#FF8C42" stopOpacity="0.55" />
-            <Stop offset="0.5" stopColor="#FF8C42" stopOpacity="0.15" />
-            <Stop offset="1" stopColor="#FF8C42" stopOpacity="0" />
-          </SvgGradient>
-          <SvgGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#4DA6FF" stopOpacity="0.3" />
-            <Stop offset="0.5" stopColor="#4DA6FF" stopOpacity="0.08" />
-            <Stop offset="1" stopColor="#4DA6FF" stopOpacity="0" />
-          </SvgGradient>
-        </Defs>
+      <View style={{ height: svgH + labelSpace }}>
+        {/* Valeurs au sommet de chaque dôme */}
+        {domes.map((dome, i) => {
+          const h = getDomeH(dome.value);
+          const topY = svgH - h;
+          return (
+            <Text key={`dv-${i}`} style={{
+              position: 'absolute',
+              top: topY + labelSpace - 24,
+              left: i * thirdW,
+              width: thirdW,
+              textAlign: 'center',
+              color: dome.color,
+              fontSize: 18,
+              fontWeight: '800',
+              textShadowColor: 'rgba(0,0,0,0.8)',
+              textShadowOffset: { width: 0, height: 1 },
+              textShadowRadius: 4,
+              zIndex: 10,
+            }}>
+              {dome.value.toLocaleString('fr-FR')}
+            </Text>
+          );
+        })}
 
-        {/* Grille horizontale ultra fine */}
-        {[500,1000,1500,2000].map(v => (
-          <Line key={`g${v}`} x1={0} y1={yP(v)} x2={cW} y2={yP(v)}
-            stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+        {/* SVG — 3 dômes */}
+        <Svg width={cW} height={svgH} style={{ position: 'absolute', bottom: 0, left: 0 }}>
+          <Defs>
+            {domes.map((dome) => (
+              <SvgGradient key={dome.gradId} id={dome.gradId} x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor={dome.color} stopOpacity="0.7" />
+                <Stop offset="1" stopColor={dome.color} stopOpacity="0.05" />
+              </SvgGradient>
+            ))}
+          </Defs>
+
+          {renderOrder.map((idx) => {
+            const dome = domes[idx];
+            const path = buildDomePath(idx, dome.value);
+            const midX = idx * thirdW + thirdW / 2;
+            const h = getDomeH(dome.value);
+            const topY = svgH - h;
+            return (
+              <G key={`dome-${idx}`}>
+                <Circle cx={midX} cy={topY} r={20} fill={dome.color} opacity={0.15} />
+                <Path d={path} fill={`url(#${dome.gradId})`} stroke={dome.color} strokeWidth={2.5} />
+              </G>
+            );
+          })}
+        </Svg>
+      </View>
+
+      {/* Labels sous les dômes */}
+      <View style={{ flexDirection: 'row', marginTop: 6 }}>
+        {domes.map((dome, i) => (
+          <View key={`dl-${i}`} style={{ flex: 1, alignItems: 'center' }}>
+            <Text style={{ color: '#8892A0', fontSize: 11, textAlign: 'center' }}>{dome.label}</Text>
+          </View>
         ))}
-
-        {/* Arrière-plan : Reste à récupérer (bleu) — descend */}
-        <Path d={areaPath(remainingPts)} fill="url(#gradBlue)" />
-        <Path d={smoothPath(remainingPts)} fill="none" stroke="#4DA6FF"
-          strokeWidth="2" strokeLinecap="round" />
-
-        {/* Milieu : Consommé (vert) — monte */}
-        <Path d={areaPath(consumedPts)} fill="url(#gradGreen)" />
-        <Path d={smoothPath(consumedPts)} fill="none" stroke="#00D984"
-          strokeWidth="2" strokeLinecap="round" />
-
-        {/* Avant-plan : Brûlé / Sport (orange) — monte bas */}
-        <Path d={areaPath(burnedPts)} fill="url(#gradOrange)" />
-        <Path d={smoothPath(burnedPts)} fill="none" stroke="#FF8C42"
-          strokeWidth="2" strokeLinecap="round" />
-
-        {/* Points lumineux terminaux */}
-        <Circle cx={lastR.x} cy={lastR.y} r={4} fill="#4DA6FF" opacity={0.12} />
-        <Circle cx={lastR.x} cy={lastR.y} r={2} fill="#4DA6FF" opacity={0.7} />
-        <Circle cx={lastC.x} cy={lastC.y} r={5} fill="#00D984" opacity={0.12} />
-        <Circle cx={lastC.x} cy={lastC.y} r={2.5} fill="#00D984" opacity={0.8} />
-        <Circle cx={lastB.x} cy={lastB.y} r={4} fill="#FF8C42" opacity={0.12} />
-        <Circle cx={lastB.x} cy={lastB.y} r={2} fill="#FF8C42" opacity={0.8} />
-      </Svg>
+      </View>
     </View>
   );
 };
@@ -1177,26 +1176,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           </View>
         </View>
 
-        <AreaFillChart mode={chartMode} />
-
-        {/* Légende */}
-        <View style={s.legendRow}>
-          <View style={s.legendItem}>
-            <View style={[s.legendDot, { backgroundColor: '#00D984' }]} />
-            <Text style={s.legendLabel}>Consommé</Text>
-            <Text style={[s.legendValue, { color: '#00D984' }]}>{consumedTotal.toLocaleString('fr-FR')}</Text>
-          </View>
-          <View style={s.legendItem}>
-            <View style={[s.legendDot, { backgroundColor: '#FF8C42' }]} />
-            <Text style={s.legendLabel}>Brûlé / Sport</Text>
-            <Text style={[s.legendValue, { color: '#FF8C42' }]}>{burnedTotal.toLocaleString('fr-FR')}</Text>
-          </View>
-          <View style={s.legendItem}>
-            <View style={[s.legendDot, { backgroundColor: '#4DA6FF' }]} />
-            <Text style={s.legendLabel}>Reste à récupérer</Text>
-            <Text style={[s.legendValue, { color: '#4DA6FF' }]}>{remaining.toLocaleString('fr-FR')}</Text>
-          </View>
-        </View>
+        <EnergyDomesChart consomme={consumedTotal} brule={burnedTotal} reste={remaining} />
 
         {/* Onglets Journalier / Général */}
         <View style={s.chartTabsRow}>
