@@ -491,7 +491,7 @@ const GemIcon = ({ size = 22 }) => (
 // ============================================================
 // COMPOSANT — Header Global (Mood + LIXUM + Lix)
 // ============================================================
-const Header = ({ moodFilled, lixCount, onMoodPress, onLixPress }) => {
+const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress }) => {
   // Animation shake pour le mood non rempli
   const shakeAnim = useRef(new RNAnimated.Value(0)).current;
 
@@ -536,7 +536,14 @@ const Header = ({ moodFilled, lixCount, onMoodPress, onLixPress }) => {
 
       {/* Lix counter — droite */}
       <TouchableOpacity onPress={onLixPress} activeOpacity={0.7} style={s.lixBtn}>
-        <GemIcon size={20} />
+        <View style={{ position: 'relative' }}>
+          <GemIcon size={20} />
+          {notifCount > 0 && (
+            <View style={s.notifBadge}>
+              <Text style={s.notifBadgeText}>{notifCount}</Text>
+            </View>
+          )}
+        </View>
         <Text style={s.lixCount}>{lixCount.toLocaleString('fr-FR')}</Text>
         <Text style={s.lixLabel}>Lix</Text>
       </TouchableOpacity>
@@ -569,19 +576,88 @@ const GlassCard = ({ children, style }) => (
 );
 
 // ============================================================
+// COMPOSANT — Graphe ECG Bilan Énergétique
+// ============================================================
+const ECGChart = () => {
+  const objective = 2330;
+  const cW = W - 64; // 16 margin + 16 padding each side
+  const cH = 170;
+  const maxK = 2600;
+  const hMin = 6, hMax = 21;
+
+  const xP = (h) => ((h - hMin) / (hMax - hMin)) * cW;
+  const yP = (k) => cH - (k / maxK) * cH;
+
+  const consumed = [
+    {h:6,k:0},{h:8,k:0},{h:8.5,k:420},{h:12,k:420},
+    {h:12.5,k:870},{h:16,k:870},{h:16.5,k:1050},
+    {h:19,k:1050},{h:19.5,k:1585},{h:21,k:1585},
+  ];
+  const burned = [
+    {h:6,k:60},{h:8,k:120},{h:10,k:200},{h:12,k:320},
+    {h:14,k:440},{h:15,k:620},{h:16,k:680},{h:18,k:760},
+    {h:20,k:840},{h:21,k:870},
+  ];
+  const remaining = consumed.map(p => ({h:p.h, k:Math.max(0, objective-p.k)}));
+
+  const toPath = (data) => data.map((p,i) =>
+    `${i===0?'M':'L'}${xP(p.h).toFixed(1)},${yP(p.k).toFixed(1)}`
+  ).join(' ');
+
+  const objY = yP(objective);
+
+  return (
+    <View style={{ position: 'relative' }}>
+      <Svg width={cW} height={cH}>
+        {/* Grille horizontale */}
+        {[500,1000,1500,2000].map(v => (
+          <Line key={`g${v}`} x1={0} y1={yP(v)} x2={cW} y2={yP(v)}
+            stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+        ))}
+        {/* Ligne objectif */}
+        <Line x1={0} y1={objY} x2={cW} y2={objY}
+          stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="4,4" />
+
+        {/* Glow consumed */}
+        <Path d={toPath(consumed)} fill="none" stroke="#00D984"
+          strokeWidth="8" strokeLinecap="round" opacity={0.08} />
+        {/* Glow burned */}
+        <Path d={toPath(burned)} fill="none" stroke="#FF8C42"
+          strokeWidth="6" strokeLinecap="round" opacity={0.06} />
+
+        {/* Remaining — pointillé bleu */}
+        <Path d={toPath(remaining)} fill="none" stroke="#4DA6FF"
+          strokeWidth="1.5" strokeLinecap="round" strokeDasharray="6,4" />
+        {/* Burned — orange */}
+        <Path d={toPath(burned)} fill="none" stroke="#FF8C42"
+          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Consumed — émeraude (dessus) */}
+        <Path d={toPath(consumed)} fill="none" stroke="#00D984"
+          strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      </Svg>
+
+      {/* Label objectif */}
+      <Text style={{ position: 'absolute', right: 0, top: objY - 14,
+        color: '#555E6C', fontSize: 9 }}>objectif</Text>
+
+      {/* Axe X */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingHorizontal: 2 }}>
+        {[6,9,12,15,18,21].map(h => (
+          <Text key={h} style={{ color: '#555E6C', fontSize: 10 }}>{h}h</Text>
+        ))}
+      </View>
+    </View>
+  );
+};
+
+// ============================================================
 // COMPOSANT — Dashboard Content (page Accueil)
 // ============================================================
 const DashboardContent = () => {
-  const consumed = 1585;
-  const objective = 2330;
-  const remaining = objective - consumed;
-  const percent = Math.round((consumed / objective) * 100);
-
-  const miniCards = [
-    { icon: '\u{1F525}', label: 'Br\u00FBl\u00E9', value: '1 585', sub: 'kcal', color: '#FF6B4A' },
-    { icon: '\u{1F4AA}', label: 'Prot\u00E9ines', value: '82%', sub: 'objectif', color: '#00D984' },
-    { icon: '\u{1F35A}', label: 'Glucides', value: '55%', sub: 'objectif', color: '#00BFA6' },
-  ];
+  const streakDays = 12;
+  const streakColor = streakDays >= 14 ? '#D4AF37'
+    : streakDays >= 7 ? '#00D984'
+    : streakDays >= 3 ? '#00BFA6' : '#8892A0';
 
   return (
     <ScrollView
@@ -589,48 +665,58 @@ const DashboardContent = () => {
       contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20, paddingTop: 8 }}
       showsVerticalScrollIndicator={false}
     >
-      {/* Sous-titre */}
-      <Text style={s.sectionSubtitle}>BIO-DIGITAL DASHBOARD</Text>
-
-      {/* ====== CARTE PRINCIPALE — Mon Énergie du Jour ====== */}
+      {/* ====== CARTE PRINCIPALE — Bilan Énergétique ECG ====== */}
       <GlassCard>
-        <Text style={s.cardLabel}>MON \u00C9NERGIE DU JOUR</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 10 }}>
-          <View style={[s.statusDot, { backgroundColor: percent >= 80 ? '#00D984' : percent >= 50 ? '#D4AF37' : '#FF6B4A' }]} />
-          <Text style={s.bigNumber}>{consumed.toLocaleString('fr-FR')}</Text>
-          <Text style={s.bigUnit}> kcal</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <Text style={s.cardLabel}>BILAN \u00C9NERG\u00C9TIQUE</Text>
+          <Text style={{ color: '#555E6C', fontSize: 12 }}>Auj. \u25BC</Text>
         </View>
-        <ProgressBar percent={percent} />
-        <Text style={s.cardHint}>
-          Encore {remaining.toLocaleString('fr-FR')} kcal \u00E0 manger
-        </Text>
+
+        <ECGChart />
+
+        {/* Légende */}
+        <View style={s.legendRow}>
+          <View style={s.legendItem}>
+            <View style={[s.legendDot, { backgroundColor: '#00D984' }]} />
+            <Text style={s.legendLabel}>Consomm\u00E9</Text>
+            <Text style={[s.legendValue, { color: '#00D984' }]}>1 585</Text>
+          </View>
+          <View style={s.legendItem}>
+            <View style={[s.legendDot, { backgroundColor: '#FF8C42' }]} />
+            <Text style={s.legendLabel}>Br\u00FBl\u00E9</Text>
+            <Text style={[s.legendValue, { color: '#FF8C42' }]}>840</Text>
+          </View>
+          <View style={s.legendItem}>
+            <View style={[s.legendDot, { backgroundColor: '#4DA6FF' }]} />
+            <Text style={s.legendLabel}>Reste</Text>
+            <Text style={[s.legendValue, { color: '#4DA6FF' }]}>745</Text>
+          </View>
+        </View>
       </GlassCard>
 
-      {/* ====== 3 MINI-CARTES ====== */}
+      {/* ====== 3 MINI-CARTES — BMR / Discipline / TDEE ====== */}
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-        {miniCards.map((item, i) => (
-          <View key={i} style={s.miniCard}>
-            <Text style={{ fontSize: 22 }}>{item.icon}</Text>
-            <Text style={[s.miniValue, { color: item.color }]}>{item.value}</Text>
-            <Text style={s.miniLabel}>{item.label}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* ====== BOUTONS MOOD + SPIN ====== */}
-      <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
-        <TouchableOpacity style={s.funButton} activeOpacity={0.7}>
-          <Text style={{ fontSize: 20 }}>{'\u{1F636}'}</Text>
-          <Text style={s.funBtnText}>MOOD</Text>
-          <View style={s.funBadge}>
-            <Text style={{ color: '#0C1219', fontSize: 7, fontWeight: '800' }}>NEW</Text>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={s.funButton} activeOpacity={0.7}>
-          <Text style={{ fontSize: 20 }}>{'\u{1F3B0}'}</Text>
-          <Text style={s.funBtnText}>SPIN</Text>
-          <Text style={s.funBtnSub}>1x gratuit</Text>
-        </TouchableOpacity>
+        {/* BMR */}
+        <View style={s.miniCard}>
+          <Text style={{ fontSize: 20 }}>{'\u2764\uFE0F'}</Text>
+          <Text style={s.miniCardTitle}>BMR</Text>
+          <Text style={[s.miniValue, { color: '#00D984' }]}>1 826</Text>
+          <Text style={s.miniCardUnit}>kcal</Text>
+        </View>
+        {/* Discipline */}
+        <View style={s.miniCard}>
+          <Text style={{ fontSize: 20 }}>{'\u{1F525}'}</Text>
+          <Text style={s.miniCardTitle}>DISCIPLINE</Text>
+          <Text style={[s.miniValue, { color: streakColor, fontSize: 26 }]}>{streakDays}</Text>
+          <Text style={s.miniCardUnit}>jours s\u00E9rie</Text>
+        </View>
+        {/* TDEE */}
+        <View style={s.miniCard}>
+          <Text style={{ fontSize: 20 }}>{'\u26A1'}</Text>
+          <Text style={s.miniCardTitle}>TDEE</Text>
+          <Text style={[s.miniValue, { color: '#00D984' }]}>2 830</Text>
+          <Text style={s.miniCardUnit}>kcal</Text>
+        </View>
       </View>
 
       {/* ====== INDICATEUR SCROLL ====== */}
@@ -797,6 +883,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [moodFilled, setMoodFilled] = useState(false);
   const lixCount = 150;
+  const notifCount = 1; // 1 = Spin Wheel quotidien disponible
 
   const renderPage = () => {
     switch (activeTab) {
@@ -838,6 +925,7 @@ export default function App() {
           <Header
             moodFilled={moodFilled}
             lixCount={lixCount}
+            notifCount={notifCount}
             onMoodPress={() => setMoodFilled(!moodFilled)}
             onLixPress={() => setActiveTab('profile')}
           />
@@ -890,6 +978,14 @@ const s = StyleSheet.create({
   },
   lixCount: { color: '#EAEEF3', fontSize: 15, fontWeight: '800' },
   lixLabel: { color: '#8892A0', fontSize: 11, fontWeight: '600' },
+  notifBadge: {
+    position: 'absolute', top: -6, right: -8,
+    backgroundColor: '#FF3B30', borderRadius: 8,
+    width: 16, height: 16,
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, borderColor: '#1A2030',
+  },
+  notifBadgeText: { color: '#FFF', fontSize: 9, fontWeight: '800' },
 
   // === SECTION TITLES ===
   sectionSubtitle: {
@@ -940,15 +1036,29 @@ const s = StyleSheet.create({
     color: '#8892A0', fontSize: 11, fontWeight: '700',
   },
 
-  // === MINI CARDS ===
+  // === ECG LEGEND ===
+  legendRow: {
+    flexDirection: 'row', justifyContent: 'space-between', marginTop: 14,
+    paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(80,95,115,0.08)',
+  },
+  legendItem: { alignItems: 'center', flex: 1 },
+  legendDot: { width: 8, height: 8, borderRadius: 4, marginBottom: 4 },
+  legendLabel: { color: '#8892A0', fontSize: 10, fontWeight: '500' },
+  legendValue: { fontSize: 15, fontWeight: '800', marginTop: 2 },
+
+  // === MINI CARDS (BMR / Discipline / TDEE) ===
   miniCard: {
-    flex: 1, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 6,
+    flex: 1, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 6,
     backgroundColor: 'rgba(21,27,35,0.7)',
-    borderWidth: 1, borderColor: 'rgba(80,95,115,0.10)',
+    borderWidth: 1, borderColor: 'rgba(62,72,85,0.3)',
     alignItems: 'center',
   },
-  miniValue: { fontSize: 20, fontWeight: '800', marginTop: 4 },
-  miniLabel: { color: '#555E6C', fontSize: 10, fontWeight: '600', marginTop: 2 },
+  miniCardTitle: {
+    color: '#8892A0', fontSize: 9, fontWeight: '700', letterSpacing: 1,
+    marginTop: 4, marginBottom: 2,
+  },
+  miniValue: { fontSize: 22, fontWeight: '800', marginTop: 2 },
+  miniCardUnit: { color: '#8892A0', fontSize: 10, marginTop: 2 },
 
   // === FUN BUTTONS (Mood + Spin) ===
   funButton: {
