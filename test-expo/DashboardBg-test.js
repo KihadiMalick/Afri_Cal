@@ -1250,7 +1250,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <LockIcon size={28} />
           <Text style={s.lockText}>Débloquer</Text>
           <View style={s.lockPriceRow}>
-            <GemIcon size={14} />
+            <LixGemIcon width={14} height={16} />
             <Text style={s.lockPrice}> 200 Lix</Text>
             <Text style={s.lockOr}>  ou  </Text>
             <StarIcon />
@@ -1275,7 +1275,7 @@ const PlaceholderPage = ({ icon, title, locked }) => (
       <View style={{ alignItems: 'center', marginTop: 20 }}>
         <LockIcon size={32} />
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 }}>
-          <GemIcon size={14} />
+          <LixGemIcon width={14} height={16} />
           <Text style={{ color: '#D4AF37', fontSize: 13 }}>300 Lix</Text>
           <Text style={{ color: '#8892A0', fontSize: 13 }}> ou </Text>
           <StarIcon />
