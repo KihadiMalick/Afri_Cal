@@ -202,30 +202,34 @@ const NebulaGridBackground = () => {
 // ============================================================
 // COMPOSANT — LixGemIcon (émeraude taillée — viewBox 0 0 20 24)
 // ============================================================
-const LixGemIcon = ({ width = 20, height = 22 }) => (
-  <Svg width={width} height={height} viewBox="0 0 20 24">
-    <Defs>
-      <SvgLinearGradient id="lixGemBody" x1="0" y1="0" x2="0.2" y2="1">
-        <Stop offset="0%" stopColor="#5DFFB4" />
-        <Stop offset="30%" stopColor="#00D984" />
-        <Stop offset="65%" stopColor="#00A866" />
-        <Stop offset="100%" stopColor="#005C38" />
-      </SvgLinearGradient>
-      <SvgLinearGradient id="lixGemCrown" x1="0.5" y1="0" x2="0.5" y2="1">
-        <Stop offset="0%" stopColor="#8AFFDA" />
-        <Stop offset="100%" stopColor="#00D984" />
-      </SvgLinearGradient>
-    </Defs>
-    <Polygon points="10,1 2,8 5.5,22 14.5,22 18,8" fill="url(#lixGemBody)" />
-    <Polygon points="10,1 2,8 18,8" fill="url(#lixGemCrown)" />
-    <Polygon points="6.5,8 13.5,8 12,5 8,5" fill="#5DFFB4" opacity={0.35} />
-    <Polygon points="2,8 5.5,22 10,8" fill="#00BF78" opacity={0.25} />
-    <Polygon points="18,8 14.5,22 10,8" fill="#007A4A" opacity={0.35} />
-    <Line x1="2" y1="8" x2="18" y2="8" stroke="#8AFFDA" strokeWidth={0.5} opacity={0.5} />
-    <Polygon points="8.5,3.5 10,1.5 11.5,3.5 10,5.5" fill="white" opacity={0.5} />
-    <Circle cx="5.5" cy="6.5" r={0.6} fill="white" opacity={0.35} />
-  </Svg>
-);
+let _gemIdx = 0;
+const LixGemIcon = ({ width = 20, height = 22 }) => {
+  const id = useMemo(() => `gem${_gemIdx++}`, []);
+  return (
+    <Svg width={width} height={height} viewBox="0 0 20 24">
+      <Defs>
+        <SvgLinearGradient id={`${id}B`} x1="0" y1="0" x2="0.2" y2="1">
+          <Stop offset="0%" stopColor="#5DFFB4" />
+          <Stop offset="30%" stopColor="#00D984" />
+          <Stop offset="65%" stopColor="#00A866" />
+          <Stop offset="100%" stopColor="#005C38" />
+        </SvgLinearGradient>
+        <SvgLinearGradient id={`${id}C`} x1="0.5" y1="0" x2="0.5" y2="1">
+          <Stop offset="0%" stopColor="#8AFFDA" />
+          <Stop offset="100%" stopColor="#00D984" />
+        </SvgLinearGradient>
+      </Defs>
+      <Polygon points="10,1 2,8 5.5,22 14.5,22 18,8" fill={`url(#${id}B)`} />
+      <Polygon points="10,1 2,8 18,8" fill={`url(#${id}C)`} />
+      <Polygon points="6.5,8 13.5,8 12,5 8,5" fill="#5DFFB4" opacity={0.35} />
+      <Polygon points="2,8 5.5,22 10,8" fill="#00BF78" opacity={0.25} />
+      <Polygon points="18,8 14.5,22 10,8" fill="#007A4A" opacity={0.35} />
+      <Line x1="2" y1="8" x2="18" y2="8" stroke="#8AFFDA" strokeWidth={0.5} opacity={0.5} />
+      <Polygon points="8.5,3.5 10,1.5 11.5,3.5 10,5.5" fill="white" opacity={0.5} />
+      <Circle cx="5.5" cy="6.5" r={0.6} fill="white" opacity={0.35} />
+    </Svg>
+  );
+};
 
 // ============================================================
 // ICÔNES SVG CUSTOM — remplacent les emojis
@@ -541,37 +545,50 @@ const CrystalBar = ({ x, barWidth, barHeight, baseY, color, colorDark, colorLigh
   const rightPath = `M ${x + barWidth} ${baseY} L ${x + barWidth} ${baseY - barHeight} L ${x + barWidth + depth} ${baseY - barHeight - topSkew} L ${x + barWidth + depth} ${baseY - topSkew} Z`;
   const topPath = `M ${x} ${baseY - barHeight} L ${x + barWidth} ${baseY - barHeight} L ${x + barWidth + depth} ${baseY - barHeight - topSkew} L ${x + depth} ${baseY - barHeight - topSkew} Z`;
 
+  // FIX 2 — valeur TOUJOURS au-dessus de la barre, même pour 870
+  const valueY = Math.min(baseY - barHeight - topSkew - 14, baseY - 50);
+
   return (
     <>
       <Defs>
+        {/* Face avant — translucide */}
         <SvgLinearGradient id={`front_${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor={colorLight} stopOpacity={0.9} />
-          <Stop offset="50%" stopColor={color} stopOpacity={0.75} />
-          <Stop offset="100%" stopColor={colorDark} stopOpacity={0.85} />
+          <Stop offset="0%" stopColor={colorLight} stopOpacity={0.55} />
+          <Stop offset="30%" stopColor={color} stopOpacity={0.40} />
+          <Stop offset="70%" stopColor={color} stopOpacity={0.45} />
+          <Stop offset="100%" stopColor={colorDark} stopOpacity={0.55} />
         </SvgLinearGradient>
+        {/* Face droite — plus transparente */}
         <SvgLinearGradient id={`right_${uid}`} x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0%" stopColor={colorDark} stopOpacity={0.6} />
-          <Stop offset="100%" stopColor={colorDark} stopOpacity={0.3} />
+          <Stop offset="0%" stopColor={colorDark} stopOpacity={0.35} />
+          <Stop offset="100%" stopColor={colorDark} stopOpacity={0.15} />
         </SvgLinearGradient>
+        {/* Face supérieure — brillante */}
         <SvgLinearGradient id={`top_${uid}`} x1="0" y1="1" x2="1" y2="0">
-          <Stop offset="0%" stopColor={color} stopOpacity={0.6} />
-          <Stop offset="100%" stopColor={colorLight} stopOpacity={0.9} />
+          <Stop offset="0%" stopColor={colorLight} stopOpacity={0.70} />
+          <Stop offset="100%" stopColor="white" stopOpacity={0.40} />
         </SvgLinearGradient>
+        {/* Glow intérieur — intense au centre */}
         <SvgLinearGradient id={`glow_${uid}`} x1="0.5" y1="0" x2="0.5" y2="1">
-          <Stop offset="0%" stopColor={glowColor} stopOpacity={0.5} />
-          <Stop offset="40%" stopColor={glowColor} stopOpacity={0.15} />
+          <Stop offset="0%" stopColor={glowColor} stopOpacity={0.6} />
+          <Stop offset="25%" stopColor="white" stopOpacity={0.20} />
+          <Stop offset="50%" stopColor={glowColor} stopOpacity={0.35} />
+          <Stop offset="75%" stopColor="white" stopOpacity={0.15} />
           <Stop offset="100%" stopColor={glowColor} stopOpacity={0} />
         </SvgLinearGradient>
       </Defs>
 
-      {/* Glow derrière */}
-      <Rect x={x + barWidth * 0.1} y={baseY - barHeight - 10} width={barWidth * 0.8} height={barHeight + 10} rx={barWidth * 0.2} fill={color} opacity={0.08} />
+      {/* Glow externe derrière */}
+      <Rect x={x - 5} y={baseY - barHeight - 15} width={barWidth + depth + 10} height={barHeight + 20} rx={12} fill={color} opacity={0.06} />
 
       {/* Face avant */}
       <Path d={frontPath} fill={`url(#front_${uid})`} />
 
-      {/* Glow intérieur */}
-      <Rect x={x + barWidth * 0.25} y={baseY - barHeight + 5} width={barWidth * 0.5} height={Math.max(0, barHeight - 10)} rx={4} fill={`url(#glow_${uid})`} />
+      {/* Reflet vertical gauche — effet verre */}
+      <Rect x={x + 2} y={baseY - barHeight + 3} width={4} height={Math.max(0, barHeight - 6)} rx={2} fill="white" opacity={0.10} />
+
+      {/* Glow intérieur — bande lumineuse centrale */}
+      <Rect x={x + barWidth * 0.2} y={baseY - barHeight + 8} width={barWidth * 0.6} height={Math.max(0, barHeight - 16)} rx={6} fill={`url(#glow_${uid})`} />
 
       {/* Face droite */}
       <Path d={rightPath} fill={`url(#right_${uid})`} />
@@ -579,25 +596,30 @@ const CrystalBar = ({ x, barWidth, barHeight, baseY, color, colorDark, colorLigh
       {/* Face supérieure */}
       <Path d={topPath} fill={`url(#top_${uid})`} />
 
-      {/* Reflet brillant sur face supérieure */}
+      {/* Highlight brillant sur le dessus */}
       <Path
-        d={`M ${x + 4} ${baseY - barHeight - 1} L ${x + barWidth * 0.6} ${baseY - barHeight - 1} L ${x + barWidth * 0.6 + depth * 0.5} ${baseY - barHeight - topSkew * 0.5 - 1} L ${x + depth * 0.5 + 4} ${baseY - barHeight - topSkew * 0.5 - 1} Z`}
-        fill="white" opacity={0.15}
+        d={`M ${x + 3} ${baseY - barHeight - 1} L ${x + barWidth * 0.5} ${baseY - barHeight - 1} L ${x + barWidth * 0.5 + depth * 0.5} ${baseY - barHeight - topSkew * 0.5 - 1} L ${x + depth * 0.5 + 3} ${baseY - barHeight - topSkew * 0.5 - 1} Z`}
+        fill="white" opacity={0.22}
       />
 
-      {/* Arêtes */}
-      <Line x1={x + barWidth} y1={baseY} x2={x + barWidth} y2={baseY - barHeight} stroke={colorLight} strokeWidth={0.8} opacity={0.4} />
-      <Line x1={x} y1={baseY - barHeight} x2={x + barWidth} y2={baseY - barHeight} stroke={colorLight} strokeWidth={0.8} opacity={0.3} />
+      {/* Arête verticale avant-droite */}
+      <Line x1={x + barWidth} y1={baseY} x2={x + barWidth} y2={baseY - barHeight} stroke={colorLight} strokeWidth={1} opacity={0.5} />
+      {/* Arête horizontale supérieure avant */}
+      <Line x1={x} y1={baseY - barHeight} x2={x + barWidth} y2={baseY - barHeight} stroke={colorLight} strokeWidth={1} opacity={0.4} />
+      {/* Arête diagonale supérieure droite */}
+      <Line x1={x + barWidth} y1={baseY - barHeight} x2={x + barWidth + depth} y2={baseY - barHeight - topSkew} stroke={colorLight} strokeWidth={0.8} opacity={0.35} />
+      {/* Arête verticale droite arrière */}
+      <Line x1={x + barWidth + depth} y1={baseY - topSkew} x2={x + barWidth + depth} y2={baseY - barHeight - topSkew} stroke={colorLight} strokeWidth={0.6} opacity={0.2} />
 
       {/* Gemme lumineuse au sommet */}
       <Rect x={x + barWidth * 0.3 + depth * 0.3} y={baseY - barHeight - topSkew * 0.55 - 4} width={barWidth * 0.35} height={6} rx={3} fill={colorLight} opacity={0.6} />
 
       {/* Valeur au-dessus — glow */}
-      <SvgText x={x + barWidth / 2 + depth / 2} y={baseY - barHeight - topSkew - 12} fontSize={16} fontWeight="800" fill={color} opacity={0.35} textAnchor="middle">
+      <SvgText x={x + barWidth / 2 + depth / 2} y={valueY} fontSize={16} fontWeight="800" fill={color} opacity={0.35} textAnchor="middle">
         {value.toLocaleString('fr-FR')}
       </SvgText>
       {/* Valeur au-dessus — net */}
-      <SvgText x={x + barWidth / 2 + depth / 2} y={baseY - barHeight - topSkew - 12} fontSize={16} fontWeight="800" fill={color} textAnchor="middle">
+      <SvgText x={x + barWidth / 2 + depth / 2} y={valueY} fontSize={16} fontWeight="800" fill={color} textAnchor="middle">
         {value.toLocaleString('fr-FR')}
       </SvgText>
 
@@ -1294,13 +1316,13 @@ const TABS = [
 
 const BottomTabs = ({ activeTab, onTabPress }) => (
   <LinearGradient
-    colors={['rgba(13,17,23,0)', 'rgba(10,14,20,0.85)', 'rgba(8,11,16,0.98)']}
-    locations={[0, 0.3, 1]}
+    colors={['rgba(13, 17, 23, 0)', 'rgba(10, 14, 20, 0.92)', '#0A0E13']}
+    locations={[0, 0.4, 1]}
     start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
     style={s.tabBar}
   >
-    {/* Séparateur émeraude subtil */}
-    <View style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 1, backgroundColor: 'rgba(0, 217, 132, 0.12)' }} />
+    {/* Séparateur émeraude */}
+    <View style={{ position: 'absolute', top: 0, left: 20, right: 20, height: 1, backgroundColor: 'rgba(0, 217, 132, 0.1)' }} />
     {TABS.map((tab) => {
       const active = activeTab === tab.key;
       return (
