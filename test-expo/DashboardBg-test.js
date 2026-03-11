@@ -473,33 +473,27 @@ const CircuitBoardUltimate = () => {
 const GemIcon = ({ size = 22 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24">
     <Defs>
-      <SvgGradient id="gemMain" x1="0" y1="0" x2="0.3" y2="1">
-        <Stop offset="0%" stopColor="#5DFFB4" />
-        <Stop offset="35%" stopColor="#00D984" />
-        <Stop offset="70%" stopColor="#00A866" />
-        <Stop offset="100%" stopColor="#006B40" />
-      </SvgGradient>
-      <SvgGradient id="gemTop" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0%" stopColor="#7AFFC8" />
-        <Stop offset="100%" stopColor="#00D984" />
+      <SvgGradient id="gemBody" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0" stopColor="#00FF9D" stopOpacity="1" />
+        <Stop offset="0.5" stopColor="#00D984" stopOpacity="1" />
+        <Stop offset="1" stopColor="#008F57" stopOpacity="1" />
       </SvgGradient>
     </Defs>
-    {/* Corps de la gemme — hexagone taillé */}
-    <Path d="M12 2L4.5 8.5L8 22H16L19.5 8.5L12 2Z" fill="url(#gemMain)" />
-    {/* Facette supérieure — couronne */}
-    <Path d="M12 2L4.5 8.5H19.5L12 2Z" fill="url(#gemTop)" />
-    {/* Table centrale — facette plate du haut */}
-    <Path d="M8.5 8.5H15.5L14 6H10L8.5 8.5Z" fill="#5DFFB4" opacity={0.5} />
-    {/* Facettes latérales gauche */}
-    <Path d="M4.5 8.5L8 22L12 8.5H4.5Z" fill="#00BF78" opacity={0.3} />
-    {/* Facettes latérales droite */}
-    <Path d="M19.5 8.5H12L16 22L19.5 8.5Z" fill="#008F57" opacity={0.4} />
-    {/* Ligne de girdle (ceinture) */}
-    <Line x1="4.5" y1="8.5" x2="19.5" y2="8.5" stroke="#7AFFC8" strokeWidth="0.5" opacity={0.6} />
-    {/* Reflet brillant — highlight */}
-    <Path d="M9.5 4.5L12 2.5L14.5 4.5L12 6.5Z" fill="white" opacity={0.45} />
-    {/* Petit éclat secondaire */}
-    <Circle cx="7" cy="7" r="0.8" fill="white" opacity={0.3} />
+    {/* Corps principal */}
+    <Path d="M12 2L4 9L12 22L20 9L12 2Z" fill="url(#gemBody)" />
+    {/* Facette supérieure — couronne lumineuse */}
+    <Path d="M12 2L4 9H20L12 2Z" fill="#00FF9D" opacity={0.8} />
+    {/* Facettes internes — lignes de taille */}
+    <Line x1="12" y1="2" x2="8" y2="9" stroke="#00FFB0" strokeWidth="0.5" opacity={0.6} />
+    <Line x1="12" y1="2" x2="16" y2="9" stroke="#00FFB0" strokeWidth="0.5" opacity={0.6} />
+    <Line x1="12" y1="22" x2="4" y2="9" stroke="#006B40" strokeWidth="0.5" opacity={0.4} />
+    <Line x1="12" y1="22" x2="20" y2="9" stroke="#006B40" strokeWidth="0.5" opacity={0.4} />
+    {/* Facette centrale sombre pour profondeur */}
+    <Path d="M8 9L12 22L16 9Z" fill="#006B40" opacity={0.2} />
+    {/* Brillance — reflet diamant */}
+    <Path d="M10 5L12 3L14 5L12 7Z" fill="white" opacity={0.45} />
+    {/* Micro reflet secondaire */}
+    <Circle cx="7" cy="8" r="0.8" fill="white" opacity={0.3} />
   </Svg>
 );
 
@@ -684,117 +678,98 @@ const MOCK_GENERAL_DATA = [
 ];
 
 // ============================================================
-// COMPOSANT — Graphe Area Fill Bilan Énergétique (stock chart)
+// COMPOSANT — Graphe 3 Dômes Premium Side-by-Side
 // ============================================================
-const AreaFillChart = ({ mode = 'daily' }) => {
-  const objective = DAILY_OBJECTIVE;
-  const SCALE_WIDTH = 35;
-  const cW = W - 64 - SCALE_WIDTH;
-  const cH = 160;
-  const maxK = 3000;
-  const yP = (k) => cH - (k / maxK) * cH;
+const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1318 }) => {
+  const cW = W - 64;
+  const svgH = 160;
+  const labelSpace = 28;
+  const thirdW = cW / 3;
+  const maxValue = Math.max(consomme, brule, reste);
 
-  // Convert flat arrays → {x, y} points
-  const toPoints = (arr) => arr.map((k, i) => ({
-    x: (i / (arr.length - 1)) * cW,
-    y: yP(k),
-  }));
+  const domes = [
+    { value: consomme, label: 'Consommé', color: '#00D984', gradId: 'domeGradGreen' },
+    { value: brule, label: 'Brûlé / Sport', color: '#FF8C42', gradId: 'domeGradOrange' },
+    { value: reste, label: 'Reste à récupérer', color: '#4DA6FF', gradId: 'domeGradBlue' },
+  ];
 
-  let consumedPts, burnedPts, remainingPts;
+  const getDomeH = (v) => (v / maxValue) * (svgH - 10);
 
-  if (mode === 'daily') {
-    const cArr = MOCK_DAILY_DATA.consumed;
-    const bArr = MOCK_DAILY_DATA.burned;
-    const rArr = cArr.map((c, i) => Math.max(0, objective - (c - bArr[i])));
-    consumedPts = toPoints(cArr);
-    burnedPts = toPoints(bArr);
-    remainingPts = toPoints(rArr);
-  } else {
-    const cArr = MOCK_GENERAL_DATA.map(w => w.avgConsumed);
-    const bArr = MOCK_GENERAL_DATA.map(w => w.avgBurned);
-    const rArr = cArr.map((c, i) => Math.max(0, objective - (c - bArr[i])));
-    consumedPts = toPoints(cArr);
-    burnedPts = toPoints(bArr);
-    remainingPts = toPoints(rArr);
-  }
-
-  // Build area fill path: smooth curve → close to bottom
-  const areaPath = (pts) => {
-    const curve = smoothPath(pts);
-    if (!curve || pts.length < 2) return '';
-    return `${curve} L ${pts[pts.length - 1].x.toFixed(1)},${cH} L ${pts[0].x.toFixed(1)},${cH} Z`;
+  const buildDomePath = (idx, value) => {
+    const x1 = idx * thirdW;
+    const x2 = (idx + 1) * thirdW;
+    const midX = (x1 + x2) / 2;
+    const h = getDomeH(value);
+    const topY = svgH - h;
+    const baseY = svgH;
+    const cp = thirdW * 0.3;
+    return `M ${x1} ${baseY} C ${x1 + cp} ${baseY} ${x1 + cp} ${topY} ${midX} ${topY} C ${x2 - cp} ${topY} ${x2 - cp} ${baseY} ${x2} ${baseY} Z`;
   };
 
-  const lastC = consumedPts[consumedPts.length - 1];
-  const lastB = burnedPts[burnedPts.length - 1];
-  const lastR = remainingPts[remainingPts.length - 1];
-
-  const scaleTicks = [500, 1000, 1500, 2000, 2500, 3000].filter(v => v <= maxK);
+  // Render order: blue (back) → green (mid) → orange (front)
+  const renderOrder = [2, 0, 1];
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-      <Svg width={cW} height={cH}>
-        <Defs>
-          <SvgGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#00D984" stopOpacity="0.45" />
-            <Stop offset="0.5" stopColor="#00D984" stopOpacity="0.12" />
-            <Stop offset="1" stopColor="#00D984" stopOpacity="0" />
-          </SvgGradient>
-          <SvgGradient id="gradOrange" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#FF8C42" stopOpacity="0.55" />
-            <Stop offset="0.5" stopColor="#FF8C42" stopOpacity="0.15" />
-            <Stop offset="1" stopColor="#FF8C42" stopOpacity="0" />
-          </SvgGradient>
-          <SvgGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#4DA6FF" stopOpacity="0.3" />
-            <Stop offset="0.5" stopColor="#4DA6FF" stopOpacity="0.08" />
-            <Stop offset="1" stopColor="#4DA6FF" stopOpacity="0" />
-          </SvgGradient>
-        </Defs>
-
-        {/* Grille horizontale — lignes pointillées subtiles */}
-        {[500, 1000, 1500, 2000, 2500, 3000].map(v => (
-          <Line key={`g${v}`} x1={0} y1={yP(v)} x2={cW} y2={yP(v)}
-            stroke="rgba(255,255,255,0.06)" strokeWidth={1} strokeDasharray="4 6" />
-        ))}
-
-        {/* Arrière-plan : Reste à récupérer (bleu) — descend */}
-        <Path d={areaPath(remainingPts)} fill="url(#gradBlue)" />
-        <Path d={smoothPath(remainingPts)} fill="none" stroke="#4DA6FF"
-          strokeWidth="2" strokeLinecap="round" />
-
-        {/* Milieu : Consommé (vert) — monte */}
-        <Path d={areaPath(consumedPts)} fill="url(#gradGreen)" />
-        <Path d={smoothPath(consumedPts)} fill="none" stroke="#00D984"
-          strokeWidth="2" strokeLinecap="round" />
-
-        {/* Avant-plan : Brûlé / Sport (orange) — monte bas */}
-        <Path d={areaPath(burnedPts)} fill="url(#gradOrange)" />
-        <Path d={smoothPath(burnedPts)} fill="none" stroke="#FF8C42"
-          strokeWidth="2" strokeLinecap="round" />
-
-        {/* Points discrets aux sommets */}
-        <Circle cx={lastR.x} cy={lastR.y} r={3} fill="#4DA6FF" />
-        <Circle cx={lastC.x} cy={lastC.y} r={3} fill="#00D984" />
-        <Circle cx={lastB.x} cy={lastB.y} r={3} fill="#FF8C42" />
-      </Svg>
-
-      {/* Colonne paliers à droite */}
-      <View style={{ width: SCALE_WIDTH, height: cH, position: 'relative' }}>
-        {scaleTicks.map(val => {
-          const bottomOffset = (val / maxK) * cH;
+    <View>
+      <View style={{ height: svgH + labelSpace }}>
+        {/* Valeurs au sommet de chaque dôme */}
+        {domes.map((dome, i) => {
+          const h = getDomeH(dome.value);
+          const topY = svgH - h;
           return (
-            <Text key={val} style={{
+            <Text key={`dv-${i}`} style={{
               position: 'absolute',
-              bottom: bottomOffset - 5,
-              left: 4,
-              fontSize: 9,
-              color: '#8892A0',
+              top: topY + labelSpace - 24,
+              left: i * thirdW,
+              width: thirdW,
+              textAlign: 'center',
+              color: dome.color,
+              fontSize: 18,
+              fontWeight: '800',
+              textShadowColor: 'rgba(0,0,0,0.8)',
+              textShadowOffset: { width: 0, height: 1 },
+              textShadowRadius: 4,
+              zIndex: 10,
             }}>
-              {val >= 1000 ? val.toLocaleString('fr-FR') : val}
+              {dome.value.toLocaleString('fr-FR')}
             </Text>
           );
         })}
+
+        {/* SVG — 3 dômes */}
+        <Svg width={cW} height={svgH} style={{ position: 'absolute', bottom: 0, left: 0 }}>
+          <Defs>
+            {domes.map((dome) => (
+              <SvgGradient key={dome.gradId} id={dome.gradId} x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor={dome.color} stopOpacity="0.7" />
+                <Stop offset="1" stopColor={dome.color} stopOpacity="0.05" />
+              </SvgGradient>
+            ))}
+          </Defs>
+
+          {renderOrder.map((idx) => {
+            const dome = domes[idx];
+            const path = buildDomePath(idx, dome.value);
+            const midX = idx * thirdW + thirdW / 2;
+            const h = getDomeH(dome.value);
+            const topY = svgH - h;
+            return (
+              <G key={`dome-${idx}`}>
+                <Circle cx={midX} cy={topY} r={20} fill={dome.color} opacity={0.15} />
+                <Path d={path} fill={`url(#${dome.gradId})`} stroke={dome.color} strokeWidth={2.5} />
+              </G>
+            );
+          })}
+        </Svg>
+      </View>
+
+      {/* Labels sous les dômes */}
+      <View style={{ flexDirection: 'row', marginTop: 6 }}>
+        {domes.map((dome, i) => (
+          <View key={`dl-${i}`} style={{ flex: 1, alignItems: 'center' }}>
+            <Text style={{ color: '#8892A0', fontSize: 11, textAlign: 'center' }}>{dome.label}</Text>
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -1161,7 +1136,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
             <TouchableOpacity
               style={s.resetBtn}
               activeOpacity={0.7}
-              onPress={() => { setCurrentMl(0); }}
+              onPress={() => { setCurrentMl(0); setHydroLogs([]); }}
             >
               <Text style={s.resetBtnText}>🔄 RÉINITIALISER</Text>
             </TouchableOpacity>
@@ -1182,8 +1157,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
     : streakDays >= 7 ? '#00D984'
     : streakDays >= 3 ? '#00BFA6' : '#8892A0';
 
-  // Reste = Objectif - (Consommé - Brûlé total) → 2330 - (1585 - 870) = 1615
-  const remaining = Math.max(0, DAILY_OBJECTIVE - (consumedTotal - burnedTotal));
+  const remaining = Math.max(0, DAILY_OBJECTIVE - (consumedTotal - burnedExtra));
 
   return (
     <ScrollView
@@ -1198,37 +1172,11 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <Text style={s.cardLabel}>BILAN ÉNERGÉTIQUE</Text>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ color: '#8892A0', fontSize: 11 }}>Objectif de Calories</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" style={{ marginRight: 4 }}>
-                <Path d="M5 2V22" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" />
-                <Path d="M5 4H18L15 8L18 12H5V4Z" fill="#D4AF37" opacity="0.8" />
-                <Path d="M5 4H18L15 8L18 12H5V4Z" stroke="#D4AF37" strokeWidth="1" fill="none" />
-              </Svg>
-              <Text style={{ color: '#EAEEF3', fontSize: 16, fontWeight: '800' }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
-            </View>
+            <Text style={{ color: '#EAEEF3', fontSize: 16, fontWeight: '800' }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
           </View>
         </View>
 
-        <AreaFillChart mode={chartMode} />
-
-        {/* Légende */}
-        <View style={s.legendRow}>
-          <View style={s.legendItem}>
-            <View style={[s.legendDot, { backgroundColor: '#00D984' }]} />
-            <Text style={s.legendLabel}>Consommé</Text>
-            <Text style={[s.legendValue, { color: '#00D984' }]}>{consumedTotal.toLocaleString('fr-FR')}</Text>
-          </View>
-          <View style={s.legendItem}>
-            <View style={[s.legendDot, { backgroundColor: '#FF8C42' }]} />
-            <Text style={s.legendLabel}>Brûlé / Sport</Text>
-            <Text style={[s.legendValue, { color: '#FF8C42' }]}>{burnedTotal.toLocaleString('fr-FR')}</Text>
-          </View>
-          <View style={s.legendItem}>
-            <View style={[s.legendDot, { backgroundColor: '#4DA6FF' }]} />
-            <Text style={s.legendLabel}>Reste à récupérer</Text>
-            <Text style={[s.legendValue, { color: '#4DA6FF' }]}>{remaining.toLocaleString('fr-FR')}</Text>
-          </View>
-        </View>
+        <EnergyDomesChart consomme={consumedTotal} brule={burnedTotal} reste={remaining} />
 
         {/* Onglets Journalier / Général */}
         <View style={s.chartTabsRow}>
@@ -1407,8 +1355,7 @@ const TABS = [
 
 const BottomTabs = ({ activeTab, onTabPress }) => (
   <LinearGradient
-    colors={['rgba(26, 32, 48, 0.0)', 'rgba(0, 217, 132, 0.06)', 'rgba(13, 17, 23, 0.98)']}
-    locations={[0, 0.3, 1]}
+    colors={['transparent', 'rgba(13, 17, 23, 0.8)', '#0D1117']}
     start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
     style={s.tabBar}
   >
@@ -1618,16 +1565,15 @@ const s = StyleSheet.create({
     letterSpacing: 2, textAlign: 'center', marginBottom: 14,
   },
   sectionTitle: {
-    color: '#EAEEF3', fontSize: 15, fontWeight: '700',
-    letterSpacing: 0.5, marginTop: 18, marginBottom: 8, marginLeft: 4,
+    color: '#8892A0', fontSize: 12, fontWeight: '700',
+    letterSpacing: 1.5, marginTop: 18, marginBottom: 8, marginLeft: 4,
   },
 
   // === GLASS CARD ===
   glassCard: {
     borderRadius: 16, padding: 16,
-    backgroundColor: 'rgba(21,27,35,0.8)',
+    backgroundColor: 'rgba(21,27,35,0.75)',
     borderWidth: 1,
-    borderColor: 'rgba(62, 72, 85, 0.5)',
     borderTopColor: 'rgba(138,146,160,0.20)',
     borderLeftColor: 'rgba(107,123,141,0.10)',
     borderRightColor: 'rgba(42,48,59,0.20)',
@@ -1772,7 +1718,7 @@ const s = StyleSheet.create({
   macroTag: { color: '#8892A0', fontSize: 11, fontWeight: '600' },
 
   // === ADVICE CARD ===
-  adviceText: { color: '#8892A0', fontSize: 12, fontStyle: 'italic', lineHeight: 20 },
+  adviceText: { color: '#C0C8D4', fontSize: 13, fontStyle: 'italic', lineHeight: 20 },
   adviceLink: {
     flexDirection: 'row', alignItems: 'center', marginTop: 10,
   },
@@ -1803,9 +1749,9 @@ const s = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 217, 132, 0.15)',
+    borderTopColor: 'rgba(80,95,115,0.08)',
     paddingTop: 10,
-    paddingBottom: Platform.OS === 'ios' ? 0 : 48,
+    paddingBottom: Platform.OS === 'ios' ? 0 : 8,
   },
   tabItem: {
     flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4,
