@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Line, Circle, Rect, Path, G, Defs, LinearGradient as SvgGradient, Stop, Polygon, ClipPath } from 'react-native-svg';
+import Svg, { Line, Circle, Rect, Path, G, Defs, LinearGradient as SvgGradient, Stop, Polygon, ClipPath, Ellipse } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width: W, height: H } = Dimensions.get('window');
@@ -470,36 +470,163 @@ const CircuitBoardUltimate = () => {
 // ============================================================
 // COMPOSANT — Icône Gem SVG (émeraude taillée premium)
 // ============================================================
-const GemIcon = ({ size = 22 }) => (
+const GemIcon = ({ size = 20 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24">
     <Defs>
-      <SvgGradient id="gemMain" x1="0" y1="0" x2="0.3" y2="1">
+      <SvgGradient id="gemBodyGrad" x1="0" y1="0" x2="0.2" y2="1">
         <Stop offset="0%" stopColor="#5DFFB4" />
-        <Stop offset="35%" stopColor="#00D984" />
-        <Stop offset="70%" stopColor="#00A866" />
-        <Stop offset="100%" stopColor="#006B40" />
+        <Stop offset="30%" stopColor="#00D984" />
+        <Stop offset="65%" stopColor="#00A866" />
+        <Stop offset="100%" stopColor="#005C38" />
       </SvgGradient>
-      <SvgGradient id="gemTop" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0%" stopColor="#7AFFC8" />
+      <SvgGradient id="gemTopGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+        <Stop offset="0%" stopColor="#8AFFDA" />
         <Stop offset="100%" stopColor="#00D984" />
       </SvgGradient>
     </Defs>
-    {/* Corps de la gemme — hexagone taillé */}
-    <Path d="M12 2L4.5 8.5L8 22H16L19.5 8.5L12 2Z" fill="url(#gemMain)" />
-    {/* Facette supérieure — couronne */}
-    <Path d="M12 2L4.5 8.5H19.5L12 2Z" fill="url(#gemTop)" />
-    {/* Table centrale — facette plate du haut */}
-    <Path d="M8.5 8.5H15.5L14 6H10L8.5 8.5Z" fill="#5DFFB4" opacity={0.5} />
-    {/* Facettes latérales gauche */}
-    <Path d="M4.5 8.5L8 22L12 8.5H4.5Z" fill="#00BF78" opacity={0.3} />
-    {/* Facettes latérales droite */}
-    <Path d="M19.5 8.5H12L16 22L19.5 8.5Z" fill="#008F57" opacity={0.4} />
-    {/* Ligne de girdle (ceinture) */}
-    <Line x1="4.5" y1="8.5" x2="19.5" y2="8.5" stroke="#7AFFC8" strokeWidth="0.5" opacity={0.6} />
-    {/* Reflet brillant — highlight */}
-    <Path d="M9.5 4.5L12 2.5L14.5 4.5L12 6.5Z" fill="white" opacity={0.45} />
-    {/* Petit éclat secondaire */}
-    <Circle cx="7" cy="7" r="0.8" fill="white" opacity={0.3} />
+    {/* Corps principal — pentagone taillé */}
+    <Polygon points="12,2 3,9 7,22 17,22 21,9" fill="url(#gemBodyGrad)" />
+    {/* Couronne supérieure */}
+    <Polygon points="12,2 3,9 21,9" fill="url(#gemTopGrad)" />
+    {/* Facette table centrale */}
+    <Polygon points="8,9 16,9 14.5,5.5 9.5,5.5" fill="#5DFFB4" opacity={0.35} />
+    {/* Facettes inférieures — gauche */}
+    <Polygon points="3,9 7,22 12,9" fill="#00BF78" opacity={0.25} />
+    {/* Facettes inférieures — droite */}
+    <Polygon points="21,9 17,22 12,9" fill="#007A4A" opacity={0.35} />
+    {/* Facette centrale basse */}
+    <Polygon points="7,22 17,22 12,9" fill="#009960" opacity={0.2} />
+    {/* Ceinture (girdle) */}
+    <Line x1="3" y1="9" x2="21" y2="9" stroke="#8AFFDA" strokeWidth={0.6} opacity={0.5} />
+    {/* Reflet brillant principal */}
+    <Polygon points="10,4 12,2.5 14,4 12,6" fill="white" opacity={0.5} />
+    {/* Éclat secondaire */}
+    <Circle cx="6.5" cy="7.5" r={0.7} fill="white" opacity={0.35} />
+    {/* Éclat tertiaire */}
+    <Circle cx="16" cy="13" r={0.5} fill="white" opacity={0.2} />
+  </Svg>
+);
+
+// ============================================================
+// ICÔNES SVG CUSTOM — remplacent les emojis
+// ============================================================
+const HeartIcon = () => (
+  <Svg width={28} height={28} viewBox="0 0 24 24">
+    <Defs>
+      <SvgGradient id="heartGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+        <Stop offset="0%" stopColor="#FF6B8A" />
+        <Stop offset="100%" stopColor="#FF3B5C" />
+      </SvgGradient>
+    </Defs>
+    <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="url(#heartGrad)" />
+    <Ellipse cx="8" cy="7.5" rx="2.5" ry="1.8" fill="white" opacity={0.25} />
+  </Svg>
+);
+
+const FlameIcon = () => (
+  <Svg width={28} height={28} viewBox="0 0 24 24">
+    <Defs>
+      <SvgGradient id="flameGrad" x1="0.5" y1="1" x2="0.5" y2="0">
+        <Stop offset="0%" stopColor="#FF4500" />
+        <Stop offset="50%" stopColor="#FF8C42" />
+        <Stop offset="100%" stopColor="#FFD700" />
+      </SvgGradient>
+    </Defs>
+    <Path d="M12 2C8.5 7 4 9.5 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8c0-2-1-3.5-2-5-.5 1.5-1.5 2.5-3 3-1-4-3-6.5-3-10z" fill="url(#flameGrad)" />
+    <Path d="M12 22c-2.21 0-4-1.79-4-4 0-2 2-3.5 3-5.5.5 1 1.5 1.5 2.5 2 .5-1.5 1-3 .5-4.5 1 1.5 2 3.5 2 5.5 0 1.5-.5 2.5-1.5 3.5-.5.5-1.5 1-2.5 1z" fill="#FFD700" opacity={0.5} />
+  </Svg>
+);
+
+const BoltIcon = () => (
+  <Svg width={28} height={28} viewBox="0 0 24 24">
+    <Defs>
+      <SvgGradient id="boltGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+        <Stop offset="0%" stopColor="#FFE066" />
+        <Stop offset="100%" stopColor="#FFB800" />
+      </SvgGradient>
+    </Defs>
+    <Path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="url(#boltGrad)" />
+    <Path d="M11 5l-4 7h3.5l-.5 4 4.5-6H11l.5-5z" fill="white" opacity={0.15} />
+  </Svg>
+);
+
+const DropletIcon = ({ size = 20 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Defs>
+      <SvgGradient id="dropGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+        <Stop offset="0%" stopColor="#7DD3FC" />
+        <Stop offset="100%" stopColor="#0EA5E9" />
+      </SvgGradient>
+    </Defs>
+    <Path d="M12 2C12 2 5 11 5 16c0 3.87 3.13 7 7 7s7-3.13 7-7c0-5-7-14-7-14z" fill="url(#dropGrad)" />
+    <Ellipse cx="9.5" cy="15" rx="2" ry="2.5" fill="white" opacity={0.2} />
+  </Svg>
+);
+
+const PlateIcon = () => (
+  <Svg width={22} height={22} viewBox="0 0 24 24">
+    <Circle cx="12" cy="12" r="10" fill="none" stroke="#00D984" strokeWidth={1.5} />
+    <Circle cx="12" cy="12" r="6" fill="none" stroke="#00D984" strokeWidth={1} opacity={0.5} />
+    <Line x1="2" y1="12" x2="5" y2="12" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" />
+    <Line x1="19" y1="12" x2="22" y2="12" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" />
+  </Svg>
+);
+
+const LightbulbIcon = () => (
+  <Svg width={22} height={22} viewBox="0 0 24 24">
+    <Defs>
+      <SvgGradient id="bulbGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+        <Stop offset="0%" stopColor="#FFE066" />
+        <Stop offset="100%" stopColor="#FFB800" />
+      </SvgGradient>
+    </Defs>
+    <Path d="M12 2C8.13 2 5 5.13 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.87-3.13-7-7-7z" fill="url(#bulbGrad)" />
+    <Rect x="9" y="19" width="6" height="1.5" rx="0.75" fill="#FFB800" opacity={0.7} />
+    <Rect x="9.5" y="21" width="5" height="1.5" rx="0.75" fill="#FFB800" opacity={0.5} />
+    <Path d="M10 12.5C10 11 11 10 12 10s2 1 2 2.5" fill="none" stroke="white" strokeWidth={0.8} opacity={0.4} />
+  </Svg>
+);
+
+const StatsIcon = () => (
+  <Svg width={22} height={22} viewBox="0 0 24 24">
+    <Defs>
+      <SvgGradient id="statsGrad" x1="0" y1="1" x2="0" y2="0">
+        <Stop offset="0%" stopColor="#00A866" />
+        <Stop offset="100%" stopColor="#00D984" />
+      </SvgGradient>
+    </Defs>
+    <Rect x="3" y="14" width="4" height="8" rx="1" fill="url(#statsGrad)" opacity={0.6} />
+    <Rect x="10" y="8" width="4" height="14" rx="1" fill="url(#statsGrad)" opacity={0.8} />
+    <Rect x="17" y="4" width="4" height="18" rx="1" fill="url(#statsGrad)" />
+  </Svg>
+);
+
+const LockIcon = ({ size = 20 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Rect x="5" y="11" width="14" height="10" rx="2" fill="#8892A0" opacity={0.6} />
+    <Path d="M8 11V7c0-2.21 1.79-4 4-4s4 1.79 4 4v4" fill="none" stroke="#8892A0" strokeWidth={2} strokeLinecap="round" />
+    <Circle cx="12" cy="16" r="1.5" fill="#EAEEF3" />
+  </Svg>
+);
+
+const StarIcon = () => (
+  <Svg width={14} height={14} viewBox="0 0 24 24">
+    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#D4AF37" />
+  </Svg>
+);
+
+const GoalFlag = () => (
+  <Svg width={18} height={18} viewBox="0 0 24 24">
+    <Defs>
+      <SvgGradient id="flagGrad" x1="0" y1="0" x2="1" y2="1">
+        <Stop offset="0%" stopColor="#FFD700" />
+        <Stop offset="100%" stopColor="#D4AF37" />
+      </SvgGradient>
+    </Defs>
+    <Line x1="5" y1="3" x2="5" y2="21" stroke="#D4AF37" strokeWidth={1.8} strokeLinecap="round" />
+    <Path d="M5 3C5 3 8 2 11 4C14 6 17 5 19 3V12C17 14 14 15 11 13C8 11 5 12 5 12V3Z" fill="url(#flagGrad)" opacity={0.85} />
+    <Path d="M7 4C9 3.5 11 4 13 5.5" fill="none" stroke="white" strokeWidth={0.5} opacity={0.4} />
+    <Circle cx="5" cy="21" r="1.5" fill="#D4AF37" />
   </Svg>
 );
 
@@ -689,8 +816,8 @@ const MOCK_GENERAL_DATA = [
 const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
   const SCALE_WIDTH = 35;
   const cW = W - 64 - SCALE_WIDTH;
-  const svgH = 160;
-  const labelSpace = 28;
+  const svgH = 200;
+  const labelSpace = 24;
   const thirdW = cW / 3;
   const maxCalorie = 3000;
   const maxValue = maxCalorie;
@@ -717,7 +844,7 @@ const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
   // Render order: blue (back) → green (mid) → orange (front)
   const renderOrder = [2, 0, 1];
 
-  const scaleTicks = [500, 1000, 1500, 2000, 2500, 3000].filter(v => v <= maxCalorie);
+  const scaleTicks = [1000, 2000, 3000];
 
   return (
     <View>
@@ -783,8 +910,21 @@ const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
             const topY = svgH - h;
             return (
               <G key={`dome-${idx}`}>
-                <Circle cx={midX} cy={topY} r={3} fill={dome.color} />
+                {/* Glow ellipse derrière le dôme */}
+                <Ellipse
+                  cx={midX}
+                  cy={svgH - h * 0.4}
+                  rx={thirdW * 0.5}
+                  ry={h * 0.4}
+                  fill={dome.color}
+                  opacity={0.12}
+                />
+                {/* Stroke glow (large, transparent) */}
+                <Path d={path} fill="none" stroke={dome.color} strokeWidth={6} opacity={0.12} />
+                {/* Dôme principal */}
                 <Path d={path} fill={`url(#${dome.gradId})`} stroke={dome.color} strokeWidth={2.5} />
+                {/* Point sommet */}
+                <Circle cx={midX} cy={topY} r={3} fill={dome.color} />
               </G>
             );
           })}
@@ -802,8 +942,9 @@ const EnergyDomesChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
               left: 4,
               fontSize: 9,
               color: '#8892A0',
+              opacity: 0.6,
             }}>
-              {val >= 1000 ? val.toLocaleString('fr-FR') : val}
+              {val.toLocaleString('fr-FR')}
             </Text>
           );
         })}
@@ -1002,7 +1143,10 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }
       {/* Infos droite */}
       <View style={{ flex: 1, marginLeft: 14 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={s.hydrationTitle}>💧 HYDRATATION</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <DropletIcon size={16} />
+            <Text style={s.hydrationTitle}>HYDRATATION</Text>
+          </View>
           <Text style={s.hydrationLiters}>{liters} / {goalL}L</Text>
         </View>
 
@@ -1216,16 +1360,12 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
       <GlassCard>
         {/* Header: titre + objectif */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
           <Text style={s.cardLabel}>BILAN ÉNERGÉTIQUE</Text>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ color: '#8892A0', fontSize: 11 }}>Objectif de Calories</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Svg width={16} height={16} viewBox="0 0 24 24" style={{ marginRight: 4 }}>
-                <Path d="M5 2V22" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" />
-                <Path d="M5 4H18L15 8L18 12H5V4Z" fill="#D4AF37" opacity={0.8} />
-                <Path d="M5 4H18L15 8L18 12H5V4Z" stroke="#D4AF37" strokeWidth="1" fill="none" />
-              </Svg>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <GoalFlag />
               <Text style={{ color: '#EAEEF3', fontSize: 16, fontWeight: '800' }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
             </View>
           </View>
@@ -1256,21 +1396,21 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
         {/* BMR */}
         <View style={s.miniCard}>
-          <Text style={{ fontSize: 20 }}>❤️</Text>
+          <HeartIcon />
           <Text style={s.miniCardTitle}>BMR</Text>
           <Text style={[s.miniValue, { color: '#00D984' }]}>1 826</Text>
           <Text style={s.miniCardUnit}>kcal</Text>
         </View>
         {/* Discipline */}
         <View style={s.miniCard}>
-          <Text style={{ fontSize: 20 }}>🔥</Text>
+          <FlameIcon />
           <Text style={s.miniCardTitle}>DISCIPLINE</Text>
           <Text style={[s.miniValue, { color: streakColor, fontSize: 26 }]}>{streakDays}</Text>
           <Text style={s.miniCardUnit}>jours série</Text>
         </View>
         {/* TDEE */}
         <View style={s.miniCard}>
-          <Text style={{ fontSize: 20 }}>⚡</Text>
+          <BoltIcon />
           <Text style={s.miniCardTitle}>TDEE</Text>
           <Text style={[s.miniValue, { color: '#00D984' }]}>2 830</Text>
           <Text style={s.miniCardUnit}>kcal</Text>
@@ -1291,32 +1431,47 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       {/* ======================================================= */}
 
       {/* DERNIER REPAS */}
-      <Text style={s.sectionTitle}>🍽️ DERNIER REPAS</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 18, marginBottom: 8, marginLeft: 4 }}>
+        <PlateIcon />
+        <Text style={s.sectionTitleText}>DERNIER REPAS</Text>
+      </View>
       <GlassCard>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View style={s.mealPhoto}>
-            <Ionicons name="camera-outline" size={24} color="#555E6C" />
+            <PlateIcon />
           </View>
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={s.mealName}>Poulet grillé + Riz</Text>
             <Text style={s.mealMeta}>450 kcal • 12h30</Text>
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
-              <Text style={s.macroTag}>💪 35g</Text>
-              <Text style={s.macroTag}>🍚 20g</Text>
-              <Text style={s.macroTag}>🧈 15g</Text>
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF6B8A', marginRight: 4 }} />
+                <Text style={s.macroTag}>35g P</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFB800', marginRight: 4 }} />
+                <Text style={s.macroTag}>20g G</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#4DA6FF', marginRight: 4 }} />
+                <Text style={s.macroTag}>15g L</Text>
+              </View>
             </View>
           </View>
         </View>
       </GlassCard>
 
       {/* CONSEIL DU JOUR */}
-      <Text style={s.sectionTitle}>💡 CONSEIL DU JOUR</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 18, marginBottom: 8, marginLeft: 4 }}>
+        <LightbulbIcon />
+        <Text style={s.sectionTitleText}>CONSEIL DU JOUR</Text>
+      </View>
       <GlassCard>
         <Text style={s.adviceText}>
           {'"Journée nuageuse ? Essayez un bon Gratin de légumes pour le réconfort !"'}
         </Text>
         <TouchableOpacity style={s.adviceLink} activeOpacity={0.7}>
-          <Text style={s.adviceLinkText}>Voir Recettes 🍽️</Text>
+          <Text style={s.adviceLinkText}>Voir Recettes</Text>
           <Ionicons name="chevron-forward" size={14} color="#00D984" />
         </TouchableOpacity>
       </GlassCard>
@@ -1341,7 +1496,10 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       )}
 
       {/* STATS AVANCÉES — FLOUTÉES */}
-      <Text style={s.sectionTitle}>{'\u{1F4CA}'} MES STATS (7 jours)</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 18, marginBottom: 8, marginLeft: 4 }}>
+        <StatsIcon />
+        <Text style={s.sectionTitleText}>MES STATS (7 jours)</Text>
+      </View>
       <View style={{ position: 'relative', overflow: 'hidden', borderRadius: 16 }}>
         <GlassCard style={{ opacity: 0.3 }}>
           <View style={{ height: 80, justifyContent: 'center', alignItems: 'center' }}>
@@ -1357,13 +1515,14 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         </GlassCard>
         {/* Overlay cadenas */}
         <View style={s.lockOverlay}>
-          <Ionicons name="lock-closed" size={28} color="#8892A0" />
+          <LockIcon size={28} />
           <Text style={s.lockText}>Débloquer</Text>
           <View style={s.lockPriceRow}>
             <GemIcon size={14} />
             <Text style={s.lockPrice}> 200 Lix</Text>
             <Text style={s.lockOr}>  ou  </Text>
-            <Text style={s.lockPremium}>{'\u2B50'} Premium</Text>
+            <StarIcon />
+            <Text style={s.lockPremium}> Premium</Text>
           </View>
         </View>
       </View>
@@ -1382,11 +1541,14 @@ const PlaceholderPage = ({ icon, title, locked }) => (
     <Text style={{ color: '#EAEEF3', fontSize: 22, fontWeight: '700', marginTop: 16 }}>{title}</Text>
     {locked && (
       <View style={{ alignItems: 'center', marginTop: 20 }}>
-        <Ionicons name="lock-closed" size={32} color="#D4AF37" />
-        <Text style={{ color: '#8892A0', fontSize: 13, marginTop: 8, textAlign: 'center' }}>
-          Contenu Premium{'\n'}
-          <Text style={{ color: '#D4AF37' }}>{'\u{1F48E}'} 300 Lix</Text> ou <Text style={{ color: '#00D984' }}>{'\u2B50'} Premium</Text>
-        </Text>
+        <LockIcon size={32} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 }}>
+          <GemIcon size={14} />
+          <Text style={{ color: '#D4AF37', fontSize: 13 }}>300 Lix</Text>
+          <Text style={{ color: '#8892A0', fontSize: 13 }}> ou </Text>
+          <StarIcon />
+          <Text style={{ color: '#00D984', fontSize: 13 }}> Premium</Text>
+        </View>
       </View>
     )}
     {!locked && (
@@ -1410,11 +1572,13 @@ const TABS = [
 
 const BottomTabs = ({ activeTab, onTabPress }) => (
   <LinearGradient
-    colors={['rgba(26, 32, 48, 0.0)', 'rgba(0, 217, 132, 0.06)', 'rgba(13, 17, 23, 0.98)']}
-    locations={[0, 0.3, 1]}
+    colors={['rgba(13, 17, 23, 0.0)', 'rgba(13, 17, 23, 0.7)', 'rgba(13, 17, 23, 0.97)']}
+    locations={[0, 0.25, 1]}
     start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
     style={s.tabBar}
   >
+    {/* Séparateur émeraude subtil */}
+    <View style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 1, backgroundColor: 'rgba(0, 217, 132, 0.12)' }} />
     {TABS.map((tab) => {
       const active = activeTab === tab.key;
       return (
@@ -1432,7 +1596,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
             />
             {tab.locked && (
               <View style={s.tabLock}>
-                <Ionicons name="lock-closed" size={8} color="#D4AF37" />
+                <LockIcon size={10} />
               </View>
             )}
           </View>
@@ -1528,6 +1692,18 @@ export default function App() {
           }}
         />
 
+        {/* Glow radial émeraude — profondeur lumineuse */}
+        <View pointerEvents="none" style={{
+          position: 'absolute', top: '15%', left: W / 2 - 160,
+          width: 320, height: 320, borderRadius: 160,
+          backgroundColor: 'rgba(0, 217, 132, 0.04)',
+        }} />
+        <View pointerEvents="none" style={{
+          position: 'absolute', top: '20%', left: W / 2 - 80,
+          width: 160, height: 160, borderRadius: 80,
+          backgroundColor: 'rgba(0, 217, 132, 0.06)',
+        }} />
+
         {/* Contenu principal */}
         <SafeAreaView style={{ flex: 1 }} edges={['top']}>
           <Header
@@ -1583,10 +1759,15 @@ const s = StyleSheet.create({
   },
   moodBtn: { position: 'relative' },
   moodCircle: {
-    width: 40, height: 40, borderRadius: 20,
+    width: 44, height: 44, borderRadius: 22,
     backgroundColor: 'rgba(21,27,35,0.7)',
-    borderWidth: 1, borderColor: 'rgba(138,146,160,0.15)',
+    borderWidth: 2, borderColor: '#00D984',
     justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#00D984',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
   },
   moodBadge: {
     position: 'absolute', top: -2, right: -2,
@@ -1624,6 +1805,10 @@ const s = StyleSheet.create({
     color: '#EAEEF3', fontSize: 15, fontWeight: '700',
     letterSpacing: 0.5, marginTop: 18, marginBottom: 8, marginLeft: 4,
   },
+  sectionTitleText: {
+    color: '#EAEEF3', fontSize: 15, fontWeight: '700',
+    letterSpacing: 0.5,
+  },
 
   // === GLASS CARD ===
   glassCard: {
@@ -1635,6 +1820,11 @@ const s = StyleSheet.create({
     borderLeftColor: 'rgba(107,123,141,0.10)',
     borderRightColor: 'rgba(42,48,59,0.20)',
     borderBottomColor: 'rgba(26,31,38,0.30)',
+    shadowColor: '#00D984',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
   },
   cardShine: {
     position: 'absolute', top: 0, left: 14, right: 14,
@@ -1805,9 +1995,7 @@ const s = StyleSheet.create({
   // === BOTTOM TAB BAR ===
   tabBar: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 217, 132, 0.15)',
-    paddingTop: 10,
+    paddingTop: 15,
     paddingBottom: Platform.OS === 'ios' ? 0 : 48,
   },
   tabItem: {
