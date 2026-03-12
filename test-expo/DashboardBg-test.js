@@ -24,179 +24,21 @@ const seededRandom = (seed) => {
   return x - Math.floor(x);
 };
 // ============================================
-// COMPOSANT — Nebula Grid Background
+// COMPOSANT — Background métallique propre
 // ============================================
-const NEBULA_GRID_SPACING = 40;
-const NEBULA_DOT_COUNT = 12;
-
-const nebulaGridLines = (() => {
-  const lines = [];
-  // Horizontal grid lines
-  for (let y = 0; y < H; y += NEBULA_GRID_SPACING) {
-    lines.push({ x1: 0, y1: y, x2: W, y2: y, horizontal: true });
-  }
-  // Vertical grid lines
-  for (let x = 0; x < W; x += NEBULA_GRID_SPACING) {
-    lines.push({ x1: x, y1: 0, x2: x, y2: H, horizontal: false });
-  }
-  return lines;
-})();
-
-const nebulaDots = (() => {
-  const dots = [];
-  for (let i = 0; i < NEBULA_DOT_COUNT; i++) {
-    const seed = i * 29 + 77;
-    dots.push({
-      x: seededRandom(seed) * W,
-      y: seededRandom(seed + 1) * H,
-      r: 1.5 + seededRandom(seed + 2) * 2.5,
-      color: ['#00D984', '#4DA6FF', '#FF8C42', '#5DFFB4'][i % 4],
-    });
-  }
-  return dots;
-})();
-
-const NebulaGridBackground = () => {
-  // LED blink animations — 3 glow dots
-  const LED_POSITIONS = useMemo(() => [
-    { x: W * 0.15, y: H * 0.12 },
-    { x: W * 0.82, y: H * 0.42 },
-    { x: W * 0.25, y: H * 0.78 },
-  ], []);
-
-  const led0 = useRef(new RNAnimated.Value(0)).current;
-  const led1 = useRef(new RNAnimated.Value(0)).current;
-  const led2 = useRef(new RNAnimated.Value(0)).current;
-  const ledAnims = [led0, led1, led2];
-
-  useEffect(() => {
-    const timers = [];
-    const blinkLed = (anim) => {
-      const pause = 1500 + Math.random() * 3000;
-      const timer = setTimeout(() => {
-        RNAnimated.timing(anim, {
-          toValue: 1, duration: 50, useNativeDriver: false,
-        }).start(() => {
-          const offTimer = setTimeout(() => {
-            RNAnimated.timing(anim, {
-              toValue: 0, duration: 80, useNativeDriver: false,
-            }).start(() => {
-              if (Math.random() < 0.3) {
-                const dblTimer = setTimeout(() => {
-                  RNAnimated.timing(anim, {
-                    toValue: 1, duration: 50, useNativeDriver: false,
-                  }).start(() => {
-                    const dblOff = setTimeout(() => {
-                      RNAnimated.timing(anim, {
-                        toValue: 0, duration: 80, useNativeDriver: false,
-                      }).start(() => blinkLed(anim));
-                    }, 100);
-                    timers.push(dblOff);
-                  });
-                }, 120);
-                timers.push(dblTimer);
-              } else {
-                blinkLed(anim);
-              }
-            });
-          }, 120);
-          timers.push(offTimer);
-        });
-      }, pause);
-      timers.push(timer);
-    };
-    ledAnims.forEach((anim, i) => {
-      const startDelay = setTimeout(() => blinkLed(anim), i * 800 + Math.random() * 1000);
-      timers.push(startDelay);
-    });
-    return () => timers.forEach(t => clearTimeout(t));
-  }, []);
-
-  return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-
-      {/* FOND — gris métallique dégradé */}
-      <LinearGradient
-        colors={['#181E26', '#1C2330', '#151B23', '#1C2330', '#181E26']}
-        locations={[0, 0.25, 0.5, 0.75, 1]}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-      />
-
-      {/* Halos émeraude latéraux subtils */}
-      <View pointerEvents="none" style={{
-        position: 'absolute', top: 0, left: -60,
-        width: 140, height: '100%',
-        backgroundColor: 'rgba(0, 217, 132, 0.012)',
-        borderTopRightRadius: 150,
-        borderBottomRightRadius: 150,
-      }} />
-      <View pointerEvents="none" style={{
-        position: 'absolute', top: 0, right: -60,
-        width: 140, height: '100%',
-        backgroundColor: 'rgba(0, 217, 132, 0.012)',
-        borderTopLeftRadius: 150,
-        borderBottomLeftRadius: 150,
-      }} />
-
-      {/* SVG — grid lines + glow dots */}
-      <Svg width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
-        {/* Grid lines */}
-        {nebulaGridLines.map((line, i) => (
-          <Line key={`ng-${i}`}
-            x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2}
-            stroke="rgba(0, 217, 132, 0.018)"
-            strokeWidth={0.5}
-          />
-        ))}
-        {/* Glow dots at intersections — colored */}
-        {nebulaDots.map((dot, i) => (
-          <G key={`nd-${i}`}>
-            <Circle cx={dot.x} cy={dot.y} r={dot.r * 3} fill={dot.color} opacity={0.06} />
-            <Circle cx={dot.x} cy={dot.y} r={dot.r} fill={dot.color} opacity={0.25} />
-          </G>
-        ))}
-      </Svg>
-
-      {/* LED blink animations */}
-      {LED_POSITIONS.map((pos, i) => (
-        <RNAnimated.View
-          key={`led-${i}`}
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            left: pos.x - 6, top: pos.y - 6,
-            width: 12, height: 12,
-            opacity: ledAnims[i],
-          }}
-        >
-          <View style={{
-            position: 'absolute', top: -3, left: -3, right: -3, bottom: -3,
-            borderRadius: 9, backgroundColor: 'rgba(0, 217, 132, 0.08)',
-          }} />
-          <View style={{
-            position: 'absolute', top: 3, left: 3,
-            width: 6, height: 6, borderRadius: 3,
-            backgroundColor: 'rgba(0, 217, 132, 0.15)',
-          }} />
-          <View style={{
-            position: 'absolute', top: 4, left: 4,
-            width: 4, height: 4, borderRadius: 2,
-            backgroundColor: 'rgba(0, 217, 132, 0.85)',
-          }} />
-        </RNAnimated.View>
-      ))}
-
-      {/* Vignette — subtle edge darkening */}
-      <LinearGradient
-        colors={['rgba(8,13,20,0.6)', 'rgba(8,13,20,0)', 'rgba(8,13,20,0)', 'rgba(8,13,20,0.6)']}
-        locations={[0, 0.25, 0.75, 1]}
-        start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-        pointerEvents="none"
-      />
-    </View>
-  );
-};
+const MetallicBackground = () => (
+  <LinearGradient
+    colors={[
+      '#1E2530',
+      '#222A35',
+      '#1A2029',
+      '#222A35',
+      '#1E2530',
+    ]}
+    locations={[0, 0.25, 0.5, 0.75, 1]}
+    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+  />
+);
 
 // ============================================================
 // COMPOSANT — LixGemIcon (émeraude taillée — viewBox 0 0 20 24)
@@ -400,8 +242,8 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
 
       {/* Lix counter — droite */}
       <TouchableOpacity onPress={onLixPress} activeOpacity={0.7} style={s.lixBtn}>
-        <View style={{ position: 'relative' }}>
-          {/* GEM_ICON_PLACEHOLDER */}
+        <View style={{ position: 'relative', marginRight: 5 }}>
+          <LixGemIcon width={18} height={20} />
           {notifCount > 0 && (
             <View style={s.notifBadge}>
               <Text style={s.notifBadgeText}>{notifCount}</Text>
@@ -782,17 +624,17 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
       {/* Pourcentage et label EN DESSOUS */}
       <Text style={{
         fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-        fontSize: 11, fontWeight: '700', color: color,
-        marginTop: 5,
-        textShadowColor: color.replace(')', ', 0.3)').replace('rgb', 'rgba'),
-        textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 4,
+        fontSize: 13, fontWeight: '800', color: color,
+        marginTop: 8,
+        textShadowColor: color + '50',
+        textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 5,
       }}>
         {percentage}%
       </Text>
-      <Text style={{ fontSize: 9, fontWeight: '700', color: '#EAEEF3', marginTop: 1 }}>
+      <Text style={{ fontSize: 10, fontWeight: '700', color: '#EAEEF3', marginTop: 2 }}>
         {label}
       </Text>
-      <Text style={{ fontSize: 7, fontWeight: '500', color: '#8892A0', marginTop: 0 }}>
+      <Text style={{ fontSize: 8, fontWeight: '500', color: '#8892A0', marginTop: 1 }}>
         {label === 'Consommé' ? '/ Repas' : 'à consommer'}
       </Text>
     </View>
@@ -802,7 +644,7 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
 // ============================================
 // COMPOSANT — DNA HELIX (ADN central — BMR)
 // ============================================
-const DnaHelix = ({ height = 68, width = 55, bmrValue = 1826 }) => {
+const DnaHelix = ({ height = 68, width = 60, bmrValue = 1826 }) => {
   const svgH = height;
   const svgW = width;
   const cx = svgW / 2;
@@ -968,15 +810,15 @@ const DnaHelix = ({ height = 68, width = 55, bmrValue = 1826 }) => {
       </View>
 
       {/* BMR EN DESSOUS DE L'ADN */}
-      <View style={{ alignItems: 'center', marginTop: 4 }}>
+      <View style={{ alignItems: 'center', marginTop: 8 }}>
         <Text style={{
           fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-          fontSize: 8, fontWeight: '800',
+          fontSize: 9, fontWeight: '800',
           color: '#EAEEF3', letterSpacing: 2,
         }}>BMR</Text>
         <Text numberOfLines={1} style={{
           fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-          fontSize: 15, fontWeight: '900',
+          fontSize: 16, fontWeight: '900',
           color: '#00D984',
           textShadowColor: 'rgba(0, 217, 132, 0.5)',
           textShadowOffset: { width: 0, height: 0 },
@@ -995,12 +837,12 @@ const DnaHelix = ({ height = 68, width = 55, bmrValue = 1826 }) => {
 // ============================================================
 const CARD_MARGIN = 14;
 const CARD_PAD = 16;
-const DNA_WIDTH = 55;
+const DNA_WIDTH = 60;
 const GAP = 4;
 const TOTAL_SIDES = (CARD_MARGIN + CARD_PAD + 1.2) * 2;
 const REACTOR_SIZE = Math.min(
   Math.floor((W - TOTAL_SIDES - DNA_WIDTH - GAP * 2) / 2),
-  78
+  88
 );
 
 // ============================================================
@@ -1388,10 +1230,10 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 const SectionDivider = () => (
   <View style={{
     alignSelf: 'center',
-    width: '55%',
+    width: '50%',
     height: 1,
-    marginVertical: 5,
-    backgroundColor: 'rgba(0, 217, 132, 0.06)',
+    marginVertical: 6,
+    backgroundColor: 'rgba(0, 217, 132, 0.08)',
     borderRadius: 0.5,
   }} />
 );
@@ -1411,7 +1253,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20, paddingTop: 8 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, paddingTop: 8 }}
       showsVerticalScrollIndicator={false}
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
@@ -1488,7 +1330,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           />
 
           {/* ADN CENTRAL — BMR */}
-          <DnaHelix height={REACTOR_SIZE * 0.80} width={DNA_WIDTH} bmrValue={1826} />
+          <DnaHelix height={REACTOR_SIZE * 1.0} width={DNA_WIDTH} bmrValue={1826} />
 
           {/* RÉACTEUR DROIT — Reste */}
           <ReactorCore
@@ -1556,8 +1398,6 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         </MiniMetalCard>
       </View>
 
-      <SectionDivider />
-
       {/* ====== CARTE HYDRATATION COMPACTE ====== */}
       <HydrationCardCompact
         currentMl={hydrationMl}
@@ -1570,8 +1410,6 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       {/* ======================================================= */}
       {/* BELOW THE FOLD — Zone scrollable                        */}
       {/* ======================================================= */}
-
-      <SectionDivider />
 
       {/* DERNIER REPAS */}
       <MetalCard style={{ marginHorizontal: 0, marginTop: 18 }}>
@@ -1740,13 +1578,13 @@ const TABS = [
 
 const BottomTabs = ({ activeTab, onTabPress }) => (
   <LinearGradient
-    colors={['rgba(13, 17, 23, 0)', 'rgba(10, 14, 20, 0.92)', '#0A0E13']}
+    colors={['rgba(30, 37, 48, 0)', 'rgba(26, 32, 41, 0.92)', '#181E26']}
     locations={[0, 0.4, 1]}
     start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
     style={s.tabBar}
   >
-    {/* Séparateur émeraude */}
-    <View style={{ position: 'absolute', top: 0, left: 20, right: 20, height: 1, backgroundColor: 'rgba(0, 217, 132, 0.1)' }} />
+    {/* Séparateur métallique */}
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(74, 79, 85, 0.4)' }} />
     {TABS.map((tab) => {
       const active = activeTab === tab.key;
       return (
@@ -1844,23 +1682,11 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: '#151B23' }}>
-        <StatusBar barStyle="light-content" backgroundColor="#181E26" />
+      <View style={{ flex: 1, backgroundColor: '#1E2530' }}>
+        <StatusBar barStyle="light-content" backgroundColor="#1E2530" />
 
-        {/* Background Nebula Grid */}
-        <NebulaGridBackground />
-
-        {/* Voile dépoli */}
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(21, 27, 35, 0.2)',
-          }}
-        />
-
-        {/* Les halos latéraux sont maintenant dans NebulaGridBackground */}
+        {/* Background métallique propre */}
+        <MetallicBackground />
 
         {/* Contenu principal */}
         <SafeAreaView style={{ flex: 1 }} edges={['top']}>
@@ -1874,11 +1700,9 @@ export default function App() {
           {renderPage()}
         </SafeAreaView>
 
-        {/* BOTTOM_TABS_PLACEHOLDER — à reconstruire proprement
         <SafeAreaView edges={['bottom']} style={{ backgroundColor: 'transparent' }}>
           <BottomTabs activeTab={activeTab} onTabPress={setActiveTab} />
         </SafeAreaView>
-        */}
 
         {/* Modal Hydratation fullscreen */}
         <HydrationModal
@@ -1924,9 +1748,9 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     shadowColor: '#00D984',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
   },
   moodBadge: {
     position: 'absolute', top: -2, right: -2,
@@ -1936,27 +1760,27 @@ const s = StyleSheet.create({
   },
   logoText: {
     color: '#EAEEF3', fontSize: 22, fontWeight: '800', letterSpacing: 4,
-    textShadowColor: 'rgba(0, 217, 132, 0.25)',
+    textShadowColor: 'rgba(0, 217, 132, 0.2)',
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
+    textShadowRadius: 8,
   },
   lixBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: 'rgba(21,27,35,0.7)',
-    paddingHorizontal: 12, paddingVertical: 7,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(21, 27, 35, 0.8)',
+    paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: 20,
-    borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)',
+    borderWidth: 1, borderColor: 'rgba(62, 72, 85, 0.5)',
   },
-  lixCount: { color: '#EAEEF3', fontSize: 15, fontWeight: '800' },
-  lixLabel: { color: '#8892A0', fontSize: 11, fontWeight: '600' },
+  lixCount: { color: '#EAEEF3', fontSize: 15, fontWeight: '700' },
+  lixLabel: { color: '#8892A0', fontSize: 11, fontWeight: '500', marginLeft: 3 },
   notifBadge: {
-    position: 'absolute', top: -6, right: -8,
-    backgroundColor: '#FF3B30', borderRadius: 8,
-    width: 16, height: 16,
+    position: 'absolute', top: -5, right: -7,
+    backgroundColor: '#FF3B30', borderRadius: 7,
+    width: 14, height: 14,
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1.5, borderColor: '#1A2030',
+    borderWidth: 1.5, borderColor: '#1E2530',
   },
-  notifBadgeText: { color: '#FFF', fontSize: 9, fontWeight: '800' },
+  notifBadgeText: { color: '#FFF', fontSize: 8, fontWeight: '800' },
 
   // === SECTION TITLES ===
   sectionSubtitle: {
