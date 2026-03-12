@@ -640,66 +640,42 @@ const useRotation = (duration, reverse = false) => {
   });
 };
 
-const useGlow = () => {
-  const glow = useRef(new RNAnimated.Value(0)).current;
-  useEffect(() => {
-    const anim = RNAnimated.loop(
-      RNAnimated.sequence([
-        RNAnimated.timing(glow, { toValue: 1, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
-        RNAnimated.timing(glow, { toValue: 0, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
-      ])
-    );
-    anim.start();
-    return () => anim.stop();
-  }, []);
-  return glow.interpolate({ inputRange: [0, 1], outputRange: [0.15, 0.35] });
-};
 
 // ============================================================
 // COMPOSANT — ReactorCore (réacteur circulaire animé)
 // ============================================================
-const ReactorCore = ({ size, value, percentage, label, color, colorLight, maxSize }) => {
-  const outerRotation = useRotation(20000);
-  const innerRotation = useRotation(14000, true);
-  const glowOpacity = useGlow();
+const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorDark }) => {
+  const outerRotation = useRotation(22000);
+  const innerRotation = useRotation(15000, true);
 
   const coreSize = size * 0.48;
   const innerRingSize = size * 0.72;
   const displayValue = Math.round(value).toString();
   const arcR = size / 2 - 8;
   const arcCirc = Math.PI * 2 * arcR;
-  const effectiveMax = maxSize || size;
 
-  const svgPadOuter = 12;
-  const outerSvgSize = size + svgPadOuter * 2;
+  const svgPad = 10;
+  const outerSvgSize = size + svgPad * 2;
   const svgPadInner = 8;
   const innerSvgSize = innerRingSize + svgPadInner * 2;
 
   return (
-    <View style={{ alignItems: 'center', width: effectiveMax + 24, height: effectiveMax + 55 }}>
-      {/* Spacer pour centrer verticalement les petits réacteurs */}
-      <View style={{ height: (effectiveMax - size) / 2 }} />
-      <View style={{ width: size + 24, height: size + 24, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
+    <View style={{ alignItems: 'center', width: size + 16, height: size + 55 }}>
+      <View style={{ width: size + 16, height: size + 16, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
 
-        {/* Glow ambiant */}
-        <RNAnimated.View style={{
-          position: 'absolute', width: size + 20, height: size + 20,
-          borderRadius: (size + 20) / 2, backgroundColor: color, opacity: glowOpacity,
-        }} />
-
-        {/* Anneau extérieur — rotation */}
+        {/* Anneau extérieur — rotation lente */}
         <RNAnimated.View style={{
           position: 'absolute', width: outerSvgSize, height: outerSvgSize,
-          marginLeft: -svgPadOuter, marginTop: -svgPadOuter,
+          marginLeft: -svgPad, marginTop: -svgPad,
           transform: [{ rotate: outerRotation }],
         }}>
           <Svg width={outerSvgSize} height={outerSvgSize} viewBox={`0 0 ${outerSvgSize} ${outerSvgSize}`}>
-            <Circle cx={outerSvgSize / 2} cy={outerSvgSize / 2} r={size / 2 - 3}
-              fill="none" stroke={color} strokeWidth={1.5} strokeOpacity={0.3}
-              strokeDasharray={`${size * 0.15} ${size * 0.08}`}
+            <Circle cx={outerSvgSize / 2} cy={outerSvgSize / 2} r={size / 2 - 2}
+              fill="none" stroke={color} strokeWidth={1.2} strokeOpacity={0.25}
+              strokeDasharray={`${size * 0.12} ${size * 0.06}`}
             />
-            <Circle cx={outerSvgSize / 2} cy={svgPadOuter} r={3.5} fill={colorLight} />
-            <Circle cx={outerSvgSize / 2} cy={outerSvgSize - svgPadOuter} r={2.5} fill={color} opacity={0.6} />
+            <Circle cx={outerSvgSize / 2} cy={svgPad} r={3} fill={colorLight} />
+            <Circle cx={outerSvgSize / 2} cy={outerSvgSize - svgPad} r={2} fill={color} opacity={0.5} />
           </Svg>
         </RNAnimated.View>
 
@@ -733,11 +709,11 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, maxSiz
           </Svg>
         </View>
 
-        {/* Core central — stable (no pulse) */}
+        {/* Core central — stable, semi-transparent */}
         <View style={{
           width: coreSize, height: coreSize, borderRadius: coreSize / 2,
           alignItems: 'center', justifyContent: 'center',
-          backgroundColor: 'rgba(13, 17, 23, 0.88)',
+          backgroundColor: 'rgba(13, 17, 23, 0.5)',
           borderWidth: 1.5, borderColor: color + '45',
           shadowColor: color, shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.5, shadowRadius: 15, elevation: 8,
@@ -748,7 +724,7 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, maxSiz
             minimumFontScale={0.6}
             style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: coreSize * 0.24, fontWeight: '800', color: '#EAEEF3',
+              fontSize: coreSize * 0.26, fontWeight: '800', color: '#EAEEF3',
               textAlign: 'center',
               textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6,
             }}
@@ -765,7 +741,7 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, maxSiz
 
       </View>
 
-      {/* Pourcentage — position absolue pour alignement */}
+      {/* Pourcentage */}
       <View style={{ position: 'absolute', bottom: 24, left: 0, right: 0, alignItems: 'center' }}>
         <Text style={{
           fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
@@ -776,7 +752,7 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, maxSiz
         </Text>
       </View>
 
-      {/* Label — position absolue tout en bas pour alignement parfait */}
+      {/* Label */}
       <View style={{ position: 'absolute', bottom: 4, left: 0, right: 0, alignItems: 'center' }}>
         <Text style={{ fontSize: 10, fontWeight: '600', color: '#8892A0' }}>
           {label}
@@ -786,35 +762,189 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, maxSiz
   );
 };
 
-// ============================================================
-// COMPOSANT — Graphe Reactor Cores (3 réacteurs)
-// ============================================================
-const REACTOR_PADDING = 28;
-const REACTOR_GAP = 8;
-const AVAILABLE_WIDTH = W - REACTOR_PADDING * 2 - REACTOR_GAP * 2;
-const REACTOR_SIZE_LARGE = Math.floor(AVAILABLE_WIDTH * 0.37);
-const REACTOR_SIZE_SMALL = Math.floor(AVAILABLE_WIDTH * 0.22);
+// ============================================
+// COMPOSANT — DNA HELIX (ADN central — BMR)
+// ============================================
+const DnaHelix = ({ height = 120, width = 60, bmrValue = 1826 }) => {
+  const strands = 8;
+  const svgHeight = height;
+  const svgWidth = width;
+  const centerX = svgWidth / 2;
+  const amplitude = svgWidth * 0.35;
 
-const ReactorCoresChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
-  const objectif = DAILY_OBJECTIVE;
-  const pctConsomme = Math.round((consomme / objectif) * 100);
-  const pctBrule = Math.round((brule / objectif) * 100);
-  const pctReste = Math.round((reste / objectif) * 100);
+  const points1 = [];
+  const points2 = [];
+  const bridges = [];
+
+  for (let i = 0; i <= strands * 2; i++) {
+    const t = i / (strands * 2);
+    const y = t * svgHeight;
+    const phase1 = Math.sin(t * Math.PI * strands) * amplitude;
+    const phase2 = Math.sin(t * Math.PI * strands + Math.PI) * amplitude;
+
+    points1.push({ x: centerX + phase1, y });
+    points2.push({ x: centerX + phase2, y });
+
+    if (i % 2 === 0 && i > 0 && i < strands * 2) {
+      bridges.push({
+        x1: centerX + phase1,
+        y1: y,
+        x2: centerX + phase2,
+        y2: y,
+      });
+    }
+  }
+
+  const buildPath = (points) => {
+    let d = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const cpY = (prev.y + curr.y) / 2;
+      d += ` C ${prev.x} ${cpY}, ${curr.x} ${cpY}, ${curr.x} ${curr.y}`;
+    }
+    return d;
+  };
 
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: REACTOR_GAP, width: '100%', paddingVertical: 6 }}>
-      <ReactorCore size={REACTOR_SIZE_LARGE} maxSize={REACTOR_SIZE_LARGE} value={consomme} percentage={pctConsomme}
-        label="Consommé" color="#00D984" colorLight="#5DFFB4"
-      />
-      <ReactorCore size={REACTOR_SIZE_SMALL} maxSize={REACTOR_SIZE_LARGE} value={brule} percentage={pctBrule}
-        label="Brûlé / Sport" color="#FF8C42" colorLight="#FFB87A"
-      />
-      <ReactorCore size={REACTOR_SIZE_LARGE} maxSize={REACTOR_SIZE_LARGE} value={reste} percentage={pctReste}
-        label="Reste" color="#4DA6FF" colorLight="#8DCAFF"
-      />
+    <View style={{ alignItems: 'center', width: svgWidth }}>
+      <Text style={{
+        fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+        fontSize: 7,
+        fontWeight: '700',
+        color: '#8892A0',
+        letterSpacing: 1.5,
+        marginBottom: 2,
+      }}>
+        VITALITÉ
+      </Text>
+
+      <View style={{ width: svgWidth, height: svgHeight, position: 'relative' }}>
+        <Svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
+          <Defs>
+            <SvgLinearGradient id="dnaStrand1" x1="0.5" y1="0" x2="0.5" y2="1">
+              <Stop offset="0%" stopColor="#5DFFB4" stopOpacity={0.9} />
+              <Stop offset="50%" stopColor="#00D984" stopOpacity={0.7} />
+              <Stop offset="100%" stopColor="#00854F" stopOpacity={0.9} />
+            </SvgLinearGradient>
+
+            <SvgLinearGradient id="dnaStrand2" x1="0.5" y1="0" x2="0.5" y2="1">
+              <Stop offset="0%" stopColor="#00E5A0" stopOpacity={0.7} />
+              <Stop offset="50%" stopColor="#00BFA6" stopOpacity={0.5} />
+              <Stop offset="100%" stopColor="#008F7A" stopOpacity={0.7} />
+            </SvgLinearGradient>
+
+            <SvgLinearGradient id="dnaBridge" x1="0" y1="0.5" x2="1" y2="0.5">
+              <Stop offset="0%" stopColor="#00D984" stopOpacity={0.4} />
+              <Stop offset="50%" stopColor="#00BFA6" stopOpacity={0.6} />
+              <Stop offset="100%" stopColor="#00D984" stopOpacity={0.4} />
+            </SvgLinearGradient>
+          </Defs>
+
+          <Rect
+            x={centerX - 8}
+            y={10}
+            width={16}
+            height={svgHeight - 20}
+            rx={8}
+            fill="#00D984"
+            opacity={0.04}
+          />
+
+          {bridges.map((b, i) => (
+            <Line
+              key={`bridge-${i}`}
+              x1={b.x1} y1={b.y1}
+              x2={b.x2} y2={b.y2}
+              stroke="url(#dnaBridge)"
+              strokeWidth={2}
+              strokeLinecap="round"
+            />
+          ))}
+
+          <Path
+            d={buildPath(points1)}
+            fill="none"
+            stroke="url(#dnaStrand1)"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+          />
+
+          <Path
+            d={buildPath(points2)}
+            fill="none"
+            stroke="url(#dnaStrand2)"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+          />
+
+          {bridges.map((b, i) => (
+            <React.Fragment key={`nodes-${i}`}>
+              <Circle cx={b.x1} cy={b.y1} r={2.5} fill="#5DFFB4" opacity={0.8} />
+              <Circle cx={b.x2} cy={b.y2} r={2.5} fill="#00BFA6" opacity={0.8} />
+            </React.Fragment>
+          ))}
+        </Svg>
+
+        <View style={{
+          position: 'absolute',
+          top: svgHeight / 2 - 22,
+          left: 0,
+          right: 0,
+          alignItems: 'center',
+        }}>
+          <View style={{
+            backgroundColor: 'rgba(13, 17, 23, 0.85)',
+            borderRadius: 10,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderWidth: 1,
+            borderColor: 'rgba(0, 217, 132, 0.2)',
+          }}>
+            <Text style={{
+              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+              fontSize: 7,
+              fontWeight: '700',
+              color: '#8892A0',
+              textAlign: 'center',
+              letterSpacing: 1,
+            }}>BMR</Text>
+            <Text
+              numberOfLines={1}
+              style={{
+                fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+                fontSize: 14,
+                fontWeight: '900',
+                color: '#00D984',
+                textAlign: 'center',
+                textShadowColor: 'rgba(0, 217, 132, 0.4)',
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 6,
+              }}
+            >
+              {bmrValue}
+            </Text>
+            <Text style={{
+              fontSize: 7,
+              color: '#8892A0',
+              textAlign: 'center',
+              letterSpacing: 1,
+            }}>KCAL</Text>
+          </View>
+        </View>
+      </View>
     </View>
   );
 };
+
+// ============================================================
+// SIZING — 2 Réacteurs + ADN central
+// ============================================================
+const CARD_PADDING = 28;
+const DNA_WIDTH = 70;
+const REACTOR_GAP = 6;
+const AVAILABLE_FOR_REACTORS = W - CARD_PADDING - DNA_WIDTH - REACTOR_GAP * 2;
+const REACTOR_SIZE = Math.floor(AVAILABLE_FOR_REACTORS / 2);
 
 // ============================================================
 // COMPOSANT — Alerte Dépassement d'objectif
@@ -1274,59 +1404,90 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           marginVertical: 10,
         }} />
 
-        <ReactorCoresChart consomme={consumedTotal} brule={burnedTotal} reste={remaining} />
+        {/* ===== LES 2 RÉACTEURS + ADN ===== */}
+        <View style={{
+          flexDirection: 'row',
+          justifyContent: 'center',
+          alignItems: 'center',
+          overflow: 'visible',
+        }}>
+          {/* RÉACTEUR GAUCHE — Consommé */}
+          <ReactorCore
+            size={REACTOR_SIZE}
+            value={consumedTotal}
+            percentage={Math.round((consumedTotal / DAILY_OBJECTIVE) * 100)}
+            label="Consommé"
+            color="#00D984"
+            colorLight="#5DFFB4"
+            colorDark="#00854F"
+          />
+
+          {/* ADN CENTRAL — BMR */}
+          <DnaHelix height={REACTOR_SIZE + 20} width={DNA_WIDTH} bmrValue={1826} />
+
+          {/* RÉACTEUR DROIT — Reste */}
+          <ReactorCore
+            size={REACTOR_SIZE}
+            value={remaining}
+            percentage={Math.round((remaining / DAILY_OBJECTIVE) * 100)}
+            label="Reste"
+            color="#4DA6FF"
+            colorLight="#8DCAFF"
+            colorDark="#2B7ACC"
+          />
+        </View>
       </MetalCard>
 
       <SectionDivider />
 
-      {/* ====== 3 MINI-CARTES — BMR / Discipline / TDEE ====== */}
+      {/* ====== 3 MINI-CARTES — Brûlé / Discipline / TDEE ====== */}
       <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 14, marginBottom: 12, marginTop: 10 }}>
-        {/* BMR */}
+        {/* BRÛLÉ / SPORT */}
         <MiniMetalCard>
-          <HeartIcon />
-          <Text style={{ color: '#8892A0', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginTop: 6 }}>BMR</Text>
+          <FlameIcon />
+          <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginTop: 5 }}>BRÛLÉ / SPORT</Text>
           <Text style={{
-            color: '#00D984',
-            fontSize: 22,
+            color: '#FF8C42',
+            fontSize: 20,
             fontWeight: '800',
             marginTop: 2,
-            textShadowColor: 'rgba(0, 217, 132, 0.3)',
+            textShadowColor: 'rgba(0, 217, 132, 0.2)',
             textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 8,
-          }}>1 826</Text>
-          <Text style={{ color: '#8892A0', fontSize: 10 }}>kcal</Text>
+            textShadowRadius: 6,
+          }}>870</Text>
+          <Text style={{ color: '#8892A0', fontSize: 9 }}>kcal</Text>
         </MiniMetalCard>
 
         {/* DISCIPLINE */}
         <MiniMetalCard>
           <FlameIcon />
-          <Text style={{ color: '#8892A0', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginTop: 6 }}>DISCIPLINE</Text>
+          <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginTop: 5 }}>DISCIPLINE</Text>
           <Text style={{
-            color: '#FF8C42',
-            fontSize: 22,
+            color: '#00D984',
+            fontSize: 20,
             fontWeight: '800',
             marginTop: 2,
             textShadowColor: 'rgba(0, 217, 132, 0.2)',
             textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 8,
+            textShadowRadius: 6,
           }}>{streakDays}</Text>
-          <Text style={{ color: '#8892A0', fontSize: 10 }}>jours série</Text>
+          <Text style={{ color: '#8892A0', fontSize: 9 }}>jours série</Text>
         </MiniMetalCard>
 
         {/* TDEE */}
         <MiniMetalCard>
           <BoltIcon />
-          <Text style={{ color: '#8892A0', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginTop: 6 }}>TDEE</Text>
+          <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginTop: 5 }}>TDEE</Text>
           <Text style={{
             color: '#4DA6FF',
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: '800',
             marginTop: 2,
             textShadowColor: 'rgba(0, 217, 132, 0.2)',
             textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 8,
+            textShadowRadius: 6,
           }}>2 830</Text>
-          <Text style={{ color: '#8892A0', fontSize: 10 }}>kcal</Text>
+          <Text style={{ color: '#8892A0', fontSize: 9 }}>kcal</Text>
         </MiniMetalCard>
       </View>
 
