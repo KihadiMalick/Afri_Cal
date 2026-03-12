@@ -73,6 +73,59 @@ const LixGemIcon = ({ width = 20, height = 22 }) => {
 };
 
 // ============================================================
+// COMPOSANT — LixCoinIcon (jeton hexagonal émeraude — L gravé)
+// ============================================================
+let _coinIdx = 0;
+const LixCoinIcon = ({ size = 18 }) => {
+  const id = useMemo(() => `lxc${_coinIdx++}`, []);
+  const s = size;
+  const hs = s / 2;
+  const hex = [
+    `${hs},${0}`,
+    `${s},${s * 0.25}`,
+    `${s},${s * 0.75}`,
+    `${hs},${s}`,
+    `${0},${s * 0.75}`,
+    `${0},${s * 0.25}`,
+  ].join(' ');
+
+  return (
+    <Svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+      <Defs>
+        <SvgLinearGradient id={`${id}F`} x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0%" stopColor="#2A3A30" />
+          <Stop offset="30%" stopColor="#1A2A22" />
+          <Stop offset="70%" stopColor="#1E3028" />
+          <Stop offset="100%" stopColor="#142018" />
+        </SvgLinearGradient>
+        <SvgLinearGradient id={`${id}E`} x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0%" stopColor="#5DFFB4" />
+          <Stop offset="50%" stopColor="#00D984" />
+          <Stop offset="100%" stopColor="#00854F" />
+        </SvgLinearGradient>
+        <SvgLinearGradient id={`${id}L`} x1="0.5" y1="0" x2="0.5" y2="1">
+          <Stop offset="0%" stopColor="#5DFFB4" />
+          <Stop offset="100%" stopColor="#00D984" />
+        </SvgLinearGradient>
+      </Defs>
+      <Polygon points={hex} fill="#00D984" opacity={0.1} transform="translate(0.5, 0.5)" />
+      <Polygon points={hex} fill={`url(#${id}F)`} />
+      <Polygon points={hex} fill="none" stroke={`url(#${id}E)`} strokeWidth={1.2} />
+      <Path d={`M ${hs},0 L ${s},${s * 0.25} L ${hs},${s * 0.35} L 0,${s * 0.25} Z`} fill="#5DFFB4" opacity={0.08} />
+      <Path
+        d={`M ${s * 0.35},${s * 0.28} L ${s * 0.35},${s * 0.68} L ${s * 0.65},${s * 0.68}`}
+        fill="none"
+        stroke={`url(#${id}L)`}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Circle cx={s * 0.3} cy={s * 0.3} r={1} fill="white" opacity={0.35} />
+    </Svg>
+  );
+};
+
+// ============================================================
 // ICÔNES SVG CUSTOM — remplacent les emojis
 // ============================================================
 const HeartIcon = () => (
@@ -243,7 +296,7 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
       {/* Lix counter — droite */}
       <TouchableOpacity onPress={onLixPress} activeOpacity={0.7} style={s.lixBtn}>
         <View style={{ position: 'relative', marginRight: 5 }}>
-          <LixGemIcon width={18} height={20} />
+          <LixCoinIcon size={18} />
           {notifCount > 0 && (
             <View style={s.notifBadge}>
               <Text style={s.notifBadgeText}>{notifCount}</Text>
@@ -499,7 +552,7 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
   const outerRotation = useRotation(10000);
   const innerRotation = useRotation(7000, true);
 
-  const coreSize = size * 0.46;
+  const coreSize = size * 0.50;
   const innerRingSize = size * 0.72;
   const displayValue = Math.round(value).toString();
 
@@ -562,12 +615,11 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
               fill="none" stroke={color} strokeWidth={1} strokeOpacity={0.2}
               strokeDasharray={`${size * 0.1} ${size * 0.05}`}
             />
-            {/* Satellite objectif — VERT, plus gros, avec double glow */}
-            <Circle cx={(size + 20) / 2} cy={10} r={4} fill="#00D984" />
-            <Circle cx={(size + 20) / 2} cy={10} r={7} fill="#00D984" opacity={0.2} />
-            <Circle cx={(size + 20) / 2} cy={10} r={11} fill="#00D984" opacity={0.07} />
+            {/* Satellite objectif — VERT, réduit */}
+            <Circle cx={(size + 20) / 2} cy={10} r={3} fill="#00D984" />
+            <Circle cx={(size + 20) / 2} cy={10} r={5} fill="#00D984" opacity={0.2} />
             {/* Satellite secondaire — couleur du réacteur, petit et discret */}
-            <Circle cx={(size + 20) / 2} cy={size + 10} r={2} fill={color} opacity={0.35} />
+            <Circle cx={(size + 20) / 2} cy={size + 10} r={1.5} fill={color} opacity={0.3} />
           </Svg>
         </RNAnimated.View>
 
@@ -621,22 +673,6 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
 
       </View>
 
-      {/* Pourcentage et label EN DESSOUS */}
-      <Text style={{
-        fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-        fontSize: 13, fontWeight: '800', color: color,
-        marginTop: 8,
-        textShadowColor: color + '50',
-        textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 5,
-      }}>
-        {percentage}%
-      </Text>
-      <Text style={{ fontSize: 10, fontWeight: '700', color: '#EAEEF3', marginTop: 2 }}>
-        {label}
-      </Text>
-      <Text style={{ fontSize: 8, fontWeight: '500', color: '#8892A0', marginTop: 1 }}>
-        {label === 'Consommé' ? '/ Repas' : 'à consommer'}
-      </Text>
     </View>
   );
 };
@@ -681,14 +717,15 @@ const DnaHelix = ({ height = 68, width = 60, bmrValue = 1826 }) => {
 
   return (
     <View style={{ alignItems: 'center', width: svgW }}>
-      {/* Label VITALITÉ au-dessus */}
+      {/* Label VITALITÉ au-dessus — discret */}
       <Text style={{
         fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-        fontSize: 7,
+        fontSize: 6,
         fontWeight: '700',
         color: '#8892A0',
         letterSpacing: 1.5,
-        marginBottom: 3,
+        marginBottom: 2,
+        opacity: 0.6,
       }}>VITALITÉ</Text>
 
       {/* SVG ADN — SANS badge BMR au centre */}
@@ -809,25 +846,6 @@ const DnaHelix = ({ height = 68, width = 60, bmrValue = 1826 }) => {
         </Svg>
       </View>
 
-      {/* BMR EN DESSOUS DE L'ADN */}
-      <View style={{ alignItems: 'center', marginTop: 8 }}>
-        <Text style={{
-          fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-          fontSize: 9, fontWeight: '800',
-          color: '#EAEEF3', letterSpacing: 2,
-        }}>BMR</Text>
-        <Text numberOfLines={1} style={{
-          fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-          fontSize: 16, fontWeight: '900',
-          color: '#00D984',
-          textShadowColor: 'rgba(0, 217, 132, 0.5)',
-          textShadowOffset: { width: 0, height: 0 },
-          textShadowRadius: 8,
-        }}>{bmrValue}</Text>
-        <Text style={{
-          fontSize: 7, fontWeight: '600', color: '#8892A0', letterSpacing: 1.5,
-        }}>KCAL</Text>
-      </View>
     </View>
   );
 };
@@ -842,7 +860,7 @@ const GAP = 4;
 const TOTAL_SIDES = (CARD_MARGIN + CARD_PAD + 1.2) * 2;
 const REACTOR_SIZE = Math.min(
   Math.floor((W - TOTAL_SIDES - DNA_WIDTH - GAP * 2) / 2),
-  88
+  95
 );
 
 // ============================================================
@@ -1258,55 +1276,82 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
       <MetalCard style={{ marginHorizontal: 0 }}>
-        {/* Header: titre + objectif */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-          <Text style={{
-            color: '#EAEEF3',
-            fontSize: 12,
-            fontWeight: '800',
-            letterSpacing: 2,
-            fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+        {/* Header compact avec fond dégradé */}
+        <View style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 6,
+        }}>
+          <View style={{
+            backgroundColor: 'rgba(0, 217, 132, 0.06)',
+            borderRadius: 8,
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+            borderWidth: 1,
+            borderColor: 'rgba(0, 217, 132, 0.1)',
           }}>
-            BILAN ÉNERGÉTIQUE
-          </Text>
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text style={{ color: '#8892A0', fontSize: 10 }}>Objectif de Calories</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-              <GoalFlag />
-              <Text style={{
-                fontSize: 16,
-                fontWeight: '900',
-                color: '#00D984',
-                marginLeft: 4,
-                textShadowColor: 'rgba(0, 217, 132, 0.4)',
-                textShadowOffset: { width: 0, height: 0 },
-                textShadowRadius: 5,
-              }}>
-                {DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal
-              </Text>
-              {/* DOT VERT OBJECTIF */}
-              <View style={{
-                width: 8,
-                height: 8,
-                borderRadius: 4,
-                backgroundColor: '#00D984',
-                marginLeft: 6,
-                shadowColor: '#00D984',
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.6,
-                shadowRadius: 4,
-                elevation: 3,
-              }} />
-            </View>
+            <Text style={{
+              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+              fontSize: 8,
+              fontWeight: '800',
+              letterSpacing: 2,
+              color: '#EAEEF3',
+            }}>BILAN ÉNERGÉTIQUE</Text>
           </View>
+          <Text style={{
+            fontSize: 9,
+            color: '#8892A0',
+          }}>Objectif de Calories</Text>
         </View>
 
-        {/* Séparateur métal */}
+        {/* Ligne séparatrice avec objectif centré */}
         <View style={{
-          height: 1,
-          backgroundColor: 'rgba(255, 255, 255, 0.04)',
-          marginVertical: 10,
-        }} />
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginVertical: 6,
+        }}>
+          <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 10,
+          }}>
+            <Svg width={14} height={14} viewBox="0 0 24 24">
+              <Defs>
+                <SvgLinearGradient id="flgGold" x1="0" y1="0" x2="1" y2="1">
+                  <Stop offset="0%" stopColor="#FFE066" />
+                  <Stop offset="100%" stopColor="#D4AF37" />
+                </SvgLinearGradient>
+              </Defs>
+              <Line x1="5" y1="2" x2="5" y2="22" stroke="#D4AF37" strokeWidth={2} strokeLinecap="round" />
+              <Path d="M5 3C5 3 8 1.5 11 4C14 6.5 17 5 19 3V13C17 15 14 16 11 13.5C8 11 5 12.5 5 12.5V3Z" fill="url(#flgGold)" />
+            </Svg>
+            <Text style={{
+              fontSize: 14,
+              fontWeight: '900',
+              color: '#00D984',
+              marginLeft: 5,
+              textShadowColor: 'rgba(0, 217, 132, 0.35)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 5,
+            }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
+            <View style={{
+              width: 7,
+              height: 7,
+              borderRadius: 3.5,
+              backgroundColor: '#00D984',
+              marginLeft: 5,
+              shadowColor: '#00D984',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.6,
+              shadowRadius: 3,
+              elevation: 2,
+            }} />
+          </View>
+          <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+        </View>
 
         {/* ===== LES 2 RÉACTEURS + ADN ===== */}
         <View style={{
@@ -1342,6 +1387,63 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             colorLight="#8DCAFF"
             colorDark="#2B7ACC"
           />
+        </View>
+
+        {/* Séparateur fin */}
+        <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginTop: 10, marginBottom: 8 }} />
+
+        {/* RANGÉE DE LABELS EN BAS */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 8 }}>
+          {/* Label Consommé — gauche */}
+          <View style={{ alignItems: 'center', flex: 1 }}>
+            <Text style={{
+              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+              fontSize: 14,
+              fontWeight: '800',
+              color: '#FF8C42',
+              textShadowColor: 'rgba(255, 140, 66, 0.3)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 4,
+            }}>{Math.round((consumedTotal / DAILY_OBJECTIVE) * 100)}%</Text>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: '#EAEEF3', marginTop: 1 }}>Consommé</Text>
+            <Text style={{ fontSize: 8, fontWeight: '500', color: '#8892A0' }}>/ Repas</Text>
+          </View>
+
+          {/* Label BMR — centre */}
+          <View style={{ alignItems: 'center', flex: 1 }}>
+            <Text style={{
+              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+              fontSize: 8,
+              fontWeight: '800',
+              color: '#EAEEF3',
+              letterSpacing: 2,
+            }}>BMR</Text>
+            <Text style={{
+              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+              fontSize: 17,
+              fontWeight: '900',
+              color: '#00D984',
+              textShadowColor: 'rgba(0, 217, 132, 0.5)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 8,
+            }}>1826</Text>
+            <Text style={{ fontSize: 7, fontWeight: '600', color: '#8892A0', letterSpacing: 1.5 }}>KCAL</Text>
+          </View>
+
+          {/* Label Reste — droite */}
+          <View style={{ alignItems: 'center', flex: 1 }}>
+            <Text style={{
+              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+              fontSize: 14,
+              fontWeight: '800',
+              color: '#4DA6FF',
+              textShadowColor: 'rgba(77, 166, 255, 0.3)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 4,
+            }}>{Math.round((remaining / DAILY_OBJECTIVE) * 100)}%</Text>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: '#EAEEF3', marginTop: 1 }}>Reste</Text>
+            <Text style={{ fontSize: 8, fontWeight: '500', color: '#8892A0' }}>à consommer</Text>
+          </View>
         </View>
       </MetalCard>
 
