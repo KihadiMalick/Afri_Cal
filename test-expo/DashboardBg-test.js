@@ -6,7 +6,7 @@
 
 import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import {
-  View, Dimensions, Text, StyleSheet, StatusBar, Alert,
+  View, Dimensions, Text, StyleSheet, StatusBar, Alert, Pressable,
   Animated as RNAnimated, ScrollView, TouchableOpacity, Platform, Modal, Easing,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -338,11 +338,47 @@ const GlassCard = ({ children, style }) => (
 // COMPOSANT METALCARD — Plaque métal brossé
 // ============================================
 const MetalCard = ({ children, style, onPress, noPadding = false }) => {
-  const Wrapper = onPress ? TouchableOpacity : View;
-  const wrapperProps = onPress ? { onPress, activeOpacity: 0.85 } : {};
 
+  if (!onPress) {
+    // Pas cliquable — rendu simple sans Pressable
+    return (
+      <View style={[metalStyles.outerBorder, style]}>
+        <LinearGradient
+          colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={metalStyles.innerGradient}
+        >
+          <View style={[metalStyles.cardContent, noPadding && { padding: 0 }]}>
+            <View style={{
+              position: 'absolute', top: 0, left: 25, right: 25,
+              height: 1, backgroundColor: 'rgba(0, 217, 132, 0.10)', borderRadius: 0.5,
+            }} />
+            {children}
+          </View>
+        </LinearGradient>
+      </View>
+    );
+  }
+
+  // Cliquable — effet bouton enfoncé
   return (
-    <Wrapper {...wrapperProps} style={[metalStyles.outerBorder, style]}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        metalStyles.outerBorder,
+        style,
+        {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: pressed ? 2 : 8 },
+          shadowOpacity: pressed ? 0.6 : 0.5,
+          shadowRadius: pressed ? 4 : 16,
+          elevation: pressed ? 4 : 12,
+          transform: [{ scale: pressed ? 0.975 : 1 }],
+          backgroundColor: pressed ? '#3E434A' : '#4A4F55',
+        },
+      ]}
+    >
       <LinearGradient
         colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
         start={{ x: 0, y: 0 }}
@@ -350,43 +386,28 @@ const MetalCard = ({ children, style, onPress, noPadding = false }) => {
         style={metalStyles.innerGradient}
       >
         <View style={[metalStyles.cardContent, noPadding && { padding: 0 }]}>
-          {/* Ligne lumineuse émeraude en haut */}
+          <View style={{
+            position: 'absolute', top: 0, left: 25, right: 25,
+            height: 1, backgroundColor: 'rgba(0, 217, 132, 0.10)', borderRadius: 0.5,
+          }} />
+          {/* Indicateur cliquable › */}
           <View style={{
             position: 'absolute',
-            top: 0,
-            left: 25,
-            right: 25,
-            height: 1,
-            backgroundColor: 'rgba(0, 217, 132, 0.10)',
-            borderRadius: 0.5,
-          }} />
-          {/* Indicateur cliquable — flèche en haut à droite */}
-          {onPress && (
-            <View style={{
-              position: 'absolute',
-              top: 10,
-              right: 10,
-              width: 18,
-              height: 18,
-              borderRadius: 9,
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              borderWidth: 1,
-              borderColor: 'rgba(255, 255, 255, 0.08)',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-              <Text style={{
-                color: '#8892A0',
-                fontSize: 10,
-                fontWeight: '600',
-                marginTop: -1,
-              }}>›</Text>
-            </View>
-          )}
+            top: 10, right: 10,
+            width: 18, height: 18,
+            borderRadius: 9,
+            backgroundColor: 'rgba(255, 255, 255, 0.04)',
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.08)',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            <Text style={{ color: '#8892A0', fontSize: 10, fontWeight: '600', marginTop: -1 }}>›</Text>
+          </View>
           {children}
         </View>
       </LinearGradient>
-    </Wrapper>
+    </Pressable>
   );
 };
 
@@ -1231,11 +1252,11 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 65, paddingTop: 8 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 50, paddingTop: 8 }}
       showsVerticalScrollIndicator={false}
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }} onPress={() => Alert.alert('Bilan Énergétique', 'Détails des calories, macros et progression — bientôt disponible')}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }}>
         {/* HEADER — une seule ligne, tout aligné */}
         <View style={{
           flexDirection: 'row',
