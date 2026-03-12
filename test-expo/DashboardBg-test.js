@@ -390,15 +390,25 @@ const metalStyles = StyleSheet.create({
 // ============================================
 // MINI METAL CARD — version compacte pour les 3 métriques
 // ============================================
-const MiniMetalCard = ({ children, style }) => (
-  <View style={[miniMetalStyles.outerBorder, style]}>
+const MiniMetalCard = ({ children, style, noBorder = false }) => (
+  <View style={[
+    miniMetalStyles.outerBorder,
+    noBorder && { backgroundColor: 'transparent', padding: 0, shadowOpacity: 0, elevation: 0 },
+    style,
+  ]}>
     <LinearGradient
-      colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+      colors={noBorder
+        ? ['#252A30', '#1E2328', '#252A30', '#1A1D22']
+        : ['#3A3F46', '#252A30', '#333A42', '#1A1D22']
+      }
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={miniMetalStyles.innerGradient}
+      style={[miniMetalStyles.innerGradient, noBorder && { borderRadius: 14 }]}
     >
-      <View style={miniMetalStyles.cardContent}>
+      <View style={[
+        miniMetalStyles.cardContent,
+        noBorder && { borderColor: 'rgba(255,255,255,0.04)' }
+      ]}>
         {children}
       </View>
     </LinearGradient>
@@ -548,9 +558,9 @@ const useRotation = (duration, reverse = false) => {
 // ============================================================
 // COMPOSANT — ReactorCore (réacteur circulaire animé)
 // ============================================================
-const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorDark }) => {
-  const outerRotation = useRotation(10000);
-  const innerRotation = useRotation(7000, true);
+const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorDark, clockwise = true }) => {
+  const outerRotation = useRotation(10000, !clockwise);
+  const innerRotation = useRotation(7000, clockwise);
 
   const coreSize = size * 0.50;
   const innerRingSize = size * 0.72;
@@ -695,7 +705,7 @@ const DnaHelix = ({ height = 68, width = 60, bmrValue = 1826 }) => {
   for (let i = 0; i <= segments; i++) {
     const t = i / segments;
     const y = t * svgH;
-    const angle = t * Math.PI * 3.5;
+    const angle = t * Math.PI * 4;
     const x1 = cx + Math.sin(angle) * amp;
     const x2 = cx + Math.sin(angle + Math.PI) * amp;
     strand1Points.push({ x: x1, y });
@@ -711,7 +721,7 @@ const DnaHelix = ({ height = 68, width = 60, bmrValue = 1826 }) => {
       y1: strand1Points[idx].y,
       x2: strand2Points[idx].x,
       y2: strand2Points[idx].y,
-      depth: Math.cos((idx / segments) * Math.PI * 3.5),
+      depth: Math.cos((idx / segments) * Math.PI * 4),
     });
   }
 
@@ -770,7 +780,7 @@ const DnaHelix = ({ height = 68, width = 60, bmrValue = 1826 }) => {
           {/* Brins avec profondeur — segments individuels */}
           {Array.from({ length: segments - 1 }, (_, i) => {
             const t = i / segments;
-            const angle = t * Math.PI * 3.5;
+            const angle = t * Math.PI * 4;
             const depth = Math.cos(angle);
             const isFront = depth >= 0;
             const p1 = strand1Points[i];
@@ -787,7 +797,7 @@ const DnaHelix = ({ height = 68, width = 60, bmrValue = 1826 }) => {
           })}
           {Array.from({ length: segments - 1 }, (_, i) => {
             const t = i / segments;
-            const angle = t * Math.PI * 3.5;
+            const angle = t * Math.PI * 4;
             const depth = Math.cos(angle);
             const isFront = depth < 0;
             const p1 = strand2Points[i];
@@ -1276,13 +1286,14 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
       <MetalCard style={{ marginHorizontal: 0 }}>
-        {/* Header compact avec fond dégradé */}
+        {/* HEADER — badge gauche + objectif droite */}
         <View style={{
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: 6,
+          marginBottom: 8,
         }}>
+          {/* Titre avec fond dégradé — GAUCHE */}
           <View style={{
             backgroundColor: 'rgba(0, 217, 132, 0.06)',
             borderRadius: 8,
@@ -1299,71 +1310,52 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               color: '#EAEEF3',
             }}>BILAN ÉNERGÉTIQUE</Text>
           </View>
-          <Text style={{
-            fontSize: 9,
-            color: '#8892A0',
-          }}>Objectif de Calories</Text>
-        </View>
 
-        {/* Ligne séparatrice avec objectif centré */}
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginVertical: 6,
-        }}>
-          <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 10,
-          }}>
-            <Svg width={14} height={14} viewBox="0 0 24 24">
+          {/* Objectif — DROITE : drapeau + valeur + dot */}
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Svg width={12} height={12} viewBox="0 0 24 24">
               <Defs>
-                <SvgLinearGradient id="flgGold" x1="0" y1="0" x2="1" y2="1">
+                <SvgLinearGradient id="flgG" x1="0" y1="0" x2="1" y2="1">
                   <Stop offset="0%" stopColor="#FFE066" />
                   <Stop offset="100%" stopColor="#D4AF37" />
                 </SvgLinearGradient>
               </Defs>
               <Line x1="5" y1="2" x2="5" y2="22" stroke="#D4AF37" strokeWidth={2} strokeLinecap="round" />
-              <Path d="M5 3C5 3 8 1.5 11 4C14 6.5 17 5 19 3V13C17 15 14 16 11 13.5C8 11 5 12.5 5 12.5V3Z" fill="url(#flgGold)" />
+              <Path d="M5 3C5 3 8 1.5 11 4C14 6.5 17 5 19 3V13C17 15 14 16 11 13.5C8 11 5 12.5 5 12.5V3Z" fill="url(#flgG)" />
             </Svg>
             <Text style={{
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: '900',
               color: '#00D984',
-              marginLeft: 5,
-              textShadowColor: 'rgba(0, 217, 132, 0.35)',
+              marginLeft: 4,
+              textShadowColor: 'rgba(0, 217, 132, 0.3)',
               textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 5,
+              textShadowRadius: 4,
             }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
             <View style={{
-              width: 7,
-              height: 7,
-              borderRadius: 3.5,
-              backgroundColor: '#00D984',
-              marginLeft: 5,
+              width: 6, height: 6, borderRadius: 3,
+              backgroundColor: '#00D984', marginLeft: 4,
               shadowColor: '#00D984',
               shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.6,
+              shadowOpacity: 0.5,
               shadowRadius: 3,
               elevation: 2,
             }} />
           </View>
-          <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
         </View>
+
+        {/* Ligne séparatrice simple sous le header */}
+        <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginBottom: 8 }} />
 
         {/* ===== LES 2 RÉACTEURS + ADN ===== */}
         <View style={{
           flexDirection: 'row',
           justifyContent: 'center',
           alignItems: 'center',
-          gap: GAP,
           overflow: 'visible',
-          paddingVertical: 8,
-          paddingHorizontal: 4,
+          paddingVertical: 4,
         }}>
-          {/* RÉACTEUR GAUCHE — Consommé */}
+          {/* RÉACTEUR GAUCHE — Consommé (sens horaire) */}
           <ReactorCore
             size={REACTOR_SIZE}
             value={consumedTotal}
@@ -1372,12 +1364,33 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             color="#FF8C42"
             colorLight="#FFB87A"
             colorDark="#CC6020"
+            clockwise={true}
           />
 
-          {/* ADN CENTRAL — BMR */}
-          <DnaHelix height={REACTOR_SIZE * 1.0} width={DNA_WIDTH} bmrValue={1826} />
+          {/* BARRE VERTICALE GAUCHE */}
+          <View style={{
+            width: 1,
+            height: '70%',
+            backgroundColor: 'rgba(255, 255, 255, 0.06)',
+            marginHorizontal: 4,
+            alignSelf: 'center',
+            borderRadius: 0.5,
+          }} />
 
-          {/* RÉACTEUR DROIT — Reste */}
+          {/* ADN CENTRAL — BMR (125% de REACTOR_SIZE) */}
+          <DnaHelix height={REACTOR_SIZE * 1.25} width={DNA_WIDTH} bmrValue={1826} />
+
+          {/* BARRE VERTICALE DROITE */}
+          <View style={{
+            width: 1,
+            height: '70%',
+            backgroundColor: 'rgba(255, 255, 255, 0.06)',
+            marginHorizontal: 4,
+            alignSelf: 'center',
+            borderRadius: 0.5,
+          }} />
+
+          {/* RÉACTEUR DROIT — Reste (sens antihoraire) */}
           <ReactorCore
             size={REACTOR_SIZE}
             value={remaining}
@@ -1386,13 +1399,14 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             color="#4DA6FF"
             colorLight="#8DCAFF"
             colorDark="#2B7ACC"
+            clockwise={false}
           />
         </View>
 
-        {/* Séparateur fin */}
-        <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginTop: 10, marginBottom: 8 }} />
+        {/* LIGNE SÉPARATRICE HORIZONTALE */}
+        <View style={{ height: 1, backgroundColor: 'rgba(255, 255, 255, 0.06)', marginTop: 8, marginBottom: 8 }} />
 
-        {/* RANGÉE DE LABELS EN BAS */}
+        {/* RANGÉE DE LABELS EN BAS — avec barres verticales */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 8 }}>
           {/* Label Consommé — gauche */}
           <View style={{ alignItems: 'center', flex: 1 }}>
@@ -1408,6 +1422,9 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             <Text style={{ fontSize: 11, fontWeight: '700', color: '#EAEEF3', marginTop: 1 }}>Consommé</Text>
             <Text style={{ fontSize: 8, fontWeight: '500', color: '#8892A0' }}>/ Repas</Text>
           </View>
+
+          {/* Barre verticale */}
+          <View style={{ width: 1, height: 40, backgroundColor: 'rgba(255,255,255,0.06)', alignSelf: 'center' }} />
 
           {/* Label BMR — centre */}
           <View style={{ alignItems: 'center', flex: 1 }}>
@@ -1429,6 +1446,9 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             }}>1826</Text>
             <Text style={{ fontSize: 7, fontWeight: '600', color: '#8892A0', letterSpacing: 1.5 }}>KCAL</Text>
           </View>
+
+          {/* Barre verticale */}
+          <View style={{ width: 1, height: 40, backgroundColor: 'rgba(255,255,255,0.06)', alignSelf: 'center' }} />
 
           {/* Label Reste — droite */}
           <View style={{ alignItems: 'center', flex: 1 }}>
@@ -1467,8 +1487,8 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <Text style={{ color: '#8892A0', fontSize: 9 }}>kcal</Text>
         </MiniMetalCard>
 
-        {/* DISCIPLINE */}
-        <MiniMetalCard>
+        {/* DISCIPLINE — SANS bordure métallique */}
+        <MiniMetalCard noBorder>
           <FlameIcon />
           <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginTop: 5 }}>DISCIPLINE</Text>
           <Text style={{
