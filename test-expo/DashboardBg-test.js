@@ -402,7 +402,7 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
       {/* Lix counter — droite */}
       <TouchableOpacity onPress={onLixPress} activeOpacity={0.7} style={s.lixBtn}>
         <View style={{ position: 'relative' }}>
-          <LixGemIcon width={20} height={22} />
+          {/* GEM_ICON_PLACEHOLDER */}
           {notifCount > 0 && (
             <View style={s.notifBadge}>
               <Text style={s.notifBadgeText}>{notifCount}</Text>
@@ -553,13 +553,13 @@ const useRotation = (duration, reverse = false) => {
   });
 };
 
-const usePulse = (min = 0.96, max = 1.04) => {
+const usePulse = (min = 0.97, max = 1.03) => {
   const pulse = useRef(new RNAnimated.Value(0)).current;
   useEffect(() => {
     const anim = RNAnimated.loop(
       RNAnimated.sequence([
-        RNAnimated.timing(pulse, { toValue: 1, duration: 2000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        RNAnimated.timing(pulse, { toValue: 0, duration: 2000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        RNAnimated.timing(pulse, { toValue: 1, duration: 3500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        RNAnimated.timing(pulse, { toValue: 0, duration: 3500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
       ])
     );
     anim.start();
@@ -573,8 +573,8 @@ const useGlow = () => {
   useEffect(() => {
     const anim = RNAnimated.loop(
       RNAnimated.sequence([
-        RNAnimated.timing(glow, { toValue: 1, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
-        RNAnimated.timing(glow, { toValue: 0, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
+        RNAnimated.timing(glow, { toValue: 1, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
+        RNAnimated.timing(glow, { toValue: 0, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
       ])
     );
     anim.start();
@@ -587,9 +587,9 @@ const useGlow = () => {
 // COMPOSANT — ReactorCore (réacteur circulaire animé)
 // ============================================================
 const ReactorCore = ({ size, value, percentage, label, color, colorLight }) => {
-  const outerRotation = useRotation(8000);
-  const innerRotation = useRotation(5000, true);
-  const coreScale = usePulse(0.96, 1.04);
+  const outerRotation = useRotation(20000);
+  const innerRotation = useRotation(14000, true);
+  const coreScale = usePulse(0.97, 1.03);
   const glowOpacity = useGlow();
 
   const coreSize = size * 0.48;
@@ -618,8 +618,8 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight }) => {
               fill="none" stroke={color} strokeWidth={1.5} strokeOpacity={0.3}
               strokeDasharray={`${size * 0.15} ${size * 0.08}`}
             />
-            <Circle cx={size / 2} cy={3} r={3} fill={colorLight} />
-            <Circle cx={size / 2} cy={size - 3} r={2} fill={color} opacity={0.6} />
+            <Circle cx={size / 2} cy={3} r={3.5} fill={colorLight} />
+            <Circle cx={size / 2} cy={size - 3} r={2.5} fill={color} opacity={0.6} />
           </Svg>
         </RNAnimated.View>
 
@@ -633,7 +633,7 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight }) => {
               fill="none" stroke={color} strokeWidth={1} strokeOpacity={0.2}
               strokeDasharray={`${innerRingSize * 0.12} ${innerRingSize * 0.06}`}
             />
-            <Circle cx={innerRingSize / 2} cy={2} r={2.5} fill={colorLight} opacity={0.8} />
+            <Circle cx={innerRingSize / 2} cy={2} r={3} fill={colorLight} opacity={0.8} />
           </Svg>
         </RNAnimated.View>
 
@@ -641,10 +641,10 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight }) => {
         <View style={{ position: 'absolute', width: size, height: size }}>
           <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
             <Circle cx={size / 2} cy={size / 2} r={arcR}
-              fill="none" stroke={color} strokeWidth={2.5} strokeOpacity={0.08}
+              fill="none" stroke={color} strokeWidth={3} strokeOpacity={0.12}
             />
             <Circle cx={size / 2} cy={size / 2} r={arcR}
-              fill="none" stroke={color} strokeWidth={2.5} strokeOpacity={0.6}
+              fill="none" stroke={color} strokeWidth={3} strokeOpacity={0.75}
               strokeLinecap="round"
               strokeDasharray={`${(percentage / 100) * arcCirc} ${arcCirc}`}
               transform={`rotate(-90 ${size / 2} ${size / 2})`}
@@ -657,14 +657,14 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight }) => {
           width: coreSize, height: coreSize, borderRadius: coreSize / 2,
           transform: [{ scale: coreScale }],
           alignItems: 'center', justifyContent: 'center',
-          backgroundColor: 'rgba(13, 17, 23, 0.7)',
-          borderWidth: 1.5, borderColor: color + '40',
+          backgroundColor: 'rgba(13, 17, 23, 0.85)',
+          borderWidth: 1.5, borderColor: color + '50',
           shadowColor: color, shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.5, shadowRadius: 15, elevation: 8,
         }}>
           <Text style={{
             fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-            fontSize: coreSize * 0.28, fontWeight: '800', color: '#EAEEF3',
+            fontSize: coreSize * 0.30, fontWeight: '900', color: '#EAEEF3',
             textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8,
           }}>
             {displayValue}
@@ -699,8 +699,8 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight }) => {
 // ============================================================
 // COMPOSANT — Graphe Reactor Cores (3 réacteurs)
 // ============================================================
-const REACTOR_SIZE_LARGE = 98;
-const REACTOR_SIZE_SMALL = 76;
+const REACTOR_SIZE_LARGE = 94;
+const REACTOR_SIZE_SMALL = 72;
 
 const ReactorCoresChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
   const objectif = DAILY_OBJECTIVE;
@@ -709,7 +709,7 @@ const ReactorCoresChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
   const pctReste = Math.round((reste / objectif) * 100);
 
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, paddingVertical: 6 }}>
+    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', paddingHorizontal: 4, gap: 4, paddingVertical: 6 }}>
       <ReactorCore size={REACTOR_SIZE_LARGE} value={consomme} percentage={pctConsomme}
         label="Consommé" color="#00D984" colorLight="#5DFFB4"
       />
@@ -1099,10 +1099,21 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 };
 
 // ============================================================
+// COMPOSANT — Séparateur premium entre sections
+// ============================================================
+const SectionDivider = () => (
+  <View style={{
+    height: 1,
+    marginHorizontal: 40,
+    marginVertical: 6,
+    backgroundColor: 'rgba(0, 217, 132, 0.06)',
+  }} />
+);
+
+// ============================================================
 // COMPOSANT — Dashboard Content (page Accueil)
 // ============================================================
 const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal }) => {
-  const [chartMode, setChartMode] = useState('daily');
   const streakDays = 12;
   const streakColor = streakDays >= 14 ? '#D4AF37'
     : streakDays >= 7 ? '#00D984'
@@ -1126,31 +1137,15 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             <Text style={{ color: '#8892A0', fontSize: 11 }}>Objectif de Calories</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <GoalFlag />
-              <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '800' }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
+              <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '900', textShadowColor: '#D4AF37', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
             </View>
           </View>
         </View>
 
         <ReactorCoresChart consomme={consumedTotal} brule={burnedTotal} reste={remaining} />
-
-        {/* Onglets Journalier / Général */}
-        <View style={s.chartTabsRow}>
-          <TouchableOpacity
-            style={[s.chartTab, chartMode === 'daily' && s.chartTabActive]}
-            onPress={() => setChartMode('daily')}
-            activeOpacity={0.7}
-          >
-            <Text style={[s.chartTabText, chartMode === 'daily' && s.chartTabTextActive]}>Journalier</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.chartTab, chartMode === 'general' && s.chartTabActive]}
-            onPress={() => setChartMode('general')}
-            activeOpacity={0.7}
-          >
-            <Text style={[s.chartTabText, chartMode === 'general' && s.chartTabTextActive]}>Général</Text>
-          </TouchableOpacity>
-        </View>
       </GlassCard>
+
+      <SectionDivider />
 
       {/* ====== 3 MINI-CARTES — BMR / Discipline / TDEE ====== */}
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
@@ -1158,24 +1153,26 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         <View style={s.miniCard}>
           <HeartIcon />
           <Text style={s.miniCardTitle}>BMR</Text>
-          <Text style={[s.miniValue, { color: '#00D984' }]}>1 826</Text>
+          <Text style={[s.miniValue, { color: '#00D984', textShadowColor: '#FF6B8A', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 }]}>1 826</Text>
           <Text style={s.miniCardUnit}>kcal</Text>
         </View>
         {/* Discipline */}
         <View style={s.miniCard}>
           <FlameIcon />
           <Text style={s.miniCardTitle}>DISCIPLINE</Text>
-          <Text style={[s.miniValue, { color: streakColor, fontSize: 26 }]}>{streakDays}</Text>
+          <Text style={[s.miniValue, { color: streakColor, fontSize: 26, textShadowColor: '#FF8C42', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 }]}>{streakDays}</Text>
           <Text style={s.miniCardUnit}>jours série</Text>
         </View>
         {/* TDEE */}
         <View style={s.miniCard}>
           <BoltIcon />
           <Text style={s.miniCardTitle}>TDEE</Text>
-          <Text style={[s.miniValue, { color: '#00D984' }]}>2 830</Text>
+          <Text style={[s.miniValue, { color: '#00D984', textShadowColor: '#FFB800', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 }]}>2 830</Text>
           <Text style={s.miniCardUnit}>kcal</Text>
         </View>
       </View>
+
+      <SectionDivider />
 
       {/* ====== CARTE HYDRATATION COMPACTE ====== */}
       <HydrationCardCompact
@@ -1189,6 +1186,8 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       {/* ======================================================= */}
       {/* BELOW THE FOLD — Zone scrollable                        */}
       {/* ======================================================= */}
+
+      <SectionDivider />
 
       {/* DERNIER REPAS */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 18, marginBottom: 8, marginLeft: 4 }}>
@@ -1464,10 +1463,11 @@ export default function App() {
           {renderPage()}
         </SafeAreaView>
 
-        {/* Bottom Tab Navigation */}
+        {/* BOTTOM_TABS_PLACEHOLDER — à reconstruire proprement
         <SafeAreaView edges={['bottom']} style={{ backgroundColor: 'transparent' }}>
           <BottomTabs activeTab={activeTab} onTabPress={setActiveTab} />
         </SafeAreaView>
+        */}
 
         {/* Modal Hydratation fullscreen */}
         <HydrationModal
@@ -1582,7 +1582,9 @@ const s = StyleSheet.create({
 
   // === ENERGY CARD ===
   cardLabel: {
-    color: '#8892A0', fontSize: 11, fontWeight: '700', letterSpacing: 2,
+    color: '#EAEEF3', fontSize: 12, fontWeight: '800', letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
   },
   statusDot: {
     width: 10, height: 10, borderRadius: 5, marginRight: 8,
@@ -1644,7 +1646,14 @@ const s = StyleSheet.create({
     height: 8, borderRadius: 4, marginTop: 8,
     backgroundColor: '#2A3040', overflow: 'hidden',
   },
-  hydroBarFill: { height: '100%', borderRadius: 4 },
+  hydroBarFill: {
+    height: '100%', borderRadius: 4,
+    shadowColor: '#00BFA6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   hydroGlasses: { color: '#8892A0', fontSize: 10 },
   hydroPercent: { color: '#4DA6FF', fontSize: 11, fontWeight: '700' },
 
@@ -1705,7 +1714,9 @@ const s = StyleSheet.create({
   // === MEAL CARD ===
   mealPhoto: {
     width: 56, height: 56, borderRadius: 12,
-    backgroundColor: 'rgba(80,95,115,0.15)',
+    backgroundColor: 'rgba(0, 217, 132, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 217, 132, 0.15)',
     justifyContent: 'center', alignItems: 'center',
   },
   mealName: { color: '#EAEEF3', fontSize: 15, fontWeight: '700' },
@@ -1757,24 +1768,6 @@ const s = StyleSheet.create({
     position: 'absolute', top: -3, right: -6,
     backgroundColor: 'rgba(21,27,35,0.9)', borderRadius: 6,
     width: 12, height: 12, justifyContent: 'center', alignItems: 'center',
-  },
-
-  // === CHART TABS (Journalier / Général) ===
-  chartTabsRow: {
-    flexDirection: 'row', justifyContent: 'center', gap: 4, marginTop: 14,
-  },
-  chartTab: {
-    paddingVertical: 8, paddingHorizontal: 20, borderRadius: 8,
-  },
-  chartTabActive: {
-    backgroundColor: 'rgba(0,217,132,0.12)',
-    borderBottomWidth: 2, borderBottomColor: '#00D984',
-  },
-  chartTabText: {
-    color: '#8892A0', fontSize: 12, fontWeight: '600',
-  },
-  chartTabTextActive: {
-    color: '#00D984',
   },
 
   // === MINUS BUTTON (hydration) ===
