@@ -1163,7 +1163,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20, paddingTop: 8 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 75, paddingTop: 8 }}
       showsVerticalScrollIndicator={false}
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
@@ -1333,7 +1333,6 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         </View>
       </View>
 
-      <View style={{ height: 20 }} />
     </ScrollView>
   );
 };
@@ -1392,7 +1391,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
             <Ionicons
               name={active ? tab.iconActive : tab.iconInactive}
               size={22}
-              color={active ? '#00D984' : '#8892A0'}
+              color={active ? '#00D984' : '#6B7B8D'}
             />
             {tab.locked && (
               <View style={s.tabLock}>
@@ -1549,8 +1548,13 @@ const s = StyleSheet.create({
   moodCircle: {
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: 'rgba(21,27,35,0.7)',
-    borderWidth: 1, borderColor: 'rgba(138,146,160,0.15)',
+    borderWidth: 2, borderColor: '#00D984',
     justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#00D984',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 5,
   },
   moodBadge: {
     position: 'absolute', top: -2, right: -2,
@@ -1560,6 +1564,9 @@ const s = StyleSheet.create({
   },
   logoText: {
     color: '#EAEEF3', fontSize: 22, fontWeight: '800', letterSpacing: 4,
+    textShadowColor: 'rgba(0, 217, 132, 0.15)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   lixBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
@@ -1669,7 +1676,14 @@ const s = StyleSheet.create({
     height: 8, borderRadius: 4, marginTop: 8,
     backgroundColor: '#2A3040', overflow: 'hidden',
   },
-  hydroBarFill: { height: '100%', borderRadius: 4 },
+  hydroBarFill: {
+    height: '100%', borderRadius: 4,
+    shadowColor: '#00BFA6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 3,
+  },
   hydroGlasses: { color: '#8892A0', fontSize: 10 },
   hydroPercent: { color: '#4DA6FF', fontSize: 11, fontWeight: '700' },
 
@@ -1729,9 +1743,16 @@ const s = StyleSheet.create({
 
   // === MEAL CARD ===
   mealPhoto: {
-    width: 56, height: 56, borderRadius: 12,
-    backgroundColor: 'rgba(80,95,115,0.15)',
+    width: 52, height: 52, borderRadius: 14,
+    backgroundColor: 'rgba(0, 217, 132, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 217, 132, 0.12)',
     justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#00D984',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
   },
   mealName: { color: '#EAEEF3', fontSize: 15, fontWeight: '700' },
   mealMeta: { color: '#555E6C', fontSize: 12, marginTop: 3 },
@@ -1777,7 +1798,7 @@ const s = StyleSheet.create({
     flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4,
   },
   tabLabel: {
-    color: '#8892A0', fontSize: 9, fontWeight: '600', marginTop: 3,
+    color: '#6B7B8D', fontSize: 9, fontWeight: '600', letterSpacing: 0.3, marginTop: -2,
   },
   tabLabelActive: { color: '#00D984' },
   tabLock: {
