@@ -115,10 +115,10 @@ const NebulaGridBackground = () => {
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
 
-      {/* FOND — multi-stop deep space gradient */}
+      {/* FOND — multi-stop deep space gradient with emerald hints */}
       <LinearGradient
-        colors={['#0F1923', '#0C1219', '#080D14', '#060A10']}
-        locations={[0, 0.35, 0.7, 1]}
+        colors={['#0A1A12', '#0C1219', '#080D14', '#0C1219', '#0A1A12']}
+        locations={[0, 0.2, 0.5, 0.8, 1]}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
@@ -452,6 +452,15 @@ const MetalCard = ({ children, style, noPadding = false }) => (
       style={metalStyles.innerGradient}
     >
       <View style={[metalStyles.cardContent, noPadding && { padding: 0 }]}>
+        {/* Ligne lumineuse émeraude en haut */}
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 30,
+          right: 30,
+          height: 1,
+          backgroundColor: 'rgba(0, 217, 132, 0.12)',
+        }} />
         {children}
       </View>
     </LinearGradient>
@@ -505,7 +514,7 @@ const miniMetalStyles = StyleSheet.create({
   outerBorder: {
     flex: 1,
     borderRadius: 14,
-    padding: 1,
+    padding: 1.2,
     backgroundColor: '#4A4F55',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -645,8 +654,8 @@ const useRotation = (duration, reverse = false) => {
 // COMPOSANT — ReactorCore (réacteur circulaire animé)
 // ============================================================
 const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorDark }) => {
-  const outerRotation = useRotation(22000);
-  const innerRotation = useRotation(15000, true);
+  const outerRotation = useRotation(10000);
+  const innerRotation = useRotation(7000, true);
 
   const coreSize = size * 0.48;
   const innerRingSize = size * 0.72;
@@ -983,7 +992,7 @@ const DnaHelix = ({ height = 68, width = 55, bmrValue = 1826 }) => {
 const CARD_MARGIN = 14;
 const CARD_PAD = 16;
 const DNA_WIDTH = 55;
-const GAP = 10;
+const GAP = 4;
 const TOTAL_SIDES = (CARD_MARGIN + CARD_PAD + 1.2) * 2;
 const REACTOR_SIZE = Math.floor((W - TOTAL_SIDES - DNA_WIDTH - GAP * 2) / 2);
 
@@ -1374,7 +1383,7 @@ const SectionDivider = () => (
     height: 1,
     marginHorizontal: 50,
     marginVertical: 4,
-    backgroundColor: 'rgba(0, 217, 132, 0.05)',
+    backgroundColor: 'rgba(0, 217, 132, 0.04)',
   }} />
 );
 
@@ -1398,16 +1407,6 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
       <MetalCard style={{ marginHorizontal: 0 }}>
-        {/* ===== LIGNE LUMINEUSE EN HAUT ===== */}
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: 30,
-          right: 30,
-          height: 1,
-          backgroundColor: 'rgba(0, 217, 132, 0.12)',
-        }} />
-
         {/* Header: titre + objectif */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
           <Text style={{
@@ -1453,6 +1452,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           gap: GAP,
           overflow: 'visible',
           paddingVertical: 8,
+          paddingHorizontal: 4,
         }}>
           {/* RÉACTEUR GAUCHE — Consommé */}
           <ReactorCore
@@ -1838,6 +1838,42 @@ export default function App() {
           }}
         />
 
+        {/* Halo vert gauche */}
+        <View pointerEvents="none" style={{
+          position: 'absolute',
+          top: 0,
+          left: -80,
+          width: 180,
+          height: '100%',
+          backgroundColor: 'rgba(0, 217, 132, 0.018)',
+          borderTopRightRadius: 200,
+          borderBottomRightRadius: 200,
+        }} />
+
+        {/* Halo vert droite */}
+        <View pointerEvents="none" style={{
+          position: 'absolute',
+          top: 0,
+          right: -80,
+          width: 180,
+          height: '100%',
+          backgroundColor: 'rgba(0, 217, 132, 0.018)',
+          borderTopLeftRadius: 200,
+          borderBottomLeftRadius: 200,
+        }} />
+
+        {/* Glow central subtil */}
+        <View pointerEvents="none" style={{
+          position: 'absolute',
+          top: '30%',
+          left: '50%',
+          marginLeft: -100,
+          width: 200,
+          height: 200,
+          borderRadius: 100,
+          backgroundColor: 'rgba(0, 217, 132, 0.01)',
+        }} />
+
         {/* Contenu principal */}
         <SafeAreaView style={{ flex: 1 }} edges={['top']}>
           <Header
@@ -1900,9 +1936,9 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     shadowColor: '#00D984',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 8,
   },
   moodBadge: {
     position: 'absolute', top: -2, right: -2,
@@ -1912,6 +1948,9 @@ const s = StyleSheet.create({
   },
   logoText: {
     color: '#EAEEF3', fontSize: 22, fontWeight: '800', letterSpacing: 4,
+    textShadowColor: 'rgba(0, 217, 132, 0.25)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
   lixBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
