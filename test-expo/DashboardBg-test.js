@@ -115,28 +115,27 @@ const NebulaGridBackground = () => {
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
 
-      {/* FOND — multi-stop deep space gradient with emerald hints */}
+      {/* FOND — gris métallique dégradé */}
       <LinearGradient
-        colors={['#0A1A12', '#0C1219', '#080D14', '#0C1219', '#0A1A12']}
-        locations={[0, 0.2, 0.5, 0.8, 1]}
+        colors={['#181E26', '#1C2330', '#151B23', '#1C2330', '#181E26']}
+        locations={[0, 0.25, 0.5, 0.75, 1]}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
-      {/* Nebula halos — quasi invisibles */}
+      {/* Halos émeraude latéraux subtils */}
       <View pointerEvents="none" style={{
-        position: 'absolute', top: H * 0.05, left: -W * 0.1, right: -W * 0.1,
-        height: H * 0.45, borderRadius: H * 0.23,
+        position: 'absolute', top: 0, left: -60,
+        width: 140, height: '100%',
         backgroundColor: 'rgba(0, 217, 132, 0.012)',
+        borderTopRightRadius: 150,
+        borderBottomRightRadius: 150,
       }} />
       <View pointerEvents="none" style={{
-        position: 'absolute', top: H * 0.55, left: W * 0.2,
-        width: W * 0.5, height: H * 0.25, borderRadius: H * 0.12,
-        backgroundColor: 'rgba(77, 166, 255, 0.008)',
-      }} />
-      <View pointerEvents="none" style={{
-        position: 'absolute', top: H * 0.15, left: W * 0.3, right: W * 0.3,
-        height: H * 0.2, borderRadius: H * 0.1,
+        position: 'absolute', top: 0, right: -60,
+        width: 140, height: '100%',
         backgroundColor: 'rgba(0, 217, 132, 0.012)',
+        borderTopLeftRadius: 150,
+        borderBottomLeftRadius: 150,
       }} />
 
       {/* SVG — grid lines + glow dots */}
@@ -456,10 +455,11 @@ const MetalCard = ({ children, style, noPadding = false }) => (
         <View style={{
           position: 'absolute',
           top: 0,
-          left: 30,
-          right: 30,
+          left: 25,
+          right: 25,
           height: 1,
-          backgroundColor: 'rgba(0, 217, 132, 0.12)',
+          backgroundColor: 'rgba(0, 217, 132, 0.10)',
+          borderRadius: 0.5,
         }} />
         {children}
       </View>
@@ -657,11 +657,11 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
   const outerRotation = useRotation(10000);
   const innerRotation = useRotation(7000, true);
 
-  const coreSize = size * 0.48;
+  const coreSize = size * 0.46;
   const innerRingSize = size * 0.72;
   const displayValue = Math.round(value).toString();
 
-  const svgPad = 10;
+  const svgPad = 8;
   const outerSvgSize = size + svgPad * 2;
   const svgPadInner = 6;
   const innerSvgSize = innerRingSize + svgPadInner * 2;
@@ -673,8 +673,8 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
 
   return (
     <View style={{
-      width: size + 24,
-      height: size + 24,
+      width: size + 20,
+      height: size + 20,
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'visible',
@@ -783,13 +783,17 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
       <Text style={{
         fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
         fontSize: 11, fontWeight: '700', color: color,
-        marginTop: 6,
-        textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 4,
+        marginTop: 5,
+        textShadowColor: color.replace(')', ', 0.3)').replace('rgb', 'rgba'),
+        textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 4,
       }}>
         {percentage}%
       </Text>
-      <Text style={{ fontSize: 9, fontWeight: '600', color: '#8892A0', marginTop: 1 }}>
+      <Text style={{ fontSize: 9, fontWeight: '700', color: '#EAEEF3', marginTop: 1 }}>
         {label}
+      </Text>
+      <Text style={{ fontSize: 7, fontWeight: '500', color: '#8892A0', marginTop: 0 }}>
+        {label === 'Consommé' ? '/ Repas' : 'à consommer'}
       </Text>
     </View>
   );
@@ -967,19 +971,19 @@ const DnaHelix = ({ height = 68, width = 55, bmrValue = 1826 }) => {
       <View style={{ alignItems: 'center', marginTop: 4 }}>
         <Text style={{
           fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-          fontSize: 7, fontWeight: '700',
-          color: '#8892A0', letterSpacing: 1.5,
+          fontSize: 8, fontWeight: '800',
+          color: '#EAEEF3', letterSpacing: 2,
         }}>BMR</Text>
         <Text numberOfLines={1} style={{
           fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-          fontSize: 14, fontWeight: '900',
+          fontSize: 15, fontWeight: '900',
           color: '#00D984',
-          textShadowColor: 'rgba(0, 217, 132, 0.4)',
+          textShadowColor: 'rgba(0, 217, 132, 0.5)',
           textShadowOffset: { width: 0, height: 0 },
-          textShadowRadius: 6,
+          textShadowRadius: 8,
         }}>{bmrValue}</Text>
         <Text style={{
-          fontSize: 6, color: '#8892A0', letterSpacing: 1.5,
+          fontSize: 7, fontWeight: '600', color: '#8892A0', letterSpacing: 1.5,
         }}>KCAL</Text>
       </View>
     </View>
@@ -994,7 +998,10 @@ const CARD_PAD = 16;
 const DNA_WIDTH = 55;
 const GAP = 4;
 const TOTAL_SIDES = (CARD_MARGIN + CARD_PAD + 1.2) * 2;
-const REACTOR_SIZE = Math.floor((W - TOTAL_SIDES - DNA_WIDTH - GAP * 2) / 2);
+const REACTOR_SIZE = Math.min(
+  Math.floor((W - TOTAL_SIDES - DNA_WIDTH - GAP * 2) / 2),
+  78
+);
 
 // ============================================================
 // COMPOSANT — Alerte Dépassement d'objectif
@@ -1380,10 +1387,12 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 // ============================================================
 const SectionDivider = () => (
   <View style={{
+    alignSelf: 'center',
+    width: '55%',
     height: 1,
-    marginHorizontal: 50,
-    marginVertical: 4,
-    backgroundColor: 'rgba(0, 217, 132, 0.04)',
+    marginVertical: 5,
+    backgroundColor: 'rgba(0, 217, 132, 0.06)',
+    borderRadius: 0.5,
   }} />
 );
 
@@ -1423,9 +1432,9 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
               <GoalFlag />
               <Text style={{
-                color: '#00D984',
-                fontSize: 17,
+                fontSize: 16,
                 fontWeight: '900',
+                color: '#00D984',
                 marginLeft: 4,
                 textShadowColor: 'rgba(0, 217, 132, 0.4)',
                 textShadowOffset: { width: 0, height: 0 },
@@ -1433,6 +1442,19 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               }}>
                 {DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal
               </Text>
+              {/* DOT VERT OBJECTIF */}
+              <View style={{
+                width: 8,
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: '#00D984',
+                marginLeft: 6,
+                shadowColor: '#00D984',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.6,
+                shadowRadius: 4,
+                elevation: 3,
+              }} />
             </View>
           </View>
         </View>
@@ -1822,8 +1844,8 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: '#0C1219' }}>
-        <StatusBar barStyle="light-content" backgroundColor="#0C1219" />
+      <View style={{ flex: 1, backgroundColor: '#151B23' }}>
+        <StatusBar barStyle="light-content" backgroundColor="#181E26" />
 
         {/* Background Nebula Grid */}
         <NebulaGridBackground />
@@ -1834,45 +1856,11 @@ export default function App() {
           style={{
             position: 'absolute',
             top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(13, 17, 23, 0.3)',
+            backgroundColor: 'rgba(21, 27, 35, 0.2)',
           }}
         />
 
-        {/* Halo vert gauche */}
-        <View pointerEvents="none" style={{
-          position: 'absolute',
-          top: 0,
-          left: -80,
-          width: 180,
-          height: '100%',
-          backgroundColor: 'rgba(0, 217, 132, 0.018)',
-          borderTopRightRadius: 200,
-          borderBottomRightRadius: 200,
-        }} />
-
-        {/* Halo vert droite */}
-        <View pointerEvents="none" style={{
-          position: 'absolute',
-          top: 0,
-          right: -80,
-          width: 180,
-          height: '100%',
-          backgroundColor: 'rgba(0, 217, 132, 0.018)',
-          borderTopLeftRadius: 200,
-          borderBottomLeftRadius: 200,
-        }} />
-
-        {/* Glow central subtil */}
-        <View pointerEvents="none" style={{
-          position: 'absolute',
-          top: '30%',
-          left: '50%',
-          marginLeft: -100,
-          width: 200,
-          height: 200,
-          borderRadius: 100,
-          backgroundColor: 'rgba(0, 217, 132, 0.01)',
-        }} />
+        {/* Les halos latéraux sont maintenant dans NebulaGridBackground */}
 
         {/* Contenu principal */}
         <SafeAreaView style={{ flex: 1 }} edges={['top']}>
