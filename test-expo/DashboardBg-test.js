@@ -651,22 +651,64 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
   const coreSize = size * 0.48;
   const innerRingSize = size * 0.72;
   const displayValue = Math.round(value).toString();
-  const arcR = size / 2 - 8;
-  const arcCirc = Math.PI * 2 * arcR;
 
   const svgPad = 10;
   const outerSvgSize = size + svgPad * 2;
-  const svgPadInner = 8;
+  const svgPadInner = 6;
   const innerSvgSize = innerRingSize + svgPadInner * 2;
 
+  // Glow expansif — rayon proportionnel au percentage
+  const coreRadius = coreSize / 2;
+  const maxGlowRadius = size / 2 - 2;
+  const glowRadius = coreRadius + (maxGlowRadius - coreRadius) * (percentage / 100);
+
   return (
-    <View style={{ alignItems: 'center', width: size + 16, height: size + 55 }}>
-      <View style={{ width: size + 16, height: size + 16, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
+    <View style={{
+      width: size + 20,
+      height: size + 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'visible',
+    }}>
+      {/* Zone du réacteur — carrée, centrée */}
+      <View style={{
+        width: size,
+        height: size,
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+      }}>
+
+        {/* Glow expansif — cercle lumineux proportionnel au % */}
+        <View style={{
+          position: 'absolute',
+          width: glowRadius * 2,
+          height: glowRadius * 2,
+          borderRadius: glowRadius,
+          backgroundColor: color,
+          opacity: 0.08 + (percentage / 100) * 0.07,
+          left: size / 2 - glowRadius,
+          top: size / 2 - glowRadius,
+        }} />
+        {/* Inner glow — plus intense, plus petit */}
+        <View style={{
+          position: 'absolute',
+          width: glowRadius * 1.2,
+          height: glowRadius * 1.2,
+          borderRadius: glowRadius * 0.6,
+          backgroundColor: color,
+          opacity: 0.05 + (percentage / 100) * 0.05,
+          left: size / 2 - glowRadius * 0.6,
+          top: size / 2 - glowRadius * 0.6,
+        }} />
 
         {/* Anneau extérieur — rotation lente */}
         <RNAnimated.View style={{
-          position: 'absolute', width: outerSvgSize, height: outerSvgSize,
-          marginLeft: -svgPad, marginTop: -svgPad,
+          position: 'absolute',
+          width: outerSvgSize,
+          height: outerSvgSize,
+          left: -svgPad,
+          top: -svgPad,
           transform: [{ rotate: outerRotation }],
         }}>
           <Svg width={outerSvgSize} height={outerSvgSize} viewBox={`0 0 ${outerSvgSize} ${outerSvgSize}`}>
@@ -674,15 +716,21 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
               fill="none" stroke={color} strokeWidth={1.2} strokeOpacity={0.25}
               strokeDasharray={`${size * 0.12} ${size * 0.06}`}
             />
-            <Circle cx={outerSvgSize / 2} cy={svgPad} r={3} fill={colorLight} />
-            <Circle cx={outerSvgSize / 2} cy={outerSvgSize - svgPad} r={2} fill={color} opacity={0.5} />
+            {/* Satellite normal — couleur du réacteur */}
+            <Circle cx={outerSvgSize / 2} cy={outerSvgSize - svgPad} r={2} fill={color} opacity={0.4} />
+            {/* Satellite objectif — toujours VERT + glow */}
+            <Circle cx={outerSvgSize / 2} cy={svgPad} r={3.5} fill="#00D984" />
+            <Circle cx={outerSvgSize / 2} cy={svgPad} r={6} fill="#00D984" opacity={0.2} />
           </Svg>
         </RNAnimated.View>
 
         {/* Anneau intérieur — rotation inverse */}
         <RNAnimated.View style={{
-          position: 'absolute', width: innerSvgSize, height: innerSvgSize,
-          marginLeft: -svgPadInner, marginTop: -svgPadInner,
+          position: 'absolute',
+          width: innerSvgSize,
+          height: innerSvgSize,
+          left: (size - innerSvgSize) / 2,
+          top: (size - innerSvgSize) / 2,
           transform: [{ rotate: innerRotation }],
         }}>
           <Svg width={innerSvgSize} height={innerSvgSize} viewBox={`0 0 ${innerSvgSize} ${innerSvgSize}`}>
@@ -694,29 +742,14 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
           </Svg>
         </RNAnimated.View>
 
-        {/* Arc de progression (fixe) */}
-        <View style={{ position: 'absolute', width: size, height: size }}>
-          <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-            <Circle cx={size / 2} cy={size / 2} r={arcR}
-              fill="none" stroke={color} strokeWidth={3} strokeOpacity={0.10}
-            />
-            <Circle cx={size / 2} cy={size / 2} r={arcR}
-              fill="none" stroke={color} strokeWidth={3} strokeOpacity={0.70}
-              strokeLinecap="round"
-              strokeDasharray={`${(percentage / 100) * arcCirc} ${arcCirc}`}
-              transform={`rotate(-90 ${size / 2} ${size / 2})`}
-            />
-          </Svg>
-        </View>
-
         {/* Core central — stable, semi-transparent */}
         <View style={{
           width: coreSize, height: coreSize, borderRadius: coreSize / 2,
           alignItems: 'center', justifyContent: 'center',
           backgroundColor: 'rgba(13, 17, 23, 0.5)',
-          borderWidth: 1.5, borderColor: color + '45',
+          borderWidth: 1.5, borderColor: color + '40',
           shadowColor: color, shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.5, shadowRadius: 15, elevation: 8,
+          shadowOpacity: 0.4, shadowRadius: 12, elevation: 6,
         }}>
           <Text
             numberOfLines={1}
@@ -742,7 +775,7 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
       </View>
 
       {/* Pourcentage */}
-      <View style={{ position: 'absolute', bottom: 24, left: 0, right: 0, alignItems: 'center' }}>
+      <View style={{ alignItems: 'center', marginTop: 2 }}>
         <Text style={{
           fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
           fontSize: 12, fontWeight: '700', color: color,
@@ -753,7 +786,7 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
       </View>
 
       {/* Label */}
-      <View style={{ position: 'absolute', bottom: 4, left: 0, right: 0, alignItems: 'center' }}>
+      <View style={{ alignItems: 'center' }}>
         <Text style={{ fontSize: 10, fontWeight: '600', color: '#8892A0' }}>
           {label}
         </Text>
@@ -765,170 +798,198 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
 // ============================================
 // COMPOSANT — DNA HELIX (ADN central — BMR)
 // ============================================
-const DnaHelix = ({ height = 120, width = 60, bmrValue = 1826 }) => {
-  const strands = 8;
-  const svgHeight = height;
-  const svgWidth = width;
-  const centerX = svgWidth / 2;
-  const amplitude = svgWidth * 0.35;
+const DnaHelix = ({ height = 130, width = 65, bmrValue = 1826 }) => {
+  const svgH = height;
+  const svgW = width;
+  const cx = svgW / 2;
+  const amp = svgW * 0.32;
+  const segments = 40;
+  const bridgeCount = 7;
 
-  const points1 = [];
-  const points2 = [];
-  const bridges = [];
+  // Générer les points des 2 brins
+  const strand1Points = [];
+  const strand2Points = [];
 
-  for (let i = 0; i <= strands * 2; i++) {
-    const t = i / (strands * 2);
-    const y = t * svgHeight;
-    const phase1 = Math.sin(t * Math.PI * strands) * amplitude;
-    const phase2 = Math.sin(t * Math.PI * strands + Math.PI) * amplitude;
-
-    points1.push({ x: centerX + phase1, y });
-    points2.push({ x: centerX + phase2, y });
-
-    if (i % 2 === 0 && i > 0 && i < strands * 2) {
-      bridges.push({
-        x1: centerX + phase1,
-        y1: y,
-        x2: centerX + phase2,
-        y2: y,
-      });
-    }
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const y = t * svgH;
+    const angle = t * Math.PI * 3.5;
+    const x1 = cx + Math.sin(angle) * amp;
+    const x2 = cx + Math.sin(angle + Math.PI) * amp;
+    strand1Points.push({ x: x1, y });
+    strand2Points.push({ x: x2, y });
   }
 
-  const buildPath = (points) => {
-    let d = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 1; i < points.length; i++) {
-      const prev = points[i - 1];
-      const curr = points[i];
-      const cpY = (prev.y + curr.y) / 2;
-      d += ` C ${prev.x} ${cpY}, ${curr.x} ${cpY}, ${curr.x} ${curr.y}`;
+  // Construire un path smooth avec courbes de Bézier cubiques
+  const dnaSmooth = (pts) => {
+    if (pts.length < 2) return '';
+    let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+    for (let i = 1; i < pts.length; i++) {
+      const p0 = pts[Math.max(i - 2, 0)];
+      const p1 = pts[i - 1];
+      const p2 = pts[i];
+      const p3 = pts[Math.min(i + 1, pts.length - 1)];
+
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
     }
     return d;
   };
 
+  // Ponts (barreaux) — espacés régulièrement
+  const bridges = [];
+  for (let i = 1; i <= bridgeCount; i++) {
+    const idx = Math.floor((i / (bridgeCount + 1)) * segments);
+    bridges.push({
+      x1: strand1Points[idx].x,
+      y1: strand1Points[idx].y,
+      x2: strand2Points[idx].x,
+      y2: strand2Points[idx].y,
+      depth: Math.cos((idx / segments) * Math.PI * 3.5),
+    });
+  }
+
   return (
-    <View style={{ alignItems: 'center', width: svgWidth }}>
+    <View style={{ alignItems: 'center', width: svgW }}>
+      {/* Label */}
       <Text style={{
         fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
         fontSize: 7,
         fontWeight: '700',
         color: '#8892A0',
         letterSpacing: 1.5,
-        marginBottom: 2,
-      }}>
-        VITALITÉ
-      </Text>
+        marginBottom: 3,
+      }}>VITALITÉ</Text>
 
-      <View style={{ width: svgWidth, height: svgHeight, position: 'relative' }}>
-        <Svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
+      <View style={{ width: svgW, height: svgH, position: 'relative' }}>
+        <Svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`}>
           <Defs>
-            <SvgLinearGradient id="dnaStrand1" x1="0.5" y1="0" x2="0.5" y2="1">
-              <Stop offset="0%" stopColor="#5DFFB4" stopOpacity={0.9} />
-              <Stop offset="50%" stopColor="#00D984" stopOpacity={0.7} />
-              <Stop offset="100%" stopColor="#00854F" stopOpacity={0.9} />
+            <SvgLinearGradient id="dnaGlow" x1="0.5" y1="0" x2="0.5" y2="1">
+              <Stop offset="0%" stopColor="#00D984" stopOpacity={0.06} />
+              <Stop offset="50%" stopColor="#00D984" stopOpacity={0.03} />
+              <Stop offset="100%" stopColor="#00D984" stopOpacity={0.06} />
             </SvgLinearGradient>
-
-            <SvgLinearGradient id="dnaStrand2" x1="0.5" y1="0" x2="0.5" y2="1">
-              <Stop offset="0%" stopColor="#00E5A0" stopOpacity={0.7} />
-              <Stop offset="50%" stopColor="#00BFA6" stopOpacity={0.5} />
-              <Stop offset="100%" stopColor="#008F7A" stopOpacity={0.7} />
+            <SvgLinearGradient id="strand1Grad" x1="0.5" y1="0" x2="0.5" y2="1">
+              <Stop offset="0%" stopColor="#5DFFB4" stopOpacity={0.95} />
+              <Stop offset="25%" stopColor="#00D984" stopOpacity={0.8} />
+              <Stop offset="50%" stopColor="#00BFA6" stopOpacity={0.7} />
+              <Stop offset="75%" stopColor="#00D984" stopOpacity={0.8} />
+              <Stop offset="100%" stopColor="#5DFFB4" stopOpacity={0.95} />
             </SvgLinearGradient>
-
-            <SvgLinearGradient id="dnaBridge" x1="0" y1="0.5" x2="1" y2="0.5">
-              <Stop offset="0%" stopColor="#00D984" stopOpacity={0.4} />
-              <Stop offset="50%" stopColor="#00BFA6" stopOpacity={0.6} />
-              <Stop offset="100%" stopColor="#00D984" stopOpacity={0.4} />
+            <SvgLinearGradient id="strand2Grad" x1="0.5" y1="0" x2="0.5" y2="1">
+              <Stop offset="0%" stopColor="#00E5A0" stopOpacity={0.8} />
+              <Stop offset="25%" stopColor="#00BFA6" stopOpacity={0.6} />
+              <Stop offset="50%" stopColor="#00D984" stopOpacity={0.5} />
+              <Stop offset="75%" stopColor="#00BFA6" stopOpacity={0.6} />
+              <Stop offset="100%" stopColor="#00E5A0" stopOpacity={0.8} />
+            </SvgLinearGradient>
+            <SvgLinearGradient id="bridgeGrad" x1="0" y1="0.5" x2="1" y2="0.5">
+              <Stop offset="0%" stopColor="#00D984" stopOpacity={0.5} />
+              <Stop offset="50%" stopColor="#5DFFB4" stopOpacity={0.7} />
+              <Stop offset="100%" stopColor="#00D984" stopOpacity={0.5} />
             </SvgLinearGradient>
           </Defs>
 
-          <Rect
-            x={centerX - 8}
-            y={10}
-            width={16}
-            height={svgHeight - 20}
-            rx={8}
-            fill="#00D984"
-            opacity={0.04}
-          />
+          {/* Glow vertical central */}
+          <Rect x={cx - 6} y={5} width={12} height={svgH - 10} rx={6}
+            fill="url(#dnaGlow)" />
 
+          {/* Couche arrière — brins à opacité réduite */}
+          <Path d={dnaSmooth(strand1Points)} fill="none"
+            stroke="url(#strand1Grad)" strokeWidth={2} strokeOpacity={0.3} />
+          <Path d={dnaSmooth(strand2Points)} fill="none"
+            stroke="url(#strand2Grad)" strokeWidth={2} strokeOpacity={0.3} />
+
+          {/* Ponts (barreaux) — épaisseur variable selon profondeur */}
           {bridges.map((b, i) => (
-            <Line
-              key={`bridge-${i}`}
-              x1={b.x1} y1={b.y1}
-              x2={b.x2} y2={b.y2}
-              stroke="url(#dnaBridge)"
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
-          ))}
-
-          <Path
-            d={buildPath(points1)}
-            fill="none"
-            stroke="url(#dnaStrand1)"
-            strokeWidth={2.5}
-            strokeLinecap="round"
-          />
-
-          <Path
-            d={buildPath(points2)}
-            fill="none"
-            stroke="url(#dnaStrand2)"
-            strokeWidth={2.5}
-            strokeLinecap="round"
-          />
-
-          {bridges.map((b, i) => (
-            <React.Fragment key={`nodes-${i}`}>
-              <Circle cx={b.x1} cy={b.y1} r={2.5} fill="#5DFFB4" opacity={0.8} />
-              <Circle cx={b.x2} cy={b.y2} r={2.5} fill="#00BFA6" opacity={0.8} />
+            <React.Fragment key={`br-${i}`}>
+              <Line x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2}
+                stroke="url(#bridgeGrad)"
+                strokeWidth={Math.abs(b.depth) > 0.3 ? 2.5 : 1.5}
+                strokeLinecap="round"
+                opacity={0.5 + Math.abs(b.depth) * 0.3}
+              />
+              {/* Node central du barreau */}
+              <Circle cx={(b.x1 + b.x2) / 2} cy={b.y1} r={1.5}
+                fill="#5DFFB4" opacity={0.6} />
             </React.Fragment>
           ))}
+
+          {/* Couche avant — brins principaux */}
+          <Path d={dnaSmooth(strand1Points)} fill="none"
+            stroke="url(#strand1Grad)" strokeWidth={2.5} />
+          <Path d={dnaSmooth(strand2Points)} fill="none"
+            stroke="url(#strand2Grad)" strokeWidth={2.5} />
+
+          {/* Nodes lumineux aux extrémités des ponts */}
+          {bridges.map((b, i) => (
+            <React.Fragment key={`nd-${i}`}>
+              <Circle cx={b.x1} cy={b.y1} r={2.5} fill="#5DFFB4" opacity={0.9} />
+              <Circle cx={b.x1} cy={b.y1} r={5} fill="#5DFFB4" opacity={0.15} />
+              <Circle cx={b.x2} cy={b.y2} r={2.5} fill="#00BFA6" opacity={0.9} />
+              <Circle cx={b.x2} cy={b.y2} r={5} fill="#00BFA6" opacity={0.15} />
+            </React.Fragment>
+          ))}
+
+          {/* Particules flottantes le long des brins */}
+          {[0.15, 0.35, 0.55, 0.75, 0.92].map((t, i) => {
+            const idx = Math.floor(t * segments);
+            const p = strand1Points[idx];
+            return (
+              <Circle key={`p1-${i}`} cx={p.x} cy={p.y} r={1.2}
+                fill="#5DFFB4" opacity={0.5} />
+            );
+          })}
+          {[0.1, 0.3, 0.5, 0.7, 0.88].map((t, i) => {
+            const idx = Math.floor(t * segments);
+            const p = strand2Points[idx];
+            return (
+              <Circle key={`p2-${i}`} cx={p.x} cy={p.y} r={1.2}
+                fill="#00BFA6" opacity={0.5} />
+            );
+          })}
         </Svg>
 
+        {/* Badge BMR au centre */}
         <View style={{
           position: 'absolute',
-          top: svgHeight / 2 - 22,
-          left: 0,
-          right: 0,
+          top: svgH / 2 - 24,
+          left: 0, right: 0,
           alignItems: 'center',
         }}>
           <View style={{
-            backgroundColor: 'rgba(13, 17, 23, 0.85)',
-            borderRadius: 10,
-            paddingHorizontal: 8,
-            paddingVertical: 4,
+            backgroundColor: 'rgba(10, 14, 20, 0.9)',
+            borderRadius: 12,
+            paddingHorizontal: 10,
+            paddingVertical: 5,
             borderWidth: 1,
-            borderColor: 'rgba(0, 217, 132, 0.2)',
+            borderColor: 'rgba(0, 217, 132, 0.25)',
+            shadowColor: '#00D984',
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.3,
+            shadowRadius: 10,
+            elevation: 6,
           }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 7,
-              fontWeight: '700',
-              color: '#8892A0',
-              textAlign: 'center',
-              letterSpacing: 1,
+              fontSize: 7, fontWeight: '700',
+              color: '#8892A0', textAlign: 'center', letterSpacing: 1.5,
             }}>BMR</Text>
-            <Text
-              numberOfLines={1}
-              style={{
-                fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-                fontSize: 14,
-                fontWeight: '900',
-                color: '#00D984',
-                textAlign: 'center',
-                textShadowColor: 'rgba(0, 217, 132, 0.4)',
-                textShadowOffset: { width: 0, height: 0 },
-                textShadowRadius: 6,
-              }}
-            >
-              {bmrValue}
-            </Text>
+            <Text numberOfLines={1} style={{
+              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+              fontSize: 16, fontWeight: '900',
+              color: '#00D984', textAlign: 'center',
+              textShadowColor: 'rgba(0, 217, 132, 0.5)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 8,
+            }}>{bmrValue}</Text>
             <Text style={{
-              fontSize: 7,
-              color: '#8892A0',
-              textAlign: 'center',
-              letterSpacing: 1,
+              fontSize: 6, color: '#8892A0',
+              textAlign: 'center', letterSpacing: 1.5,
             }}>KCAL</Text>
           </View>
         </View>
@@ -1383,11 +1444,11 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
               <GoalFlag />
               <Text style={{
-                color: '#EAEEF3',
+                color: '#00D984',
                 fontSize: 17,
                 fontWeight: '900',
                 marginLeft: 4,
-                textShadowColor: '#D4AF37',
+                textShadowColor: 'rgba(0, 217, 132, 0.4)',
                 textShadowOffset: { width: 0, height: 0 },
                 textShadowRadius: 5,
               }}>
@@ -1417,9 +1478,9 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             value={consumedTotal}
             percentage={Math.round((consumedTotal / DAILY_OBJECTIVE) * 100)}
             label="Consommé"
-            color="#00D984"
-            colorLight="#5DFFB4"
-            colorDark="#00854F"
+            color="#FF8C42"
+            colorLight="#FFB87A"
+            colorDark="#CC6020"
           />
 
           {/* ADN CENTRAL — BMR */}
