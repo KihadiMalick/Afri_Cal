@@ -1265,161 +1265,165 @@ const SectionDivider = () => (
 // ============================================================
 const ScrollableMetricCards = () => {
   const [activePage, setActivePage] = React.useState(0);
+  const scrollRef = React.useRef(null);
 
-  const HORIZONTAL_MARGIN = 14;
-  const CARD_GAP = 10;
-  const PAGE_WIDTH = W; // chaque page = largeur écran
+  const MARGIN = 14;           // même marge que les MetalCard
+  const GAP = 10;
+  const CARD_WIDTH = (W - MARGIN * 2 - GAP) / 2;
+
+  const goToPage = (page) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ x: page * W, animated: true });
+      setActivePage(page);
+    }
+  };
 
   const handleScroll = (event) => {
     const x = event.nativeEvent.contentOffset.x;
-    const page = Math.round(x / PAGE_WIDTH);
+    const page = Math.round(x / W);
     if (page !== activePage) setActivePage(page);
   };
 
+  // Icônes SVG
+  const FlameIcon = (
+    <Svg width={22} height={22} viewBox="0 0 24 24">
+      <Defs>
+        <SvgLinearGradient id="mcFl" x1="0.5" y1="1" x2="0.5" y2="0">
+          <Stop offset="0%" stopColor="#FF4500" />
+          <Stop offset="50%" stopColor="#FF8C42" />
+          <Stop offset="100%" stopColor="#FFD700" />
+        </SvgLinearGradient>
+      </Defs>
+      <Path d="M12 2C8.5 7 4 9.5 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8c0-2-1-3.5-2-5-.5 1.5-1.5 2.5-3 3-1-4-3-6.5-3-10z" fill="url(#mcFl)" />
+    </Svg>
+  );
+
+  const HeartIcon = (
+    <Svg width={22} height={22} viewBox="0 0 24 24">
+      <Defs>
+        <SvgLinearGradient id="mcHt" x1="0.5" y1="0" x2="0.5" y2="1">
+          <Stop offset="0%" stopColor="#FF6B8A" />
+          <Stop offset="100%" stopColor="#FF3B5C" />
+        </SvgLinearGradient>
+      </Defs>
+      <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="url(#mcHt)" />
+    </Svg>
+  );
+
+  const ShieldIcon = (
+    <Svg width={22} height={22} viewBox="0 0 24 24">
+      <Defs>
+        <SvgLinearGradient id="mcSh" x1="0.5" y1="0" x2="0.5" y2="1">
+          <Stop offset="0%" stopColor="#00D984" />
+          <Stop offset="100%" stopColor="#00854F" />
+        </SvgLinearGradient>
+      </Defs>
+      <Path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z" fill="url(#mcSh)" opacity={0.85} />
+      <Path d="M12 7c-1 2-2.5 3-2.5 5 0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5c0-2-1.5-3-2.5-5z" fill="#FFD700" opacity={0.8} />
+    </Svg>
+  );
+
+  const BoltIcon = (
+    <Svg width={22} height={22} viewBox="0 0 24 24">
+      <Defs>
+        <SvgLinearGradient id="mcBt" x1="0.5" y1="0" x2="0.5" y2="1">
+          <Stop offset="0%" stopColor="#FFE066" />
+          <Stop offset="100%" stopColor="#FFB800" />
+        </SvgLinearGradient>
+      </Defs>
+      <Path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="url(#mcBt)" />
+    </Svg>
+  );
+
+  const renderCard = (icon, label, value, valueColor, unit, shadowColor) => (
+    <View style={{
+      width: CARD_WIDTH,
+      borderRadius: 14,
+      padding: 1.2,
+      backgroundColor: '#4A4F55',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+      elevation: 8,
+    }}>
+      <LinearGradient
+        colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ borderRadius: 13, overflow: 'hidden' }}
+      >
+        <View style={{
+          paddingVertical: 14,
+          paddingHorizontal: 8,
+          borderWidth: 1,
+          borderColor: 'rgba(0, 0, 0, 0.25)',
+          borderRadius: 13,
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 100,
+        }}>
+          {icon}
+          <Text style={{
+            color: '#8892A0', fontSize: 8, fontWeight: '700',
+            letterSpacing: 1, marginTop: 6,
+          }}>{label}</Text>
+          <Text style={{
+            color: valueColor, fontSize: 22, fontWeight: '800', marginTop: 2,
+            textShadowColor: shadowColor,
+            textShadowOffset: { width: 0, height: 0 },
+            textShadowRadius: 6,
+          }}>{value}</Text>
+          <Text style={{ color: '#8892A0', fontSize: 9 }}>{unit}</Text>
+        </View>
+      </LinearGradient>
+    </View>
+  );
+
   return (
-    <View style={{ marginBottom: 12 }}>
+    <View style={{ marginBottom: 10 }}>
       <ScrollView
+        ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        snapToInterval={PAGE_WIDTH}
+        snapToInterval={W}
         snapToAlignment="start"
         decelerationRate="fast"
       >
-        {/* ===== PAGE 1 : Brûlé + BMR ===== */}
-        <View style={{ width: PAGE_WIDTH, flexDirection: 'row', justifyContent: 'center', gap: CARD_GAP, paddingHorizontal: HORIZONTAL_MARGIN }}>
-
-          {/* BRÛLÉ / SPORT — icône flamme orange */}
-          <MiniMetalCard>
-            <Svg width={24} height={24} viewBox="0 0 24 24">
-              <Defs>
-                <SvgLinearGradient id="mcFlame" x1="0.5" y1="1" x2="0.5" y2="0">
-                  <Stop offset="0%" stopColor="#FF4500" />
-                  <Stop offset="50%" stopColor="#FF8C42" />
-                  <Stop offset="100%" stopColor="#FFD700" />
-                </SvgLinearGradient>
-              </Defs>
-              <Path d="M12 2C8.5 7 4 9.5 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8c0-2-1-3.5-2-5-.5 1.5-1.5 2.5-3 3-1-4-3-6.5-3-10z" fill="url(#mcFlame)" />
-              <Path d="M12 22c-2.21 0-4-1.79-4-4 0-2 2-3.5 3-5.5.5 1 1.5 1.5 2.5 2 .5-1.5 1-3 .5-4.5 1 1.5 2 3.5 2 5.5 0 1.5-.5 2.5-1.5 3.5-.5.5-1.5 1-2.5 1z" fill="#FFD700" opacity={0.4} />
-            </Svg>
-            <Text style={{
-              color: '#8892A0', fontSize: 8, fontWeight: '700',
-              letterSpacing: 1, marginTop: 6,
-            }}>BRÛLÉ / SPORT</Text>
-            <Text style={{
-              color: '#FF8C42', fontSize: 24, fontWeight: '800', marginTop: 3,
-              textShadowColor: 'rgba(255, 140, 66, 0.25)',
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 6,
-            }}>870</Text>
-            <Text style={{ color: '#8892A0', fontSize: 10 }}>kcal</Text>
-          </MiniMetalCard>
-
-          {/* BMR — icône cœur avec pouls */}
-          <MiniMetalCard>
-            <Svg width={24} height={24} viewBox="0 0 24 24">
-              <Defs>
-                <SvgLinearGradient id="mcHeart" x1="0.5" y1="0" x2="0.5" y2="1">
-                  <Stop offset="0%" stopColor="#FF6B8A" />
-                  <Stop offset="100%" stopColor="#FF3B5C" />
-                </SvgLinearGradient>
-              </Defs>
-              <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="url(#mcHeart)" />
-              <Ellipse cx="8" cy="7.5" rx="2.5" ry="1.8" fill="white" opacity={0.2} />
-            </Svg>
-            <Text style={{
-              color: '#8892A0', fontSize: 8, fontWeight: '700',
-              letterSpacing: 1, marginTop: 6,
-            }}>BMR</Text>
-            <Text style={{
-              color: '#00D984', fontSize: 24, fontWeight: '800', marginTop: 3,
-              textShadowColor: 'rgba(0, 217, 132, 0.2)',
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 6,
-            }}>1 826</Text>
-            <Text style={{ color: '#8892A0', fontSize: 10 }}>kcal</Text>
-          </MiniMetalCard>
+        {/* PAGE 1 */}
+        <View style={{
+          width: W,
+          paddingHorizontal: MARGIN,
+          flexDirection: 'row',
+          gap: GAP,
+        }}>
+          {renderCard(FlameIcon, 'BRÛLÉ / SPORT', '870', '#FF8C42', 'kcal', 'rgba(255,140,66,0.2)')}
+          {renderCard(HeartIcon, 'BMR', '1 826', '#00D984', 'kcal', 'rgba(0,217,132,0.2)')}
         </View>
 
-        {/* ===== PAGE 2 : Discipline + TDEE ===== */}
-        <View style={{ width: PAGE_WIDTH, flexDirection: 'row', justifyContent: 'center', gap: CARD_GAP, paddingHorizontal: HORIZONTAL_MARGIN }}>
-
-          {/* DISCIPLINE — icône bouclier avec flamme (streak) */}
-          <MiniMetalCard>
-            <Svg width={24} height={24} viewBox="0 0 24 24">
-              <Defs>
-                <SvgLinearGradient id="mcShield" x1="0.5" y1="0" x2="0.5" y2="1">
-                  <Stop offset="0%" stopColor="#00D984" />
-                  <Stop offset="100%" stopColor="#00854F" />
-                </SvgLinearGradient>
-              </Defs>
-              {/* Bouclier */}
-              <Path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z" fill="url(#mcShield)" opacity={0.85} />
-              {/* Flamme au centre du bouclier */}
-              <Path d="M12 7c-1 2-2.5 3-2.5 5 0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5c0-2-1.5-3-2.5-5z" fill="#FFD700" opacity={0.8} />
-              {/* Reflet */}
-              <Ellipse cx="9" cy="7" rx="2" ry="2.5" fill="white" opacity={0.12} />
-            </Svg>
-            <Text style={{
-              color: '#8892A0', fontSize: 8, fontWeight: '700',
-              letterSpacing: 1, marginTop: 6,
-            }}>DISCIPLINE</Text>
-            <Text style={{
-              color: '#00D984', fontSize: 24, fontWeight: '800', marginTop: 3,
-              textShadowColor: 'rgba(0, 217, 132, 0.2)',
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 6,
-            }}>12</Text>
-            <Text style={{ color: '#8892A0', fontSize: 10 }}>jours série</Text>
-          </MiniMetalCard>
-
-          {/* TDEE — icône éclair énergie */}
-          <MiniMetalCard>
-            <Svg width={24} height={24} viewBox="0 0 24 24">
-              <Defs>
-                <SvgLinearGradient id="mcBolt" x1="0.5" y1="0" x2="0.5" y2="1">
-                  <Stop offset="0%" stopColor="#FFE066" />
-                  <Stop offset="100%" stopColor="#FFB800" />
-                </SvgLinearGradient>
-              </Defs>
-              <Path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="url(#mcBolt)" />
-              <Path d="M11 5l-4 7h3.5l-.5 4 4.5-6H11l.5-5z" fill="white" opacity={0.12} />
-            </Svg>
-            <Text style={{
-              color: '#8892A0', fontSize: 8, fontWeight: '700',
-              letterSpacing: 1, marginTop: 6,
-            }}>TDEE</Text>
-            <Text style={{
-              color: '#4DA6FF', fontSize: 24, fontWeight: '800', marginTop: 3,
-              textShadowColor: 'rgba(77, 166, 255, 0.2)',
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 6,
-            }}>2 830</Text>
-            <Text style={{ color: '#8892A0', fontSize: 10 }}>kcal</Text>
-          </MiniMetalCard>
+        {/* PAGE 2 */}
+        <View style={{
+          width: W,
+          paddingHorizontal: MARGIN,
+          flexDirection: 'row',
+          gap: GAP,
+        }}>
+          {renderCard(ShieldIcon, 'DISCIPLINE', '12', '#00D984', 'jours série', 'rgba(0,217,132,0.2)')}
+          {renderCard(BoltIcon, 'TDEE', '2 830', '#4DA6FF', 'kcal', 'rgba(77,166,255,0.2)')}
         </View>
       </ScrollView>
 
-      {/* ===== DOTS INDICATEURS ===== */}
-      <View style={{
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 8,
-        gap: 6,
-      }}>
+      {/* DOTS gris métallique */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 8, gap: 6 }}>
         <View style={{
-          width: activePage === 0 ? 18 : 6,
-          height: 6,
-          borderRadius: 3,
-          backgroundColor: activePage === 0 ? '#8892A0' : 'rgba(136, 146, 160, 0.25)',
+          width: activePage === 0 ? 18 : 6, height: 5, borderRadius: 2.5,
+          backgroundColor: activePage === 0 ? '#8892A0' : 'rgba(136,146,160,0.25)',
         }} />
         <View style={{
-          width: activePage === 1 ? 18 : 6,
-          height: 6,
-          borderRadius: 3,
-          backgroundColor: activePage === 1 ? '#8892A0' : 'rgba(136, 146, 160, 0.25)',
+          width: activePage === 1 ? 18 : 6, height: 5, borderRadius: 2.5,
+          backgroundColor: activePage === 1 ? '#8892A0' : 'rgba(136,146,160,0.25)',
         }} />
       </View>
     </View>
@@ -1563,97 +1567,100 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           />
         </View>
 
-        {/* LIGNE SÉPARATRICE HORIZONTALE */}
-        <View style={{ height: 1, backgroundColor: 'rgba(255, 255, 255, 0.06)', marginTop: 8, marginBottom: 8 }} />
+        {/* ===== LIGNE SÉPARATRICE AVEC TITRES ENCASTRÉS ===== */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginTop: 10,
+          marginBottom: 6,
+          paddingHorizontal: 4,
+        }}>
+          {/* Ligne gauche */}
+          <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
 
-        {/* RANGÉE DE LABELS EN BAS — tout aligné */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 8 }}>
+          {/* Titre "Consommé" */}
+          <Text style={{
+            fontSize: 9,
+            fontWeight: '700',
+            color: '#EAEEF3',
+            paddingHorizontal: 6,
+          }}>Consommé</Text>
 
-          {/* COLONNE GAUCHE — Consommé */}
+          {/* Ligne milieu-gauche */}
+          <View style={{ flex: 0.6, height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+
+          {/* Titre "VITALITÉ" */}
+          <Text style={{
+            fontSize: 8,
+            fontWeight: '800',
+            color: '#D4AF37',
+            paddingHorizontal: 6,
+            letterSpacing: 1.5,
+          }}>VITALITÉ</Text>
+
+          {/* Ligne milieu-droite */}
+          <View style={{ flex: 0.6, height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+
+          {/* Titre "Reste" */}
+          <Text style={{
+            fontSize: 9,
+            fontWeight: '700',
+            color: '#EAEEF3',
+            paddingHorizontal: 6,
+          }}>Reste</Text>
+
+          {/* Ligne droite */}
+          <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+        </View>
+
+        {/* ===== POURCENTAGES XXL + SOUS-TITRES ===== */}
+        <View style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          paddingHorizontal: 8,
+          marginBottom: 4,
+        }}>
+          {/* 68% — Consommé */}
           <View style={{ alignItems: 'center', flex: 1 }}>
-            {/* LIGNE 1 : chiffre */}
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 16,
-              fontWeight: '800',
+              fontSize: 26,
+              fontWeight: '900',
               color: '#FF8C42',
-              textShadowColor: 'rgba(255, 140, 66, 0.25)',
+              textShadowColor: 'rgba(255, 140, 66, 0.3)',
               textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 4,
-              height: 22,
-              lineHeight: 22,
-              textAlignVertical: 'center',
+              textShadowRadius: 8,
             }}>{Math.round((consumedTotal / DAILY_OBJECTIVE) * 100)}%</Text>
-            {/* LIGNE 2 : titre */}
-            <Text style={{
-              fontSize: 11, fontWeight: '700', color: '#EAEEF3',
-              marginTop: 2, height: 14, lineHeight: 14,
-            }}>Consommé</Text>
-            {/* LIGNE 3 : sous-titre */}
-            <Text style={{
-              fontSize: 8, fontWeight: '500', color: '#8892A0',
-              height: 12, lineHeight: 12,
-            }}>/ Repas</Text>
+            <Text style={{ fontSize: 8, fontWeight: '500', color: '#8892A0', marginTop: 1 }}>/ Repas</Text>
           </View>
 
-          {/* Barre verticale */}
-          <View style={{ width: 1, height: 48, backgroundColor: 'rgba(255,255,255,0.06)', alignSelf: 'center' }} />
-
-          {/* COLONNE CENTRE — Vitalité */}
+          {/* 84 — Vitalité */}
           <View style={{ alignItems: 'center', flex: 1 }}>
-            {/* LIGNE 1 : score — MÊME hauteur que les % */}
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 16,
+              fontSize: 28,
               fontWeight: '900',
               color: '#00D984',
               textShadowColor: 'rgba(0, 217, 132, 0.4)',
               textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 8,
-              height: 22,
-              lineHeight: 22,
-              textAlignVertical: 'center',
+              textShadowRadius: 10,
             }}>84</Text>
-            {/* LIGNE 2 : VITALITÉ */}
-            <Text style={{
-              fontSize: 8, fontWeight: '800', color: '#D4AF37',
-              letterSpacing: 2, marginTop: 2, height: 14, lineHeight: 14,
-            }}>VITALITÉ</Text>
-            {/* LIGNE 3 : / 100 */}
-            <Text style={{
-              fontSize: 8, fontWeight: '600', color: '#8892A0',
-              letterSpacing: 1, height: 12, lineHeight: 12,
-            }}>/ 100</Text>
+            <Text style={{ fontSize: 8, fontWeight: '600', color: '#8892A0', letterSpacing: 1, marginTop: 1 }}>/ 100</Text>
           </View>
 
-          {/* Barre verticale */}
-          <View style={{ width: 1, height: 48, backgroundColor: 'rgba(255,255,255,0.06)', alignSelf: 'center' }} />
-
-          {/* COLONNE DROITE — Reste */}
+          {/* 69% — Reste */}
           <View style={{ alignItems: 'center', flex: 1 }}>
-            {/* LIGNE 1 */}
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 16,
-              fontWeight: '800',
+              fontSize: 26,
+              fontWeight: '900',
               color: '#4DA6FF',
-              textShadowColor: 'rgba(77, 166, 255, 0.25)',
+              textShadowColor: 'rgba(77, 166, 255, 0.3)',
               textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 4,
-              height: 22,
-              lineHeight: 22,
-              textAlignVertical: 'center',
+              textShadowRadius: 8,
             }}>{Math.round((remaining / DAILY_OBJECTIVE) * 100)}%</Text>
-            {/* LIGNE 2 */}
-            <Text style={{
-              fontSize: 11, fontWeight: '700', color: '#EAEEF3',
-              marginTop: 2, height: 14, lineHeight: 14,
-            }}>Reste</Text>
-            {/* LIGNE 3 */}
-            <Text style={{
-              fontSize: 8, fontWeight: '500', color: '#8892A0',
-              height: 12, lineHeight: 12,
-            }}>à consommer</Text>
+            <Text style={{ fontSize: 8, fontWeight: '500', color: '#8892A0', marginTop: 1 }}>à consommer</Text>
           </View>
         </View>
       </MetalCard>
