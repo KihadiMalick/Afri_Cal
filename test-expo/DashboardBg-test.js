@@ -440,6 +440,93 @@ const GlassCard = ({ children, style }) => (
   </View>
 );
 
+// ============================================
+// COMPOSANT METALCARD — Plaque métal brossé
+// ============================================
+const MetalCard = ({ children, style, noPadding = false }) => (
+  <View style={[metalStyles.outerBorder, style]}>
+    <LinearGradient
+      colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={metalStyles.innerGradient}
+    >
+      <View style={[metalStyles.cardContent, noPadding && { padding: 0 }]}>
+        {children}
+      </View>
+    </LinearGradient>
+  </View>
+);
+
+const metalStyles = StyleSheet.create({
+  outerBorder: {
+    borderRadius: 18,
+    padding: 1.2,
+    backgroundColor: '#4A4F55',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 12,
+    marginHorizontal: 14,
+    marginBottom: 12,
+  },
+  innerGradient: {
+    borderRadius: 17,
+    overflow: 'hidden',
+  },
+  cardContent: {
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.25)',
+    borderRadius: 17,
+  },
+});
+
+// ============================================
+// MINI METAL CARD — version compacte pour les 3 métriques
+// ============================================
+const MiniMetalCard = ({ children, style }) => (
+  <View style={[miniMetalStyles.outerBorder, style]}>
+    <LinearGradient
+      colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={miniMetalStyles.innerGradient}
+    >
+      <View style={miniMetalStyles.cardContent}>
+        {children}
+      </View>
+    </LinearGradient>
+  </View>
+);
+
+const miniMetalStyles = StyleSheet.create({
+  outerBorder: {
+    flex: 1,
+    borderRadius: 14,
+    padding: 1,
+    backgroundColor: '#4A4F55',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  innerGradient: {
+    borderRadius: 13,
+    overflow: 'hidden',
+  },
+  cardContent: {
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.25)',
+    borderRadius: 13,
+    alignItems: 'center',
+  },
+});
+
 // ============================================================
 // UTILITAIRE — Bézier smooth path
 // ============================================================
@@ -553,21 +640,6 @@ const useRotation = (duration, reverse = false) => {
   });
 };
 
-const usePulse = (min = 0.97, max = 1.03) => {
-  const pulse = useRef(new RNAnimated.Value(0)).current;
-  useEffect(() => {
-    const anim = RNAnimated.loop(
-      RNAnimated.sequence([
-        RNAnimated.timing(pulse, { toValue: 1, duration: 3500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        RNAnimated.timing(pulse, { toValue: 0, duration: 3500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
-    );
-    anim.start();
-    return () => anim.stop();
-  }, []);
-  return pulse.interpolate({ inputRange: [0, 1], outputRange: [min, max] });
-};
-
 const useGlow = () => {
   const glow = useRef(new RNAnimated.Value(0)).current;
   useEffect(() => {
@@ -589,21 +661,25 @@ const useGlow = () => {
 const ReactorCore = ({ size, value, percentage, label, color, colorLight, maxSize }) => {
   const outerRotation = useRotation(20000);
   const innerRotation = useRotation(14000, true);
-  const coreScale = usePulse(0.97, 1.03);
   const glowOpacity = useGlow();
 
   const coreSize = size * 0.48;
   const innerRingSize = size * 0.72;
-  const displayValue = value >= 1000 ? value.toLocaleString('fr-FR') : value.toString();
+  const displayValue = Math.round(value).toString();
   const arcR = size / 2 - 8;
   const arcCirc = Math.PI * 2 * arcR;
   const effectiveMax = maxSize || size;
 
+  const svgPadOuter = 12;
+  const outerSvgSize = size + svgPadOuter * 2;
+  const svgPadInner = 8;
+  const innerSvgSize = innerRingSize + svgPadInner * 2;
+
   return (
-    <View style={{ alignItems: 'center', width: effectiveMax + 10, height: effectiveMax + 55 }}>
+    <View style={{ alignItems: 'center', width: effectiveMax + 24, height: effectiveMax + 55 }}>
       {/* Spacer pour centrer verticalement les petits réacteurs */}
       <View style={{ height: (effectiveMax - size) / 2 }} />
-      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: size + 24, height: size + 24, alignItems: 'center', justifyContent: 'center', overflow: 'visible' }}>
 
         {/* Glow ambiant */}
         <RNAnimated.View style={{
@@ -613,30 +689,32 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, maxSiz
 
         {/* Anneau extérieur — rotation */}
         <RNAnimated.View style={{
-          position: 'absolute', width: size, height: size,
+          position: 'absolute', width: outerSvgSize, height: outerSvgSize,
+          marginLeft: -svgPadOuter, marginTop: -svgPadOuter,
           transform: [{ rotate: outerRotation }],
         }}>
-          <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-            <Circle cx={size / 2} cy={size / 2} r={size / 2 - 3}
+          <Svg width={outerSvgSize} height={outerSvgSize} viewBox={`0 0 ${outerSvgSize} ${outerSvgSize}`}>
+            <Circle cx={outerSvgSize / 2} cy={outerSvgSize / 2} r={size / 2 - 3}
               fill="none" stroke={color} strokeWidth={1.5} strokeOpacity={0.3}
               strokeDasharray={`${size * 0.15} ${size * 0.08}`}
             />
-            <Circle cx={size / 2} cy={3} r={3.5} fill={colorLight} />
-            <Circle cx={size / 2} cy={size - 3} r={2.5} fill={color} opacity={0.6} />
+            <Circle cx={outerSvgSize / 2} cy={svgPadOuter} r={3.5} fill={colorLight} />
+            <Circle cx={outerSvgSize / 2} cy={outerSvgSize - svgPadOuter} r={2.5} fill={color} opacity={0.6} />
           </Svg>
         </RNAnimated.View>
 
         {/* Anneau intérieur — rotation inverse */}
         <RNAnimated.View style={{
-          position: 'absolute', width: innerRingSize, height: innerRingSize,
+          position: 'absolute', width: innerSvgSize, height: innerSvgSize,
+          marginLeft: -svgPadInner, marginTop: -svgPadInner,
           transform: [{ rotate: innerRotation }],
         }}>
-          <Svg width={innerRingSize} height={innerRingSize} viewBox={`0 0 ${innerRingSize} ${innerRingSize}`}>
-            <Circle cx={innerRingSize / 2} cy={innerRingSize / 2} r={innerRingSize / 2 - 2}
+          <Svg width={innerSvgSize} height={innerSvgSize} viewBox={`0 0 ${innerSvgSize} ${innerSvgSize}`}>
+            <Circle cx={innerSvgSize / 2} cy={innerSvgSize / 2} r={innerRingSize / 2 - 2}
               fill="none" stroke={color} strokeWidth={1} strokeOpacity={0.2}
               strokeDasharray={`${innerRingSize * 0.12} ${innerRingSize * 0.06}`}
             />
-            <Circle cx={innerRingSize / 2} cy={2} r={3} fill={colorLight} opacity={0.8} />
+            <Circle cx={innerSvgSize / 2} cy={svgPadInner} r={3} fill={colorLight} opacity={0.8} />
           </Svg>
         </RNAnimated.View>
 
@@ -644,10 +722,10 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, maxSiz
         <View style={{ position: 'absolute', width: size, height: size }}>
           <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
             <Circle cx={size / 2} cy={size / 2} r={arcR}
-              fill="none" stroke={color} strokeWidth={3} strokeOpacity={0.12}
+              fill="none" stroke={color} strokeWidth={3} strokeOpacity={0.10}
             />
             <Circle cx={size / 2} cy={size / 2} r={arcR}
-              fill="none" stroke={color} strokeWidth={3} strokeOpacity={0.75}
+              fill="none" stroke={color} strokeWidth={3} strokeOpacity={0.70}
               strokeLinecap="round"
               strokeDasharray={`${(percentage / 100) * arcCirc} ${arcCirc}`}
               transform={`rotate(-90 ${size / 2} ${size / 2})`}
@@ -655,21 +733,26 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, maxSiz
           </Svg>
         </View>
 
-        {/* Core central — pulse */}
-        <RNAnimated.View style={{
+        {/* Core central — stable (no pulse) */}
+        <View style={{
           width: coreSize, height: coreSize, borderRadius: coreSize / 2,
-          transform: [{ scale: coreScale }],
           alignItems: 'center', justifyContent: 'center',
-          backgroundColor: 'rgba(13, 17, 23, 0.85)',
-          borderWidth: 1.5, borderColor: color + '50',
+          backgroundColor: 'rgba(13, 17, 23, 0.88)',
+          borderWidth: 1.5, borderColor: color + '45',
           shadowColor: color, shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.5, shadowRadius: 15, elevation: 8,
         }}>
-          <Text style={{
-            fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-            fontSize: coreSize * 0.34, fontWeight: '900', color: '#EAEEF3',
-            textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8,
-          }}>
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.6}
+            style={{
+              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+              fontSize: coreSize * 0.24, fontWeight: '800', color: '#EAEEF3',
+              textAlign: 'center',
+              textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6,
+            }}
+          >
             {displayValue}
           </Text>
           <Text style={{
@@ -678,7 +761,7 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, maxSiz
           }}>
             KCAL
           </Text>
-        </RNAnimated.View>
+        </View>
 
       </View>
 
@@ -706,8 +789,11 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, maxSiz
 // ============================================================
 // COMPOSANT — Graphe Reactor Cores (3 réacteurs)
 // ============================================================
-const REACTOR_SIZE_LARGE = 82;
-const REACTOR_SIZE_SMALL = 64;
+const REACTOR_PADDING = 28;
+const REACTOR_GAP = 8;
+const AVAILABLE_WIDTH = W - REACTOR_PADDING * 2 - REACTOR_GAP * 2;
+const REACTOR_SIZE_LARGE = Math.floor(AVAILABLE_WIDTH * 0.37);
+const REACTOR_SIZE_SMALL = Math.floor(AVAILABLE_WIDTH * 0.22);
 
 const ReactorCoresChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
   const objectif = DAILY_OBJECTIVE;
@@ -716,7 +802,7 @@ const ReactorCoresChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
   const pctReste = Math.round((reste / objectif) * 100);
 
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'flex-start', paddingHorizontal: 10, width: '100%', paddingVertical: 6 }}>
+    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: REACTOR_GAP, width: '100%', paddingVertical: 6 }}>
       <ReactorCore size={REACTOR_SIZE_LARGE} maxSize={REACTOR_SIZE_LARGE} value={consomme} percentage={pctConsomme}
         label="Consommé" color="#00D984" colorLight="#5DFFB4"
       />
@@ -903,47 +989,51 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }
   const goalL = (goalMl / 1000).toFixed(1);
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={s.hydrationCard}>
-      {/* Mini silhouette gauche */}
-      <SilhouetteFill fillPercent={percent} height={56} gender={gender} />
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: 0 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {/* Mini silhouette gauche */}
+          <SilhouetteFill fillPercent={percent} height={56} gender={gender} />
 
-      {/* Infos droite */}
-      <View style={{ flex: 1, marginLeft: 14 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <DropletIcon size={16} />
-            <Text style={s.hydrationTitle}>HYDRATATION</Text>
+          {/* Infos droite */}
+          <View style={{ flex: 1, marginLeft: 14 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <DropletIcon size={16} />
+                <Text style={s.hydrationTitle}>HYDRATATION</Text>
+              </View>
+              <Text style={s.hydrationLiters}>{liters} / {goalL}L</Text>
+            </View>
+
+            {/* Barre de progression */}
+            <View style={s.hydroBar}>
+              <LinearGradient
+                colors={['#4DA6FF', '#00BCD4']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={[s.hydroBarFill, { width: percent + '%' }]}
+              />
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 3 }}>
+              <Text style={s.hydroGlasses}>{glasses}/{totalGlasses} verres 🥛</Text>
+              <Text style={s.hydroPercent}>{percent}%</Text>
+            </View>
+
+            {/* Sport water loss alert */}
+            {sportAlert ? (
+              <Text style={{ color: '#FF8C42', fontSize: 10, marginTop: 4 }}>{sportAlert}</Text>
+            ) : (
+              <Text style={{ color: '#555E6C', fontSize: 10, marginTop: 4 }}>Tap pour ajouter →</Text>
+            )}
+
+            {/* Low hydration warning */}
+            {percent < 30 && percent > 0 && (
+              <Text style={{ color: '#FF3B30', fontSize: 10, fontWeight: '700', marginTop: 2 }}>
+                ⚠️ Pensez à vous réhydrater ! 💧
+              </Text>
+            )}
           </View>
-          <Text style={s.hydrationLiters}>{liters} / {goalL}L</Text>
         </View>
-
-        {/* Barre de progression */}
-        <View style={s.hydroBar}>
-          <LinearGradient
-            colors={['#4DA6FF', '#00BCD4']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={[s.hydroBarFill, { width: percent + '%' }]}
-          />
-        </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 3 }}>
-          <Text style={s.hydroGlasses}>{glasses}/{totalGlasses} verres 🥛</Text>
-          <Text style={s.hydroPercent}>{percent}%</Text>
-        </View>
-
-        {/* Sport water loss alert */}
-        {sportAlert ? (
-          <Text style={{ color: '#FF8C42', fontSize: 10, marginTop: 4 }}>{sportAlert}</Text>
-        ) : (
-          <Text style={{ color: '#555E6C', fontSize: 10, marginTop: 4 }}>Tap pour ajouter →</Text>
-        )}
-
-        {/* Low hydration warning */}
-        {percent < 30 && percent > 0 && (
-          <Text style={{ color: '#FF3B30', fontSize: 10, fontWeight: '700', marginTop: 2 }}>
-            ⚠️ Pensez à vous réhydrater ! 💧
-          </Text>
-        )}
-      </View>
+      </MetalCard>
     </TouchableOpacity>
   );
 };
@@ -1136,47 +1226,108 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       showsVerticalScrollIndicator={false}
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
-      <GlassCard style={{ paddingHorizontal: 8, paddingTop: 14, paddingBottom: 10 }}>
+      <MetalCard style={{ marginHorizontal: 0 }}>
+        {/* ===== LIGNE LUMINEUSE EN HAUT ===== */}
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 30,
+          right: 30,
+          height: 1,
+          backgroundColor: 'rgba(0, 217, 132, 0.12)',
+        }} />
+
         {/* Header: titre + objectif */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-          <Text style={s.cardLabel}>BILAN ÉNERGÉTIQUE</Text>
+          <Text style={{
+            color: '#EAEEF3',
+            fontSize: 12,
+            fontWeight: '800',
+            letterSpacing: 2,
+            fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+          }}>
+            BILAN ÉNERGÉTIQUE
+          </Text>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={{ color: '#8892A0', fontSize: 11 }}>Objectif de Calories</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={{ color: '#8892A0', fontSize: 10 }}>Objectif de Calories</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
               <GoalFlag />
-              <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '900', textShadowColor: '#D4AF37', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
+              <Text style={{
+                color: '#EAEEF3',
+                fontSize: 17,
+                fontWeight: '900',
+                marginLeft: 4,
+                textShadowColor: '#D4AF37',
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 5,
+              }}>
+                {DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal
+              </Text>
             </View>
           </View>
         </View>
 
+        {/* Séparateur métal */}
+        <View style={{
+          height: 1,
+          backgroundColor: 'rgba(255, 255, 255, 0.04)',
+          marginVertical: 10,
+        }} />
+
         <ReactorCoresChart consomme={consumedTotal} brule={burnedTotal} reste={remaining} />
-      </GlassCard>
+      </MetalCard>
 
       <SectionDivider />
 
       {/* ====== 3 MINI-CARTES — BMR / Discipline / TDEE ====== */}
-      <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+      <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 14, marginBottom: 12, marginTop: 10 }}>
         {/* BMR */}
-        <View style={s.miniCard}>
+        <MiniMetalCard>
           <HeartIcon />
-          <Text style={s.miniCardTitle}>BMR</Text>
-          <Text style={[s.miniValue, { color: '#00D984', textShadowColor: '#FF6B8A', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 }]}>1 826</Text>
-          <Text style={s.miniCardUnit}>kcal</Text>
-        </View>
-        {/* Discipline */}
-        <View style={s.miniCard}>
+          <Text style={{ color: '#8892A0', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginTop: 6 }}>BMR</Text>
+          <Text style={{
+            color: '#00D984',
+            fontSize: 22,
+            fontWeight: '800',
+            marginTop: 2,
+            textShadowColor: 'rgba(0, 217, 132, 0.3)',
+            textShadowOffset: { width: 0, height: 0 },
+            textShadowRadius: 8,
+          }}>1 826</Text>
+          <Text style={{ color: '#8892A0', fontSize: 10 }}>kcal</Text>
+        </MiniMetalCard>
+
+        {/* DISCIPLINE */}
+        <MiniMetalCard>
           <FlameIcon />
-          <Text style={s.miniCardTitle}>DISCIPLINE</Text>
-          <Text style={[s.miniValue, { color: streakColor, fontSize: 26, textShadowColor: '#FF8C42', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 }]}>{streakDays}</Text>
-          <Text style={s.miniCardUnit}>jours série</Text>
-        </View>
+          <Text style={{ color: '#8892A0', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginTop: 6 }}>DISCIPLINE</Text>
+          <Text style={{
+            color: '#FF8C42',
+            fontSize: 22,
+            fontWeight: '800',
+            marginTop: 2,
+            textShadowColor: 'rgba(0, 217, 132, 0.2)',
+            textShadowOffset: { width: 0, height: 0 },
+            textShadowRadius: 8,
+          }}>{streakDays}</Text>
+          <Text style={{ color: '#8892A0', fontSize: 10 }}>jours série</Text>
+        </MiniMetalCard>
+
         {/* TDEE */}
-        <View style={s.miniCard}>
+        <MiniMetalCard>
           <BoltIcon />
-          <Text style={s.miniCardTitle}>TDEE</Text>
-          <Text style={[s.miniValue, { color: '#00D984', textShadowColor: '#FFB800', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 }]}>2 830</Text>
-          <Text style={s.miniCardUnit}>kcal</Text>
-        </View>
+          <Text style={{ color: '#8892A0', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginTop: 6 }}>TDEE</Text>
+          <Text style={{
+            color: '#4DA6FF',
+            fontSize: 22,
+            fontWeight: '800',
+            marginTop: 2,
+            textShadowColor: 'rgba(0, 217, 132, 0.2)',
+            textShadowOffset: { width: 0, height: 0 },
+            textShadowRadius: 8,
+          }}>2 830</Text>
+          <Text style={{ color: '#8892A0', fontSize: 10 }}>kcal</Text>
+        </MiniMetalCard>
       </View>
 
       <SectionDivider />
@@ -1197,56 +1348,88 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       <SectionDivider />
 
       {/* DERNIER REPAS */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 18, marginBottom: 8, marginLeft: 4 }}>
-        <PlateIcon />
-        <Text style={s.sectionTitleText}>DERNIER REPAS</Text>
-      </View>
-      <GlassCard>
+      <MetalCard style={{ marginHorizontal: 0, marginTop: 18 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+          <PlateIcon />
+          <Text style={{
+            color: '#EAEEF3',
+            fontSize: 14,
+            fontWeight: '700',
+            letterSpacing: 1,
+            marginLeft: 8,
+          }}>DERNIER REPAS</Text>
+        </View>
+
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={s.mealPhoto}>
+          <View style={{
+            width: 52,
+            height: 52,
+            borderRadius: 12,
+            backgroundColor: 'rgba(0, 217, 132, 0.06)',
+            borderWidth: 1,
+            borderColor: 'rgba(0, 217, 132, 0.12)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginRight: 12,
+          }}>
             <PlateIcon />
           </View>
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={s.mealName}>Poulet grillé + Riz</Text>
-            <Text style={s.mealMeta}>450 kcal • 12h30</Text>
-            <View style={{ flexDirection: 'row', gap: 12, marginTop: 6 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: '#EAEEF3', fontSize: 14, fontWeight: '600' }}>Poulet grillé + Riz</Text>
+            <Text style={{ color: '#8892A0', fontSize: 11, marginTop: 2 }}>450 kcal • 12h30</Text>
+            <View style={{ flexDirection: 'row', marginTop: 4, gap: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF6B8A', marginRight: 4 }} />
-                <Text style={s.macroTag}>35g P</Text>
+                <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#FF6B8A', marginRight: 4 }} />
+                <Text style={{ color: '#8892A0', fontSize: 10 }}>35g P</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFB800', marginRight: 4 }} />
-                <Text style={s.macroTag}>20g G</Text>
+                <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#FFB800', marginRight: 4 }} />
+                <Text style={{ color: '#8892A0', fontSize: 10 }}>20g G</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#4DA6FF', marginRight: 4 }} />
-                <Text style={s.macroTag}>15g L</Text>
+                <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#4DA6FF', marginRight: 4 }} />
+                <Text style={{ color: '#8892A0', fontSize: 10 }}>15g L</Text>
               </View>
             </View>
           </View>
         </View>
-      </GlassCard>
+      </MetalCard>
 
       {/* CONSEIL DU JOUR */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 18, marginBottom: 8, marginLeft: 4 }}>
-        <LightbulbIcon />
-        <Text style={s.sectionTitleText}>CONSEIL DU JOUR</Text>
-      </View>
-      <GlassCard>
-        <Text style={s.adviceText}>
-          {'"Journée nuageuse ? Essayez un bon Gratin de légumes pour le réconfort !"'}
+      <MetalCard style={{ marginHorizontal: 0, marginTop: 18 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+          <LightbulbIcon />
+          <Text style={{
+            color: '#EAEEF3',
+            fontSize: 14,
+            fontWeight: '700',
+            letterSpacing: 1,
+            marginLeft: 8,
+          }}>CONSEIL DU JOUR</Text>
+        </View>
+        <Text style={{
+          color: '#8892A0',
+          fontSize: 12,
+          fontStyle: 'italic',
+          lineHeight: 18,
+        }}>
+          {"Journée nuageuse ? Essayez un bon Gratin de légumes pour le réconfort !"}
         </Text>
-        <TouchableOpacity style={s.adviceLink} activeOpacity={0.7}>
-          <Text style={s.adviceLinkText}>Voir Recettes</Text>
-          <Ionicons name="chevron-forward" size={14} color="#00D984" />
-        </TouchableOpacity>
-      </GlassCard>
+        <Text style={{
+          color: '#00D984',
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 8,
+        }}>
+          Voir Recettes  ›
+        </Text>
+      </MetalCard>
 
       {/* SUGGESTION ACTIVITÉ (dynamique basée sur surplus) */}
       {consumedTotal - burnedExtra > DAILY_OBJECTIVE && (
         <>
-          <Text style={s.sectionTitle}>🏃 SUGGESTION ACTIVITÉ</Text>
-          <GlassCard>
+          <MetalCard style={{ marginHorizontal: 0, marginTop: 18 }}>
+            <Text style={s.sectionTitle}>🏃 SUGGESTION ACTIVITÉ</Text>
             <Text style={s.surplusText}>Surplus : +{consumedTotal - burnedExtra - DAILY_OBJECTIVE} kcal</Text>
             <View style={{ gap: 8, marginTop: 10 }}>
               {suggestActivities(consumedTotal - burnedExtra - DAILY_OBJECTIVE).slice(0, 2).map((sug, i) => (
@@ -1257,41 +1440,34 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                 </View>
               ))}
             </View>
-          </GlassCard>
+          </MetalCard>
         </>
       )}
 
       {/* STATS AVANCÉES — FLOUTÉES */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 18, marginBottom: 8, marginLeft: 4 }}>
-        <StatsIcon />
-        <Text style={s.sectionTitleText}>MES STATS (7 jours)</Text>
-      </View>
-      <View style={{ position: 'relative', overflow: 'hidden', borderRadius: 16 }}>
-        <GlassCard style={{ opacity: 0.3 }}>
-          <View style={{ height: 80, justifyContent: 'center', alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', gap: 4, marginBottom: 6 }}>
-              {[40, 65, 50, 80, 70, 55, 90].map((h, i) => (
-                <View key={i} style={{
-                  width: 20, height: h * 0.6, borderRadius: 4,
-                  backgroundColor: 'rgba(0,217,132,0.3)',
-                }} />
-              ))}
-            </View>
-          </View>
-        </GlassCard>
-        {/* Overlay cadenas */}
-        <View style={s.lockOverlay}>
+      <MetalCard style={{ marginHorizontal: 0, marginTop: 18 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+          <StatsIcon />
+          <Text style={{
+            color: '#EAEEF3',
+            fontSize: 14,
+            fontWeight: '700',
+            letterSpacing: 1,
+            marginLeft: 8,
+          }}>MES STATS (7 jours)</Text>
+        </View>
+        <View style={{ alignItems: 'center' }}>
           <LockIcon size={28} />
-          <Text style={s.lockText}>Débloquer</Text>
-          <View style={s.lockPriceRow}>
+          <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '600', marginTop: 8 }}>Débloquer</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
             <LixGemIcon width={14} height={16} />
-            <Text style={s.lockPrice}> 200 Lix</Text>
-            <Text style={s.lockOr}>  ou  </Text>
+            <Text style={{ color: '#00D984', fontSize: 13, fontWeight: '700' }}> 200 Lix</Text>
+            <Text style={{ color: '#8892A0', fontSize: 12, marginHorizontal: 6 }}>ou</Text>
             <StarIcon />
-            <Text style={s.lockPremium}> Premium</Text>
+            <Text style={{ color: '#D4AF37', fontSize: 13, fontWeight: '700' }}> Premium</Text>
           </View>
         </View>
-      </View>
+      </MetalCard>
 
       <View style={{ height: 20 }} />
     </ScrollView>
