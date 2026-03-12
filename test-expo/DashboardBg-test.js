@@ -390,25 +390,15 @@ const metalStyles = StyleSheet.create({
 // ============================================
 // MINI METAL CARD — version compacte pour les 3 métriques
 // ============================================
-const MiniMetalCard = ({ children, style, noBorder = false }) => (
-  <View style={[
-    miniMetalStyles.outerBorder,
-    noBorder && { backgroundColor: 'transparent', padding: 0, shadowOpacity: 0, elevation: 0, minHeight: 110 },
-    style,
-  ]}>
+const MiniMetalCard = ({ children, style }) => (
+  <View style={[miniMetalStyles.outerBorder, style]}>
     <LinearGradient
-      colors={noBorder
-        ? ['#252A30', '#1E2328', '#252A30', '#1A1D22']
-        : ['#3A3F46', '#252A30', '#333A42', '#1A1D22']
-      }
+      colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={[miniMetalStyles.innerGradient, noBorder && { borderRadius: 14 }]}
+      style={miniMetalStyles.innerGradient}
     >
-      <View style={[
-        miniMetalStyles.cardContent,
-        noBorder && { borderColor: 'rgba(255,255,255,0.04)' }
-      ]}>
+      <View style={miniMetalStyles.cardContent}>
         {children}
       </View>
     </LinearGradient>
@@ -426,7 +416,7 @@ const miniMetalStyles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 8,
-    minHeight: 110,
+    minHeight: 120,
   },
   innerGradient: {
     borderRadius: 13,
@@ -434,8 +424,8 @@ const miniMetalStyles = StyleSheet.create({
     flex: 1,
   },
   cardContent: {
-    paddingVertical: 10,
-    paddingHorizontal: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.25)',
     borderRadius: 13,
@@ -694,7 +684,7 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
 // ============================================
 // COMPOSANT — DNA HELIX (ADN central — Score Vitalité)
 // ============================================
-const DnaHelix = ({ height = 68, width = 60, score = 84 }) => {
+const DnaHelix = ({ height = 68, width = 60 }) => {
   const svgH = height;
   const svgW = width;
   const cx = svgW / 2;
@@ -858,38 +848,6 @@ const DnaHelix = ({ height = 68, width = 60, score = 84 }) => {
           })}
         </Svg>
 
-        {/* Badge central ADN — Score Vitalité */}
-        <View style={{
-          position: 'absolute',
-          top: svgH / 2 - 18,
-          left: 0, right: 0,
-          alignItems: 'center',
-        }}>
-          <View style={{
-            backgroundColor: 'rgba(10, 14, 20, 0.92)',
-            borderRadius: 12,
-            paddingHorizontal: 10,
-            paddingVertical: 4,
-            borderWidth: 1,
-            borderColor: 'rgba(212, 175, 55, 0.2)',
-            shadowColor: '#D4AF37',
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.15,
-            shadowRadius: 6,
-            elevation: 3,
-          }}>
-            <Text style={{
-              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 16,
-              fontWeight: '900',
-              color: '#00D984',
-              textAlign: 'center',
-              textShadowColor: 'rgba(0, 217, 132, 0.5)',
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 8,
-            }}>{score}</Text>
-          </View>
-        </View>
       </View>
 
     </View>
@@ -1294,13 +1252,178 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 const SectionDivider = () => (
   <View style={{
     alignSelf: 'center',
-    width: '50%',
+    width: '45%',
     height: 1,
-    marginVertical: 6,
-    backgroundColor: 'rgba(0, 217, 132, 0.08)',
+    marginVertical: 8,
+    backgroundColor: 'rgba(0, 217, 132, 0.06)',
     borderRadius: 0.5,
   }} />
 );
+
+// ============================================================
+// COMPOSANT — ScrollableMetricCards (carrousel 2 pages × 2 cartes)
+// ============================================================
+const CARD_PAGE_WIDTH = W - 28; // 14 margin chaque côté
+
+const ScrollableMetricCards = () => {
+  const [activePage, setActivePage] = React.useState(0);
+
+  const handleScroll = (event) => {
+    const x = event.nativeEvent.contentOffset.x;
+    const page = Math.round(x / CARD_PAGE_WIDTH);
+    if (page !== activePage) setActivePage(page);
+  };
+
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        snapToInterval={CARD_PAGE_WIDTH}
+        decelerationRate="fast"
+        contentContainerStyle={{ paddingHorizontal: 14 }}
+      >
+        {/* ===== PAGE 1 : Brûlé + BMR ===== */}
+        <View style={{ width: CARD_PAGE_WIDTH, flexDirection: 'row', gap: 8 }}>
+
+          {/* BRÛLÉ / SPORT — icône flamme orange */}
+          <MiniMetalCard>
+            <Svg width={24} height={24} viewBox="0 0 24 24">
+              <Defs>
+                <SvgLinearGradient id="mcFlame" x1="0.5" y1="1" x2="0.5" y2="0">
+                  <Stop offset="0%" stopColor="#FF4500" />
+                  <Stop offset="50%" stopColor="#FF8C42" />
+                  <Stop offset="100%" stopColor="#FFD700" />
+                </SvgLinearGradient>
+              </Defs>
+              <Path d="M12 2C8.5 7 4 9.5 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8c0-2-1-3.5-2-5-.5 1.5-1.5 2.5-3 3-1-4-3-6.5-3-10z" fill="url(#mcFlame)" />
+              <Path d="M12 22c-2.21 0-4-1.79-4-4 0-2 2-3.5 3-5.5.5 1 1.5 1.5 2.5 2 .5-1.5 1-3 .5-4.5 1 1.5 2 3.5 2 5.5 0 1.5-.5 2.5-1.5 3.5-.5.5-1.5 1-2.5 1z" fill="#FFD700" opacity={0.4} />
+            </Svg>
+            <Text style={{
+              color: '#8892A0', fontSize: 8, fontWeight: '700',
+              letterSpacing: 1, marginTop: 6,
+            }}>BRÛLÉ / SPORT</Text>
+            <Text style={{
+              color: '#FF8C42', fontSize: 24, fontWeight: '800', marginTop: 3,
+              textShadowColor: 'rgba(255, 140, 66, 0.25)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 6,
+            }}>870</Text>
+            <Text style={{ color: '#8892A0', fontSize: 10 }}>kcal</Text>
+          </MiniMetalCard>
+
+          {/* BMR — icône cœur avec pouls */}
+          <MiniMetalCard>
+            <Svg width={24} height={24} viewBox="0 0 24 24">
+              <Defs>
+                <SvgLinearGradient id="mcHeart" x1="0.5" y1="0" x2="0.5" y2="1">
+                  <Stop offset="0%" stopColor="#FF6B8A" />
+                  <Stop offset="100%" stopColor="#FF3B5C" />
+                </SvgLinearGradient>
+              </Defs>
+              <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="url(#mcHeart)" />
+              <Ellipse cx="8" cy="7.5" rx="2.5" ry="1.8" fill="white" opacity={0.2} />
+            </Svg>
+            <Text style={{
+              color: '#8892A0', fontSize: 8, fontWeight: '700',
+              letterSpacing: 1, marginTop: 6,
+            }}>BMR</Text>
+            <Text style={{
+              color: '#00D984', fontSize: 24, fontWeight: '800', marginTop: 3,
+              textShadowColor: 'rgba(0, 217, 132, 0.2)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 6,
+            }}>1 826</Text>
+            <Text style={{ color: '#8892A0', fontSize: 10 }}>kcal</Text>
+          </MiniMetalCard>
+        </View>
+
+        {/* ===== PAGE 2 : Discipline + TDEE ===== */}
+        <View style={{ width: CARD_PAGE_WIDTH, flexDirection: 'row', gap: 8 }}>
+
+          {/* DISCIPLINE — icône bouclier avec flamme (streak) */}
+          <MiniMetalCard>
+            <Svg width={24} height={24} viewBox="0 0 24 24">
+              <Defs>
+                <SvgLinearGradient id="mcShield" x1="0.5" y1="0" x2="0.5" y2="1">
+                  <Stop offset="0%" stopColor="#00D984" />
+                  <Stop offset="100%" stopColor="#00854F" />
+                </SvgLinearGradient>
+              </Defs>
+              {/* Bouclier */}
+              <Path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z" fill="url(#mcShield)" opacity={0.85} />
+              {/* Flamme au centre du bouclier */}
+              <Path d="M12 7c-1 2-2.5 3-2.5 5 0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5c0-2-1.5-3-2.5-5z" fill="#FFD700" opacity={0.8} />
+              {/* Reflet */}
+              <Ellipse cx="9" cy="7" rx="2" ry="2.5" fill="white" opacity={0.12} />
+            </Svg>
+            <Text style={{
+              color: '#8892A0', fontSize: 8, fontWeight: '700',
+              letterSpacing: 1, marginTop: 6,
+            }}>DISCIPLINE</Text>
+            <Text style={{
+              color: '#00D984', fontSize: 24, fontWeight: '800', marginTop: 3,
+              textShadowColor: 'rgba(0, 217, 132, 0.2)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 6,
+            }}>12</Text>
+            <Text style={{ color: '#8892A0', fontSize: 10 }}>jours série</Text>
+          </MiniMetalCard>
+
+          {/* TDEE — icône éclair énergie */}
+          <MiniMetalCard>
+            <Svg width={24} height={24} viewBox="0 0 24 24">
+              <Defs>
+                <SvgLinearGradient id="mcBolt" x1="0.5" y1="0" x2="0.5" y2="1">
+                  <Stop offset="0%" stopColor="#FFE066" />
+                  <Stop offset="100%" stopColor="#FFB800" />
+                </SvgLinearGradient>
+              </Defs>
+              <Path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="url(#mcBolt)" />
+              <Path d="M11 5l-4 7h3.5l-.5 4 4.5-6H11l.5-5z" fill="white" opacity={0.12} />
+            </Svg>
+            <Text style={{
+              color: '#8892A0', fontSize: 8, fontWeight: '700',
+              letterSpacing: 1, marginTop: 6,
+            }}>TDEE</Text>
+            <Text style={{
+              color: '#4DA6FF', fontSize: 24, fontWeight: '800', marginTop: 3,
+              textShadowColor: 'rgba(77, 166, 255, 0.2)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 6,
+            }}>2 830</Text>
+            <Text style={{ color: '#8892A0', fontSize: 10 }}>kcal</Text>
+          </MiniMetalCard>
+        </View>
+      </ScrollView>
+
+      {/* ===== DOTS INDICATEURS ===== */}
+      <View style={{
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 8,
+        gap: 6,
+      }}>
+        <View style={{
+          width: activePage === 0 ? 16 : 6,
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: activePage === 0 ? '#00D984' : 'rgba(255,255,255,0.15)',
+        }} />
+        <View style={{
+          width: activePage === 1 ? 16 : 6,
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: activePage === 1 ? '#00D984' : 'rgba(255,255,255,0.15)',
+        }} />
+      </View>
+    </View>
+  );
+};
 
 // ============================================================
 // COMPOSANT — Dashboard Content (page Accueil)
@@ -1414,7 +1537,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           }} />
 
           {/* ADN CENTRAL — Score Vitalité (125% de REACTOR_SIZE) */}
-          <DnaHelix height={REACTOR_SIZE * 1.25} width={DNA_WIDTH} score={84} />
+          <DnaHelix height={REACTOR_SIZE * 1.25} width={DNA_WIDTH} />
 
           {/* BARRE VERTICALE DROITE */}
           <View style={{
@@ -1511,61 +1634,8 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
 
       <SectionDivider />
 
-      {/* ====== 4 MINI-CARTES — Brûlé / BMR / Discipline / TDEE ====== */}
-      <View style={{ flexDirection: 'row', gap: 6, marginHorizontal: 14, marginBottom: 12, marginTop: 10, alignItems: 'stretch' }}>
-
-        {/* 1. BRÛLÉ / SPORT — avec bordure métal */}
-        <MiniMetalCard>
-          <Text style={{ fontSize: 18 }}>🔥</Text>
-          <Text style={{ color: '#8892A0', fontSize: 7, fontWeight: '700', letterSpacing: 1, marginTop: 4 }}>BRÛLÉ</Text>
-          <Text style={{
-            color: '#FF8C42', fontSize: 18, fontWeight: '800', marginTop: 1,
-            textShadowColor: 'rgba(0, 217, 132, 0.15)',
-            textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 6,
-          }}>870</Text>
-          <Text style={{ color: '#8892A0', fontSize: 8 }}>kcal</Text>
-        </MiniMetalCard>
-
-        {/* 2. BMR — sans bordure métal */}
-        <MiniMetalCard noBorder>
-          <Text style={{ fontSize: 18 }}>❤️</Text>
-          <Text style={{ color: '#8892A0', fontSize: 7, fontWeight: '700', letterSpacing: 1, marginTop: 4 }}>BMR</Text>
-          <Text style={{
-            color: '#00D984', fontSize: 18, fontWeight: '800', marginTop: 1,
-            textShadowColor: 'rgba(0, 217, 132, 0.15)',
-            textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 6,
-          }}>1826</Text>
-          <Text style={{ color: '#8892A0', fontSize: 8 }}>kcal</Text>
-        </MiniMetalCard>
-
-        {/* 3. DISCIPLINE — sans bordure métal */}
-        <MiniMetalCard noBorder>
-          <Text style={{ fontSize: 18 }}>🔥</Text>
-          <Text style={{ color: '#8892A0', fontSize: 7, fontWeight: '700', letterSpacing: 1, marginTop: 4 }}>DISCIPLINE</Text>
-          <Text style={{
-            color: '#00D984', fontSize: 18, fontWeight: '800', marginTop: 1,
-            textShadowColor: 'rgba(0, 217, 132, 0.15)',
-            textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 6,
-          }}>12</Text>
-          <Text style={{ color: '#8892A0', fontSize: 8 }}>jours série</Text>
-        </MiniMetalCard>
-
-        {/* 4. TDEE — avec bordure métal */}
-        <MiniMetalCard>
-          <Text style={{ fontSize: 18 }}>⚡</Text>
-          <Text style={{ color: '#8892A0', fontSize: 7, fontWeight: '700', letterSpacing: 1, marginTop: 4 }}>TDEE</Text>
-          <Text style={{
-            color: '#4DA6FF', fontSize: 18, fontWeight: '800', marginTop: 1,
-            textShadowColor: 'rgba(0, 217, 132, 0.15)',
-            textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 6,
-          }}>2830</Text>
-          <Text style={{ color: '#8892A0', fontSize: 8 }}>kcal</Text>
-        </MiniMetalCard>
-      </View>
+      {/* ====== MINI-CARTES SWIPEABLE — 2 pages × 2 cartes ====== */}
+      <ScrollableMetricCards />
 
       {/* ====== CARTE HYDRATATION COMPACTE ====== */}
       <HydrationCardCompact
@@ -1609,7 +1679,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: '#EAEEF3', fontSize: 14, fontWeight: '600' }}>Poulet grillé + Riz</Text>
-            <Text style={{ color: '#8892A0', fontSize: 11, marginTop: 2 }}>450 kcal • 12h30</Text>
+            <Text style={{ color: '#8892A0', fontSize: 11, marginTop: 2 }}>450 kcal • <Text style={{ color: '#EAEEF3' }}>12h30</Text></Text>
             <View style={{ flexDirection: 'row', marginTop: 4, gap: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#FF6B8A', marginRight: 4 }} />
@@ -1688,12 +1758,12 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
 
         {/* Suggestions */}
         <View style={{
-          backgroundColor: 'rgba(0, 217, 132, 0.04)',
+          backgroundColor: 'rgba(0, 217, 132, 0.03)',
           borderRadius: 10,
           padding: 10,
           marginTop: 8,
           borderWidth: 1,
-          borderColor: 'rgba(0, 217, 132, 0.08)',
+          borderColor: 'rgba(0, 217, 132, 0.06)',
         }}>
           <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>SUGGESTIONS</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
@@ -1756,7 +1826,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <LockIcon size={28} />
           <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '600', marginTop: 8 }}>Débloquer</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-            <LixGemIcon width={14} height={16} />
+            <LixCoinIcon size={12} />
             <Text style={{ color: '#00D984', fontSize: 13, fontWeight: '700' }}> 200 Lix</Text>
             <Text style={{ color: '#8892A0', fontSize: 12, marginHorizontal: 6 }}>ou</Text>
             <StarIcon />
