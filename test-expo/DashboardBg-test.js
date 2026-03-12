@@ -614,18 +614,12 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
             minimumFontScale={0.6}
             style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: coreSize * 0.26, fontWeight: '800', color: '#EAEEF3',
+              fontSize: coreSize * 0.30, fontWeight: '900', color: '#EAEEF3',
               textAlign: 'center',
               textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6,
             }}
           >
             {displayValue}
-          </Text>
-          <Text style={{
-            fontSize: coreSize * 0.11, fontWeight: '700', color: color,
-            opacity: 0.7, letterSpacing: 2, marginTop: -1,
-          }}>
-            KCAL
           </Text>
         </View>
 
@@ -1209,7 +1203,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, paddingTop: 8 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 75, paddingTop: 8 }}
       showsVerticalScrollIndicator={false}
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
@@ -1370,13 +1364,18 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <View style={{
             width: 52,
             height: 52,
-            borderRadius: 12,
-            backgroundColor: 'rgba(0, 217, 132, 0.06)',
+            borderRadius: 14,
+            backgroundColor: 'rgba(0, 217, 132, 0.05)',
             borderWidth: 1,
             borderColor: 'rgba(0, 217, 132, 0.12)',
             justifyContent: 'center',
             alignItems: 'center',
             marginRight: 12,
+            shadowColor: '#00D984',
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
+            elevation: 2,
           }}>
             <PlateIcon />
           </View>
@@ -1601,7 +1600,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
             <Ionicons
               name={active ? tab.iconActive : tab.iconInactive}
               size={22}
-              color={active ? '#00D984' : '#8892A0'}
+              color={active ? '#00D984' : '#6B7B8D'}
             />
             {tab.locked && (
               <View style={s.tabLock}>
@@ -1751,9 +1750,9 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     shadowColor: '#00D984',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.35,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 5,
   },
   moodBadge: {
     position: 'absolute', top: -2, right: -2,
@@ -1763,7 +1762,7 @@ const s = StyleSheet.create({
   },
   logoText: {
     color: '#EAEEF3', fontSize: 22, fontWeight: '800', letterSpacing: 4,
-    textShadowColor: 'rgba(0, 217, 132, 0.2)',
+    textShadowColor: 'rgba(0, 217, 132, 0.15)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
   },
@@ -1988,7 +1987,7 @@ const s = StyleSheet.create({
     flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4,
   },
   tabLabel: {
-    color: '#8892A0', fontSize: 9, fontWeight: '600', marginTop: 3,
+    color: '#6B7B8D', fontSize: 9, fontWeight: '600', letterSpacing: 0.3, marginTop: -2,
   },
   tabLabelActive: { color: '#00D984' },
   tabLock: {
