@@ -7,7 +7,7 @@
 import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import {
   View, Dimensions, Text, StyleSheet, StatusBar,
-  Animated as RNAnimated, ScrollView, TouchableOpacity, Platform, Modal,
+  Animated as RNAnimated, ScrollView, TouchableOpacity, Platform, Modal, Easing,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -534,175 +534,191 @@ const MOCK_GENERAL_DATA = [
 ];
 
 // ============================================================
-// COMPOSANT — Barre Cristal 3D Isométrique
+// HOOKS — Animations pour Reactor Cores
 // ============================================================
-const CrystalBar = ({ x, barWidth, barHeight, baseY, color, colorDark, colorLight, glowColor, value, label }) => {
-  const depth = 14;
-  const topSkew = 10;
-  const uid = label.replace(/[^a-zA-Z]/g, '');
+const useRotation = (duration, reverse = false) => {
+  const rotation = useRef(new RNAnimated.Value(0)).current;
+  useEffect(() => {
+    const anim = RNAnimated.loop(
+      RNAnimated.timing(rotation, {
+        toValue: 1, duration, easing: Easing.linear, useNativeDriver: true,
+      })
+    );
+    anim.start();
+    return () => anim.stop();
+  }, []);
+  return rotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: reverse ? ['360deg', '0deg'] : ['0deg', '360deg'],
+  });
+};
 
-  const frontPath = `M ${x} ${baseY} L ${x} ${baseY - barHeight} L ${x + barWidth} ${baseY - barHeight} L ${x + barWidth} ${baseY} Z`;
-  const rightPath = `M ${x + barWidth} ${baseY} L ${x + barWidth} ${baseY - barHeight} L ${x + barWidth + depth} ${baseY - barHeight - topSkew} L ${x + barWidth + depth} ${baseY - topSkew} Z`;
-  const topPath = `M ${x} ${baseY - barHeight} L ${x + barWidth} ${baseY - barHeight} L ${x + barWidth + depth} ${baseY - barHeight - topSkew} L ${x + depth} ${baseY - barHeight - topSkew} Z`;
+const usePulse = (min = 0.96, max = 1.04) => {
+  const pulse = useRef(new RNAnimated.Value(0)).current;
+  useEffect(() => {
+    const anim = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(pulse, { toValue: 1, duration: 2000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        RNAnimated.timing(pulse, { toValue: 0, duration: 2000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, []);
+  return pulse.interpolate({ inputRange: [0, 1], outputRange: [min, max] });
+};
 
-  // FIX 2 — valeur TOUJOURS au-dessus de la barre, même pour 870
-  const valueY = Math.min(baseY - barHeight - topSkew - 14, baseY - 50);
+const useGlow = () => {
+  const glow = useRef(new RNAnimated.Value(0)).current;
+  useEffect(() => {
+    const anim = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(glow, { toValue: 1, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
+        RNAnimated.timing(glow, { toValue: 0, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, []);
+  return glow.interpolate({ inputRange: [0, 1], outputRange: [0.15, 0.35] });
+};
+
+// ============================================================
+// COMPOSANT — ReactorCore (réacteur circulaire animé)
+// ============================================================
+const ReactorCore = ({ size, value, percentage, label, color, colorLight }) => {
+  const outerRotation = useRotation(8000);
+  const innerRotation = useRotation(5000, true);
+  const coreScale = usePulse(0.96, 1.04);
+  const glowOpacity = useGlow();
+
+  const coreSize = size * 0.48;
+  const innerRingSize = size * 0.72;
+  const displayValue = value >= 1000 ? value.toLocaleString('fr-FR') : value.toString();
+  const arcR = size / 2 - 8;
+  const arcCirc = Math.PI * 2 * arcR;
 
   return (
-    <>
-      <Defs>
-        {/* Face avant — translucide */}
-        <SvgLinearGradient id={`front_${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor={colorLight} stopOpacity={0.55} />
-          <Stop offset="30%" stopColor={color} stopOpacity={0.40} />
-          <Stop offset="70%" stopColor={color} stopOpacity={0.45} />
-          <Stop offset="100%" stopColor={colorDark} stopOpacity={0.55} />
-        </SvgLinearGradient>
-        {/* Face droite — plus transparente */}
-        <SvgLinearGradient id={`right_${uid}`} x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0%" stopColor={colorDark} stopOpacity={0.35} />
-          <Stop offset="100%" stopColor={colorDark} stopOpacity={0.15} />
-        </SvgLinearGradient>
-        {/* Face supérieure — brillante */}
-        <SvgLinearGradient id={`top_${uid}`} x1="0" y1="1" x2="1" y2="0">
-          <Stop offset="0%" stopColor={colorLight} stopOpacity={0.70} />
-          <Stop offset="100%" stopColor="white" stopOpacity={0.40} />
-        </SvgLinearGradient>
-        {/* Glow intérieur — intense au centre */}
-        <SvgLinearGradient id={`glow_${uid}`} x1="0.5" y1="0" x2="0.5" y2="1">
-          <Stop offset="0%" stopColor={glowColor} stopOpacity={0.6} />
-          <Stop offset="25%" stopColor="white" stopOpacity={0.20} />
-          <Stop offset="50%" stopColor={glowColor} stopOpacity={0.35} />
-          <Stop offset="75%" stopColor="white" stopOpacity={0.15} />
-          <Stop offset="100%" stopColor={glowColor} stopOpacity={0} />
-        </SvgLinearGradient>
-      </Defs>
+    <View style={{ alignItems: 'center', width: size + 10 }}>
+      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
 
-      {/* Glow externe derrière */}
-      <Rect x={x - 5} y={baseY - barHeight - 15} width={barWidth + depth + 10} height={barHeight + 20} rx={12} fill={color} opacity={0.06} />
+        {/* Glow ambiant */}
+        <RNAnimated.View style={{
+          position: 'absolute', width: size + 20, height: size + 20,
+          borderRadius: (size + 20) / 2, backgroundColor: color, opacity: glowOpacity,
+        }} />
 
-      {/* Face avant */}
-      <Path d={frontPath} fill={`url(#front_${uid})`} />
+        {/* Anneau extérieur — rotation */}
+        <RNAnimated.View style={{
+          position: 'absolute', width: size, height: size,
+          transform: [{ rotate: outerRotation }],
+        }}>
+          <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+            <Circle cx={size / 2} cy={size / 2} r={size / 2 - 3}
+              fill="none" stroke={color} strokeWidth={1.5} strokeOpacity={0.3}
+              strokeDasharray={`${size * 0.15} ${size * 0.08}`}
+            />
+            <Circle cx={size / 2} cy={3} r={3} fill={colorLight} />
+            <Circle cx={size / 2} cy={size - 3} r={2} fill={color} opacity={0.6} />
+          </Svg>
+        </RNAnimated.View>
 
-      {/* Reflet vertical gauche — effet verre */}
-      <Rect x={x + 2} y={baseY - barHeight + 3} width={4} height={Math.max(0, barHeight - 6)} rx={2} fill="white" opacity={0.10} />
+        {/* Anneau intérieur — rotation inverse */}
+        <RNAnimated.View style={{
+          position: 'absolute', width: innerRingSize, height: innerRingSize,
+          transform: [{ rotate: innerRotation }],
+        }}>
+          <Svg width={innerRingSize} height={innerRingSize} viewBox={`0 0 ${innerRingSize} ${innerRingSize}`}>
+            <Circle cx={innerRingSize / 2} cy={innerRingSize / 2} r={innerRingSize / 2 - 2}
+              fill="none" stroke={color} strokeWidth={1} strokeOpacity={0.2}
+              strokeDasharray={`${innerRingSize * 0.12} ${innerRingSize * 0.06}`}
+            />
+            <Circle cx={innerRingSize / 2} cy={2} r={2.5} fill={colorLight} opacity={0.8} />
+          </Svg>
+        </RNAnimated.View>
 
-      {/* Glow intérieur — bande lumineuse centrale */}
-      <Rect x={x + barWidth * 0.2} y={baseY - barHeight + 8} width={barWidth * 0.6} height={Math.max(0, barHeight - 16)} rx={6} fill={`url(#glow_${uid})`} />
+        {/* Arc de progression (fixe) */}
+        <View style={{ position: 'absolute', width: size, height: size }}>
+          <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+            <Circle cx={size / 2} cy={size / 2} r={arcR}
+              fill="none" stroke={color} strokeWidth={2.5} strokeOpacity={0.08}
+            />
+            <Circle cx={size / 2} cy={size / 2} r={arcR}
+              fill="none" stroke={color} strokeWidth={2.5} strokeOpacity={0.6}
+              strokeLinecap="round"
+              strokeDasharray={`${(percentage / 100) * arcCirc} ${arcCirc}`}
+              transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            />
+          </Svg>
+        </View>
 
-      {/* Face droite */}
-      <Path d={rightPath} fill={`url(#right_${uid})`} />
+        {/* Core central — pulse */}
+        <RNAnimated.View style={{
+          width: coreSize, height: coreSize, borderRadius: coreSize / 2,
+          transform: [{ scale: coreScale }],
+          alignItems: 'center', justifyContent: 'center',
+          backgroundColor: 'rgba(13, 17, 23, 0.7)',
+          borderWidth: 1.5, borderColor: color + '40',
+          shadowColor: color, shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.5, shadowRadius: 15, elevation: 8,
+        }}>
+          <Text style={{
+            fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+            fontSize: coreSize * 0.28, fontWeight: '800', color: '#EAEEF3',
+            textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8,
+          }}>
+            {displayValue}
+          </Text>
+          <Text style={{
+            fontSize: coreSize * 0.12, fontWeight: '600', color: color,
+            opacity: 0.7, letterSpacing: 2, marginTop: -1,
+          }}>
+            KCAL
+          </Text>
+        </RNAnimated.View>
 
-      {/* Face supérieure */}
-      <Path d={topPath} fill={`url(#top_${uid})`} />
+      </View>
 
-      {/* Highlight brillant sur le dessus */}
-      <Path
-        d={`M ${x + 3} ${baseY - barHeight - 1} L ${x + barWidth * 0.5} ${baseY - barHeight - 1} L ${x + barWidth * 0.5 + depth * 0.5} ${baseY - barHeight - topSkew * 0.5 - 1} L ${x + depth * 0.5 + 3} ${baseY - barHeight - topSkew * 0.5 - 1} Z`}
-        fill="white" opacity={0.22}
-      />
+      {/* Pourcentage */}
+      <Text style={{
+        fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+        fontSize: 12, fontWeight: '700', color: color, marginTop: 4,
+        textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6,
+      }}>
+        {percentage}%
+      </Text>
 
-      {/* Arête verticale avant-droite */}
-      <Line x1={x + barWidth} y1={baseY} x2={x + barWidth} y2={baseY - barHeight} stroke={colorLight} strokeWidth={1} opacity={0.5} />
-      {/* Arête horizontale supérieure avant */}
-      <Line x1={x} y1={baseY - barHeight} x2={x + barWidth} y2={baseY - barHeight} stroke={colorLight} strokeWidth={1} opacity={0.4} />
-      {/* Arête diagonale supérieure droite */}
-      <Line x1={x + barWidth} y1={baseY - barHeight} x2={x + barWidth + depth} y2={baseY - barHeight - topSkew} stroke={colorLight} strokeWidth={0.8} opacity={0.35} />
-      {/* Arête verticale droite arrière */}
-      <Line x1={x + barWidth + depth} y1={baseY - topSkew} x2={x + barWidth + depth} y2={baseY - barHeight - topSkew} stroke={colorLight} strokeWidth={0.6} opacity={0.2} />
-
-      {/* Gemme lumineuse au sommet */}
-      <Rect x={x + barWidth * 0.3 + depth * 0.3} y={baseY - barHeight - topSkew * 0.55 - 4} width={barWidth * 0.35} height={6} rx={3} fill={colorLight} opacity={0.6} />
-
-      {/* Valeur au-dessus — glow */}
-      <SvgText x={x + barWidth / 2 + depth / 2} y={valueY} fontSize={16} fontWeight="800" fill={color} opacity={0.35} textAnchor="middle">
-        {value.toLocaleString('fr-FR')}
-      </SvgText>
-      {/* Valeur au-dessus — net */}
-      <SvgText x={x + barWidth / 2 + depth / 2} y={valueY} fontSize={16} fontWeight="800" fill={color} textAnchor="middle">
-        {value.toLocaleString('fr-FR')}
-      </SvgText>
-
-      {/* Label en dessous */}
-      <SvgText x={x + barWidth / 2 + depth / 2} y={baseY + 16} fontSize={10} fill="#8892A0" textAnchor="middle">
+      {/* Label */}
+      <Text style={{ fontSize: 10, fontWeight: '600', color: '#8892A0', marginTop: 2 }}>
         {label}
-      </SvgText>
-    </>
+      </Text>
+    </View>
   );
 };
 
 // ============================================================
-// COMPOSANT — Graphe Barres Cristal 3D
+// COMPOSANT — Graphe Reactor Cores (3 réacteurs)
 // ============================================================
-const CrystalBarsChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
-  const GRAPH_SVG_WIDTH = W - 80;
-  const GRAPH_HEIGHT = 210;
-  const BASE_Y = GRAPH_HEIGHT - 5;
-  const BAR_WIDTH = 55;
-  const BAR_GAP = 15;
-  const maxCalorie = 2500;
-  const maxHeight = GRAPH_HEIGHT - 50;
+const REACTOR_SIZE_LARGE = 98;
+const REACTOR_SIZE_SMALL = 76;
 
-  const hConsomme = (consomme / maxCalorie) * maxHeight;
-  const hBrule = (brule / maxCalorie) * maxHeight;
-  const hReste = (reste / maxCalorie) * maxHeight;
-
-  const totalWidth = BAR_WIDTH * 3 + BAR_GAP * 2 + 14 * 3;
-  const startX = (GRAPH_SVG_WIDTH - totalWidth) / 2;
-  const bar1X = startX;
-  const bar2X = startX + BAR_WIDTH + 14 + BAR_GAP;
-  const bar3X = startX + (BAR_WIDTH + 14 + BAR_GAP) * 2;
+const ReactorCoresChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
+  const objectif = DAILY_OBJECTIVE;
+  const pctConsomme = Math.round((consomme / objectif) * 100);
+  const pctBrule = Math.round((brule / objectif) * 100);
+  const pctReste = Math.round((reste / objectif) * 100);
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-      <Svg width={GRAPH_SVG_WIDTH} height={GRAPH_HEIGHT + 25}>
-        {/* Lignes de grille */}
-        {[500, 1000, 1500, 2000, 2500].map((val) => {
-          const y = BASE_Y - (val / maxCalorie) * maxHeight;
-          return (
-            <Line key={val} x1={0} y1={y} x2={GRAPH_SVG_WIDTH} y2={y}
-              stroke="rgba(255, 255, 255, 0.05)" strokeWidth={1} strokeDasharray="4 8"
-            />
-          );
-        })}
-
-        {/* Barre 1 — Consommé (vert) */}
-        <CrystalBar x={bar1X} barWidth={BAR_WIDTH} barHeight={hConsomme} baseY={BASE_Y}
-          color="#00D984" colorDark="#00854F" colorLight="#5DFFB4" glowColor="#00FFAA"
-          value={consomme} label="Consommé"
-        />
-
-        {/* Barre 2 — Brûlé / Sport (orange) */}
-        <CrystalBar x={bar2X} barWidth={BAR_WIDTH} barHeight={hBrule} baseY={BASE_Y}
-          color="#FF8C42" colorDark="#CC6020" colorLight="#FFB87A" glowColor="#FFAA60"
-          value={brule} label="Brûlé / Sport"
-        />
-
-        {/* Barre 3 — Reste (bleu) */}
-        <CrystalBar x={bar3X} barWidth={BAR_WIDTH} barHeight={hReste} baseY={BASE_Y}
-          color="#4DA6FF" colorDark="#2B7ACC" colorLight="#8DCAFF" glowColor="#70BBFF"
-          value={reste} label="Reste"
-        />
-      </Svg>
-
-      {/* Échelle paliers à droite */}
-      <View style={{ width: 35, height: GRAPH_HEIGHT, justifyContent: 'flex-end' }}>
-        {[500, 1000, 1500, 2000, 2500].map((val) => {
-          const bottomPos = (val / maxCalorie) * maxHeight;
-          return (
-            <Text key={val} style={{
-              position: 'absolute',
-              bottom: bottomPos - 6,
-              right: 0,
-              fontSize: 9,
-              color: '#8892A0',
-              opacity: 0.6,
-            }}>
-              {val >= 1000 ? `${val / 1000}k` : val}
-            </Text>
-          );
-        })}
-      </View>
+    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, paddingVertical: 6 }}>
+      <ReactorCore size={REACTOR_SIZE_LARGE} value={consomme} percentage={pctConsomme}
+        label="Consommé" color="#00D984" colorLight="#5DFFB4"
+      />
+      <ReactorCore size={REACTOR_SIZE_SMALL} value={brule} percentage={pctBrule}
+        label="Brûlé / Sport" color="#FF8C42" colorLight="#FFB87A"
+      />
+      <ReactorCore size={REACTOR_SIZE_LARGE} value={reste} percentage={pctReste}
+        label="Reste" color="#4DA6FF" colorLight="#8DCAFF"
+      />
     </View>
   );
 };
@@ -1115,7 +1131,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           </View>
         </View>
 
-        <CrystalBarsChart consomme={consumedTotal} brule={burnedTotal} reste={remaining} />
+        <ReactorCoresChart consomme={consumedTotal} brule={burnedTotal} reste={remaining} />
 
         {/* Onglets Journalier / Général */}
         <View style={s.chartTabsRow}>
