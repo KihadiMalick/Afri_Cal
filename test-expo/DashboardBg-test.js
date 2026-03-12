@@ -586,7 +586,7 @@ const useGlow = () => {
 // ============================================================
 // COMPOSANT — ReactorCore (réacteur circulaire animé)
 // ============================================================
-const ReactorCore = ({ size, value, percentage, label, color, colorLight }) => {
+const ReactorCore = ({ size, value, percentage, label, color, colorLight, maxSize }) => {
   const outerRotation = useRotation(20000);
   const innerRotation = useRotation(14000, true);
   const coreScale = usePulse(0.97, 1.03);
@@ -597,9 +597,12 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight }) => {
   const displayValue = value >= 1000 ? value.toLocaleString('fr-FR') : value.toString();
   const arcR = size / 2 - 8;
   const arcCirc = Math.PI * 2 * arcR;
+  const effectiveMax = maxSize || size;
 
   return (
-    <View style={{ alignItems: 'center', width: size + 10 }}>
+    <View style={{ alignItems: 'center', width: effectiveMax + 10, height: effectiveMax + 55 }}>
+      {/* Spacer pour centrer verticalement les petits réacteurs */}
+      <View style={{ height: (effectiveMax - size) / 2 }} />
       <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
 
         {/* Glow ambiant */}
@@ -664,7 +667,7 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight }) => {
         }}>
           <Text style={{
             fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-            fontSize: coreSize * 0.30, fontWeight: '900', color: '#EAEEF3',
+            fontSize: coreSize * 0.34, fontWeight: '900', color: '#EAEEF3',
             textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8,
           }}>
             {displayValue}
@@ -679,19 +682,23 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight }) => {
 
       </View>
 
-      {/* Pourcentage */}
-      <Text style={{
-        fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-        fontSize: 12, fontWeight: '700', color: color, marginTop: 4,
-        textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6,
-      }}>
-        {percentage}%
-      </Text>
+      {/* Pourcentage — position absolue pour alignement */}
+      <View style={{ position: 'absolute', bottom: 24, left: 0, right: 0, alignItems: 'center' }}>
+        <Text style={{
+          fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+          fontSize: 12, fontWeight: '700', color: color,
+          textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6,
+        }}>
+          {percentage}%
+        </Text>
+      </View>
 
-      {/* Label */}
-      <Text style={{ fontSize: 10, fontWeight: '600', color: '#8892A0', marginTop: 2 }}>
-        {label}
-      </Text>
+      {/* Label — position absolue tout en bas pour alignement parfait */}
+      <View style={{ position: 'absolute', bottom: 4, left: 0, right: 0, alignItems: 'center' }}>
+        <Text style={{ fontSize: 10, fontWeight: '600', color: '#8892A0' }}>
+          {label}
+        </Text>
+      </View>
     </View>
   );
 };
@@ -699,8 +706,8 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight }) => {
 // ============================================================
 // COMPOSANT — Graphe Reactor Cores (3 réacteurs)
 // ============================================================
-const REACTOR_SIZE_LARGE = 94;
-const REACTOR_SIZE_SMALL = 72;
+const REACTOR_SIZE_LARGE = 82;
+const REACTOR_SIZE_SMALL = 64;
 
 const ReactorCoresChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
   const objectif = DAILY_OBJECTIVE;
@@ -709,14 +716,14 @@ const ReactorCoresChart = ({ consomme = 1585, brule = 870, reste = 1615 }) => {
   const pctReste = Math.round((reste / objectif) * 100);
 
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', paddingHorizontal: 4, gap: 4, paddingVertical: 6 }}>
-      <ReactorCore size={REACTOR_SIZE_LARGE} value={consomme} percentage={pctConsomme}
+    <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'flex-start', paddingHorizontal: 10, width: '100%', paddingVertical: 6 }}>
+      <ReactorCore size={REACTOR_SIZE_LARGE} maxSize={REACTOR_SIZE_LARGE} value={consomme} percentage={pctConsomme}
         label="Consommé" color="#00D984" colorLight="#5DFFB4"
       />
-      <ReactorCore size={REACTOR_SIZE_SMALL} value={brule} percentage={pctBrule}
+      <ReactorCore size={REACTOR_SIZE_SMALL} maxSize={REACTOR_SIZE_LARGE} value={brule} percentage={pctBrule}
         label="Brûlé / Sport" color="#FF8C42" colorLight="#FFB87A"
       />
-      <ReactorCore size={REACTOR_SIZE_LARGE} value={reste} percentage={pctReste}
+      <ReactorCore size={REACTOR_SIZE_LARGE} maxSize={REACTOR_SIZE_LARGE} value={reste} percentage={pctReste}
         label="Reste" color="#4DA6FF" colorLight="#8DCAFF"
       />
     </View>
@@ -1129,7 +1136,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       showsVerticalScrollIndicator={false}
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
-      <GlassCard>
+      <GlassCard style={{ paddingHorizontal: 8, paddingTop: 14, paddingBottom: 10 }}>
         {/* Header: titre + objectif */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
           <Text style={s.cardLabel}>BILAN ÉNERGÉTIQUE</Text>
