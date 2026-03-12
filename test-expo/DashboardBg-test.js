@@ -1263,14 +1263,16 @@ const SectionDivider = () => (
 // ============================================================
 // COMPOSANT — ScrollableMetricCards (carrousel 2 pages × 2 cartes)
 // ============================================================
-const CARD_PAGE_WIDTH = W - 28; // 14 margin chaque côté
-
 const ScrollableMetricCards = () => {
   const [activePage, setActivePage] = React.useState(0);
 
+  const HORIZONTAL_MARGIN = 14;
+  const CARD_GAP = 10;
+  const PAGE_WIDTH = W; // chaque page = largeur écran
+
   const handleScroll = (event) => {
     const x = event.nativeEvent.contentOffset.x;
-    const page = Math.round(x / CARD_PAGE_WIDTH);
+    const page = Math.round(x / PAGE_WIDTH);
     if (page !== activePage) setActivePage(page);
   };
 
@@ -1278,16 +1280,15 @@ const ScrollableMetricCards = () => {
     <View style={{ marginBottom: 12 }}>
       <ScrollView
         horizontal
-        pagingEnabled
         showsHorizontalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        snapToInterval={CARD_PAGE_WIDTH}
+        snapToInterval={PAGE_WIDTH}
+        snapToAlignment="start"
         decelerationRate="fast"
-        contentContainerStyle={{ paddingHorizontal: 14 }}
       >
         {/* ===== PAGE 1 : Brûlé + BMR ===== */}
-        <View style={{ width: CARD_PAGE_WIDTH, flexDirection: 'row', gap: 8 }}>
+        <View style={{ width: PAGE_WIDTH, flexDirection: 'row', justifyContent: 'center', gap: CARD_GAP, paddingHorizontal: HORIZONTAL_MARGIN }}>
 
           {/* BRÛLÉ / SPORT — icône flamme orange */}
           <MiniMetalCard>
@@ -1342,7 +1343,7 @@ const ScrollableMetricCards = () => {
         </View>
 
         {/* ===== PAGE 2 : Discipline + TDEE ===== */}
-        <View style={{ width: CARD_PAGE_WIDTH, flexDirection: 'row', gap: 8 }}>
+        <View style={{ width: PAGE_WIDTH, flexDirection: 'row', justifyContent: 'center', gap: CARD_GAP, paddingHorizontal: HORIZONTAL_MARGIN }}>
 
           {/* DISCIPLINE — icône bouclier avec flamme (streak) */}
           <MiniMetalCard>
@@ -1409,16 +1410,16 @@ const ScrollableMetricCards = () => {
         gap: 6,
       }}>
         <View style={{
-          width: activePage === 0 ? 16 : 6,
+          width: activePage === 0 ? 18 : 6,
           height: 6,
           borderRadius: 3,
-          backgroundColor: activePage === 0 ? '#00D984' : 'rgba(255,255,255,0.15)',
+          backgroundColor: activePage === 0 ? '#8892A0' : 'rgba(136, 146, 160, 0.25)',
         }} />
         <View style={{
-          width: activePage === 1 ? 16 : 6,
+          width: activePage === 1 ? 18 : 6,
           height: 6,
           borderRadius: 3,
-          backgroundColor: activePage === 1 ? '#00D984' : 'rgba(255,255,255,0.15)',
+          backgroundColor: activePage === 1 ? '#8892A0' : 'rgba(136, 146, 160, 0.25)',
         }} />
       </View>
     </View>
@@ -1565,69 +1566,94 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         {/* LIGNE SÉPARATRICE HORIZONTALE */}
         <View style={{ height: 1, backgroundColor: 'rgba(255, 255, 255, 0.06)', marginTop: 8, marginBottom: 8 }} />
 
-        {/* RANGÉE DE LABELS EN BAS — avec barres verticales */}
+        {/* RANGÉE DE LABELS EN BAS — tout aligné */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 8 }}>
-          {/* Label Consommé — gauche */}
+
+          {/* COLONNE GAUCHE — Consommé */}
           <View style={{ alignItems: 'center', flex: 1 }}>
+            {/* LIGNE 1 : chiffre */}
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: '800',
               color: '#FF8C42',
-              textShadowColor: 'rgba(255, 140, 66, 0.3)',
+              textShadowColor: 'rgba(255, 140, 66, 0.25)',
               textShadowOffset: { width: 0, height: 0 },
               textShadowRadius: 4,
+              height: 22,
+              lineHeight: 22,
+              textAlignVertical: 'center',
             }}>{Math.round((consumedTotal / DAILY_OBJECTIVE) * 100)}%</Text>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: '#EAEEF3', marginTop: 1 }}>Consommé</Text>
-            <Text style={{ fontSize: 8, fontWeight: '500', color: '#8892A0' }}>/ Repas</Text>
+            {/* LIGNE 2 : titre */}
+            <Text style={{
+              fontSize: 11, fontWeight: '700', color: '#EAEEF3',
+              marginTop: 2, height: 14, lineHeight: 14,
+            }}>Consommé</Text>
+            {/* LIGNE 3 : sous-titre */}
+            <Text style={{
+              fontSize: 8, fontWeight: '500', color: '#8892A0',
+              height: 12, lineHeight: 12,
+            }}>/ Repas</Text>
           </View>
 
           {/* Barre verticale */}
-          <View style={{ width: 1, height: 40, backgroundColor: 'rgba(255,255,255,0.06)', alignSelf: 'center' }} />
+          <View style={{ width: 1, height: 48, backgroundColor: 'rgba(255,255,255,0.06)', alignSelf: 'center' }} />
 
-          {/* CENTRE — Score Vitalité (remplace BMR) */}
+          {/* COLONNE CENTRE — Vitalité */}
           <View style={{ alignItems: 'center', flex: 1 }}>
+            {/* LIGNE 1 : score — MÊME hauteur que les % */}
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 7,
-              fontWeight: '800',
-              color: '#D4AF37',
-              letterSpacing: 2,
-            }}>VITALITÉ</Text>
-            <Text numberOfLines={1} style={{
-              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 24,
+              fontSize: 16,
               fontWeight: '900',
               color: '#00D984',
-              textShadowColor: 'rgba(0, 217, 132, 0.5)',
+              textShadowColor: 'rgba(0, 217, 132, 0.4)',
               textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 10,
-              marginTop: 1,
+              textShadowRadius: 8,
+              height: 22,
+              lineHeight: 22,
+              textAlignVertical: 'center',
             }}>84</Text>
+            {/* LIGNE 2 : VITALITÉ */}
             <Text style={{
-              fontSize: 9,
-              fontWeight: '700',
-              color: '#8892A0',
-              letterSpacing: 1,
+              fontSize: 8, fontWeight: '800', color: '#D4AF37',
+              letterSpacing: 2, marginTop: 2, height: 14, lineHeight: 14,
+            }}>VITALITÉ</Text>
+            {/* LIGNE 3 : / 100 */}
+            <Text style={{
+              fontSize: 8, fontWeight: '600', color: '#8892A0',
+              letterSpacing: 1, height: 12, lineHeight: 12,
             }}>/ 100</Text>
           </View>
 
           {/* Barre verticale */}
-          <View style={{ width: 1, height: 40, backgroundColor: 'rgba(255,255,255,0.06)', alignSelf: 'center' }} />
+          <View style={{ width: 1, height: 48, backgroundColor: 'rgba(255,255,255,0.06)', alignSelf: 'center' }} />
 
-          {/* Label Reste — droite */}
+          {/* COLONNE DROITE — Reste */}
           <View style={{ alignItems: 'center', flex: 1 }}>
+            {/* LIGNE 1 */}
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: '800',
               color: '#4DA6FF',
-              textShadowColor: 'rgba(77, 166, 255, 0.3)',
+              textShadowColor: 'rgba(77, 166, 255, 0.25)',
               textShadowOffset: { width: 0, height: 0 },
               textShadowRadius: 4,
+              height: 22,
+              lineHeight: 22,
+              textAlignVertical: 'center',
             }}>{Math.round((remaining / DAILY_OBJECTIVE) * 100)}%</Text>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: '#EAEEF3', marginTop: 1 }}>Reste</Text>
-            <Text style={{ fontSize: 8, fontWeight: '500', color: '#8892A0' }}>à consommer</Text>
+            {/* LIGNE 2 */}
+            <Text style={{
+              fontSize: 11, fontWeight: '700', color: '#EAEEF3',
+              marginTop: 2, height: 14, lineHeight: 14,
+            }}>Reste</Text>
+            {/* LIGNE 3 */}
+            <Text style={{
+              fontSize: 8, fontWeight: '500', color: '#8892A0',
+              height: 12, lineHeight: 12,
+            }}>à consommer</Text>
           </View>
         </View>
       </MetalCard>
