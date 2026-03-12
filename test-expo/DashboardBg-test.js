@@ -6,7 +6,7 @@
 
 import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import {
-  View, Dimensions, Text, StyleSheet, StatusBar,
+  View, Dimensions, Text, StyleSheet, StatusBar, Alert,
   Animated as RNAnimated, ScrollView, TouchableOpacity, Platform, Modal, Easing,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -337,30 +337,58 @@ const GlassCard = ({ children, style }) => (
 // ============================================
 // COMPOSANT METALCARD — Plaque métal brossé
 // ============================================
-const MetalCard = ({ children, style, noPadding = false }) => (
-  <View style={[metalStyles.outerBorder, style]}>
-    <LinearGradient
-      colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={metalStyles.innerGradient}
-    >
-      <View style={[metalStyles.cardContent, noPadding && { padding: 0 }]}>
-        {/* Ligne lumineuse émeraude en haut */}
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: 25,
-          right: 25,
-          height: 1,
-          backgroundColor: 'rgba(0, 217, 132, 0.10)',
-          borderRadius: 0.5,
-        }} />
-        {children}
-      </View>
-    </LinearGradient>
-  </View>
-);
+const MetalCard = ({ children, style, onPress, noPadding = false }) => {
+  const Wrapper = onPress ? TouchableOpacity : View;
+  const wrapperProps = onPress ? { onPress, activeOpacity: 0.85 } : {};
+
+  return (
+    <Wrapper {...wrapperProps} style={[metalStyles.outerBorder, style]}>
+      <LinearGradient
+        colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={metalStyles.innerGradient}
+      >
+        <View style={[metalStyles.cardContent, noPadding && { padding: 0 }]}>
+          {/* Ligne lumineuse émeraude en haut */}
+          <View style={{
+            position: 'absolute',
+            top: 0,
+            left: 25,
+            right: 25,
+            height: 1,
+            backgroundColor: 'rgba(0, 217, 132, 0.10)',
+            borderRadius: 0.5,
+          }} />
+          {/* Indicateur cliquable — flèche en haut à droite */}
+          {onPress && (
+            <View style={{
+              position: 'absolute',
+              top: 10,
+              right: 10,
+              width: 18,
+              height: 18,
+              borderRadius: 9,
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.08)',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+              <Text style={{
+                color: '#8892A0',
+                fontSize: 10,
+                fontWeight: '600',
+                marginTop: -1,
+              }}>›</Text>
+            </View>
+          )}
+          {children}
+        </View>
+      </LinearGradient>
+    </Wrapper>
+  );
+};
 
 const metalStyles = StyleSheet.create({
   outerBorder: {
@@ -1203,11 +1231,11 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 75, paddingTop: 8 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 65, paddingTop: 8 }}
       showsVerticalScrollIndicator={false}
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }} onPress={() => Alert.alert('Bilan Énergétique', 'Détails des calories, macros et progression — bientôt disponible')}>
         {/* HEADER — une seule ligne, tout aligné */}
         <View style={{
           flexDirection: 'row',
@@ -1278,13 +1306,13 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         {/* ===== LABELS — version épurée ===== */}
         <View style={{
           flexDirection: 'row',
-          justifyContent: 'space-around',
+          justifyContent: 'center',
           alignItems: 'center',
-          paddingHorizontal: 4,
+          paddingHorizontal: 0,
           marginTop: 10,
         }}>
           {/* Consommé */}
-          <View style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: 'center', flex: 1 }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
               fontSize: 15,
@@ -1300,7 +1328,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           </View>
 
           {/* Vitalité */}
-          <View style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: 'center', flex: 1 }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
               fontSize: 15,
@@ -1317,7 +1345,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           </View>
 
           {/* Reste */}
-          <View style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: 'center', flex: 1 }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
               fontSize: 15,
@@ -1348,7 +1376,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       {/* ======================================================= */}
 
       {/* DERNIER REPAS */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }} onPress={() => Alert.alert('Dernier Repas', 'Détails nutritionnels complets — bientôt disponible')}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
           <PlateIcon />
           <Text style={{
@@ -1401,7 +1429,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       </MetalCard>
 
       {/* COACH LIXMAN */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }} onPress={() => Alert.alert('Coach LixMan', 'Recommandations personnalisées IA — bientôt disponible')}>
         {/* Header Coach */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
           {/* Icône robot/coach — petit cercle émeraude avec un "L" */}
@@ -1482,14 +1510,19 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         </View>
 
         {/* Lien Voir Recettes */}
-        <Text style={{
-          color: '#00D984',
-          fontSize: 11,
-          fontWeight: '600',
-          marginTop: 8,
-        }}>
-          Voir Recettes  ›
-        </Text>
+        <TouchableOpacity
+          onPress={() => Alert.alert('Recettes', 'Recettes adaptées à votre profil — bientôt disponible')}
+          activeOpacity={0.7}
+        >
+          <Text style={{
+            color: '#00D984',
+            fontSize: 11,
+            fontWeight: '600',
+            marginTop: 8,
+          }}>
+            Voir Recettes  ›
+          </Text>
+        </TouchableOpacity>
       </MetalCard>
 
       {/* SUGGESTION ACTIVITÉ (dynamique basée sur surplus) */}
@@ -1512,7 +1545,14 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       )}
 
       {/* STATS AVANCÉES — FLOUTÉES */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }} onPress={() => Alert.alert(
+        'Débloquer Mes Stats',
+        'Accédez à vos statistiques sur 7 jours pour 200 Lix ou avec un abonnement Premium.',
+        [
+          { text: 'Plus tard', style: 'cancel' },
+          { text: 'Débloquer', onPress: () => console.log('Navigate to shop') },
+        ]
+      )}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
           <StatsIcon />
           <Text style={{
