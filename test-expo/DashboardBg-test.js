@@ -309,20 +309,26 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
       paddingHorizontal: 14,
       paddingTop: 10,
       paddingBottom: 10,
+      overflow: 'visible',
     }}>
 
       {/* GAUCHE — Logo PNG */}
-      <Image
-        source={require('./assets/lixum-logo.png')}
-        resizeMode="contain"
-        style={{
-          width: 250,
-          height: 75,
-        }}
-      />
+      <View style={{ flex: 0 }}>
+        <Image
+          source={require('./assets/lixum-logo.png')}
+          style={{
+            width: 280,
+            height: 85,
+            resizeMode: 'contain',
+            marginLeft: -40,
+            marginTop: -10,
+            marginBottom: -10,
+          }}
+        />
+      </View>
 
       {/* DROITE — Mood + Lix Coin */}
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 0, flexShrink: 0 }}>
 
         {/* Mood emoji avec ring */}
         <TouchableOpacity onPress={onMoodPress} activeOpacity={0.7} style={{ position: 'relative', marginRight: 8 }}>
