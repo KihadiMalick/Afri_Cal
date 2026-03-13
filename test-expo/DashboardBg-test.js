@@ -302,45 +302,101 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
   });
 
   return (
-    <View style={s.header}>
+    <View style={{
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 14,
+      paddingTop: 10,
+      paddingBottom: 10,
+    }}>
+
       {/* GAUCHE — Logo PNG */}
       <Image
         source={require('./assets/lixum-logo.png')}
         style={{
-          width: 200,
-          height: 55,
+          width: 130,
+          height: 40,
           resizeMode: 'contain',
         }}
       />
 
       {/* DROITE — Mood + Lix Coin */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+
         {/* Mood emoji avec ring */}
-        <TouchableOpacity onPress={onMoodPress} activeOpacity={0.7} style={s.moodBtn}>
+        <TouchableOpacity onPress={onMoodPress} activeOpacity={0.7} style={{ position: 'relative', marginRight: 8 }}>
           <RNAnimated.View style={{ transform: [{ rotate: moodFilled ? '0deg' : rotate }] }}>
-            <View style={s.moodCircle}>
-              <Text style={{ fontSize: fp(18) }}>{moodFilled ? '😊' : '😶'}</Text>
+            <View style={{
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              borderWidth: 2,
+              borderColor: '#00D984',
+              backgroundColor: 'rgba(21,27,35,0.7)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              shadowColor: '#00D984',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.3,
+              shadowRadius: 6,
+              elevation: 4,
+            }}>
+              <Text style={{ fontSize: 20 }}>{moodFilled ? '😊' : '😶'}</Text>
             </View>
           </RNAnimated.View>
           {!moodFilled && (
-            <View style={s.moodBadge}>
-              <Text style={{ color: '#fff', fontSize: fp(7), fontWeight: '800' }}>!</Text>
+            <View style={{
+              position: 'absolute',
+              top: -3,
+              right: -3,
+              width: 14,
+              height: 14,
+              borderRadius: 7,
+              backgroundColor: '#FF8C42',
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderWidth: 1.5,
+              borderColor: '#1E2530',
+            }}>
+              <Text style={{ color: 'white', fontSize: 8, fontWeight: '800' }}>!</Text>
             </View>
           )}
         </TouchableOpacity>
 
-        {/* Lix counter */}
-        <TouchableOpacity onPress={onLixPress} activeOpacity={0.7} style={s.lixBtn}>
-          <View style={{ position: 'relative', marginRight: wp(5) }}>
-            <LixCoinIcon size={wp(16)} />
+        {/* Lix Coin + compteur */}
+        <TouchableOpacity onPress={onLixPress} activeOpacity={0.7} style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: 'rgba(21, 27, 35, 0.8)',
+          borderWidth: 1,
+          borderColor: 'rgba(62, 72, 85, 0.5)',
+          borderRadius: 20,
+          paddingHorizontal: 10,
+          paddingVertical: 6,
+        }}>
+          <View style={{ position: 'relative', marginRight: 5 }}>
+            <LixCoinIcon size={16} />
             {notifCount > 0 && (
-              <View style={s.notifBadge}>
-                <Text style={s.notifBadgeText}>{notifCount}</Text>
+              <View style={{
+                position: 'absolute',
+                top: -4,
+                right: -6,
+                backgroundColor: '#FF3B30',
+                borderRadius: 6,
+                width: 13,
+                height: 13,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderWidth: 1.5,
+                borderColor: '#1E2530',
+              }}>
+                <Text style={{ color: 'white', fontSize: 7, fontWeight: '800' }}>{notifCount}</Text>
               </View>
             )}
           </View>
-          <Text style={s.lixCount}>{lixCount.toLocaleString('fr-FR')}</Text>
-          <Text style={s.lixLabel}>Lix</Text>
+          <Text style={{ color: '#EAEEF3', fontSize: 15, fontWeight: '700' }}>{lixCount.toLocaleString('fr-FR')}</Text>
+          <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '500', marginLeft: 3 }}>Lix</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -1067,61 +1123,78 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }
 
   return (
       <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={onPress}>
+
+        {/* ========== LIGNE 1 : Titre à gauche — Données à droite ========== */}
+        <View style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 10,
+          marginRight: 25,
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={{ fontSize: 16, marginRight: 6 }}>💧</Text>
+            <Text style={{
+              color: '#EAEEF3',
+              fontSize: 14,
+              fontWeight: '700',
+              letterSpacing: 1,
+            }}>HYDRATATION</Text>
+          </View>
+
+          <Text style={{
+            color: '#00BFA6',
+            fontSize: 14,
+            fontWeight: '700',
+          }}>{liters} / {goalL}L</Text>
+        </View>
+
+        {/* ========== LIGNE 2 : Silhouette + Barre + Infos ========== */}
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {/* Mini silhouette gauche */}
-          <SilhouetteFill fillPercent={percent} height={wp(56)} gender={gender} />
 
-          {/* Infos droite */}
-          <View style={{ flex: 1, marginLeft: wp(14) }}>
-            {/* Ligne titre Hydratation — titre à gauche, données à droite */}
-            <View style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingRight: 30,
-            }}>
-              {/* GAUCHE — icône + titre */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 }}>
-                <Text style={{ fontSize: 14, marginRight: 5 }}>💧</Text>
-                <Text style={{
-                  color: '#EAEEF3',
-                  fontSize: 13,
-                  fontWeight: '700',
-                  letterSpacing: 1,
-                }}>HYDRATATION</Text>
-              </View>
+          {/* Silhouette à gauche */}
+          <View style={{ width: 45, alignItems: 'center', marginRight: 12 }}>
+            <SilhouetteFill fillPercent={percent} height={wp(56)} gender={gender} />
+          </View>
 
-              {/* DROITE — valeurs litres */}
-              <Text style={{
-                color: '#00BFA6',
-                fontSize: 13,
-                fontWeight: '700',
-              }}>{liters} / {goalL}L</Text>
-            </View>
+          {/* Colonne droite : barre + verres + sport */}
+          <View style={{ flex: 1 }}>
 
             {/* Barre de progression */}
-            <View style={s.hydroBar}>
+            <View style={{
+              height: 8,
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              borderRadius: 4,
+              overflow: 'hidden',
+              marginBottom: 8,
+            }}>
               <LinearGradient
                 colors={['#4DA6FF', '#00BCD4']}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={[s.hydroBarFill, { width: percent + '%' }]}
+                style={{
+                  width: percent + '%',
+                  height: '100%',
+                  borderRadius: 4,
+                }}
               />
             </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 3 }}>
-              <Text style={s.hydroGlasses}>{glasses}/{totalGlasses} verres 🥛</Text>
-              <Text style={s.hydroPercent}>{percent}%</Text>
+
+            {/* Verres + pourcentage */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Text style={{ color: '#8892A0', fontSize: 12 }}>{glasses}/{totalGlasses} verres 🥛</Text>
+              <Text style={{ color: '#FF8C42', fontSize: 12, fontWeight: '700' }}>{percent}%</Text>
             </View>
 
-            {/* Sport water loss alert */}
+            {/* Sport water loss / hint */}
             {sportAlert ? (
-              <Text style={{ color: '#FF8C42', fontSize: fp(10), marginTop: wp(4) }}>{sportAlert}</Text>
+              <Text style={{ color: '#FF8C42', fontSize: 11 }}>{sportAlert}</Text>
             ) : (
-              <Text style={{ color: '#555E6C', fontSize: fp(10), marginTop: wp(4) }}>Tap pour ajouter →</Text>
+              <Text style={{ color: '#555E6C', fontSize: 11 }}>Tap pour ajouter →</Text>
             )}
 
             {/* Low hydration warning */}
             {percent < 30 && percent > 0 && (
-              <Text style={{ color: '#FF3B30', fontSize: fp(10), fontWeight: '700', marginTop: 2 }}>
+              <Text style={{ color: '#FF3B30', fontSize: 10, fontWeight: '700', marginTop: 2 }}>
                 ⚠️ Pensez à vous réhydrater ! 💧
               </Text>
             )}
