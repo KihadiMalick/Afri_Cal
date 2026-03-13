@@ -320,7 +320,7 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
             width: 220,
             height: 68,
             resizeMode: 'contain',
-            marginLeft: -65,
+            marginLeft: -50,
             marginTop: -10,
             marginBottom: -10,
           }}
