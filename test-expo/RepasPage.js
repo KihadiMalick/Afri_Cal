@@ -14,7 +14,7 @@ ABONNEMENTS :
 - Premium Standard : 9,99$/mois → 10 000 Lix offerts
 */
 
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Dimensions, Text, StyleSheet, Pressable, Image,
@@ -259,7 +259,8 @@ const RepasPage = () => {
         Animated.timing(glowAnim, { toValue: 0, duration: 1500, useNativeDriver: false }),
       ])
     ).start();
-  }, [glowAnim]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
@@ -275,7 +276,13 @@ const RepasPage = () => {
       locations={[0, 0.25, 0.5, 0.75, 1]}
       style={{ flex: 1 }}
     >
-      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+      {/* TODO PRODUCTION: Remettre <SafeAreaView> avec <SafeAreaProvider> lors du build EAS final.
+          Ce paddingTop fixe est un workaround temporaire pour Snack Expo uniquement.
+          Lors de l'assemblage de toutes les pages pour la production :
+          1. Ajouter <SafeAreaProvider> dans App.js racine
+          2. Remplacer ce <View> par <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+          3. Supprimer le paddingTop fixe */}
+      <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 40 : 50 }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: wp(80) }}
@@ -657,7 +664,7 @@ const RepasPage = () => {
             </ScrollView>
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     </LinearGradient>
   );
 };
