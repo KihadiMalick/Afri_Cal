@@ -295,9 +295,56 @@ const GoalFlag = () => (
 );
 
 // ============================================================
+// COMPOSANT — FloatingHeart (animation cœur TikTok)
+// ============================================================
+const FloatingHeart = ({ x, emoji }) => {
+  const translateY = useRef(new RNAnimated.Value(0)).current;
+  const opacity = useRef(new RNAnimated.Value(1)).current;
+  const scale = useRef(new RNAnimated.Value(0.5)).current;
+
+  useEffect(() => {
+    RNAnimated.parallel([
+      RNAnimated.timing(translateY, {
+        toValue: -250 - Math.random() * 100,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+      RNAnimated.timing(opacity, {
+        toValue: 0,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+      RNAnimated.sequence([
+        RNAnimated.timing(scale, {
+          toValue: 1.2,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(scale, {
+          toValue: 0.8,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
+
+  return (
+    <RNAnimated.Text style={{
+      position: 'absolute',
+      left: x,
+      bottom: 200,
+      fontSize: 22,
+      transform: [{ translateY }, { scale }],
+      opacity,
+    }}>{emoji}</RNAnimated.Text>
+  );
+};
+
+// ============================================================
 // COMPOSANT — Header Global (Mood + LIXUM + Lix)
 // ============================================================
-const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress }) => {
+const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress, onLixPress }) => {
   // Animation shake pour le mood non rempli
   const shakeAnim = useRef(new RNAnimated.Value(0)).current;
 
@@ -358,17 +405,19 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
               height: 38,
               borderRadius: 19,
               borderWidth: 2,
-              borderColor: '#00D984',
+              borderColor: moodFilled ? '#00D984' : '#FF8C42',
               backgroundColor: 'rgba(21,27,35,0.7)',
               justifyContent: 'center',
               alignItems: 'center',
-              shadowColor: '#00D984',
+              shadowColor: moodFilled ? '#00D984' : '#FF8C42',
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 0.3,
               shadowRadius: 6,
               elevation: 4,
             }}>
-              <Text style={{ fontSize: 20 }}>{moodFilled ? '😊' : '😶'}</Text>
+              <Text style={{ fontSize: 20 }}>
+                {currentMood === 'happy' ? '😄' : currentMood === 'chill' ? '😊' : currentMood === 'sad' ? '😔' : '😊'}
+              </Text>
             </View>
           </RNAnimated.View>
           {!moodFilled && (
@@ -1939,6 +1988,8 @@ export default function App() {
     scrollRef.current?.scrollTo({ y: SCROLL_POSITIONS[tooltipStep - 1], animated: true });
   }, [tooltipStep]);
   const [moodFilled, setMoodFilled] = useState(false);
+  const [currentMood, setCurrentMood] = useState(null); // 'sad' | 'chill' | 'happy'
+  const [showMoodModal, setShowMoodModal] = useState(false);
   const [hydrationMl, setHydrationMl] = useState(1500);
   const [hydroModalVisible, setHydroModalVisible] = useState(false);
   const [surplusAlertVisible, setSurplusAlertVisible] = useState(false);
@@ -2170,6 +2221,350 @@ export default function App() {
     );
   };
 
+  // ===== MOOD MODAL — TikTok Tap Mechanism =====
+  const MoodModal = () => {
+    if (!showMoodModal) return null;
+
+    const [moodLevel, setMoodLevel] = useState(0);
+    const [lockedAtChill, setLockedAtChill] = useState(false);
+    const [hearts, setHearts] = useState([]);
+    const [moodResult, setMoodResult] = useState(null);
+    const [showWeather, setShowWeather] = useState(false);
+    const [selectedWeather, setSelectedWeather] = useState(null);
+    const decayTimer = useRef(null);
+    const heartId = useRef(0);
+    const inactivityTimer = useRef(null);
+
+    const CHILL_THRESHOLD = 40;
+    const HAPPY_THRESHOLD = 80;
+
+    // DECAY — jauge descend si on ne tapote pas
+    useEffect(() => {
+      decayTimer.current = setInterval(() => {
+        setMoodLevel(prev => {
+          const minLevel = lockedAtChill ? CHILL_THRESHOLD : 0;
+          return Math.max(prev - 1.5, minLevel);
+        });
+      }, 100);
+      return () => clearInterval(decayTimer.current);
+    }, [lockedAtChill]);
+
+    // Verrouillage au niveau Chill
+    useEffect(() => {
+      if (moodLevel >= CHILL_THRESHOLD && !lockedAtChill) {
+        setLockedAtChill(true);
+      }
+    }, [moodLevel]);
+
+    // Détection fin — 3 secondes sans tap
+    useEffect(() => {
+      if (moodResult) return;
+      clearTimeout(inactivityTimer.current);
+      inactivityTimer.current = setTimeout(() => {
+        let result;
+        if (moodLevel >= HAPPY_THRESHOLD) result = 'happy';
+        else if (moodLevel >= CHILL_THRESHOLD) result = 'chill';
+        else result = 'sad';
+        setMoodResult(result);
+        clearInterval(decayTimer.current);
+      }, 3000);
+      return () => clearTimeout(inactivityTimer.current);
+    }, [moodLevel]);
+
+    const handleTap = () => {
+      if (moodResult) return;
+      setMoodLevel(prev => Math.min(prev + 4, 100));
+
+      const id = heartId.current++;
+      const newHeart = {
+        id,
+        x: Math.random() * (W - 60) + 30,
+        emoji: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🩷'][Math.floor(Math.random() * 7)],
+      };
+      setHearts(prev => [...prev, newHeart]);
+      setTimeout(() => {
+        setHearts(prev => prev.filter(h => h.id !== id));
+      }, 1500);
+    };
+
+    const moodMessages = {
+      sad: {
+        emoji: '😔',
+        title: 'Ça va aller...',
+        message: 'Une petite activité sportive en plein air peut faire des merveilles ! Bougez, respirez, et revenez plus fort.',
+        color: '#8892A0',
+      },
+      chill: {
+        emoji: '😊',
+        title: 'Belle énergie !',
+        message: 'Maintenez votre énergie positive avec un bon repas équilibré. Votre corps vous remerciera.',
+        color: '#00D984',
+      },
+      happy: {
+        emoji: '😄',
+        title: 'Au top !',
+        message: 'Quelle énergie ! Profitez de cette journée pour atteindre vos objectifs. Rien ne peut vous arrêter !',
+        color: '#D4AF37',
+      },
+    };
+
+    const currentMoodZone = moodLevel >= HAPPY_THRESHOLD ? 'happy' : moodLevel >= CHILL_THRESHOLD ? 'chill' : 'sad';
+
+    return (
+      <View style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        zIndex: 9998,
+      }}>
+        <LinearGradient
+          colors={['#0D1117', '#1A2029', '#0D1117']}
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={handleTap}
+            style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}
+          >
+            {/* Cœurs flottants */}
+            {hearts.map(heart => (
+              <FloatingHeart key={heart.id} x={heart.x} emoji={heart.emoji} />
+            ))}
+
+            {/* Titre */}
+            {!moodResult && (
+              <Text style={{
+                color: '#EAEEF3',
+                fontSize: 18,
+                fontWeight: '800',
+                letterSpacing: 2,
+                marginBottom: 30,
+              }}>COMMENT ALLEZ-VOUS ?</Text>
+            )}
+
+            {/* Barre verticale + Emojis */}
+            {!moodResult && (
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 300 }}>
+                {/* Emojis à gauche */}
+                <View style={{ justifyContent: 'space-between', height: 300, marginRight: 15, paddingVertical: 5 }}>
+                  <Text style={{ fontSize: 30, opacity: currentMoodZone === 'happy' ? 1 : 0.3 }}>😄</Text>
+                  <Text style={{ fontSize: 30, opacity: currentMoodZone === 'chill' ? 1 : 0.3 }}>😊</Text>
+                  <Text style={{ fontSize: 30, opacity: currentMoodZone === 'sad' ? 1 : 0.3 }}>😔</Text>
+                </View>
+
+                {/* Barre verticale */}
+                <View style={{
+                  width: 50,
+                  height: 300,
+                  borderRadius: 25,
+                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  overflow: 'hidden',
+                  justifyContent: 'flex-end',
+                }}>
+                  {/* Marqueur Happy */}
+                  <View style={{
+                    position: 'absolute',
+                    top: 300 * (1 - HAPPY_THRESHOLD / 100) - 1,
+                    left: 0, right: 0, height: 2,
+                    backgroundColor: '#D4AF37', opacity: 0.4,
+                  }} />
+                  {/* Marqueur Chill */}
+                  <View style={{
+                    position: 'absolute',
+                    top: 300 * (1 - CHILL_THRESHOLD / 100) - 1,
+                    left: 0, right: 0, height: 2,
+                    backgroundColor: '#00D984', opacity: 0.4,
+                  }} />
+
+                  {/* Remplissage gradient */}
+                  <LinearGradient
+                    colors={
+                      moodLevel >= HAPPY_THRESHOLD
+                        ? ['#D4AF37', '#FFE066']
+                        : moodLevel >= CHILL_THRESHOLD
+                          ? ['#00854F', '#00D984']
+                          : ['#4A4F55', '#8892A0']
+                    }
+                    style={{
+                      width: '100%',
+                      height: `${moodLevel}%`,
+                      borderRadius: 25,
+                    }}
+                  />
+                </View>
+
+                {/* Labels à droite */}
+                <View style={{ justifyContent: 'space-between', height: 300, marginLeft: 15, paddingVertical: 5 }}>
+                  <Text style={{ color: '#D4AF37', fontSize: 11, fontWeight: '700' }}>HEUREUX</Text>
+                  <Text style={{ color: '#00D984', fontSize: 11, fontWeight: '700' }}>CHILL</Text>
+                  <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '700' }}>TRISTE</Text>
+                </View>
+              </View>
+            )}
+
+            {/* Instruction tap */}
+            {!moodResult && (
+              <Text style={{
+                color: '#8892A0',
+                fontSize: 12,
+                marginTop: 25,
+                textAlign: 'center',
+              }}>Tapotez l'écran pour exprimer votre humeur !</Text>
+            )}
+
+            {/* Résultat Mood */}
+            {moodResult && !showWeather && (
+              <View style={{ alignItems: 'center', paddingHorizontal: 30 }}>
+                <Text style={{ fontSize: 60, marginBottom: 15 }}>{moodMessages[moodResult].emoji}</Text>
+                <Text style={{
+                  color: moodMessages[moodResult].color,
+                  fontSize: 22,
+                  fontWeight: '800',
+                  marginBottom: 10,
+                }}>{moodMessages[moodResult].title}</Text>
+                <Text style={{
+                  color: '#8892A0',
+                  fontSize: 14,
+                  lineHeight: 22,
+                  textAlign: 'center',
+                  marginBottom: 30,
+                }}>{moodMessages[moodResult].message}</Text>
+
+                <TouchableOpacity
+                  onPress={() => setShowWeather(true)}
+                  style={{
+                    backgroundColor: moodMessages[moodResult].color,
+                    borderRadius: 14,
+                    paddingHorizontal: 30,
+                    paddingVertical: 12,
+                  }}
+                >
+                  <Text style={{ color: '#0D1117', fontSize: 15, fontWeight: '800' }}>Continuer →</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    setMoodLevel(0);
+                    setLockedAtChill(false);
+                    setMoodResult(null);
+                    setHearts([]);
+                  }}
+                  style={{ marginTop: 15 }}
+                >
+                  <Text style={{ color: '#8892A0', fontSize: 12 }}>Refaire</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Sélection Météo */}
+            {showWeather && (
+              <View style={{ alignItems: 'center', paddingHorizontal: 20 }}>
+                <Text style={{
+                  color: '#EAEEF3',
+                  fontSize: 16,
+                  fontWeight: '800',
+                  letterSpacing: 2,
+                  marginBottom: 8,
+                }}>QUEL TEMPS FAIT-IL ?</Text>
+                <Text style={{
+                  color: '#8892A0',
+                  fontSize: 12,
+                  marginBottom: 25,
+                  textAlign: 'center',
+                }}>Cela nous aide à adapter vos recommandations</Text>
+
+                <View style={{ flexDirection: 'row', gap: 15 }}>
+                  {/* Pluvieux */}
+                  <TouchableOpacity
+                    onPress={() => setSelectedWeather('rainy')}
+                    style={{
+                      width: 90, height: 100,
+                      borderRadius: 18,
+                      backgroundColor: selectedWeather === 'rainy' ? 'rgba(77, 166, 255, 0.15)' : 'rgba(255,255,255,0.04)',
+                      borderWidth: 1.5,
+                      borderColor: selectedWeather === 'rainy' ? '#4DA6FF' : 'rgba(255,255,255,0.08)',
+                      justifyContent: 'center', alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ fontSize: 35 }}>🌧️</Text>
+                    <Text style={{ color: '#4DA6FF', fontSize: 11, fontWeight: '700', marginTop: 5 }}>Pluvieux</Text>
+                  </TouchableOpacity>
+
+                  {/* Nuageux */}
+                  <TouchableOpacity
+                    onPress={() => setSelectedWeather('cloudy')}
+                    style={{
+                      width: 90, height: 100,
+                      borderRadius: 18,
+                      backgroundColor: selectedWeather === 'cloudy' ? 'rgba(136, 146, 160, 0.15)' : 'rgba(255,255,255,0.04)',
+                      borderWidth: 1.5,
+                      borderColor: selectedWeather === 'cloudy' ? '#8892A0' : 'rgba(255,255,255,0.08)',
+                      justifyContent: 'center', alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ fontSize: 35 }}>☁️</Text>
+                    <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '700', marginTop: 5 }}>Nuageux</Text>
+                  </TouchableOpacity>
+
+                  {/* Ensoleillé */}
+                  <TouchableOpacity
+                    onPress={() => setSelectedWeather('sunny')}
+                    style={{
+                      width: 90, height: 100,
+                      borderRadius: 18,
+                      backgroundColor: selectedWeather === 'sunny' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255,255,255,0.04)',
+                      borderWidth: 1.5,
+                      borderColor: selectedWeather === 'sunny' ? '#D4AF37' : 'rgba(255,255,255,0.08)',
+                      justifyContent: 'center', alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ fontSize: 35 }}>☀️</Text>
+                    <Text style={{ color: '#D4AF37', fontSize: 11, fontWeight: '700', marginTop: 5 }}>Ensoleillé</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Bouton Valider */}
+                {selectedWeather && (
+                  <View style={{ marginTop: 25, alignItems: 'center' }}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setCurrentMood(moodResult);
+                        setMoodFilled(true);
+                        setShowMoodModal(false);
+                      }}
+                      style={{
+                        backgroundColor: '#00D984',
+                        borderRadius: 14,
+                        paddingHorizontal: 30,
+                        paddingVertical: 12,
+                      }}
+                    >
+                      <Text style={{ color: '#0D1117', fontSize: 15, fontWeight: '800' }}>Valider ✓</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => Alert.alert(
+                        'Recettes Suggérées',
+                        'Découvrez des recettes adaptées à votre humeur et à la météo du jour !',
+                      )}
+                      style={{ marginTop: 12 }}
+                    >
+                      <Text style={{ color: '#00D984', fontSize: 12, fontWeight: '600' }}>
+                        Voir les Recettes Suggérées  ›
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+
+          </TouchableOpacity>
+        </LinearGradient>
+      </View>
+    );
+  };
+
   const renderPage = () => {
     switch (activeTab) {
       case 'home':
@@ -2211,9 +2606,10 @@ export default function App() {
         <SafeAreaView style={{ flex: 1 }} edges={['top']}>
           <Header
             moodFilled={moodFilled}
+            currentMood={currentMood}
             lixCount={lixCount}
             notifCount={notifCount}
-            onMoodPress={() => setMoodFilled(!moodFilled)}
+            onMoodPress={() => setShowMoodModal(true)}
             onLixPress={() => setActiveTab('profile')}
           />
           {renderPage()}
@@ -2242,6 +2638,9 @@ export default function App() {
           surplus={surplus}
           onAddActivity={() => setActiveTab('activity')}
         />
+
+        {/* ===== MOOD MODAL — TikTok Tap ===== */}
+        <MoodModal />
 
         {/* ===== TOOLTIP OVERLAY — Tutoriel guidé ===== */}
         <TooltipOverlay />
