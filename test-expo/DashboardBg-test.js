@@ -1845,6 +1845,10 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
+  const [tooltipStep, setTooltipStep] = useState(1);
+  // 0 = pas de tooltip (fermé)
+  // 1 à 5 = étape active
+  // Au premier lancement : setTooltipStep(1)
   const [moodFilled, setMoodFilled] = useState(false);
   const [hydrationMl, setHydrationMl] = useState(1500);
   const [hydroModalVisible, setHydroModalVisible] = useState(false);
@@ -1877,6 +1881,175 @@ export default function App() {
   const sportAlert = sportWaterLoss > 0
     ? `🏃 -${sportWaterLoss}ml (${activities.map(a => ACTIVITY_LABELS[a.name] || a.name).join(', ')})`
     : null;
+
+  // ===== TOOLTIP OVERLAY — Tutoriel guidé 5 étapes =====
+  const TooltipOverlay = () => {
+    if (tooltipStep === 0) return null;
+
+    const steps = [
+      {
+        title: 'Calories Consommées',
+        description: 'Ce réacteur montre les calories que vous avez mangées aujourd\'hui. Le glow orange grandit avec votre progression.',
+        icon: '🔥',
+        color: '#FF8C42',
+      },
+      {
+        title: 'Score Vitalité',
+        description: 'Votre score de santé quotidien sur 100. Il combine nutrition, hydratation, activité et discipline.',
+        icon: '🧬',
+        color: '#00D984',
+      },
+      {
+        title: 'Calories Restantes',
+        description: 'Ce réacteur montre combien de calories vous pouvez encore consommer. Le sport augmente ce nombre !',
+        icon: '💪',
+        color: '#4DA6FF',
+      },
+      {
+        title: 'Hydratation',
+        description: 'Suivez votre consommation d\'eau. L\'app calcule automatiquement l\'eau perdue pendant le sport.',
+        icon: '💧',
+        color: '#00BFA6',
+      },
+      {
+        title: 'Coach LixMan',
+        description: 'Votre coach IA personnel. Il analyse vos données et vous donne des conseils adaptés chaque jour.',
+        icon: '🧠',
+        color: '#00D984',
+      },
+    ];
+
+    const currentStep = steps[tooltipStep - 1];
+    const isLast = tooltipStep === steps.length;
+
+    return (
+      <View style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        zIndex: 9999,
+      }}>
+        {/* Fond assombri */}
+        <View style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        }} />
+
+        {/* Bulle de tooltip — centrée en bas de l'écran */}
+        <View style={{
+          position: 'absolute',
+          bottom: 120,
+          left: 20,
+          right: 20,
+          backgroundColor: '#1E2530',
+          borderRadius: 20,
+          padding: 20,
+          borderWidth: 1,
+          borderColor: currentStep.color + '30',
+          shadowColor: currentStep.color,
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.2,
+          shadowRadius: 15,
+          elevation: 10,
+        }}>
+          {/* Indicateur d'étape */}
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'center',
+            marginBottom: 12,
+            gap: 6,
+          }}>
+            {steps.map((_, i) => (
+              <View key={i} style={{
+                width: i + 1 === tooltipStep ? 20 : 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: i + 1 === tooltipStep ? currentStep.color : 'rgba(255,255,255,0.15)',
+              }} />
+            ))}
+          </View>
+
+          {/* Étape numéro */}
+          <Text style={{
+            color: currentStep.color,
+            fontSize: 10,
+            fontWeight: '700',
+            letterSpacing: 2,
+            textAlign: 'center',
+            marginBottom: 6,
+          }}>{tooltipStep} / {steps.length}</Text>
+
+          {/* Icône + Titre */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+            <Text style={{ fontSize: 22, marginRight: 8 }}>{currentStep.icon}</Text>
+            <Text style={{
+              color: '#EAEEF3',
+              fontSize: 18,
+              fontWeight: '800',
+            }}>{currentStep.title}</Text>
+          </View>
+
+          {/* Description */}
+          <Text style={{
+            color: '#8892A0',
+            fontSize: 13,
+            lineHeight: 20,
+            textAlign: 'center',
+            marginBottom: 16,
+          }}>{currentStep.description}</Text>
+
+          {/* Boutons */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* Passer */}
+            <TouchableOpacity onPress={() => setTooltipStep(0)}>
+              <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '500' }}>Passer</Text>
+            </TouchableOpacity>
+
+            {/* Suivant / Commencer */}
+            <TouchableOpacity
+              onPress={() => {
+                if (isLast) {
+                  setTooltipStep(0);
+                  // Plus tard : sauvegarder dans Supabase
+                  // await supabase.from('users_profile').update({ has_seen_tooltip: true })
+                } else {
+                  setTooltipStep(tooltipStep + 1);
+                }
+              }}
+              style={{
+                backgroundColor: currentStep.color,
+                borderRadius: 12,
+                paddingHorizontal: 20,
+                paddingVertical: 10,
+              }}
+            >
+              <Text style={{
+                color: '#0D1117',
+                fontSize: 14,
+                fontWeight: '800',
+              }}>{isLast ? 'Commencer !' : 'Suivant →'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Flèche pointant vers l'élément (triangle) */}
+        <View style={{
+          position: 'absolute',
+          bottom: 115,
+          alignSelf: 'center',
+          width: 0,
+          height: 0,
+          borderLeftWidth: 10,
+          borderRightWidth: 10,
+          borderBottomWidth: 10,
+          borderLeftColor: 'transparent',
+          borderRightColor: 'transparent',
+          borderBottomColor: '#1E2530',
+          transform: [{ rotate: '180deg' }],
+        }} />
+      </View>
+    );
+  };
 
   const renderPage = () => {
     switch (activeTab) {
@@ -1949,6 +2122,9 @@ export default function App() {
           surplus={surplus}
           onAddActivity={() => setActiveTab('activity')}
         />
+
+        {/* ===== TOOLTIP OVERLAY — Tutoriel guidé ===== */}
+        <TooltipOverlay />
       </View>
     </SafeAreaProvider>
   );
