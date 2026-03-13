@@ -1,4 +1,4 @@
-// LIXUM - Page Repas / Meals — Phase 2 (refonte post-screenshot)
+// LIXUM - Page Repas / Meals — Phase 3 (Premium Polish)
 // Même design system que DashboardBg-test.js
 // Dépendances: expo-linear-gradient, react-native-svg, react-native-safe-area-context
 
@@ -19,6 +19,7 @@ import {
   View, Dimensions, Text, StyleSheet, Pressable, Image,
   Animated, ScrollView, PixelRatio, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Path, Rect, Ellipse } from 'react-native-svg';
 
@@ -33,106 +34,6 @@ const fp = (size) => {
   const scaled = (W / BASE_WIDTH) * size;
   return Math.round(PixelRatio.roundToNearestPixel(scaled));
 };
-
-// ============================================
-// COMPOSANT — MetalCard (copié depuis DashboardBg-test.js)
-// ============================================
-const MetalCard = ({ children, style, onPress, noPadding = false }) => {
-  if (!onPress) {
-    return (
-      <View style={[metalStyles.outerBorder, style]}>
-        <LinearGradient
-          colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={metalStyles.innerGradient}
-        >
-          <View style={[metalStyles.cardContent, noPadding && { padding: 0 }]}>
-            <View style={{
-              position: 'absolute', top: 0, left: 25, right: 25,
-              height: 1, backgroundColor: 'rgba(0, 217, 132, 0.10)', borderRadius: 0.5,
-            }} />
-            {children}
-          </View>
-        </LinearGradient>
-      </View>
-    );
-  }
-
-  return (
-    <Pressable
-      onPress={onPress}
-      delayPressIn={120}
-      unstable_pressDelay={120}
-      style={({ pressed }) => [
-        metalStyles.outerBorder,
-        style,
-        {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: pressed ? 2 : 8 },
-          shadowOpacity: pressed ? 0.6 : 0.5,
-          shadowRadius: pressed ? 4 : 16,
-          elevation: pressed ? 4 : 12,
-          transform: [{ scale: pressed ? 0.975 : 1 }],
-          backgroundColor: pressed ? '#3E434A' : '#4A4F55',
-        },
-      ]}
-    >
-      <LinearGradient
-        colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={metalStyles.innerGradient}
-      >
-        <View style={[metalStyles.cardContent, noPadding && { padding: 0 }]}>
-          <View style={{
-            position: 'absolute', top: 0, left: 25, right: 25,
-            height: 1, backgroundColor: 'rgba(0, 217, 132, 0.10)', borderRadius: 0.5,
-          }} />
-          <View style={{
-            position: 'absolute',
-            top: wp(10), right: wp(10),
-            width: wp(18), height: wp(18),
-            borderRadius: wp(9),
-            backgroundColor: 'rgba(255, 255, 255, 0.04)',
-            borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.08)',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-            <Text style={{ color: '#8892A0', fontSize: fp(10), fontWeight: '600', marginTop: -1 }}>›</Text>
-          </View>
-          {children}
-        </View>
-      </LinearGradient>
-    </Pressable>
-  );
-};
-
-const metalStyles = StyleSheet.create({
-  outerBorder: {
-    borderRadius: wp(18),
-    padding: wp(1.2),
-    backgroundColor: '#4A4F55',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 12,
-    marginHorizontal: wp(14),
-    marginBottom: wp(12),
-  },
-  innerGradient: {
-    borderRadius: wp(17),
-    overflow: 'hidden',
-  },
-  cardContent: {
-    padding: wp(16),
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.25)',
-    borderRadius: wp(17),
-  },
-});
 
 // ============================================
 // MOCK DATA
@@ -155,191 +56,187 @@ const MOCK_FREQUENT = [
 ];
 
 const MOCK_RECIPES = [
-  { name: 'Thieboudienne', origin: '🇸🇳 Sénégal', cal: 520, color: '#8B4513' },
-  { name: 'Ndolé', origin: '🇨🇲 Cameroun', cal: 380, color: '#2E5A1C' },
-  { name: 'Fumbwa', origin: '🇧🇮 Burundi', cal: 290, color: '#1E4A20' },
-  { name: 'Ugali + Sukuma', origin: '🇰🇪 Kenya', cal: 350, color: '#8B6914' },
-  { name: 'Mafé', origin: '🇲🇱 Mali', cal: 480, color: '#A0522D' },
-  { name: 'Jollof Rice', origin: '🇳🇬 Nigeria', cal: 410, color: '#B22222' },
+  { name: 'Thieboudienne', origin: '\u{1F1F8}\u{1F1F3} Sénégal', cal: 520, color: '#7A3B10' },
+  { name: 'Ndolé', origin: '\u{1F1E8}\u{1F1F2} Cameroun', cal: 380, color: '#1E4A20' },
+  { name: 'Fumbwa', origin: '\u{1F1E7}\u{1F1EE} Burundi', cal: 290, color: '#1A3A1E' },
+  { name: 'Ugali + Sukuma', origin: '\u{1F1F0}\u{1F1EA} Kenya', cal: 350, color: '#6A5010' },
+  { name: 'Mafé', origin: '\u{1F1F2}\u{1F1F1} Mali', cal: 480, color: '#8A4520' },
+  { name: 'Jollof Rice', origin: '\u{1F1F3}\u{1F1EC} Nigeria', cal: 410, color: '#8B1A1A' },
 ];
 
 // ============================================
-// COMPOSANT — MealDayCard (card horizontale)
+// COMPOSANT — SectionTitle (FIX 3)
+// ============================================
+const SectionTitle = ({ title, rightAction, rightLabel }) => (
+  <View style={{
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: wp(16),
+    marginBottom: wp(10),
+  }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <View style={{
+        width: 3, height: 18, borderRadius: 1.5,
+        backgroundColor: '#00D984', marginRight: 8,
+      }}/>
+      <Text style={{
+        color: '#EAEEF3',
+        fontSize: fp(14),
+        fontWeight: '800',
+        letterSpacing: 2,
+        textTransform: 'uppercase',
+      }}>
+        {title}
+      </Text>
+    </View>
+    {rightLabel && (
+      <Pressable onPressIn={rightAction}>
+        <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600' }}>
+          {rightLabel}
+        </Text>
+      </Pressable>
+    )}
+  </View>
+);
+
+// ============================================
+// COMPOSANT — MealDayCard (FIX 4 — compact)
 // ============================================
 const MealDayCard = ({ icon, label, meal, lang }) => {
-  const cardWidth = wp(220);
+  const cardWidth = wp(175);
 
   if (meal) {
-    // CARD AVEC REPAS
     return (
-      <Pressable
-        delayPressIn={120}
+      <Pressable delayPressIn={120}
         style={({ pressed }) => ({
           width: cardWidth,
           transform: [{ scale: pressed ? 0.975 : 1 }],
         })}
       >
         <View style={{
-          borderRadius: 18, padding: 1.2,
-          backgroundColor: '#4A4F55', elevation: 12,
-          shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3, shadowRadius: 8,
+          borderRadius: 16, padding: 1,
+          backgroundColor: '#4A4F55', elevation: 8,
+          shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.25, shadowRadius: 6,
         }}>
           <LinearGradient
             colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-            style={{ borderRadius: 17, padding: wp(14) }}
+            style={{ borderRadius: 15, padding: wp(11) }}
           >
-            {/* Ligne émeraude top */}
+            {/* Ligne émeraude */}
             <View style={{
-              position: 'absolute', top: 0, left: 20, right: 20,
+              position: 'absolute', top: 0, left: 16, right: 16,
               height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
             }}/>
 
-            {/* Header card : icône + label + heure */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
-              <Text style={{ fontSize: 18 }}>{icon}</Text>
+            {/* Header compact */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+              <Text style={{ fontSize: 14 }}>{icon}</Text>
               <Text style={{
-                color: '#8892A0', fontSize: fp(11), fontWeight: '700',
-                letterSpacing: 1, marginLeft: 6, textTransform: 'uppercase',
+                color: '#8892A0', fontSize: fp(9), fontWeight: '700',
+                letterSpacing: 1, marginLeft: 4, textTransform: 'uppercase',
               }}>{label}</Text>
-              <Text style={{
-                color: '#5A6070', fontSize: fp(10), marginLeft: 'auto',
-              }}>{meal.time}</Text>
+              <Text style={{ color: '#3A4050', fontSize: fp(9), marginLeft: 'auto' }}>{meal.time}</Text>
             </View>
 
-            {/* Photo placeholder + infos */}
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {/* Placeholder assiette fumante */}
-              <View style={{
-                width: wp(46), height: wp(46), borderRadius: 12,
-                backgroundColor: '#2A2F36',
-                justifyContent: 'center', alignItems: 'center',
-                marginRight: wp(10),
-                borderWidth: 1, borderColor: '#3A3F46',
-              }}>
-                <Svg width={24} height={24} viewBox="0 0 24 24">
-                  <Ellipse cx="12" cy="17" rx="10" ry="4" fill="none" stroke="#5A6070" strokeWidth={1.2}/>
-                  <Path d="M2 17C2 14.5 6 12 12 12C18 12 22 14.5 22 17" fill="none" stroke="#5A6070" strokeWidth={1.2}/>
-                  <Path d="M9 9C9 7.5 10.5 6.5 10.5 5" stroke="#5A6070" strokeWidth={0.8} strokeLinecap="round" opacity={0.5}/>
-                  <Path d="M12 8C12 6.5 13.5 5.5 13.5 4" stroke="#5A6070" strokeWidth={0.8} strokeLinecap="round" opacity={0.5}/>
-                  <Path d="M15 9C15 7.5 16.5 6.5 16.5 5" stroke="#5A6070" strokeWidth={0.8} strokeLinecap="round" opacity={0.5}/>
-                </Svg>
-              </View>
+            {/* Nom + calories */}
+            <Text style={{
+              color: '#EAEEF3', fontSize: fp(12), fontWeight: '700',
+            }} numberOfLines={1}>{meal.name}</Text>
+            <Text style={{
+              color: '#FF8C42', fontSize: fp(11), fontWeight: '700', marginTop: 2,
+            }}>{meal.calories} kcal</Text>
 
-              {/* Infos */}
-              <View style={{ flex: 1 }}>
-                <Text style={{
-                  color: '#EAEEF3', fontSize: fp(13), fontWeight: '700',
-                }} numberOfLines={1}>{meal.name}</Text>
-                <Text style={{
-                  color: '#FF8C42', fontSize: fp(12), fontWeight: '700', marginTop: 3,
-                }}>{meal.calories} kcal</Text>
+            {/* Macros compacts */}
+            <View style={{ flexDirection: 'row', marginTop: wp(6), gap: wp(8) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#FF6B6B', marginRight: 3 }}/>
+                <Text style={{ color: '#5A6070', fontSize: fp(9) }}>{meal.protein}g P</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#FFD93D', marginRight: 3 }}/>
+                <Text style={{ color: '#5A6070', fontSize: fp(9) }}>{meal.carbs}g G</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#4DA6FF', marginRight: 3 }}/>
+                <Text style={{ color: '#5A6070', fontSize: fp(9) }}>{meal.fat}g L</Text>
               </View>
             </View>
 
-            {/* Macros en ligne */}
-            <View style={{ flexDirection: 'row', marginTop: wp(10), gap: wp(10) }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF6B6B', marginRight: 3 }}/>
-                <Text style={{ color: '#6A7080', fontSize: fp(10) }}>{meal.protein}g P</Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFD93D', marginRight: 3 }}/>
-                <Text style={{ color: '#6A7080', fontSize: fp(10) }}>{meal.carbs}g G</Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4DA6FF', marginRight: 3 }}/>
-                <Text style={{ color: '#6A7080', fontSize: fp(10) }}>{meal.fat}g L</Text>
-              </View>
-            </View>
-
-            {/* Bouton + Ajouter un plat */}
-            <Pressable
-              delayPressIn={120}
+            {/* Bouton + Ajouter — discret */}
+            <Pressable delayPressIn={120}
               style={({ pressed }) => ({
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginTop: wp(10),
-                paddingVertical: wp(6),
-                borderRadius: 10,
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                marginTop: wp(8), paddingVertical: wp(4),
+                borderRadius: 8,
                 borderWidth: 1,
-                borderColor: pressed ? 'rgba(0,217,132,0.4)' : 'rgba(0,217,132,0.15)',
-                backgroundColor: pressed ? 'rgba(0,217,132,0.06)' : 'transparent',
+                borderColor: pressed ? 'rgba(0,217,132,0.4)' : 'rgba(0,217,132,0.12)',
               })}
             >
-              <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '700', marginRight: 4 }}>+</Text>
-              <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '600' }}>
-                {lang === 'fr' ? 'Ajouter un plat' : 'Add a dish'}
+              <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '700', marginRight: 3 }}>+</Text>
+              <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '600' }}>
+                {lang === 'fr' ? 'Ajouter' : 'Add'}
               </Text>
             </Pressable>
-
           </LinearGradient>
         </View>
       </Pressable>
     );
   }
 
-  // CARD VIDE — créneau sans repas
+  // CARD VIDE
   return (
-    <Pressable
-      delayPressIn={120}
+    <Pressable delayPressIn={120}
       style={({ pressed }) => ({
         width: cardWidth,
         transform: [{ scale: pressed ? 0.975 : 1 }],
       })}
     >
       <View style={{
-        borderRadius: 18, padding: 1.2,
-        backgroundColor: '#4A4F55', elevation: 12,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3, shadowRadius: 8,
+        borderRadius: 16, padding: 1,
+        backgroundColor: '#4A4F55', elevation: 8,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25, shadowRadius: 6,
       }}>
         <LinearGradient
           colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
           style={{
-            borderRadius: 17,
-            padding: wp(14),
-            minHeight: wp(160),
-            justifyContent: 'center',
-            alignItems: 'center',
+            borderRadius: 15, padding: wp(11),
+            minHeight: wp(135),
+            justifyContent: 'center', alignItems: 'center',
           }}
         >
-          {/* Ligne émeraude top */}
           <View style={{
-            position: 'absolute', top: 0, left: 20, right: 20,
+            position: 'absolute', top: 0, left: 16, right: 16,
             height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
           }}/>
 
           {/* Header */}
           <View style={{
-            position: 'absolute', top: wp(14), left: wp(14),
+            position: 'absolute', top: wp(11), left: wp(11),
             flexDirection: 'row', alignItems: 'center',
           }}>
-            <Text style={{ fontSize: 18 }}>{icon}</Text>
+            <Text style={{ fontSize: 14 }}>{icon}</Text>
             <Text style={{
-              color: '#8892A0', fontSize: fp(11), fontWeight: '700',
-              letterSpacing: 1, marginLeft: 6, textTransform: 'uppercase',
+              color: '#8892A0', fontSize: fp(9), fontWeight: '700',
+              letterSpacing: 1, marginLeft: 4, textTransform: 'uppercase',
             }}>{label}</Text>
           </View>
 
-          {/* Bouton + central */}
+          {/* Bouton + */}
           <View style={{
-            width: wp(48), height: wp(48), borderRadius: wp(24),
-            borderWidth: 2, borderColor: 'rgba(0,217,132,0.25)',
+            width: wp(36), height: wp(36), borderRadius: wp(18),
+            borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.2)',
             justifyContent: 'center', alignItems: 'center',
-            backgroundColor: 'rgba(0,217,132,0.05)',
-            marginTop: wp(10),
+            backgroundColor: 'rgba(0,217,132,0.04)',
+            marginTop: wp(8),
           }}>
-            <Text style={{ color: '#00D984', fontSize: fp(24), fontWeight: '300' }}>+</Text>
+            <Text style={{ color: '#00D984', fontSize: fp(20), fontWeight: '300' }}>+</Text>
           </View>
-
-          <Text style={{
-            color: '#5A6070', fontSize: fp(11), marginTop: wp(8),
-          }}>
-            {lang === 'fr' ? 'Ajouter un repas' : 'Add a meal'}
+          <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: wp(5) }}>
+            {lang === 'fr' ? 'Ajouter' : 'Add'}
           </Text>
-
         </LinearGradient>
       </View>
     </Pressable>
@@ -372,490 +269,396 @@ const RepasPage = () => {
   const calPercent = Math.round((MOCK_CALORIES.consumed / MOCK_CALORIES.goal) * 100);
 
   return (
-    <ScrollView
+    // FIX 1 — Même dégradé métallique que le dashboard
+    <LinearGradient
+      colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']}
+      locations={[0, 0.25, 0.5, 0.75, 1]}
       style={{ flex: 1 }}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: wp(20) }}
     >
-      {/* ======== 1. HEADER — paddingTop aligné avec le dashboard ======== */}
-      <View style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: wp(16),
-        paddingTop: wp(45),
-        paddingBottom: wp(10),
-      }}>
-        <Text style={{
-          color: '#EAEEF3',
-          fontSize: fp(20),
-          fontWeight: '800',
-          letterSpacing: 2,
-        }}>
-          MES REPAS
-        </Text>
-
-        {/* Badge date */}
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: 'rgba(0,217,132,0.08)',
-          paddingHorizontal: wp(12),
-          paddingVertical: wp(6),
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: 'rgba(0,217,132,0.15)',
-        }}>
-          <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '600' }}>
-            {lang === 'fr' ? "Aujourd'hui" : 'Today'}
-          </Text>
-          <Text style={{ color: '#8892A0', fontSize: fp(11), marginLeft: 6 }}>
-            {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
-          </Text>
-        </View>
-      </View>
-
-      {/* ======== 2. RÉSUMÉ CALORIES DU JOUR ======== */}
-      <MetalCard>
-        <View style={{ padding: wp(14) }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-              <Svg width={16} height={16} viewBox="0 0 16 16">
-                <Path d="M8 1C8 1 3 6 3 10C3 12.8 5.2 15 8 15C10.8 15 13 12.8 13 10C13 6 8 1 8 1Z"
-                  fill="#FF8C42" opacity={0.9} />
-                <Path d="M8 5C8 5 5.5 8 5.5 10.5C5.5 11.9 6.6 13 8 13C9.4 13 10.5 11.9 10.5 10.5C10.5 8 8 5 8 5Z"
-                  fill="#FFB74D" opacity={0.8} />
-              </Svg>
-              <Text style={{ color: '#FF8C42', fontSize: fp(20), fontWeight: '800', marginLeft: 6 }}>
-                {MOCK_CALORIES.consumed.toLocaleString('fr-FR')}
-              </Text>
-              <Text style={{ color: '#8892A0', fontSize: fp(14), marginLeft: 4 }}>
-                / {MOCK_CALORIES.goal.toLocaleString('fr-FR')} kcal
-              </Text>
-            </View>
-            <Text style={{ color: '#FF8C42', fontSize: fp(14), fontWeight: '700' }}>{calPercent}%</Text>
-          </View>
-
-          {/* Barre de progression */}
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: wp(80) }}
+        >
+          {/* ======== 1. HEADER — paddingTop aligné avec le dashboard ======== */}
           <View style={{
-            height: 6,
-            backgroundColor: 'rgba(255,140,66,0.12)',
-            borderRadius: 3,
-            marginTop: wp(8),
-            overflow: 'hidden',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingHorizontal: wp(16),
+            paddingTop: wp(45),
+            paddingBottom: wp(10),
           }}>
-            <View style={{
-              height: '100%',
-              width: `${Math.min(calPercent, 100)}%`,
-              backgroundColor: calPercent > 100 ? '#FF3B30' : '#FF8C42',
-              borderRadius: 3,
-            }} />
-          </View>
-
-          {/* Macros */}
-          <View style={{ flexDirection: 'row', marginTop: wp(10), gap: wp(16) }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF6B6B', marginRight: 5 }} />
-              <Text style={{ color: '#8892A0', fontSize: fp(12) }}>{MOCK_CALORIES.protein}g</Text>
-              <Text style={{ color: '#5A6070', fontSize: fp(11), marginLeft: 3 }}>P</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFD93D', marginRight: 5 }} />
-              <Text style={{ color: '#8892A0', fontSize: fp(12) }}>{MOCK_CALORIES.carbs}g</Text>
-              <Text style={{ color: '#5A6070', fontSize: fp(11), marginLeft: 3 }}>G</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#4DA6FF', marginRight: 5 }} />
-              <Text style={{ color: '#8892A0', fontSize: fp(12) }}>{MOCK_CALORIES.fat}g</Text>
-              <Text style={{ color: '#5A6070', fontSize: fp(11), marginLeft: 3 }}>L</Text>
-            </View>
-          </View>
-        </View>
-      </MetalCard>
-
-      {/* ======== 3. BOUTON XSCAN ======== */}
-      <Pressable
-        onPressIn={() => { /* TODO: ouvrir le scan */ }}
-        delayPressIn={120}
-        style={({ pressed }) => ({
-          marginHorizontal: wp(16),
-          marginTop: wp(16),
-          transform: [{ scale: pressed ? 0.975 : 1 }],
-        })}
-      >
-        <Animated.View style={{
-          borderRadius: 20,
-          padding: 2,
-          backgroundColor: '#4A4F55',
-          elevation: 16,
-          shadowColor: '#00D984',
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: glowOpacity,
-          shadowRadius: 15,
-        }}>
-          <LinearGradient
-            colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-            style={{ borderRadius: 18, padding: wp(20), alignItems: 'center' }}
-          >
-            {/* Ligne émeraude top */}
-            <View style={{
-              position: 'absolute', top: 0, left: 20, right: 20,
-              height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
-            }} />
-
-            {/* Boule métallique */}
-            <View style={{
-              width: wp(60), height: wp(60), borderRadius: wp(30),
-              backgroundColor: '#3A3F46',
-              borderWidth: 1.5, borderColor: '#5A5F65',
-              shadowColor: '#000', shadowOffset: { width: 2, height: 3 },
-              shadowOpacity: 0.6, shadowRadius: 6, elevation: 10,
-              justifyContent: 'center', alignItems: 'center',
-              marginBottom: wp(14),
-            }}>
-              {/* Reflet */}
-              <View style={{
-                position: 'absolute', top: wp(8), left: wp(10),
-                width: wp(18), height: wp(10), borderRadius: wp(9),
-                backgroundColor: 'rgba(255,255,255,0.18)',
-              }} />
-              {/* Rails en X */}
-              <Svg width={wp(30)} height={wp(30)} viewBox="0 0 30 30">
-                <Line x1="5" y1="5" x2="25" y2="25" stroke="#00D984" strokeWidth={1.5} opacity={0.6} />
-                <Line x1="25" y1="5" x2="5" y2="25" stroke="#00D984" strokeWidth={1.5} opacity={0.6} />
-                <Circle cx="15" cy="15" r="2.5" fill="#00D984" opacity={0.8} />
-              </Svg>
-            </View>
-
-            {/* Texte XSCAN */}
-            <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: wp(4) }}>
-              <Text style={{
-                color: '#00D984',
-                fontSize: fp(26),
-                fontWeight: '900',
-                letterSpacing: 1,
-              }}>X</Text>
-              <Text style={{
-                color: '#8892A0',
-                fontSize: fp(26),
-                fontWeight: '900',
-                letterSpacing: 1,
-              }}>SCAN</Text>
-            </View>
-
-            {/* Sous-texte */}
             <Text style={{
-              color: '#8892A0',
-              fontSize: fp(13),
-              marginBottom: wp(4),
+              color: '#EAEEF3',
+              fontSize: fp(20),
+              fontWeight: '800',
+              letterSpacing: 2,
             }}>
-              {lang === 'fr' ? 'Scanner votre repas' : 'Scan your meal'}
+              MES REPAS
             </Text>
 
-            {/* Badge IA VISION */}
+            {/* Badge date */}
             <View style={{
-              flexDirection: 'row', alignItems: 'center',
-              backgroundColor: 'rgba(212,175,55,0.08)',
-              paddingHorizontal: 10, paddingVertical: 3,
-              borderRadius: 8, borderWidth: 0.5,
-              borderColor: 'rgba(212,175,55,0.2)',
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: 'rgba(0,217,132,0.08)',
+              paddingHorizontal: wp(12),
+              paddingVertical: wp(6),
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: 'rgba(0,217,132,0.15)',
             }}>
-              <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700', letterSpacing: 1 }}>
-                IA VISION
+              <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '600' }}>
+                {lang === 'fr' ? "Aujourd'hui" : 'Today'}
+              </Text>
+              <Text style={{ color: '#8892A0', fontSize: fp(11), marginLeft: 6 }}>
+                {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
               </Text>
             </View>
-          </LinearGradient>
-        </Animated.View>
-      </Pressable>
+          </View>
 
-      {/* Compteur scans — logique freemium */}
-      <Text style={{
-        color: '#5A6070',
-        fontSize: fp(11),
-        textAlign: 'center',
-        marginTop: wp(6),
-      }}>
-        {lang === 'fr' ? '1/1 scan gratuit restant' : '1/1 free scan remaining'}
-      </Text>
-
-      {/* ======== 4. BOUTONS SECONDAIRES ======== */}
-      <View style={{
-        flexDirection: 'row',
-        justifyContent: 'center',
-        gap: wp(20),
-        marginTop: wp(14),
-        marginHorizontal: wp(16),
-      }}>
-        {/* Bouton Galerie */}
-        <Pressable
-          onPressIn={() => { /* TODO: ouvrir image picker */ }}
-          delayPressIn={120}
-          style={({ pressed }) => ({
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
-            paddingHorizontal: wp(16),
-            paddingVertical: wp(10),
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: '#3A3F46',
-          })}
-        >
-          <Svg width={18} height={18} viewBox="0 0 18 18">
-            <Rect x="1" y="1" width="16" height="16" rx="3" fill="none" stroke="#8892A0" strokeWidth={1.3} />
-            <Circle cx="6" cy="6.5" r="2" fill="#8892A0" opacity={0.6} />
-            <Path d="M1 13L5.5 8.5L9 12L12 9L17 14" stroke="#8892A0" strokeWidth={1.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-          <Text style={{ color: '#8892A0', fontSize: fp(13), fontWeight: '600', marginLeft: 8 }}>
-            {lang === 'fr' ? 'Galerie' : 'Gallery'}
-          </Text>
-        </Pressable>
-
-        {/* Bouton Saisie manuelle */}
-        <Pressable
-          onPressIn={() => { /* TODO: ouvrir recherche manuelle */ }}
-          delayPressIn={120}
-          style={({ pressed }) => ({
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
-            paddingHorizontal: wp(16),
-            paddingVertical: wp(10),
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: '#3A3F46',
-          })}
-        >
-          <Svg width={18} height={18} viewBox="0 0 18 18">
-            <Path d="M13.5 2.5L15.5 4.5L5.5 14.5L2 16L3.5 12.5L13.5 2.5Z"
-              fill="none" stroke="#8892A0" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round" />
-            <Path d="M11.5 4.5L13.5 6.5" stroke="#8892A0" strokeWidth={1.3} strokeLinecap="round" />
-          </Svg>
-          <Text style={{ color: '#8892A0', fontSize: fp(13), fontWeight: '600', marginLeft: 8 }}>
-            {lang === 'fr' ? 'Manuel' : 'Manual'}
-          </Text>
-        </Pressable>
-      </View>
-
-      {/* ======== 5. SECTION PLAT DU JOUR — scroll horizontal ======== */}
-      <View style={{ marginTop: wp(24) }}>
-        <Text style={{
-          color: '#EAEEF3',
-          fontSize: fp(16),
-          fontWeight: '800',
-          letterSpacing: 1.5,
-          paddingHorizontal: wp(16),
-          marginBottom: wp(12),
-        }}>
-          {lang === 'fr' ? '🍽️  PLAT DU JOUR' : '🍽️  MEALS TODAY'}
-        </Text>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(12) }}
-          snapToInterval={wp(220) + wp(12)}
-          decelerationRate="fast"
-        >
-          {/* Card Petit-déjeuner (rempli) */}
-          <MealDayCard
-            icon="☀️"
-            label={lang === 'fr' ? 'Petit-déjeuner' : 'Breakfast'}
-            meal={{
-              name: 'Thé + Pain beurré',
-              calories: 320,
-              protein: 8, carbs: 45, fat: 12,
-              time: '7h30',
-            }}
-            lang={lang}
-          />
-
-          {/* Card Déjeuner (rempli) */}
-          <MealDayCard
-            icon="🌤️"
-            label={lang === 'fr' ? 'Déjeuner' : 'Lunch'}
-            meal={{
-              name: 'Poulet grillé + Riz',
-              calories: 450,
-              protein: 35, carbs: 42, fat: 15,
-              time: '12h30',
-            }}
-            lang={lang}
-          />
-
-          {/* Card Dîner (vide) */}
-          <MealDayCard
-            icon="🌙"
-            label={lang === 'fr' ? 'Dîner' : 'Dinner'}
-            meal={null}
-            lang={lang}
-          />
-
-          {/* Card Snack (vide) */}
-          <MealDayCard
-            icon="🍿"
-            label={lang === 'fr' ? 'Snack' : 'Snack'}
-            meal={null}
-            lang={lang}
-          />
-        </ScrollView>
-      </View>
-
-      {/* ======== 6. SECTION RECETTES — scroll horizontal ======== */}
-      <View style={{ marginTop: wp(28) }}>
-        {/* Header avec titre + "Voir tout" */}
-        <View style={{
-          flexDirection: 'row', justifyContent: 'space-between',
-          alignItems: 'center', paddingHorizontal: wp(16),
-          marginBottom: wp(12),
-        }}>
-          <Text style={{
-            color: '#EAEEF3',
-            fontSize: fp(16),
-            fontWeight: '800',
-            letterSpacing: 1.5,
+          {/* ======== 2. RÉSUMÉ CALORIES DU JOUR (FIX 2A — compact) ======== */}
+          <View style={{
+            marginHorizontal: wp(16),
+            marginTop: wp(12),
           }}>
-            {lang === 'fr' ? '🍳  RECETTES' : '🍳  RECIPES'}
-          </Text>
-          <Pressable>
-            <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '600' }}>
-              {lang === 'fr' ? 'Voir tout ›' : 'See all ›'}
-            </Text>
-          </Pressable>
-        </View>
+            <View style={{
+              borderRadius: 16, padding: 1,
+              backgroundColor: '#4A4F55', elevation: 8,
+              shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+              shadowOpacity: 0.25, shadowRadius: 6,
+            }}>
+              <LinearGradient
+                colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                style={{ borderRadius: 15, paddingHorizontal: wp(14), paddingVertical: wp(10) }}
+              >
+                {/* Ligne émeraude top */}
+                <View style={{
+                  position: 'absolute', top: 0, left: 20, right: 20,
+                  height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
+                }}/>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(12) }}
-        >
-          {MOCK_RECIPES.map((recipe, index) => (
-            <Pressable
-              key={index}
-              delayPressIn={120}
-              onPressIn={() => { /* TODO: naviguer vers page Recettes */ }}
-              style={({ pressed }) => ({
-                width: wp(150),
-                borderRadius: 16,
-                overflow: 'hidden',
-                transform: [{ scale: pressed ? 0.96 : 1 }],
-                elevation: 8,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 3 },
-                shadowOpacity: 0.3,
-                shadowRadius: 6,
-              })}
-            >
-              {/* Image placeholder — fond coloré avec assiette SVG */}
-              <View style={{
-                width: '100%',
-                height: wp(120),
-                backgroundColor: recipe.color,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-                {/* Overlay foncé en bas pour le texte */}
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.7)']}
-                  style={{
-                    position: 'absolute', bottom: 0, left: 0, right: 0,
-                    height: '60%',
-                  }}
-                />
-                {/* Icône placeholder assiette */}
-                <Svg width={40} height={40} viewBox="0 0 40 40" style={{ opacity: 0.3 }}>
-                  <Ellipse cx="20" cy="28" rx="16" ry="7" fill="none" stroke="#FFF" strokeWidth={1.5}/>
-                  <Path d="M4 28C4 23 10 18 20 18C30 18 36 23 36 28" fill="none" stroke="#FFF" strokeWidth={1.5}/>
-                  <Path d="M15 13C15 10 18 8 18 5" stroke="#FFF" strokeWidth={1} strokeLinecap="round" opacity={0.6}/>
-                  <Path d="M20 11C20 8 23 6 23 3" stroke="#FFF" strokeWidth={1} strokeLinecap="round" opacity={0.6}/>
-                  <Path d="M25 13C25 10 28 8 28 5" stroke="#FFF" strokeWidth={1} strokeLinecap="round" opacity={0.6}/>
-                </Svg>
-              </View>
-
-              {/* Infos en bas */}
-              <View style={{
-                backgroundColor: '#1E2530',
-                padding: wp(10),
-                borderBottomLeftRadius: 16,
-                borderBottomRightRadius: 16,
-              }}>
-                <Text style={{
-                  color: '#EAEEF3', fontSize: fp(12), fontWeight: '700',
-                }} numberOfLines={1}>{recipe.name}</Text>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 3 }}>
-                  <Text style={{ color: '#8892A0', fontSize: fp(10) }}>{recipe.origin}</Text>
-                  <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '600' }}>{recipe.cal} kcal</Text>
+                {/* Tout sur 2 lignes serrées */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                    <Text style={{ color: '#FF8C42', fontSize: fp(18), fontWeight: '800' }}>
+                      {MOCK_CALORIES.consumed.toLocaleString('fr-FR')}
+                    </Text>
+                    <Text style={{ color: '#5A6070', fontSize: fp(12), marginLeft: 4 }}>
+                      / {MOCK_CALORIES.goal.toLocaleString('fr-FR')} kcal
+                    </Text>
+                  </View>
+                  <Text style={{ color: '#FF8C42', fontSize: fp(13), fontWeight: '700' }}>{calPercent}%</Text>
                 </View>
-              </View>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
 
-      {/* ======== 7. SECTION PLATS FRÉQUENTS — en dernier ======== */}
-      <View style={{ marginTop: wp(28), marginBottom: wp(100) }}>
-        <View style={{
-          flexDirection: 'row', alignItems: 'center',
-          paddingHorizontal: wp(16), marginBottom: wp(12),
-        }}>
-          <Svg width={14} height={14} viewBox="0 0 14 14">
-            <Path d="M7.5 1L3 8H7L6.5 13L11 6H7L7.5 1Z" fill="#FFD93D" opacity={0.8} />
-          </Svg>
-          <Text style={{
-            color: '#EAEEF3',
-            fontSize: fp(16),
-            fontWeight: '800',
-            letterSpacing: 1.5,
-            marginLeft: 8,
-          }}>
-            {lang === 'fr' ? 'PLATS FRÉQUENTS' : 'FREQUENT MEALS'}
+                {/* Barre fine */}
+                <View style={{
+                  height: 4, backgroundColor: 'rgba(255,140,66,0.12)',
+                  borderRadius: 2, marginTop: wp(6), overflow: 'hidden',
+                }}>
+                  <View style={{
+                    height: '100%', width: `${Math.min(calPercent, 100)}%`,
+                    backgroundColor: calPercent > 100 ? '#FF3B30' : '#FF8C42', borderRadius: 2,
+                  }} />
+                </View>
+
+                {/* Macros en ligne */}
+                <View style={{ flexDirection: 'row', marginTop: wp(7), gap: wp(14) }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF6B6B', marginRight: 4 }}/>
+                    <Text style={{ color: '#6A7080', fontSize: fp(10) }}>{MOCK_CALORIES.protein}g P</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFD93D', marginRight: 4 }}/>
+                    <Text style={{ color: '#6A7080', fontSize: fp(10) }}>{MOCK_CALORIES.carbs}g G</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4DA6FF', marginRight: 4 }}/>
+                    <Text style={{ color: '#6A7080', fontSize: fp(10) }}>{MOCK_CALORIES.fat}g L</Text>
+                  </View>
+                </View>
+              </LinearGradient>
+            </View>
+          </View>
+
+          {/* ======== 3. BOUTON XSCAN (FIX 2B — réduit ~30%) ======== */}
+          <Pressable
+            onPressIn={() => {}}
+            delayPressIn={120}
+            style={({ pressed }) => ({
+              marginHorizontal: wp(16),
+              marginTop: wp(14),
+              transform: [{ scale: pressed ? 0.975 : 1 }],
+            })}
+          >
+            <View style={{
+              borderRadius: 18, padding: 1.5,
+              backgroundColor: '#4A4F55', elevation: 12,
+              shadowColor: '#00D984', shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.3, shadowRadius: 12,
+            }}>
+              <LinearGradient
+                colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                style={{
+                  borderRadius: 17,
+                  paddingVertical: wp(16),
+                  alignItems: 'center',
+                }}
+              >
+                {/* Ligne émeraude top */}
+                <View style={{
+                  position: 'absolute', top: 0, left: 20, right: 20,
+                  height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
+                }}/>
+
+                {/* Boule métallique — plus petite */}
+                <View style={{
+                  width: wp(48), height: wp(48), borderRadius: wp(24),
+                  backgroundColor: '#3A3F46',
+                  borderWidth: 1.5, borderColor: '#5A5F65',
+                  shadowColor: '#000', shadowOffset: { width: 2, height: 3 },
+                  shadowOpacity: 0.5, shadowRadius: 5, elevation: 8,
+                  justifyContent: 'center', alignItems: 'center',
+                  marginBottom: wp(10),
+                }}>
+                  <View style={{
+                    position: 'absolute', top: wp(6), left: wp(8),
+                    width: wp(14), height: wp(8), borderRadius: wp(7),
+                    backgroundColor: 'rgba(255,255,255,0.15)',
+                  }}/>
+                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24">
+                    <Line x1="4" y1="4" x2="20" y2="20" stroke="#00D984" strokeWidth={1.8} opacity={0.7}/>
+                    <Line x1="20" y1="4" x2="4" y2="20" stroke="#00D984" strokeWidth={1.8} opacity={0.7}/>
+                    <Circle cx="12" cy="12" r="2" fill="#00D984" opacity={0.9}/>
+                  </Svg>
+                </View>
+
+                {/* XSCAN texte */}
+                <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                  <Text style={{ color: '#00D984', fontSize: fp(22), fontWeight: '900', letterSpacing: 1 }}>X</Text>
+                  <Text style={{ color: '#8892A0', fontSize: fp(22), fontWeight: '900', letterSpacing: 1 }}>SCAN</Text>
+                </View>
+
+                <Text style={{ color: '#5A6070', fontSize: fp(11), marginTop: wp(3) }}>
+                  {lang === 'fr' ? 'Scanner votre repas' : 'Scan your meal'}
+                </Text>
+
+                {/* Badge IA VISION — plus petit */}
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  backgroundColor: 'rgba(212,175,55,0.08)',
+                  paddingHorizontal: 8, paddingVertical: 2,
+                  borderRadius: 6, borderWidth: 0.5,
+                  borderColor: 'rgba(212,175,55,0.2)',
+                  marginTop: wp(6),
+                }}>
+                  <Text style={{ color: '#D4AF37', fontSize: fp(9), fontWeight: '700', letterSpacing: 1 }}>IA VISION</Text>
+                </View>
+              </LinearGradient>
+            </View>
+          </Pressable>
+
+          {/* Compteur scan */}
+          <Text style={{ color: '#5A6070', fontSize: fp(10), textAlign: 'center', marginTop: wp(5) }}>
+            {lang === 'fr' ? '1/1 scan gratuit restant' : '1/1 free scan remaining'}
           </Text>
-        </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(10) }}
-        >
-          {MOCK_FREQUENT.map((item, index) => (
-            <Pressable
-              key={index}
-              delayPressIn={120}
-              style={({ pressed }) => ({
-                width: wp(90),
-                backgroundColor: pressed ? '#2A2F36' : '#222830',
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: '#3A3F46',
-                padding: wp(10),
-                alignItems: 'center',
-                transform: [{ scale: pressed ? 0.95 : 1 }],
-              })}
-            >
-              <View style={{
-                width: wp(42), height: wp(42), borderRadius: wp(21),
-                backgroundColor: '#2E333A',
-                justifyContent: 'center', alignItems: 'center',
-                marginBottom: wp(6),
-                borderWidth: 1, borderColor: '#3A3F46',
-              }}>
-                <Svg width={22} height={22} viewBox="0 0 22 22">
-                  <Ellipse cx="11" cy="15" rx="9" ry="4" fill="none" stroke="#5A6070" strokeWidth={1.2} />
-                  <Path d="M2 15C2 12.5 6 10 11 10C16 10 20 12.5 20 15" fill="none" stroke="#5A6070" strokeWidth={1.2} />
+          {/* ======== 4. BOUTONS SECONDAIRES (FIX 2C — compacts) ======== */}
+          <View style={{
+            flexDirection: 'row', justifyContent: 'center',
+            gap: wp(14), marginTop: wp(10), marginHorizontal: wp(16),
+          }}>
+            {[
+              { icon: 'gallery', label: lang === 'fr' ? 'Galerie' : 'Gallery' },
+              { icon: 'manual', label: lang === 'fr' ? 'Manuel' : 'Manual' },
+            ].map((btn, i) => (
+              <Pressable key={i} delayPressIn={120}
+                style={({ pressed }) => ({
+                  flexDirection: 'row', alignItems: 'center',
+                  backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
+                  paddingHorizontal: wp(14), paddingVertical: wp(8),
+                  borderRadius: 10, borderWidth: 1, borderColor: '#3A3F46',
+                })}
+              >
+                <Svg width={15} height={15} viewBox="0 0 18 18">
+                  {btn.icon === 'gallery' ? (
+                    <>
+                      <Rect x="1" y="1" width="16" height="16" rx="3" fill="none" stroke="#8892A0" strokeWidth={1.3}/>
+                      <Circle cx="6" cy="6.5" r="2" fill="#8892A0" opacity={0.5}/>
+                      <Path d="M1 13L5.5 8.5L9 12L12 9L17 14" stroke="#8892A0" strokeWidth={1.2} fill="none" strokeLinecap="round"/>
+                    </>
+                  ) : (
+                    <>
+                      <Path d="M13.5 2.5L15.5 4.5L5.5 14.5L2 16L3.5 12.5L13.5 2.5Z" fill="none" stroke="#8892A0" strokeWidth={1.3} strokeLinecap="round"/>
+                      <Path d="M11.5 4.5L13.5 6.5" stroke="#8892A0" strokeWidth={1.3} strokeLinecap="round"/>
+                    </>
+                  )}
                 </Svg>
-              </View>
-              <Text style={{
-                color: '#EAEEF3', fontSize: fp(11), fontWeight: '600',
-                textAlign: 'center',
-              }} numberOfLines={1}>{item.name}</Text>
-              <Text style={{
-                color: '#8892A0', fontSize: fp(10), marginTop: 2,
-              }}>{item.cal} kcal</Text>
-            </Pressable>
-          ))}
+                <Text style={{ color: '#8892A0', fontSize: fp(12), fontWeight: '600', marginLeft: 6 }}>{btn.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* ======== 5. SECTION PLAT DU JOUR (FIX 3+4+7) ======== */}
+          <View style={{ marginTop: wp(22) }}>
+            <SectionTitle title={lang === 'fr' ? 'Plat du jour' : 'Meals today'} />
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(10) }}
+              snapToInterval={wp(175) + wp(10)}
+              decelerationRate="fast"
+            >
+              <MealDayCard
+                icon="\u2600\uFE0F"
+                label={lang === 'fr' ? 'Petit-déjeuner' : 'Breakfast'}
+                meal={{
+                  name: 'Thé + Pain beurré',
+                  calories: 320,
+                  protein: 8, carbs: 45, fat: 12,
+                  time: '7h30',
+                }}
+                lang={lang}
+              />
+              <MealDayCard
+                icon="\u{1F324}\uFE0F"
+                label={lang === 'fr' ? 'Déjeuner' : 'Lunch'}
+                meal={{
+                  name: 'Poulet grillé + Riz',
+                  calories: 450,
+                  protein: 35, carbs: 42, fat: 15,
+                  time: '12h30',
+                }}
+                lang={lang}
+              />
+              <MealDayCard
+                icon="\u{1F319}"
+                label={lang === 'fr' ? 'Dîner' : 'Dinner'}
+                meal={null}
+                lang={lang}
+              />
+              <MealDayCard
+                icon="\u{1F37F}"
+                label={lang === 'fr' ? 'Snack' : 'Snack'}
+                meal={null}
+                lang={lang}
+              />
+            </ScrollView>
+          </View>
+
+          {/* ======== 6. SECTION RECETTES (FIX 3+5+7) ======== */}
+          <View style={{ marginTop: wp(22) }}>
+            <SectionTitle
+              title={lang === 'fr' ? 'Recettes' : 'Recipes'}
+              rightLabel={lang === 'fr' ? 'Voir tout \u203A' : 'See all \u203A'}
+            />
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(10) }}
+            >
+              {MOCK_RECIPES.map((recipe, index) => (
+                <Pressable key={index} delayPressIn={120}
+                  style={({ pressed }) => ({
+                    width: wp(130),
+                    borderRadius: 14,
+                    overflow: 'hidden',
+                    transform: [{ scale: pressed ? 0.96 : 1 }],
+                    elevation: 6,
+                  })}
+                >
+                  {/* Zone image — fond coloré + overlay */}
+                  <LinearGradient
+                    colors={[recipe.color, 'rgba(0,0,0,0.4)']}
+                    style={{
+                      width: '100%', height: wp(90),
+                      justifyContent: 'flex-end',
+                      padding: wp(8),
+                    }}
+                  >
+                    {/* Petit badge calories en haut à droite */}
+                    <View style={{
+                      position: 'absolute', top: wp(6), right: wp(6),
+                      backgroundColor: 'rgba(0,0,0,0.5)',
+                      paddingHorizontal: 6, paddingVertical: 2,
+                      borderRadius: 6,
+                    }}>
+                      <Text style={{ color: '#FF8C42', fontSize: fp(8), fontWeight: '700' }}>
+                        {recipe.cal} kcal
+                      </Text>
+                    </View>
+
+                    {/* Placeholder visuel au centre — assiette SVG subtile */}
+                    <View style={{ position: 'absolute', top: '30%', alignSelf: 'center', opacity: 0.15 }}>
+                      <Svg width={36} height={36} viewBox="0 0 36 36">
+                        <Ellipse cx="18" cy="25" rx="14" ry="6" fill="none" stroke="#FFF" strokeWidth={1.5}/>
+                        <Path d="M4 25C4 21 10 17 18 17C26 17 32 21 32 25" fill="none" stroke="#FFF" strokeWidth={1.5}/>
+                      </Svg>
+                    </View>
+                  </LinearGradient>
+
+                  {/* Infos en bas — fond métallique */}
+                  <View style={{
+                    backgroundColor: '#1A1F28',
+                    paddingHorizontal: wp(8), paddingVertical: wp(7),
+                  }}>
+                    <Text style={{
+                      color: '#EAEEF3', fontSize: fp(11), fontWeight: '700',
+                    }} numberOfLines={1}>{recipe.name}</Text>
+                    <Text style={{
+                      color: '#6A7080', fontSize: fp(9), marginTop: 2,
+                    }}>{recipe.origin}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* ======== 7. SECTION PLATS FRÉQUENTS (FIX 3+6+7) ======== */}
+          <View style={{ marginTop: wp(22), marginBottom: wp(16) }}>
+            <SectionTitle title={lang === 'fr' ? 'Plats fréquents' : 'Frequent meals'} />
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(8) }}
+            >
+              {MOCK_FREQUENT.map((item, index) => (
+                <Pressable key={index} delayPressIn={120}
+                  style={({ pressed }) => ({
+                    width: wp(75),
+                    backgroundColor: pressed ? '#2A2F36' : '#1E2530',
+                    borderRadius: 12,
+                    borderWidth: 1, borderColor: '#2E333A',
+                    padding: wp(8),
+                    alignItems: 'center',
+                    transform: [{ scale: pressed ? 0.95 : 1 }],
+                  })}
+                >
+                  <View style={{
+                    width: wp(32), height: wp(32), borderRadius: wp(16),
+                    backgroundColor: '#252A32',
+                    justifyContent: 'center', alignItems: 'center',
+                    marginBottom: wp(5),
+                    borderWidth: 0.5, borderColor: '#3A3F46',
+                  }}>
+                    <Svg width={16} height={16} viewBox="0 0 20 20">
+                      <Ellipse cx="10" cy="14" rx="8" ry="3.5" fill="none" stroke="#5A6070" strokeWidth={1}/>
+                      <Path d="M2 14C2 12 5 9.5 10 9.5C15 9.5 18 12 18 14" fill="none" stroke="#5A6070" strokeWidth={1}/>
+                    </Svg>
+                  </View>
+                  <Text style={{
+                    color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center',
+                  }} numberOfLines={1}>{item.name}</Text>
+                  <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 1 }}>{item.cal} kcal</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
         </ScrollView>
-      </View>
-    </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
