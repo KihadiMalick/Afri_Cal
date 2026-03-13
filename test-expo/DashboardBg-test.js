@@ -307,8 +307,8 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
       <Image
         source={require('./assets/lixum-logo.png')}
         style={{
-          width: wp(180),
-          height: wp(50),
+          width: 200,
+          height: 55,
           resizeMode: 'contain',
         }}
       />
@@ -1072,32 +1072,30 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }
           <SilhouetteFill fillPercent={percent} height={wp(56)} gender={gender} />
 
           {/* Infos droite */}
-          <View style={{ flex: 1, marginLeft: wp(14), paddingRight: wp(25) }}>
-            {/* Ligne titre Hydratation — forcer la séparation */}
+          <View style={{ flex: 1, marginLeft: wp(14) }}>
+            {/* Ligne titre Hydratation — titre à gauche, données à droite */}
             <View style={{
               flexDirection: 'row',
               justifyContent: 'space-between',
               alignItems: 'center',
-              width: '100%',
-              paddingRight: wp(30),
+              paddingRight: 30,
             }}>
-              {/* GAUCHE — icône + titre (regroupés) */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 0 }}>
-                <Text style={{ fontSize: fp(14), marginRight: wp(5) }}>💧</Text>
+              {/* GAUCHE — icône + titre */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 }}>
+                <Text style={{ fontSize: 14, marginRight: 5 }}>💧</Text>
                 <Text style={{
                   color: '#EAEEF3',
-                  fontSize: fp(13),
+                  fontSize: 13,
                   fontWeight: '700',
-                  letterSpacing: wp(1),
+                  letterSpacing: 1,
                 }}>HYDRATATION</Text>
               </View>
 
-              {/* DROITE — valeurs (avec espace garanti) */}
+              {/* DROITE — valeurs litres */}
               <Text style={{
                 color: '#00BFA6',
-                fontSize: fp(13),
+                fontSize: 13,
                 fontWeight: '700',
-                marginLeft: wp(10),
               }}>{liters} / {goalL}L</Text>
             </View>
 
