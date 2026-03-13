@@ -14,6 +14,7 @@ import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from 'react-native-
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Rect, Path, G, Defs, Defs as SvgDefs, Mask, LinearGradient as SvgLinearGradient, Stop, Polygon, ClipPath, Ellipse, Text as SvgText } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import RepasPage from './RepasPage';
 // Note: expo-screen-capture doit être installé dans le projet
 // npx expo install expo-screen-capture
 // Dans Snack Expo, cet import peut ne pas fonctionner — laisser en commentaire si besoin
@@ -3036,7 +3037,7 @@ export default function App() {
           />
         );
       case 'meals':
-        return <PlaceholderPage icon={'🍽️'} title="Repas" />;
+        return <RepasPage />;
       case 'activity':
         return <PlaceholderPage icon={'🏃'} title="Activité" />;
       case 'medicai':
