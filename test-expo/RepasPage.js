@@ -14,12 +14,12 @@ ABONNEMENTS :
 - Premium Standard : 9,99$/mois → 10 000 Lix offerts
 */
 
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Dimensions, Text, StyleSheet, Pressable, Image,
   Animated, ScrollView, PixelRatio, Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Path, Rect, Ellipse } from 'react-native-svg';
 
