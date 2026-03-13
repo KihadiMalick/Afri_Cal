@@ -307,8 +307,8 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
       <Image
         source={require('./assets/lixum-logo.png')}
         style={{
-          width: wp(150),
-          height: wp(42),
+          width: wp(180),
+          height: wp(50),
           resizeMode: 'contain',
         }}
       />
@@ -1073,12 +1073,32 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }
 
           {/* Infos droite */}
           <View style={{ flex: 1, marginLeft: wp(14), paddingRight: wp(25) }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
-                <DropletIcon size={wp(16)} />
-                <Text style={s.hydrationTitle}>HYDRATATION</Text>
+            {/* Ligne titre Hydratation — forcer la séparation */}
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: '100%',
+              paddingRight: wp(30),
+            }}>
+              {/* GAUCHE — icône + titre (regroupés) */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 0 }}>
+                <Text style={{ fontSize: fp(14), marginRight: wp(5) }}>💧</Text>
+                <Text style={{
+                  color: '#EAEEF3',
+                  fontSize: fp(13),
+                  fontWeight: '700',
+                  letterSpacing: wp(1),
+                }}>HYDRATATION</Text>
               </View>
-              <Text style={s.hydrationLiters}>{liters} / {goalL}L</Text>
+
+              {/* DROITE — valeurs (avec espace garanti) */}
+              <Text style={{
+                color: '#00BFA6',
+                fontSize: fp(13),
+                fontWeight: '700',
+                marginLeft: wp(10),
+              }}>{liters} / {goalL}L</Text>
             </View>
 
             {/* Barre de progression */}
@@ -1507,32 +1527,69 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert('Coach LixMan', 'Recommandations personnalisées IA — bientôt disponible')}>
         {/* Header Coach */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-          {/* Icône Coach LixMan — cerveau IA */}
+          {/* Icône Coach LixMan — Cerveau connecté par des fils */}
           <View style={{
-            width: wp(28),
-            height: wp(28),
-            borderRadius: wp(14),
-            backgroundColor: 'rgba(0, 217, 132, 0.10)',
+            width: wp(30),
+            height: wp(30),
+            borderRadius: wp(15),
+            backgroundColor: 'rgba(0, 217, 132, 0.08)',
             borderWidth: 1,
-            borderColor: 'rgba(0, 217, 132, 0.25)',
+            borderColor: 'rgba(0, 217, 132, 0.2)',
             justifyContent: 'center',
             alignItems: 'center',
           }}>
-            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24">
+            <Svg width={wp(20)} height={wp(20)} viewBox="0 0 28 28">
               <Defs>
-                <SvgLinearGradient id="brainGrd" x1="0.5" y1="0" x2="0.5" y2="1">
+                <SvgLinearGradient id="brainFill" x1="0.5" y1="0" x2="0.5" y2="1">
                   <Stop offset="0%" stopColor="#5DFFB4" />
-                  <Stop offset="100%" stopColor="#00D984" />
+                  <Stop offset="50%" stopColor="#00D984" />
+                  <Stop offset="100%" stopColor="#00854F" />
                 </SvgLinearGradient>
               </Defs>
-              {/* Cerveau simplifié */}
-              <Path d="M12 2C9 2 7 4 7 6.5c0 1-.5 2-1.5 2.5C4 10 3 11.5 3 13c0 2 1.5 3.5 3.5 4 .5 1.5 2 3 3.5 3h4c1.5 0 3-1.5 3.5-3 2-.5 3.5-2 3.5-4 0-1.5-1-3-2.5-4C17.5 8.5 17 7.5 17 6.5 17 4 15 2 12 2z"
-                fill="url(#brainGrd)" opacity={0.85} />
-              {/* Lignes de circuit au centre */}
-              <Path d="M10 8h4M12 8v4M10 12h4M11 12v3M13 12v3"
-                fill="none" stroke="white" strokeWidth={0.8} strokeLinecap="round" opacity={0.5} />
-              {/* Point central */}
-              <Circle cx="12" cy="10" r="1" fill="white" opacity={0.6} />
+
+              {/* Forme du cerveau — deux hémisphères */}
+              {/* Hémisphère gauche */}
+              <Path d="M14 4C10 4 7 6.5 7 9.5c0 1.5-.5 2.5-1.5 3.5C4 14.5 3 16 3 18c0 2.5 2 4.5 4.5 4.5H13V4z"
+                fill="url(#brainFill)" opacity={0.75} />
+              {/* Hémisphère droit */}
+              <Path d="M14 4c4 0 7 2.5 7 5.5 0 1.5.5 2.5 1.5 3.5C24 14.5 25 16 25 18c0 2.5-2 4.5-4.5 4.5H14V4z"
+                fill="url(#brainFill)" opacity={0.6} />
+
+              {/* Sillon central */}
+              <Line x1="14" y1="4" x2="14" y2="22.5" stroke="#0A1A12" strokeWidth={1} opacity={0.4} />
+
+              {/* === FILS / CIRCUITS qui traversent le cerveau === */}
+              {/* Fil horizontal haut */}
+              <Line x1="1" y1="10" x2="27" y2="10" stroke="#5DFFB4" strokeWidth={0.7} opacity={0.5} />
+              {/* Fil horizontal milieu */}
+              <Line x1="2" y1="15" x2="26" y2="15" stroke="#00D984" strokeWidth={0.7} opacity={0.45} />
+              {/* Fil horizontal bas */}
+              <Line x1="3" y1="20" x2="25" y2="20" stroke="#00BFA6" strokeWidth={0.7} opacity={0.4} />
+
+              {/* Fil diagonal gauche → droite */}
+              <Line x1="5" y1="6" x2="23" y2="20" stroke="#5DFFB4" strokeWidth={0.5} opacity={0.3} />
+              {/* Fil diagonal droite → gauche */}
+              <Line x1="23" y1="6" x2="5" y2="20" stroke="#00BFA6" strokeWidth={0.5} opacity={0.3} />
+
+              {/* === NODES aux intersections des fils === */}
+              <Circle cx="14" cy="10" r="1.5" fill="#5DFFB4" opacity={0.9} />
+              <Circle cx="14" cy="15" r="1.5" fill="#00D984" opacity={0.9} />
+              <Circle cx="14" cy="20" r="1.2" fill="#00BFA6" opacity={0.8} />
+
+              {/* Nodes latéraux */}
+              <Circle cx="8" cy="10" r="1" fill="#5DFFB4" opacity={0.6} />
+              <Circle cx="20" cy="10" r="1" fill="#5DFFB4" opacity={0.6} />
+              <Circle cx="7" cy="15" r="1" fill="#00D984" opacity={0.5} />
+              <Circle cx="21" cy="15" r="1" fill="#00D984" opacity={0.5} />
+
+              {/* Petits éclats de connexion aux extrémités des fils */}
+              <Circle cx="1" cy="10" r="0.8" fill="#5DFFB4" opacity={0.4} />
+              <Circle cx="27" cy="10" r="0.8" fill="#5DFFB4" opacity={0.4} />
+              <Circle cx="2" cy="15" r="0.8" fill="#00D984" opacity={0.35} />
+              <Circle cx="26" cy="15" r="0.8" fill="#00D984" opacity={0.35} />
+
+              {/* Reflet lumineux en haut à gauche du cerveau */}
+              <Ellipse cx="10" cy="7" rx="3" ry="2" fill="white" opacity={0.08} />
             </Svg>
           </View>
           <Text style={{
