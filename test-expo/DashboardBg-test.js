@@ -45,19 +45,21 @@ const seededRandom = (seed) => {
 // SPOTLIGHT — Zones et positions de scroll pour le tooltip guidé
 // ============================================
 const SPOTLIGHT_ZONES = [
-  // Étape 1 — Réacteur gauche (scroll: 0)
-  { x: 14, y: 155, width: 110, height: 130, borderRadius: 20 },
-  // Étape 2 — ADN central (scroll: 0)
-  { x: 115, y: 145, width: 90, height: 170, borderRadius: 15 },
-  // Étape 3 — Réacteur droit (scroll: 0)
-  { x: 196, y: 155, width: 110, height: 130, borderRadius: 20 },
-  // Étape 4 — Hydratation (scroll: 250 → l'élément est maintenant visible)
-  { x: 14, y: 260, width: W - 28, height: 120, borderRadius: 18 },
-  // Étape 5 — Coach LixMan (scroll: 500 → l'élément est maintenant visible)
-  { x: 14, y: 310, width: W - 28, height: 140, borderRadius: 18 },
+  // Étape 1 — Réacteur gauche (Consommé) → décalé à droite
+  { x: 20, y: 155, width: 110, height: 130, borderRadius: 20 },
+  // Étape 2 — ADN central + Score Vitalité → décalé à droite
+  { x: 120, y: 145, width: 90, height: 170, borderRadius: 15 },
+  // Étape 3 — Réacteur droit (Reste) → décalé à droite
+  { x: 202, y: 155, width: 110, height: 130, borderRadius: 20 },
+  // Étape 4 — Carte Hydratation → REMONTÉ (était trop bas)
+  { x: 14, y: 200, width: W - 28, height: 130, borderRadius: 18 },
+  // Étape 5 — Carte Coach LixMan → DESCENDU légèrement
+  { x: 14, y: 340, width: W - 28, height: 160, borderRadius: 18 },
 ];
 
-const SCROLL_POSITIONS = [0, 0, 0, 250, 500];
+// Étape 4 : scroll de 200 (Hydratation visible)
+// Étape 5 : scroll de 450 (Coach visible)
+const SCROLL_POSITIONS = [0, 0, 0, 200, 450];
 
 // ============================================
 // COMPOSANT — Background métallique propre
