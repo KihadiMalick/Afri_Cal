@@ -14,6 +14,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import {
   Poppins_300Light,
@@ -116,21 +117,23 @@ export default function App() {
   };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0D1117' }}>
-      <StatusBar barStyle="light-content" backgroundColor="#0D1117" />
-      {currentScreen !== 'menu' && (
-        <SafeAreaView style={navStyles.backBar}>
-          <TouchableOpacity onPress={goBack} style={navStyles.backBtn}>
-            <Text style={navStyles.backText}>{'\u25C0'} Menu</Text>
-          </TouchableOpacity>
-          <Text style={navStyles.screenName}>
-            {SCREENS.find(s => s.key === currentScreen)?.label}
-          </Text>
-          <View style={{ width: 70 }} />
-        </SafeAreaView>
-      )}
-      {renderScreen()}
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0D1117' }}>
+        <StatusBar barStyle="light-content" backgroundColor="#0D1117" />
+        {currentScreen !== 'menu' && (
+          <SafeAreaView style={navStyles.backBar}>
+            <TouchableOpacity onPress={goBack} style={navStyles.backBtn}>
+              <Text style={navStyles.backText}>{'\u25C0'} Menu</Text>
+            </TouchableOpacity>
+            <Text style={navStyles.screenName}>
+              {SCREENS.find(s => s.key === currentScreen)?.label}
+            </Text>
+            <View style={{ width: 70 }} />
+          </SafeAreaView>
+        )}
+        {renderScreen()}
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
 
