@@ -259,7 +259,7 @@ const RepasPage = () => {
         Animated.timing(glowAnim, { toValue: 0, duration: 1500, useNativeDriver: false }),
       ])
     ).start();
-  }, []);
+  }, [glowAnim]);
 
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
