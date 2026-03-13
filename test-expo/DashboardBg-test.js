@@ -365,6 +365,8 @@ const MetalCard = ({ children, style, onPress, noPadding = false }) => {
   return (
     <Pressable
       onPress={onPress}
+      delayPressIn={120}
+      unstable_pressDelay={120}
       style={({ pressed }) => [
         metalStyles.outerBorder,
         style,
@@ -1027,8 +1029,7 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }
   const goalL = (goalMl / 1000).toFixed(1);
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }} onPress={onPress}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {/* Mini silhouette gauche */}
           <SilhouetteFill fillPercent={percent} height={56} gender={gender} />
@@ -1072,7 +1073,6 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }
           </View>
         </View>
       </MetalCard>
-    </TouchableOpacity>
   );
 };
 
@@ -1252,7 +1252,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 50, paddingTop: 8 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 35, paddingTop: 8 }}
       showsVerticalScrollIndicator={false}
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
@@ -1346,6 +1346,12 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             <Text style={{
               fontSize: 9, fontWeight: '600', color: '#8892A0', marginTop: 2,
             }}>Consommé</Text>
+            <Text style={{
+              fontSize: 8,
+              fontWeight: '700',
+              color: '#FF3B30',
+              marginTop: 3,
+            }}>- 870 Kcal/Sport</Text>
           </View>
 
           {/* Vitalité */}
