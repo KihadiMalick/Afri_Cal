@@ -315,8 +315,8 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
       <Image
         source={require('./assets/lixum-logo.png')}
         style={{
-          width: 130,
-          height: 40,
+          width: 135,
+          height: 42,
           resizeMode: 'contain',
         }}
       />
@@ -1598,69 +1598,74 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert('Coach LixMan', 'Recommandations personnalisées IA — bientôt disponible')}>
         {/* Header Coach */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-          {/* Icône Coach LixMan — Cerveau connecté par des fils */}
+          {/* Icône Coach LixMan — Docteur-Cerveau */}
           <View style={{
-            width: wp(30),
-            height: wp(30),
-            borderRadius: wp(15),
+            width: 34,
+            height: 34,
+            borderRadius: 17,
             backgroundColor: 'rgba(0, 217, 132, 0.08)',
             borderWidth: 1,
             borderColor: 'rgba(0, 217, 132, 0.2)',
             justifyContent: 'center',
             alignItems: 'center',
+            shadowColor: '#00D984',
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.15,
+            shadowRadius: 6,
+            elevation: 3,
           }}>
-            <Svg width={wp(20)} height={wp(20)} viewBox="0 0 28 28">
+            <Svg width={24} height={24} viewBox="0 0 32 32">
               <Defs>
-                <SvgLinearGradient id="brainFill" x1="0.5" y1="0" x2="0.5" y2="1">
+                <SvgLinearGradient id="brainHead" x1="0.5" y1="0" x2="0.5" y2="1">
                   <Stop offset="0%" stopColor="#5DFFB4" />
                   <Stop offset="50%" stopColor="#00D984" />
                   <Stop offset="100%" stopColor="#00854F" />
                 </SvgLinearGradient>
+                <SvgLinearGradient id="coatBody" x1="0.5" y1="0" x2="0.5" y2="1">
+                  <Stop offset="0%" stopColor="#EAEEF3" />
+                  <Stop offset="100%" stopColor="#8892A0" />
+                </SvgLinearGradient>
               </Defs>
 
-              {/* Forme du cerveau — deux hémisphères */}
-              {/* Hémisphère gauche */}
-              <Path d="M14 4C10 4 7 6.5 7 9.5c0 1.5-.5 2.5-1.5 3.5C4 14.5 3 16 3 18c0 2.5 2 4.5 4.5 4.5H13V4z"
-                fill="url(#brainFill)" opacity={0.75} />
-              {/* Hémisphère droit */}
-              <Path d="M14 4c4 0 7 2.5 7 5.5 0 1.5.5 2.5 1.5 3.5C24 14.5 25 16 25 18c0 2.5-2 4.5-4.5 4.5H14V4z"
-                fill="url(#brainFill)" opacity={0.6} />
+              {/* ===== CERVEAU (tête) ===== */}
+              {/* Forme du cerveau */}
+              <Path d="M16 3C13 3 10.5 5 10.5 7.5c0 1-.5 2-1 2.5C8.5 11 8 12 8 13c0 1.5 1 2.5 2 3h12c1-.5 2-1.5 2-3 0-1-.5-2-1.5-3-.5-.5-1-1.5-1-2.5C21.5 5 19 3 16 3z"
+                fill="url(#brainHead)" />
+              {/* Sillon central du cerveau */}
+              <Line x1="16" y1="3.5" x2="16" y2="15.5" stroke="#005C38" strokeWidth={0.8} opacity={0.5} />
+              {/* Circuits dans le cerveau — contrastés en blanc/cyan */}
+              <Line x1="11" y1="7" x2="21" y2="7" stroke="#FFFFFF" strokeWidth={0.6} opacity={0.5} />
+              <Line x1="11.5" y1="10" x2="20.5" y2="10" stroke="#7AFFC8" strokeWidth={0.6} opacity={0.5} />
+              <Line x1="12" y1="13" x2="20" y2="13" stroke="#FFFFFF" strokeWidth={0.6} opacity={0.4} />
+              {/* Nodes lumineux dans le cerveau */}
+              <Circle cx="14" cy="7" r="1" fill="#FFFFFF" opacity={0.7} />
+              <Circle cx="18" cy="7" r="1" fill="#7AFFC8" opacity={0.7} />
+              <Circle cx="16" cy="10" r="1.2" fill="#FFFFFF" opacity={0.8} />
+              <Circle cx="14" cy="13" r="0.8" fill="#7AFFC8" opacity={0.6} />
+              <Circle cx="18" cy="13" r="0.8" fill="#FFFFFF" opacity={0.6} />
 
-              {/* Sillon central */}
-              <Line x1="14" y1="4" x2="14" y2="22.5" stroke="#0A1A12" strokeWidth={1} opacity={0.4} />
+              {/* ===== COU ===== */}
+              <Rect x="14.5" y="16" width="3" height="2" rx="1" fill="#8892A0" opacity={0.4} />
 
-              {/* === FILS / CIRCUITS qui traversent le cerveau === */}
-              {/* Fil horizontal haut */}
-              <Line x1="1" y1="10" x2="27" y2="10" stroke="#5DFFB4" strokeWidth={0.7} opacity={0.5} />
-              {/* Fil horizontal milieu */}
-              <Line x1="2" y1="15" x2="26" y2="15" stroke="#00D984" strokeWidth={0.7} opacity={0.45} />
-              {/* Fil horizontal bas */}
-              <Line x1="3" y1="20" x2="25" y2="20" stroke="#00BFA6" strokeWidth={0.7} opacity={0.4} />
+              {/* ===== BLOUSE DE DOCTEUR (corps) ===== */}
+              {/* Épaules + corps de la blouse */}
+              <Path d="M8 18.5C8 18 10 17.5 13 17.5h6c3 0 5 0.5 5 1v8c0 1-1 2-2 2.5H10c-1-0.5-2-1.5-2-2.5v-8z"
+                fill="url(#coatBody)" opacity={0.85} />
+              {/* Col en V de la blouse */}
+              <Path d="M13.5 17.5L16 21L18.5 17.5"
+                fill="none" stroke="#00D984" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" />
+              {/* Boutons de la blouse */}
+              <Circle cx="16" cy="22" r="0.7" fill="#00D984" opacity={0.6} />
+              <Circle cx="16" cy="24.5" r="0.7" fill="#00D984" opacity={0.5} />
+              <Circle cx="16" cy="27" r="0.7" fill="#00D984" opacity={0.4} />
+              {/* Poche de poitrine avec croix médicale */}
+              <Rect x="18" y="20" width="3.5" height="3" rx="0.5" fill="none" stroke="#8892A0" strokeWidth={0.5} opacity={0.4} />
+              <Line x1="19.75" y1="20.5" x2="19.75" y2="22.5" stroke="#FF6B8A" strokeWidth={0.6} opacity={0.5} />
+              <Line x1="18.5" y1="21.5" x2="21" y2="21.5" stroke="#FF6B8A" strokeWidth={0.6} opacity={0.5} />
 
-              {/* Fil diagonal gauche → droite */}
-              <Line x1="5" y1="6" x2="23" y2="20" stroke="#5DFFB4" strokeWidth={0.5} opacity={0.3} />
-              {/* Fil diagonal droite → gauche */}
-              <Line x1="23" y1="6" x2="5" y2="20" stroke="#00BFA6" strokeWidth={0.5} opacity={0.3} />
-
-              {/* === NODES aux intersections des fils === */}
-              <Circle cx="14" cy="10" r="1.5" fill="#5DFFB4" opacity={0.9} />
-              <Circle cx="14" cy="15" r="1.5" fill="#00D984" opacity={0.9} />
-              <Circle cx="14" cy="20" r="1.2" fill="#00BFA6" opacity={0.8} />
-
-              {/* Nodes latéraux */}
-              <Circle cx="8" cy="10" r="1" fill="#5DFFB4" opacity={0.6} />
-              <Circle cx="20" cy="10" r="1" fill="#5DFFB4" opacity={0.6} />
-              <Circle cx="7" cy="15" r="1" fill="#00D984" opacity={0.5} />
-              <Circle cx="21" cy="15" r="1" fill="#00D984" opacity={0.5} />
-
-              {/* Petits éclats de connexion aux extrémités des fils */}
-              <Circle cx="1" cy="10" r="0.8" fill="#5DFFB4" opacity={0.4} />
-              <Circle cx="27" cy="10" r="0.8" fill="#5DFFB4" opacity={0.4} />
-              <Circle cx="2" cy="15" r="0.8" fill="#00D984" opacity={0.35} />
-              <Circle cx="26" cy="15" r="0.8" fill="#00D984" opacity={0.35} />
-
-              {/* Reflet lumineux en haut à gauche du cerveau */}
-              <Ellipse cx="10" cy="7" rx="3" ry="2" fill="white" opacity={0.08} />
+              {/* ===== FILS DE CONNEXION — du cerveau vers le corps ===== */}
+              <Line x1="12" y1="14" x2="10" y2="19" stroke="#00D984" strokeWidth={0.5} opacity={0.3} strokeDasharray="1.5 1.5" />
+              <Line x1="20" y1="14" x2="22" y2="19" stroke="#00D984" strokeWidth={0.5} opacity={0.3} strokeDasharray="1.5 1.5" />
             </Svg>
           </View>
           <Text style={{
