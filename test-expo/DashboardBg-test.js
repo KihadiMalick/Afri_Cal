@@ -8,6 +8,7 @@ import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react'
 import {
   View, Dimensions, Text, StyleSheet, StatusBar, Alert, Pressable, Image,
   Animated as RNAnimated, ScrollView, TouchableOpacity, Platform, Modal, Easing,
+  PixelRatio,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,6 +16,23 @@ import Svg, { Line, Circle, Rect, Path, G, Defs, LinearGradient as SvgLinearGrad
 import { Ionicons } from '@expo/vector-icons';
 
 const { width: W, height: H } = Dimensions.get('window');
+
+// ============================================
+// SYSTÈME RESPONSIVE — Base design : 320dp (Z Fold 5 plié)
+// ============================================
+const BASE_WIDTH = 320;
+
+// Fonction de scaling proportionnel
+const wp = (size) => (W / BASE_WIDTH) * size;
+
+// Fonction de scaling pour les fonts (avec limite PixelRatio)
+const fp = (size) => {
+  const scaled = (W / BASE_WIDTH) * size;
+  return Math.round(PixelRatio.roundToNearestPixel(scaled));
+};
+
+// Fonction de scaling vertical (pour les heights)
+const hp = (size) => (H / 700) * size;
 
 // ============================================
 // UTILITAIRE — pseudo-random deterministe
@@ -287,32 +305,32 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
       <Image
         source={require('./assets/lixum-logo.png')}
         style={{
-          width: 110,
-          height: 30,
+          width: wp(150),
+          height: wp(42),
           resizeMode: 'contain',
         }}
       />
 
       {/* DROITE — Mood + Lix Coin */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
         {/* Mood emoji avec ring */}
         <TouchableOpacity onPress={onMoodPress} activeOpacity={0.7} style={s.moodBtn}>
           <RNAnimated.View style={{ transform: [{ rotate: moodFilled ? '0deg' : rotate }] }}>
             <View style={s.moodCircle}>
-              <Text style={{ fontSize: 18 }}>{moodFilled ? '😊' : '😶'}</Text>
+              <Text style={{ fontSize: fp(18) }}>{moodFilled ? '😊' : '😶'}</Text>
             </View>
           </RNAnimated.View>
           {!moodFilled && (
             <View style={s.moodBadge}>
-              <Text style={{ color: '#fff', fontSize: 7, fontWeight: '800' }}>!</Text>
+              <Text style={{ color: '#fff', fontSize: fp(7), fontWeight: '800' }}>!</Text>
             </View>
           )}
         </TouchableOpacity>
 
         {/* Lix counter */}
         <TouchableOpacity onPress={onLixPress} activeOpacity={0.7} style={s.lixBtn}>
-          <View style={{ position: 'relative', marginRight: 5 }}>
-            <LixCoinIcon size={16} />
+          <View style={{ position: 'relative', marginRight: wp(5) }}>
+            <LixCoinIcon size={wp(16)} />
             {notifCount > 0 && (
               <View style={s.notifBadge}>
                 <Text style={s.notifBadgeText}>{notifCount}</Text>
@@ -412,16 +430,16 @@ const MetalCard = ({ children, style, onPress, noPadding = false }) => {
           {/* Indicateur cliquable › */}
           <View style={{
             position: 'absolute',
-            top: 10, right: 10,
-            width: 18, height: 18,
-            borderRadius: 9,
+            top: wp(10), right: wp(10),
+            width: wp(18), height: wp(18),
+            borderRadius: wp(9),
             backgroundColor: 'rgba(255, 255, 255, 0.04)',
             borderWidth: 1,
             borderColor: 'rgba(255, 255, 255, 0.08)',
             justifyContent: 'center',
             alignItems: 'center',
           }}>
-            <Text style={{ color: '#8892A0', fontSize: 10, fontWeight: '600', marginTop: -1 }}>›</Text>
+            <Text style={{ color: '#8892A0', fontSize: fp(10), fontWeight: '600', marginTop: -1 }}>›</Text>
           </View>
           {children}
         </View>
@@ -432,26 +450,26 @@ const MetalCard = ({ children, style, onPress, noPadding = false }) => {
 
 const metalStyles = StyleSheet.create({
   outerBorder: {
-    borderRadius: 18,
-    padding: 1.2,
+    borderRadius: wp(18),
+    padding: wp(1.2),
     backgroundColor: '#4A4F55',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.5,
     shadowRadius: 16,
     elevation: 12,
-    marginHorizontal: 14,
-    marginBottom: 12,
+    marginHorizontal: wp(14),
+    marginBottom: wp(12),
   },
   innerGradient: {
-    borderRadius: 17,
+    borderRadius: wp(17),
     overflow: 'hidden',
   },
   cardContent: {
-    padding: 16,
+    padding: wp(16),
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.25)',
-    borderRadius: 17,
+    borderRadius: wp(17),
   },
 });
 
@@ -863,14 +881,14 @@ const DnaHelix = ({ height = 68, width = 60 }) => {
 // ============================================================
 // SIZING — 2 Réacteurs + ADN central
 // ============================================================
-const CARD_MARGIN = 14;
-const CARD_PAD = 16;
-const DNA_WIDTH = 60;
-const GAP = 4;
-const TOTAL_SIDES = (CARD_MARGIN + CARD_PAD + 1.2) * 2;
+const CARD_MARGIN = wp(14);
+const CARD_PAD = wp(16);
+const DNA_WIDTH = wp(60);
+const GAP = wp(4);
+const TOTAL_SIDES = (CARD_MARGIN + CARD_PAD + wp(1.2)) * 2;
 const REACTOR_SIZE = Math.min(
   Math.floor((W - TOTAL_SIDES - DNA_WIDTH - GAP * 2) / 2),
-  95
+  wp(95)
 );
 
 // ============================================================
@@ -1046,16 +1064,16 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }
   const goalL = (goalMl / 1000).toFixed(1);
 
   return (
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }} onPress={onPress}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={onPress}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {/* Mini silhouette gauche */}
-          <SilhouetteFill fillPercent={percent} height={56} gender={gender} />
+          <SilhouetteFill fillPercent={percent} height={wp(56)} gender={gender} />
 
           {/* Infos droite */}
-          <View style={{ flex: 1, marginLeft: 14, paddingRight: 30 }}>
+          <View style={{ flex: 1, marginLeft: wp(14), paddingRight: wp(30) }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <DropletIcon size={16} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                <DropletIcon size={wp(16)} />
                 <Text style={s.hydrationTitle}>HYDRATATION</Text>
               </View>
               <Text style={s.hydrationLiters}>{liters} / {goalL}L</Text>
@@ -1076,14 +1094,14 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }
 
             {/* Sport water loss alert */}
             {sportAlert ? (
-              <Text style={{ color: '#FF8C42', fontSize: 10, marginTop: 4 }}>{sportAlert}</Text>
+              <Text style={{ color: '#FF8C42', fontSize: fp(10), marginTop: wp(4) }}>{sportAlert}</Text>
             ) : (
-              <Text style={{ color: '#555E6C', fontSize: 10, marginTop: 4 }}>Tap pour ajouter →</Text>
+              <Text style={{ color: '#555E6C', fontSize: fp(10), marginTop: wp(4) }}>Tap pour ajouter →</Text>
             )}
 
             {/* Low hydration warning */}
             {percent < 30 && percent > 0 && (
-              <Text style={{ color: '#FF3B30', fontSize: 10, fontWeight: '700', marginTop: 2 }}>
+              <Text style={{ color: '#FF3B30', fontSize: fp(10), fontWeight: '700', marginTop: 2 }}>
                 ⚠️ Pensez à vous réhydrater ! 💧
               </Text>
             )}
@@ -1269,29 +1287,29 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 25, paddingTop: 8 }}
+      contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(25), paddingTop: wp(8) }}
       showsVerticalScrollIndicator={false}
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }}>
         {/* HEADER — une seule ligne, tout aligné */}
         <View style={{
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: 10,
+          marginBottom: wp(10),
         }}>
           <Text style={{
             fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-            fontSize: 9,
+            fontSize: fp(9),
             fontWeight: '800',
-            letterSpacing: 2,
+            letterSpacing: wp(2),
             color: '#8892A0',
           }}>BILAN ÉNERGÉTIQUE</Text>
 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{
-              fontSize: 13,
+              fontSize: fp(13),
               fontWeight: '800',
               color: '#00D984',
               textShadowColor: 'rgba(0, 217, 132, 0.3)',
@@ -1299,8 +1317,8 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               textShadowRadius: 4,
             }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
             <View style={{
-              width: 5, height: 5, borderRadius: 2.5,
-              backgroundColor: '#00D984', marginLeft: 4,
+              width: wp(5), height: wp(5), borderRadius: wp(2.5),
+              backgroundColor: '#00D984', marginLeft: wp(4),
             }} />
           </View>
         </View>
@@ -1347,13 +1365,13 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           justifyContent: 'center',
           alignItems: 'center',
           paddingHorizontal: 0,
-          marginTop: 10,
+          marginTop: wp(10),
         }}>
           {/* Consommé */}
           <View style={{ alignItems: 'center', flex: 1 }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 15,
+              fontSize: fp(15),
               fontWeight: '800',
               color: '#FF8C42',
               textShadowColor: 'rgba(255, 140, 66, 0.2)',
@@ -1361,10 +1379,10 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               textShadowRadius: 4,
             }}>{Math.round((consumedTotal / DAILY_OBJECTIVE) * 100)}%</Text>
             <Text style={{
-              fontSize: 9, fontWeight: '600', color: '#8892A0', marginTop: 2,
+              fontSize: fp(9), fontWeight: '600', color: '#8892A0', marginTop: 2,
             }}>Consommé</Text>
             <Text style={{
-              fontSize: 8,
+              fontSize: fp(8),
               fontWeight: '700',
               color: '#FF3B30',
               marginTop: 3,
@@ -1375,7 +1393,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <View style={{ alignItems: 'center', flex: 1 }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 15,
+              fontSize: fp(15),
               fontWeight: '900',
               color: '#00D984',
               textShadowColor: 'rgba(0, 217, 132, 0.4)',
@@ -1383,7 +1401,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               textShadowRadius: 6,
             }}>84</Text>
             <Text style={{
-              fontSize: 8, fontWeight: '700', color: '#D4AF37', marginTop: 2,
+              fontSize: fp(8), fontWeight: '700', color: '#D4AF37', marginTop: 2,
               letterSpacing: 1.5,
             }}>VITALITÉ</Text>
           </View>
@@ -1392,7 +1410,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <View style={{ alignItems: 'center', flex: 1 }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 15,
+              fontSize: fp(15),
               fontWeight: '800',
               color: '#4DA6FF',
               textShadowColor: 'rgba(77, 166, 255, 0.2)',
@@ -1400,7 +1418,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               textShadowRadius: 4,
             }}>{Math.round((remaining / DAILY_OBJECTIVE) * 100)}%</Text>
             <Text style={{
-              fontSize: 9, fontWeight: '600', color: '#8892A0', marginTop: 2,
+              fontSize: fp(9), fontWeight: '600', color: '#8892A0', marginTop: 2,
             }}>Reste</Text>
           </View>
         </View>
@@ -1420,52 +1438,63 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       {/* ======================================================= */}
 
       {/* DERNIER REPAS */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }} onPress={() => Alert.alert('Dernier Repas', 'Détails nutritionnels complets — bientôt disponible')}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert('Dernier Repas', 'Détails nutritionnels complets — bientôt disponible')}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
           <ForkKnifeIcon />
           <Text style={{
             color: '#EAEEF3',
-            fontSize: 14,
+            fontSize: fp(14),
             fontWeight: '700',
-            letterSpacing: 1,
-            marginLeft: 8,
+            letterSpacing: wp(1),
+            marginLeft: wp(8),
           }}>DERNIER REPAS</Text>
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {/* Placeholder image repas — assiette fumante */}
           <View style={{
-            width: 52,
-            height: 52,
-            borderRadius: 14,
-            backgroundColor: 'rgba(0, 217, 132, 0.05)',
+            width: wp(52),
+            height: wp(52),
+            borderRadius: wp(12),
+            backgroundColor: 'rgba(30, 37, 48, 0.8)',
             borderWidth: 1,
-            borderColor: 'rgba(0, 217, 132, 0.12)',
+            borderColor: 'rgba(62, 72, 85, 0.3)',
             justifyContent: 'center',
             alignItems: 'center',
-            marginRight: 12,
-            shadowColor: '#00D984',
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.1,
-            shadowRadius: 6,
-            elevation: 2,
+            marginRight: wp(12),
           }}>
-            <PlateIcon />
+            <Svg width={wp(28)} height={wp(28)} viewBox="0 0 32 32">
+              <Defs>
+                <SvgLinearGradient id="plateGrd" x1="0.5" y1="0" x2="0.5" y2="1">
+                  <Stop offset="0%" stopColor="#8892A0" />
+                  <Stop offset="100%" stopColor="#6B7B8D" />
+                </SvgLinearGradient>
+              </Defs>
+              {/* Assiette */}
+              <Ellipse cx="16" cy="22" rx="13" ry="5" fill="url(#plateGrd)" opacity={0.3} />
+              <Ellipse cx="16" cy="20" rx="12" ry="4.5" fill="none" stroke="#8892A0" strokeWidth={1.2} opacity={0.5} />
+              <Ellipse cx="16" cy="20" rx="8" ry="3" fill="none" stroke="#8892A0" strokeWidth={0.8} opacity={0.3} />
+              {/* Vapeur / fumée */}
+              <Path d="M11 14 Q11 11 13 12 Q15 13 13 10" fill="none" stroke="#8892A0" strokeWidth={1} strokeLinecap="round" opacity={0.4} />
+              <Path d="M16 13 Q16 10 18 11 Q20 12 18 9" fill="none" stroke="#8892A0" strokeWidth={1} strokeLinecap="round" opacity={0.35} />
+              <Path d="M21 14 Q21 11 23 12 Q25 13 23 10" fill="none" stroke="#8892A0" strokeWidth={1} strokeLinecap="round" opacity={0.3} />
+            </Svg>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: '#EAEEF3', fontSize: 14, fontWeight: '600' }}>Poulet grillé + Riz</Text>
-            <Text style={{ color: '#8892A0', fontSize: 11, marginTop: 2 }}>450 kcal • <Text style={{ color: '#EAEEF3' }}>12h30</Text></Text>
-            <View style={{ flexDirection: 'row', marginTop: 4, gap: 10 }}>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>Poulet grillé + Riz</Text>
+            <Text style={{ color: '#8892A0', fontSize: fp(11), marginTop: 2 }}>450 kcal • <Text style={{ color: '#EAEEF3' }}>12h30</Text></Text>
+            <View style={{ flexDirection: 'row', marginTop: 4, gap: wp(10) }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#FF6B8A', marginRight: 4 }} />
-                <Text style={{ color: '#8892A0', fontSize: 10 }}>35g P</Text>
+                <View style={{ width: wp(7), height: wp(7), borderRadius: wp(3.5), backgroundColor: '#FF6B8A', marginRight: wp(4) }} />
+                <Text style={{ color: '#8892A0', fontSize: fp(10) }}>35g P</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#FFB800', marginRight: 4 }} />
-                <Text style={{ color: '#8892A0', fontSize: 10 }}>20g G</Text>
+                <View style={{ width: wp(7), height: wp(7), borderRadius: wp(3.5), backgroundColor: '#FFB800', marginRight: wp(4) }} />
+                <Text style={{ color: '#8892A0', fontSize: fp(10) }}>20g G</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#4DA6FF', marginRight: 4 }} />
-                <Text style={{ color: '#8892A0', fontSize: 10 }}>15g L</Text>
+                <View style={{ width: wp(7), height: wp(7), borderRadius: wp(3.5), backgroundColor: '#4DA6FF', marginRight: wp(4) }} />
+                <Text style={{ color: '#8892A0', fontSize: fp(10) }}>15g L</Text>
               </View>
             </View>
           </View>
@@ -1473,14 +1502,14 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       </MetalCard>
 
       {/* COACH LIXMAN */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }} onPress={() => Alert.alert('Coach LixMan', 'Recommandations personnalisées IA — bientôt disponible')}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert('Coach LixMan', 'Recommandations personnalisées IA — bientôt disponible')}>
         {/* Header Coach */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
           {/* Icône robot/coach — petit cercle émeraude avec un "L" */}
           <View style={{
-            width: 26,
-            height: 26,
-            borderRadius: 13,
+            width: wp(26),
+            height: wp(26),
+            borderRadius: wp(13),
             backgroundColor: 'rgba(0, 217, 132, 0.12)',
             borderWidth: 1,
             borderColor: 'rgba(0, 217, 132, 0.25)',
@@ -1489,29 +1518,29 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 12,
+              fontSize: fp(12),
               fontWeight: '900',
               color: '#00D984',
             }}>L</Text>
           </View>
           <Text style={{
             color: '#EAEEF3',
-            fontSize: 13,
+            fontSize: fp(13),
             fontWeight: '700',
-            letterSpacing: 1,
-            marginLeft: 8,
+            letterSpacing: wp(1),
+            marginLeft: wp(8),
           }}>COACH LIXMAN</Text>
           {/* Badge "IA" */}
           <View style={{
             backgroundColor: 'rgba(212, 175, 55, 0.12)',
-            borderRadius: 6,
-            paddingHorizontal: 6,
-            paddingVertical: 2,
-            marginLeft: 8,
+            borderRadius: wp(6),
+            paddingHorizontal: wp(6),
+            paddingVertical: wp(2),
+            marginLeft: wp(8),
           }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: 7,
+              fontSize: fp(7),
               fontWeight: '800',
               color: '#D4AF37',
               letterSpacing: 1,
@@ -1522,8 +1551,8 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         {/* Message du coach — une seule ligne punchy */}
         <Text style={{
           color: '#EAEEF3',
-          fontSize: 12,
-          lineHeight: 17,
+          fontSize: fp(12),
+          lineHeight: fp(17),
           fontWeight: '500',
         }}>
           Déficit de <Text style={{ color: '#FF8C42', fontWeight: '700' }}>412 kcal</Text> — bonne stratégie pour la <Text style={{ color: '#00D984', fontWeight: '700' }}>perte de poids</Text> !
@@ -1532,24 +1561,24 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         {/* Suggestions */}
         <View style={{
           backgroundColor: 'rgba(0, 217, 132, 0.03)',
-          borderRadius: 10,
-          padding: 10,
-          marginTop: 8,
+          borderRadius: wp(10),
+          padding: wp(10),
+          marginTop: wp(8),
           borderWidth: 1,
           borderColor: 'rgba(0, 217, 132, 0.06)',
         }}>
-          <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', letterSpacing: 1, marginBottom: 4 }}>SUGGESTIONS</Text>
+          <Text style={{ color: '#8892A0', fontSize: fp(8), fontWeight: '700', letterSpacing: wp(1), marginBottom: wp(4) }}>SUGGESTIONS</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
-            <Text style={{ color: '#00D984', fontSize: 10, marginRight: 6 }}>+</Text>
-            <Text style={{ color: '#EAEEF3', fontSize: 11 }}>25g de protéines au prochain repas</Text>
+            <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>25g de protéines au prochain repas</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
-            <Text style={{ color: '#00D984', fontSize: 10, marginRight: 6 }}>+</Text>
-            <Text style={{ color: '#EAEEF3', fontSize: 11 }}>1 verre d'eau (hydratation à 60%)</Text>
+            <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>1 verre d'eau (hydratation à 60%)</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ color: '#00D984', fontSize: 10, marginRight: 6 }}>+</Text>
-            <Text style={{ color: '#EAEEF3', fontSize: 11 }}>15 min de marche pour brûler 85 kcal</Text>
+            <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>15 min de marche pour brûler 85 kcal</Text>
           </View>
         </View>
 
@@ -1560,9 +1589,9 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         >
           <Text style={{
             color: '#00D984',
-            fontSize: 11,
+            fontSize: fp(11),
             fontWeight: '600',
-            marginTop: 8,
+            marginTop: wp(8),
           }}>
             Voir Recettes  ›
           </Text>
@@ -1589,7 +1618,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       )}
 
       {/* STATS AVANCÉES — FLOUTÉES */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }} onPress={() => Alert.alert(
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert(
         'Débloquer Mes Stats',
         'Accédez à vos statistiques sur 7 jours pour 200 Lix ou avec un abonnement Premium.',
         [
@@ -1597,25 +1626,25 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           { text: 'Débloquer', onPress: () => console.log('Navigate to shop') },
         ]
       )}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
           <StatsIcon />
           <Text style={{
             color: '#EAEEF3',
-            fontSize: 14,
+            fontSize: fp(14),
             fontWeight: '700',
-            letterSpacing: 1,
-            marginLeft: 8,
+            letterSpacing: wp(1),
+            marginLeft: wp(8),
           }}>MES STATS (7 jours)</Text>
         </View>
         <View style={{ alignItems: 'center' }}>
-          <LockIcon size={28} />
-          <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '600', marginTop: 8 }}>Débloquer</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-            <LixCoinIcon size={12} />
-            <Text style={{ color: '#00D984', fontSize: 13, fontWeight: '700' }}> 200 Lix</Text>
-            <Text style={{ color: '#8892A0', fontSize: 12, marginHorizontal: 6 }}>ou</Text>
+          <LockIcon size={wp(28)} />
+          <Text style={{ color: '#8892A0', fontSize: fp(13), fontWeight: '600', marginTop: wp(8) }}>Débloquer</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(4) }}>
+            <LixCoinIcon size={wp(12)} />
+            <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '700' }}> 200 Lix</Text>
+            <Text style={{ color: '#8892A0', fontSize: fp(12), marginHorizontal: wp(6) }}>ou</Text>
             <StarIcon />
-            <Text style={{ color: '#D4AF37', fontSize: 13, fontWeight: '700' }}> Premium</Text>
+            <Text style={{ color: '#D4AF37', fontSize: fp(13), fontWeight: '700' }}> Premium</Text>
           </View>
         </View>
       </MetalCard>
@@ -1682,7 +1711,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
         >
           <View style={{ position: 'relative' }}>
             {tab.isMedicAi ? (
-              <Svg width={22} height={22} viewBox="0 0 24 24">
+              <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24">
                 <Defs>
                   <SvgLinearGradient id="medicGrad" x1="0.5" y1="0" x2="0.5" y2="1">
                     <Stop offset="0%" stopColor="#FF6B8A" />
@@ -1697,7 +1726,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
             ) : (
               <Ionicons
                 name={active ? tab.iconActive : tab.iconInactive}
-                size={22}
+                size={wp(22)}
                 color={active ? '#00D984' : '#6B7B8D'}
               />
             )}
@@ -1842,15 +1871,15 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingHorizontal: wp(14),
+    paddingTop: wp(8),
+    paddingBottom: wp(8),
   },
   moodBtn: { position: 'relative' },
   moodCircle: {
-    width: 36, height: 36, borderRadius: 18,
+    width: wp(36), height: wp(36), borderRadius: wp(18),
     backgroundColor: 'rgba(21,27,35,0.7)',
-    borderWidth: 1.5, borderColor: '#00D984',
+    borderWidth: wp(1.5), borderColor: '#00D984',
     justifyContent: 'center', alignItems: 'center',
     shadowColor: '#00D984',
     shadowOffset: { width: 0, height: 0 },
@@ -1860,7 +1889,7 @@ const s = StyleSheet.create({
   },
   moodBadge: {
     position: 'absolute', top: -3, right: -3,
-    width: 12, height: 12, borderRadius: 6,
+    width: wp(12), height: wp(12), borderRadius: wp(6),
     backgroundColor: '#FF8C42',
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 1.5, borderColor: '#1E2530',
@@ -1868,12 +1897,12 @@ const s = StyleSheet.create({
   lixBtn: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: 'rgba(21, 27, 35, 0.8)',
-    paddingHorizontal: 10, paddingVertical: 5,
-    borderRadius: 20,
+    paddingHorizontal: wp(10), paddingVertical: wp(5),
+    borderRadius: wp(18),
     borderWidth: 1, borderColor: 'rgba(62, 72, 85, 0.5)',
   },
-  lixCount: { color: '#EAEEF3', fontSize: 15, fontWeight: '700' },
-  lixLabel: { color: '#8892A0', fontSize: 11, fontWeight: '500', marginLeft: 3 },
+  lixCount: { color: '#EAEEF3', fontSize: fp(14), fontWeight: '700' },
+  lixLabel: { color: '#8892A0', fontSize: fp(10), fontWeight: '500', marginLeft: wp(3) },
   notifBadge: {
     position: 'absolute', top: -5, right: -7,
     backgroundColor: '#FF3B30', borderRadius: 7,
@@ -1881,7 +1910,7 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 1.5, borderColor: '#1E2530',
   },
-  notifBadgeText: { color: '#FFF', fontSize: 8, fontWeight: '800' },
+  notifBadgeText: { color: '#FFF', fontSize: fp(8), fontWeight: '800' },
 
   // === SECTION TITLES ===
   sectionSubtitle: {
@@ -1934,14 +1963,14 @@ const s = StyleSheet.create({
 
   // === PROGRESS BAR ===
   progressBg: {
-    height: 8, borderRadius: 4, marginTop: 12,
+    height: wp(8), borderRadius: wp(4), marginTop: wp(12),
     backgroundColor: 'rgba(80,95,115,0.15)',
     overflow: 'hidden', position: 'relative',
   },
-  progressFill: { height: '100%', borderRadius: 4 },
+  progressFill: { height: '100%', borderRadius: wp(4) },
   progressText: {
     position: 'absolute', right: 0, top: -18,
-    color: '#8892A0', fontSize: 11, fontWeight: '700',
+    color: '#8892A0', fontSize: fp(11), fontWeight: '700',
   },
 
   // === ECG LEGEND ===
@@ -1962,13 +1991,13 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
   },
   hydrationTitle: {
-    color: '#EAEEF3', fontSize: 12, fontWeight: '700', letterSpacing: 1,
+    color: '#EAEEF3', fontSize: fp(12), fontWeight: '700', letterSpacing: wp(1),
   },
   hydrationLiters: {
-    color: '#4DA6FF', fontSize: 13, fontWeight: '800',
+    color: '#4DA6FF', fontSize: fp(13), fontWeight: '800',
   },
   hydroBar: {
-    height: 8, borderRadius: 4, marginTop: 8,
+    height: wp(8), borderRadius: wp(4), marginTop: wp(8),
     backgroundColor: '#2A3040', overflow: 'hidden',
   },
   hydroBarFill: {
@@ -1979,8 +2008,8 @@ const s = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  hydroGlasses: { color: '#8892A0', fontSize: 10 },
-  hydroPercent: { color: '#4DA6FF', fontSize: 11, fontWeight: '700' },
+  hydroGlasses: { color: '#8892A0', fontSize: fp(10) },
+  hydroPercent: { color: '#4DA6FF', fontSize: fp(11), fontWeight: '700' },
 
   // === HYDRATION MODAL ===
   modalHeader: {
@@ -2079,14 +2108,14 @@ const s = StyleSheet.create({
   // === BOTTOM TAB BAR ===
   tabBar: {
     flexDirection: 'row',
-    paddingTop: 15,
+    paddingTop: wp(10),
     paddingBottom: Platform.OS === 'ios' ? 0 : 48,
   },
   tabItem: {
-    flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4,
+    flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: wp(4),
   },
   tabLabel: {
-    color: '#6B7B8D', fontSize: 9, fontWeight: '600', letterSpacing: 0.3, marginTop: -2,
+    color: '#6B7B8D', fontSize: fp(9), fontWeight: '600', letterSpacing: wp(0.3), marginTop: -2,
   },
   tabLabelActive: { color: '#00D984' },
   tabLock: {
