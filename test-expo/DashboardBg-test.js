@@ -209,9 +209,11 @@ const PlateIcon = () => (
 );
 
 const ForkKnifeIcon = () => (
-  <Svg width={20} height={20} viewBox="0 0 24 24">
-    <Path d="M3 2v8c0 1.1.9 2 2 2h2v10h2V12h2c1.1 0 2-.9 2-2V2H9v6H7V2H3z" fill="#8892A0" />
-    <Path d="M16 2v6c0 1.1.9 2 2 2v12h2V10c1.1 0 2-.9 2-2V2h-2v6h-2V2h-2z" fill="#8892A0" />
+  <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24">
+    {/* Petit bol fumant — icône titre Dernier Repas */}
+    <Path d="M4 16h16c0 2.2-1.8 4-4 4H8c-2.2 0-4-1.8-4-4z" fill="#8892A0" opacity={0.6} />
+    <Path d="M2 14h20v2H2z" fill="#8892A0" opacity={0.4} />
+    <Path d="M9 8c0-1 .5-3 3-3s3 2 3 3" fill="none" stroke="#8892A0" strokeWidth={1.2} strokeLinecap="round" opacity={0.5} />
   </Svg>
 );
 
@@ -1070,8 +1072,8 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }
           <SilhouetteFill fillPercent={percent} height={wp(56)} gender={gender} />
 
           {/* Infos droite */}
-          <View style={{ flex: 1, marginLeft: wp(14), paddingRight: wp(30) }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flex: 1, marginLeft: wp(14), paddingRight: wp(25) }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
                 <DropletIcon size={wp(16)} />
                 <Text style={s.hydrationTitle}>HYDRATATION</Text>
@@ -1287,7 +1289,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(25), paddingTop: wp(8) }}
+      contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(15), paddingTop: wp(8) }}
       showsVerticalScrollIndicator={false}
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
@@ -1505,23 +1507,33 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert('Coach LixMan', 'Recommandations personnalisées IA — bientôt disponible')}>
         {/* Header Coach */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-          {/* Icône robot/coach — petit cercle émeraude avec un "L" */}
+          {/* Icône Coach LixMan — cerveau IA */}
           <View style={{
-            width: wp(26),
-            height: wp(26),
-            borderRadius: wp(13),
-            backgroundColor: 'rgba(0, 217, 132, 0.12)',
+            width: wp(28),
+            height: wp(28),
+            borderRadius: wp(14),
+            backgroundColor: 'rgba(0, 217, 132, 0.10)',
             borderWidth: 1,
             borderColor: 'rgba(0, 217, 132, 0.25)',
             justifyContent: 'center',
             alignItems: 'center',
           }}>
-            <Text style={{
-              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: fp(12),
-              fontWeight: '900',
-              color: '#00D984',
-            }}>L</Text>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24">
+              <Defs>
+                <SvgLinearGradient id="brainGrd" x1="0.5" y1="0" x2="0.5" y2="1">
+                  <Stop offset="0%" stopColor="#5DFFB4" />
+                  <Stop offset="100%" stopColor="#00D984" />
+                </SvgLinearGradient>
+              </Defs>
+              {/* Cerveau simplifié */}
+              <Path d="M12 2C9 2 7 4 7 6.5c0 1-.5 2-1.5 2.5C4 10 3 11.5 3 13c0 2 1.5 3.5 3.5 4 .5 1.5 2 3 3.5 3h4c1.5 0 3-1.5 3.5-3 2-.5 3.5-2 3.5-4 0-1.5-1-3-2.5-4C17.5 8.5 17 7.5 17 6.5 17 4 15 2 12 2z"
+                fill="url(#brainGrd)" opacity={0.85} />
+              {/* Lignes de circuit au centre */}
+              <Path d="M10 8h4M12 8v4M10 12h4M11 12v3M13 12v3"
+                fill="none" stroke="white" strokeWidth={0.8} strokeLinecap="round" opacity={0.5} />
+              {/* Point central */}
+              <Circle cx="12" cy="10" r="1" fill="white" opacity={0.6} />
+            </Svg>
           </View>
           <Text style={{
             color: '#EAEEF3',
@@ -2109,7 +2121,7 @@ const s = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     paddingTop: wp(10),
-    paddingBottom: Platform.OS === 'ios' ? 0 : 48,
+    paddingBottom: Platform.OS === 'ios' ? 0 : 12,
   },
   tabItem: {
     flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: wp(4),
