@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, Image, StyleSheet, Platform } from 'react-native';
 
 const FONT_BOLD = Platform.OS === 'web' ? 'Poppins_700Bold, sans-serif' : 'Poppins_700Bold';
 const FONT_BLACK = Platform.OS === 'web' ? 'Poppins_900Black, sans-serif' : 'Poppins_900Black';
@@ -25,18 +25,13 @@ export function NeonX({ size = 16 }: NeonXProps) {
 }
 
 export function LixumLogo({ size = 14, showSub = true }: { size?: number; showSub?: boolean }) {
+  const scale = size / 14;
   return (
-    <View style={styles.logoWrap}>
-      <View style={styles.logoRing}>
-        <NeonX size={size} />
-      </View>
-      {showSub && (
-        <View style={styles.logoTextCol}>
-          <Text style={styles.brandName}>LIXUM</Text>
-          <Text style={styles.subText}>BIO-DIGITAL DASHBOARD</Text>
-        </View>
-      )}
-    </View>
+    <Image
+      source={require('../../../assets/lixum-logo.png')}
+      resizeMode="contain"
+      style={{ width: 135 * scale, height: 42 * scale }}
+    />
   );
 }
 
