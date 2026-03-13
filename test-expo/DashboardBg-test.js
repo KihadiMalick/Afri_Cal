@@ -54,7 +54,7 @@ const SPOTLIGHT_ZONES = [
   // Étape 4 — Carte Hydratation → REMONTÉ (était trop bas)
   { x: 14, y: 185, width: W - 28, height: 130, borderRadius: 18 },
   // Étape 5 — Carte Coach LixMan → DESCENDU légèrement
-  { x: 14, y: 310, width: W - 28, height: 160, borderRadius: 18 },
+  { x: 14, y: 340, width: W - 28, height: 160, borderRadius: 18 },
 ];
 
 // Étape 4 : scroll de 200 (Hydratation visible)
