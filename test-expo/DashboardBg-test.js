@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Line, Circle, Rect, Path, G, Defs, Mask, LinearGradient as SvgLinearGradient, Stop, Polygon, ClipPath, Ellipse, Text as SvgText } from 'react-native-svg';
+import Svg, { Line, Circle, Rect, Path, G, Defs, Defs as SvgDefs, Mask, LinearGradient as SvgLinearGradient, Stop, Polygon, ClipPath, Ellipse, Text as SvgText } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 // Note: expo-screen-capture doit être installé dans le projet
 // npx expo install expo-screen-capture
@@ -299,49 +299,135 @@ const GoalFlag = () => (
 );
 
 // ============================================================
-// COMPOSANT — FloatingHeart (animation cœur TikTok)
+// COMPOSANT — FloatingHeart (animation cœur TikTok — suit la position du doigt)
 // ============================================================
-const FloatingHeart = ({ x, emoji }) => {
-  const translateY = useRef(new RNAnimated.Value(0)).current;
-  const opacity = useRef(new RNAnimated.Value(1)).current;
-  const scale = useRef(new RNAnimated.Value(0.5)).current;
+const FloatingHeart = ({ heart }) => {
+  const anim = useRef(new RNAnimated.Value(0)).current;
+  const drift = useRef((Math.random() - 0.5) * 70).current;
+  const endY = useRef(-140 - Math.random() * 80).current;
+  const heartSize = useRef(20 + Math.random() * 12).current;
 
   useEffect(() => {
-    RNAnimated.parallel([
-      RNAnimated.timing(translateY, {
-        toValue: -250 - Math.random() * 100,
-        duration: 1500,
-        useNativeDriver: true,
-      }),
-      RNAnimated.timing(opacity, {
-        toValue: 0,
-        duration: 1500,
-        useNativeDriver: true,
-      }),
-      RNAnimated.sequence([
-        RNAnimated.timing(scale, {
-          toValue: 1.2,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        RNAnimated.timing(scale, {
-          toValue: 0.8,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
+    RNAnimated.timing(anim, {
+      toValue: 1,
+      duration: 1100,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   return (
     <RNAnimated.Text style={{
       position: 'absolute',
-      left: x,
-      bottom: 200,
-      fontSize: 22,
-      transform: [{ translateY }, { scale }],
-      opacity,
-    }}>{emoji}</RNAnimated.Text>
+      left: heart.x - 10,
+      top: heart.y - 10,
+      fontSize: heartSize,
+      zIndex: 100,
+      transform: [
+        { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, endY] }) },
+        { translateX: anim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, drift * 0.6, drift] }) },
+        { scale: anim.interpolate({ inputRange: [0, 0.15, 0.7, 1], outputRange: [0.4, 1.2, 1, 0.5] }) },
+      ],
+      opacity: anim.interpolate({ inputRange: [0, 0.2, 0.75, 1], outputRange: [1, 1, 0.6, 0] }),
+    }}>
+      {heart.emoji}
+    </RNAnimated.Text>
+  );
+};
+
+// ============================================================
+// COMPOSANT — MoodIcon (icône SVG premium par tier)
+// ============================================================
+const MoodIcon = ({ tier, size = 42, active = false }) => {
+  const configs = {
+    0: { // Triste
+      bgColors: ['#2A2E35', '#1E2228'],
+      borderColor: '#8892A0',
+      glowColor: 'rgba(136,146,160,0.3)',
+      face: (s) => (
+        <>
+          <Path d={`M${s*0.32} ${s*0.42} Q${s*0.37} ${s*0.47} ${s*0.42} ${s*0.42}`}
+                stroke="#8892A0" strokeWidth={1.8} fill="none" strokeLinecap="round"/>
+          <Path d={`M${s*0.58} ${s*0.42} Q${s*0.63} ${s*0.47} ${s*0.68} ${s*0.42}`}
+                stroke="#8892A0" strokeWidth={1.8} fill="none" strokeLinecap="round"/>
+          <Path d={`M${s*0.35} ${s*0.65} Q${s*0.5} ${s*0.58} ${s*0.65} ${s*0.65}`}
+                stroke="#8892A0" strokeWidth={1.8} fill="none" strokeLinecap="round"/>
+        </>
+      ),
+    },
+    1: { // Chill
+      bgColors: ['#1A2E25', '#152820'],
+      borderColor: '#00D984',
+      glowColor: 'rgba(0,217,132,0.25)',
+      face: (s) => (
+        <>
+          <Path d={`M${s*0.30} ${s*0.42} L${s*0.42} ${s*0.42}`}
+                stroke="#00D984" strokeWidth={2} strokeLinecap="round"/>
+          <Path d={`M${s*0.58} ${s*0.42} L${s*0.70} ${s*0.42}`}
+                stroke="#00D984" strokeWidth={2} strokeLinecap="round"/>
+          <Path d={`M${s*0.35} ${s*0.62} Q${s*0.5} ${s*0.68} ${s*0.65} ${s*0.62}`}
+                stroke="#00D984" strokeWidth={1.8} fill="none" strokeLinecap="round"/>
+        </>
+      ),
+    },
+    2: { // Heureux
+      bgColors: ['#1A2535', '#152030'],
+      borderColor: '#4DA6FF',
+      glowColor: 'rgba(77,166,255,0.25)',
+      face: (s) => (
+        <>
+          <Circle cx={s*0.37} cy={s*0.40} r={s*0.045} fill="#4DA6FF"/>
+          <Circle cx={s*0.63} cy={s*0.40} r={s*0.045} fill="#4DA6FF"/>
+          <Path d={`M${s*0.30} ${s*0.58} Q${s*0.5} ${s*0.75} ${s*0.70} ${s*0.58}`}
+                stroke="#4DA6FF" strokeWidth={2} fill="none" strokeLinecap="round"/>
+        </>
+      ),
+    },
+    3: { // Excité
+      bgColors: ['#2E2818', '#282215'],
+      borderColor: '#D4AF37',
+      glowColor: 'rgba(212,175,55,0.35)',
+      face: (s) => (
+        <>
+          <Path d={`M${s*0.37} ${s*0.34} L${s*0.37} ${s*0.46} M${s*0.31} ${s*0.40} L${s*0.43} ${s*0.40}`}
+                stroke="#D4AF37" strokeWidth={2} strokeLinecap="round"/>
+          <Path d={`M${s*0.63} ${s*0.34} L${s*0.63} ${s*0.46} M${s*0.57} ${s*0.40} L${s*0.69} ${s*0.40}`}
+                stroke="#D4AF37" strokeWidth={2} strokeLinecap="round"/>
+          <Ellipse cx={s*0.5} cy={s*0.63} rx={s*0.13} ry={s*0.09}
+                   fill="none" stroke="#D4AF37" strokeWidth={2}/>
+        </>
+      ),
+    },
+  };
+
+  const config = configs[tier];
+  const s = size;
+
+  return (
+    <View style={{
+      width: s, height: s,
+      borderRadius: s / 2,
+      shadowColor: config.borderColor,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: active ? 0.9 : 0.3,
+      shadowRadius: active ? 14 : 6,
+      elevation: active ? 10 : 4,
+      transform: [{ scale: active ? 1.15 : 1 }],
+    }}>
+      <Svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+        <SvgDefs>
+          <SvgLinearGradient id={`moodBg${tier}`} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={config.bgColors[0]} />
+            <Stop offset="1" stopColor={config.bgColors[1]} />
+          </SvgLinearGradient>
+        </SvgDefs>
+        <Circle cx={s/2} cy={s/2} r={s/2 - 1} fill="none"
+                stroke={config.glowColor} strokeWidth={3}/>
+        <Circle cx={s/2} cy={s/2} r={s/2 - 3} fill={`url(#moodBg${tier})`}/>
+        <Circle cx={s/2} cy={s/2} r={s/2 - 3} fill="none"
+                stroke={config.borderColor} strokeWidth={1.5} opacity={active ? 1 : 0.8}/>
+        {config.face(s)}
+      </Svg>
+    </View>
   );
 };
 
@@ -419,9 +505,7 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
               shadowRadius: 6,
               elevation: 4,
             }}>
-              <Text style={{ fontSize: 20 }}>
-                {currentMood === 'excited' ? '🤩' : currentMood === 'happy' ? '😄' : currentMood === 'chill' ? '😊' : currentMood === 'sad' ? '😔' : '😊'}
-              </Text>
+              <MoodIcon tier={currentMood === 'excited' ? 3 : currentMood === 'happy' ? 2 : currentMood === 'chill' ? 1 : 0} size={24} active={true} />
             </View>
           </RNAnimated.View>
           {!moodFilled && (
@@ -2247,35 +2331,30 @@ export default function App() {
   };
 
   // ===== ENERGY PARTICLE — Animated particle for overflow taps =====
-  const EnergyParticle = ({ x, emoji }) => {
-    const translateY = useRef(new RNAnimated.Value(0)).current;
-    const opacity = useRef(new RNAnimated.Value(1)).current;
+  const EnergyParticle = ({ x, y, emoji }) => {
+    const anim = useRef(new RNAnimated.Value(0)).current;
+    const drift = useRef((Math.random() - 0.5) * 50).current;
 
     useEffect(() => {
-      RNAnimated.parallel([
-        RNAnimated.timing(translateY, {
-          toValue: -50,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        RNAnimated.timing(opacity, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      RNAnimated.timing(anim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
     }, []);
 
     return (
       <RNAnimated.Text style={{
         position: 'absolute',
-        top: 20,
-        left: '50%',
-        marginLeft: x,
+        left: x - 8,
+        top: y ? y - 8 : 20,
         fontSize: 16,
-        transform: [{ translateY }],
-        opacity,
-        zIndex: 15,
+        zIndex: 100,
+        transform: [
+          { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, -60 - Math.random() * 40] }) },
+          { translateX: anim.interpolate({ inputRange: [0, 1], outputRange: [0, drift] }) },
+        ],
+        opacity: anim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [1, 0.8, 0] }),
       }}>{emoji}</RNAnimated.Text>
     );
   };
@@ -2337,31 +2416,35 @@ export default function App() {
     const [overflowTaps, setOverflowTaps] = useState(0);
     const [isExcited, setIsExcited] = useState(false);
     const [energyParticles, setEnergyParticles] = useState([]);
+    const [excitedBuildUp, setExcitedBuildUp] = useState(0);
+    const [currentTier, setCurrentTier] = useState(0);
+    const [tierLabel, setTierLabel] = useState('');
+    const [tierColor, setTierColor] = useState('#FFF');
+    const [fallingStars, setFallingStars] = useState([]);
     const decayTimer = useRef(null);
     const heartId = useRef(0);
     const inactivityTimer = useRef(null);
     const handAnim = useRef(new RNAnimated.Value(0)).current;
     const tubeShakeAnim = useRef(new RNAnimated.Value(0)).current;
+    const tierLabelOpacity = useRef(new RNAnimated.Value(0)).current;
 
     const CHILL_THRESHOLD = 40;
     const HAPPY_THRESHOLD = 80;
 
     // DECAY — jauge descend si on ne tapote pas (3-tier locking)
     useEffect(() => {
+      if (!hasStartedTapping || isExcited) return;
+
       decayTimer.current = setInterval(() => {
         setMoodLevel(prev => {
-          if (isExcited) return prev; // Excité verrouillé à 100
-          if (prev >= HAPPY_THRESHOLD) {
-            return Math.max(prev - 1.5, HAPPY_THRESHOLD);
-          } else if (prev >= CHILL_THRESHOLD) {
-            return Math.max(prev - 1.5, CHILL_THRESHOLD);
-          } else {
-            return Math.max(prev - 1.5, 0);
-          }
+          if (prev >= 100) return 100;                        // Verrouillé 100%
+          if (prev >= HAPPY_THRESHOLD) return Math.max(prev - 1.5, HAPPY_THRESHOLD);
+          if (prev >= CHILL_THRESHOLD) return Math.max(prev - 1.5, CHILL_THRESHOLD);
+          return Math.max(prev - 1.5, 0);
         });
       }, 100);
       return () => clearInterval(decayTimer.current);
-    }, [isExcited]);
+    }, [hasStartedTapping, isExcited]);
 
     // Hand hint animation loop
     useEffect(() => {
@@ -2378,22 +2461,23 @@ export default function App() {
     const handTranslateY = handAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -12] });
     const handOpacity = handAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.6, 1, 0.6] });
 
-    // Tube shake when overflow tapping
+    // Tube shake when overflow tapping (build-up)
     useEffect(() => {
-      if (moodLevel >= 100 && overflowTaps > 0 && !isExcited) {
-        const intensity = Math.min(overflowTaps * 0.8, 4);
-        RNAnimated.loop(
+      if (excitedBuildUp > 0 && excitedBuildUp < 5 && !isExcited) {
+        const intensity = excitedBuildUp * 1.2;
+        const animation = RNAnimated.loop(
           RNAnimated.sequence([
-            RNAnimated.timing(tubeShakeAnim, { toValue: intensity, duration: 40, useNativeDriver: true }),
-            RNAnimated.timing(tubeShakeAnim, { toValue: -intensity, duration: 40, useNativeDriver: true }),
+            RNAnimated.timing(tubeShakeAnim, { toValue: intensity, duration: 35, useNativeDriver: true }),
+            RNAnimated.timing(tubeShakeAnim, { toValue: -intensity, duration: 35, useNativeDriver: true }),
           ])
-        ).start();
+        );
+        animation.start();
+        return () => { animation.stop(); tubeShakeAnim.setValue(0); };
       }
       if (isExcited) {
-        tubeShakeAnim.stopAnimation();
         tubeShakeAnim.setValue(0);
       }
-    }, [overflowTaps, isExcited]);
+    }, [excitedBuildUp, isExcited]);
 
     // Détection fin — 3 secondes sans tap (only if user has started tapping)
     useEffect(() => {
@@ -2411,11 +2495,96 @@ export default function App() {
       return () => clearTimeout(inactivityTimer.current);
     }, [moodLevel, hasStartedTapping, isExcited]);
 
-    const spawnEnergyParticles = () => {
+    // Falling stars when Excited triggers
+    useEffect(() => {
+      if (isExcited) {
+        const stars = Array.from({ length: 10 }, (_, i) => ({
+          id: Date.now() + i,
+          emoji: ['⭐', '🌟', '✨'][Math.floor(Math.random() * 3)],
+          x: Math.random() * 280 + 20,
+        }));
+        setFallingStars(stars);
+        setTimeout(() => setFallingStars([]), 1800);
+      }
+    }, [isExcited]);
+
+    const FloatingStar = ({ star }) => {
+      const anim = useRef(new RNAnimated.Value(0)).current;
+      useEffect(() => {
+        RNAnimated.timing(anim, {
+          toValue: 1, duration: 1500, useNativeDriver: true,
+        }).start();
+      }, []);
+      return (
+        <RNAnimated.Text style={{
+          position: 'absolute',
+          left: star.x,
+          top: 20,
+          fontSize: 20 + Math.random() * 10,
+          zIndex: 100,
+          transform: [
+            { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, 300 + Math.random() * 100] }) },
+            { rotate: anim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${Math.floor(Math.random() * 360)}deg`] }) },
+          ],
+          opacity: anim.interpolate({ inputRange: [0, 0.3, 0.8, 1], outputRange: [1, 1, 0.5, 0] }),
+        }}>
+          {star.emoji}
+        </RNAnimated.Text>
+      );
+    };
+
+    // Tier feedback — flash label + vibration quand un palier est franchi
+    const triggerTierFeedback = (tier) => {
+      const labels = { 1: 'CHILL', 2: 'HEUREUX', 3: 'EXCITÉ' };
+      const colors = { 1: '#00D984', 2: '#4DA6FF', 3: '#D4AF37' };
+
+      setTierLabel(labels[tier] || '');
+      setTierColor(colors[tier] || '#FFF');
+
+      RNAnimated.sequence([
+        RNAnimated.timing(tierLabelOpacity, { toValue: 1, duration: 80, useNativeDriver: true }),
+        RNAnimated.delay(350),
+        RNAnimated.timing(tierLabelOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      ]).start(() => setTierLabel(''));
+
+      try {
+        const { Vibration } = require('react-native');
+        Vibration.vibrate(30);
+      } catch(e) {}
+    };
+
+    useEffect(() => {
+      let newTier = 0;
+      if (isExcited) newTier = 3;
+      else if (moodLevel >= 80) newTier = 2;
+      else if (moodLevel >= 40) newTier = 1;
+
+      if (newTier > currentTier) {
+        setCurrentTier(newTier);
+        triggerTierFeedback(newTier);
+      }
+    }, [moodLevel, isExcited]);
+
+    const spawnHeartsAt = (x, y) => {
+      const emojis = ['❤️', '🧡', '💛', '💚', '💙', '💜', '🤍'];
+      const batch = Array.from({ length: 3 }, (_, i) => ({
+        id: Date.now() + i + Math.random(),
+        emoji: emojis[Math.floor(Math.random() * emojis.length)],
+        x: x + (Math.random() * 30 - 15),
+        y: y,
+      }));
+      setHearts(prev => [...prev, ...batch]);
+      setTimeout(() => {
+        setHearts(prev => prev.filter(h => !batch.find(b => b.id === h.id)));
+      }, 1200);
+    };
+
+    const spawnEnergyAt = (x, y) => {
       const newParticles = Array.from({ length: 3 }, (_, i) => ({
-        id: Date.now() + i,
-        x: Math.random() * 40 - 20,
-        emoji: ['⚡', '✦', '💥'][Math.floor(Math.random() * 3)],
+        id: Date.now() + i + Math.random(),
+        x: x + (Math.random() * 30 - 15),
+        y: y,
+        emoji: ['⚡', '✦', '🔥'][Math.floor(Math.random() * 3)],
       }));
       setEnergyParticles(prev => [...prev, ...newParticles]);
       setTimeout(() => {
@@ -2423,21 +2592,32 @@ export default function App() {
       }, 800);
     };
 
-    const handleTap = () => {
+    const handleTap = (touchX, touchY) => {
       if (moodResult) return;
       if (!hasStartedTapping) setHasStartedTapping(true);
       setTapCount(prev => prev + 1);
 
+      // Spawner cœurs à la position du doigt
+      spawnHeartsAt(touchX, touchY);
+
+      if (isExcited) return;
+
       if (moodLevel >= 100) {
         // Overflow taps after reaching 100%
-        setOverflowTaps(prev => {
+        setOverflowTaps(prev => prev + 1);
+        setExcitedBuildUp(prev => {
           const next = prev + 1;
           if (next >= 5 && !isExcited) {
             setIsExcited(true);
+            try {
+              const { Vibration } = require('react-native');
+              Vibration.vibrate([0, 50, 30, 50]);
+            } catch(e) {}
           }
-          return next;
+          return Math.min(next, 5);
         });
-        spawnEnergyParticles();
+        // Particules énergie pendant le build-up
+        spawnEnergyAt(touchX, touchY);
       } else if (tapCount < 3) {
         // First 3 taps: light progression (+1%)
         setMoodLevel(prev => Math.min(prev + 1, 100));
@@ -2445,40 +2625,29 @@ export default function App() {
         // Normal taps: +4%
         setMoodLevel(prev => Math.min(prev + 4, 100));
       }
-
-      const id = heartId.current++;
-      const newHeart = {
-        id,
-        x: Math.random() * (W - 60) + 30,
-        emoji: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🩷'][Math.floor(Math.random() * 7)],
-      };
-      setHearts(prev => [...prev, newHeart]);
-      setTimeout(() => {
-        setHearts(prev => prev.filter(h => h.id !== id));
-      }, 1500);
     };
 
     const moodMessages = {
       sad: {
-        emoji: '😔',
+        tier: 0,
         title: 'Ça va aller...',
         message: 'Une petite activité sportive en plein air peut faire des merveilles ! Bougez, respirez, et revenez plus fort.',
         color: '#8892A0',
       },
       chill: {
-        emoji: '😊',
+        tier: 1,
         title: 'Belle énergie !',
         message: 'Maintenez votre énergie positive avec un bon repas équilibré. Votre corps vous remerciera.',
         color: '#00D984',
       },
       happy: {
-        emoji: '😄',
+        tier: 2,
         title: 'Au top !',
         message: 'Quelle énergie ! Profitez de cette journée pour atteindre vos objectifs. Rien ne peut vous arrêter !',
         color: '#4DA6FF',
       },
       excited: {
-        emoji: '🤩',
+        tier: 3,
         title: 'Tu déborde d\'énergie !',
         message: 'C\'est le moment de tout donner ! Tu es au maximum de ton énergie !',
         color: '#D4AF37',
@@ -2486,6 +2655,7 @@ export default function App() {
     };
 
     const currentMoodZone = isExcited ? 'excited' : moodLevel >= HAPPY_THRESHOLD ? 'happy' : moodLevel >= CHILL_THRESHOLD ? 'chill' : 'sad';
+    const activeTier = isExcited ? 3 : moodLevel >= 80 ? 2 : moodLevel >= 40 ? 1 : 0;
 
     return (
       <View style={{
@@ -2497,14 +2667,21 @@ export default function App() {
           colors={['#0D1117', '#1A2029', '#0D1117']}
           style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
         >
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={handleTap}
+          <Pressable
+            onPressIn={(event) => {
+              const { locationX, locationY } = event.nativeEvent;
+              handleTap(locationX, locationY);
+            }}
             style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}
           >
             {/* Cœurs flottants */}
             {hearts.map(heart => (
-              <FloatingHeart key={heart.id} x={heart.x} emoji={heart.emoji} />
+              <FloatingHeart key={heart.id} heart={heart} />
+            ))}
+
+            {/* Étoiles tombantes (Excité) */}
+            {fallingStars.map(star => (
+              <FloatingStar key={star.id} star={star} />
             ))}
 
             {/* Titre */}
@@ -2518,7 +2695,33 @@ export default function App() {
               }}>COMMENT ALLEZ-VOUS ?</Text>
             )}
 
-            {/* Barre verticale + Emojis */}
+            {/* Flash label tier */}
+            {tierLabel !== '' && (
+              <RNAnimated.View style={{
+                position: 'absolute',
+                alignSelf: 'center',
+                top: '42%',
+                zIndex: 60,
+                opacity: tierLabelOpacity,
+                backgroundColor: 'rgba(0,0,0,0.7)',
+                paddingHorizontal: 20,
+                paddingVertical: 10,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: tierColor,
+              }}>
+                <Text style={{
+                  color: tierColor,
+                  fontSize: 20,
+                  fontWeight: '900',
+                  letterSpacing: 2,
+                }}>
+                  {tierLabel}
+                </Text>
+              </RNAnimated.View>
+            )}
+
+            {/* Barre verticale + Icônes */}
             {!moodResult && (
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 300, position: 'relative' }}>
                 {/* Hand hint — visible before 3 taps */}
@@ -2543,15 +2746,15 @@ export default function App() {
 
                 {/* Energy particles */}
                 {energyParticles.map(p => (
-                  <EnergyParticle key={p.id} x={p.x} emoji={p.emoji} />
+                  <EnergyParticle key={p.id} x={p.x} y={p.y} emoji={p.emoji} />
                 ))}
 
-                {/* Emojis à gauche */}
-                <View style={{ justifyContent: 'space-between', height: 300, marginRight: 15, paddingVertical: 5 }}>
-                  <Text style={{ fontSize: 30, opacity: currentMoodZone === 'excited' ? 1 : 0.3 }}>🤩</Text>
-                  <Text style={{ fontSize: 30, opacity: currentMoodZone === 'happy' ? 1 : 0.3 }}>😄</Text>
-                  <Text style={{ fontSize: 30, opacity: currentMoodZone === 'chill' ? 1 : 0.3 }}>😊</Text>
-                  <Text style={{ fontSize: 30, opacity: currentMoodZone === 'sad' ? 1 : 0.3 }}>😔</Text>
+                {/* Icônes SVG à gauche */}
+                <View style={{ justifyContent: 'space-between', height: 300, marginRight: 15, paddingVertical: 5, alignItems: 'center' }}>
+                  <MoodIcon tier={3} size={42} active={activeTier === 3} />
+                  <MoodIcon tier={2} size={42} active={activeTier === 2} />
+                  <MoodIcon tier={1} size={42} active={activeTier === 1} />
+                  <MoodIcon tier={0} size={42} active={activeTier === 0} />
                 </View>
 
                 {/* Barre verticale avec shake */}
@@ -2566,19 +2769,32 @@ export default function App() {
                     overflow: 'hidden',
                     justifyContent: 'flex-end',
                   }}>
-                    {/* Marqueur Happy */}
+                    {/* Barre 1 : Triste → Chill à 40% */}
                     <View style={{
                       position: 'absolute',
-                      top: 300 * (1 - HAPPY_THRESHOLD / 100) - 1,
-                      left: 0, right: 0, height: 2,
-                      backgroundColor: '#D4AF37', opacity: 0.4,
+                      bottom: 300 * 0.40,
+                      left: -4, right: -4, height: 2.5,
+                      backgroundColor: '#00D984',
+                      borderRadius: 1,
+                      zIndex: 5,
                     }} />
-                    {/* Marqueur Chill */}
+                    {/* Barre 2 : Chill → Heureux à 80% */}
                     <View style={{
                       position: 'absolute',
-                      top: 300 * (1 - CHILL_THRESHOLD / 100) - 1,
-                      left: 0, right: 0, height: 2,
-                      backgroundColor: '#00D984', opacity: 0.4,
+                      bottom: 300 * 0.80,
+                      left: -4, right: -4, height: 2.5,
+                      backgroundColor: '#4DA6FF',
+                      borderRadius: 1,
+                      zIndex: 5,
+                    }} />
+                    {/* Barre 3 : Heureux → Excité à 95% */}
+                    <View style={{
+                      position: 'absolute',
+                      bottom: 300 * 0.95,
+                      left: -4, right: -4, height: 2.5,
+                      backgroundColor: '#D4AF37',
+                      borderRadius: 1,
+                      zIndex: 5,
                     }} />
 
                     {/* Remplissage gradient */}
@@ -2640,7 +2856,9 @@ export default function App() {
                     ))}
                   </>
                 )}
-                <Text style={{ fontSize: 60, marginBottom: 15 }}>{moodMessages[moodResult].emoji}</Text>
+                <View style={{ marginBottom: 15 }}>
+                  <MoodIcon tier={moodMessages[moodResult].tier} size={60} active={true} />
+                </View>
                 <Text style={{
                   color: moodMessages[moodResult].color,
                   fontSize: 22,
@@ -2678,7 +2896,13 @@ export default function App() {
                     setOverflowTaps(0);
                     setIsExcited(false);
                     setEnergyParticles([]);
+                    setExcitedBuildUp(0);
+                    setCurrentTier(0);
+                    setTierLabel('');
+                    setTierColor('#FFF');
+                    setFallingStars([]);
                     tubeShakeAnim.setValue(0);
+                    tierLabelOpacity.setValue(0);
                   }}
                   style={{ marginTop: 15 }}
                 >
@@ -2789,7 +3013,7 @@ export default function App() {
               </View>
             )}
 
-          </TouchableOpacity>
+          </Pressable>
         </LinearGradient>
       </View>
     );
