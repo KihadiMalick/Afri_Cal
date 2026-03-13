@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Line, Circle, Rect, Path, G, Defs, LinearGradient as SvgLinearGradient, Stop, Polygon, ClipPath, Ellipse, Text as SvgText } from 'react-native-svg';
+import Svg, { Line, Circle, Rect, Path, G, Defs, Mask, LinearGradient as SvgLinearGradient, Stop, Polygon, ClipPath, Ellipse, Text as SvgText } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width: W, height: H } = Dimensions.get('window');
@@ -41,6 +41,24 @@ const seededRandom = (seed) => {
   const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
 };
+// ============================================
+// SPOTLIGHT — Zones et positions de scroll pour le tooltip guidé
+// ============================================
+const SPOTLIGHT_ZONES = [
+  // Étape 1 — Réacteur gauche (scroll: 0)
+  { x: 14, y: 155, width: 110, height: 130, borderRadius: 20 },
+  // Étape 2 — ADN central (scroll: 0)
+  { x: 115, y: 145, width: 90, height: 170, borderRadius: 15 },
+  // Étape 3 — Réacteur droit (scroll: 0)
+  { x: 196, y: 155, width: 110, height: 130, borderRadius: 20 },
+  // Étape 4 — Hydratation (scroll: 250 → l'élément est maintenant visible)
+  { x: 14, y: 260, width: W - 28, height: 120, borderRadius: 18 },
+  // Étape 5 — Coach LixMan (scroll: 500 → l'élément est maintenant visible)
+  { x: 14, y: 310, width: W - 28, height: 140, borderRadius: 18 },
+];
+
+const SCROLL_POSITIONS = [0, 0, 0, 250, 500];
+
 // ============================================
 // COMPOSANT — Background métallique propre
 // ============================================
@@ -1374,7 +1392,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 // ============================================================
 // COMPOSANT — Dashboard Content (page Accueil)
 // ============================================================
-const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal }) => {
+const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef }) => {
   const streakDays = 12;
   const streakColor = streakDays >= 14 ? '#D4AF37'
     : streakDays >= 7 ? '#00D984'
@@ -1385,6 +1403,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={{ flex: 1 }}
       contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(15), paddingTop: wp(8) }}
       showsVerticalScrollIndicator={false}
@@ -1849,6 +1868,13 @@ export default function App() {
   // 0 = pas de tooltip (fermé)
   // 1 à 5 = étape active
   // Au premier lancement : setTooltipStep(1)
+  const scrollRef = React.useRef(null);
+
+  // Scroll automatique vers l'élément ciblé par le tooltip
+  React.useEffect(() => {
+    if (tooltipStep === 0) return;
+    scrollRef.current?.scrollTo({ y: SCROLL_POSITIONS[tooltipStep - 1], animated: true });
+  }, [tooltipStep]);
   const [moodFilled, setMoodFilled] = useState(false);
   const [hydrationMl, setHydrationMl] = useState(1500);
   const [hydroModalVisible, setHydroModalVisible] = useState(false);
@@ -1922,23 +1948,68 @@ export default function App() {
     const currentStep = steps[tooltipStep - 1];
     const isLast = tooltipStep === steps.length;
 
+    // Zone du spotlight pour l'étape en cours
+    const spotlight = SPOTLIGHT_ZONES[tooltipStep - 1];
+
     return (
       <View style={{
         position: 'absolute',
         top: 0, left: 0, right: 0, bottom: 0,
         zIndex: 9999,
       }}>
-        {/* Fond assombri */}
-        <View style={{
-          position: 'absolute',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        }} />
+        {/* Overlay avec trou spotlight */}
+        <Svg
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          width={W}
+          height={H + 100}
+        >
+          <Defs>
+            <Mask id="spotlightMask">
+              {/* Tout en blanc = visible (opaque) */}
+              <Rect x="0" y="0" width={W} height={H + 100} fill="white" />
+              {/* Trou en noir = transparent (le spotlight) */}
+              <Rect
+                x={spotlight.x - 4}
+                y={spotlight.y - 4}
+                width={spotlight.width + 8}
+                height={spotlight.height + 8}
+                rx={spotlight.borderRadius + 4}
+                ry={spotlight.borderRadius + 4}
+                fill="black"
+              />
+            </Mask>
+          </Defs>
+          {/* Rectangle sombre avec le masque (trou) */}
+          <Rect
+            x="0" y="0"
+            width={W}
+            height={H + 100}
+            fill="rgba(0, 0, 0, 0.78)"
+            mask="url(#spotlightMask)"
+          />
+          {/* Bordure lumineuse autour du spotlight */}
+          <Rect
+            x={spotlight.x - 2}
+            y={spotlight.y - 2}
+            width={spotlight.width + 4}
+            height={spotlight.height + 4}
+            rx={spotlight.borderRadius + 2}
+            ry={spotlight.borderRadius + 2}
+            fill="none"
+            stroke={currentStep.color}
+            strokeWidth={1.5}
+            opacity={0.5}
+          />
+        </Svg>
 
-        {/* Bulle de tooltip — centrée en bas de l'écran */}
+        {/* Bulle de tooltip — position dynamique */}
         <View style={{
           position: 'absolute',
-          bottom: 120,
+          // Si l'élément est en haut → bulle en bas, et vice versa
+          ...(spotlight.y < 400
+            ? { bottom: 100 }
+            : { top: spotlight.y - 220 }
+          ),
           left: 20,
           right: 20,
           backgroundColor: '#1E2530',
@@ -2032,21 +2103,6 @@ export default function App() {
           </View>
         </View>
 
-        {/* Flèche pointant vers l'élément (triangle) */}
-        <View style={{
-          position: 'absolute',
-          bottom: 115,
-          alignSelf: 'center',
-          width: 0,
-          height: 0,
-          borderLeftWidth: 10,
-          borderRightWidth: 10,
-          borderBottomWidth: 10,
-          borderLeftColor: 'transparent',
-          borderRightColor: 'transparent',
-          borderBottomColor: '#1E2530',
-          transform: [{ rotate: '180deg' }],
-        }} />
       </View>
     );
   };
@@ -2064,6 +2120,7 @@ export default function App() {
             sportAlert={sportAlert}
             consumedTotal={consumedTotal}
             burnedTotal={burnedTotal}
+            scrollRef={scrollRef}
           />
         );
       case 'meals':
