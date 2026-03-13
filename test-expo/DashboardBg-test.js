@@ -317,10 +317,10 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
         <Image
           source={require('./assets/lixum-logo.png')}
           style={{
-            width: 280,
+            width: 260,
             height: 85,
             resizeMode: 'contain',
-            marginLeft: -40,
+            marginLeft: -55,
             marginTop: -10,
             marginBottom: -10,
           }}
