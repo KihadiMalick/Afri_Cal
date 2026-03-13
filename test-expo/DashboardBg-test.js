@@ -6,7 +6,7 @@
 
 import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import {
-  View, Dimensions, Text, StyleSheet, StatusBar, Alert, Pressable,
+  View, Dimensions, Text, StyleSheet, StatusBar, Alert, Pressable, Image,
   Animated as RNAnimated, ScrollView, TouchableOpacity, Platform, Modal, Easing,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -190,6 +190,13 @@ const PlateIcon = () => (
   </Svg>
 );
 
+const ForkKnifeIcon = () => (
+  <Svg width={20} height={20} viewBox="0 0 24 24">
+    <Path d="M3 2v8c0 1.1.9 2 2 2h2v10h2V12h2c1.1 0 2-.9 2-2V2H9v6H7V2H3z" fill="#8892A0" />
+    <Path d="M16 2v6c0 1.1.9 2 2 2v12h2V10c1.1 0 2-.9 2-2V2h-2v6h-2V2h-2z" fill="#8892A0" />
+  </Svg>
+);
+
 const LightbulbIcon = () => (
   <Svg width={22} height={22} viewBox="0 0 24 24">
     <Defs>
@@ -276,36 +283,46 @@ const Header = ({ moodFilled, lixCount, notifCount = 0, onMoodPress, onLixPress 
 
   return (
     <View style={s.header}>
-      {/* Mood icon — gauche */}
-      <TouchableOpacity onPress={onMoodPress} activeOpacity={0.7} style={s.moodBtn}>
-        <RNAnimated.View style={{ transform: [{ rotate: moodFilled ? '0deg' : rotate }] }}>
-          <View style={s.moodCircle}>
-            <Text style={{ fontSize: 20 }}>{moodFilled ? '\u{1F60A}' : '\u{1F636}'}</Text>
-          </View>
-        </RNAnimated.View>
-        {!moodFilled && (
-          <View style={s.moodBadge}>
-            <Text style={{ color: '#fff', fontSize: 8, fontWeight: '800' }}>!</Text>
-          </View>
-        )}
-      </TouchableOpacity>
+      {/* GAUCHE — Logo PNG */}
+      <Image
+        source={require('./assets/lixum-logo.png')}
+        style={{
+          width: 110,
+          height: 30,
+          resizeMode: 'contain',
+        }}
+      />
 
-      {/* Logo LIXUM — centre */}
-      <Text style={s.logoText}>LIXUM</Text>
-
-      {/* Lix counter — droite */}
-      <TouchableOpacity onPress={onLixPress} activeOpacity={0.7} style={s.lixBtn}>
-        <View style={{ position: 'relative', marginRight: 5 }}>
-          <LixCoinIcon size={18} />
-          {notifCount > 0 && (
-            <View style={s.notifBadge}>
-              <Text style={s.notifBadgeText}>{notifCount}</Text>
+      {/* DROITE — Mood + Lix Coin */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {/* Mood emoji avec ring */}
+        <TouchableOpacity onPress={onMoodPress} activeOpacity={0.7} style={s.moodBtn}>
+          <RNAnimated.View style={{ transform: [{ rotate: moodFilled ? '0deg' : rotate }] }}>
+            <View style={s.moodCircle}>
+              <Text style={{ fontSize: 18 }}>{moodFilled ? '😊' : '😶'}</Text>
+            </View>
+          </RNAnimated.View>
+          {!moodFilled && (
+            <View style={s.moodBadge}>
+              <Text style={{ color: '#fff', fontSize: 7, fontWeight: '800' }}>!</Text>
             </View>
           )}
-        </View>
-        <Text style={s.lixCount}>{lixCount.toLocaleString('fr-FR')}</Text>
-        <Text style={s.lixLabel}>Lix</Text>
-      </TouchableOpacity>
+        </TouchableOpacity>
+
+        {/* Lix counter */}
+        <TouchableOpacity onPress={onLixPress} activeOpacity={0.7} style={s.lixBtn}>
+          <View style={{ position: 'relative', marginRight: 5 }}>
+            <LixCoinIcon size={16} />
+            {notifCount > 0 && (
+              <View style={s.notifBadge}>
+                <Text style={s.notifBadgeText}>{notifCount}</Text>
+              </View>
+            )}
+          </View>
+          <Text style={s.lixCount}>{lixCount.toLocaleString('fr-FR')}</Text>
+          <Text style={s.lixLabel}>Lix</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -1035,7 +1052,7 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }
           <SilhouetteFill fillPercent={percent} height={56} gender={gender} />
 
           {/* Infos droite */}
-          <View style={{ flex: 1, marginLeft: 14 }}>
+          <View style={{ flex: 1, marginLeft: 14, paddingRight: 30 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <DropletIcon size={16} />
@@ -1252,7 +1269,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 35, paddingTop: 8 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 25, paddingTop: 8 }}
       showsVerticalScrollIndicator={false}
     >
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
@@ -1405,7 +1422,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       {/* DERNIER REPAS */}
       <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }} onPress={() => Alert.alert('Dernier Repas', 'Détails nutritionnels complets — bientôt disponible')}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-          <PlateIcon />
+          <ForkKnifeIcon />
           <Text style={{
             color: '#EAEEF3',
             fontSize: 14,
@@ -1641,7 +1658,7 @@ const TABS = [
   { key: 'home', label: 'Accueil', iconActive: 'home', iconInactive: 'home-outline' },
   { key: 'meals', label: 'Repas', iconActive: 'restaurant', iconInactive: 'restaurant-outline' },
   { key: 'activity', label: 'Activité', iconActive: 'fitness', iconInactive: 'fitness-outline' },
-  { key: 'calendar', label: 'Calendrier', iconActive: 'calendar', iconInactive: 'calendar-outline', locked: true },
+  { key: 'medicai', label: 'MedicAi', iconActive: 'medkit', iconInactive: 'medkit-outline', locked: true, isMedicAi: true },
   { key: 'profile', label: 'Profil', iconActive: 'person', iconInactive: 'person-outline' },
 ];
 
@@ -1664,18 +1681,37 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
           activeOpacity={0.7}
         >
           <View style={{ position: 'relative' }}>
-            <Ionicons
-              name={active ? tab.iconActive : tab.iconInactive}
-              size={22}
-              color={active ? '#00D984' : '#6B7B8D'}
-            />
+            {tab.isMedicAi ? (
+              <Svg width={22} height={22} viewBox="0 0 24 24">
+                <Defs>
+                  <SvgLinearGradient id="medicGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+                    <Stop offset="0%" stopColor="#FF6B8A" />
+                    <Stop offset="100%" stopColor="#FF3B5C" />
+                  </SvgLinearGradient>
+                </Defs>
+                <Rect x="8" y="2" width="8" height="20" rx="2" fill="url(#medicGrad)" opacity={active ? 1 : 0.5} />
+                <Rect x="2" y="8" width="20" height="8" rx="2" fill="url(#medicGrad)" opacity={active ? 1 : 0.5} />
+                <Path d="M12 11.5c.5-.8 1.5-1 2-.5s.5 1.5 0 2.5l-2 2-2-2c-.5-1-.5-2 0-2.5s1.5-.3 2 .5z"
+                  fill="white" opacity={0.7} />
+              </Svg>
+            ) : (
+              <Ionicons
+                name={active ? tab.iconActive : tab.iconInactive}
+                size={22}
+                color={active ? '#00D984' : '#6B7B8D'}
+              />
+            )}
             {tab.locked && (
               <View style={s.tabLock}>
                 <LockIcon size={10} />
               </View>
             )}
           </View>
-          <Text style={[s.tabLabel, active && s.tabLabelActive]}>{tab.label}</Text>
+          <Text style={[
+            s.tabLabel,
+            active && (tab.isMedicAi ? { color: '#FF3B5C' } : s.tabLabelActive),
+            tab.isMedicAi && !active && { color: '#8892A0' },
+          ]}>{tab.label}</Text>
         </TouchableOpacity>
       );
     })}
@@ -1740,8 +1776,8 @@ export default function App() {
         return <PlaceholderPage icon={'🍽️'} title="Repas" />;
       case 'activity':
         return <PlaceholderPage icon={'🏃'} title="Activité" />;
-      case 'calendar':
-        return <PlaceholderPage icon={'📅'} title="Calendrier" locked />;
+      case 'medicai':
+        return <PlaceholderPage icon={'🏥'} title="MedicAi" locked />;
       case 'profile':
         return <PlaceholderPage icon={'👤'} title="Profil" />;
       default:
@@ -1806,32 +1842,28 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   moodBtn: { position: 'relative' },
   moodCircle: {
-    width: 44, height: 44, borderRadius: 22,
+    width: 36, height: 36, borderRadius: 18,
     backgroundColor: 'rgba(21,27,35,0.7)',
-    borderWidth: 2, borderColor: '#00D984',
+    borderWidth: 1.5, borderColor: '#00D984',
     justifyContent: 'center', alignItems: 'center',
     shadowColor: '#00D984',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   moodBadge: {
-    position: 'absolute', top: -2, right: -2,
-    width: 14, height: 14, borderRadius: 7,
-    backgroundColor: '#00D984',
+    position: 'absolute', top: -3, right: -3,
+    width: 12, height: 12, borderRadius: 6,
+    backgroundColor: '#FF8C42',
     justifyContent: 'center', alignItems: 'center',
-  },
-  logoText: {
-    color: '#EAEEF3', fontSize: 22, fontWeight: '800', letterSpacing: 4,
-    textShadowColor: 'rgba(0, 217, 132, 0.15)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
+    borderWidth: 1.5, borderColor: '#1E2530',
   },
   lixBtn: {
     flexDirection: 'row', alignItems: 'center',
