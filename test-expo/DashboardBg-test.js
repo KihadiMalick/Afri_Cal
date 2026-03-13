@@ -1270,7 +1270,11 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false}>
-      <View style={{ flex: 1, backgroundColor: '#0C1219' }}>
+      <LinearGradient
+        colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']}
+        locations={[0, 0.25, 0.5, 0.75, 1]}
+        style={{ flex: 1 }}
+      >
         <SafeAreaView style={{ flex: 1 }} edges={['top']}>
           {/* Header */}
           <View style={s.modalHeader}>
@@ -1357,7 +1361,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 
             {/* Historique */}
             <View style={{ width: W - 64, marginTop: 24 }}>
-              <Text style={{ color: '#8892A0', fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 10 }}>━ Historique aujourd'hui ━</Text>
+              <Text style={{ color: '#EAEEF3', fontSize: 14, fontWeight: '800', letterSpacing: 2, marginTop: 20, marginBottom: 12 }}>HISTORIQUE</Text>
               {hydroLogs.map((log, i) => (
                 <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
                   <Text style={{ color: '#555E6C', fontSize: 12, width: 50 }}>{log.time}</Text>
@@ -1372,17 +1376,74 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
               )}
             </View>
 
-            {/* Réinitialiser */}
+            {/* Voir plus — Freemium */}
             <TouchableOpacity
-              style={s.resetBtn}
-              activeOpacity={0.7}
-              onPress={() => { setCurrentMl(0); }}
+              onPress={() => Alert.alert(
+                'Historique Complet',
+                'Accédez à votre historique sur 7 jours et plus.',
+                [
+                  { text: 'Plus tard', style: 'cancel' },
+                  { text: '100 Lix', onPress: () => console.log('unlock history') },
+                  { text: 'Premium', onPress: () => console.log('go premium') },
+                ]
+              )}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                borderWidth: 1,
+                borderColor: 'rgba(255, 255, 255, 0.08)',
+                borderRadius: 14,
+                paddingVertical: 14,
+                marginTop: 12,
+                marginHorizontal: 20,
+              }}
             >
-              <Text style={s.resetBtnText}>🔄 RÉINITIALISER</Text>
+              <Text style={{ fontSize: 16, marginRight: 8 }}>🔒</Text>
+              <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '600' }}>Voir 7 jours et +</Text>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginLeft: 10,
+                backgroundColor: 'rgba(0, 217, 132, 0.08)',
+                borderRadius: 8,
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+              }}>
+                <Text style={{ color: '#00D984', fontSize: 11, fontWeight: '700' }}>100 Lix</Text>
+              </View>
+              <Text style={{ color: '#8892A0', fontSize: 11, marginLeft: 5 }}>ou</Text>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginLeft: 5,
+                backgroundColor: 'rgba(212, 175, 55, 0.08)',
+                borderRadius: 8,
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+              }}>
+                <Text style={{ color: '#D4AF37', fontSize: 11, fontWeight: '700' }}>★ Premium</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Réinitialiser — discret avec confirmation */}
+            <TouchableOpacity
+              onPress={() => Alert.alert(
+                'Réinitialiser',
+                'Voulez-vous vraiment remettre votre hydratation à zéro pour aujourd\'hui ?',
+                [
+                  { text: 'Annuler', style: 'cancel' },
+                  { text: 'Réinitialiser', style: 'destructive', onPress: () => { setCurrentMl(0); setHydroLogs([]); } },
+                ]
+              )}
+              style={{ alignSelf: 'center', marginTop: 20, marginBottom: 30 }}
+            >
+              <Text style={{ color: '#8892A0', fontSize: 11, opacity: 0.5 }}>Réinitialiser les données du jour</Text>
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
-      </View>
+      </LinearGradient>
     </Modal>
   );
 };
