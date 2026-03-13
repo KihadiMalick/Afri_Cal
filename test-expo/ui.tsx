@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Platform,
+  Image,
   type ViewStyle,
   type TextStyle,
   type TextInputProps,
@@ -332,18 +333,13 @@ export function NeonX({ size = 16 }: { size?: number }) {
 }
 
 export function LixumLogo({ size = 14, showSub = true }: { size?: number; showSub?: boolean }) {
+  const scale = size / 14;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <View style={logoStyles.ring}>
-        <NeonX size={size} />
-      </View>
-      {showSub && (
-        <View style={{ gap: 1 }}>
-          <Text style={logoStyles.brand}>LIXUM</Text>
-          <Text style={logoStyles.sub}>BIO-DIGITAL DASHBOARD</Text>
-        </View>
-      )}
-    </View>
+    <Image
+      source={require('./assets/lixum-logo.png')}
+      resizeMode="contain"
+      style={{ width: 135 * scale, height: 42 * scale }}
+    />
   );
 }
 

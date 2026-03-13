@@ -61,9 +61,7 @@ export function LoginScreen({ onNavigate }: { onNavigate?: (screen: string) => v
         >
           {/* Logo & Branding */}
           <View style={styles.logoContainer}>
-            <View style={[styles.logoBadge, { backgroundColor: tk.logoBoxBg, borderColor: tk.logoBoxBorder }]}>
-              <LixumLogo size={22} showSub={false} />
-            </View>
+            <LixumLogo size={22} showSub={false} />
             <Text style={[styles.tagline, { color: tk.accentSub }]}>
               TRACK YOUR VITALITY
             </Text>
