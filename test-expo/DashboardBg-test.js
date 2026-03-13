@@ -46,15 +46,15 @@ const seededRandom = (seed) => {
 // ============================================
 const SPOTLIGHT_ZONES = [
   // Étape 1 — Réacteur gauche (Consommé) → décalé à droite
-  { x: 20, y: 155, width: 110, height: 130, borderRadius: 20 },
+  { x: 28, y: 155, width: 110, height: 130, borderRadius: 20 },
   // Étape 2 — ADN central + Score Vitalité → décalé à droite
-  { x: 120, y: 145, width: 90, height: 170, borderRadius: 15 },
+  { x: 128, y: 145, width: 90, height: 170, borderRadius: 15 },
   // Étape 3 — Réacteur droit (Reste) → décalé à droite
-  { x: 202, y: 155, width: 110, height: 130, borderRadius: 20 },
+  { x: 210, y: 155, width: 110, height: 130, borderRadius: 20 },
   // Étape 4 — Carte Hydratation → REMONTÉ (était trop bas)
-  { x: 14, y: 200, width: W - 28, height: 130, borderRadius: 18 },
+  { x: 14, y: 185, width: W - 28, height: 130, borderRadius: 18 },
   // Étape 5 — Carte Coach LixMan → DESCENDU légèrement
-  { x: 14, y: 340, width: W - 28, height: 160, borderRadius: 18 },
+  { x: 14, y: 310, width: W - 28, height: 160, borderRadius: 18 },
 ];
 
 // Étape 4 : scroll de 200 (Hydratation visible)
