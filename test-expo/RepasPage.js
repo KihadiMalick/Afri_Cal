@@ -401,7 +401,6 @@ const RepasPage = ({ onNavigate }) => {
   // 'none' = page Repas normale
   // 'camera' = caméra ouverte
   // 'analyzing' = écran analyse avec textes fun
-  // 'choice' = 2 plats proposés, l'utilisateur choisit
   // 'result' = résultat du scan
 
   const [scanMode, setScanMode] = useState('none');
@@ -415,6 +414,10 @@ const RepasPage = ({ onNavigate }) => {
 
   const [aiVisual, setAiVisual] = useState(null);
   // Les infos visuelles de l'IA (texture, volume, ingredients_seen)
+
+  const [showAlternatives, setShowAlternatives] = useState(false);
+  const [alternativeDishes, setAlternativeDishes] = useState([]);
+  const [currentDishName, setCurrentDishName] = useState('');
 
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef(null);
@@ -555,39 +558,55 @@ const RepasPage = ({ onNavigate }) => {
 
       const result = await response.json();
 
-      // Stocker le mode et les données
+      // Stocker les infos visuelles IA
       setScanMode(result.mode);
       setScanSuggestions(result.suggestions || []);
       setAiVisual(result.ai_visual || null);
 
-      if (result.mode === 'double_choice' && result.suggestions.length >= 2) {
-        // 2 plats proposés → écran de choix
-        setAnalysisProgress(100);
-        setTimeout(() => setScanScreen('choice'), 500);
+      // Récupérer les noms alternatifs depuis l'IA
+      const aiSuggestionNames = (result.ai_visual?.original_suggestions || []).map(s => ({
+        name_fr: s.name_fr,
+        name_en: s.name_en,
+        country: s.country,
+        confidence: s.confidence,
+      }));
+      setAlternativeDishes(aiSuggestionNames);
 
-      } else if (result.mode === 'single_match' && result.suggestions.length === 1) {
-        // 1 seul plat → directement au résultat
-        setSelectedSuggestion(result.suggestions[0]);
-        setScanResult(result.suggestions[0]);
-        setAnalysisProgress(100);
-        setTimeout(() => setScanScreen('result'), 500);
-
+      // TOUJOURS aller au résultat directement
+      if (result.suggestions && result.suggestions.length > 0) {
+        // Prendre la meilleure suggestion DB
+        const best = result.suggestions[0];
+        setCurrentDishName(best.name_fr || best.name_en || '');
+        setScanResult(best);
+      } else if (result.ai_fallback) {
+        // Fallback IA
+        const fb = result.ai_fallback;
+        setCurrentDishName(fb.dish_name_fr || fb.dish_name_en || '');
+        setScanResult({
+          name_fr: fb.dish_name_fr,
+          name_en: fb.dish_name_en,
+          confidence: fb.confidence,
+          ingredients: fb.ingredients,
+          totals: fb.totals,
+          calories: fb.totals?.calories || 0,
+          protein_g: fb.totals?.protein_g || 0,
+          carbs_g: fb.totals?.carbs_g || 0,
+          fat_g: fb.totals?.fat_g || 0,
+          source: 'ai_estimate',
+        });
       } else {
-        // Fallback IA → résultat avec données IA
-        const fallback = result.ai_fallback;
-        if (fallback) {
-          setScanResult({
-            dish_name_fr: fallback.dish_name_fr,
-            dish_name_en: fallback.dish_name_en,
-            confidence: fallback.confidence,
-            ingredients: fallback.ingredients,
-            totals: fallback.totals,
-            source: 'ai_estimate',
-          });
-        }
-        setAnalysisProgress(100);
-        setTimeout(() => setScanScreen('result'), 500);
+        setScanResult({
+          name_fr: 'Plat non identifié',
+          name_en: 'Unidentified meal',
+          confidence: 30,
+          ingredients: [],
+          totals: { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 },
+        });
+        setCurrentDishName(lang === 'fr' ? 'Plat non identifié' : 'Unidentified meal');
       }
+
+      setAnalysisProgress(100);
+      setTimeout(() => setScanScreen('result'), 500);
 
     } catch (error) {
       clearInterval(textInterval);
@@ -1676,178 +1695,6 @@ const RepasPage = ({ onNavigate }) => {
           </View>
         )}
 
-        {/* ÉCRAN CHOIX — 2 suggestions de plats */}
-        {scanScreen === 'choice' && scanSuggestions.length >= 2 && (
-          <View style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0, bottom: 0,
-            zIndex: 2000,
-            backgroundColor: '#0D1117',
-          }}>
-            {/* Photo en fond flouté */}
-            {capturedPhoto && (
-              <Image source={{ uri: capturedPhoto.uri }}
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.1 }}
-                blurRadius={15} />
-            )}
-
-            <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 50 : 60 }}>
-              {/* Header */}
-              <View style={{
-                flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-                paddingHorizontal: wp(16), paddingBottom: wp(12),
-              }}>
-                <Pressable onPress={() => { setScanScreen('none'); setCapturedPhoto(null); setScanSuggestions([]); setScanMode('none'); setSelectedSuggestion(null); setAiVisual(null); }}>
-                  <Text style={{ color: '#8892A0', fontSize: fp(14) }}>✕ {lang === 'fr' ? 'Fermer' : 'Close'}</Text>
-                </Pressable>
-                <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                  <Text style={{ color: '#00D984', fontSize: fp(16), fontWeight: '900' }}>X</Text>
-                  <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '900' }}>SCAN</Text>
-                </View>
-                <View style={{ width: 60 }} />
-              </View>
-
-              {/* Photo miniature */}
-              {capturedPhoto && (
-                <View style={{
-                  marginHorizontal: wp(16), height: wp(160), borderRadius: 18,
-                  overflow: 'hidden', marginBottom: wp(20),
-                }}>
-                  <Image source={{ uri: capturedPhoto.uri }}
-                    style={{ width: '100%', height: '100%' }} />
-                </View>
-              )}
-
-              {/* Question */}
-              <Text style={{
-                color: '#EAEEF3', fontSize: fp(20), fontWeight: '800',
-                textAlign: 'center', paddingHorizontal: wp(20), marginBottom: wp(6),
-              }}>
-                {lang === 'fr' ? 'Quel est ce plat ?' : 'What is this dish?'}
-              </Text>
-              <Text style={{
-                color: '#8892A0', fontSize: fp(12), textAlign: 'center',
-                marginBottom: wp(24),
-              }}>
-                {lang === 'fr' ? 'Deux plats correspondent à votre photo' : 'Two dishes match your photo'}
-              </Text>
-
-              {/* Les 2 options côte à côte */}
-              <View style={{
-                flexDirection: 'row', paddingHorizontal: wp(12), gap: wp(10),
-              }}>
-                {scanSuggestions.slice(0, 2).map((suggestion, index) => (
-                  <Pressable
-                    key={index}
-                    onPress={() => {
-                      setSelectedSuggestion(suggestion);
-                      setScanResult(suggestion);
-                      setScanScreen('result');
-                    }}
-                    delayPressIn={80}
-                    style={({ pressed }) => ({
-                      flex: 1,
-                      borderRadius: 18,
-                      padding: 1.2,
-                      backgroundColor: pressed ? '#00D984' : '#4A4F55',
-                      elevation: 12,
-                      transform: [{ scale: pressed ? 0.96 : 1 }],
-                    })}
-                  >
-                    <LinearGradient
-                      colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-                      style={{ borderRadius: 17, padding: wp(14), alignItems: 'center', minHeight: wp(180) }}
-                    >
-                      {/* Ligne émeraude top */}
-                      <View style={{
-                        position: 'absolute', top: 0, left: 16, right: 16,
-                        height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
-                      }} />
-
-                      {/* Confiance */}
-                      <View style={{
-                        backgroundColor: suggestion.confidence > 70
-                          ? 'rgba(0,217,132,0.12)' : 'rgba(255,140,66,0.12)',
-                        paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8,
-                        marginBottom: wp(10),
-                      }}>
-                        <Text style={{
-                          color: suggestion.confidence > 70 ? '#00D984' : '#FF8C42',
-                          fontSize: fp(11), fontWeight: '800',
-                        }}>
-                          {suggestion.confidence}%
-                        </Text>
-                      </View>
-
-                      {/* Drapeau pays */}
-                      <Text style={{ fontSize: 24, marginBottom: wp(8) }}>
-                        {suggestion.country_code === 'SN' ? '🇸🇳' :
-                         suggestion.country_code === 'ML' ? '🇲🇱' :
-                         suggestion.country_code === 'CM' ? '🇨🇲' :
-                         suggestion.country_code === 'BI' ? '🇧🇮' :
-                         suggestion.country_code === 'NG' ? '🇳🇬' :
-                         suggestion.country_code === 'KE' ? '🇰🇪' :
-                         suggestion.country_code === 'IN' ? '🇮🇳' :
-                         '🌍'}
-                      </Text>
-
-                      {/* Nom du plat */}
-                      <Text style={{
-                        color: '#EAEEF3', fontSize: fp(14), fontWeight: '700',
-                        textAlign: 'center', marginBottom: wp(8),
-                      }} numberOfLines={2}>
-                        {lang === 'fr' ? suggestion.name_fr : suggestion.name_en}
-                      </Text>
-
-                      {/* Calories */}
-                      <Text style={{
-                        color: '#FF8C42', fontSize: fp(18), fontWeight: '900',
-                      }}>
-                        {suggestion.calories} kcal
-                      </Text>
-
-                      {/* Bouton sélection */}
-                      <View style={{
-                        marginTop: wp(12),
-                        backgroundColor: 'rgba(0,217,132,0.08)',
-                        paddingHorizontal: 16, paddingVertical: 6,
-                        borderRadius: 10, borderWidth: 1,
-                        borderColor: 'rgba(0,217,132,0.2)',
-                      }}>
-                        <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700' }}>
-                          {lang === 'fr' ? "C'est ça !" : "That's it!"}
-                        </Text>
-                      </View>
-                    </LinearGradient>
-                  </Pressable>
-                ))}
-              </View>
-
-              {/* Bouton Corriger en bas */}
-              <Pressable
-                onPress={() => {
-                  // Prendre la première suggestion comme base pour la correction
-                  setSelectedSuggestion(scanSuggestions[0]);
-                  setScanResult(scanSuggestions[0]);
-                  setScanScreen('result');
-                  // TODO: ouvrir directement l'écran correction (Phase 2)
-                }}
-                style={{
-                  marginTop: wp(24), marginHorizontal: wp(40),
-                  paddingVertical: wp(12), borderRadius: 14,
-                  backgroundColor: 'rgba(255,255,255,0.03)',
-                  borderWidth: 1, borderColor: '#3A3F46',
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: '#8892A0', fontSize: fp(13), fontWeight: '600' }}>
-                  {lang === 'fr' ? 'Aucun des deux ? Corriger' : 'Neither? Correct'}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-
         {/* ÉCRAN RÉSULTAT */}
         {scanScreen === 'result' && scanResult && (
           <View style={{
@@ -1873,6 +1720,9 @@ const RepasPage = ({ onNavigate }) => {
                   setScanScreen('none');
                   setScanResult(null);
                   setCapturedPhoto(null);
+                  setShowAlternatives(false);
+                  setAlternativeDishes([]);
+                  setCurrentDishName('');
                   setScanMode('none');
                   setScanSuggestions([]);
                   setSelectedSuggestion(null);
@@ -1903,7 +1753,7 @@ const RepasPage = ({ onNavigate }) => {
                 </View>
               )}
 
-              {/* Nom du plat + confiance */}
+              {/* Nom du plat — utilise currentDishName qui peut être modifié */}
               <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
                   <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '700', marginRight: 8 }}>✅</Text>
@@ -1911,17 +1761,34 @@ const RepasPage = ({ onNavigate }) => {
                     {lang === 'fr' ? 'Plat identifié' : 'Meal identified'}
                   </Text>
                 </View>
+
+                {/* Nom du plat */}
                 <Text style={{
                   color: '#EAEEF3', fontSize: fp(22), fontWeight: '900',
-                  marginBottom: wp(8),
+                  marginBottom: wp(6),
                 }}>
-                  {scanResult.name_fr || scanResult.dish_name_fr || 'Plat non identifié'}
+                  {currentDishName || scanResult.name_fr || scanResult.dish_name_fr || 'Plat non identifié'}
                 </Text>
+
+                {/* Lien "Pas ce plat ?" */}
+                <Pressable
+                  onPress={() => setShowAlternatives(true)}
+                  style={{ marginBottom: wp(10) }}
+                >
+                  <Text style={{
+                    color: '#FF8C42',
+                    fontSize: fp(12),
+                    fontWeight: '600',
+                    textDecorationLine: 'underline',
+                  }}>
+                    {lang === 'fr' ? 'Pas ce plat ? Clique ici !' : 'Not this dish? Tap here!'}
+                  </Text>
+                </Pressable>
 
                 {/* Barre de confiance */}
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Text style={{ color: '#8892A0', fontSize: fp(11), marginRight: 8 }}>
-                    {lang === 'fr' ? 'Confiance' : 'Confidence'} :
+                    {lang === 'fr' ? 'Confiance :' : 'Confidence:'}
                   </Text>
                   <View style={{
                     flex: 1, height: 5, backgroundColor: 'rgba(0,217,132,0.1)',
@@ -1929,16 +1796,16 @@ const RepasPage = ({ onNavigate }) => {
                   }}>
                     <View style={{
                       height: '100%',
-                      width: `${scanResult.confidence}%`,
-                      backgroundColor: scanResult.confidence > 70 ? '#00D984' : scanResult.confidence > 50 ? '#FF8C42' : '#FF3B30',
+                      width: `${scanResult.confidence || 50}%`,
+                      backgroundColor: (scanResult.confidence || 50) > 70 ? '#00D984' : (scanResult.confidence || 50) > 50 ? '#FF8C42' : '#FF3B30',
                       borderRadius: 3,
-                    }}/>
+                    }} />
                   </View>
                   <Text style={{
-                    color: scanResult.confidence > 70 ? '#00D984' : '#FF8C42',
+                    color: (scanResult.confidence || 50) > 70 ? '#00D984' : '#FF8C42',
                     fontSize: fp(12), fontWeight: '700',
                   }}>
-                    {scanResult.confidence}%
+                    {scanResult.confidence || 50}%
                   </Text>
                 </View>
               </View>
@@ -2145,6 +2012,9 @@ const RepasPage = ({ onNavigate }) => {
                     setScanScreen('none');
                     setScanResult(null);
                     setCapturedPhoto(null);
+                    setShowAlternatives(false);
+                    setAlternativeDishes([]);
+                    setCurrentDishName('');
                     setScanMode('none');
                     setScanSuggestions([]);
                     setSelectedSuggestion(null);
@@ -2184,6 +2054,172 @@ const RepasPage = ({ onNavigate }) => {
               </View>
 
             </ScrollView>
+
+            {/* POPUP ALTERNATIVES — "Pas ce plat ?" */}
+            {showAlternatives && (
+              <View style={{
+                position: 'absolute',
+                top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 3000,
+                paddingHorizontal: wp(20),
+              }}>
+                <View style={{
+                  width: '100%',
+                  borderRadius: 20,
+                  padding: 1.2,
+                  backgroundColor: '#4A4F55',
+                }}>
+                  <LinearGradient
+                    colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                    style={{ borderRadius: 19, padding: wp(20) }}
+                  >
+                    {/* Ligne émeraude top */}
+                    <View style={{
+                      position: 'absolute', top: 0, left: 20, right: 20,
+                      height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
+                    }} />
+
+                    {/* Titre */}
+                    <Text style={{
+                      color: '#EAEEF3', fontSize: fp(18), fontWeight: '800',
+                      textAlign: 'center', marginBottom: wp(6),
+                    }}>
+                      {lang === 'fr' ? 'Autres plats possibles' : 'Other possible dishes'}
+                    </Text>
+                    <Text style={{
+                      color: '#8892A0', fontSize: fp(11), textAlign: 'center',
+                      marginBottom: wp(16),
+                    }}>
+                      {lang === 'fr'
+                        ? 'Les ingrédients et macros restent identiques'
+                        : 'Ingredients and macros stay the same'}
+                    </Text>
+
+                    {/* Liste des alternatives */}
+                    {alternativeDishes.map((alt, index) => {
+                      const isCurrentDish = (alt.name_fr || alt.name_en) === currentDishName;
+                      const countryFlag =
+                        alt.country === 'SN' ? '🇸🇳' :
+                        alt.country === 'ML' ? '🇲🇱' :
+                        alt.country === 'CM' ? '🇨🇲' :
+                        alt.country === 'BI' ? '🇧🇮' :
+                        alt.country === 'NG' ? '🇳🇬' :
+                        alt.country === 'KE' ? '🇰🇪' :
+                        alt.country === 'CI' ? '🇨🇮' :
+                        alt.country === 'IN' ? '🇮🇳' :
+                        alt.country === 'GN' ? '🇬🇳' :
+                        alt.country === 'BF' ? '🇧🇫' :
+                        alt.country === 'CD' ? '🇨🇩' :
+                        alt.country === 'TG' ? '🇹🇬' :
+                        '🌍';
+
+                      return (
+                        <Pressable
+                          key={index}
+                          onPress={() => {
+                            if (!isCurrentDish) {
+                              // Changer le nom du plat SEULEMENT, garder les ingrédients et macros
+                              setCurrentDishName(lang === 'fr' ? alt.name_fr : alt.name_en);
+                              setShowAlternatives(false);
+                            }
+                          }}
+                          style={({ pressed }) => ({
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            paddingVertical: wp(12),
+                            paddingHorizontal: wp(14),
+                            borderRadius: 14,
+                            marginBottom: wp(8),
+                            backgroundColor: isCurrentDish
+                              ? 'rgba(0,217,132,0.10)'
+                              : pressed ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+                            borderWidth: 1,
+                            borderColor: isCurrentDish
+                              ? 'rgba(0,217,132,0.3)'
+                              : '#2A2F36',
+                          })}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                            {/* Drapeau */}
+                            <Text style={{ fontSize: 22, marginRight: wp(10) }}>{countryFlag}</Text>
+
+                            {/* Nom + confiance */}
+                            <View style={{ flex: 1 }}>
+                              <Text style={{
+                                color: isCurrentDish ? '#00D984' : '#EAEEF3',
+                                fontSize: fp(14), fontWeight: '700',
+                              }} numberOfLines={1}>
+                                {lang === 'fr' ? alt.name_fr : alt.name_en}
+                              </Text>
+                              <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: 2 }}>
+                                {alt.confidence}% {lang === 'fr' ? 'de confiance' : 'confidence'}
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Indicateur sélectionné */}
+                          {isCurrentDish ? (
+                            <View style={{
+                              width: 22, height: 22, borderRadius: 11,
+                              backgroundColor: '#00D984',
+                              justifyContent: 'center', alignItems: 'center',
+                            }}>
+                              <Text style={{ color: '#0D1117', fontSize: 12, fontWeight: '900' }}>✓</Text>
+                            </View>
+                          ) : (
+                            <View style={{
+                              width: 22, height: 22, borderRadius: 11,
+                              borderWidth: 1.5, borderColor: '#3A3F46',
+                            }} />
+                          )}
+                        </Pressable>
+                      );
+                    })}
+
+                    {/* Fun fact nutritionnel */}
+                    <View style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: 'rgba(212,175,55,0.06)',
+                      paddingHorizontal: wp(12),
+                      paddingVertical: wp(8),
+                      borderRadius: 10,
+                      marginTop: wp(10),
+                    }}>
+                      <Text style={{ fontSize: 14, marginRight: 8 }}>💡</Text>
+                      <Text style={{
+                        color: '#8892A0', fontSize: fp(9), fontStyle: 'italic',
+                        flex: 1, lineHeight: fp(13),
+                      }}>
+                        {lang === 'fr'
+                          ? 'Chaque plat porte une identité culinaire unique. Votre dashboard se base sur les ingrédients détectés.'
+                          : 'Every dish carries a unique culinary identity. Your dashboard is based on detected ingredients.'}
+                      </Text>
+                    </View>
+
+                    {/* Bouton fermer */}
+                    <Pressable
+                      onPress={() => setShowAlternatives(false)}
+                      style={({ pressed }) => ({
+                        marginTop: wp(8),
+                        paddingVertical: wp(12),
+                        borderRadius: 14,
+                        backgroundColor: pressed ? '#00B572' : '#00D984',
+                        alignItems: 'center',
+                      })}
+                    >
+                      <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
+                        {lang === 'fr' ? 'Valider' : 'Confirm'}
+                      </Text>
+                    </Pressable>
+                  </LinearGradient>
+                </View>
+              </View>
+            )}
           </View>
         )}
 
