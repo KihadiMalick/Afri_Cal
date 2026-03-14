@@ -18,10 +18,11 @@ ABONNEMENTS :
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Dimensions, Text, StyleSheet, Pressable, Image,
-  Animated, ScrollView, PixelRatio, Platform,
+  Animated, ScrollView, PixelRatio, Platform, TouchableOpacity,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Line, Circle, Path, Rect, Ellipse } from 'react-native-svg';
+import Svg, { Line, Circle, Path, Rect, Ellipse, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width: W } = Dimensions.get('window');
 
@@ -56,13 +57,99 @@ const MOCK_FREQUENT = [
 ];
 
 const MOCK_RECIPES = [
-  { name: 'Thieboudienne', origin: '\u{1F1F8}\u{1F1F3} Sénégal', cal: 520, color: '#7A3B10' },
-  { name: 'Ndolé', origin: '\u{1F1E8}\u{1F1F2} Cameroun', cal: 380, color: '#1E4A20' },
-  { name: 'Fumbwa', origin: '\u{1F1E7}\u{1F1EE} Burundi', cal: 290, color: '#1A3A1E' },
-  { name: 'Ugali + Sukuma', origin: '\u{1F1F0}\u{1F1EA} Kenya', cal: 350, color: '#6A5010' },
-  { name: 'Mafé', origin: '\u{1F1F2}\u{1F1F1} Mali', cal: 480, color: '#8A4520' },
-  { name: 'Jollof Rice', origin: '\u{1F1F3}\u{1F1EC} Nigeria', cal: 410, color: '#8B1A1A' },
+  { name: 'Thieboudienne', origin: '🇸🇳 Sénégal', cal: 520, color: '#7A3B10' },
+  { name: 'Ndolé', origin: '🇨🇲 Cameroun', cal: 380, color: '#1E4A20' },
+  { name: 'Fumbwa', origin: '🇧🇮 Burundi', cal: 290, color: '#1A3A1E' },
+  { name: 'Ugali + Sukuma', origin: '🇰🇪 Kenya', cal: 350, color: '#6A5010' },
+  { name: 'Mafé', origin: '🇲🇱 Mali', cal: 480, color: '#8A4520' },
+  { name: 'Jollof Rice', origin: '🇳🇬 Nigeria', cal: 410, color: '#8B1A1A' },
 ];
+
+// ============================================
+// COMPOSANT — LockIcon (copié du dashboard)
+// ============================================
+const LockIcon = ({ size = 20 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Rect x="5" y="11" width="14" height="10" rx="2" fill="#8892A0" opacity={0.6} />
+    <Path d="M8 11V7c0-2.21 1.79-4 4-4s4 1.79 4 4v4" fill="none" stroke="#8892A0" strokeWidth={2} strokeLinecap="round" />
+    <Circle cx="12" cy="16" r="1.5" fill="#EAEEF3" />
+  </Svg>
+);
+
+// ============================================
+// COMPOSANT — Bottom Tab Bar (copié du dashboard)
+// ============================================
+const TABS = [
+  { key: 'home', label: 'Accueil', iconActive: 'home', iconInactive: 'home-outline' },
+  { key: 'meals', label: 'Repas', iconActive: 'restaurant', iconInactive: 'restaurant-outline' },
+  { key: 'activity', label: 'Activité', iconActive: 'fitness', iconInactive: 'fitness-outline' },
+  { key: 'medicai', label: 'MedicAi', iconActive: 'medkit', iconInactive: 'medkit-outline', locked: true, isMedicAi: true },
+  { key: 'profile', label: 'Profil', iconActive: 'person', iconInactive: 'person-outline' },
+];
+
+const BottomTabs = ({ activeTab, onTabPress }) => (
+  <LinearGradient
+    colors={['rgba(30, 37, 48, 0)', 'rgba(26, 32, 41, 0.92)', '#181E26']}
+    locations={[0, 0.4, 1]}
+    start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+    style={{
+      flexDirection: 'row',
+      paddingTop: wp(10),
+      paddingBottom: Platform.OS === 'ios' ? 0 : 12,
+    }}
+  >
+    {/* Séparateur métallique */}
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(74, 79, 85, 0.4)' }} />
+    {TABS.map((tab) => {
+      const active = activeTab === tab.key;
+      return (
+        <TouchableOpacity
+          key={tab.key}
+          style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: wp(4) }}
+          onPress={() => onTabPress(tab.key)}
+          activeOpacity={0.7}
+        >
+          <View style={{ position: 'relative' }}>
+            {tab.isMedicAi ? (
+              <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24">
+                <Defs>
+                  <SvgLinearGradient id="medicGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+                    <Stop offset="0%" stopColor="#FF6B8A" />
+                    <Stop offset="100%" stopColor="#FF3B5C" />
+                  </SvgLinearGradient>
+                </Defs>
+                <Rect x="8" y="2" width="8" height="20" rx="2" fill="url(#medicGrad)" opacity={active ? 1 : 0.5} />
+                <Rect x="2" y="8" width="20" height="8" rx="2" fill="url(#medicGrad)" opacity={active ? 1 : 0.5} />
+                <Path d="M12 11.5c.5-.8 1.5-1 2-.5s.5 1.5 0 2.5l-2 2-2-2c-.5-1-.5-2 0-2.5s1.5-.3 2 .5z"
+                  fill="white" opacity={0.7} />
+              </Svg>
+            ) : (
+              <Ionicons
+                name={active ? tab.iconActive : tab.iconInactive}
+                size={wp(22)}
+                color={active ? '#00D984' : '#6B7B8D'}
+              />
+            )}
+            {tab.locked && (
+              <View style={{
+                position: 'absolute', top: -3, right: -6,
+                backgroundColor: 'rgba(21,27,35,0.9)', borderRadius: 6,
+                width: 12, height: 12, justifyContent: 'center', alignItems: 'center',
+              }}>
+                <LockIcon size={10} />
+              </View>
+            )}
+          </View>
+          <Text style={[
+            { color: '#6B7B8D', fontSize: fp(9), fontWeight: '600', letterSpacing: wp(0.3), marginTop: -2 },
+            active && (tab.isMedicAi ? { color: '#FF3B5C' } : { color: '#00D984' }),
+            tab.isMedicAi && !active && { color: '#8892A0' },
+          ]}>{tab.label}</Text>
+        </TouchableOpacity>
+      );
+    })}
+  </LinearGradient>
+);
 
 // ============================================
 // COMPOSANT — SectionTitle (FIX 3)
@@ -246,8 +333,17 @@ const MealDayCard = ({ icon, label, meal, lang }) => {
 // ============================================
 // COMPOSANT PRINCIPAL — RepasPage
 // ============================================
-const RepasPage = () => {
+const RepasPage = ({ onNavigate }) => {
   const [lang] = useState('fr');
+  const [activeTab, setActiveTab] = useState('meals');
+
+  const handleTabPress = (key) => {
+    if (key === 'meals') return; // Déjà sur cette page
+    if (onNavigate) {
+      onNavigate(key);
+    }
+    setActiveTab(key);
+  };
 
   // Animation glow pulsant pour Xscan
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -282,7 +378,7 @@ const RepasPage = () => {
           1. Ajouter <SafeAreaProvider> dans App.js racine
           2. Remplacer ce <View> par <SafeAreaView style={{ flex: 1 }} edges={['top']}>
           3. Supprimer le paddingTop fixe */}
-      <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 40 : 50 }}>
+      <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 20 : 30 }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: wp(80) }}
@@ -293,7 +389,7 @@ const RepasPage = () => {
             justifyContent: 'space-between',
             alignItems: 'center',
             paddingHorizontal: wp(16),
-            paddingTop: wp(45),
+            paddingTop: wp(20),
             paddingBottom: wp(10),
           }}>
             <Text style={{
@@ -519,7 +615,7 @@ const RepasPage = () => {
               decelerationRate="fast"
             >
               <MealDayCard
-                icon="\u2600\uFE0F"
+                icon="☀️"
                 label={lang === 'fr' ? 'Petit-déjeuner' : 'Breakfast'}
                 meal={{
                   name: 'Thé + Pain beurré',
@@ -530,7 +626,7 @@ const RepasPage = () => {
                 lang={lang}
               />
               <MealDayCard
-                icon="\u{1F324}\uFE0F"
+                icon="🌤️"
                 label={lang === 'fr' ? 'Déjeuner' : 'Lunch'}
                 meal={{
                   name: 'Poulet grillé + Riz',
@@ -541,13 +637,13 @@ const RepasPage = () => {
                 lang={lang}
               />
               <MealDayCard
-                icon="\u{1F319}"
+                icon="🌙"
                 label={lang === 'fr' ? 'Dîner' : 'Dinner'}
                 meal={null}
                 lang={lang}
               />
               <MealDayCard
-                icon="\u{1F37F}"
+                icon="🍿"
                 label={lang === 'fr' ? 'Snack' : 'Snack'}
                 meal={null}
                 lang={lang}
@@ -559,7 +655,7 @@ const RepasPage = () => {
           <View style={{ marginTop: wp(22) }}>
             <SectionTitle
               title={lang === 'fr' ? 'Recettes' : 'Recipes'}
-              rightLabel={lang === 'fr' ? 'Voir tout \u203A' : 'See all \u203A'}
+              rightLabel={lang === 'fr' ? 'Voir tout ›' : 'See all ›'}
             />
 
             <ScrollView
@@ -664,6 +760,16 @@ const RepasPage = () => {
             </ScrollView>
           </View>
         </ScrollView>
+
+        {/* BOTTOM TAB BAR — positionnée en absolute en bas, HORS du ScrollView */}
+        <View style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+        }}>
+          <BottomTabs activeTab={activeTab} onTabPress={handleTabPress} />
+        </View>
       </View>
     </LinearGradient>
   );
