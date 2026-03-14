@@ -266,15 +266,15 @@ const MealDayCard = ({ icon, label, meal, lang }) => {
                 <View style={{ flexDirection: 'row', marginTop: wp(6), gap: wp(8) }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#FF6B6B', marginRight: 3 }}/>
-                    <Text style={{ color: '#5A6070', fontSize: fp(9) }}>{meal.protein}g P</Text>
+                    <Text style={{ color: '#5A6070', fontSize: fp(7) }}>{meal.protein}g {lang === 'fr' ? 'Protéines' : 'Protein'}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#FFD93D', marginRight: 3 }}/>
-                    <Text style={{ color: '#5A6070', fontSize: fp(9) }}>{meal.carbs}g G</Text>
+                    <Text style={{ color: '#5A6070', fontSize: fp(7) }}>{meal.carbs}g {lang === 'fr' ? 'Glucides' : 'Carbs'}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#4DA6FF', marginRight: 3 }}/>
-                    <Text style={{ color: '#5A6070', fontSize: fp(9) }}>{meal.fat}g L</Text>
+                    <Text style={{ color: '#5A6070', fontSize: fp(7) }}>{meal.fat}g {lang === 'fr' ? 'Lipides' : 'Fat'}</Text>
                   </View>
                 </View>
               </View>
@@ -677,9 +677,9 @@ const RepasPage = ({ onNavigate }) => {
                   {/* Macros dans mini cards */}
                   <View style={{ flexDirection: 'row', marginTop: wp(12), gap: wp(8) }}>
                     {[
-                      { value: `${MOCK_CALORIES.protein}g`, color: '#FF6B6B', letter: 'P' },
-                      { value: `${MOCK_CALORIES.carbs}g`, color: '#FFD93D', letter: 'G' },
-                      { value: `${MOCK_CALORIES.fat}g`, color: '#4DA6FF', letter: 'L' },
+                      { value: `${MOCK_CALORIES.protein}g`, color: '#FF6B6B', label: lang === 'fr' ? 'Protéines' : 'Protein' },
+                      { value: `${MOCK_CALORIES.carbs}g`, color: '#FFD93D', label: lang === 'fr' ? 'Glucides' : 'Carbs' },
+                      { value: `${MOCK_CALORIES.fat}g`, color: '#4DA6FF', label: lang === 'fr' ? 'Lipides' : 'Fat' },
                     ].map((m, i) => (
                       <View key={i} style={{
                         flex: 1, backgroundColor: 'rgba(255,255,255,0.03)',
@@ -688,7 +688,7 @@ const RepasPage = ({ onNavigate }) => {
                       }}>
                         <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: m.color, marginBottom: 4 }}/>
                         <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '700' }}>{m.value}</Text>
-                        <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2, letterSpacing: 0.5 }}>{m.letter}</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 2 }}>{m.label}</Text>
                       </View>
                     ))}
                   </View>
@@ -1738,9 +1738,9 @@ const RepasPage = ({ onNavigate }) => {
 
                     <View style={{ flexDirection: 'row', marginTop: wp(10), gap: wp(8) }}>
                       {[
-                        { value: `${scanResult.totals.protein_g.toFixed(1)}g`, color: '#FF6B6B', letter: 'P' },
-                        { value: `${scanResult.totals.carbs_g.toFixed(1)}g`, color: '#FFD93D', letter: 'G' },
-                        { value: `${scanResult.totals.fat_g.toFixed(1)}g`, color: '#4DA6FF', letter: 'L' },
+                        { value: `${scanResult.totals.protein_g.toFixed(1)}g`, color: '#FF6B6B', label: lang === 'fr' ? 'Protéines' : 'Protein' },
+                        { value: `${scanResult.totals.carbs_g.toFixed(1)}g`, color: '#FFD93D', label: lang === 'fr' ? 'Glucides' : 'Carbs' },
+                        { value: `${scanResult.totals.fat_g.toFixed(1)}g`, color: '#4DA6FF', label: lang === 'fr' ? 'Lipides' : 'Fat' },
                       ].map((m, i) => (
                         <View key={i} style={{
                           flex: 1, backgroundColor: 'rgba(255,255,255,0.03)',
@@ -1749,7 +1749,7 @@ const RepasPage = ({ onNavigate }) => {
                         }}>
                           <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: m.color, marginBottom: 3 }}/>
                           <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{m.value}</Text>
-                          <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 1 }}>{m.letter}</Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 1 }}>{m.label}</Text>
                         </View>
                       ))}
                     </View>
