@@ -25,6 +25,7 @@ import Svg, { Line, Circle, Path, Rect, Ellipse, Defs, Mask, LinearGradient as S
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { createClient } from '@supabase/supabase-js';
+import * as ImagePicker from 'expo-image-picker';
 
 const SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
@@ -454,6 +455,44 @@ const RepasPage = ({ onNavigate }) => {
     } catch (error) {
       console.log('Erreur capture photo:', error);
       alert(lang === 'fr' ? 'Erreur lors de la capture' : 'Capture error');
+    }
+  };
+
+  const pickImageFromGallery = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permissionResult.granted) {
+        alert(lang === 'fr'
+          ? 'Permission galerie requise pour charger une photo'
+          : 'Gallery permission required to load a photo');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+        base64: true,
+        allowsEditing: false,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedImage = result.assets[0];
+
+        const photo = {
+          uri: selectedImage.uri,
+          base64: selectedImage.base64,
+          width: selectedImage.width,
+          height: selectedImage.height,
+        };
+
+        setCapturedPhoto(photo);
+        setScanScreen('analyzing');
+        runAnalysis(photo);
+      }
+    } catch (error) {
+      console.error('Erreur galerie:', error);
+      alert(lang === 'fr' ? 'Erreur lors du chargement de la photo' : 'Error loading photo');
     }
   };
 
@@ -940,7 +979,7 @@ const RepasPage = ({ onNavigate }) => {
                 }}>
                   {/* Charger Photo — bas gauche */}
                   <Pressable
-                    onPressIn={() => { /* TODO: ouvrir galerie / image picker */ }}
+                    onPress={pickImageFromGallery}
                     delayPressIn={120}
                     style={({ pressed }) => ({
                       flexDirection: 'row',
