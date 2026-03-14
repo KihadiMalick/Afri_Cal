@@ -23,6 +23,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Path, Rect, Ellipse, Defs, Mask, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const { width: W } = Dimensions.get('window');
 
@@ -388,34 +395,152 @@ const RepasPage = ({ onNavigate }) => {
   const ring3Anim = useRef(new Animated.Value(0)).current;
   const [showRings, setShowRings] = useState(false);
 
-  const activateScan = () => {
-    setShowRings(true);
+  // === STATES SCAN ===
+  const [scanScreen, setScanScreen] = useState('none');
+  // 'none' = page Repas normale
+  // 'camera' = caméra ouverte
+  // 'analyzing' = écran analyse avec textes fun
+  // 'result' = résultat du scan
 
-    // Reset
+  const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef(null);
+  const [capturedPhoto, setCapturedPhoto] = useState(null);
+  const [analysisText, setAnalysisText] = useState('');
+  const [scanResult, setScanResult] = useState(null);
+  const [currentLoadingIndex, setCurrentLoadingIndex] = useState(0);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+
+  const loadingTexts = lang === 'fr'
+    ? [
+      '🍳 Cooking...',
+      '🥣 Souping...',
+      '🔪 Chopping...',
+      '🍽️ Fooding...',
+      '🫘 Okra okra...',
+      '🐟 Tieb tieb...',
+      '🥬 Ndolé ndolé...',
+      '🍚 Fumbwa fumbwa...',
+      '🔥 Mijotons tout ça...',
+      '📊 Comptage des calories...',
+    ]
+    : [
+      '🍳 Cooking...',
+      '🥣 Souping...',
+      '🔪 Chopping...',
+      '🍽️ Fooding...',
+      '🫘 Okra okra...',
+      '🐟 Tieb tieb...',
+      '🥬 Ndolé ndolé...',
+      '🍚 Fumbwa fumbwa...',
+      '🔥 Simmering flavors...',
+      '📊 Counting calories...',
+    ];
+
+  const takePicture = async () => {
+    if (!cameraRef.current) return;
+
+    try {
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+        base64: true,
+        skipProcessing: false,
+      });
+
+      setCapturedPhoto(photo);
+      setScanScreen('analyzing');
+
+      runAnalysis(photo);
+    } catch (error) {
+      console.log('Erreur capture photo:', error);
+      alert(lang === 'fr' ? 'Erreur lors de la capture' : 'Capture error');
+    }
+  };
+
+  const runAnalysis = (photo) => {
+    setCurrentLoadingIndex(0);
+    setAnalysisProgress(0);
+
+    const textInterval = setInterval(() => {
+      setCurrentLoadingIndex(prev => {
+        if (prev >= loadingTexts.length - 1) return 0;
+        return prev + 1;
+      });
+    }, 800);
+
+    const progressInterval = setInterval(() => {
+      setAnalysisProgress(prev => {
+        if (prev >= 80) {
+          clearInterval(progressInterval);
+          return 80;
+        }
+        return prev + 2;
+      });
+    }, 100);
+
+    // TODO: Remplacer par l'appel réel à la Supabase Edge Function
+    setTimeout(() => {
+      clearInterval(textInterval);
+      clearInterval(progressInterval);
+      setAnalysisProgress(100);
+
+      const mockResult = {
+        dish_name_fr: 'Poulet grillé + Riz blanc',
+        dish_name_en: 'Grilled Chicken + White Rice',
+        confidence: 88,
+        texture: lang === 'fr' ? 'grillé, riz cuit' : 'grilled, cooked rice',
+        total_volume_ml: 450,
+        ingredients: [
+          { name: 'Riz blanc', quantity_g: 200, calories: 260, protein_g: 5.4, carbs_g: 56, fat_g: 0.6, source: 'lixum_db' },
+          { name: 'Poulet grillé', quantity_g: 150, calories: 248, protein_g: 38, carbs_g: 0, fat_g: 10, source: 'lixum_db' },
+          { name: 'Huile végétale', quantity_g: 10, calories: 88, protein_g: 0, carbs_g: 0, fat_g: 10, source: 'lixum_db' },
+          { name: 'Oignon', quantity_g: 20, calories: 8, protein_g: 0.2, carbs_g: 1.8, fat_g: 0, source: 'lixum_db' },
+        ],
+        totals: {
+          calories: 604,
+          protein_g: 43.6,
+          carbs_g: 57.8,
+          fat_g: 20.6,
+          fiber_g: 1.2,
+        },
+      };
+
+      setScanResult(mockResult);
+
+      setTimeout(() => {
+        setScanScreen('result');
+      }, 500);
+
+    }, 3500);
+  };
+
+  const activateScan = async () => {
+    setShowRings(true);
     ring1Anim.setValue(0);
     ring2Anim.setValue(0);
     ring3Anim.setValue(0);
 
-    // Stagger : chaque anneau commence 200ms après le précédent
-    // Chaque anneau dure 400ms
-    // Total visible : ~800ms
     Animated.stagger(200, [
-      Animated.timing(ring1Anim, {
-        toValue: 1, duration: 400, useNativeDriver: true,
-      }),
-      Animated.timing(ring2Anim, {
-        toValue: 1, duration: 400, useNativeDriver: true,
-      }),
-      Animated.timing(ring3Anim, {
-        toValue: 1, duration: 400, useNativeDriver: true,
-      }),
-    ]).start(() => {
+      Animated.timing(ring1Anim, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(ring2Anim, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(ring3Anim, { toValue: 1, duration: 400, useNativeDriver: true }),
+    ]).start(async () => {
       setShowRings(false);
       ring1Anim.setValue(0);
       ring2Anim.setValue(0);
       ring3Anim.setValue(0);
-      // TODO: naviguer vers l'écran du scan
-      // navigation.navigate('XscanScreen') ou setActiveScreen('xscan')
+
+      // Vérifier la permission caméra
+      if (!permission?.granted) {
+        const result = await requestPermission();
+        if (!result.granted) {
+          alert(lang === 'fr'
+            ? 'Permission caméra requise pour scanner'
+            : 'Camera permission required to scan');
+          return;
+        }
+      }
+      // Ouvrir la caméra
+      setScanScreen('camera');
     });
   };
   const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -1254,6 +1379,489 @@ const RepasPage = ({ onNavigate }) => {
             </View>
           </View>
         )}
+
+        {/* ÉCRAN CAMÉRA — plein écran */}
+        {scanScreen === 'camera' && (
+          <View style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            zIndex: 2000,
+            backgroundColor: '#000',
+          }}>
+            <CameraView
+              ref={cameraRef}
+              style={{ flex: 1 }}
+              facing="back"
+            >
+              <View style={{ flex: 1, justifyContent: 'space-between' }}>
+
+                {/* Header caméra */}
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingTop: Platform.OS === 'android' ? 50 : 60,
+                  paddingHorizontal: wp(20),
+                }}>
+                  <Pressable
+                    onPress={() => setScanScreen('none')}
+                    style={{
+                      width: 40, height: 40, borderRadius: 20,
+                      backgroundColor: 'rgba(0,0,0,0.5)',
+                      justifyContent: 'center', alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#FFF', fontSize: 20, fontWeight: '300' }}>✕</Text>
+                  </Pressable>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                    <Text style={{ color: '#00D984', fontSize: fp(18), fontWeight: '900' }}>X</Text>
+                    <Text style={{ color: '#FFF', fontSize: fp(18), fontWeight: '900' }}>SCAN</Text>
+                  </View>
+
+                  <View style={{ width: 40 }}/>
+                </View>
+
+                {/* Zone centrale — cadre de scan */}
+                <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                  <View style={{
+                    width: wp(260),
+                    height: wp(260),
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}>
+                    {/* Coin haut-gauche */}
+                    <View style={{
+                      position: 'absolute', top: 0, left: 0,
+                      width: 40, height: 40,
+                      borderTopWidth: 3, borderLeftWidth: 3,
+                      borderColor: '#00D984', borderTopLeftRadius: 12,
+                    }}/>
+                    {/* Coin haut-droit */}
+                    <View style={{
+                      position: 'absolute', top: 0, right: 0,
+                      width: 40, height: 40,
+                      borderTopWidth: 3, borderRightWidth: 3,
+                      borderColor: '#00D984', borderTopRightRadius: 12,
+                    }}/>
+                    {/* Coin bas-gauche */}
+                    <View style={{
+                      position: 'absolute', bottom: 0, left: 0,
+                      width: 40, height: 40,
+                      borderBottomWidth: 3, borderLeftWidth: 3,
+                      borderColor: '#00D984', borderBottomLeftRadius: 12,
+                    }}/>
+                    {/* Coin bas-droit */}
+                    <View style={{
+                      position: 'absolute', bottom: 0, right: 0,
+                      width: 40, height: 40,
+                      borderBottomWidth: 3, borderRightWidth: 3,
+                      borderColor: '#00D984', borderBottomRightRadius: 12,
+                    }}/>
+
+                    <Text style={{
+                      color: 'rgba(255,255,255,0.6)',
+                      fontSize: fp(13),
+                      textAlign: 'center',
+                    }}>
+                      {lang === 'fr' ? 'Centrez votre plat\ndans le cadre' : 'Center your meal\nin the frame'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Bas — bouton capture */}
+                <View style={{
+                  alignItems: 'center',
+                  paddingBottom: Platform.OS === 'android' ? 60 : 80,
+                }}>
+                  <Pressable
+                    onPress={takePicture}
+                    style={({ pressed }) => ({
+                      width: 72, height: 72, borderRadius: 36,
+                      backgroundColor: pressed ? 'rgba(0,217,132,0.8)' : 'rgba(255,255,255,0.9)',
+                      justifyContent: 'center', alignItems: 'center',
+                      borderWidth: 4,
+                      borderColor: '#00D984',
+                      transform: [{ scale: pressed ? 0.92 : 1 }],
+                    })}
+                  >
+                    <View style={{
+                      width: 56, height: 56, borderRadius: 28,
+                      backgroundColor: '#FFF',
+                      borderWidth: 2, borderColor: '#00D984',
+                    }}/>
+                  </Pressable>
+
+                  <Text style={{
+                    color: 'rgba(255,255,255,0.5)',
+                    fontSize: fp(11),
+                    marginTop: 10,
+                  }}>
+                    {lang === 'fr' ? 'Appuyez pour capturer' : 'Tap to capture'}
+                  </Text>
+                </View>
+
+              </View>
+            </CameraView>
+          </View>
+        )}
+
+        {/* ÉCRAN ANALYSE */}
+        {scanScreen === 'analyzing' && (
+          <View style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            zIndex: 2000,
+            backgroundColor: '#0D1117',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            {capturedPhoto && (
+              <Image
+                source={{ uri: capturedPhoto.uri }}
+                style={{
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  opacity: 0.15,
+                }}
+                blurRadius={10}
+              />
+            )}
+
+            <View style={{ alignItems: 'center', paddingHorizontal: wp(30) }}>
+
+              {capturedPhoto && (
+                <View style={{
+                  width: wp(140), height: wp(140), borderRadius: 20,
+                  overflow: 'hidden', marginBottom: wp(30),
+                  borderWidth: 2, borderColor: 'rgba(0,217,132,0.2)',
+                }}>
+                  <Image
+                    source={{ uri: capturedPhoto.uri }}
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                  <View style={{
+                    position: 'absolute',
+                    left: 0, right: 0,
+                    height: 2,
+                    backgroundColor: '#00D984',
+                    top: '50%',
+                    opacity: 0.6,
+                  }}/>
+                </View>
+              )}
+
+              <Text style={{
+                color: '#EAEEF3',
+                fontSize: fp(20),
+                fontWeight: '700',
+                marginBottom: wp(24),
+                textAlign: 'center',
+                minHeight: fp(28),
+              }}>
+                {loadingTexts[currentLoadingIndex]}
+              </Text>
+
+              <View style={{
+                width: wp(220),
+                height: 6,
+                backgroundColor: 'rgba(0,217,132,0.1)',
+                borderRadius: 3,
+                overflow: 'hidden',
+              }}>
+                <View style={{
+                  height: '100%',
+                  width: `${analysisProgress}%`,
+                  backgroundColor: '#00D984',
+                  borderRadius: 3,
+                }}/>
+              </View>
+
+              <Text style={{
+                color: '#5A6070',
+                fontSize: fp(11),
+                marginTop: wp(8),
+              }}>
+                {analysisProgress}%
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* ÉCRAN RÉSULTAT */}
+        {scanScreen === 'result' && scanResult && (
+          <View style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            zIndex: 2000,
+            backgroundColor: '#0D1117',
+          }}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: wp(100) }}
+            >
+              {/* Header */}
+              <View style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingTop: Platform.OS === 'android' ? 50 : 60,
+                paddingHorizontal: wp(16),
+                paddingBottom: wp(12),
+              }}>
+                <Pressable onPress={() => {
+                  setScanScreen('none');
+                  setScanResult(null);
+                  setCapturedPhoto(null);
+                }}>
+                  <Text style={{ color: '#8892A0', fontSize: fp(14) }}>✕ {lang === 'fr' ? 'Fermer' : 'Close'}</Text>
+                </Pressable>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                  <Text style={{ color: '#00D984', fontSize: fp(16), fontWeight: '900' }}>X</Text>
+                  <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '900' }}>SCAN</Text>
+                </View>
+                <View style={{ width: 60 }}/>
+              </View>
+
+              {/* Photo capturée */}
+              {capturedPhoto && (
+                <View style={{
+                  marginHorizontal: wp(16),
+                  height: wp(200),
+                  borderRadius: 18,
+                  overflow: 'hidden',
+                  marginBottom: wp(16),
+                }}>
+                  <Image
+                    source={{ uri: capturedPhoto.uri }}
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </View>
+              )}
+
+              {/* Nom du plat + confiance */}
+              <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+                  <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '700', marginRight: 8 }}>✅</Text>
+                  <Text style={{ color: '#8892A0', fontSize: fp(12) }}>
+                    {lang === 'fr' ? 'Plat identifié' : 'Meal identified'}
+                  </Text>
+                </View>
+                <Text style={{
+                  color: '#EAEEF3', fontSize: fp(22), fontWeight: '900',
+                  marginBottom: wp(8),
+                }}>
+                  {lang === 'fr' ? scanResult.dish_name_fr : scanResult.dish_name_en}
+                </Text>
+
+                {/* Barre de confiance */}
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ color: '#8892A0', fontSize: fp(11), marginRight: 8 }}>
+                    {lang === 'fr' ? 'Confiance' : 'Confidence'} :
+                  </Text>
+                  <View style={{
+                    flex: 1, height: 5, backgroundColor: 'rgba(0,217,132,0.1)',
+                    borderRadius: 3, overflow: 'hidden', marginRight: 8,
+                  }}>
+                    <View style={{
+                      height: '100%',
+                      width: `${scanResult.confidence}%`,
+                      backgroundColor: scanResult.confidence > 70 ? '#00D984' : scanResult.confidence > 50 ? '#FF8C42' : '#FF3B30',
+                      borderRadius: 3,
+                    }}/>
+                  </View>
+                  <Text style={{
+                    color: scanResult.confidence > 70 ? '#00D984' : '#FF8C42',
+                    fontSize: fp(12), fontWeight: '700',
+                  }}>
+                    {scanResult.confidence}%
+                  </Text>
+                </View>
+              </View>
+
+              {/* MetalCard : liste des ingrédients */}
+              <View style={{ marginHorizontal: wp(16), marginBottom: wp(16) }}>
+                <View style={{
+                  borderRadius: 18, padding: 1.2,
+                  backgroundColor: '#4A4F55', elevation: 12,
+                }}>
+                  <LinearGradient
+                    colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                    style={{ borderRadius: 17, padding: wp(16) }}
+                  >
+                    <View style={{
+                      position: 'absolute', top: 0, left: 20, right: 20,
+                      height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
+                    }}/>
+
+                    <Text style={{
+                      color: '#8892A0', fontSize: fp(11), fontWeight: '700',
+                      letterSpacing: 1.5, marginBottom: wp(12),
+                    }}>
+                      {lang === 'fr' ? 'INGRÉDIENTS DÉTECTÉS' : 'DETECTED INGREDIENTS'}
+                    </Text>
+
+                    {scanResult.ingredients.map((ing, index) => (
+                      <View key={index} style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        paddingVertical: wp(8),
+                        borderBottomWidth: index < scanResult.ingredients.length - 1 ? 0.5 : 0,
+                        borderBottomColor: 'rgba(255,255,255,0.05)',
+                      }}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '600' }}>
+                            {ing.name}
+                          </Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: 2 }}>
+                            {ing.quantity_g}g
+                          </Text>
+                        </View>
+                        <Text style={{ color: '#FF8C42', fontSize: fp(13), fontWeight: '700' }}>
+                          {ing.calories} kcal
+                        </Text>
+                      </View>
+                    ))}
+
+                    <View style={{
+                      height: 1, backgroundColor: 'rgba(0,217,132,0.15)',
+                      marginVertical: wp(12),
+                    }}/>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '800' }}>TOTAL</Text>
+                      <Text style={{ color: '#FF8C42', fontSize: fp(18), fontWeight: '900' }}>
+                        {scanResult.totals.calories} kcal
+                      </Text>
+                    </View>
+
+                    <View style={{ flexDirection: 'row', marginTop: wp(10), gap: wp(8) }}>
+                      {[
+                        { value: `${scanResult.totals.protein_g.toFixed(1)}g`, color: '#FF6B6B', letter: 'P' },
+                        { value: `${scanResult.totals.carbs_g.toFixed(1)}g`, color: '#FFD93D', letter: 'G' },
+                        { value: `${scanResult.totals.fat_g.toFixed(1)}g`, color: '#4DA6FF', letter: 'L' },
+                      ].map((m, i) => (
+                        <View key={i} style={{
+                          flex: 1, backgroundColor: 'rgba(255,255,255,0.03)',
+                          borderRadius: 10, paddingVertical: wp(8), alignItems: 'center',
+                          borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                        }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: m.color, marginBottom: 3 }}/>
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{m.value}</Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 1 }}>{m.letter}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </LinearGradient>
+                </View>
+              </View>
+
+              {/* Infos supplémentaires */}
+              <View style={{ paddingHorizontal: wp(16), marginBottom: wp(20) }}>
+                <Text style={{ color: '#5A6070', fontSize: fp(11) }}>
+                  📏 Volume : ~{scanResult.total_volume_ml}ml  •  🍽️ {scanResult.texture}
+                </Text>
+              </View>
+
+              {/* Sélecteur de créneau */}
+              <View style={{
+                flexDirection: 'row', alignItems: 'center',
+                paddingHorizontal: wp(16), marginBottom: wp(20),
+              }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(12), marginRight: 8 }}>
+                  {lang === 'fr' ? 'Créneau :' : 'Slot:'}
+                </Text>
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  backgroundColor: 'rgba(0,217,132,0.08)',
+                  paddingHorizontal: 12, paddingVertical: 5,
+                  borderRadius: 10,
+                }}>
+                  <Text style={{ fontSize: 14, marginRight: 5 }}>
+                    {new Date().getHours() < 10 ? '☀️' : new Date().getHours() < 14 ? '🌤️' : new Date().getHours() < 21 ? '🌙' : '🍿'}
+                  </Text>
+                  <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '600' }}>
+                    {new Date().getHours() < 10
+                      ? (lang === 'fr' ? 'Petit-déjeuner' : 'Breakfast')
+                      : new Date().getHours() < 14
+                        ? (lang === 'fr' ? 'Déjeuner' : 'Lunch')
+                        : new Date().getHours() < 21
+                          ? (lang === 'fr' ? 'Dîner' : 'Dinner')
+                          : 'Snack'
+                    }
+                  </Text>
+                </View>
+              </View>
+
+              {/* Boutons Corriger + Confirmer */}
+              <View style={{
+                flexDirection: 'row',
+                paddingHorizontal: wp(16),
+                gap: wp(12),
+                marginBottom: wp(16),
+              }}>
+                <Pressable
+                  onPress={() => {
+                    alert(lang === 'fr' ? 'Correction à venir' : 'Correction coming');
+                  }}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    paddingVertical: wp(14),
+                    borderRadius: 14,
+                    backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+                    borderWidth: 1, borderColor: '#3A3F46',
+                    alignItems: 'center',
+                  })}
+                >
+                  <Text style={{ color: '#8892A0', fontSize: fp(14), fontWeight: '700' }}>
+                    {lang === 'fr' ? 'Corriger' : 'Correct'}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => {
+                    setScanScreen('none');
+                    setScanResult(null);
+                    setCapturedPhoto(null);
+                    alert(lang === 'fr' ? 'Repas ajouté ! +10 Lix' : 'Meal added! +10 Lix');
+                  }}
+                  style={({ pressed }) => ({
+                    flex: 2,
+                    paddingVertical: wp(14),
+                    borderRadius: 14,
+                    backgroundColor: pressed ? '#00B572' : '#00D984',
+                    alignItems: 'center',
+                  })}
+                >
+                  <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
+                    ✓ {lang === 'fr' ? 'CONFIRMER' : 'CONFIRM'}
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* Récompense Lix */}
+              <View style={{
+                alignItems: 'center',
+                paddingBottom: wp(20),
+              }}>
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  backgroundColor: 'rgba(212,175,55,0.08)',
+                  paddingHorizontal: 14, paddingVertical: 6,
+                  borderRadius: 10,
+                }}>
+                  <Text style={{ fontSize: 14, marginRight: 6 }}>🏆</Text>
+                  <Text style={{ color: '#D4AF37', fontSize: fp(12), fontWeight: '700' }}>
+                    +10 Lix • XSCAN {lang === 'fr' ? 'réussi' : 'complete'} !
+                  </Text>
+                </View>
+              </View>
+
+            </ScrollView>
+          </View>
+        )}
+
       </View>
     </LinearGradient>
   );
