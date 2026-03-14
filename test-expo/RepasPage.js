@@ -193,8 +193,8 @@ const SectionTitle = ({ title, rightAction, rightLabel }) => (
 // ============================================
 // COMPOSANT — MealDayCard (FIX 4 — compact)
 // ============================================
-const MEAL_CARD_WIDTH = wp(240);
-const MEAL_CARD_HEIGHT = wp(200);
+const MEAL_CARD_WIDTH = wp(160);
+const MEAL_CARD_HEIGHT = wp(150);
 
 const MealDayCard = ({ icon, label, meal, lang }) => {
 
@@ -235,7 +235,7 @@ const MealDayCard = ({ icon, label, meal, lang }) => {
             {/* Miniature SVG + infos */}
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={{
-                width: wp(52), height: wp(52), borderRadius: 14,
+                width: wp(36), height: wp(36), borderRadius: 14,
                 backgroundColor: '#252A30', justifyContent: 'center', alignItems: 'center',
                 marginRight: wp(10),
               }}>
@@ -252,7 +252,7 @@ const MealDayCard = ({ icon, label, meal, lang }) => {
                   color: '#EAEEF3', fontSize: fp(12), fontWeight: '700',
                 }} numberOfLines={1}>{meal.name}</Text>
                 <Text style={{
-                  color: '#FF8C42', fontSize: fp(11), fontWeight: '700', marginTop: 2,
+                  color: '#FF8C42', fontSize: fp(13), fontWeight: '700', marginTop: 2,
                 }}>{meal.calories} kcal</Text>
 
                 {/* Macros compacts */}
@@ -277,7 +277,7 @@ const MealDayCard = ({ icon, label, meal, lang }) => {
             <Pressable delayPressIn={120}
               style={({ pressed }) => ({
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-                marginTop: wp(8), paddingVertical: wp(8),
+                marginTop: wp(8), paddingVertical: wp(5),
                 borderRadius: 12,
                 backgroundColor: pressed ? 'rgba(0,217,132,0.12)' : 'rgba(0,217,132,0.06)',
                 borderWidth: 1,
@@ -339,7 +339,7 @@ const MealDayCard = ({ icon, label, meal, lang }) => {
 
           {/* Bouton + central avec glow émeraude */}
           <View style={{
-            width: wp(54), height: wp(54), borderRadius: wp(27),
+            width: wp(38), height: wp(38), borderRadius: wp(19),
             borderWidth: 2, borderColor: 'rgba(0,217,132,0.25)',
             justifyContent: 'center', alignItems: 'center',
             backgroundColor: 'rgba(0,217,132,0.04)',
@@ -396,22 +396,18 @@ const RepasPage = ({ onNavigate }) => {
     ring2Anim.setValue(0);
     ring3Anim.setValue(0);
 
-    // Animation séquentielle : 3 anneaux en ~800ms total
-    Animated.sequence([
+    // Stagger : chaque anneau commence 200ms après le précédent
+    // Chaque anneau dure 400ms
+    // Total visible : ~800ms
+    Animated.stagger(200, [
       Animated.timing(ring1Anim, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
+        toValue: 1, duration: 400, useNativeDriver: true,
       }),
       Animated.timing(ring2Anim, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
+        toValue: 1, duration: 400, useNativeDriver: true,
       }),
       Animated.timing(ring3Anim, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
+        toValue: 1, duration: 400, useNativeDriver: true,
       }),
     ]).start(() => {
       setShowRings(false);
@@ -618,11 +614,11 @@ const RepasPage = ({ onNavigate }) => {
                           width: wp(82), height: wp(82), borderRadius: wp(41),
                           borderWidth: 2, borderColor: '#00D984',
                           opacity: ring1Anim.interpolate({
-                            inputRange: [0, 0.3, 1],
-                            outputRange: [0, 0.8, 0.2],
+                            inputRange: [0, 0.3, 0.7, 1],
+                            outputRange: [0, 0.9, 0.5, 0.1],
                           }),
                           transform: [{ scale: ring1Anim.interpolate({
-                            inputRange: [0, 1], outputRange: [0.85, 1],
+                            inputRange: [0, 1], outputRange: [0.8, 1],
                           })}],
                         }}/>
                         <Animated.View style={{
@@ -630,11 +626,11 @@ const RepasPage = ({ onNavigate }) => {
                           width: wp(96), height: wp(96), borderRadius: wp(48),
                           borderWidth: 1.5, borderColor: '#00D984',
                           opacity: ring2Anim.interpolate({
-                            inputRange: [0, 0.3, 1],
-                            outputRange: [0, 0.7, 0.15],
+                            inputRange: [0, 0.3, 0.7, 1],
+                            outputRange: [0, 0.8, 0.3, 0.05],
                           }),
                           transform: [{ scale: ring2Anim.interpolate({
-                            inputRange: [0, 1], outputRange: [0.85, 1],
+                            inputRange: [0, 1], outputRange: [0.82, 1],
                           })}],
                         }}/>
                         <Animated.View style={{
@@ -642,11 +638,11 @@ const RepasPage = ({ onNavigate }) => {
                           width: wp(115), height: wp(115), borderRadius: wp(57.5),
                           borderWidth: 1, borderColor: '#00D984',
                           opacity: ring3Anim.interpolate({
-                            inputRange: [0, 0.3, 1],
-                            outputRange: [0, 0.5, 0.1],
+                            inputRange: [0, 0.3, 0.7, 1],
+                            outputRange: [0, 0.6, 0.2, 0],
                           }),
                           transform: [{ scale: ring3Anim.interpolate({
-                            inputRange: [0, 1], outputRange: [0.88, 1],
+                            inputRange: [0, 1], outputRange: [0.85, 1],
                           })}],
                         }}/>
                       </>
@@ -1141,7 +1137,7 @@ const RepasPage = ({ onNavigate }) => {
               <Defs>
                 <Mask id="spotlightMask">
                   <Rect x="0" y="0" width={SCREEN_WIDTH} height={SCREEN_HEIGHT} fill="white"/>
-                  <Circle cx={SCREEN_WIDTH / 2} cy={xButtonY} r={wp(55)} fill="black"/>
+                  <Circle cx={SCREEN_WIDTH / 2} cy={xButtonY + wp(15)} r={wp(55)} fill="black"/>
                 </Mask>
               </Defs>
               <Rect
@@ -1153,7 +1149,7 @@ const RepasPage = ({ onNavigate }) => {
               />
               <Circle
                 cx={SCREEN_WIDTH / 2}
-                cy={xButtonY}
+                cy={xButtonY + wp(15)}
                 r={wp(55)}
                 fill="none"
                 stroke="#00D984"
@@ -1165,7 +1161,7 @@ const RepasPage = ({ onNavigate }) => {
             {/* Bulle de texte tooltip */}
             <View style={{
               position: 'absolute',
-              top: xButtonY + wp(80),
+              top: xButtonY + wp(15) + wp(80),
               left: wp(24),
               right: wp(24),
               backgroundColor: '#1E2530',
