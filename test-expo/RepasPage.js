@@ -396,6 +396,30 @@ const RepasPage = ({ onNavigate }) => {
   const ring3Anim = useRef(new Animated.Value(0)).current;
   const [showRings, setShowRings] = useState(false);
 
+  // === SHAKE ANIM pour icône "Pas ce plat ?" ===
+  const alertShakeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (scanScreen === 'result') {
+      const shake = Animated.loop(
+        Animated.sequence([
+          Animated.timing(alertShakeAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
+          Animated.timing(alertShakeAnim, { toValue: -1, duration: 100, useNativeDriver: true }),
+          Animated.timing(alertShakeAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
+          Animated.timing(alertShakeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
+          Animated.delay(2000),
+        ])
+      );
+      shake.start();
+      return () => shake.stop();
+    }
+  }, [scanScreen]);
+
+  const alertRotate = alertShakeAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ['-12deg', '0deg', '12deg'],
+  });
+
   // === STATES SCAN ===
   const [scanScreen, setScanScreen] = useState('none');
   // 'none' = page Repas normale
@@ -458,7 +482,7 @@ const RepasPage = ({ onNavigate }) => {
 
     try {
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.7,
+        quality: 0.5,
         base64: true,
         skipProcessing: false,
         exif: false,
@@ -487,9 +511,10 @@ const RepasPage = ({ onNavigate }) => {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.7,
+        quality: 0.5,
         base64: true,
-        allowsEditing: false,
+        allowsEditing: true,
+        aspect: [1, 1],
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -570,7 +595,15 @@ const RepasPage = ({ onNavigate }) => {
         country: s.country,
         confidence: s.confidence,
       }));
-      setAlternativeDishes(aiSuggestionNames);
+      // Filtrer pour avoir des pays différents dans les alternatives
+      const seenCountries = new Set();
+      const uniqueCountryDishes = aiSuggestionNames.filter(dish => {
+        const country = dish.country || 'unknown';
+        if (seenCountries.has(country)) return false;
+        seenCountries.add(country);
+        return true;
+      });
+      setAlternativeDishes(uniqueCountryDishes.length > 0 ? uniqueCountryDishes : aiSuggestionNames);
 
       // TOUJOURS aller au résultat directement
       if (result.suggestions && result.suggestions.length > 0) {
@@ -1727,6 +1760,7 @@ const RepasPage = ({ onNavigate }) => {
                   setScanSuggestions([]);
                   setSelectedSuggestion(null);
                   setAiVisual(null);
+                  alertShakeAnim.setValue(0);
                 }}>
                   <Text style={{ color: '#8892A0', fontSize: fp(14) }}>✕ {lang === 'fr' ? 'Fermer' : 'Close'}</Text>
                 </Pressable>
@@ -1770,11 +1804,26 @@ const RepasPage = ({ onNavigate }) => {
                   {currentDishName || scanResult.name_fr || scanResult.dish_name_fr || 'Plat non identifié'}
                 </Text>
 
-                {/* Lien "Pas ce plat ?" */}
+                {/* Lien "Pas ce plat ?" avec icône shake */}
                 <Pressable
                   onPress={() => setShowAlternatives(true)}
-                  style={{ marginBottom: wp(10) }}
+                  style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}
                 >
+                  {/* Icône exclamation qui shake */}
+                  <Animated.View style={{
+                    transform: [{ rotate: alertRotate }],
+                    marginRight: 6,
+                  }}>
+                    <View style={{
+                      width: 20, height: 20, borderRadius: 10,
+                      backgroundColor: 'rgba(255,140,66,0.15)',
+                      borderWidth: 1, borderColor: 'rgba(255,140,66,0.4)',
+                      justifyContent: 'center', alignItems: 'center',
+                    }}>
+                      <Text style={{ color: '#FF8C42', fontSize: 12, fontWeight: '900' }}>!</Text>
+                    </View>
+                  </Animated.View>
+
                   <Text style={{
                     color: '#FF8C42',
                     fontSize: fp(12),
@@ -1948,7 +1997,18 @@ const RepasPage = ({ onNavigate }) => {
               {/* Infos supplémentaires */}
               <View style={{ paddingHorizontal: wp(16), marginBottom: wp(20) }}>
                 <Text style={{ color: '#5A6070', fontSize: fp(11) }}>
-                  📏 Volume : ~{scanResult.total_volume_ml}ml  •  🍽️ {scanResult.texture}
+                  ⚖️ {lang === 'fr' ? 'Poids estimé' : 'Estimated weight'} : ~{
+                    (() => {
+                      const totalGrams = (scanResult.ingredients || []).reduce((sum, ing) => sum + (ing.quantity_g || 0), 0);
+                      if (totalGrams >= 1000) {
+                        return (totalGrams / 1000).toFixed(1) + ' kg';
+                      }
+                      return totalGrams + 'g';
+                    })()
+                  }
+                  {scanResult.texture ? (' • 🍽️ ' + (
+                    typeof scanResult.texture === 'string' ? scanResult.texture : ''
+                  )) : ''}
                 </Text>
               </View>
 
@@ -2019,6 +2079,7 @@ const RepasPage = ({ onNavigate }) => {
                     setScanSuggestions([]);
                     setSelectedSuggestion(null);
                     setAiVisual(null);
+                    alertShakeAnim.setValue(0);
                     alert(lang === 'fr' ? 'Repas ajouté ! +10 Lix' : 'Meal added! +10 Lix');
                   }}
                   style={({ pressed }) => ({
