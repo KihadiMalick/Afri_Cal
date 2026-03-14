@@ -95,7 +95,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
       borderTopWidth: 1,
       borderTopColor: 'rgba(74,79,85,0.5)',
       paddingTop: wp(10),
-      paddingBottom: Platform.OS === 'android' ? 45 : 34,
+      paddingBottom: Platform.OS === 'android' ? 50 : 34,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: -4 },
       shadowOpacity: 0.3,
@@ -193,14 +193,16 @@ const SectionTitle = ({ title, rightAction, rightLabel }) => (
 // ============================================
 // COMPOSANT — MealDayCard (FIX 4 — compact)
 // ============================================
+const MEAL_CARD_WIDTH = wp(240);
+const MEAL_CARD_HEIGHT = wp(200);
+
 const MealDayCard = ({ icon, label, meal, lang }) => {
-  const cardWidth = wp(240);
 
   if (meal) {
     return (
       <Pressable delayPressIn={120}
         style={({ pressed }) => ({
-          width: cardWidth,
+          width: MEAL_CARD_WIDTH,
           transform: [{ scale: pressed ? 0.975 : 1 }],
         })}
       >
@@ -212,7 +214,7 @@ const MealDayCard = ({ icon, label, meal, lang }) => {
         }}>
           <LinearGradient
             colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-            style={{ borderRadius: 15, padding: wp(11) }}
+            style={{ borderRadius: 15, padding: wp(11), minHeight: MEAL_CARD_HEIGHT }}
           >
             {/* Ligne émeraude */}
             <View style={{
@@ -300,7 +302,7 @@ const MealDayCard = ({ icon, label, meal, lang }) => {
   return (
     <Pressable delayPressIn={120}
       style={({ pressed }) => ({
-        width: cardWidth,
+        width: MEAL_CARD_WIDTH,
         transform: [{ scale: pressed ? 0.975 : 1 }],
       })}
     >
@@ -314,7 +316,7 @@ const MealDayCard = ({ icon, label, meal, lang }) => {
           colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
           style={{
             borderRadius: 15, padding: wp(11),
-            minHeight: wp(135),
+            minHeight: MEAL_CARD_HEIGHT,
             justifyContent: 'center', alignItems: 'center',
           }}
         >
@@ -456,7 +458,7 @@ const RepasPage = ({ onNavigate }) => {
           1. Ajouter <SafeAreaProvider> dans App.js racine
           2. Remplacer ce <View> par <SafeAreaView style={{ flex: 1 }} edges={['top']}>
           3. Supprimer le paddingTop fixe */}
-      <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 20 : 30 }}>
+      <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 50 : 55 }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: wp(120) }}
@@ -467,7 +469,7 @@ const RepasPage = ({ onNavigate }) => {
             justifyContent: 'space-between',
             alignItems: 'center',
             paddingHorizontal: wp(16),
-            paddingTop: wp(20),
+            paddingTop: 0,
             paddingBottom: wp(10),
           }}>
             <Text style={{
@@ -613,38 +615,38 @@ const RepasPage = ({ onNavigate }) => {
                       <>
                         <Animated.View style={{
                           position: 'absolute',
-                          width: wp(140), height: wp(140), borderRadius: wp(70),
-                          borderWidth: 2.5, borderColor: '#00D984',
+                          width: wp(82), height: wp(82), borderRadius: wp(41),
+                          borderWidth: 2, borderColor: '#00D984',
                           opacity: ring1Anim.interpolate({
                             inputRange: [0, 0.3, 1],
                             outputRange: [0, 0.8, 0.2],
                           }),
                           transform: [{ scale: ring1Anim.interpolate({
-                            inputRange: [0, 1], outputRange: [0.7, 1],
+                            inputRange: [0, 1], outputRange: [0.85, 1],
                           })}],
                         }}/>
                         <Animated.View style={{
                           position: 'absolute',
-                          width: wp(170), height: wp(170), borderRadius: wp(85),
-                          borderWidth: 2, borderColor: '#00D984',
+                          width: wp(96), height: wp(96), borderRadius: wp(48),
+                          borderWidth: 1.5, borderColor: '#00D984',
                           opacity: ring2Anim.interpolate({
                             inputRange: [0, 0.3, 1],
                             outputRange: [0, 0.7, 0.15],
                           }),
                           transform: [{ scale: ring2Anim.interpolate({
-                            inputRange: [0, 1], outputRange: [0.75, 1],
+                            inputRange: [0, 1], outputRange: [0.85, 1],
                           })}],
                         }}/>
                         <Animated.View style={{
                           position: 'absolute',
-                          width: wp(200), height: wp(200), borderRadius: wp(100),
-                          borderWidth: 1.5, borderColor: '#00D984',
+                          width: wp(115), height: wp(115), borderRadius: wp(57.5),
+                          borderWidth: 1, borderColor: '#00D984',
                           opacity: ring3Anim.interpolate({
                             inputRange: [0, 0.3, 1],
                             outputRange: [0, 0.5, 0.1],
                           }),
                           transform: [{ scale: ring3Anim.interpolate({
-                            inputRange: [0, 1], outputRange: [0.8, 1],
+                            inputRange: [0, 1], outputRange: [0.88, 1],
                           })}],
                         }}/>
                       </>
@@ -663,6 +665,7 @@ const RepasPage = ({ onNavigate }) => {
                     borderWidth: 1.5,
                     borderColor: '#3A3F46',
                     justifyContent: 'center', alignItems: 'center',
+                    overflow: 'hidden',
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 3 },
                     shadowOpacity: 0.5,
@@ -943,7 +946,7 @@ const RepasPage = ({ onNavigate }) => {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(10) }}
-              snapToInterval={wp(240) + wp(10)}
+              snapToInterval={MEAL_CARD_WIDTH + wp(10)}
               decelerationRate="fast"
             >
               <MealDayCard
@@ -1138,7 +1141,7 @@ const RepasPage = ({ onNavigate }) => {
               <Defs>
                 <Mask id="spotlightMask">
                   <Rect x="0" y="0" width={SCREEN_WIDTH} height={SCREEN_HEIGHT} fill="white"/>
-                  <Circle cx={SCREEN_WIDTH / 2} cy={xButtonY} r={wp(70)} fill="black"/>
+                  <Circle cx={SCREEN_WIDTH / 2} cy={xButtonY} r={wp(55)} fill="black"/>
                 </Mask>
               </Defs>
               <Rect
@@ -1151,7 +1154,7 @@ const RepasPage = ({ onNavigate }) => {
               <Circle
                 cx={SCREEN_WIDTH / 2}
                 cy={xButtonY}
-                r={wp(70)}
+                r={wp(55)}
                 fill="none"
                 stroke="#00D984"
                 strokeWidth={2}
