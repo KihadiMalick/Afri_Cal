@@ -2004,14 +2004,9 @@ const TABS = [
 ];
 
 const BottomTabs = ({ activeTab, onTabPress }) => (
-  <LinearGradient
-    colors={['rgba(30, 37, 48, 0)', 'rgba(26, 32, 41, 0.92)', '#181E26']}
-    locations={[0, 0.4, 1]}
-    start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+  <View
     style={s.tabBar}
   >
-    {/* Séparateur métallique */}
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(74, 79, 85, 0.4)' }} />
     {TABS.map((tab) => {
       const active = activeTab === tab.key;
       return (
@@ -2056,7 +2051,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
         </TouchableOpacity>
       );
     })}
-  </LinearGradient>
+  </View>
 );
 
 // ============================================================
@@ -3350,8 +3345,16 @@ const s = StyleSheet.create({
   // === BOTTOM TAB BAR ===
   tabBar: {
     flexDirection: 'row',
+    backgroundColor: '#141A22',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(74,79,85,0.5)',
     paddingTop: wp(10),
-    paddingBottom: Platform.OS === 'ios' ? 0 : 12,
+    paddingBottom: Platform.OS === 'android' ? 20 : 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 20,
   },
   tabItem: {
     flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: wp(4),

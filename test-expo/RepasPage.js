@@ -57,12 +57,12 @@ const MOCK_FREQUENT = [
 ];
 
 const MOCK_RECIPES = [
-  { name: 'Thieboudienne', origin: '🇸🇳 Sénégal', cal: 520, color: '#7A3B10' },
-  { name: 'Ndolé', origin: '🇨🇲 Cameroun', cal: 380, color: '#1E4A20' },
-  { name: 'Fumbwa', origin: '🇧🇮 Burundi', cal: 290, color: '#1A3A1E' },
-  { name: 'Ugali + Sukuma', origin: '🇰🇪 Kenya', cal: 350, color: '#6A5010' },
-  { name: 'Mafé', origin: '🇲🇱 Mali', cal: 480, color: '#8A4520' },
-  { name: 'Jollof Rice', origin: '🇳🇬 Nigeria', cal: 410, color: '#8B1A1A' },
+  { name: 'Thieboudienne', origin: '🇸🇳 Sénégal', cal: 520, bgTop: '#8B4513', bgBottom: '#5D2E0D', ingredients: ['🐟', '🍚', '🥕'] },
+  { name: 'Ndolé', origin: '🇨🇲 Cameroun', cal: 380, bgTop: '#2E5A1C', bgBottom: '#1A3510', ingredients: ['🥬', '🥜', '🍖'] },
+  { name: 'Fumbwa', origin: '🇧🇮 Burundi', cal: 290, bgTop: '#1E4A20', bgBottom: '#0F2810', ingredients: ['🥬', '🫘', '🧅'] },
+  { name: 'Ugali + Sukuma', origin: '🇰🇪 Kenya', cal: 350, bgTop: '#8B6914', bgBottom: '#5A440D', ingredients: ['🌽', '🥬', '🧅'] },
+  { name: 'Mafé', origin: '🇲🇱 Mali', cal: 480, bgTop: '#A0522D', bgBottom: '#6B3720', ingredients: ['🥜', '🍖', '🍅'] },
+  { name: 'Jollof Rice', origin: '🇳🇬 Nigeria', cal: 410, bgTop: '#B22222', bgBottom: '#7A1717', ingredients: ['🍚', '🍅', '🌶️'] },
 ];
 
 // ============================================
@@ -88,18 +88,21 @@ const TABS = [
 ];
 
 const BottomTabs = ({ activeTab, onTabPress }) => (
-  <LinearGradient
-    colors={['rgba(30, 37, 48, 0)', 'rgba(26, 32, 41, 0.92)', '#181E26']}
-    locations={[0, 0.4, 1]}
-    start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+  <View
     style={{
       flexDirection: 'row',
+      backgroundColor: '#141A22',
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(74,79,85,0.5)',
       paddingTop: wp(10),
-      paddingBottom: Platform.OS === 'ios' ? 0 : 12,
+      paddingBottom: Platform.OS === 'android' ? 20 : 30,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 20,
     }}
   >
-    {/* Séparateur métallique */}
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(74, 79, 85, 0.4)' }} />
     {TABS.map((tab) => {
       const active = activeTab === tab.key;
       return (
@@ -148,7 +151,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
         </TouchableOpacity>
       );
     })}
-  </LinearGradient>
+  </View>
 );
 
 // ============================================
@@ -160,7 +163,7 @@ const SectionTitle = ({ title, rightAction, rightLabel }) => (
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: wp(16),
-    marginBottom: wp(10),
+    marginBottom: wp(12),
   }}>
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <View style={{
@@ -227,42 +230,63 @@ const MealDayCard = ({ icon, label, meal, lang }) => {
               <Text style={{ color: '#3A4050', fontSize: fp(9), marginLeft: 'auto' }}>{meal.time}</Text>
             </View>
 
-            {/* Nom + calories */}
-            <Text style={{
-              color: '#EAEEF3', fontSize: fp(12), fontWeight: '700',
-            }} numberOfLines={1}>{meal.name}</Text>
-            <Text style={{
-              color: '#FF8C42', fontSize: fp(11), fontWeight: '700', marginTop: 2,
-            }}>{meal.calories} kcal</Text>
+            {/* Miniature SVG + infos */}
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{
+                width: wp(52), height: wp(52), borderRadius: 14,
+                backgroundColor: '#252A30', justifyContent: 'center', alignItems: 'center',
+                marginRight: wp(10),
+              }}>
+                <Svg width={30} height={30} viewBox="0 0 36 36">
+                  <Ellipse cx="18" cy="25" rx="14" ry="6" fill="none" stroke="#5A6070" strokeWidth={1.5}/>
+                  <Path d="M4 25C4 21 10 17 18 17C26 17 32 21 32 25" fill="none" stroke="#5A6070" strokeWidth={1.5}/>
+                  <Path d="M14 15C14.5 12 16 10 18 10C20 10 21.5 12 22 15" fill="none" stroke="#5A6070" strokeWidth={1} opacity={0.5}/>
+                  <Path d="M16 12C16 10 17 8 18 7" fill="none" stroke="#5A6070" strokeWidth={0.8} opacity={0.4}/>
+                  <Path d="M20 13C20.5 11 21 9 21 8" fill="none" stroke="#5A6070" strokeWidth={0.8} opacity={0.4}/>
+                </Svg>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{
+                  color: '#EAEEF3', fontSize: fp(12), fontWeight: '700',
+                }} numberOfLines={1}>{meal.name}</Text>
+                <Text style={{
+                  color: '#FF8C42', fontSize: fp(11), fontWeight: '700', marginTop: 2,
+                }}>{meal.calories} kcal</Text>
 
-            {/* Macros compacts */}
-            <View style={{ flexDirection: 'row', marginTop: wp(6), gap: wp(8) }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#FF6B6B', marginRight: 3 }}/>
-                <Text style={{ color: '#5A6070', fontSize: fp(9) }}>{meal.protein}g P</Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#FFD93D', marginRight: 3 }}/>
-                <Text style={{ color: '#5A6070', fontSize: fp(9) }}>{meal.carbs}g G</Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#4DA6FF', marginRight: 3 }}/>
-                <Text style={{ color: '#5A6070', fontSize: fp(9) }}>{meal.fat}g L</Text>
+                {/* Macros compacts */}
+                <View style={{ flexDirection: 'row', marginTop: wp(6), gap: wp(8) }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#FF6B6B', marginRight: 3 }}/>
+                    <Text style={{ color: '#5A6070', fontSize: fp(9) }}>{meal.protein}g P</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#FFD93D', marginRight: 3 }}/>
+                    <Text style={{ color: '#5A6070', fontSize: fp(9) }}>{meal.carbs}g G</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#4DA6FF', marginRight: 3 }}/>
+                    <Text style={{ color: '#5A6070', fontSize: fp(9) }}>{meal.fat}g L</Text>
+                  </View>
+                </View>
               </View>
             </View>
 
-            {/* Bouton + Ajouter — discret */}
+            {/* Bouton + Ajouter — plus visible */}
             <Pressable delayPressIn={120}
               style={({ pressed }) => ({
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-                marginTop: wp(8), paddingVertical: wp(4),
-                borderRadius: 8,
+                marginTop: wp(8), paddingVertical: wp(8),
+                borderRadius: 12,
+                backgroundColor: pressed ? 'rgba(0,217,132,0.12)' : 'rgba(0,217,132,0.06)',
                 borderWidth: 1,
-                borderColor: pressed ? 'rgba(0,217,132,0.4)' : 'rgba(0,217,132,0.12)',
+                borderColor: pressed ? 'rgba(0,217,132,0.4)' : 'rgba(0,217,132,0.2)',
               })}
             >
-              <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '700', marginRight: 3 }}>+</Text>
-              <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '600' }}>
+              <Svg width={12} height={12} viewBox="0 0 12 12" style={{ marginRight: 4 }}>
+                <Line x1="6" y1="2" x2="6" y2="10" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round"/>
+                <Line x1="2" y1="6" x2="10" y2="6" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round"/>
+              </Svg>
+              <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>
                 {lang === 'fr' ? 'Ajouter' : 'Add'}
               </Text>
             </Pressable>
@@ -311,15 +335,23 @@ const MealDayCard = ({ icon, label, meal, lang }) => {
             }}>{label}</Text>
           </View>
 
-          {/* Bouton + */}
+          {/* Bouton + central avec glow émeraude */}
           <View style={{
-            width: wp(36), height: wp(36), borderRadius: wp(18),
-            borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.2)',
+            width: wp(54), height: wp(54), borderRadius: wp(27),
+            borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.25)',
             justifyContent: 'center', alignItems: 'center',
-            backgroundColor: 'rgba(0,217,132,0.04)',
+            backgroundColor: 'rgba(0,217,132,0.06)',
             marginTop: wp(8),
+            shadowColor: '#00D984',
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.25,
+            shadowRadius: 10,
+            elevation: 6,
           }}>
-            <Text style={{ color: '#00D984', fontSize: fp(20), fontWeight: '300' }}>+</Text>
+            <Svg width={24} height={24} viewBox="0 0 24 24">
+              <Line x1="12" y1="6" x2="12" y2="18" stroke="#00D984" strokeWidth={2} strokeLinecap="round"/>
+              <Line x1="6" y1="12" x2="18" y2="12" stroke="#00D984" strokeWidth={2} strokeLinecap="round"/>
+            </Svg>
           </View>
           <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: wp(5) }}>
             {lang === 'fr' ? 'Ajouter' : 'Add'}
@@ -381,7 +413,7 @@ const RepasPage = ({ onNavigate }) => {
       <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 20 : 30 }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: wp(80) }}
+          contentContainerStyle={{ paddingBottom: wp(110) }}
         >
           {/* ======== 1. HEADER — paddingTop aligné avec le dashboard ======== */}
           <View style={{
@@ -434,51 +466,62 @@ const RepasPage = ({ onNavigate }) => {
             }}>
               <LinearGradient
                 colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-                style={{ borderRadius: 15, paddingHorizontal: wp(14), paddingVertical: wp(10) }}
+                style={{ borderRadius: 15 }}
               >
-                {/* Ligne émeraude top */}
-                <View style={{
-                  position: 'absolute', top: 0, left: 20, right: 20,
-                  height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
-                }}/>
-
-                {/* Tout sur 2 lignes serrées */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                    <Text style={{ color: '#FF8C42', fontSize: fp(18), fontWeight: '800' }}>
-                      {MOCK_CALORIES.consumed.toLocaleString('fr-FR')}
-                    </Text>
-                    <Text style={{ color: '#5A6070', fontSize: fp(12), marginLeft: 4 }}>
-                      / {MOCK_CALORIES.goal.toLocaleString('fr-FR')} kcal
-                    </Text>
+                <View style={{ padding: wp(16) }}>
+                  {/* Ligne 1 : icône feu + calories + badge % */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                      <Svg width={20} height={20} viewBox="0 0 20 20" style={{ marginRight: 6, top: 2 }}>
+                        <Path d="M10 1C10 1 4 7 4 12C4 15.3 6.7 18 10 18C13.3 18 16 15.3 16 12C16 7 10 1 10 1Z"
+                              fill="#FF8C42" opacity={0.85}/>
+                        <Path d="M10 6C10 6 7 9.5 7 12C7 13.7 8.3 15 10 15C11.7 15 13 13.7 13 12C13 9.5 10 6 10 6Z"
+                              fill="#FFB74D" opacity={0.7}/>
+                      </Svg>
+                      <Text style={{ color: '#FF8C42', fontSize: fp(26), fontWeight: '900' }}>
+                        {MOCK_CALORIES.consumed.toLocaleString('fr-FR')}
+                      </Text>
+                      <Text style={{ color: '#5A6070', fontSize: fp(14), marginLeft: 4 }}>
+                        / {MOCK_CALORIES.goal.toLocaleString('fr-FR')} kcal
+                      </Text>
+                    </View>
+                    <View style={{
+                      backgroundColor: 'rgba(255,140,66,0.12)',
+                      paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8,
+                    }}>
+                      <Text style={{ color: '#FF8C42', fontSize: fp(14), fontWeight: '800' }}>{calPercent}%</Text>
+                    </View>
                   </View>
-                  <Text style={{ color: '#FF8C42', fontSize: fp(13), fontWeight: '700' }}>{calPercent}%</Text>
-                </View>
 
-                {/* Barre fine */}
-                <View style={{
-                  height: 4, backgroundColor: 'rgba(255,140,66,0.12)',
-                  borderRadius: 2, marginTop: wp(6), overflow: 'hidden',
-                }}>
+                  {/* Barre dégradé */}
                   <View style={{
-                    height: '100%', width: `${Math.min(calPercent, 100)}%`,
-                    backgroundColor: calPercent > 100 ? '#FF3B30' : '#FF8C42', borderRadius: 2,
-                  }} />
-                </View>
+                    height: 7, backgroundColor: 'rgba(255,140,66,0.08)',
+                    borderRadius: 4, marginTop: wp(10), overflow: 'hidden',
+                  }}>
+                    <LinearGradient
+                      colors={['#FF8C42', '#FFB74D']}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                      style={{ height: '100%', width: `${Math.min(calPercent, 100)}%`, borderRadius: 4 }}
+                    />
+                  </View>
 
-                {/* Macros en ligne */}
-                <View style={{ flexDirection: 'row', marginTop: wp(7), gap: wp(14) }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF6B6B', marginRight: 4 }}/>
-                    <Text style={{ color: '#6A7080', fontSize: fp(10) }}>{MOCK_CALORIES.protein}g P</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFD93D', marginRight: 4 }}/>
-                    <Text style={{ color: '#6A7080', fontSize: fp(10) }}>{MOCK_CALORIES.carbs}g G</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4DA6FF', marginRight: 4 }}/>
-                    <Text style={{ color: '#6A7080', fontSize: fp(10) }}>{MOCK_CALORIES.fat}g L</Text>
+                  {/* Macros dans mini cards */}
+                  <View style={{ flexDirection: 'row', marginTop: wp(12), gap: wp(8) }}>
+                    {[
+                      { value: `${MOCK_CALORIES.protein}g`, color: '#FF6B6B', letter: 'P' },
+                      { value: `${MOCK_CALORIES.carbs}g`, color: '#FFD93D', letter: 'G' },
+                      { value: `${MOCK_CALORIES.fat}g`, color: '#4DA6FF', letter: 'L' },
+                    ].map((m, i) => (
+                      <View key={i} style={{
+                        flex: 1, backgroundColor: 'rgba(255,255,255,0.03)',
+                        borderRadius: 10, paddingVertical: wp(8), alignItems: 'center',
+                        borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                      }}>
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: m.color, marginBottom: 4 }}/>
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '700' }}>{m.value}</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2, letterSpacing: 0.5 }}>{m.letter}</Text>
+                      </View>
+                    ))}
                   </View>
                 </View>
               </LinearGradient>
@@ -491,7 +534,7 @@ const RepasPage = ({ onNavigate }) => {
             delayPressIn={120}
             style={({ pressed }) => ({
               marginHorizontal: wp(16),
-              marginTop: wp(14),
+              marginTop: wp(20),
               transform: [{ scale: pressed ? 0.975 : 1 }],
             })}
           >
@@ -503,74 +546,84 @@ const RepasPage = ({ onNavigate }) => {
             }}>
               <LinearGradient
                 colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-                style={{
-                  borderRadius: 17,
-                  paddingVertical: wp(16),
-                  alignItems: 'center',
-                }}
+                style={{ borderRadius: 17 }}
               >
-                {/* Ligne émeraude top */}
-                <View style={{
-                  position: 'absolute', top: 0, left: 20, right: 20,
-                  height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
-                }}/>
-
-                {/* Boule métallique — plus petite */}
-                <View style={{
-                  width: wp(48), height: wp(48), borderRadius: wp(24),
-                  backgroundColor: '#3A3F46',
-                  borderWidth: 1.5, borderColor: '#5A5F65',
-                  shadowColor: '#000', shadowOffset: { width: 2, height: 3 },
-                  shadowOpacity: 0.5, shadowRadius: 5, elevation: 8,
-                  justifyContent: 'center', alignItems: 'center',
-                  marginBottom: wp(10),
-                }}>
+                <View style={{ alignItems: 'center', padding: wp(24) }}>
                   <View style={{
-                    position: 'absolute', top: wp(6), left: wp(8),
-                    width: wp(14), height: wp(8), borderRadius: wp(7),
-                    backgroundColor: 'rgba(255,255,255,0.15)',
+                    position: 'absolute', top: 0, left: 20, right: 20,
+                    height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
                   }}/>
-                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24">
-                    <Line x1="4" y1="4" x2="20" y2="20" stroke="#00D984" strokeWidth={1.8} opacity={0.7}/>
-                    <Line x1="20" y1="4" x2="4" y2="20" stroke="#00D984" strokeWidth={1.8} opacity={0.7}/>
-                    <Circle cx="12" cy="12" r="2" fill="#00D984" opacity={0.9}/>
-                  </Svg>
-                </View>
 
-                {/* XSCAN texte */}
-                <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                  <Text style={{ color: '#00D984', fontSize: fp(22), fontWeight: '900', letterSpacing: 1 }}>X</Text>
-                  <Text style={{ color: '#8892A0', fontSize: fp(22), fontWeight: '900', letterSpacing: 1 }}>SCAN</Text>
-                </View>
+                  {/* Boule + anneau orbital */}
+                  <View style={{
+                    width: wp(80), height: wp(80),
+                    justifyContent: 'center', alignItems: 'center',
+                    marginBottom: wp(16),
+                  }}>
+                    <Svg width={wp(80)} height={wp(80)} viewBox="0 0 80 80" style={{ position: 'absolute' }}>
+                      <Circle cx="40" cy="40" r="36" fill="none"
+                              stroke="rgba(0,217,132,0.15)" strokeWidth={1} strokeDasharray="4 6" />
+                      <Circle cx="76" cy="40" r="3" fill="#00D984" opacity={0.6}/>
+                    </Svg>
 
-                <Text style={{ color: '#5A6070', fontSize: fp(11), marginTop: wp(3) }}>
-                  {lang === 'fr' ? 'Scanner votre repas' : 'Scan your meal'}
-                </Text>
+                    <View style={{
+                      width: wp(58), height: wp(58), borderRadius: wp(29),
+                      backgroundColor: '#2E333A',
+                      borderWidth: 1.5, borderColor: '#4A4F55',
+                      shadowColor: '#00D984', shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.3, shadowRadius: 12, elevation: 12,
+                      justifyContent: 'center', alignItems: 'center',
+                    }}>
+                      <View style={{
+                        position: 'absolute', top: wp(8), left: wp(12),
+                        width: wp(20), height: wp(10), borderRadius: wp(10),
+                        backgroundColor: 'rgba(255,255,255,0.12)',
+                        transform: [{ rotate: '-20deg' }],
+                      }}/>
+                      <Svg width={wp(28)} height={wp(28)} viewBox="0 0 28 28">
+                        <Line x1="5" y1="5" x2="23" y2="23" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Line x1="23" y1="5" x2="5" y2="23" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Circle cx="14" cy="14" r="3" fill="#00D984" opacity={0.5}/>
+                        <Circle cx="5" cy="5" r="2" fill="none" stroke="#00D984" strokeWidth={1} opacity={0.4}/>
+                        <Circle cx="23" cy="5" r="2" fill="none" stroke="#00D984" strokeWidth={1} opacity={0.4}/>
+                        <Circle cx="5" cy="23" r="2" fill="none" stroke="#00D984" strokeWidth={1} opacity={0.4}/>
+                        <Circle cx="23" cy="23" r="2" fill="none" stroke="#00D984" strokeWidth={1} opacity={0.4}/>
+                      </Svg>
+                    </View>
+                  </View>
 
-                {/* Badge IA VISION — plus petit */}
-                <View style={{
-                  flexDirection: 'row', alignItems: 'center',
-                  backgroundColor: 'rgba(212,175,55,0.08)',
-                  paddingHorizontal: 8, paddingVertical: 2,
-                  borderRadius: 6, borderWidth: 0.5,
-                  borderColor: 'rgba(212,175,55,0.2)',
-                  marginTop: wp(6),
-                }}>
-                  <Text style={{ color: '#D4AF37', fontSize: fp(9), fontWeight: '700', letterSpacing: 1 }}>IA VISION</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: wp(6) }}>
+                    <Text style={{ color: '#00D984', fontSize: fp(30), fontWeight: '900', letterSpacing: 1 }}>X</Text>
+                    <Text style={{ color: '#EAEEF3', fontSize: fp(30), fontWeight: '900', letterSpacing: 1 }}>SCAN</Text>
+                  </View>
+
+                  <Text style={{ color: '#8892A0', fontSize: fp(13), marginBottom: wp(8) }}>
+                    {lang === 'fr' ? 'Scanner votre repas' : 'Scan your meal'}
+                  </Text>
+
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: 'rgba(212,175,55,0.10)',
+                    paddingHorizontal: 14, paddingVertical: 5,
+                    borderRadius: 10, borderWidth: 0.5, borderColor: 'rgba(212,175,55,0.25)',
+                  }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#D4AF37', marginRight: 6 }}/>
+                    <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '800', letterSpacing: 1.5 }}>IA VISION</Text>
+                  </View>
                 </View>
               </LinearGradient>
             </View>
           </Pressable>
 
           {/* Compteur scan */}
-          <Text style={{ color: '#5A6070', fontSize: fp(10), textAlign: 'center', marginTop: wp(5) }}>
+          <Text style={{ color: '#5A6070', fontSize: fp(10), textAlign: 'center', marginTop: wp(6) }}>
             {lang === 'fr' ? '1/1 scan gratuit restant' : '1/1 free scan remaining'}
           </Text>
 
           {/* ======== 4. BOUTONS SECONDAIRES (FIX 2C — compacts) ======== */}
           <View style={{
             flexDirection: 'row', justifyContent: 'center',
-            gap: wp(14), marginTop: wp(10), marginHorizontal: wp(16),
+            gap: wp(14), marginTop: wp(14), marginHorizontal: wp(16),
           }}>
             {[
               { icon: 'gallery', label: lang === 'fr' ? 'Galerie' : 'Gallery' },
@@ -580,8 +633,13 @@ const RepasPage = ({ onNavigate }) => {
                 style={({ pressed }) => ({
                   flexDirection: 'row', alignItems: 'center',
                   backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
-                  paddingHorizontal: wp(14), paddingVertical: wp(8),
-                  borderRadius: 10, borderWidth: 1, borderColor: '#3A3F46',
+                  paddingHorizontal: wp(20), paddingVertical: wp(12),
+                  borderRadius: 14, borderWidth: 1, borderColor: '#3A3F46',
+                  elevation: 4,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
                 })}
               >
                 <Svg width={15} height={15} viewBox="0 0 18 18">
@@ -604,7 +662,7 @@ const RepasPage = ({ onNavigate }) => {
           </View>
 
           {/* ======== 5. SECTION PLAT DU JOUR (FIX 3+4+7) ======== */}
-          <View style={{ marginTop: wp(22) }}>
+          <View style={{ marginTop: wp(24) }}>
             <SectionTitle title={lang === 'fr' ? 'Plat du jour' : 'Meals today'} />
 
             <ScrollView
@@ -652,7 +710,7 @@ const RepasPage = ({ onNavigate }) => {
           </View>
 
           {/* ======== 6. SECTION RECETTES (FIX 3+5+7) ======== */}
-          <View style={{ marginTop: wp(22) }}>
+          <View style={{ marginTop: wp(28) }}>
             <SectionTitle
               title={lang === 'fr' ? 'Recettes' : 'Recipes'}
               rightLabel={lang === 'fr' ? 'Voir tout ›' : 'See all ›'}
@@ -673,16 +731,27 @@ const RepasPage = ({ onNavigate }) => {
                     elevation: 6,
                   })}
                 >
-                  {/* Zone image — fond coloré + overlay */}
+                  {/* Zone image — fond dégradé + emojis ingrédients */}
                   <LinearGradient
-                    colors={[recipe.color, 'rgba(0,0,0,0.4)']}
+                    colors={[recipe.bgTop, recipe.bgBottom]}
                     style={{
                       width: '100%', height: wp(90),
-                      justifyContent: 'flex-end',
-                      padding: wp(8),
+                      justifyContent: 'center', alignItems: 'center',
                     }}
                   >
-                    {/* Petit badge calories en haut à droite */}
+                    {/* Cercles décoratifs flous */}
+                    <View style={{
+                      position: 'absolute', top: wp(10), left: wp(8),
+                      width: wp(30), height: wp(30), borderRadius: wp(15),
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                    }}/>
+                    <View style={{
+                      position: 'absolute', bottom: wp(12), right: wp(6),
+                      width: wp(22), height: wp(22), borderRadius: wp(11),
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                    }}/>
+
+                    {/* Badge calories en haut à droite */}
                     <View style={{
                       position: 'absolute', top: wp(6), right: wp(6),
                       backgroundColor: 'rgba(0,0,0,0.5)',
@@ -694,18 +763,20 @@ const RepasPage = ({ onNavigate }) => {
                       </Text>
                     </View>
 
-                    {/* Placeholder visuel au centre — assiette SVG subtile */}
-                    <View style={{ position: 'absolute', top: '30%', alignSelf: 'center', opacity: 0.15 }}>
-                      <Svg width={36} height={36} viewBox="0 0 36 36">
-                        <Ellipse cx="18" cy="25" rx="14" ry="6" fill="none" stroke="#FFF" strokeWidth={1.5}/>
-                        <Path d="M4 25C4 21 10 17 18 17C26 17 32 21 32 25" fill="none" stroke="#FFF" strokeWidth={1.5}/>
-                      </Svg>
+                    {/* 3 emojis ingrédients au centre */}
+                    <View style={{ flexDirection: 'row', gap: wp(6) }}>
+                      {recipe.ingredients.map((emoji, ei) => (
+                        <Text key={ei} style={{
+                          fontSize: fp(28),
+                          transform: [{ rotate: ei === 0 ? '-10deg' : ei === 2 ? '10deg' : '0deg' }],
+                        }}>{emoji}</Text>
+                      ))}
                     </View>
                   </LinearGradient>
 
-                  {/* Infos en bas — fond métallique */}
+                  {/* Infos en bas — fond sombre */}
                   <View style={{
-                    backgroundColor: '#1A1F28',
+                    backgroundColor: '#1E2530',
                     paddingHorizontal: wp(8), paddingVertical: wp(7),
                   }}>
                     <Text style={{
@@ -720,8 +791,14 @@ const RepasPage = ({ onNavigate }) => {
             </ScrollView>
           </View>
 
+          {/* Séparateur */}
+          <View style={{
+            height: 1, backgroundColor: 'rgba(255,255,255,0.04)',
+            marginHorizontal: wp(16), marginTop: wp(28),
+          }}/>
+
           {/* ======== 7. SECTION PLATS FRÉQUENTS (FIX 3+6+7) ======== */}
-          <View style={{ marginTop: wp(22), marginBottom: wp(16) }}>
+          <View style={{ marginTop: wp(16), marginBottom: wp(16) }}>
             <SectionTitle title={lang === 'fr' ? 'Plats fréquents' : 'Frequent meals'} />
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false}
