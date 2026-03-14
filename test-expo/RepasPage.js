@@ -441,9 +441,10 @@ const RepasPage = ({ onNavigate }) => {
 
     try {
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
+        quality: 0.7,
         base64: true,
         skipProcessing: false,
+        exif: false,
       });
 
       setCapturedPhoto(photo);
@@ -456,10 +457,11 @@ const RepasPage = ({ onNavigate }) => {
     }
   };
 
-  const runAnalysis = (photo) => {
+  const runAnalysis = async (photo) => {
     setCurrentLoadingIndex(0);
     setAnalysisProgress(0);
 
+    // Défilement des textes fun
     const textInterval = setInterval(() => {
       setCurrentLoadingIndex(prev => {
         if (prev >= loadingTexts.length - 1) return 0;
@@ -467,6 +469,7 @@ const RepasPage = ({ onNavigate }) => {
       });
     }, 800);
 
+    // Barre de progression cosmétique (monte à 80% en attendant la réponse)
     const progressInterval = setInterval(() => {
       setAnalysisProgress(prev => {
         if (prev >= 80) {
@@ -477,40 +480,72 @@ const RepasPage = ({ onNavigate }) => {
       });
     }, 100);
 
-    // TODO: Remplacer par l'appel réel à la Supabase Edge Function
-    setTimeout(() => {
+    try {
+      // Appel à la Supabase Edge Function
+      const response = await fetch(
+        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0',
+          },
+          body: JSON.stringify({
+            photos_base64: [photo.base64],
+            user_country: 'BI',
+            lang: lang || 'fr',
+          }),
+        }
+      );
+
       clearInterval(textInterval);
       clearInterval(progressInterval);
-      setAnalysisProgress(100);
 
-      const mockResult = {
-        dish_name_fr: 'Poulet grillé + Riz blanc',
-        dish_name_en: 'Grilled Chicken + White Rice',
-        confidence: 88,
-        texture: lang === 'fr' ? 'grillé, riz cuit' : 'grilled, cooked rice',
-        total_volume_ml: 450,
-        ingredients: [
-          { name: 'Riz blanc', quantity_g: 200, calories: 260, protein_g: 5.4, carbs_g: 56, fat_g: 0.6, source: 'lixum_db' },
-          { name: 'Poulet grillé', quantity_g: 150, calories: 248, protein_g: 38, carbs_g: 0, fat_g: 10, source: 'lixum_db' },
-          { name: 'Huile végétale', quantity_g: 10, calories: 88, protein_g: 0, carbs_g: 0, fat_g: 10, source: 'lixum_db' },
-          { name: 'Oignon', quantity_g: 20, calories: 8, protein_g: 0.2, carbs_g: 1.8, fat_g: 0, source: 'lixum_db' },
-        ],
-        totals: {
-          calories: 604,
-          protein_g: 43.6,
-          carbs_g: 57.8,
-          fat_g: 20.6,
-          fiber_g: 1.2,
-        },
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Edge Function error:', errorData);
+        throw new Error(errorData.error || 'Erreur serveur');
+      }
+
+      const result = await response.json();
+
+      // Transformer le résultat pour correspondre au format attendu par l'écran résultat
+      const scanResultFormatted = {
+        dish_name_fr: result.dish_name_fr || 'Plat non identifié',
+        dish_name_en: result.dish_name_en || 'Unidentified meal',
+        confidence: result.confidence || 50,
+        texture: result.texture || '',
+        total_volume_ml: result.total_volume_ml || 0,
+        ingredients: result.ingredients || [],
+        totals: result.totals || { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 },
+        filtered_count: result.filtered_count || 0,
+        removed_ingredients: result.removed_ingredients || [],
+        processing_time_ms: result.processing_time_ms || 0,
       };
 
-      setScanResult(mockResult);
+      setScanResult(scanResultFormatted);
+      setAnalysisProgress(100);
 
+      // Petit délai pour montrer 100% avant le résultat
       setTimeout(() => {
         setScanScreen('result');
       }, 500);
 
-    }, 3500);
+    } catch (error) {
+      clearInterval(textInterval);
+      clearInterval(progressInterval);
+
+      console.error('Scan error:', error);
+
+      // Afficher l'erreur et revenir à la page Repas
+      alert(
+        lang === 'fr'
+          ? 'Erreur lors de l\'analyse : ' + error.message + '\nVeuillez réessayer.'
+          : 'Analysis error: ' + error.message + '\nPlease try again.'
+      );
+      setScanScreen('none');
+      setCapturedPhoto(null);
+    }
   };
 
   const activateScan = async () => {
