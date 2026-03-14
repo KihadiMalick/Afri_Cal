@@ -95,7 +95,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
       borderTopWidth: 1,
       borderTopColor: 'rgba(74,79,85,0.5)',
       paddingTop: wp(10),
-      paddingBottom: Platform.OS === 'android' ? 20 : 30,
+      paddingBottom: Platform.OS === 'android' ? 35 : 30,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: -4 },
       shadowOpacity: 0.3,
@@ -194,7 +194,7 @@ const SectionTitle = ({ title, rightAction, rightLabel }) => (
 // COMPOSANT — MealDayCard (FIX 4 — compact)
 // ============================================
 const MealDayCard = ({ icon, label, meal, lang }) => {
-  const cardWidth = wp(175);
+  const cardWidth = wp(240);
 
   if (meal) {
     return (
@@ -413,7 +413,7 @@ const RepasPage = ({ onNavigate }) => {
       <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 20 : 30 }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: wp(110) }}
+          contentContainerStyle={{ paddingBottom: wp(120) }}
         >
           {/* ======== 1. HEADER — paddingTop aligné avec le dashboard ======== */}
           <View style={{
@@ -528,138 +528,255 @@ const RepasPage = ({ onNavigate }) => {
             </View>
           </View>
 
-          {/* ======== 3. BOUTON XSCAN (FIX 2B — réduit ~30%) ======== */}
-          <Pressable
-            onPressIn={() => {}}
-            delayPressIn={120}
-            style={({ pressed }) => ({
-              marginHorizontal: wp(16),
-              marginTop: wp(20),
-              transform: [{ scale: pressed ? 0.975 : 1 }],
-            })}
-          >
+          {/* ======== 3. CARTE XSCAN — MetalCard NON cliquable ======== */}
+          <View style={{ marginHorizontal: wp(16), marginTop: wp(20) }}>
             <View style={{
-              borderRadius: 18, padding: 1.5,
+              borderRadius: 18, padding: 1.2,
               backgroundColor: '#4A4F55', elevation: 12,
               shadowColor: '#00D984', shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.3, shadowRadius: 12,
+              shadowOpacity: 0.15, shadowRadius: 12,
             }}>
               <LinearGradient
                 colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-                style={{ borderRadius: 17 }}
+                style={{ borderRadius: 17, padding: wp(18) }}
               >
-                <View style={{ alignItems: 'center', padding: wp(24) }}>
-                  <View style={{
-                    position: 'absolute', top: 0, left: 20, right: 20,
-                    height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
-                  }}/>
+                {/* Ligne émeraude top */}
+                <View style={{
+                  position: 'absolute', top: 0, left: 20, right: 20,
+                  height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
+                }}/>
 
-                  {/* Boule + anneau orbital */}
-                  <View style={{
-                    width: wp(80), height: wp(80),
-                    justifyContent: 'center', alignItems: 'center',
-                    marginBottom: wp(16),
-                  }}>
-                    <Svg width={wp(80)} height={wp(80)} viewBox="0 0 80 80" style={{ position: 'absolute' }}>
-                      <Circle cx="40" cy="40" r="36" fill="none"
-                              stroke="rgba(0,217,132,0.15)" strokeWidth={1} strokeDasharray="4 6" />
-                      <Circle cx="76" cy="40" r="3" fill="#00D984" opacity={0.6}/>
+                {/* HEADER : XSCAN en haut à gauche */}
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: wp(20) }}>
+                  <Text style={{
+                    color: '#00D984', fontSize: fp(22), fontWeight: '900', letterSpacing: 1,
+                  }}>X</Text>
+                  <Text style={{
+                    color: '#EAEEF3', fontSize: fp(22), fontWeight: '900', letterSpacing: 1,
+                  }}>SCAN</Text>
+                </View>
+
+                {/* CENTRE : Gros bouton X cliquable */}
+                <View style={{ alignItems: 'center', marginBottom: wp(16) }}>
+                  <Pressable
+                    onPressIn={() => { /* TODO: lancer le scan Xscan */ }}
+                    delayPressIn={80}
+                    style={({ pressed }) => ({
+                      width: wp(100),
+                      height: wp(100),
+                      borderRadius: wp(50),
+                      backgroundColor: pressed ? '#252A30' : '#2E333A',
+                      borderWidth: 2,
+                      borderColor: pressed ? '#00D984' : '#4A4F55',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      shadowColor: pressed ? '#00D984' : '#000',
+                      shadowOffset: { width: 0, height: pressed ? 1 : 4 },
+                      shadowOpacity: pressed ? 0.5 : 0.4,
+                      shadowRadius: pressed ? 4 : 10,
+                      elevation: pressed ? 4 : 14,
+                      transform: [{ scale: pressed ? 0.93 : 1 }],
+                    })}
+                  >
+                    {/* Anneau orbital */}
+                    <Svg width={wp(100)} height={wp(100)} viewBox="0 0 100 100"
+                      style={{ position: 'absolute' }}>
+                      <Circle cx="50" cy="50" r="46" fill="none"
+                              stroke="rgba(0,217,132,0.12)" strokeWidth={1} strokeDasharray="5 7" />
+                      <Circle cx="96" cy="50" r="2.5" fill="#00D984" opacity={0.5}/>
                     </Svg>
 
+                    {/* Reflet réaliste */}
                     <View style={{
-                      width: wp(58), height: wp(58), borderRadius: wp(29),
-                      backgroundColor: '#2E333A',
-                      borderWidth: 1.5, borderColor: '#4A4F55',
-                      shadowColor: '#00D984', shadowOffset: { width: 0, height: 0 },
-                      shadowOpacity: 0.3, shadowRadius: 12, elevation: 12,
-                      justifyContent: 'center', alignItems: 'center',
+                      position: 'absolute', top: wp(14), left: wp(20),
+                      width: wp(28), height: wp(12), borderRadius: wp(10),
+                      backgroundColor: 'rgba(255,255,255,0.10)',
+                      transform: [{ rotate: '-25deg' }],
+                    }}/>
+
+                    {/* X SVG — GRAND */}
+                    <Svg width={wp(48)} height={wp(48)} viewBox="0 0 48 48">
+                      <Line x1="8" y1="8" x2="40" y2="40" stroke="#00D984" strokeWidth={4} strokeLinecap="round"/>
+                      <Line x1="40" y1="8" x2="8" y2="40" stroke="#00D984" strokeWidth={4} strokeLinecap="round"/>
+                      <Circle cx="24" cy="24" r="4" fill="#00D984" opacity={0.4}/>
+                      <Circle cx="24" cy="24" r="2" fill="#00D984" opacity={0.8}/>
+                      <Circle cx="8" cy="8" r="3.5" fill="none" stroke="#00D984" strokeWidth={1.5} opacity={0.35}/>
+                      <Circle cx="40" cy="8" r="3.5" fill="none" stroke="#00D984" strokeWidth={1.5} opacity={0.35}/>
+                      <Circle cx="8" cy="40" r="3.5" fill="none" stroke="#00D984" strokeWidth={1.5} opacity={0.35}/>
+                      <Circle cx="40" cy="40" r="3.5" fill="none" stroke="#00D984" strokeWidth={1.5} opacity={0.35}/>
+                    </Svg>
+                  </Pressable>
+                </View>
+
+                {/* Texte sous le bouton */}
+                <Text style={{
+                  color: '#8892A0', fontSize: fp(13), textAlign: 'center',
+                  marginBottom: wp(20),
+                }}>
+                  {lang === 'fr' ? 'Scanner votre repas' : 'Scan your meal'}
+                </Text>
+
+                {/* BAS : Charger Photo (gauche) + Scan Avancé IA (droite) */}
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  {/* Charger Photo — bas gauche */}
+                  <Pressable
+                    onPressIn={() => { /* TODO: ouvrir galerie / image picker */ }}
+                    delayPressIn={120}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: pressed ? 'rgba(0,217,132,0.12)' : 'rgba(0,217,132,0.06)',
+                      paddingHorizontal: wp(12),
+                      paddingVertical: wp(8),
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: pressed ? 'rgba(0,217,132,0.35)' : 'rgba(0,217,132,0.15)',
+                    })}
+                  >
+                    <Svg width={16} height={16} viewBox="0 0 16 16" style={{ marginRight: 6 }}>
+                      <Rect x="1" y="3" width="14" height="10" rx="2" fill="none" stroke="#00D984" strokeWidth={1.2}/>
+                      <Circle cx="8" cy="8.5" r="3" fill="none" stroke="#00D984" strokeWidth={1.2}/>
+                      <Circle cx="8" cy="8.5" r="1" fill="#00D984" opacity={0.5}/>
+                      <Rect x="5.5" y="2" width="5" height="2" rx="1" fill="none" stroke="#00D984" strokeWidth={0.8}/>
+                    </Svg>
+                    <Text style={{
+                      color: '#00D984', fontSize: fp(11), fontWeight: '700',
                     }}>
-                      <View style={{
-                        position: 'absolute', top: wp(8), left: wp(12),
-                        width: wp(20), height: wp(10), borderRadius: wp(10),
-                        backgroundColor: 'rgba(255,255,255,0.12)',
-                        transform: [{ rotate: '-20deg' }],
-                      }}/>
-                      <Svg width={wp(28)} height={wp(28)} viewBox="0 0 28 28">
-                        <Line x1="5" y1="5" x2="23" y2="23" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round"/>
-                        <Line x1="23" y1="5" x2="5" y2="23" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round"/>
-                        <Circle cx="14" cy="14" r="3" fill="#00D984" opacity={0.5}/>
-                        <Circle cx="5" cy="5" r="2" fill="none" stroke="#00D984" strokeWidth={1} opacity={0.4}/>
-                        <Circle cx="23" cy="5" r="2" fill="none" stroke="#00D984" strokeWidth={1} opacity={0.4}/>
-                        <Circle cx="5" cy="23" r="2" fill="none" stroke="#00D984" strokeWidth={1} opacity={0.4}/>
-                        <Circle cx="23" cy="23" r="2" fill="none" stroke="#00D984" strokeWidth={1} opacity={0.4}/>
-                      </Svg>
-                    </View>
-                  </View>
+                      {lang === 'fr' ? 'Charger Photo' : 'Load Photo'}
+                    </Text>
+                  </Pressable>
 
-                  <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: wp(6) }}>
-                    <Text style={{ color: '#00D984', fontSize: fp(30), fontWeight: '900', letterSpacing: 1 }}>X</Text>
-                    <Text style={{ color: '#EAEEF3', fontSize: fp(30), fontWeight: '900', letterSpacing: 1 }}>SCAN</Text>
-                  </View>
-
-                  <Text style={{ color: '#8892A0', fontSize: fp(13), marginBottom: wp(8) }}>
-                    {lang === 'fr' ? 'Scanner votre repas' : 'Scan your meal'}
-                  </Text>
-
+                  {/* Scan Avancé IA — bas droite */}
                   <View style={{
-                    flexDirection: 'row', alignItems: 'center',
-                    backgroundColor: 'rgba(212,175,55,0.10)',
-                    paddingHorizontal: 14, paddingVertical: 5,
-                    borderRadius: 10, borderWidth: 0.5, borderColor: 'rgba(212,175,55,0.25)',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(212,175,55,0.08)',
+                    paddingHorizontal: wp(10),
+                    paddingVertical: wp(6),
+                    borderRadius: 10,
+                    borderWidth: 0.5,
+                    borderColor: 'rgba(212,175,55,0.2)',
                   }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#D4AF37', marginRight: 6 }}/>
-                    <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '800', letterSpacing: 1.5 }}>IA VISION</Text>
+                    <View style={{
+                      width: 5, height: 5, borderRadius: 2.5,
+                      backgroundColor: '#D4AF37', marginRight: 5,
+                    }}/>
+                    <Text style={{
+                      color: '#D4AF37', fontSize: fp(9), fontWeight: '800', letterSpacing: 1,
+                    }}>
+                      {lang === 'fr' ? 'SCAN AVANCÉ IA' : 'AI ADVANCED SCAN'}
+                    </Text>
                   </View>
                 </View>
+
               </LinearGradient>
             </View>
-          </Pressable>
-
-          {/* Compteur scan */}
-          <Text style={{ color: '#5A6070', fontSize: fp(10), textAlign: 'center', marginTop: wp(6) }}>
-            {lang === 'fr' ? '1/1 scan gratuit restant' : '1/1 free scan remaining'}
-          </Text>
-
-          {/* ======== 4. BOUTONS SECONDAIRES (FIX 2C — compacts) ======== */}
-          <View style={{
-            flexDirection: 'row', justifyContent: 'center',
-            gap: wp(14), marginTop: wp(14), marginHorizontal: wp(16),
-          }}>
-            {[
-              { icon: 'gallery', label: lang === 'fr' ? 'Galerie' : 'Gallery' },
-              { icon: 'manual', label: lang === 'fr' ? 'Manuel' : 'Manual' },
-            ].map((btn, i) => (
-              <Pressable key={i} delayPressIn={120}
-                style={({ pressed }) => ({
-                  flexDirection: 'row', alignItems: 'center',
-                  backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
-                  paddingHorizontal: wp(20), paddingVertical: wp(12),
-                  borderRadius: 14, borderWidth: 1, borderColor: '#3A3F46',
-                  elevation: 4,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 4,
-                })}
-              >
-                <Svg width={15} height={15} viewBox="0 0 18 18">
-                  {btn.icon === 'gallery' ? (
-                    <>
-                      <Rect x="1" y="1" width="16" height="16" rx="3" fill="none" stroke="#8892A0" strokeWidth={1.3}/>
-                      <Circle cx="6" cy="6.5" r="2" fill="#8892A0" opacity={0.5}/>
-                      <Path d="M1 13L5.5 8.5L9 12L12 9L17 14" stroke="#8892A0" strokeWidth={1.2} fill="none" strokeLinecap="round"/>
-                    </>
-                  ) : (
-                    <>
-                      <Path d="M13.5 2.5L15.5 4.5L5.5 14.5L2 16L3.5 12.5L13.5 2.5Z" fill="none" stroke="#8892A0" strokeWidth={1.3} strokeLinecap="round"/>
-                      <Path d="M11.5 4.5L13.5 6.5" stroke="#8892A0" strokeWidth={1.3} strokeLinecap="round"/>
-                    </>
-                  )}
-                </Svg>
-                <Text style={{ color: '#8892A0', fontSize: fp(12), fontWeight: '600', marginLeft: 6 }}>{btn.label}</Text>
-              </Pressable>
-            ))}
           </View>
+
+          {/* ======== DOTS SCANS — sous la carte Xscan ======== */}
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: wp(12),
+            gap: wp(6),
+          }}>
+            {[0, 1, 2].map((i) => {
+              const totalScans = 1; // 1=Lucky(Free), 2=Gold, 3=Platinum
+              const isFilled = i < totalScans;
+
+              return (
+                <View key={i} style={{
+                  width: wp(16),
+                  height: wp(16),
+                  borderRadius: wp(8),
+                  backgroundColor: isFilled ? '#1A2E25' : '#1E2228',
+                  borderWidth: 1.5,
+                  borderColor: isFilled ? '#00D984' : '#3A3F46',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  shadowColor: isFilled ? '#00D984' : 'transparent',
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: isFilled ? 0.4 : 0,
+                  shadowRadius: 6,
+                  elevation: isFilled ? 4 : 0,
+                }}>
+                  {isFilled ? (
+                    <View style={{
+                      width: wp(8), height: wp(8), borderRadius: wp(4),
+                      backgroundColor: '#00D984',
+                      shadowColor: '#00D984',
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.6, shadowRadius: 3,
+                    }}>
+                      <View style={{
+                        position: 'absolute', top: 1, left: 2,
+                        width: 3, height: 2, borderRadius: 1.5,
+                        backgroundColor: 'rgba(255,255,255,0.35)',
+                      }}/>
+                    </View>
+                  ) : (
+                    <View style={{
+                      width: wp(8), height: wp(8), borderRadius: wp(4),
+                      backgroundColor: '#15191F',
+                      borderWidth: 0.5, borderColor: '#2A2F36',
+                    }}/>
+                  )}
+                </View>
+              );
+            })}
+
+            {/* Texte */}
+            <Text style={{
+              color: '#8892A0', fontSize: fp(12), fontWeight: '600', marginLeft: wp(8),
+            }}>
+              {lang === 'fr' ? '1 Scan Restant' : '1 Scan Remaining'}
+            </Text>
+
+            {/* Badge plan */}
+            <View style={{
+              backgroundColor: 'rgba(0,217,132,0.08)',
+              paddingHorizontal: 8, paddingVertical: 2,
+              borderRadius: 6, marginLeft: wp(6),
+            }}>
+              <Text style={{
+                color: '#00D984', fontSize: fp(9), fontWeight: '800', letterSpacing: 1,
+              }}>LUCKY</Text>
+            </View>
+          </View>
+
+          {/* ======== AJOUTER MANUELLEMENT — centré sous les dots ======== */}
+          <Pressable
+            onPressIn={() => { /* TODO: ouvrir recherche manuelle DB */ }}
+            delayPressIn={120}
+            style={({ pressed }) => ({
+              marginHorizontal: wp(40),
+              marginTop: wp(14),
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: wp(11),
+              borderRadius: 14,
+              backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+              borderWidth: 1,
+              borderColor: pressed ? '#5A6070' : '#3A3F46',
+            })}
+          >
+            <Svg width={16} height={16} viewBox="0 0 16 16" style={{ marginRight: 8 }}>
+              <Path d="M12 1.5L14.5 4L5 13.5L1.5 14.5L2.5 11L12 1.5Z"
+                    fill="none" stroke="#8892A0" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round"/>
+              <Path d="M10 3.5L12.5 6" stroke="#8892A0" strokeWidth={1.2} strokeLinecap="round"/>
+            </Svg>
+            <Text style={{
+              color: '#8892A0', fontSize: fp(13), fontWeight: '600',
+            }}>
+              {lang === 'fr' ? 'Ajouter Manuellement' : 'Add Manually'}
+            </Text>
+          </Pressable>
 
           {/* ======== 5. SECTION PLAT DU JOUR (FIX 3+4+7) ======== */}
           <View style={{ marginTop: wp(24) }}>
@@ -669,7 +786,7 @@ const RepasPage = ({ onNavigate }) => {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(10) }}
-              snapToInterval={wp(175) + wp(10)}
+              snapToInterval={wp(240) + wp(10)}
               decelerationRate="fast"
             >
               <MealDayCard
