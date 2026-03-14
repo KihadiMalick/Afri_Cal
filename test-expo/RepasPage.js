@@ -21,7 +21,7 @@ import {
   Animated, ScrollView, PixelRatio, Platform, TouchableOpacity,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Line, Circle, Path, Rect, Ellipse, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import Svg, { Line, Circle, Path, Rect, Ellipse, Defs, Mask, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width: W } = Dimensions.get('window');
@@ -372,6 +372,16 @@ const RepasPage = ({ onNavigate }) => {
     setActiveTab(key);
   };
 
+  // Glow diffus du bouton X au press
+  const [isXPressed, setIsXPressed] = useState(false);
+  const glowIntensity = useRef(new Animated.Value(0)).current;
+
+  // Tooltip spotlight Xscan
+  const [showScanTooltip, setShowScanTooltip] = useState(true);
+  const [xButtonY, setXButtonY] = useState(0);
+  const SCREEN_WIDTH = Dimensions.get('window').width;
+  const SCREEN_HEIGHT = Dimensions.get('window').height;
+
   // Animation glow pulsant pour Xscan
   const glowAnim = useRef(new Animated.Value(0)).current;
 
@@ -555,7 +565,13 @@ const RepasPage = ({ onNavigate }) => {
                 <View style={{ alignItems: 'center', marginBottom: wp(16) }}>
 
                   {/* Anneau extérieur 1 — le plus grand, le plus subtil (bord du creux) */}
-                  <View style={{
+                  <View
+                    onLayout={(event) => {
+                      event.target.measureInWindow((x, y, width, height) => {
+                        setXButtonY(y + height / 2);
+                      });
+                    }}
+                    style={{
                     width: wp(120), height: wp(120), borderRadius: wp(60),
                     backgroundColor: '#22272E',
                     borderWidth: 1.5,
@@ -577,41 +593,57 @@ const RepasPage = ({ onNavigate }) => {
                       justifyContent: 'center', alignItems: 'center',
                     }}>
 
-                      {/* Rainure circulaire lumineuse — ligne fine émeraude */}
+                      {/* Rainure circulaire — bordure émeraude supprimée */}
                       <View style={{
                         width: wp(96), height: wp(96), borderRadius: wp(48),
-                        borderWidth: 0.8,
-                        borderColor: 'rgba(0,217,132,0.15)',
+                        borderWidth: 0,
+                        borderColor: 'transparent',
                         backgroundColor: 'transparent',
                         justifyContent: 'center', alignItems: 'center',
                       }}>
 
-                        {/* Fond du creux — le plus sombre */}
+                        {/* Fond du creux — avec glow animé */}
                         <View style={{
                           width: wp(88), height: wp(88), borderRadius: wp(44),
-                          backgroundColor: '#14181E',
+                          backgroundColor: isXPressed ? '#162A1E' : '#14181E',
                           borderWidth: 1,
-                          borderColor: '#1E2228',
+                          borderColor: isXPressed ? 'rgba(0,217,132,0.2)' : '#1E2228',
                           justifyContent: 'center', alignItems: 'center',
+                          shadowColor: '#00D984',
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: isXPressed ? 0.6 : 0,
+                          shadowRadius: isXPressed ? 20 : 0,
+                          elevation: isXPressed ? 8 : 0,
                         }}>
 
                           {/* LE BOUTON X CLIQUABLE — logé au fond du creux */}
                           <Pressable
-                            onPressIn={() => { /* TODO: lancer le scan Xscan */ }}
-                            delayPressIn={80}
+                            onPressIn={() => {
+                              setIsXPressed(true);
+                              Animated.timing(glowIntensity, {
+                                toValue: 1,
+                                duration: 200,
+                                useNativeDriver: false,
+                              }).start();
+                            }}
+                            onPressOut={() => {
+                              setIsXPressed(false);
+                              Animated.timing(glowIntensity, {
+                                toValue: 0,
+                                duration: 400,
+                                useNativeDriver: false,
+                              }).start();
+                            }}
+                            onPress={() => { /* TODO: lancer le scan Xscan */ }}
                             style={({ pressed }) => ({
                               width: wp(72),
                               height: wp(72),
                               borderRadius: wp(36),
                               backgroundColor: pressed ? '#1E2530' : '#2A2F38',
-                              borderWidth: 2,
-                              borderColor: pressed ? '#00D984' : '#3E434A',
+                              borderWidth: 1.5,
+                              borderColor: '#2A2F36',
                               justifyContent: 'center',
                               alignItems: 'center',
-                              shadowColor: pressed ? '#00D984' : '#000',
-                              shadowOffset: { width: 0, height: pressed ? 0 : 3 },
-                              shadowOpacity: pressed ? 0.6 : 0.3,
-                              shadowRadius: pressed ? 8 : 6,
                               elevation: pressed ? 2 : 10,
                               transform: [{ scale: pressed ? 0.94 : 1 }],
                             })}
@@ -1001,6 +1033,132 @@ const RepasPage = ({ onNavigate }) => {
         }}>
           <BottomTabs activeTab={activeTab} onTabPress={handleTabPress} />
         </View>
+
+        {/* ======== TOOLTIP SPOTLIGHT XSCAN ======== */}
+        {showScanTooltip && xButtonY > 0 && (
+          <View style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            zIndex: 1000,
+          }}>
+            {/* Overlay SVG avec trou circulaire */}
+            <Svg
+              width={SCREEN_WIDTH}
+              height={SCREEN_HEIGHT}
+              style={{ position: 'absolute' }}
+            >
+              <Defs>
+                <Mask id="spotlightMask">
+                  <Rect x="0" y="0" width={SCREEN_WIDTH} height={SCREEN_HEIGHT} fill="white"/>
+                  <Circle cx={SCREEN_WIDTH / 2} cy={xButtonY} r={wp(70)} fill="black"/>
+                </Mask>
+              </Defs>
+              <Rect
+                x="0" y="0"
+                width={SCREEN_WIDTH}
+                height={SCREEN_HEIGHT}
+                fill="rgba(0,0,0,0.85)"
+                mask="url(#spotlightMask)"
+              />
+              <Circle
+                cx={SCREEN_WIDTH / 2}
+                cy={xButtonY}
+                r={wp(70)}
+                fill="none"
+                stroke="#00D984"
+                strokeWidth={2}
+                opacity={0.6}
+              />
+            </Svg>
+
+            {/* Bulle de texte tooltip */}
+            <View style={{
+              position: 'absolute',
+              top: xButtonY + wp(80),
+              left: wp(24),
+              right: wp(24),
+              backgroundColor: '#1E2530',
+              borderRadius: 16,
+              padding: wp(18),
+              borderWidth: 1,
+              borderColor: 'rgba(0,217,132,0.2)',
+              shadowColor: '#00D984',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.15,
+              shadowRadius: 10,
+              elevation: 10,
+            }}>
+              {/* Flèche vers le haut */}
+              <View style={{
+                position: 'absolute',
+                top: -8,
+                alignSelf: 'center',
+                width: 0, height: 0,
+                borderLeftWidth: 8, borderRightWidth: 8, borderBottomWidth: 8,
+                borderLeftColor: 'transparent', borderRightColor: 'transparent',
+                borderBottomColor: '#1E2530',
+              }}/>
+
+              {/* Icône + Titre */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                <Text style={{ fontSize: 20, marginRight: 8 }}>🎯</Text>
+                <Text style={{
+                  color: '#00D984', fontSize: fp(15), fontWeight: '800',
+                }}>
+                  {lang === 'fr' ? 'Technologie Xscan' : 'Xscan Technology'}
+                </Text>
+              </View>
+
+              {/* Description */}
+              <Text style={{
+                color: '#EAEEF3', fontSize: fp(13), lineHeight: fp(19),
+                marginBottom: wp(10),
+              }}>
+                {lang === 'fr'
+                  ? 'Testez la technologie de scan alimentaire la plus avancée du marché. Notre IA analyse votre plat sous plusieurs angles pour une précision inégalée.'
+                  : 'Try the most advanced food scanning technology on the market. Our AI analyzes your meal from multiple angles for unmatched precision.'}
+              </Text>
+
+              {/* Badge scan gratuit */}
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'rgba(0,217,132,0.08)',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 10,
+                alignSelf: 'flex-start',
+                marginBottom: wp(12),
+              }}>
+                <Text style={{ fontSize: 14, marginRight: 6 }}>🎁</Text>
+                <Text style={{
+                  color: '#00D984', fontSize: fp(12), fontWeight: '700',
+                }}>
+                  {lang === 'fr'
+                    ? '1 scan gratuit offert en bienvenue !'
+                    : '1 free scan as a welcome gift!'}
+                </Text>
+              </View>
+
+              {/* Bouton Compris */}
+              <Pressable
+                onPress={() => setShowScanTooltip(false)}
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? '#00B572' : '#00D984',
+                  borderRadius: 12,
+                  paddingVertical: wp(10),
+                  alignItems: 'center',
+                })}
+              >
+                <Text style={{
+                  color: '#0D1117', fontSize: fp(14), fontWeight: '800',
+                }}>
+                  {lang === 'fr' ? 'Compris !' : 'Got it!'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
       </View>
     </LinearGradient>
   );
