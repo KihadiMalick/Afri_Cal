@@ -95,7 +95,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
       borderTopWidth: 1,
       borderTopColor: 'rgba(74,79,85,0.5)',
       paddingTop: wp(10),
-      paddingBottom: Platform.OS === 'android' ? 35 : 30,
+      paddingBottom: Platform.OS === 'android' ? 45 : 34,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: -4 },
       shadowOpacity: 0.3,
@@ -338,15 +338,10 @@ const MealDayCard = ({ icon, label, meal, lang }) => {
           {/* Bouton + central avec glow émeraude */}
           <View style={{
             width: wp(54), height: wp(54), borderRadius: wp(27),
-            borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.25)',
+            borderWidth: 2, borderColor: 'rgba(0,217,132,0.25)',
             justifyContent: 'center', alignItems: 'center',
-            backgroundColor: 'rgba(0,217,132,0.06)',
+            backgroundColor: 'rgba(0,217,132,0.04)',
             marginTop: wp(8),
-            shadowColor: '#00D984',
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.25,
-            shadowRadius: 10,
-            elevation: 6,
           }}>
             <Svg width={24} height={24} viewBox="0 0 24 24">
               <Line x1="12" y1="6" x2="12" y2="18" stroke="#00D984" strokeWidth={2} strokeLinecap="round"/>
@@ -556,56 +551,98 @@ const RepasPage = ({ onNavigate }) => {
                   }}>SCAN</Text>
                 </View>
 
-                {/* CENTRE : Gros bouton X cliquable */}
+                {/* CENTRE : Bouton X avec profondeur */}
                 <View style={{ alignItems: 'center', marginBottom: wp(16) }}>
-                  <Pressable
-                    onPressIn={() => { /* TODO: lancer le scan Xscan */ }}
-                    delayPressIn={80}
-                    style={({ pressed }) => ({
-                      width: wp(100),
-                      height: wp(100),
-                      borderRadius: wp(50),
-                      backgroundColor: pressed ? '#252A30' : '#2E333A',
-                      borderWidth: 2,
-                      borderColor: pressed ? '#00D984' : '#4A4F55',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      shadowColor: pressed ? '#00D984' : '#000',
-                      shadowOffset: { width: 0, height: pressed ? 1 : 4 },
-                      shadowOpacity: pressed ? 0.5 : 0.4,
-                      shadowRadius: pressed ? 4 : 10,
-                      elevation: pressed ? 4 : 14,
-                      transform: [{ scale: pressed ? 0.93 : 1 }],
-                    })}
-                  >
-                    {/* Anneau orbital */}
-                    <Svg width={wp(100)} height={wp(100)} viewBox="0 0 100 100"
-                      style={{ position: 'absolute' }}>
-                      <Circle cx="50" cy="50" r="46" fill="none"
-                              stroke="rgba(0,217,132,0.12)" strokeWidth={1} strokeDasharray="5 7" />
-                      <Circle cx="96" cy="50" r="2.5" fill="#00D984" opacity={0.5}/>
-                    </Svg>
 
-                    {/* Reflet réaliste */}
+                  {/* Anneau extérieur 1 — le plus grand, le plus subtil (bord du creux) */}
+                  <View style={{
+                    width: wp(120), height: wp(120), borderRadius: wp(60),
+                    backgroundColor: '#22272E',
+                    borderWidth: 1.5,
+                    borderColor: '#3A3F46',
+                    justifyContent: 'center', alignItems: 'center',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: 0.5,
+                    shadowRadius: 6,
+                    elevation: 2,
+                  }}>
+
+                    {/* Anneau intermédiaire — crée la marche du creux */}
                     <View style={{
-                      position: 'absolute', top: wp(14), left: wp(20),
-                      width: wp(28), height: wp(12), borderRadius: wp(10),
-                      backgroundColor: 'rgba(255,255,255,0.10)',
-                      transform: [{ rotate: '-25deg' }],
-                    }}/>
+                      width: wp(106), height: wp(106), borderRadius: wp(53),
+                      backgroundColor: '#1A1F26',
+                      borderWidth: 1,
+                      borderColor: '#2E333A',
+                      justifyContent: 'center', alignItems: 'center',
+                    }}>
 
-                    {/* X SVG — GRAND */}
-                    <Svg width={wp(48)} height={wp(48)} viewBox="0 0 48 48">
-                      <Line x1="8" y1="8" x2="40" y2="40" stroke="#00D984" strokeWidth={4} strokeLinecap="round"/>
-                      <Line x1="40" y1="8" x2="8" y2="40" stroke="#00D984" strokeWidth={4} strokeLinecap="round"/>
-                      <Circle cx="24" cy="24" r="4" fill="#00D984" opacity={0.4}/>
-                      <Circle cx="24" cy="24" r="2" fill="#00D984" opacity={0.8}/>
-                      <Circle cx="8" cy="8" r="3.5" fill="none" stroke="#00D984" strokeWidth={1.5} opacity={0.35}/>
-                      <Circle cx="40" cy="8" r="3.5" fill="none" stroke="#00D984" strokeWidth={1.5} opacity={0.35}/>
-                      <Circle cx="8" cy="40" r="3.5" fill="none" stroke="#00D984" strokeWidth={1.5} opacity={0.35}/>
-                      <Circle cx="40" cy="40" r="3.5" fill="none" stroke="#00D984" strokeWidth={1.5} opacity={0.35}/>
-                    </Svg>
-                  </Pressable>
+                      {/* Rainure circulaire lumineuse — ligne fine émeraude */}
+                      <View style={{
+                        width: wp(96), height: wp(96), borderRadius: wp(48),
+                        borderWidth: 0.8,
+                        borderColor: 'rgba(0,217,132,0.15)',
+                        backgroundColor: 'transparent',
+                        justifyContent: 'center', alignItems: 'center',
+                      }}>
+
+                        {/* Fond du creux — le plus sombre */}
+                        <View style={{
+                          width: wp(88), height: wp(88), borderRadius: wp(44),
+                          backgroundColor: '#14181E',
+                          borderWidth: 1,
+                          borderColor: '#1E2228',
+                          justifyContent: 'center', alignItems: 'center',
+                        }}>
+
+                          {/* LE BOUTON X CLIQUABLE — logé au fond du creux */}
+                          <Pressable
+                            onPressIn={() => { /* TODO: lancer le scan Xscan */ }}
+                            delayPressIn={80}
+                            style={({ pressed }) => ({
+                              width: wp(72),
+                              height: wp(72),
+                              borderRadius: wp(36),
+                              backgroundColor: pressed ? '#1E2530' : '#2A2F38',
+                              borderWidth: 2,
+                              borderColor: pressed ? '#00D984' : '#3E434A',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              shadowColor: pressed ? '#00D984' : '#000',
+                              shadowOffset: { width: 0, height: pressed ? 0 : 3 },
+                              shadowOpacity: pressed ? 0.6 : 0.3,
+                              shadowRadius: pressed ? 8 : 6,
+                              elevation: pressed ? 2 : 10,
+                              transform: [{ scale: pressed ? 0.94 : 1 }],
+                            })}
+                          >
+                            {/* X SVG — GRAND et visible */}
+                            <Svg width={wp(40)} height={wp(40)} viewBox="0 0 40 40">
+                              {/* Lignes du X */}
+                              <Line x1="7" y1="7" x2="33" y2="33"
+                                    stroke="#00D984" strokeWidth={3.5} strokeLinecap="round"/>
+                              <Line x1="33" y1="7" x2="7" y2="33"
+                                    stroke="#00D984" strokeWidth={3.5} strokeLinecap="round"/>
+                              {/* Point central */}
+                              <Circle cx="20" cy="20" r="3" fill="#00D984" opacity={0.3}/>
+                              <Circle cx="20" cy="20" r="1.5" fill="#00D984" opacity={0.7}/>
+                              {/* 4 petits cercles aux extrémités (trous) */}
+                              <Circle cx="7" cy="7" r="3" fill="none"
+                                      stroke="#00D984" strokeWidth={1.2} opacity={0.3}/>
+                              <Circle cx="33" cy="7" r="3" fill="none"
+                                      stroke="#00D984" strokeWidth={1.2} opacity={0.3}/>
+                              <Circle cx="7" cy="33" r="3" fill="none"
+                                      stroke="#00D984" strokeWidth={1.2} opacity={0.3}/>
+                              <Circle cx="33" cy="33" r="3" fill="none"
+                                      stroke="#00D984" strokeWidth={1.2} opacity={0.3}/>
+                            </Svg>
+                          </Pressable>
+
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+
                 </View>
 
                 {/* Texte sous le bouton */}
