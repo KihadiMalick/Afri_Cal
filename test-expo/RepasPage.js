@@ -379,6 +379,47 @@ const RepasPage = ({ onNavigate }) => {
   // Tooltip spotlight Xscan
   const [showScanTooltip, setShowScanTooltip] = useState(true);
   const [xButtonY, setXButtonY] = useState(0);
+
+  // Animation 3 anneaux lumineux au press du bouton X
+  const ring1Anim = useRef(new Animated.Value(0)).current;
+  const ring2Anim = useRef(new Animated.Value(0)).current;
+  const ring3Anim = useRef(new Animated.Value(0)).current;
+  const [showRings, setShowRings] = useState(false);
+
+  const activateScan = () => {
+    setShowRings(true);
+
+    // Reset
+    ring1Anim.setValue(0);
+    ring2Anim.setValue(0);
+    ring3Anim.setValue(0);
+
+    // Animation séquentielle : 3 anneaux en ~800ms total
+    Animated.sequence([
+      Animated.timing(ring1Anim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(ring2Anim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(ring3Anim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowRings(false);
+      ring1Anim.setValue(0);
+      ring2Anim.setValue(0);
+      ring3Anim.setValue(0);
+      // TODO: naviguer vers l'écran du scan
+      // navigation.navigate('XscanScreen') ou setActiveScreen('xscan')
+    });
+  };
   const SCREEN_WIDTH = Dimensions.get('window').width;
   const SCREEN_HEIGHT = Dimensions.get('window').height;
 
@@ -564,11 +605,56 @@ const RepasPage = ({ onNavigate }) => {
                 {/* CENTRE : Bouton X avec profondeur */}
                 <View style={{ alignItems: 'center', marginBottom: wp(16) }}>
 
+                  {/* Conteneur relatif pour les anneaux animés */}
+                  <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+
+                    {/* Les 3 anneaux animés */}
+                    {showRings && (
+                      <>
+                        <Animated.View style={{
+                          position: 'absolute',
+                          width: wp(140), height: wp(140), borderRadius: wp(70),
+                          borderWidth: 2.5, borderColor: '#00D984',
+                          opacity: ring1Anim.interpolate({
+                            inputRange: [0, 0.3, 1],
+                            outputRange: [0, 0.8, 0.2],
+                          }),
+                          transform: [{ scale: ring1Anim.interpolate({
+                            inputRange: [0, 1], outputRange: [0.7, 1],
+                          })}],
+                        }}/>
+                        <Animated.View style={{
+                          position: 'absolute',
+                          width: wp(170), height: wp(170), borderRadius: wp(85),
+                          borderWidth: 2, borderColor: '#00D984',
+                          opacity: ring2Anim.interpolate({
+                            inputRange: [0, 0.3, 1],
+                            outputRange: [0, 0.7, 0.15],
+                          }),
+                          transform: [{ scale: ring2Anim.interpolate({
+                            inputRange: [0, 1], outputRange: [0.75, 1],
+                          })}],
+                        }}/>
+                        <Animated.View style={{
+                          position: 'absolute',
+                          width: wp(200), height: wp(200), borderRadius: wp(100),
+                          borderWidth: 1.5, borderColor: '#00D984',
+                          opacity: ring3Anim.interpolate({
+                            inputRange: [0, 0.3, 1],
+                            outputRange: [0, 0.5, 0.1],
+                          }),
+                          transform: [{ scale: ring3Anim.interpolate({
+                            inputRange: [0, 1], outputRange: [0.8, 1],
+                          })}],
+                        }}/>
+                      </>
+                    )}
+
                   {/* Anneau extérieur 1 — le plus grand, le plus subtil (bord du creux) */}
                   <View
                     onLayout={(event) => {
                       event.target.measureInWindow((x, y, width, height) => {
-                        setXButtonY(y + height / 2);
+                        setXButtonY(y + height / 2 + wp(10));
                       });
                     }}
                     style={{
@@ -634,7 +720,7 @@ const RepasPage = ({ onNavigate }) => {
                                 useNativeDriver: false,
                               }).start();
                             }}
-                            onPress={() => { /* TODO: lancer le scan Xscan */ }}
+                            onPress={activateScan}
                             style={({ pressed }) => ({
                               width: wp(72),
                               height: wp(72),
@@ -674,6 +760,8 @@ const RepasPage = ({ onNavigate }) => {
                       </View>
                     </View>
                   </View>
+
+                  </View>{/* Fin conteneur relatif anneaux */}
 
                 </View>
 
@@ -1101,7 +1189,15 @@ const RepasPage = ({ onNavigate }) => {
 
               {/* Icône + Titre */}
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-                <Text style={{ fontSize: 20, marginRight: 8 }}>🎯</Text>
+                <View style={{ marginRight: 8 }}>
+                  <Svg width={22} height={22} viewBox="0 0 22 22">
+                    <Circle cx="11" cy="11" r="10" fill="none" stroke="#00D984" strokeWidth={1.3} opacity={0.4}/>
+                    <Circle cx="11" cy="11" r="6.5" fill="none" stroke="#00D984" strokeWidth={1.3} opacity={0.6}/>
+                    <Circle cx="11" cy="11" r="3" fill="none" stroke="#00D984" strokeWidth={1.3} opacity={0.8}/>
+                    <Circle cx="11" cy="11" r="1.2" fill="#00D984"/>
+                    <Line x1="11" y1="11" x2="11" y2="1" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.7}/>
+                  </Svg>
+                </View>
                 <Text style={{
                   color: '#00D984', fontSize: fp(15), fontWeight: '800',
                 }}>
@@ -1115,8 +1211,8 @@ const RepasPage = ({ onNavigate }) => {
                 marginBottom: wp(10),
               }}>
                 {lang === 'fr'
-                  ? 'Testez la technologie de scan alimentaire la plus avancée du marché. Notre IA analyse votre plat sous plusieurs angles pour une précision inégalée.'
-                  : 'Try the most advanced food scanning technology on the market. Our AI analyzes your meal from multiple angles for unmatched precision.'}
+                  ? 'Testez la technologie de scan alimentaire la plus avancée du marché, de manière Fun.'
+                  : 'Try the most advanced food scanning technology on the market, in a Fun way.'}
               </Text>
 
               {/* Badge scan gratuit */}
