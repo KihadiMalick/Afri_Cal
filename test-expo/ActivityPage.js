@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, {
-  Line, Circle, Path, Rect, Ellipse, Defs,
+  G, Line, Circle, Path, Rect, Ellipse, Defs,
   LinearGradient as SvgLinearGradient, Stop,
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
@@ -79,6 +79,128 @@ const RUN_FLAGS = [
 const TIME_STEPS = [5, 10, 15, 20, 30, 45, 60];
 
 const OTHER_SPORTS = ['velo', 'natation', 'musculation', 'yoga', 'corde', 'football', 'basketball', 'danse'];
+
+// ── Walk Immersive Trail ─────────────────────────────────────────────────────
+const WALK_DISTANCE_MAP = [
+  { pos: 0, meters: 0 },
+  { pos: 0.02, meters: 0 },
+  { pos: 0.22, meters: 500 },
+  { pos: 0.42, meters: 2000 },
+  { pos: 0.65, meters: 5000 },
+  { pos: 0.98, meters: 10000 },
+  { pos: 1.0, meters: 10000 },
+];
+
+const WALK_LANDMARKS = [
+  { type: 'house', position: 0.02, label: 'Départ' },
+  { type: 'tree', position: 0.22, label: '500m' },
+  { type: 'bench', position: 0.42, label: '2 km' },
+  { type: 'birds', position: 0.65, label: '5 km' },
+  { type: 'pond', position: 0.98, label: '10 km' },
+];
+
+const walkSliderToDistance = (value) => {
+  for (let i = 1; i < WALK_DISTANCE_MAP.length; i++) {
+    if (value <= WALK_DISTANCE_MAP[i].pos) {
+      const prev = WALK_DISTANCE_MAP[i - 1];
+      const curr = WALK_DISTANCE_MAP[i];
+      const t = (value - prev.pos) / (curr.pos - prev.pos);
+      return prev.meters + (curr.meters - prev.meters) * t;
+    }
+  }
+  return 10000;
+};
+
+const generateFootprints = (progress, canvasWidth, canvasHeight) => {
+  const prints = [];
+  const totalPrints = 20;
+  const midY = canvasHeight * 0.5;
+  const amplitude = canvasHeight * 0.15;
+
+  for (let i = 0; i < totalPrints; i++) {
+    const t = i / totalPrints;
+    if (t > progress) break;
+
+    const x = t * canvasWidth * 0.85 + canvasWidth * 0.08;
+    const waveOffset = Math.sin(t * Math.PI * 3) * amplitude;
+    const isRight = i % 2 === 0;
+    const footOffset = isRight ? -5 : 5;
+    const y = midY + waveOffset + footOffset;
+
+    const distanceFromCurrent = progress - t;
+    const fadeStart = 0.3;
+    const opacity = distanceFromCurrent > fadeStart
+      ? Math.max(0, 1 - ((distanceFromCurrent - fadeStart) / fadeStart))
+      : 0.8;
+
+    prints.push({ x, y, isRight, opacity });
+  }
+  return prints;
+};
+
+// ── SVG Decor Components ─────────────────────────────────────────────────────
+const FootprintSVG = ({ x, y, isRight, opacity, color = '#00D984' }) => (
+  <G opacity={opacity} transform={`translate(${x}, ${y}) rotate(${isRight ? 15 : -15})`}>
+    <Ellipse cx={0} cy={0} rx={4} ry={6} fill={color} opacity={0.7} />
+    <Circle cx={isRight ? 2 : -2} cy={-6} r={1.5} fill={color} opacity={0.6} />
+    <Circle cx={0} cy={-7} r={1.5} fill={color} opacity={0.6} />
+    <Circle cx={isRight ? -2 : 2} cy={-6} r={1.5} fill={color} opacity={0.6} />
+  </G>
+);
+
+const HouseIcon = ({ x, y }) => (
+  <G transform={`translate(${x}, ${y})`}>
+    <Path d="M0 -8 L8 0 L-8 0 Z" fill="#8892A0" opacity={0.6} />
+    <Rect x={-5} y={0} width={10} height={8} fill="#8892A0" opacity={0.4} />
+    <Rect x={-2} y={3} width={4} height={5} fill="#5A6070" opacity={0.5} />
+    <Rect x={3} y={1} width={3} height={3} fill="#D4AF37" opacity={0.3} />
+  </G>
+);
+
+const TreeIcon = ({ x, y, passed }) => (
+  <G transform={`translate(${x}, ${y})`}>
+    <Rect x={-1.5} y={0} width={3} height={8} fill="#8B6914" opacity={0.6} />
+    <Circle cx={0} cy={-4} r={7} fill="#00D984" opacity={passed ? 0.4 : 0.25} />
+    <Circle cx={-4} cy={-2} r={5} fill="#00D984" opacity={passed ? 0.35 : 0.2} />
+    <Circle cx={4} cy={-2} r={5} fill="#00D984" opacity={passed ? 0.35 : 0.2} />
+    {passed && (
+      <Ellipse cx={6} cy={4} rx={2} ry={1} fill="#00D984" opacity={0.3}
+        transform="rotate(45, 6, 4)" />
+    )}
+  </G>
+);
+
+const BenchIcon = ({ x, y }) => (
+  <G transform={`translate(${x}, ${y})`}>
+    <Rect x={-8} y={-1} width={16} height={2} rx={1} fill="#8892A0" opacity={0.5} />
+    <Rect x={-7} y={-5} width={14} height={2} rx={1} fill="#8892A0" opacity={0.4} />
+    <Line x1={-6} y1={1} x2={-6} y2={5} stroke="#8892A0" strokeWidth={1.5} opacity={0.4} />
+    <Line x1={6} y1={1} x2={6} y2={5} stroke="#8892A0" strokeWidth={1.5} opacity={0.4} />
+    <Line x1={-6} y1={-5} x2={-6} y2={-1} stroke="#8892A0" strokeWidth={1.5} opacity={0.4} />
+    <Line x1={6} y1={-5} x2={6} y2={-1} stroke="#8892A0" strokeWidth={1.5} opacity={0.4} />
+  </G>
+);
+
+const BirdsIcon = ({ x, y, passed }) => (
+  <G transform={`translate(${x}, ${y - (passed ? 5 : 0)})`}>
+    <Path d={`M${-4} ${0} Q${-2} ${-3} ${0} ${0}`} fill="none" stroke="#8892A0" strokeWidth={1.2} opacity={passed ? 0.3 : 0.5} />
+    <Path d={`M${3} ${-4} Q${5} ${-7} ${7} ${-4}`} fill="none" stroke="#8892A0" strokeWidth={1.2} opacity={passed ? 0.25 : 0.45} />
+    <Path d={`M${-7} ${-3} Q${-5} ${-6} ${-3} ${-3}`} fill="none" stroke="#8892A0" strokeWidth={1} opacity={passed ? 0.2 : 0.4} />
+  </G>
+);
+
+const PondIcon = ({ x, y }) => (
+  <G transform={`translate(${x}, ${y})`}>
+    <Ellipse cx={0} cy={4} rx={14} ry={8} fill="#4DA6FF" opacity={0.15} />
+    <Ellipse cx={0} cy={4} rx={12} ry={6} fill="#4DA6FF" opacity={0.1} />
+    <Path d="M-8 3 Q-4 1 0 3 Q4 5 8 3" fill="none" stroke="#4DA6FF" strokeWidth={0.8} opacity={0.3} />
+    <Path d="M-6 6 Q-2 4 2 6 Q6 8 10 6" fill="none" stroke="#4DA6FF" strokeWidth={0.6} opacity={0.2} />
+    <Ellipse cx={0} cy={1} rx={4} ry={2.5} fill="#FFB800" opacity={0.6} />
+    <Circle cx={-3} cy={-1} r={2.5} fill="#FFB800" opacity={0.6} />
+    <Path d="M-5.5 -1 L-7 -0.5 L-5.5 0" fill="#FF8C42" opacity={0.7} />
+    <Circle cx={-3.5} cy={-1.5} r={0.6} fill="#0D1117" />
+  </G>
+);
 
 // ── LockIcon ─────────────────────────────────────────────────────────────────
 const LockIcon = ({ size = 20 }) => (
@@ -718,9 +840,13 @@ const ActivityPage = ({ onNavigate }) => {
   const [walkSaved, setWalkSaved] = useState(false);
   const [runSaved, setRunSaved] = useState(false);
 
-  // Walk slider
+  // Walk immersive trail
   const [walkMode, setWalkMode] = useState('distance');
   const [walkValue, setWalkValue] = useState(0.2);
+  const [walkRoundTrip, setWalkRoundTrip] = useState(false);
+  const [walkBarWidth, setWalkBarWidth] = useState(0);
+  const [walkBarX, setWalkBarX] = useState(0);
+  const walkBarRef = useRef(null);
 
   // Run slider
   const [runMode, setRunMode] = useState('distance');
@@ -818,24 +944,35 @@ const ActivityPage = ({ onNavigate }) => {
   const RUN_MAX_DIST = 21000;  // 21 km in metres
   const MAX_TIME = 60;         // minutes
 
-  // FIX 3: Walk — use non-linear distance interpolation
-  const walkDistanceM = walkMode === 'distance' ? sliderToDistance(walkValue, WALK_FLAGS) : null;
+  // Walk — immersive trail distance interpolation
+  const walkDistanceM = walkMode === 'distance' ? walkSliderToDistance(walkValue) : null;
   const walkDistanceKm = walkDistanceM !== null ? walkDistanceM / 1000 : null;
   const walkTimeMins = walkMode === 'temps' ? walkValue * MAX_TIME : null;
 
-  const walkCalories = walkMode === 'distance'
+  const walkCaloriesBase = walkMode === 'distance'
     ? Math.round((walkDistanceKm / ACTIVITY_DATA.marche.km_per_hour) * ACTIVITY_DATA.marche.kcal_per_hour)
     : Math.round((walkTimeMins / 60) * ACTIVITY_DATA.marche.kcal_per_hour);
 
-  const walkDuration = walkMode === 'distance'
+  const walkDurationBase = walkMode === 'distance'
     ? Math.round((walkDistanceKm / ACTIVITY_DATA.marche.km_per_hour) * 60)
     : Math.round(walkTimeMins);
 
-  const walkDistDisplay = walkMode === 'distance'
+  const walkDistDisplayBase = walkMode === 'distance'
     ? walkDistanceKm
     : (walkTimeMins / 60) * ACTIVITY_DATA.marche.km_per_hour;
 
-  const walkWater = Math.round((walkDuration / 60) * ACTIVITY_DATA.marche.water_per_hour_ml);
+  const walkWaterBase = Math.round((walkDurationBase / 60) * ACTIVITY_DATA.marche.water_per_hour_ml);
+
+  // Round-trip multiplier
+  const walkMultiplier = walkRoundTrip ? 2 : 1;
+  const walkCalories = walkCaloriesBase * walkMultiplier;
+  const walkDuration = walkDurationBase * walkMultiplier;
+  const walkDistDisplay = walkDistDisplayBase * walkMultiplier;
+  const walkWater = walkWaterBase * walkMultiplier;
+
+  // SVG canvas dimensions
+  const WALK_CANVAS_H = wp(100);
+  const walkFootprints = generateFootprints(walkValue, walkBarWidth, WALK_CANVAS_H * 0.4);
 
   // FIX 3: Run — use non-linear distance interpolation
   const runDistanceM = runMode === 'distance' ? sliderToDistance(runValue, RUN_FLAGS) : null;
@@ -863,14 +1000,19 @@ const ActivityPage = ({ onNavigate }) => {
 
   // ── Handlers ───────────────────────────────────────────────────────────
   const handleAddWalk = async () => {
-    const dur = walkDuration;
-    const cal = walkCalories;
-    const water = walkWater;
-    const ok = await saveActivity('marche', dur, cal, 'modere', water);
+    if (walkDistDisplay === 0) return;
+    const ok = await saveActivity('marche', walkDuration, walkCalories, 'modere', walkWater);
     if (ok) {
       setWalkSaved(true);
       setTimeout(() => setWalkSaved(false), 1500);
     }
+  };
+
+  const handleWalkSliderTouch = (evt) => {
+    if (walkBarWidth <= 0) return;
+    const touchX = evt.nativeEvent.pageX - walkBarX;
+    const clamped = Math.max(0, Math.min(1, touchX / walkBarWidth));
+    setWalkValue(clamped);
   };
 
   const handleAddRun = async () => {
@@ -983,14 +1125,14 @@ const ActivityPage = ({ onNavigate }) => {
             </View>
           </MetalCard>
 
-          {/* WALK HERO */}
+          {/* WALK HERO — Immersive Trail */}
           <SectionTitle title="Marche" />
           <MetalCard>
             <View>
               {/* Card header */}
               <View style={{
                 flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-                marginBottom: wp(4),
+                marginBottom: wp(8),
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <WalkShoeIcon size={wp(18)} />
@@ -1004,59 +1146,222 @@ const ActivityPage = ({ onNavigate }) => {
                 <ModePill mode={walkMode} onToggle={setWalkMode} accentColor="#00D984" />
               </View>
 
-              {/* Slider */}
-              <ActivitySlider
-                type="marche"
-                mode={walkMode}
-                value={walkValue}
-                onChange={setWalkValue}
-                shoeAnim={shoeAnim}
-                flags={WALK_FLAGS}
-                maxDistance={WALK_MAX_DIST}
-                maxTime={MAX_TIME}
-                accentColor="#00D984"
-              />
+              {/* Immersive Trail Canvas */}
+              <View
+                ref={walkBarRef}
+                onLayout={(e) => {
+                  const w = e.nativeEvent.layout.width;
+                  setWalkBarWidth(w);
+                  walkBarRef.current?.measure?.((fx, fy, fw, fh, px) => {
+                    if (px !== undefined) setWalkBarX(px);
+                  });
+                }}
+                style={{
+                  height: WALK_CANVAS_H,
+                  backgroundColor: 'rgba(0,217,132,0.04)',
+                  borderRadius: wp(14),
+                  overflow: 'hidden',
+                  borderWidth: 1,
+                  borderColor: 'rgba(0,217,132,0.1)',
+                }}
+              >
+                {/* SVG Canvas — decor + footprints */}
+                <Svg width="100%" height={WALK_CANVAS_H * 0.7} style={{ position: 'absolute', top: 0 }}>
+                  {/* Grass texture lines */}
+                  {walkBarWidth > 0 && Array.from({ length: 40 }).map((_, i) => {
+                    const x = (i / 40) * walkBarWidth;
+                    return (
+                      <Line key={`grass-${i}`}
+                        x1={x} y1={WALK_CANVAS_H * 0.68}
+                        x2={x + 2} y2={WALK_CANVAS_H * 0.63}
+                        stroke="#00D984" strokeWidth={0.8} opacity={0.08} />
+                    );
+                  })}
 
-              {/* Value display — FIX 4: formatted durations */}
+                  {/* Decor elements — top zone (30%) */}
+                  {walkBarWidth > 0 && WALK_LANDMARKS.map((lm) => {
+                    const x = lm.position * walkBarWidth;
+                    const decorY = WALK_CANVAS_H * 0.18;
+                    const passed = walkValue >= lm.position;
+                    switch (lm.type) {
+                      case 'house': return <HouseIcon key={lm.type} x={x} y={decorY} />;
+                      case 'tree': return <TreeIcon key={lm.type} x={x} y={decorY} passed={passed} />;
+                      case 'bench': return <BenchIcon key={lm.type} x={x} y={decorY + 4} />;
+                      case 'birds': return <BirdsIcon key={lm.type} x={x} y={decorY - 6} passed={passed} />;
+                      case 'pond': return <PondIcon key={lm.type} x={x} y={decorY + 2} />;
+                      default: return null;
+                    }
+                  })}
+
+                  {/* Footprint trail — middle zone (40%) */}
+                  {walkFootprints.map((fp_, i) => (
+                    <FootprintSVG
+                      key={`fp-${i}`}
+                      x={fp_.x}
+                      y={WALK_CANVAS_H * 0.3 + fp_.y}
+                      isRight={fp_.isRight}
+                      opacity={fp_.opacity}
+                    />
+                  ))}
+
+                  {/* Walker position indicator */}
+                  {walkBarWidth > 0 && walkValue > 0 && (
+                    <G transform={`translate(${walkValue * walkBarWidth * 0.85 + walkBarWidth * 0.08}, ${WALK_CANVAS_H * 0.48})`}>
+                      <Circle cx={0} cy={0} r={5} fill="#00D984" opacity={0.6} />
+                      <Circle cx={0} cy={0} r={3} fill="#00D984" opacity={0.9} />
+                    </G>
+                  )}
+                </Svg>
+
+                {/* Touch area + progress bar — bottom zone */}
+                <View
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: wp(50),
+                    justifyContent: 'center',
+                  }}
+                  onStartShouldSetResponder={() => true}
+                  onMoveShouldSetResponder={() => true}
+                  onResponderGrant={handleWalkSliderTouch}
+                  onResponderMove={handleWalkSliderTouch}
+                  onResponderRelease={() => {}}
+                >
+                  {/* Visible progress bar */}
+                  <View style={{
+                    height: wp(8),
+                    backgroundColor: 'rgba(0,217,132,0.08)',
+                    borderRadius: wp(4),
+                    overflow: 'hidden',
+                    marginHorizontal: wp(4),
+                  }}>
+                    <LinearGradient
+                      colors={['#00D984', '#00B572']}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                      style={{
+                        height: '100%',
+                        width: `${walkValue * 100}%`,
+                        borderRadius: wp(4),
+                      }}
+                    />
+                  </View>
+                </View>
+
+                {/* Landmark labels below bar */}
+                {walkBarWidth > 0 && (
+                  <View style={{ position: 'absolute', bottom: wp(2), left: 0, right: 0 }}>
+                    {WALK_LANDMARKS.map((lm) => {
+                      const isActive = (() => {
+                        let closest = WALK_LANDMARKS[0];
+                        let minD = Math.abs(walkValue - closest.position);
+                        WALK_LANDMARKS.forEach((l) => {
+                          const d = Math.abs(walkValue - l.position);
+                          if (d < minD) { minD = d; closest = l; }
+                        });
+                        return closest.type === lm.type;
+                      })();
+                      return (
+                        <View key={lm.type} style={{
+                          position: 'absolute',
+                          left: lm.position * walkBarWidth - wp(16),
+                          bottom: 0,
+                          width: wp(32),
+                          alignItems: 'center',
+                        }}>
+                          <Text style={{
+                            fontSize: fp(7),
+                            color: isActive ? '#00D984' : '#555E6C',
+                            fontWeight: isActive ? '700' : '500',
+                          }}>
+                            {lm.label}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
+
+              {/* Value display */}
               <View style={{
                 flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',
                 marginTop: wp(10), paddingHorizontal: wp(4),
               }}>
                 <View>
                   <Text style={{ color: '#00D984', fontSize: fp(22), fontWeight: '900' }}>
-                    {formatDistance(walkDistDisplay * 1000)}
+                    {walkRoundTrip
+                      ? `${formatDistance(walkDistDisplayBase * 1000)} \u00D72 = ${formatDistance(walkDistDisplay * 1000)}`
+                      : formatDistance(walkDistDisplay * 1000)
+                    }
                   </Text>
-                  {walkMode === 'temps' && (
-                    <Text style={{ color: '#555E6C', fontSize: fp(9), marginTop: wp(2) }}>
-                      ~{formatDistance(walkDistDisplay * 1000)} à vitesse normale
-                    </Text>
-                  )}
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={{ color: '#FF8C42', fontSize: fp(18), fontWeight: '900' }}>
-                    {walkCalories} kcal
-                  </Text>
-                  <Text style={{ color: '#555E6C', fontSize: fp(9), marginTop: wp(2) }}>
-                    ~{formatDuration(walkDuration)} {String.fromCodePoint(0x00B7)} {String.fromCodePoint(0x1F4A7)} {walkWater} ml
+                    {Math.round(walkCalories)} kcal
                   </Text>
                 </View>
               </View>
+              <Text style={{ color: '#555E6C', fontSize: fp(9), marginTop: wp(2), paddingHorizontal: wp(4) }}>
+                ~{formatDuration(walkDuration)} à vitesse normale {String.fromCodePoint(0x00B7)} {String.fromCodePoint(0x1F4A7)} {walkWater} ml
+              </Text>
 
-              {/* Add button — FIX 7: feedback */}
-              <TouchableOpacity
+              {/* Aller / Retour toggle */}
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: wp(10),
+                marginBottom: wp(8),
+              }}>
+                <Pressable
+                  onPress={() => setWalkRoundTrip(!walkRoundTrip)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: wp(14),
+                    paddingVertical: wp(8),
+                    borderRadius: 12,
+                    backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.12)' : 'rgba(255,255,255,0.03)',
+                    borderWidth: 1.5,
+                    borderColor: walkRoundTrip ? 'rgba(0,217,132,0.4)' : '#2A2F36',
+                  }}
+                >
+                  <Svg width={20} height={16} viewBox="0 0 20 16" style={{ marginRight: 8 }}>
+                    <Path d="M2 5 L8 2 L8 4 L18 4 L18 6 L8 6 L8 8 Z" fill={walkRoundTrip ? '#00D984' : '#8892A0'} />
+                    <Path d="M18 11 L12 14 L12 12 L2 12 L2 10 L12 10 L12 8 Z" fill={walkRoundTrip ? '#00D984' : '#8892A0'} opacity={0.6} />
+                  </Svg>
+                  <Text style={{
+                    color: walkRoundTrip ? '#00D984' : '#8892A0',
+                    fontSize: fp(11),
+                    fontWeight: walkRoundTrip ? '800' : '600',
+                  }}>
+                    Aller / Retour
+                  </Text>
+                  {walkRoundTrip && (
+                    <Text style={{ color: '#00D984', fontSize: fp(9), marginLeft: 8, fontWeight: '600' }}>{String.fromCodePoint(0x00D7)}2</Text>
+                  )}
+                </Pressable>
+              </View>
+
+              {/* Add button with feedback */}
+              <Pressable
                 onPress={handleAddWalk}
-                activeOpacity={0.7}
-                style={{
-                  backgroundColor: walkSaved ? '#2ECC71' : '#00D984',
-                  borderRadius: wp(12),
-                  paddingVertical: wp(11), alignItems: 'center',
-                  marginTop: wp(14),
-                }}
+                disabled={walkSaved || walkDistDisplay === 0}
+                style={({ pressed }) => ({
+                  paddingVertical: wp(14),
+                  borderRadius: 14,
+                  backgroundColor: walkSaved ? '#00D984' : pressed ? '#00B572' : '#00D984',
+                  alignItems: 'center',
+                  marginTop: wp(8),
+                  opacity: walkDistDisplay === 0 ? 0.4 : 1,
+                })}
               >
-                <Text style={{ color: '#000', fontSize: fp(12), fontWeight: '800' }}>
-                  {walkSaved ? '✓ AJOUTÉ ! +5 Lix' : `✓ AJOUTER MARCHE — ${walkCalories} kcal`}
+                <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
+                  {walkSaved ? '✓ AJOUTÉ ! +5 Lix' : `✓ AJOUTER MARCHE — ${Math.round(walkCalories)} kcal`}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </MetalCard>
 
