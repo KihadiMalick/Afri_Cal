@@ -31,6 +31,19 @@ const fp = (size) => {
   return Math.round(PixelRatio.roundToNearestPixel(scaled));
 };
 
+// ── Format helpers ───────────────────────────────────────────────────────────
+const formatDuration = (minutes) => {
+  const rounded = Math.round(minutes);
+  if (rounded < 60) return `${rounded} min`;
+  const hours = Math.round((rounded / 60) * 10) / 10;
+  return `${hours} h`;
+};
+
+const formatDistance = (meters) => {
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${Math.round(meters / 100) / 10} km`;
+};
+
 // ── Activity data ────────────────────────────────────────────────────────────
 const ACTIVITY_DATA = {
   marche: { kcal_per_hour: 280, icon: '🚶', label: 'Marche', color: '#00D984', km_per_hour: 5, water_per_hour_ml: 400 },
@@ -66,6 +79,91 @@ const RUN_FLAGS = [
 const TIME_STEPS = [5, 10, 15, 20, 30, 45, 60];
 
 const OTHER_SPORTS = ['velo', 'natation', 'musculation', 'yoga', 'corde', 'football', 'basketball', 'danse'];
+
+// ── LockIcon ─────────────────────────────────────────────────────────────────
+const LockIcon = ({ size = 20 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Rect x="5" y="11" width="14" height="10" rx="2" fill="#8892A0" opacity={0.6} />
+    <Path d="M8 11V7c0-2.21 1.79-4 4-4s4 1.79 4 4v4" fill="none" stroke="#8892A0" strokeWidth={2} strokeLinecap="round" />
+    <Circle cx="12" cy="16" r="1.5" fill="#EAEEF3" />
+  </Svg>
+);
+
+// ── Bottom Tabs ──────────────────────────────────────────────────────────────
+const TABS = [
+  { key: 'home', label: 'Accueil', iconActive: 'home', iconInactive: 'home-outline' },
+  { key: 'meals', label: 'Repas', iconActive: 'restaurant', iconInactive: 'restaurant-outline' },
+  { key: 'activity', label: 'Activité', iconActive: 'fitness', iconInactive: 'fitness-outline' },
+  { key: 'medicai', label: 'MedicAi', iconActive: 'medkit', iconInactive: 'medkit-outline', locked: true, isMedicAi: true },
+  { key: 'profile', label: 'Profil', iconActive: 'person', iconInactive: 'person-outline' },
+];
+
+const BottomTabs = ({ activeTab, onTabPress }) => (
+  <View
+    style={{
+      flexDirection: 'row',
+      backgroundColor: '#141A22',
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(74,79,85,0.5)',
+      paddingTop: wp(10),
+      paddingBottom: Platform.OS === 'android' ? 50 : 34,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 20,
+    }}
+  >
+    {TABS.map((tab) => {
+      const active = activeTab === tab.key;
+      return (
+        <TouchableOpacity
+          key={tab.key}
+          style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: wp(4) }}
+          onPress={() => onTabPress(tab.key)}
+          activeOpacity={0.7}
+        >
+          <View style={{ position: 'relative' }}>
+            {tab.isMedicAi ? (
+              <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24">
+                <Defs>
+                  <SvgLinearGradient id="medicGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+                    <Stop offset="0%" stopColor="#FF6B8A" />
+                    <Stop offset="100%" stopColor="#FF3B5C" />
+                  </SvgLinearGradient>
+                </Defs>
+                <Rect x="8" y="2" width="8" height="20" rx="2" fill="url(#medicGrad)" opacity={active ? 1 : 0.5} />
+                <Rect x="2" y="8" width="20" height="8" rx="2" fill="url(#medicGrad)" opacity={active ? 1 : 0.5} />
+                <Path d="M12 11.5c.5-.8 1.5-1 2-.5s.5 1.5 0 2.5l-2 2-2-2c-.5-1-.5-2 0-2.5s1.5-.3 2 .5z"
+                  fill="white" opacity={0.7} />
+              </Svg>
+            ) : (
+              <Ionicons
+                name={active ? tab.iconActive : tab.iconInactive}
+                size={wp(22)}
+                color={active ? '#00D984' : '#6B7B8D'}
+              />
+            )}
+            {tab.locked && (
+              <View style={{
+                position: 'absolute', top: -3, right: -6,
+                backgroundColor: 'rgba(21,27,35,0.9)', borderRadius: 6,
+                width: 12, height: 12, justifyContent: 'center', alignItems: 'center',
+              }}>
+                <LockIcon size={10} />
+              </View>
+            )}
+          </View>
+          <Text style={[
+            { color: '#6B7B8D', fontSize: fp(9), fontWeight: '600', letterSpacing: wp(0.3), marginTop: -2 },
+            active && (tab.isMedicAi ? { color: '#FF3B5C' } : { color: '#00D984' }),
+            tab.isMedicAi && !active && { color: '#8892A0' },
+          ]}>{tab.label}</Text>
+        </TouchableOpacity>
+      );
+    })}
+  </View>
+);
 
 // ── MetalCard ────────────────────────────────────────────────────────────────
 const MetalCard = ({ children, style, onPress, noPadding = false }) => {
@@ -189,93 +287,77 @@ const MetallicBackground = () => (
   />
 );
 
-// ── SVG Shoe Footprints (Walk indicator) ─────────────────────────────────────
-const ShoeFootprints = ({ shoeAnim }) => {
-  const leftY = shoeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -4] });
-  const rightY = shoeAnim.interpolate({ inputRange: [0, 1], outputRange: [-4, 0] });
+// ── FIX 2: SVG Sneaker Icons ─────────────────────────────────────────────────
+const WalkShoeIcon = ({ size = 32 }) => (
+  <Svg width={size} height={size} viewBox="0 0 40 40">
+    <Path d="M8 28 L8 20 Q8 16 12 15 L22 13 Q26 12 28 14 L32 16 Q36 18 36 22 L36 26 Q36 30 32 30 L12 30 Q8 30 8 28Z"
+      fill="none" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M14 15 L14 10 Q14 8 16 8 L20 8 Q22 8 22 10 L22 13"
+      fill="none" stroke="#00D984" strokeWidth={2} strokeLinecap="round" />
+    <Line x1="16" y1="18" x2="16" y2="14" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.5} />
+    <Line x1="20" y1="17" x2="20" y2="13" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.5} />
+    <Path d="M10 28 L34 28" stroke="#00D984" strokeWidth={2} strokeLinecap="round" opacity={0.7} />
+    <Line x1="2" y1="22" x2="6" y2="22" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.4} />
+    <Line x1="1" y1="25" x2="5" y2="25" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.3} />
+    <Line x1="3" y1="19" x2="6" y2="19" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.3} />
+  </Svg>
+);
 
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', width: wp(24), height: wp(20) }}>
-      <Animated.View style={{ transform: [{ translateY: leftY }], marginRight: wp(1) }}>
-        <Svg width={wp(10)} height={wp(16)} viewBox="0 0 16 26">
-          <Path
-            d="M4 2C4 1 5 0 7 0C9 0 10 1 10 2L11 14C11 16 9 18 7 18C5 18 3 16 3 14L4 2Z"
-            fill="#00D984"
-            opacity={0.9}
-          />
-          <Ellipse cx="7" cy="22" rx="4" ry="3" fill="#00D984" opacity={0.7} />
-        </Svg>
-      </Animated.View>
-      <Animated.View style={{ transform: [{ translateY: rightY }] }}>
-        <Svg width={wp(10)} height={wp(16)} viewBox="0 0 16 26">
-          <Path
-            d="M6 2C6 1 7 0 9 0C11 0 12 1 12 2L13 14C13 16 11 18 9 18C7 18 5 16 5 14L6 2Z"
-            fill="#00D984"
-            opacity={0.9}
-          />
-          <Ellipse cx="9" cy="22" rx="4" ry="3" fill="#00D984" opacity={0.7} />
-        </Svg>
-      </Animated.View>
-    </View>
-  );
-};
+const RunShoeIcon = ({ size = 32 }) => (
+  <Svg width={size} height={size} viewBox="0 0 40 40">
+    <Path d="M6 26 L10 17 Q12 13 16 12 L24 10 Q28 9 30 12 L34 16 Q38 19 36 23 L34 27 Q32 30 28 30 L10 30 Q6 30 6 26Z"
+      fill="none" stroke="#FF8C42" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M16 12 L18 6 Q19 4 21 5 L24 7 Q25 8 24 10"
+      fill="none" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round" />
+    <Line x1="18" y1="15" x2="17" y2="11" stroke="#FF8C42" strokeWidth={1.5} strokeLinecap="round" opacity={0.5} />
+    <Line x1="22" y1="14" x2="21" y2="10" stroke="#FF8C42" strokeWidth={1.5} strokeLinecap="round" opacity={0.5} />
+    <Path d="M8 28 L30 28" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round" opacity={0.7} />
+    <Line x1="0" y1="20" x2="5" y2="20" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round" opacity={0.5} />
+    <Line x1="-1" y1="23" x2="4" y2="23" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round" opacity={0.4} />
+    <Line x1="1" y1="17" x2="5" y2="17" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round" opacity={0.3} />
+    <Line x1="-2" y1="26" x2="3" y2="26" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round" opacity={0.3} />
+  </Svg>
+);
 
-// ── SVG Runner Silhouette (Run indicator) ────────────────────────────────────
-const RunnerSilhouette = ({ shoeAnim }) => {
-  const bounce = shoeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -3] });
-
+const WalkShoeAnimated = ({ shoeAnim }) => {
+  const bounce = shoeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -4] });
   return (
     <Animated.View style={{ transform: [{ translateY: bounce }] }}>
-      <Svg width={wp(20)} height={wp(24)} viewBox="0 0 32 40">
-        {/* Head */}
-        <Circle cx="18" cy="5" r="4" fill="#FF8C42" opacity={0.9} />
-        {/* Body */}
-        <Path
-          d="M18 9L16 20"
-          stroke="#FF8C42"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          fill="none"
-        />
-        {/* Arms */}
-        <Path
-          d="M16 13L10 10M16 13L22 16"
-          stroke="#FF8C42"
-          strokeWidth="2"
-          strokeLinecap="round"
-          fill="none"
-        />
-        {/* Legs */}
-        <Path
-          d="M16 20L10 30M16 20L24 28"
-          stroke="#FF8C42"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          fill="none"
-        />
-        {/* Feet */}
-        <Path
-          d="M10 30L6 31M24 28L28 27"
-          stroke="#FF8C42"
-          strokeWidth="2"
-          strokeLinecap="round"
-          fill="none"
-        />
-      </Svg>
+      <WalkShoeIcon size={wp(28)} />
     </Animated.View>
   );
 };
 
+const RunShoeAnimated = ({ shoeAnim }) => {
+  const bounce = shoeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -3] });
+  return (
+    <Animated.View style={{ transform: [{ translateY: bounce }] }}>
+      <RunShoeIcon size={wp(28)} />
+    </Animated.View>
+  );
+};
+
+// ── FIX 3: Non-linear slider distance interpolation ─────────────────────────
+const sliderToDistance = (sliderValue, flags) => {
+  const maxIdx = flags.length - 1;
+  const pos = sliderValue * maxIdx;
+  const segmentIndex = Math.min(Math.floor(pos), maxIdx - 1);
+  const segmentProgress = pos - segmentIndex;
+  const fromFlag = flags[Math.min(segmentIndex, maxIdx)];
+  const toFlag = flags[Math.min(segmentIndex + 1, maxIdx)];
+  return fromFlag.distance + (toFlag.distance - fromFlag.distance) * segmentProgress;
+};
+
 // ── Custom Slider (Walk / Run) ───────────────────────────────────────────────
 const ActivitySlider = ({
-  type, // 'marche' or 'course'
-  mode, // 'distance' or 'temps'
-  value, // 0 to 1
+  type,
+  mode,
+  value,
   onChange,
   shoeAnim,
   flags,
-  maxDistance, // in metres
-  maxTime, // in minutes
+  maxDistance,
+  maxTime,
   accentColor,
 }) => {
   const barRef = useRef(null);
@@ -292,10 +374,6 @@ const ActivitySlider = ({
     onChange(clamped);
   };
 
-  const currentValue = mode === 'distance'
-    ? value * maxDistance
-    : value * maxTime;
-
   const flagList = mode === 'distance' ? flags : TIME_STEPS;
 
   return (
@@ -306,9 +384,7 @@ const ActivitySlider = ({
         onLayout={(e) => {
           setBarWidth(e.nativeEvent.layout.width);
           barRef.current?.measureInWindow?.((x) => setBarX(x));
-          // Fallback: measure via pageX on layout
           if (e.nativeEvent.layout.x !== undefined) {
-            // Approximate barX from layout
             barRef.current?.measure?.((fx, fy, fw, fh, px) => {
               if (px !== undefined) setBarX(px);
             });
@@ -331,7 +407,6 @@ const ActivitySlider = ({
       >
         {/* Track ruler lines */}
         {isWalk ? (
-          // Grass-like vertical lines for walk
           <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, flexDirection: 'row' }}>
             {Array.from({ length: 30 }).map((_, i) => (
               <View key={i} style={{
@@ -342,7 +417,6 @@ const ActivitySlider = ({
             ))}
           </View>
         ) : (
-          // Olympic track lane lines for run
           <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}>
             {[0.25, 0.5, 0.75].map((pos, i) => (
               <View key={i} style={{
@@ -355,20 +429,17 @@ const ActivitySlider = ({
           </View>
         )}
 
-        {/* Flag markers */}
+        {/* FIX 3: Flag markers — equally spaced */}
         {flagList.map((flag, idx) => {
-          const flagVal = mode === 'distance'
-            ? flag.distance / maxDistance
-            : flag / maxTime;
-          if (flagVal > 1) return null;
+          const equalPos = flagList.length > 1 ? idx / (flagList.length - 1) : 0;
 
+          // Find nearest flag to current slider value
           const isNearest = (() => {
-            const cv = value;
             let minDist = Infinity;
             let nearestIdx = 0;
-            flagList.forEach((f, fi) => {
-              const fv = mode === 'distance' ? f.distance / maxDistance : f / maxTime;
-              const d = Math.abs(cv - fv);
+            flagList.forEach((_, fi) => {
+              const fPos = flagList.length > 1 ? fi / (flagList.length - 1) : 0;
+              const d = Math.abs(value - fPos);
               if (d < minDist) { minDist = d; nearestIdx = fi; }
             });
             return nearestIdx === idx;
@@ -377,7 +448,7 @@ const ActivitySlider = ({
           return (
             <View key={idx} style={{
               position: 'absolute',
-              left: `${flagVal * 100}%`,
+              left: `${equalPos * 100}%`,
               top: wp(2),
               alignItems: 'center',
               transform: [{ translateX: -wp(10) }],
@@ -387,7 +458,7 @@ const ActivitySlider = ({
                 color: isNearest ? accentColor : '#555E6C',
                 fontWeight: isNearest ? '700' : '500',
               }}>
-                🏁
+                {String.fromCodePoint(0x1F3C1)}
               </Text>
               <Text style={{
                 fontSize: fp(7),
@@ -410,7 +481,7 @@ const ActivitySlider = ({
           borderBottomLeftRadius: wp(12),
         }} />
 
-        {/* Moving indicator */}
+        {/* Moving indicator — FIX 2: sneaker icons */}
         <Animated.View style={{
           position: 'absolute',
           left: barWidth > 0 ? value * (barWidth - wp(28)) : 0,
@@ -421,8 +492,8 @@ const ActivitySlider = ({
           alignItems: 'center',
         }}>
           {isWalk
-            ? <ShoeFootprints shoeAnim={shoeAnim} />
-            : <RunnerSilhouette shoeAnim={shoeAnim} />
+            ? <WalkShoeAnimated shoeAnim={shoeAnim} />
+            : <RunShoeAnimated shoeAnim={shoeAnim} />
           }
         </Animated.View>
       </View>
@@ -638,9 +709,14 @@ const SportModal = ({ visible, sportKey, onClose, onSave }) => {
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ══════════════════════════════════════════════════════════════════════════════
-const ActivityPage = () => {
+const ActivityPage = ({ onNavigate }) => {
   // ── State ────────────────────────────────────────────────────────────────
   const [todayActivities, setTodayActivities] = useState([]);
+  const [activeTab, setActiveTab] = useState('activity');
+
+  // FIX 7: Save feedback states
+  const [walkSaved, setWalkSaved] = useState(false);
+  const [runSaved, setRunSaved] = useState(false);
 
   // Walk slider
   const [walkMode, setWalkMode] = useState('distance');
@@ -669,6 +745,13 @@ const ActivityPage = () => {
   // Load today's activities
   useEffect(() => { loadTodayActivities(); }, []);
 
+  // ── Tab handler ─────────────────────────────────────────────────────────
+  const handleTabPress = (key) => {
+    if (key === 'activity') return;
+    if (onNavigate) onNavigate(key);
+    setActiveTab(key);
+  };
+
   // ── Supabase functions ─────────────────────────────────────────────────
   const loadTodayActivities = async () => {
     const today = new Date().toISOString().split('T')[0];
@@ -681,35 +764,53 @@ const ActivityPage = () => {
     if (data) setTodayActivities(data);
   };
 
+  // FIX 6: Save via RPC (SECURITY DEFINER)
   const saveActivity = async (activityType, durationMin, caloriesBurned, intensity, waterLost) => {
-    const { data, error } = await supabase
-      .from('activities')
-      .insert({
-        user_id: TEST_USER_ID,
-        name: ACTIVITY_DATA[activityType].label,
-        type: activityType,
-        duration_minutes: Math.round(durationMin),
-        calories_burned: Math.round(caloriesBurned),
-        intensity: intensity || 'modere',
-        water_lost_ml: Math.round(waterLost),
+    const actData = ACTIVITY_DATA[activityType];
+    if (!actData) return false;
+
+    try {
+      const { data, error } = await supabase.rpc('add_user_activity', {
+        p_user_id: TEST_USER_ID,
+        p_name: actData.label,
+        p_type: activityType,
+        p_duration_minutes: Math.round(durationMin),
+        p_calories_burned: Math.round(caloriesBurned),
+        p_intensity: intensity || 'modere',
+        p_water_lost_ml: Math.round(waterLost),
       });
 
-    if (error) {
-      console.error('Save activity error:', error);
-      alert('Erreur : ' + error.message);
+      if (error) {
+        console.error('Save activity error:', error);
+        alert('Erreur : ' + error.message);
+        return false;
+      }
+
+      await loadTodayActivities();
+      return true;
+    } catch (e) {
+      console.error('Save error:', e);
+      alert('Erreur réseau.');
       return false;
     }
-
-    await loadTodayActivities();
-    return true;
   };
 
+  // FIX 5: Delete via RPC (SECURITY DEFINER)
   const deleteActivity = async (activityId) => {
-    const { error } = await supabase
-      .from('activities')
-      .delete()
-      .eq('id', activityId);
-    if (!error) await loadTodayActivities();
+    try {
+      const { error } = await supabase.rpc('delete_user_activity', {
+        p_activity_id: activityId,
+        p_user_id: TEST_USER_ID,
+      });
+      if (error) {
+        console.error('Delete error:', error);
+        alert('Erreur suppression : ' + error.message);
+        return;
+      }
+      await loadTodayActivities();
+    } catch (e) {
+      console.error('Delete activity error:', e);
+    }
   };
 
   // ── Calculations ───────────────────────────────────────────────────────
@@ -717,8 +818,8 @@ const ActivityPage = () => {
   const RUN_MAX_DIST = 21000;  // 21 km in metres
   const MAX_TIME = 60;         // minutes
 
-  // Walk
-  const walkDistanceM = walkMode === 'distance' ? walkValue * WALK_MAX_DIST : null;
+  // FIX 3: Walk — use non-linear distance interpolation
+  const walkDistanceM = walkMode === 'distance' ? sliderToDistance(walkValue, WALK_FLAGS) : null;
   const walkDistanceKm = walkDistanceM !== null ? walkDistanceM / 1000 : null;
   const walkTimeMins = walkMode === 'temps' ? walkValue * MAX_TIME : null;
 
@@ -728,7 +829,7 @@ const ActivityPage = () => {
 
   const walkDuration = walkMode === 'distance'
     ? Math.round((walkDistanceKm / ACTIVITY_DATA.marche.km_per_hour) * 60)
-    : walkTimeMins;
+    : Math.round(walkTimeMins);
 
   const walkDistDisplay = walkMode === 'distance'
     ? walkDistanceKm
@@ -736,8 +837,8 @@ const ActivityPage = () => {
 
   const walkWater = Math.round((walkDuration / 60) * ACTIVITY_DATA.marche.water_per_hour_ml);
 
-  // Run
-  const runDistanceM = runMode === 'distance' ? runValue * RUN_MAX_DIST : null;
+  // FIX 3: Run — use non-linear distance interpolation
+  const runDistanceM = runMode === 'distance' ? sliderToDistance(runValue, RUN_FLAGS) : null;
   const runDistanceKm = runDistanceM !== null ? runDistanceM / 1000 : null;
   const runTimeMins = runMode === 'temps' ? runValue * MAX_TIME : null;
 
@@ -747,7 +848,7 @@ const ActivityPage = () => {
 
   const runDuration = runMode === 'distance'
     ? Math.round((runDistanceKm / ACTIVITY_DATA.course.km_per_hour) * 60)
-    : runTimeMins;
+    : Math.round(runTimeMins);
 
   const runDistDisplay = runMode === 'distance'
     ? runDistanceKm
@@ -762,21 +863,25 @@ const ActivityPage = () => {
 
   // ── Handlers ───────────────────────────────────────────────────────────
   const handleAddWalk = async () => {
-    const dist = walkDistDisplay;
     const dur = walkDuration;
     const cal = walkCalories;
     const water = walkWater;
     const ok = await saveActivity('marche', dur, cal, 'modere', water);
-    if (ok) alert(`Marche ajoutée ! ${dist.toFixed(1)} km — ${cal} kcal`);
+    if (ok) {
+      setWalkSaved(true);
+      setTimeout(() => setWalkSaved(false), 1500);
+    }
   };
 
   const handleAddRun = async () => {
-    const dist = runDistDisplay;
     const dur = runDuration;
     const cal = runCalories;
     const water = runWater;
     const ok = await saveActivity('course', dur, cal, 'modere', water);
-    if (ok) alert(`Course ajoutée ! ${dist.toFixed(1)} km — ${cal} kcal`);
+    if (ok) {
+      setRunSaved(true);
+      setTimeout(() => setRunSaved(false), 1500);
+    }
   };
 
   const handleSportSave = async (sportKey, duration, calories, intensity, waterLost) => {
@@ -787,21 +892,15 @@ const ActivityPage = () => {
     }
   };
 
-  const handleDeleteActivity = (id) => {
+  const handleDeleteActivity = (activity) => {
     Alert.alert(
       'Supprimer',
-      'Supprimer cette activité ?',
+      'Voulez-vous supprimer cette activité ?',
       [
         { text: 'Annuler', style: 'cancel' },
-        { text: 'Supprimer', style: 'destructive', onPress: () => deleteActivity(id) },
+        { text: 'Supprimer', style: 'destructive', onPress: () => deleteActivity(activity.id) },
       ]
     );
-  };
-
-  // ── Format helpers ─────────────────────────────────────────────────────
-  const formatDist = (km) => {
-    if (km < 1) return `${Math.round(km * 1000)} m`;
-    return `${km.toFixed(1)} km`;
   };
 
   const todayDateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
@@ -815,7 +914,7 @@ const ActivityPage = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: wp(120) }}
         >
-          {/* ═══ HEADER ═══ */}
+          {/* HEADER */}
           <View style={{
             flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
             paddingHorizontal: wp(16), paddingBottom: wp(10),
@@ -840,12 +939,12 @@ const ActivityPage = () => {
             </View>
           </View>
 
-          {/* ═══ SECTION 2 — DAY SUMMARY ═══ */}
+          {/* DAY SUMMARY */}
           <MetalCard>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View style={{ alignItems: 'center', flex: 1 }}>
                 <Text style={{ fontSize: fp(10), color: '#8892A0', fontWeight: '600', marginBottom: wp(2) }}>
-                  🔥 Brûlé
+                  {String.fromCodePoint(0x1F525)} Brûlé
                 </Text>
                 <Text style={{ fontSize: fp(18), color: '#FF8C42', fontWeight: '900' }}>
                   {totalCalories}
@@ -860,12 +959,11 @@ const ActivityPage = () => {
 
               <View style={{ alignItems: 'center', flex: 1 }}>
                 <Text style={{ fontSize: fp(10), color: '#8892A0', fontWeight: '600', marginBottom: wp(2) }}>
-                  ⏱ Temps
+                  {String.fromCodePoint(0x23F1)} Temps
                 </Text>
                 <Text style={{ fontSize: fp(18), color: '#EAEEF3', fontWeight: '900' }}>
-                  {totalDuration}
+                  {formatDuration(totalDuration)}
                 </Text>
-                <Text style={{ fontSize: fp(8), color: '#555E6C', fontWeight: '600' }}>min</Text>
               </View>
 
               <View style={{
@@ -875,7 +973,7 @@ const ActivityPage = () => {
 
               <View style={{ alignItems: 'center', flex: 1 }}>
                 <Text style={{ fontSize: fp(10), color: '#8892A0', fontWeight: '600', marginBottom: wp(2) }}>
-                  💧 Eau perdue
+                  {String.fromCodePoint(0x1F4A7)} Eau perdue
                 </Text>
                 <Text style={{ fontSize: fp(18), color: '#4DA6FF', fontWeight: '900' }}>
                   {totalWater}
@@ -885,7 +983,7 @@ const ActivityPage = () => {
             </View>
           </MetalCard>
 
-          {/* ═══ SECTION 3 — WALK HERO ═══ */}
+          {/* WALK HERO */}
           <SectionTitle title="Marche" />
           <MetalCard>
             <View>
@@ -895,16 +993,7 @@ const ActivityPage = () => {
                 marginBottom: wp(4),
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24">
-                    <Circle cx="12" cy="4" r="3" fill="#00D984" />
-                    <Path
-                      d="M12 7L11 14L8 22M12 7L14 12L18 14M11 14L15 18"
-                      stroke="#00D984"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      fill="none"
-                    />
-                  </Svg>
+                  <WalkShoeIcon size={wp(18)} />
                   <Text style={{
                     color: '#EAEEF3', fontSize: fp(14), fontWeight: '800',
                     letterSpacing: 1.5, marginLeft: wp(6),
@@ -928,18 +1017,18 @@ const ActivityPage = () => {
                 accentColor="#00D984"
               />
 
-              {/* Value display */}
+              {/* Value display — FIX 4: formatted durations */}
               <View style={{
                 flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',
                 marginTop: wp(10), paddingHorizontal: wp(4),
               }}>
                 <View>
                   <Text style={{ color: '#00D984', fontSize: fp(22), fontWeight: '900' }}>
-                    {formatDist(walkDistDisplay)}
+                    {formatDistance(walkDistDisplay * 1000)}
                   </Text>
                   {walkMode === 'temps' && (
                     <Text style={{ color: '#555E6C', fontSize: fp(9), marginTop: wp(2) }}>
-                      ~{formatDist(walkDistDisplay)} à vitesse normale
+                      ~{formatDistance(walkDistDisplay * 1000)} à vitesse normale
                     </Text>
                   )}
                 </View>
@@ -948,29 +1037,30 @@ const ActivityPage = () => {
                     {walkCalories} kcal
                   </Text>
                   <Text style={{ color: '#555E6C', fontSize: fp(9), marginTop: wp(2) }}>
-                    ~{walkDuration} min · 💧 {walkWater} ml
+                    ~{formatDuration(walkDuration)} {String.fromCodePoint(0x00B7)} {String.fromCodePoint(0x1F4A7)} {walkWater} ml
                   </Text>
                 </View>
               </View>
 
-              {/* Add button */}
+              {/* Add button — FIX 7: feedback */}
               <TouchableOpacity
                 onPress={handleAddWalk}
                 activeOpacity={0.7}
                 style={{
-                  backgroundColor: '#00D984', borderRadius: wp(12),
+                  backgroundColor: walkSaved ? '#2ECC71' : '#00D984',
+                  borderRadius: wp(12),
                   paddingVertical: wp(11), alignItems: 'center',
                   marginTop: wp(14),
                 }}
               >
                 <Text style={{ color: '#000', fontSize: fp(12), fontWeight: '800' }}>
-                  ✓ AJOUTER MARCHE — {walkCalories} kcal
+                  {walkSaved ? '✓ AJOUTÉ ! +5 Lix' : `✓ AJOUTER MARCHE — ${walkCalories} kcal`}
                 </Text>
               </TouchableOpacity>
             </View>
           </MetalCard>
 
-          {/* ═══ SECTION 4 — RUN HERO ═══ */}
+          {/* RUN HERO */}
           <SectionTitle title="Course" />
           <MetalCard>
             <View>
@@ -980,16 +1070,7 @@ const ActivityPage = () => {
                 marginBottom: wp(4),
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24">
-                    <Circle cx="14" cy="4" r="3" fill="#FF8C42" />
-                    <Path
-                      d="M14 7L12 14L7 20M14 7L18 11L22 12M12 14L17 18"
-                      stroke="#FF8C42"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      fill="none"
-                    />
-                  </Svg>
+                  <RunShoeIcon size={wp(18)} />
                   <Text style={{
                     color: '#EAEEF3', fontSize: fp(14), fontWeight: '800',
                     letterSpacing: 1.5, marginLeft: wp(6),
@@ -1013,18 +1094,18 @@ const ActivityPage = () => {
                 accentColor="#FF8C42"
               />
 
-              {/* Value display */}
+              {/* Value display — FIX 4: formatted durations */}
               <View style={{
                 flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',
                 marginTop: wp(10), paddingHorizontal: wp(4),
               }}>
                 <View>
                   <Text style={{ color: '#FF8C42', fontSize: fp(22), fontWeight: '900' }}>
-                    {formatDist(runDistDisplay)}
+                    {formatDistance(runDistDisplay * 1000)}
                   </Text>
                   {runMode === 'temps' && (
                     <Text style={{ color: '#555E6C', fontSize: fp(9), marginTop: wp(2) }}>
-                      ~{formatDist(runDistDisplay)} à allure modérée
+                      ~{formatDistance(runDistDisplay * 1000)} à allure modérée
                     </Text>
                   )}
                 </View>
@@ -1033,29 +1114,30 @@ const ActivityPage = () => {
                     {runCalories} kcal
                   </Text>
                   <Text style={{ color: '#555E6C', fontSize: fp(9), marginTop: wp(2) }}>
-                    ~{runDuration} min · 💧 {runWater} ml
+                    ~{formatDuration(runDuration)} {String.fromCodePoint(0x00B7)} {String.fromCodePoint(0x1F4A7)} {runWater} ml
                   </Text>
                 </View>
               </View>
 
-              {/* Add button */}
+              {/* Add button — FIX 7: feedback */}
               <TouchableOpacity
                 onPress={handleAddRun}
                 activeOpacity={0.7}
                 style={{
-                  backgroundColor: '#FF8C42', borderRadius: wp(12),
+                  backgroundColor: runSaved ? '#2ECC71' : '#FF8C42',
+                  borderRadius: wp(12),
                   paddingVertical: wp(11), alignItems: 'center',
                   marginTop: wp(14),
                 }}
               >
                 <Text style={{ color: '#000', fontSize: fp(12), fontWeight: '800' }}>
-                  ✓ AJOUTER COURSE — {runCalories} kcal
+                  {runSaved ? '✓ AJOUTÉ ! +5 Lix' : `✓ AJOUTER COURSE — ${runCalories} kcal`}
                 </Text>
               </TouchableOpacity>
             </View>
           </MetalCard>
 
-          {/* ═══ SECTION 5 — OTHER SPORTS GRID ═══ */}
+          {/* OTHER SPORTS GRID */}
           <SectionTitle title="Autres activités" />
           <View style={{
             flexDirection: 'row', flexWrap: 'wrap',
@@ -1071,7 +1153,7 @@ const ActivityPage = () => {
             ))}
           </View>
 
-          {/* ═══ SECTION 6 — TODAY'S HISTORY ═══ */}
+          {/* TODAY'S HISTORY */}
           <View style={{ marginTop: wp(8) }}>
             <SectionTitle title="Aujourd'hui" />
           </View>
@@ -1087,7 +1169,7 @@ const ActivityPage = () => {
           ) : (
             todayActivities.map((act) => {
               const sportData = ACTIVITY_DATA[act.type] || {};
-              const iconText = sportData.icon || '🏅';
+              const iconText = sportData.icon || String.fromCodePoint(0x1F3C5);
               const sportColor = sportData.color || '#00D984';
               const createdTime = act.created_at
                 ? new Date(act.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
@@ -1106,14 +1188,14 @@ const ActivityPage = () => {
                         </Text>
                         <View style={{ flexDirection: 'row', marginTop: wp(2), gap: wp(8) }}>
                           <Text style={{ color: '#8892A0', fontSize: fp(9) }}>
-                            {act.duration_minutes} min
+                            {formatDuration(act.duration_minutes)}
                           </Text>
                           <Text style={{ color: '#FF8C42', fontSize: fp(9), fontWeight: '700' }}>
                             {act.calories_burned} kcal
                           </Text>
                           {act.water_lost_ml > 0 && (
                             <Text style={{ color: '#4DA6FF', fontSize: fp(9) }}>
-                              💧 {act.water_lost_ml} ml
+                              {String.fromCodePoint(0x1F4A7)} {act.water_lost_ml} ml
                             </Text>
                           )}
                           <Text style={{ color: '#555E6C', fontSize: fp(9) }}>
@@ -1124,7 +1206,7 @@ const ActivityPage = () => {
                     </View>
 
                     <Pressable
-                      onPress={() => handleDeleteActivity(act.id)}
+                      onPress={() => handleDeleteActivity(act)}
                       style={{
                         width: wp(24), height: wp(24), borderRadius: wp(12),
                         backgroundColor: 'rgba(255,107,107,0.1)',
@@ -1140,7 +1222,7 @@ const ActivityPage = () => {
             })
           )}
 
-          {/* ═══ SECTION 7 — REWARD BADGE ═══ */}
+          {/* REWARD BADGE */}
           <View style={{
             alignItems: 'center', marginTop: wp(12), marginBottom: wp(16),
           }}>
@@ -1151,13 +1233,18 @@ const ActivityPage = () => {
               borderRadius: wp(14),
               borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
             }}>
-              <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>🏆</Text>
+              <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>{String.fromCodePoint(0x1F3C6)}</Text>
               <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '700' }}>
                 +5 Lix par activité
               </Text>
             </View>
           </View>
         </ScrollView>
+      </View>
+
+      {/* Bottom Tab Bar — FIX 1 */}
+      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+        <BottomTabs activeTab={activeTab} onTabPress={handleTabPress} />
       </View>
 
       {/* Sport Modal */}
