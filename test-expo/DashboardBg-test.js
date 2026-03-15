@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Rect, Path, G, Defs, Defs as SvgDefs, Mask, LinearGradient as SvgLinearGradient, Stop, Polygon, ClipPath, Ellipse, Text as SvgText } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import RepasPage from './RepasPage';
+import ActivityPage from './ActivityPage';
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase client (même que RepasPage)
@@ -3131,7 +3132,7 @@ export default function App() {
       case 'meals':
         return <RepasPage />;
       case 'activity':
-        return <PlaceholderPage icon={'🏃'} title="Activité" />;
+        return <ActivityPage />;
       case 'medicai':
         return <PlaceholderPage icon={'🏥'} title="MedicAi" locked />;
       case 'profile':
