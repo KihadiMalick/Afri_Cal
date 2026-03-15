@@ -65,7 +65,7 @@ const MOCK_RECIPES = [
     name: 'Thieboudienne',
     origin: '🇸🇳 Sénégal',
     cal: 520,
-    image: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=300&h=200&fit=crop',
+    image: 'https://images.unsplash.com/photo-1567982047351-76b6f93e38ee?w=300&h=200&fit=crop',
   },
   {
     name: 'Pizza Margherita',
@@ -89,7 +89,7 @@ const MOCK_RECIPES = [
     name: 'Okra Soup',
     origin: '🇳🇬 Nigeria',
     cal: 220,
-    image: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=300&h=200&fit=crop',
+    image: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=300&h=200&fit=crop',
   },
   {
     name: 'Salade Mixte',
@@ -1271,18 +1271,20 @@ const RepasPage = ({ onNavigate }) => {
     if (query.length < 2) { setIngSearchResults([]); return; }
     setIsIngSearching(true);
     try {
+      console.log('Searching ingredients:', query);
       const response = await fetch(
         'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC3pUn0',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0',
           },
           body: JSON.stringify({ action: 'search_ingredients', query: query, limit: 8 }),
         }
       );
       const data = await response.json();
+      console.log('Ingredient results:', data);
       setIngSearchResults(data.results || []);
     } catch (e) {
       setIngSearchResults([]);
@@ -1325,7 +1327,7 @@ const RepasPage = ({ onNavigate }) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC3pUn0',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0',
           },
           body: JSON.stringify({ action: 'search_ingredients', query: ing.name, limit: 1 }),
         }
@@ -2407,13 +2409,22 @@ const RepasPage = ({ onNavigate }) => {
                                 borderBottomWidth: i < mealComponents.length - 1 ? 0.5 : 0,
                                 borderBottomColor: 'rgba(255,255,255,0.05)',
                               }}>
-                                <Text style={{ color: '#EAEEF3', fontSize: fp(12) }}>{comp.component_name}</Text>
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                  <Text style={{ color: '#5A6070', fontSize: fp(10), marginRight: wp(8) }}>
-                                    {Math.round((comp.percentage_estimate / 100) * manualPortionG)}g
-                                  </Text>
-                                  <Text style={{ color: '#8892A0', fontSize: fp(9) }}>{comp.percentage_estimate}%</Text>
-                                </View>
+                                <Text style={{ color: '#EAEEF3', fontSize: fp(12), flex: 1 }}>{comp.component_name}</Text>
+                                <Text style={{ color: '#5A6070', fontSize: fp(10), marginRight: wp(6) }}>
+                                  {Math.round((comp.percentage_estimate / 100) * manualPortionG)}g
+                                </Text>
+                                <Text style={{ color: '#8892A0', fontSize: fp(9), marginRight: wp(8) }}>{comp.percentage_estimate}%</Text>
+                                <Pressable
+                                  onPress={() => setMealComponents(prev => prev.filter((_, idx) => idx !== i))}
+                                  style={({ pressed }) => ({
+                                    width: 24, height: 24, borderRadius: 12,
+                                    backgroundColor: pressed ? 'rgba(255,59,48,0.2)' : 'rgba(255,59,48,0.08)',
+                                    justifyContent: 'center', alignItems: 'center',
+                                    borderWidth: 1, borderColor: 'rgba(255,59,48,0.2)',
+                                  })}
+                                >
+                                  <Text style={{ color: '#FF3B30', fontSize: 12, fontWeight: '700' }}>×</Text>
+                                </Pressable>
                               </View>
                             ))}
                           </View>
