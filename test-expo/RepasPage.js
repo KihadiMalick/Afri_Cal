@@ -65,7 +65,7 @@ const MOCK_RECIPES = [
     name: 'Thieboudienne',
     origin: '🇸🇳 Sénégal',
     cal: 520,
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Thi%C3%A9boudienn%C3%A9.jpg/1280px-Thi%C3%A9boudienn%C3%A9.jpg',
+    image: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=300&h=200&fit=crop',
   },
   {
     name: 'Pizza Margherita',
@@ -86,10 +86,10 @@ const MOCK_RECIPES = [
     image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=300&h=200&fit=crop',
   },
   {
-    name: 'Jollof Rice',
+    name: 'Okra Soup',
     origin: '🇳🇬 Nigeria',
-    cal: 410,
-    image: 'https://images.unsplash.com/photo-1645696301019-35adcc18fc71?w=300&h=200&fit=crop',
+    cal: 220,
+    image: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=300&h=200&fit=crop',
   },
   {
     name: 'Salade Mixte',
