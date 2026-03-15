@@ -33,6 +33,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// TODO PRODUCTION: Remplacer TEST_USER_ID par l'ID du user authentifié via supabase.auth.getUser()
+const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
+
 const { width: W } = Dimensions.get('window');
 
 // ============================================
@@ -460,6 +463,8 @@ const RepasPage = ({ onNavigate }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [editingQuantityIndex, setEditingQuantityIndex] = useState(null);
   const [tempQuantity, setTempQuantity] = useState('');
 
@@ -929,6 +934,97 @@ const RepasPage = ({ onNavigate }) => {
     setSearchQuery('');
     setSearchResults([]);
     setEditingQuantityIndex(null);
+  };
+
+  const getMealType = () => {
+    const hour = new Date().getHours();
+    if (hour < 10) return 'breakfast';
+    if (hour < 14) return 'lunch';
+    if (hour < 21) return 'dinner';
+    return 'snack';
+  };
+
+  const saveMealToSupabase = async () => {
+    if (isSaving || !scanResult) return;
+    setIsSaving(true);
+
+    try {
+      // Calculer les totaux finaux
+      const totals = scanResult.totals || {
+        calories: scanResult.calories || 0,
+        protein_g: scanResult.protein_g || 0,
+        carbs_g: scanResult.carbs_g || 0,
+        fat_g: scanResult.fat_g || 0,
+        fiber_g: scanResult.fiber_g || 0,
+      };
+
+      // Poids total
+      const totalWeight = (scanResult.ingredients || []).reduce(
+        (sum, ing) => sum + (ing.quantity_g || 0), 0
+      );
+
+      // Déterminer la source
+      const source = capturedPhoto?.uri?.startsWith('file') ? 'xscan_4' : 'gallery';
+
+      const { data, error } = await supabase.rpc('add_meal_and_update_summary', {
+        p_user_id: TEST_USER_ID,
+        p_meal_type: getMealType(),
+        p_food_name: currentDishName || scanResult.name_fr || 'Plat scanné',
+        p_calories: Math.round(totals.calories || 0),
+        p_protein: Math.round((totals.protein_g || 0) * 10) / 10,
+        p_carbs: Math.round((totals.carbs_g || 0) * 10) / 10,
+        p_fat: Math.round((totals.fat_g || 0) * 10) / 10,
+        p_fiber: Math.round((totals.fiber_g || 0) * 10) / 10,
+        p_source: source,
+        p_confidence: scanResult.confidence || null,
+        p_photo_url: null,
+        p_ingredients_detail: scanResult.ingredients || [],
+        p_food_db_id: null,
+        p_volume_ml: null,
+        p_texture: typeof scanResult.texture === 'string' ? scanResult.texture : null,
+        p_portion_g: totalWeight > 0 ? totalWeight : null,
+      });
+
+      if (error) {
+        console.error('Erreur sauvegarde Supabase:', error);
+        alert('Erreur : ' + error.message);
+        setIsSaving(false);
+        return;
+      }
+
+      console.log('Repas sauvegardé ! ID:', data);
+      setSaveSuccess(true);
+
+      // Attendre 1.5s pour montrer le succès, puis fermer
+      setTimeout(() => {
+        // Reset tous les states
+        setScanScreen('none');
+        setRecalculating(false);
+        setScanResult(null);
+        setCapturedPhoto(null);
+        setShowAlternatives(false);
+        setAlternativeDishes([]);
+        setCurrentDishName('');
+        setScanMode('none');
+        setScanSuggestions([]);
+        setSelectedSuggestion(null);
+        setAiVisual(null);
+        alertShakeAnim.setValue(0);
+        setCorrectionMode(false);
+        setEditedIngredients([]);
+        setSearchQuery('');
+        setSearchResults([]);
+        setEditingQuantityIndex(null);
+        setTempQuantity('');
+        setIsSaving(false);
+        setSaveSuccess(false);
+      }, 1500);
+
+    } catch (err) {
+      console.error('Erreur réseau:', err);
+      alert('Erreur réseau. Vérifie ta connexion.');
+      setIsSaving(false);
+    }
   };
 
   const activateScan = async () => {
@@ -2350,37 +2446,27 @@ const RepasPage = ({ onNavigate }) => {
                 </Pressable>
 
                 <Pressable
-                  onPress={() => {
-                    setScanScreen('none');
-                    setRecalculating(false);
-                    setScanResult(null);
-                    setCapturedPhoto(null);
-                    setShowAlternatives(false);
-                    setAlternativeDishes([]);
-                    setCurrentDishName('');
-                    setScanMode('none');
-                    setScanSuggestions([]);
-                    setSelectedSuggestion(null);
-                    setAiVisual(null);
-                    alertShakeAnim.setValue(0);
-                    setCorrectionMode(false);
-                    setEditedIngredients([]);
-                    setSearchQuery('');
-                    setSearchResults([]);
-                    setEditingQuantityIndex(null);
-                    setTempQuantity('');
-                    alert(lang === 'fr' ? 'Repas ajouté ! +10 Lix' : 'Meal added! +10 Lix');
-                  }}
+                  onPress={saveMealToSupabase}
+                  disabled={isSaving || saveSuccess}
                   style={({ pressed }) => ({
                     flex: 2,
                     paddingVertical: wp(14),
                     borderRadius: 14,
-                    backgroundColor: pressed ? '#00B572' : '#00D984',
+                    backgroundColor: saveSuccess
+                      ? '#00D984'
+                      : isSaving
+                        ? 'rgba(0,217,132,0.5)'
+                        : pressed ? '#00B572' : '#00D984',
                     alignItems: 'center',
+                    opacity: isSaving ? 0.7 : 1,
                   })}
                 >
                   <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
-                    ✓ {lang === 'fr' ? 'CONFIRMER' : 'CONFIRM'}
+                    {saveSuccess
+                      ? '✓ SAUVEGARDÉ ! +10 Lix'
+                      : isSaving
+                        ? '⏳ SAUVEGARDE...'
+                        : '✓ CONFIRMER'}
                   </Text>
                 </Pressable>
               </View>
