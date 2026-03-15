@@ -15,6 +15,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Rect, Path, G, Defs, Defs as SvgDefs, Mask, LinearGradient as SvgLinearGradient, Stop, Polygon, ClipPath, Ellipse, Text as SvgText } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import RepasPage from './RepasPage';
+import { createClient } from '@supabase/supabase-js';
+
+// Supabase client (même que RepasPage)
+const SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// TODO PRODUCTION: Remplacer par l'ID du user authentifié
+const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 // Note: expo-screen-capture doit être installé dans le projet
 // npx expo install expo-screen-capture
 // Dans Snack Expo, cet import peut ne pas fonctionner — laisser en commentaire si besoin
@@ -1593,14 +1602,15 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 // ============================================================
 // COMPOSANT — Dashboard Content (page Accueil)
 // ============================================================
-const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef }) => {
+const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef, dailyTarget, lastMeal }) => {
+  const OBJECTIVE = dailyTarget || DAILY_OBJECTIVE;
   const streakDays = 12;
   const streakColor = streakDays >= 14 ? '#D4AF37'
     : streakDays >= 7 ? '#00D984'
     : streakDays >= 3 ? '#00BFA6' : '#8892A0';
 
   // Reste = Objectif - (Consommé - Brûlé total) → 2330 - (1585 - 870) = 1615
-  const remaining = Math.max(0, DAILY_OBJECTIVE - (consumedTotal - burnedTotal));
+  const remaining = Math.max(0, OBJECTIVE - (consumedTotal - burnedTotal));
 
   return (
     <ScrollView
@@ -1634,7 +1644,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               textShadowColor: 'rgba(0, 217, 132, 0.3)',
               textShadowOffset: { width: 0, height: 0 },
               textShadowRadius: 4,
-            }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
+            }}>{OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
             <View style={{
               width: wp(5), height: wp(5), borderRadius: wp(2.5),
               backgroundColor: '#00D984', marginLeft: wp(4),
@@ -1654,7 +1664,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <ReactorCore
             size={REACTOR_SIZE}
             value={consumedTotal}
-            percentage={Math.round((consumedTotal / DAILY_OBJECTIVE) * 100)}
+            percentage={Math.round((consumedTotal / OBJECTIVE) * 100)}
             label="Consommé"
             color="#FF8C42"
             colorLight="#FFB87A"
@@ -1669,7 +1679,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <ReactorCore
             size={REACTOR_SIZE}
             value={remaining}
-            percentage={Math.round((remaining / DAILY_OBJECTIVE) * 100)}
+            percentage={Math.round((remaining / OBJECTIVE) * 100)}
             label="Reste"
             color="#4DA6FF"
             colorLight="#8DCAFF"
@@ -1696,7 +1706,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               textShadowColor: 'rgba(255, 140, 66, 0.2)',
               textShadowOffset: { width: 0, height: 0 },
               textShadowRadius: 4,
-            }}>{Math.round((consumedTotal / DAILY_OBJECTIVE) * 100)}%</Text>
+            }}>{Math.round((consumedTotal / OBJECTIVE) * 100)}%</Text>
             <Text style={{
               fontSize: fp(9), fontWeight: '600', color: '#8892A0', marginTop: 2,
             }}>Consommé</Text>
@@ -1735,7 +1745,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               textShadowColor: 'rgba(77, 166, 255, 0.2)',
               textShadowOffset: { width: 0, height: 0 },
               textShadowRadius: 4,
-            }}>{Math.round((remaining / DAILY_OBJECTIVE) * 100)}%</Text>
+            }}>{Math.round((remaining / OBJECTIVE) * 100)}%</Text>
             <Text style={{
               fontSize: fp(9), fontWeight: '600', color: '#8892A0', marginTop: 2,
             }}>Reste</Text>
@@ -1800,20 +1810,31 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             </Svg>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>Poulet grillé + Riz</Text>
-            <Text style={{ color: '#8892A0', fontSize: fp(11), marginTop: 2 }}>450 kcal • <Text style={{ color: '#EAEEF3' }}>12h30</Text></Text>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>
+              {lastMeal ? lastMeal.food_name : 'Aucun repas'}
+            </Text>
+            <Text style={{ color: '#8892A0', fontSize: fp(11), marginTop: 2 }}>
+              {lastMeal
+                ? `${Math.round(lastMeal.calories)} kcal • `
+                : 'Scannez votre premier repas '}
+              <Text style={{ color: '#EAEEF3' }}>
+                {lastMeal
+                  ? new Date(lastMeal.meal_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+                  : ''}
+              </Text>
+            </Text>
             <View style={{ flexDirection: 'row', marginTop: 4, gap: wp(10) }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={{ width: wp(7), height: wp(7), borderRadius: wp(3.5), backgroundColor: '#FF6B8A', marginRight: wp(4) }} />
-                <Text style={{ color: '#8892A0', fontSize: fp(10) }}>35g P</Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(10) }}>{lastMeal ? Math.round(lastMeal.protein_g || 0) : 0}g P</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={{ width: wp(7), height: wp(7), borderRadius: wp(3.5), backgroundColor: '#FFB800', marginRight: wp(4) }} />
-                <Text style={{ color: '#8892A0', fontSize: fp(10) }}>20g G</Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(10) }}>{lastMeal ? Math.round(lastMeal.carbs_g || 0) : 0}g G</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={{ width: wp(7), height: wp(7), borderRadius: wp(3.5), backgroundColor: '#4DA6FF', marginRight: wp(4) }} />
-                <Text style={{ color: '#8892A0', fontSize: fp(10) }}>15g L</Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(10) }}>{lastMeal ? Math.round(lastMeal.fat_g || 0) : 0}g L</Text>
               </View>
             </View>
           </View>
@@ -1867,7 +1888,12 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           lineHeight: fp(17),
           fontWeight: '500',
         }}>
-          Déficit de <Text style={{ color: '#FF8C42', fontWeight: '700' }}>412 kcal</Text> — bonne stratégie pour la <Text style={{ color: '#00D984', fontWeight: '700' }}>perte de poids</Text> !
+          {consumedTotal === 0
+            ? <>Bienvenue ! Scannez votre <Text style={{ color: '#00D984', fontWeight: '700' }}>premier repas</Text> pour activer le suivi.</>
+            : consumedTotal < OBJECTIVE
+              ? <>Déficit de <Text style={{ color: '#FF8C42', fontWeight: '700' }}>{OBJECTIVE - consumedTotal + burnedTotal} kcal</Text> — bonne stratégie pour la <Text style={{ color: '#00D984', fontWeight: '700' }}>perte de poids</Text> !</>
+              : <>Surplus de <Text style={{ color: '#FF3B30', fontWeight: '700' }}>{consumedTotal - OBJECTIVE} kcal</Text> — pensez à une <Text style={{ color: '#4DA6FF', fontWeight: '700' }}>activité physique</Text> !</>
+          }
         </Text>
 
         {/* Suggestions */}
@@ -1911,13 +1937,13 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       </MetalCard>
 
       {/* SUGGESTION ACTIVITÉ (dynamique basée sur surplus) */}
-      {consumedTotal - burnedExtra > DAILY_OBJECTIVE && (
+      {consumedTotal - burnedExtra > OBJECTIVE && (
         <>
           <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }}>
             <Text style={s.sectionTitle}>🏃 SUGGESTION ACTIVITÉ</Text>
-            <Text style={s.surplusText}>Surplus : +{consumedTotal - burnedExtra - DAILY_OBJECTIVE} kcal</Text>
+            <Text style={s.surplusText}>Surplus : +{consumedTotal - burnedExtra - OBJECTIVE} kcal</Text>
             <View style={{ gap: 8, marginTop: 10 }}>
-              {suggestActivities(consumedTotal - burnedExtra - DAILY_OBJECTIVE).slice(0, 2).map((sug, i) => (
+              {suggestActivities(consumedTotal - burnedExtra - OBJECTIVE).slice(0, 2).map((sug, i) => (
                 <View key={i} style={s.activityRow}>
                   <Text style={{ fontSize: 16 }}>{ACTIVITY_ICONS[sug.activity] || '🏃'}</Text>
                   <Text style={s.activityText}>{sug.minutesNeeded} min {ACTIVITY_LABELS[sug.activity]}</Text>
@@ -2060,6 +2086,14 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
+  // === DONNÉES RÉELLES SUPABASE ===
+  const [realConsumed, setRealConsumed] = useState(0);
+  const [realDailyTarget, setRealDailyTarget] = useState(2330);
+  const [realLixBalance, setRealLixBalance] = useState(0);
+  const [realGender, setRealGender] = useState('homme');
+  const [lastMeal, setLastMeal] = useState(null);
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
+
   const [tooltipStep, setTooltipStep] = useState(1);
   // 0 = pas de tooltip (fermé)
   // 1 à 5 = étape active
@@ -2092,6 +2126,66 @@ export default function App() {
   }, []);
   */
 
+  // === CHARGER DONNÉES DASHBOARD ===
+  const loadDashboardFromSupabase = async () => {
+    setIsLoadingDashboard(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      // 1. Profil utilisateur
+      const { data: profile } = await supabase
+        .from('users_profile')
+        .select('daily_calorie_target, lix_balance, gender')
+        .eq('user_id', TEST_USER_ID)
+        .single();
+
+      if (profile) {
+        setRealDailyTarget(profile.daily_calorie_target || 2330);
+        setRealLixBalance(profile.lix_balance || 0);
+        setRealGender(profile.gender === 'female' || profile.gender === 'femme' ? 'femme' : 'homme');
+      }
+
+      // 2. Résumé quotidien
+      const { data: summary } = await supabase
+        .from('daily_summary')
+        .select('total_calories, total_protein, total_carbs, total_fat')
+        .eq('user_id', TEST_USER_ID)
+        .eq('date', today)
+        .single();
+
+      if (summary) {
+        setRealConsumed(Math.round(summary.total_calories || 0));
+      }
+
+      // 3. Dernier repas
+      const { data: meals } = await supabase
+        .from('meals')
+        .select('food_name, calories, protein_g, carbs_g, fat_g, meal_time')
+        .eq('user_id', TEST_USER_ID)
+        .order('meal_time', { ascending: false })
+        .limit(1);
+
+      if (meals && meals.length > 0) {
+        setLastMeal(meals[0]);
+      }
+
+    } catch (err) {
+      console.error('Erreur chargement dashboard:', err);
+    }
+    setIsLoadingDashboard(false);
+  };
+
+  useEffect(() => {
+    loadDashboardFromSupabase();
+  }, []);
+
+  // Recharger quand on revient sur l'onglet home
+  useEffect(() => {
+    if (activeTab === 'home') {
+      loadDashboardFromSupabase();
+    }
+  }, [activeTab]);
+
   const [moodFilled, setMoodFilled] = useState(false);
   const [currentMood, setCurrentMood] = useState(null); // 'sad' | 'chill' | 'happy' | 'excited'
   const [showMoodModal, setShowMoodModal] = useState(false);
@@ -2110,13 +2204,13 @@ export default function App() {
     { name: 'course', durationMin: 40, intensity: 'intense', kcalBurned: 573 },
   ]);
 
-  const lixCount = 150;
+  const lixCount = realLixBalance;
   const notifCount = 1;
-  const gender = 'homme';
+  const gender = realGender;
   const hydrationGoal = gender === 'homme' ? 2500 : 2000;
 
   // Calorie logic
-  const consumedTotal = 1585; // mock — from scanned meals
+  const consumedTotal = realConsumed;
   const burnedExtra = activities.reduce((sum, a) => sum + a.kcalBurned, 0);
   const burnedTotal = 870; // BMR spread + sport
   const surplus = Math.max(0, consumedTotal - burnedExtra - DAILY_OBJECTIVE);
@@ -3029,6 +3123,8 @@ export default function App() {
             consumedTotal={consumedTotal}
             burnedTotal={burnedTotal}
             scrollRef={scrollRef}
+            dailyTarget={realDailyTarget}
+            lastMeal={lastMeal}
           />
         );
       case 'meals':
