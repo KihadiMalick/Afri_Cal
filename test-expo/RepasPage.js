@@ -1220,6 +1220,7 @@ const RepasPage = ({ onNavigate }) => {
         search_term: query,
         max_results: 8,
       });
+      if (error) console.error('Meal RPC error:', error);
       if (data) setMealSearchResults(data);
     } catch (e) {
       console.error('Meal search error:', e);
@@ -1274,6 +1275,7 @@ const RepasPage = ({ onNavigate }) => {
         search_term: query,
         max_results: 8,
       });
+      if (error) console.error('RPC error:', error);
       if (data) {
         setIngSearchResults(data.map(item => ({
           name: item.name,
