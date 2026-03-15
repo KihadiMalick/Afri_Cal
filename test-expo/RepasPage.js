@@ -51,14 +51,6 @@ const fp = (size) => {
 // ============================================
 // MOCK DATA
 // ============================================
-const MOCK_CALORIES = {
-  consumed: 1585,
-  goal: 2330,
-  protein: 89,
-  carbs: 120,
-  fat: 52,
-};
-
 const MOCK_FREQUENT = [
   { name: 'Riz + Haricots', cal: 285 },
   { name: 'Ugali', cal: 310 },
@@ -69,12 +61,49 @@ const MOCK_FREQUENT = [
 ];
 
 const MOCK_RECIPES = [
-  { name: 'Thieboudienne', origin: '🇸🇳 Sénégal', cal: 520, bgTop: '#8B4513', bgBottom: '#5D2E0D', ingredients: ['🐟', '🍚', '🥕'] },
-  { name: 'Ndolé', origin: '🇨🇲 Cameroun', cal: 380, bgTop: '#2E5A1C', bgBottom: '#1A3510', ingredients: ['🥬', '🥜', '🍖'] },
-  { name: 'Fumbwa', origin: '🇧🇮 Burundi', cal: 290, bgTop: '#1E4A20', bgBottom: '#0F2810', ingredients: ['🥬', '🫘', '🧅'] },
-  { name: 'Ugali + Sukuma', origin: '🇰🇪 Kenya', cal: 350, bgTop: '#8B6914', bgBottom: '#5A440D', ingredients: ['🌽', '🥬', '🧅'] },
-  { name: 'Mafé', origin: '🇲🇱 Mali', cal: 480, bgTop: '#A0522D', bgBottom: '#6B3720', ingredients: ['🥜', '🍖', '🍅'] },
-  { name: 'Jollof Rice', origin: '🇳🇬 Nigeria', cal: 410, bgTop: '#B22222', bgBottom: '#7A1717', ingredients: ['🍚', '🍅', '🌶️'] },
+  {
+    name: 'Thieboudienne',
+    origin: '🇸🇳 Sénégal',
+    cal: 520,
+    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Thi%C3%A9boudienn%C3%A9.jpg/1280px-Thi%C3%A9boudienn%C3%A9.jpg',
+  },
+  {
+    name: 'Pizza Margherita',
+    origin: '🇮🇹 Italie',
+    cal: 680,
+    image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=300&h=200&fit=crop',
+  },
+  {
+    name: 'Couscous Royal',
+    origin: '🇲🇦 Maroc',
+    cal: 450,
+    image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=300&h=200&fit=crop',
+  },
+  {
+    name: 'Brochettes Viande',
+    origin: '🇧🇮 Burundi',
+    cal: 380,
+    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=300&h=200&fit=crop',
+  },
+  {
+    name: 'Jollof Rice',
+    origin: '🇳🇬 Nigeria',
+    cal: 410,
+    image: 'https://images.unsplash.com/photo-1645696301019-35adcc18fc71?w=300&h=200&fit=crop',
+  },
+  {
+    name: 'Salade Mixte',
+    origin: '🌍 Mondial',
+    cal: 180,
+    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&h=200&fit=crop',
+  },
+];
+
+const MEAL_SLOTS = [
+  { key: 'breakfast', icon: '☀️', label_fr: 'Petit-déj', label_en: 'Breakfast' },
+  { key: 'lunch', icon: '🌤️', label_fr: 'Déjeuner', label_en: 'Lunch' },
+  { key: 'dinner', icon: '🌙', label_fr: 'Dîner', label_en: 'Dinner' },
+  { key: 'snack', icon: '🍿', label_fr: 'Snack', label_en: 'Snack' },
 ];
 
 // ============================================
@@ -376,6 +405,24 @@ const MealDayCard = ({ icon, label, meal, lang }) => {
 // ============================================
 const RepasPage = ({ onNavigate }) => {
   const [lang] = useState('fr');
+  // === DONNÉES RÉELLES SUPABASE ===
+  const [dailySummary, setDailySummary] = useState({
+    total_calories: 0,
+    total_protein: 0,
+    total_carbs: 0,
+    total_fat: 0,
+    meals_count: 0,
+  });
+  const [userProfile, setUserProfile] = useState({
+    daily_calorie_target: 2330,
+  });
+  const [todayMeals, setTodayMeals] = useState([]);
+  const [frequentMeals, setFrequentMeals] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  // === SÉLECTEUR CRÉNEAU REPAS ===
+  const [selectedMealType, setSelectedMealType] = useState(null);
+
   const [activeTab, setActiveTab] = useState('meals');
 
   const handleTabPress = (key) => {
@@ -399,6 +446,84 @@ const RepasPage = ({ onNavigate }) => {
   const ring2Anim = useRef(new Animated.Value(0)).current;
   const ring3Anim = useRef(new Animated.Value(0)).current;
   const [showRings, setShowRings] = useState(false);
+
+  // === CHARGER LES DONNÉES SUPABASE ===
+  const loadDashboardData = async () => {
+    setIsLoadingData(true);
+    try {
+      // 1. Charger le profil utilisateur (calorie_target)
+      const { data: profile } = await supabase
+        .from('users_profile')
+        .select('daily_calorie_target')
+        .eq('user_id', TEST_USER_ID)
+        .single();
+
+      if (profile) {
+        setUserProfile({ daily_calorie_target: profile.daily_calorie_target || 2330 });
+      }
+
+      // 2. Charger le résumé quotidien
+      const today = new Date().toISOString().split('T')[0];
+      const { data: summary } = await supabase
+        .from('daily_summary')
+        .select('*')
+        .eq('user_id', TEST_USER_ID)
+        .eq('date', today)
+        .single();
+
+      if (summary) {
+        setDailySummary({
+          total_calories: summary.total_calories || 0,
+          total_protein: Math.round((summary.total_protein || 0) * 10) / 10,
+          total_carbs: Math.round((summary.total_carbs || 0) * 10) / 10,
+          total_fat: Math.round((summary.total_fat || 0) * 10) / 10,
+          meals_count: summary.meals_count || 0,
+        });
+      }
+
+      // 3. Charger les repas d'aujourd'hui
+      const { data: meals } = await supabase
+        .from('meals')
+        .select('*')
+        .eq('user_id', TEST_USER_ID)
+        .eq('date', today)
+        .order('meal_time', { ascending: true });
+
+      if (meals) {
+        setTodayMeals(meals);
+      }
+
+      // 4. Charger les plats fréquents (top 6 les plus mangés)
+      const { data: frequent } = await supabase
+        .from('meals')
+        .select('food_name, calories')
+        .eq('user_id', TEST_USER_ID)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (frequent && frequent.length > 0) {
+        const countMap = {};
+        frequent.forEach(m => {
+          if (!countMap[m.food_name]) {
+            countMap[m.food_name] = { name: m.food_name, cal: m.calories, count: 0 };
+          }
+          countMap[m.food_name].count++;
+        });
+        const sorted = Object.values(countMap)
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 6);
+        setFrequentMeals(sorted);
+      }
+
+    } catch (err) {
+      console.error('Erreur chargement données:', err);
+    }
+    setIsLoadingData(false);
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
 
   // === SHAKE ANIM pour icône "Pas ce plat ?" ===
   const alertShakeAnim = useRef(new Animated.Value(0)).current;
@@ -656,6 +781,7 @@ const RepasPage = ({ onNavigate }) => {
       }
 
       setAnalysisProgress(100);
+      setSelectedMealType(getAutoMealType());
       setTimeout(() => setScanScreen('result'), 500);
 
     } catch (error) {
@@ -936,7 +1062,7 @@ const RepasPage = ({ onNavigate }) => {
     setEditingQuantityIndex(null);
   };
 
-  const getMealType = () => {
+  const getAutoMealType = () => {
     const hour = new Date().getHours();
     if (hour < 10) return 'breakfast';
     if (hour < 14) return 'lunch';
@@ -968,7 +1094,7 @@ const RepasPage = ({ onNavigate }) => {
 
       const { data, error } = await supabase.rpc('add_meal_and_update_summary', {
         p_user_id: TEST_USER_ID,
-        p_meal_type: getMealType(),
+        p_meal_type: selectedMealType || getAutoMealType(),
         p_food_name: currentDishName || scanResult.name_fr || 'Plat scanné',
         p_calories: Math.round(totals.calories || 0),
         p_protein: Math.round((totals.protein_g || 0) * 10) / 10,
@@ -997,6 +1123,7 @@ const RepasPage = ({ onNavigate }) => {
 
       // Attendre 1.5s pour montrer le succès, puis fermer
       setTimeout(() => {
+        loadDashboardData();
         // Reset tous les states
         setScanScreen('none');
         setRecalculating(false);
@@ -1078,7 +1205,9 @@ const RepasPage = ({ onNavigate }) => {
     outputRange: [0.2, 0.5],
   });
 
-  const calPercent = Math.round((MOCK_CALORIES.consumed / MOCK_CALORIES.goal) * 100);
+  const calPercent = userProfile.daily_calorie_target > 0
+    ? Math.round((dailySummary.total_calories / userProfile.daily_calorie_target) * 100)
+    : 0;
 
   return (
     // FIX 1 — Même dégradé métallique que le dashboard
@@ -1162,10 +1291,10 @@ const RepasPage = ({ onNavigate }) => {
                               fill="#FFB74D" opacity={0.7}/>
                       </Svg>
                       <Text style={{ color: '#FF8C42', fontSize: fp(26), fontWeight: '900' }}>
-                        {MOCK_CALORIES.consumed.toLocaleString('fr-FR')}
+                        {dailySummary.total_calories.toLocaleString('fr-FR')}
                       </Text>
                       <Text style={{ color: '#5A6070', fontSize: fp(14), marginLeft: 4 }}>
-                        / {MOCK_CALORIES.goal.toLocaleString('fr-FR')} kcal
+                        / {userProfile.daily_calorie_target.toLocaleString('fr-FR')} kcal
                       </Text>
                     </View>
                     <View style={{
@@ -1191,9 +1320,9 @@ const RepasPage = ({ onNavigate }) => {
                   {/* Macros dans mini cards */}
                   <View style={{ flexDirection: 'row', marginTop: wp(12), gap: wp(8) }}>
                     {[
-                      { value: `${MOCK_CALORIES.protein}g`, color: '#FF6B6B', label: lang === 'fr' ? 'Protéines' : 'Protein' },
-                      { value: `${MOCK_CALORIES.carbs}g`, color: '#FFD93D', label: lang === 'fr' ? 'Glucides' : 'Carbs' },
-                      { value: `${MOCK_CALORIES.fat}g`, color: '#4DA6FF', label: lang === 'fr' ? 'Lipides' : 'Fat' },
+                      { value: `${dailySummary.total_protein}g`, color: '#FF6B6B', label: lang === 'fr' ? 'Protéines' : 'Protein' },
+                      { value: `${dailySummary.total_carbs}g`, color: '#FFD93D', label: lang === 'fr' ? 'Glucides' : 'Carbs' },
+                      { value: `${dailySummary.total_fat}g`, color: '#4DA6FF', label: lang === 'fr' ? 'Lipides' : 'Fat' },
                     ].map((m, i) => (
                       <View key={i} style={{
                         flex: 1, backgroundColor: 'rgba(255,255,255,0.03)',
@@ -1584,40 +1713,30 @@ const RepasPage = ({ onNavigate }) => {
               snapToInterval={MEAL_CARD_WIDTH + wp(10)}
               decelerationRate="fast"
             >
-              <MealDayCard
-                icon="☀️"
-                label={lang === 'fr' ? 'Petit-déjeuner' : 'Breakfast'}
-                meal={{
-                  name: 'Thé + Pain beurré',
-                  calories: 320,
-                  protein: 8, carbs: 45, fat: 12,
-                  time: '7h30',
-                }}
-                lang={lang}
-              />
-              <MealDayCard
-                icon="🌤️"
-                label={lang === 'fr' ? 'Déjeuner' : 'Lunch'}
-                meal={{
-                  name: 'Poulet grillé + Riz',
-                  calories: 450,
-                  protein: 35, carbs: 42, fat: 15,
-                  time: '12h30',
-                }}
-                lang={lang}
-              />
-              <MealDayCard
-                icon="🌙"
-                label={lang === 'fr' ? 'Dîner' : 'Dinner'}
-                meal={null}
-                lang={lang}
-              />
-              <MealDayCard
-                icon="🍿"
-                label={lang === 'fr' ? 'Snack' : 'Snack'}
-                meal={null}
-                lang={lang}
-              />
+              {[
+                { key: 'breakfast', icon: '☀️', label: lang === 'fr' ? 'Petit-déjeuner' : 'Breakfast' },
+                { key: 'lunch', icon: '🌤️', label: lang === 'fr' ? 'Déjeuner' : 'Lunch' },
+                { key: 'dinner', icon: '🌙', label: lang === 'fr' ? 'Dîner' : 'Dinner' },
+                { key: 'snack', icon: '🍿', label: lang === 'fr' ? 'Snack' : 'Snack' },
+              ].map((slot) => {
+                const meal = todayMeals.find(m => m.meal_type === slot.key);
+                return (
+                  <MealDayCard
+                    key={slot.key}
+                    icon={slot.icon}
+                    label={slot.label}
+                    meal={meal ? {
+                      name: meal.food_name,
+                      calories: Math.round(meal.calories),
+                      protein: Math.round(meal.protein_g || 0),
+                      carbs: Math.round(meal.carbs_g || 0),
+                      fat: Math.round(meal.fat_g || 0),
+                      time: new Date(meal.meal_time).toLocaleTimeString(lang === 'fr' ? 'fr-FR' : 'en-US', { hour: '2-digit', minute: '2-digit' }),
+                    } : null}
+                    lang={lang}
+                  />
+                );
+              })}
             </ScrollView>
           </View>
 
@@ -1643,30 +1762,28 @@ const RepasPage = ({ onNavigate }) => {
                     elevation: 6,
                   })}
                 >
-                  {/* Zone image — fond dégradé + emojis ingrédients */}
-                  <LinearGradient
-                    colors={[recipe.bgTop, recipe.bgBottom]}
-                    style={{
-                      width: '100%', height: wp(90),
-                      justifyContent: 'center', alignItems: 'center',
-                    }}
-                  >
-                    {/* Cercles décoratifs flous */}
-                    <View style={{
-                      position: 'absolute', top: wp(10), left: wp(8),
-                      width: wp(30), height: wp(30), borderRadius: wp(15),
-                      backgroundColor: 'rgba(255,255,255,0.06)',
-                    }}/>
-                    <View style={{
-                      position: 'absolute', bottom: wp(12), right: wp(6),
-                      width: wp(22), height: wp(22), borderRadius: wp(11),
-                      backgroundColor: 'rgba(255,255,255,0.06)',
-                    }}/>
-
-                    {/* Badge calories en haut à droite */}
+                  {/* Zone image — photo réelle */}
+                  <View style={{
+                    width: '100%', height: wp(90),
+                    backgroundColor: '#1A1D22',
+                  }}>
+                    <Image
+                      source={{ uri: recipe.image }}
+                      style={{
+                        width: '100%', height: '100%',
+                        resizeMode: 'cover',
+                      }}
+                    />
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.4)']}
+                      style={{
+                        position: 'absolute', bottom: 0, left: 0, right: 0,
+                        height: '40%',
+                      }}
+                    />
                     <View style={{
                       position: 'absolute', top: wp(6), right: wp(6),
-                      backgroundColor: 'rgba(0,0,0,0.5)',
+                      backgroundColor: 'rgba(0,0,0,0.6)',
                       paddingHorizontal: 6, paddingVertical: 2,
                       borderRadius: 6,
                     }}>
@@ -1674,17 +1791,7 @@ const RepasPage = ({ onNavigate }) => {
                         {recipe.cal} kcal
                       </Text>
                     </View>
-
-                    {/* 3 emojis ingrédients au centre */}
-                    <View style={{ flexDirection: 'row', gap: wp(6) }}>
-                      {recipe.ingredients.map((emoji, ei) => (
-                        <Text key={ei} style={{
-                          fontSize: fp(28),
-                          transform: [{ rotate: ei === 0 ? '-10deg' : ei === 2 ? '10deg' : '0deg' }],
-                        }}>{emoji}</Text>
-                      ))}
-                    </View>
-                  </LinearGradient>
+                  </View>
 
                   {/* Infos en bas — fond sombre */}
                   <View style={{
@@ -1716,7 +1823,7 @@ const RepasPage = ({ onNavigate }) => {
             <ScrollView horizontal showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(8) }}
             >
-              {MOCK_FREQUENT.map((item, index) => (
+              {(frequentMeals.length > 0 ? frequentMeals : MOCK_FREQUENT).map((item, index) => (
                 <Pressable key={index} delayPressIn={120}
                   style={({ pressed }) => ({
                     width: wp(75),
@@ -2386,33 +2493,46 @@ const RepasPage = ({ onNavigate }) => {
                 </Text>
               </View>
 
-              {/* Sélecteur de créneau */}
-              <View style={{
-                flexDirection: 'row', alignItems: 'center',
-                paddingHorizontal: wp(16), marginBottom: wp(20),
-              }}>
-                <Text style={{ color: '#8892A0', fontSize: fp(12), marginRight: 8 }}>
-                  {lang === 'fr' ? 'Créneau :' : 'Slot:'}
+              {/* Sélecteur de créneau — cliquable */}
+              <View style={{ paddingHorizontal: wp(16), marginBottom: wp(20) }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '700', letterSpacing: 1.5, marginBottom: wp(8) }}>
+                  {lang === 'fr' ? 'CRÉNEAU REPAS' : 'MEAL SLOT'}
                 </Text>
-                <View style={{
-                  flexDirection: 'row', alignItems: 'center',
-                  backgroundColor: 'rgba(0,217,132,0.08)',
-                  paddingHorizontal: 12, paddingVertical: 5,
-                  borderRadius: 10,
-                }}>
-                  <Text style={{ fontSize: 14, marginRight: 5 }}>
-                    {new Date().getHours() < 10 ? '☀️' : new Date().getHours() < 14 ? '🌤️' : new Date().getHours() < 21 ? '🌙' : '🍿'}
-                  </Text>
-                  <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '600' }}>
-                    {new Date().getHours() < 10
-                      ? (lang === 'fr' ? 'Petit-déjeuner' : 'Breakfast')
-                      : new Date().getHours() < 14
-                        ? (lang === 'fr' ? 'Déjeuner' : 'Lunch')
-                        : new Date().getHours() < 21
-                          ? (lang === 'fr' ? 'Dîner' : 'Dinner')
-                          : 'Snack'
-                    }
-                  </Text>
+                <View style={{ flexDirection: 'row', gap: wp(8) }}>
+                  {MEAL_SLOTS.map((slot) => {
+                    const isSelected = selectedMealType === slot.key;
+                    return (
+                      <Pressable
+                        key={slot.key}
+                        onPress={() => setSelectedMealType(slot.key)}
+                        style={({ pressed }) => ({
+                          flex: 1,
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          paddingVertical: wp(10),
+                          borderRadius: 12,
+                          backgroundColor: isSelected
+                            ? 'rgba(0,217,132,0.12)'
+                            : pressed
+                              ? 'rgba(255,255,255,0.05)'
+                              : 'rgba(255,255,255,0.02)',
+                          borderWidth: 1.5,
+                          borderColor: isSelected
+                            ? 'rgba(0,217,132,0.4)'
+                            : '#2A2F36',
+                        })}
+                      >
+                        <Text style={{ fontSize: 16, marginBottom: 3 }}>{slot.icon}</Text>
+                        <Text style={{
+                          color: isSelected ? '#00D984' : '#8892A0',
+                          fontSize: fp(9),
+                          fontWeight: isSelected ? '800' : '600',
+                        }}>
+                          {lang === 'fr' ? slot.label_fr : slot.label_en}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
               </View>
 
