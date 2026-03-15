@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, {
   G, Line, Circle, Path, Rect, Ellipse, Defs,
   LinearGradient as SvgLinearGradient, Stop,
+  Text as SvgText,
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { createClient } from '@supabase/supabase-js';
@@ -21,6 +22,10 @@ const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
+
+// ── Screen dimensions ────────────────────────────────────────────────────────
+const SCREEN_W = Dimensions.get('window').width;
+const SCREEN_H = Dimensions.get('window').height;
 
 // ── Responsive system ────────────────────────────────────────────────────────
 const { width: W } = Dimensions.get('window');
@@ -846,6 +851,8 @@ const ActivityPage = ({ onNavigate }) => {
   const [walkRoundTrip, setWalkRoundTrip] = useState(false);
   const [walkSaved, setWalkSaved] = useState(false);
   const [walkBarWidth, setWalkBarWidth] = useState(W - wp(64));
+  const [walkCanvasWidth, setWalkCanvasWidth] = useState(SCREEN_H - 24);
+  const [walkCanvasHeight, setWalkCanvasHeight] = useState(SCREEN_W - 100);
 
   // Run slider
   const [runMode, setRunMode] = useState('distance');
@@ -999,6 +1006,44 @@ const ActivityPage = ({ onNavigate }) => {
   };
 
   const todayDateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+
+  // ── Walk computed values ─────────────────────────────────────────────────
+  const WALK_DIST_MAP = [
+    { pos: 0, meters: 0 }, { pos: 0.25, meters: 500 }, { pos: 0.5, meters: 2000 },
+    { pos: 0.75, meters: 5000 }, { pos: 1.0, meters: 10000 },
+  ];
+  const WALK_TIME_MAP = [
+    { pos: 0, min: 0 }, { pos: 0.25, min: 15 }, { pos: 0.5, min: 30 },
+    { pos: 0.75, min: 60 }, { pos: 1.0, min: 120 },
+  ];
+  const interpMap = (map, val, key) => {
+    for (let i = 1; i < map.length; i++) {
+      if (val <= map[i].pos) {
+        const p = map[i - 1], c = map[i];
+        return p[key] + (c[key] - p[key]) * ((val - p.pos) / (c.pos - p.pos));
+      }
+    }
+    return map[map.length - 1][key];
+  };
+  const walkDistMeters = walkMode === 'distance'
+    ? interpMap(WALK_DIST_MAP, walkSliderValue, 'meters')
+    : (interpMap(WALK_TIME_MAP, walkSliderValue, 'min') / 60) * 5000;
+  const walkDurMinutes = walkMode === 'distance'
+    ? (walkDistMeters / 5000) * 60
+    : interpMap(WALK_TIME_MAP, walkSliderValue, 'min');
+  const walkCalBase = (walkDurMinutes / 60) * 280;
+  const walkWaterMl = (walkDurMinutes / 60) * 400;
+  const walkMult = walkRoundTrip ? 2 : 1;
+  const walkCaloriesDisplay = Math.round(walkCalBase * walkMult);
+  const walkDistDisplay = (() => {
+    const d = walkDistMeters * walkMult;
+    return d < 1000 ? `${Math.round(d)} m` : `${Math.round(d / 100) / 10} km`;
+  })();
+  const walkDurDisplay = (() => {
+    const m = Math.round(walkDurMinutes * walkMult);
+    return m < 60 ? `${m} min` : `${Math.round(m / 6) / 10} h`;
+  })();
+  const walkWaterDisplay = Math.round(walkWaterMl * walkMult);
 
   // ── RENDER ─────────────────────────────────────────────────────────────
   return (
@@ -1320,330 +1365,372 @@ const ActivityPage = ({ onNavigate }) => {
         <BottomTabs activeTab={activeTab} onTabPress={handleTabPress} />
       </View>
 
-      {/* MODAL MARCHE FULLSCREEN */}
-      <Modal visible={walkModalVisible} animationType="slide" transparent={false}>
-        <LinearGradient
-          colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']}
-          locations={[0, 0.25, 0.5, 0.75, 1]}
-          style={{ flex: 1 }}
-        >
-          <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 50 : 55 }}>
+      {/* MODAL MARCHE FULLSCREEN — MODE PAYSAGE */}
+      <Modal visible={walkModalVisible} animationType="slide" transparent={false} supportedOrientations={['portrait', 'landscape']}>
+        <View style={{ flex: 1, backgroundColor: '#0D1117' }}>
+          {/* Contenu tourné en paysage */}
+          <View style={{
+            width: SCREEN_H,
+            height: SCREEN_W,
+            transform: [{ rotate: '90deg' }, { translateX: (SCREEN_H - SCREEN_W) / 2 }, { translateY: (SCREEN_H - SCREEN_W) / 2 }],
+          }}>
+            <LinearGradient
+              colors={['#1E2530', '#222A35', '#1A2029']}
+              style={{ flex: 1 }}
+            >
+              {/* Header compact — une seule ligne */}
+              <View style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingHorizontal: 16,
+                paddingTop: 12,
+                paddingBottom: 8,
+              }}>
+                {/* Fermer */}
+                <Pressable onPress={() => setWalkModalVisible(false)}>
+                  <Text style={{ color: '#8892A0', fontSize: 13 }}>{String.fromCodePoint(0x2715)}</Text>
+                </Pressable>
 
-            {/* Header */}
-            <View style={{
-              flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-              paddingHorizontal: wp(16), paddingBottom: wp(12),
-            }}>
-              <Pressable onPress={() => setWalkModalVisible(false)}>
-                <Text style={{ color: '#8892A0', fontSize: fp(14) }}>{String.fromCodePoint(0x2715)} Fermer</Text>
-              </Pressable>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ fontSize: 20, marginRight: 6 }}>{String.fromCodePoint(0x1F6B6)}</Text>
-                <Text style={{ color: '#EAEEF3', fontSize: fp(18), fontWeight: '800' }}>MARCHE</Text>
+                {/* Toggle Distance/Temps — compact */}
+                <View style={{
+                  flexDirection: 'row',
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: 10, padding: 2,
+                }}>
+                  <Pressable
+                    onPress={() => { setWalkMode('distance'); setWalkSliderValue(0); }}
+                    style={{
+                      paddingHorizontal: 14, paddingVertical: 5, borderRadius: 8,
+                      backgroundColor: walkMode === 'distance' ? '#00D984' : 'transparent',
+                    }}
+                  >
+                    <Text style={{ color: walkMode === 'distance' ? '#0D1117' : '#8892A0', fontSize: 11, fontWeight: '700' }}>Distance</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => { setWalkMode('temps'); setWalkSliderValue(0); }}
+                    style={{
+                      paddingHorizontal: 14, paddingVertical: 5, borderRadius: 8,
+                      backgroundColor: walkMode === 'temps' ? '#00D984' : 'transparent',
+                    }}
+                  >
+                    <Text style={{ color: walkMode === 'temps' ? '#0D1117' : '#8892A0', fontSize: 11, fontWeight: '700' }}>Temps</Text>
+                  </Pressable>
+                </View>
+
+                {/* Aller/Retour compact */}
+                <Pressable onPress={() => setWalkRoundTrip(!walkRoundTrip)}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
+                    backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)',
+                    borderWidth: 1, borderColor: walkRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.08)',
+                  }}
+                >
+                  <Text style={{ color: walkRoundTrip ? '#00D984' : '#8892A0', fontSize: 10, fontWeight: '700' }}>
+                    {String.fromCodePoint(0x2194)} A/R {walkRoundTrip ? String.fromCodePoint(0x00D7) + '2' : ''}
+                  </Text>
+                </Pressable>
+
+                {/* Infos calories — compact */}
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ color: '#FF8C42', fontSize: 18, fontWeight: '900' }}>
+                    {Math.round(walkCaloriesDisplay)} kcal
+                  </Text>
+                  <Text style={{ color: '#5A6070', fontSize: 9 }}>
+                    {walkDistDisplay} {String.fromCodePoint(0x00B7)} {walkDurDisplay} {String.fromCodePoint(0x00B7)} {String.fromCodePoint(0x1F4A7)} {walkWaterDisplay} ml
+                  </Text>
+                </View>
               </View>
-              <View style={{ width: 60 }} />
-            </View>
 
-            {/* Toggle Distance / Temps */}
-            <View style={{
-              flexDirection: 'row', alignSelf: 'center',
-              backgroundColor: 'rgba(255,255,255,0.05)',
-              borderRadius: 12, padding: 3, marginBottom: wp(16),
-            }}>
-              <Pressable
-                onPress={() => { setWalkMode('distance'); setWalkSliderValue(0); }}
-                style={{
-                  paddingHorizontal: wp(20), paddingVertical: wp(8), borderRadius: 10,
-                  backgroundColor: walkMode === 'distance' ? '#00D984' : 'transparent',
-                }}
-              >
-                <Text style={{ color: walkMode === 'distance' ? '#0D1117' : '#8892A0', fontSize: fp(12), fontWeight: '700' }}>Distance</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => { setWalkMode('temps'); setWalkSliderValue(0); }}
-                style={{
-                  paddingHorizontal: wp(20), paddingVertical: wp(8), borderRadius: 10,
-                  backgroundColor: walkMode === 'temps' ? '#00D984' : 'transparent',
-                }}
-              >
-                <Text style={{ color: walkMode === 'temps' ? '#0D1117' : '#8892A0', fontSize: fp(12), fontWeight: '700' }}>Temps</Text>
-              </Pressable>
-            </View>
-
-            {/* CANVAS SVG */}
-            <View style={{ marginHorizontal: wp(16) }}>
+              {/* CANVAS — occupe presque tout l'espace restant */}
               <View
                 style={{
-                  height: wp(140),
-                  borderRadius: 18,
-                  backgroundColor: 'rgba(0,217,132,0.04)',
+                  flex: 1,
+                  marginHorizontal: 12,
+                  marginBottom: 8,
+                  borderRadius: 16,
+                  backgroundColor: 'rgba(0,217,132,0.03)',
                   borderWidth: 1,
-                  borderColor: 'rgba(0,217,132,0.1)',
+                  borderColor: 'rgba(0,217,132,0.08)',
                   overflow: 'hidden',
                 }}
-                onLayout={(e) => setWalkBarWidth(e.nativeEvent.layout.width)}
+                onLayout={(e) => {
+                  setWalkCanvasWidth(e.nativeEvent.layout.width);
+                  setWalkCanvasHeight(e.nativeEvent.layout.height);
+                }}
                 onStartShouldSetResponder={() => true}
                 onMoveShouldSetResponder={() => true}
                 onResponderGrant={(evt) => {
                   const x = evt.nativeEvent.locationX;
-                  setWalkSliderValue(Math.max(0, Math.min(1, x / walkBarWidth)));
+                  setWalkSliderValue(Math.max(0, Math.min(1, x / (walkCanvasWidth || 1))));
                 }}
                 onResponderMove={(evt) => {
                   const x = evt.nativeEvent.locationX;
-                  setWalkSliderValue(Math.max(0, Math.min(1, x / walkBarWidth)));
+                  setWalkSliderValue(Math.max(0, Math.min(1, x / (walkCanvasWidth || 1))));
                 }}
               >
-                <Svg width={walkBarWidth || W - wp(32)} height={wp(140)} viewBox={`0 0 ${walkBarWidth || 280} ${wp(140)}`}>
-                  {/* Grass texture */}
-                  {Array.from({ length: 30 }, (_, i) => (
-                    <Line key={`grass-${i}`}
-                      x1={(i / 30) * (walkBarWidth || 280)} y1={wp(140) - 2}
-                      x2={(i / 30) * (walkBarWidth || 280) + 1.5} y2={wp(140) - 7}
-                      stroke="#00D984" strokeWidth={1} opacity={0.1} />
-                  ))}
+                <Svg width={walkCanvasWidth || SCREEN_H - 24} height={walkCanvasHeight || SCREEN_W - 80}
+                  viewBox={`0 0 ${walkCanvasWidth || 600} ${walkCanvasHeight || 250}`}>
 
-                  {/* OBSTACLES + FOOTPRINTS */}
+                  {/* Gazon subtil — petites touffes d'herbe */}
+                  {Array.from({ length: 50 }, (_, i) => {
+                    const x = (i / 50) * (walkCanvasWidth || 600);
+                    const h = walkCanvasHeight || 250;
+                    return (
+                      <G key={`g-${i}`}>
+                        <Line x1={x} y1={h} x2={x - 1} y2={h - 4 - Math.random() * 3} stroke="#00D984" strokeWidth={0.8} opacity={0.08} />
+                        <Line x1={x + 2} y1={h} x2={x + 1} y2={h - 3 - Math.random() * 3} stroke="#00D984" strokeWidth={0.8} opacity={0.06} />
+                      </G>
+                    );
+                  })}
+
+                  {/* Ligne de sol */}
+                  <Line x1={0} y1={(walkCanvasHeight || 250) - 1} x2={walkCanvasWidth || 600} y2={(walkCanvasHeight || 250) - 1}
+                    stroke="#00D984" strokeWidth={0.5} opacity={0.1} />
+
                   {(() => {
-                    const cW = walkBarWidth || 280;
-                    const midY = wp(140) * 0.55;
-                    const margin = cW * 0.08;
-                    const usableWidth = cW - margin * 2;
-                    const passed = (pos) => walkSliderValue >= pos;
+                    const cW = walkCanvasWidth || 600;
+                    const cH = walkCanvasHeight || 250;
+                    const midY = cH * 0.55;
+                    const margin = cW * 0.06;
+                    const usable = cW - margin * 2;
+                    const passed = (p) => walkSliderValue >= p;
 
                     return (
                       <>
-                        {/* Maison */}
-                        <G transform={`translate(${margin}, ${midY - 12})`}>
-                          <Path d="M0 -6 L6 0 L-6 0 Z" fill="#8892A0" opacity={0.7} />
-                          <Rect x={-4} y={0} width={8} height={7} fill="#8892A0" opacity={0.5} />
-                          <Rect x={-1.5} y={2.5} width={3} height={4.5} fill="#5A6070" opacity={0.6} />
-                          <Rect x={2} y={1} width={2.5} height={2.5} fill="#D4AF37" opacity={0.4} />
+                        {/* ===== MAISON — Départ (colorée, premium) ===== */}
+                        <G transform={`translate(${margin}, ${midY - 15})`}>
+                          {/* Cheminée */}
+                          <Rect x={6} y={-12} width={3} height={6} fill="#8892A0" opacity={0.5} />
+                          {/* Fumée */}
+                          <Circle cx={8} cy={-14} r={2} fill="#8892A0" opacity={0.2} />
+                          <Circle cx={10} cy={-17} r={1.5} fill="#8892A0" opacity={0.15} />
+                          {/* Toit */}
+                          <Path d="M-2 -4 L10 -12 L22 -4 Z" fill="#FF6B6B" opacity={0.7} />
+                          {/* Mur */}
+                          <Rect x={0} y={-4} width={20} height={16} fill="#FFE4B5" opacity={0.6} />
+                          {/* Porte */}
+                          <Rect x={7} y={2} width={6} height={10} rx={1} fill="#8B6914" opacity={0.7} />
+                          {/* Poignée */}
+                          <Circle cx={11.5} cy={7} r={0.8} fill="#D4AF37" opacity={0.8} />
+                          {/* Fenêtre gauche */}
+                          <Rect x={1.5} y={-1} width={4} height={4} rx={0.5} fill="#4DA6FF" opacity={0.4} />
+                          <Line x1={3.5} y1={-1} x2={3.5} y2={3} stroke="#FFE4B5" strokeWidth={0.5} opacity={0.5} />
+                          <Line x1={1.5} y1={1} x2={5.5} y2={1} stroke="#FFE4B5" strokeWidth={0.5} opacity={0.5} />
+                          {/* Fenêtre droite */}
+                          <Rect x={14.5} y={-1} width={4} height={4} rx={0.5} fill="#4DA6FF" opacity={0.4} />
                         </G>
 
-                        {/* Arbre */}
-                        <G transform={`translate(${margin + 0.22 * usableWidth}, ${midY - 8})`}>
-                          <Rect x={-1.5} y={4} width={3} height={10} fill="#8B6914" opacity={0.6} />
-                          <Circle cx={0} cy={0} r={8} fill="#00D984" opacity={passed(0.22) ? 0.5 : 0.25} />
-                          <Circle cx={-4} cy={3} r={5} fill="#00D984" opacity={passed(0.22) ? 0.4 : 0.2} />
-                          <Circle cx={4} cy={3} r={5} fill="#00D984" opacity={passed(0.22) ? 0.4 : 0.2} />
+                        {/* ===== ARBRE — position 22% (coloré, premium) ===== */}
+                        <G transform={`translate(${margin + 0.22 * usable}, ${midY - 10})`}>
+                          {/* Tronc texturé */}
+                          <Rect x={-2} y={6} width={4} height={14} fill="#8B6914" opacity={0.7} />
+                          <Line x1={-1} y1={8} x2={-1} y2={18} stroke="#6B4C12" strokeWidth={0.5} opacity={0.3} />
+                          <Line x1={1} y1={7} x2={1} y2={19} stroke="#A07A18" strokeWidth={0.5} opacity={0.2} />
+                          {/* Feuillage — 3 cercles verts riches */}
+                          <Circle cx={0} cy={-2} r={10} fill="#2ECC71" opacity={0.7} />
+                          <Circle cx={-6} cy={2} r={7} fill="#27AE60" opacity={0.6} />
+                          <Circle cx={6} cy={2} r={7} fill="#27AE60" opacity={0.6} />
+                          <Circle cx={0} cy={-6} r={5} fill="#58D68D" opacity={0.4} />
+                          {/* Pomme qui tombe si passé */}
                           {passed(0.22) && (
                             <G>
-                              <Circle cx={5} cy={14} r={2.5} fill="#FF3B30" opacity={0.6} />
-                              <Line x1={5} y1={12} x2={5.5} y2={11} stroke="#8B6914" strokeWidth={0.8} opacity={0.5} />
+                              <Circle cx={7} cy={18} r={3} fill="#FF3B30" opacity={0.8} />
+                              <Line x1={7} y1={15} x2={7.5} y2={13.5} stroke="#8B6914" strokeWidth={1} />
+                              <Ellipse cx={8.5} cy={13} rx={2} ry={1} fill="#27AE60" opacity={0.5} transform="rotate(-30, 8.5, 13)" />
                             </G>
                           )}
                         </G>
 
-                        {/* Banc */}
-                        <G transform={`translate(${margin + 0.42 * usableWidth}, ${midY + 2})`}>
-                          <Rect x={-10} y={-2} width={20} height={3} rx={1.5} fill="#8892A0" opacity={0.6} />
-                          <Rect x={-9} y={-7} width={18} height={2.5} rx={1} fill="#8892A0" opacity={0.5} />
-                          <Line x1={-7} y1={1} x2={-7} y2={6} stroke="#8892A0" strokeWidth={2} opacity={0.5} />
-                          <Line x1={7} y1={1} x2={7} y2={6} stroke="#8892A0" strokeWidth={2} opacity={0.5} />
-                          <Line x1={-7} y1={-7} x2={-7} y2={-2} stroke="#8892A0" strokeWidth={2} opacity={0.5} />
-                          <Line x1={7} y1={-7} x2={7} y2={-2} stroke="#8892A0" strokeWidth={2} opacity={0.5} />
+                        {/* ===== BANC — position 42% (coloré, détaillé) ===== */}
+                        <G transform={`translate(${margin + 0.42 * usable}, ${midY + 2})`}>
+                          {/* Planches assise — bois chaud */}
+                          <Rect x={-12} y={-2} width={24} height={2.5} rx={1} fill="#D4A574" opacity={0.8} />
+                          <Rect x={-12} y={1} width={24} height={2.5} rx={1} fill="#C4956A" opacity={0.7} />
+                          {/* Planches dossier */}
+                          <Rect x={-11} y={-8} width={22} height={2} rx={1} fill="#D4A574" opacity={0.7} />
+                          <Rect x={-11} y={-5.5} width={22} height={2} rx={1} fill="#C4956A" opacity={0.6} />
+                          {/* Pieds métal */}
+                          <Path d="M-9 3.5 L-10 10 L-8 10 L-7 3.5" fill="#5A6070" opacity={0.7} />
+                          <Path d="M9 3.5 L8 10 L10 10 L11 3.5" fill="#5A6070" opacity={0.7} />
+                          {/* Montants dossier */}
+                          <Rect x={-9} y={-8} width={2} height={11} rx={0.5} fill="#5A6070" opacity={0.6} />
+                          <Rect x={9} y={-8} width={2} height={11} rx={0.5} fill="#5A6070" opacity={0.6} />
+                          {/* Accoudoirs */}
+                          <Rect x={-13} y={-3} width={4} height={2} rx={1} fill="#5A6070" opacity={0.5} />
+                          <Rect x={11} y={-3} width={4} height={2} rx={1} fill="#5A6070" opacity={0.5} />
                         </G>
 
-                        {/* Oiseaux */}
-                        <G transform={`translate(${margin + 0.65 * usableWidth}, ${midY - (passed(0.65) ? 18 : 6)})`}>
-                          <Path d="M-6 0 Q-3 -5 0 0" fill="none" stroke={passed(0.65) ? '#00D984' : '#8892A0'} strokeWidth={2} opacity={passed(0.65) ? 0.7 : 0.5} />
-                          <Path d="M4 -3 Q7 -8 10 -3" fill="none" stroke={passed(0.65) ? '#00D984' : '#8892A0'} strokeWidth={2} opacity={passed(0.65) ? 0.6 : 0.45} />
-                          <Path d="M-9 -4 Q-6 -9 -3 -4" fill="none" stroke={passed(0.65) ? '#00D984' : '#8892A0'} strokeWidth={1.8} opacity={passed(0.65) ? 0.5 : 0.4} />
-                          <Circle cx={-3} cy={1} r={1.5} fill={passed(0.65) ? '#00D984' : '#8892A0'} opacity={0.4} />
-                          <Circle cx={7} cy={-2} r={1.5} fill={passed(0.65) ? '#00D984' : '#8892A0'} opacity={0.4} />
-                          <Circle cx={-6} cy={-3} r={1.5} fill={passed(0.65) ? '#00D984' : '#8892A0'} opacity={0.4} />
+                        {/* ===== OISEAUX — position 65% (vrais oiseaux SVG, colorés, GRANDS) ===== */}
+                        <G transform={`translate(${margin + 0.65 * usable}, ${midY - (passed(0.65) ? 25 : 5)})`}>
+                          {/* Oiseau 1 — grand, bleu */}
+                          <G transform="translate(0, 0)">
+                            <Ellipse cx={0} cy={0} rx={5} ry={3} fill="#4DA6FF" opacity={0.8} />
+                            <Circle cx={-4} cy={-1.5} r={2.5} fill="#4DA6FF" opacity={0.8} />
+                            <Path d="M-6.5 -1.5 L-8.5 -0.5 L-6.5 0" fill="#FF8C42" opacity={0.9} />
+                            <Circle cx={-5} cy={-2} r={0.7} fill="white" />
+                            <Circle cx={-5.2} cy={-2} r={0.4} fill="#0D1117" />
+                            {/* Aile */}
+                            <Path d="M-1 -2 Q3 -8 8 -3 Q4 -1 0 0" fill="#5BC0EB" opacity={0.6} />
+                            {/* Queue */}
+                            <Path d="M5 0 L9 -2 L8 1 Z" fill="#4DA6FF" opacity={0.6} />
+                          </G>
+
+                          {/* Oiseau 2 — petit, vert */}
+                          <G transform="translate(14, -8) scale(0.7)">
+                            <Ellipse cx={0} cy={0} rx={5} ry={3} fill="#00D984" opacity={0.7} />
+                            <Circle cx={-4} cy={-1.5} r={2.5} fill="#00D984" opacity={0.7} />
+                            <Path d="M-6.5 -1.5 L-8 -0.5 L-6.5 0" fill="#FF8C42" opacity={0.8} />
+                            <Circle cx={-5} cy={-2} r={0.6} fill="white" />
+                            <Circle cx={-5.2} cy={-2} r={0.35} fill="#0D1117" />
+                            <Path d="M-1 -2 Q3 -7 7 -2 Q3 0 0 0" fill="#5DFFB4" opacity={0.5} />
+                          </G>
+
+                          {/* Oiseau 3 — moyen, jaune */}
+                          <G transform="translate(-12, -12) scale(0.6)">
+                            <Ellipse cx={0} cy={0} rx={5} ry={3} fill="#FFD93D" opacity={0.7} />
+                            <Circle cx={-4} cy={-1.5} r={2.5} fill="#FFD93D" opacity={0.7} />
+                            <Path d="M-6.5 -1.5 L-8 -0.5 L-6.5 0" fill="#FF8C42" opacity={0.8} />
+                            <Circle cx={-5} cy={-2} r={0.6} fill="white" />
+                            <Circle cx={-5.2} cy={-2} r={0.35} fill="#0D1117" />
+                            <Path d="M-1 -2 Q3 -7 7 -2 Q3 0 0 0" fill="#FFE066" opacity={0.5} />
+                          </G>
                         </G>
 
-                        {/* Etang + Canard */}
-                        <G transform={`translate(${margin + 0.95 * usableWidth}, ${midY})`}>
-                          <Ellipse cx={0} cy={4} rx={16} ry={10} fill="#4DA6FF" opacity={0.15} />
-                          <Ellipse cx={0} cy={4} rx={13} ry={7} fill="#4DA6FF" opacity={0.1} />
-                          <Path d="M-10 3 Q-5 0 0 3 Q5 6 10 3" fill="none" stroke="#4DA6FF" strokeWidth={1} opacity={0.3} />
-                          <Path d="M-7 7 Q-2 4 3 7 Q8 10 13 7" fill="none" stroke="#4DA6FF" strokeWidth={0.8} opacity={0.2} />
-                          <Ellipse cx={0} cy={0} rx={5} ry={3} fill="#FFB800" opacity={0.7} />
-                          <Circle cx={-4} cy={-2} r={3} fill="#FFB800" opacity={0.7} />
-                          <Path d="M-7 -2 L-9.5 -1 L-7 0" fill="#FF8C42" opacity={0.8} />
-                          <Circle cx={-5} cy={-2.5} r={0.8} fill="#0D1117" />
+                        {/* ===== ÉTANG + CANARD — position 93% (coloré, vivant) ===== */}
+                        <G transform={`translate(${margin + 0.93 * usable}, ${midY})`}>
+                          {/* Eau */}
+                          <Ellipse cx={0} cy={5} rx={20} ry={12} fill="#4DA6FF" opacity={0.12} />
+                          <Ellipse cx={0} cy={5} rx={16} ry={9} fill="#4DA6FF" opacity={0.08} />
+                          {/* Rides */}
+                          <Path d="M-12 4 Q-6 1 0 4 Q6 7 12 4" fill="none" stroke="#4DA6FF" strokeWidth={0.8} opacity={0.25} />
+                          <Path d="M-9 8 Q-3 5 3 8 Q9 11 15 8" fill="none" stroke="#4DA6FF" strokeWidth={0.6} opacity={0.15} />
+                          {/* Nénuphars */}
+                          <Ellipse cx={-10} cy={8} rx={3} ry={1.5} fill="#27AE60" opacity={0.4} />
+                          <Circle cx={-10} cy={7} r={1} fill="#FF6B8A" opacity={0.3} />
+                          <Ellipse cx={8} cy={10} rx={2.5} ry={1.2} fill="#27AE60" opacity={0.3} />
+                          {/* Canard — coloré et vivant */}
+                          <Ellipse cx={0} cy={1} rx={6} ry={3.5} fill="#FFB800" opacity={0.85} />
+                          <Circle cx={-5} cy={-2} r={3.5} fill="#27AE60" opacity={0.8} />
+                          <Path d="M-8.5 -2 L-11 -1 L-8.5 0" fill="#FF8C42" opacity={0.9} />
+                          <Circle cx={-6} cy={-2.5} r={1} fill="white" />
+                          <Circle cx={-6.3} cy={-2.5} r={0.5} fill="#0D1117" />
+                          {/* Queue relevée */}
+                          <Path d="M6 -1 L9 -4 L7 0" fill="#FFB800" opacity={0.7} />
+                          {/* Reflet dans l'eau */}
+                          <Ellipse cx={0} cy={6} rx={5} ry={2} fill="#FFB800" opacity={0.1} />
                         </G>
 
-                        {/* TRACES DE PAS — contournent les obstacles */}
+                        {/* ===== TRACES DE PAS — orientées horizontalement, moins nombreuses ===== */}
                         {(() => {
                           const prints = [];
-                          const totalPrints = 24;
+                          const totalPrints = 14;
+
                           for (let i = 0; i < totalPrints; i++) {
                             const t = i / totalPrints;
                             if (t > walkSliderValue) break;
-                            const baseX = margin + t * usableWidth;
+
+                            const baseX = margin + t * usable;
+
                             let waveY = 0;
-                            const nearTree = Math.abs(t - 0.22) < 0.08;
-                            const nearBench = Math.abs(t - 0.42) < 0.08;
-                            const nearBirds = Math.abs(t - 0.65) < 0.06;
-                            if (nearTree) waveY = 18;
-                            else if (nearBench) waveY = -16;
-                            else if (nearBirds) waveY = 14;
-                            else waveY = Math.sin(t * Math.PI * 5) * 8;
+                            const nearTree = Math.abs(t - 0.22) < 0.06;
+                            const nearBench = Math.abs(t - 0.42) < 0.06;
+                            const nearBirds = Math.abs(t - 0.65) < 0.05;
+
+                            if (nearTree) waveY = 22;
+                            else if (nearBench) waveY = -20;
+                            else if (nearBirds) waveY = 18;
+                            else waveY = Math.sin(t * Math.PI * 4) * 6;
+
                             const isRight = i % 2 === 0;
                             const footOffset = isRight ? -4 : 4;
                             const y = midY + waveY + footOffset;
+
                             const dist = walkSliderValue - t;
-                            const opacity = dist > 0.25 ? Math.max(0.05, 0.7 - (dist - 0.25) * 2) : 0.7;
+                            const opacity = dist > 0.20 ? Math.max(0, 0.6 - (dist - 0.20) * 3) : 0.6;
+
+                            if (opacity <= 0) continue;
+
+                            const footAngle = isRight ? 80 : 100;
+
                             prints.push(
                               <G key={`fp-${i}`} opacity={opacity}
-                                transform={`translate(${baseX}, ${y}) rotate(${isRight ? 12 : -12})`}>
-                                <Ellipse cx={0} cy={0} rx={3.5} ry={5.5} fill="#00D984" opacity={0.6} />
-                                <Circle cx={isRight ? 1.5 : -1.5} cy={-5.5} r={1.3} fill="#00D984" opacity={0.5} />
-                                <Circle cx={0} cy={-6} r={1.3} fill="#00D984" opacity={0.5} />
-                                <Circle cx={isRight ? -1.5 : 1.5} cy={-5.5} r={1.3} fill="#00D984" opacity={0.5} />
+                                transform={`translate(${baseX}, ${y}) rotate(${footAngle})`}>
+                                <Ellipse cx={0} cy={0} rx={3} ry={5} fill="#00D984" opacity={0.5} />
+                                <Circle cx={isRight ? 1 : -1} cy={-5} r={1.2} fill="#00D984" opacity={0.4} />
+                                <Circle cx={0} cy={-5.5} r={1.2} fill="#00D984" opacity={0.4} />
+                                <Circle cx={isRight ? -1 : 1} cy={-5} r={1.2} fill="#00D984" opacity={0.4} />
                               </G>
                             );
                           }
                           return prints;
                         })()}
+
+                        {/* Barre de progression — en bas du canvas */}
+                        <Rect x={margin} y={cH - 10} width={usable} height={6} rx={3} fill="rgba(0,217,132,0.08)" />
+                        <Rect x={margin} y={cH - 10} width={Math.max(0, usable * walkSliderValue)} height={6} rx={3} fill="#00D984" opacity={0.7} />
+
+                        {/* Labels paliers — en bas */}
+                        {(walkMode === 'distance'
+                          ? ['D\u00e9part', '500m', '2 km', '5 km', '10 km']
+                          : ['5 min', '15 min', '30 min', '1 h', '2 h']
+                        ).map((label, i, arr) => {
+                          const pos = margin + (i / (arr.length - 1)) * usable;
+                          const isActive = Math.abs(walkSliderValue - (i / (arr.length - 1))) < 0.12;
+                          return (
+                            <SvgText key={`lb-${i}`} x={pos} y={cH - 14}
+                              fill={isActive ? '#00D984' : '#5A6070'}
+                              fontSize={9} fontWeight={isActive ? '800' : '400'}
+                              textAnchor="middle">
+                              {label}
+                            </SvgText>
+                          );
+                        })}
                       </>
                     );
                   })()}
-
-                  {/* Progress bar at bottom */}
-                  <Rect x={walkBarWidth ? walkBarWidth * 0.08 : 22} y={wp(140) - wp(12)}
-                    width={(walkBarWidth || 280) * 0.84} height={wp(8)}
-                    rx={wp(4)} fill="rgba(0,217,132,0.08)" />
-                  <Rect x={walkBarWidth ? walkBarWidth * 0.08 : 22} y={wp(140) - wp(12)}
-                    width={Math.max(0, ((walkBarWidth || 280) * 0.84) * walkSliderValue)} height={wp(8)}
-                    rx={wp(4)} fill="#00D984" opacity={0.8} />
                 </Svg>
               </View>
 
-              {/* Labels sous le canvas */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6), paddingHorizontal: wp(4) }}>
-                {(walkMode === 'distance'
-                  ? [{ label: 'Départ' }, { label: '500m' }, { label: '2 km' }, { label: '5 km' }, { label: '10 km' }]
-                  : [{ label: '5 min' }, { label: '15 min' }, { label: '30 min' }, { label: '1 h' }, { label: '2 h' }]
-                ).map((item, i, arr) => {
-                  const pos = i / (arr.length - 1);
-                  const isActive = Math.abs(walkSliderValue - pos) < 0.12;
-                  return (
-                    <Text key={i} style={{
-                      color: isActive ? '#00D984' : '#5A6070',
-                      fontSize: fp(9),
-                      fontWeight: isActive ? '800' : '500',
-                    }}>{item.label}</Text>
-                  );
-                })}
-              </View>
-            </View>
-
-            {/* Valeurs calculées */}
-            {(() => {
-              const WALK_DIST_MAP = [
-                { pos: 0, meters: 0 }, { pos: 0.25, meters: 500 }, { pos: 0.5, meters: 2000 },
-                { pos: 0.75, meters: 5000 }, { pos: 1.0, meters: 10000 },
-              ];
-              const WALK_TIME_MAP = [
-                { pos: 0, min: 0 }, { pos: 0.25, min: 15 }, { pos: 0.5, min: 30 },
-                { pos: 0.75, min: 60 }, { pos: 1.0, min: 120 },
-              ];
-              const interpolate = (map, val, key) => {
-                for (let j = 1; j < map.length; j++) {
-                  if (val <= map[j].pos) {
-                    const prev = map[j - 1]; const curr = map[j];
-                    const t = (val - prev.pos) / (curr.pos - prev.pos);
-                    return prev[key] + (curr[key] - prev[key]) * t;
-                  }
-                }
-                return map[map.length - 1][key];
-              };
-              let distMeters, durationMin;
-              if (walkMode === 'distance') {
-                distMeters = interpolate(WALK_DIST_MAP, walkSliderValue, 'meters');
-                durationMin = (distMeters / 1000) / 5 * 60;
-              } else {
-                durationMin = interpolate(WALK_TIME_MAP, walkSliderValue, 'min');
-                distMeters = (durationMin / 60) * 5 * 1000;
-              }
-              const calories = (durationMin / 60) * 280;
-              const waterMl = (durationMin / 60) * 400;
-              const mult = walkRoundTrip ? 2 : 1;
-              const fDist = distMeters * mult;
-              const fCal = Math.round(calories * mult);
-              const fDur = Math.round(durationMin * mult);
-              const fWater = Math.round(waterMl * mult);
-              const distStr = fDist < 1000 ? `${Math.round(fDist)} m` : `${Math.round(fDist / 100) / 10} km`;
-              const durStr = fDur < 60 ? `${fDur} min` : `${Math.round(fDur / 6) / 10} h`;
-
-              return (
-                <View style={{ paddingHorizontal: wp(16), marginTop: wp(16) }}>
-                  {/* Distance + Calories */}
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                    <Text style={{ color: '#00D984', fontSize: fp(28), fontWeight: '900' }}>
-                      {distStr}{walkRoundTrip ? ' \u00D72' : ''}
-                    </Text>
-                    <Text style={{ color: '#FF8C42', fontSize: fp(22), fontWeight: '800' }}>
-                      {fCal} kcal
-                    </Text>
-                  </View>
-
-                  {/* Durée + Eau */}
-                  <Text style={{ color: '#5A6070', fontSize: fp(11), marginTop: wp(4) }}>
-                    ~{durStr} à vitesse normale {String.fromCodePoint(0x00B7)} {String.fromCodePoint(0x1F4A7)} {fWater} ml
+              {/* Bouton CONFIRMER — compact en bas */}
+              <View style={{
+                flexDirection: 'row',
+                justifyContent: 'center',
+                paddingHorizontal: 16,
+                paddingBottom: 8,
+              }}>
+                <Pressable
+                  onPress={async () => {
+                    if (walkCaloriesDisplay === 0) return;
+                    const cmult = walkRoundTrip ? 2 : 1;
+                    const success = await saveActivity('marche',
+                      Math.round(walkDurMinutes * cmult),
+                      Math.round(walkCaloriesDisplay),
+                      'modere',
+                      Math.round(walkWaterMl * cmult)
+                    );
+                    if (success) {
+                      setWalkSaved(true);
+                      setTimeout(() => { setWalkSaved(false); setWalkModalVisible(false); }, 1500);
+                    }
+                  }}
+                  disabled={walkSaved || walkSliderValue === 0}
+                  style={({ pressed }) => ({
+                    paddingVertical: 10,
+                    paddingHorizontal: 30,
+                    borderRadius: 12,
+                    backgroundColor: walkSaved ? '#00D984' : walkSliderValue === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
+                  })}
+                >
+                  <Text style={{ color: '#0D1117', fontSize: 14, fontWeight: '800' }}>
+                    {walkSaved ? '\u2713 AJOUT\u00c9 ! +5 Lix' : `\u2713 MARCHE \u2014 ${Math.round(walkCaloriesDisplay)} kcal`}
                   </Text>
-
-                  {/* Aller/Retour */}
-                  <View style={{ alignItems: 'center', marginTop: wp(16) }}>
-                    <Pressable
-                      onPress={() => setWalkRoundTrip(!walkRoundTrip)}
-                      style={{
-                        flexDirection: 'row', alignItems: 'center',
-                        paddingHorizontal: wp(14), paddingVertical: wp(8), borderRadius: 12,
-                        backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.12)' : 'rgba(255,255,255,0.03)',
-                        borderWidth: 1.5, borderColor: walkRoundTrip ? 'rgba(0,217,132,0.4)' : '#2A2F36',
-                      }}
-                    >
-                      <Svg width={20} height={16} viewBox="0 0 20 16" style={{ marginRight: 8 }}>
-                        <Path d="M2 5 L8 2 L8 4 L18 4 L18 6 L8 6 L8 8 Z" fill={walkRoundTrip ? '#00D984' : '#8892A0'} />
-                        <Path d="M18 11 L12 14 L12 12 L2 12 L2 10 L12 10 L12 8 Z" fill={walkRoundTrip ? '#00D984' : '#8892A0'} opacity={0.6} />
-                      </Svg>
-                      <Text style={{ color: walkRoundTrip ? '#00D984' : '#8892A0', fontSize: fp(12), fontWeight: '700' }}>
-                        Aller / Retour
-                      </Text>
-                      {walkRoundTrip && <Text style={{ color: '#00D984', fontSize: fp(10), marginLeft: 8, fontWeight: '700' }}>{String.fromCodePoint(0x00D7)}2</Text>}
-                    </Pressable>
-                  </View>
-
-                  {/* Bouton CONFIRMER */}
-                  <Pressable
-                    onPress={async () => {
-                      if (fCal === 0) return;
-                      const success = await saveActivity('marche', fDur, fCal, 'modere', fWater);
-                      if (success) {
-                        setWalkSaved(true);
-                        setTimeout(() => {
-                          setWalkSaved(false);
-                          setWalkModalVisible(false);
-                        }, 1500);
-                      }
-                    }}
-                    disabled={walkSaved || fCal === 0}
-                    style={({ pressed }) => ({
-                      paddingVertical: wp(14), borderRadius: 14,
-                      backgroundColor: walkSaved ? '#00D984' : fCal === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
-                      alignItems: 'center', marginTop: wp(20),
-                    })}
-                  >
-                    <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
-                      {walkSaved ? '✓ AJOUTÉ ! +5 Lix' : `✓ AJOUTER MARCHE — ${fCal} kcal`}
-                    </Text>
-                  </Pressable>
-
-                  {/* Récompense Lix */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: wp(12) }}>
-                    <Text style={{ fontSize: 14, marginRight: 6 }}>{String.fromCodePoint(0x1F3C6)}</Text>
-                    <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '600' }}>+5 Lix par activité</Text>
-                  </View>
-                </View>
-              );
-            })()}
+                </Pressable>
+              </View>
+            </LinearGradient>
           </View>
-        </LinearGradient>
+        </View>
       </Modal>
 
       {/* Sport Modal */}
