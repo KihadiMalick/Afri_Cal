@@ -836,17 +836,16 @@ const ActivityPage = ({ onNavigate }) => {
   const [todayActivities, setTodayActivities] = useState([]);
   const [activeTab, setActiveTab] = useState('activity');
 
-  // FIX 7: Save feedback states
-  const [walkSaved, setWalkSaved] = useState(false);
+  // Save feedback
   const [runSaved, setRunSaved] = useState(false);
 
-  // Walk immersive trail
+  // Walk modal
+  const [walkModalVisible, setWalkModalVisible] = useState(false);
   const [walkMode, setWalkMode] = useState('distance');
-  const [walkValue, setWalkValue] = useState(0.2);
+  const [walkSliderValue, setWalkSliderValue] = useState(0);
   const [walkRoundTrip, setWalkRoundTrip] = useState(false);
-  const [walkBarWidth, setWalkBarWidth] = useState(0);
-  const [walkBarX, setWalkBarX] = useState(0);
-  const walkBarRef = useRef(null);
+  const [walkSaved, setWalkSaved] = useState(false);
+  const [walkBarWidth, setWalkBarWidth] = useState(W - wp(64));
 
   // Run slider
   const [runMode, setRunMode] = useState('distance');
@@ -944,36 +943,6 @@ const ActivityPage = ({ onNavigate }) => {
   const RUN_MAX_DIST = 21000;  // 21 km in metres
   const MAX_TIME = 60;         // minutes
 
-  // Walk — immersive trail distance interpolation
-  const walkDistanceM = walkMode === 'distance' ? walkSliderToDistance(walkValue) : null;
-  const walkDistanceKm = walkDistanceM !== null ? walkDistanceM / 1000 : null;
-  const walkTimeMins = walkMode === 'temps' ? walkValue * MAX_TIME : null;
-
-  const walkCaloriesBase = walkMode === 'distance'
-    ? Math.round((walkDistanceKm / ACTIVITY_DATA.marche.km_per_hour) * ACTIVITY_DATA.marche.kcal_per_hour)
-    : Math.round((walkTimeMins / 60) * ACTIVITY_DATA.marche.kcal_per_hour);
-
-  const walkDurationBase = walkMode === 'distance'
-    ? Math.round((walkDistanceKm / ACTIVITY_DATA.marche.km_per_hour) * 60)
-    : Math.round(walkTimeMins);
-
-  const walkDistDisplayBase = walkMode === 'distance'
-    ? walkDistanceKm
-    : (walkTimeMins / 60) * ACTIVITY_DATA.marche.km_per_hour;
-
-  const walkWaterBase = Math.round((walkDurationBase / 60) * ACTIVITY_DATA.marche.water_per_hour_ml);
-
-  // Round-trip multiplier
-  const walkMultiplier = walkRoundTrip ? 2 : 1;
-  const walkCalories = walkCaloriesBase * walkMultiplier;
-  const walkDuration = walkDurationBase * walkMultiplier;
-  const walkDistDisplay = walkDistDisplayBase * walkMultiplier;
-  const walkWater = walkWaterBase * walkMultiplier;
-
-  // SVG canvas dimensions
-  const WALK_CANVAS_H = wp(100);
-  const walkFootprints = generateFootprints(walkValue, walkBarWidth, WALK_CANVAS_H * 0.4);
-
   // FIX 3: Run — use non-linear distance interpolation
   const runDistanceM = runMode === 'distance' ? sliderToDistance(runValue, RUN_FLAGS) : null;
   const runDistanceKm = runDistanceM !== null ? runDistanceM / 1000 : null;
@@ -999,22 +968,6 @@ const ActivityPage = ({ onNavigate }) => {
   const totalWater = todayActivities.reduce((s, a) => s + (a.water_lost_ml || 0), 0);
 
   // ── Handlers ───────────────────────────────────────────────────────────
-  const handleAddWalk = async () => {
-    if (walkDistDisplay === 0) return;
-    const ok = await saveActivity('marche', walkDuration, walkCalories, 'modere', walkWater);
-    if (ok) {
-      setWalkSaved(true);
-      setTimeout(() => setWalkSaved(false), 1500);
-    }
-  };
-
-  const handleWalkSliderTouch = (evt) => {
-    if (walkBarWidth <= 0) return;
-    const touchX = evt.nativeEvent.pageX - walkBarX;
-    const clamped = Math.max(0, Math.min(1, touchX / walkBarWidth));
-    setWalkValue(clamped);
-  };
-
   const handleAddRun = async () => {
     const dur = runDuration;
     const cal = runCalories;
@@ -1125,245 +1078,60 @@ const ActivityPage = ({ onNavigate }) => {
             </View>
           </MetalCard>
 
-          {/* WALK HERO — Immersive Trail */}
+          {/* CARTE MARCHE — compacte */}
           <SectionTitle title="Marche" />
-          <MetalCard>
-            <View>
-              {/* Card header */}
-              <View style={{
-                flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-                marginBottom: wp(8),
-              }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <WalkShoeIcon size={wp(18)} />
-                  <Text style={{
-                    color: '#EAEEF3', fontSize: fp(14), fontWeight: '800',
-                    letterSpacing: 1.5, marginLeft: wp(6),
-                  }}>
-                    MARCHE
-                  </Text>
-                </View>
-                <ModePill mode={walkMode} onToggle={setWalkMode} accentColor="#00D984" />
-              </View>
+          <View style={{
+            borderRadius: wp(18), padding: wp(1.2),
+            backgroundColor: '#4A4F55',
+            shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.5, shadowRadius: 16, elevation: 12,
+            marginHorizontal: wp(14), marginBottom: wp(12),
+          }}>
+            <LinearGradient
+              colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+              style={{ borderRadius: wp(17), overflow: 'hidden' }}
+            >
+              <View style={{ padding: wp(16), borderWidth: 1, borderColor: 'rgba(0,0,0,0.25)', borderRadius: wp(17) }}>
+                <View style={{ position: 'absolute', top: 0, left: 25, right: 25, height: 1, backgroundColor: 'rgba(0,217,132,0.10)' }} />
 
-              {/* Immersive Trail Canvas */}
-              <View
-                ref={walkBarRef}
-                onLayout={(e) => {
-                  const w = e.nativeEvent.layout.width;
-                  setWalkBarWidth(w);
-                  walkBarRef.current?.measure?.((fx, fy, fw, fh, px) => {
-                    if (px !== undefined) setWalkBarX(px);
-                  });
-                }}
-                style={{
-                  height: WALK_CANVAS_H,
-                  backgroundColor: 'rgba(0,217,132,0.04)',
-                  borderRadius: wp(14),
-                  overflow: 'hidden',
-                  borderWidth: 1,
-                  borderColor: 'rgba(0,217,132,0.1)',
-                }}
-              >
-                {/* SVG Canvas — decor + footprints */}
-                <Svg width="100%" height={WALK_CANVAS_H * 0.7} style={{ position: 'absolute', top: 0 }}>
-                  {/* Grass texture lines */}
-                  {walkBarWidth > 0 && Array.from({ length: 40 }).map((_, i) => {
-                    const x = (i / 40) * walkBarWidth;
-                    return (
-                      <Line key={`grass-${i}`}
-                        x1={x} y1={WALK_CANVAS_H * 0.68}
-                        x2={x + 2} y2={WALK_CANVAS_H * 0.63}
-                        stroke="#00D984" strokeWidth={0.8} opacity={0.08} />
-                    );
-                  })}
-
-                  {/* Decor elements — top zone (30%) */}
-                  {walkBarWidth > 0 && WALK_LANDMARKS.map((lm) => {
-                    const x = lm.position * walkBarWidth;
-                    const decorY = WALK_CANVAS_H * 0.18;
-                    const passed = walkValue >= lm.position;
-                    switch (lm.type) {
-                      case 'house': return <HouseIcon key={lm.type} x={x} y={decorY} />;
-                      case 'tree': return <TreeIcon key={lm.type} x={x} y={decorY} passed={passed} />;
-                      case 'bench': return <BenchIcon key={lm.type} x={x} y={decorY + 4} />;
-                      case 'birds': return <BirdsIcon key={lm.type} x={x} y={decorY - 6} passed={passed} />;
-                      case 'pond': return <PondIcon key={lm.type} x={x} y={decorY + 2} />;
-                      default: return null;
-                    }
-                  })}
-
-                  {/* Footprint trail — middle zone (40%) */}
-                  {walkFootprints.map((fp_, i) => (
-                    <FootprintSVG
-                      key={`fp-${i}`}
-                      x={fp_.x}
-                      y={WALK_CANVAS_H * 0.3 + fp_.y}
-                      isRight={fp_.isRight}
-                      opacity={fp_.opacity}
-                    />
-                  ))}
-
-                  {/* Walker position indicator */}
-                  {walkBarWidth > 0 && walkValue > 0 && (
-                    <G transform={`translate(${walkValue * walkBarWidth * 0.85 + walkBarWidth * 0.08}, ${WALK_CANVAS_H * 0.48})`}>
-                      <Circle cx={0} cy={0} r={5} fill="#00D984" opacity={0.6} />
-                      <Circle cx={0} cy={0} r={3} fill="#00D984" opacity={0.9} />
-                    </G>
-                  )}
-                </Svg>
-
-                {/* Touch area + progress bar — bottom zone */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: wp(50),
-                    justifyContent: 'center',
-                  }}
-                  onStartShouldSetResponder={() => true}
-                  onMoveShouldSetResponder={() => true}
-                  onResponderGrant={handleWalkSliderTouch}
-                  onResponderMove={handleWalkSliderTouch}
-                  onResponderRelease={() => {}}
-                >
-                  {/* Visible progress bar */}
-                  <View style={{
-                    height: wp(8),
-                    backgroundColor: 'rgba(0,217,132,0.08)',
-                    borderRadius: wp(4),
-                    overflow: 'hidden',
-                    marginHorizontal: wp(4),
-                  }}>
-                    <LinearGradient
-                      colors={['#00D984', '#00B572']}
-                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                      style={{
-                        height: '100%',
-                        width: `${walkValue * 100}%`,
-                        borderRadius: wp(4),
-                      }}
-                    />
-                  </View>
+                {/* Header */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
+                  <Text style={{ fontSize: 22, marginRight: 8 }}>{String.fromCodePoint(0x1F6B6)}</Text>
+                  <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800', letterSpacing: 1 }}>MARCHE</Text>
                 </View>
 
-                {/* Landmark labels below bar */}
-                {walkBarWidth > 0 && (
-                  <View style={{ position: 'absolute', bottom: wp(2), left: 0, right: 0 }}>
-                    {WALK_LANDMARKS.map((lm) => {
-                      const isActive = (() => {
-                        let closest = WALK_LANDMARKS[0];
-                        let minD = Math.abs(walkValue - closest.position);
-                        WALK_LANDMARKS.forEach((l) => {
-                          const d = Math.abs(walkValue - l.position);
-                          if (d < minD) { minD = d; closest = l; }
-                        });
-                        return closest.type === lm.type;
-                      })();
-                      return (
-                        <View key={lm.type} style={{
-                          position: 'absolute',
-                          left: lm.position * walkBarWidth - wp(16),
-                          bottom: 0,
-                          width: wp(32),
-                          alignItems: 'center',
-                        }}>
-                          <Text style={{
-                            fontSize: fp(7),
-                            color: isActive ? '#00D984' : '#555E6C',
-                            fontWeight: isActive ? '700' : '500',
-                          }}>
-                            {lm.label}
-                          </Text>
-                        </View>
-                      );
-                    })}
-                  </View>
-                )}
-              </View>
+                {/* Phrase motivante */}
+                <Text style={{ color: '#8892A0', fontSize: fp(11), lineHeight: fp(16), marginBottom: wp(10) }}>
+                  La marche est le meilleur exercice. <Text style={{ color: '#00D984', fontWeight: '700' }}>30 min/jour</Text> change votre vie.
+                </Text>
 
-              {/* Value display */}
-              <View style={{
-                flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',
-                marginTop: wp(10), paddingHorizontal: wp(4),
-              }}>
-                <View>
-                  <Text style={{ color: '#00D984', fontSize: fp(22), fontWeight: '900' }}>
-                    {walkRoundTrip
-                      ? `${formatDistance(walkDistDisplayBase * 1000)} \u00D72 = ${formatDistance(walkDistDisplay * 1000)}`
-                      : formatDistance(walkDistDisplay * 1000)
-                    }
-                  </Text>
+                {/* Info calories */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF8C42', marginRight: 6 }} />
+                  <Text style={{ color: '#5A6070', fontSize: fp(10) }}>~56 kcal/km à vitesse normale {String.fromCodePoint(0x2022)} {String.fromCodePoint(0x1F4A7)} ~80 ml/km</Text>
                 </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ color: '#FF8C42', fontSize: fp(18), fontWeight: '900' }}>
-                    {Math.round(walkCalories)} kcal
-                  </Text>
-                </View>
-              </View>
-              <Text style={{ color: '#555E6C', fontSize: fp(9), marginTop: wp(2), paddingHorizontal: wp(4) }}>
-                ~{formatDuration(walkDuration)} à vitesse normale {String.fromCodePoint(0x00B7)} {String.fromCodePoint(0x1F4A7)} {walkWater} ml
-              </Text>
 
-              {/* Aller / Retour toggle */}
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginTop: wp(10),
-                marginBottom: wp(8),
-              }}>
+                {/* Bouton Marcher */}
                 <Pressable
-                  onPress={() => setWalkRoundTrip(!walkRoundTrip)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingHorizontal: wp(14),
-                    paddingVertical: wp(8),
-                    borderRadius: 12,
-                    backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.12)' : 'rgba(255,255,255,0.03)',
-                    borderWidth: 1.5,
-                    borderColor: walkRoundTrip ? 'rgba(0,217,132,0.4)' : '#2A2F36',
+                  onPress={() => {
+                    setWalkSliderValue(0);
+                    setWalkRoundTrip(false);
+                    setWalkSaved(false);
+                    setWalkMode('distance');
+                    setWalkModalVisible(true);
                   }}
+                  style={({ pressed }) => ({
+                    paddingVertical: wp(12),
+                    borderRadius: 14,
+                    backgroundColor: pressed ? '#00B572' : '#00D984',
+                    alignItems: 'center',
+                  })}
                 >
-                  <Svg width={20} height={16} viewBox="0 0 20 16" style={{ marginRight: 8 }}>
-                    <Path d="M2 5 L8 2 L8 4 L18 4 L18 6 L8 6 L8 8 Z" fill={walkRoundTrip ? '#00D984' : '#8892A0'} />
-                    <Path d="M18 11 L12 14 L12 12 L2 12 L2 10 L12 10 L12 8 Z" fill={walkRoundTrip ? '#00D984' : '#8892A0'} opacity={0.6} />
-                  </Svg>
-                  <Text style={{
-                    color: walkRoundTrip ? '#00D984' : '#8892A0',
-                    fontSize: fp(11),
-                    fontWeight: walkRoundTrip ? '800' : '600',
-                  }}>
-                    Aller / Retour
-                  </Text>
-                  {walkRoundTrip && (
-                    <Text style={{ color: '#00D984', fontSize: fp(9), marginLeft: 8, fontWeight: '600' }}>{String.fromCodePoint(0x00D7)}2</Text>
-                  )}
+                  <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>{String.fromCodePoint(0x1F6B6)} Marcher</Text>
                 </Pressable>
               </View>
-
-              {/* Add button with feedback */}
-              <Pressable
-                onPress={handleAddWalk}
-                disabled={walkSaved || walkDistDisplay === 0}
-                style={({ pressed }) => ({
-                  paddingVertical: wp(14),
-                  borderRadius: 14,
-                  backgroundColor: walkSaved ? '#00D984' : pressed ? '#00B572' : '#00D984',
-                  alignItems: 'center',
-                  marginTop: wp(8),
-                  opacity: walkDistDisplay === 0 ? 0.4 : 1,
-                })}
-              >
-                <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
-                  {walkSaved ? '✓ AJOUTÉ ! +5 Lix' : `✓ AJOUTER MARCHE — ${Math.round(walkCalories)} kcal`}
-                </Text>
-              </Pressable>
-            </View>
-          </MetalCard>
+            </LinearGradient>
+          </View>
 
           {/* RUN HERO */}
           <SectionTitle title="Course" />
@@ -1551,6 +1319,332 @@ const ActivityPage = ({ onNavigate }) => {
       <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
         <BottomTabs activeTab={activeTab} onTabPress={handleTabPress} />
       </View>
+
+      {/* MODAL MARCHE FULLSCREEN */}
+      <Modal visible={walkModalVisible} animationType="slide" transparent={false}>
+        <LinearGradient
+          colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']}
+          locations={[0, 0.25, 0.5, 0.75, 1]}
+          style={{ flex: 1 }}
+        >
+          <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 50 : 55 }}>
+
+            {/* Header */}
+            <View style={{
+              flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+              paddingHorizontal: wp(16), paddingBottom: wp(12),
+            }}>
+              <Pressable onPress={() => setWalkModalVisible(false)}>
+                <Text style={{ color: '#8892A0', fontSize: fp(14) }}>{String.fromCodePoint(0x2715)} Fermer</Text>
+              </Pressable>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ fontSize: 20, marginRight: 6 }}>{String.fromCodePoint(0x1F6B6)}</Text>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(18), fontWeight: '800' }}>MARCHE</Text>
+              </View>
+              <View style={{ width: 60 }} />
+            </View>
+
+            {/* Toggle Distance / Temps */}
+            <View style={{
+              flexDirection: 'row', alignSelf: 'center',
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              borderRadius: 12, padding: 3, marginBottom: wp(16),
+            }}>
+              <Pressable
+                onPress={() => { setWalkMode('distance'); setWalkSliderValue(0); }}
+                style={{
+                  paddingHorizontal: wp(20), paddingVertical: wp(8), borderRadius: 10,
+                  backgroundColor: walkMode === 'distance' ? '#00D984' : 'transparent',
+                }}
+              >
+                <Text style={{ color: walkMode === 'distance' ? '#0D1117' : '#8892A0', fontSize: fp(12), fontWeight: '700' }}>Distance</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => { setWalkMode('temps'); setWalkSliderValue(0); }}
+                style={{
+                  paddingHorizontal: wp(20), paddingVertical: wp(8), borderRadius: 10,
+                  backgroundColor: walkMode === 'temps' ? '#00D984' : 'transparent',
+                }}
+              >
+                <Text style={{ color: walkMode === 'temps' ? '#0D1117' : '#8892A0', fontSize: fp(12), fontWeight: '700' }}>Temps</Text>
+              </Pressable>
+            </View>
+
+            {/* CANVAS SVG */}
+            <View style={{ marginHorizontal: wp(16) }}>
+              <View
+                style={{
+                  height: wp(140),
+                  borderRadius: 18,
+                  backgroundColor: 'rgba(0,217,132,0.04)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(0,217,132,0.1)',
+                  overflow: 'hidden',
+                }}
+                onLayout={(e) => setWalkBarWidth(e.nativeEvent.layout.width)}
+                onStartShouldSetResponder={() => true}
+                onMoveShouldSetResponder={() => true}
+                onResponderGrant={(evt) => {
+                  const x = evt.nativeEvent.locationX;
+                  setWalkSliderValue(Math.max(0, Math.min(1, x / walkBarWidth)));
+                }}
+                onResponderMove={(evt) => {
+                  const x = evt.nativeEvent.locationX;
+                  setWalkSliderValue(Math.max(0, Math.min(1, x / walkBarWidth)));
+                }}
+              >
+                <Svg width={walkBarWidth || W - wp(32)} height={wp(140)} viewBox={`0 0 ${walkBarWidth || 280} ${wp(140)}`}>
+                  {/* Grass texture */}
+                  {Array.from({ length: 30 }, (_, i) => (
+                    <Line key={`grass-${i}`}
+                      x1={(i / 30) * (walkBarWidth || 280)} y1={wp(140) - 2}
+                      x2={(i / 30) * (walkBarWidth || 280) + 1.5} y2={wp(140) - 7}
+                      stroke="#00D984" strokeWidth={1} opacity={0.1} />
+                  ))}
+
+                  {/* OBSTACLES + FOOTPRINTS */}
+                  {(() => {
+                    const cW = walkBarWidth || 280;
+                    const midY = wp(140) * 0.55;
+                    const margin = cW * 0.08;
+                    const usableWidth = cW - margin * 2;
+                    const passed = (pos) => walkSliderValue >= pos;
+
+                    return (
+                      <>
+                        {/* Maison */}
+                        <G transform={`translate(${margin}, ${midY - 12})`}>
+                          <Path d="M0 -6 L6 0 L-6 0 Z" fill="#8892A0" opacity={0.7} />
+                          <Rect x={-4} y={0} width={8} height={7} fill="#8892A0" opacity={0.5} />
+                          <Rect x={-1.5} y={2.5} width={3} height={4.5} fill="#5A6070" opacity={0.6} />
+                          <Rect x={2} y={1} width={2.5} height={2.5} fill="#D4AF37" opacity={0.4} />
+                        </G>
+
+                        {/* Arbre */}
+                        <G transform={`translate(${margin + 0.22 * usableWidth}, ${midY - 8})`}>
+                          <Rect x={-1.5} y={4} width={3} height={10} fill="#8B6914" opacity={0.6} />
+                          <Circle cx={0} cy={0} r={8} fill="#00D984" opacity={passed(0.22) ? 0.5 : 0.25} />
+                          <Circle cx={-4} cy={3} r={5} fill="#00D984" opacity={passed(0.22) ? 0.4 : 0.2} />
+                          <Circle cx={4} cy={3} r={5} fill="#00D984" opacity={passed(0.22) ? 0.4 : 0.2} />
+                          {passed(0.22) && (
+                            <G>
+                              <Circle cx={5} cy={14} r={2.5} fill="#FF3B30" opacity={0.6} />
+                              <Line x1={5} y1={12} x2={5.5} y2={11} stroke="#8B6914" strokeWidth={0.8} opacity={0.5} />
+                            </G>
+                          )}
+                        </G>
+
+                        {/* Banc */}
+                        <G transform={`translate(${margin + 0.42 * usableWidth}, ${midY + 2})`}>
+                          <Rect x={-10} y={-2} width={20} height={3} rx={1.5} fill="#8892A0" opacity={0.6} />
+                          <Rect x={-9} y={-7} width={18} height={2.5} rx={1} fill="#8892A0" opacity={0.5} />
+                          <Line x1={-7} y1={1} x2={-7} y2={6} stroke="#8892A0" strokeWidth={2} opacity={0.5} />
+                          <Line x1={7} y1={1} x2={7} y2={6} stroke="#8892A0" strokeWidth={2} opacity={0.5} />
+                          <Line x1={-7} y1={-7} x2={-7} y2={-2} stroke="#8892A0" strokeWidth={2} opacity={0.5} />
+                          <Line x1={7} y1={-7} x2={7} y2={-2} stroke="#8892A0" strokeWidth={2} opacity={0.5} />
+                        </G>
+
+                        {/* Oiseaux */}
+                        <G transform={`translate(${margin + 0.65 * usableWidth}, ${midY - (passed(0.65) ? 18 : 6)})`}>
+                          <Path d="M-6 0 Q-3 -5 0 0" fill="none" stroke={passed(0.65) ? '#00D984' : '#8892A0'} strokeWidth={2} opacity={passed(0.65) ? 0.7 : 0.5} />
+                          <Path d="M4 -3 Q7 -8 10 -3" fill="none" stroke={passed(0.65) ? '#00D984' : '#8892A0'} strokeWidth={2} opacity={passed(0.65) ? 0.6 : 0.45} />
+                          <Path d="M-9 -4 Q-6 -9 -3 -4" fill="none" stroke={passed(0.65) ? '#00D984' : '#8892A0'} strokeWidth={1.8} opacity={passed(0.65) ? 0.5 : 0.4} />
+                          <Circle cx={-3} cy={1} r={1.5} fill={passed(0.65) ? '#00D984' : '#8892A0'} opacity={0.4} />
+                          <Circle cx={7} cy={-2} r={1.5} fill={passed(0.65) ? '#00D984' : '#8892A0'} opacity={0.4} />
+                          <Circle cx={-6} cy={-3} r={1.5} fill={passed(0.65) ? '#00D984' : '#8892A0'} opacity={0.4} />
+                        </G>
+
+                        {/* Etang + Canard */}
+                        <G transform={`translate(${margin + 0.95 * usableWidth}, ${midY})`}>
+                          <Ellipse cx={0} cy={4} rx={16} ry={10} fill="#4DA6FF" opacity={0.15} />
+                          <Ellipse cx={0} cy={4} rx={13} ry={7} fill="#4DA6FF" opacity={0.1} />
+                          <Path d="M-10 3 Q-5 0 0 3 Q5 6 10 3" fill="none" stroke="#4DA6FF" strokeWidth={1} opacity={0.3} />
+                          <Path d="M-7 7 Q-2 4 3 7 Q8 10 13 7" fill="none" stroke="#4DA6FF" strokeWidth={0.8} opacity={0.2} />
+                          <Ellipse cx={0} cy={0} rx={5} ry={3} fill="#FFB800" opacity={0.7} />
+                          <Circle cx={-4} cy={-2} r={3} fill="#FFB800" opacity={0.7} />
+                          <Path d="M-7 -2 L-9.5 -1 L-7 0" fill="#FF8C42" opacity={0.8} />
+                          <Circle cx={-5} cy={-2.5} r={0.8} fill="#0D1117" />
+                        </G>
+
+                        {/* TRACES DE PAS — contournent les obstacles */}
+                        {(() => {
+                          const prints = [];
+                          const totalPrints = 24;
+                          for (let i = 0; i < totalPrints; i++) {
+                            const t = i / totalPrints;
+                            if (t > walkSliderValue) break;
+                            const baseX = margin + t * usableWidth;
+                            let waveY = 0;
+                            const nearTree = Math.abs(t - 0.22) < 0.08;
+                            const nearBench = Math.abs(t - 0.42) < 0.08;
+                            const nearBirds = Math.abs(t - 0.65) < 0.06;
+                            if (nearTree) waveY = 18;
+                            else if (nearBench) waveY = -16;
+                            else if (nearBirds) waveY = 14;
+                            else waveY = Math.sin(t * Math.PI * 5) * 8;
+                            const isRight = i % 2 === 0;
+                            const footOffset = isRight ? -4 : 4;
+                            const y = midY + waveY + footOffset;
+                            const dist = walkSliderValue - t;
+                            const opacity = dist > 0.25 ? Math.max(0.05, 0.7 - (dist - 0.25) * 2) : 0.7;
+                            prints.push(
+                              <G key={`fp-${i}`} opacity={opacity}
+                                transform={`translate(${baseX}, ${y}) rotate(${isRight ? 12 : -12})`}>
+                                <Ellipse cx={0} cy={0} rx={3.5} ry={5.5} fill="#00D984" opacity={0.6} />
+                                <Circle cx={isRight ? 1.5 : -1.5} cy={-5.5} r={1.3} fill="#00D984" opacity={0.5} />
+                                <Circle cx={0} cy={-6} r={1.3} fill="#00D984" opacity={0.5} />
+                                <Circle cx={isRight ? -1.5 : 1.5} cy={-5.5} r={1.3} fill="#00D984" opacity={0.5} />
+                              </G>
+                            );
+                          }
+                          return prints;
+                        })()}
+                      </>
+                    );
+                  })()}
+
+                  {/* Progress bar at bottom */}
+                  <Rect x={walkBarWidth ? walkBarWidth * 0.08 : 22} y={wp(140) - wp(12)}
+                    width={(walkBarWidth || 280) * 0.84} height={wp(8)}
+                    rx={wp(4)} fill="rgba(0,217,132,0.08)" />
+                  <Rect x={walkBarWidth ? walkBarWidth * 0.08 : 22} y={wp(140) - wp(12)}
+                    width={Math.max(0, ((walkBarWidth || 280) * 0.84) * walkSliderValue)} height={wp(8)}
+                    rx={wp(4)} fill="#00D984" opacity={0.8} />
+                </Svg>
+              </View>
+
+              {/* Labels sous le canvas */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6), paddingHorizontal: wp(4) }}>
+                {(walkMode === 'distance'
+                  ? [{ label: 'Départ' }, { label: '500m' }, { label: '2 km' }, { label: '5 km' }, { label: '10 km' }]
+                  : [{ label: '5 min' }, { label: '15 min' }, { label: '30 min' }, { label: '1 h' }, { label: '2 h' }]
+                ).map((item, i, arr) => {
+                  const pos = i / (arr.length - 1);
+                  const isActive = Math.abs(walkSliderValue - pos) < 0.12;
+                  return (
+                    <Text key={i} style={{
+                      color: isActive ? '#00D984' : '#5A6070',
+                      fontSize: fp(9),
+                      fontWeight: isActive ? '800' : '500',
+                    }}>{item.label}</Text>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Valeurs calculées */}
+            {(() => {
+              const WALK_DIST_MAP = [
+                { pos: 0, meters: 0 }, { pos: 0.25, meters: 500 }, { pos: 0.5, meters: 2000 },
+                { pos: 0.75, meters: 5000 }, { pos: 1.0, meters: 10000 },
+              ];
+              const WALK_TIME_MAP = [
+                { pos: 0, min: 0 }, { pos: 0.25, min: 15 }, { pos: 0.5, min: 30 },
+                { pos: 0.75, min: 60 }, { pos: 1.0, min: 120 },
+              ];
+              const interpolate = (map, val, key) => {
+                for (let j = 1; j < map.length; j++) {
+                  if (val <= map[j].pos) {
+                    const prev = map[j - 1]; const curr = map[j];
+                    const t = (val - prev.pos) / (curr.pos - prev.pos);
+                    return prev[key] + (curr[key] - prev[key]) * t;
+                  }
+                }
+                return map[map.length - 1][key];
+              };
+              let distMeters, durationMin;
+              if (walkMode === 'distance') {
+                distMeters = interpolate(WALK_DIST_MAP, walkSliderValue, 'meters');
+                durationMin = (distMeters / 1000) / 5 * 60;
+              } else {
+                durationMin = interpolate(WALK_TIME_MAP, walkSliderValue, 'min');
+                distMeters = (durationMin / 60) * 5 * 1000;
+              }
+              const calories = (durationMin / 60) * 280;
+              const waterMl = (durationMin / 60) * 400;
+              const mult = walkRoundTrip ? 2 : 1;
+              const fDist = distMeters * mult;
+              const fCal = Math.round(calories * mult);
+              const fDur = Math.round(durationMin * mult);
+              const fWater = Math.round(waterMl * mult);
+              const distStr = fDist < 1000 ? `${Math.round(fDist)} m` : `${Math.round(fDist / 100) / 10} km`;
+              const durStr = fDur < 60 ? `${fDur} min` : `${Math.round(fDur / 6) / 10} h`;
+
+              return (
+                <View style={{ paddingHorizontal: wp(16), marginTop: wp(16) }}>
+                  {/* Distance + Calories */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <Text style={{ color: '#00D984', fontSize: fp(28), fontWeight: '900' }}>
+                      {distStr}{walkRoundTrip ? ' \u00D72' : ''}
+                    </Text>
+                    <Text style={{ color: '#FF8C42', fontSize: fp(22), fontWeight: '800' }}>
+                      {fCal} kcal
+                    </Text>
+                  </View>
+
+                  {/* Durée + Eau */}
+                  <Text style={{ color: '#5A6070', fontSize: fp(11), marginTop: wp(4) }}>
+                    ~{durStr} à vitesse normale {String.fromCodePoint(0x00B7)} {String.fromCodePoint(0x1F4A7)} {fWater} ml
+                  </Text>
+
+                  {/* Aller/Retour */}
+                  <View style={{ alignItems: 'center', marginTop: wp(16) }}>
+                    <Pressable
+                      onPress={() => setWalkRoundTrip(!walkRoundTrip)}
+                      style={{
+                        flexDirection: 'row', alignItems: 'center',
+                        paddingHorizontal: wp(14), paddingVertical: wp(8), borderRadius: 12,
+                        backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.12)' : 'rgba(255,255,255,0.03)',
+                        borderWidth: 1.5, borderColor: walkRoundTrip ? 'rgba(0,217,132,0.4)' : '#2A2F36',
+                      }}
+                    >
+                      <Svg width={20} height={16} viewBox="0 0 20 16" style={{ marginRight: 8 }}>
+                        <Path d="M2 5 L8 2 L8 4 L18 4 L18 6 L8 6 L8 8 Z" fill={walkRoundTrip ? '#00D984' : '#8892A0'} />
+                        <Path d="M18 11 L12 14 L12 12 L2 12 L2 10 L12 10 L12 8 Z" fill={walkRoundTrip ? '#00D984' : '#8892A0'} opacity={0.6} />
+                      </Svg>
+                      <Text style={{ color: walkRoundTrip ? '#00D984' : '#8892A0', fontSize: fp(12), fontWeight: '700' }}>
+                        Aller / Retour
+                      </Text>
+                      {walkRoundTrip && <Text style={{ color: '#00D984', fontSize: fp(10), marginLeft: 8, fontWeight: '700' }}>{String.fromCodePoint(0x00D7)}2</Text>}
+                    </Pressable>
+                  </View>
+
+                  {/* Bouton CONFIRMER */}
+                  <Pressable
+                    onPress={async () => {
+                      if (fCal === 0) return;
+                      const success = await saveActivity('marche', fDur, fCal, 'modere', fWater);
+                      if (success) {
+                        setWalkSaved(true);
+                        setTimeout(() => {
+                          setWalkSaved(false);
+                          setWalkModalVisible(false);
+                        }, 1500);
+                      }
+                    }}
+                    disabled={walkSaved || fCal === 0}
+                    style={({ pressed }) => ({
+                      paddingVertical: wp(14), borderRadius: 14,
+                      backgroundColor: walkSaved ? '#00D984' : fCal === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
+                      alignItems: 'center', marginTop: wp(20),
+                    })}
+                  >
+                    <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
+                      {walkSaved ? '✓ AJOUTÉ ! +5 Lix' : `✓ AJOUTER MARCHE — ${fCal} kcal`}
+                    </Text>
+                  </Pressable>
+
+                  {/* Récompense Lix */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: wp(12) }}>
+                    <Text style={{ fontSize: 14, marginRight: 6 }}>{String.fromCodePoint(0x1F3C6)}</Text>
+                    <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '600' }}>+5 Lix par activité</Text>
+                  </View>
+                </View>
+              );
+            })()}
+          </View>
+        </LinearGradient>
+      </Modal>
 
       {/* Sport Modal */}
       <SportModal
