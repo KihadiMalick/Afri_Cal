@@ -19,6 +19,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Dimensions, Text, StyleSheet, Pressable, Image,
   Animated, ScrollView, PixelRatio, Platform, TouchableOpacity, TextInput,
+  KeyboardAvoidingView, Keyboard,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Path, Rect, Ellipse, Defs, Mask, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
@@ -445,6 +446,7 @@ const RepasPage = ({ onNavigate }) => {
 
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef(null);
+  const correctionScrollRef = useRef(null);
   const [capturedPhoto, setCapturedPhoto] = useState(null);
   const [analysisText, setAnalysisText] = useState('');
   const [scanResult, setScanResult] = useState(null);
@@ -2589,6 +2591,11 @@ const RepasPage = ({ onNavigate }) => {
                 zIndex: 2500,
                 backgroundColor: '#0D1117',
               }}>
+                <KeyboardAvoidingView
+                  style={{ flex: 1 }}
+                  behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                  keyboardVerticalOffset={0}
+                >
                 {/* Header */}
                 <View style={{
                   flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -2616,9 +2623,10 @@ const RepasPage = ({ onNavigate }) => {
                 </View>
 
                 <ScrollView
+                  ref={correctionScrollRef}
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"
-                  contentContainerStyle={{ paddingBottom: wp(120) }}
+                  contentContainerStyle={{ paddingBottom: wp(250) }}
                 >
                   {/* Totaux en temps réel */}
                   <View style={{
@@ -2761,6 +2769,13 @@ const RepasPage = ({ onNavigate }) => {
                         onChangeText={searchIngredients}
                         placeholder={lang === 'fr' ? 'Tapez un ingrédient...' : 'Type an ingredient...'}
                         placeholderTextColor="#5A6070"
+                        onFocus={() => {
+                          setTimeout(() => {
+                            if (correctionScrollRef.current) {
+                              correctionScrollRef.current.scrollToEnd({ animated: true });
+                            }
+                          }, 300);
+                        }}
                         style={{
                           flex: 1, color: '#EAEEF3', fontSize: fp(13),
                           paddingVertical: wp(12),
@@ -2882,6 +2897,7 @@ const RepasPage = ({ onNavigate }) => {
                     </Text>
                   </Pressable>
                 </View>
+                </KeyboardAvoidingView>
               </View>
             )}
           </View>
