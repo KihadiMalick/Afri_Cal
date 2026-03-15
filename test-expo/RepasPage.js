@@ -18,7 +18,7 @@ ABONNEMENTS :
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Dimensions, Text, StyleSheet, Pressable, Image,
-  Animated, ScrollView, PixelRatio, Platform, TouchableOpacity,
+  Animated, ScrollView, PixelRatio, Platform, TouchableOpacity, TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Path, Rect, Ellipse, Defs, Mask, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
@@ -452,6 +452,15 @@ const RepasPage = ({ onNavigate }) => {
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [recalculating, setRecalculating] = useState(false);
 
+  // === STATES CORRECTION ===
+  const [correctionMode, setCorrectionMode] = useState(false);
+  const [editedIngredients, setEditedIngredients] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [editingQuantityIndex, setEditingQuantityIndex] = useState(null);
+  const [tempQuantity, setTempQuantity] = useState('');
+
   const loadingTexts = lang === 'fr'
     ? [
       '🍳 Cooking...',
@@ -652,6 +661,12 @@ const RepasPage = ({ onNavigate }) => {
       setScanScreen('none');
       setRecalculating(false);
       setCapturedPhoto(null);
+      setCorrectionMode(false);
+      setEditedIngredients([]);
+      setSearchQuery('');
+      setSearchResults([]);
+      setEditingQuantityIndex(null);
+      setTempQuantity('');
     }
   };
 
@@ -749,6 +764,169 @@ const RepasPage = ({ onNavigate }) => {
       setScanResult({ ...scanResult, ingredients: updatedIngredients });
       setRecalculating(false);
     }
+  };
+
+  // === FONCTIONS CORRECTION ===
+
+  const removeIngredient = (index) => {
+    const updated = editedIngredients.filter((_, i) => i !== index);
+    setEditedIngredients(updated);
+  };
+
+  const updateQuantity = async (index, newQuantityStr) => {
+    const newQty = parseFloat(newQuantityStr);
+    if (isNaN(newQty) || newQty <= 0) return;
+
+    const updated = [...editedIngredients];
+    const ing = updated[index];
+    const oldQty = ing.quantity_g || 100;
+
+    try {
+      const response = await fetch(
+        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0',
+          },
+          body: JSON.stringify({
+            action: 'search_ingredients',
+            query: ing.name,
+            limit: 1,
+          }),
+        }
+      );
+      const data = await response.json();
+      const results = data.results || [];
+
+      if (results.length > 0) {
+        const db = results[0];
+        const factor = newQty / 100;
+        updated[index] = {
+          ...ing,
+          quantity_g: newQty,
+          calories: Math.round((db.kcal_per_100g || 0) * factor),
+          protein_g: Math.round((db.protein_per_100g || 0) * factor * 10) / 10,
+          carbs_g: Math.round((db.carbs_per_100g || 0) * factor * 10) / 10,
+          fat_g: Math.round((db.fat_per_100g || 0) * factor * 10) / 10,
+          fiber_g: Math.round((db.fiber_per_100g || 0) * factor * 10) / 10,
+        };
+      } else {
+        const ratio = newQty / oldQty;
+        updated[index] = {
+          ...ing,
+          quantity_g: newQty,
+          calories: Math.round((ing.calories || 0) * ratio),
+          protein_g: Math.round((ing.protein_g || 0) * ratio * 10) / 10,
+          carbs_g: Math.round((ing.carbs_g || 0) * ratio * 10) / 10,
+          fat_g: Math.round((ing.fat_g || 0) * ratio * 10) / 10,
+          fiber_g: Math.round((ing.fiber_g || 0) * ratio * 10) / 10,
+        };
+      }
+    } catch (e) {
+      const ratio = newQty / oldQty;
+      updated[index] = {
+        ...ing,
+        quantity_g: newQty,
+        calories: Math.round((ing.calories || 0) * ratio),
+        protein_g: Math.round((ing.protein_g || 0) * ratio * 10) / 10,
+        carbs_g: Math.round((ing.carbs_g || 0) * ratio * 10) / 10,
+        fat_g: Math.round((ing.fat_g || 0) * ratio * 10) / 10,
+        fiber_g: Math.round((ing.fiber_g || 0) * ratio * 10) / 10,
+      };
+    }
+
+    setEditedIngredients(updated);
+    setEditingQuantityIndex(null);
+    setTempQuantity('');
+  };
+
+  const searchIngredients = async (query) => {
+    setSearchQuery(query);
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0',
+          },
+          body: JSON.stringify({
+            action: 'search_ingredients',
+            query: query,
+            limit: 8,
+          }),
+        }
+      );
+      const data = await response.json();
+      setSearchResults(data.results || []);
+    } catch (e) {
+      console.error('Search error:', e);
+      setSearchResults([]);
+    }
+    setIsSearching(false);
+  };
+
+  const addIngredientFromSearch = (dbIngredient) => {
+    const defaultQty = 100;
+    const factor = defaultQty / 100;
+
+    const newIng = {
+      name: dbIngredient.name,
+      name_en: dbIngredient.name,
+      quantity_g: defaultQty,
+      calories: Math.round((dbIngredient.kcal_per_100g || 0) * factor),
+      protein_g: Math.round((dbIngredient.protein_per_100g || 0) * factor * 10) / 10,
+      carbs_g: Math.round((dbIngredient.carbs_per_100g || 0) * factor * 10) / 10,
+      fat_g: Math.round((dbIngredient.fat_per_100g || 0) * factor * 10) / 10,
+      fiber_g: Math.round((dbIngredient.fiber_per_100g || 0) * factor * 10) / 10,
+      source: 'lixum_db',
+      certainty: 100,
+      uncertain: false,
+      alternatives: [],
+      added_manually: true,
+    };
+
+    setEditedIngredients([...editedIngredients, newIng]);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const getEditedTotals = () => {
+    return editedIngredients.reduce((acc, ing) => ({
+      calories: acc.calories + (ing.calories || 0),
+      protein_g: Math.round((acc.protein_g + (ing.protein_g || 0)) * 10) / 10,
+      carbs_g: Math.round((acc.carbs_g + (ing.carbs_g || 0)) * 10) / 10,
+      fat_g: Math.round((acc.fat_g + (ing.fat_g || 0)) * 10) / 10,
+      fiber_g: Math.round((acc.fiber_g + (ing.fiber_g || 0)) * 10) / 10,
+    }), { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 });
+  };
+
+  const applyCorrection = () => {
+    const totals = getEditedTotals();
+    setScanResult({
+      ...scanResult,
+      ingredients: editedIngredients,
+      calories: totals.calories,
+      protein_g: totals.protein_g,
+      carbs_g: totals.carbs_g,
+      fat_g: totals.fat_g,
+      fiber_g: totals.fiber_g,
+      totals: totals,
+    });
+    setCorrectionMode(false);
+    setEditedIngredients([]);
+    setSearchQuery('');
+    setSearchResults([]);
+    setEditingQuantityIndex(null);
   };
 
   const activateScan = async () => {
@@ -1642,7 +1820,7 @@ const RepasPage = ({ onNavigate }) => {
                   paddingHorizontal: wp(20),
                 }}>
                   <Pressable
-                    onPress={() => { setScanScreen('none'); setRecalculating(false); }}
+                    onPress={() => { setScanScreen('none'); setRecalculating(false); setCorrectionMode(false); setEditedIngredients([]); setSearchQuery(''); setSearchResults([]); setEditingQuantityIndex(null); setTempQuantity(''); }}
                     style={{
                       width: 40, height: 40, borderRadius: 20,
                       backgroundColor: 'rgba(0,0,0,0.5)',
@@ -1860,6 +2038,12 @@ const RepasPage = ({ onNavigate }) => {
                   setSelectedSuggestion(null);
                   setAiVisual(null);
                   alertShakeAnim.setValue(0);
+                  setCorrectionMode(false);
+                  setEditedIngredients([]);
+                  setSearchQuery('');
+                  setSearchResults([]);
+                  setEditingQuantityIndex(null);
+                  setTempQuantity('');
                 }}>
                   <Text style={{ color: '#8892A0', fontSize: fp(14) }}>✕ {lang === 'fr' ? 'Fermer' : 'Close'}</Text>
                 </Pressable>
@@ -2143,7 +2327,11 @@ const RepasPage = ({ onNavigate }) => {
               }}>
                 <Pressable
                   onPress={() => {
-                    alert(lang === 'fr' ? 'Correction à venir' : 'Correction coming');
+                    setEditedIngredients([...(scanResult.ingredients || [])]);
+                    setCorrectionMode(true);
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setEditingQuantityIndex(null);
                   }}
                   style={({ pressed }) => ({
                     flex: 1,
@@ -2173,6 +2361,12 @@ const RepasPage = ({ onNavigate }) => {
                     setSelectedSuggestion(null);
                     setAiVisual(null);
                     alertShakeAnim.setValue(0);
+                    setCorrectionMode(false);
+                    setEditedIngredients([]);
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setEditingQuantityIndex(null);
+                    setTempQuantity('');
                     alert(lang === 'fr' ? 'Repas ajouté ! +10 Lix' : 'Meal added! +10 Lix');
                   }}
                   style={({ pressed }) => ({
@@ -2383,6 +2577,310 @@ const RepasPage = ({ onNavigate }) => {
                       </Text>
                     </Pressable>
                   </LinearGradient>
+                </View>
+              </View>
+            )}
+
+            {/* ÉCRAN CORRECTION */}
+            {correctionMode && (
+              <View style={{
+                position: 'absolute',
+                top: 0, left: 0, right: 0, bottom: 0,
+                zIndex: 2500,
+                backgroundColor: '#0D1117',
+              }}>
+                {/* Header */}
+                <View style={{
+                  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                  paddingTop: Platform.OS === 'android' ? 50 : 60,
+                  paddingHorizontal: wp(16), paddingBottom: wp(10),
+                  borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.05)',
+                }}>
+                  <Pressable onPress={() => {
+                    setCorrectionMode(false);
+                    setEditedIngredients([]);
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setEditingQuantityIndex(null);
+                  }}>
+                    <Text style={{ color: '#8892A0', fontSize: fp(14) }}>✕ {lang === 'fr' ? 'Annuler' : 'Cancel'}</Text>
+                  </Pressable>
+                  <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800' }}>
+                    {lang === 'fr' ? 'Corriger' : 'Correct'}
+                  </Text>
+                  <Pressable onPress={applyCorrection}>
+                    <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '700' }}>
+                      ✓ {lang === 'fr' ? 'Valider' : 'Apply'}
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  contentContainerStyle={{ paddingBottom: wp(120) }}
+                >
+                  {/* Totaux en temps réel */}
+                  <View style={{
+                    marginHorizontal: wp(16), marginTop: wp(12), marginBottom: wp(16),
+                    borderRadius: 16, padding: 1,
+                    backgroundColor: '#4A4F55',
+                  }}>
+                    <LinearGradient
+                      colors={['#3A3F46', '#252A30', '#1A1D22']}
+                      style={{ borderRadius: 15, padding: wp(14), alignItems: 'center' }}
+                    >
+                      <Text style={{ color: '#FF8C42', fontSize: fp(28), fontWeight: '900' }}>
+                        {getEditedTotals().calories} kcal
+                      </Text>
+                      <View style={{ flexDirection: 'row', marginTop: wp(8), gap: wp(16) }}>
+                        <View style={{ alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF6B6B', marginBottom: 2 }} />
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>
+                            {getEditedTotals().protein_g.toFixed(1)}g
+                          </Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(8) }}>{lang === 'fr' ? 'Protéines' : 'Protein'}</Text>
+                        </View>
+                        <View style={{ alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFD93D', marginBottom: 2 }} />
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>
+                            {getEditedTotals().carbs_g.toFixed(1)}g
+                          </Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(8) }}>{lang === 'fr' ? 'Glucides' : 'Carbs'}</Text>
+                        </View>
+                        <View style={{ alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4DA6FF', marginBottom: 2 }} />
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>
+                            {getEditedTotals().fat_g.toFixed(1)}g
+                          </Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(8) }}>{lang === 'fr' ? 'Lipides' : 'Fat'}</Text>
+                        </View>
+                      </View>
+                    </LinearGradient>
+                  </View>
+
+                  {/* Liste des ingrédients éditables */}
+                  <View style={{ paddingHorizontal: wp(16) }}>
+                    <Text style={{
+                      color: '#8892A0', fontSize: fp(11), fontWeight: '700',
+                      letterSpacing: 1.5, marginBottom: wp(10),
+                    }}>
+                      {lang === 'fr' ? 'INGRÉDIENTS' : 'INGREDIENTS'} ({editedIngredients.length})
+                    </Text>
+
+                    {editedIngredients.map((ing, index) => (
+                      <View key={index} style={{
+                        flexDirection: 'row', alignItems: 'center',
+                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        borderRadius: 14, marginBottom: wp(8),
+                        padding: wp(12),
+                        borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                      }}>
+                        {/* Info ingrédient */}
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '600' }}>
+                            {ing.name}
+                            {ing.added_manually && (
+                              <Text style={{ color: '#00D984', fontSize: fp(9) }}> +ajouté</Text>
+                            )}
+                          </Text>
+
+                          {/* Quantité — tap pour éditer */}
+                          {editingQuantityIndex === index ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                              <TextInput
+                                value={tempQuantity}
+                                onChangeText={setTempQuantity}
+                                keyboardType="numeric"
+                                autoFocus={true}
+                                style={{
+                                  color: '#00D984', fontSize: fp(12), fontWeight: '700',
+                                  backgroundColor: 'rgba(0,217,132,0.08)',
+                                  borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
+                                  minWidth: 50, borderWidth: 1, borderColor: 'rgba(0,217,132,0.3)',
+                                }}
+                                onSubmitEditing={() => updateQuantity(index, tempQuantity)}
+                                onBlur={() => {
+                                  if (tempQuantity) updateQuantity(index, tempQuantity);
+                                  else { setEditingQuantityIndex(null); setTempQuantity(''); }
+                                }}
+                              />
+                              <Text style={{ color: '#5A6070', fontSize: fp(11), marginLeft: 4 }}>g</Text>
+                            </View>
+                          ) : (
+                            <Pressable onPress={() => {
+                              setEditingQuantityIndex(index);
+                              setTempQuantity(String(ing.quantity_g || 100));
+                            }}>
+                              <Text style={{ color: '#00D984', fontSize: fp(11), marginTop: 3, textDecorationLine: 'underline' }}>
+                                {ing.quantity_g || 100}g — {lang === 'fr' ? 'modifier' : 'edit'}
+                              </Text>
+                            </Pressable>
+                          )}
+                        </View>
+
+                        {/* Calories */}
+                        <Text style={{ color: '#FF8C42', fontSize: fp(13), fontWeight: '700', marginRight: wp(10) }}>
+                          {ing.calories} kcal
+                        </Text>
+
+                        {/* Bouton supprimer */}
+                        <Pressable
+                          onPress={() => removeIngredient(index)}
+                          style={({ pressed }) => ({
+                            width: 28, height: 28, borderRadius: 14,
+                            backgroundColor: pressed ? 'rgba(255,59,48,0.2)' : 'rgba(255,59,48,0.08)',
+                            justifyContent: 'center', alignItems: 'center',
+                            borderWidth: 1, borderColor: 'rgba(255,59,48,0.2)',
+                          })}
+                        >
+                          <Text style={{ color: '#FF3B30', fontSize: 14, fontWeight: '700' }}>×</Text>
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
+
+                  {/* Barre de recherche — Ajouter un ingrédient */}
+                  <View style={{ paddingHorizontal: wp(16), marginTop: wp(16) }}>
+                    <Text style={{
+                      color: '#8892A0', fontSize: fp(11), fontWeight: '700',
+                      letterSpacing: 1.5, marginBottom: wp(8),
+                    }}>
+                      {lang === 'fr' ? 'AJOUTER UN INGRÉDIENT' : 'ADD INGREDIENT'}
+                    </Text>
+
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      backgroundColor: 'rgba(255,255,255,0.03)',
+                      borderRadius: 14, paddingHorizontal: wp(12),
+                      borderWidth: 1, borderColor: searchQuery.length > 0 ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.05)',
+                    }}>
+                      <Text style={{ color: '#5A6070', fontSize: 16, marginRight: 8 }}>🔍</Text>
+                      <TextInput
+                        value={searchQuery}
+                        onChangeText={searchIngredients}
+                        placeholder={lang === 'fr' ? 'Tapez un ingrédient...' : 'Type an ingredient...'}
+                        placeholderTextColor="#5A6070"
+                        style={{
+                          flex: 1, color: '#EAEEF3', fontSize: fp(13),
+                          paddingVertical: wp(12),
+                        }}
+                      />
+                      {searchQuery.length > 0 && (
+                        <Pressable onPress={() => { setSearchQuery(''); setSearchResults([]); }}>
+                          <Text style={{ color: '#8892A0', fontSize: 16 }}>✕</Text>
+                        </Pressable>
+                      )}
+                    </View>
+
+                    {/* Indicateur de recherche */}
+                    {isSearching && (
+                      <Text style={{ color: '#00D984', fontSize: fp(10), marginTop: wp(6), fontStyle: 'italic' }}>
+                        {lang === 'fr' ? 'Recherche...' : 'Searching...'}
+                      </Text>
+                    )}
+
+                    {/* Résultats de recherche */}
+                    {searchResults.length > 0 && (
+                      <View style={{
+                        marginTop: wp(8),
+                        borderRadius: 14,
+                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                        overflow: 'hidden',
+                      }}>
+                        {searchResults.map((result, i) => (
+                          <Pressable
+                            key={i}
+                            onPress={() => addIngredientFromSearch(result)}
+                            style={({ pressed }) => ({
+                              flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                              paddingVertical: wp(10), paddingHorizontal: wp(12),
+                              backgroundColor: pressed ? 'rgba(0,217,132,0.08)' : 'transparent',
+                              borderBottomWidth: i < searchResults.length - 1 ? 0.5 : 0,
+                              borderBottomColor: 'rgba(255,255,255,0.05)',
+                            })}
+                          >
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>
+                                {result.name}
+                              </Text>
+                              <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>
+                                {result.category || ''} • {result.kcal_per_100g} kcal/100g
+                                {result.table === 'preparations_master' ? ' • cuit' : ''}
+                              </Text>
+                            </View>
+                            <View style={{
+                              backgroundColor: 'rgba(0,217,132,0.08)',
+                              paddingHorizontal: 10, paddingVertical: 4,
+                              borderRadius: 8, borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                            }}>
+                              <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>
+                                + {lang === 'fr' ? 'Ajouter' : 'Add'}
+                              </Text>
+                            </View>
+                          </Pressable>
+                        ))}
+                      </View>
+                    )}
+
+                    {/* Message si aucun résultat */}
+                    {searchQuery.length >= 2 && !isSearching && searchResults.length === 0 && (
+                      <View style={{
+                        marginTop: wp(8), padding: wp(12),
+                        borderRadius: 14, backgroundColor: 'rgba(255,140,66,0.06)',
+                        borderWidth: 0.5, borderColor: 'rgba(255,140,66,0.15)',
+                      }}>
+                        <Text style={{ color: '#FF8C42', fontSize: fp(11), textAlign: 'center' }}>
+                          {lang === 'fr'
+                            ? `"${searchQuery}" non trouvé dans notre base`
+                            : `"${searchQuery}" not found in our database`}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Info Lix */}
+                  <View style={{
+                    marginHorizontal: wp(16), marginTop: wp(24),
+                    alignItems: 'center',
+                  }}>
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      backgroundColor: 'rgba(212,175,55,0.06)',
+                      paddingHorizontal: 14, paddingVertical: 8,
+                      borderRadius: 10,
+                    }}>
+                      <Text style={{ fontSize: 14, marginRight: 6 }}>🏆</Text>
+                      <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '600' }}>
+                        +5 Lix • {lang === 'fr' ? 'Correction confirmée' : 'Correction confirmed'}
+                      </Text>
+                    </View>
+                  </View>
+
+                </ScrollView>
+
+                {/* Bouton Valider fixe en bas */}
+                <View style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                  paddingHorizontal: wp(16), paddingBottom: Platform.OS === 'android' ? 55 : 40,
+                  paddingTop: wp(10),
+                  backgroundColor: '#0D1117',
+                  borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.05)',
+                }}>
+                  <Pressable
+                    onPress={applyCorrection}
+                    style={({ pressed }) => ({
+                      paddingVertical: wp(14),
+                      borderRadius: 14,
+                      backgroundColor: pressed ? '#00B572' : '#00D984',
+                      alignItems: 'center',
+                    })}
+                  >
+                    <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
+                      ✓ {lang === 'fr' ? 'APPLIQUER LA CORRECTION' : 'APPLY CORRECTION'}
+                    </Text>
+                  </Pressable>
                 </View>
               </View>
             )}
