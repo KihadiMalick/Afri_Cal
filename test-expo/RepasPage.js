@@ -1216,11 +1216,10 @@ const RepasPage = ({ onNavigate }) => {
     if (query.length < 2) { setMealSearchResults([]); return; }
     setIsMealSearching(true);
     try {
-      const { data, error } = await supabase
-        .from('meals_master')
-        .select('id, name, country_origin, category, description, kcal_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g')
-        .ilike('name', `%${query}%`)
-        .limit(8);
+      const { data, error } = await supabase.rpc('search_meals_fuzzy', {
+        search_term: query,
+        max_results: 8,
+      });
       if (data) setMealSearchResults(data);
     } catch (e) {
       console.error('Meal search error:', e);
@@ -1271,22 +1270,24 @@ const RepasPage = ({ onNavigate }) => {
     if (query.length < 2) { setIngSearchResults([]); return; }
     setIsIngSearching(true);
     try {
-      console.log('Searching ingredients:', query);
-      const response = await fetch(
-        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0',
-          },
-          body: JSON.stringify({ action: 'search_ingredients', query: query, limit: 8 }),
-        }
-      );
-      const data = await response.json();
-      console.log('Ingredient results:', data);
-      setIngSearchResults(data.results || []);
+      const { data, error } = await supabase.rpc('search_ingredients_fuzzy', {
+        search_term: query,
+        max_results: 8,
+      });
+      if (data) {
+        setIngSearchResults(data.map(item => ({
+          name: item.name,
+          kcal_per_100g: item.kcal_per_100g,
+          protein_per_100g: item.protein_per_100g,
+          carbs_per_100g: item.carbs_per_100g,
+          fat_per_100g: item.fat_per_100g,
+          fiber_per_100g: item.fiber_per_100g,
+          category: item.category,
+          table: item.source_table,
+        })));
+      }
     } catch (e) {
+      console.error('Ingredient search error:', e);
       setIngSearchResults([]);
     }
     setIsIngSearching(false);
