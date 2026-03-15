@@ -839,7 +839,8 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
   // Glow expansif — rayon proportionnel au percentage
   const coreRadius = coreSize / 2;
   const maxGlowRadius = size / 2 - 2;
-  const glowRadius = coreRadius + (maxGlowRadius - coreRadius) * (percentage / 100);
+  const cappedPercentage = Math.min(percentage, 115);
+  const glowRadius = coreRadius + (maxGlowRadius - coreRadius) * (cappedPercentage / 100);
 
   return (
     <View style={{
