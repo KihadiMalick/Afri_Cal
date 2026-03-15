@@ -450,6 +450,7 @@ const RepasPage = ({ onNavigate }) => {
   const [scanResult, setScanResult] = useState(null);
   const [currentLoadingIndex, setCurrentLoadingIndex] = useState(0);
   const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [recalculating, setRecalculating] = useState(false);
 
   const loadingTexts = lang === 'fr'
     ? [
@@ -649,7 +650,104 @@ const RepasPage = ({ onNavigate }) => {
         ? 'Erreur lors de l\'analyse : ' + error.message
         : 'Analysis error: ' + error.message);
       setScanScreen('none');
+      setRecalculating(false);
       setCapturedPhoto(null);
+    }
+  };
+
+  const recalculateIngredient = async (ingredientIndex, newName) => {
+    if (!scanResult || !scanResult.ingredients) return;
+    setRecalculating(true);
+
+    try {
+      // Appeler l'Edge Function pour chercher les macros du nouvel ingrédient
+      const response = await fetch(
+        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0',
+          },
+          body: JSON.stringify({
+            action: 'search_ingredients',
+            query: newName,
+            limit: 1,
+          }),
+        }
+      );
+
+      const data = await response.json();
+      const results = data.results || [];
+
+      // Copier les ingrédients
+      const updatedIngredients = [...scanResult.ingredients];
+      const oldIngredient = updatedIngredients[ingredientIndex];
+      const quantity = oldIngredient.quantity_g || 100;
+
+      if (results.length > 0) {
+        // Ingrédient trouvé dans la DB → macros réelles
+        const dbMatch = results[0];
+        const factor = quantity / 100;
+
+        updatedIngredients[ingredientIndex] = {
+          ...oldIngredient,
+          name: newName,
+          name_en: newName,
+          uncertain: false,
+          alternatives: [],
+          calories: Math.round((dbMatch.kcal_per_100g || 0) * factor),
+          protein_g: Math.round((dbMatch.protein_per_100g || 0) * factor * 10) / 10,
+          carbs_g: Math.round((dbMatch.carbs_per_100g || 0) * factor * 10) / 10,
+          fat_g: Math.round((dbMatch.fat_per_100g || 0) * factor * 10) / 10,
+          fiber_g: Math.round((dbMatch.fiber_per_100g || 0) * factor * 10) / 10,
+          source: 'lixum_db',
+        };
+      } else {
+        // Pas trouvé → garder les mêmes macros mais changer le nom
+        updatedIngredients[ingredientIndex] = {
+          ...oldIngredient,
+          name: newName,
+          name_en: newName,
+          uncertain: false,
+          alternatives: [],
+        };
+      }
+
+      // Recalculer les totaux
+      const newTotals = updatedIngredients.reduce((acc, ing) => ({
+        calories: acc.calories + (ing.calories || 0),
+        protein_g: Math.round((acc.protein_g + (ing.protein_g || 0)) * 10) / 10,
+        carbs_g: Math.round((acc.carbs_g + (ing.carbs_g || 0)) * 10) / 10,
+        fat_g: Math.round((acc.fat_g + (ing.fat_g || 0)) * 10) / 10,
+        fiber_g: Math.round((acc.fiber_g + (ing.fiber_g || 0)) * 10) / 10,
+      }), { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 });
+
+      // Mettre à jour le résultat
+      setScanResult({
+        ...scanResult,
+        ingredients: updatedIngredients,
+        calories: newTotals.calories,
+        protein_g: newTotals.protein_g,
+        carbs_g: newTotals.carbs_g,
+        fat_g: newTotals.fat_g,
+        fiber_g: newTotals.fiber_g,
+        totals: newTotals,
+      });
+      setRecalculating(false);
+    } catch (error) {
+      console.error('Erreur recalcul ingrédient:', error);
+      // En cas d'erreur, juste changer le nom
+      const updatedIngredients = [...scanResult.ingredients];
+      updatedIngredients[ingredientIndex] = {
+        ...updatedIngredients[ingredientIndex],
+        name: newName,
+        name_en: newName,
+        uncertain: false,
+        alternatives: [],
+      };
+      setScanResult({ ...scanResult, ingredients: updatedIngredients });
+      setRecalculating(false);
     }
   };
 
@@ -1544,7 +1642,7 @@ const RepasPage = ({ onNavigate }) => {
                   paddingHorizontal: wp(20),
                 }}>
                   <Pressable
-                    onPress={() => setScanScreen('none')}
+                    onPress={() => { setScanScreen('none'); setRecalculating(false); }}
                     style={{
                       width: 40, height: 40, borderRadius: 20,
                       backgroundColor: 'rgba(0,0,0,0.5)',
@@ -1751,6 +1849,7 @@ const RepasPage = ({ onNavigate }) => {
               }}>
                 <Pressable onPress={() => {
                   setScanScreen('none');
+                  setRecalculating(false);
                   setScanResult(null);
                   setCapturedPhoto(null);
                   setShowAlternatives(false);
@@ -1927,21 +2026,7 @@ const RepasPage = ({ onNavigate }) => {
                             {ing.alternatives.map((alt, altIndex) => (
                               <Pressable
                                 key={altIndex}
-                                onPress={() => {
-                                  // Remplacer l'ingrédient par l'alternative choisie
-                                  const updatedIngredients = [...(scanResult.ingredients || [])];
-                                  updatedIngredients[index] = {
-                                    ...updatedIngredients[index],
-                                    name: alt,
-                                    name_en: alt,
-                                    uncertain: false,
-                                    alternatives: [],
-                                  };
-                                  setScanResult({
-                                    ...scanResult,
-                                    ingredients: updatedIngredients,
-                                  });
-                                }}
+                                onPress={() => recalculateIngredient(index, alt)}
                                 style={({ pressed }) => ({
                                   backgroundColor: pressed ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)',
                                   paddingHorizontal: 10, paddingVertical: 4,
@@ -1967,9 +2052,16 @@ const RepasPage = ({ onNavigate }) => {
                     {/* Totaux */}
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '800' }}>TOTAL</Text>
-                      <Text style={{ color: '#FF8C42', fontSize: fp(18), fontWeight: '900' }}>
-                        {scanResult.totals?.calories || scanResult.calories || 0} kcal
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        {recalculating && (
+                          <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: 8, fontStyle: 'italic' }}>
+                            {lang === 'fr' ? 'recalcul...' : 'recalculating...'}
+                          </Text>
+                        )}
+                        <Text style={{ color: '#FF8C42', fontSize: fp(18), fontWeight: '900' }}>
+                          {scanResult.totals?.calories || scanResult.calories || 0} kcal
+                        </Text>
+                      </View>
                     </View>
 
                     {/* Macros */}
@@ -2070,6 +2162,7 @@ const RepasPage = ({ onNavigate }) => {
                 <Pressable
                   onPress={() => {
                     setScanScreen('none');
+                    setRecalculating(false);
                     setScanResult(null);
                     setCapturedPhoto(null);
                     setShowAlternatives(false);
@@ -2182,8 +2275,20 @@ const RepasPage = ({ onNavigate }) => {
                           key={index}
                           onPress={() => {
                             if (!isCurrentDish) {
-                              // Changer le nom du plat SEULEMENT, garder les ingrédients et macros
-                              setCurrentDishName(lang === 'fr' ? alt.name_fr : alt.name_en);
+                              const newDishName = lang === 'fr' ? alt.name_fr : alt.name_en;
+                              setCurrentDishName(newDishName);
+
+                              // Chercher si ce plat a des données complètes dans les suggestions
+                              const matchingSuggestion = scanSuggestions.find(
+                                s => s.name_fr === alt.name_fr || s.name_en === alt.name_en
+                              );
+
+                              if (matchingSuggestion && matchingSuggestion.ingredients && matchingSuggestion.ingredients.length > 0) {
+                                // Ce plat a des données complètes → mettre à jour toute la fiche
+                                setScanResult(matchingSuggestion);
+                              }
+                              // Sinon, garder les mêmes ingrédients (comportement actuel)
+
                               setShowAlternatives(false);
                             }
                           }}
