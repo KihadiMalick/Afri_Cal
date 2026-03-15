@@ -688,10 +688,10 @@ const ActivityPage = () => {
         user_id: TEST_USER_ID,
         name: ACTIVITY_DATA[activityType].label,
         type: activityType,
-        duration_minutes: durationMin,
-        calories_burned: caloriesBurned,
+        duration_minutes: Math.round(durationMin),
+        calories_burned: Math.round(caloriesBurned),
         intensity: intensity || 'modere',
-        water_lost_ml: waterLost,
+        water_lost_ml: Math.round(waterLost),
       });
 
     if (error) {
