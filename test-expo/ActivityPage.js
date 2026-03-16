@@ -1380,31 +1380,46 @@ const ActivityPage = ({ onNavigate }) => {
                         <Ellipse cx={18} cy={-6} rx={1.5} ry={2.5} fill="#8D6E63" opacity={0.25} />
                       </G>
 
-                      {/* EMPREINTES DE PIEDS — réalistes, alternées G/D */}
+                      {/* EMPREINTES DE PIEDS — surbrillance devant, estompées derrière */}
                       {(() => {
                         const prints = [];
-                        const totalPrints = walkFootprintCount;
+                        const totalSteps = walkFootprintCount;
                         const startX = 60;
-                        for (let i = 0; i < totalPrints; i++) {
+                        for (let i = 0; i < totalSteps; i++) {
                           const px = startX + i * WALK_PAS_SPACING;
                           if (px > scW - 40) break;
                           const isRight = i % 2 === 0;
-                          const offsetY = isRight ? 4 : -4;
-                          const y = pathY + 5 + offsetY;
-                          const distFromEnd = totalPrints - 1 - i;
-                          const opacity = distFromEnd === 0 ? 0.8 : Math.max(0.15, 0.7 - distFromEnd * 0.04);
+                          const offY = isRight ? 4 : -4;
+                          const y = pathY + 5 + offY;
+                          const distFromCurrent = totalSteps - 1 - i;
+
+                          let opacity, scale, fillColor, glowR;
+                          if (distFromCurrent <= 1) {
+                            opacity = 0.9; scale = 1.15; fillColor = '#C8A870'; glowR = 12;
+                          } else if (distFromCurrent <= 5) {
+                            opacity = 0.6 - (distFromCurrent - 2) * 0.05;
+                            scale = 1.0; fillColor = '#3A2A1A'; glowR = 0;
+                          } else {
+                            opacity = Math.max(0.15, 0.4 - distFromCurrent * 0.03);
+                            scale = 0.95; fillColor = '#3A2A1A'; glowR = 0;
+                          }
+
                           prints.push(
-                            <G key={`wfp-${i}`} opacity={opacity} transform={`translate(${px}, ${y})`}>
+                            <G key={`wfp-${i}`} opacity={opacity} transform={`translate(${px}, ${y}) scale(${scale})`}>
+                              {/* Glow halo pour les empreintes actives */}
+                              {glowR > 0 && (
+                                <Ellipse cx={0} cy={3} rx={glowR} ry={glowR} fill="#C8A870" opacity={0.12} />
+                              )}
                               {/* Plante du pied */}
-                              <Ellipse cx={0} cy={3} rx={3.5} ry={6} fill="#3A2A1A" opacity={0.7} />
+                              <Ellipse cx={0} cy={3} rx={3.5} ry={6} fill={fillColor} opacity={0.7} />
                               {/* Talon */}
-                              <Ellipse cx={0} cy={10} rx={2.8} ry={3} fill="#3A2A1A" opacity={0.5} />
+                              <Ellipse cx={0} cy={10} rx={2.8} ry={3} fill={fillColor} opacity={0.5} />
                               {/* Orteils */}
-                              <Circle cx={-2.5} cy={-2.5} r={1.4} fill="#3A2A1A" opacity={0.65} />
-                              <Circle cx={-1} cy={-4} r={1.4} fill="#3A2A1A" opacity={0.65} />
-                              <Circle cx={0.8} cy={-4.5} r={1.3} fill="#3A2A1A" opacity={0.6} />
-                              <Circle cx={2.5} cy={-3.5} r={1.2} fill="#3A2A1A" opacity={0.55} />
-                              <Circle cx={3.5} cy={-2} r={1.1} fill="#3A2A1A" opacity={0.5} />
+                              <Circle cx={-2.5} cy={-2.5} r={1.4} fill={fillColor} opacity={0.65} />
+                              <Circle cx={-1} cy={-4} r={1.4} fill={fillColor} opacity={0.65} />
+                              <Circle cx={0.8} cy={-4.5} r={1.3} fill={fillColor} opacity={0.6} />
+                              <Circle cx={2.5} cy={-3.5} r={1.2} fill={fillColor} opacity={0.55} />
+                              <Circle cx={3.5} cy={-2} r={1.1} fill={fillColor} opacity={0.5} />
                             </G>
                           );
                         }
@@ -1431,100 +1446,76 @@ const ActivityPage = ({ onNavigate }) => {
             </View>
 
             {/* DOUBLE MOLETTE VINTAGE — contrôle le défilement */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: wp(6), marginBottom: wp(2) }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: wp(4), marginBottom: wp(2) }}>
               {/* Bouton RECULER */}
               <View style={{ alignItems: 'center' }}>
-                <Text style={{ color: '#5A6070', fontSize: fp(9), marginBottom: wp(3) }}>{String.fromCodePoint(0x25C0)}</Text>
+                <Text style={{ color: '#5A6070', fontSize: fp(8), marginBottom: wp(2) }}>{String.fromCodePoint(0x25C0)}</Text>
                 <Pressable
                   onPressIn={() => startWalkMoving(-1)}
                   onPressOut={stopWalkMoving}
                 >
                   <Animated.View style={{
-                    width: wp(58), height: wp(58), borderRadius: wp(29),
+                    width: wp(48), height: wp(48), borderRadius: wp(24),
                     backgroundColor: '#1A1A1A',
-                    borderWidth: 2, borderColor: '#C0C0C0',
+                    borderWidth: 1.5, borderColor: '#C0C0C0',
                     justifyContent: 'center', alignItems: 'center',
-                    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.7, shadowRadius: 8, elevation: 10,
+                    overflow: 'hidden',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: 0.6, shadowRadius: 6, elevation: 8,
                     transform: [{ rotate: walkKnobRotate }],
                   }}>
                     {/* Cercles concentriques gravés */}
-                    <View style={{ width: wp(44), height: wp(44), borderRadius: wp(22), borderWidth: 0.8, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                      <View style={{ width: wp(32), height: wp(32), borderRadius: wp(16), borderWidth: 0.6, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: wp(20), height: wp(20), borderRadius: wp(10), borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: wp(10), height: wp(10), borderRadius: wp(5), backgroundColor: '#2A2A2A' }} />
+                    <View style={{ width: wp(36), height: wp(36), borderRadius: wp(18), borderWidth: 0.7, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                      <View style={{ width: wp(24), height: wp(24), borderRadius: wp(12), borderWidth: 0.5, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' }}>
+                        <View style={{ width: wp(14), height: wp(14), borderRadius: wp(7), borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: wp(6), height: wp(6), borderRadius: wp(3), backgroundColor: '#2A2A2A' }} />
                         </View>
                       </View>
                     </View>
                     {/* Indicateur 12h */}
-                    <View style={{ position: 'absolute', top: wp(4), width: 2, height: wp(8), backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                    {/* Rainures knurled sur le pourtour (simulées) */}
-                    {Array.from({ length: 24 }, (_, i) => {
-                      const angle = (i / 24) * 360;
-                      return (
-                        <View key={`kl-${i}`} style={{
-                          position: 'absolute', width: 1.5, height: wp(5),
-                          backgroundColor: i % 2 === 0 ? '#3A3A3A' : '#1A1A1A',
-                          top: 0, left: wp(29) - 0.75,
-                          transform: [{ rotate: `${angle}deg` }, { translateY: wp(1) }],
-                          transformOrigin: `0.75px ${wp(29)}px`,
-                        }} />
-                      );
-                    })}
+                    <View style={{ position: 'absolute', top: wp(3), width: 2, height: wp(7), backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
                   </Animated.View>
                 </Pressable>
-                <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: wp(3), fontWeight: '600', letterSpacing: 1 }}>RECULER</Text>
+                <Text style={{ color: '#5A6070', fontSize: fp(7), marginTop: wp(2), fontWeight: '600', letterSpacing: 1 }}>RECULER</Text>
               </View>
 
               {/* Espacement + texte central */}
-              <View style={{ alignItems: 'center', marginHorizontal: wp(10), justifyContent: 'center' }}>
-                <Text style={{ color: '#888', fontSize: fp(9), fontStyle: 'italic', textAlign: 'center' }}>
-                  {String.fromCodePoint(0x1F3AF)} Maintenez{'\n'}pour déplacer
+              <View style={{ alignItems: 'center', marginHorizontal: wp(8), justifyContent: 'center' }}>
+                <Text style={{ color: '#888', fontSize: fp(8), fontStyle: 'italic', textAlign: 'center' }}>
+                  {String.fromCodePoint(0x1F447)} Maintenez{'\n'}pour déplacer
                 </Text>
               </View>
 
               {/* Bouton AVANCER */}
               <View style={{ alignItems: 'center' }}>
-                <Text style={{ color: '#5A6070', fontSize: fp(9), marginBottom: wp(3) }}>{String.fromCodePoint(0x25B6)}</Text>
+                <Text style={{ color: '#5A6070', fontSize: fp(8), marginBottom: wp(2) }}>{String.fromCodePoint(0x25B6)}</Text>
                 <Pressable
                   onPressIn={() => startWalkMoving(1)}
                   onPressOut={stopWalkMoving}
                 >
                   <Animated.View style={{
-                    width: wp(58), height: wp(58), borderRadius: wp(29),
+                    width: wp(48), height: wp(48), borderRadius: wp(24),
                     backgroundColor: '#1A1A1A',
-                    borderWidth: 2, borderColor: '#C0C0C0',
+                    borderWidth: 1.5, borderColor: '#C0C0C0',
                     justifyContent: 'center', alignItems: 'center',
-                    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.7, shadowRadius: 8, elevation: 10,
+                    overflow: 'hidden',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: 0.6, shadowRadius: 6, elevation: 8,
                     transform: [{ rotate: walkKnobRotate }],
                   }}>
                     {/* Cercles concentriques gravés */}
-                    <View style={{ width: wp(44), height: wp(44), borderRadius: wp(22), borderWidth: 0.8, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                      <View style={{ width: wp(32), height: wp(32), borderRadius: wp(16), borderWidth: 0.6, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: wp(20), height: wp(20), borderRadius: wp(10), borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: wp(10), height: wp(10), borderRadius: wp(5), backgroundColor: '#2A2A2A' }} />
+                    <View style={{ width: wp(36), height: wp(36), borderRadius: wp(18), borderWidth: 0.7, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                      <View style={{ width: wp(24), height: wp(24), borderRadius: wp(12), borderWidth: 0.5, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' }}>
+                        <View style={{ width: wp(14), height: wp(14), borderRadius: wp(7), borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: wp(6), height: wp(6), borderRadius: wp(3), backgroundColor: '#2A2A2A' }} />
                         </View>
                       </View>
                     </View>
                     {/* Indicateur 12h */}
-                    <View style={{ position: 'absolute', top: wp(4), width: 2, height: wp(8), backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                    {/* Rainures knurled sur le pourtour (simulées) */}
-                    {Array.from({ length: 24 }, (_, i) => {
-                      const angle = (i / 24) * 360;
-                      return (
-                        <View key={`kr-${i}`} style={{
-                          position: 'absolute', width: 1.5, height: wp(5),
-                          backgroundColor: i % 2 === 0 ? '#3A3A3A' : '#1A1A1A',
-                          top: 0, left: wp(29) - 0.75,
-                          transform: [{ rotate: `${angle}deg` }, { translateY: wp(1) }],
-                          transformOrigin: `0.75px ${wp(29)}px`,
-                        }} />
-                      );
-                    })}
+                    <View style={{ position: 'absolute', top: wp(3), width: 2, height: wp(7), backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
                   </Animated.View>
                 </Pressable>
-                <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: wp(3), fontWeight: '600', letterSpacing: 1 }}>AVANCER</Text>
+                <Text style={{ color: '#5A6070', fontSize: fp(7), marginTop: wp(2), fontWeight: '600', letterSpacing: 1 }}>AVANCER</Text>
               </View>
             </View>
 
@@ -1539,7 +1530,7 @@ const ActivityPage = ({ onNavigate }) => {
                 }}
               >
                 <Text style={{ color: walkRoundTrip ? '#00D984' : '#8892A0', fontSize: fp(10), fontWeight: '700' }}>
-                  {String.fromCodePoint(0x2194)} A/R {walkRoundTrip ? String.fromCodePoint(0x00D7) + '2' : ''}
+                  {String.fromCodePoint(0x2194)} Aller/Retour {walkRoundTrip ? String.fromCodePoint(0x00D7) + '2' : ''}
                 </Text>
               </Pressable>
               <View style={{ alignItems: 'flex-end' }}>
