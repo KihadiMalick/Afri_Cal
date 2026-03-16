@@ -105,51 +105,7 @@ const walkSliderToDistance = (value) => {
   return 10000;
 };
 
-const generateFootprints = (progress, canvasWidth, canvasHeight) => {
-  const prints = [];
-  const totalPrints = 20;
-  const midY = canvasHeight * 0.5;
-  const amplitude = canvasHeight * 0.15;
-
-  for (let i = 0; i < totalPrints; i++) {
-    const t = i / totalPrints;
-    if (t > progress) break;
-
-    const x = t * canvasWidth * 0.85 + canvasWidth * 0.08;
-    const waveOffset = Math.sin(t * Math.PI * 3) * amplitude;
-    const isRight = i % 2 === 0;
-    const footOffset = isRight ? -5 : 5;
-    const y = midY + waveOffset + footOffset;
-
-    const distanceFromCurrent = progress - t;
-    const fadeStart = 0.3;
-    const opacity = distanceFromCurrent > fadeStart
-      ? Math.max(0, 1 - ((distanceFromCurrent - fadeStart) / fadeStart))
-      : 0.8;
-
-    prints.push({ x, y, isRight, opacity });
-  }
-  return prints;
-};
-
 // ── SVG Decor Components ─────────────────────────────────────────────────────
-const FootprintSVG = ({ x, y, isRight, opacity, color = '#00D984' }) => (
-  <G opacity={opacity} transform={`translate(${x}, ${y}) rotate(${isRight ? 15 : -15})`}>
-    <Ellipse cx={0} cy={0} rx={4} ry={6} fill={color} opacity={0.7} />
-    <Circle cx={isRight ? 2 : -2} cy={-6} r={1.5} fill={color} opacity={0.6} />
-    <Circle cx={0} cy={-7} r={1.5} fill={color} opacity={0.6} />
-    <Circle cx={isRight ? -2 : 2} cy={-6} r={1.5} fill={color} opacity={0.6} />
-  </G>
-);
-
-const HouseIcon = ({ x, y }) => (
-  <G transform={`translate(${x}, ${y})`}>
-    <Path d="M0 -8 L8 0 L-8 0 Z" fill="#8892A0" opacity={0.6} />
-    <Rect x={-5} y={0} width={10} height={8} fill="#8892A0" opacity={0.4} />
-    <Rect x={-2} y={3} width={4} height={5} fill="#5A6070" opacity={0.5} />
-    <Rect x={3} y={1} width={3} height={3} fill="#D4AF37" opacity={0.3} />
-  </G>
-);
 
 const TreeIcon = ({ x, y, passed }) => (
   <G transform={`translate(${x}, ${y})`}>
@@ -359,9 +315,9 @@ const metalStyles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardContent: {
-    padding: 6,
-    paddingTop: 6,
-    paddingBottom: 6,
+    padding: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.25)',
     borderRadius: wp(17),
@@ -954,8 +910,7 @@ const ActivityPage = ({ onNavigate }) => {
   // ── Run constants & calculations ──────────────────────────────────────
   const RUN_SCENE_W = 8400;       // 42km marathon canvas
   const RUN_MAX_DIST = 42000;     // 42 km in metres
-  const RUN_CANVAS_H = 100;       // ultra-compact canvas height
-  const RUN_PAS_SPACING = 28;     // same as walk
+  const RUN_CANVAS_H = 120;       // increased canvas height
 
   // Jaguar animation frame
 
@@ -974,7 +929,6 @@ const ActivityPage = ({ onNavigate }) => {
   const runDistFinal = runDistM * runMul;
   const runDistStr = runDistFinal < 1000 ? `${Math.round(runDistFinal)} m` : `${Math.round(runDistFinal / 100) / 10} km`;
   const runDurStr = (() => { const m = Math.round(runDuration); return m < 60 ? `${m} min` : `${Math.round(m / 6) / 10} h`; })();
-  const runFootprintCount = Math.floor(runScrollOffset / RUN_PAS_SPACING);
 
   // Day totals
   const totalCalories = todayActivities.reduce((s, a) => s + (a.calories_burned || 0), 0);
@@ -1019,7 +973,7 @@ const ActivityPage = ({ onNavigate }) => {
   // ── Walk constants ─────────────────────────────────────────────────────
   const WALK_SCENE_W = 2000;
   const WALK_MAX_DIST = 10000;
-  const WALK_CANVAS_H = 100;  // ultra-compact canvas height
+  const WALK_CANVAS_H = 120;  // increased canvas height
 
   // ── Walk computed values ──────────────────────────────────────────────
   const walkMaxS = WALK_SCENE_W - walkCanvasW;
@@ -1032,8 +986,6 @@ const ActivityPage = ({ onNavigate }) => {
   const walkDistFinal = walkDistM * walkMul;
   const walkDistStr = walkDistFinal < 1000 ? `${Math.round(walkDistFinal)} m` : `${Math.round(walkDistFinal / 100) / 10} km`;
   const walkDurStr = (() => { const m = Math.round(walkDurMin * walkMul); return m < 60 ? `${m} min` : `${Math.round(m / 6) / 10} h`; })();
-  const WALK_PAS_SPACING = 28;
-  const walkFootprintCount = Math.floor(walkScrollOffset / WALK_PAS_SPACING);
 
   // ── Walk knob interaction ─────────────────────────────────────────────
   const startWalkMoving = (direction) => {
@@ -1215,7 +1167,7 @@ const ActivityPage = ({ onNavigate }) => {
             {/* Header + data compact */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
               <WalkShoeIcon size={wp(14)} />
-              <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '800', letterSpacing: 1.5, marginLeft: wp(4) }}>
+              <Text style={{ color: '#EAEEF3', fontSize: fp(15), fontWeight: '800', letterSpacing: 1.5, marginLeft: wp(4) }}>
                 MARCHE
               </Text>
               <View style={{ flex: 1 }} />
@@ -1226,7 +1178,7 @@ const ActivityPage = ({ onNavigate }) => {
 
             {/* Canvas SVG side-scroll */}
             <View
-              style={{ height: WALK_CANVAS_H, borderRadius: 14, overflow: 'hidden', backgroundColor: 'rgba(0,217,132,0.03)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.08)' }}
+              style={{ position: 'relative', height: WALK_CANVAS_H, borderRadius: 14, overflow: 'hidden', backgroundColor: 'rgba(0,217,132,0.03)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.08)' }}
               onLayout={(e) => setWalkCanvasW(e.nativeEvent.layout.width)}
             >
               <Svg width={walkCanvasW} height={WALK_CANVAS_H} viewBox={`${walkScrollOffset} 0 ${walkCanvasW} ${WALK_CANVAS_H}`}>
@@ -1350,22 +1302,32 @@ const ActivityPage = ({ onNavigate }) => {
                       <Path d={`M0 ${pathY + 12} Q500 ${pathY + 5} 1000 ${pathY + 10} Q1500 ${pathY + 6} ${scW} ${pathY + 12}`}
                         fill="none" stroke="#A5D6A7" strokeWidth={1} opacity={0.3} />
 
-                      {/* MAISON — juste avant les premières empreintes */}
-                      <G transform={`translate(${walkCanvasW * 0.4 - 40}, ${pathY - 30}) scale(1.8)`}>
-                        <Rect x={6} y={-12} width={3} height={6} fill="#795548" opacity={0.6} />
-                        <Circle cx={8} cy={-14} r={2.5} fill="#BDBDBD" opacity={0.3} />
-                        <Path d="M-2 -4 L10 -14 L22 -4 Z" fill="#E53935" opacity={0.85} />
-                        <Path d="M0 -4 L10 -12 L20 -4" fill="none" stroke="#C62828" strokeWidth={1} opacity={0.5} />
-                        <Rect x={0} y={-4} width={20} height={18} fill="#FFECB3" opacity={0.85} />
-                        <Rect x={7} y={3} width={6} height={11} rx={1} fill="#6D4C41" opacity={0.85} />
-                        <Circle cx={11.5} cy={8} r={0.8} fill="#FFD54F" opacity={0.9} />
-                        <Rect x={1.5} y={-1} width={4} height={4} rx={0.5} fill="#90CAF9" opacity={0.6} />
-                        <Line x1={3.5} y1={-1} x2={3.5} y2={3} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
-                        <Line x1={1.5} y1={1} x2={5.5} y2={1} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
-                        <Rect x={14.5} y={-1} width={4} height={4} rx={0.5} fill="#90CAF9" opacity={0.6} />
-                        <Line x1={16.5} y1={-1} x2={16.5} y2={3} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
-                        <Line x1={14.5} y1={1} x2={18.5} y2={1} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
-                      </G>
+                      {/* NID DE POUSSIN (remplace la maison) */}
+                      {(() => {
+                        const nestX = walkCanvasW * 0.4 - 20;
+                        const nestBaseY = pathY + 5;
+                        return (
+                          <G>
+                            {/* Nid — base (demi-ellipse brune) */}
+                            <Ellipse cx={nestX} cy={nestBaseY} rx={18} ry={10} fill="#6B4226" />
+                            {/* Brindilles gauche */}
+                            <Line x1={nestX - 16} y1={nestBaseY - 2} x2={nestX - 21} y2={nestBaseY - 7} stroke="#8B5A2B" strokeWidth={1.5} />
+                            <Line x1={nestX - 13} y1={nestBaseY - 3} x2={nestX - 19} y2={nestBaseY - 9} stroke="#8B5A2B" strokeWidth={1.5} />
+                            {/* Brindilles droite */}
+                            <Line x1={nestX + 16} y1={nestBaseY - 2} x2={nestX + 21} y2={nestBaseY - 7} stroke="#8B5A2B" strokeWidth={1.5} />
+                            <Line x1={nestX + 13} y1={nestBaseY - 3} x2={nestX + 19} y2={nestBaseY - 9} stroke="#8B5A2B" strokeWidth={1.5} />
+                            {/* Intérieur du nid */}
+                            <Ellipse cx={nestX} cy={nestBaseY - 2} rx={13} ry={6} fill="#8B6914" />
+                            {/* 3 oeufs */}
+                            <Ellipse cx={nestX - 5} cy={nestBaseY - 5} rx={3.5} ry={4.5} fill="#FFF8E7" />
+                            <Ellipse cx={nestX + 4} cy={nestBaseY - 5} rx={3.5} ry={4.5} fill="#FFF8E7" />
+                            <Ellipse cx={nestX} cy={nestBaseY - 6} rx={3} ry={4} fill="#FFF8E7" />
+                            {/* Taches sur les oeufs */}
+                            <Circle cx={nestX - 5} cy={nestBaseY - 6} r={1} fill="#D4C4A0" />
+                            <Circle cx={nestX + 3} cy={nestBaseY - 4} r={0.8} fill="#D4C4A0" />
+                          </G>
+                        );
+                      })()}
 
                       {/* ARBRE — x=440 */}
                       <G transform={`translate(440, ${pathY - 20}) scale(2)`}>
@@ -1459,53 +1421,24 @@ const ActivityPage = ({ onNavigate }) => {
                         <Ellipse cx={18} cy={-6} rx={1.5} ry={2.5} fill="#8D6E63" opacity={0.25} />
                       </G>
 
-                      {/* EMPREINTES DE PIEDS — surbrillance devant, estompées derrière */}
-                      {(() => {
-                        const prints = [];
-                        const totalSteps = walkFootprintCount;
-                        const FOOTPRINT_START_X = walkCanvasW * 0.4;
-                        const startX = FOOTPRINT_START_X;
-                        for (let i = 0; i < totalSteps; i++) {
-                          const px = startX + i * WALK_PAS_SPACING;
-                          if (px > scW - 40) break;
-                          const isRight = i % 2 === 0;
-                          const offY = isRight ? 4 : -4;
-                          const y = pathY + 5 + offY;
-                          const distFromCurrent = totalSteps - 1 - i;
-
-                          let opacity, scale, fillColor, glowR;
-                          if (distFromCurrent <= 1) {
-                            opacity = 0.9; scale = 1.15; fillColor = '#C8A870'; glowR = 12;
-                          } else if (distFromCurrent <= 5) {
-                            opacity = 0.6 - (distFromCurrent - 2) * 0.05;
-                            scale = 1.0; fillColor = '#3A2A1A'; glowR = 0;
-                          } else {
-                            opacity = Math.max(0.15, 0.4 - distFromCurrent * 0.03);
-                            scale = 0.95; fillColor = '#3A2A1A'; glowR = 0;
-                          }
-
-                          prints.push(
-                            <G key={`wfp-${i}`} opacity={opacity} transform={`translate(${px}, ${y}) scale(${scale}) rotate(90)${!isRight ? ' scale(1,-1)' : ''}`}>
-                              {/* Glow halo pour les empreintes actives */}
-                              {glowR > 0 && (
-                                <Ellipse cx={0} cy={0} rx={glowR} ry={glowR} fill="#C8A870" opacity={0.12} />
-                              )}
-                              {/* === SEMELLE AVANT (partie principale, allongée) === */}
-                              <Ellipse cx={4} cy={0} rx={8} ry={5} fill={fillColor} opacity={0.7} />
-                              {/* Arche du pied — découpe intérieure */}
-                              <Ellipse cx={-1} cy={isRight ? -2 : 2} rx={3} ry={2} fill="#252A30" opacity={0.5} />
-                              {/* === TALON (séparé, petit ovale arrondi) === */}
-                              <Ellipse cx={-10} cy={0} rx={4} ry={3.5} fill={fillColor} opacity={0.6} />
-                            </G>
-                          );
-                        }
-                        return prints;
-                      })()}
 
                     </>
                   );
                 })()}
               </Svg>
+
+              {/* Poussin qui marche (GIF tourne en permanence) */}
+              <Image
+                source={require('./assets/walk-creature.gif')}
+                style={{
+                  position: 'absolute',
+                  width: 45,
+                  height: 45,
+                  left: '40%',
+                  bottom: 5,
+                }}
+                resizeMode="contain"
+              />
 
               {/* Brouillard gauche */}
               <LinearGradient
@@ -1535,36 +1468,36 @@ const ActivityPage = ({ onNavigate }) => {
                   backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
                 }}
               >
-                <Text style={{ color: walkRoundTrip ? '#00D984' : '#888', fontSize: 8 }}>
-                  {walkRoundTrip ? '\u2194 A/R \u00D72' : '\u2194 A/R'}
+                <Text style={{ color: walkRoundTrip ? '#00D984' : '#999', fontSize: 9 }}>
+                  {walkRoundTrip ? '\u2194 Aller/Retour \u00D72' : '\u2194 Aller/Retour'}
                 </Text>
               </TouchableOpacity>
 
-              {/* CENTER: Knob buttons (30px) */}
+              {/* CENTER: Knob buttons (36px) */}
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={{ color: '#555', fontSize: 9, marginRight: 4 }}>{String.fromCodePoint(0x25C0)}</Text>
                 <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}>
-                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                    <Animated.View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateLeft }] }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                    <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateLeft }] }}>
                       <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
                         <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
                           <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
                         </View>
                       </View>
-                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 4, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
                     </Animated.View>
                   </View>
                 </Pressable>
                 <View style={{ width: 16 }} />
                 <Pressable onPressIn={() => startWalkMoving(1)} onPressOut={stopWalkMoving}>
-                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                    <Animated.View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateRight }] }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                    <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateRight }] }}>
                       <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
                         <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
                           <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
                         </View>
                       </View>
-                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 4, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
                     </Animated.View>
                   </View>
                 </Pressable>
@@ -1579,11 +1512,11 @@ const ActivityPage = ({ onNavigate }) => {
             </View>
 
             {/* Maintenez hint */}
-            <Text style={{ textAlign: 'center', color: '#555', fontSize: 7, marginTop: 1, fontStyle: 'italic' }}>
-              {String.fromCodePoint(0x261F)} Maintenez pour avancer
+            <Text style={{ textAlign: 'center', color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: 'bold', marginTop: 2, letterSpacing: 0.5 }}>
+              {String.fromCodePoint(0x261F)} MAINTENEZ POUR AVANCER
             </Text>
 
-            {/* Bouton CONFIRMER ultra-compact */}
+            {/* Bouton CONFIRMER */}
             <Pressable
               onPress={async () => {
                 if (walkCal === 0) return;
@@ -1603,14 +1536,14 @@ const ActivityPage = ({ onNavigate }) => {
               }}
               disabled={walkSaved || walkScrollOffset === 0}
               style={({ pressed }) => ({
-                paddingVertical: 8,
+                paddingVertical: 10,
                 borderRadius: 12,
                 backgroundColor: walkSaved ? '#00D984' : walkScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
                 alignItems: 'center',
                 marginTop: 3,
               })}
             >
-              <Text style={{ color: '#0D1117', fontSize: 13, fontWeight: '800' }}>
+              <Text style={{ color: '#0D1117', fontSize: 14, fontWeight: '800' }}>
                 {walkSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` MARCHE — ${walkCal} kcal`}
               </Text>
             </Pressable>
@@ -1622,7 +1555,7 @@ const ActivityPage = ({ onNavigate }) => {
             {/* Header + data compact */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
               <RunShoeIcon size={wp(14)} />
-              <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '800', letterSpacing: 1.5, marginLeft: wp(4) }}>
+              <Text style={{ color: '#EAEEF3', fontSize: fp(15), fontWeight: '800', letterSpacing: 1.5, marginLeft: wp(4) }}>
                 COURSE
               </Text>
               <View style={{ flex: 1 }} />
@@ -1783,35 +1716,35 @@ const ActivityPage = ({ onNavigate }) => {
                 })()}
               </Svg>
 
-              {/* Jaguar GIF — superposed on canvas */}
+              {/* Cheval GIF — toujours visible */}
               <Image
                 source={require('./assets/horse-run.gif')}
                 style={{
                   position: 'absolute',
-                  width: 80,
-                  height: 50,
-                  left: '35%',
-                  bottom: 10,
+                  width: 70,
+                  height: 45,
+                  left: '30%',
+                  bottom: 8,
                   transform: [{ scaleX: -1 }],
                 }}
                 resizeMode="contain"
               />
 
-              {/* Dust cloud behind jaguar when running */}
+              {/* Poussière — visible seulement pendant la course */}
               {isRunning && (
                 <View style={{
                   position: 'absolute',
-                  left: '25%',
-                  bottom: 8,
+                  left: '18%',
+                  bottom: 10,
                   flexDirection: 'row',
                 }}>
-                  {[0.3, 0.2, 0.15, 0.1].map((opacity, i) => (
+                  {[0.35, 0.25, 0.15, 0.08].map((op, i) => (
                     <View key={i} style={{
-                      width: 6 + i * 2,
-                      height: 6 + i * 2,
+                      width: 4 + i * 3,
+                      height: 4 + i * 3,
                       borderRadius: 10,
-                      backgroundColor: `rgba(140, 110, 60, ${opacity})`,
-                      marginRight: 3,
+                      backgroundColor: `rgba(140, 110, 60, ${op})`,
+                      marginRight: 2,
                     }} />
                   ))}
                 </View>
@@ -1845,36 +1778,36 @@ const ActivityPage = ({ onNavigate }) => {
                   backgroundColor: runRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
                 }}
               >
-                <Text style={{ color: runRoundTrip ? '#00D984' : '#888', fontSize: 8 }}>
-                  {runRoundTrip ? '\u2194 A/R \u00D72' : '\u2194 A/R'}
+                <Text style={{ color: runRoundTrip ? '#00D984' : '#999', fontSize: 9 }}>
+                  {runRoundTrip ? '\u2194 Aller/Retour \u00D72' : '\u2194 Aller/Retour'}
                 </Text>
               </TouchableOpacity>
 
-              {/* CENTER: Knob buttons (30px) */}
+              {/* CENTER: Knob buttons (36px) */}
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={{ color: '#555', fontSize: 9, marginRight: 4 }}>{String.fromCodePoint(0x25C0)}</Text>
                 <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}>
-                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                    <Animated.View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateLeft }] }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                    <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateLeft }] }}>
                       <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
                         <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
                           <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
                         </View>
                       </View>
-                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 4, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
                     </Animated.View>
                   </View>
                 </Pressable>
                 <View style={{ width: 16 }} />
                 <Pressable onPressIn={() => startRunMoving(1)} onPressOut={stopRunMoving}>
-                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                    <Animated.View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateRight }] }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                    <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateRight }] }}>
                       <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
                         <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
                           <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
                         </View>
                       </View>
-                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 4, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
                     </Animated.View>
                   </View>
                 </Pressable>
@@ -1889,23 +1822,23 @@ const ActivityPage = ({ onNavigate }) => {
             </View>
 
             {/* Maintenez hint */}
-            <Text style={{ textAlign: 'center', color: '#555', fontSize: 7, marginTop: 1, fontStyle: 'italic' }}>
-              {String.fromCodePoint(0x261F)} Maintenez pour avancer
+            <Text style={{ textAlign: 'center', color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: 'bold', marginTop: 2, letterSpacing: 0.5 }}>
+              {String.fromCodePoint(0x261F)} MAINTENEZ POUR AVANCER
             </Text>
 
-            {/* Bouton CONFIRMER ultra-compact */}
+            {/* Bouton CONFIRMER */}
             <Pressable
               onPress={handleAddRun}
               disabled={runSaved || runScrollOffset === 0}
               style={({ pressed }) => ({
-                paddingVertical: 8,
+                paddingVertical: 10,
                 borderRadius: 12,
                 backgroundColor: runSaved ? '#00D984' : runScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
                 alignItems: 'center',
                 marginTop: 3,
               })}
             >
-              <Text style={{ color: '#0D1117', fontSize: 13, fontWeight: '800' }}>
+              <Text style={{ color: '#0D1117', fontSize: 14, fontWeight: '800' }}>
                 {runSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` COURSE — ${runCalories} kcal`}
               </Text>
             </Pressable>
