@@ -5,7 +5,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, Dimensions, ScrollView, Pressable, Platform,
   Animated, PixelRatio, TextInput, Alert, TouchableOpacity,
-  Modal, StyleSheet,
+  Modal, StyleSheet, Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, {
@@ -15,7 +15,6 @@ import Svg, {
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { createClient } from '@supabase/supabase-js';
-import LottieView from 'lottie-react-native';
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
@@ -863,8 +862,6 @@ const ActivityPage = ({ onNavigate }) => {
   const runMilestoneTimerRef = useRef(null);
   const runMilestoneHitRef = useRef({});
 
-  // Jaguar Lottie animation
-  const jaguarAnimRef = useRef(null);
   const [isRunning, setIsRunning] = useState(false);
 
   // Sport modal
@@ -961,9 +958,6 @@ const ActivityPage = ({ onNavigate }) => {
   const RUN_PAS_SPACING = 28;     // same as walk
 
   // Jaguar animation frame
-  const jaguarFrameRef = useRef(0);
-  const jaguarTickRef = useRef(0);
-  const JAGUAR_FRAME_COUNT = 4;
 
   const runMaxS = RUN_SCENE_W - runCanvasW;
   const runProg = runMaxS > 0 ? runScrollOffset / runMaxS : 0;
@@ -1078,7 +1072,6 @@ const ActivityPage = ({ onNavigate }) => {
     runSpeedRef.current = 2;
     isRunMovingRef.current = true;
     setIsRunning(true);
-    if (jaguarAnimRef.current) jaguarAnimRef.current.play();
     runIntervalRef.current = setInterval(() => {
       const holdDuration = Date.now() - runHoldStartRef.current;
       if (holdDuration > 3000) runSpeedRef.current = 16;
@@ -1091,18 +1084,11 @@ const ActivityPage = ({ onNavigate }) => {
         return Math.max(0, Math.min(prev + direction * runSpeedRef.current, maxS));
       });
       activeRotateAnim.setValue((activeRotateAnim.__getValue() || 0) + direction * 10);
-      // Advance jaguar animation frame every 3 ticks (~150ms)
-      jaguarTickRef.current += 1;
-      if (jaguarTickRef.current >= 3) {
-        jaguarTickRef.current = 0;
-        jaguarFrameRef.current = (jaguarFrameRef.current + 1) % JAGUAR_FRAME_COUNT;
-      }
     }, 50);
   };
   const stopRunMoving = () => {
     isRunMovingRef.current = false;
     setIsRunning(false);
-    if (jaguarAnimRef.current) jaguarAnimRef.current.pause();
     if (runIntervalRef.current) {
       clearInterval(runIntervalRef.current);
       runIntervalRef.current = null;
@@ -1797,20 +1783,18 @@ const ActivityPage = ({ onNavigate }) => {
                 })()}
               </Svg>
 
-              {/* Jaguar Lottie — superposed on canvas */}
-              <LottieView
-                ref={jaguarAnimRef}
-                source={require('./assets/animations/cheetah-running.json')}
+              {/* Jaguar GIF — superposed on canvas */}
+              <Image
+                source={require('./assets/horse-run.gif')}
                 style={{
                   position: 'absolute',
                   width: 80,
                   height: 50,
                   left: '35%',
                   bottom: 10,
+                  transform: [{ scaleX: -1 }],
                 }}
-                autoPlay={false}
-                loop={true}
-                speed={1.5}
+                resizeMode="contain"
               />
 
               {/* Dust cloud behind jaguar when running */}
