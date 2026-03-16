@@ -839,8 +839,13 @@ const ActivityPage = ({ onNavigate }) => {
   const [walkRoundTrip, setWalkRoundTrip] = useState(false);
   const [walkSaved, setWalkSaved] = useState(false);
 
+  // Walk knob controls
+  const walkIntervalRef = useRef(null);
+  const walkRotateAnim = useRef(new Animated.Value(0)).current;
+  const walkSpeedRef = useRef(2);
+  const walkHoldStartRef = useRef(0);
+
   // Run slider
-  const [runMode, setRunMode] = useState('distance');
   const [runValue, setRunValue] = useState(0.15);
 
   // Sport modal
@@ -935,21 +940,14 @@ const ActivityPage = ({ onNavigate }) => {
   const MAX_TIME = 60;         // minutes
 
   // FIX 3: Run — use non-linear distance interpolation
-  const runDistanceM = runMode === 'distance' ? sliderToDistance(runValue, RUN_FLAGS) : null;
-  const runDistanceKm = runDistanceM !== null ? runDistanceM / 1000 : null;
-  const runTimeMins = runMode === 'temps' ? runValue * MAX_TIME : null;
+  const runDistanceM = sliderToDistance(runValue, RUN_FLAGS);
+  const runDistanceKm = runDistanceM / 1000;
 
-  const runCalories = runMode === 'distance'
-    ? Math.round((runDistanceKm / ACTIVITY_DATA.course.km_per_hour) * ACTIVITY_DATA.course.kcal_per_hour)
-    : Math.round((runTimeMins / 60) * ACTIVITY_DATA.course.kcal_per_hour);
+  const runCalories = Math.round((runDistanceKm / ACTIVITY_DATA.course.km_per_hour) * ACTIVITY_DATA.course.kcal_per_hour);
 
-  const runDuration = runMode === 'distance'
-    ? Math.round((runDistanceKm / ACTIVITY_DATA.course.km_per_hour) * 60)
-    : Math.round(runTimeMins);
+  const runDuration = Math.round((runDistanceKm / ACTIVITY_DATA.course.km_per_hour) * 60);
 
-  const runDistDisplay = runMode === 'distance'
-    ? runDistanceKm
-    : (runTimeMins / 60) * ACTIVITY_DATA.course.km_per_hour;
+  const runDistDisplay = runDistanceKm;
 
   const runWater = Math.round((runDuration / 60) * ACTIVITY_DATA.course.water_per_hour_ml);
 
@@ -1007,6 +1005,40 @@ const ActivityPage = ({ onNavigate }) => {
   const walkDistFinal = walkDistM * walkMul;
   const walkDistStr = walkDistFinal < 1000 ? `${Math.round(walkDistFinal)} m` : `${Math.round(walkDistFinal / 100) / 10} km`;
   const walkDurStr = (() => { const m = Math.round(walkDurMin * walkMul); return m < 60 ? `${m} min` : `${Math.round(m / 6) / 10} h`; })();
+  const WALK_PAS_SPACING = 28;
+  const walkFootprintCount = Math.floor(walkScrollOffset / WALK_PAS_SPACING);
+
+  // ── Walk knob interaction ─────────────────────────────────────────────
+  const startWalkMoving = (direction) => {
+    walkHoldStartRef.current = Date.now();
+    walkSpeedRef.current = 2;
+    walkIntervalRef.current = setInterval(() => {
+      const holdDuration = Date.now() - walkHoldStartRef.current;
+      if (holdDuration > 2000) walkSpeedRef.current = 6;
+      else if (holdDuration > 1000) walkSpeedRef.current = 4;
+      else if (holdDuration > 500) walkSpeedRef.current = 3;
+      setWalkScrollOffset(prev => {
+        const maxS = WALK_SCENE_W - walkCanvasW;
+        return Math.max(0, Math.min(prev + direction * walkSpeedRef.current, maxS));
+      });
+      walkRotateAnim.setValue((walkRotateAnim.__getValue() || 0) + direction * 10);
+    }, 50);
+  };
+  const stopWalkMoving = () => {
+    if (walkIntervalRef.current) {
+      clearInterval(walkIntervalRef.current);
+      walkIntervalRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => { if (walkIntervalRef.current) clearInterval(walkIntervalRef.current); };
+  }, []);
+
+  const walkKnobRotate = walkRotateAnim.interpolate({
+    inputRange: [-3600, 3600],
+    outputRange: ['-3600deg', '3600deg'],
+  });
 
   // ── RENDER ─────────────────────────────────────────────────────────────
   return (
@@ -1348,25 +1380,31 @@ const ActivityPage = ({ onNavigate }) => {
                         <Ellipse cx={18} cy={-6} rx={1.5} ry={2.5} fill="#8D6E63" opacity={0.25} />
                       </G>
 
-                      {/* TRACES DE PAS — noires, droites, visibles */}
+                      {/* EMPREINTES DE PIEDS — réalistes, alternées G/D */}
                       {(() => {
                         const prints = [];
-                        for (let i = 0; i < 8; i++) {
-                          const dist = (i + 1) * 22;
-                          const px = centerX - dist;
-                          if (px < 40) continue;
-                          const sceneProgress = px / WALK_SCENE_W;
-                          if (sceneProgress > walkProg) continue;
+                        const totalPrints = walkFootprintCount;
+                        const startX = 60;
+                        for (let i = 0; i < totalPrints; i++) {
+                          const px = startX + i * WALK_PAS_SPACING;
+                          if (px > scW - 40) break;
                           const isRight = i % 2 === 0;
-                          const y = pathY + 5;
-                          const opacity = Math.max(0.08, 0.55 - i * 0.06);
+                          const offsetY = isRight ? 4 : -4;
+                          const y = pathY + 5 + offsetY;
+                          const distFromEnd = totalPrints - 1 - i;
+                          const opacity = distFromEnd === 0 ? 0.8 : Math.max(0.15, 0.7 - distFromEnd * 0.04);
                           prints.push(
-                            <G key={`wfp-${i}`} opacity={opacity}
-                              transform={`translate(${px}, ${y}) rotate(${isRight ? 85 : 95})`}>
-                              <Ellipse cx={0} cy={0} rx={2.5} ry={4.5} fill="#1A1A1A" opacity={0.7} />
-                              <Circle cx={1} cy={-4.5} r={1} fill="#1A1A1A" opacity={0.6} />
-                              <Circle cx={0} cy={-5} r={1} fill="#1A1A1A" opacity={0.6} />
-                              <Circle cx={-1} cy={-4.5} r={1} fill="#1A1A1A" opacity={0.6} />
+                            <G key={`wfp-${i}`} opacity={opacity} transform={`translate(${px}, ${y})`}>
+                              {/* Plante du pied */}
+                              <Ellipse cx={0} cy={3} rx={3.5} ry={6} fill="#3A2A1A" opacity={0.7} />
+                              {/* Talon */}
+                              <Ellipse cx={0} cy={10} rx={2.8} ry={3} fill="#3A2A1A" opacity={0.5} />
+                              {/* Orteils */}
+                              <Circle cx={-2.5} cy={-2.5} r={1.4} fill="#3A2A1A" opacity={0.65} />
+                              <Circle cx={-1} cy={-4} r={1.4} fill="#3A2A1A" opacity={0.65} />
+                              <Circle cx={0.8} cy={-4.5} r={1.3} fill="#3A2A1A" opacity={0.6} />
+                              <Circle cx={2.5} cy={-3.5} r={1.2} fill="#3A2A1A" opacity={0.55} />
+                              <Circle cx={3.5} cy={-2} r={1.1} fill="#3A2A1A" opacity={0.5} />
                             </G>
                           );
                         }
@@ -1392,71 +1430,101 @@ const ActivityPage = ({ onNavigate }) => {
               />
             </View>
 
-            {/* BOUTON RADIO VINTAGE — contrôle le défilement */}
-            <View style={{ marginTop: wp(4), marginBottom: wp(4), paddingHorizontal: wp(8), height: wp(40), justifyContent: 'center' }}
-              onStartShouldSetResponder={() => true}
-              onMoveShouldSetResponder={() => true}
-              onResponderGrant={(evt) => {
-                const x = evt.nativeEvent.locationX;
-                const containerWidth = walkCanvasW - wp(16);
-                const ratio = Math.max(0, Math.min(1, x / containerWidth));
-                const maxS = WALK_SCENE_W - walkCanvasW;
-                setWalkScrollOffset(ratio * maxS);
-              }}
-              onResponderMove={(evt) => {
-                const x = evt.nativeEvent.locationX;
-                const containerWidth = walkCanvasW - wp(16);
-                const ratio = Math.max(0, Math.min(1, x / containerWidth));
-                const maxS = WALK_SCENE_W - walkCanvasW;
-                setWalkScrollOffset(ratio * maxS);
-              }}
-            >
-              {/* Rail */}
-              <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), marginHorizontal: wp(14) }}>
-                <View style={{ position: 'absolute', left: 0, height: '100%', width: `${walkProg * 100}%`, backgroundColor: 'rgba(0,217,132,0.2)', borderRadius: wp(2) }} />
+            {/* DOUBLE MOLETTE VINTAGE — contrôle le défilement */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: wp(6), marginBottom: wp(2) }}>
+              {/* Bouton RECULER */}
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: '#5A6070', fontSize: fp(9), marginBottom: wp(3) }}>{String.fromCodePoint(0x25C0)}</Text>
+                <Pressable
+                  onPressIn={() => startWalkMoving(-1)}
+                  onPressOut={stopWalkMoving}
+                >
+                  <Animated.View style={{
+                    width: wp(58), height: wp(58), borderRadius: wp(29),
+                    backgroundColor: '#1A1A1A',
+                    borderWidth: 2, borderColor: '#C0C0C0',
+                    justifyContent: 'center', alignItems: 'center',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.7, shadowRadius: 8, elevation: 10,
+                    transform: [{ rotate: walkKnobRotate }],
+                  }}>
+                    {/* Cercles concentriques gravés */}
+                    <View style={{ width: wp(44), height: wp(44), borderRadius: wp(22), borderWidth: 0.8, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                      <View style={{ width: wp(32), height: wp(32), borderRadius: wp(16), borderWidth: 0.6, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' }}>
+                        <View style={{ width: wp(20), height: wp(20), borderRadius: wp(10), borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: wp(10), height: wp(10), borderRadius: wp(5), backgroundColor: '#2A2A2A' }} />
+                        </View>
+                      </View>
+                    </View>
+                    {/* Indicateur 12h */}
+                    <View style={{ position: 'absolute', top: wp(4), width: 2, height: wp(8), backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                    {/* Rainures knurled sur le pourtour (simulées) */}
+                    {Array.from({ length: 24 }, (_, i) => {
+                      const angle = (i / 24) * 360;
+                      return (
+                        <View key={`kl-${i}`} style={{
+                          position: 'absolute', width: 1.5, height: wp(5),
+                          backgroundColor: i % 2 === 0 ? '#3A3A3A' : '#1A1A1A',
+                          top: 0, left: wp(29) - 0.75,
+                          transform: [{ rotate: `${angle}deg` }, { translateY: wp(1) }],
+                          transformOrigin: `0.75px ${wp(29)}px`,
+                        }} />
+                      );
+                    })}
+                  </Animated.View>
+                </Pressable>
+                <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: wp(3), fontWeight: '600', letterSpacing: 1 }}>RECULER</Text>
               </View>
 
-              {/* Bouton métallique — positionné sur le rail */}
-              <View style={{
-                position: 'absolute',
-                left: wp(8) + walkProg * (walkCanvasW - wp(44)),
-                top: wp(6),
-                width: wp(30),
-                height: wp(30),
-                borderRadius: wp(15),
-                backgroundColor: '#2A2F36',
-                borderWidth: 2.5,
-                borderColor: '#5A6070',
-                justifyContent: 'center',
-                alignItems: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.6,
-                shadowRadius: 8,
-                elevation: 10,
-              }}>
-                {/* Anneau extérieur métallique */}
-                <View style={{
-                  width: wp(26), height: wp(26), borderRadius: wp(13),
-                  borderWidth: 1.5, borderColor: '#6B7280',
-                  justifyContent: 'center', alignItems: 'center',
-                  backgroundColor: '#333940',
-                }}>
-                  {/* Rainures vintage */}
-                  <View style={{ width: wp(14), height: 1.5, backgroundColor: '#8892A0', borderRadius: 1, marginBottom: 1.5, opacity: 0.5 }} />
-                  <View style={{ width: wp(10), height: 1.5, backgroundColor: '#6B7280', borderRadius: 1, marginBottom: 1.5, opacity: 0.4 }} />
-                  <View style={{ width: wp(14), height: 1.5, backgroundColor: '#8892A0', borderRadius: 1, opacity: 0.5 }} />
-                  {/* Point central émeraude lumineux */}
-                  <View style={{
-                    position: 'absolute',
-                    width: wp(7), height: wp(7), borderRadius: wp(3.5),
-                    backgroundColor: '#00D984',
-                    shadowColor: '#00D984',
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: 0.6,
-                    shadowRadius: 4,
-                  }} />
-                </View>
+              {/* Espacement + texte central */}
+              <View style={{ alignItems: 'center', marginHorizontal: wp(10), justifyContent: 'center' }}>
+                <Text style={{ color: '#888', fontSize: fp(9), fontStyle: 'italic', textAlign: 'center' }}>
+                  {String.fromCodePoint(0x1F3AF)} Maintenez{'\n'}pour déplacer
+                </Text>
+              </View>
+
+              {/* Bouton AVANCER */}
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: '#5A6070', fontSize: fp(9), marginBottom: wp(3) }}>{String.fromCodePoint(0x25B6)}</Text>
+                <Pressable
+                  onPressIn={() => startWalkMoving(1)}
+                  onPressOut={stopWalkMoving}
+                >
+                  <Animated.View style={{
+                    width: wp(58), height: wp(58), borderRadius: wp(29),
+                    backgroundColor: '#1A1A1A',
+                    borderWidth: 2, borderColor: '#C0C0C0',
+                    justifyContent: 'center', alignItems: 'center',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.7, shadowRadius: 8, elevation: 10,
+                    transform: [{ rotate: walkKnobRotate }],
+                  }}>
+                    {/* Cercles concentriques gravés */}
+                    <View style={{ width: wp(44), height: wp(44), borderRadius: wp(22), borderWidth: 0.8, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                      <View style={{ width: wp(32), height: wp(32), borderRadius: wp(16), borderWidth: 0.6, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' }}>
+                        <View style={{ width: wp(20), height: wp(20), borderRadius: wp(10), borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: wp(10), height: wp(10), borderRadius: wp(5), backgroundColor: '#2A2A2A' }} />
+                        </View>
+                      </View>
+                    </View>
+                    {/* Indicateur 12h */}
+                    <View style={{ position: 'absolute', top: wp(4), width: 2, height: wp(8), backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                    {/* Rainures knurled sur le pourtour (simulées) */}
+                    {Array.from({ length: 24 }, (_, i) => {
+                      const angle = (i / 24) * 360;
+                      return (
+                        <View key={`kr-${i}`} style={{
+                          position: 'absolute', width: 1.5, height: wp(5),
+                          backgroundColor: i % 2 === 0 ? '#3A3A3A' : '#1A1A1A',
+                          top: 0, left: wp(29) - 0.75,
+                          transform: [{ rotate: `${angle}deg` }, { translateY: wp(1) }],
+                          transformOrigin: `0.75px ${wp(29)}px`,
+                        }} />
+                      );
+                    })}
+                  </Animated.View>
+                </Pressable>
+                <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: wp(3), fontWeight: '600', letterSpacing: 1 }}>AVANCER</Text>
               </View>
             </View>
 
@@ -1475,7 +1543,7 @@ const ActivityPage = ({ onNavigate }) => {
                 </Text>
               </Pressable>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800' }}>{walkDurStr}</Text>
+                <Text style={{ color: '#00D984', fontSize: fp(18), fontWeight: '900' }}>{walkDurStr}</Text>
                 <Text style={{ color: '#5A6070', fontSize: fp(8) }}>à vitesse normale</Text>
               </View>
             </View>
@@ -1530,13 +1598,12 @@ const ActivityPage = ({ onNavigate }) => {
                     COURSE
                   </Text>
                 </View>
-                <ModePill mode={runMode} onToggle={setRunMode} accentColor="#FF8C42" />
               </View>
 
               {/* Slider */}
               <ActivitySlider
                 type="course"
-                mode={runMode}
+                mode="distance"
                 value={runValue}
                 onChange={setRunValue}
                 shoeAnim={shoeAnim}
@@ -1555,11 +1622,6 @@ const ActivityPage = ({ onNavigate }) => {
                   <Text style={{ color: '#FF8C42', fontSize: fp(18), fontWeight: '900' }}>
                     {formatDistance(runDistDisplay * 1000)}
                   </Text>
-                  {runMode === 'temps' && (
-                    <Text style={{ color: '#555E6C', fontSize: fp(9), marginTop: wp(2) }}>
-                      ~{formatDistance(runDistDisplay * 1000)} à allure modérée
-                    </Text>
-                  )}
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={{ color: '#FF8C42', fontSize: fp(14), fontWeight: '900' }}>
