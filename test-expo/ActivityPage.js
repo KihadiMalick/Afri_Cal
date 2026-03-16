@@ -61,15 +61,6 @@ const ACTIVITY_DATA = {
   danse: { kcal_per_hour: 450, icon: '💃', label: 'Danse', color: '#EC407A', water_per_hour_ml: 500 },
 };
 
-const WALK_FLAGS = [
-  { distance: 100, label: '100m' },
-  { distance: 500, label: '500m' },
-  { distance: 1000, label: '1 km' },
-  { distance: 2000, label: '2 km' },
-  { distance: 5000, label: '5 km' },
-  { distance: 10000, label: '10 km' },
-];
-
 const RUN_FLAGS = [
   { distance: 400, label: '400m' },
   { distance: 1000, label: '1 km' },
@@ -943,7 +934,6 @@ const ActivityPage = ({ onNavigate }) => {
   };
 
   // ── Calculations ───────────────────────────────────────────────────────
-  const WALK_MAX_DIST = 10000; // 10 km in metres
   const RUN_MAX_DIST = 21000;  // 21 km in metres
   const MAX_TIME = 60;         // minutes
 
