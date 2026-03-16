@@ -267,456 +267,210 @@ const ParticleBackground = () => {
 };
 
 // ============================================
-// CARTE HOLOGRAPHIQUE avec circuit animé
+// BULLE SYNAPTIQUE — Noeud du réseau neuronal
 // ============================================
-const HologramCard = ({ icon, title, subtitle, color, onPress }) => {
-  const glowAnim = useRef(new Animated.Value(0.2)).current;
-  const circuitAnim = useRef(new Animated.Value(0)).current;
-  const isPressed = useRef(false);
+const SynapseBubble = ({ message, index, onPress }) => {
+  const isBot = message.role === 'assistant';
+  const isLeft = isBot;
+  const bubbleColor = isBot ? '#00D984' : '#4DA6FF';
+  const bgColor = isBot ? 'rgba(0,217,132,0.12)' : 'rgba(77,166,255,0.12)';
+  const borderColor = isBot ? 'rgba(0,217,132,0.4)' : 'rgba(77,166,255,0.4)';
 
-  const handlePressIn = () => {
-    isPressed.current = true;
-    Animated.timing(circuitAnim, { toValue: 1, duration: 400, useNativeDriver: false }).start();
-    Animated.timing(glowAnim, { toValue: 0.6, duration: 400, useNativeDriver: false }).start();
-  };
-
-  const handlePressOut = () => {
-    isPressed.current = false;
-    Animated.timing(circuitAnim, { toValue: 0, duration: 600, useNativeDriver: false }).start();
-    Animated.timing(glowAnim, { toValue: 0.2, duration: 600, useNativeDriver: false }).start();
-  };
-
-  const circuitColor = circuitAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [`rgba(${color === '#FFB400' ? '255,180,0' : '0,217,132'},0.15)`, `rgba(${color === '#FFB400' ? '255,180,0' : '0,217,132'},0.8)`],
-  });
-
-  return (
-    <Pressable
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      onPress={onPress}
-      style={{ flex: 1, marginHorizontal: 4 }}
-    >
-      {/* Circuit vers LixMan (ligne verticale) */}
-      <Animated.View style={{
-        alignSelf: 'center',
-        width: 1.5,
-        height: 12,
-        backgroundColor: circuitColor,
-        marginBottom: 2,
-      }} />
-      {/* Point de connexion */}
-      <Animated.View style={{
-        alignSelf: 'center',
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: circuitColor,
-        marginBottom: 4,
-      }} />
-
-      {/* Carte */}
-      <Animated.View style={{
-        backgroundColor: 'rgba(10,15,25,0.8)',
-        borderRadius: 14,
-        borderWidth: 1.5,
-        borderColor: circuitAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [`rgba(${color === '#FFB400' ? '255,180,0' : '0,217,132'},0.2)`, color],
-        }),
-        padding: 12,
-        alignItems: 'center',
-        shadowColor: color,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        elevation: 3,
-      }}>
-        <Text style={{ fontSize: 24, marginBottom: 4 }}>{icon}</Text>
-        <Text style={{ color: color, fontSize: 12, fontWeight: 'bold' }}>{title}</Text>
-        <Text style={{ color: '#555', fontSize: 8, marginTop: 2 }}>{subtitle}</Text>
-      </Animated.View>
-    </Pressable>
-  );
-};
-
-// ============================================
-// LIXMAN HOLOGRAMME VIVANT
-// ============================================
-const LixManHologram = ({ todaySummary, userProfile, onMediBookPress, onSecretPocketPress }) => {
-  const haloAnim = useRef(new Animated.Value(0.15)).current;
-  const orbitAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(haloAnim, { toValue: 0.35, duration: 2500, useNativeDriver: false }),
-        Animated.timing(haloAnim, { toValue: 0.15, duration: 2500, useNativeDriver: false }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.timing(orbitAnim, {
-        toValue: 1,
-        duration: 20000,
-        useNativeDriver: true,
-      })
-    ).start();
-  }, []);
-
-  const orbitRotation = orbitAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  const calories = todaySummary?.total_calories || 0;
-  const tdee = userProfile?.tdee || 2000;
-  const water = todaySummary?.total_water || 0;
-
-  return (
-    <View style={{ alignItems: 'center', marginVertical: 6 }}>
-      {/* Conteneur hologramme */}
-      <View style={{ width: SCREEN_WIDTH - 32, alignItems: 'center', position: 'relative' }}>
-
-        {/* HALO VERT qui respire derrière l'image */}
-        <Animated.View style={{
-          position: 'absolute',
-          top: 5,
-          width: SCREEN_WIDTH - 48,
-          height: 165,
-          borderRadius: 20,
-          backgroundColor: '#00D984',
-          opacity: haloAnim,
-          transform: [{ scale: 1.03 }],
-        }} />
-
-        {/* Image LixMan principale */}
-        <Image
-          source={require('./assets/lixman-doctor.png')}
-          style={{
-            width: SCREEN_WIDTH - 48,
-            height: 160,
-            borderRadius: 16,
-            borderWidth: 1.5,
-            borderColor: 'rgba(0,217,132,0.4)',
-          }}
-          resizeMode="cover"
-        />
-
-        {/* DONNÉES EN ORBITE — 3 bulles qui flottent autour de l'image */}
-        <Animated.View style={{
-          position: 'absolute',
-          top: 0, left: 0, right: 0, bottom: 0,
-          alignItems: 'center',
-          justifyContent: 'center',
-          transform: [{ rotate: orbitRotation }],
-        }}>
-          {/* Bulle Calories — en haut à droite */}
-          <Animated.View style={{
-            position: 'absolute',
-            top: -8,
-            right: 10,
-            transform: [{ rotate: orbitAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-360deg'] }) }],
-          }}>
-            <View style={{
-              backgroundColor: 'rgba(6,8,12,0.85)',
-              borderRadius: 20,
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              borderWidth: 1,
-              borderColor: 'rgba(0,217,132,0.4)',
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
-              <Text style={{ fontSize: 10 }}>🔥</Text>
-              <Text style={{ color: '#FF6B3D', fontSize: 10, fontWeight: 'bold', marginLeft: 3 }}>
-                {calories} kcal
-              </Text>
-            </View>
-          </Animated.View>
-
-          {/* Bulle Eau — en bas à gauche */}
-          <Animated.View style={{
-            position: 'absolute',
-            bottom: -8,
-            left: 10,
-            transform: [{ rotate: orbitAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-360deg'] }) }],
-          }}>
-            <View style={{
-              backgroundColor: 'rgba(6,8,12,0.85)',
-              borderRadius: 20,
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              borderWidth: 1,
-              borderColor: 'rgba(77,166,255,0.4)',
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
-              <Text style={{ fontSize: 10 }}>💧</Text>
-              <Text style={{ color: '#4DA6FF', fontSize: 10, fontWeight: 'bold', marginLeft: 3 }}>
-                {water} ml
-              </Text>
-            </View>
-          </Animated.View>
-
-          {/* Bulle Objectif — en haut à gauche */}
-          <Animated.View style={{
-            position: 'absolute',
-            top: -8,
-            left: 10,
-            transform: [{ rotate: orbitAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-360deg'] }) }],
-          }}>
-            <View style={{
-              backgroundColor: 'rgba(6,8,12,0.85)',
-              borderRadius: 20,
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              borderWidth: 1,
-              borderColor: 'rgba(0,217,132,0.4)',
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
-              <Text style={{ fontSize: 10 }}>🎯</Text>
-              <Text style={{ color: '#00D984', fontSize: 10, fontWeight: 'bold', marginLeft: 3 }}>
-                {Math.round((calories / tdee) * 100)}%
-              </Text>
-            </View>
-          </Animated.View>
-        </Animated.View>
-
-        {/* Sous-titre */}
-        <Text style={{
-          color: 'rgba(0,217,132,0.5)',
-          fontSize: 9,
-          textAlign: 'center',
-          marginTop: 6,
-          fontStyle: 'italic',
-          letterSpacing: 1,
-        }}>
-          ESPACE SANTÉ INTELLIGENT
-        </Text>
-      </View>
-
-      {/* DOSSIERS HOLOGRAPHIQUES connectés */}
-      <View style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 10,
-        paddingHorizontal: 16,
-        width: '100%',
-      }}>
-        <HologramCard
-          icon="📋"
-          title="MediBook"
-          subtitle="Dossier médical"
-          color="#00D984"
-          onPress={onMediBookPress}
-        />
-        <HologramCard
-          icon="🔐"
-          title="Secret Pocket"
-          subtitle="Coffre-fort santé"
-          color="#FFB400"
-          onPress={onSecretPocketPress}
-        />
-      </View>
-    </View>
-  );
-};
-
-// ============================================
-// INDICATEUR DE RÉFLEXION — Impulsions nerveuses
-// ============================================
-const ThinkingIndicator = () => {
-  const brainPulse = useRef(new Animated.Value(0.3)).current;
-  const impulse1 = useRef(new Animated.Value(0)).current;
-  const impulse2 = useRef(new Animated.Value(0)).current;
-  const impulse3 = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(brainPulse, { toValue: 1, duration: 600, useNativeDriver: false }),
-        Animated.timing(brainPulse, { toValue: 0.3, duration: 600, useNativeDriver: false }),
-      ])
-    ).start();
-
-    const pulseSequence = () => {
-      Animated.stagger(200, [
-        Animated.sequence([
-          Animated.timing(impulse1, { toValue: 1, duration: 300, useNativeDriver: false }),
-          Animated.timing(impulse1, { toValue: 0, duration: 300, useNativeDriver: false }),
-        ]),
-        Animated.sequence([
-          Animated.timing(impulse2, { toValue: 1, duration: 300, useNativeDriver: false }),
-          Animated.timing(impulse2, { toValue: 0, duration: 300, useNativeDriver: false }),
-        ]),
-        Animated.sequence([
-          Animated.timing(impulse3, { toValue: 1, duration: 300, useNativeDriver: false }),
-          Animated.timing(impulse3, { toValue: 0, duration: 300, useNativeDriver: false }),
-        ]),
-      ]).start(() => pulseSequence());
-    };
-    pulseSequence();
-  }, []);
-
-  return (
-    <View style={{ alignSelf: 'flex-start', marginBottom: 10, maxWidth: '85%' }}>
-      {/* Avatar */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, marginLeft: 4 }}>
-        <Image
-          source={require('./assets/lixman-avatar.png')}
-          style={{ width: 20, height: 20, borderRadius: 10, marginRight: 5, borderWidth: 1.5, borderColor: '#00D984' }}
-          resizeMode="cover"
-        />
-        <Text style={{ color: '#00D984', fontSize: 11, fontWeight: 'bold' }}>LixMan</Text>
-      </View>
-
-      {/* Bulle avec cerveau et impulsions */}
-      <View style={{
-        backgroundColor: 'rgba(15,20,30,0.9)',
-        borderRadius: 16,
-        borderTopLeftRadius: 4,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        borderWidth: 1,
-        borderColor: 'rgba(0,217,132,0.2)',
-        borderLeftWidth: 3,
-        borderLeftColor: '#00D984',
-      }}>
-        {/* Ligne cerveau + texte */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-          {/* Cerveau qui pulse */}
-          <Animated.View style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: brainPulse.interpolate({
-              inputRange: [0.3, 1],
-              outputRange: ['rgba(0,217,132,0.1)', 'rgba(0,217,132,0.3)'],
-            }),
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginRight: 12,
-            borderWidth: 1.5,
-            borderColor: brainPulse.interpolate({
-              inputRange: [0.3, 1],
-              outputRange: ['rgba(0,217,132,0.2)', 'rgba(0,217,132,0.7)'],
-            }),
-          }}>
-            <Text style={{ fontSize: 18 }}>🧠</Text>
-          </Animated.View>
-
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: '#00D984', fontSize: 12, fontWeight: 'bold' }}>
-              Analyse en cours
-            </Text>
-            <Text style={{ color: '#555', fontSize: 9, marginTop: 2 }} numberOfLines={1}>
-              Consultation de vos données...
-            </Text>
-          </View>
-        </View>
-
-        {/* Impulsions nerveuses (3 points qui s'allument en cascade) */}
-        <View style={{ flexDirection: 'row', marginTop: 10, justifyContent: 'center' }}>
-          {[impulse1, impulse2, impulse3].map((imp, i) => (
-            <Animated.View key={i} style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              marginHorizontal: 6,
-              backgroundColor: imp.interpolate({
-                inputRange: [0, 1],
-                outputRange: ['rgba(0,217,132,0.15)', '#00D984'],
-              }),
-              transform: [{
-                scale: imp.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.8, 1.3],
-                }),
-              }],
-            }} />
-          ))}
-        </View>
-      </View>
-    </View>
-  );
-};
-
-// ============================================
-// BULLE HOLOGRAPHIQUE pour LixMan
-// ============================================
-const HoloBubble = ({ content, timestamp, onRecipePress }) => {
-  const flashAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(10)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.5)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
-      Animated.timing(opacityAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-      Animated.sequence([
-        Animated.timing(flashAnim, { toValue: 1, duration: 100, useNativeDriver: false }),
-        Animated.timing(flashAnim, { toValue: 0, duration: 800, useNativeDriver: false }),
-      ]),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, friction: 6, useNativeDriver: true }),
     ]).start();
+  }, []);
+
+  const preview = message.content
+    ? message.content.replace(/\*\*/g, '').replace(/\[RECETTE:.*?\]/g, '\u{1F37D}\u{FE0F}').substring(0, 80) + (message.content.length > 80 ? '...' : '')
+    : '';
+
+  const time = message.timestamp
+    ? new Date(message.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    : '';
+
+  return (
+    <Animated.View style={{
+      opacity: fadeAnim,
+      transform: [{ scale: scaleAnim }],
+      alignSelf: isLeft ? 'flex-start' : 'flex-end',
+      marginLeft: isLeft ? 10 : 60,
+      marginRight: isLeft ? 60 : 10,
+      marginBottom: 0,
+    }}>
+      <TouchableOpacity
+        onPress={() => onPress(message)}
+        activeOpacity={0.7}
+      >
+        <View style={{
+          backgroundColor: bgColor,
+          borderRadius: 20,
+          paddingHorizontal: 14,
+          paddingVertical: 10,
+          borderWidth: 1.5,
+          borderColor: borderColor,
+          minWidth: 80,
+          maxWidth: 220,
+          shadowColor: bubbleColor,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 8,
+          elevation: 3,
+        }}>
+          <Text style={{
+            color: bubbleColor,
+            fontSize: 8,
+            fontWeight: 'bold',
+            marginBottom: 3,
+            letterSpacing: 0.5,
+          }}>
+            {isBot ? '\u{1F9E0} LIXMAN' : '\u{1F464} VOUS'}
+          </Text>
+
+          <Text style={{
+            color: '#D0D0D0',
+            fontSize: 12,
+            lineHeight: 16,
+          }} numberOfLines={3}>
+            {preview}
+          </Text>
+
+          <Text style={{
+            color: '#555',
+            fontSize: 8,
+            marginTop: 4,
+            textAlign: 'right',
+          }}>
+            {time}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+// ============================================
+// LIGNE SYNAPTIQUE — Circuit entre les bulles
+// ============================================
+const SynapseLine = ({ fromLeft, toLeft }) => {
+  const lineAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(lineAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: false,
+    }).start();
+  }, []);
+
+  const startX = fromLeft ? '25%' : '75%';
+  const endX = toLeft ? '25%' : '75%';
+
+  return (
+    <View style={{ height: 30, position: 'relative', marginVertical: -2 }}>
+      <Animated.View style={{
+        position: 'absolute',
+        top: 0,
+        left: startX,
+        width: 2,
+        height: '50%',
+        backgroundColor: '#00D984',
+        opacity: lineAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 0.4],
+        }),
+      }} />
+
+      <Animated.View style={{
+        position: 'absolute',
+        top: '40%',
+        left: fromLeft !== toLeft ? '50%' : (fromLeft ? '25%' : '75%'),
+        marginLeft: -3,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#00D984',
+        opacity: lineAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 0.5],
+        }),
+      }} />
+
+      <Animated.View style={{
+        position: 'absolute',
+        bottom: 0,
+        left: endX,
+        width: 2,
+        height: '50%',
+        backgroundColor: '#00D984',
+        opacity: lineAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 0.3],
+        }),
+      }} />
+    </View>
+  );
+};
+
+// ============================================
+// BULLE D'ATTENTE — LixMan réfléchit
+// ============================================
+const WaitingBubble = () => {
+  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 0.8, duration: 600, useNativeDriver: false }),
+        Animated.timing(pulseAnim, { toValue: 0.3, duration: 600, useNativeDriver: false }),
+      ])
+    ).start();
   }, []);
 
   return (
     <Animated.View style={{
       alignSelf: 'flex-start',
-      maxWidth: '85%',
-      marginBottom: 10,
-      opacity: opacityAnim,
-      transform: [{ translateY: slideAnim }],
+      marginLeft: 10,
+      marginBottom: 0,
     }}>
-      {/* Avatar + nom */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, marginLeft: 4 }}>
-        <Image
-          source={require('./assets/lixman-avatar.png')}
-          style={{ width: 20, height: 20, borderRadius: 10, marginRight: 5, borderWidth: 1.5, borderColor: '#00D984' }}
-          resizeMode="cover"
-        />
-        <Text style={{ color: '#00D984', fontSize: 11, fontWeight: 'bold' }}>LixMan</Text>
-      </View>
-
-      {/* Bulle holographique */}
       <Animated.View style={{
-        backgroundColor: 'rgba(12,18,28,0.85)',
-        borderRadius: 14,
-        borderTopLeftRadius: 4,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderWidth: 1,
-        borderColor: flashAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: ['rgba(0,217,132,0.15)', 'rgba(0,217,132,0.8)'],
+        backgroundColor: pulseAnim.interpolate({
+          inputRange: [0.3, 0.8],
+          outputRange: ['rgba(0,217,132,0.05)', 'rgba(0,217,132,0.15)'],
         }),
-        borderLeftWidth: 3,
-        borderLeftColor: flashAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: ['#00D984', '#00FFB2'],
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderWidth: 1.5,
+        borderColor: pulseAnim.interpolate({
+          inputRange: [0.3, 0.8],
+          outputRange: ['rgba(0,217,132,0.2)', 'rgba(0,217,132,0.6)'],
         }),
+        minWidth: 80,
+        flexDirection: 'row',
+        alignItems: 'center',
         shadowColor: '#00D984',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: flashAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0.05, 0.3],
-        }),
+        shadowOpacity: 0.15,
         shadowRadius: 8,
       }}>
-        <FormattedText
-          text={content}
-          style={{ color: '#E0E0E0', fontSize: 14, lineHeight: 20 }}
-          onRecipePress={onRecipePress}
-        />
+        <Animated.Text style={{ fontSize: 16, opacity: pulseAnim, marginRight: 8 }}>{'\u{1F9E0}'}</Animated.Text>
+        {[0, 1, 2].map((i) => (
+          <Animated.View key={i} style={{
+            width: 5,
+            height: 5,
+            borderRadius: 2.5,
+            backgroundColor: '#00D984',
+            marginHorizontal: 2,
+            opacity: pulseAnim,
+          }} />
+        ))}
       </Animated.View>
-
-      {/* Heure */}
-      <Text style={{ color: '#444', fontSize: 9, marginTop: 2, marginLeft: 4 }}>
-        {timestamp ? new Date(timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
-      </Text>
     </Animated.View>
   );
 };
@@ -740,6 +494,9 @@ export default function MedicAiPage() {
   // Plats disponibles + modal recette
   const [availableMeals, setAvailableMeals] = useState([]);
   const [recipeModal, setRecipeModal] = useState(null);
+
+  // Modal message complet (réseau synaptique)
+  const [selectedMessage, setSelectedMessage] = useState(null);
 
   // Navigation
   const [activeTab, setActiveTab] = useState('medicai');
@@ -919,6 +676,15 @@ ${mealsList}
     // navigation.navigate('Repas', { recipe: recipeName, section: 'recettes' });
   };
 
+  // ── Modal message synaptique ──────────────────────────────────────────────
+  const handleBubblePress = (message) => {
+    setSelectedMessage(message);
+  };
+
+  const closeMessageModal = () => {
+    setSelectedMessage(null);
+  };
+
   // ── Envoi de message et appel IA ─────────────────────────────────────────
   const sendMessage = async () => {
     if (!inputText.trim() || isLoading) return;
@@ -1046,64 +812,123 @@ ${mealsList}
       >
         <ScrollView
           ref={scrollViewRef}
-          style={{ flex: 1, paddingHorizontal: 16 }}
+          style={{ flex: 1, paddingHorizontal: 8 }}
           contentContainerStyle={{ paddingBottom: 10 }}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           keyboardShouldPersistTaps="handled"
         >
-          {/* LIXMAN HOLOGRAMME — Toujours visible */}
-          <LixManHologram
-            todaySummary={todaySummary}
-            userProfile={userProfile}
-            onMediBookPress={() => {
-              addBotMessage("Le MediBook sera disponible dans une prochaine mise à jour. Il vous permettra de stocker vos ordonnances, rendez-vous et rappels de médicaments. 📋");
-            }}
-            onSecretPocketPress={() => {
-              addBotMessage("Le Secret Pocket sera disponible dans une prochaine mise à jour. Vos données sensibles seront chiffrées et accessibles uniquement par empreinte digitale. 🔐");
-            }}
-          />
-
-          {/* MESSAGES — Bulles holographiques */}
-          {messages.map((msg) => (
-            msg.role === 'assistant' ? (
-              <HoloBubble
-                key={msg.id}
-                content={msg.content}
-                timestamp={msg.timestamp}
-                onRecipePress={handleRecipePress}
+          {/* TÊTE DU RÉSEAU — Avatar LixMan connecté */}
+          <View style={{ alignItems: 'center', marginTop: 8, marginBottom: 4 }}>
+            <View style={{
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              borderWidth: 2,
+              borderColor: '#00D984',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'rgba(0,217,132,0.08)',
+              shadowColor: '#00D984',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              elevation: 5,
+            }}>
+              <Image
+                source={require('./assets/lixman-avatar.png')}
+                style={{ width: 48, height: 48, borderRadius: 24 }}
+                resizeMode="cover"
               />
-            ) : (
-              <Animated.View
-                key={msg.id}
-                style={{
-                  alignSelf: 'flex-end',
-                  maxWidth: '80%',
-                  marginBottom: 10,
-                }}
-              >
-                <Text style={{ color: '#666', fontSize: 10, marginBottom: 2, textAlign: 'right' }}>Vous</Text>
-                <View style={{
-                  backgroundColor: 'rgba(0,217,132,0.1)',
-                  borderRadius: 14,
-                  borderTopRightRadius: 4,
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderWidth: 1,
-                  borderColor: 'rgba(0,217,132,0.25)',
-                  borderRightWidth: 3,
-                  borderRightColor: 'rgba(0,217,132,0.4)',
-                }}>
-                  <Text style={{ color: '#E0E0E0', fontSize: 14, lineHeight: 20 }}>{msg.content}</Text>
-                </View>
-                <Text style={{ color: '#444', fontSize: 9, marginTop: 2, textAlign: 'right' }}>
-                  {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
-                </Text>
-              </Animated.View>
-            )
-          ))}
+            </View>
 
-          {/* Indicateur "LixMan réfléchit..." — Impulsions nerveuses */}
-          {isTyping && <ThinkingIndicator />}
+            <Text style={{ color: '#00D984', fontSize: 10, fontWeight: 'bold', marginTop: 4, letterSpacing: 1 }}>
+              LIXMAN
+            </Text>
+            <Text style={{ color: 'rgba(0,217,132,0.4)', fontSize: 7, letterSpacing: 1.5 }}>
+              ESPACE SANT{'\u00C9'} INTELLIGENT
+            </Text>
+
+            <View style={{ width: 2, height: 15, backgroundColor: 'rgba(0,217,132,0.3)', marginTop: 4 }} />
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(0,217,132,0.5)' }} />
+          </View>
+
+          {/* CARTES MediBook + Secret Pocket */}
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'center',
+            marginBottom: 10,
+            paddingHorizontal: 20,
+            gap: 12,
+          }}>
+            <TouchableOpacity
+              onPress={() => addBotMessage("Le MediBook sera disponible prochainement. \u{1F4CB}")}
+              style={{
+                backgroundColor: 'rgba(0,217,132,0.08)',
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: 'rgba(0,217,132,0.25)',
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                flexDirection: 'row',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 14, marginRight: 6 }}>{'\u{1F4CB}'}</Text>
+              <Text style={{ color: '#00D984', fontSize: 10, fontWeight: 'bold' }}>MediBook</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. \u{1F510}")}
+              style={{
+                backgroundColor: 'rgba(255,180,0,0.06)',
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: 'rgba(255,180,0,0.2)',
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                flexDirection: 'row',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 14, marginRight: 6 }}>{'\u{1F510}'}</Text>
+              <Text style={{ color: '#FFB400', fontSize: 10, fontWeight: 'bold' }}>Secret Pocket</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* RÉSEAU DE BULLES SYNAPTIQUES */}
+          {messages.map((msg, index) => {
+            const isBot = msg.role === 'assistant';
+            const prevMsg = index > 0 ? messages[index - 1] : null;
+            const prevIsBot = prevMsg ? prevMsg.role === 'assistant' : true;
+
+            return (
+              <View key={msg.id}>
+                {index > 0 && (
+                  <SynapseLine
+                    fromLeft={prevIsBot}
+                    toLeft={isBot}
+                  />
+                )}
+
+                <SynapseBubble
+                  message={msg}
+                  index={index}
+                  onPress={handleBubblePress}
+                />
+              </View>
+            );
+          })}
+
+          {/* BULLE D'ATTENTE quand LixMan réfléchit */}
+          {isTyping && (
+            <View>
+              <SynapseLine
+                fromLeft={messages.length > 0 ? messages[messages.length - 1].role !== 'assistant' : true}
+                toLeft={true}
+              />
+              <WaitingBubble />
+            </View>
+          )}
         </ScrollView>
 
         {/* ===== BARRE DE SAISIE — Style holographique ===== */}
@@ -1202,6 +1027,93 @@ ${mealsList}
       {/* ===== BOTTOM TAB BAR ===== */}
       {!keyboardVisible && (
         <BottomTabs activeTab={activeTab} onTabPress={setActiveTab} />
+      )}
+
+      {/* === MODAL MESSAGE COMPLET (réseau synaptique) === */}
+      {selectedMessage && (
+        <View style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 200,
+        }}>
+          <TouchableOpacity
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+            onPress={closeMessageModal}
+            activeOpacity={1}
+          />
+          <View style={{
+            backgroundColor: '#0D1117',
+            borderRadius: 20,
+            padding: 18,
+            width: SCREEN_WIDTH * 0.9,
+            maxHeight: SCREEN_HEIGHT * 0.7,
+            borderWidth: 1.5,
+            borderColor: selectedMessage.role === 'assistant'
+              ? 'rgba(0,217,132,0.4)'
+              : 'rgba(77,166,255,0.4)',
+          }}>
+            {/* Header du modal */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {selectedMessage.role === 'assistant' ? (
+                  <>
+                    <Image
+                      source={require('./assets/lixman-avatar.png')}
+                      style={{ width: 24, height: 24, borderRadius: 12, marginRight: 8, borderWidth: 1.5, borderColor: '#00D984' }}
+                      resizeMode="cover"
+                    />
+                    <Text style={{ color: '#00D984', fontSize: 14, fontWeight: 'bold' }}>LixMan</Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={{ fontSize: 18, marginRight: 8 }}>{'\u{1F464}'}</Text>
+                    <Text style={{ color: '#4DA6FF', fontSize: 14, fontWeight: 'bold' }}>Vous</Text>
+                  </>
+                )}
+              </View>
+
+              <Text style={{ color: '#555', fontSize: 10 }}>
+                {selectedMessage.timestamp
+                  ? new Date(selectedMessage.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+                  : ''}
+              </Text>
+            </View>
+
+            {/* Contenu complet scrollable */}
+            <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.5 }}>
+              {selectedMessage.role === 'assistant' ? (
+                <FormattedText
+                  text={selectedMessage.content}
+                  style={{ color: '#E0E0E0', fontSize: 14, lineHeight: 22 }}
+                  onRecipePress={(name) => { closeMessageModal(); handleRecipePress(name); }}
+                />
+              ) : (
+                <Text style={{ color: '#E0E0E0', fontSize: 14, lineHeight: 22 }}>
+                  {selectedMessage.content}
+                </Text>
+              )}
+            </ScrollView>
+
+            {/* Bouton fermer */}
+            <TouchableOpacity
+              onPress={closeMessageModal}
+              style={{
+                marginTop: 14,
+                paddingVertical: 10,
+                borderRadius: 12,
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.1)',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: '#888', fontSize: 12 }}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       )}
 
       {/* === MODAL CONFIRMATION RECETTE === */}
