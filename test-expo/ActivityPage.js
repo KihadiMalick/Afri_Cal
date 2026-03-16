@@ -1472,195 +1472,282 @@ const ActivityPage = ({ onNavigate }) => {
                   setWalkSliderValue(Math.max(0, Math.min(1, x / (walkCanvasWidth || 1))));
                 }}
               >
-                <Svg width={walkCanvasWidth || SCREEN_H - 24} height={walkCanvasHeight || SCREEN_W - 80}
+                <Svg width={walkCanvasWidth || 600} height={walkCanvasHeight || 250}
                   viewBox={`0 0 ${walkCanvasWidth || 600} ${walkCanvasHeight || 250}`}>
 
-                  {/* Gazon subtil */}
-                  {Array.from({ length: 50 }, (_, i) => {
-                    const x = (i / 50) * (walkCanvasWidth || 600);
-                    const h = walkCanvasHeight || 250;
-                    return (
-                      <G key={`g-${i}`}>
-                        <Line x1={x} y1={h} x2={x - 1} y2={h - 5} stroke="#00D984" strokeWidth={0.8} opacity={0.08} />
-                        <Line x1={x + 2} y1={h} x2={x + 1} y2={h - 4} stroke="#00D984" strokeWidth={0.8} opacity={0.06} />
-                      </G>
-                    );
-                  })}
-
-                  {/* Ligne de sol */}
-                  <Line x1={0} y1={(walkCanvasHeight || 250) - 1} x2={walkCanvasWidth || 600} y2={(walkCanvasHeight || 250) - 1}
-                    stroke="#00D984" strokeWidth={0.5} opacity={0.1} />
+                  <Defs>
+                    {/* Dégradé ciel */}
+                    <SvgLinearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                      <Stop offset="0%" stopColor="#87CEEB" stopOpacity={0.9} />
+                      <Stop offset="40%" stopColor="#B0E0FF" stopOpacity={0.7} />
+                      <Stop offset="70%" stopColor="#D4EFFF" stopOpacity={0.5} />
+                      <Stop offset="100%" stopColor="#E8F5E9" stopOpacity={0.3} />
+                    </SvgLinearGradient>
+                    {/* Dégradé herbe */}
+                    <SvgLinearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
+                      <Stop offset="0%" stopColor="#4CAF50" stopOpacity={0.4} />
+                      <Stop offset="50%" stopColor="#388E3C" stopOpacity={0.5} />
+                      <Stop offset="100%" stopColor="#2E7D32" stopOpacity={0.6} />
+                    </SvgLinearGradient>
+                    {/* Dégradé chemin de terre */}
+                    <SvgLinearGradient id="pathGrad" x1="0" y1="0" x2="0" y2="1">
+                      <Stop offset="0%" stopColor="#D7CCC8" stopOpacity={0.3} />
+                      <Stop offset="50%" stopColor="#BCAAA4" stopOpacity={0.25} />
+                      <Stop offset="100%" stopColor="#A1887F" stopOpacity={0.2} />
+                    </SvgLinearGradient>
+                    {/* Dégradé soleil */}
+                    <SvgLinearGradient id="sunGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+                      <Stop offset="0%" stopColor="#FFF9C4" />
+                      <Stop offset="100%" stopColor="#FFD54F" />
+                    </SvgLinearGradient>
+                  </Defs>
 
                   {(() => {
                     const cW = walkCanvasWidth || 600;
                     const cH = walkCanvasHeight || 250;
-                    const midY = cH * 0.55;
-                    const margin = cW * 0.06;
+                    const groundY = cH * 0.60;
+                    const pathY = cH * 0.58;
+                    const skyH = groundY;
+                    const margin = cW * 0.05;
                     const usable = cW - margin * 2;
                     const passed = (p) => walkSliderValue >= p;
 
                     return (
                       <>
-                        {/* ===== MAISON — Départ (colorée, premium) ===== */}
-                        <G transform={`translate(${margin}, ${midY - 15})`}>
-                          {/* Cheminée */}
-                          <Rect x={6} y={-12} width={3} height={6} fill="#8892A0" opacity={0.5} />
-                          {/* Fumée */}
-                          <Circle cx={8} cy={-14} r={2} fill="#8892A0" opacity={0.2} />
-                          <Circle cx={10} cy={-17} r={1.5} fill="#8892A0" opacity={0.15} />
-                          {/* Toit */}
-                          <Path d="M-2 -4 L10 -12 L22 -4 Z" fill="#FF6B6B" opacity={0.7} />
-                          {/* Mur */}
-                          <Rect x={0} y={-4} width={20} height={16} fill="#FFE4B5" opacity={0.6} />
-                          {/* Porte */}
-                          <Rect x={7} y={2} width={6} height={10} rx={1} fill="#8B6914" opacity={0.7} />
-                          {/* Poignée */}
-                          <Circle cx={11.5} cy={7} r={0.8} fill="#D4AF37" opacity={0.8} />
-                          {/* Fenêtre gauche */}
-                          <Rect x={1.5} y={-1} width={4} height={4} rx={0.5} fill="#4DA6FF" opacity={0.4} />
-                          <Line x1={3.5} y1={-1} x2={3.5} y2={3} stroke="#FFE4B5" strokeWidth={0.5} opacity={0.5} />
-                          <Line x1={1.5} y1={1} x2={5.5} y2={1} stroke="#FFE4B5" strokeWidth={0.5} opacity={0.5} />
-                          {/* Fenêtre droite */}
-                          <Rect x={14.5} y={-1} width={4} height={4} rx={0.5} fill="#4DA6FF" opacity={0.4} />
+                        {/* ===== CIEL ===== */}
+                        <Rect x={0} y={0} width={cW} height={skyH} fill="url(#skyGrad)" />
+
+                        {/* ===== SOLEIL — en haut à droite ===== */}
+                        <G transform={`translate(${cW * 0.85}, ${cH * 0.12})`}>
+                          {Array.from({ length: 12 }, (_, i) => {
+                            const angle = (i / 12) * Math.PI * 2;
+                            const x1 = Math.cos(angle) * 14;
+                            const y1 = Math.sin(angle) * 14;
+                            const x2 = Math.cos(angle) * 22;
+                            const y2 = Math.sin(angle) * 22;
+                            return <Line key={`ray-${i}`} x1={x1} y1={y1} x2={x2} y2={y2}
+                              stroke="#FFD54F" strokeWidth={1.5} opacity={0.5} strokeLinecap="round" />;
+                          })}
+                          <Circle cx={0} cy={0} r={12} fill="url(#sunGrad)" opacity={0.9} />
+                          <Circle cx={-3} cy={-3} r={4} fill="#FFFFFF" opacity={0.3} />
                         </G>
 
-                        {/* ===== ARBRE — position 22% (coloré, premium) ===== */}
-                        <G transform={`translate(${margin + 0.22 * usable}, ${midY - 10})`}>
-                          {/* Tronc texturé */}
-                          <Rect x={-2} y={6} width={4} height={14} fill="#8B6914" opacity={0.7} />
-                          <Line x1={-1} y1={8} x2={-1} y2={18} stroke="#6B4C12" strokeWidth={0.5} opacity={0.3} />
-                          <Line x1={1} y1={7} x2={1} y2={19} stroke="#A07A18" strokeWidth={0.5} opacity={0.2} />
-                          {/* Feuillage */}
-                          <Circle cx={0} cy={-2} r={10} fill="#2ECC71" opacity={0.7} />
-                          <Circle cx={-6} cy={2} r={7} fill="#27AE60" opacity={0.6} />
-                          <Circle cx={6} cy={2} r={7} fill="#27AE60" opacity={0.6} />
-                          <Circle cx={0} cy={-6} r={5} fill="#58D68D" opacity={0.4} />
-                          {/* Pomme qui tombe si passé */}
+                        {/* ===== NUAGES ===== */}
+                        <G transform={`translate(${cW * 0.15}, ${cH * 0.08})`} opacity={0.6}>
+                          <Ellipse cx={0} cy={0} rx={18} ry={8} fill="white" />
+                          <Ellipse cx={-12} cy={2} rx={12} ry={7} fill="white" />
+                          <Ellipse cx={12} cy={2} rx={14} ry={7} fill="white" />
+                          <Ellipse cx={0} cy={-4} rx={10} ry={6} fill="white" opacity={0.8} />
+                        </G>
+                        <G transform={`translate(${cW * 0.5}, ${cH * 0.06})`} opacity={0.4}>
+                          <Ellipse cx={0} cy={0} rx={12} ry={5} fill="white" />
+                          <Ellipse cx={-8} cy={1} rx={8} ry={5} fill="white" />
+                          <Ellipse cx={8} cy={1} rx={10} ry={5} fill="white" />
+                        </G>
+                        <G transform={`translate(${cW * 0.7}, ${cH * 0.14})`} opacity={0.35}>
+                          <Ellipse cx={0} cy={0} rx={14} ry={6} fill="white" />
+                          <Ellipse cx={10} cy={1} rx={10} ry={5} fill="white" />
+                          <Ellipse cx={-8} cy={2} rx={9} ry={5} fill="white" />
+                        </G>
+
+                        {/* ===== COLLINES LOINTAINES ===== */}
+                        <Path d={`M0 ${groundY} Q${cW * 0.15} ${groundY - 25} ${cW * 0.3} ${groundY - 10} Q${cW * 0.5} ${groundY - 30} ${cW * 0.7} ${groundY - 8} Q${cW * 0.85} ${groundY - 20} ${cW} ${groundY} Z`}
+                          fill="#81C784" opacity={0.25} />
+
+                        {/* ===== SOL / HERBE ===== */}
+                        <Rect x={0} y={groundY} width={cW} height={cH - groundY} fill="url(#grassGrad)" />
+
+                        {/* Texture herbe — touffes */}
+                        {Array.from({ length: 60 }, (_, i) => {
+                          const x = (i / 60) * cW + (Math.sin(i * 7) * 3);
+                          return (
+                            <G key={`tuft-${i}`}>
+                              <Line x1={x} y1={groundY} x2={x - 1.5} y2={groundY - 4 - (i % 3) * 2}
+                                stroke="#66BB6A" strokeWidth={1.2} opacity={0.3} strokeLinecap="round" />
+                              <Line x1={x + 2} y1={groundY} x2={x + 1} y2={groundY - 3 - (i % 4) * 1.5}
+                                stroke="#4CAF50" strokeWidth={1} opacity={0.25} strokeLinecap="round" />
+                            </G>
+                          );
+                        })}
+
+                        {/* Petites fleurs sauvages */}
+                        {[0.08, 0.18, 0.35, 0.52, 0.68, 0.78, 0.88].map((pos, i) => {
+                          const x = pos * cW;
+                          const y = groundY + 8 + (i % 3) * 5;
+                          const colors = ['#FF6B8A', '#FFD93D', '#E1BEE7', '#FF8A65', '#81D4FA', '#F48FB1', '#FFCC80'];
+                          return (
+                            <G key={`flower-${i}`}>
+                              <Line x1={x} y1={y} x2={x} y2={y - 5} stroke="#66BB6A" strokeWidth={0.8} opacity={0.4} />
+                              <Circle cx={x} cy={y - 6} r={2} fill={colors[i]} opacity={0.5} />
+                              <Circle cx={x} cy={y - 6} r={0.8} fill="#FFD54F" opacity={0.6} />
+                            </G>
+                          );
+                        })}
+
+                        {/* ===== CHEMIN DE TERRE ===== */}
+                        <Path d={`M${margin} ${pathY + 5} Q${cW * 0.25} ${pathY - 2} ${cW * 0.5} ${pathY + 3} Q${cW * 0.75} ${pathY - 1} ${margin + usable} ${pathY + 5}`}
+                          fill="none" stroke="url(#pathGrad)" strokeWidth={18} strokeLinecap="round" />
+                        <Path d={`M${margin} ${pathY + 12} Q${cW * 0.25} ${pathY + 5} ${cW * 0.5} ${pathY + 10} Q${cW * 0.75} ${pathY + 6} ${margin + usable} ${pathY + 12}`}
+                          fill="none" stroke="#A5D6A7" strokeWidth={1} opacity={0.3} />
+
+                        {/* ===== MAISON — Départ, GRANDE ===== */}
+                        <G transform={`translate(${margin + 5}, ${pathY - 30}) scale(1.8)`}>
+                          <Rect x={6} y={-12} width={3} height={6} fill="#795548" opacity={0.6} />
+                          <Circle cx={8} cy={-14} r={2.5} fill="#BDBDBD" opacity={0.3} />
+                          <Circle cx={10} cy={-17} r={2} fill="#BDBDBD" opacity={0.2} />
+                          <Path d="M-2 -4 L10 -14 L22 -4 Z" fill="#E53935" opacity={0.85} />
+                          <Path d="M0 -4 L10 -12 L20 -4" fill="none" stroke="#C62828" strokeWidth={1} opacity={0.5} />
+                          <Rect x={0} y={-4} width={20} height={18} fill="#FFECB3" opacity={0.85} />
+                          <Rect x={7} y={3} width={6} height={11} rx={1} fill="#6D4C41" opacity={0.85} />
+                          <Circle cx={11.5} cy={8} r={0.8} fill="#FFD54F" opacity={0.9} />
+                          <Rect x={1.5} y={-1} width={4} height={4} rx={0.5} fill="#90CAF9" opacity={0.6} />
+                          <Line x1={3.5} y1={-1} x2={3.5} y2={3} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
+                          <Line x1={1.5} y1={1} x2={5.5} y2={1} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
+                          <Rect x={14.5} y={-1} width={4} height={4} rx={0.5} fill="#90CAF9" opacity={0.6} />
+                          <Line x1={16.5} y1={-1} x2={16.5} y2={3} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
+                          <Line x1={14.5} y1={1} x2={18.5} y2={1} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
+                        </G>
+
+                        {/* ===== ARBRE — position 22%, TRÈS GRAND ===== */}
+                        <G transform={`translate(${margin + 0.22 * usable}, ${pathY - 20}) scale(2)`}>
+                          <Rect x={-2.5} y={8} width={5} height={16} fill="#795548" opacity={0.8} />
+                          <Line x1={-1.5} y1={10} x2={-1.5} y2={22} stroke="#5D4037" strokeWidth={0.5} opacity={0.4} />
+                          <Line x1={1.5} y1={9} x2={1.5} y2={23} stroke="#8D6E63" strokeWidth={0.5} opacity={0.3} />
+                          <Circle cx={0} cy={0} r={12} fill="#43A047" opacity={0.85} />
+                          <Circle cx={-7} cy={4} r={8} fill="#388E3C" opacity={0.75} />
+                          <Circle cx={7} cy={4} r={8} fill="#388E3C" opacity={0.75} />
+                          <Circle cx={0} cy={-5} r={7} fill="#66BB6A" opacity={0.5} />
+                          <Circle cx={-4} cy={-2} r={3} fill="#81C784" opacity={0.3} />
                           {passed(0.22) && (
                             <G>
-                              <Circle cx={7} cy={18} r={3} fill="#FF3B30" opacity={0.8} />
-                              <Line x1={7} y1={15} x2={7.5} y2={13.5} stroke="#8B6914" strokeWidth={1} />
-                              <Ellipse cx={8.5} cy={13} rx={2} ry={1} fill="#27AE60" opacity={0.5} transform="rotate(-30, 8.5, 13)" />
+                              <Circle cx={8} cy={22} r={3.5} fill="#F44336" opacity={0.85} />
+                              <Ellipse cx={9.5} cy={21} rx={1} ry={0.5} fill="white" opacity={0.3} />
+                              <Line x1={8} y1={18.5} x2={8.5} y2={17} stroke="#795548" strokeWidth={1} />
+                              <Ellipse cx={10} cy={16.5} rx={2.5} ry={1.2} fill="#66BB6A" opacity={0.6} transform="rotate(-30, 10, 16.5)" />
                             </G>
                           )}
                         </G>
 
-                        {/* ===== BANC — position 42% (coloré, détaillé) ===== */}
-                        <G transform={`translate(${margin + 0.42 * usable}, ${midY + 2})`}>
-                          {/* Planches assise — bois chaud */}
-                          <Rect x={-12} y={-2} width={24} height={2.5} rx={1} fill="#D4A574" opacity={0.8} />
-                          <Rect x={-12} y={1} width={24} height={2.5} rx={1} fill="#C4956A" opacity={0.7} />
-                          {/* Planches dossier */}
-                          <Rect x={-11} y={-8} width={22} height={2} rx={1} fill="#D4A574" opacity={0.7} />
-                          <Rect x={-11} y={-5.5} width={22} height={2} rx={1} fill="#C4956A" opacity={0.6} />
-                          {/* Pieds métal */}
-                          <Path d="M-9 3.5 L-10 10 L-8 10 L-7 3.5" fill="#5A6070" opacity={0.7} />
-                          <Path d="M9 3.5 L8 10 L10 10 L11 3.5" fill="#5A6070" opacity={0.7} />
-                          {/* Montants dossier */}
-                          <Rect x={-9} y={-8} width={2} height={11} rx={0.5} fill="#5A6070" opacity={0.6} />
-                          <Rect x={9} y={-8} width={2} height={11} rx={0.5} fill="#5A6070" opacity={0.6} />
-                          {/* Accoudoirs */}
-                          <Rect x={-13} y={-3} width={4} height={2} rx={1} fill="#5A6070" opacity={0.5} />
-                          <Rect x={11} y={-3} width={4} height={2} rx={1} fill="#5A6070" opacity={0.5} />
+                        {/* ===== BANC — position 42%, GRAND ET DÉTAILLÉ ===== */}
+                        <G transform={`translate(${margin + 0.42 * usable}, ${pathY - 4}) scale(1.8)`}>
+                          <Rect x={-12} y={-2} width={24} height={3} rx={1.5} fill="#D7CCC8" opacity={0.9} />
+                          <Rect x={-12} y={1.5} width={24} height={3} rx={1.5} fill="#BCAAA4" opacity={0.8} />
+                          <Rect x={-11} y={-9} width={22} height={2.5} rx={1} fill="#D7CCC8" opacity={0.8} />
+                          <Rect x={-11} y={-6} width={22} height={2.5} rx={1} fill="#BCAAA4" opacity={0.7} />
+                          <Path d="M-9 4.5 L-10.5 12 L-8 12 L-6.5 4.5" fill="#616161" opacity={0.8} />
+                          <Path d="M9 4.5 L7.5 12 L10 12 L11.5 4.5" fill="#616161" opacity={0.8} />
+                          <Rect x={-10} y={-9} width={2.5} height={13} rx={0.5} fill="#616161" opacity={0.7} />
+                          <Rect x={9.5} y={-9} width={2.5} height={13} rx={0.5} fill="#616161" opacity={0.7} />
+                          <Rect x={-14} y={-4} width={5} height={2.5} rx={1} fill="#616161" opacity={0.6} />
+                          <Rect x={11} y={-4} width={5} height={2.5} rx={1} fill="#616161" opacity={0.6} />
                         </G>
 
-                        {/* ===== OISEAUX — position 65% (vrais oiseaux SVG) ===== */}
-                        <G transform={`translate(${margin + 0.65 * usable}, ${midY - (passed(0.65) ? 25 : 5)})`}>
-                          {/* Oiseau 1 — grand, bleu */}
+                        {/* ===== OISEAUX — position 65%, GRANDS, COLORÉS ===== */}
+                        <G transform={`translate(${margin + 0.65 * usable}, ${pathY - (passed(0.65) ? 40 : 10)}) scale(2.2)`}>
+                          {/* Oiseau 1 — bleu roi */}
                           <G transform="translate(0, 0)">
-                            <Ellipse cx={0} cy={0} rx={5} ry={3} fill="#4DA6FF" opacity={0.8} />
-                            <Circle cx={-4} cy={-1.5} r={2.5} fill="#4DA6FF" opacity={0.8} />
-                            <Path d="M-6.5 -1.5 L-8.5 -0.5 L-6.5 0" fill="#FF8C42" opacity={0.9} />
-                            <Circle cx={-5} cy={-2} r={0.7} fill="white" />
-                            <Circle cx={-5.2} cy={-2} r={0.4} fill="#0D1117" />
-                            <Path d="M-1 -2 Q3 -8 8 -3 Q4 -1 0 0" fill="#5BC0EB" opacity={0.6} />
-                            <Path d="M5 0 L9 -2 L8 1 Z" fill="#4DA6FF" opacity={0.6} />
+                            <Ellipse cx={0} cy={0} rx={6} ry={3.5} fill="#1E88E5" opacity={0.9} />
+                            <Circle cx={-5} cy={-1.5} r={3} fill="#1565C0" opacity={0.9} />
+                            <Path d="M-8 -1.5 L-10.5 -0.5 L-8 0.5" fill="#FF8F00" opacity={0.95} />
+                            <Circle cx={-6} cy={-2.2} r={1} fill="white" />
+                            <Circle cx={-6.3} cy={-2.2} r={0.5} fill="#0D1117" />
+                            <Path d="M-1 -2.5 Q4 -10 10 -4 Q5 -1 0 0" fill="#42A5F5" opacity={0.7} />
+                            <Path d="M6 0 L10 -2 L9 1.5 Z" fill="#1E88E5" opacity={0.7} />
                           </G>
-                          {/* Oiseau 2 — petit, vert */}
-                          <G transform="translate(14, -8) scale(0.7)">
-                            <Ellipse cx={0} cy={0} rx={5} ry={3} fill="#00D984" opacity={0.7} />
-                            <Circle cx={-4} cy={-1.5} r={2.5} fill="#00D984" opacity={0.7} />
-                            <Path d="M-6.5 -1.5 L-8 -0.5 L-6.5 0" fill="#FF8C42" opacity={0.8} />
-                            <Circle cx={-5} cy={-2} r={0.6} fill="white" />
-                            <Circle cx={-5.2} cy={-2} r={0.35} fill="#0D1117" />
-                            <Path d="M-1 -2 Q3 -7 7 -2 Q3 0 0 0" fill="#5DFFB4" opacity={0.5} />
+                          {/* Oiseau 2 — vert tropical */}
+                          <G transform="translate(16, -10) scale(0.75)">
+                            <Ellipse cx={0} cy={0} rx={6} ry={3.5} fill="#43A047" opacity={0.85} />
+                            <Circle cx={-5} cy={-1.5} r={3} fill="#2E7D32" opacity={0.85} />
+                            <Path d="M-8 -1.5 L-10 -0.5 L-8 0.5" fill="#FF8F00" opacity={0.9} />
+                            <Circle cx={-6} cy={-2.2} r={0.8} fill="white" />
+                            <Circle cx={-6.2} cy={-2.2} r={0.4} fill="#0D1117" />
+                            <Path d="M-1 -2 Q4 -8 9 -3 Q4 0 0 0" fill="#66BB6A" opacity={0.6} />
                           </G>
-                          {/* Oiseau 3 — moyen, jaune */}
-                          <G transform="translate(-12, -12) scale(0.6)">
-                            <Ellipse cx={0} cy={0} rx={5} ry={3} fill="#FFD93D" opacity={0.7} />
-                            <Circle cx={-4} cy={-1.5} r={2.5} fill="#FFD93D" opacity={0.7} />
-                            <Path d="M-6.5 -1.5 L-8 -0.5 L-6.5 0" fill="#FF8C42" opacity={0.8} />
-                            <Circle cx={-5} cy={-2} r={0.6} fill="white" />
-                            <Circle cx={-5.2} cy={-2} r={0.35} fill="#0D1117" />
-                            <Path d="M-1 -2 Q3 -7 7 -2 Q3 0 0 0" fill="#FFE066" opacity={0.5} />
+                          {/* Oiseau 3 — jaune canari */}
+                          <G transform="translate(-14, -14) scale(0.65)">
+                            <Ellipse cx={0} cy={0} rx={6} ry={3.5} fill="#FDD835" opacity={0.85} />
+                            <Circle cx={-5} cy={-1.5} r={3} fill="#F9A825" opacity={0.85} />
+                            <Path d="M-8 -1.5 L-10 -0.5 L-8 0.5" fill="#FF6F00" opacity={0.9} />
+                            <Circle cx={-6} cy={-2.2} r={0.8} fill="white" />
+                            <Circle cx={-6.2} cy={-2.2} r={0.4} fill="#0D1117" />
+                            <Path d="M-1 -2 Q4 -8 9 -3 Q4 0 0 0" fill="#FFEE58" opacity={0.6} />
                           </G>
                         </G>
 
-                        {/* ===== ÉTANG + CANARD — position 93% ===== */}
-                        <G transform={`translate(${margin + 0.93 * usable}, ${midY})`}>
-                          {/* Eau */}
-                          <Ellipse cx={0} cy={5} rx={20} ry={12} fill="#4DA6FF" opacity={0.12} />
-                          <Ellipse cx={0} cy={5} rx={16} ry={9} fill="#4DA6FF" opacity={0.08} />
-                          {/* Rides */}
-                          <Path d="M-12 4 Q-6 1 0 4 Q6 7 12 4" fill="none" stroke="#4DA6FF" strokeWidth={0.8} opacity={0.25} />
-                          <Path d="M-9 8 Q-3 5 3 8 Q9 11 15 8" fill="none" stroke="#4DA6FF" strokeWidth={0.6} opacity={0.15} />
+                        {/* ===== ÉTANG + CANARD — position 90%, GRAND ===== */}
+                        <G transform={`translate(${margin + 0.90 * usable}, ${pathY - 5}) scale(1.8)`}>
+                          <Ellipse cx={0} cy={6} rx={22} ry={14} fill="#4FC3F7" opacity={0.2} />
+                          <Ellipse cx={0} cy={6} rx={18} ry={10} fill="#29B6F6" opacity={0.15} />
+                          <Path d="M-14 5 Q-7 2 0 5 Q7 8 14 5" fill="none" stroke="#4FC3F7" strokeWidth={1} opacity={0.3} />
+                          <Path d="M-10 9 Q-3 6 4 9 Q11 12 18 9" fill="none" stroke="#4FC3F7" strokeWidth={0.8} opacity={0.2} />
                           {/* Nénuphars */}
-                          <Ellipse cx={-10} cy={8} rx={3} ry={1.5} fill="#27AE60" opacity={0.4} />
-                          <Circle cx={-10} cy={7} r={1} fill="#FF6B8A" opacity={0.3} />
-                          <Ellipse cx={8} cy={10} rx={2.5} ry={1.2} fill="#27AE60" opacity={0.3} />
-                          {/* Canard */}
-                          <Ellipse cx={0} cy={1} rx={6} ry={3.5} fill="#FFB800" opacity={0.85} />
-                          <Circle cx={-5} cy={-2} r={3.5} fill="#27AE60" opacity={0.8} />
-                          <Path d="M-8.5 -2 L-11 -1 L-8.5 0" fill="#FF8C42" opacity={0.9} />
-                          <Circle cx={-6} cy={-2.5} r={1} fill="white" />
-                          <Circle cx={-6.3} cy={-2.5} r={0.5} fill="#0D1117" />
-                          {/* Queue relevée */}
-                          <Path d="M6 -1 L9 -4 L7 0" fill="#FFB800" opacity={0.7} />
-                          {/* Reflet dans l'eau */}
-                          <Ellipse cx={0} cy={6} rx={5} ry={2} fill="#FFB800" opacity={0.1} />
+                          <Ellipse cx={-12} cy={9} rx={4} ry={2} fill="#66BB6A" opacity={0.5} />
+                          <Circle cx={-12} cy={8} r={1.5} fill="#F48FB1" opacity={0.5} />
+                          <Ellipse cx={10} cy={12} rx={3} ry={1.5} fill="#66BB6A" opacity={0.4} />
+                          <Circle cx={10} cy={11} r={1} fill="#CE93D8" opacity={0.4} />
+                          {/* Canard GRAND et coloré */}
+                          <Ellipse cx={0} cy={1} rx={7} ry={4} fill="#FFB300" opacity={0.9} />
+                          <Circle cx={-6} cy={-3} r={4} fill="#2E7D32" opacity={0.9} />
+                          <Circle cx={-7.5} cy={-3.5} r={1.3} fill="white" />
+                          <Circle cx={-7.8} cy={-3.5} r={0.6} fill="#0D1117" />
+                          <Path d="M-10 -3 L-13 -2 L-10 -1" fill="#FF6F00" opacity={0.95} />
+                          <Path d="M-3 -1 Q-1 -3 1 -1" fill="white" opacity={0.3} strokeWidth={1} />
+                          <Path d="M7 -1 L10 -5 L8 1" fill="#FFB300" opacity={0.8} />
+                          <Ellipse cx={0} cy={7} rx={6} ry={2.5} fill="#FFB300" opacity={0.08} />
+                          {/* Roseaux */}
+                          <Line x1={16} y1={-8} x2={16} y2={8} stroke="#8D6E63" strokeWidth={1.2} opacity={0.4} />
+                          <Ellipse cx={16} cy={-9} rx={2} ry={3} fill="#8D6E63" opacity={0.3} />
+                          <Line x1={18} y1={-5} x2={18} y2={8} stroke="#8D6E63" strokeWidth={1} opacity={0.3} />
+                          <Ellipse cx={18} cy={-6} rx={1.5} ry={2.5} fill="#8D6E63" opacity={0.25} />
                         </G>
 
-                        {/* ===== TRACES DE PAS — réduites, horizontales ===== */}
+                        {/* ===== TRACES DE PAS — marron, dans la terre ===== */}
                         {(() => {
                           const prints = [];
-                          const totalPrints = 14;
+                          const totalPrints = 12;
                           for (let i = 0; i < totalPrints; i++) {
                             const t = i / totalPrints;
                             if (t > walkSliderValue) break;
                             const baseX = margin + t * usable;
                             let waveY = 0;
-                            const nearTree = Math.abs(t - 0.22) < 0.06;
-                            const nearBench = Math.abs(t - 0.42) < 0.06;
-                            const nearBirds = Math.abs(t - 0.65) < 0.05;
-                            if (nearTree) waveY = 22;
-                            else if (nearBench) waveY = -20;
-                            else if (nearBirds) waveY = 18;
-                            else waveY = Math.sin(t * Math.PI * 4) * 6;
+                            if (Math.abs(t - 0.22) < 0.07) waveY = 18;
+                            else if (Math.abs(t - 0.42) < 0.07) waveY = -16;
+                            else if (Math.abs(t - 0.65) < 0.06) waveY = 15;
+                            else waveY = Math.sin(t * Math.PI * 4) * 5;
                             const isRight = i % 2 === 0;
-                            const footOffset = isRight ? -4 : 4;
-                            const y = midY + waveY + footOffset;
+                            const y = pathY + waveY + (isRight ? -3 : 3);
                             const dist = walkSliderValue - t;
-                            const opacity = dist > 0.20 ? Math.max(0, 0.6 - (dist - 0.20) * 3) : 0.6;
+                            const opacity = dist > 0.18 ? Math.max(0, 0.5 - (dist - 0.18) * 2.5) : 0.5;
                             if (opacity <= 0) continue;
-                            const footAngle = isRight ? 80 : 100;
+                            const angle = isRight ? 82 : 98;
                             prints.push(
-                              <G key={`fp-${i}`} opacity={opacity}
-                                transform={`translate(${baseX}, ${y}) rotate(${footAngle})`}>
-                                <Ellipse cx={0} cy={0} rx={3} ry={5} fill="#00D984" opacity={0.5} />
-                                <Circle cx={isRight ? 1 : -1} cy={-5} r={1.2} fill="#00D984" opacity={0.4} />
-                                <Circle cx={0} cy={-5.5} r={1.2} fill="#00D984" opacity={0.4} />
-                                <Circle cx={isRight ? -1 : 1} cy={-5} r={1.2} fill="#00D984" opacity={0.4} />
+                              <G key={`fp-${i}`} opacity={opacity} transform={`translate(${baseX}, ${y}) rotate(${angle})`}>
+                                <Ellipse cx={0} cy={0} rx={2.5} ry={4.5} fill="#5D4037" opacity={0.4} />
+                                <Circle cx={isRight ? 1 : -1} cy={-4.5} r={1} fill="#5D4037" opacity={0.35} />
+                                <Circle cx={0} cy={-5} r={1} fill="#5D4037" opacity={0.35} />
+                                <Circle cx={isRight ? -1 : 1} cy={-4.5} r={1} fill="#5D4037" opacity={0.35} />
                               </G>
                             );
                           }
                           return prints;
                         })()}
 
-                        {/* Barre de progression — en bas du canvas */}
-                        <Rect x={margin} y={cH - 10} width={usable} height={6} rx={3} fill="rgba(0,217,132,0.08)" />
-                        <Rect x={margin} y={cH - 10} width={Math.max(0, usable * walkSliderValue)} height={6} rx={3} fill="#00D984" opacity={0.7} />
+                        {/* ===== BARRE DE PROGRESSION — sur le chemin ===== */}
+                        <Rect x={margin} y={pathY + 20} width={usable} height={5} rx={2.5} fill="rgba(0,0,0,0.1)" />
+                        <Rect x={margin} y={pathY + 20} width={Math.max(0, usable * walkSliderValue)} height={5} rx={2.5} fill="#00D984" opacity={0.8} />
 
-                        {/* Labels paliers — SvgText */}
+                        {/* ===== AFFICHAGE DISTANCE EN DIRECT — bulle qui suit le doigt ===== */}
+                        {walkSliderValue > 0.01 && (
+                          <G transform={`translate(${margin + walkSliderValue * usable}, ${pathY + 35})`}>
+                            <Rect x={-30} y={0} width={60} height={20} rx={10} fill="rgba(0,0,0,0.6)" />
+                            <Path d="M-4 0 L0 -4 L4 0" fill="rgba(0,0,0,0.6)" />
+                            <SvgText x={0} y={14} fill="#00D984" fontSize={10} fontWeight="800" textAnchor="middle">
+                              {walkDistDisplay}
+                            </SvgText>
+                          </G>
+                        )}
+
+                        {/* ===== LABELS PALIERS — sous la barre ===== */}
                         {(walkMode === 'distance'
                           ? ['Départ', '500m', '2 km', '5 km', '10 km']
                           : ['5 min', '15 min', '30 min', '1 h', '2 h']
@@ -1668,9 +1755,9 @@ const ActivityPage = ({ onNavigate }) => {
                           const pos = margin + (i / (arr.length - 1)) * usable;
                           const isActive = Math.abs(walkSliderValue - (i / (arr.length - 1))) < 0.12;
                           return (
-                            <SvgText key={`lb-${i}`} x={pos} y={cH - 14}
-                              fill={isActive ? '#00D984' : '#5A6070'}
-                              fontSize={9} fontWeight={isActive ? '800' : '400'}
+                            <SvgText key={`lb-${i}`} x={pos} y={pathY + 55}
+                              fill={isActive ? '#FFFFFF' : 'rgba(255,255,255,0.4)'}
+                              fontSize={8} fontWeight={isActive ? '800' : '400'}
                               textAnchor="middle">
                               {label}
                             </SvgText>
