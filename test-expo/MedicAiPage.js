@@ -208,6 +208,150 @@ const FormattedText = ({ text, style, onRecipePress }) => {
 };
 
 // ============================================
+// FOND VIVANT — Circuits animés du cabinet digital
+// ============================================
+const CabinetBackground = () => {
+  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 0.6, duration: 2000, useNativeDriver: false }),
+        Animated.timing(pulseAnim, { toValue: 0.3, duration: 2000, useNativeDriver: false }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <View style={{
+      position: 'absolute',
+      top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: '#060810',
+    }}>
+      {/* Lignes de circuit verticales */}
+      {[0.15, 0.35, 0.65, 0.85].map((pos, i) => (
+        <Animated.View key={`v${i}`} style={{
+          position: 'absolute',
+          left: `${pos * 100}%`,
+          top: 0,
+          bottom: 0,
+          width: 0.5,
+          backgroundColor: '#00D984',
+          opacity: pulseAnim,
+        }} />
+      ))}
+
+      {/* Lignes horizontales */}
+      {[0.2, 0.5, 0.8].map((pos, i) => (
+        <Animated.View key={`h${i}`} style={{
+          position: 'absolute',
+          top: `${pos * 100}%`,
+          left: 0,
+          right: 0,
+          height: 0.5,
+          backgroundColor: '#00D984',
+          opacity: Animated.multiply(pulseAnim, 0.5),
+        }} />
+      ))}
+
+      {/* Noeuds de circuit (petits cercles aux intersections) */}
+      {[
+        { x: '15%', y: '20%' }, { x: '35%', y: '50%' },
+        { x: '65%', y: '20%' }, { x: '85%', y: '80%' },
+        { x: '15%', y: '80%' }, { x: '65%', y: '50%' },
+      ].map((node, i) => (
+        <Animated.View key={`n${i}`} style={{
+          position: 'absolute',
+          left: node.x,
+          top: node.y,
+          width: 4,
+          height: 4,
+          borderRadius: 2,
+          backgroundColor: '#00D984',
+          opacity: pulseAnim,
+        }} />
+      ))}
+
+      {/* Overlay gradient sombre pour que le contenu soit lisible */}
+      <View style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(6, 8, 16, 0.85)',
+      }} />
+    </View>
+  );
+};
+
+// ============================================
+// INDICATEUR DE RÉFLEXION — Cerveau qui pulse
+// ============================================
+const ThinkingIndicator = () => {
+  const brainPulse = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(brainPulse, { toValue: 1, duration: 800, useNativeDriver: false }),
+        Animated.timing(brainPulse, { toValue: 0.4, duration: 800, useNativeDriver: false }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <View style={{ alignSelf: 'flex-start', marginBottom: 10 }}>
+      {/* Avatar + nom */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, marginLeft: 4 }}>
+        <Image
+          source={require('./assets/lixman-avatar.png')}
+          style={{ width: 20, height: 20, borderRadius: 10, marginRight: 5, borderWidth: 1.5, borderColor: '#00D984' }}
+          resizeMode="cover"
+        />
+        <Text style={{ color: '#00D984', fontSize: 11, fontWeight: 'bold' }}>LixMan</Text>
+      </View>
+
+      {/* Bulle avec animation cerveau */}
+      <View style={{
+        backgroundColor: 'rgba(40,40,50,0.8)',
+        borderRadius: 16,
+        borderTopLeftRadius: 4,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(60,60,70,0.5)',
+        flexDirection: 'row',
+        alignItems: 'center',
+      }}>
+        {/* Icône cerveau qui pulse en vert */}
+        <Animated.View style={{
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          backgroundColor: 'rgba(0,217,132,0.15)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginRight: 10,
+          borderWidth: 1.5,
+          borderColor: 'rgba(0,217,132,0.5)',
+          opacity: brainPulse,
+        }}>
+          <Text style={{ fontSize: 14 }}>🧠</Text>
+        </Animated.View>
+
+        {/* Texte + points animés */}
+        <View>
+          <Text style={{ color: '#00D984', fontSize: 12, fontWeight: 'bold' }}>
+            Analyse en cours
+          </Text>
+          <Text style={{ color: '#666', fontSize: 9, marginTop: 1 }}>
+            LixMan consulte vos données...
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// ============================================
 // COMPOSANT PRINCIPAL
 // ============================================
 export default function MedicAiPage() {
@@ -286,7 +430,7 @@ export default function MedicAiPage() {
       generateGreeting(profileData[0], summaryData[0]);
     } catch (error) {
       console.error('Erreur chargement données:', error);
-      addBotMessage("Bonjour ! Je suis LixMan, votre compagnon de santé IA. Comment puis-je vous aider aujourd'hui ?");
+      addBotMessage("Bonjour ! Je suis LixMan, votre coach nutritionniste IA personnel. Comment puis-je vous aider aujourd'hui ?");
     }
   };
 
@@ -330,16 +474,16 @@ export default function MedicAiPage() {
 
     if (!summary || summary.total_calories === 0) {
       if (hour > 13) {
-        greeting = `${timeGreeting} ${name} ! 👋\n\nJe remarque que vous n'avez encore rien mangé aujourd'hui... Tout va bien ?\n\nN'oubliez pas que sauter des repas n'est jamais bon pour le métabolisme. Même un fruit ou un yaourt, c'est mieux que rien. 🍎\n\nComment puis-je vous aider ?`;
+        greeting = `${timeGreeting} ${name} ! Ravi de vous revoir dans votre espace santé. 👋\n\nJe remarque que vous n'avez encore rien mangé aujourd'hui... Tout va bien ?\n\nN'oubliez pas que sauter des repas n'est jamais bon pour le métabolisme. Même un fruit ou un yaourt, c'est mieux que rien. 🍎`;
       } else {
-        greeting = `${timeGreeting} ${name} ! 👋\n\nJe suis LixMan, votre compagnon de santé IA. J'ai accès à vos données nutritionnelles pour mieux vous accompagner.\n\nComment vous sentez-vous aujourd'hui ?`;
+        greeting = `Bienvenue ${name} dans votre espace santé intelligent ! 👋\n\nJe suis LixMan, votre coach nutritionniste IA personnel. Ici, tout est confidentiel et pensé pour votre bien-être.\n\nParlez-moi de vos objectifs santé, je suis tout ouïe.`;
       }
     } else {
       const calories = summary.total_calories || 0;
       const tdee = profile?.tdee || 2000;
       const percentage = Math.round((calories / tdee) * 100);
 
-      greeting = `${timeGreeting} ${name} ! 👋\n\nJ'ai jeté un œil à vos données du jour : vous êtes à ${calories} kcal sur ${tdee} kcal (${percentage}%).\n\n`;
+      greeting = `${timeGreeting} ${name} ! Content de vous revoir. 👋\n\nJ'ai jeté un œil à vos données du jour depuis votre espace santé : vous êtes à ${calories} kcal sur ${tdee} kcal (${percentage}%).\n\n`;
 
       if (percentage < 30 && hour > 14) {
         greeting += `C'est un peu bas pour cette heure-ci. Vous avez prévu de manger bientôt ? 🤔`;
@@ -461,7 +605,10 @@ ${mealsList}
 
   // ── RENDER ───────────────────────────────────────────────────────────────
   return (
-    <View style={{ flex: 1, backgroundColor: '#0A0A0F' }}>
+    <View style={{ flex: 1 }}>
+      {/* Fond vivant du cabinet */}
+      <CabinetBackground />
+
       <StatusBar barStyle="light-content" />
 
       {/* ===== HEADER ===== */}
@@ -471,7 +618,12 @@ ${mealsList}
         paddingBottom: 8,
       }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ color: '#FFF', fontSize: 24, fontWeight: 'bold' }}>MedicAi</Text>
+          <View>
+            <Text style={{ color: '#FFF', fontSize: 22, fontWeight: 'bold' }}>MedicAi</Text>
+            <Text style={{ color: 'rgba(0,217,132,0.5)', fontSize: 9, letterSpacing: 1 }}>
+              ESPACE SANTÉ INTELLIGENT
+            </Text>
+          </View>
           <View style={{
             backgroundColor: 'rgba(0,217,132,0.15)',
             borderRadius: 20,
@@ -485,23 +637,25 @@ ${mealsList}
         </View>
       </View>
 
-      {/* ===== BARRE DE TOKENS ===== */}
+      {/* ===== BARRE DE TOKENS — Style circuit ===== */}
       <View style={{
         marginHorizontal: 16,
-        marginBottom: 8,
-        backgroundColor: 'rgba(30,30,30,0.6)',
+        marginBottom: 6,
+        backgroundColor: 'rgba(15,18,28,0.8)',
         borderRadius: 10,
         padding: 8,
         borderWidth: 1,
-        borderColor: '#222',
+        borderColor: 'rgba(0,217,132,0.15)',
       }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-          <Text style={{ color: '#AAA', fontSize: 10 }}>🔋 Tokens aujourd'hui</Text>
+          <Text style={{ color: 'rgba(0,217,132,0.6)', fontSize: 10, letterSpacing: 0.5 }}>
+            ⚡ ÉNERGIE DISPONIBLE
+          </Text>
           <Text style={{ color: '#AAA', fontSize: 10 }}>{tokenUsed} / {tokenLimit}</Text>
         </View>
         <View style={{
-          height: 4,
-          backgroundColor: '#1A1A2E',
+          height: 3,
+          backgroundColor: 'rgba(0,217,132,0.1)',
           borderRadius: 2,
           overflow: 'hidden',
         }}>
@@ -526,28 +680,134 @@ ${mealsList}
           contentContainerStyle={{ paddingBottom: 20 }}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
-          {/* IMAGE LIXMAN (affichée seulement au début, avant les messages) */}
+          {/* ZONE LIXMAN — Image + Dossiers connectés par circuits */}
           {messages.length <= 1 && (
             <View style={{ alignItems: 'center', marginVertical: 8 }}>
-              <Image
-                source={require('./assets/lixman-avatar.png')}
-                style={{
-                  width: SCREEN_WIDTH - 40,
-                  height: 150,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: 'rgba(0,217,132,0.3)',
-                }}
-                resizeMode="cover"
-              />
-              <Text style={{
-                color: 'rgba(255,255,255,0.4)',
-                fontSize: 9,
-                marginTop: 4,
-                fontStyle: 'italic',
-              }}>
-                LixMan — Votre compagnon de santé IA
-              </Text>
+
+              {/* Zone LixMan avec circuits */}
+              <View style={{ width: SCREEN_WIDTH - 32, position: 'relative' }}>
+
+                {/* Image LixMan — Grande image paysage */}
+                <Image
+                  source={require('./assets/lixman-doctor.png')}
+                  style={{
+                    width: '100%',
+                    height: 160,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: 'rgba(0,217,132,0.3)',
+                  }}
+                  resizeMode="cover"
+                />
+
+                {/* Sous-titre cabinet */}
+                <Text style={{
+                  color: 'rgba(0,217,132,0.6)',
+                  fontSize: 9,
+                  textAlign: 'center',
+                  marginTop: 4,
+                  fontStyle: 'italic',
+                  letterSpacing: 0.5,
+                }}>
+                  LixMan — Votre espace santé intelligent
+                </Text>
+
+                {/* Deux dossiers connectés par des circuits */}
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginTop: 8,
+                  paddingHorizontal: 10,
+                }}>
+                  {/* MediBook */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      addBotMessage("Le MediBook sera disponible dans une prochaine mise à jour. Il vous permettra de stocker vos ordonnances, rendez-vous et rappels de médicaments. 📋");
+                    }}
+                    style={{
+                      flex: 1,
+                      marginRight: 6,
+                      backgroundColor: 'rgba(0,217,132,0.08)',
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: 'rgba(0,217,132,0.25)',
+                      padding: 10,
+                      alignItems: 'center',
+                      position: 'relative',
+                    }}
+                  >
+                    {/* Circuit connecteur vers le haut (vers l'image LixMan) */}
+                    <View style={{
+                      position: 'absolute',
+                      top: -9,
+                      left: '50%',
+                      width: 1,
+                      height: 9,
+                      backgroundColor: 'rgba(0,217,132,0.4)',
+                    }} />
+                    <View style={{
+                      position: 'absolute',
+                      top: -12,
+                      left: '48%',
+                      width: 5,
+                      height: 5,
+                      borderRadius: 2.5,
+                      backgroundColor: '#00D984',
+                      opacity: 0.6,
+                    }} />
+
+                    <Text style={{ fontSize: 22, marginBottom: 4 }}>📋</Text>
+                    <Text style={{ color: '#00D984', fontSize: 11, fontWeight: 'bold' }}>MediBook</Text>
+                    <Text style={{ color: '#666', fontSize: 8, textAlign: 'center', marginTop: 2 }}>
+                      Dossier médical
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Secret Pocket */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      addBotMessage("Le Secret Pocket sera disponible dans une prochaine mise à jour. Vos données sensibles seront chiffrées et accessibles uniquement par empreinte digitale. 🔐");
+                    }}
+                    style={{
+                      flex: 1,
+                      marginLeft: 6,
+                      backgroundColor: 'rgba(255,180,0,0.06)',
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: 'rgba(255,180,0,0.2)',
+                      padding: 10,
+                      alignItems: 'center',
+                      position: 'relative',
+                    }}
+                  >
+                    {/* Circuit connecteur vers le haut */}
+                    <View style={{
+                      position: 'absolute',
+                      top: -9,
+                      left: '50%',
+                      width: 1,
+                      height: 9,
+                      backgroundColor: 'rgba(255,180,0,0.3)',
+                    }} />
+                    <View style={{
+                      position: 'absolute',
+                      top: -12,
+                      left: '48%',
+                      width: 5,
+                      height: 5,
+                      borderRadius: 2.5,
+                      backgroundColor: '#FFB400',
+                      opacity: 0.5,
+                    }} />
+
+                    <Text style={{ fontSize: 22, marginBottom: 4 }}>🔐</Text>
+                    <Text style={{ color: '#FFB400', fontSize: 11, fontWeight: 'bold' }}>Secret Pocket</Text>
+                    <Text style={{ color: '#666', fontSize: 8, textAlign: 'center', marginTop: 2 }}>
+                      Coffre-fort santé
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           )}
 
@@ -582,22 +842,17 @@ ${mealsList}
                 </View>
               )}
 
-              {/* Bulle */}
-              <View style={{
-                backgroundColor: msg.role === 'user'
-                  ? 'rgba(0,217,132,0.15)'
-                  : 'rgba(40,40,50,0.8)',
-                borderRadius: 16,
-                borderTopRightRadius: msg.role === 'user' ? 4 : 16,
-                borderTopLeftRadius: msg.role === 'user' ? 16 : 4,
-                paddingHorizontal: 14,
-                paddingVertical: 10,
-                borderWidth: 1,
-                borderColor: msg.role === 'user'
-                  ? 'rgba(0,217,132,0.2)'
-                  : 'rgba(60,60,70,0.5)',
-              }}>
-                {msg.role === 'user' ? (
+              {/* Bulle — Style cabinet médical */}
+              {msg.role === 'user' ? (
+                <View style={{
+                  backgroundColor: 'rgba(0,217,132,0.12)',
+                  borderRadius: 14,
+                  borderTopRightRadius: 4,
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderWidth: 1,
+                  borderColor: 'rgba(0,217,132,0.2)',
+                }}>
                   <Text style={{
                     color: '#E0E0E0',
                     fontSize: 14,
@@ -605,14 +860,26 @@ ${mealsList}
                   }}>
                     {msg.content}
                   </Text>
-                ) : (
+                </View>
+              ) : (
+                <View style={{
+                  backgroundColor: 'rgba(25,30,40,0.85)',
+                  borderRadius: 14,
+                  borderTopLeftRadius: 4,
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderWidth: 1,
+                  borderColor: 'rgba(0,217,132,0.15)',
+                  borderLeftWidth: 3,
+                  borderLeftColor: '#00D984',
+                }}>
                   <FormattedText
                     text={msg.content}
                     style={{ color: '#E0E0E0', fontSize: 14, lineHeight: 20 }}
                     onRecipePress={handleRecipePress}
                   />
-                )}
-              </View>
+                </View>
+              )}
 
               {/* Heure */}
               <Text style={{
@@ -627,47 +894,20 @@ ${mealsList}
             </View>
           ))}
 
-          {/* Indicateur "LixMan tape..." */}
-          {isTyping && (
-            <View style={{ alignSelf: 'flex-start', marginBottom: 10 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, marginLeft: 4 }}>
-                <Image
-                  source={require('./assets/lixman-avatar.png')}
-                  style={{ width: 20, height: 20, borderRadius: 10, marginRight: 5, borderWidth: 1.5, borderColor: '#00D984' }}
-                  resizeMode="cover"
-                />
-                <Text style={{ color: '#00D984', fontSize: 11, fontWeight: 'bold' }}>LixMan</Text>
-              </View>
-              <View style={{
-                backgroundColor: 'rgba(40,40,50,0.8)',
-                borderRadius: 16,
-                borderTopLeftRadius: 4,
-                paddingHorizontal: 14,
-                paddingVertical: 10,
-                borderWidth: 1,
-                borderColor: 'rgba(60,60,70,0.5)',
-              }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <ActivityIndicator size="small" color="#00D984" />
-                  <Text style={{ color: '#888', fontSize: 13, marginLeft: 8 }}>
-                    LixMan réfléchit...
-                  </Text>
-                </View>
-              </View>
-            </View>
-          )}
+          {/* Indicateur "LixMan réfléchit..." — Cerveau qui pulse */}
+          {isTyping && <ThinkingIndicator />}
         </ScrollView>
 
-        {/* ===== BARRE DE SAISIE ===== */}
+        {/* ===== BARRE DE SAISIE — Style cabinet ===== */}
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
           paddingHorizontal: 12,
           paddingTop: 8,
           paddingBottom: keyboardVisible ? 4 : 70,
-          backgroundColor: 'rgba(20,20,25,0.95)',
+          backgroundColor: 'rgba(10,12,20,0.95)',
           borderTopWidth: 1,
-          borderTopColor: '#222',
+          borderTopColor: 'rgba(0,217,132,0.15)',
         }}>
           {/* Bouton pièce jointe */}
           <TouchableOpacity
@@ -684,10 +924,10 @@ ${mealsList}
             flex: 1,
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: 'rgba(40,40,50,0.6)',
+            backgroundColor: 'rgba(20,25,35,0.8)',
             borderRadius: 20,
             borderWidth: 1,
-            borderColor: '#333',
+            borderColor: 'rgba(0,217,132,0.2)',
             paddingHorizontal: 14,
             paddingVertical: Platform.OS === 'ios' ? 10 : 6,
           }}>
@@ -700,8 +940,8 @@ ${mealsList}
                 maxHeight: 80,
                 paddingVertical: 0,
               }}
-              placeholder="Parlez à LixMan..."
-              placeholderTextColor="#666"
+              placeholder="Consultez LixMan..."
+              placeholderTextColor="#555"
               selectionColor="#00D984"
               value={inputText}
               onChangeText={setInputText}
