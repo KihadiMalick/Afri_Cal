@@ -50,7 +50,7 @@ const formatDistance = (meters) => {
 // ── Activity data ────────────────────────────────────────────────────────────
 const ACTIVITY_DATA = {
   marche: { kcal_per_hour: 280, icon: '🚶', label: 'Marche', color: '#00D984', km_per_hour: 5, water_per_hour_ml: 400 },
-  course: { kcal_per_hour: 700, icon: '🏃', label: 'Course', color: '#FF8C42', km_per_hour: 10, water_per_hour_ml: 900 },
+  course: { kcal_per_hour: 700, icon: '🏃', label: 'Course', color: '#00D984', km_per_hour: 8, water_per_hour_ml: 900 },
   velo: { kcal_per_hour: 500, icon: '🚴', label: 'Vélo', color: '#4DA6FF', water_per_hour_ml: 600 },
   natation: { kcal_per_hour: 600, icon: '🏊', label: 'Natation', color: '#00BCD4', water_per_hour_ml: 700 },
   musculation: { kcal_per_hour: 400, icon: '🏋️', label: 'Musculation', color: '#FF6B6B', water_per_hour_ml: 500 },
@@ -422,16 +422,16 @@ const WalkShoeIcon = ({ size = 32 }) => (
 const RunShoeIcon = ({ size = 32 }) => (
   <Svg width={size} height={size} viewBox="0 0 40 40">
     <Path d="M6 26 L10 17 Q12 13 16 12 L24 10 Q28 9 30 12 L34 16 Q38 19 36 23 L34 27 Q32 30 28 30 L10 30 Q6 30 6 26Z"
-      fill="none" stroke="#FF8C42" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+      fill="none" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
     <Path d="M16 12 L18 6 Q19 4 21 5 L24 7 Q25 8 24 10"
-      fill="none" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round" />
-    <Line x1="18" y1="15" x2="17" y2="11" stroke="#FF8C42" strokeWidth={1.5} strokeLinecap="round" opacity={0.5} />
-    <Line x1="22" y1="14" x2="21" y2="10" stroke="#FF8C42" strokeWidth={1.5} strokeLinecap="round" opacity={0.5} />
-    <Path d="M8 28 L30 28" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round" opacity={0.7} />
-    <Line x1="0" y1="20" x2="5" y2="20" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round" opacity={0.5} />
-    <Line x1="-1" y1="23" x2="4" y2="23" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round" opacity={0.4} />
-    <Line x1="1" y1="17" x2="5" y2="17" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round" opacity={0.3} />
-    <Line x1="-2" y1="26" x2="3" y2="26" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round" opacity={0.3} />
+      fill="none" stroke="#00D984" strokeWidth={2} strokeLinecap="round" />
+    <Line x1="18" y1="15" x2="17" y2="11" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.5} />
+    <Line x1="22" y1="14" x2="21" y2="10" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.5} />
+    <Path d="M8 28 L30 28" stroke="#00D984" strokeWidth={2} strokeLinecap="round" opacity={0.7} />
+    <Line x1="0" y1="20" x2="5" y2="20" stroke="#00D984" strokeWidth={2} strokeLinecap="round" opacity={0.5} />
+    <Line x1="-1" y1="23" x2="4" y2="23" stroke="#00D984" strokeWidth={2} strokeLinecap="round" opacity={0.4} />
+    <Line x1="1" y1="17" x2="5" y2="17" stroke="#00D984" strokeWidth={2} strokeLinecap="round" opacity={0.3} />
+    <Line x1="-2" y1="26" x2="3" y2="26" stroke="#00D984" strokeWidth={2} strokeLinecap="round" opacity={0.3} />
   </Svg>
 );
 
@@ -846,8 +846,19 @@ const ActivityPage = ({ onNavigate }) => {
   const walkSpeedRef = useRef(2);
   const walkHoldStartRef = useRef(0);
 
-  // Run slider
-  const [runValue, setRunValue] = useState(0.15);
+  // Run side-scroll (same system as walk)
+  const [runScrollOffset, setRunScrollOffset] = useState(0);
+  const [runCanvasW, setRunCanvasW] = useState(280);
+  const [runRoundTrip, setRunRoundTrip] = useState(false);
+  const runIntervalRef = useRef(null);
+  const runRotateAnimLeft = useRef(new Animated.Value(0)).current;
+  const runRotateAnimRight = useRef(new Animated.Value(0)).current;
+  const runSpeedRef = useRef(2);
+  const runHoldStartRef = useRef(0);
+  const isRunMovingRef = useRef(false);
+  const [runMilestone, setRunMilestone] = useState(null);
+  const runMilestoneTimerRef = useRef(null);
+  const runMilestoneHitRef = useRef({});
 
   // Sport modal
   const [modalSport, setModalSport] = useState(null);
@@ -936,21 +947,28 @@ const ActivityPage = ({ onNavigate }) => {
     }
   };
 
-  // ── Calculations ───────────────────────────────────────────────────────
-  const RUN_MAX_DIST = 21000;  // 21 km in metres
-  const MAX_TIME = 60;         // minutes
+  // ── Run constants & calculations ──────────────────────────────────────
+  const RUN_SCENE_W = 8400;       // 42km marathon canvas
+  const RUN_MAX_DIST = 42000;     // 42 km in metres
+  const RUN_CANVAS_H = wp(65);    // same height as walk
+  const RUN_PAS_SPACING = 28;     // same as walk
 
-  // FIX 3: Run — use non-linear distance interpolation
-  const runDistanceM = sliderToDistance(runValue, RUN_FLAGS);
-  const runDistanceKm = runDistanceM / 1000;
-
-  const runCalories = Math.round((runDistanceKm / ACTIVITY_DATA.course.km_per_hour) * ACTIVITY_DATA.course.kcal_per_hour);
-
-  const runDuration = Math.round((runDistanceKm / ACTIVITY_DATA.course.km_per_hour) * 60);
-
-  const runDistDisplay = runDistanceKm;
-
-  const runWater = Math.round((runDuration / 60) * ACTIVITY_DATA.course.water_per_hour_ml);
+  const runMaxS = RUN_SCENE_W - runCanvasW;
+  const runProg = runMaxS > 0 ? runScrollOffset / runMaxS : 0;
+  const RUN_METERS_PER_PIXEL = RUN_MAX_DIST / RUN_SCENE_W;
+  const RUN_PIXELS_PER_METER = RUN_SCENE_W / RUN_MAX_DIST;
+  const runDistM = runScrollOffset * RUN_METERS_PER_PIXEL;
+  const runMul = runRoundTrip ? 2 : 1;
+  const runDistKm = (runDistM * runMul) / 1000;
+  // Calories course ≈ 1.0 kcal/kg/km (userWeight ~70kg default)
+  const userWeight = 70;
+  const runCalories = Math.round(runDistKm * userWeight * 1.0);
+  const runWater = Math.round(runDistKm * 150);
+  const runDuration = Math.round((runDistKm / 8) * 60);
+  const runDistFinal = runDistM * runMul;
+  const runDistStr = runDistFinal < 1000 ? `${Math.round(runDistFinal)} m` : `${Math.round(runDistFinal / 100) / 10} km`;
+  const runDurStr = (() => { const m = Math.round(runDuration); return m < 60 ? `${m} min` : `${Math.round(m / 6) / 10} h`; })();
+  const runFootprintCount = Math.floor(runScrollOffset / RUN_PAS_SPACING);
 
   // Day totals
   const totalCalories = todayActivities.reduce((s, a) => s + (a.calories_burned || 0), 0);
@@ -959,13 +977,15 @@ const ActivityPage = ({ onNavigate }) => {
 
   // ── Handlers ───────────────────────────────────────────────────────────
   const handleAddRun = async () => {
-    const dur = runDuration;
-    const cal = runCalories;
-    const water = runWater;
-    const ok = await saveActivity('course', dur, cal, 'modere', water);
+    if (runCalories === 0) return;
+    const ok = await saveActivity('course', runDuration, runCalories, 'modere', runWater);
     if (ok) {
       setRunSaved(true);
-      setTimeout(() => setRunSaved(false), 1500);
+      setTimeout(() => {
+        setRunSaved(false);
+        setRunScrollOffset(0);
+        runMilestoneHitRef.current = {};
+      }, 1500);
     }
   };
 
@@ -1038,6 +1058,61 @@ const ActivityPage = ({ onNavigate }) => {
   useEffect(() => {
     return () => { if (walkIntervalRef.current) clearInterval(walkIntervalRef.current); };
   }, []);
+
+  // ── Run knob interaction ──────────────────────────────────────────────
+  const startRunMoving = (direction) => {
+    const activeRotateAnim = direction === 1 ? runRotateAnimRight : runRotateAnimLeft;
+    runHoldStartRef.current = Date.now();
+    runSpeedRef.current = 2;
+    isRunMovingRef.current = true;
+    runIntervalRef.current = setInterval(() => {
+      const holdDuration = Date.now() - runHoldStartRef.current;
+      if (holdDuration > 3000) runSpeedRef.current = 16;
+      else if (holdDuration > 2000) runSpeedRef.current = 10;
+      else if (holdDuration > 1000) runSpeedRef.current = 6;
+      else if (holdDuration > 500) runSpeedRef.current = 4;
+      else runSpeedRef.current = 2;
+      setRunScrollOffset(prev => {
+        const maxS = RUN_SCENE_W - runCanvasW;
+        return Math.max(0, Math.min(prev + direction * runSpeedRef.current, maxS));
+      });
+      activeRotateAnim.setValue((activeRotateAnim.__getValue() || 0) + direction * 10);
+    }, 50);
+  };
+  const stopRunMoving = () => {
+    isRunMovingRef.current = false;
+    if (runIntervalRef.current) {
+      clearInterval(runIntervalRef.current);
+      runIntervalRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => { if (runIntervalRef.current) clearInterval(runIntervalRef.current); };
+  }, []);
+
+  // Run milestone detection
+  useEffect(() => {
+    const distanceM = runDistM;
+    const milestones = [500, 1000, 2000, 5000, 10000, 21000];
+    milestones.forEach(m => {
+      if (distanceM >= m && distanceM < m + 50 && !runMilestoneHitRef.current[m]) {
+        runMilestoneHitRef.current[m] = true;
+        setRunMilestone(m);
+        if (runMilestoneTimerRef.current) clearTimeout(runMilestoneTimerRef.current);
+        runMilestoneTimerRef.current = setTimeout(() => setRunMilestone(null), 3000);
+      }
+    });
+  }, [runScrollOffset]);
+
+  const runKnobRotateLeft = runRotateAnimLeft.interpolate({
+    inputRange: [-3600, 3600],
+    outputRange: ['-3600deg', '3600deg'],
+  });
+  const runKnobRotateRight = runRotateAnimRight.interpolate({
+    inputRange: [-3600, 3600],
+    outputRange: ['-3600deg', '3600deg'],
+  });
 
   const walkKnobRotateLeft = walkRotateAnimLeft.interpolate({
     inputRange: [-3600, 3600],
@@ -1625,75 +1700,427 @@ const ActivityPage = ({ onNavigate }) => {
             </Pressable>
           </MetalCard>
 
-          {/* RUN HERO */}
+          {/* COURSE — PISTE OLYMPIQUE NOCTURNE NÉON */}
           <SectionTitle title="Course" />
           <MetalCard>
-            <View>
-              {/* Card header */}
-              <View style={{
-                flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-                marginBottom: wp(4),
-              }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <RunShoeIcon size={wp(16)} />
-                  <Text style={{
-                    color: '#EAEEF3', fontSize: fp(13), fontWeight: '800',
-                    letterSpacing: 1.5, marginLeft: wp(6),
-                  }}>
-                    COURSE
-                  </Text>
-                </View>
-              </View>
+            {/* Header */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(2) }}>
+              <RunShoeIcon size={wp(16)} />
+              <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '800', letterSpacing: 1.5, marginLeft: wp(6) }}>
+                COURSE
+              </Text>
+            </View>
 
-              {/* Slider */}
-              <ActivitySlider
-                type="course"
-                mode="distance"
-                value={runValue}
-                onChange={setRunValue}
-                shoeAnim={shoeAnim}
-                flags={RUN_FLAGS}
-                maxDistance={RUN_MAX_DIST}
-                maxTime={MAX_TIME}
-                accentColor="#FF8C42"
+            {/* Données en direct */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: wp(2) }}>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '600' }}>{String.fromCodePoint(0x1F4CF)} Distance</Text>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '900' }}>{runDistStr}</Text>
+              </View>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '600' }}>{String.fromCodePoint(0x1F525)} Calories</Text>
+                <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '900' }}>{runCalories} kcal</Text>
+              </View>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '600' }}>{String.fromCodePoint(0x1F4A7)} Eau</Text>
+                <Text style={{ color: '#4DA6FF', fontSize: fp(14), fontWeight: '900' }}>{runWater} ml</Text>
+              </View>
+            </View>
+
+            {/* Canvas SVG — Neon Olympic Track */}
+            <View
+              style={{ height: RUN_CANVAS_H, borderRadius: 14, overflow: 'hidden', backgroundColor: '#0A0E1A', borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)' }}
+              onLayout={(e) => setRunCanvasW(e.nativeEvent.layout.width)}
+            >
+              <Svg width={runCanvasW} height={RUN_CANVAS_H} viewBox={`0 0 ${runCanvasW} ${RUN_CANVAS_H}`}>
+                {(() => {
+                  const cW = runCanvasW;
+                  const cH = RUN_CANVAS_H;
+                  const trackY = cH * 0.45;
+                  const trackHeight = cH * 0.55;
+                  const FOOTPRINT_START_X = cW * 0.4;
+                  const sOff = runScrollOffset;
+
+                  // Fixed stars
+                  const stars = [
+                    { x: 50, y: 10, r: 1, o: 0.6 }, { x: 120, y: 25, r: 0.7, o: 0.4 },
+                    { x: 200, y: 8, r: 1.2, o: 0.7 }, { x: 310, y: 18, r: 0.8, o: 0.5 },
+                    { x: 30, y: 30, r: 0.5, o: 0.3 }, { x: 80, y: 5, r: 0.9, o: 0.5 },
+                    { x: 160, y: 20, r: 0.6, o: 0.35 }, { x: 220, y: 3, r: 1.1, o: 0.6 },
+                    { x: 270, y: 15, r: 0.7, o: 0.45 }, { x: 15, y: 18, r: 0.8, o: 0.4 },
+                    { x: 100, y: 33, r: 0.5, o: 0.25 }, { x: 180, y: 12, r: 1.0, o: 0.55 },
+                    { x: 250, y: 28, r: 0.6, o: 0.3 }, { x: 40, y: 22, r: 0.9, o: 0.5 },
+                    { x: 140, y: 6, r: 0.7, o: 0.4 }, { x: 300, y: 10, r: 1.0, o: 0.6 },
+                    { x: 70, y: 35, r: 0.5, o: 0.2 }, { x: 190, y: 30, r: 0.8, o: 0.35 },
+                    { x: 260, y: 5, r: 1.1, o: 0.65 }, { x: 110, y: 15, r: 0.6, o: 0.4 },
+                    { x: 330, y: 22, r: 0.7, o: 0.45 }, { x: 340, y: 8, r: 0.9, o: 0.5 },
+                  ];
+
+                  // Distance markers
+                  const markers = [
+                    { distance: 0, label: 'START' },
+                    { distance: 500, label: '500m' },
+                    { distance: 1000, label: '1 km' },
+                    { distance: 2000, label: '2 km' },
+                    { distance: 5000, label: '5 km' },
+                    { distance: 10000, label: '10 km' },
+                    { distance: 21000, label: '21 km' },
+                    { distance: 42000, label: '42 km' },
+                  ];
+
+                  // Lane lines
+                  const laneLines = [
+                    { y: trackY + 5, w: 0.5, o: 0.2 },
+                    { y: trackY + trackHeight * 0.25, w: 0.8, o: 0.4 },
+                    { y: trackY + trackHeight * 0.5, w: 1.5, o: 0.7 },
+                    { y: trackY + trackHeight * 0.75, w: 0.8, o: 0.4 },
+                    { y: trackY + trackHeight - 5, w: 0.5, o: 0.2 },
+                  ];
+
+                  // Ghost runner position (simulate at 60% of current progress)
+                  const ghostDistM = runDistM * 0.6;
+                  const ghostX = FOOTPRINT_START_X + (ghostDistM * RUN_PIXELS_PER_METER) - sOff;
+
+                  // Footprints
+                  const footprintY = trackY + trackHeight * 0.5;
+                  const totalSteps = runFootprintCount;
+
+                  return (
+                    <>
+                      {/* COUCHE 1: CIEL NOCTURNE */}
+                      <Rect x={0} y={0} width={cW} height={trackY} fill="#0A0E1A" />
+                      <Rect x={0} y={trackY * 0.55} width={cW} height={trackY * 0.45} fill="#12081E" opacity={0.5} />
+
+                      {/* Étoiles fixes */}
+                      {stars.map((s, i) => (
+                        <Circle key={`st-${i}`} cx={s.x} cy={s.y} r={s.r} fill="white" opacity={s.o} />
+                      ))}
+
+                      {/* COUCHE 2: TRIBUNES (silhouettes sombres, no scroll) */}
+                      {Array.from({ length: 8 }, (_, i) => (
+                        <Rect key={`tl-${i}`} x={0} y={trackY - 8 - i * 3} width={cW * 0.12}
+                          height={i * 3 + 10} fill="#151025" opacity={0.3 + i * 0.04} />
+                      ))}
+                      {Array.from({ length: 8 }, (_, i) => (
+                        <Rect key={`tr-${i}`} x={cW - cW * 0.12} y={trackY - 8 - i * 3}
+                          width={cW * 0.12} height={i * 3 + 10} fill="#151025" opacity={0.3 + i * 0.04} />
+                      ))}
+
+                      {/* COUCHE 3: PROJECTEURS */}
+                      {[cW * 0.2, cW * 0.5, cW * 0.8].map((px, i) => (
+                        <G key={`proj-${i}`}>
+                          <Circle cx={px} cy={trackY - 10} r={10}
+                            fill="white" opacity={runMilestone === 1000 ? 0.15 : 0.06} />
+                          <Circle cx={px} cy={trackY - 10} r={2}
+                            fill="white" opacity={runMilestone === 1000 ? 1 : 0.7} />
+                          <Path d={`M${px - 8} ${trackY - 4} L${px} ${trackY - 14} L${px + 8} ${trackY - 4} Z`}
+                            fill="white" opacity={0.025} />
+                        </G>
+                      ))}
+
+                      {/* COUCHE 4: SURFACE DE LA PISTE */}
+                      <Rect x={0} y={trackY} width={cW} height={trackHeight} fill="#1A1028" />
+
+                      {/* Couloir central éclairé */}
+                      <Rect x={0} y={trackY + trackHeight * 0.35} width={cW}
+                        height={trackHeight * 0.3} fill="#00D984" opacity={0.04} />
+
+                      {/* Lignes de couloir néon */}
+                      {laneLines.map((line, i) => (
+                        <G key={`ll-${i}`}>
+                          {/* Glow */}
+                          <Line x1={0} y1={line.y} x2={cW} y2={line.y}
+                            stroke="#00D984" strokeWidth={line.w + 3}
+                            opacity={line.o * 0.15 * (runMilestone === 5000 ? 2 : 1)} />
+                          {/* Sharp line */}
+                          <Line x1={0} y1={line.y} x2={cW} y2={line.y}
+                            stroke="#00D984" strokeWidth={line.w}
+                            opacity={line.o * (runMilestone === 5000 ? 1.3 : 1)} />
+                        </G>
+                      ))}
+
+                      {/* COUCHE 5: MARQUEURS DE DISTANCE */}
+                      {markers.map((marker, i) => {
+                        const mX = FOOTPRINT_START_X + (marker.distance * RUN_PIXELS_PER_METER) - sOff;
+                        if (mX < -20 || mX > cW + 20) return null;
+                        return (
+                          <G key={`mk-${i}`}>
+                            <Line x1={mX} y1={trackY} x2={mX} y2={trackY + trackHeight}
+                              stroke="#00D984" strokeWidth={1} opacity={0.3} />
+                            {/* Badge holographique */}
+                            <Rect x={mX - 18} y={trackY - 18} width={36} height={14}
+                              rx={3} fill="#00D984" opacity={0.12} />
+                            <SvgText x={mX} y={trackY - 8}
+                              fill="#00D984" opacity={0.8} fontSize={9}
+                              fontFamily="monospace" textAnchor="middle">
+                              {marker.label}
+                            </SvgText>
+                          </G>
+                        );
+                      })}
+
+                      {/* COUCHE 6: GHOST RUNNER */}
+                      {ghostX > -20 && ghostX < cW + 20 && runDistM > 50 && (
+                        <G>
+                          {/* Body */}
+                          <Ellipse cx={ghostX} cy={footprintY} rx={6} ry={10}
+                            fill="#FF4D6A" opacity={0.2} />
+                          {/* Head */}
+                          <Circle cx={ghostX} cy={footprintY - 14} r={4}
+                            fill="#FF4D6A" opacity={0.2} />
+                          {/* Legs */}
+                          <Line x1={ghostX - 2} y1={footprintY + 8} x2={ghostX - 6} y2={footprintY + 20}
+                            stroke="#FF4D6A" strokeWidth={1.5} opacity={0.2} />
+                          <Line x1={ghostX + 2} y1={footprintY + 8} x2={ghostX + 5} y2={footprintY + 18}
+                            stroke="#FF4D6A" strokeWidth={1.5} opacity={0.2} />
+                          {/* Ghost trail at 10km milestone */}
+                          {runMilestone === 10000 && (
+                            <Rect x={ghostX - 30} y={footprintY - 3} width={25} height={6}
+                              fill="#FF4D6A" opacity={0.1} rx={3} />
+                          )}
+                          {/* Label */}
+                          <SvgText x={ghostX} y={footprintY - 24}
+                            fill="#FF4D6A" opacity={0.5} fontSize={8}
+                            fontWeight="bold" fontFamily="monospace" textAnchor="middle">
+                            GHOST
+                          </SvgText>
+                        </G>
+                      )}
+
+                      {/* COUCHE 7: EMPREINTES NÉON */}
+                      {(() => {
+                        const prints = [];
+                        for (let i = 0; i < totalSteps; i++) {
+                          const px = FOOTPRINT_START_X + i * RUN_PAS_SPACING - sOff;
+                          if (px < -20 || px > cW + 20) continue;
+                          const isRight = i % 2 === 0;
+                          const offY = isRight ? 4 : -4;
+                          const y = footprintY + offY;
+                          const distFromCurrent = totalSteps - 1 - i;
+
+                          let opacity, scale, glowR;
+                          if (distFromCurrent <= 1) {
+                            opacity = 0.9; scale = 1.15; glowR = 12;
+                          } else if (distFromCurrent <= 5) {
+                            opacity = 0.6 - (distFromCurrent - 2) * 0.05;
+                            scale = 1.0; glowR = 0;
+                          } else {
+                            opacity = Math.max(0.15, 0.4 - distFromCurrent * 0.03);
+                            scale = 0.95; glowR = 0;
+                          }
+
+                          prints.push(
+                            <G key={`rfp-${i}`} opacity={opacity} transform={`translate(${px}, ${y}) scale(${scale}) rotate(90)${!isRight ? ' scale(1,-1)' : ''}`}>
+                              {/* Glow halo */}
+                              {glowR > 0 && (
+                                <Ellipse cx={0} cy={0} rx={glowR} ry={glowR} fill="#00D984" opacity={0.15} />
+                              )}
+                              {/* Speed trail for recent */}
+                              {glowR > 0 && (
+                                <Rect x={-30} y={-3} width={20} height={6} fill="#00D984" opacity={0.1} rx={3} />
+                              )}
+                              {/* Semelle avant */}
+                              <Ellipse cx={4} cy={0} rx={8} ry={5} fill="#00D984" opacity={0.7} />
+                              {/* Arche */}
+                              <Ellipse cx={-1} cy={isRight ? -2 : 2} rx={3} ry={2} fill="#1A1028" opacity={0.6} />
+                              {/* Talon */}
+                              <Ellipse cx={-10} cy={0} rx={4} ry={3.5} fill="#00D984" opacity={0.6} />
+                            </G>
+                          );
+                        }
+                        return prints;
+                      })()}
+
+                      {/* COUCHE 8: MILESTONE EFFECTS */}
+                      {runMilestone === 500 && (
+                        <Rect x={0} y={0} width={cW} height={cH} fill="white" opacity={0.15} />
+                      )}
+                      {runMilestone === 2000 && (
+                        <SvgText x={cW / 2} y={cH / 2}
+                          fill="#00D984" opacity={0.9} fontSize={16}
+                          fontWeight="bold" fontFamily="monospace" textAnchor="middle">
+                          2 KM
+                        </SvgText>
+                      )}
+                      {runMilestone === 21000 && (
+                        <>
+                          <Rect x={0} y={0} width={cW} height={cH} fill="#FFD700" opacity={0.06} />
+                          <SvgText x={cW / 2} y={cH / 2}
+                            fill="#FFD700" opacity={0.9} fontSize={14}
+                            fontWeight="bold" fontFamily="monospace" textAnchor="middle">
+                            SEMI-MARATHON
+                          </SvgText>
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
+              </Svg>
+
+              {/* Brouillard gauche */}
+              <LinearGradient
+                colors={['#0A0E1A', 'rgba(10,14,26,0)']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 30 }}
               />
+              {/* Brouillard droite */}
+              <LinearGradient
+                colors={['rgba(10,14,26,0)', '#0A0E1A']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 30 }}
+              />
+            </View>
 
-              {/* Value display — FIX 4: formatted durations */}
-              <View style={{
-                flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',
-                marginTop: wp(6), paddingHorizontal: wp(4),
-              }}>
-                <View>
-                  <Text style={{ color: '#FF8C42', fontSize: fp(18), fontWeight: '900' }}>
-                    {formatDistance(runDistDisplay * 1000)}
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ color: '#FF8C42', fontSize: fp(14), fontWeight: '900' }}>
-                    {runCalories} kcal
-                  </Text>
-                  <Text style={{ color: '#555E6C', fontSize: fp(9), marginTop: wp(2) }}>
-                    ~{formatDuration(runDuration)} {String.fromCodePoint(0x00B7)} {String.fromCodePoint(0x1F4A7)} {runWater} ml
+            {/* DOUBLE MOLETTE — contrôle le défilement Course */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: wp(3), marginBottom: wp(1) }}>
+              {/* Bouton RECULER */}
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: '#5A6070', fontSize: fp(8), marginBottom: wp(2) }}>{String.fromCodePoint(0x25C0)}</Text>
+                <Pressable
+                  onPressIn={() => startRunMoving(-1)}
+                  onPressOut={stopRunMoving}
+                >
+                  <View style={{
+                    width: wp(58), height: wp(58), borderRadius: wp(29),
+                    backgroundColor: '#111', borderWidth: 1, borderColor: '#333',
+                    justifyContent: 'center', alignItems: 'center',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.8, shadowRadius: 4, elevation: 6,
+                  }}>
+                    <Animated.View style={{
+                      width: wp(48), height: wp(48), borderRadius: wp(24),
+                      backgroundColor: '#1A1A1A',
+                      borderWidth: 2, borderColor: '#444',
+                      justifyContent: 'center', alignItems: 'center',
+                      overflow: 'hidden',
+                      shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.5, shadowRadius: 6, elevation: 8,
+                      transform: [{ rotate: runKnobRotateLeft }],
+                    }}>
+                      <View style={{
+                        width: wp(40), height: wp(40), borderRadius: wp(20),
+                        backgroundColor: '#222', borderWidth: 1,
+                        borderTopColor: '#3A3A3A', borderLeftColor: '#333',
+                        borderRightColor: '#333', borderBottomColor: '#111',
+                        justifyContent: 'center', alignItems: 'center',
+                      }}>
+                        <View style={{ width: wp(28), height: wp(28), borderRadius: wp(14), borderWidth: 0.7, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: wp(18), height: wp(18), borderRadius: wp(9), borderWidth: 0.5, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={{ width: wp(10), height: wp(10), borderRadius: wp(5), borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                              <View style={{ width: wp(5), height: wp(5), borderRadius: wp(2.5), backgroundColor: '#2A2A2A' }} />
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                      <View style={{ position: 'absolute', top: wp(3), width: 2, height: wp(7), backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                    </Animated.View>
+                  </View>
+                </Pressable>
+                <Text style={{ color: '#5A6070', fontSize: fp(7), marginTop: wp(2), fontWeight: '600', letterSpacing: 1 }}>RECULER</Text>
+              </View>
+
+              {/* Espacement + texte central */}
+              <View style={{ alignItems: 'center', marginHorizontal: wp(8), justifyContent: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M12 2C12 2 12 8 12 8M12 8C10.5 8 9 9 9 10.5V14L7.5 12.5C6.5 12 5.5 12.5 5.5 13.5C5.5 14 5.7 14.5 6 14.8L10 20C10.5 20.7 11.3 21 12.2 21H16C18.2 21 20 19.2 20 17V11.5C20 10.1 18.9 9 17.5 9C17.5 9 17 9 17 9V8.5C17 7.7 16.3 7 15.5 7C15.2 7 15 7.1 14.8 7.2V6.5C14.8 5.7 14.1 5 13.3 5C13 5 12.7 5.1 12.5 5.3V8C12.5 8 12 8 12 8Z"
+                      fill="#888"
+                      stroke="#666"
+                      strokeWidth={0.5}
+                    />
+                    <Path d="M11 2L11 4" stroke="#888" strokeWidth={1.5} strokeLinecap="round"/>
+                    <Path d="M9 3L10 4.5" stroke="#888" strokeWidth={1} strokeLinecap="round"/>
+                    <Path d="M13 3L12 4.5" stroke="#888" strokeWidth={1} strokeLinecap="round"/>
+                  </Svg>
+                  <Text style={{ color: '#888', fontSize: fp(9), fontStyle: 'italic', marginLeft: 4 }}>
+                    Maintenez pour avancer
                   </Text>
                 </View>
               </View>
 
-              {/* Add button — FIX 7: feedback */}
-              <TouchableOpacity
-                onPress={handleAddRun}
-                activeOpacity={0.7}
+              {/* Bouton AVANCER */}
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: '#5A6070', fontSize: fp(8), marginBottom: wp(2) }}>{String.fromCodePoint(0x25B6)}</Text>
+                <Pressable
+                  onPressIn={() => startRunMoving(1)}
+                  onPressOut={stopRunMoving}
+                >
+                  <View style={{
+                    width: wp(58), height: wp(58), borderRadius: wp(29),
+                    backgroundColor: '#111', borderWidth: 1, borderColor: '#333',
+                    justifyContent: 'center', alignItems: 'center',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.8, shadowRadius: 4, elevation: 6,
+                  }}>
+                    <Animated.View style={{
+                      width: wp(48), height: wp(48), borderRadius: wp(24),
+                      backgroundColor: '#1A1A1A',
+                      borderWidth: 2, borderColor: '#444',
+                      justifyContent: 'center', alignItems: 'center',
+                      overflow: 'hidden',
+                      shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.5, shadowRadius: 6, elevation: 8,
+                      transform: [{ rotate: runKnobRotateRight }],
+                    }}>
+                      <View style={{
+                        width: wp(40), height: wp(40), borderRadius: wp(20),
+                        backgroundColor: '#222', borderWidth: 1,
+                        borderTopColor: '#3A3A3A', borderLeftColor: '#333',
+                        borderRightColor: '#333', borderBottomColor: '#111',
+                        justifyContent: 'center', alignItems: 'center',
+                      }}>
+                        <View style={{ width: wp(28), height: wp(28), borderRadius: wp(14), borderWidth: 0.7, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: wp(18), height: wp(18), borderRadius: wp(9), borderWidth: 0.5, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={{ width: wp(10), height: wp(10), borderRadius: wp(5), borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                              <View style={{ width: wp(5), height: wp(5), borderRadius: wp(2.5), backgroundColor: '#2A2A2A' }} />
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                      <View style={{ position: 'absolute', top: wp(3), width: 2, height: wp(7), backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                    </Animated.View>
+                  </View>
+                </Pressable>
+                <Text style={{ color: '#5A6070', fontSize: fp(7), marginTop: wp(2), fontWeight: '600', letterSpacing: 1 }}>AVANCER</Text>
+              </View>
+            </View>
+
+            {/* Aller/Retour + durée */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: wp(2) }}>
+              <Pressable onPress={() => setRunRoundTrip(!runRoundTrip)}
                 style={{
-                  backgroundColor: runSaved ? '#2ECC71' : '#FF8C42',
-                  borderRadius: 12,
-                  paddingVertical: wp(9), alignItems: 'center',
-                  marginTop: wp(6),
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingHorizontal: wp(10), paddingVertical: wp(5), borderRadius: 8,
+                  backgroundColor: runRoundTrip ? 'rgba(0,217,132,0.12)' : 'rgba(255,255,255,0.04)',
+                  borderWidth: 1, borderColor: runRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.06)',
                 }}
               >
-                <Text style={{ color: '#000', fontSize: fp(12), fontWeight: '800' }}>
-                  {runSaved ? '✓ AJOUTÉ ! +5 Lix' : `✓ AJOUTER COURSE — ${runCalories} kcal`}
+                <Text style={{ color: runRoundTrip ? '#00D984' : '#8892A0', fontSize: fp(10), fontWeight: '700' }}>
+                  {String.fromCodePoint(0x2194)} Aller/Retour {runRoundTrip ? String.fromCodePoint(0x00D7) + '2' : ''}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ color: '#00D984', fontSize: fp(18), fontWeight: '900' }}>{runDurStr}</Text>
+                <Text style={{ color: '#5A6070', fontSize: fp(8) }}>à allure normale</Text>
+              </View>
             </View>
+
+            {/* Bouton CONFIRMER */}
+            <Pressable
+              onPress={handleAddRun}
+              disabled={runSaved || runScrollOffset === 0}
+              style={({ pressed }) => ({
+                paddingVertical: wp(9),
+                borderRadius: 12,
+                backgroundColor: runSaved ? '#00D984' : runScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
+                alignItems: 'center',
+              })}
+            >
+              <Text style={{ color: '#0D1117', fontSize: fp(12), fontWeight: '800' }}>
+                {runSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` COURSE — ${runCalories} kcal`}
+              </Text>
+            </Pressable>
           </MetalCard>
 
           {/* OTHER SPORTS GRID */}
