@@ -681,7 +681,6 @@ ${mealsList}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
           {/* ZONE LIXMAN — Image + Dossiers connectés par circuits */}
-          {messages.length <= 1 && (
             <View style={{ alignItems: 'center', marginVertical: 8 }}>
 
               {/* Zone LixMan avec circuits */}
@@ -809,7 +808,6 @@ ${mealsList}
                 </View>
               </View>
             </View>
-          )}
 
           {/* MESSAGES */}
           {messages.map((msg) => (
@@ -904,7 +902,7 @@ ${mealsList}
           alignItems: 'center',
           paddingHorizontal: 12,
           paddingTop: 8,
-          paddingBottom: keyboardVisible ? 4 : 70,
+          paddingBottom: keyboardVisible ? 8 : 75,
           backgroundColor: 'rgba(10,12,20,0.95)',
           borderTopWidth: 1,
           borderTopColor: 'rgba(0,217,132,0.15)',
