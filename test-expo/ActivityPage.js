@@ -836,11 +836,8 @@ const ActivityPage = ({ onNavigate }) => {
   // Walk side-scroll
   const [walkScrollOffset, setWalkScrollOffset] = useState(0);
   const [walkCanvasW, setWalkCanvasW] = useState(280);
-  const [walkMode, setWalkMode] = useState('distance');
   const [walkRoundTrip, setWalkRoundTrip] = useState(false);
   const [walkSaved, setWalkSaved] = useState(false);
-  const [walkTouchStartX, setWalkTouchStartX] = useState(0);
-  const [walkScrollStart, setWalkScrollStart] = useState(0);
 
   // Run slider
   const [runMode, setRunMode] = useState('distance');
@@ -1092,28 +1089,12 @@ const ActivityPage = ({ onNavigate }) => {
           {/* MARCHE — SIDE-SCROLL TAPIS ROULANT */}
           <SectionTitle title="Marche" />
           <MetalCard>
-            {/* Header — titre + toggle */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(4) }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <WalkShoeIcon size={wp(16)} />
-                <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '800', letterSpacing: 1.5, marginLeft: wp(6) }}>
-                  MARCHE
-                </Text>
-              </View>
-              <View style={{ flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: 2 }}>
-                <Pressable
-                  onPress={() => { setWalkMode('distance'); setWalkScrollOffset(0); }}
-                  style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8, backgroundColor: walkMode === 'distance' ? '#00D984' : 'transparent' }}
-                >
-                  <Text style={{ color: walkMode === 'distance' ? '#0D1117' : '#8892A0', fontSize: fp(10), fontWeight: '700' }}>Distance</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => { setWalkMode('temps'); setWalkScrollOffset(0); }}
-                  style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8, backgroundColor: walkMode === 'temps' ? '#00D984' : 'transparent' }}
-                >
-                  <Text style={{ color: walkMode === 'temps' ? '#0D1117' : '#8892A0', fontSize: fp(10), fontWeight: '700' }}>Temps</Text>
-                </Pressable>
-              </View>
+            {/* Header */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(4) }}>
+              <WalkShoeIcon size={wp(16)} />
+              <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '800', letterSpacing: 1.5, marginLeft: wp(6) }}>
+                MARCHE
+              </Text>
             </View>
 
             {/* Données en direct */}
@@ -1412,90 +1393,91 @@ const ActivityPage = ({ onNavigate }) => {
             </View>
 
             {/* BOUTON RADIO VINTAGE — contrôle le défilement */}
-            <View style={{ marginTop: wp(4), marginBottom: wp(4), paddingHorizontal: wp(4) }}>
-              {/* Rail du slider */}
-              <View style={{ height: wp(6), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(3), justifyContent: 'center' }}>
-                {/* Rail rempli */}
-                <View style={{ position: 'absolute', left: 0, height: '100%', width: `${walkProg * 100}%`, backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(3) }} />
-                {/* Graduations */}
-                {[0.2, 0.4, 0.6, 0.8].map((p, i) => (
-                  <View key={`grad-${i}`} style={{
-                    position: 'absolute', left: `${p * 100}%`,
-                    width: 1, height: wp(4), backgroundColor: 'rgba(255,255,255,0.08)',
-                  }} />
-                ))}
+            <View style={{ marginTop: wp(4), marginBottom: wp(4), paddingHorizontal: wp(8), height: wp(40), justifyContent: 'center' }}
+              onStartShouldSetResponder={() => true}
+              onMoveShouldSetResponder={() => true}
+              onResponderGrant={(evt) => {
+                const x = evt.nativeEvent.locationX;
+                const containerWidth = walkCanvasW - wp(16);
+                const ratio = Math.max(0, Math.min(1, x / containerWidth));
+                const maxS = WALK_SCENE_W - walkCanvasW;
+                setWalkScrollOffset(ratio * maxS);
+              }}
+              onResponderMove={(evt) => {
+                const x = evt.nativeEvent.locationX;
+                const containerWidth = walkCanvasW - wp(16);
+                const ratio = Math.max(0, Math.min(1, x / containerWidth));
+                const maxS = WALK_SCENE_W - walkCanvasW;
+                setWalkScrollOffset(ratio * maxS);
+              }}
+            >
+              {/* Rail */}
+              <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), marginHorizontal: wp(14) }}>
+                <View style={{ position: 'absolute', left: 0, height: '100%', width: `${walkProg * 100}%`, backgroundColor: 'rgba(0,217,132,0.2)', borderRadius: wp(2) }} />
               </View>
 
-              {/* Zone tactile élargie */}
-              <View
-                style={{
-                  position: 'absolute', top: -wp(15), left: 0, right: 0, bottom: -wp(15),
-                }}
-                onStartShouldSetResponder={() => true}
-                onMoveShouldSetResponder={() => true}
-                onResponderGrant={(evt) => {
-                  setWalkTouchStartX(evt.nativeEvent.locationX);
-                  setWalkScrollStart(walkScrollOffset);
-                }}
-                onResponderMove={(evt) => {
-                  const containerWidth = walkCanvasW;
-                  const x = evt.nativeEvent.locationX;
-                  const ratio = Math.max(0, Math.min(1, x / containerWidth));
-                  const maxS = WALK_SCENE_W - walkCanvasW;
-                  setWalkScrollOffset(ratio * maxS);
-                }}
-              />
-
-              {/* Le BOUTON physique — rond métallique avec rainures */}
+              {/* Bouton métallique — positionné sur le rail */}
               <View style={{
                 position: 'absolute',
-                left: `${walkProg * 100}%`,
-                top: -wp(10),
-                marginLeft: -wp(14),
-                width: wp(28),
-                height: wp(28),
-                borderRadius: wp(14),
-                backgroundColor: '#3A3F46',
-                borderWidth: 2,
+                left: wp(8) + walkProg * (walkCanvasW - wp(44)),
+                top: wp(6),
+                width: wp(30),
+                height: wp(30),
+                borderRadius: wp(15),
+                backgroundColor: '#2A2F36',
+                borderWidth: 2.5,
                 borderColor: '#5A6070',
                 justifyContent: 'center',
                 alignItems: 'center',
                 shadowColor: '#000',
-                shadowOffset: { width: 0, height: 3 },
-                shadowOpacity: 0.5,
-                shadowRadius: 6,
-                elevation: 8,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.6,
+                shadowRadius: 8,
+                elevation: 10,
               }}>
-                {/* Rainures du bouton (style vintage) */}
-                <View style={{ width: wp(16), height: 1.5, backgroundColor: '#8892A0', borderRadius: 1, marginBottom: 2, opacity: 0.4 }} />
-                <View style={{ width: wp(12), height: 1.5, backgroundColor: '#8892A0', borderRadius: 1, marginBottom: 2, opacity: 0.3 }} />
-                <View style={{ width: wp(16), height: 1.5, backgroundColor: '#8892A0', borderRadius: 1, opacity: 0.4 }} />
-                {/* Point central émeraude */}
+                {/* Anneau extérieur métallique */}
                 <View style={{
-                  position: 'absolute',
-                  width: wp(6), height: wp(6), borderRadius: wp(3),
-                  backgroundColor: '#00D984', opacity: 0.8,
-                }} />
+                  width: wp(26), height: wp(26), borderRadius: wp(13),
+                  borderWidth: 1.5, borderColor: '#6B7280',
+                  justifyContent: 'center', alignItems: 'center',
+                  backgroundColor: '#333940',
+                }}>
+                  {/* Rainures vintage */}
+                  <View style={{ width: wp(14), height: 1.5, backgroundColor: '#8892A0', borderRadius: 1, marginBottom: 1.5, opacity: 0.5 }} />
+                  <View style={{ width: wp(10), height: 1.5, backgroundColor: '#6B7280', borderRadius: 1, marginBottom: 1.5, opacity: 0.4 }} />
+                  <View style={{ width: wp(14), height: 1.5, backgroundColor: '#8892A0', borderRadius: 1, opacity: 0.5 }} />
+                  {/* Point central émeraude lumineux */}
+                  <View style={{
+                    position: 'absolute',
+                    width: wp(7), height: wp(7), borderRadius: wp(3.5),
+                    backgroundColor: '#00D984',
+                    shadowColor: '#00D984',
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.6,
+                    shadowRadius: 4,
+                  }} />
+                </View>
               </View>
             </View>
 
             {/* Aller/Retour + durée */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(4) }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: wp(4) }}>
               <Pressable onPress={() => setWalkRoundTrip(!walkRoundTrip)}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
-                  paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8,
-                  backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)',
-                  borderWidth: 1, borderColor: walkRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.08)',
+                  paddingHorizontal: wp(10), paddingVertical: wp(5), borderRadius: 8,
+                  backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.12)' : 'rgba(255,255,255,0.04)',
+                  borderWidth: 1, borderColor: walkRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.06)',
                 }}
               >
                 <Text style={{ color: walkRoundTrip ? '#00D984' : '#8892A0', fontSize: fp(10), fontWeight: '700' }}>
-                  {String.fromCodePoint(0x2194)} Aller/Retour {walkRoundTrip ? String.fromCodePoint(0x00D7) + '2' : ''}
+                  {String.fromCodePoint(0x2194)} A/R {walkRoundTrip ? String.fromCodePoint(0x00D7) + '2' : ''}
                 </Text>
               </Pressable>
-              <Text style={{ color: '#8892A0', fontSize: fp(10) }}>
-                {String.fromCodePoint(0x23F1)} {walkDurStr}
-              </Text>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800' }}>{walkDurStr}</Text>
+                <Text style={{ color: '#5A6070', fontSize: fp(8) }}>à vitesse normale</Text>
+              </View>
             </View>
 
             {/* Bouton CONFIRMER */}
