@@ -842,15 +842,14 @@ const ActivityPage = ({ onNavigate }) => {
   // Save feedback
   const [runSaved, setRunSaved] = useState(false);
 
-  // Walk modal
-  const [walkModalVisible, setWalkModalVisible] = useState(false);
+  // Walk side-scroll
+  const [walkScrollOffset, setWalkScrollOffset] = useState(0);
+  const [walkCanvasW, setWalkCanvasW] = useState(280);
   const [walkMode, setWalkMode] = useState('distance');
-  const [walkSliderValue, setWalkSliderValue] = useState(0);
   const [walkRoundTrip, setWalkRoundTrip] = useState(false);
   const [walkSaved, setWalkSaved] = useState(false);
-  const [walkBarWidth, setWalkBarWidth] = useState(W - wp(64));
-  const [walkCanvasWidth, setWalkCanvasWidth] = useState(SCREEN_H - 24);
-  const [walkCanvasHeight, setWalkCanvasHeight] = useState(SCREEN_W - 100);
+  const [walkTouchStartX, setWalkTouchStartX] = useState(0);
+  const [walkScrollStart, setWalkScrollStart] = useState(0);
 
   // Run slider
   const [runMode, setRunMode] = useState('distance');
@@ -1005,47 +1004,33 @@ const ActivityPage = ({ onNavigate }) => {
 
   const todayDateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
 
-  // ── Walk computed values ────────────────────────────────────────────────
-  const WALK_DIST_MAP = [
-    { pos: 0, meters: 0 }, { pos: 0.25, meters: 500 }, { pos: 0.5, meters: 2000 },
-    { pos: 0.75, meters: 5000 }, { pos: 1.0, meters: 10000 },
-  ];
-  const WALK_TIME_MAP = [
-    { pos: 0, min: 0 }, { pos: 0.25, min: 15 }, { pos: 0.5, min: 30 },
-    { pos: 0.75, min: 60 }, { pos: 1.0, min: 120 },
-  ];
+  // ── Walk constants ─────────────────────────────────────────────────────
+  const WALK_SCENE_W = 2000;
+  const WALK_MAX_DIST = 10000;
+  const WALK_CANVAS_H = wp(120);
 
-  const interpMap = (map, val, key) => {
-    for (let i = 1; i < map.length; i++) {
-      if (val <= map[i].pos) {
-        const p = map[i - 1], c = map[i];
-        return p[key] + (c[key] - p[key]) * ((val - p.pos) / (c.pos - p.pos));
-      }
-    }
-    return map[map.length - 1][key];
+  // ── Walk touch handlers ───────────────────────────────────────────────
+  const onWalkTouchStart = (evt) => {
+    setWalkTouchStartX(evt.nativeEvent.locationX);
+    setWalkScrollStart(walkScrollOffset);
+  };
+  const onWalkTouchMove = (evt) => {
+    const dx = walkTouchStartX - evt.nativeEvent.locationX;
+    const maxS = WALK_SCENE_W - walkCanvasW;
+    setWalkScrollOffset(Math.max(0, Math.min(maxS, walkScrollStart + dx * 1.5)));
   };
 
-  const walkDistMeters = walkMode === 'distance'
-    ? interpMap(WALK_DIST_MAP, walkSliderValue, 'meters')
-    : (interpMap(WALK_TIME_MAP, walkSliderValue, 'min') / 60) * 5000;
-
-  const walkDurMinutes = walkMode === 'distance'
-    ? (walkDistMeters / 5000) * 60
-    : interpMap(WALK_TIME_MAP, walkSliderValue, 'min');
-
-  const walkCalBase = (walkDurMinutes / 60) * 280;
-  const walkWaterMl = (walkDurMinutes / 60) * 400;
-  const walkMult = walkRoundTrip ? 2 : 1;
-  const walkCaloriesDisplay = Math.round(walkCalBase * walkMult);
-  const walkDistDisplay = (() => {
-    const d = walkDistMeters * walkMult;
-    return d < 1000 ? `${Math.round(d)} m` : `${Math.round(d / 100) / 10} km`;
-  })();
-  const walkDurDisplay = (() => {
-    const m = Math.round(walkDurMinutes * walkMult);
-    return m < 60 ? `${m} min` : `${Math.round(m / 6) / 10} h`;
-  })();
-  const walkWaterDisplay = Math.round(walkWaterMl * walkMult);
+  // ── Walk computed values ──────────────────────────────────────────────
+  const walkMaxS = WALK_SCENE_W - walkCanvasW;
+  const walkProg = walkMaxS > 0 ? walkScrollOffset / walkMaxS : 0;
+  const walkDistM = walkProg * WALK_MAX_DIST;
+  const walkMul = walkRoundTrip ? 2 : 1;
+  const walkDurMin = (walkDistM / 5000) * 60;
+  const walkCal = Math.round((walkDurMin / 60) * 280 * walkMul);
+  const walkWater = Math.round((walkDurMin / 60) * 400 * walkMul);
+  const walkDistFinal = walkDistM * walkMul;
+  const walkDistStr = walkDistFinal < 1000 ? `${Math.round(walkDistFinal)} m` : `${Math.round(walkDistFinal / 100) / 10} km`;
+  const walkDurStr = (() => { const m = Math.round(walkDurMin * walkMul); return m < 60 ? `${m} min` : `${Math.round(m / 6) / 10} h`; })();
 
   // ── RENDER ─────────────────────────────────────────────────────────────
   return (
@@ -1125,60 +1110,367 @@ const ActivityPage = ({ onNavigate }) => {
             </View>
           </MetalCard>
 
-          {/* CARTE MARCHE — compacte */}
+          {/* MARCHE — SIDE-SCROLL TAPIS ROULANT */}
           <SectionTitle title="Marche" />
-          <View style={{
-            borderRadius: wp(18), padding: wp(1.2),
-            backgroundColor: '#4A4F55',
-            shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.5, shadowRadius: 16, elevation: 12,
-            marginHorizontal: wp(14), marginBottom: wp(12),
-          }}>
-            <LinearGradient
-              colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-              style={{ borderRadius: wp(17), overflow: 'hidden' }}
-            >
-              <View style={{ padding: wp(16), borderWidth: 1, borderColor: 'rgba(0,0,0,0.25)', borderRadius: wp(17) }}>
-                <View style={{ position: 'absolute', top: 0, left: 25, right: 25, height: 1, backgroundColor: 'rgba(0,217,132,0.10)' }} />
-
-                {/* Header */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
-                  <Text style={{ fontSize: 22, marginRight: 8 }}>{String.fromCodePoint(0x1F6B6)}</Text>
-                  <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800', letterSpacing: 1 }}>MARCHE</Text>
-                </View>
-
-                {/* Phrase motivante */}
-                <Text style={{ color: '#8892A0', fontSize: fp(11), lineHeight: fp(16), marginBottom: wp(10) }}>
-                  La marche est le meilleur exercice. <Text style={{ color: '#00D984', fontWeight: '700' }}>30 min/jour</Text> change votre vie.
+          <MetalCard>
+            {/* Header — titre + toggle */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(8) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <WalkShoeIcon size={wp(18)} />
+                <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '800', letterSpacing: 1.5, marginLeft: wp(6) }}>
+                  MARCHE
                 </Text>
-
-                {/* Info calories */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF8C42', marginRight: 6 }} />
-                  <Text style={{ color: '#5A6070', fontSize: fp(10) }}>~56 kcal/km à vitesse normale {String.fromCodePoint(0x2022)} {String.fromCodePoint(0x1F4A7)} ~80 ml/km</Text>
-                </View>
-
-                {/* Bouton Marcher */}
+              </View>
+              <View style={{ flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: 2 }}>
                 <Pressable
-                  onPress={() => {
-                    setWalkSliderValue(0);
-                    setWalkRoundTrip(false);
-                    setWalkSaved(false);
-                    setWalkMode('distance');
-                    setWalkModalVisible(true);
-                  }}
-                  style={({ pressed }) => ({
-                    paddingVertical: wp(12),
-                    borderRadius: 14,
-                    backgroundColor: pressed ? '#00B572' : '#00D984',
-                    alignItems: 'center',
-                  })}
+                  onPress={() => { setWalkMode('distance'); setWalkScrollOffset(0); }}
+                  style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8, backgroundColor: walkMode === 'distance' ? '#00D984' : 'transparent' }}
                 >
-                  <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>{String.fromCodePoint(0x1F6B6)} Marcher</Text>
+                  <Text style={{ color: walkMode === 'distance' ? '#0D1117' : '#8892A0', fontSize: fp(10), fontWeight: '700' }}>Distance</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => { setWalkMode('temps'); setWalkScrollOffset(0); }}
+                  style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8, backgroundColor: walkMode === 'temps' ? '#00D984' : 'transparent' }}
+                >
+                  <Text style={{ color: walkMode === 'temps' ? '#0D1117' : '#8892A0', fontSize: fp(10), fontWeight: '700' }}>Temps</Text>
                 </Pressable>
               </View>
-            </LinearGradient>
-          </View>
+            </View>
+
+            {/* Données en direct */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: wp(8) }}>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '600' }}>{String.fromCodePoint(0x1F4CF)} Distance</Text>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '900' }}>{walkDistStr}</Text>
+              </View>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '600' }}>{String.fromCodePoint(0x1F525)} Calories</Text>
+                <Text style={{ color: '#FF8C42', fontSize: fp(16), fontWeight: '900' }}>{walkCal} kcal</Text>
+              </View>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '600' }}>{String.fromCodePoint(0x1F4A7)} Eau</Text>
+                <Text style={{ color: '#4DA6FF', fontSize: fp(16), fontWeight: '900' }}>{walkWater} ml</Text>
+              </View>
+            </View>
+
+            {/* Canvas SVG side-scroll */}
+            <View
+              style={{ height: WALK_CANVAS_H, borderRadius: 14, overflow: 'hidden', backgroundColor: 'rgba(0,217,132,0.03)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.08)' }}
+              onLayout={(e) => setWalkCanvasW(e.nativeEvent.layout.width)}
+              onStartShouldSetResponder={() => true}
+              onMoveShouldSetResponder={() => true}
+              onResponderGrant={onWalkTouchStart}
+              onResponderMove={onWalkTouchMove}
+            >
+              <Svg width={walkCanvasW} height={WALK_CANVAS_H} viewBox={`${walkScrollOffset} 0 ${walkCanvasW} ${WALK_CANVAS_H}`}>
+                <Defs>
+                  <SvgLinearGradient id="wSkyGrad" x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0%" stopColor="#87CEEB" stopOpacity={0.9} />
+                    <Stop offset="40%" stopColor="#B0E0FF" stopOpacity={0.7} />
+                    <Stop offset="100%" stopColor="#E8F5E9" stopOpacity={0.3} />
+                  </SvgLinearGradient>
+                  <SvgLinearGradient id="wGrassGrad" x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0%" stopColor="#4CAF50" stopOpacity={0.4} />
+                    <Stop offset="100%" stopColor="#2E7D32" stopOpacity={0.6} />
+                  </SvgLinearGradient>
+                  <SvgLinearGradient id="wPathGrad" x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0%" stopColor="#D7CCC8" stopOpacity={0.3} />
+                    <Stop offset="100%" stopColor="#A1887F" stopOpacity={0.2} />
+                  </SvgLinearGradient>
+                  <SvgLinearGradient id="wSunGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+                    <Stop offset="0%" stopColor="#FFF9C4" />
+                    <Stop offset="100%" stopColor="#FFD54F" />
+                  </SvgLinearGradient>
+                </Defs>
+
+                {(() => {
+                  const scW = WALK_SCENE_W;
+                  const scH = WALK_CANVAS_H;
+                  const groundY = scH * 0.60;
+                  const pathY = scH * 0.58;
+                  const centerX = walkScrollOffset + walkCanvasW / 2;
+                  const passed = (px) => centerX > px;
+
+                  return (
+                    <>
+                      {/* CIEL */}
+                      <Rect x={0} y={0} width={scW} height={groundY} fill="url(#wSkyGrad)" />
+
+                      {/* SOLEIL */}
+                      <G transform="translate(1400, 20)">
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const angle = (i / 12) * Math.PI * 2;
+                          return <Line key={`sr-${i}`} x1={Math.cos(angle) * 14} y1={Math.sin(angle) * 14} x2={Math.cos(angle) * 22} y2={Math.sin(angle) * 22}
+                            stroke="#FFD54F" strokeWidth={1.5} opacity={0.5} strokeLinecap="round" />;
+                        })}
+                        <Circle cx={0} cy={0} r={12} fill="url(#wSunGrad)" opacity={0.9} />
+                        <Circle cx={-3} cy={-3} r={4} fill="#FFFFFF" opacity={0.3} />
+                      </G>
+
+                      {/* NUAGES */}
+                      <G transform="translate(200, 12)" opacity={0.6}>
+                        <Ellipse cx={0} cy={0} rx={18} ry={8} fill="white" />
+                        <Ellipse cx={-12} cy={2} rx={12} ry={7} fill="white" />
+                        <Ellipse cx={12} cy={2} rx={14} ry={7} fill="white" />
+                      </G>
+                      <G transform="translate(700, 8)" opacity={0.4}>
+                        <Ellipse cx={0} cy={0} rx={12} ry={5} fill="white" />
+                        <Ellipse cx={-8} cy={1} rx={8} ry={5} fill="white" />
+                        <Ellipse cx={8} cy={1} rx={10} ry={5} fill="white" />
+                      </G>
+                      <G transform="translate(1100, 18)" opacity={0.35}>
+                        <Ellipse cx={0} cy={0} rx={14} ry={6} fill="white" />
+                        <Ellipse cx={10} cy={1} rx={10} ry={5} fill="white" />
+                      </G>
+                      <G transform="translate(1600, 10)" opacity={0.5}>
+                        <Ellipse cx={0} cy={0} rx={16} ry={7} fill="white" />
+                        <Ellipse cx={-10} cy={2} rx={11} ry={6} fill="white" />
+                        <Ellipse cx={10} cy={1} rx={12} ry={6} fill="white" />
+                      </G>
+                      <G transform="translate(1900, 22)" opacity={0.3}>
+                        <Ellipse cx={0} cy={0} rx={10} ry={4} fill="white" />
+                        <Ellipse cx={7} cy={1} rx={8} ry={4} fill="white" />
+                      </G>
+
+                      {/* COLLINES LOINTAINES */}
+                      <Path d={`M0 ${groundY} Q300 ${groundY - 25} 600 ${groundY - 10} Q1000 ${groundY - 30} 1400 ${groundY - 8} Q1700 ${groundY - 20} ${scW} ${groundY} Z`}
+                        fill="#81C784" opacity={0.25} />
+
+                      {/* SOL / HERBE */}
+                      <Rect x={0} y={groundY} width={scW} height={scH - groundY} fill="url(#wGrassGrad)" />
+
+                      {/* Touffes d'herbe */}
+                      {Array.from({ length: 120 }, (_, i) => {
+                        const x = (i / 120) * scW + (Math.sin(i * 7) * 3);
+                        return (
+                          <G key={`wt-${i}`}>
+                            <Line x1={x} y1={groundY} x2={x - 1.5} y2={groundY - 4 - (i % 3) * 2}
+                              stroke="#66BB6A" strokeWidth={1.2} opacity={0.3} strokeLinecap="round" />
+                            <Line x1={x + 2} y1={groundY} x2={x + 1} y2={groundY - 3 - (i % 4) * 1.5}
+                              stroke="#4CAF50" strokeWidth={1} opacity={0.25} strokeLinecap="round" />
+                          </G>
+                        );
+                      })}
+
+                      {/* Fleurs */}
+                      {[80, 250, 500, 750, 1000, 1250, 1500, 1750, 1950].map((fx, i) => {
+                        const y = groundY + 8 + (i % 3) * 5;
+                        const colors = ['#FF6B8A', '#FFD93D', '#E1BEE7', '#FF8A65', '#81D4FA', '#F48FB1', '#FFCC80', '#CE93D8', '#A5D6A7'];
+                        return (
+                          <G key={`wf-${i}`}>
+                            <Line x1={fx} y1={y} x2={fx} y2={y - 5} stroke="#66BB6A" strokeWidth={0.8} opacity={0.4} />
+                            <Circle cx={fx} cy={y - 6} r={2} fill={colors[i]} opacity={0.5} />
+                            <Circle cx={fx} cy={y - 6} r={0.8} fill="#FFD54F" opacity={0.6} />
+                          </G>
+                        );
+                      })}
+
+                      {/* CHEMIN DE TERRE */}
+                      <Path d={`M0 ${pathY + 5} Q500 ${pathY - 2} 1000 ${pathY + 3} Q1500 ${pathY - 1} ${scW} ${pathY + 5}`}
+                        fill="none" stroke="url(#wPathGrad)" strokeWidth={18} strokeLinecap="round" />
+                      <Path d={`M0 ${pathY + 12} Q500 ${pathY + 5} 1000 ${pathY + 10} Q1500 ${pathY + 6} ${scW} ${pathY + 12}`}
+                        fill="none" stroke="#A5D6A7" strokeWidth={1} opacity={0.3} />
+
+                      {/* MAISON — x=60 */}
+                      <G transform={`translate(60, ${pathY - 30}) scale(1.8)`}>
+                        <Rect x={6} y={-12} width={3} height={6} fill="#795548" opacity={0.6} />
+                        <Circle cx={8} cy={-14} r={2.5} fill="#BDBDBD" opacity={0.3} />
+                        <Path d="M-2 -4 L10 -14 L22 -4 Z" fill="#E53935" opacity={0.85} />
+                        <Path d="M0 -4 L10 -12 L20 -4" fill="none" stroke="#C62828" strokeWidth={1} opacity={0.5} />
+                        <Rect x={0} y={-4} width={20} height={18} fill="#FFECB3" opacity={0.85} />
+                        <Rect x={7} y={3} width={6} height={11} rx={1} fill="#6D4C41" opacity={0.85} />
+                        <Circle cx={11.5} cy={8} r={0.8} fill="#FFD54F" opacity={0.9} />
+                        <Rect x={1.5} y={-1} width={4} height={4} rx={0.5} fill="#90CAF9" opacity={0.6} />
+                        <Line x1={3.5} y1={-1} x2={3.5} y2={3} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
+                        <Line x1={1.5} y1={1} x2={5.5} y2={1} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
+                        <Rect x={14.5} y={-1} width={4} height={4} rx={0.5} fill="#90CAF9" opacity={0.6} />
+                        <Line x1={16.5} y1={-1} x2={16.5} y2={3} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
+                        <Line x1={14.5} y1={1} x2={18.5} y2={1} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
+                      </G>
+
+                      {/* ARBRE — x=440 */}
+                      <G transform={`translate(440, ${pathY - 20}) scale(2)`}>
+                        <Rect x={-2.5} y={8} width={5} height={16} fill="#795548" opacity={0.8} />
+                        <Line x1={-1.5} y1={10} x2={-1.5} y2={22} stroke="#5D4037" strokeWidth={0.5} opacity={0.4} />
+                        <Line x1={1.5} y1={9} x2={1.5} y2={23} stroke="#8D6E63" strokeWidth={0.5} opacity={0.3} />
+                        <Circle cx={0} cy={0} r={12} fill="#43A047" opacity={0.85} />
+                        <Circle cx={-7} cy={4} r={8} fill="#388E3C" opacity={0.75} />
+                        <Circle cx={7} cy={4} r={8} fill="#388E3C" opacity={0.75} />
+                        <Circle cx={0} cy={-5} r={7} fill="#66BB6A" opacity={0.5} />
+                        <Circle cx={-4} cy={-2} r={3} fill="#81C784" opacity={0.3} />
+                        {passed(440) && (
+                          <G>
+                            <Circle cx={8} cy={22} r={3.5} fill="#F44336" opacity={0.85} />
+                            <Ellipse cx={9.5} cy={21} rx={1} ry={0.5} fill="white" opacity={0.3} />
+                            <Line x1={8} y1={18.5} x2={8.5} y2={17} stroke="#795548" strokeWidth={1} />
+                            <Ellipse cx={10} cy={16.5} rx={2.5} ry={1.2} fill="#66BB6A" opacity={0.6} transform="rotate(-30, 10, 16.5)" />
+                          </G>
+                        )}
+                      </G>
+
+                      {/* BANC — x=840 */}
+                      <G transform={`translate(840, ${pathY - 4}) scale(1.8)`}>
+                        <Rect x={-12} y={-2} width={24} height={3} rx={1.5} fill="#D7CCC8" opacity={0.9} />
+                        <Rect x={-12} y={1.5} width={24} height={3} rx={1.5} fill="#BCAAA4" opacity={0.8} />
+                        <Rect x={-11} y={-9} width={22} height={2.5} rx={1} fill="#D7CCC8" opacity={0.8} />
+                        <Rect x={-11} y={-6} width={22} height={2.5} rx={1} fill="#BCAAA4" opacity={0.7} />
+                        <Path d="M-9 4.5 L-10.5 12 L-8 12 L-6.5 4.5" fill="#616161" opacity={0.8} />
+                        <Path d="M9 4.5 L7.5 12 L10 12 L11.5 4.5" fill="#616161" opacity={0.8} />
+                        <Rect x={-10} y={-9} width={2.5} height={13} rx={0.5} fill="#616161" opacity={0.7} />
+                        <Rect x={9.5} y={-9} width={2.5} height={13} rx={0.5} fill="#616161" opacity={0.7} />
+                        <Rect x={-14} y={-4} width={5} height={2.5} rx={1} fill="#616161" opacity={0.6} />
+                        <Rect x={11} y={-4} width={5} height={2.5} rx={1} fill="#616161" opacity={0.6} />
+                      </G>
+
+                      {/* OISEAUX — x=1300 */}
+                      <G transform={`translate(1300, ${pathY - (passed(1300) ? 40 : 10)}) scale(2.2)`}>
+                        <G transform="translate(0, 0)">
+                          <Ellipse cx={0} cy={0} rx={6} ry={3.5} fill="#1E88E5" opacity={0.9} />
+                          <Circle cx={-5} cy={-1.5} r={3} fill="#1565C0" opacity={0.9} />
+                          <Path d="M-8 -1.5 L-10.5 -0.5 L-8 0.5" fill="#FF8F00" opacity={0.95} />
+                          <Circle cx={-6} cy={-2.2} r={1} fill="white" />
+                          <Circle cx={-6.3} cy={-2.2} r={0.5} fill="#0D1117" />
+                          <Path d="M-1 -2.5 Q4 -10 10 -4 Q5 -1 0 0" fill="#42A5F5" opacity={0.7} />
+                          <Path d="M6 0 L10 -2 L9 1.5 Z" fill="#1E88E5" opacity={0.7} />
+                        </G>
+                        <G transform="translate(16, -10) scale(0.75)">
+                          <Ellipse cx={0} cy={0} rx={6} ry={3.5} fill="#43A047" opacity={0.85} />
+                          <Circle cx={-5} cy={-1.5} r={3} fill="#2E7D32" opacity={0.85} />
+                          <Path d="M-8 -1.5 L-10 -0.5 L-8 0.5" fill="#FF8F00" opacity={0.9} />
+                          <Circle cx={-6} cy={-2.2} r={0.8} fill="white" />
+                          <Circle cx={-6.2} cy={-2.2} r={0.4} fill="#0D1117" />
+                          <Path d="M-1 -2 Q4 -8 9 -3 Q4 0 0 0" fill="#66BB6A" opacity={0.6} />
+                        </G>
+                        <G transform="translate(-14, -14) scale(0.65)">
+                          <Ellipse cx={0} cy={0} rx={6} ry={3.5} fill="#FDD835" opacity={0.85} />
+                          <Circle cx={-5} cy={-1.5} r={3} fill="#F9A825" opacity={0.85} />
+                          <Path d="M-8 -1.5 L-10 -0.5 L-8 0.5" fill="#FF6F00" opacity={0.9} />
+                          <Circle cx={-6} cy={-2.2} r={0.8} fill="white" />
+                          <Circle cx={-6.2} cy={-2.2} r={0.4} fill="#0D1117" />
+                          <Path d="M-1 -2 Q4 -8 9 -3 Q4 0 0 0" fill="#FFEE58" opacity={0.6} />
+                        </G>
+                      </G>
+
+                      {/* ÉTANG + CANARD — x=1850 */}
+                      <G transform={`translate(1850, ${pathY - 5}) scale(1.8)`}>
+                        <Ellipse cx={0} cy={6} rx={22} ry={14} fill="#4FC3F7" opacity={0.2} />
+                        <Ellipse cx={0} cy={6} rx={18} ry={10} fill="#29B6F6" opacity={0.15} />
+                        <Path d="M-14 5 Q-7 2 0 5 Q7 8 14 5" fill="none" stroke="#4FC3F7" strokeWidth={1} opacity={0.3} />
+                        <Ellipse cx={-12} cy={9} rx={4} ry={2} fill="#66BB6A" opacity={0.5} />
+                        <Circle cx={-12} cy={8} r={1.5} fill="#F48FB1" opacity={0.5} />
+                        <Ellipse cx={10} cy={12} rx={3} ry={1.5} fill="#66BB6A" opacity={0.4} />
+                        <Circle cx={10} cy={11} r={1} fill="#CE93D8" opacity={0.4} />
+                        <Ellipse cx={0} cy={1} rx={7} ry={4} fill="#FFB300" opacity={0.9} />
+                        <Circle cx={-6} cy={-3} r={4} fill="#2E7D32" opacity={0.9} />
+                        <Circle cx={-7.5} cy={-3.5} r={1.3} fill="white" />
+                        <Circle cx={-7.8} cy={-3.5} r={0.6} fill="#0D1117" />
+                        <Path d="M-10 -3 L-13 -2 L-10 -1" fill="#FF6F00" opacity={0.95} />
+                        <Path d="M7 -1 L10 -5 L8 1" fill="#FFB300" opacity={0.8} />
+                        <Line x1={16} y1={-8} x2={16} y2={8} stroke="#8D6E63" strokeWidth={1.2} opacity={0.4} />
+                        <Ellipse cx={16} cy={-9} rx={2} ry={3} fill="#8D6E63" opacity={0.3} />
+                        <Line x1={18} y1={-5} x2={18} y2={8} stroke="#8D6E63" strokeWidth={1} opacity={0.3} />
+                        <Ellipse cx={18} cy={-6} rx={1.5} ry={2.5} fill="#8D6E63" opacity={0.25} />
+                      </G>
+
+                      {/* TRACES DE PAS — 8 empreintes DERRIÈRE le centre */}
+                      {(() => {
+                        const prints = [];
+                        for (let i = 0; i < 8; i++) {
+                          const px = centerX - (i + 1) * 22;
+                          if (px < 0) continue;
+                          const isRight = i % 2 === 0;
+                          const y = pathY + (isRight ? -3 : 3) + Math.sin(px * 0.02) * 3;
+                          const opacity = Math.max(0, 0.6 - i * 0.07);
+                          const angle = isRight ? 87 : 93;
+                          prints.push(
+                            <G key={`wfp-${i}`} opacity={opacity} transform={`translate(${px}, ${y}) rotate(${angle})`}>
+                              <Ellipse cx={0} cy={0} rx={2.5} ry={4.5} fill="#5D4037" opacity={0.4} />
+                              <Circle cx={isRight ? 1 : -1} cy={-4.5} r={1} fill="#5D4037" opacity={0.35} />
+                              <Circle cx={0} cy={-5} r={1} fill="#5D4037" opacity={0.35} />
+                              <Circle cx={isRight ? -1 : 1} cy={-4.5} r={1} fill="#5D4037" opacity={0.35} />
+                            </G>
+                          );
+                        }
+                        return prints;
+                      })()}
+
+                      {/* Point position actuelle — émeraude */}
+                      <Circle cx={centerX} cy={pathY + 2} r={5} fill="#00D984" opacity={0.9} />
+                      <Circle cx={centerX} cy={pathY + 2} r={8} fill="#00D984" opacity={0.2} />
+                    </>
+                  );
+                })()}
+              </Svg>
+
+              {/* Brouillard gauche */}
+              <LinearGradient
+                colors={['#252A30', 'rgba(37,42,48,0)']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 30 }}
+              />
+              {/* Brouillard droite */}
+              <LinearGradient
+                colors={['rgba(37,42,48,0)', '#252A30']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 30 }}
+              />
+            </View>
+
+            {/* Mini barre de progression */}
+            <View style={{ height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.06)', marginTop: wp(8), marginBottom: wp(6) }}>
+              <View style={{ height: 4, borderRadius: 2, backgroundColor: '#00D984', width: `${Math.round(walkProg * 100)}%`, opacity: 0.8 }} />
+            </View>
+
+            {/* Aller/Retour + durée */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(10) }}>
+              <Pressable onPress={() => setWalkRoundTrip(!walkRoundTrip)}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8,
+                  backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)',
+                  borderWidth: 1, borderColor: walkRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <Text style={{ color: walkRoundTrip ? '#00D984' : '#8892A0', fontSize: fp(10), fontWeight: '700' }}>
+                  {String.fromCodePoint(0x2194)} Aller/Retour {walkRoundTrip ? String.fromCodePoint(0x00D7) + '2' : ''}
+                </Text>
+              </Pressable>
+              <Text style={{ color: '#8892A0', fontSize: fp(10) }}>
+                {String.fromCodePoint(0x23F1)} {walkDurStr}
+              </Text>
+            </View>
+
+            {/* Bouton CONFIRMER */}
+            <Pressable
+              onPress={async () => {
+                if (walkCal === 0) return;
+                const success = await saveActivity('marche',
+                  Math.round(walkDurMin * walkMul),
+                  walkCal,
+                  'modere',
+                  walkWater
+                );
+                if (success) {
+                  setWalkSaved(true);
+                  setTimeout(() => {
+                    setWalkSaved(false);
+                    setWalkScrollOffset(0);
+                  }, 1500);
+                }
+              }}
+              disabled={walkSaved || walkScrollOffset === 0}
+              style={({ pressed }) => ({
+                paddingVertical: wp(12),
+                borderRadius: 14,
+                backgroundColor: walkSaved ? '#00D984' : walkScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
+                alignItems: 'center',
+              })}
+            >
+              <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
+                {walkSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` MARCHE — ${walkCal} kcal`}
+              </Text>
+            </Pressable>
+          </MetalCard>
 
           {/* RUN HERO */}
           <SectionTitle title="Course" />
@@ -1367,446 +1659,6 @@ const ActivityPage = ({ onNavigate }) => {
         <BottomTabs activeTab={activeTab} onTabPress={handleTabPress} />
       </View>
 
-      {/* MODAL MARCHE FULLSCREEN — LANDSCAPE */}
-      <Modal visible={walkModalVisible} animationType="slide" transparent={false} supportedOrientations={['portrait', 'landscape']}>
-        <View style={{ flex: 1, backgroundColor: '#0D1117' }}>
-          {/* Contenu tourné en paysage */}
-          <View style={{
-            width: SCREEN_H,
-            height: SCREEN_W,
-            transform: [{ rotate: '90deg' }, { translateX: (SCREEN_H - SCREEN_W) / 2 }, { translateY: (SCREEN_H - SCREEN_W) / 2 }],
-          }}>
-            <LinearGradient
-              colors={['#1E2530', '#222A35', '#1A2029']}
-              style={{ flex: 1 }}
-            >
-              {/* Header compact — une seule ligne */}
-              <View style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingHorizontal: 16,
-                paddingTop: 12,
-                paddingBottom: 8,
-              }}>
-                {/* Fermer */}
-                <Pressable onPress={() => setWalkModalVisible(false)}>
-                  <Text style={{ color: '#8892A0', fontSize: 13 }}>{String.fromCodePoint(0x2715)}</Text>
-                </Pressable>
-
-                {/* Toggle Distance/Temps — compact */}
-                <View style={{
-                  flexDirection: 'row',
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: 10, padding: 2,
-                }}>
-                  <Pressable
-                    onPress={() => { setWalkMode('distance'); setWalkSliderValue(0); }}
-                    style={{
-                      paddingHorizontal: 14, paddingVertical: 5, borderRadius: 8,
-                      backgroundColor: walkMode === 'distance' ? '#00D984' : 'transparent',
-                    }}
-                  >
-                    <Text style={{ color: walkMode === 'distance' ? '#0D1117' : '#8892A0', fontSize: 11, fontWeight: '700' }}>Distance</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => { setWalkMode('temps'); setWalkSliderValue(0); }}
-                    style={{
-                      paddingHorizontal: 14, paddingVertical: 5, borderRadius: 8,
-                      backgroundColor: walkMode === 'temps' ? '#00D984' : 'transparent',
-                    }}
-                  >
-                    <Text style={{ color: walkMode === 'temps' ? '#0D1117' : '#8892A0', fontSize: 11, fontWeight: '700' }}>Temps</Text>
-                  </Pressable>
-                </View>
-
-                {/* Aller/Retour compact */}
-                <Pressable onPress={() => setWalkRoundTrip(!walkRoundTrip)}
-                  style={{
-                    flexDirection: 'row', alignItems: 'center',
-                    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
-                    backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)',
-                    borderWidth: 1, borderColor: walkRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.08)',
-                  }}
-                >
-                  <Text style={{ color: walkRoundTrip ? '#00D984' : '#8892A0', fontSize: 10, fontWeight: '700' }}>
-                    {String.fromCodePoint(0x2194)} A/R {walkRoundTrip ? String.fromCodePoint(0x00D7) + '2' : ''}
-                  </Text>
-                </Pressable>
-
-                {/* Infos calories — compact */}
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ color: '#FF8C42', fontSize: 18, fontWeight: '900' }}>
-                    {walkCaloriesDisplay} kcal
-                  </Text>
-                  <Text style={{ color: '#5A6070', fontSize: 9 }}>
-                    {walkDistDisplay} {String.fromCodePoint(0x00B7)} {walkDurDisplay} {String.fromCodePoint(0x00B7)} {String.fromCodePoint(0x1F4A7)} {walkWaterDisplay} ml
-                  </Text>
-                </View>
-              </View>
-
-              {/* CANVAS — occupe presque tout l'espace restant */}
-              <View
-                style={{
-                  flex: 1,
-                  marginHorizontal: 12,
-                  marginBottom: 8,
-                  borderRadius: 16,
-                  backgroundColor: 'rgba(0,217,132,0.03)',
-                  borderWidth: 1,
-                  borderColor: 'rgba(0,217,132,0.08)',
-                  overflow: 'hidden',
-                }}
-                onLayout={(e) => {
-                  setWalkCanvasWidth(e.nativeEvent.layout.width);
-                  setWalkCanvasHeight(e.nativeEvent.layout.height);
-                }}
-                onStartShouldSetResponder={() => true}
-                onMoveShouldSetResponder={() => true}
-                onResponderGrant={(evt) => {
-                  const x = evt.nativeEvent.locationX;
-                  setWalkSliderValue(Math.max(0, Math.min(1, x / (walkCanvasWidth || 1))));
-                }}
-                onResponderMove={(evt) => {
-                  const x = evt.nativeEvent.locationX;
-                  setWalkSliderValue(Math.max(0, Math.min(1, x / (walkCanvasWidth || 1))));
-                }}
-              >
-                <Svg width={walkCanvasWidth || 600} height={walkCanvasHeight || 250}
-                  viewBox={`0 0 ${walkCanvasWidth || 600} ${walkCanvasHeight || 250}`}>
-
-                  <Defs>
-                    {/* Dégradé ciel */}
-                    <SvgLinearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-                      <Stop offset="0%" stopColor="#87CEEB" stopOpacity={0.9} />
-                      <Stop offset="40%" stopColor="#B0E0FF" stopOpacity={0.7} />
-                      <Stop offset="70%" stopColor="#D4EFFF" stopOpacity={0.5} />
-                      <Stop offset="100%" stopColor="#E8F5E9" stopOpacity={0.3} />
-                    </SvgLinearGradient>
-                    {/* Dégradé herbe */}
-                    <SvgLinearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
-                      <Stop offset="0%" stopColor="#4CAF50" stopOpacity={0.4} />
-                      <Stop offset="50%" stopColor="#388E3C" stopOpacity={0.5} />
-                      <Stop offset="100%" stopColor="#2E7D32" stopOpacity={0.6} />
-                    </SvgLinearGradient>
-                    {/* Dégradé chemin de terre */}
-                    <SvgLinearGradient id="pathGrad" x1="0" y1="0" x2="0" y2="1">
-                      <Stop offset="0%" stopColor="#D7CCC8" stopOpacity={0.3} />
-                      <Stop offset="50%" stopColor="#BCAAA4" stopOpacity={0.25} />
-                      <Stop offset="100%" stopColor="#A1887F" stopOpacity={0.2} />
-                    </SvgLinearGradient>
-                    {/* Dégradé soleil */}
-                    <SvgLinearGradient id="sunGrad" x1="0.5" y1="0" x2="0.5" y2="1">
-                      <Stop offset="0%" stopColor="#FFF9C4" />
-                      <Stop offset="100%" stopColor="#FFD54F" />
-                    </SvgLinearGradient>
-                  </Defs>
-
-                  {(() => {
-                    const cW = walkCanvasWidth || 600;
-                    const cH = walkCanvasHeight || 250;
-                    const groundY = cH * 0.60;
-                    const pathY = cH * 0.58;
-                    const skyH = groundY;
-                    const margin = cW * 0.05;
-                    const usable = cW - margin * 2;
-                    const passed = (p) => walkSliderValue >= p;
-
-                    return (
-                      <>
-                        {/* ===== CIEL ===== */}
-                        <Rect x={0} y={0} width={cW} height={skyH} fill="url(#skyGrad)" />
-
-                        {/* ===== SOLEIL — en haut à droite ===== */}
-                        <G transform={`translate(${cW * 0.85}, ${cH * 0.12})`}>
-                          {Array.from({ length: 12 }, (_, i) => {
-                            const angle = (i / 12) * Math.PI * 2;
-                            const x1 = Math.cos(angle) * 14;
-                            const y1 = Math.sin(angle) * 14;
-                            const x2 = Math.cos(angle) * 22;
-                            const y2 = Math.sin(angle) * 22;
-                            return <Line key={`ray-${i}`} x1={x1} y1={y1} x2={x2} y2={y2}
-                              stroke="#FFD54F" strokeWidth={1.5} opacity={0.5} strokeLinecap="round" />;
-                          })}
-                          <Circle cx={0} cy={0} r={12} fill="url(#sunGrad)" opacity={0.9} />
-                          <Circle cx={-3} cy={-3} r={4} fill="#FFFFFF" opacity={0.3} />
-                        </G>
-
-                        {/* ===== NUAGES ===== */}
-                        <G transform={`translate(${cW * 0.15}, ${cH * 0.08})`} opacity={0.6}>
-                          <Ellipse cx={0} cy={0} rx={18} ry={8} fill="white" />
-                          <Ellipse cx={-12} cy={2} rx={12} ry={7} fill="white" />
-                          <Ellipse cx={12} cy={2} rx={14} ry={7} fill="white" />
-                          <Ellipse cx={0} cy={-4} rx={10} ry={6} fill="white" opacity={0.8} />
-                        </G>
-                        <G transform={`translate(${cW * 0.5}, ${cH * 0.06})`} opacity={0.4}>
-                          <Ellipse cx={0} cy={0} rx={12} ry={5} fill="white" />
-                          <Ellipse cx={-8} cy={1} rx={8} ry={5} fill="white" />
-                          <Ellipse cx={8} cy={1} rx={10} ry={5} fill="white" />
-                        </G>
-                        <G transform={`translate(${cW * 0.7}, ${cH * 0.14})`} opacity={0.35}>
-                          <Ellipse cx={0} cy={0} rx={14} ry={6} fill="white" />
-                          <Ellipse cx={10} cy={1} rx={10} ry={5} fill="white" />
-                          <Ellipse cx={-8} cy={2} rx={9} ry={5} fill="white" />
-                        </G>
-
-                        {/* ===== COLLINES LOINTAINES ===== */}
-                        <Path d={`M0 ${groundY} Q${cW * 0.15} ${groundY - 25} ${cW * 0.3} ${groundY - 10} Q${cW * 0.5} ${groundY - 30} ${cW * 0.7} ${groundY - 8} Q${cW * 0.85} ${groundY - 20} ${cW} ${groundY} Z`}
-                          fill="#81C784" opacity={0.25} />
-
-                        {/* ===== SOL / HERBE ===== */}
-                        <Rect x={0} y={groundY} width={cW} height={cH - groundY} fill="url(#grassGrad)" />
-
-                        {/* Texture herbe — touffes */}
-                        {Array.from({ length: 60 }, (_, i) => {
-                          const x = (i / 60) * cW + (Math.sin(i * 7) * 3);
-                          return (
-                            <G key={`tuft-${i}`}>
-                              <Line x1={x} y1={groundY} x2={x - 1.5} y2={groundY - 4 - (i % 3) * 2}
-                                stroke="#66BB6A" strokeWidth={1.2} opacity={0.3} strokeLinecap="round" />
-                              <Line x1={x + 2} y1={groundY} x2={x + 1} y2={groundY - 3 - (i % 4) * 1.5}
-                                stroke="#4CAF50" strokeWidth={1} opacity={0.25} strokeLinecap="round" />
-                            </G>
-                          );
-                        })}
-
-                        {/* Petites fleurs sauvages */}
-                        {[0.08, 0.18, 0.35, 0.52, 0.68, 0.78, 0.88].map((pos, i) => {
-                          const x = pos * cW;
-                          const y = groundY + 8 + (i % 3) * 5;
-                          const colors = ['#FF6B8A', '#FFD93D', '#E1BEE7', '#FF8A65', '#81D4FA', '#F48FB1', '#FFCC80'];
-                          return (
-                            <G key={`flower-${i}`}>
-                              <Line x1={x} y1={y} x2={x} y2={y - 5} stroke="#66BB6A" strokeWidth={0.8} opacity={0.4} />
-                              <Circle cx={x} cy={y - 6} r={2} fill={colors[i]} opacity={0.5} />
-                              <Circle cx={x} cy={y - 6} r={0.8} fill="#FFD54F" opacity={0.6} />
-                            </G>
-                          );
-                        })}
-
-                        {/* ===== CHEMIN DE TERRE ===== */}
-                        <Path d={`M${margin} ${pathY + 5} Q${cW * 0.25} ${pathY - 2} ${cW * 0.5} ${pathY + 3} Q${cW * 0.75} ${pathY - 1} ${margin + usable} ${pathY + 5}`}
-                          fill="none" stroke="url(#pathGrad)" strokeWidth={18} strokeLinecap="round" />
-                        <Path d={`M${margin} ${pathY + 12} Q${cW * 0.25} ${pathY + 5} ${cW * 0.5} ${pathY + 10} Q${cW * 0.75} ${pathY + 6} ${margin + usable} ${pathY + 12}`}
-                          fill="none" stroke="#A5D6A7" strokeWidth={1} opacity={0.3} />
-
-                        {/* ===== MAISON — Départ, GRANDE ===== */}
-                        <G transform={`translate(${margin + 5}, ${pathY - 30}) scale(1.8)`}>
-                          <Rect x={6} y={-12} width={3} height={6} fill="#795548" opacity={0.6} />
-                          <Circle cx={8} cy={-14} r={2.5} fill="#BDBDBD" opacity={0.3} />
-                          <Circle cx={10} cy={-17} r={2} fill="#BDBDBD" opacity={0.2} />
-                          <Path d="M-2 -4 L10 -14 L22 -4 Z" fill="#E53935" opacity={0.85} />
-                          <Path d="M0 -4 L10 -12 L20 -4" fill="none" stroke="#C62828" strokeWidth={1} opacity={0.5} />
-                          <Rect x={0} y={-4} width={20} height={18} fill="#FFECB3" opacity={0.85} />
-                          <Rect x={7} y={3} width={6} height={11} rx={1} fill="#6D4C41" opacity={0.85} />
-                          <Circle cx={11.5} cy={8} r={0.8} fill="#FFD54F" opacity={0.9} />
-                          <Rect x={1.5} y={-1} width={4} height={4} rx={0.5} fill="#90CAF9" opacity={0.6} />
-                          <Line x1={3.5} y1={-1} x2={3.5} y2={3} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
-                          <Line x1={1.5} y1={1} x2={5.5} y2={1} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
-                          <Rect x={14.5} y={-1} width={4} height={4} rx={0.5} fill="#90CAF9" opacity={0.6} />
-                          <Line x1={16.5} y1={-1} x2={16.5} y2={3} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
-                          <Line x1={14.5} y1={1} x2={18.5} y2={1} stroke="#FFECB3" strokeWidth={0.5} opacity={0.6} />
-                        </G>
-
-                        {/* ===== ARBRE — position 22%, TRÈS GRAND ===== */}
-                        <G transform={`translate(${margin + 0.22 * usable}, ${pathY - 20}) scale(2)`}>
-                          <Rect x={-2.5} y={8} width={5} height={16} fill="#795548" opacity={0.8} />
-                          <Line x1={-1.5} y1={10} x2={-1.5} y2={22} stroke="#5D4037" strokeWidth={0.5} opacity={0.4} />
-                          <Line x1={1.5} y1={9} x2={1.5} y2={23} stroke="#8D6E63" strokeWidth={0.5} opacity={0.3} />
-                          <Circle cx={0} cy={0} r={12} fill="#43A047" opacity={0.85} />
-                          <Circle cx={-7} cy={4} r={8} fill="#388E3C" opacity={0.75} />
-                          <Circle cx={7} cy={4} r={8} fill="#388E3C" opacity={0.75} />
-                          <Circle cx={0} cy={-5} r={7} fill="#66BB6A" opacity={0.5} />
-                          <Circle cx={-4} cy={-2} r={3} fill="#81C784" opacity={0.3} />
-                          {passed(0.22) && (
-                            <G>
-                              <Circle cx={8} cy={22} r={3.5} fill="#F44336" opacity={0.85} />
-                              <Ellipse cx={9.5} cy={21} rx={1} ry={0.5} fill="white" opacity={0.3} />
-                              <Line x1={8} y1={18.5} x2={8.5} y2={17} stroke="#795548" strokeWidth={1} />
-                              <Ellipse cx={10} cy={16.5} rx={2.5} ry={1.2} fill="#66BB6A" opacity={0.6} transform="rotate(-30, 10, 16.5)" />
-                            </G>
-                          )}
-                        </G>
-
-                        {/* ===== BANC — position 42%, GRAND ET DÉTAILLÉ ===== */}
-                        <G transform={`translate(${margin + 0.42 * usable}, ${pathY - 4}) scale(1.8)`}>
-                          <Rect x={-12} y={-2} width={24} height={3} rx={1.5} fill="#D7CCC8" opacity={0.9} />
-                          <Rect x={-12} y={1.5} width={24} height={3} rx={1.5} fill="#BCAAA4" opacity={0.8} />
-                          <Rect x={-11} y={-9} width={22} height={2.5} rx={1} fill="#D7CCC8" opacity={0.8} />
-                          <Rect x={-11} y={-6} width={22} height={2.5} rx={1} fill="#BCAAA4" opacity={0.7} />
-                          <Path d="M-9 4.5 L-10.5 12 L-8 12 L-6.5 4.5" fill="#616161" opacity={0.8} />
-                          <Path d="M9 4.5 L7.5 12 L10 12 L11.5 4.5" fill="#616161" opacity={0.8} />
-                          <Rect x={-10} y={-9} width={2.5} height={13} rx={0.5} fill="#616161" opacity={0.7} />
-                          <Rect x={9.5} y={-9} width={2.5} height={13} rx={0.5} fill="#616161" opacity={0.7} />
-                          <Rect x={-14} y={-4} width={5} height={2.5} rx={1} fill="#616161" opacity={0.6} />
-                          <Rect x={11} y={-4} width={5} height={2.5} rx={1} fill="#616161" opacity={0.6} />
-                        </G>
-
-                        {/* ===== OISEAUX — position 65%, GRANDS, COLORÉS ===== */}
-                        <G transform={`translate(${margin + 0.65 * usable}, ${pathY - (passed(0.65) ? 40 : 10)}) scale(2.2)`}>
-                          {/* Oiseau 1 — bleu roi */}
-                          <G transform="translate(0, 0)">
-                            <Ellipse cx={0} cy={0} rx={6} ry={3.5} fill="#1E88E5" opacity={0.9} />
-                            <Circle cx={-5} cy={-1.5} r={3} fill="#1565C0" opacity={0.9} />
-                            <Path d="M-8 -1.5 L-10.5 -0.5 L-8 0.5" fill="#FF8F00" opacity={0.95} />
-                            <Circle cx={-6} cy={-2.2} r={1} fill="white" />
-                            <Circle cx={-6.3} cy={-2.2} r={0.5} fill="#0D1117" />
-                            <Path d="M-1 -2.5 Q4 -10 10 -4 Q5 -1 0 0" fill="#42A5F5" opacity={0.7} />
-                            <Path d="M6 0 L10 -2 L9 1.5 Z" fill="#1E88E5" opacity={0.7} />
-                          </G>
-                          {/* Oiseau 2 — vert tropical */}
-                          <G transform="translate(16, -10) scale(0.75)">
-                            <Ellipse cx={0} cy={0} rx={6} ry={3.5} fill="#43A047" opacity={0.85} />
-                            <Circle cx={-5} cy={-1.5} r={3} fill="#2E7D32" opacity={0.85} />
-                            <Path d="M-8 -1.5 L-10 -0.5 L-8 0.5" fill="#FF8F00" opacity={0.9} />
-                            <Circle cx={-6} cy={-2.2} r={0.8} fill="white" />
-                            <Circle cx={-6.2} cy={-2.2} r={0.4} fill="#0D1117" />
-                            <Path d="M-1 -2 Q4 -8 9 -3 Q4 0 0 0" fill="#66BB6A" opacity={0.6} />
-                          </G>
-                          {/* Oiseau 3 — jaune canari */}
-                          <G transform="translate(-14, -14) scale(0.65)">
-                            <Ellipse cx={0} cy={0} rx={6} ry={3.5} fill="#FDD835" opacity={0.85} />
-                            <Circle cx={-5} cy={-1.5} r={3} fill="#F9A825" opacity={0.85} />
-                            <Path d="M-8 -1.5 L-10 -0.5 L-8 0.5" fill="#FF6F00" opacity={0.9} />
-                            <Circle cx={-6} cy={-2.2} r={0.8} fill="white" />
-                            <Circle cx={-6.2} cy={-2.2} r={0.4} fill="#0D1117" />
-                            <Path d="M-1 -2 Q4 -8 9 -3 Q4 0 0 0" fill="#FFEE58" opacity={0.6} />
-                          </G>
-                        </G>
-
-                        {/* ===== ÉTANG + CANARD — position 90%, GRAND ===== */}
-                        <G transform={`translate(${margin + 0.90 * usable}, ${pathY - 5}) scale(1.8)`}>
-                          <Ellipse cx={0} cy={6} rx={22} ry={14} fill="#4FC3F7" opacity={0.2} />
-                          <Ellipse cx={0} cy={6} rx={18} ry={10} fill="#29B6F6" opacity={0.15} />
-                          <Path d="M-14 5 Q-7 2 0 5 Q7 8 14 5" fill="none" stroke="#4FC3F7" strokeWidth={1} opacity={0.3} />
-                          <Path d="M-10 9 Q-3 6 4 9 Q11 12 18 9" fill="none" stroke="#4FC3F7" strokeWidth={0.8} opacity={0.2} />
-                          {/* Nénuphars */}
-                          <Ellipse cx={-12} cy={9} rx={4} ry={2} fill="#66BB6A" opacity={0.5} />
-                          <Circle cx={-12} cy={8} r={1.5} fill="#F48FB1" opacity={0.5} />
-                          <Ellipse cx={10} cy={12} rx={3} ry={1.5} fill="#66BB6A" opacity={0.4} />
-                          <Circle cx={10} cy={11} r={1} fill="#CE93D8" opacity={0.4} />
-                          {/* Canard GRAND et coloré */}
-                          <Ellipse cx={0} cy={1} rx={7} ry={4} fill="#FFB300" opacity={0.9} />
-                          <Circle cx={-6} cy={-3} r={4} fill="#2E7D32" opacity={0.9} />
-                          <Circle cx={-7.5} cy={-3.5} r={1.3} fill="white" />
-                          <Circle cx={-7.8} cy={-3.5} r={0.6} fill="#0D1117" />
-                          <Path d="M-10 -3 L-13 -2 L-10 -1" fill="#FF6F00" opacity={0.95} />
-                          <Path d="M-3 -1 Q-1 -3 1 -1" fill="white" opacity={0.3} strokeWidth={1} />
-                          <Path d="M7 -1 L10 -5 L8 1" fill="#FFB300" opacity={0.8} />
-                          <Ellipse cx={0} cy={7} rx={6} ry={2.5} fill="#FFB300" opacity={0.08} />
-                          {/* Roseaux */}
-                          <Line x1={16} y1={-8} x2={16} y2={8} stroke="#8D6E63" strokeWidth={1.2} opacity={0.4} />
-                          <Ellipse cx={16} cy={-9} rx={2} ry={3} fill="#8D6E63" opacity={0.3} />
-                          <Line x1={18} y1={-5} x2={18} y2={8} stroke="#8D6E63" strokeWidth={1} opacity={0.3} />
-                          <Ellipse cx={18} cy={-6} rx={1.5} ry={2.5} fill="#8D6E63" opacity={0.25} />
-                        </G>
-
-                        {/* ===== TRACES DE PAS — marron, dans la terre ===== */}
-                        {(() => {
-                          const prints = [];
-                          const totalPrints = 12;
-                          for (let i = 0; i < totalPrints; i++) {
-                            const t = i / totalPrints;
-                            if (t > walkSliderValue) break;
-                            const baseX = margin + t * usable;
-                            let waveY = 0;
-                            if (Math.abs(t - 0.22) < 0.07) waveY = 18;
-                            else if (Math.abs(t - 0.42) < 0.07) waveY = -16;
-                            else if (Math.abs(t - 0.65) < 0.06) waveY = 15;
-                            else waveY = Math.sin(t * Math.PI * 4) * 5;
-                            const isRight = i % 2 === 0;
-                            const y = pathY + waveY + (isRight ? -3 : 3);
-                            const dist = walkSliderValue - t;
-                            const opacity = dist > 0.18 ? Math.max(0, 0.5 - (dist - 0.18) * 2.5) : 0.5;
-                            if (opacity <= 0) continue;
-                            const angle = isRight ? 82 : 98;
-                            prints.push(
-                              <G key={`fp-${i}`} opacity={opacity} transform={`translate(${baseX}, ${y}) rotate(${angle})`}>
-                                <Ellipse cx={0} cy={0} rx={2.5} ry={4.5} fill="#5D4037" opacity={0.4} />
-                                <Circle cx={isRight ? 1 : -1} cy={-4.5} r={1} fill="#5D4037" opacity={0.35} />
-                                <Circle cx={0} cy={-5} r={1} fill="#5D4037" opacity={0.35} />
-                                <Circle cx={isRight ? -1 : 1} cy={-4.5} r={1} fill="#5D4037" opacity={0.35} />
-                              </G>
-                            );
-                          }
-                          return prints;
-                        })()}
-
-                        {/* ===== BARRE DE PROGRESSION — sur le chemin ===== */}
-                        <Rect x={margin} y={pathY + 20} width={usable} height={5} rx={2.5} fill="rgba(0,0,0,0.1)" />
-                        <Rect x={margin} y={pathY + 20} width={Math.max(0, usable * walkSliderValue)} height={5} rx={2.5} fill="#00D984" opacity={0.8} />
-
-                        {/* ===== AFFICHAGE DISTANCE EN DIRECT — bulle qui suit le doigt ===== */}
-                        {walkSliderValue > 0.01 && (
-                          <G transform={`translate(${margin + walkSliderValue * usable}, ${pathY + 35})`}>
-                            <Rect x={-30} y={0} width={60} height={20} rx={10} fill="rgba(0,0,0,0.6)" />
-                            <Path d="M-4 0 L0 -4 L4 0" fill="rgba(0,0,0,0.6)" />
-                            <SvgText x={0} y={14} fill="#00D984" fontSize={10} fontWeight="800" textAnchor="middle">
-                              {walkDistDisplay}
-                            </SvgText>
-                          </G>
-                        )}
-
-                        {/* ===== LABELS PALIERS — sous la barre ===== */}
-                        {(walkMode === 'distance'
-                          ? ['Départ', '500m', '2 km', '5 km', '10 km']
-                          : ['5 min', '15 min', '30 min', '1 h', '2 h']
-                        ).map((label, i, arr) => {
-                          const pos = margin + (i / (arr.length - 1)) * usable;
-                          const isActive = Math.abs(walkSliderValue - (i / (arr.length - 1))) < 0.12;
-                          return (
-                            <SvgText key={`lb-${i}`} x={pos} y={pathY + 55}
-                              fill={isActive ? '#FFFFFF' : 'rgba(255,255,255,0.4)'}
-                              fontSize={8} fontWeight={isActive ? '800' : '400'}
-                              textAnchor="middle">
-                              {label}
-                            </SvgText>
-                          );
-                        })}
-                      </>
-                    );
-                  })()}
-                </Svg>
-              </View>
-
-              {/* Bouton CONFIRMER — compact en bas */}
-              <View style={{
-                flexDirection: 'row',
-                justifyContent: 'center',
-                paddingHorizontal: 16,
-                paddingBottom: 8,
-              }}>
-                <Pressable
-                  onPress={async () => {
-                    if (walkCaloriesDisplay === 0) return;
-                    const success = await saveActivity('marche',
-                      Math.round(walkDurMinutes * walkMult),
-                      Math.round(walkCaloriesDisplay),
-                      'modere',
-                      Math.round(walkWaterMl * walkMult)
-                    );
-                    if (success) {
-                      setWalkSaved(true);
-                      setTimeout(() => { setWalkSaved(false); setWalkModalVisible(false); }, 1500);
-                    }
-                  }}
-                  disabled={walkSaved || walkSliderValue === 0}
-                  style={({ pressed }) => ({
-                    paddingVertical: 10,
-                    paddingHorizontal: 30,
-                    borderRadius: 12,
-                    backgroundColor: walkSaved ? '#00D984' : walkSliderValue === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
-                  })}
-                >
-                  <Text style={{ color: '#0D1117', fontSize: 14, fontWeight: '800' }}>
-                    {walkSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` MARCHE — ${walkCaloriesDisplay} kcal`}
-                  </Text>
-                </Pressable>
-              </View>
-            </LinearGradient>
-          </View>
-        </View>
-      </Modal>
 
       {/* Sport Modal */}
       <SportModal
