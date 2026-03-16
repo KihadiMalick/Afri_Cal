@@ -15,6 +15,7 @@ import Svg, {
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { createClient } from '@supabase/supabase-js';
+import LottieView from 'lottie-react-native';
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
@@ -359,7 +360,7 @@ const metalStyles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardContent: {
-    padding: 8,
+    padding: 6,
     paddingTop: 6,
     paddingBottom: 6,
     borderWidth: 1,
@@ -862,6 +863,10 @@ const ActivityPage = ({ onNavigate }) => {
   const runMilestoneTimerRef = useRef(null);
   const runMilestoneHitRef = useRef({});
 
+  // Jaguar Lottie animation
+  const jaguarAnimRef = useRef(null);
+  const [isRunning, setIsRunning] = useState(false);
+
   // Sport modal
   const [modalSport, setModalSport] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -952,7 +957,7 @@ const ActivityPage = ({ onNavigate }) => {
   // ── Run constants & calculations ──────────────────────────────────────
   const RUN_SCENE_W = 8400;       // 42km marathon canvas
   const RUN_MAX_DIST = 42000;     // 42 km in metres
-  const RUN_CANVAS_H = 110;       // compact canvas height
+  const RUN_CANVAS_H = 100;       // ultra-compact canvas height
   const RUN_PAS_SPACING = 28;     // same as walk
 
   // Jaguar animation frame
@@ -1020,7 +1025,7 @@ const ActivityPage = ({ onNavigate }) => {
   // ── Walk constants ─────────────────────────────────────────────────────
   const WALK_SCENE_W = 2000;
   const WALK_MAX_DIST = 10000;
-  const WALK_CANVAS_H = 110;  // compact canvas height
+  const WALK_CANVAS_H = 100;  // ultra-compact canvas height
 
   // ── Walk computed values ──────────────────────────────────────────────
   const walkMaxS = WALK_SCENE_W - walkCanvasW;
@@ -1072,6 +1077,8 @@ const ActivityPage = ({ onNavigate }) => {
     runHoldStartRef.current = Date.now();
     runSpeedRef.current = 2;
     isRunMovingRef.current = true;
+    setIsRunning(true);
+    if (jaguarAnimRef.current) jaguarAnimRef.current.play();
     runIntervalRef.current = setInterval(() => {
       const holdDuration = Date.now() - runHoldStartRef.current;
       if (holdDuration > 3000) runSpeedRef.current = 16;
@@ -1094,6 +1101,8 @@ const ActivityPage = ({ onNavigate }) => {
   };
   const stopRunMoving = () => {
     isRunMovingRef.current = false;
+    setIsRunning(false);
+    if (jaguarAnimRef.current) jaguarAnimRef.current.pause();
     if (runIntervalRef.current) {
       clearInterval(runIntervalRef.current);
       runIntervalRef.current = null;
@@ -1526,56 +1535,69 @@ const ActivityPage = ({ onNavigate }) => {
               />
             </View>
 
-            {/* Maintenez pour avancer — above buttons */}
-            <Text style={{ textAlign: 'center', fontSize: 8, color: '#666', marginBottom: 2, fontStyle: 'italic' }}>
-              {String.fromCodePoint(0x261F)} Maintenez pour avancer
-            </Text>
-
-            {/* Compact knob controls */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 2 }}>
-              <Text style={{ color: '#666', fontSize: 10, marginRight: 6 }}>{String.fromCodePoint(0x25C0)}</Text>
-              <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}>
-                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                  <Animated.View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateLeft }] }}>
-                    <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                      <View style={{ width: 14, height: 14, borderRadius: 7, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
-                      </View>
-                    </View>
-                    <View style={{ position: 'absolute', top: 2, width: 1.5, height: 5, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                  </Animated.View>
-                </View>
-              </Pressable>
-              <View style={{ width: 30 }} />
-              <Pressable onPressIn={() => startWalkMoving(1)} onPressOut={stopWalkMoving}>
-                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                  <Animated.View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateRight }] }}>
-                    <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                      <View style={{ width: 14, height: 14, borderRadius: 7, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
-                      </View>
-                    </View>
-                    <View style={{ position: 'absolute', top: 2, width: 1.5, height: 5, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                  </Animated.View>
-                </View>
-              </Pressable>
-              <Text style={{ color: '#666', fontSize: 10, marginLeft: 6 }}>{String.fromCodePoint(0x25B6)}</Text>
-            </View>
-
-            {/* Aller/Retour + durée — same line */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2, paddingHorizontal: 8 }}>
-              <Pressable onPress={() => setWalkRoundTrip(!walkRoundTrip)}>
-                <Text style={{ color: walkRoundTrip ? '#00D984' : '#888', fontSize: 10 }}>
-                  {String.fromCodePoint(0x2194)} Aller/Retour {walkRoundTrip ? String.fromCodePoint(0x00D7) + '2' : ''}
+            {/* Single line: Aller/Retour | Knob buttons | Duration */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, marginTop: 3 }}>
+              {/* LEFT: Aller/Retour */}
+              <TouchableOpacity
+                onPress={() => setWalkRoundTrip(!walkRoundTrip)}
+                style={{
+                  borderWidth: 1,
+                  borderColor: walkRoundTrip ? '#00D984' : '#333',
+                  borderRadius: 8,
+                  paddingHorizontal: 5,
+                  paddingVertical: 2,
+                  backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
+                }}
+              >
+                <Text style={{ color: walkRoundTrip ? '#00D984' : '#888', fontSize: 8 }}>
+                  {walkRoundTrip ? '\u2194 A/R \u00D72' : '\u2194 A/R'}
                 </Text>
-              </Pressable>
+              </TouchableOpacity>
+
+              {/* CENTER: Knob buttons (30px) */}
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ color: '#555', fontSize: 9, marginRight: 4 }}>{String.fromCodePoint(0x25C0)}</Text>
+                <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}>
+                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                    <Animated.View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateLeft }] }}>
+                      <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                        <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
+                        </View>
+                      </View>
+                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 4, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                    </Animated.View>
+                  </View>
+                </Pressable>
+                <View style={{ width: 16 }} />
+                <Pressable onPressIn={() => startWalkMoving(1)} onPressOut={stopWalkMoving}>
+                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                    <Animated.View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateRight }] }}>
+                      <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                        <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
+                        </View>
+                      </View>
+                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 4, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                    </Animated.View>
+                  </View>
+                </Pressable>
+                <Text style={{ color: '#555', fontSize: 9, marginLeft: 4 }}>{String.fromCodePoint(0x25B6)}</Text>
+              </View>
+
+              {/* RIGHT: Duration */}
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ color: '#00D984', fontSize: 14, fontWeight: 'bold' }}>{walkDurStr}</Text>
-                <Text style={{ color: '#888', fontSize: 8 }}>à vitesse normale</Text>
+                <Text style={{ color: '#00D984', fontSize: 13, fontWeight: 'bold' }}>{walkDurStr}</Text>
+                <Text style={{ color: '#666', fontSize: 7 }}>vitesse norm.</Text>
               </View>
             </View>
 
-            {/* Bouton CONFIRMER compact */}
+            {/* Maintenez hint */}
+            <Text style={{ textAlign: 'center', color: '#555', fontSize: 7, marginTop: 1, fontStyle: 'italic' }}>
+              {String.fromCodePoint(0x261F)} Maintenez pour avancer
+            </Text>
+
+            {/* Bouton CONFIRMER ultra-compact */}
             <Pressable
               onPress={async () => {
                 if (walkCal === 0) return;
@@ -1595,14 +1617,14 @@ const ActivityPage = ({ onNavigate }) => {
               }}
               disabled={walkSaved || walkScrollOffset === 0}
               style={({ pressed }) => ({
-                paddingVertical: 10,
+                paddingVertical: 8,
                 borderRadius: 12,
                 backgroundColor: walkSaved ? '#00D984' : walkScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
                 alignItems: 'center',
-                marginTop: 4,
+                marginTop: 3,
               })}
             >
-              <Text style={{ color: '#0D1117', fontSize: 14, fontWeight: '800' }}>
+              <Text style={{ color: '#0D1117', fontSize: 13, fontWeight: '800' }}>
                 {walkSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` MARCHE — ${walkCal} kcal`}
               </Text>
             </Pressable>
@@ -1623,12 +1645,13 @@ const ActivityPage = ({ onNavigate }) => {
               <Text style={{ color: '#4DA6FF', fontSize: fp(11), fontWeight: '700' }}>{String.fromCodePoint(0x1F4A7)}{runWater}ml</Text>
             </View>
 
-            {/* Canvas SVG — Savane Africaine */}
+            {/* Canvas SVG — Savane Africaine + Lottie Jaguar overlay */}
             <View
-              style={{ height: RUN_CANVAS_H, borderRadius: 14, overflow: 'hidden', backgroundColor: '#D4632A', borderWidth: 1, borderColor: 'rgba(232,148,74,0.3)' }}
+              style={{ position: 'relative', height: RUN_CANVAS_H, borderRadius: 14, overflow: 'hidden', backgroundColor: '#D4632A', borderWidth: 1, borderColor: 'rgba(232,148,74,0.3)' }}
               onLayout={(e) => setRunCanvasW(e.nativeEvent.layout.width)}
             >
-              <Svg width={runCanvasW} height={RUN_CANVAS_H} viewBox={`0 0 ${runCanvasW} ${RUN_CANVAS_H}`}>
+              {/* SVG Savanna background (decor only — no jaguar) */}
+              <Svg width={runCanvasW} height={RUN_CANVAS_H} viewBox={`0 0 ${runCanvasW} ${RUN_CANVAS_H}`} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
                 {(() => {
                   const cW = runCanvasW;
                   const cH = RUN_CANVAS_H;
@@ -1637,8 +1660,6 @@ const ActivityPage = ({ onNavigate }) => {
                   const sOff = runScrollOffset;
                   const trailY = groundY + cH * 0.15;
                   const trailH = cH * 0.2;
-                  const jFrame = jaguarFrameRef.current;
-                  const isMoving = isRunMovingRef.current;
 
                   // Savanna trees (scroll with parallax 0.3x)
                   const trees = [
@@ -1675,29 +1696,22 @@ const ActivityPage = ({ onNavigate }) => {
                     { x: cW * 0.45, y: 22 }, { x: cW * 0.75, y: 8 },
                   ];
 
-                  // Jaguar position (fixed center of screen)
-                  const jaguarX = cW * 0.5;
-                  const jaguarY = trailY + trailH * 0.4;
-                  const bodyStretch = (jFrame === 0 || jFrame === 2) ? 1.1 : 0.95;
-                  const bodyLift = (jFrame === 1 || jFrame === 3) ? -2 : 0;
-                  const tailWave = Math.sin(jFrame * Math.PI / 2) * 3;
-
                   // Sun position (parallax 0.05x)
                   const sunX = cW * 0.8 - sOff * 0.05;
                   const sunY = cH * 0.38;
 
                   return (
                     <>
-                      {/* COUCHE 1: CIEL COUCHER DE SOLEIL */}
+                      {/* CIEL COUCHER DE SOLEIL */}
                       <Rect x={0} y={0} width={cW} height={groundY} fill="#D4632A" />
                       <Rect x={0} y={cH * 0.3} width={cW} height={cH * 0.15} fill="#E8944A" opacity={0.7} />
 
-                      {/* COUCHE 2: SOLEIL */}
+                      {/* SOLEIL */}
                       <Circle cx={sunX} cy={sunY} r={35} fill="#FADE6A" opacity={0.15} />
                       <Circle cx={sunX} cy={sunY} r={22} fill="#F5C040" opacity={0.9} />
                       <Circle cx={sunX} cy={sunY} r={14} fill="#FADE6A" opacity={0.6} />
 
-                      {/* COUCHE 5: OISEAUX */}
+                      {/* OISEAUX */}
                       {birds.map((bird, i) => {
                         const bx = bird.x - sOff * 0.1;
                         return (
@@ -1707,7 +1721,7 @@ const ActivityPage = ({ onNavigate }) => {
                         );
                       })}
 
-                      {/* COUCHE 3: SILHOUETTES D'ARBRES (parallaxe 0.3x) */}
+                      {/* SILHOUETTES D'ARBRES (parallaxe 0.3x) */}
                       {trees.map((tree, i) => {
                         const tx = tree.x - sOff * 0.3;
                         if (tx < -40 || tx > cW + 40) return null;
@@ -1729,10 +1743,10 @@ const ActivityPage = ({ onNavigate }) => {
                         }
                       })}
 
-                      {/* COUCHE 4: SOL DE SAVANE */}
+                      {/* SOL DE SAVANE */}
                       <Rect x={0} y={groundY} width={cW} height={cH * 0.55} fill="#5A3E1B" />
 
-                      {/* Herbes sèches (défilent avec le sol) */}
+                      {/* Herbes sèches */}
                       {grassTufts.map((g, i) => {
                         const gx = g.x - sOff;
                         if (gx < -10 || gx > cW + 10) return null;
@@ -1746,7 +1760,7 @@ const ActivityPage = ({ onNavigate }) => {
                       {/* Piste de terre battue */}
                       <Rect x={0} y={trailY} width={cW} height={trailH} fill="#4A3418" />
 
-                      {/* COUCHE 8: MARQUEURS — poteaux en bois */}
+                      {/* MARQUEURS — poteaux en bois */}
                       {markers.map((marker, i) => {
                         const mx = FOOTPRINT_START_X + (marker.distance * RUN_PIXELS_PER_METER) - sOff;
                         if (mx < -20 || mx > cW + 20) return null;
@@ -1760,81 +1774,6 @@ const ActivityPage = ({ onNavigate }) => {
                           </G>
                         );
                       })}
-
-                      {/* COUCHE 6: NUAGE DE POUSSIÈRE (derrière le jaguar) */}
-                      {isMoving && [
-                        { dx: -20, dy: -2, r: 4, o: 0.25 },
-                        { dx: -28, dy: -5, r: 3, o: 0.18 },
-                        { dx: -35, dy: -1, r: 5, o: 0.12 },
-                        { dx: -24, dy: 3, r: 3.5, o: 0.2 },
-                        { dx: -40, dy: -3, r: 2.5, o: 0.08 },
-                        { dx: -15, dy: 2, r: 3, o: 0.22 },
-                      ].map((p, i) => (
-                        <Circle key={`dust-${i}`}
-                          cx={jaguarX + p.dx} cy={jaguarY + p.dy}
-                          r={p.r} fill="#8C6E3C" opacity={p.o} />
-                      ))}
-
-                      {/* COUCHE 7: LE JAGUAR ANIMÉ */}
-                      <G transform={`translate(${jaguarX}, ${jaguarY})`}>
-                        {/* Corps (ellipse horizontale) */}
-                        <Ellipse cx={0} cy={bodyLift} rx={16 * bodyStretch} ry={6} fill="#C4872C" />
-
-                        {/* Taches */}
-                        {[[-6, -2], [-1, -3], [5, -1], [8, -3]].map(([sx, sy], i) => (
-                          <Ellipse key={`spot-${i}`} cx={sx} cy={sy + bodyLift} rx={2} ry={1.5} fill="#6B4513" />
-                        ))}
-
-                        {/* Tête */}
-                        <Ellipse cx={16 * bodyStretch + 4} cy={bodyLift - 2} rx={5} ry={4} fill="#C4872C" />
-
-                        {/* Oreilles */}
-                        <Path d={`M${18 * bodyStretch + 1} ${bodyLift - 6} L${18 * bodyStretch + 3} ${bodyLift - 10} L${18 * bodyStretch + 5} ${bodyLift - 6} Z`} fill="#3A2510" />
-                        <Path d={`M${18 * bodyStretch + 5} ${bodyLift - 6} L${18 * bodyStretch + 7} ${bodyLift - 9} L${18 * bodyStretch + 9} ${bodyLift - 5} Z`} fill="#3A2510" />
-
-                        {/* Oeil */}
-                        <Circle cx={20 * bodyStretch + 2} cy={bodyLift - 3} r={1.5} fill="#FFD" />
-                        <Circle cx={20 * bodyStretch + 2.5} cy={bodyLift - 3} r={0.7} fill="#111" />
-
-                        {/* Pattes */}
-                        {jFrame === 0 ? (
-                          <>
-                            <Line x1={10} y1={4 + bodyLift} x2={22} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                            <Line x1={8} y1={4 + bodyLift} x2={10} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                            <Line x1={-8} y1={4 + bodyLift} x2={-6} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                            <Line x1={-10} y1={4 + bodyLift} x2={-22} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                          </>
-                        ) : jFrame === 1 ? (
-                          <>
-                            <Line x1={8} y1={2 + bodyLift} x2={6} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                            <Line x1={5} y1={2 + bodyLift} x2={3} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                            <Line x1={-5} y1={2 + bodyLift} x2={-3} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                            <Line x1={-8} y1={2 + bodyLift} x2={-6} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                          </>
-                        ) : jFrame === 2 ? (
-                          <>
-                            <Line x1={10} y1={4 + bodyLift} x2={20} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                            <Line x1={6} y1={4 + bodyLift} x2={4} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                            <Line x1={-6} y1={4 + bodyLift} x2={-4} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                            <Line x1={-10} y1={4 + bodyLift} x2={-20} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                          </>
-                        ) : (
-                          <>
-                            <Line x1={7} y1={2 + bodyLift} x2={5} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                            <Line x1={4} y1={2 + bodyLift} x2={2} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                            <Line x1={-4} y1={2 + bodyLift} x2={-2} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                            <Line x1={-7} y1={2 + bodyLift} x2={-5} y2={12 + bodyLift} stroke="#3A2510" strokeWidth={2} strokeLinecap="round" />
-                          </>
-                        )}
-
-                        {/* Queue */}
-                        <Path
-                          d={`M${-16 * bodyStretch} ${bodyLift} Q${-22} ${bodyLift - 8 + tailWave} ${-26} ${bodyLift - 5 + tailWave}`}
-                          fill="none" stroke="#C4872C" strokeWidth={2} strokeLinecap="round" />
-                        <Path
-                          d={`M${-25} ${bodyLift - 6 + tailWave} L${-27} ${bodyLift - 4 + tailWave}`}
-                          fill="none" stroke="#3A2510" strokeWidth={2.5} strokeLinecap="round" />
-                      </G>
 
                       {/* MILESTONE EFFECTS */}
                       {runMilestone === 500 && (
@@ -1858,6 +1797,42 @@ const ActivityPage = ({ onNavigate }) => {
                 })()}
               </Svg>
 
+              {/* Jaguar Lottie — superposed on canvas */}
+              <LottieView
+                ref={jaguarAnimRef}
+                source={require('./assets/animations/cheetah-running.json')}
+                style={{
+                  position: 'absolute',
+                  width: 80,
+                  height: 50,
+                  left: '35%',
+                  bottom: 10,
+                }}
+                autoPlay={false}
+                loop={true}
+                speed={1.5}
+              />
+
+              {/* Dust cloud behind jaguar when running */}
+              {isRunning && (
+                <View style={{
+                  position: 'absolute',
+                  left: '25%',
+                  bottom: 8,
+                  flexDirection: 'row',
+                }}>
+                  {[0.3, 0.2, 0.15, 0.1].map((opacity, i) => (
+                    <View key={i} style={{
+                      width: 6 + i * 2,
+                      height: 6 + i * 2,
+                      borderRadius: 10,
+                      backgroundColor: `rgba(140, 110, 60, ${opacity})`,
+                      marginRight: 3,
+                    }} />
+                  ))}
+                </View>
+              )}
+
               {/* Brouillard gauche */}
               <LinearGradient
                 colors={['#5A3E1B', 'rgba(90,62,27,0)']}
@@ -1872,68 +1847,81 @@ const ActivityPage = ({ onNavigate }) => {
               />
             </View>
 
-            {/* Maintenez pour avancer — above buttons */}
-            <Text style={{ textAlign: 'center', fontSize: 8, color: '#666', marginBottom: 2, fontStyle: 'italic' }}>
-              {String.fromCodePoint(0x261F)} Maintenez pour avancer
-            </Text>
-
-            {/* Compact knob controls */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 2 }}>
-              <Text style={{ color: '#666', fontSize: 10, marginRight: 6 }}>{String.fromCodePoint(0x25C0)}</Text>
-              <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}>
-                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                  <Animated.View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateLeft }] }}>
-                    <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                      <View style={{ width: 14, height: 14, borderRadius: 7, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
-                      </View>
-                    </View>
-                    <View style={{ position: 'absolute', top: 2, width: 1.5, height: 5, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                  </Animated.View>
-                </View>
-              </Pressable>
-              <View style={{ width: 30 }} />
-              <Pressable onPressIn={() => startRunMoving(1)} onPressOut={stopRunMoving}>
-                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                  <Animated.View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateRight }] }}>
-                    <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                      <View style={{ width: 14, height: 14, borderRadius: 7, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
-                      </View>
-                    </View>
-                    <View style={{ position: 'absolute', top: 2, width: 1.5, height: 5, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                  </Animated.View>
-                </View>
-              </Pressable>
-              <Text style={{ color: '#666', fontSize: 10, marginLeft: 6 }}>{String.fromCodePoint(0x25B6)}</Text>
-            </View>
-
-            {/* Aller/Retour + durée — same line */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2, paddingHorizontal: 8 }}>
-              <Pressable onPress={() => setRunRoundTrip(!runRoundTrip)}>
-                <Text style={{ color: runRoundTrip ? '#00D984' : '#888', fontSize: 10 }}>
-                  {String.fromCodePoint(0x2194)} Aller/Retour {runRoundTrip ? String.fromCodePoint(0x00D7) + '2' : ''}
+            {/* Single line: Aller/Retour | Knob buttons | Duration */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, marginTop: 3 }}>
+              {/* LEFT: Aller/Retour */}
+              <TouchableOpacity
+                onPress={() => setRunRoundTrip(!runRoundTrip)}
+                style={{
+                  borderWidth: 1,
+                  borderColor: runRoundTrip ? '#00D984' : '#333',
+                  borderRadius: 8,
+                  paddingHorizontal: 5,
+                  paddingVertical: 2,
+                  backgroundColor: runRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
+                }}
+              >
+                <Text style={{ color: runRoundTrip ? '#00D984' : '#888', fontSize: 8 }}>
+                  {runRoundTrip ? '\u2194 A/R \u00D72' : '\u2194 A/R'}
                 </Text>
-              </Pressable>
+              </TouchableOpacity>
+
+              {/* CENTER: Knob buttons (30px) */}
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ color: '#555', fontSize: 9, marginRight: 4 }}>{String.fromCodePoint(0x25C0)}</Text>
+                <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}>
+                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                    <Animated.View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateLeft }] }}>
+                      <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                        <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
+                        </View>
+                      </View>
+                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 4, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                    </Animated.View>
+                  </View>
+                </Pressable>
+                <View style={{ width: 16 }} />
+                <Pressable onPressIn={() => startRunMoving(1)} onPressOut={stopRunMoving}>
+                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                    <Animated.View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateRight }] }}>
+                      <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                        <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
+                        </View>
+                      </View>
+                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 4, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                    </Animated.View>
+                  </View>
+                </Pressable>
+                <Text style={{ color: '#555', fontSize: 9, marginLeft: 4 }}>{String.fromCodePoint(0x25B6)}</Text>
+              </View>
+
+              {/* RIGHT: Duration */}
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ color: '#00D984', fontSize: 14, fontWeight: 'bold' }}>{runDurStr}</Text>
-                <Text style={{ color: '#888', fontSize: 8 }}>à allure normale</Text>
+                <Text style={{ color: '#00D984', fontSize: 13, fontWeight: 'bold' }}>{runDurStr}</Text>
+                <Text style={{ color: '#666', fontSize: 7 }}>allure norm.</Text>
               </View>
             </View>
 
-            {/* Bouton CONFIRMER compact */}
+            {/* Maintenez hint */}
+            <Text style={{ textAlign: 'center', color: '#555', fontSize: 7, marginTop: 1, fontStyle: 'italic' }}>
+              {String.fromCodePoint(0x261F)} Maintenez pour avancer
+            </Text>
+
+            {/* Bouton CONFIRMER ultra-compact */}
             <Pressable
               onPress={handleAddRun}
               disabled={runSaved || runScrollOffset === 0}
               style={({ pressed }) => ({
-                paddingVertical: 10,
+                paddingVertical: 8,
                 borderRadius: 12,
                 backgroundColor: runSaved ? '#00D984' : runScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
                 alignItems: 'center',
-                marginTop: 4,
+                marginTop: 3,
               })}
             >
-              <Text style={{ color: '#0D1117', fontSize: 14, fontWeight: '800' }}>
+              <Text style={{ color: '#0D1117', fontSize: 13, fontWeight: '800' }}>
                 {runSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` COURSE — ${runCalories} kcal`}
               </Text>
             </Pressable>
