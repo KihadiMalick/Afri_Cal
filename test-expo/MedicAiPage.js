@@ -6,7 +6,7 @@ import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   Image, KeyboardAvoidingView, Platform, Animated,
   Dimensions, StatusBar, SafeAreaView, ActivityIndicator,
-  FlatList, PixelRatio,
+  FlatList, PixelRatio, Keyboard,
 } from 'react-native';
 import Svg, {
   G, Line, Circle, Path, Rect, Ellipse, Defs,
@@ -144,12 +144,34 @@ export default function MedicAiPage() {
   const [tokenUsed, setTokenUsed] = useState(0);
   const [tokenLimit, setTokenLimit] = useState(1000);
 
+  // Keyboard
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
   // Navigation
   const [activeTab, setActiveTab] = useState('medicai');
 
   // Refs
   const scrollViewRef = useRef(null);
   const inputRef = useRef(null);
+
+  // ── Keyboard listener ───────────────────────────────────────────────────
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  // ── Auto-scroll when keyboard opens ────────────────────────────────────
+  useEffect(() => {
+    if (keyboardVisible) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [keyboardVisible]);
 
   // ── Chargement des données au mount ──────────────────────────────────────
   useEffect(() => {
@@ -386,8 +408,8 @@ AUJOURD'HUI :
       {/* ===== ZONE DE CHAT ===== */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={80}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
       >
         <ScrollView
           ref={scrollViewRef}
@@ -505,6 +527,7 @@ AUJOURD'HUI :
           alignItems: 'center',
           paddingHorizontal: 12,
           paddingVertical: 8,
+          paddingBottom: keyboardVisible ? 4 : 20,
           backgroundColor: 'rgba(20,20,25,0.95)',
           borderTopWidth: 1,
           borderTopColor: '#222',
@@ -581,7 +604,9 @@ AUJOURD'HUI :
       </KeyboardAvoidingView>
 
       {/* ===== BOTTOM TAB BAR ===== */}
-      <BottomTabs activeTab={activeTab} onTabPress={setActiveTab} />
+      {!keyboardVisible && (
+        <BottomTabs activeTab={activeTab} onTabPress={setActiveTab} />
+      )}
     </View>
   );
 }
