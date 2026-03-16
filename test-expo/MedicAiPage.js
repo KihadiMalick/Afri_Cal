@@ -4,7 +4,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  Image, KeyboardAvoidingView, Platform, Animated,
+  Image, Platform, Animated,
   Dimensions, StatusBar, SafeAreaView, ActivityIndicator,
   FlatList, PixelRatio, Keyboard, Pressable,
 } from 'react-native';
@@ -1037,11 +1037,7 @@ ${mealsList}
       </View>
 
       {/* ===== ZONE DE CHAT ===== */}
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
-      >
+      <View style={{ flex: 1 }}>
         <ScrollView
           ref={scrollViewRef}
           style={{ flex: 1, paddingHorizontal: 16 }}
@@ -1108,8 +1104,7 @@ ${mealsList}
           flexDirection: 'row',
           alignItems: 'center',
           paddingHorizontal: 12,
-          paddingTop: 10,
-          paddingBottom: keyboardVisible ? 8 : 75,
+          paddingVertical: 8,
           backgroundColor: 'rgba(6,8,12,0.95)',
           borderTopWidth: 1,
           borderTopColor: 'rgba(0,217,132,0.2)',
@@ -1195,13 +1190,11 @@ ${mealsList}
             </Text>
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </View>
 
       {/* ===== BOTTOM TAB BAR ===== */}
       {!keyboardVisible && (
-        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
-          <BottomTabs activeTab={activeTab} onTabPress={setActiveTab} />
-        </View>
+        <BottomTabs activeTab={activeTab} onTabPress={setActiveTab} />
       )}
 
       {/* === MODAL CONFIRMATION RECETTE === */}
