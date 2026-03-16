@@ -6,7 +6,7 @@ import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   Image, KeyboardAvoidingView, Platform, Animated,
   Dimensions, StatusBar, SafeAreaView, ActivityIndicator,
-  FlatList, PixelRatio,
+  FlatList, PixelRatio, Keyboard,
 } from 'react-native';
 import Svg, {
   G, Line, Circle, Path, Rect, Ellipse, Defs,
@@ -129,6 +129,85 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
 );
 
 // ============================================
+// RENDU FORMATÉ — Markdown + Liens Recettes
+// Gère : **bold**, - listes, [RECETTE:nom], sauts de ligne
+// ============================================
+const FormattedText = ({ text, style, onRecipePress }) => {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+
+  return (
+    <View>
+      {lines.map((line, lineIndex) => {
+        if (line.trim() === '') {
+          return <View key={lineIndex} style={{ height: 6 }} />;
+        }
+
+        // Détecter [RECETTE:nom_du_plat]
+        const recipeMatch = line.match(/\[RECETTE:(.*?)\]/);
+        if (recipeMatch) {
+          const recipeName = recipeMatch[1];
+          return (
+            <TouchableOpacity
+              key={lineIndex}
+              onPress={() => onRecipePress && onRecipePress(recipeName)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'rgba(0,217,132,0.1)',
+                borderWidth: 1,
+                borderColor: 'rgba(0,217,132,0.3)',
+                borderRadius: 10,
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                marginVertical: 4,
+              }}
+            >
+              <Text style={{ fontSize: 16, marginRight: 8 }}>🍽️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#00D984', fontSize: 13, fontWeight: 'bold' }}>
+                  {recipeName}
+                </Text>
+                <Text style={{ color: '#888', fontSize: 9 }}>
+                  Appuyez pour voir la recette →
+                </Text>
+              </View>
+              <Text style={{ color: '#00D984', fontSize: 18 }}>›</Text>
+            </TouchableOpacity>
+          );
+        }
+
+        // Ligne "- " = puce de liste
+        const isBullet = line.trim().startsWith('- ');
+        const cleanLine = isBullet ? line.trim().substring(2) : line;
+
+        // Parser **bold**
+        const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
+
+        return (
+          <View key={lineIndex} style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 2, paddingLeft: isBullet ? 4 : 0 }}>
+            {isBullet && (
+              <Text style={[style, { marginRight: 6 }]}>•</Text>
+            )}
+            {parts.map((part, partIndex) => {
+              if (part.startsWith('**') && part.endsWith('**')) {
+                return (
+                  <Text key={partIndex} style={[style, { fontWeight: 'bold', color: '#FFF' }]}>
+                    {part.slice(2, -2)}
+                  </Text>
+                );
+              }
+              return <Text key={partIndex} style={style}>{part}</Text>;
+            })}
+          </View>
+        );
+      })}
+    </View>
+  );
+};
+
+// ============================================
 // COMPOSANT PRINCIPAL
 // ============================================
 export default function MedicAiPage() {
@@ -144,8 +223,15 @@ export default function MedicAiPage() {
   const [tokenUsed, setTokenUsed] = useState(0);
   const [tokenLimit, setTokenLimit] = useState(1000);
 
+  // Plats disponibles + modal recette
+  const [availableMeals, setAvailableMeals] = useState([]);
+  const [recipeModal, setRecipeModal] = useState(null);
+
   // Navigation
   const [activeTab, setActiveTab] = useState('medicai');
+
+  // Clavier
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   // Refs
   const scrollViewRef = useRef(null);
@@ -155,6 +241,17 @@ export default function MedicAiPage() {
   useEffect(() => {
     loadUserData();
     loadTokenQuota();
+    loadAvailableMeals();
+  }, []);
+
+  // ── Keyboard listener ────────────────────────────────────────────────────
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', () => {
+      setKeyboardVisible(true);
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+    });
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
   const addBotMessage = useCallback((text) => {
@@ -210,6 +307,19 @@ export default function MedicAiPage() {
     }
   };
 
+  const loadAvailableMeals = async () => {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/meals_master?select=id,name,category,calories_per_serving&order=name`,
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
+      );
+      const data = await res.json();
+      if (Array.isArray(data)) setAvailableMeals(data);
+    } catch (error) {
+      console.error('Erreur chargement plats:', error);
+    }
+  };
+
   // ── Message d'accueil intelligent ────────────────────────────────────────
   const generateGreeting = (profile, summary) => {
     const hour = new Date().getHours();
@@ -258,6 +368,11 @@ export default function MedicAiPage() {
     const carbs = todaySummary?.total_carbs || 0;
     const fat = todaySummary?.total_fat || 0;
 
+    // Liste des plats disponibles
+    const mealsList = availableMeals.length > 0
+      ? availableMeals.map(m => `${m.name} (${m.calories_per_serving || '?'} kcal)`).join(', ')
+      : 'Liste non chargée';
+
     return `
 DONNÉES UTILISATEUR (${today}) :
 - Nom : ${userProfile.first_name || 'N/A'} ${userProfile.last_name || ''}
@@ -266,10 +381,26 @@ DONNÉES UTILISATEUR (${today}) :
 - Objectif : ${userProfile.goal || 'N/A'}
 - BMR : ${userProfile.bmr || 'N/A'} kcal | TDEE : ${userProfile.tdee || 'N/A'} kcal
 
-AUJOURD'HUI :
+MACROS AUJOURD'HUI :
 - Calories : ${cal} / ${userProfile.tdee || 2000} kcal
 - Protéines : ${protein}g | Glucides : ${carbs}g | Lipides : ${fat}g
+
+PLATS DISPONIBLES DANS L'APP (liste de la base de recettes) :
+${mealsList}
     `;
+  };
+
+  // ── Gestion clic recette ─────────────────────────────────────────────────
+  const handleRecipePress = (recipeName) => {
+    setRecipeModal({ name: recipeName });
+  };
+
+  const confirmNavigateToRecipe = () => {
+    const recipeName = recipeModal?.name;
+    setRecipeModal(null);
+    setActiveTab('repas');
+    // TODO EAS Build avec React Navigation :
+    // navigation.navigate('Repas', { recipe: recipeName, section: 'recettes' });
   };
 
   // ── Envoi de message et appel IA ─────────────────────────────────────────
@@ -386,8 +517,8 @@ AUJOURD'HUI :
       {/* ===== ZONE DE CHAT ===== */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={80}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
       >
         <ScrollView
           ref={scrollViewRef}
@@ -397,21 +528,26 @@ AUJOURD'HUI :
         >
           {/* IMAGE LIXMAN (affichée seulement au début, avant les messages) */}
           {messages.length <= 1 && (
-            <View style={{
-              alignItems: 'center',
-              marginBottom: 12,
-            }}>
+            <View style={{ alignItems: 'center', marginVertical: 8 }}>
               <Image
-                source={require('./assets/lixman-doctor.png')}
+                source={require('./assets/lixman-avatar.png')}
                 style={{
-                  width: SCREEN_WIDTH - 32,
-                  height: 160,
-                  borderRadius: 12,
+                  width: SCREEN_WIDTH - 40,
+                  height: 150,
+                  borderRadius: 16,
                   borderWidth: 1,
-                  borderColor: '#222',
+                  borderColor: 'rgba(0,217,132,0.3)',
                 }}
                 resizeMode="cover"
               />
+              <Text style={{
+                color: 'rgba(255,255,255,0.4)',
+                fontSize: 9,
+                marginTop: 4,
+                fontStyle: 'italic',
+              }}>
+                LixMan — Votre compagnon de santé IA
+              </Text>
             </View>
           )}
 
@@ -426,15 +562,25 @@ AUJOURD'HUI :
               }}
             >
               {/* Label LixMan ou Vous */}
-              <Text style={{
-                color: msg.role === 'user' ? '#888' : '#00D984',
-                fontSize: 10,
-                marginBottom: 2,
-                marginLeft: msg.role === 'user' ? 0 : 4,
-                textAlign: msg.role === 'user' ? 'right' : 'left',
-              }}>
-                {msg.role === 'user' ? 'Vous' : '🤖 LixMan'}
-              </Text>
+              {msg.role === 'user' ? (
+                <Text style={{
+                  color: '#888',
+                  fontSize: 10,
+                  marginBottom: 2,
+                  textAlign: 'right',
+                }}>
+                  Vous
+                </Text>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, marginLeft: 4 }}>
+                  <Image
+                    source={require('./assets/lixman-avatar.png')}
+                    style={{ width: 20, height: 20, borderRadius: 10, marginRight: 5, borderWidth: 1.5, borderColor: '#00D984' }}
+                    resizeMode="cover"
+                  />
+                  <Text style={{ color: '#00D984', fontSize: 11, fontWeight: 'bold' }}>LixMan</Text>
+                </View>
+              )}
 
               {/* Bulle */}
               <View style={{
@@ -451,13 +597,21 @@ AUJOURD'HUI :
                   ? 'rgba(0,217,132,0.2)'
                   : 'rgba(60,60,70,0.5)',
               }}>
-                <Text style={{
-                  color: '#E0E0E0',
-                  fontSize: 14,
-                  lineHeight: 20,
-                }}>
-                  {msg.content}
-                </Text>
+                {msg.role === 'user' ? (
+                  <Text style={{
+                    color: '#E0E0E0',
+                    fontSize: 14,
+                    lineHeight: 20,
+                  }}>
+                    {msg.content}
+                  </Text>
+                ) : (
+                  <FormattedText
+                    text={msg.content}
+                    style={{ color: '#E0E0E0', fontSize: 14, lineHeight: 20 }}
+                    onRecipePress={handleRecipePress}
+                  />
+                )}
               </View>
 
               {/* Heure */}
@@ -476,9 +630,14 @@ AUJOURD'HUI :
           {/* Indicateur "LixMan tape..." */}
           {isTyping && (
             <View style={{ alignSelf: 'flex-start', marginBottom: 10 }}>
-              <Text style={{ color: '#00D984', fontSize: 10, marginBottom: 2, marginLeft: 4 }}>
-                🤖 LixMan
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, marginLeft: 4 }}>
+                <Image
+                  source={require('./assets/lixman-avatar.png')}
+                  style={{ width: 20, height: 20, borderRadius: 10, marginRight: 5, borderWidth: 1.5, borderColor: '#00D984' }}
+                  resizeMode="cover"
+                />
+                <Text style={{ color: '#00D984', fontSize: 11, fontWeight: 'bold' }}>LixMan</Text>
+              </View>
               <View style={{
                 backgroundColor: 'rgba(40,40,50,0.8)',
                 borderRadius: 16,
@@ -505,6 +664,7 @@ AUJOURD'HUI :
           alignItems: 'center',
           paddingHorizontal: 12,
           paddingVertical: 8,
+          paddingBottom: keyboardVisible ? 4 : 20,
           backgroundColor: 'rgba(20,20,25,0.95)',
           borderTopWidth: 1,
           borderTopColor: '#222',
@@ -535,12 +695,14 @@ AUJOURD'HUI :
               ref={inputRef}
               style={{
                 flex: 1,
-                color: '#FFF',
+                color: '#FFFFFF',
                 fontSize: 14,
                 maxHeight: 80,
+                paddingVertical: 0,
               }}
               placeholder="Parlez à LixMan..."
               placeholderTextColor="#666"
+              selectionColor="#00D984"
               value={inputText}
               onChangeText={setInputText}
               multiline
@@ -581,7 +743,79 @@ AUJOURD'HUI :
       </KeyboardAvoidingView>
 
       {/* ===== BOTTOM TAB BAR ===== */}
-      <BottomTabs activeTab={activeTab} onTabPress={setActiveTab} />
+      {!keyboardVisible && (
+        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+          <BottomTabs activeTab={activeTab} onTabPress={setActiveTab} />
+        </View>
+      )}
+
+      {/* === MODAL CONFIRMATION RECETTE === */}
+      {recipeModal && (
+        <View style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 100,
+        }}>
+          <View style={{
+            backgroundColor: '#1A1A2E',
+            borderRadius: 16,
+            padding: 20,
+            width: SCREEN_WIDTH * 0.85,
+            borderWidth: 1,
+            borderColor: '#333',
+          }}>
+            {/* Avatar LixMan */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+              <Image
+                source={require('./assets/lixman-avatar.png')}
+                style={{ width: 30, height: 30, borderRadius: 15, marginRight: 10, borderWidth: 1, borderColor: '#00D984' }}
+                resizeMode="cover"
+              />
+              <Text style={{ color: '#00D984', fontSize: 14, fontWeight: 'bold' }}>LixMan</Text>
+            </View>
+
+            {/* Message */}
+            <Text style={{ color: '#E0E0E0', fontSize: 14, lineHeight: 20, marginBottom: 16 }}>
+              Tu veux voir la recette "{recipeModal.name}" dans la section Repas ? 🍽️
+            </Text>
+
+            {/* Boutons */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <TouchableOpacity
+                onPress={() => setRecipeModal(null)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: '#333',
+                  alignItems: 'center',
+                  marginRight: 8,
+                }}
+              >
+                <Text style={{ color: '#888', fontSize: 13 }}>Annuler</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={confirmNavigateToRecipe}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 10,
+                  backgroundColor: '#00D984',
+                  alignItems: 'center',
+                  marginLeft: 8,
+                }}
+              >
+                <Text style={{ color: '#000', fontSize: 13, fontWeight: 'bold' }}>Voir la recette</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
