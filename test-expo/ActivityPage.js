@@ -841,7 +841,8 @@ const ActivityPage = ({ onNavigate }) => {
 
   // Walk knob controls
   const walkIntervalRef = useRef(null);
-  const walkRotateAnim = useRef(new Animated.Value(0)).current;
+  const walkRotateAnimLeft = useRef(new Animated.Value(0)).current;
+  const walkRotateAnimRight = useRef(new Animated.Value(0)).current;
   const walkSpeedRef = useRef(2);
   const walkHoldStartRef = useRef(0);
 
@@ -1010,18 +1011,21 @@ const ActivityPage = ({ onNavigate }) => {
 
   // ── Walk knob interaction ─────────────────────────────────────────────
   const startWalkMoving = (direction) => {
+    const activeRotateAnim = direction === 1 ? walkRotateAnimRight : walkRotateAnimLeft;
     walkHoldStartRef.current = Date.now();
     walkSpeedRef.current = 2;
     walkIntervalRef.current = setInterval(() => {
       const holdDuration = Date.now() - walkHoldStartRef.current;
-      if (holdDuration > 2000) walkSpeedRef.current = 6;
-      else if (holdDuration > 1000) walkSpeedRef.current = 4;
-      else if (holdDuration > 500) walkSpeedRef.current = 3;
+      if (holdDuration > 3000) walkSpeedRef.current = 16;
+      else if (holdDuration > 2000) walkSpeedRef.current = 10;
+      else if (holdDuration > 1000) walkSpeedRef.current = 6;
+      else if (holdDuration > 500) walkSpeedRef.current = 4;
+      else walkSpeedRef.current = 2;
       setWalkScrollOffset(prev => {
         const maxS = WALK_SCENE_W - walkCanvasW;
         return Math.max(0, Math.min(prev + direction * walkSpeedRef.current, maxS));
       });
-      walkRotateAnim.setValue((walkRotateAnim.__getValue() || 0) + direction * 10);
+      activeRotateAnim.setValue((activeRotateAnim.__getValue() || 0) + direction * 10);
     }, 50);
   };
   const stopWalkMoving = () => {
@@ -1035,7 +1039,11 @@ const ActivityPage = ({ onNavigate }) => {
     return () => { if (walkIntervalRef.current) clearInterval(walkIntervalRef.current); };
   }, []);
 
-  const walkKnobRotate = walkRotateAnim.interpolate({
+  const walkKnobRotateLeft = walkRotateAnimLeft.interpolate({
+    inputRange: [-3600, 3600],
+    outputRange: ['-3600deg', '3600deg'],
+  });
+  const walkKnobRotateRight = walkRotateAnimRight.interpolate({
     inputRange: [-3600, 3600],
     outputRange: ['-3600deg', '3600deg'],
   });
@@ -1271,8 +1279,8 @@ const ActivityPage = ({ onNavigate }) => {
                       <Path d={`M0 ${pathY + 12} Q500 ${pathY + 5} 1000 ${pathY + 10} Q1500 ${pathY + 6} ${scW} ${pathY + 12}`}
                         fill="none" stroke="#A5D6A7" strokeWidth={1} opacity={0.3} />
 
-                      {/* MAISON — x=60 */}
-                      <G transform={`translate(60, ${pathY - 30}) scale(1.8)`}>
+                      {/* MAISON — juste avant les premières empreintes */}
+                      <G transform={`translate(${walkCanvasW * 0.4 - 40}, ${pathY - 30}) scale(1.8)`}>
                         <Rect x={6} y={-12} width={3} height={6} fill="#795548" opacity={0.6} />
                         <Circle cx={8} cy={-14} r={2.5} fill="#BDBDBD" opacity={0.3} />
                         <Path d="M-2 -4 L10 -14 L22 -4 Z" fill="#E53935" opacity={0.85} />
@@ -1384,7 +1392,8 @@ const ActivityPage = ({ onNavigate }) => {
                       {(() => {
                         const prints = [];
                         const totalSteps = walkFootprintCount;
-                        const startX = 60;
+                        const FOOTPRINT_START_X = walkCanvasW * 0.4;
+                        const startX = FOOTPRINT_START_X;
                         for (let i = 0; i < totalSteps; i++) {
                           const px = startX + i * WALK_PAS_SPACING;
                           if (px > scW - 40) break;
@@ -1405,16 +1414,16 @@ const ActivityPage = ({ onNavigate }) => {
                           }
 
                           prints.push(
-                            <G key={`wfp-${i}`} opacity={opacity} transform={`translate(${px}, ${y}) scale(${scale})`}>
+                            <G key={`wfp-${i}`} opacity={opacity} transform={`translate(${px}, ${y}) scale(${scale}) rotate(90)`}>
                               {/* Glow halo pour les empreintes actives */}
                               {glowR > 0 && (
                                 <Ellipse cx={0} cy={3} rx={glowR} ry={glowR} fill="#C8A870" opacity={0.12} />
                               )}
-                              {/* Plante du pied */}
+                              {/* Plante du pied (horizontal — toes RIGHT) */}
                               <Ellipse cx={0} cy={3} rx={3.5} ry={6} fill={fillColor} opacity={0.7} />
-                              {/* Talon */}
+                              {/* Talon (now LEFT) */}
                               <Ellipse cx={0} cy={10} rx={2.8} ry={3} fill={fillColor} opacity={0.5} />
-                              {/* Orteils */}
+                              {/* Orteils (now RIGHT) */}
                               <Circle cx={-2.5} cy={-2.5} r={1.4} fill={fillColor} opacity={0.65} />
                               <Circle cx={-1} cy={-4} r={1.4} fill={fillColor} opacity={0.65} />
                               <Circle cx={0.8} cy={-4.5} r={1.3} fill={fillColor} opacity={0.6} />
@@ -1462,7 +1471,7 @@ const ActivityPage = ({ onNavigate }) => {
                     overflow: 'hidden',
                     shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
                     shadowOpacity: 0.6, shadowRadius: 6, elevation: 8,
-                    transform: [{ rotate: walkKnobRotate }],
+                    transform: [{ rotate: walkKnobRotateLeft }],
                   }}>
                     {/* Cercles concentriques gravés */}
                     <View style={{ width: wp(36), height: wp(36), borderRadius: wp(18), borderWidth: 0.7, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
@@ -1501,7 +1510,7 @@ const ActivityPage = ({ onNavigate }) => {
                     overflow: 'hidden',
                     shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
                     shadowOpacity: 0.6, shadowRadius: 6, elevation: 8,
-                    transform: [{ rotate: walkKnobRotate }],
+                    transform: [{ rotate: walkKnobRotateRight }],
                   }}>
                     {/* Cercles concentriques gravés */}
                     <View style={{ width: wp(36), height: wp(36), borderRadius: wp(18), borderWidth: 0.7, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
