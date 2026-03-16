@@ -359,7 +359,7 @@ const metalStyles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardContent: {
-    padding: wp(10),
+    padding: wp(8),
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.25)',
     borderRadius: wp(17),
@@ -370,7 +370,7 @@ const metalStyles = StyleSheet.create({
 const SectionTitle = ({ title, rightAction, rightLabel }) => (
   <View style={{
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: wp(16), marginBottom: wp(8),
+    paddingHorizontal: wp(16), marginBottom: wp(4),
   }}>
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <View style={{
@@ -993,7 +993,7 @@ const ActivityPage = ({ onNavigate }) => {
   // ── Walk constants ─────────────────────────────────────────────────────
   const WALK_SCENE_W = 2000;
   const WALK_MAX_DIST = 10000;
-  const WALK_CANVAS_H = wp(85);
+  const WALK_CANVAS_H = wp(65);
 
   // ── Walk computed values ──────────────────────────────────────────────
   const walkMaxS = WALK_SCENE_W - walkCanvasW;
@@ -1130,7 +1130,7 @@ const ActivityPage = ({ onNavigate }) => {
           <SectionTitle title="Marche" />
           <MetalCard>
             {/* Header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(4) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(2) }}>
               <WalkShoeIcon size={wp(16)} />
               <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '800', letterSpacing: 1.5, marginLeft: wp(6) }}>
                 MARCHE
@@ -1138,7 +1138,7 @@ const ActivityPage = ({ onNavigate }) => {
             </View>
 
             {/* Données en direct */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: wp(4) }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: wp(2) }}>
               <View style={{ alignItems: 'center' }}>
                 <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '600' }}>{String.fromCodePoint(0x1F4CF)} Distance</Text>
                 <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '900' }}>{walkDistStr}</Text>
@@ -1414,21 +1414,17 @@ const ActivityPage = ({ onNavigate }) => {
                           }
 
                           prints.push(
-                            <G key={`wfp-${i}`} opacity={opacity} transform={`translate(${px}, ${y}) scale(${scale}) rotate(90)`}>
+                            <G key={`wfp-${i}`} opacity={opacity} transform={`translate(${px}, ${y}) scale(${scale}) rotate(90)${!isRight ? ' scale(1,-1)' : ''}`}>
                               {/* Glow halo pour les empreintes actives */}
                               {glowR > 0 && (
-                                <Ellipse cx={0} cy={3} rx={glowR} ry={glowR} fill="#C8A870" opacity={0.12} />
+                                <Ellipse cx={0} cy={0} rx={glowR} ry={glowR} fill="#C8A870" opacity={0.12} />
                               )}
-                              {/* Plante du pied (horizontal — toes RIGHT) */}
-                              <Ellipse cx={0} cy={3} rx={3.5} ry={6} fill={fillColor} opacity={0.7} />
-                              {/* Talon (now LEFT) */}
-                              <Ellipse cx={0} cy={10} rx={2.8} ry={3} fill={fillColor} opacity={0.5} />
-                              {/* Orteils (now RIGHT) */}
-                              <Circle cx={-2.5} cy={-2.5} r={1.4} fill={fillColor} opacity={0.65} />
-                              <Circle cx={-1} cy={-4} r={1.4} fill={fillColor} opacity={0.65} />
-                              <Circle cx={0.8} cy={-4.5} r={1.3} fill={fillColor} opacity={0.6} />
-                              <Circle cx={2.5} cy={-3.5} r={1.2} fill={fillColor} opacity={0.55} />
-                              <Circle cx={3.5} cy={-2} r={1.1} fill={fillColor} opacity={0.5} />
+                              {/* === SEMELLE AVANT (partie principale, allongée) === */}
+                              <Ellipse cx={4} cy={0} rx={8} ry={5} fill={fillColor} opacity={0.7} />
+                              {/* Arche du pied — découpe intérieure */}
+                              <Ellipse cx={-1} cy={isRight ? -2 : 2} rx={3} ry={2} fill="#252A30" opacity={0.5} />
+                              {/* === TALON (séparé, petit ovale arrondi) === */}
+                              <Ellipse cx={-10} cy={0} rx={4} ry={3.5} fill={fillColor} opacity={0.6} />
                             </G>
                           );
                         }
@@ -1455,7 +1451,7 @@ const ActivityPage = ({ onNavigate }) => {
             </View>
 
             {/* DOUBLE MOLETTE VINTAGE — contrôle le défilement */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: wp(4), marginBottom: wp(2) }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: wp(3), marginBottom: wp(1) }}>
               {/* Bouton RECULER */}
               <View style={{ alignItems: 'center' }}>
                 <Text style={{ color: '#5A6070', fontSize: fp(8), marginBottom: wp(2) }}>{String.fromCodePoint(0x25C0)}</Text>
@@ -1463,36 +1459,67 @@ const ActivityPage = ({ onNavigate }) => {
                   onPressIn={() => startWalkMoving(-1)}
                   onPressOut={stopWalkMoving}
                 >
-                  <Animated.View style={{
-                    width: wp(48), height: wp(48), borderRadius: wp(24),
-                    backgroundColor: '#1A1A1A',
-                    borderWidth: 1.5, borderColor: '#C0C0C0',
+                  {/* Base/socle du bouton */}
+                  <View style={{
+                    width: wp(58), height: wp(58), borderRadius: wp(29),
+                    backgroundColor: '#111', borderWidth: 1, borderColor: '#333',
                     justifyContent: 'center', alignItems: 'center',
-                    overflow: 'hidden',
-                    shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
-                    shadowOpacity: 0.6, shadowRadius: 6, elevation: 8,
-                    transform: [{ rotate: walkKnobRotateLeft }],
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.8, shadowRadius: 4, elevation: 6,
                   }}>
-                    {/* Cercles concentriques gravés */}
-                    <View style={{ width: wp(36), height: wp(36), borderRadius: wp(18), borderWidth: 0.7, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                      <View style={{ width: wp(24), height: wp(24), borderRadius: wp(12), borderWidth: 0.5, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: wp(14), height: wp(14), borderRadius: wp(7), borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: wp(6), height: wp(6), borderRadius: wp(3), backgroundColor: '#2A2A2A' }} />
+                    <Animated.View style={{
+                      width: wp(48), height: wp(48), borderRadius: wp(24),
+                      backgroundColor: '#1A1A1A',
+                      borderWidth: 2, borderColor: '#444',
+                      justifyContent: 'center', alignItems: 'center',
+                      overflow: 'hidden',
+                      shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.5, shadowRadius: 6, elevation: 8,
+                      transform: [{ rotate: walkKnobRotateLeft }],
+                    }}>
+                      {/* Surface intérieure avec reflet */}
+                      <View style={{
+                        width: wp(40), height: wp(40), borderRadius: wp(20),
+                        backgroundColor: '#222', borderWidth: 1,
+                        borderTopColor: '#3A3A3A', borderLeftColor: '#333',
+                        borderRightColor: '#333', borderBottomColor: '#111',
+                        justifyContent: 'center', alignItems: 'center',
+                      }}>
+                        {/* Cercles concentriques gravés */}
+                        <View style={{ width: wp(28), height: wp(28), borderRadius: wp(14), borderWidth: 0.7, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: wp(18), height: wp(18), borderRadius: wp(9), borderWidth: 0.5, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={{ width: wp(10), height: wp(10), borderRadius: wp(5), borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                              <View style={{ width: wp(5), height: wp(5), borderRadius: wp(2.5), backgroundColor: '#2A2A2A' }} />
+                            </View>
+                          </View>
                         </View>
                       </View>
-                    </View>
-                    {/* Indicateur 12h */}
-                    <View style={{ position: 'absolute', top: wp(3), width: 2, height: wp(7), backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                  </Animated.View>
+                      {/* Indicateur 12h */}
+                      <View style={{ position: 'absolute', top: wp(3), width: 2, height: wp(7), backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                    </Animated.View>
+                  </View>
                 </Pressable>
                 <Text style={{ color: '#5A6070', fontSize: fp(7), marginTop: wp(2), fontWeight: '600', letterSpacing: 1 }}>RECULER</Text>
               </View>
 
               {/* Espacement + texte central */}
               <View style={{ alignItems: 'center', marginHorizontal: wp(8), justifyContent: 'center' }}>
-                <Text style={{ color: '#888', fontSize: fp(8), fontStyle: 'italic', textAlign: 'center' }}>
-                  {String.fromCodePoint(0x1F447)} Maintenez{'\n'}pour déplacer
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M12 2C12 2 12 8 12 8M12 8C10.5 8 9 9 9 10.5V14L7.5 12.5C6.5 12 5.5 12.5 5.5 13.5C5.5 14 5.7 14.5 6 14.8L10 20C10.5 20.7 11.3 21 12.2 21H16C18.2 21 20 19.2 20 17V11.5C20 10.1 18.9 9 17.5 9C17.5 9 17 9 17 9V8.5C17 7.7 16.3 7 15.5 7C15.2 7 15 7.1 14.8 7.2V6.5C14.8 5.7 14.1 5 13.3 5C13 5 12.7 5.1 12.5 5.3V8C12.5 8 12 8 12 8Z"
+                      fill="#888"
+                      stroke="#666"
+                      strokeWidth={0.5}
+                    />
+                    <Path d="M11 2L11 4" stroke="#888" strokeWidth={1.5} strokeLinecap="round"/>
+                    <Path d="M9 3L10 4.5" stroke="#888" strokeWidth={1} strokeLinecap="round"/>
+                    <Path d="M13 3L12 4.5" stroke="#888" strokeWidth={1} strokeLinecap="round"/>
+                  </Svg>
+                  <Text style={{ color: '#888', fontSize: fp(9), fontStyle: 'italic', marginLeft: 4 }}>
+                    Maintenez pour avancer
+                  </Text>
+                </View>
               </View>
 
               {/* Bouton AVANCER */}
@@ -1502,34 +1529,52 @@ const ActivityPage = ({ onNavigate }) => {
                   onPressIn={() => startWalkMoving(1)}
                   onPressOut={stopWalkMoving}
                 >
-                  <Animated.View style={{
-                    width: wp(48), height: wp(48), borderRadius: wp(24),
-                    backgroundColor: '#1A1A1A',
-                    borderWidth: 1.5, borderColor: '#C0C0C0',
+                  {/* Base/socle du bouton */}
+                  <View style={{
+                    width: wp(58), height: wp(58), borderRadius: wp(29),
+                    backgroundColor: '#111', borderWidth: 1, borderColor: '#333',
                     justifyContent: 'center', alignItems: 'center',
-                    overflow: 'hidden',
-                    shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
-                    shadowOpacity: 0.6, shadowRadius: 6, elevation: 8,
-                    transform: [{ rotate: walkKnobRotateRight }],
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.8, shadowRadius: 4, elevation: 6,
                   }}>
-                    {/* Cercles concentriques gravés */}
-                    <View style={{ width: wp(36), height: wp(36), borderRadius: wp(18), borderWidth: 0.7, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                      <View style={{ width: wp(24), height: wp(24), borderRadius: wp(12), borderWidth: 0.5, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: wp(14), height: wp(14), borderRadius: wp(7), borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: wp(6), height: wp(6), borderRadius: wp(3), backgroundColor: '#2A2A2A' }} />
+                    <Animated.View style={{
+                      width: wp(48), height: wp(48), borderRadius: wp(24),
+                      backgroundColor: '#1A1A1A',
+                      borderWidth: 2, borderColor: '#444',
+                      justifyContent: 'center', alignItems: 'center',
+                      overflow: 'hidden',
+                      shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.5, shadowRadius: 6, elevation: 8,
+                      transform: [{ rotate: walkKnobRotateRight }],
+                    }}>
+                      {/* Surface intérieure avec reflet */}
+                      <View style={{
+                        width: wp(40), height: wp(40), borderRadius: wp(20),
+                        backgroundColor: '#222', borderWidth: 1,
+                        borderTopColor: '#3A3A3A', borderLeftColor: '#333',
+                        borderRightColor: '#333', borderBottomColor: '#111',
+                        justifyContent: 'center', alignItems: 'center',
+                      }}>
+                        {/* Cercles concentriques gravés */}
+                        <View style={{ width: wp(28), height: wp(28), borderRadius: wp(14), borderWidth: 0.7, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: wp(18), height: wp(18), borderRadius: wp(9), borderWidth: 0.5, borderColor: '#2A2A2A', justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={{ width: wp(10), height: wp(10), borderRadius: wp(5), borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                              <View style={{ width: wp(5), height: wp(5), borderRadius: wp(2.5), backgroundColor: '#2A2A2A' }} />
+                            </View>
+                          </View>
                         </View>
                       </View>
-                    </View>
-                    {/* Indicateur 12h */}
-                    <View style={{ position: 'absolute', top: wp(3), width: 2, height: wp(7), backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                  </Animated.View>
+                      {/* Indicateur 12h */}
+                      <View style={{ position: 'absolute', top: wp(3), width: 2, height: wp(7), backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                    </Animated.View>
+                  </View>
                 </Pressable>
                 <Text style={{ color: '#5A6070', fontSize: fp(7), marginTop: wp(2), fontWeight: '600', letterSpacing: 1 }}>AVANCER</Text>
               </View>
             </View>
 
             {/* Aller/Retour + durée */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: wp(4) }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: wp(2) }}>
               <Pressable onPress={() => setWalkRoundTrip(!walkRoundTrip)}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
