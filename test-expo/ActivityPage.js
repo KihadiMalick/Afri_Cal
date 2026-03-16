@@ -352,14 +352,14 @@ const metalStyles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 12,
     marginHorizontal: wp(14),
-    marginBottom: wp(12),
+    marginBottom: wp(8),
   },
   innerGradient: {
     borderRadius: wp(17),
     overflow: 'hidden',
   },
   cardContent: {
-    padding: wp(16),
+    padding: wp(10),
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.25)',
     borderRadius: wp(17),
@@ -370,7 +370,7 @@ const metalStyles = StyleSheet.create({
 const SectionTitle = ({ title, rightAction, rightLabel }) => (
   <View style={{
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: wp(16), marginBottom: wp(12),
+    paddingHorizontal: wp(16), marginBottom: wp(8),
   }}>
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <View style={{
@@ -997,18 +997,7 @@ const ActivityPage = ({ onNavigate }) => {
   // ── Walk constants ─────────────────────────────────────────────────────
   const WALK_SCENE_W = 2000;
   const WALK_MAX_DIST = 10000;
-  const WALK_CANVAS_H = wp(120);
-
-  // ── Walk touch handlers ───────────────────────────────────────────────
-  const onWalkTouchStart = (evt) => {
-    setWalkTouchStartX(evt.nativeEvent.locationX);
-    setWalkScrollStart(walkScrollOffset);
-  };
-  const onWalkTouchMove = (evt) => {
-    const dx = walkTouchStartX - evt.nativeEvent.locationX;
-    const maxS = WALK_SCENE_W - walkCanvasW;
-    setWalkScrollOffset(Math.max(0, Math.min(maxS, walkScrollStart + dx * 1.5)));
-  };
+  const WALK_CANVAS_H = wp(85);
 
   // ── Walk computed values ──────────────────────────────────────────────
   const walkMaxS = WALK_SCENE_W - walkCanvasW;
@@ -1104,10 +1093,10 @@ const ActivityPage = ({ onNavigate }) => {
           <SectionTitle title="Marche" />
           <MetalCard>
             {/* Header — titre + toggle */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(8) }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(4) }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <WalkShoeIcon size={wp(18)} />
-                <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '800', letterSpacing: 1.5, marginLeft: wp(6) }}>
+                <WalkShoeIcon size={wp(16)} />
+                <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '800', letterSpacing: 1.5, marginLeft: wp(6) }}>
                   MARCHE
                 </Text>
               </View>
@@ -1128,18 +1117,18 @@ const ActivityPage = ({ onNavigate }) => {
             </View>
 
             {/* Données en direct */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: wp(8) }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: wp(4) }}>
               <View style={{ alignItems: 'center' }}>
                 <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '600' }}>{String.fromCodePoint(0x1F4CF)} Distance</Text>
-                <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '900' }}>{walkDistStr}</Text>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '900' }}>{walkDistStr}</Text>
               </View>
               <View style={{ alignItems: 'center' }}>
                 <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '600' }}>{String.fromCodePoint(0x1F525)} Calories</Text>
-                <Text style={{ color: '#FF8C42', fontSize: fp(16), fontWeight: '900' }}>{walkCal} kcal</Text>
+                <Text style={{ color: '#FF8C42', fontSize: fp(14), fontWeight: '900' }}>{walkCal} kcal</Text>
               </View>
               <View style={{ alignItems: 'center' }}>
                 <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '600' }}>{String.fromCodePoint(0x1F4A7)} Eau</Text>
-                <Text style={{ color: '#4DA6FF', fontSize: fp(16), fontWeight: '900' }}>{walkWater} ml</Text>
+                <Text style={{ color: '#4DA6FF', fontSize: fp(14), fontWeight: '900' }}>{walkWater} ml</Text>
               </View>
             </View>
 
@@ -1147,10 +1136,6 @@ const ActivityPage = ({ onNavigate }) => {
             <View
               style={{ height: WALK_CANVAS_H, borderRadius: 14, overflow: 'hidden', backgroundColor: 'rgba(0,217,132,0.03)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.08)' }}
               onLayout={(e) => setWalkCanvasW(e.nativeEvent.layout.width)}
-              onStartShouldSetResponder={() => true}
-              onMoveShouldSetResponder={() => true}
-              onResponderGrant={onWalkTouchStart}
-              onResponderMove={onWalkTouchMove}
             >
               <Svg width={walkCanvasW} height={WALK_CANVAS_H} viewBox={`${walkScrollOffset} 0 ${walkCanvasW} ${WALK_CANVAS_H}`}>
                 <Defs>
@@ -1195,6 +1180,18 @@ const ActivityPage = ({ onNavigate }) => {
                         })}
                         <Circle cx={0} cy={0} r={12} fill="url(#wSunGrad)" opacity={0.9} />
                         <Circle cx={-3} cy={-3} r={4} fill="#FFFFFF" opacity={0.3} />
+                        {walkProg > 0.65 && (
+                          <>
+                            <Circle cx={0} cy={0} r={22} fill="#FFD54F" opacity={0.15} />
+                            <Circle cx={0} cy={0} r={30} fill="#FFD54F" opacity={0.07} />
+                            {Array.from({ length: 8 }, (_, i) => {
+                              const a = (i / 8) * Math.PI * 2 + 0.2;
+                              return <Line key={`xr-${i}`} x1={Math.cos(a) * 18} y1={Math.sin(a) * 18}
+                                x2={Math.cos(a) * 28} y2={Math.sin(a) * 28}
+                                stroke="#FFF9C4" strokeWidth={2} opacity={0.3} strokeLinecap="round" />;
+                            })}
+                          </>
+                        )}
                       </G>
 
                       {/* NUAGES */}
@@ -1312,32 +1309,30 @@ const ActivityPage = ({ onNavigate }) => {
                         <Rect x={11} y={-4} width={5} height={2.5} rx={1} fill="#616161" opacity={0.6} />
                       </G>
 
-                      {/* OISEAUX — x=1300 */}
-                      <G transform={`translate(1300, ${pathY - (passed(1300) ? 40 : 10)}) scale(2.2)`}>
-                        <G transform="translate(0, 0)">
-                          <Ellipse cx={0} cy={0} rx={6} ry={3.5} fill="#1E88E5" opacity={0.9} />
-                          <Circle cx={-5} cy={-1.5} r={3} fill="#1565C0" opacity={0.9} />
-                          <Path d="M-8 -1.5 L-10.5 -0.5 L-8 0.5" fill="#FF8F00" opacity={0.95} />
-                          <Circle cx={-6} cy={-2.2} r={1} fill="white" />
-                          <Circle cx={-6.3} cy={-2.2} r={0.5} fill="#0D1117" />
-                          <Path d="M-1 -2.5 Q4 -10 10 -4 Q5 -1 0 0" fill="#42A5F5" opacity={0.7} />
-                          <Path d="M6 0 L10 -2 L9 1.5 Z" fill="#1E88E5" opacity={0.7} />
+                      {/* COLOMBES BLANCHES — s'envolent vers le soleil quand passé */}
+                      <G transform={`translate(1300, ${pathY - (walkProg > 0.65 ? 45 : 5)})`}>
+                        {/* Colombe 1 — grande */}
+                        <G transform={`translate(0, ${walkProg > 0.65 ? -10 : 0}) scale(1.8)`}>
+                          <Ellipse cx={0} cy={0} rx={5} ry={2.5} fill="white" opacity={0.9} />
+                          <Circle cx={-4} cy={-1} r={2.5} fill="white" opacity={0.9} />
+                          <Path d="M-6.5 -1 L-8 0 L-6.5 0.5" fill="#FFB300" opacity={0.8} />
+                          <Circle cx={-5.5} cy={-1.5} r={0.5} fill="#333" />
+                          <Path d="M-1 -2 Q0 -9 8 -5 Q4 -1 0 0" fill="white" opacity={0.7} />
+                          <Path d="M-1 2 Q0 8 7 5 Q3 2 0 1" fill="white" opacity={0.5} />
                         </G>
-                        <G transform="translate(16, -10) scale(0.75)">
-                          <Ellipse cx={0} cy={0} rx={6} ry={3.5} fill="#43A047" opacity={0.85} />
-                          <Circle cx={-5} cy={-1.5} r={3} fill="#2E7D32" opacity={0.85} />
-                          <Path d="M-8 -1.5 L-10 -0.5 L-8 0.5" fill="#FF8F00" opacity={0.9} />
-                          <Circle cx={-6} cy={-2.2} r={0.8} fill="white" />
-                          <Circle cx={-6.2} cy={-2.2} r={0.4} fill="#0D1117" />
-                          <Path d="M-1 -2 Q4 -8 9 -3 Q4 0 0 0" fill="#66BB6A" opacity={0.6} />
+                        {/* Colombe 2 — moyenne */}
+                        <G transform={`translate(18, ${walkProg > 0.65 ? -20 : -5}) scale(1.2)`}>
+                          <Ellipse cx={0} cy={0} rx={5} ry={2.5} fill="white" opacity={0.8} />
+                          <Circle cx={-4} cy={-1} r={2.5} fill="white" opacity={0.8} />
+                          <Path d="M-6.5 -1 L-8 0 L-6.5 0.5" fill="#FFB300" opacity={0.7} />
+                          <Circle cx={-5.5} cy={-1.5} r={0.4} fill="#333" />
+                          <Path d="M-1 -2 Q0 -8 7 -4 Q3 -1 0 0" fill="white" opacity={0.6} />
                         </G>
-                        <G transform="translate(-14, -14) scale(0.65)">
-                          <Ellipse cx={0} cy={0} rx={6} ry={3.5} fill="#FDD835" opacity={0.85} />
-                          <Circle cx={-5} cy={-1.5} r={3} fill="#F9A825" opacity={0.85} />
-                          <Path d="M-8 -1.5 L-10 -0.5 L-8 0.5" fill="#FF6F00" opacity={0.9} />
-                          <Circle cx={-6} cy={-2.2} r={0.8} fill="white" />
-                          <Circle cx={-6.2} cy={-2.2} r={0.4} fill="#0D1117" />
-                          <Path d="M-1 -2 Q4 -8 9 -3 Q4 0 0 0" fill="#FFEE58" opacity={0.6} />
+                        {/* Colombe 3 — petite, plus haute */}
+                        <G transform={`translate(-12, ${walkProg > 0.65 ? -30 : -8}) scale(0.9)`}>
+                          <Ellipse cx={0} cy={0} rx={5} ry={2.5} fill="white" opacity={0.7} />
+                          <Circle cx={-4} cy={-1} r={2.5} fill="white" opacity={0.7} />
+                          <Path d="M-1 -2 Q0 -7 6 -3 Q3 -1 0 0" fill="white" opacity={0.5} />
                         </G>
                       </G>
 
@@ -1346,6 +1341,16 @@ const ActivityPage = ({ onNavigate }) => {
                         <Ellipse cx={0} cy={6} rx={22} ry={14} fill="#4FC3F7" opacity={0.2} />
                         <Ellipse cx={0} cy={6} rx={18} ry={10} fill="#29B6F6" opacity={0.15} />
                         <Path d="M-14 5 Q-7 2 0 5 Q7 8 14 5" fill="none" stroke="#4FC3F7" strokeWidth={1} opacity={0.3} />
+                        {walkProg > 0.88 && (
+                          <>
+                            <Circle cx={-3} cy={-6} r={1.5} fill="#4FC3F7" opacity={0.6} />
+                            <Circle cx={4} cy={-8} r={1} fill="#4FC3F7" opacity={0.5} />
+                            <Circle cx={-6} cy={-4} r={1} fill="#4FC3F7" opacity={0.4} />
+                            <Circle cx={7} cy={-5} r={0.8} fill="#4FC3F7" opacity={0.4} />
+                            <Path d="M-15 6 Q-8 3 0 6 Q8 9 15 6" fill="none" stroke="#4FC3F7" strokeWidth={1} opacity={0.4} />
+                            <Ellipse cx={0} cy={5} rx={20} ry={12} fill="#4FC3F7" opacity={0.08} />
+                          </>
+                        )}
                         <Ellipse cx={-12} cy={9} rx={4} ry={2} fill="#66BB6A" opacity={0.5} />
                         <Circle cx={-12} cy={8} r={1.5} fill="#F48FB1" opacity={0.5} />
                         <Ellipse cx={10} cy={12} rx={3} ry={1.5} fill="#66BB6A" opacity={0.4} />
@@ -1362,31 +1367,31 @@ const ActivityPage = ({ onNavigate }) => {
                         <Ellipse cx={18} cy={-6} rx={1.5} ry={2.5} fill="#8D6E63" opacity={0.25} />
                       </G>
 
-                      {/* TRACES DE PAS — 8 empreintes DERRIÈRE le centre */}
+                      {/* TRACES DE PAS — noires, droites, visibles */}
                       {(() => {
                         const prints = [];
                         for (let i = 0; i < 8; i++) {
-                          const px = centerX - (i + 1) * 22;
-                          if (px < 0) continue;
+                          const dist = (i + 1) * 22;
+                          const px = centerX - dist;
+                          if (px < 40) continue;
+                          const sceneProgress = px / WALK_SCENE_W;
+                          if (sceneProgress > walkProg) continue;
                           const isRight = i % 2 === 0;
-                          const y = pathY + (isRight ? -3 : 3) + Math.sin(px * 0.02) * 3;
-                          const opacity = Math.max(0, 0.6 - i * 0.07);
-                          const angle = isRight ? 87 : 93;
+                          const y = pathY + 5;
+                          const opacity = Math.max(0.08, 0.55 - i * 0.06);
                           prints.push(
-                            <G key={`wfp-${i}`} opacity={opacity} transform={`translate(${px}, ${y}) rotate(${angle})`}>
-                              <Ellipse cx={0} cy={0} rx={2.5} ry={4.5} fill="#5D4037" opacity={0.4} />
-                              <Circle cx={isRight ? 1 : -1} cy={-4.5} r={1} fill="#5D4037" opacity={0.35} />
-                              <Circle cx={0} cy={-5} r={1} fill="#5D4037" opacity={0.35} />
-                              <Circle cx={isRight ? -1 : 1} cy={-4.5} r={1} fill="#5D4037" opacity={0.35} />
+                            <G key={`wfp-${i}`} opacity={opacity}
+                              transform={`translate(${px}, ${y}) rotate(${isRight ? 85 : 95})`}>
+                              <Ellipse cx={0} cy={0} rx={2.5} ry={4.5} fill="#1A1A1A" opacity={0.7} />
+                              <Circle cx={1} cy={-4.5} r={1} fill="#1A1A1A" opacity={0.6} />
+                              <Circle cx={0} cy={-5} r={1} fill="#1A1A1A" opacity={0.6} />
+                              <Circle cx={-1} cy={-4.5} r={1} fill="#1A1A1A" opacity={0.6} />
                             </G>
                           );
                         }
                         return prints;
                       })()}
 
-                      {/* Point position actuelle — émeraude */}
-                      <Circle cx={centerX} cy={pathY + 2} r={5} fill="#00D984" opacity={0.9} />
-                      <Circle cx={centerX} cy={pathY + 2} r={8} fill="#00D984" opacity={0.2} />
                     </>
                   );
                 })()}
@@ -1406,13 +1411,76 @@ const ActivityPage = ({ onNavigate }) => {
               />
             </View>
 
-            {/* Mini barre de progression */}
-            <View style={{ height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.06)', marginTop: wp(8), marginBottom: wp(6) }}>
-              <View style={{ height: 4, borderRadius: 2, backgroundColor: '#00D984', width: `${Math.round(walkProg * 100)}%`, opacity: 0.8 }} />
+            {/* BOUTON RADIO VINTAGE — contrôle le défilement */}
+            <View style={{ marginTop: wp(4), marginBottom: wp(4), paddingHorizontal: wp(4) }}>
+              {/* Rail du slider */}
+              <View style={{ height: wp(6), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(3), justifyContent: 'center' }}>
+                {/* Rail rempli */}
+                <View style={{ position: 'absolute', left: 0, height: '100%', width: `${walkProg * 100}%`, backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(3) }} />
+                {/* Graduations */}
+                {[0.2, 0.4, 0.6, 0.8].map((p, i) => (
+                  <View key={`grad-${i}`} style={{
+                    position: 'absolute', left: `${p * 100}%`,
+                    width: 1, height: wp(4), backgroundColor: 'rgba(255,255,255,0.08)',
+                  }} />
+                ))}
+              </View>
+
+              {/* Zone tactile élargie */}
+              <View
+                style={{
+                  position: 'absolute', top: -wp(15), left: 0, right: 0, bottom: -wp(15),
+                }}
+                onStartShouldSetResponder={() => true}
+                onMoveShouldSetResponder={() => true}
+                onResponderGrant={(evt) => {
+                  setWalkTouchStartX(evt.nativeEvent.locationX);
+                  setWalkScrollStart(walkScrollOffset);
+                }}
+                onResponderMove={(evt) => {
+                  const containerWidth = walkCanvasW;
+                  const x = evt.nativeEvent.locationX;
+                  const ratio = Math.max(0, Math.min(1, x / containerWidth));
+                  const maxS = WALK_SCENE_W - walkCanvasW;
+                  setWalkScrollOffset(ratio * maxS);
+                }}
+              />
+
+              {/* Le BOUTON physique — rond métallique avec rainures */}
+              <View style={{
+                position: 'absolute',
+                left: `${walkProg * 100}%`,
+                top: -wp(10),
+                marginLeft: -wp(14),
+                width: wp(28),
+                height: wp(28),
+                borderRadius: wp(14),
+                backgroundColor: '#3A3F46',
+                borderWidth: 2,
+                borderColor: '#5A6070',
+                justifyContent: 'center',
+                alignItems: 'center',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 3 },
+                shadowOpacity: 0.5,
+                shadowRadius: 6,
+                elevation: 8,
+              }}>
+                {/* Rainures du bouton (style vintage) */}
+                <View style={{ width: wp(16), height: 1.5, backgroundColor: '#8892A0', borderRadius: 1, marginBottom: 2, opacity: 0.4 }} />
+                <View style={{ width: wp(12), height: 1.5, backgroundColor: '#8892A0', borderRadius: 1, marginBottom: 2, opacity: 0.3 }} />
+                <View style={{ width: wp(16), height: 1.5, backgroundColor: '#8892A0', borderRadius: 1, opacity: 0.4 }} />
+                {/* Point central émeraude */}
+                <View style={{
+                  position: 'absolute',
+                  width: wp(6), height: wp(6), borderRadius: wp(3),
+                  backgroundColor: '#00D984', opacity: 0.8,
+                }} />
+              </View>
             </View>
 
             {/* Aller/Retour + durée */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(10) }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(4) }}>
               <Pressable onPress={() => setWalkRoundTrip(!walkRoundTrip)}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
@@ -1450,13 +1518,13 @@ const ActivityPage = ({ onNavigate }) => {
               }}
               disabled={walkSaved || walkScrollOffset === 0}
               style={({ pressed }) => ({
-                paddingVertical: wp(12),
-                borderRadius: 14,
+                paddingVertical: wp(9),
+                borderRadius: 12,
                 backgroundColor: walkSaved ? '#00D984' : walkScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
                 alignItems: 'center',
               })}
             >
-              <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
+              <Text style={{ color: '#0D1117', fontSize: fp(12), fontWeight: '800' }}>
                 {walkSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` MARCHE — ${walkCal} kcal`}
               </Text>
             </Pressable>
@@ -1472,9 +1540,9 @@ const ActivityPage = ({ onNavigate }) => {
                 marginBottom: wp(4),
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <RunShoeIcon size={wp(18)} />
+                  <RunShoeIcon size={wp(16)} />
                   <Text style={{
-                    color: '#EAEEF3', fontSize: fp(14), fontWeight: '800',
+                    color: '#EAEEF3', fontSize: fp(13), fontWeight: '800',
                     letterSpacing: 1.5, marginLeft: wp(6),
                   }}>
                     COURSE
@@ -1499,10 +1567,10 @@ const ActivityPage = ({ onNavigate }) => {
               {/* Value display — FIX 4: formatted durations */}
               <View style={{
                 flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline',
-                marginTop: wp(10), paddingHorizontal: wp(4),
+                marginTop: wp(6), paddingHorizontal: wp(4),
               }}>
                 <View>
-                  <Text style={{ color: '#FF8C42', fontSize: fp(22), fontWeight: '900' }}>
+                  <Text style={{ color: '#FF8C42', fontSize: fp(18), fontWeight: '900' }}>
                     {formatDistance(runDistDisplay * 1000)}
                   </Text>
                   {runMode === 'temps' && (
@@ -1512,7 +1580,7 @@ const ActivityPage = ({ onNavigate }) => {
                   )}
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ color: '#FF8C42', fontSize: fp(18), fontWeight: '900' }}>
+                  <Text style={{ color: '#FF8C42', fontSize: fp(14), fontWeight: '900' }}>
                     {runCalories} kcal
                   </Text>
                   <Text style={{ color: '#555E6C', fontSize: fp(9), marginTop: wp(2) }}>
@@ -1527,9 +1595,9 @@ const ActivityPage = ({ onNavigate }) => {
                 activeOpacity={0.7}
                 style={{
                   backgroundColor: runSaved ? '#2ECC71' : '#FF8C42',
-                  borderRadius: wp(12),
-                  paddingVertical: wp(11), alignItems: 'center',
-                  marginTop: wp(14),
+                  borderRadius: 12,
+                  paddingVertical: wp(9), alignItems: 'center',
+                  marginTop: wp(6),
                 }}
               >
                 <Text style={{ color: '#000', fontSize: fp(12), fontWeight: '800' }}>
