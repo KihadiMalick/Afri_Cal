@@ -4,7 +4,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  Image, Platform, Animated,
+  Image, Platform, Animated, KeyboardAvoidingView,
   Dimensions, StatusBar, SafeAreaView, ActivityIndicator,
   FlatList, PixelRatio, Keyboard, Pressable,
 } from 'react-native';
@@ -345,14 +345,14 @@ const HologramCard = ({ icon, title, subtitle, color, onPress }) => {
 // LIXMAN HOLOGRAMME VIVANT
 // ============================================
 const LixManHologram = ({ todaySummary, userProfile, onMediBookPress, onSecretPocketPress }) => {
-  const haloAnim = useRef(new Animated.Value(0.3)).current;
+  const haloAnim = useRef(new Animated.Value(0.15)).current;
   const orbitAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(haloAnim, { toValue: 0.7, duration: 2500, useNativeDriver: false }),
-        Animated.timing(haloAnim, { toValue: 0.3, duration: 2500, useNativeDriver: false }),
+        Animated.timing(haloAnim, { toValue: 0.35, duration: 2500, useNativeDriver: false }),
+        Animated.timing(haloAnim, { toValue: 0.15, duration: 2500, useNativeDriver: false }),
       ])
     ).start();
 
@@ -562,7 +562,7 @@ const ThinkingIndicator = () => {
   }, []);
 
   return (
-    <View style={{ alignSelf: 'flex-start', marginBottom: 10, maxWidth: '80%' }}>
+    <View style={{ alignSelf: 'flex-start', marginBottom: 10, maxWidth: '85%' }}>
       {/* Avatar */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, marginLeft: 4 }}>
         <Image
@@ -586,7 +586,7 @@ const ThinkingIndicator = () => {
         borderLeftColor: '#00D984',
       }}>
         {/* Ligne cerveau + texte */}
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           {/* Cerveau qui pulse */}
           <Animated.View style={{
             width: 32,
@@ -612,7 +612,7 @@ const ThinkingIndicator = () => {
             <Text style={{ color: '#00D984', fontSize: 12, fontWeight: 'bold' }}>
               Analyse en cours
             </Text>
-            <Text style={{ color: '#555', fontSize: 9, marginTop: 2 }}>
+            <Text style={{ color: '#555', fontSize: 9, marginTop: 2 }} numberOfLines={1}>
               Consultation de vos données...
             </Text>
           </View>
@@ -762,9 +762,11 @@ export default function MedicAiPage() {
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => {
       setKeyboardVisible(true);
-      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 150);
     });
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardVisible(false);
+    });
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
@@ -1037,12 +1039,17 @@ ${mealsList}
       </View>
 
       {/* ===== ZONE DE CHAT ===== */}
-      <View style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
         <ScrollView
           ref={scrollViewRef}
           style={{ flex: 1, paddingHorizontal: 16 }}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={{ paddingBottom: 10 }}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          keyboardShouldPersistTaps="handled"
         >
           {/* LIXMAN HOLOGRAMME — Toujours visible */}
           <LixManHologram
@@ -1190,7 +1197,7 @@ ${mealsList}
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </KeyboardAvoidingView>
 
       {/* ===== BOTTOM TAB BAR ===== */}
       {!keyboardVisible && (
