@@ -1,21 +1,17 @@
 // ──────────────────────────────────────────────────────────────────────────────
-// MedicAiPage.js — LIXUM MedicAi : Réseau Synaptique à Balles Métalliques
-// Redesign : Fond PCB, ALIXEN cerveau, circuits, dossiers métal, boules 3 états
+// MedicAiPage.js — MedicAi : Thème Cabinet Médical + Constellation Libre
+// Fond gris clair, boules neumorphiques, positionnement force-directed
 // ──────────────────────────────────────────────────────────────────────────────
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   Image, Platform, Animated, KeyboardAvoidingView,
-  Dimensions, StatusBar, SafeAreaView, ActivityIndicator,
-  FlatList, PixelRatio, Keyboard, Pressable,
+  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable,
 } from 'react-native';
 import Svg, {
-  G, Line, Circle, Path, Rect, Ellipse, Defs,
+  Defs, Rect, Path, Circle,
   LinearGradient as SvgLinearGradient, Stop,
-  Text as SvgText,
-  Polygon, Circle as SvgCircle,
 } from 'react-native-svg';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -133,7 +129,6 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
 
 // ============================================
 // RENDU FORMATÉ — Markdown + Liens Recettes
-// Gère : **bold**, - listes, [RECETTE:nom], sauts de ligne
 // ============================================
 const FormattedText = ({ text, style, onRecipePress }) => {
   if (!text) return null;
@@ -147,7 +142,6 @@ const FormattedText = ({ text, style, onRecipePress }) => {
           return <View key={lineIndex} style={{ height: 6 }} />;
         }
 
-        // Détecter [RECETTE:nom_du_plat]
         const recipeMatch = line.match(/\[RECETTE:(.*?)\]/);
         if (recipeMatch) {
           const recipeName = recipeMatch[1];
@@ -181,11 +175,9 @@ const FormattedText = ({ text, style, onRecipePress }) => {
           );
         }
 
-        // Ligne "- " = puce de liste
         const isBullet = line.trim().startsWith('- ');
         const cleanLine = isBullet ? line.trim().substring(2) : line;
 
-        // Parser **bold**
         const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
 
         return (
@@ -196,7 +188,7 @@ const FormattedText = ({ text, style, onRecipePress }) => {
             {parts.map((part, partIndex) => {
               if (part.startsWith('**') && part.endsWith('**')) {
                 return (
-                  <Text key={partIndex} style={[style, { fontWeight: 'bold', color: '#FFF' }]}>
+                  <Text key={partIndex} style={[style, { fontWeight: 'bold', color: '#1A2030' }]}>
                     {part.slice(2, -2)}
                   </Text>
                 );
@@ -210,230 +202,72 @@ const FormattedText = ({ text, style, onRecipePress }) => {
   );
 };
 
+// ============================================
+// DOCTOR HEADER — Image paysage lixman-doctor.png
+// ============================================
+const DoctorHeader = () => (
+  <View style={{
+    width: SCREEN_WIDTH,
+    height: SCREEN_WIDTH * 0.42,
+    backgroundColor: '#DDE2E8',
+    overflow: 'hidden',
+  }}>
+    <Image
+      source={require('./assets/lixman-doctor.png')}
+      style={{
+        width: SCREEN_WIDTH,
+        height: SCREEN_WIDTH * 0.42,
+      }}
+      resizeMode="cover"
+    />
+    {/* Dégradé de fondu en bas pour transition douce vers le fond */}
+    <View style={{
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 25,
+    }}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(232,236,240,0.0)' }} />
+      <View style={{ flex: 1, backgroundColor: 'rgba(232,236,240,0.3)' }} />
+      <View style={{ flex: 1, backgroundColor: 'rgba(232,236,240,0.6)' }} />
+      <View style={{ flex: 1, backgroundColor: 'rgba(232,236,240,0.85)' }} />
+      <View style={{ flex: 1, backgroundColor: 'rgba(232,236,240,1)' }} />
+    </View>
+  </View>
+);
 
 // ============================================
-// ALIXEN HEADER — Image paysage + Particules animées
+// LOADING DOTS (3 points qui pulsent en séquence)
 // ============================================
-const AlixenHeader = () => {
-  const particles = useRef(
-    Array.from({ length: 40 }, () => ({
-      x: Math.random() * SCREEN_WIDTH,
-      y: Math.random() * 90,
-      size: 1.5 + Math.random() * 5,
-      color: ['rgba(160,130,210,A)', 'rgba(210,180,80,A)', 'rgba(0,200,210,A)', 'rgba(180,190,200,A)', 'rgba(0,217,132,A)', 'rgba(200,100,160,A)'][Math.floor(Math.random() * 6)]
-        .replace('A', (0.08 + Math.random() * 0.2).toFixed(2)),
-      animX: new Animated.Value(Math.random()),
-      animY: new Animated.Value(Math.random()),
-      animOpacity: new Animated.Value(0.05 + Math.random() * 0.1),
-      ampX: 2 + Math.random() * 6,
-      ampY: 1.5 + Math.random() * 5,
-      durationX: 3000 + Math.random() * 5000,
-      durationY: 3500 + Math.random() * 4500,
-      minOpacity: 0.03 + Math.random() * 0.06,
-      maxOpacity: 0.1 + Math.random() * 0.25,
-      pulseDuration: 2000 + Math.random() * 4000,
-    }))
-  ).current;
+const LoadingDots = () => {
+  const anims = [
+    useRef(new Animated.Value(0.3)).current,
+    useRef(new Animated.Value(0.3)).current,
+    useRef(new Animated.Value(0.3)).current,
+  ];
 
   useEffect(() => {
-    particles.forEach((p) => {
+    anims.forEach((a, i) => {
       Animated.loop(Animated.sequence([
-        Animated.timing(p.animX, { toValue: 1, duration: p.durationX, useNativeDriver: true }),
-        Animated.timing(p.animX, { toValue: 0, duration: p.durationX, useNativeDriver: true }),
-      ])).start();
-      Animated.loop(Animated.sequence([
-        Animated.timing(p.animY, { toValue: 1, duration: p.durationY, useNativeDriver: true }),
-        Animated.timing(p.animY, { toValue: 0, duration: p.durationY, useNativeDriver: true }),
-      ])).start();
-      Animated.loop(Animated.sequence([
-        Animated.timing(p.animOpacity, { toValue: p.maxOpacity, duration: p.pulseDuration, useNativeDriver: true }),
-        Animated.timing(p.animOpacity, { toValue: p.minOpacity, duration: p.pulseDuration, useNativeDriver: true }),
+        Animated.delay(i * 200),
+        Animated.timing(a, { toValue: 1, duration: 400, useNativeDriver: false }),
+        Animated.timing(a, { toValue: 0.3, duration: 400, useNativeDriver: false }),
       ])).start();
     });
   }, []);
 
   return (
-    <View style={{
-      width: SCREEN_WIDTH,
-      height: 95,
-      backgroundColor: '#080E18',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* Particules DERRIÈRE l'image */}
-      {particles.filter((_, i) => i < 20).map((p, i) => (
-        <Animated.View key={`bp-${i}`} style={{
-          position: 'absolute',
-          left: p.x,
-          top: p.y,
-          width: p.size,
-          height: p.size,
-          borderRadius: p.size / 2,
-          backgroundColor: p.color,
-          opacity: p.animOpacity,
-          transform: [
-            { translateX: p.animX.interpolate({ inputRange: [0, 1], outputRange: [-p.ampX, p.ampX] }) },
-            { translateY: p.animY.interpolate({ inputRange: [0, 1], outputRange: [-p.ampY, p.ampY] }) },
-          ],
-        }} />
-      ))}
-
-      {/* Image ALIXEN en paysage */}
-      <Image
-        source={require('./assets/alixen-header.png')}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: SCREEN_WIDTH,
-          height: 95,
-        }}
-        resizeMode="cover"
-      />
-
-      {/* Particules DEVANT l'image (faible opacité) */}
-      {particles.filter((_, i) => i >= 20).map((p, i) => (
-        <Animated.View key={`fp-${i}`} style={{
-          position: 'absolute',
-          left: p.x,
-          top: p.y,
-          width: p.size,
-          height: p.size,
-          borderRadius: p.size / 2,
-          backgroundColor: p.color,
-          opacity: p.animOpacity,
-          transform: [
-            { translateX: p.animX.interpolate({ inputRange: [0, 1], outputRange: [-p.ampX, p.ampX] }) },
-            { translateY: p.animY.interpolate({ inputRange: [0, 1], outputRange: [-p.ampY, p.ampY] }) },
-          ],
-        }} />
-      ))}
-
-      {/* Dégradé de fondu en bas */}
-      <View style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 20,
-        backgroundColor: 'transparent',
-      }}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(30,37,48,0.3)' }} />
-        <View style={{ flex: 1, backgroundColor: 'rgba(30,37,48,0.6)' }} />
-        <View style={{ flex: 1, backgroundColor: 'rgba(30,37,48,0.9)' }} />
-      </View>
-
-      {/* Nom ALIXEN */}
-      <View style={{ position: 'absolute', bottom: 6, left: 0, right: 0, alignItems: 'center' }}>
-        <Text style={{ color: 'rgba(0,217,132,0.5)', fontSize: 10, fontWeight: 'bold', letterSpacing: 5 }}>
-          ALIXEN
-        </Text>
-      </View>
-    </View>
-  );
-};
-
-// ============================================
-// CADRE MÉTALLIQUE AVEC CREUX
-// ============================================
-const MetalFrame = ({ children }) => (
-  <View style={{
-    flex: 1,
-    marginHorizontal: 8,
-    marginTop: 4,
-    marginBottom: 4,
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(20,25,35,0.5)',
-    borderWidth: 1.5,
-    borderColor: '#3A3F46',
-  }}>
-    {/* Effet de creux — ombre intérieure en haut */}
-    <View style={{
-      position: 'absolute',
-      top: 0, left: 0, right: 0,
-      height: 6,
-      backgroundColor: 'rgba(0,0,0,0.15)',
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
-      zIndex: 1,
-    }} />
-
-    {/* Effet de creux — ombre intérieure en bas */}
-    <View style={{
-      position: 'absolute',
-      bottom: 0, left: 0, right: 0,
-      height: 6,
-      backgroundColor: 'rgba(0,0,0,0.1)',
-      borderBottomLeftRadius: 16,
-      borderBottomRightRadius: 16,
-      zIndex: 1,
-    }} />
-
-    {/* Reflet subtil sur le bord gauche */}
-    <View style={{
-      position: 'absolute',
-      top: 10, left: 0,
-      width: 1,
-      height: '80%',
-      backgroundColor: 'rgba(255,255,255,0.03)',
-      zIndex: 1,
-    }} />
-
-    {/* Reflet subtil sur le bord droit */}
-    <View style={{
-      position: 'absolute',
-      top: 10, right: 0,
-      width: 1,
-      height: '80%',
-      backgroundColor: 'rgba(255,255,255,0.03)',
-      zIndex: 1,
-    }} />
-
-    {children}
-  </View>
-);
-
-// ============================================
-// DOTS DE CHARGEMENT (3 points qui pulsent en séquence)
-// ============================================
-const LoadingDots = () => {
-  const dot1 = useRef(new Animated.Value(0.3)).current;
-  const dot2 = useRef(new Animated.Value(0.3)).current;
-  const dot3 = useRef(new Animated.Value(0.3)).current;
-
-  useEffect(() => {
-    const animate = (dot, delay) => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(dot, { toValue: 1, duration: 400, useNativeDriver: false }),
-          Animated.timing(dot, { toValue: 0.3, duration: 400, useNativeDriver: false }),
-        ])
-      ).start();
-    };
-    animate(dot1, 0);
-    animate(dot2, 200);
-    animate(dot3, 400);
-  }, []);
-
-  return (
     <View style={{ flexDirection: 'row', gap: 6, paddingVertical: 4 }}>
-      {[dot1, dot2, dot3].map((dot, i) => (
-        <Animated.View key={i} style={{
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: '#00D984',
-          opacity: dot,
-        }} />
+      {anims.map((a, i) => (
+        <Animated.View key={i} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#00D984', opacity: a }} />
       ))}
     </View>
   );
 };
 
 // ============================================
-// CARTE DE RÉPONSE — Messages alternés user/IA
+// RESPONSE CARD — Carte blanche en bas
 // ============================================
 const ResponseCard = ({ currentMessage, isLoading, isUserMessage }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -442,26 +276,22 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage }) => {
   useEffect(() => {
     if (currentMessage || isLoading) {
       fadeAnim.setValue(0);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }).start();
+      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
     }
   }, [currentMessage, isLoading]);
 
+  // Effet machine à écrire pour les réponses IA
   useEffect(() => {
     if (currentMessage && !isUserMessage && !isLoading) {
       setDisplayedText('');
-      const text = currentMessage;
       let idx = 0;
       const interval = setInterval(() => {
         idx += 2;
-        if (idx >= text.length) {
-          setDisplayedText(text);
+        if (idx >= currentMessage.length) {
+          setDisplayedText(currentMessage);
           clearInterval(interval);
         } else {
-          setDisplayedText(text.substring(0, idx));
+          setDisplayedText(currentMessage.substring(0, idx));
         }
       }, 15);
       return () => clearInterval(interval);
@@ -475,296 +305,72 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage }) => {
   return (
     <Animated.View style={{
       opacity: fadeAnim,
-      marginHorizontal: 12,
+      marginHorizontal: 10,
       marginBottom: 8,
-      borderRadius: 14,
-      overflow: 'hidden',
-      backgroundColor: '#252A30',
+      borderRadius: 16,
+      backgroundColor: '#FFF',
       borderWidth: 1,
-      borderColor: isLoading ? 'rgba(0,217,132,0.2)' : (isUserMessage ? 'rgba(77,166,255,0.2)' : 'rgba(232,64,64,0.2)'),
+      borderColor: isLoading ? 'rgba(0,200,130,0.1)' : (isUserMessage ? 'rgba(70,140,220,0.1)' : 'rgba(210,80,80,0.1)'),
+      padding: 14,
+      minHeight: 50,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.25,
-      shadowRadius: 5,
-      elevation: 5,
-      minHeight: 60,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 6,
+      elevation: 2,
     }}>
-      {/* Reflet métallique */}
-      <View style={{
-        position: 'absolute',
-        top: 0, left: 0, right: 0,
-        height: 20,
-        borderTopLeftRadius: 14,
-        borderTopRightRadius: 14,
-        backgroundColor: 'rgba(255,255,255,0.03)',
-      }} />
-
-      <View style={{ padding: 14 }}>
-        {/* Indicateur qui parle */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-          <View style={{
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: isLoading ? '#00D984' : (isUserMessage ? '#4DA6FF' : '#E84040'),
-            marginRight: 6,
-          }} />
-          <Text style={{
-            color: isLoading ? 'rgba(0,217,132,0.5)' : (isUserMessage ? 'rgba(77,166,255,0.5)' : 'rgba(232,64,64,0.5)'),
-            fontSize: 9,
-            fontWeight: 'bold',
-            letterSpacing: 1,
-          }}>
-            {isLoading ? 'ALIXEN R\u00C9FL\u00C9CHIT...' : (isUserMessage ? 'VOUS' : 'ALIXEN')}
-          </Text>
-        </View>
-
-        {/* Contenu */}
-        {isLoading ? (
-          <LoadingDots />
-        ) : (
-          <Text style={{
-            color: 'rgba(220,225,230,0.85)',
-            fontSize: 13,
-            lineHeight: 20,
-          }}>
-            {displayedText}
-            {!isUserMessage && displayedText.length < (currentMessage || '').length && (
-              <Text style={{ color: '#00D984' }}>|</Text>
-            )}
-          </Text>
-        )}
+      {/* Indicateur */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+        <View style={{
+          width: 7, height: 7, borderRadius: 3.5,
+          backgroundColor: isLoading ? '#00D984' : (isUserMessage ? '#4A8CDC' : '#D06060'),
+        }} />
+        <Text style={{
+          color: isLoading ? 'rgba(0,170,120,0.5)' : (isUserMessage ? 'rgba(70,130,210,0.5)' : 'rgba(200,80,80,0.5)'),
+          fontSize: 9, fontWeight: '600', letterSpacing: 1,
+        }}>
+          {isLoading ? 'ALIXEN R\u00C9FL\u00C9CHIT...' : (isUserMessage ? 'VOUS' : 'ALIXEN')}
+        </Text>
       </View>
+
+      {/* Contenu */}
+      {isLoading ? (
+        <LoadingDots />
+      ) : (
+        <Text style={{ color: '#3A4550', fontSize: 13, lineHeight: 20 }}>
+          {displayedText}
+          {!isUserMessage && displayedText.length < (currentMessage || '').length && (
+            <Text style={{ color: '#00D984' }}>|</Text>
+          )}
+        </Text>
+      )}
     </Animated.View>
   );
 };
 
 // ============================================
-// CIRCUITS DE CONNEXION (Y-split)
+// NEUMORPH BALL — Boule neumorphique cabinet médical
 // ============================================
-const CircuitConnectors = () => {
-  const pulseAnim = useRef(new Animated.Value(0)).current;
+const NeumorphBall = ({ index, isBot, isSearchHit, status, onPress }) => {
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const wobbleX = useRef(new Animated.Value(0)).current;
+  const wobbleY = useRef(new Animated.Value(0)).current;
+  const loadPulse = useRef(new Animated.Value(0.3)).current;
+
+  const BALL_SIZE = 30;
 
   useEffect(() => {
-    Animated.loop(
-      Animated.timing(pulseAnim, { toValue: 1, duration: 2500, useNativeDriver: false })
-    ).start();
-  }, []);
-
-  const dotOpacity = pulseAnim.interpolate({
-    inputRange: [0, 0.25, 0.5, 0.75, 1],
-    outputRange: [0.2, 0.6, 0.2, 0.6, 0.2],
-  });
-
-  return (
-    <View style={{ alignItems: 'center', marginBottom: 2 }}>
-      {/* Ligne verticale depuis ALIXEN */}
-      <View style={{ width: 1.5, height: 10, backgroundColor: 'rgba(0,220,210,0.25)' }} />
-
-      {/* Point de jonction central (gros, pulsant) */}
-      <Animated.View style={{
-        width: 7,
-        height: 7,
-        borderRadius: 3.5,
-        backgroundColor: 'rgba(0,220,210,0.55)',
-        opacity: dotOpacity,
-        marginVertical: 1,
-      }} />
-
-      {/* Branches horizontales + verticales vers MediBook et SecretPocket */}
-      <View style={{
-        flexDirection: 'row',
-        width: SCREEN_WIDTH - 60,
-        alignSelf: 'center',
-        height: 20,
-        position: 'relative',
-      }}>
-        {/* Ligne horizontale GAUCHE — du centre vers le centre de MediBook */}
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '50%',
-          height: 1.5,
-          backgroundColor: 'rgba(0,220,210,0.25)',
-        }} />
-
-        {/* Ligne verticale qui descend à gauche */}
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: '25%',
-          width: 1.5,
-          height: 20,
-          backgroundColor: 'rgba(0,220,210,0.25)',
-        }} />
-
-        {/* Point en bas à gauche (au-dessus de MediBook) */}
-        <View style={{
-          position: 'absolute',
-          bottom: 0,
-          left: '25%',
-          marginLeft: -2.5,
-          width: 5,
-          height: 5,
-          borderRadius: 2.5,
-          backgroundColor: 'rgba(0,220,210,0.55)',
-        }} />
-
-        {/* Ligne horizontale DROITE — du centre vers le centre de SecretPocket */}
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '50%',
-          height: 1.5,
-          backgroundColor: 'rgba(0,220,210,0.25)',
-        }} />
-
-        {/* Ligne verticale qui descend à droite */}
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          right: '25%',
-          width: 1.5,
-          height: 20,
-          backgroundColor: 'rgba(212,175,55,0.25)',
-        }} />
-
-        {/* Point en bas à droite (au-dessus de SecretPocket) */}
-        <View style={{
-          position: 'absolute',
-          bottom: 0,
-          right: '25%',
-          marginRight: -2.5,
-          width: 5,
-          height: 5,
-          borderRadius: 2.5,
-          backgroundColor: 'rgba(212,175,55,0.5)',
-        }} />
-
-        {/* POINT LUMINEUX QUI VOYAGE à gauche */}
-        <Animated.View style={{
-          position: 'absolute',
-          top: -2,
-          left: pulseAnim.interpolate({
-            inputRange: [0, 0.5, 1],
-            outputRange: ['48%', '23%', '48%'],
-          }),
-          width: 5,
-          height: 5,
-          borderRadius: 2.5,
-          backgroundColor: 'rgba(0,240,220,0.6)',
-          opacity: dotOpacity,
-        }} />
-
-        {/* POINT LUMINEUX QUI VOYAGE à droite */}
-        <Animated.View style={{
-          position: 'absolute',
-          top: -2,
-          right: pulseAnim.interpolate({
-            inputRange: [0, 0.5, 1],
-            outputRange: ['48%', '23%', '48%'],
-          }),
-          width: 5,
-          height: 5,
-          borderRadius: 2.5,
-          backgroundColor: 'rgba(0,240,220,0.6)',
-          opacity: dotOpacity,
-        }} />
-      </View>
-    </View>
-  );
-};
-
-// ============================================
-// DOSSIER MÉTALLIQUE
-// ============================================
-const MetalFolder = ({ title, subtitle, borderColor, onPress, accentColor }) => (
-  <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={{
-    flex: 1,
-    marginHorizontal: 4,
-    borderRadius: 14,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 6,
-  }}>
-    {/* Fond dégradé métallique */}
-    <View style={{
-      backgroundColor: '#2D3238',
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: borderColor || 'rgba(80,85,92,0.3)',
-      padding: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: 65,
-    }}>
-      {/* Reflet métallique en haut */}
-      <View style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 25,
-        borderTopLeftRadius: 14,
-        borderTopRightRadius: 14,
-        backgroundColor: 'rgba(255,255,255,0.04)',
-      }} />
-
-      {/* Ombre intérieure en bas */}
-      <View style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 20,
-        borderBottomLeftRadius: 14,
-        borderBottomRightRadius: 14,
-        backgroundColor: 'rgba(0,0,0,0.08)',
-      }} />
-
-      {/* Barre de couleur accent en haut */}
-      <View style={{
-        position: 'absolute',
-        top: 0,
-        left: 25,
-        right: 25,
-        height: 2.5,
-        borderRadius: 1,
-        backgroundColor: accentColor || '#00D984',
-        opacity: 0.6,
-      }} />
-
-      <Text style={{ color: accentColor || '#00D984', fontSize: 14, fontWeight: 'bold' }}>
-        {title}
-      </Text>
-      <Text style={{ color: 'rgba(200,205,210,0.5)', fontSize: 9, marginTop: 3 }}>
-        {subtitle}
-      </Text>
-    </View>
-  </TouchableOpacity>
-);
-
-// ============================================
-// BALLE MÉTALLIQUE — 3 états : loading, unread, read
-// ============================================
-const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
-  const scaleAnim = useRef(new Animated.Value(isNew ? 0 : 1)).current;
-  const wobbleAnim = useRef(new Animated.Value(0)).current;
-  const loadPulse = useRef(new Animated.Value(0.2)).current;
-
-  useEffect(() => {
-    if (isNew) {
-      Animated.spring(scaleAnim, { toValue: 1, friction: 5, tension: 100, useNativeDriver: true }).start();
-    }
-    const dur = 3000 + (index % 5) * 500;
+    // Entrée avec spring
+    Animated.spring(scaleAnim, { toValue: 1, friction: 5, tension: 80, useNativeDriver: true }).start();
+    // Wobble continu
+    const dur = 2500 + (index % 5) * 500;
     Animated.loop(Animated.sequence([
-      Animated.timing(wobbleAnim, { toValue: 1, duration: dur / 2, useNativeDriver: true }),
-      Animated.timing(wobbleAnim, { toValue: 0, duration: dur / 2, useNativeDriver: true }),
+      Animated.timing(wobbleX, { toValue: 1, duration: dur, useNativeDriver: true }),
+      Animated.timing(wobbleX, { toValue: 0, duration: dur, useNativeDriver: true }),
+    ])).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(wobbleY, { toValue: 1, duration: dur * 0.8, useNativeDriver: true }),
+      Animated.timing(wobbleY, { toValue: 0, duration: dur * 0.8, useNativeDriver: true }),
     ])).start();
   }, []);
 
@@ -772,362 +378,230 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
     if (status === 'loading') {
       Animated.loop(Animated.sequence([
         Animated.timing(loadPulse, { toValue: 0.8, duration: 500, useNativeDriver: false }),
-        Animated.timing(loadPulse, { toValue: 0.2, duration: 500, useNativeDriver: false }),
+        Animated.timing(loadPulse, { toValue: 0.3, duration: 500, useNativeDriver: false }),
       ])).start();
-    } else {
-      loadPulse.setValue(1);
     }
   }, [status]);
 
-  const wobbleY = wobbleAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -1.5] });
-
-  // Couleurs selon status
-  let borderColor, glowColor;
-  if (isHighlighted) {
-    // Surbrillance VERTE pour recherche
-    borderColor = 'rgba(0,217,132,0.7)';
-    glowColor = '#00D984';
+  // Couleurs
+  let borderColor, numColor, shadowColor;
+  if (isSearchHit) {
+    borderColor = 'rgba(0,200,100,0.7)';
+    numColor = 'rgba(0,160,80,0.7)';
+    shadowColor = '#00C864';
   } else if (status === 'loading') {
-    borderColor = loadPulse.interpolate({
-      inputRange: [0.2, 0.8],
-      outputRange: ['rgba(0,217,132,0.15)', 'rgba(0,217,132,0.6)'],
-    });
-    glowColor = '#00D984';
+    borderColor = 'rgba(0,200,130,0.4)';
+    numColor = 'rgba(0,200,130,0.5)';
+    shadowColor = '#00D984';
   } else if (status === 'unread') {
-    borderColor = '#00D984';
-    glowColor = '#00D984';
+    borderColor = 'rgba(0,200,130,0.6)';
+    numColor = '#00A878';
+    shadowColor = '#00D984';
   } else {
-    borderColor = isBot ? 'rgba(255,80,80,0.5)' : 'rgba(77,166,255,0.4)';
-    glowColor = isBot ? '#E84040' : '#4DA6FF';
+    borderColor = isBot ? 'rgba(210,80,80,0.3)' : 'rgba(70,140,220,0.3)';
+    numColor = isBot ? 'rgba(200,70,70,0.55)' : 'rgba(60,130,210,0.55)';
+    shadowColor = isBot ? '#D06060' : '#4A8CDC';
   }
-
-  const BALL_SZ = 34;
 
   return (
     <Animated.View style={{
-      transform: [{ scale: scaleAnim }, { translateY: wobbleY }],
+      transform: [
+        { scale: scaleAnim },
+        { translateX: wobbleX.interpolate({ inputRange: [0, 1], outputRange: [-1, 1] }) },
+        { translateY: wobbleY.interpolate({ inputRange: [0, 1], outputRange: [-0.8, 0.8] }) },
+      ],
     }}>
       <Pressable onPress={() => { if (status !== 'loading') onPress(); }}>
-        <Animated.View style={{
-          width: BALL_SZ,
-          height: BALL_SZ,
-          borderRadius: BALL_SZ / 2,
-          backgroundColor: '#2D3238',
-          borderWidth: status === 'loading' ? 1.8 : 1.2,
+        <View style={{
+          width: BALL_SIZE,
+          height: BALL_SIZE,
+          borderRadius: BALL_SIZE / 2,
+          backgroundColor: '#EDF0F4',
+          borderWidth: isSearchHit ? 2 : 1,
           borderColor: borderColor,
-          shadowColor: isHighlighted ? '#00D984' : glowColor,
-          shadowOffset: { width: 0, height: isHighlighted ? 0 : 3 },
-          shadowOpacity: isHighlighted ? 0.5 : (status === 'loading' || status === 'unread' ? 0.4 : 0.3),
-          shadowRadius: isHighlighted ? 10 : (status === 'loading' || status === 'unread' ? 8 : 5),
-          elevation: isHighlighted ? 8 : (status === 'loading' || status === 'unread' ? 6 : 5),
+          // Ombre neumorphique sombre (bas-droite)
+          shadowColor: isSearchHit ? shadowColor : 'rgba(0,0,0,0.12)',
+          shadowOffset: { width: 2, height: 2 },
+          shadowOpacity: isSearchHit ? 0.4 : 0.3,
+          shadowRadius: isSearchHit ? 8 : 4,
+          elevation: isSearchHit ? 6 : 3,
           justifyContent: 'center',
           alignItems: 'center',
           overflow: 'hidden',
         }}>
-          {/* Reflet métallique en haut-gauche */}
+          {/* Highlight neumorphique haut-gauche (lumière) */}
           <View style={{
             position: 'absolute',
-            top: 2,
-            left: BALL_SZ * 0.12,
-            width: BALL_SZ * 0.5,
-            height: BALL_SZ * 0.32,
-            borderRadius: BALL_SZ * 0.2,
-            backgroundColor: 'rgba(255,255,255,0.06)',
+            top: 1,
+            left: BALL_SIZE * 0.1,
+            width: BALL_SIZE * 0.5,
+            height: BALL_SIZE * 0.3,
+            borderRadius: BALL_SIZE,
+            backgroundColor: 'rgba(255,255,255,0.5)',
             transform: [{ rotate: '-15deg' }],
           }} />
 
-          {/* Ombre intérieure en bas */}
+          {/* Ombre intérieure bas */}
           <View style={{
             position: 'absolute',
             bottom: 0,
             left: 2,
             right: 2,
-            height: BALL_SZ * 0.35,
-            borderBottomLeftRadius: BALL_SZ / 2,
-            borderBottomRightRadius: BALL_SZ / 2,
-            backgroundColor: 'rgba(0,0,0,0.08)',
+            height: BALL_SIZE * 0.3,
+            borderBottomLeftRadius: BALL_SIZE / 2,
+            borderBottomRightRadius: BALL_SIZE / 2,
+            backgroundColor: 'rgba(0,0,0,0.03)',
           }} />
 
-          {/* Bordure extérieure métal */}
-          <View style={{
-            position: 'absolute', top: 1, left: 1, right: 1, bottom: 1,
-            borderRadius: BALL_SZ / 2,
-            borderWidth: 0.3,
-            borderColor: 'rgba(74,79,85,0.3)',
-          }} />
-
-          {/* Double ring extérieur */}
-          <View style={{
-            position: 'absolute',
-            top: -1, left: -1, right: -1, bottom: -1,
-            borderRadius: (BALL_SZ + 2) / 2,
-            borderWidth: 0.3,
-            borderColor: 'rgba(74,79,85,0.4)',
-          }} />
-
-          {/* Contenu : numéro ou indicateur loading */}
+          {/* Contenu */}
           {status === 'loading' ? (
             <Animated.View style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
+              width: 8, height: 8, borderRadius: 4,
               backgroundColor: '#00D984',
               opacity: loadPulse,
             }} />
           ) : (
             <Text style={{
-              color: isHighlighted ? '#00D984' : (status === 'unread' ? '#00D984' : (isBot ? 'rgba(255,90,90,0.7)' : 'rgba(77,166,255,0.6)')),
-              fontSize: 11,
+              color: numColor,
+              fontSize: 10,
               fontWeight: 'bold',
             }}>
               {index + 1}
             </Text>
           )}
-        </Animated.View>
+        </View>
       </Pressable>
     </Animated.View>
   );
 };
 
 // ============================================
-// RÉSEAU SYNAPTIQUE EN S — Circuit neural
+// CONSTELLATION NETWORK — Positionnement force-directed
 // ============================================
-const BALLS_PER_ROW = 8;
-const BALL_SIZE = 34;
-const BALL_GAP = 2;
-const GAP = BALL_SIZE + BALL_GAP; // = 36
-const ROW_SPACING = 16;
-const TOTAL_BALLS_WIDTH = BALLS_PER_ROW * GAP;
-const PADDING_H = (SCREEN_WIDTH - TOTAL_BALLS_WIDTH) / 2;
+const ConstellationNetwork = ({ messages, searchHits, onBallPress }) => {
+  const positions = useRef([]).current;
+  const BALL_SIZE = 30;
+  const BALL_RADIUS = BALL_SIZE / 2;
 
-const getBallPosition = (index) => {
-  const row = Math.floor(index / BALLS_PER_ROW);
-  const col = index % BALLS_PER_ROW;
-  const isReversed = row % 2 === 1;
-  const actualCol = isReversed ? (BALLS_PER_ROW - 1 - col) : col;
-  const x = PADDING_H + actualCol * GAP;
-  const y = row * (BALL_SIZE + ROW_SPACING);
-  return { x, y, row };
-};
+  // Calculer les positions quand messages change
+  useMemo(() => {
+    positions.length = 0;
+    const padX = 22;
+    const padY = 8;
+    const areaW = SCREEN_WIDTH - padX * 2;
+    const areaH = Math.max(200, Math.ceil(messages.length / 4) * 65 + 40);
 
-const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
-  const totalRows = Math.ceil(messages.length / BALLS_PER_ROW);
-  const containerHeight = totalRows * (BALL_SIZE + ROW_SPACING) + 10;
+    messages.forEach((m, i) => {
+      let x, y, ok, att = 0;
+      do {
+        ok = true;
+        // Biais : ALIXEN légèrement plus haut, User légèrement plus bas
+        const yBias = m.role === 'assistant' ? 0.35 : 0.65;
+        x = padX + Math.random() * areaW;
+        y = padY + areaH * (yBias - 0.25 + Math.random() * 0.5);
+        // Vérifier pas de chevauchement
+        for (let j = 0; j < positions.length; j++) {
+          const dx = x - positions[j].x, dy = y - positions[j].y;
+          if (Math.sqrt(dx * dx + dy * dy) < BALL_SIZE * 1.4) { ok = false; break; }
+        }
+        att++;
+      } while (!ok && att < 200);
+      positions.push({ x, y, vx: 0, vy: 0 });
+    });
+
+    // Relaxation de forces (80 itérations)
+    for (let iter = 0; iter < 80; iter++) {
+      for (let i = 0; i < positions.length; i++) {
+        positions[i].vx = 0;
+        positions[i].vy = 0;
+        // Répulsion entre toutes les boules
+        for (let j = 0; j < positions.length; j++) {
+          if (i === j) continue;
+          const dx = positions[i].x - positions[j].x;
+          const dy = positions[i].y - positions[j].y;
+          const d = Math.max(Math.sqrt(dx * dx + dy * dy), 1);
+          const minDist = BALL_SIZE * 1.6;
+          if (d < minDist) {
+            const force = (minDist - d) / minDist * 2;
+            positions[i].vx += (dx / d) * force;
+            positions[i].vy += (dy / d) * force;
+          }
+        }
+        // Attraction vers la paire question/réponse
+        if (i > 0) {
+          const pair = i % 2 === 1 ? i - 1 : i + 1;
+          if (pair < positions.length && pair >= 0) {
+            const dx = positions[pair].x - positions[i].x;
+            const dy = positions[pair].y - positions[i].y;
+            const d = Math.sqrt(dx * dx + dy * dy);
+            if (d > BALL_SIZE * 3) {
+              positions[i].vx += dx * 0.012;
+              positions[i].vy += dy * 0.012;
+            }
+          }
+        }
+      }
+      // Appliquer les vitesses avec limites
+      positions.forEach(p => {
+        p.x = Math.max(padX, Math.min(SCREEN_WIDTH - padX, p.x + p.vx));
+        p.y = Math.max(padY, Math.min(padY + areaH, p.y + p.vy));
+      });
+    }
+  }, [messages.length]);
+
+  const containerHeight = positions.length > 0
+    ? Math.max(...positions.map(p => p.y)) + BALL_SIZE + 20
+    : 200;
 
   return (
-    <View style={{
-      height: containerHeight,
-      width: '100%',
-      paddingHorizontal: 4,
-      position: 'relative',
-    }}>
-      {/* Circuit de fond (traits verts entre les balles) */}
+    <View style={{ height: containerHeight, position: 'relative' }}>
+      {/* Lignes de connexion paires question→réponse */}
       {messages.map((msg, i) => {
-        if (i === 0) return null;
-        const prev = getBallPosition(i - 1);
-        const curr = getBallPosition(i);
-        const prevRow = Math.floor((i - 1) / BALLS_PER_ROW);
-        const currRow = Math.floor(i / BALLS_PER_ROW);
-
-        if (prevRow === currRow) {
-          const leftX = Math.min(prev.x, curr.x) + BALL_SIZE / 2;
-          const width = Math.abs(curr.x - prev.x);
-          return (
-            <View key={`line-${i}`} style={{
-              position: 'absolute',
-              left: leftX,
-              top: curr.y + BALL_SIZE / 2 - 0.5,
-              width: width,
-              height: 1,
-              backgroundColor: 'rgba(0,220,210,0.25)',
-            }} />
-          );
-        } else {
-          return (
-            <View key={`line-${i}`} style={{
-              position: 'absolute',
-              left: prev.x + BALL_SIZE / 2 - 0.5,
-              top: prev.y + BALL_SIZE / 2,
-              width: 1,
-              height: ROW_SPACING,
-              backgroundColor: 'rgba(0,220,210,0.25)',
-            }} />
-          );
-        }
+        if (i === 0 || i % 2 === 0) return null;
+        const pairIdx = i - 1;
+        if (!positions[i] || !positions[pairIdx]) return null;
+        const x1 = positions[pairIdx].x;
+        const y1 = positions[pairIdx].y;
+        const x2 = positions[i].x;
+        const y2 = positions[i].y;
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+        return (
+          <View key={`line-${i}`} style={{
+            position: 'absolute',
+            left: x1,
+            top: y1,
+            width: len,
+            height: 1,
+            backgroundColor: 'rgba(0,180,130,0.12)',
+            transform: [{ rotate: `${angle}deg` }],
+            transformOrigin: '0 0',
+          }} />
+        );
       })}
 
-      {/* Points de connexion entre les lignes */}
+      {/* Boules */}
       {messages.map((msg, i) => {
-        const prevRow = Math.floor((i - 1) / BALLS_PER_ROW);
-        const currRow = Math.floor(i / BALLS_PER_ROW);
-        if (i > 0 && prevRow !== currRow) {
-          const prev = getBallPosition(i - 1);
-          return (
-            <View key={`dot-${i}`} style={{
-              position: 'absolute',
-              left: prev.x + BALL_SIZE / 2 - 2,
-              top: prev.y + BALL_SIZE / 2 + ROW_SPACING / 2 - 2,
-              width: 4,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: 'rgba(0,220,210,0.55)',
-            }} />
-          );
-        }
-        return null;
-      })}
-
-      {/* Les balles métalliques */}
-      {messages.map((msg, i) => {
-        const pos = getBallPosition(i);
-        const isBot = msg.role === 'assistant';
-        const isHighlighted = highlightedIndices.includes(i);
+        if (!positions[i]) return null;
+        const isSearch = searchHits && searchHits.has(i);
         return (
           <View key={msg.id} style={{
             position: 'absolute',
-            left: pos.x,
-            top: pos.y,
+            left: positions[i].x - BALL_RADIUS,
+            top: positions[i].y - BALL_RADIUS,
           }}>
-            <MetalBall
+            <NeumorphBall
               index={i}
-              isBot={isBot}
-              isHighlighted={isHighlighted}
-              isNew={msg._isNew}
+              isBot={msg.role === 'assistant'}
+              isSearchHit={isSearch}
               status={msg._status || 'read'}
               onPress={() => onBallPress(msg, i)}
             />
           </View>
         );
       })}
-    </View>
-  );
-};
-
-// ============================================
-// SABLIER — Remplace la barre d'énergie
-// ============================================
-const HourglassTimer = ({ tokensUsed, tokenLimit }) => {
-  const sandAnim = useRef(new Animated.Value(0)).current;
-
-  const usagePercent = Math.min(tokensUsed / tokenLimit, 1);
-  const isExpired = usagePercent >= 1;
-
-  useEffect(() => {
-    if (!isExpired) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(sandAnim, { toValue: 1, duration: 4000, useNativeDriver: false }),
-          Animated.timing(sandAnim, { toValue: 0, duration: 0, useNativeDriver: false }),
-        ])
-      ).start();
-    }
-  }, [isExpired]);
-
-  const GLASS_W = 28;
-  const GLASS_H = 44;
-
-  return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <View style={{
-        width: GLASS_W,
-        height: GLASS_H,
-        position: 'relative',
-        alignItems: 'center',
-      }}>
-        {/* Cadre haut */}
-        <View style={{
-          width: GLASS_W + 4,
-          height: 4,
-          backgroundColor: '#3A3F46',
-          borderRadius: 2,
-          borderWidth: 0.5,
-          borderColor: '#4A4F55',
-        }} />
-
-        {/* Partie haute (sable qui descend = tokens restants) */}
-        <View style={{
-          width: GLASS_W - 6,
-          height: GLASS_H * 0.4,
-          overflow: 'hidden',
-          alignItems: 'center',
-        }}>
-          <View style={{
-            width: '100%',
-            height: '100%',
-            borderBottomLeftRadius: GLASS_W * 0.4,
-            borderBottomRightRadius: GLASS_W * 0.4,
-            backgroundColor: 'rgba(30,35,42,0.6)',
-            borderWidth: 0.5,
-            borderColor: 'rgba(74,79,85,0.4)',
-            overflow: 'hidden',
-            justifyContent: 'flex-end',
-          }}>
-            <View style={{
-              width: '100%',
-              height: `${Math.max((1 - usagePercent) * 100, 0)}%`,
-              backgroundColor: isExpired ? 'rgba(232,64,64,0.3)' : 'rgba(0,217,132,0.35)',
-              borderBottomLeftRadius: GLASS_W * 0.3,
-              borderBottomRightRadius: GLASS_W * 0.3,
-            }} />
-          </View>
-        </View>
-
-        {/* Goulot */}
-        <View style={{
-          width: 5,
-          height: 5,
-          backgroundColor: 'rgba(0,180,160,0.3)',
-          borderRadius: 2.5,
-        }} />
-
-        {/* Partie basse (sable qui s'accumule = tokens utilisés) */}
-        <View style={{
-          width: GLASS_W - 6,
-          height: GLASS_H * 0.4,
-          overflow: 'hidden',
-          alignItems: 'center',
-        }}>
-          <View style={{
-            width: '100%',
-            height: '100%',
-            borderTopLeftRadius: GLASS_W * 0.4,
-            borderTopRightRadius: GLASS_W * 0.4,
-            backgroundColor: 'rgba(30,35,42,0.6)',
-            borderWidth: 0.5,
-            borderColor: 'rgba(74,79,85,0.4)',
-            overflow: 'hidden',
-            justifyContent: 'flex-end',
-          }}>
-            <View style={{
-              width: '100%',
-              height: `${usagePercent * 100}%`,
-              backgroundColor: isExpired ? 'rgba(232,64,64,0.3)' : 'rgba(0,217,132,0.2)',
-              borderTopLeftRadius: GLASS_W * 0.2,
-              borderTopRightRadius: GLASS_W * 0.2,
-            }} />
-          </View>
-        </View>
-
-        {/* Cadre bas */}
-        <View style={{
-          width: GLASS_W + 4,
-          height: 4,
-          backgroundColor: '#3A3F46',
-          borderRadius: 2,
-          borderWidth: 0.5,
-          borderColor: '#4A4F55',
-        }} />
-      </View>
-
-      {/* Compteur texte */}
-      <Text style={{
-        color: isExpired ? 'rgba(232,64,64,0.5)' : 'rgba(0,180,140,0.6)',
-        fontSize: 7,
-        marginTop: 3,
-        fontWeight: 'bold',
-      }}>
-        {tokenLimit - tokensUsed > 0 ? `${tokenLimit - tokensUsed}` : '\u00C9PUIS\u00C9'}
-      </Text>
     </View>
   );
 };
@@ -1151,13 +625,13 @@ export default function MedicAiPage() {
   const [availableMeals, setAvailableMeals] = useState([]);
   const [recipeModal, setRecipeModal] = useState(null);
 
-  // Modal message complet (réseau synaptique)
+  // Modal message complet
   const [selectedMessage, setSelectedMessage] = useState(null);
 
   // Recherche dans les messages
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchIndex, setSearchIndex] = useState(-1);
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchHits, setSearchHits] = useState(new Set());
 
   // Navigation
   const [activeTab, setActiveTab] = useState('medicai');
@@ -1174,10 +648,8 @@ export default function MedicAiPage() {
   const scrollViewRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Animations d'entrée en cascade
-  const brainEntry = useRef(new Animated.Value(0)).current;
-  const cardsEntry = useRef(new Animated.Value(0)).current;
-  const ballsEntry = useRef(new Animated.Value(0)).current;
+  // Animations d'entrée
+  const contentEntry = useRef(new Animated.Value(0)).current;
   const inputEntry = useRef(new Animated.Value(0)).current;
 
   // ── Chargement des données au mount ──────────────────────────────────────
@@ -1186,11 +658,8 @@ export default function MedicAiPage() {
     loadTokenQuota();
     loadAvailableMeals();
 
-    // Séquence d'entrée en cascade
     Animated.stagger(200, [
-      Animated.spring(brainEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
-      Animated.spring(cardsEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
-      Animated.spring(ballsEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
+      Animated.spring(contentEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
       Animated.spring(inputEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
     ]).start();
   }, []);
@@ -1361,8 +830,6 @@ ${mealsList}
     const recipeName = recipeModal?.name;
     setRecipeModal(null);
     setActiveTab('repas');
-    // TODO EAS Build avec React Navigation :
-    // navigation.navigate('Repas', { recipe: recipeName, section: 'recettes' });
   };
 
   // ── Modal message (balle pressée) — marque comme lu ──────────────────────
@@ -1381,30 +848,29 @@ ${mealsList}
   };
 
   // ── Recherche dans les messages ────────────────────────────────────────
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-    if (!query.trim()) {
-      setSearchResults([]);
-      setSearchIndex(-1);
+  const toggleSearchModal = () => {
+    setSearchVisible(!searchVisible);
+    if (searchVisible) {
+      setSearchQuery('');
+      setSearchHits(new Set());
+    }
+  };
+
+  const handleSearch = (text) => {
+    setSearchQuery(text);
+    if (!text.trim()) {
+      setSearchHits(new Set());
       return;
     }
-    const results = [];
-    messages.forEach((msg, i) => {
-      if (msg.content.toLowerCase().includes(query.toLowerCase())) {
-        results.push(i);
-      }
+    const hits = new Set();
+    const low = text.toLowerCase();
+    messages.forEach((m, i) => {
+      if (m.content.toLowerCase().includes(low)) hits.add(i);
     });
-    setSearchResults(results);
-    setSearchIndex(results.length > 0 ? 0 : -1);
+    setSearchHits(hits);
   };
 
-  const navigateSearch = (direction) => {
-    if (searchResults.length === 0) return;
-    const newIndex = (searchIndex + direction + searchResults.length) % searchResults.length;
-    setSearchIndex(newIndex);
-  };
-
-  // ── Envoi de message et appel IA (cycle loading → unread → read) ────────
+  // ── Envoi de message et appel IA ────────────────────────────────────────
   const sendMessage = async () => {
     if (!inputText.trim() || isLoading) return;
     const userText = inputText.trim();
@@ -1458,7 +924,7 @@ ${mealsList}
       const data = await response.json();
       const replyText = data.message || data.error || "Erreur de connexion.";
 
-      // 5. Afficher la réponse IA dans la carte (effet machine à écrire)
+      // 5. Afficher la réponse IA dans la carte
       setCardIsLoading(false);
       setCardMessage(replyText);
       setCardIsUser(false);
@@ -1479,13 +945,13 @@ ${mealsList}
     } catch (error) {
       console.error('Erreur ALIXEN:', error);
       setCardIsLoading(false);
-      setCardMessage("Erreur r\u00E9seau. V\u00E9rifiez votre connexion.");
+      setCardMessage("Erreur réseau. Vérifiez votre connexion.");
       setCardIsUser(false);
 
       const botMsg = {
         id: botMsgId,
         role: 'assistant',
-        content: "Erreur r\u00E9seau. V\u00E9rifiez votre connexion.",
+        content: "Erreur réseau. Vérifiez votre connexion.",
         timestamp: new Date(),
         _isNew: true,
         _status: 'read',
@@ -1497,271 +963,261 @@ ${mealsList}
 
   // ── RENDER ───────────────────────────────────────────────────────────────
   return (
-    <View style={{ flex: 1 }}>
-      {/* FOND DÉGRADÉ (comme Dashboard/Repas) */}
-      <LinearGradient
-        colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-      />
+    <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+      <StatusBar barStyle="dark-content" />
 
-      <StatusBar barStyle="light-content" />
-
-      {/* ===== HEADER — MedicAi + badge En ligne ===== */}
+      {/* ===== HEADER — MedicAi sobre sur fond clair ===== */}
       <View style={{
+        backgroundColor: '#F4F6F8',
         paddingTop: Platform.OS === 'android' ? 35 : 50,
-        paddingHorizontal: 16,
         paddingBottom: 6,
+        paddingHorizontal: 16,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
       }}>
         <View>
-          <Text style={{ color: 'rgba(220,230,240,0.9)', fontSize: 22, fontWeight: 'bold', letterSpacing: 0.5 }}>
-            MedicAi
-          </Text>
-          <Text style={{ color: 'rgba(0,220,210,0.5)', fontSize: 8, letterSpacing: 2, marginTop: 1 }}>
-            ESPACE SANT{'\u00C9'} INTELLIGENT
-          </Text>
+          <Text style={{ color: '#1A2030', fontSize: 22, fontWeight: 'bold' }}>MedicAi</Text>
+          <Text style={{ color: 'rgba(0,150,120,0.45)', fontSize: 7, letterSpacing: 2 }}>ESPACE SANTÉ INTELLIGENT</Text>
         </View>
         <View style={{
-          backgroundColor: 'rgba(0,217,132,0.1)',
-          borderRadius: 20,
-          paddingHorizontal: 10,
-          paddingVertical: 4,
+          backgroundColor: 'rgba(0,180,130,0.08)',
           borderWidth: 1,
-          borderColor: 'rgba(0,217,132,0.3)',
+          borderColor: 'rgba(0,180,130,0.2)',
+          borderRadius: 14,
+          paddingHorizontal: 8,
+          paddingVertical: 3,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 4,
         }}>
-          <Text style={{ color: '#00B870', fontSize: 11 }}>{'\uD83D\uDFE2'} En ligne</Text>
+          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#00D984' }} />
+          <Text style={{ color: '#00A878', fontSize: 10 }}>En ligne</Text>
         </View>
       </View>
 
-      {/* ZONE ALIXEN — Image paysage + particules */}
-      <AlixenHeader />
-
-      {/* ===== ZONE DE CONTENU dans le cadre métallique ===== */}
+      {/* ===== ZONE DE CONTENU ===== */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        <MetalFrame>
-          <ScrollView
-            ref={scrollViewRef}
-            style={{ flex: 1 }}
-            contentContainerStyle={{ paddingBottom: 10, paddingTop: 8 }}
-            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* Circuits de connexion vers les dossiers */}
-            <Animated.View style={{
-              opacity: cardsEntry,
-              transform: [{ scale: cardsEntry.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }],
+        <ScrollView
+          ref={scrollViewRef}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 10 }}
+          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Image docteur */}
+          <DoctorHeader />
+
+          {/* Chips MediBook / SecretPocket / Sablier */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginVertical: 6 }}>
+            <TouchableOpacity
+              onPress={() => addBotMessage("Le MediBook sera disponible prochainement.")}
+              style={{
+                backgroundColor: '#FFF',
+                borderRadius: 12,
+                paddingHorizontal: 12,
+                paddingVertical: 5,
+                borderWidth: 1,
+                borderColor: 'rgba(0,180,130,0.15)',
+                shadowColor: '#000',
+                shadowOffset: { width: 1, height: 1 },
+                shadowOpacity: 0.04,
+                shadowRadius: 3,
+                elevation: 1,
+              }}
+            >
+              <Text style={{ color: '#00A878', fontSize: 10, fontWeight: '600' }}>MediBook</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement.")}
+              style={{
+                backgroundColor: '#FFF',
+                borderRadius: 12,
+                paddingHorizontal: 12,
+                paddingVertical: 5,
+                borderWidth: 1,
+                borderColor: 'rgba(190,160,50,0.15)',
+                shadowColor: '#000',
+                shadowOffset: { width: 1, height: 1 },
+                shadowOpacity: 0.04,
+                shadowRadius: 3,
+                elevation: 1,
+              }}
+            >
+              <Text style={{ color: '#B89A30', fontSize: 10, fontWeight: '600' }}>Secret Pocket</Text>
+            </TouchableOpacity>
+
+            {/* Sablier compteur */}
+            <View style={{
+              backgroundColor: '#FFF',
+              borderRadius: 12,
+              paddingHorizontal: 10,
+              paddingVertical: 5,
+              borderWidth: 1,
+              borderColor: 'rgba(0,0,0,0.05)',
             }}>
-              <CircuitConnectors />
-
-              {/* Dossiers métalliques + Sablier au centre */}
-              <View style={{ flexDirection: 'row', paddingHorizontal: 12, marginBottom: 6, alignItems: 'center' }}>
-                <MetalFolder
-                  title="MediBook"
-                  subtitle="Dossier m\u00E9dical"
-                  borderColor="rgba(0,217,132,0.25)"
-                  accentColor="#00D984"
-                  onPress={() => addBotMessage("Le MediBook sera disponible prochainement. \uD83D\uDCCB")}
-                />
-
-                {/* SABLIER AU CENTRE */}
-                <View style={{ marginHorizontal: 6 }}>
-                  <HourglassTimer tokensUsed={tokenUsed} tokenLimit={tokenLimit} />
-                </View>
-
-                <MetalFolder
-                  title="Secret Pocket"
-                  subtitle="Coffre-fort sant\u00E9"
-                  borderColor="rgba(212,175,55,0.25)"
-                  accentColor="#D4AF37"
-                  onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. \uD83D\uDD10")}
-                />
-              </View>
-            </Animated.View>
-
-            {/* Circuit vers les boules */}
-            <Animated.View style={{
-              opacity: ballsEntry,
-              transform: [{ translateY: ballsEntry.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
-            }}>
-              <View style={{ alignItems: 'center', marginBottom: 4 }}>
-                <View style={{ width: 1.5, height: 8, backgroundColor: 'rgba(0,220,210,0.15)' }} />
-                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,220,210,0.25)' }} />
-              </View>
-
-              {/* RÉSEAU DE BALLES MÉTALLIQUES EN S */}
-              <SynapticNetwork
-                messages={messages}
-                highlightedIndices={searchResults.length > 0 && searchIndex >= 0 ? [searchResults[searchIndex]] : []}
-                onBallPress={handleBallPress}
-              />
-            </Animated.View>
-
-            {/* LÉGENDE */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 6 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2D3238', borderWidth: 1, borderColor: 'rgba(255,80,80,0.5)' }} />
-                <Text style={{ color: 'rgba(200,210,220,0.5)', fontSize: 9 }}>ALIXEN</Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2D3238', borderWidth: 1, borderColor: 'rgba(77,166,255,0.4)' }} />
-                <Text style={{ color: 'rgba(200,210,220,0.5)', fontSize: 9 }}>Vous</Text>
-              </View>
+              <Text style={{ color: 'rgba(0,160,120,0.5)', fontSize: 10 }}>
+                {tokenLimit - tokenUsed > 0 ? `\u23F3 ${tokenLimit - tokenUsed}` : '\u23F3 \u00C9PUIS\u00C9'}
+              </Text>
             </View>
+          </View>
 
-            {/* Résultat de recherche */}
-            {searchResults.length > 0 && searchIndex >= 0 && (
-              <Text style={{ textAlign: 'center', color: 'rgba(0,217,132,0.6)', fontSize: 9, marginTop: 3 }}>
-                Boule #{searchResults[searchIndex] + 1} — {searchIndex + 1}/{searchResults.length}
-              </Text>
-            )}
-            {searchQuery.trim() !== '' && searchResults.length === 0 && (
-              <Text style={{ textAlign: 'center', color: 'rgba(200,210,220,0.4)', fontSize: 8, marginTop: 4 }}>
-                Aucun r\u00E9sultat
-              </Text>
-            )}
-
-            {/* CARTE DE RÉPONSE */}
-            <ResponseCard
-              currentMessage={cardMessage}
-              isLoading={cardIsLoading}
-              isUserMessage={cardIsUser}
+          {/* Constellation de boules */}
+          <Animated.View style={{
+            opacity: contentEntry,
+            transform: [{ translateY: contentEntry.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+          }}>
+            <ConstellationNetwork
+              messages={messages}
+              searchHits={searchHits}
+              onBallPress={handleBallPress}
             />
-          </ScrollView>
-        </MetalFrame>
+          </Animated.View>
 
-        {/* ===== CARTE MÉTALLIQUE DE SAISIE ===== */}
+          {/* Légende discrète */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 14, marginTop: 8, marginBottom: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#EDF0F4', borderWidth: 1, borderColor: 'rgba(210,80,80,0.3)' }} />
+              <Text style={{ color: 'rgba(0,0,0,0.3)', fontSize: 8 }}>ALIXEN</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#EDF0F4', borderWidth: 1, borderColor: 'rgba(70,140,220,0.3)' }} />
+              <Text style={{ color: 'rgba(0,0,0,0.3)', fontSize: 8 }}>Vous</Text>
+            </View>
+          </View>
+
+          {/* Carte de réponse */}
+          <ResponseCard
+            currentMessage={cardMessage}
+            isLoading={cardIsLoading}
+            isUserMessage={cardIsUser}
+          />
+        </ScrollView>
+
+        {/* Panneau recherche (si ouvert) */}
+        {searchVisible && (
+          <View style={{
+            paddingHorizontal: 10,
+            paddingVertical: 8,
+            backgroundColor: '#FFF',
+            borderTopWidth: 1,
+            borderTopColor: 'rgba(0,0,0,0.04)',
+            borderBottomWidth: 1,
+            borderBottomColor: 'rgba(0,0,0,0.04)',
+          }}>
+            <TextInput
+              autoFocus
+              style={{ color: '#00A878', fontSize: 13, paddingVertical: 4 }}
+              placeholder="Rechercher dans les messages..."
+              placeholderTextColor="rgba(0,0,0,0.2)"
+              value={searchQuery}
+              onChangeText={handleSearch}
+            />
+            {searchHits.size > 0 && (
+              <Text style={{ color: '#00A878', fontSize: 9, marginTop: 3 }}>
+                {searchHits.size} bulle{searchHits.size > 1 ? 's' : ''} trouvée{searchHits.size > 1 ? 's' : ''}
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* Barre de saisie : Loupe + Message + Envoyer */}
         <Animated.View style={{
           opacity: inputEntry,
           transform: [{ translateY: inputEntry.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }],
         }}>
-        <View style={{
-          marginHorizontal: 6,
-          marginBottom: 4,
-          paddingHorizontal: 8,
-          paddingVertical: 8,
-          backgroundColor: '#252A30',
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: 'rgba(74,79,85,0.4)',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.15,
-          shadowRadius: 8,
-          elevation: 6,
-        }}>
-          {/* Reflet métallique en haut de la carte */}
           <View style={{
-            position: 'absolute',
-            top: 2,
-            left: 8,
-            right: 8,
-            height: 10,
-            borderRadius: 8,
-            backgroundColor: 'rgba(255,255,255,0.02)',
-          }} />
-
-          {/* LIGNE DU HAUT : Recherche (gauche) + Upload (droite) */}
-          <View style={{ flexDirection: 'row', marginBottom: 6, gap: 6 }}>
-            {/* Recherche — haut gauche (thème VERT) */}
-            <View style={{
-              flex: 1,
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: 'rgba(40,60,50,0.6)',
-              borderRadius: 12,
-              borderWidth: 0.5,
-              borderColor: 'rgba(0,217,132,0.2)',
-              paddingHorizontal: 10,
-              paddingVertical: Platform.OS === 'ios' ? 8 : 5,
-            }}>
-              <TextInput
-                style={{ flex: 1, color: '#00D984', fontSize: 11, paddingVertical: 0 }}
-                placeholder="Chercher..."
-                placeholderTextColor="rgba(0,217,132,0.25)"
-                value={searchQuery}
-                onChangeText={handleSearch}
-              />
-              <TouchableOpacity onPress={() => navigateSearch(-1)} style={{ paddingHorizontal: 3 }}>
-                <Text style={{ color: 'rgba(0,217,132,0.4)', fontSize: 11 }}>{'\u25C0'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigateSearch(1)} style={{ paddingHorizontal: 3 }}>
-                <Text style={{ color: 'rgba(0,217,132,0.4)', fontSize: 11 }}>{'\u25B6'}</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Upload — haut droite */}
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 8,
+            paddingVertical: 6,
+            gap: 6,
+            backgroundColor: '#E8ECF0',
+            borderTopWidth: 1,
+            borderTopColor: 'rgba(0,0,0,0.04)',
+          }}>
+            {/* Bouton Loupe neumorphique */}
             <TouchableOpacity
-              onPress={() => addBotMessage("L'import de fichiers sera disponible prochainement.")}
+              onPress={toggleSearchModal}
               style={{
-                backgroundColor: 'rgba(50,58,68,0.7)',
-                borderRadius: 12,
-                borderWidth: 0.5,
-                borderColor: 'rgba(212,175,55,0.15)',
-                paddingHorizontal: 14,
-                paddingVertical: Platform.OS === 'ios' ? 8 : 5,
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: '#EDF0F4',
                 justifyContent: 'center',
                 alignItems: 'center',
+                shadowColor: 'rgba(0,0,0,0.1)',
+                shadowOffset: { width: 2, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 3,
+                borderWidth: 0.5,
+                borderColor: 'rgba(255,255,255,0.6)',
               }}
             >
-              <Text style={{ color: 'rgba(212,175,55,0.45)', fontSize: 11 }}>Upload</Text>
+              <Text style={{ fontSize: 16 }}>{'\uD83D\uDD0D'}</Text>
             </TouchableOpacity>
-          </View>
 
-          {/* LIGNE DU BAS : Message (centre) + Envoyer */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+            {/* Champ message */}
             <View style={{
               flex: 1,
-              backgroundColor: 'rgba(50,58,68,0.7)',
-              borderRadius: 12,
-              borderWidth: 0.5,
-              borderColor: 'rgba(77,166,255,0.2)',
-              paddingHorizontal: 12,
+              backgroundColor: '#FFF',
+              borderRadius: 20,
+              paddingHorizontal: 14,
               paddingVertical: Platform.OS === 'ios' ? 8 : 5,
+              borderWidth: 1,
+              borderColor: 'rgba(0,0,0,0.06)',
+              shadowColor: 'rgba(0,0,0,0.04)',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.3,
+              shadowRadius: 3,
+              elevation: 1,
             }}>
               <TextInput
                 ref={inputRef}
-                style={{ color: '#E0E0E0', fontSize: 12, paddingVertical: 0, maxHeight: 60 }}
+                style={{ color: '#3A4550', fontSize: 12, paddingVertical: 0, maxHeight: 60 }}
                 placeholder="Consultez ALIXEN..."
-                placeholderTextColor="rgba(77,166,255,0.25)"
-                selectionColor="#4DA6FF"
+                placeholderTextColor="rgba(0,0,0,0.2)"
+                selectionColor="#00A878"
                 value={inputText}
                 onChangeText={setInputText}
                 multiline
                 blurOnSubmit={false}
               />
             </View>
+
+            {/* Bouton envoyer */}
             <TouchableOpacity
               onPress={sendMessage}
               disabled={!inputText.trim() || isLoading}
               style={{
-                width: 34,
-                height: 34,
-                borderRadius: 17,
-                backgroundColor: inputText.trim() ? '#4DA6FF' : 'rgba(77,166,255,0.08)',
-                borderWidth: inputText.trim() ? 0 : 0.6,
-                borderColor: 'rgba(77,166,255,0.2)',
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: inputText.trim() ? '#00D984' : '#EDF0F4',
                 justifyContent: 'center',
                 alignItems: 'center',
-                shadowColor: inputText.trim() ? '#4DA6FF' : 'transparent',
-                shadowOpacity: 0.3,
-                shadowRadius: 6,
+                shadowColor: inputText.trim() ? '#00D984' : 'transparent',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: inputText.trim() ? 0.3 : 0,
+                shadowRadius: 5,
                 elevation: inputText.trim() ? 4 : 0,
               }}
             >
               <Text style={{
-                color: inputText.trim() ? '#FFF' : 'rgba(77,166,255,0.3)',
+                color: inputText.trim() ? '#FFF' : 'rgba(0,0,0,0.15)',
                 fontSize: 14,
                 fontWeight: 'bold',
               }}>{'\u27A4'}</Text>
             </TouchableOpacity>
           </View>
-        </View>
         </Animated.View>
       </KeyboardAvoidingView>
 
@@ -1770,11 +1226,11 @@ ${mealsList}
         <BottomTabs activeTab={activeTab} onTabPress={setActiveTab} />
       )}
 
-      {/* === MODAL MESSAGE COMPLET (réseau synaptique métallique) === */}
+      {/* === MODAL MESSAGE COMPLET === */}
       {selectedMessage && (
         <View style={{
           position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.88)',
+          backgroundColor: 'rgba(0,0,0,0.5)',
           justifyContent: 'center', alignItems: 'center', zIndex: 200,
         }}>
           <TouchableOpacity
@@ -1782,14 +1238,19 @@ ${mealsList}
             onPress={closeModal} activeOpacity={1}
           />
           <View style={{
-            backgroundColor: '#0D1118',
+            backgroundColor: '#FFF',
             borderRadius: 20,
             padding: 16,
             width: SCREEN_WIDTH * 0.92,
             maxHeight: SCREEN_HEIGHT * 0.65,
-            borderWidth: 1.5,
+            borderWidth: 1,
             borderColor: selectedMessage.role === 'assistant'
-              ? 'rgba(232,64,64,0.3)' : 'rgba(77,166,255,0.3)',
+              ? 'rgba(210,80,80,0.15)' : 'rgba(70,140,220,0.15)',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 8,
           }}>
             {/* Header */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -1797,18 +1258,18 @@ ${mealsList}
                 {selectedMessage.role === 'assistant' ? (
                   <>
                     <Image source={require('./assets/lixman-avatar.png')}
-                      style={{ width: 22, height: 22, borderRadius: 11, marginRight: 8, borderWidth: 1, borderColor: '#E84040' }}
+                      style={{ width: 22, height: 22, borderRadius: 11, marginRight: 8, borderWidth: 1, borderColor: '#D06060' }}
                       resizeMode="cover" />
-                    <Text style={{ color: '#E84040', fontSize: 12, fontWeight: 'bold' }}>ALIXEN</Text>
+                    <Text style={{ color: '#D06060', fontSize: 12, fontWeight: 'bold' }}>ALIXEN</Text>
                   </>
                 ) : (
-                  <Text style={{ color: '#4DA6FF', fontSize: 12, fontWeight: 'bold' }}>{'\uD83D\uDC64'} Vous</Text>
+                  <Text style={{ color: '#4A8CDC', fontSize: 12, fontWeight: 'bold' }}>{'\uD83D\uDC64'} Vous</Text>
                 )}
-                <Text style={{ color: '#333', fontSize: 9, marginLeft: 8 }}>#{selectedMessage.index + 1}</Text>
+                <Text style={{ color: 'rgba(0,0,0,0.2)', fontSize: 9, marginLeft: 8 }}>#{selectedMessage.index + 1}</Text>
               </View>
               <TouchableOpacity onPress={closeModal}
-                style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#222' }}>
-                <Text style={{ color: '#555', fontSize: 10 }}>Fermer</Text>
+                style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)' }}>
+                <Text style={{ color: 'rgba(0,0,0,0.4)', fontSize: 10 }}>Fermer</Text>
               </TouchableOpacity>
             </View>
 
@@ -1817,18 +1278,18 @@ ${mealsList}
               {selectedMessage.role === 'assistant' ? (
                 <FormattedText
                   text={selectedMessage.content}
-                  style={{ color: '#D0D0D0', fontSize: 13, lineHeight: 21 }}
+                  style={{ color: '#3A4550', fontSize: 13, lineHeight: 21 }}
                   onRecipePress={(name) => { closeModal(); handleRecipePress(name); }}
                 />
               ) : (
-                <Text style={{ color: '#D0D0D0', fontSize: 13, lineHeight: 21 }}>
+                <Text style={{ color: '#3A4550', fontSize: 13, lineHeight: 21 }}>
                   {selectedMessage.content}
                 </Text>
               )}
             </ScrollView>
 
             {/* Heure */}
-            <Text style={{ color: '#333', fontSize: 8, marginTop: 8, textAlign: 'right' }}>
+            <Text style={{ color: 'rgba(0,0,0,0.2)', fontSize: 8, marginTop: 8, textAlign: 'right' }}>
               {selectedMessage.timestamp
                 ? new Date(selectedMessage.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
                 : ''}
@@ -1842,18 +1303,23 @@ ${mealsList}
         <View style={{
           position: 'absolute',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.7)',
+          backgroundColor: 'rgba(0,0,0,0.4)',
           justifyContent: 'center',
           alignItems: 'center',
           zIndex: 100,
         }}>
           <View style={{
-            backgroundColor: '#1A1A2E',
+            backgroundColor: '#FFF',
             borderRadius: 16,
             padding: 20,
             width: SCREEN_WIDTH * 0.85,
             borderWidth: 1,
-            borderColor: '#333',
+            borderColor: 'rgba(0,0,0,0.06)',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 8,
           }}>
             {/* Avatar ALIXEN */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
@@ -1862,11 +1328,11 @@ ${mealsList}
                 style={{ width: 30, height: 30, borderRadius: 15, marginRight: 10, borderWidth: 1, borderColor: '#00D984' }}
                 resizeMode="cover"
               />
-              <Text style={{ color: '#00D984', fontSize: 14, fontWeight: 'bold' }}>ALIXEN</Text>
+              <Text style={{ color: '#00A878', fontSize: 14, fontWeight: 'bold' }}>ALIXEN</Text>
             </View>
 
             {/* Message */}
-            <Text style={{ color: '#E0E0E0', fontSize: 14, lineHeight: 20, marginBottom: 16 }}>
+            <Text style={{ color: '#3A4550', fontSize: 14, lineHeight: 20, marginBottom: 16 }}>
               Tu veux voir la recette "{recipeModal.name}" dans la section Repas ? {'\uD83C\uDF7D\uFE0F'}
             </Text>
 
@@ -1879,12 +1345,12 @@ ${mealsList}
                   paddingVertical: 10,
                   borderRadius: 10,
                   borderWidth: 1,
-                  borderColor: '#333',
+                  borderColor: 'rgba(0,0,0,0.08)',
                   alignItems: 'center',
                   marginRight: 8,
                 }}
               >
-                <Text style={{ color: '#888', fontSize: 13 }}>Annuler</Text>
+                <Text style={{ color: 'rgba(0,0,0,0.4)', fontSize: 13 }}>Annuler</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -1898,7 +1364,7 @@ ${mealsList}
                   marginLeft: 8,
                 }}
               >
-                <Text style={{ color: '#000', fontSize: 13, fontWeight: 'bold' }}>Voir la recette</Text>
+                <Text style={{ color: '#FFF', fontSize: 13, fontWeight: 'bold' }}>Voir la recette</Text>
               </TouchableOpacity>
             </View>
           </View>
