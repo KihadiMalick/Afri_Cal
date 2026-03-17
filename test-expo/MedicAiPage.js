@@ -227,7 +227,7 @@ const circuitSegments = Array.from({ length: 200 }, () => {
     hasCorner: Math.random() > 0.7,
     cornerLength: 8 + Math.random() * 20,
     cornerDir: Math.random() > 0.5 ? 1 : -1,
-    opacity: 0.04 + Math.random() * 0.08,
+    opacity: 0.08 + Math.random() * 0.14,
   };
 });
 
@@ -235,7 +235,7 @@ const circuitNodes = Array.from({ length: 80 }, () => ({
   x: Math.random() * SCREEN_WIDTH,
   y: Math.random() * 1200,
   size: 1.5 + Math.random() * 3,
-  opacity: 0.03 + Math.random() * 0.06,
+  opacity: 0.06 + Math.random() * 0.12,
 }));
 
 const CircuitPatternBackground = () => {
@@ -245,33 +245,33 @@ const CircuitPatternBackground = () => {
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
       <LinearGradient
-        colors={['#DDE1E6', '#D4D9DF', '#DDE1E6', '#D0D5DB']}
+        colors={['#2A3040', '#283040', '#2A3040', '#273040']}
         locations={[0, 0.35, 0.7, 1]}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
       <Svg width={w} height={h} style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
         <Polygon points={'0,0 ' + (w * 0.6) + ',0 ' + (w * 0.3) + ',' + (h * 0.35)}
-          fill="rgba(0,180,140,0.04)" stroke="rgba(0,180,140,0.08)" strokeWidth="0.5" />
+          fill="rgba(0,180,140,0.06)" stroke="rgba(0,180,140,0.12)" strokeWidth="0.5" />
         <Polygon points={w + ',0 ' + w + ',' + (h * 0.4) + ' ' + (w * 0.5) + ',' + (h * 0.15)}
-          fill="rgba(0,160,130,0.04)" stroke="rgba(0,160,130,0.06)" strokeWidth="0.5" />
+          fill="rgba(0,160,130,0.06)" stroke="rgba(0,160,130,0.09)" strokeWidth="0.5" />
         <Polygon points={'0,' + (h * 0.6) + ' ' + (w * 0.4) + ',' + (h * 0.45) + ' ' + (w * 0.2) + ',' + h}
-          fill="rgba(0,180,140,0.03)" stroke="rgba(0,180,140,0.06)" strokeWidth="0.5" />
+          fill="rgba(0,180,140,0.045)" stroke="rgba(0,180,140,0.09)" strokeWidth="0.5" />
         <Polygon points={w + ',' + (h * 0.5) + ' ' + (w * 0.6) + ',' + h + ' ' + w + ',' + h}
-          fill="rgba(0,160,130,0.03)" stroke="rgba(0,160,130,0.06)" strokeWidth="0.5" />
+          fill="rgba(0,160,130,0.045)" stroke="rgba(0,160,130,0.09)" strokeWidth="0.5" />
         <Polygon points={(w * 0.1) + ',' + (h * 0.2) + ' ' + (w * 0.35) + ',' + (h * 0.1) + ' ' + (w * 0.25) + ',' + (h * 0.35)}
-          fill="rgba(0,180,140,0.05)" stroke="rgba(0,180,140,0.09)" strokeWidth="0.8" />
+          fill="rgba(0,180,140,0.075)" stroke="rgba(0,180,140,0.135)" strokeWidth="0.8" />
         <Polygon points={(w * 0.65) + ',' + (h * 0.25) + ' ' + (w * 0.9) + ',' + (h * 0.15) + ' ' + (w * 0.8) + ',' + (h * 0.4)}
-          fill="rgba(0,160,130,0.04)" stroke="rgba(0,160,130,0.08)" strokeWidth="0.8" />
+          fill="rgba(0,160,130,0.06)" stroke="rgba(0,160,130,0.12)" strokeWidth="0.8" />
         <Polygon points={(w * 0.3) + ',' + (h * 0.65) + ' ' + (w * 0.55) + ',' + (h * 0.55) + ' ' + (w * 0.45) + ',' + (h * 0.8)}
-          fill="rgba(0,180,140,0.04)" stroke="rgba(0,180,140,0.08)" strokeWidth="0.8" />
+          fill="rgba(0,180,140,0.06)" stroke="rgba(0,180,140,0.12)" strokeWidth="0.8" />
         <Polygon points={(w * 0.7) + ',' + (h * 0.6) + ' ' + (w * 0.95) + ',' + (h * 0.7) + ' ' + (w * 0.85) + ',' + (h * 0.85)}
-          fill="rgba(212,175,55,0.025)" stroke="rgba(212,175,55,0.05)" strokeWidth="0.5" />
+          fill="rgba(212,175,55,0.0375)" stroke="rgba(212,175,55,0.075)" strokeWidth="0.5" />
         <Polygon points={(w * 0.5) + ',' + (h * 0.05) + ' ' + (w * 0.55) + ',' + (h * 0.02) + ' ' + (w * 0.53) + ',' + (h * 0.08)}
-          fill="rgba(0,180,140,0.07)" />
+          fill="rgba(0,180,140,0.105)" />
         <Polygon points={(w * 0.15) + ',' + (h * 0.5) + ' ' + (w * 0.2) + ',' + (h * 0.47) + ' ' + (w * 0.18) + ',' + (h * 0.53)}
-          fill="rgba(0,160,130,0.07)" />
+          fill="rgba(0,160,130,0.105)" />
         <Polygon points={(w * 0.85) + ',' + (h * 0.9) + ' ' + (w * 0.9) + ',' + (h * 0.87) + ' ' + (w * 0.88) + ',' + (h * 0.93)}
-          fill="rgba(0,180,140,0.06)" />
+          fill="rgba(0,180,140,0.09)" />
         <Line x1={w * 0.3} y1={h * 0.35} x2={w * 0.5} y2={h * 0.15} stroke="rgba(0,180,140,0.08)" strokeWidth="0.5" />
         <Line x1={w * 0.8} y1={h * 0.4} x2={w * 0.6} y2={h * 0.55} stroke="rgba(0,160,130,0.06)" strokeWidth="0.5" />
         <Line x1={w * 0.2} y1={h * 0.7} x2={w * 0.45} y2={h * 0.8} stroke="rgba(0,180,140,0.06)" strokeWidth="0.5" />
@@ -404,6 +404,117 @@ const AlixenBrain = () => {
 };
 
 // ============================================
+// BORDS MÉTALLIQUES LATÉRAUX — Rails de circuit vivants
+// ============================================
+const MetalRails = () => {
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(pulseAnim, { toValue: 1, duration: 4000, useNativeDriver: false })
+    ).start();
+  }, []);
+
+  const pulseY = pulseAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: ['0%', '100%', '0%'],
+  });
+
+  return (
+    <>
+      {/* Rail gauche */}
+      <View style={{
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: 6,
+        backgroundColor: '#1A1D22',
+        borderRightWidth: 0.5,
+        borderRightColor: 'rgba(0,220,210,0.2)',
+        zIndex: 10,
+      }}>
+        <View style={{
+          position: 'absolute',
+          right: 1,
+          top: 0,
+          bottom: 0,
+          width: 0.8,
+          backgroundColor: 'rgba(0,220,210,0.12)',
+        }} />
+        <Animated.View style={{
+          position: 'absolute',
+          right: 0,
+          top: pulseY,
+          width: 3,
+          height: 3,
+          borderRadius: 1.5,
+          backgroundColor: 'rgba(0,240,220,0.55)',
+          marginTop: -1.5,
+        }} />
+        {[15, 30, 50, 70, 85].map((pct, i) => (
+          <View key={`ln-${i}`} style={{
+            position: 'absolute',
+            right: 0,
+            top: `${pct}%`,
+            width: 2,
+            height: 2,
+            borderRadius: 1,
+            backgroundColor: 'rgba(0,220,210,0.18)',
+          }} />
+        ))}
+      </View>
+
+      {/* Rail droit */}
+      <View style={{
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: 6,
+        backgroundColor: '#1A1D22',
+        borderLeftWidth: 0.5,
+        borderLeftColor: 'rgba(0,220,210,0.2)',
+        zIndex: 10,
+      }}>
+        <View style={{
+          position: 'absolute',
+          left: 1,
+          top: 0,
+          bottom: 0,
+          width: 0.8,
+          backgroundColor: 'rgba(0,220,210,0.12)',
+        }} />
+        <Animated.View style={{
+          position: 'absolute',
+          left: 0,
+          top: pulseAnim.interpolate({
+            inputRange: [0, 0.5, 1],
+            outputRange: ['100%', '0%', '100%'],
+          }),
+          width: 3,
+          height: 3,
+          borderRadius: 1.5,
+          backgroundColor: 'rgba(0,240,220,0.55)',
+          marginTop: -1.5,
+        }} />
+        {[15, 30, 50, 70, 85].map((pct, i) => (
+          <View key={`rn-${i}`} style={{
+            position: 'absolute',
+            left: 0,
+            top: `${pct}%`,
+            width: 2,
+            height: 2,
+            borderRadius: 1,
+            backgroundColor: 'rgba(0,220,210,0.18)',
+          }} />
+        ))}
+      </View>
+    </>
+  );
+};
+
+// ============================================
 // CIRCUITS DE CONNEXION (Y-split)
 // ============================================
 const CircuitConnectors = () => {
@@ -423,14 +534,14 @@ const CircuitConnectors = () => {
   return (
     <View style={{ alignItems: 'center', marginBottom: 2 }}>
       {/* Ligne verticale depuis ALIXEN */}
-      <View style={{ width: 1.5, height: 10, backgroundColor: 'rgba(0,180,160,0.2)' }} />
+      <View style={{ width: 1.5, height: 10, backgroundColor: 'rgba(0,220,210,0.25)' }} />
 
       {/* Point de jonction central (gros, pulsant) */}
       <Animated.View style={{
         width: 7,
         height: 7,
         borderRadius: 3.5,
-        backgroundColor: 'rgba(0,180,160,0.5)',
+        backgroundColor: 'rgba(0,220,210,0.55)',
         opacity: dotOpacity,
         marginVertical: 1,
       }} />
@@ -438,7 +549,7 @@ const CircuitConnectors = () => {
       {/* Branches horizontales + verticales vers MediBook et SecretPocket */}
       <View style={{
         flexDirection: 'row',
-        width: SCREEN_WIDTH - 32,
+        width: SCREEN_WIDTH - 60,
         alignSelf: 'center',
         height: 20,
         position: 'relative',
@@ -450,7 +561,7 @@ const CircuitConnectors = () => {
           left: 0,
           width: '50%',
           height: 1.5,
-          backgroundColor: 'rgba(0,180,160,0.2)',
+          backgroundColor: 'rgba(0,220,210,0.25)',
         }} />
 
         {/* Ligne verticale qui descend à gauche */}
@@ -460,7 +571,7 @@ const CircuitConnectors = () => {
           left: '25%',
           width: 1.5,
           height: 20,
-          backgroundColor: 'rgba(0,180,160,0.2)',
+          backgroundColor: 'rgba(0,220,210,0.25)',
         }} />
 
         {/* Point en bas à gauche (au-dessus de MediBook) */}
@@ -472,7 +583,7 @@ const CircuitConnectors = () => {
           width: 5,
           height: 5,
           borderRadius: 2.5,
-          backgroundColor: 'rgba(0,180,160,0.4)',
+          backgroundColor: 'rgba(0,220,210,0.55)',
         }} />
 
         {/* Ligne horizontale DROITE — du centre vers le centre de SecretPocket */}
@@ -482,7 +593,7 @@ const CircuitConnectors = () => {
           right: 0,
           width: '50%',
           height: 1.5,
-          backgroundColor: 'rgba(0,180,160,0.2)',
+          backgroundColor: 'rgba(0,220,210,0.25)',
         }} />
 
         {/* Ligne verticale qui descend à droite */}
@@ -492,7 +603,7 @@ const CircuitConnectors = () => {
           right: '25%',
           width: 1.5,
           height: 20,
-          backgroundColor: 'rgba(212,175,55,0.15)',
+          backgroundColor: 'rgba(212,175,55,0.25)',
         }} />
 
         {/* Point en bas à droite (au-dessus de SecretPocket) */}
@@ -504,7 +615,7 @@ const CircuitConnectors = () => {
           width: 5,
           height: 5,
           borderRadius: 2.5,
-          backgroundColor: 'rgba(212,175,55,0.35)',
+          backgroundColor: 'rgba(212,175,55,0.5)',
         }} />
 
         {/* POINT LUMINEUX QUI VOYAGE à gauche */}
@@ -518,7 +629,7 @@ const CircuitConnectors = () => {
           width: 5,
           height: 5,
           borderRadius: 2.5,
-          backgroundColor: '#00B8A0',
+          backgroundColor: 'rgba(0,240,220,0.6)',
           opacity: dotOpacity,
         }} />
 
@@ -533,7 +644,7 @@ const CircuitConnectors = () => {
           width: 5,
           height: 5,
           borderRadius: 2.5,
-          backgroundColor: '#00B8A0',
+          backgroundColor: 'rgba(0,240,220,0.6)',
           opacity: dotOpacity,
         }} />
       </View>
@@ -648,9 +759,9 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
   // Couleurs selon status
   let borderColor, glowColor;
   if (isHighlighted) {
-    // Surbrillance ORANGE pour recherche
-    borderColor = 'rgba(255,160,50,0.7)';
-    glowColor = '#FF9F43';
+    // Surbrillance VERTE pour recherche
+    borderColor = 'rgba(0,217,132,0.7)';
+    glowColor = '#00D984';
   } else if (status === 'loading') {
     borderColor = loadPulse.interpolate({
       inputRange: [0.2, 0.8],
@@ -679,7 +790,7 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
           backgroundColor: '#2D3238',
           borderWidth: status === 'loading' ? 1.8 : 1.2,
           borderColor: borderColor,
-          shadowColor: isHighlighted ? '#FF9F43' : glowColor,
+          shadowColor: isHighlighted ? '#00D984' : glowColor,
           shadowOffset: { width: 0, height: isHighlighted ? 0 : 3 },
           shadowOpacity: isHighlighted ? 0.5 : (status === 'loading' || status === 'unread' ? 0.4 : 0.3),
           shadowRadius: isHighlighted ? 10 : (status === 'loading' || status === 'unread' ? 8 : 5),
@@ -740,7 +851,7 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
             }} />
           ) : (
             <Text style={{
-              color: isHighlighted ? '#FF9F43' : (status === 'unread' ? '#00D984' : (isBot ? 'rgba(255,90,90,0.7)' : 'rgba(77,166,255,0.6)')),
+              color: isHighlighted ? '#00D984' : (status === 'unread' ? '#00D984' : (isBot ? 'rgba(255,90,90,0.7)' : 'rgba(77,166,255,0.6)')),
               fontSize: 11,
               fontWeight: 'bold',
             }}>
@@ -803,7 +914,7 @@ const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
               top: curr.y + BALL_SIZE / 2 - 0.5,
               width: width,
               height: 1,
-              backgroundColor: 'rgba(0,180,160,0.2)',
+              backgroundColor: 'rgba(0,220,210,0.25)',
             }} />
           );
         } else {
@@ -814,7 +925,7 @@ const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
               top: prev.y + BALL_SIZE / 2,
               width: 1,
               height: ROW_SPACING,
-              backgroundColor: 'rgba(0,180,160,0.2)',
+              backgroundColor: 'rgba(0,220,210,0.25)',
             }} />
           );
         }
@@ -834,7 +945,7 @@ const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
               width: 4,
               height: 4,
               borderRadius: 2,
-              backgroundColor: 'rgba(0,180,160,0.4)',
+              backgroundColor: 'rgba(0,220,210,0.55)',
             }} />
           );
         }
@@ -1033,11 +1144,25 @@ export default function MedicAiPage() {
   const scrollViewRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Animations d'entrée en cascade
+  const brainEntry = useRef(new Animated.Value(0)).current;
+  const cardsEntry = useRef(new Animated.Value(0)).current;
+  const ballsEntry = useRef(new Animated.Value(0)).current;
+  const inputEntry = useRef(new Animated.Value(0)).current;
+
   // ── Chargement des données au mount ──────────────────────────────────────
   useEffect(() => {
     loadUserData();
     loadTokenQuota();
     loadAvailableMeals();
+
+    // Séquence d'entrée en cascade
+    Animated.stagger(200, [
+      Animated.spring(brainEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
+      Animated.spring(cardsEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
+      Animated.spring(ballsEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
+      Animated.spring(inputEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
+    ]).start();
   }, []);
 
   // ── Keyboard listener ────────────────────────────────────────────────────
@@ -1311,10 +1436,11 @@ ${mealsList}
   // ── RENDER ───────────────────────────────────────────────────────────────
   return (
     <View style={{ flex: 1 }}>
-      {/* Fond blanc avec motifs de circuits verts */}
+      {/* Fond sombre avec motifs de circuits */}
       <CircuitPatternBackground />
+      <MetalRails />
 
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
 
       {/* ===== HEADER — Minimaliste et premium ===== */}
       <View style={{
@@ -1326,10 +1452,10 @@ ${mealsList}
         alignItems: 'center',
       }}>
         <View>
-          <Text style={{ color: '#1A2030', fontSize: 22, fontWeight: 'bold', letterSpacing: 0.5 }}>
+          <Text style={{ color: 'rgba(220,230,240,0.9)', fontSize: 22, fontWeight: 'bold', letterSpacing: 0.5 }}>
             MedicAi
           </Text>
-          <Text style={{ color: 'rgba(0,150,130,0.5)', fontSize: 8, letterSpacing: 2, marginTop: 1 }}>
+          <Text style={{ color: 'rgba(0,220,210,0.5)', fontSize: 8, letterSpacing: 2, marginTop: 1 }}>
             ESPACE SANT{'\u00C9'} INTELLIGENT
           </Text>
         </View>
@@ -1345,6 +1471,18 @@ ${mealsList}
         </View>
       </View>
 
+      {/* Ombre de profondeur sous le header */}
+      <View style={{
+        height: 8,
+        backgroundColor: 'transparent',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        elevation: 3,
+        zIndex: 5,
+      }} />
+
       {/* ===== ZONE DE CHAT ===== */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -1359,74 +1497,107 @@ ${mealsList}
           keyboardShouldPersistTaps="handled"
         >
           {/* ALIXEN Brain — Cerveau dans bulle métallique */}
-          <AlixenBrain />
+          <Animated.View style={{
+            transform: [
+              { translateY: brainEntry.interpolate({ inputRange: [0, 1], outputRange: [-30, 0] }) },
+              { scale: brainEntry },
+            ],
+            opacity: brainEntry,
+          }}>
+            <AlixenBrain />
+          </Animated.View>
 
           {/* Circuits de connexion vers les dossiers */}
-          <CircuitConnectors />
+          <Animated.View style={{
+            opacity: cardsEntry,
+            transform: [{ scale: cardsEntry.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }],
+          }}>
+            <CircuitConnectors />
 
-          {/* Dossiers métalliques + Sablier au centre */}
-          <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 4, alignItems: 'center' }}>
-            <MetalFolder
-              title="MediBook"
-              subtitle="Dossier médical"
-              borderColor="rgba(0,217,132,0.25)"
-              accentColor="#00D984"
-              onPress={() => addBotMessage("Le MediBook sera disponible prochainement. \uD83D\uDCCB")}
-            />
+            {/* Dossiers métalliques + Sablier au centre */}
+            <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 4, alignItems: 'center' }}>
+              <MetalFolder
+                title="MediBook"
+                subtitle="Dossier médical"
+                borderColor="rgba(0,217,132,0.25)"
+                accentColor="#00D984"
+                onPress={() => addBotMessage("Le MediBook sera disponible prochainement. \uD83D\uDCCB")}
+              />
 
-            {/* SABLIER AU CENTRE */}
-            <View style={{ marginHorizontal: 6 }}>
-              <HourglassTimer tokensUsed={tokenUsed} tokenLimit={tokenLimit} />
+              {/* SABLIER AU CENTRE */}
+              <View style={{ marginHorizontal: 6 }}>
+                <HourglassTimer tokensUsed={tokenUsed} tokenLimit={tokenLimit} />
+              </View>
+
+              <MetalFolder
+                title="Secret Pocket"
+                subtitle="Coffre-fort santé"
+                borderColor="rgba(212,175,55,0.25)"
+                accentColor="#D4AF37"
+                onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. \uD83D\uDD10")}
+              />
+            </View>
+          </Animated.View>
+
+          {/* Circuit descendant des dossiers vers les boules + réseau */}
+          <Animated.View style={{
+            opacity: ballsEntry,
+            transform: [{ translateY: ballsEntry.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+          }}>
+            <View style={{ alignItems: 'center', marginBottom: 4 }}>
+              <View style={{ width: 1.5, height: 8, backgroundColor: 'rgba(0,220,210,0.25)' }} />
+              <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,220,210,0.55)' }} />
             </View>
 
-            <MetalFolder
-              title="Secret Pocket"
-              subtitle="Coffre-fort santé"
-              borderColor="rgba(212,175,55,0.25)"
-              accentColor="#D4AF37"
-              onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. \uD83D\uDD10")}
+            {/* RÉSEAU DE BALLES MÉTALLIQUES EN S */}
+            <SynapticNetwork
+              messages={messages}
+              highlightedIndices={searchResults.length > 0 && searchIndex >= 0 ? [searchResults[searchIndex]] : []}
+              onBallPress={handleBallPress}
             />
-          </View>
-
-          {/* Circuit descendant des dossiers vers les boules */}
-          <View style={{ alignItems: 'center', marginBottom: 4 }}>
-            <View style={{ width: 1.5, height: 8, backgroundColor: 'rgba(0,180,160,0.2)' }} />
-            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,180,160,0.4)' }} />
-          </View>
-
-          {/* RÉSEAU DE BALLES MÉTALLIQUES EN S */}
-          <SynapticNetwork
-            messages={messages}
-            highlightedIndices={searchResults.length > 0 && searchIndex >= 0 ? [searchResults[searchIndex]] : []}
-            onBallPress={handleBallPress}
-          />
+          </Animated.View>
 
           {/* LÉGENDE */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 6 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2D3238', borderWidth: 1, borderColor: 'rgba(255,80,80,0.5)' }} />
-              <Text style={{ color: 'rgba(60,70,80,0.5)', fontSize: 9 }}>ALIXEN</Text>
+              <Text style={{ color: 'rgba(200,210,220,0.5)', fontSize: 9 }}>ALIXEN</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2D3238', borderWidth: 1, borderColor: 'rgba(77,166,255,0.4)' }} />
-              <Text style={{ color: 'rgba(60,70,80,0.5)', fontSize: 9 }}>Vous</Text>
+              <Text style={{ color: 'rgba(200,210,220,0.5)', fontSize: 9 }}>Vous</Text>
             </View>
           </View>
 
           {/* Résultat de recherche */}
           {searchResults.length > 0 && searchIndex >= 0 && (
-            <Text style={{ textAlign: 'center', color: 'rgba(255,160,50,0.6)', fontSize: 9, marginTop: 3 }}>
+            <Text style={{ textAlign: 'center', color: 'rgba(0,217,132,0.6)', fontSize: 9, marginTop: 3 }}>
               Boule #{searchResults[searchIndex] + 1} — {searchIndex + 1}/{searchResults.length}
             </Text>
           )}
           {searchQuery.trim() !== '' && searchResults.length === 0 && (
-            <Text style={{ textAlign: 'center', color: 'rgba(60,70,80,0.4)', fontSize: 8, marginTop: 4 }}>
+            <Text style={{ textAlign: 'center', color: 'rgba(200,210,220,0.4)', fontSize: 8, marginTop: 4 }}>
               Aucun résultat
             </Text>
           )}
         </ScrollView>
 
+        {/* Ombre de profondeur au-dessus de la zone de saisie */}
+        <View style={{
+          height: 6,
+          backgroundColor: 'transparent',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.1,
+          shadowRadius: 5,
+          elevation: 3,
+        }} />
+
         {/* ===== CARTE MÉTALLIQUE DE SAISIE ===== */}
+        <Animated.View style={{
+          opacity: inputEntry,
+          transform: [{ translateY: inputEntry.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }],
+        }}>
         <View style={{
           marginHorizontal: 6,
           marginBottom: 4,
@@ -1455,30 +1626,30 @@ ${mealsList}
 
           {/* LIGNE DU HAUT : Recherche (gauche) + Upload (droite) */}
           <View style={{ flexDirection: 'row', marginBottom: 6, gap: 6 }}>
-            {/* Recherche — haut gauche (thème ORANGE) */}
+            {/* Recherche — haut gauche (thème VERT) */}
             <View style={{
               flex: 1,
               flexDirection: 'row',
               alignItems: 'center',
-              backgroundColor: 'rgba(60,50,40,0.6)',
+              backgroundColor: 'rgba(40,60,50,0.6)',
               borderRadius: 12,
               borderWidth: 0.5,
-              borderColor: 'rgba(255,160,50,0.2)',
+              borderColor: 'rgba(0,217,132,0.2)',
               paddingHorizontal: 10,
               paddingVertical: Platform.OS === 'ios' ? 8 : 5,
             }}>
               <TextInput
-                style={{ flex: 1, color: '#FF9F43', fontSize: 11, paddingVertical: 0 }}
+                style={{ flex: 1, color: '#00D984', fontSize: 11, paddingVertical: 0 }}
                 placeholder="Chercher..."
-                placeholderTextColor="rgba(255,160,50,0.3)"
+                placeholderTextColor="rgba(0,217,132,0.25)"
                 value={searchQuery}
                 onChangeText={handleSearch}
               />
               <TouchableOpacity onPress={() => navigateSearch(-1)} style={{ paddingHorizontal: 3 }}>
-                <Text style={{ color: 'rgba(255,160,50,0.45)', fontSize: 11 }}>{'\u25C0'}</Text>
+                <Text style={{ color: 'rgba(0,217,132,0.4)', fontSize: 11 }}>{'\u25C0'}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => navigateSearch(1)} style={{ paddingHorizontal: 3 }}>
-                <Text style={{ color: 'rgba(255,160,50,0.45)', fontSize: 11 }}>{'\u25B6'}</Text>
+                <Text style={{ color: 'rgba(0,217,132,0.4)', fontSize: 11 }}>{'\u25B6'}</Text>
               </TouchableOpacity>
             </View>
 
@@ -1507,7 +1678,7 @@ ${mealsList}
               backgroundColor: 'rgba(50,58,68,0.7)',
               borderRadius: 12,
               borderWidth: 0.5,
-              borderColor: 'rgba(0,217,132,0.15)',
+              borderColor: 'rgba(77,166,255,0.2)',
               paddingHorizontal: 12,
               paddingVertical: Platform.OS === 'ios' ? 8 : 5,
             }}>
@@ -1515,8 +1686,8 @@ ${mealsList}
                 ref={inputRef}
                 style={{ color: '#E0E0E0', fontSize: 12, paddingVertical: 0, maxHeight: 60 }}
                 placeholder="Consultez ALIXEN..."
-                placeholderTextColor="rgba(0,217,132,0.25)"
-                selectionColor="#00D984"
+                placeholderTextColor="rgba(77,166,255,0.25)"
+                selectionColor="#4DA6FF"
                 value={inputText}
                 onChangeText={setInputText}
                 multiline
@@ -1530,25 +1701,26 @@ ${mealsList}
                 width: 34,
                 height: 34,
                 borderRadius: 17,
-                backgroundColor: inputText.trim() ? '#00D984' : 'rgba(0,217,132,0.08)',
+                backgroundColor: inputText.trim() ? '#4DA6FF' : 'rgba(77,166,255,0.08)',
                 borderWidth: inputText.trim() ? 0 : 0.6,
-                borderColor: 'rgba(0,217,132,0.2)',
+                borderColor: 'rgba(77,166,255,0.2)',
                 justifyContent: 'center',
                 alignItems: 'center',
-                shadowColor: inputText.trim() ? '#00D984' : 'transparent',
+                shadowColor: inputText.trim() ? '#4DA6FF' : 'transparent',
                 shadowOpacity: 0.3,
                 shadowRadius: 6,
                 elevation: inputText.trim() ? 4 : 0,
               }}
             >
               <Text style={{
-                color: inputText.trim() ? '#000' : 'rgba(0,217,132,0.3)',
+                color: inputText.trim() ? '#FFF' : 'rgba(77,166,255,0.3)',
                 fontSize: 14,
                 fontWeight: 'bold',
               }}>{'\u27A4'}</Text>
             </TouchableOpacity>
           </View>
         </View>
+        </Animated.View>
       </KeyboardAvoidingView>
 
       {/* ===== BOTTOM TAB BAR ===== */}
