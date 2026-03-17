@@ -209,35 +209,88 @@ const FormattedText = ({ text, style, onRecipePress }) => {
 };
 
 // ============================================
-// FOND PCB (Circuits imprimés)
+// FOND BLANC + MOTIFS GÉOMÉTRIQUES DE CIRCUITS VERTS
 // ============================================
-const PCBBackground = () => {
+const circuitSegments = Array.from({ length: 200 }, () => {
+  const x = Math.random() * SCREEN_WIDTH;
+  const y = Math.random() * 1200;
+  const isHorizontal = Math.random() > 0.4;
+  const length = 15 + Math.random() * 40;
+  return {
+    x,
+    y,
+    length,
+    isHorizontal,
+    hasNode: Math.random() > 0.6,
+    hasCorner: Math.random() > 0.7,
+    cornerLength: 8 + Math.random() * 20,
+    cornerDir: Math.random() > 0.5 ? 1 : -1,
+    opacity: 0.04 + Math.random() * 0.08,
+  };
+});
+
+const circuitNodes = Array.from({ length: 80 }, () => ({
+  x: Math.random() * SCREEN_WIDTH,
+  y: Math.random() * 1200,
+  size: 1.5 + Math.random() * 3,
+  opacity: 0.03 + Math.random() * 0.06,
+}));
+
+const CircuitPatternBackground = () => {
   return (
     <View style={{
       position: 'absolute',
       top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: '#0B1A2A',
+      backgroundColor: '#F2F4F6',
     }}>
-      {/* Grille verticale fine */}
-      {Array.from({ length: Math.ceil(SCREEN_WIDTH / 12) }, (_, i) => (
-        <View key={`gv-${i}`} style={{
-          position: 'absolute',
-          left: i * 12,
-          top: 0,
-          width: 0.3,
-          height: '100%',
-          backgroundColor: 'rgba(0,180,200,0.02)',
-        }} />
+      {/* Segments de circuits */}
+      {circuitSegments.map((seg, i) => (
+        <View key={`seg-${i}`}>
+          {/* Ligne principale */}
+          <View style={{
+            position: 'absolute',
+            left: seg.x,
+            top: seg.y,
+            width: seg.isHorizontal ? seg.length : 1,
+            height: seg.isHorizontal ? 1 : seg.length,
+            backgroundColor: `rgba(0,180,140,${seg.opacity})`,
+          }} />
+          {/* Angle à 90° si hasCorner */}
+          {seg.hasCorner && (
+            <View style={{
+              position: 'absolute',
+              left: seg.isHorizontal ? seg.x + seg.length : seg.x - (seg.cornerDir > 0 ? 0 : seg.cornerLength),
+              top: seg.isHorizontal ? seg.y - (seg.cornerDir > 0 ? seg.cornerLength : 0) : seg.y + seg.length,
+              width: seg.isHorizontal ? 1 : seg.cornerLength,
+              height: seg.isHorizontal ? seg.cornerLength : 1,
+              backgroundColor: `rgba(0,180,140,${seg.opacity * 0.8})`,
+            }} />
+          )}
+          {/* Nœud au bout si hasNode */}
+          {seg.hasNode && (
+            <View style={{
+              position: 'absolute',
+              left: seg.isHorizontal ? seg.x + seg.length - 1.5 : seg.x - 1.5,
+              top: seg.isHorizontal ? seg.y - 1.5 : seg.y + seg.length - 1.5,
+              width: 3,
+              height: 3,
+              borderRadius: 1.5,
+              backgroundColor: `rgba(0,180,140,${seg.opacity * 1.2})`,
+            }} />
+          )}
+        </View>
       ))}
-      {/* Grille horizontale fine */}
-      {Array.from({ length: 50 }, (_, i) => (
-        <View key={`gh-${i}`} style={{
+
+      {/* Nœuds de circuit supplémentaires */}
+      {circuitNodes.map((n, i) => (
+        <View key={`node-${i}`} style={{
           position: 'absolute',
-          top: i * 12,
-          left: 0,
-          height: 0.3,
-          width: '100%',
-          backgroundColor: 'rgba(0,180,200,0.02)',
+          left: n.x,
+          top: n.y,
+          width: n.size,
+          height: n.size,
+          borderRadius: n.size / 2,
+          backgroundColor: `rgba(0,180,140,${n.opacity})`,
         }} />
       ))}
     </View>
@@ -268,14 +321,14 @@ const AlixenBrain = () => {
         borderRadius: 35,
         backgroundColor: '#252A30',
         borderWidth: 1.5,
-        borderColor: '#4A4F55',
+        borderColor: 'rgba(74,79,85,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#00D984',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
-        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 8,
       }}>
         {/* Reflet métallique */}
         <View style={{
@@ -305,7 +358,7 @@ const AlixenBrain = () => {
           bottom: -3,
           borderRadius: 38,
           borderWidth: 0.5,
-          borderColor: 'rgba(0,200,220,0.35)',
+          borderColor: 'rgba(0,180,160,0.5)',
           opacity: pulseAnim,
         }} />
       </View>
@@ -333,14 +386,14 @@ const CircuitConnectors = () => {
   return (
     <View style={{ alignItems: 'center', marginBottom: 2 }}>
       {/* Ligne verticale depuis ALIXEN */}
-      <View style={{ width: 1.5, height: 10, backgroundColor: 'rgba(0,200,220,0.15)' }} />
+      <View style={{ width: 1.5, height: 10, backgroundColor: 'rgba(0,180,160,0.2)' }} />
 
       {/* Point de jonction central (gros, pulsant) */}
       <Animated.View style={{
         width: 7,
         height: 7,
         borderRadius: 3.5,
-        backgroundColor: 'rgba(0,200,220,0.5)',
+        backgroundColor: 'rgba(0,180,160,0.5)',
         opacity: dotOpacity,
         marginVertical: 1,
       }} />
@@ -348,7 +401,7 @@ const CircuitConnectors = () => {
       {/* Branches horizontales + verticales vers MediBook et SecretPocket */}
       <View style={{
         flexDirection: 'row',
-        width: SCREEN_WIDTH - 40,
+        width: SCREEN_WIDTH - 80,
         height: 18,
         position: 'relative',
       }}>
@@ -359,7 +412,7 @@ const CircuitConnectors = () => {
           left: 0,
           width: '50%',
           height: 1.5,
-          backgroundColor: 'rgba(0,200,220,0.15)',
+          backgroundColor: 'rgba(0,180,160,0.2)',
         }} />
         {/* Ligne verticale gauche */}
         <View style={{
@@ -368,7 +421,7 @@ const CircuitConnectors = () => {
           left: 0,
           width: 1.5,
           height: 18,
-          backgroundColor: 'rgba(0,200,220,0.15)',
+          backgroundColor: 'rgba(0,180,160,0.2)',
         }} />
         {/* Point en bas à gauche */}
         <View style={{
@@ -378,7 +431,7 @@ const CircuitConnectors = () => {
           width: 5,
           height: 5,
           borderRadius: 2.5,
-          backgroundColor: 'rgba(0,200,220,0.35)',
+          backgroundColor: 'rgba(0,180,160,0.5)',
         }} />
 
         {/* Ligne horizontale droite */}
@@ -388,7 +441,7 @@ const CircuitConnectors = () => {
           right: 0,
           width: '50%',
           height: 1.5,
-          backgroundColor: 'rgba(0,200,220,0.15)',
+          backgroundColor: 'rgba(0,180,160,0.2)',
         }} />
         {/* Ligne verticale droite */}
         <View style={{
@@ -397,7 +450,7 @@ const CircuitConnectors = () => {
           right: 0,
           width: 1.5,
           height: 18,
-          backgroundColor: 'rgba(0,200,220,0.15)',
+          backgroundColor: 'rgba(0,180,160,0.2)',
         }} />
         {/* Point en bas à droite */}
         <View style={{
@@ -407,7 +460,7 @@ const CircuitConnectors = () => {
           width: 5,
           height: 5,
           borderRadius: 2.5,
-          backgroundColor: 'rgba(0,200,220,0.35)',
+          backgroundColor: 'rgba(0,180,160,0.5)',
         }} />
 
         {/* POINT LUMINEUX QUI VOYAGE à gauche */}
@@ -421,7 +474,7 @@ const CircuitConnectors = () => {
           width: 5,
           height: 5,
           borderRadius: 2.5,
-          backgroundColor: '#00D4FF',
+          backgroundColor: '#00B8A0',
           opacity: dotOpacity,
         }} />
 
@@ -436,7 +489,7 @@ const CircuitConnectors = () => {
           width: 5,
           height: 5,
           borderRadius: 2.5,
-          backgroundColor: '#00D4FF',
+          backgroundColor: '#00B8A0',
           opacity: dotOpacity,
         }} />
       </View>
@@ -448,50 +501,71 @@ const CircuitConnectors = () => {
 // DOSSIER MÉTALLIQUE
 // ============================================
 const MetalFolder = ({ title, subtitle, borderColor, onPress, accentColor }) => (
-  <TouchableOpacity onPress={onPress} style={{
+  <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={{
     flex: 1,
     marginHorizontal: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: borderColor,
-    padding: 10,
-    alignItems: 'center',
-    backgroundColor: '#252A30',
+    borderRadius: 14,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 5,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
   }}>
-    {/* Reflet métallique en haut */}
+    {/* Fond dégradé métallique */}
     <View style={{
-      position: 'absolute',
-      top: 2,
-      left: 6,
-      right: 6,
-      height: 12,
-      borderRadius: 8,
-      backgroundColor: 'rgba(255,255,255,0.035)',
-    }} />
+      backgroundColor: '#2D3238',
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: borderColor || 'rgba(80,85,92,0.3)',
+      padding: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 65,
+    }}>
+      {/* Reflet métallique en haut */}
+      <View style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 25,
+        borderTopLeftRadius: 14,
+        borderTopRightRadius: 14,
+        backgroundColor: 'rgba(255,255,255,0.04)',
+      }} />
 
-    {/* Barre de couleur en haut (accent) */}
-    <View style={{
-      position: 'absolute',
-      top: 0,
-      left: 20,
-      right: 20,
-      height: 2,
-      borderRadius: 1,
-      backgroundColor: accentColor || borderColor,
-      opacity: 0.5,
-    }} />
+      {/* Ombre intérieure en bas */}
+      <View style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 20,
+        borderBottomLeftRadius: 14,
+        borderBottomRightRadius: 14,
+        backgroundColor: 'rgba(0,0,0,0.08)',
+      }} />
 
-    <Text style={{ color: accentColor || '#00D984', fontSize: 13, fontWeight: 'bold', marginTop: 4 }}>
-      {title}
-    </Text>
-    <Text style={{ color: '#666', fontSize: 8, marginTop: 2 }}>
-      {subtitle}
-    </Text>
+      {/* Barre de couleur accent en haut */}
+      <View style={{
+        position: 'absolute',
+        top: 0,
+        left: 25,
+        right: 25,
+        height: 2.5,
+        borderRadius: 1,
+        backgroundColor: accentColor || '#00D984',
+        opacity: 0.6,
+      }} />
+
+      <Text style={{ color: accentColor || '#00D984', fontSize: 14, fontWeight: 'bold' }}>
+        {title}
+      </Text>
+      <Text style={{ color: 'rgba(200,205,210,0.5)', fontSize: 9, marginTop: 3 }}>
+        {subtitle}
+      </Text>
+    </View>
   </TouchableOpacity>
 );
 
@@ -529,7 +603,11 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
 
   // Couleurs selon status
   let borderColor, glowColor;
-  if (status === 'loading') {
+  if (isHighlighted) {
+    // Surbrillance ORANGE pour recherche
+    borderColor = 'rgba(255,160,50,0.7)';
+    glowColor = '#FF9F43';
+  } else if (status === 'loading') {
     borderColor = loadPulse.interpolate({
       inputRange: [0.2, 0.8],
       outputRange: ['rgba(0,217,132,0.15)', 'rgba(0,217,132,0.6)'],
@@ -554,36 +632,40 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
           width: BALL_SZ,
           height: BALL_SZ,
           borderRadius: BALL_SZ / 2,
-          backgroundColor: '#2A3038',
-          borderWidth: status === 'loading' ? 1.5 : 1,
+          backgroundColor: '#2D3238',
+          borderWidth: status === 'loading' ? 1.8 : 1.2,
           borderColor: borderColor,
-          shadowColor: glowColor,
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: status === 'loading' || status === 'unread' ? 0.4 : 0.15,
-          shadowRadius: status === 'loading' || status === 'unread' ? 8 : 4,
-          elevation: status === 'loading' || status === 'unread' ? 6 : 3,
+          shadowColor: isHighlighted ? '#FF9F43' : glowColor,
+          shadowOffset: { width: 0, height: isHighlighted ? 0 : 3 },
+          shadowOpacity: isHighlighted ? 0.5 : (status === 'loading' || status === 'unread' ? 0.4 : 0.3),
+          shadowRadius: isHighlighted ? 10 : (status === 'loading' || status === 'unread' ? 8 : 5),
+          elevation: isHighlighted ? 8 : (status === 'loading' || status === 'unread' ? 6 : 5),
           justifyContent: 'center',
           alignItems: 'center',
           overflow: 'hidden',
         }}>
-          {/* Reflet métallique */}
+          {/* Reflet métallique en haut-gauche */}
           <View style={{
-            position: 'absolute', top: 2, left: BALL_SZ * 0.15,
-            width: BALL_SZ * 0.45, height: BALL_SZ * 0.3,
+            position: 'absolute',
+            top: 2,
+            left: BALL_SZ * 0.12,
+            width: BALL_SZ * 0.5,
+            height: BALL_SZ * 0.32,
             borderRadius: BALL_SZ * 0.2,
-            backgroundColor: 'rgba(255,255,255,0.07)',
+            backgroundColor: 'rgba(255,255,255,0.06)',
             transform: [{ rotate: '-15deg' }],
           }} />
 
-          {/* Reflet ambiant bas-droite */}
+          {/* Ombre intérieure en bas */}
           <View style={{
             position: 'absolute',
-            bottom: BALL_SZ * 0.15,
-            right: BALL_SZ * 0.15,
-            width: BALL_SZ * 0.18,
-            height: BALL_SZ * 0.18,
-            borderRadius: BALL_SZ * 0.09,
-            backgroundColor: 'rgba(255,255,255,0.025)',
+            bottom: 0,
+            left: 2,
+            right: 2,
+            height: BALL_SZ * 0.35,
+            borderBottomLeftRadius: BALL_SZ / 2,
+            borderBottomRightRadius: BALL_SZ / 2,
+            backgroundColor: 'rgba(0,0,0,0.08)',
           }} />
 
           {/* Bordure extérieure métal */}
@@ -614,7 +696,7 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
             }} />
           ) : (
             <Text style={{
-              color: status === 'unread' ? '#00D984' : (isBot ? 'rgba(255,90,90,0.7)' : 'rgba(77,166,255,0.6)'),
+              color: isHighlighted ? '#FF9F43' : (status === 'unread' ? '#00D984' : (isBot ? 'rgba(255,90,90,0.7)' : 'rgba(77,166,255,0.6)')),
               fontSize: 11,
               fontWeight: 'bold',
             }}>
@@ -677,7 +759,7 @@ const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
               top: curr.y + BALL_SIZE / 2 - 0.5,
               width: width,
               height: 1,
-              backgroundColor: 'rgba(0,200,220,0.1)',
+              backgroundColor: 'rgba(0,180,160,0.2)',
             }} />
           );
         } else {
@@ -688,7 +770,7 @@ const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
               top: prev.y + BALL_SIZE / 2,
               width: 1,
               height: ROW_SPACING,
-              backgroundColor: 'rgba(0,200,220,0.1)',
+              backgroundColor: 'rgba(0,180,160,0.2)',
             }} />
           );
         }
@@ -708,7 +790,7 @@ const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
               width: 4,
               height: 4,
               borderRadius: 2,
-              backgroundColor: 'rgba(0,200,220,0.25)',
+              backgroundColor: 'rgba(0,180,160,0.4)',
             }} />
           );
         }
@@ -814,7 +896,7 @@ const HourglassTimer = ({ tokensUsed, tokenLimit }) => {
         <View style={{
           width: 5,
           height: 5,
-          backgroundColor: 'rgba(0,200,220,0.2)',
+          backgroundColor: 'rgba(0,180,160,0.3)',
           borderRadius: 2.5,
         }} />
 
@@ -859,7 +941,7 @@ const HourglassTimer = ({ tokensUsed, tokenLimit }) => {
 
       {/* Compteur texte */}
       <Text style={{
-        color: isExpired ? 'rgba(232,64,64,0.5)' : 'rgba(0,217,132,0.4)',
+        color: isExpired ? 'rgba(232,64,64,0.5)' : 'rgba(0,180,140,0.6)',
         fontSize: 7,
         marginTop: 3,
         fontWeight: 'bold',
@@ -1185,10 +1267,10 @@ ${mealsList}
   // ── RENDER ───────────────────────────────────────────────────────────────
   return (
     <View style={{ flex: 1 }}>
-      {/* Fond PCB avec grille de circuits */}
-      <PCBBackground />
+      {/* Fond blanc avec motifs de circuits verts */}
+      <CircuitPatternBackground />
 
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
 
       {/* ===== HEADER — Minimaliste et premium ===== */}
       <View style={{
@@ -1200,22 +1282,22 @@ ${mealsList}
         alignItems: 'center',
       }}>
         <View>
-          <Text style={{ color: '#FFF', fontSize: 22, fontWeight: 'bold', letterSpacing: 0.5 }}>
+          <Text style={{ color: '#1A2030', fontSize: 22, fontWeight: 'bold', letterSpacing: 0.5 }}>
             MedicAi
           </Text>
-          <Text style={{ color: 'rgba(0,217,132,0.4)', fontSize: 8, letterSpacing: 2, marginTop: 1 }}>
+          <Text style={{ color: 'rgba(0,150,130,0.5)', fontSize: 8, letterSpacing: 2, marginTop: 1 }}>
             ESPACE SANT{'\u00C9'} INTELLIGENT
           </Text>
         </View>
         <View style={{
-          backgroundColor: 'rgba(0,217,132,0.08)',
+          backgroundColor: 'rgba(0,217,132,0.1)',
           borderRadius: 20,
           paddingHorizontal: 10,
           paddingVertical: 4,
           borderWidth: 1,
-          borderColor: 'rgba(0,217,132,0.25)',
+          borderColor: 'rgba(0,217,132,0.3)',
         }}>
-          <Text style={{ color: '#00D984', fontSize: 11 }}>{'\uD83D\uDFE2'} En ligne</Text>
+          <Text style={{ color: '#00B870', fontSize: 11 }}>{'\uD83D\uDFE2'} En ligne</Text>
         </View>
       </View>
 
@@ -1264,8 +1346,8 @@ ${mealsList}
 
           {/* Circuit descendant des dossiers vers les boules */}
           <View style={{ alignItems: 'center', marginBottom: 4 }}>
-            <View style={{ width: 1.5, height: 8, backgroundColor: 'rgba(0,200,220,0.12)' }} />
-            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,200,220,0.3)' }} />
+            <View style={{ width: 1.5, height: 8, backgroundColor: 'rgba(0,180,160,0.2)' }} />
+            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,180,160,0.4)' }} />
           </View>
 
           {/* RÉSEAU DE BALLES MÉTALLIQUES EN S */}
@@ -1278,23 +1360,23 @@ ${mealsList}
           {/* LÉGENDE */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 6 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2A3038', borderWidth: 1, borderColor: 'rgba(255,80,80,0.5)' }} />
-              <Text style={{ color: '#555', fontSize: 9 }}>ALIXEN</Text>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2D3238', borderWidth: 1, borderColor: 'rgba(255,80,80,0.5)' }} />
+              <Text style={{ color: 'rgba(60,70,80,0.5)', fontSize: 9 }}>ALIXEN</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2A3038', borderWidth: 1, borderColor: 'rgba(77,166,255,0.4)' }} />
-              <Text style={{ color: '#555', fontSize: 9 }}>Vous</Text>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2D3238', borderWidth: 1, borderColor: 'rgba(77,166,255,0.4)' }} />
+              <Text style={{ color: 'rgba(60,70,80,0.5)', fontSize: 9 }}>Vous</Text>
             </View>
           </View>
 
           {/* Résultat de recherche */}
           {searchResults.length > 0 && searchIndex >= 0 && (
-            <Text style={{ textAlign: 'center', color: 'rgba(77,166,255,0.4)', fontSize: 8, marginTop: 3 }}>
+            <Text style={{ textAlign: 'center', color: 'rgba(255,160,50,0.6)', fontSize: 9, marginTop: 3 }}>
               Boule #{searchResults[searchIndex] + 1} — {searchIndex + 1}/{searchResults.length}
             </Text>
           )}
           {searchQuery.trim() !== '' && searchResults.length === 0 && (
-            <Text style={{ textAlign: 'center', color: '#444', fontSize: 8, marginTop: 4 }}>
+            <Text style={{ textAlign: 'center', color: 'rgba(60,70,80,0.4)', fontSize: 8, marginTop: 4 }}>
               Aucun résultat
             </Text>
           )}
@@ -1306,15 +1388,15 @@ ${mealsList}
           marginBottom: 4,
           paddingHorizontal: 8,
           paddingVertical: 8,
-          backgroundColor: '#1E2530',
+          backgroundColor: '#252A30',
           borderRadius: 14,
           borderWidth: 1,
-          borderColor: 'rgba(74,79,85,0.5)',
+          borderColor: 'rgba(74,79,85,0.4)',
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.3,
-          shadowRadius: 6,
-          elevation: 4,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.15,
+          shadowRadius: 8,
+          elevation: 6,
         }}>
           {/* Reflet métallique en haut de la carte */}
           <View style={{
@@ -1329,30 +1411,30 @@ ${mealsList}
 
           {/* LIGNE DU HAUT : Recherche (gauche) + Upload (droite) */}
           <View style={{ flexDirection: 'row', marginBottom: 6, gap: 6 }}>
-            {/* Recherche — haut gauche */}
+            {/* Recherche — haut gauche (thème ORANGE) */}
             <View style={{
               flex: 1,
               flexDirection: 'row',
               alignItems: 'center',
-              backgroundColor: 'rgba(50,58,68,0.7)',
+              backgroundColor: 'rgba(60,50,40,0.6)',
               borderRadius: 12,
               borderWidth: 0.5,
-              borderColor: 'rgba(77,166,255,0.15)',
+              borderColor: 'rgba(255,160,50,0.2)',
               paddingHorizontal: 10,
               paddingVertical: Platform.OS === 'ios' ? 8 : 5,
             }}>
               <TextInput
-                style={{ flex: 1, color: '#4DA6FF', fontSize: 11, paddingVertical: 0 }}
+                style={{ flex: 1, color: '#FF9F43', fontSize: 11, paddingVertical: 0 }}
                 placeholder="Chercher..."
-                placeholderTextColor="rgba(77,166,255,0.25)"
+                placeholderTextColor="rgba(255,160,50,0.3)"
                 value={searchQuery}
                 onChangeText={handleSearch}
               />
               <TouchableOpacity onPress={() => navigateSearch(-1)} style={{ paddingHorizontal: 3 }}>
-                <Text style={{ color: 'rgba(77,166,255,0.35)', fontSize: 11 }}>{'\u25C0'}</Text>
+                <Text style={{ color: 'rgba(255,160,50,0.45)', fontSize: 11 }}>{'\u25C0'}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => navigateSearch(1)} style={{ paddingHorizontal: 3 }}>
-                <Text style={{ color: 'rgba(77,166,255,0.35)', fontSize: 11 }}>{'\u25B6'}</Text>
+                <Text style={{ color: 'rgba(255,160,50,0.45)', fontSize: 11 }}>{'\u25B6'}</Text>
               </TouchableOpacity>
             </View>
 
