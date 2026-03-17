@@ -6,10 +6,10 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   Image, Platform, Animated, KeyboardAvoidingView,
-  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable,
+  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Alert,
 } from 'react-native';
 import Svg, {
-  Defs, Rect, Path, Circle,
+  Defs, Rect, Path, Circle, Line,
   LinearGradient as SvgLinearGradient, Stop,
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
@@ -310,7 +310,7 @@ const FormattedResponseText = ({ text, style }) => {
 // ============================================
 // METAL CARD — Style LIXUM sombre avec dégradé
 // ============================================
-const MetalCard = ({ title, icon, onPress }) => {
+const MetalCard = ({ title, titleColor = '#00D984', iconElement, onPress }) => {
   const pressAnim = useRef(new Animated.Value(0)).current;
   const handlePressIn = () => Animated.timing(pressAnim, { toValue: 1, duration: 120, useNativeDriver: false }).start();
   const handlePressOut = () => Animated.timing(pressAnim, { toValue: 0, duration: 180, useNativeDriver: false }).start();
@@ -342,12 +342,14 @@ const MetalCard = ({ title, icon, onPress }) => {
             overflow: 'hidden',
           }}
         >
-          {/* Icône */}
-          <Text style={{ fontSize: 32, marginBottom: 8 }}>{icon}</Text>
+          {/* Icône SVG */}
+          <View style={{ marginBottom: 8 }}>
+            {iconElement}
+          </View>
 
           {/* Titre */}
           <Text style={{
-            color: '#00D984',
+            color: titleColor,
             fontSize: fp(14),
             fontWeight: '700',
             letterSpacing: 0.5,
@@ -361,30 +363,58 @@ const MetalCard = ({ title, icon, onPress }) => {
 // (GrooveLiquidInput removed — replaced by gradient input bar in render)
 
 // ============================================
-// LOADING DOTS (3 points qui pulsent en séquence)
+// LOADING DOTS — Premium typing indicator with bounce
 // ============================================
 const LoadingDots = () => {
-  const anims = [
-    useRef(new Animated.Value(0.3)).current,
-    useRef(new Animated.Value(0.3)).current,
-    useRef(new Animated.Value(0.3)).current,
-  ];
+  const bounce1 = useRef(new Animated.Value(0)).current;
+  const bounce2 = useRef(new Animated.Value(0)).current;
+  const bounce3 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    anims.forEach((a, i) => {
-      Animated.loop(Animated.sequence([
-        Animated.delay(i * 200),
-        Animated.timing(a, { toValue: 1, duration: 400, useNativeDriver: false }),
-        Animated.timing(a, { toValue: 0.3, duration: 400, useNativeDriver: false }),
-      ])).start();
-    });
+    const createBounce = (anim, delay) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(anim, { toValue: -4, duration: 200, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0, duration: 200, useNativeDriver: true }),
+          Animated.delay(400 - delay),
+        ])
+      );
+
+    createBounce(bounce1, 0).start();
+    createBounce(bounce2, 150).start();
+    createBounce(bounce3, 300).start();
   }, []);
 
   return (
-    <View style={{ flexDirection: 'row', gap: 6, paddingVertical: 4 }}>
-      {anims.map((a, i) => (
-        <Animated.View key={i} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#00D984', opacity: a }} />
-      ))}
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0, 217, 132, 0.08)',
+      borderRadius: wp(16),
+      paddingHorizontal: wp(16),
+      paddingVertical: wp(8),
+      borderWidth: 1,
+      borderColor: 'rgba(0, 217, 132, 0.15)',
+      alignSelf: 'flex-start',
+      gap: wp(8),
+    }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        {[bounce1, bounce2, bounce3].map((anim, i) => (
+          <Animated.View key={i} style={{
+            width: wp(6),
+            height: wp(6),
+            borderRadius: wp(3),
+            backgroundColor: '#00D984',
+            transform: [{ translateY: anim }],
+          }} />
+        ))}
+      </View>
+      <Text style={{
+        fontSize: fp(12),
+        color: 'rgba(0, 217, 132, 0.7)',
+        fontStyle: 'italic',
+      }}>ALIXEN reflechit...</Text>
     </View>
   );
 };
@@ -430,31 +460,55 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage }) => {
       opacity: fadeAnim,
       marginHorizontal: 10,
       marginBottom: 8,
-      borderRadius: 16,
-      backgroundColor: '#FFF',
+      borderRadius: wp(16),
+      backgroundColor: '#FAFBFC',
       borderWidth: 1,
       borderColor: isLoading ? 'rgba(0,200,130,0.1)' : (isUserMessage ? 'rgba(70,140,220,0.1)' : 'rgba(210,80,80,0.1)'),
+      borderLeftWidth: (!isUserMessage || isLoading) ? wp(3) : 1,
+      borderLeftColor: (!isUserMessage || isLoading) ? '#00D984' : (isUserMessage ? 'rgba(70,140,220,0.1)' : 'rgba(210,80,80,0.1)'),
       padding: 14,
       minHeight: 50,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 6,
-      elevation: 2,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 4,
     }}>
-      {/* Indicateur */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-        <View style={{
-          width: 7, height: 7, borderRadius: 3.5,
-          backgroundColor: isLoading ? '#00D984' : (isUserMessage ? '#4A8CDC' : '#D06060'),
-        }} />
-        <Text style={{
-          color: isLoading ? 'rgba(0,170,120,0.5)' : (isUserMessage ? 'rgba(70,130,210,0.5)' : 'rgba(200,80,80,0.5)'),
-          fontSize: 9, fontWeight: '600', letterSpacing: 1,
-        }}>
-          {isLoading ? 'ALIXEN RÉFLÉCHIT...' : (isUserMessage ? 'VOUS' : 'ALIXEN')}
-        </Text>
-      </View>
+      {/* Badge ALIXEN premium */}
+      {!isUserMessage && !isLoading && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginBottom: wp(8) }}>
+          <LinearGradient
+            colors={['#00D984', '#00B871']}
+            style={{
+              width: wp(20),
+              height: wp(20),
+              borderRadius: wp(10),
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: '#FFF', fontSize: fp(9), fontWeight: '800' }}>AI</Text>
+          </LinearGradient>
+          <Text style={{
+            fontSize: fp(13),
+            fontWeight: '700',
+            color: '#2D3436',
+            letterSpacing: 1,
+          }}>ALIXEN</Text>
+        </View>
+      )}
+      {isUserMessage && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+          <View style={{
+            width: 7, height: 7, borderRadius: 3.5,
+            backgroundColor: '#4A8CDC',
+          }} />
+          <Text style={{
+            color: 'rgba(70,130,210,0.5)',
+            fontSize: 9, fontWeight: '600', letterSpacing: 1,
+          }}>VOUS</Text>
+        </View>
+      )}
 
       {/* Contenu */}
       {isLoading ? (
@@ -1314,16 +1368,32 @@ ${mealsList}
             gap: wp(12),
             paddingHorizontal: 16,
             marginTop: 8,
-            marginBottom: 8,
+            marginBottom: 4,
           }}>
             <MetalCard
               title="MediBook"
-              icon="📊"
+              iconElement={
+                <Svg width={wp(36)} height={wp(36)} viewBox="0 0 24 24" fill="none">
+                  <Rect x="3" y="2" width="14" height="20" rx="2" stroke="#00D984" strokeWidth="1.5" fill="none"/>
+                  <Line x1="7" y1="8" x2="13" y2="8" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                  <Line x1="7" y1="12" x2="13" y2="12" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                  <Line x1="7" y1="16" x2="11" y2="16" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                  <Line x1="19" y1="3" x2="19" y2="7" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                  <Line x1="17" y1="5" x2="21" y2="5" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                </Svg>
+              }
               onPress={() => addBotMessage("Le MediBook sera disponible prochainement. Votre dossier médical complet avec bilans, rappels et médicaments.")}
             />
             <MetalCard
               title="Secret Pocket"
-              icon="🔒"
+              titleColor="#D4AF37"
+              iconElement={
+                <Svg width={wp(36)} height={wp(36)} viewBox="0 0 24 24" fill="none">
+                  <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" fill="none"/>
+                  <Rect x="9" y="10" width="6" height="5" rx="1" stroke="#D4AF37" strokeWidth="1.5" fill="none"/>
+                  <Path d="M10 10V8a2 2 0 014 0v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+                </Svg>
+              }
               onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. Votre coffre-fort santé chiffré.")}
             />
           </View>
@@ -1332,6 +1402,7 @@ ${mealsList}
           <Animated.View style={{
             opacity: contentEntry,
             transform: [{ translateY: contentEntry.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+            marginBottom: wp(4),
           }}>
             <SynapticNetwork
               messages={messages}
@@ -1339,18 +1410,6 @@ ${mealsList}
               onBallPress={handleBallPress}
             />
           </Animated.View>
-
-          {/* Légende discrète */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 14, marginTop: 2, marginBottom: 2 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#EDF0F4', borderWidth: 1, borderColor: 'rgba(210,80,80,0.3)' }} />
-              <Text style={{ color: 'rgba(0,0,0,0.3)', fontSize: 8 }}>ALIXEN</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#EDF0F4', borderWidth: 1, borderColor: 'rgba(70,140,220,0.3)' }} />
-              <Text style={{ color: 'rgba(0,0,0,0.3)', fontSize: 8 }}>Vous</Text>
-            </View>
-          </View>
 
           {/* Carte de réponse */}
           <ResponseCard
@@ -1453,6 +1512,50 @@ ${mealsList}
               paddingVertical: 6,
               gap: 6,
             }}>
+              {/* Bouton "+" ajout document */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => {
+                  Alert.alert(
+                    'Ajouter un document',
+                    'Choisissez le type de document a analyser par ALIXEN',
+                    [
+                      { text: 'Bilan sanguin (PDF)', onPress: () => console.log('Bilan sanguin') },
+                      { text: 'Ordonnance (Photo)', onPress: () => console.log('Ordonnance') },
+                      { text: 'Resultats labo', onPress: () => console.log('Resultats labo') },
+                      { text: 'Annuler', style: 'cancel' },
+                    ]
+                  );
+                }}
+                style={({ pressed }) => ({
+                  width: wp(38),
+                  height: wp(38),
+                  borderRadius: wp(19),
+                  borderWidth: 1,
+                  borderColor: '#4A4F55',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  overflow: 'hidden',
+                  transform: [{ scale: pressed ? 0.92 : 1 }],
+                })}
+              >
+                <LinearGradient
+                  colors={['#3A3F46', '#252A30']}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: wp(19),
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                    <Line x1="12" y1="5" x2="12" y2="19" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
+                    <Line x1="5" y1="12" x2="19" y2="12" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
+                  </Svg>
+                </LinearGradient>
+              </Pressable>
+
               {/* Bouton Recherche — carré arrondi séparé */}
               <TouchableOpacity
                 onPress={() => setSearchVisible(!searchVisible)}
