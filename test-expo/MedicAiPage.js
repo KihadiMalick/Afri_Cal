@@ -216,7 +216,7 @@ const PCBBackground = () => {
     <View style={{
       position: 'absolute',
       top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: '#0a0e14',
+      backgroundColor: '#0B1A2A',
     }}>
       {/* Grille verticale fine */}
       {Array.from({ length: Math.ceil(SCREEN_WIDTH / 12) }, (_, i) => (
@@ -226,7 +226,7 @@ const PCBBackground = () => {
           top: 0,
           width: 0.3,
           height: '100%',
-          backgroundColor: 'rgba(0,217,132,0.015)',
+          backgroundColor: 'rgba(0,180,200,0.02)',
         }} />
       ))}
       {/* Grille horizontale fine */}
@@ -237,7 +237,7 @@ const PCBBackground = () => {
           left: 0,
           height: 0.3,
           width: '100%',
-          backgroundColor: 'rgba(0,217,132,0.015)',
+          backgroundColor: 'rgba(0,180,200,0.02)',
         }} />
       ))}
     </View>
@@ -260,7 +260,7 @@ const AlixenBrain = () => {
   }, []);
 
   return (
-    <View style={{ alignItems: 'center', paddingTop: 8, paddingBottom: 4 }}>
+    <View style={{ alignItems: 'center', paddingTop: 6, paddingBottom: 0 }}>
       {/* Bulle métallique du cerveau */}
       <View style={{
         width: 70,
@@ -305,7 +305,7 @@ const AlixenBrain = () => {
           bottom: -3,
           borderRadius: 38,
           borderWidth: 0.5,
-          borderColor: 'rgba(0,217,132,0.3)',
+          borderColor: 'rgba(0,200,220,0.35)',
           opacity: pulseAnim,
         }} />
       </View>
@@ -333,14 +333,14 @@ const CircuitConnectors = () => {
   return (
     <View style={{ alignItems: 'center', marginBottom: 2 }}>
       {/* Ligne verticale depuis ALIXEN */}
-      <View style={{ width: 1.5, height: 18, backgroundColor: 'rgba(0,217,132,0.15)' }} />
+      <View style={{ width: 1.5, height: 10, backgroundColor: 'rgba(0,200,220,0.15)' }} />
 
       {/* Point de jonction central (gros, pulsant) */}
       <Animated.View style={{
         width: 7,
         height: 7,
         borderRadius: 3.5,
-        backgroundColor: 'rgba(0,217,132,0.4)',
+        backgroundColor: 'rgba(0,200,220,0.5)',
         opacity: dotOpacity,
         marginVertical: 1,
       }} />
@@ -349,7 +349,7 @@ const CircuitConnectors = () => {
       <View style={{
         flexDirection: 'row',
         width: SCREEN_WIDTH - 40,
-        height: 25,
+        height: 18,
         position: 'relative',
       }}>
         {/* Ligne horizontale gauche */}
@@ -359,7 +359,7 @@ const CircuitConnectors = () => {
           left: 0,
           width: '50%',
           height: 1.5,
-          backgroundColor: 'rgba(0,217,132,0.12)',
+          backgroundColor: 'rgba(0,200,220,0.15)',
         }} />
         {/* Ligne verticale gauche */}
         <View style={{
@@ -367,8 +367,8 @@ const CircuitConnectors = () => {
           top: 0,
           left: 0,
           width: 1.5,
-          height: 25,
-          backgroundColor: 'rgba(0,217,132,0.12)',
+          height: 18,
+          backgroundColor: 'rgba(0,200,220,0.15)',
         }} />
         {/* Point en bas à gauche */}
         <View style={{
@@ -378,7 +378,7 @@ const CircuitConnectors = () => {
           width: 5,
           height: 5,
           borderRadius: 2.5,
-          backgroundColor: 'rgba(0,217,132,0.3)',
+          backgroundColor: 'rgba(0,200,220,0.35)',
         }} />
 
         {/* Ligne horizontale droite */}
@@ -388,7 +388,7 @@ const CircuitConnectors = () => {
           right: 0,
           width: '50%',
           height: 1.5,
-          backgroundColor: 'rgba(0,217,132,0.12)',
+          backgroundColor: 'rgba(0,200,220,0.15)',
         }} />
         {/* Ligne verticale droite */}
         <View style={{
@@ -396,8 +396,8 @@ const CircuitConnectors = () => {
           top: 0,
           right: 0,
           width: 1.5,
-          height: 25,
-          backgroundColor: 'rgba(212,175,55,0.12)',
+          height: 18,
+          backgroundColor: 'rgba(0,200,220,0.15)',
         }} />
         {/* Point en bas à droite */}
         <View style={{
@@ -407,7 +407,7 @@ const CircuitConnectors = () => {
           width: 5,
           height: 5,
           borderRadius: 2.5,
-          backgroundColor: 'rgba(212,175,55,0.3)',
+          backgroundColor: 'rgba(0,200,220,0.35)',
         }} />
 
         {/* POINT LUMINEUX QUI VOYAGE à gauche */}
@@ -421,7 +421,7 @@ const CircuitConnectors = () => {
           width: 5,
           height: 5,
           borderRadius: 2.5,
-          backgroundColor: '#00D984',
+          backgroundColor: '#00D4FF',
           opacity: dotOpacity,
         }} />
 
@@ -436,7 +436,7 @@ const CircuitConnectors = () => {
           width: 5,
           height: 5,
           borderRadius: 2.5,
-          backgroundColor: '#D4AF37',
+          backgroundColor: '#00D4FF',
           opacity: dotOpacity,
         }} />
       </View>
@@ -447,38 +447,51 @@ const CircuitConnectors = () => {
 // ============================================
 // DOSSIER MÉTALLIQUE
 // ============================================
-const MetalFolder = ({ title, subtitle, borderColor, onPress }) => (
+const MetalFolder = ({ title, subtitle, borderColor, onPress, accentColor }) => (
   <TouchableOpacity onPress={onPress} style={{
     flex: 1,
     marginHorizontal: 4,
-    backgroundColor: '#1e2228',
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: borderColor,
-    padding: 8,
+    padding: 10,
     alignItems: 'center',
+    backgroundColor: '#252A30',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
+    elevation: 5,
   }}>
-    {/* Tab métallique */}
-    <View style={{
-      position: 'absolute',
-      top: -4,
-      width: 35,
-      height: 6,
-      borderRadius: 3,
-      backgroundColor: 'rgba(255,255,255,0.03)',
-    }} />
-    {/* Reflet */}
+    {/* Reflet métallique en haut */}
     <View style={{
       position: 'absolute',
       top: 2,
-      left: 4,
-      right: 4,
-      height: 10,
-      borderRadius: 4,
-      backgroundColor: 'rgba(255,255,255,0.02)',
+      left: 6,
+      right: 6,
+      height: 12,
+      borderRadius: 8,
+      backgroundColor: 'rgba(255,255,255,0.035)',
     }} />
-    <Text style={{ color: borderColor.replace('0.3', '0.6'), fontSize: 12, fontWeight: 'bold' }}>{title}</Text>
-    <Text style={{ color: '#555', fontSize: 8, marginTop: 1 }}>{subtitle}</Text>
+
+    {/* Barre de couleur en haut (accent) */}
+    <View style={{
+      position: 'absolute',
+      top: 0,
+      left: 20,
+      right: 20,
+      height: 2,
+      borderRadius: 1,
+      backgroundColor: accentColor || borderColor,
+      opacity: 0.5,
+    }} />
+
+    <Text style={{ color: accentColor || '#00D984', fontSize: 13, fontWeight: 'bold', marginTop: 4 }}>
+      {title}
+    </Text>
+    <Text style={{ color: '#666', fontSize: 8, marginTop: 2 }}>
+      {subtitle}
+    </Text>
   </TouchableOpacity>
 );
 
@@ -526,7 +539,7 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
     borderColor = '#00D984';
     glowColor = '#00D984';
   } else {
-    borderColor = isBot ? 'rgba(232,64,64,0.4)' : 'rgba(77,166,255,0.4)';
+    borderColor = isBot ? 'rgba(255,80,80,0.5)' : 'rgba(77,166,255,0.4)';
     glowColor = isBot ? '#E84040' : '#4DA6FF';
   }
 
@@ -541,7 +554,7 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
           width: BALL_SZ,
           height: BALL_SZ,
           borderRadius: BALL_SZ / 2,
-          backgroundColor: '#252A30',
+          backgroundColor: '#2A3038',
           borderWidth: status === 'loading' ? 1.5 : 1,
           borderColor: borderColor,
           shadowColor: glowColor,
@@ -562,12 +575,32 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
             transform: [{ rotate: '-15deg' }],
           }} />
 
+          {/* Reflet ambiant bas-droite */}
+          <View style={{
+            position: 'absolute',
+            bottom: BALL_SZ * 0.15,
+            right: BALL_SZ * 0.15,
+            width: BALL_SZ * 0.18,
+            height: BALL_SZ * 0.18,
+            borderRadius: BALL_SZ * 0.09,
+            backgroundColor: 'rgba(255,255,255,0.025)',
+          }} />
+
           {/* Bordure extérieure métal */}
           <View style={{
             position: 'absolute', top: 1, left: 1, right: 1, bottom: 1,
             borderRadius: BALL_SZ / 2,
             borderWidth: 0.3,
             borderColor: 'rgba(74,79,85,0.3)',
+          }} />
+
+          {/* Double ring extérieur */}
+          <View style={{
+            position: 'absolute',
+            top: -1, left: -1, right: -1, bottom: -1,
+            borderRadius: (BALL_SZ + 2) / 2,
+            borderWidth: 0.3,
+            borderColor: 'rgba(74,79,85,0.4)',
           }} />
 
           {/* Contenu : numéro ou indicateur loading */}
@@ -581,7 +614,7 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
             }} />
           ) : (
             <Text style={{
-              color: status === 'unread' ? '#00D984' : (isBot ? 'rgba(232,64,64,0.6)' : 'rgba(77,166,255,0.6)'),
+              color: status === 'unread' ? '#00D984' : (isBot ? 'rgba(255,90,90,0.7)' : 'rgba(77,166,255,0.6)'),
               fontSize: 11,
               fontWeight: 'bold',
             }}>
@@ -644,7 +677,7 @@ const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
               top: curr.y + BALL_SIZE / 2 - 0.5,
               width: width,
               height: 1,
-              backgroundColor: 'rgba(0,217,132,0.08)',
+              backgroundColor: 'rgba(0,200,220,0.1)',
             }} />
           );
         } else {
@@ -655,7 +688,7 @@ const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
               top: prev.y + BALL_SIZE / 2,
               width: 1,
               height: ROW_SPACING,
-              backgroundColor: 'rgba(0,217,132,0.08)',
+              backgroundColor: 'rgba(0,200,220,0.1)',
             }} />
           );
         }
@@ -675,7 +708,7 @@ const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
               width: 4,
               height: 4,
               borderRadius: 2,
-              backgroundColor: 'rgba(0,217,132,0.2)',
+              backgroundColor: 'rgba(0,200,220,0.25)',
             }} />
           );
         }
@@ -741,10 +774,12 @@ const HourglassTimer = ({ tokensUsed, tokenLimit }) => {
       }}>
         {/* Cadre haut */}
         <View style={{
-          width: GLASS_W,
-          height: 3,
-          backgroundColor: '#4A4F55',
-          borderRadius: 1.5,
+          width: GLASS_W + 4,
+          height: 4,
+          backgroundColor: '#3A3F46',
+          borderRadius: 2,
+          borderWidth: 0.5,
+          borderColor: '#4A4F55',
         }} />
 
         {/* Partie haute (sable qui descend = tokens restants) */}
@@ -768,7 +803,7 @@ const HourglassTimer = ({ tokensUsed, tokenLimit }) => {
             <View style={{
               width: '100%',
               height: `${Math.max((1 - usagePercent) * 100, 0)}%`,
-              backgroundColor: isExpired ? 'rgba(232,64,64,0.3)' : 'rgba(0,217,132,0.25)',
+              backgroundColor: isExpired ? 'rgba(232,64,64,0.3)' : 'rgba(0,217,132,0.35)',
               borderBottomLeftRadius: GLASS_W * 0.3,
               borderBottomRightRadius: GLASS_W * 0.3,
             }} />
@@ -777,10 +812,10 @@ const HourglassTimer = ({ tokensUsed, tokenLimit }) => {
 
         {/* Goulot */}
         <View style={{
-          width: 4,
-          height: 4,
-          backgroundColor: 'rgba(0,217,132,0.15)',
-          borderRadius: 2,
+          width: 5,
+          height: 5,
+          backgroundColor: 'rgba(0,200,220,0.2)',
+          borderRadius: 2.5,
         }} />
 
         {/* Partie basse (sable qui s'accumule = tokens utilisés) */}
@@ -813,10 +848,12 @@ const HourglassTimer = ({ tokensUsed, tokenLimit }) => {
 
         {/* Cadre bas */}
         <View style={{
-          width: GLASS_W,
-          height: 3,
-          backgroundColor: '#4A4F55',
-          borderRadius: 1.5,
+          width: GLASS_W + 4,
+          height: 4,
+          backgroundColor: '#3A3F46',
+          borderRadius: 2,
+          borderWidth: 0.5,
+          borderColor: '#4A4F55',
         }} />
       </View>
 
@@ -1182,34 +1219,6 @@ ${mealsList}
         </View>
       </View>
 
-      {/* ===== PRÉSENTATION ALIXEN (remplace la barre énergie) ===== */}
-      <View style={{
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        backgroundColor: 'rgba(10,14,20,0.8)',
-        borderBottomWidth: 0.5,
-        borderBottomColor: 'rgba(0,217,132,0.08)',
-      }}>
-        <Text style={{
-          color: 'rgba(0,217,132,0.5)',
-          fontSize: 12,
-          fontWeight: 'bold',
-          letterSpacing: 6,
-          textAlign: 'center',
-        }}>
-          ALIXEN
-        </Text>
-        <Text style={{
-          color: 'rgba(0,217,132,0.2)',
-          fontSize: 7,
-          letterSpacing: 2.5,
-          textAlign: 'center',
-          marginTop: 1,
-        }}>
-          ESPACE SANT{'\u00C9'} INTELLIGENT
-        </Text>
-      </View>
-
       {/* ===== ZONE DE CHAT ===== */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -1230,11 +1239,12 @@ ${mealsList}
           <CircuitConnectors />
 
           {/* Dossiers métalliques + Sablier au centre */}
-          <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 6, alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 4, alignItems: 'center' }}>
             <MetalFolder
               title="MediBook"
               subtitle="Dossier médical"
-              borderColor="rgba(0,217,132,0.3)"
+              borderColor="rgba(0,217,132,0.25)"
+              accentColor="#00D984"
               onPress={() => addBotMessage("Le MediBook sera disponible prochainement. \uD83D\uDCCB")}
             />
 
@@ -1246,15 +1256,16 @@ ${mealsList}
             <MetalFolder
               title="Secret Pocket"
               subtitle="Coffre-fort santé"
-              borderColor="rgba(212,175,55,0.3)"
+              borderColor="rgba(212,175,55,0.25)"
+              accentColor="#D4AF37"
               onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. \uD83D\uDD10")}
             />
           </View>
 
           {/* Circuit descendant des dossiers vers les boules */}
           <View style={{ alignItems: 'center', marginBottom: 4 }}>
-            <View style={{ width: 1.5, height: 14, backgroundColor: 'rgba(0,217,132,0.1)' }} />
-            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,217,132,0.25)' }} />
+            <View style={{ width: 1.5, height: 8, backgroundColor: 'rgba(0,200,220,0.12)' }} />
+            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,200,220,0.3)' }} />
           </View>
 
           {/* RÉSEAU DE BALLES MÉTALLIQUES EN S */}
@@ -1267,11 +1278,11 @@ ${mealsList}
           {/* LÉGENDE */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 6 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#252A30', borderWidth: 1, borderColor: 'rgba(232,64,64,0.4)' }} />
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2A3038', borderWidth: 1, borderColor: 'rgba(255,80,80,0.5)' }} />
               <Text style={{ color: '#555', fontSize: 9 }}>ALIXEN</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#252A30', borderWidth: 1, borderColor: 'rgba(77,166,255,0.4)' }} />
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2A3038', borderWidth: 1, borderColor: 'rgba(77,166,255,0.4)' }} />
               <Text style={{ color: '#555', fontSize: 9 }}>Vous</Text>
             </View>
           </View>
@@ -1295,10 +1306,10 @@ ${mealsList}
           marginBottom: 4,
           paddingHorizontal: 8,
           paddingVertical: 8,
-          backgroundColor: '#1A1D22',
+          backgroundColor: '#1E2530',
           borderRadius: 14,
-          borderWidth: 0.8,
-          borderColor: '#4A4F55',
+          borderWidth: 1,
+          borderColor: 'rgba(74,79,85,0.5)',
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 3 },
           shadowOpacity: 0.3,
@@ -1323,7 +1334,7 @@ ${mealsList}
               flex: 1,
               flexDirection: 'row',
               alignItems: 'center',
-              backgroundColor: 'rgba(45,50,58,0.6)',
+              backgroundColor: 'rgba(50,58,68,0.7)',
               borderRadius: 12,
               borderWidth: 0.5,
               borderColor: 'rgba(77,166,255,0.15)',
@@ -1349,7 +1360,7 @@ ${mealsList}
             <TouchableOpacity
               onPress={() => addBotMessage("L'import de fichiers sera disponible prochainement.")}
               style={{
-                backgroundColor: 'rgba(45,50,58,0.6)',
+                backgroundColor: 'rgba(50,58,68,0.7)',
                 borderRadius: 12,
                 borderWidth: 0.5,
                 borderColor: 'rgba(212,175,55,0.15)',
@@ -1367,7 +1378,7 @@ ${mealsList}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
             <View style={{
               flex: 1,
-              backgroundColor: 'rgba(45,50,58,0.6)',
+              backgroundColor: 'rgba(50,58,68,0.7)',
               borderRadius: 12,
               borderWidth: 0.5,
               borderColor: 'rgba(0,217,132,0.15)',
