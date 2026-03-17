@@ -517,145 +517,212 @@ const WaitingBall = () => {
 const generateParticles = (CX, CY, screenW, imageH) => {
   const particles = [];
 
-  // GROUPE 1 : AU-DESSUS DE LA TÊTE (jaune/vert)
-  for (let i = 0; i < 15; i++) {
-    const angle = -0.8 + Math.random() * 1.6;
-    const dist = 10 + Math.random() * 50;
+  // ============================================
+  // GROUPE 1 : AU-DESSUS DE LA TÊTE (25 particules)
+  // Jaune/vert lumineux — énergie du cerveau qui émane
+  // Doivent être VISIBLES, tailles variées, certaines grosses
+  // Remplir tout l'arc au-dessus du crâne
+  // ============================================
+  for (let i = 0; i < 25; i++) {
+    const spreadX = -screenW * 0.3 + Math.random() * screenW * 0.6;
+    const topY = Math.random() * 45;
     particles.push({
-      baseX: CX + Math.cos(angle) * dist * 0.8 - 3,
-      baseY: 5 + Math.random() * 35,
-      size: 1 + Math.random() * 4,
-      color: Math.random() > 0.4
-        ? `rgba(200,220,80,${0.15 + Math.random() * 0.3})`
-        : `rgba(120,220,140,${0.1 + Math.random() * 0.25})`,
-      ampX: 2 + Math.random() * 5,
-      ampY: 2 + Math.random() * 6,
-      durationX: 3000 + Math.random() * 4000,
-      durationY: 3500 + Math.random() * 4000,
+      baseX: CX + spreadX,
+      baseY: topY,
+      size: 1.5 + Math.random() * 5.5,
+      color: Math.random() > 0.35
+        ? 'rgba(210,225,80,' + (0.15 + Math.random() * 0.35) + ')'
+        : 'rgba(130,225,140,' + (0.12 + Math.random() * 0.28) + ')',
+      ampX: 2 + Math.random() * 7,
+      ampY: 2 + Math.random() * 8,
+      durationX: 2500 + Math.random() * 3500,
+      durationY: 3000 + Math.random() * 3500,
       animX: new Animated.Value(Math.random()),
       animY: new Animated.Value(Math.random()),
-      animOpacity: new Animated.Value(0.1 + Math.random() * 0.2),
-      minOpacity: 0.05 + Math.random() * 0.1,
-      maxOpacity: 0.2 + Math.random() * 0.35,
-      pulseDuration: 1500 + Math.random() * 3000,
-      layer: Math.random() > 0.5 ? 'front' : 'back',
+      animOpacity: new Animated.Value(0.1 + Math.random() * 0.15),
+      minOpacity: 0.06 + Math.random() * 0.1,
+      maxOpacity: 0.25 + Math.random() * 0.4,
+      pulseDuration: 1200 + Math.random() * 2500,
+      layer: Math.random() > 0.4 ? 'front' : 'back',
     });
   }
 
-  // GROUPE 2 : CÔTÉ GAUCHE (turquoise/cyan)
-  for (let i = 0; i < 12; i++) {
+  // ============================================
+  // GROUPE 2 : CÔTÉ GAUCHE DENSE (25 particules)
+  // Turquoise/cyan — correspond à la joue gauche du visage
+  // BEAUCOUP de particules, du bord gauche de l'écran
+  // jusqu'au centre du visage, sur toute la hauteur
+  // ============================================
+  for (let i = 0; i < 25; i++) {
     particles.push({
-      baseX: 5 + Math.random() * (CX - 30),
-      baseY: 20 + Math.random() * (imageH - 50),
-      size: 1.5 + Math.random() * 5,
-      color: Math.random() > 0.3
-        ? `rgba(0,200,200,${0.08 + Math.random() * 0.2})`
-        : `rgba(0,220,180,${0.06 + Math.random() * 0.15})`,
-      ampX: 3 + Math.random() * 6,
-      ampY: 2 + Math.random() * 5,
-      durationX: 4000 + Math.random() * 5000,
-      durationY: 3500 + Math.random() * 4500,
+      baseX: 5 + Math.random() * (CX - 15),
+      baseY: 15 + Math.random() * (imageH - 30),
+      size: 1 + Math.random() * 6.5,
+      color: Math.random() > 0.25
+        ? 'rgba(0,210,210,' + (0.08 + Math.random() * 0.25) + ')'
+        : 'rgba(0,230,190,' + (0.06 + Math.random() * 0.2) + ')',
+      ampX: 3 + Math.random() * 8,
+      ampY: 2 + Math.random() * 6,
+      durationX: 3500 + Math.random() * 5000,
+      durationY: 3000 + Math.random() * 4500,
       animX: new Animated.Value(Math.random()),
       animY: new Animated.Value(Math.random()),
-      animOpacity: new Animated.Value(0.05 + Math.random() * 0.1),
-      minOpacity: 0.03 + Math.random() * 0.06,
-      maxOpacity: 0.12 + Math.random() * 0.2,
+      animOpacity: new Animated.Value(0.04 + Math.random() * 0.1),
+      minOpacity: 0.03 + Math.random() * 0.07,
+      maxOpacity: 0.12 + Math.random() * 0.25,
       pulseDuration: 2000 + Math.random() * 4000,
       layer: 'back',
     });
   }
 
-  // GROUPE 3 : CÔTÉ DROIT (violet/rose)
-  for (let i = 0; i < 12; i++) {
+  // ============================================
+  // GROUPE 3 : CÔTÉ DROIT DENSE (25 particules)
+  // Violet/rose/mauve — correspond au côté droit du visage
+  // Même densité que le côté gauche mais en violet
+  // Du centre jusqu'au bord droit de l'écran
+  // ============================================
+  for (let i = 0; i < 25; i++) {
     particles.push({
-      baseX: CX + 20 + Math.random() * (CX - 20),
-      baseY: 20 + Math.random() * (imageH - 50),
-      size: 1.5 + Math.random() * 5,
+      baseX: CX + 15 + Math.random() * (CX - 15),
+      baseY: 15 + Math.random() * (imageH - 30),
+      size: 1 + Math.random() * 6.5,
       color: Math.random() > 0.3
-        ? `rgba(180,130,200,${0.06 + Math.random() * 0.15})`
-        : `rgba(200,150,180,${0.05 + Math.random() * 0.12})`,
-      ampX: 3 + Math.random() * 6,
-      ampY: 2 + Math.random() * 5,
-      durationX: 4000 + Math.random() * 5000,
-      durationY: 3500 + Math.random() * 4500,
+        ? 'rgba(185,135,210,' + (0.07 + Math.random() * 0.2) + ')'
+        : Math.random() > 0.5
+          ? 'rgba(210,155,190,' + (0.05 + Math.random() * 0.15) + ')'
+          : 'rgba(160,120,200,' + (0.06 + Math.random() * 0.18) + ')',
+      ampX: 3 + Math.random() * 8,
+      ampY: 2 + Math.random() * 6,
+      durationX: 3500 + Math.random() * 5000,
+      durationY: 3000 + Math.random() * 4500,
       animX: new Animated.Value(Math.random()),
       animY: new Animated.Value(Math.random()),
       animOpacity: new Animated.Value(0.04 + Math.random() * 0.08),
-      minOpacity: 0.02 + Math.random() * 0.05,
-      maxOpacity: 0.1 + Math.random() * 0.18,
+      minOpacity: 0.02 + Math.random() * 0.06,
+      maxOpacity: 0.1 + Math.random() * 0.22,
       pulseDuration: 2000 + Math.random() * 4000,
       layer: 'back',
     });
   }
 
-  // GROUPE 4 : FRONT / ZONE CERVEAU (jaune vif, DEVANT l'image)
-  for (let i = 0; i < 10; i++) {
+  // ============================================
+  // GROUPE 4 : FRONT & CERVEAU (15 particules)
+  // Jaune vif — DEVANT l'image, sur le front
+  // Petites, rapides, très lumineuses
+  // Simulent l'activité cérébrale en temps réel
+  // ============================================
+  for (let i = 0; i < 15; i++) {
     particles.push({
-      baseX: CX - 25 + Math.random() * 50,
-      baseY: 15 + Math.random() * 40,
-      size: 0.8 + Math.random() * 2.5,
-      color: Math.random() > 0.5
-        ? `rgba(220,230,100,${0.2 + Math.random() * 0.35})`
-        : `rgba(180,220,80,${0.15 + Math.random() * 0.3})`,
-      ampX: 1.5 + Math.random() * 3,
-      ampY: 1 + Math.random() * 3,
-      durationX: 2000 + Math.random() * 2500,
-      durationY: 2200 + Math.random() * 2500,
+      baseX: CX - 35 + Math.random() * 70,
+      baseY: 10 + Math.random() * 50,
+      size: 0.8 + Math.random() * 3,
+      color: Math.random() > 0.45
+        ? 'rgba(225,235,100,' + (0.2 + Math.random() * 0.4) + ')'
+        : 'rgba(185,225,85,' + (0.15 + Math.random() * 0.35) + ')',
+      ampX: 1 + Math.random() * 4,
+      ampY: 1 + Math.random() * 3.5,
+      durationX: 1800 + Math.random() * 2200,
+      durationY: 2000 + Math.random() * 2200,
       animX: new Animated.Value(Math.random()),
       animY: new Animated.Value(Math.random()),
-      animOpacity: new Animated.Value(0.15 + Math.random() * 0.2),
+      animOpacity: new Animated.Value(0.12 + Math.random() * 0.2),
       minOpacity: 0.08 + Math.random() * 0.1,
-      maxOpacity: 0.3 + Math.random() * 0.4,
-      pulseDuration: 800 + Math.random() * 1500,
+      maxOpacity: 0.3 + Math.random() * 0.45,
+      pulseDuration: 700 + Math.random() * 1200,
       layer: 'front',
     });
   }
 
-  // GROUPE 5 : JOUES ET BAS DU VISAGE (cyan/turquoise DEVANT)
-  for (let i = 0; i < 8; i++) {
+  // ============================================
+  // GROUPE 5 : JOUES & BAS DU VISAGE (10 particules)
+  // Cyan doux DEVANT l'image — très faible opacité
+  // Donne un effet de vie sans cacher les détails
+  // ============================================
+  for (let i = 0; i < 10; i++) {
     particles.push({
-      baseX: CX - 40 + Math.random() * 80,
-      baseY: imageH * 0.4 + Math.random() * (imageH * 0.35),
-      size: 1 + Math.random() * 3,
-      color: `rgba(0,210,200,${0.05 + Math.random() * 0.1})`,
-      ampX: 2 + Math.random() * 4,
-      ampY: 1.5 + Math.random() * 3,
+      baseX: CX - 50 + Math.random() * 100,
+      baseY: imageH * 0.35 + Math.random() * (imageH * 0.4),
+      size: 1 + Math.random() * 3.5,
+      color: 'rgba(0,215,205,' + (0.04 + Math.random() * 0.08) + ')',
+      ampX: 2 + Math.random() * 5,
+      ampY: 1.5 + Math.random() * 4,
       durationX: 4000 + Math.random() * 5000,
       durationY: 3500 + Math.random() * 4500,
       animX: new Animated.Value(Math.random()),
       animY: new Animated.Value(Math.random()),
-      animOpacity: new Animated.Value(0.03 + Math.random() * 0.05),
+      animOpacity: new Animated.Value(0.02 + Math.random() * 0.04),
       minOpacity: 0.01 + Math.random() * 0.03,
-      maxOpacity: 0.06 + Math.random() * 0.1,
+      maxOpacity: 0.05 + Math.random() * 0.1,
       pulseDuration: 3000 + Math.random() * 5000,
       layer: 'front',
     });
   }
 
-  // GROUPE 6 : FOND ÉPARPILLÉ (toutes couleurs)
-  for (let i = 0; i < 20; i++) {
+  // ============================================
+  // GROUPE 6 : DERRIÈRE LA TÊTE (15 particules)
+  // Mix de toutes les couleurs — autour du contour
+  // de la tête, dans le halo. Moyennement visibles.
+  // Comblent l'espace entre le visage et les bords
+  // ============================================
+  for (let i = 0; i < 15; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 35 + Math.random() * 55;
     const colors = [
-      `rgba(0,200,200,${0.03 + Math.random() * 0.08})`,
-      `rgba(180,130,200,${0.02 + Math.random() * 0.06})`,
-      `rgba(200,220,80,${0.02 + Math.random() * 0.06})`,
-      `rgba(255,255,255,${0.02 + Math.random() * 0.05})`,
-      `rgba(0,220,170,${0.03 + Math.random() * 0.07})`,
-      `rgba(200,150,180,${0.02 + Math.random() * 0.05})`,
+      'rgba(0,200,200,' + (0.06 + Math.random() * 0.15) + ')',
+      'rgba(170,130,200,' + (0.05 + Math.random() * 0.12) + ')',
+      'rgba(200,220,90,' + (0.05 + Math.random() * 0.12) + ')',
+      'rgba(0,220,170,' + (0.06 + Math.random() * 0.14) + ')',
+    ];
+    particles.push({
+      baseX: CX + Math.cos(angle) * dist,
+      baseY: CY + Math.sin(angle) * dist * 0.8,
+      size: 2 + Math.random() * 5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      ampX: 3 + Math.random() * 6,
+      ampY: 2 + Math.random() * 5,
+      durationX: 3500 + Math.random() * 4500,
+      durationY: 3000 + Math.random() * 4000,
+      animX: new Animated.Value(Math.random()),
+      animY: new Animated.Value(Math.random()),
+      animOpacity: new Animated.Value(0.04 + Math.random() * 0.08),
+      minOpacity: 0.02 + Math.random() * 0.06,
+      maxOpacity: 0.1 + Math.random() * 0.2,
+      pulseDuration: 2500 + Math.random() * 4000,
+      layer: 'back',
+    });
+  }
+
+  // ============================================
+  // GROUPE 7 : FOND GÉNÉRAL (30 particules)
+  // Éparpillées sur TOUT l'espace — coins, bords, partout
+  // Toutes couleurs (cyan, violet, jaune, blanc, vert, rose)
+  // Grosses et petites mélangées
+  // Remplissent les zones vides pour que rien ne soit mort
+  // ============================================
+  for (let i = 0; i < 30; i++) {
+    const colors = [
+      'rgba(0,200,210,' + (0.03 + Math.random() * 0.1) + ')',
+      'rgba(180,135,210,' + (0.02 + Math.random() * 0.08) + ')',
+      'rgba(210,225,90,' + (0.02 + Math.random() * 0.08) + ')',
+      'rgba(255,255,255,' + (0.02 + Math.random() * 0.06) + ')',
+      'rgba(0,225,175,' + (0.03 + Math.random() * 0.09) + ')',
+      'rgba(210,155,185,' + (0.02 + Math.random() * 0.07) + ')',
+      'rgba(100,200,230,' + (0.03 + Math.random() * 0.08) + ')',
     ];
     particles.push({
       baseX: Math.random() * screenW,
       baseY: Math.random() * imageH,
-      size: 2 + Math.random() * 7,
+      size: 1.5 + Math.random() * 8,
       color: colors[Math.floor(Math.random() * colors.length)],
-      ampX: 3 + Math.random() * 8,
-      ampY: 3 + Math.random() * 7,
-      durationX: 5000 + Math.random() * 7000,
-      durationY: 5000 + Math.random() * 6000,
+      ampX: 3 + Math.random() * 10,
+      ampY: 3 + Math.random() * 8,
+      durationX: 4500 + Math.random() * 7000,
+      durationY: 4500 + Math.random() * 6000,
       animX: new Animated.Value(Math.random()),
       animY: new Animated.Value(Math.random()),
-      animOpacity: new Animated.Value(0.02 + Math.random() * 0.04),
-      minOpacity: 0.01 + Math.random() * 0.02,
-      maxOpacity: 0.05 + Math.random() * 0.1,
+      animOpacity: new Animated.Value(0.02 + Math.random() * 0.05),
+      minOpacity: 0.01 + Math.random() * 0.03,
+      maxOpacity: 0.06 + Math.random() * 0.12,
       pulseDuration: 4000 + Math.random() * 6000,
       layer: 'back',
     });
@@ -740,26 +807,37 @@ const AlixenHeader = () => {
         backgroundColor: '#080E18',
       }} />
 
-      {/* LUEUR AMBIANTE turquoise */}
+      {/* LUEUR AMBIANTE — plus grande, plus visible */}
       <View style={{
         position: 'absolute',
-        top: CY - 40,
-        left: CX - 60,
-        width: 120,
-        height: 80,
-        borderRadius: 60,
-        backgroundColor: 'rgba(0,200,180,0.04)',
+        top: CY - 60,
+        left: CX - 80,
+        width: 160,
+        height: 120,
+        borderRadius: 80,
+        backgroundColor: 'rgba(0,200,180,0.06)',
       }} />
 
-      {/* LUEUR DU CERVEAU jaune/vert */}
+      {/* LUEUR DU CERVEAU — plus intense */}
       <View style={{
         position: 'absolute',
-        top: 5,
-        left: CX - 40,
+        top: 0,
+        left: CX - 55,
+        width: 110,
+        height: 65,
+        borderRadius: 55,
+        backgroundColor: 'rgba(180,220,60,0.045)',
+      }} />
+
+      {/* LUEUR VIOLETTE côté droit */}
+      <View style={{
+        position: 'absolute',
+        top: CY - 30,
+        right: 10,
         width: 80,
-        height: 50,
+        height: 80,
         borderRadius: 40,
-        backgroundColor: 'rgba(180,220,60,0.03)',
+        backgroundColor: 'rgba(170,130,200,0.03)',
       }} />
 
       {/* PARTICULES BACK — derrière l'image */}
