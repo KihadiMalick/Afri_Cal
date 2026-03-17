@@ -238,6 +238,305 @@ const DoctorHeader = () => (
 );
 
 // ============================================
+// SCROLL ARROW — Flèche animée pour indiquer le scroll
+// ============================================
+const ScrollArrow = () => {
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.timing(bounceAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <Animated.View style={{
+      alignSelf: 'center',
+      marginTop: 4,
+      marginBottom: 2,
+      transform: [{
+        translateY: bounceAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 6],
+        }),
+      }],
+    }}>
+      <Text style={{ color: 'rgba(0,160,130,0.4)', fontSize: 20 }}>↓</Text>
+    </Animated.View>
+  );
+};
+
+// ============================================
+// FORMATTED RESPONSE TEXT — Parse **bold** markdown
+// ============================================
+const FormattedResponseText = ({ text, style }) => {
+  if (!text) return null;
+
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+
+  return (
+    <Text style={style}>
+      {parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return (
+            <Text key={i} style={{ fontWeight: 'bold' }}>
+              {part.slice(2, -2)}
+            </Text>
+          );
+        }
+        return <Text key={i}>{part}</Text>;
+      })}
+    </Text>
+  );
+};
+
+// ============================================
+// NEUMORPH CARD — Grande carte neumorphique
+// ============================================
+const NeumorphCard = ({ title, icon, accentColor, onPress }) => {
+  const pressAnim = useRef(new Animated.Value(0)).current;
+
+  const handlePressIn = () => {
+    Animated.timing(pressAnim, { toValue: 1, duration: 120, useNativeDriver: false }).start();
+  };
+  const handlePressOut = () => {
+    Animated.timing(pressAnim, { toValue: 0, duration: 180, useNativeDriver: false }).start();
+  };
+
+  const outerShadow = pressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.4, 0],
+  });
+  const innerShadow = pressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.15],
+  });
+  const scaleVal = pressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.97],
+  });
+
+  const CARD_SIZE = (SCREEN_WIDTH - 48) / 2;
+
+  return (
+    <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut} onPress={onPress}>
+      <Animated.View style={{
+        width: CARD_SIZE,
+        height: CARD_SIZE * 0.7,
+        borderRadius: 18,
+        backgroundColor: '#E4E8EC',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: 'rgba(0,0,0,0.12)',
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: outerShadow,
+        shadowRadius: 8,
+        elevation: 5,
+        borderWidth: 0.5,
+        borderColor: 'rgba(255,255,255,0.6)',
+        transform: [{ scale: scaleVal }],
+      }}>
+        {/* Reflet neumorphique en haut */}
+        <View style={{
+          position: 'absolute',
+          top: 3,
+          left: 8,
+          right: 8,
+          height: 18,
+          borderRadius: 12,
+          backgroundColor: 'rgba(255,255,255,0.45)',
+        }} />
+
+        {/* Ombre intérieure quand pressé */}
+        <Animated.View style={{
+          position: 'absolute',
+          top: 3, left: 3, right: 3, bottom: 3,
+          borderRadius: 16,
+          borderWidth: 1.5,
+          borderColor: 'rgba(0,0,0,0.06)',
+          backgroundColor: 'rgba(0,0,0,0.01)',
+          opacity: innerShadow,
+        }} />
+
+        {/* Icône grande */}
+        <Text style={{ fontSize: 30, marginBottom: 6 }}>{icon}</Text>
+
+        {/* Titre */}
+        <Text style={{
+          color: accentColor,
+          fontSize: 13,
+          fontWeight: 'bold',
+          letterSpacing: 0.5,
+        }}>{title}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+};
+
+// ============================================
+// LIQUID INPUT BAR — Tube de liquide autour de la barre de saisie
+// ============================================
+const LiquidInputBar = ({ children, tokensUsed, tokenLimit }) => {
+  const percent = Math.max(0, Math.min(1, 1 - tokensUsed / tokenLimit));
+  let liquidColor;
+  if (percent > 0.6) liquidColor = '#00D984';
+  else if (percent > 0.3) liquidColor = '#F0C040';
+  else if (percent > 0.1) liquidColor = '#F08030';
+  else liquidColor = '#E05050';
+
+  const BAR_RADIUS = 22;
+  const TUBE_WIDTH = 2.5;
+
+  return (
+    <View style={{
+      marginHorizontal: 8,
+      marginBottom: 4,
+      position: 'relative',
+    }}>
+      {/* Tube transparent (fond) */}
+      <View style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        borderRadius: BAR_RADIUS,
+        borderWidth: TUBE_WIDTH,
+        borderColor: 'rgba(0,0,0,0.04)',
+      }} />
+
+      {/* LIQUIDE — Côté DROIT (segment 1) */}
+      {percent > 0 && (
+        <View style={{
+          position: 'absolute',
+          top: BAR_RADIUS,
+          right: 0,
+          width: TUBE_WIDTH,
+          height: Math.min(1, percent / 0.25) * (44 - BAR_RADIUS * 2 + BAR_RADIUS),
+          backgroundColor: liquidColor,
+          borderRadius: TUBE_WIDTH / 2,
+        }} />
+      )}
+
+      {/* LIQUIDE — Côté BAS (segment 2) */}
+      {percent > 0.25 && (
+        <View style={{
+          position: 'absolute',
+          bottom: 0,
+          right: BAR_RADIUS,
+          height: TUBE_WIDTH,
+          width: Math.min(1, (percent - 0.25) / 0.25) * (SCREEN_WIDTH - 16 - BAR_RADIUS * 2),
+          backgroundColor: liquidColor,
+          borderRadius: TUBE_WIDTH / 2,
+          alignSelf: 'flex-end',
+        }} />
+      )}
+
+      {/* LIQUIDE — Côté GAUCHE (segment 3) */}
+      {percent > 0.5 && (
+        <View style={{
+          position: 'absolute',
+          bottom: BAR_RADIUS,
+          left: 0,
+          width: TUBE_WIDTH,
+          height: Math.min(1, (percent - 0.5) / 0.25) * (44 - BAR_RADIUS * 2 + BAR_RADIUS),
+          backgroundColor: liquidColor,
+          borderRadius: TUBE_WIDTH / 2,
+        }} />
+      )}
+
+      {/* LIQUIDE — Côté HAUT (segment 4) */}
+      {percent > 0.75 && (
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: BAR_RADIUS,
+          height: TUBE_WIDTH,
+          width: Math.min(1, (percent - 0.75) / 0.25) * (SCREEN_WIDTH - 16 - BAR_RADIUS * 2),
+          backgroundColor: liquidColor,
+          borderRadius: TUBE_WIDTH / 2,
+        }} />
+      )}
+
+      {/* Coin haut-droit */}
+      {percent > 0 && (
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: BAR_RADIUS * 2,
+          height: BAR_RADIUS * 2,
+          borderTopRightRadius: BAR_RADIUS,
+          borderWidth: TUBE_WIDTH,
+          borderColor: 'transparent',
+          borderTopColor: percent > 0.85 ? liquidColor : 'transparent',
+          borderRightColor: liquidColor,
+        }} />
+      )}
+
+      {/* Coin bas-droit */}
+      {percent > 0.2 && (
+        <View style={{
+          position: 'absolute',
+          bottom: 0,
+          right: 0,
+          width: BAR_RADIUS * 2,
+          height: BAR_RADIUS * 2,
+          borderBottomRightRadius: BAR_RADIUS,
+          borderWidth: TUBE_WIDTH,
+          borderColor: 'transparent',
+          borderRightColor: percent > 0.05 ? liquidColor : 'transparent',
+          borderBottomColor: percent > 0.25 ? liquidColor : 'transparent',
+        }} />
+      )}
+
+      {/* Coin bas-gauche */}
+      {percent > 0.45 && (
+        <View style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          width: BAR_RADIUS * 2,
+          height: BAR_RADIUS * 2,
+          borderBottomLeftRadius: BAR_RADIUS,
+          borderWidth: TUBE_WIDTH,
+          borderColor: 'transparent',
+          borderBottomColor: percent > 0.4 ? liquidColor : 'transparent',
+          borderLeftColor: percent > 0.5 ? liquidColor : 'transparent',
+        }} />
+      )}
+
+      {/* Coin haut-gauche */}
+      {percent > 0.7 && (
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: BAR_RADIUS * 2,
+          height: BAR_RADIUS * 2,
+          borderTopLeftRadius: BAR_RADIUS,
+          borderWidth: TUBE_WIDTH,
+          borderColor: 'transparent',
+          borderLeftColor: percent > 0.6 ? liquidColor : 'transparent',
+          borderTopColor: percent > 0.75 ? liquidColor : 'transparent',
+        }} />
+      )}
+
+      {/* Le contenu de la barre */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 6,
+        paddingVertical: 5,
+        gap: 5,
+      }}>
+        {children}
+      </View>
+    </View>
+  );
+};
+
+// ============================================
 // LOADING DOTS (3 points qui pulsent en séquence)
 // ============================================
 const LoadingDots = () => {
@@ -337,12 +636,14 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage }) => {
       {isLoading ? (
         <LoadingDots />
       ) : (
-        <Text style={{ color: '#3A4550', fontSize: 13, lineHeight: 20 }}>
-          {displayedText}
-          {!isUserMessage && displayedText.length < (currentMessage || '').length && (
-            <Text style={{ color: '#00D984' }}>|</Text>
-          )}
-        </Text>
+        <View>
+          <FormattedResponseText
+            text={displayedText + (!isUserMessage && displayedText.length < (currentMessage || '').length ? '|' : '')}
+            style={{ color: '#3A4550', fontSize: 13, lineHeight: 20 }}
+          />
+          {/* ScrollArrow si texte long (plus de 6 lignes ~120 chars) */}
+          {displayedText && displayedText.length > 120 && <ScrollArrow />}
+        </View>
       )}
     </Animated.View>
   );
@@ -602,6 +903,42 @@ const ConstellationNetwork = ({ messages, searchHits, onBallPress }) => {
           </View>
         );
       })}
+    </View>
+  );
+};
+
+// ============================================
+// MODAL SCROLL CONTENT — ScrollView avec flèche de scroll
+// ============================================
+const ModalScrollContent = ({ selectedMessage, closeModal, handleRecipePress }) => {
+  const [isScrollable, setIsScrollable] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(false);
+
+  return (
+    <View>
+      <ScrollView
+        style={{ maxHeight: SCREEN_HEIGHT * 0.45 }}
+        onContentSizeChange={(w, h) => setIsScrollable(h > 300)}
+        onScroll={({ nativeEvent }) => {
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          setIsAtBottom(layoutMeasurement.height + contentOffset.y >= contentSize.height - 20);
+        }}
+        scrollEventThrottle={16}
+      >
+        {selectedMessage.role === 'assistant' ? (
+          <FormattedText
+            text={selectedMessage.content}
+            style={{ color: '#3A4550', fontSize: 13, lineHeight: 21 }}
+            onRecipePress={(name) => { closeModal(); handleRecipePress(name); }}
+          />
+        ) : (
+          <FormattedResponseText
+            text={selectedMessage.content}
+            style={{ color: '#3A4550', fontSize: 13, lineHeight: 21 }}
+          />
+        )}
+      </ScrollView>
+      {isScrollable && !isAtBottom && <ScrollArrow />}
     </View>
   );
 };
@@ -1014,59 +1351,26 @@ ${mealsList}
           {/* Image docteur */}
           <DoctorHeader />
 
-          {/* Chips MediBook / SecretPocket / Sablier */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginVertical: 6 }}>
-            <TouchableOpacity
-              onPress={() => addBotMessage("Le MediBook sera disponible prochainement.")}
-              style={{
-                backgroundColor: '#FFF',
-                borderRadius: 12,
-                paddingHorizontal: 12,
-                paddingVertical: 5,
-                borderWidth: 1,
-                borderColor: 'rgba(0,180,130,0.15)',
-                shadowColor: '#000',
-                shadowOffset: { width: 1, height: 1 },
-                shadowOpacity: 0.04,
-                shadowRadius: 3,
-                elevation: 1,
-              }}
-            >
-              <Text style={{ color: '#00A878', fontSize: 10, fontWeight: '600' }}>MediBook</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement.")}
-              style={{
-                backgroundColor: '#FFF',
-                borderRadius: 12,
-                paddingHorizontal: 12,
-                paddingVertical: 5,
-                borderWidth: 1,
-                borderColor: 'rgba(190,160,50,0.15)',
-                shadowColor: '#000',
-                shadowOffset: { width: 1, height: 1 },
-                shadowOpacity: 0.04,
-                shadowRadius: 3,
-                elevation: 1,
-              }}
-            >
-              <Text style={{ color: '#B89A30', fontSize: 10, fontWeight: '600' }}>Secret Pocket</Text>
-            </TouchableOpacity>
-
-            {/* Sablier compteur */}
-            <View style={{
-              backgroundColor: '#FFF',
-              borderRadius: 12,
-              paddingHorizontal: 10,
-              paddingVertical: 5,
-              borderWidth: 1,
-              borderColor: 'rgba(0,0,0,0.05)',
-            }}>
-              <Text style={{ color: 'rgba(0,160,120,0.5)', fontSize: 10 }}>
-                {tokenLimit - tokenUsed > 0 ? `\u23F3 ${tokenLimit - tokenUsed}` : '\u23F3 \u00C9PUIS\u00C9'}
-              </Text>
-            </View>
+          {/* Cartes neumorphiques MediBook / SecretPocket */}
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'center',
+            gap: 12,
+            paddingHorizontal: 16,
+            marginVertical: 10,
+          }}>
+            <NeumorphCard
+              title="MediBook"
+              icon={'\uD83D\uDCCA'}
+              accentColor="#00A878"
+              onPress={() => addBotMessage("Le MediBook sera disponible prochainement. Votre dossier m\u00E9dical complet avec bilans, rappels et m\u00E9dicaments.")}
+            />
+            <NeumorphCard
+              title="Secret Pocket"
+              icon={'\uD83D\uDD12'}
+              accentColor="#B89A30"
+              onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. Votre coffre-fort sant\u00E9 chiffr\u00E9.")}
+            />
           </View>
 
           {/* Constellation de boules */}
@@ -1101,16 +1405,22 @@ ${mealsList}
           />
         </ScrollView>
 
-        {/* Panneau recherche (si ouvert) */}
+        {/* Panneau recherche (si ouvert) — AU DESSUS de la barre */}
         {searchVisible && (
           <View style={{
-            paddingHorizontal: 10,
+            paddingHorizontal: 12,
             paddingVertical: 8,
             backgroundColor: '#FFF',
             borderTopWidth: 1,
             borderTopColor: 'rgba(0,0,0,0.04)',
-            borderBottomWidth: 1,
-            borderBottomColor: 'rgba(0,0,0,0.04)',
+            marginHorizontal: 8,
+            borderRadius: 14,
+            marginBottom: 4,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.04,
+            shadowRadius: 4,
+            elevation: 2,
           }}>
             <TextInput
               autoFocus
@@ -1122,63 +1432,49 @@ ${mealsList}
             />
             {searchHits.size > 0 && (
               <Text style={{ color: '#00A878', fontSize: 9, marginTop: 3 }}>
-                {searchHits.size} bulle{searchHits.size > 1 ? 's' : ''} trouvée{searchHits.size > 1 ? 's' : ''}
+                {searchHits.size} bulle{searchHits.size > 1 ? 's' : ''} trouv\u00E9e{searchHits.size > 1 ? 's' : ''}
               </Text>
             )}
           </View>
         )}
 
-        {/* Barre de saisie : Loupe + Message + Envoyer */}
+        {/* BARRE DE SAISIE avec tube de liquide */}
         <Animated.View style={{
           opacity: inputEntry,
           transform: [{ translateY: inputEntry.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }],
         }}>
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 8,
-            paddingVertical: 6,
-            gap: 6,
-            backgroundColor: '#E8ECF0',
-            borderTopWidth: 1,
-            borderTopColor: 'rgba(0,0,0,0.04)',
-          }}>
+          <LiquidInputBar tokensUsed={tokenUsed} tokenLimit={tokenLimit}>
             {/* Bouton Loupe neumorphique */}
             <TouchableOpacity
               onPress={toggleSearchModal}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                backgroundColor: '#EDF0F4',
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: '#E4E8EC',
                 justifyContent: 'center',
                 alignItems: 'center',
-                shadowColor: 'rgba(0,0,0,0.1)',
-                shadowOffset: { width: 2, height: 2 },
-                shadowOpacity: 0.3,
-                shadowRadius: 4,
-                elevation: 3,
+                shadowColor: 'rgba(0,0,0,0.15)',
+                shadowOffset: { width: 3, height: 3 },
+                shadowOpacity: 1,
+                shadowRadius: 5,
+                elevation: 4,
                 borderWidth: 0.5,
-                borderColor: 'rgba(255,255,255,0.6)',
+                borderColor: 'rgba(255,255,255,0.7)',
               }}
             >
-              <Text style={{ fontSize: 16 }}>{'\uD83D\uDD0D'}</Text>
+              <Text style={{ fontSize: 17, color: '#888' }}>{'\uD83D\uDD0D'}</Text>
             </TouchableOpacity>
 
             {/* Champ message */}
             <View style={{
               flex: 1,
               backgroundColor: '#FFF',
-              borderRadius: 20,
+              borderRadius: 18,
               paddingHorizontal: 14,
               paddingVertical: Platform.OS === 'ios' ? 8 : 5,
               borderWidth: 1,
-              borderColor: 'rgba(0,0,0,0.06)',
-              shadowColor: 'rgba(0,0,0,0.04)',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.3,
-              shadowRadius: 3,
-              elevation: 1,
+              borderColor: 'rgba(0,0,0,0.05)',
             }}>
               <TextInput
                 ref={inputRef}
@@ -1193,31 +1489,33 @@ ${mealsList}
               />
             </View>
 
-            {/* Bouton envoyer */}
+            {/* Bouton Envoyer neumorphique */}
             <TouchableOpacity
               onPress={sendMessage}
               disabled={!inputText.trim() || isLoading}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                backgroundColor: inputText.trim() ? '#00D984' : '#EDF0F4',
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: inputText.trim() ? '#00D984' : '#E4E8EC',
                 justifyContent: 'center',
                 alignItems: 'center',
-                shadowColor: inputText.trim() ? '#00D984' : 'transparent',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: inputText.trim() ? 0.3 : 0,
-                shadowRadius: 5,
-                elevation: inputText.trim() ? 4 : 0,
+                shadowColor: inputText.trim() ? 'rgba(0,180,100,0.3)' : 'rgba(0,0,0,0.12)',
+                shadowOffset: { width: 3, height: 3 },
+                shadowOpacity: 1,
+                shadowRadius: inputText.trim() ? 6 : 4,
+                elevation: inputText.trim() ? 5 : 3,
+                borderWidth: 0.5,
+                borderColor: inputText.trim() ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.7)',
               }}
             >
               <Text style={{
                 color: inputText.trim() ? '#FFF' : 'rgba(0,0,0,0.15)',
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: 'bold',
               }}>{'\u27A4'}</Text>
             </TouchableOpacity>
-          </View>
+          </LiquidInputBar>
         </Animated.View>
       </KeyboardAvoidingView>
 
@@ -1273,20 +1571,8 @@ ${mealsList}
               </TouchableOpacity>
             </View>
 
-            {/* Contenu scrollable */}
-            <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.45 }}>
-              {selectedMessage.role === 'assistant' ? (
-                <FormattedText
-                  text={selectedMessage.content}
-                  style={{ color: '#3A4550', fontSize: 13, lineHeight: 21 }}
-                  onRecipePress={(name) => { closeModal(); handleRecipePress(name); }}
-                />
-              ) : (
-                <Text style={{ color: '#3A4550', fontSize: 13, lineHeight: 21 }}>
-                  {selectedMessage.content}
-                </Text>
-              )}
-            </ScrollView>
+            {/* Contenu scrollable avec ScrollArrow */}
+            <ModalScrollContent selectedMessage={selectedMessage} closeModal={closeModal} handleRecipePress={handleRecipePress} />
 
             {/* Heure */}
             <Text style={{ color: 'rgba(0,0,0,0.2)', fontSize: 8, marginTop: 8, textAlign: 'right' }}>
