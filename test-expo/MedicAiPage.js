@@ -298,26 +298,11 @@ const FormattedResponseText = ({ text, style }) => {
 // ============================================
 const NeumorphCard = ({ title, icon, accentColor, onPress }) => {
   const pressAnim = useRef(new Animated.Value(0)).current;
+  const handlePressIn = () => Animated.timing(pressAnim, { toValue: 1, duration: 120, useNativeDriver: false }).start();
+  const handlePressOut = () => Animated.timing(pressAnim, { toValue: 0, duration: 180, useNativeDriver: false }).start();
 
-  const handlePressIn = () => {
-    Animated.timing(pressAnim, { toValue: 1, duration: 120, useNativeDriver: false }).start();
-  };
-  const handlePressOut = () => {
-    Animated.timing(pressAnim, { toValue: 0, duration: 180, useNativeDriver: false }).start();
-  };
-
-  const outerShadow = pressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.4, 0],
-  });
-  const innerShadow = pressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 0.15],
-  });
-  const scaleVal = pressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0.97],
-  });
+  const scaleVal = pressAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] });
+  const innerOp = pressAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.2] });
 
   const CARD_SIZE = (SCREEN_WIDTH - 48) / 2;
 
@@ -330,24 +315,37 @@ const NeumorphCard = ({ title, icon, accentColor, onPress }) => {
         backgroundColor: '#E4E8EC',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: 'rgba(0,0,0,0.12)',
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: outerShadow,
-        shadowRadius: 8,
-        elevation: 5,
+        shadowColor: 'rgba(0,0,0,0.2)',
+        shadowOffset: { width: 5, height: 5 },
+        shadowOpacity: 0.5,
+        shadowRadius: 10,
+        elevation: 8,
         borderWidth: 0.5,
-        borderColor: 'rgba(255,255,255,0.6)',
+        borderColor: 'rgba(255,255,255,0.5)',
         transform: [{ scale: scaleVal }],
+        overflow: 'hidden',
       }}>
-        {/* Reflet neumorphique en haut */}
+        {/* Reflet neumorphique lumineux en haut */}
         <View style={{
           position: 'absolute',
-          top: 3,
-          left: 8,
-          right: 8,
-          height: 18,
-          borderRadius: 12,
-          backgroundColor: 'rgba(255,255,255,0.45)',
+          top: 0, left: 0, right: 0,
+          height: 25,
+          borderTopLeftRadius: 18,
+          borderTopRightRadius: 18,
+          backgroundColor: 'rgba(255,255,255,0.5)',
+        }} />
+
+        {/* Fond sombre dans l'ouverture du dossier */}
+        <View style={{
+          position: 'absolute',
+          top: 22,
+          left: 10,
+          right: 10,
+          bottom: 30,
+          borderRadius: 10,
+          backgroundColor: 'rgba(30,35,45,0.06)',
+          borderWidth: 0.5,
+          borderColor: 'rgba(0,0,0,0.03)',
         }} />
 
         {/* Ombre intérieure quand pressé */}
@@ -355,19 +353,28 @@ const NeumorphCard = ({ title, icon, accentColor, onPress }) => {
           position: 'absolute',
           top: 3, left: 3, right: 3, bottom: 3,
           borderRadius: 16,
-          borderWidth: 1.5,
-          borderColor: 'rgba(0,0,0,0.06)',
-          backgroundColor: 'rgba(0,0,0,0.01)',
-          opacity: innerShadow,
+          borderWidth: 2,
+          borderColor: 'rgba(0,0,0,0.08)',
+          opacity: innerOp,
         }} />
 
-        {/* Icône grande */}
-        <Text style={{ fontSize: 30, marginBottom: 6 }}>{icon}</Text>
+        {/* Ombre en bas (profondeur) */}
+        <View style={{
+          position: 'absolute',
+          bottom: 0, left: 0, right: 0,
+          height: 20,
+          borderBottomLeftRadius: 18,
+          borderBottomRightRadius: 18,
+          backgroundColor: 'rgba(0,0,0,0.03)',
+        }} />
+
+        {/* Icône */}
+        <Text style={{ fontSize: 32, marginBottom: 6 }}>{icon}</Text>
 
         {/* Titre */}
         <Text style={{
           color: accentColor,
-          fontSize: 13,
+          fontSize: 14,
           fontWeight: 'bold',
           letterSpacing: 0.5,
         }}>{title}</Text>
@@ -377,161 +384,222 @@ const NeumorphCard = ({ title, icon, accentColor, onPress }) => {
 };
 
 // ============================================
-// LIQUID INPUT BAR — Tube de liquide autour de la barre de saisie
+// LIQUID TUBE INPUT — Tube transparent avec liquide + bille + lock
 // ============================================
-const LiquidInputBar = ({ children, tokensUsed, tokenLimit }) => {
-  const percent = Math.max(0, Math.min(1, 1 - tokensUsed / tokenLimit));
+const LiquidTubeInput = ({ children, tokensUsed, tokenLimit, onLockPress }) => {
+  const percent = Math.max(0, Math.min(1, tokensUsed / tokenLimit));
+  const isLocked = percent >= 1;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+
   let liquidColor;
-  if (percent > 0.6) liquidColor = '#00D984';
-  else if (percent > 0.3) liquidColor = '#F0C040';
-  else if (percent > 0.1) liquidColor = '#F08030';
+  if (percent < 0.6) liquidColor = '#00D984';
+  else if (percent < 0.8) liquidColor = '#F0C040';
+  else if (percent < 0.95) liquidColor = '#F08030';
   else liquidColor = '#E05050';
 
-  const BAR_RADIUS = 22;
-  const TUBE_WIDTH = 2.5;
+  const triggerShake = useCallback(() => {
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 6, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -6, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 4, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -4, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+    ]).start();
+  }, [shakeAnim]);
+
+  const TUBE_THICK = 3;
+  const TUBE_RADIUS = 24;
+  const TUBE_MARGIN = 14;
+  const tubeWidth = SCREEN_WIDTH - TUBE_MARGIN * 2;
 
   return (
-    <View style={{
-      marginHorizontal: 8,
-      marginBottom: 4,
-      position: 'relative',
-    }}>
-      {/* Tube transparent (fond) */}
-      <View style={{
-        position: 'absolute',
-        top: 0, left: 0, right: 0, bottom: 0,
-        borderRadius: BAR_RADIUS,
-        borderWidth: TUBE_WIDTH,
-        borderColor: 'rgba(0,0,0,0.04)',
-      }} />
-
-      {/* LIQUIDE — Côté DROIT (segment 1) */}
-      {percent > 0 && (
-        <View style={{
-          position: 'absolute',
-          top: BAR_RADIUS,
-          right: 0,
-          width: TUBE_WIDTH,
-          height: Math.min(1, percent / 0.25) * (44 - BAR_RADIUS * 2 + BAR_RADIUS),
-          backgroundColor: liquidColor,
-          borderRadius: TUBE_WIDTH / 2,
-        }} />
-      )}
-
-      {/* LIQUIDE — Côté BAS (segment 2) */}
-      {percent > 0.25 && (
-        <View style={{
-          position: 'absolute',
-          bottom: 0,
-          right: BAR_RADIUS,
-          height: TUBE_WIDTH,
-          width: Math.min(1, (percent - 0.25) / 0.25) * (SCREEN_WIDTH - 16 - BAR_RADIUS * 2),
-          backgroundColor: liquidColor,
-          borderRadius: TUBE_WIDTH / 2,
-          alignSelf: 'flex-end',
-        }} />
-      )}
-
-      {/* LIQUIDE — Côté GAUCHE (segment 3) */}
-      {percent > 0.5 && (
-        <View style={{
-          position: 'absolute',
-          bottom: BAR_RADIUS,
-          left: 0,
-          width: TUBE_WIDTH,
-          height: Math.min(1, (percent - 0.5) / 0.25) * (44 - BAR_RADIUS * 2 + BAR_RADIUS),
-          backgroundColor: liquidColor,
-          borderRadius: TUBE_WIDTH / 2,
-        }} />
-      )}
-
-      {/* LIQUIDE — Côté HAUT (segment 4) */}
-      {percent > 0.75 && (
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: BAR_RADIUS,
-          height: TUBE_WIDTH,
-          width: Math.min(1, (percent - 0.75) / 0.25) * (SCREEN_WIDTH - 16 - BAR_RADIUS * 2),
-          backgroundColor: liquidColor,
-          borderRadius: TUBE_WIDTH / 2,
-        }} />
-      )}
-
-      {/* Coin haut-droit */}
-      {percent > 0 && (
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: BAR_RADIUS * 2,
-          height: BAR_RADIUS * 2,
-          borderTopRightRadius: BAR_RADIUS,
-          borderWidth: TUBE_WIDTH,
-          borderColor: 'transparent',
-          borderTopColor: percent > 0.85 ? liquidColor : 'transparent',
-          borderRightColor: liquidColor,
-        }} />
-      )}
-
-      {/* Coin bas-droit */}
-      {percent > 0.2 && (
-        <View style={{
-          position: 'absolute',
-          bottom: 0,
-          right: 0,
-          width: BAR_RADIUS * 2,
-          height: BAR_RADIUS * 2,
-          borderBottomRightRadius: BAR_RADIUS,
-          borderWidth: TUBE_WIDTH,
-          borderColor: 'transparent',
-          borderRightColor: percent > 0.05 ? liquidColor : 'transparent',
-          borderBottomColor: percent > 0.25 ? liquidColor : 'transparent',
-        }} />
-      )}
-
-      {/* Coin bas-gauche */}
-      {percent > 0.45 && (
-        <View style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          width: BAR_RADIUS * 2,
-          height: BAR_RADIUS * 2,
-          borderBottomLeftRadius: BAR_RADIUS,
-          borderWidth: TUBE_WIDTH,
-          borderColor: 'transparent',
-          borderBottomColor: percent > 0.4 ? liquidColor : 'transparent',
-          borderLeftColor: percent > 0.5 ? liquidColor : 'transparent',
-        }} />
-      )}
-
-      {/* Coin haut-gauche */}
-      {percent > 0.7 && (
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: BAR_RADIUS * 2,
-          height: BAR_RADIUS * 2,
-          borderTopLeftRadius: BAR_RADIUS,
-          borderWidth: TUBE_WIDTH,
-          borderColor: 'transparent',
-          borderLeftColor: percent > 0.6 ? liquidColor : 'transparent',
-          borderTopColor: percent > 0.75 ? liquidColor : 'transparent',
-        }} />
-      )}
-
-      {/* Le contenu de la barre */}
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 6,
-        paddingVertical: 5,
-        gap: 5,
+    <View style={{ marginHorizontal: TUBE_MARGIN, marginBottom: 6 }}>
+      <Animated.View style={{
+        position: 'relative',
+        transform: [{ translateX: isLocked ? shakeAnim : 0 }],
       }}>
-        {children}
-      </View>
+        {/* TUBE TRANSPARENT (fond) */}
+        <View style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          borderRadius: TUBE_RADIUS,
+          borderWidth: TUBE_THICK,
+          borderColor: 'rgba(0,0,0,0.04)',
+        }} />
+
+        {/* LIQUIDE — Côté DROIT */}
+        {percent > 0 && (
+          <View style={{
+            position: 'absolute',
+            top: TUBE_RADIUS,
+            right: 0,
+            width: TUBE_THICK,
+            height: Math.min(percent / 0.2, 1) * 20,
+            backgroundColor: liquidColor,
+            borderRadius: TUBE_THICK / 2,
+          }} />
+        )}
+
+        {/* Coin BAS-DROIT */}
+        {percent > 0.15 && (
+          <View style={{
+            position: 'absolute',
+            bottom: 0, right: 0,
+            width: TUBE_RADIUS,
+            height: TUBE_RADIUS,
+            borderBottomRightRadius: TUBE_RADIUS,
+            borderBottomWidth: TUBE_THICK,
+            borderRightWidth: TUBE_THICK,
+            borderColor: liquidColor,
+            backgroundColor: 'transparent',
+          }} />
+        )}
+
+        {/* Côté BAS */}
+        {percent > 0.25 && (
+          <View style={{
+            position: 'absolute',
+            bottom: 0,
+            right: TUBE_RADIUS,
+            height: TUBE_THICK,
+            width: Math.min((percent - 0.25) / 0.35, 1) * (tubeWidth - TUBE_RADIUS * 2),
+            backgroundColor: liquidColor,
+            borderRadius: TUBE_THICK / 2,
+            alignSelf: 'flex-end',
+          }} />
+        )}
+
+        {/* Coin BAS-GAUCHE */}
+        {percent > 0.55 && (
+          <View style={{
+            position: 'absolute',
+            bottom: 0, left: 0,
+            width: TUBE_RADIUS,
+            height: TUBE_RADIUS,
+            borderBottomLeftRadius: TUBE_RADIUS,
+            borderBottomWidth: TUBE_THICK,
+            borderLeftWidth: TUBE_THICK,
+            borderColor: liquidColor,
+            backgroundColor: 'transparent',
+          }} />
+        )}
+
+        {/* Côté GAUCHE */}
+        {percent > 0.6 && (
+          <View style={{
+            position: 'absolute',
+            bottom: TUBE_RADIUS,
+            left: 0,
+            width: TUBE_THICK,
+            height: Math.min((percent - 0.6) / 0.2, 1) * 20,
+            backgroundColor: liquidColor,
+            borderRadius: TUBE_THICK / 2,
+          }} />
+        )}
+
+        {/* Coin HAUT-GAUCHE */}
+        {percent > 0.75 && (
+          <View style={{
+            position: 'absolute',
+            top: 0, left: 0,
+            width: TUBE_RADIUS,
+            height: TUBE_RADIUS,
+            borderTopLeftRadius: TUBE_RADIUS,
+            borderTopWidth: TUBE_THICK,
+            borderLeftWidth: TUBE_THICK,
+            borderColor: liquidColor,
+            backgroundColor: 'transparent',
+          }} />
+        )}
+
+        {/* Côté HAUT */}
+        {percent > 0.8 && (
+          <View style={{
+            position: 'absolute',
+            top: 0,
+            left: TUBE_RADIUS,
+            height: TUBE_THICK,
+            width: Math.min((percent - 0.8) / 0.2, 1) * (tubeWidth - TUBE_RADIUS * 2),
+            backgroundColor: liquidColor,
+            borderRadius: TUBE_THICK / 2,
+          }} />
+        )}
+
+        {/* BILLE DE PLOMB NOIRE */}
+        {percent > 0 && percent < 1 && (
+          <View style={{
+            position: 'absolute',
+            ...(percent < 0.2 ? {
+              right: -2,
+              top: TUBE_RADIUS + percent / 0.2 * 20,
+            } : percent < 0.6 ? {
+              bottom: -2,
+              right: TUBE_RADIUS + (percent - 0.2) / 0.4 * (tubeWidth - TUBE_RADIUS * 2),
+            } : percent < 0.8 ? {
+              left: -2,
+              bottom: TUBE_RADIUS + (percent - 0.6) / 0.2 * 20,
+            } : {
+              top: -2,
+              left: TUBE_RADIUS + (percent - 0.8) / 0.2 * (tubeWidth - TUBE_RADIUS * 2),
+            }),
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: '#1A1D22',
+            borderWidth: 1,
+            borderColor: '#333',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.3,
+            shadowRadius: 2,
+            elevation: 3,
+            zIndex: 10,
+          }} />
+        )}
+
+        {/* LOCK NOIR — coin haut-droit */}
+        <TouchableOpacity
+          onPress={() => {
+            if (isLocked) {
+              onLockPress && onLockPress();
+            }
+          }}
+          style={{
+            position: 'absolute',
+            top: -5,
+            right: -5,
+            width: 18,
+            height: 18,
+            borderRadius: 9,
+            backgroundColor: isLocked ? '#1A1D22' : 'rgba(30,30,40,0.3)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: isLocked ? '#E05050' : 'rgba(0,0,0,0.1)',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: isLocked ? 0.4 : 0.1,
+            shadowRadius: 3,
+            elevation: isLocked ? 4 : 1,
+            zIndex: 20,
+          }}
+        >
+          <Text style={{ fontSize: 8, color: isLocked ? '#E05050' : '#999' }}>
+            {isLocked ? '🔒' : '🔓'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* CONTENU : Loupe + Input + Envoyer */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 8,
+          paddingVertical: 6,
+          gap: 6,
+        }}>
+          {children}
+        </View>
+      </Animated.View>
     </View>
   );
 };
@@ -628,7 +696,7 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage }) => {
           color: isLoading ? 'rgba(0,170,120,0.5)' : (isUserMessage ? 'rgba(70,130,210,0.5)' : 'rgba(200,80,80,0.5)'),
           fontSize: 9, fontWeight: '600', letterSpacing: 1,
         }}>
-          {isLoading ? 'ALIXEN R\u00C9FL\u00C9CHIT...' : (isUserMessage ? 'VOUS' : 'ALIXEN')}
+          {isLoading ? 'ALIXEN RÉFLÉCHIT...' : (isUserMessage ? 'VOUS' : 'ALIXEN')}
         </Text>
       </View>
 
@@ -636,14 +704,10 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage }) => {
       {isLoading ? (
         <LoadingDots />
       ) : (
-        <View>
-          <FormattedResponseText
-            text={displayedText + (!isUserMessage && displayedText.length < (currentMessage || '').length ? '|' : '')}
-            style={{ color: '#3A4550', fontSize: 13, lineHeight: 20 }}
-          />
-          {/* ScrollArrow si texte long (plus de 6 lignes ~120 chars) */}
-          {displayedText && displayedText.length > 120 && <ScrollArrow />}
-        </View>
+        <FormattedResponseText
+          text={displayedText + (!isUserMessage && displayedText.length < (currentMessage || '').length ? '|' : '')}
+          style={{ color: '#3A4550', fontSize: 13, lineHeight: 20 }}
+        />
       )}
     </Animated.View>
   );
@@ -981,6 +1045,10 @@ export default function MedicAiPage() {
   // Clavier
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
+  // Lock state
+  const [isLocked, setIsLocked] = useState(false);
+  const [showLockModal, setShowLockModal] = useState(false);
+
   // Refs
   const scrollViewRef = useRef(null);
   const inputRef = useRef(null);
@@ -988,6 +1056,7 @@ export default function MedicAiPage() {
   // Animations d'entrée
   const contentEntry = useRef(new Animated.Value(0)).current;
   const inputEntry = useRef(new Animated.Value(0)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
 
   // ── Chargement des données au mount ──────────────────────────────────────
   useEffect(() => {
@@ -1021,6 +1090,17 @@ export default function MedicAiPage() {
     });
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
+
+  // ── Lock quand quota atteint ──────────────────────────────────────────────
+  useEffect(() => {
+    if (tokenUsed >= tokenLimit) {
+      setIsLocked(true);
+    }
+  }, [tokenUsed, tokenLimit]);
+
+  const handleLockPress = () => {
+    setShowLockModal(true);
+  };
 
   const addBotMessage = useCallback((text) => {
     setMessages(prev => [...prev, {
@@ -1363,13 +1443,13 @@ ${mealsList}
               title="MediBook"
               icon={'\uD83D\uDCCA'}
               accentColor="#00A878"
-              onPress={() => addBotMessage("Le MediBook sera disponible prochainement. Votre dossier m\u00E9dical complet avec bilans, rappels et m\u00E9dicaments.")}
+              onPress={() => addBotMessage("Le MediBook sera disponible prochainement. Votre dossier médical complet avec bilans, rappels et médicaments.")}
             />
             <NeumorphCard
               title="Secret Pocket"
               icon={'\uD83D\uDD12'}
               accentColor="#B89A30"
-              onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. Votre coffre-fort sant\u00E9 chiffr\u00E9.")}
+              onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. Votre coffre-fort santé chiffré.")}
             />
           </View>
 
@@ -1405,10 +1485,12 @@ ${mealsList}
           />
         </ScrollView>
 
-        {/* Panneau recherche (si ouvert) — AU DESSUS de la barre */}
+        {/* Panneau recherche (si ouvert) — avec bouton X */}
         {searchVisible && (
           <View style={{
-            paddingHorizontal: 12,
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 10,
             paddingVertical: 8,
             backgroundColor: '#FFF',
             borderTopWidth: 1,
@@ -1424,15 +1506,43 @@ ${mealsList}
           }}>
             <TextInput
               autoFocus
-              style={{ color: '#00A878', fontSize: 13, paddingVertical: 4 }}
+              style={{ flex: 1, color: '#00A878', fontSize: 13, paddingVertical: 4 }}
               placeholder="Rechercher dans les messages..."
               placeholderTextColor="rgba(0,0,0,0.2)"
               value={searchQuery}
               onChangeText={handleSearch}
             />
+
+            {/* Bouton fermer X */}
+            <TouchableOpacity
+              onPress={() => {
+                setSearchVisible(false);
+                setSearchQuery('');
+                setSearchHits(new Set());
+              }}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: 'rgba(0,0,0,0.05)',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginLeft: 8,
+              }}
+            >
+              <Text style={{ color: '#999', fontSize: 14, fontWeight: 'bold' }}>✕</Text>
+            </TouchableOpacity>
+
+            {/* Compteur résultats en dessous */}
             {searchHits.size > 0 && (
-              <Text style={{ color: '#00A878', fontSize: 9, marginTop: 3 }}>
-                {searchHits.size} bulle{searchHits.size > 1 ? 's' : ''} trouv\u00E9e{searchHits.size > 1 ? 's' : ''}
+              <Text style={{
+                position: 'absolute',
+                bottom: -14,
+                left: 12,
+                color: '#00A878',
+                fontSize: 8,
+              }}>
+                {searchHits.size} bulle{searchHits.size > 1 ? 's' : ''} trouvée{searchHits.size > 1 ? 's' : ''}
               </Text>
             )}
           </View>
@@ -1443,42 +1553,42 @@ ${mealsList}
           opacity: inputEntry,
           transform: [{ translateY: inputEntry.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }],
         }}>
-          <LiquidInputBar tokensUsed={tokenUsed} tokenLimit={tokenLimit}>
-            {/* Bouton Loupe neumorphique */}
+          <LiquidTubeInput tokensUsed={tokenUsed} tokenLimit={tokenLimit} onLockPress={handleLockPress}>
+            {/* Loupe neumorphique */}
             <TouchableOpacity
-              onPress={toggleSearchModal}
+              onPress={() => setSearchVisible(!searchVisible)}
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
+                width: 36,
+                height: 36,
+                borderRadius: 18,
                 backgroundColor: '#E4E8EC',
                 justifyContent: 'center',
                 alignItems: 'center',
-                shadowColor: 'rgba(0,0,0,0.15)',
-                shadowOffset: { width: 3, height: 3 },
-                shadowOpacity: 1,
-                shadowRadius: 5,
-                elevation: 4,
+                shadowColor: 'rgba(0,0,0,0.12)',
+                shadowOffset: { width: 2, height: 2 },
+                shadowOpacity: 0.5,
+                shadowRadius: 4,
+                elevation: 3,
                 borderWidth: 0.5,
-                borderColor: 'rgba(255,255,255,0.7)',
+                borderColor: 'rgba(255,255,255,0.6)',
               }}
             >
-              <Text style={{ fontSize: 17, color: '#888' }}>{'\uD83D\uDD0D'}</Text>
+              <Text style={{ fontSize: 16, color: '#888' }}>🔍</Text>
             </TouchableOpacity>
 
             {/* Champ message */}
             <View style={{
               flex: 1,
               backgroundColor: '#FFF',
-              borderRadius: 18,
-              paddingHorizontal: 14,
-              paddingVertical: Platform.OS === 'ios' ? 8 : 5,
+              borderRadius: 16,
+              paddingHorizontal: 12,
+              paddingVertical: Platform.OS === 'ios' ? 7 : 4,
               borderWidth: 1,
               borderColor: 'rgba(0,0,0,0.05)',
             }}>
               <TextInput
                 ref={inputRef}
-                style={{ color: '#3A4550', fontSize: 12, paddingVertical: 0, maxHeight: 60 }}
+                style={{ color: '#3A4550', fontSize: 12, paddingVertical: 0, maxHeight: 55 }}
                 placeholder="Consultez ALIXEN..."
                 placeholderTextColor="rgba(0,0,0,0.2)"
                 selectionColor="#00A878"
@@ -1486,36 +1596,51 @@ ${mealsList}
                 onChangeText={setInputText}
                 multiline
                 blurOnSubmit={false}
+                editable={!isLocked}
               />
             </View>
 
-            {/* Bouton Envoyer neumorphique */}
+            {/* Bouton Envoyer */}
             <TouchableOpacity
-              onPress={sendMessage}
-              disabled={!inputText.trim() || isLoading}
+              onPress={() => {
+                if (isLocked) {
+                  Animated.sequence([
+                    Animated.timing(shakeAnim, { toValue: 6, duration: 50, useNativeDriver: true }),
+                    Animated.timing(shakeAnim, { toValue: -6, duration: 50, useNativeDriver: true }),
+                    Animated.timing(shakeAnim, { toValue: 4, duration: 50, useNativeDriver: true }),
+                    Animated.timing(shakeAnim, { toValue: -4, duration: 50, useNativeDriver: true }),
+                    Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+                  ]).start();
+                } else {
+                  sendMessage();
+                }
+              }}
+              disabled={(!inputText.trim() && !isLocked) || isLoading}
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: inputText.trim() ? '#00D984' : '#E4E8EC',
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: isLocked ? 'rgba(60,60,70,0.8)' : (inputText.trim() ? '#4DA6FF' : '#E4E8EC'),
                 justifyContent: 'center',
                 alignItems: 'center',
-                shadowColor: inputText.trim() ? 'rgba(0,180,100,0.3)' : 'rgba(0,0,0,0.12)',
-                shadowOffset: { width: 3, height: 3 },
-                shadowOpacity: 1,
-                shadowRadius: inputText.trim() ? 6 : 4,
-                elevation: inputText.trim() ? 5 : 3,
+                shadowColor: isLocked ? '#000' : (inputText.trim() ? 'rgba(77,166,255,0.3)' : 'rgba(0,0,0,0.1)'),
+                shadowOffset: { width: 2, height: 2 },
+                shadowOpacity: 0.4,
+                shadowRadius: 4,
+                elevation: 3,
                 borderWidth: 0.5,
-                borderColor: inputText.trim() ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.7)',
+                borderColor: isLocked ? '#444' : 'rgba(255,255,255,0.5)',
               }}
             >
               <Text style={{
-                color: inputText.trim() ? '#FFF' : 'rgba(0,0,0,0.15)',
-                fontSize: 15,
+                color: isLocked ? '#E05050' : (inputText.trim() ? '#FFF' : 'rgba(0,0,0,0.15)'),
+                fontSize: isLocked ? 12 : 14,
                 fontWeight: 'bold',
-              }}>{'\u27A4'}</Text>
+              }}>
+                {isLocked ? '🔒' : '➤'}
+              </Text>
             </TouchableOpacity>
-          </LiquidInputBar>
+          </LiquidTubeInput>
         </Animated.View>
       </KeyboardAvoidingView>
 
@@ -1580,6 +1705,91 @@ ${mealsList}
                 ? new Date(selectedMessage.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
                 : ''}
             </Text>
+          </View>
+        </View>
+      )}
+
+      {/* === MODAL LOCK — Énergie épuisée === */}
+      {showLockModal && (
+        <View style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 500,
+        }}>
+          <View style={{
+            backgroundColor: '#FFF',
+            borderRadius: 20,
+            padding: 24,
+            width: SCREEN_WIDTH * 0.85,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.15,
+            shadowRadius: 20,
+            elevation: 10,
+          }}>
+            <Text style={{ fontSize: 30, marginBottom: 10 }}>🔒</Text>
+            <Text style={{ color: '#1A2030', fontSize: 16, fontWeight: 'bold', marginBottom: 6 }}>
+              Énergie épuisée
+            </Text>
+            <Text style={{ color: '#888', fontSize: 12, textAlign: 'center', marginBottom: 16, lineHeight: 18 }}>
+              Vous avez utilisé toute votre énergie de conversation. Rechargez pour continuer à consulter ALIXEN.
+            </Text>
+
+            {/* Option 1 : Payer en Lix */}
+            <TouchableOpacity
+              onPress={() => {
+                setShowLockModal(false);
+                addBotMessage("Paiement en Lix bientôt disponible !");
+              }}
+              style={{
+                width: '100%',
+                backgroundColor: '#00D984',
+                borderRadius: 14,
+                paddingVertical: 12,
+                alignItems: 'center',
+                marginBottom: 8,
+              }}
+            >
+              <Text style={{ color: '#FFF', fontSize: 13, fontWeight: 'bold' }}>
+                Recharger avec 100 Lix
+              </Text>
+            </TouchableOpacity>
+
+            {/* Option 2 : S'abonner */}
+            <TouchableOpacity
+              onPress={() => {
+                setShowLockModal(false);
+                addBotMessage("Les abonnements seront disponibles prochainement !");
+              }}
+              style={{
+                width: '100%',
+                backgroundColor: 'rgba(0,0,0,0.05)',
+                borderRadius: 14,
+                paddingVertical: 12,
+                alignItems: 'center',
+                borderWidth: 1,
+                borderColor: 'rgba(0,0,0,0.08)',
+                marginBottom: 8,
+              }}
+            >
+              <Text style={{ color: '#1A2030', fontSize: 13, fontWeight: '600' }}>
+                S'abonner — Illimité
+              </Text>
+            </TouchableOpacity>
+
+            {/* Option 3 : Attendre */}
+            <TouchableOpacity
+              onPress={() => setShowLockModal(false)}
+              style={{ paddingVertical: 8 }}
+            >
+              <Text style={{ color: '#AAA', fontSize: 11 }}>
+                Attendre le rechargement (6h)
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
