@@ -13,7 +13,9 @@ import Svg, {
   G, Line, Circle, Path, Rect, Ellipse, Defs,
   LinearGradient as SvgLinearGradient, Stop,
   Text as SvgText,
+  Polygon, Circle as SvgCircle,
 } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -237,25 +239,61 @@ const circuitNodes = Array.from({ length: 80 }, () => ({
 }));
 
 const CircuitPatternBackground = () => {
+  var w = SCREEN_WIDTH;
+  var h = SCREEN_HEIGHT;
+
   return (
-    <View style={{
-      position: 'absolute',
-      top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: '#F2F4F6',
-    }}>
-      {/* Segments de circuits */}
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+      <LinearGradient
+        colors={['#DDE1E6', '#D4D9DF', '#DDE1E6', '#D0D5DB']}
+        locations={[0, 0.35, 0.7, 1]}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+      />
+      <Svg width={w} height={h} style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
+        <Polygon points={'0,0 ' + (w * 0.6) + ',0 ' + (w * 0.3) + ',' + (h * 0.35)}
+          fill="rgba(0,180,140,0.04)" stroke="rgba(0,180,140,0.08)" strokeWidth="0.5" />
+        <Polygon points={w + ',0 ' + w + ',' + (h * 0.4) + ' ' + (w * 0.5) + ',' + (h * 0.15)}
+          fill="rgba(0,160,130,0.04)" stroke="rgba(0,160,130,0.06)" strokeWidth="0.5" />
+        <Polygon points={'0,' + (h * 0.6) + ' ' + (w * 0.4) + ',' + (h * 0.45) + ' ' + (w * 0.2) + ',' + h}
+          fill="rgba(0,180,140,0.03)" stroke="rgba(0,180,140,0.06)" strokeWidth="0.5" />
+        <Polygon points={w + ',' + (h * 0.5) + ' ' + (w * 0.6) + ',' + h + ' ' + w + ',' + h}
+          fill="rgba(0,160,130,0.03)" stroke="rgba(0,160,130,0.06)" strokeWidth="0.5" />
+        <Polygon points={(w * 0.1) + ',' + (h * 0.2) + ' ' + (w * 0.35) + ',' + (h * 0.1) + ' ' + (w * 0.25) + ',' + (h * 0.35)}
+          fill="rgba(0,180,140,0.05)" stroke="rgba(0,180,140,0.09)" strokeWidth="0.8" />
+        <Polygon points={(w * 0.65) + ',' + (h * 0.25) + ' ' + (w * 0.9) + ',' + (h * 0.15) + ' ' + (w * 0.8) + ',' + (h * 0.4)}
+          fill="rgba(0,160,130,0.04)" stroke="rgba(0,160,130,0.08)" strokeWidth="0.8" />
+        <Polygon points={(w * 0.3) + ',' + (h * 0.65) + ' ' + (w * 0.55) + ',' + (h * 0.55) + ' ' + (w * 0.45) + ',' + (h * 0.8)}
+          fill="rgba(0,180,140,0.04)" stroke="rgba(0,180,140,0.08)" strokeWidth="0.8" />
+        <Polygon points={(w * 0.7) + ',' + (h * 0.6) + ' ' + (w * 0.95) + ',' + (h * 0.7) + ' ' + (w * 0.85) + ',' + (h * 0.85)}
+          fill="rgba(212,175,55,0.025)" stroke="rgba(212,175,55,0.05)" strokeWidth="0.5" />
+        <Polygon points={(w * 0.5) + ',' + (h * 0.05) + ' ' + (w * 0.55) + ',' + (h * 0.02) + ' ' + (w * 0.53) + ',' + (h * 0.08)}
+          fill="rgba(0,180,140,0.07)" />
+        <Polygon points={(w * 0.15) + ',' + (h * 0.5) + ' ' + (w * 0.2) + ',' + (h * 0.47) + ' ' + (w * 0.18) + ',' + (h * 0.53)}
+          fill="rgba(0,160,130,0.07)" />
+        <Polygon points={(w * 0.85) + ',' + (h * 0.9) + ' ' + (w * 0.9) + ',' + (h * 0.87) + ' ' + (w * 0.88) + ',' + (h * 0.93)}
+          fill="rgba(0,180,140,0.06)" />
+        <Line x1={w * 0.3} y1={h * 0.35} x2={w * 0.5} y2={h * 0.15} stroke="rgba(0,180,140,0.08)" strokeWidth="0.5" />
+        <Line x1={w * 0.8} y1={h * 0.4} x2={w * 0.6} y2={h * 0.55} stroke="rgba(0,160,130,0.06)" strokeWidth="0.5" />
+        <Line x1={w * 0.2} y1={h * 0.7} x2={w * 0.45} y2={h * 0.8} stroke="rgba(0,180,140,0.06)" strokeWidth="0.5" />
+        <SvgCircle cx={w * 0.3} cy={h * 0.35} r="2" fill="rgba(0,180,140,0.15)" />
+        <SvgCircle cx={w * 0.5} cy={h * 0.15} r="2" fill="rgba(0,180,140,0.15)" />
+        <SvgCircle cx={w * 0.8} cy={h * 0.4} r="1.5" fill="rgba(0,160,130,0.12)" />
+        <SvgCircle cx={w * 0.25} cy={h * 0.35} r="1.5" fill="rgba(0,180,140,0.12)" />
+        <SvgCircle cx={w * 0.6} cy={h * 0.55} r="2" fill="rgba(0,160,130,0.14)" />
+        <SvgCircle cx={w * 0.45} cy={h * 0.8} r="1.5" fill="rgba(0,180,140,0.10)" />
+      </Svg>
+
+      {/* Circuit segments overlay */}
       {circuitSegments.map((seg, i) => (
         <View key={`seg-${i}`}>
-          {/* Ligne principale */}
           <View style={{
             position: 'absolute',
             left: seg.x,
             top: seg.y,
             width: seg.isHorizontal ? seg.length : 1,
             height: seg.isHorizontal ? 1 : seg.length,
-            backgroundColor: `rgba(0,180,140,${seg.opacity})`,
+            backgroundColor: `rgba(0,180,140,${seg.opacity * 1.5})`,
           }} />
-          {/* Angle à 90° si hasCorner */}
           {seg.hasCorner && (
             <View style={{
               position: 'absolute',
@@ -263,10 +301,9 @@ const CircuitPatternBackground = () => {
               top: seg.isHorizontal ? seg.y - (seg.cornerDir > 0 ? seg.cornerLength : 0) : seg.y + seg.length,
               width: seg.isHorizontal ? 1 : seg.cornerLength,
               height: seg.isHorizontal ? seg.cornerLength : 1,
-              backgroundColor: `rgba(0,180,140,${seg.opacity * 0.8})`,
+              backgroundColor: `rgba(0,180,140,${seg.opacity * 1.2})`,
             }} />
           )}
-          {/* Nœud au bout si hasNode */}
           {seg.hasNode && (
             <View style={{
               position: 'absolute',
@@ -275,13 +312,13 @@ const CircuitPatternBackground = () => {
               width: 3,
               height: 3,
               borderRadius: 1.5,
-              backgroundColor: `rgba(0,180,140,${seg.opacity * 1.2})`,
+              backgroundColor: `rgba(0,180,140,${seg.opacity * 1.8})`,
             }} />
           )}
         </View>
       ))}
 
-      {/* Nœuds de circuit supplémentaires */}
+      {/* Circuit nodes overlay */}
       {circuitNodes.map((n, i) => (
         <View key={`node-${i}`} style={{
           position: 'absolute',
@@ -290,7 +327,7 @@ const CircuitPatternBackground = () => {
           width: n.size,
           height: n.size,
           borderRadius: n.size / 2,
-          backgroundColor: `rgba(0,180,140,${n.opacity})`,
+          backgroundColor: `rgba(0,180,140,${n.opacity * 1.5})`,
         }} />
       ))}
     </View>
@@ -401,11 +438,12 @@ const CircuitConnectors = () => {
       {/* Branches horizontales + verticales vers MediBook et SecretPocket */}
       <View style={{
         flexDirection: 'row',
-        width: SCREEN_WIDTH - 80,
-        height: 18,
+        width: SCREEN_WIDTH - 32,
+        alignSelf: 'center',
+        height: 20,
         position: 'relative',
       }}>
-        {/* Ligne horizontale gauche */}
+        {/* Ligne horizontale GAUCHE — du centre vers le centre de MediBook */}
         <View style={{
           position: 'absolute',
           top: 0,
@@ -413,28 +451,31 @@ const CircuitConnectors = () => {
           width: '50%',
           height: 1.5,
           backgroundColor: 'rgba(0,180,160,0.2)',
-        }} />
-        {/* Ligne verticale gauche */}
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: 1.5,
-          height: 18,
-          backgroundColor: 'rgba(0,180,160,0.2)',
-        }} />
-        {/* Point en bas à gauche */}
-        <View style={{
-          position: 'absolute',
-          bottom: 0,
-          left: -2,
-          width: 5,
-          height: 5,
-          borderRadius: 2.5,
-          backgroundColor: 'rgba(0,180,160,0.5)',
         }} />
 
-        {/* Ligne horizontale droite */}
+        {/* Ligne verticale qui descend à gauche */}
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: '25%',
+          width: 1.5,
+          height: 20,
+          backgroundColor: 'rgba(0,180,160,0.2)',
+        }} />
+
+        {/* Point en bas à gauche (au-dessus de MediBook) */}
+        <View style={{
+          position: 'absolute',
+          bottom: 0,
+          left: '25%',
+          marginLeft: -2.5,
+          width: 5,
+          height: 5,
+          borderRadius: 2.5,
+          backgroundColor: 'rgba(0,180,160,0.4)',
+        }} />
+
+        {/* Ligne horizontale DROITE — du centre vers le centre de SecretPocket */}
         <View style={{
           position: 'absolute',
           top: 0,
@@ -443,24 +484,27 @@ const CircuitConnectors = () => {
           height: 1.5,
           backgroundColor: 'rgba(0,180,160,0.2)',
         }} />
-        {/* Ligne verticale droite */}
+
+        {/* Ligne verticale qui descend à droite */}
         <View style={{
           position: 'absolute',
           top: 0,
-          right: 0,
+          right: '25%',
           width: 1.5,
-          height: 18,
-          backgroundColor: 'rgba(0,180,160,0.2)',
+          height: 20,
+          backgroundColor: 'rgba(212,175,55,0.15)',
         }} />
-        {/* Point en bas à droite */}
+
+        {/* Point en bas à droite (au-dessus de SecretPocket) */}
         <View style={{
           position: 'absolute',
           bottom: 0,
-          right: -2,
+          right: '25%',
+          marginRight: -2.5,
           width: 5,
           height: 5,
           borderRadius: 2.5,
-          backgroundColor: 'rgba(0,180,160,0.5)',
+          backgroundColor: 'rgba(212,175,55,0.35)',
         }} />
 
         {/* POINT LUMINEUX QUI VOYAGE à gauche */}
@@ -469,7 +513,7 @@ const CircuitConnectors = () => {
           top: -2,
           left: pulseAnim.interpolate({
             inputRange: [0, 0.5, 1],
-            outputRange: ['48%', '0%', '48%'],
+            outputRange: ['48%', '23%', '48%'],
           }),
           width: 5,
           height: 5,
@@ -484,7 +528,7 @@ const CircuitConnectors = () => {
           top: -2,
           right: pulseAnim.interpolate({
             inputRange: [0, 0.5, 1],
-            outputRange: ['48%', '0%', '48%'],
+            outputRange: ['48%', '23%', '48%'],
           }),
           width: 5,
           height: 5,
