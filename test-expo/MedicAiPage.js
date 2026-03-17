@@ -1,5 +1,6 @@
 // ──────────────────────────────────────────────────────────────────────────────
 // MedicAiPage.js — LIXUM MedicAi : Réseau Synaptique à Balles Métalliques
+// Redesign : Fond PCB, ALIXEN cerveau, circuits, dossiers métal, boules 3 états
 // ──────────────────────────────────────────────────────────────────────────────
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
@@ -31,7 +32,7 @@ const fp = (size) => {
 // ============================================
 const SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
 const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC3pUn0';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
 
 // User test (même UUID que partout)
 const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
@@ -208,38 +209,35 @@ const FormattedText = ({ text, style, onRecipePress }) => {
 };
 
 // ============================================
-// FOND AVEC PARTICULES MÉTALLIQUES
+// FOND PCB (Circuits imprimés)
 // ============================================
-const MetalParticleBackground = () => {
-  const particles = useRef(
-    Array.from({ length: 20 }, () => ({
-      x: new Animated.Value(Math.random() * SCREEN_WIDTH),
-      y: new Animated.Value(SCREEN_HEIGHT + Math.random() * 100),
-      size: 1.5 + Math.random() * 2.5,
-      opacity: 0.04 + Math.random() * 0.08,
-      speed: 18000 + Math.random() * 20000,
-    }))
-  ).current;
-
-  useEffect(() => {
-    particles.forEach((p) => {
-      const go = () => {
-        p.y.setValue(SCREEN_HEIGHT + 30);
-        p.x.setValue(Math.random() * SCREEN_WIDTH);
-        Animated.timing(p.y, { toValue: -30, duration: p.speed, useNativeDriver: true }).start(go);
-      };
-      setTimeout(go, Math.random() * 8000);
-    });
-  }, []);
-
+const PCBBackground = () => {
   return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#020405' }}>
-      {particles.map((p, i) => (
-        <Animated.View key={i} style={{
-          position: 'absolute', width: p.size, height: p.size, borderRadius: p.size,
-          backgroundColor: i % 3 === 0 ? '#4A4F55' : '#00D984',
-          opacity: p.opacity,
-          transform: [{ translateX: p.x }, { translateY: p.y }],
+    <View style={{
+      position: 'absolute',
+      top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: '#0a0e14',
+    }}>
+      {/* Grille verticale fine */}
+      {Array.from({ length: Math.ceil(SCREEN_WIDTH / 12) }, (_, i) => (
+        <View key={`gv-${i}`} style={{
+          position: 'absolute',
+          left: i * 12,
+          top: 0,
+          width: 0.3,
+          height: '100%',
+          backgroundColor: 'rgba(0,217,132,0.015)',
+        }} />
+      ))}
+      {/* Grille horizontale fine */}
+      {Array.from({ length: 50 }, (_, i) => (
+        <View key={`gh-${i}`} style={{
+          position: 'absolute',
+          top: i * 12,
+          left: 0,
+          height: 0.3,
+          width: '100%',
+          backgroundColor: 'rgba(0,217,132,0.015)',
         }} />
       ))}
     </View>
@@ -247,115 +245,268 @@ const MetalParticleBackground = () => {
 };
 
 // ============================================
-// BALLE MÉTALLIQUE — Noeud du réseau
+// ALIXEN BRAIN — Cerveau dans bulle métallique
 // ============================================
-const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew }) => {
-  const scaleAnim = useRef(new Animated.Value(isNew ? 0 : 1)).current;
-  const wobbleAnim = useRef(new Animated.Value(0)).current;
+const AlixenBrain = () => {
+  const pulseAnim = useRef(new Animated.Value(0.2)).current;
 
   useEffect(() => {
-    if (isNew) {
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 5,
-        tension: 100,
-        useNativeDriver: true,
-      }).start();
-    }
-
-    const wobbleDuration = 3000 + (index % 5) * 500;
     Animated.loop(
       Animated.sequence([
-        Animated.timing(wobbleAnim, { toValue: 1, duration: wobbleDuration / 2, useNativeDriver: true }),
-        Animated.timing(wobbleAnim, { toValue: 0, duration: wobbleDuration / 2, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0.5, duration: 2000, useNativeDriver: false }),
+        Animated.timing(pulseAnim, { toValue: 0.2, duration: 2000, useNativeDriver: false }),
       ])
     ).start();
   }, []);
 
-  const wobbleTranslateY = wobbleAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -1.5],
-  });
-  const wobbleScale = wobbleAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [1, 1.015, 1],
-  });
+  return (
+    <View style={{ alignItems: 'center', paddingTop: 8, paddingBottom: 4 }}>
+      {/* Bulle métallique du cerveau */}
+      <View style={{
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: '#252A30',
+        borderWidth: 1.5,
+        borderColor: '#4A4F55',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#00D984',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        elevation: 5,
+      }}>
+        {/* Reflet métallique */}
+        <View style={{
+          position: 'absolute',
+          top: 3,
+          left: 8,
+          width: 20,
+          height: 12,
+          borderRadius: 10,
+          backgroundColor: 'rgba(255,255,255,0.06)',
+          transform: [{ rotate: '-15deg' }],
+        }} />
 
-  const primaryColor = isBot ? '#E84040' : '#4DA6FF';
-  const innerGlow = isBot ? 'rgba(232,64,64,0.15)' : 'rgba(77,166,255,0.15)';
+        {/* Image du cerveau (lixman-avatar.png) */}
+        <Image
+          source={require('./assets/lixman-avatar.png')}
+          style={{ width: 38, height: 38, borderRadius: 19 }}
+          resizeMode="cover"
+        />
+
+        {/* Anneau vert externe animé */}
+        <Animated.View style={{
+          position: 'absolute',
+          top: -3,
+          left: -3,
+          right: -3,
+          bottom: -3,
+          borderRadius: 28,
+          borderWidth: 0.5,
+          borderColor: 'rgba(0,217,132,0.3)',
+          opacity: pulseAnim,
+        }} />
+      </View>
+
+      {/* Nom */}
+      <Text style={{
+        color: 'rgba(0,217,132,0.5)',
+        fontSize: 8,
+        fontWeight: 'bold',
+        letterSpacing: 4,
+        marginTop: 4,
+      }}>ALIXEN</Text>
+      <Text style={{
+        color: 'rgba(0,217,132,0.2)',
+        fontSize: 5,
+        letterSpacing: 2,
+      }}>ESPACE SANTE INTELLIGENT</Text>
+    </View>
+  );
+};
+
+// ============================================
+// CIRCUITS DE CONNEXION (Y-split)
+// ============================================
+const CircuitConnectors = () => {
+  return (
+    <View style={{ alignItems: 'center' }}>
+      {/* Ligne verticale d'ALIXEN vers le point de jonction */}
+      <View style={{ width: 1.2, height: 15, backgroundColor: 'rgba(0,217,132,0.12)' }} />
+
+      {/* Point de jonction */}
+      <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: 'rgba(0,217,132,0.4)' }} />
+
+      {/* Branche horizontale gauche + droite */}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', width: SCREEN_WIDTH - 60 }}>
+        {/* Branche gauche */}
+        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+          <View style={{ width: '50%', height: 1.2, backgroundColor: 'rgba(0,217,132,0.12)' }} />
+          <View style={{ width: 1.2, height: 12, backgroundColor: 'rgba(0,217,132,0.12)', alignSelf: 'flex-start' }} />
+          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,217,132,0.35)', alignSelf: 'flex-start' }} />
+        </View>
+
+        {/* Espace central */}
+        <View style={{ width: 20 }} />
+
+        {/* Branche droite */}
+        <View style={{ flex: 1, alignItems: 'flex-start' }}>
+          <View style={{ width: '50%', height: 1.2, backgroundColor: 'rgba(0,217,132,0.12)' }} />
+          <View style={{ width: 1.2, height: 12, backgroundColor: 'rgba(0,217,132,0.12)', alignSelf: 'flex-end' }} />
+          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,217,132,0.35)', alignSelf: 'flex-end' }} />
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// ============================================
+// DOSSIER MÉTALLIQUE
+// ============================================
+const MetalFolder = ({ title, subtitle, borderColor, onPress }) => (
+  <TouchableOpacity onPress={onPress} style={{
+    flex: 1,
+    marginHorizontal: 4,
+    backgroundColor: '#1e2228',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: borderColor,
+    padding: 8,
+    alignItems: 'center',
+  }}>
+    {/* Tab métallique */}
+    <View style={{
+      position: 'absolute',
+      top: -4,
+      width: 35,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: 'rgba(255,255,255,0.03)',
+    }} />
+    {/* Reflet */}
+    <View style={{
+      position: 'absolute',
+      top: 2,
+      left: 4,
+      right: 4,
+      height: 10,
+      borderRadius: 4,
+      backgroundColor: 'rgba(255,255,255,0.02)',
+    }} />
+    <Text style={{ color: borderColor.replace('0.3', '0.6'), fontSize: 9, fontWeight: 'bold' }}>{title}</Text>
+    <Text style={{ color: '#555', fontSize: 6, marginTop: 1 }}>{subtitle}</Text>
+  </TouchableOpacity>
+);
+
+// ============================================
+// BALLE MÉTALLIQUE — 3 états : loading, unread, read
+// ============================================
+const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
+  const scaleAnim = useRef(new Animated.Value(isNew ? 0 : 1)).current;
+  const wobbleAnim = useRef(new Animated.Value(0)).current;
+  const loadPulse = useRef(new Animated.Value(0.2)).current;
+
+  useEffect(() => {
+    if (isNew) {
+      Animated.spring(scaleAnim, { toValue: 1, friction: 5, tension: 100, useNativeDriver: true }).start();
+    }
+    const dur = 3000 + (index % 5) * 500;
+    Animated.loop(Animated.sequence([
+      Animated.timing(wobbleAnim, { toValue: 1, duration: dur / 2, useNativeDriver: true }),
+      Animated.timing(wobbleAnim, { toValue: 0, duration: dur / 2, useNativeDriver: true }),
+    ])).start();
+  }, []);
+
+  useEffect(() => {
+    if (status === 'loading') {
+      Animated.loop(Animated.sequence([
+        Animated.timing(loadPulse, { toValue: 0.8, duration: 500, useNativeDriver: false }),
+        Animated.timing(loadPulse, { toValue: 0.2, duration: 500, useNativeDriver: false }),
+      ])).start();
+    } else {
+      loadPulse.setValue(1);
+    }
+  }, [status]);
+
+  const wobbleY = wobbleAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -1.5] });
+
+  // Couleurs selon status
+  let borderColor, glowColor;
+  if (status === 'loading') {
+    borderColor = loadPulse.interpolate({
+      inputRange: [0.2, 0.8],
+      outputRange: ['rgba(0,217,132,0.15)', 'rgba(0,217,132,0.6)'],
+    });
+    glowColor = '#00D984';
+  } else if (status === 'unread') {
+    borderColor = '#00D984';
+    glowColor = '#00D984';
+  } else {
+    borderColor = isBot ? 'rgba(232,64,64,0.4)' : 'rgba(77,166,255,0.4)';
+    glowColor = isBot ? '#E84040' : '#4DA6FF';
+  }
 
   const BALL_SIZE = 28;
 
   return (
     <Animated.View style={{
-      transform: [
-        { scale: scaleAnim },
-        { translateY: wobbleTranslateY },
-        { scale: wobbleScale },
-      ],
+      transform: [{ scale: scaleAnim }, { translateY: wobbleY }],
     }}>
-      <Pressable onPress={onPress}>
-        <View style={{
+      <Pressable onPress={() => { if (status !== 'loading') onPress(); }}>
+        <Animated.View style={{
           width: BALL_SIZE,
           height: BALL_SIZE,
           borderRadius: BALL_SIZE / 2,
           backgroundColor: '#252A30',
-          borderWidth: 1.2,
-          borderColor: isHighlighted ? primaryColor : '#4A4F55',
-          shadowColor: isHighlighted ? primaryColor : '#000',
-          shadowOffset: { width: 0, height: isHighlighted ? 0 : 2 },
-          shadowOpacity: isHighlighted ? 0.6 : 0.4,
-          shadowRadius: isHighlighted ? 8 : 4,
-          elevation: isHighlighted ? 8 : 3,
+          borderWidth: status === 'loading' ? 1.5 : 1,
+          borderColor: borderColor,
+          shadowColor: glowColor,
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: status === 'loading' || status === 'unread' ? 0.4 : 0.15,
+          shadowRadius: status === 'loading' || status === 'unread' ? 8 : 4,
+          elevation: status === 'loading' || status === 'unread' ? 6 : 3,
           justifyContent: 'center',
           alignItems: 'center',
           overflow: 'hidden',
         }}>
-          {/* Reflet métallique en haut */}
+          {/* Reflet métallique */}
           <View style={{
-            position: 'absolute',
-            top: 1,
-            left: BALL_SIZE * 0.15,
-            width: BALL_SIZE * 0.5,
-            height: BALL_SIZE * 0.35,
-            borderRadius: BALL_SIZE * 0.25,
-            backgroundColor: 'rgba(255,255,255,0.08)',
+            position: 'absolute', top: 2, left: BALL_SIZE * 0.15,
+            width: BALL_SIZE * 0.45, height: BALL_SIZE * 0.3,
+            borderRadius: BALL_SIZE * 0.2,
+            backgroundColor: 'rgba(255,255,255,0.07)',
             transform: [{ rotate: '-15deg' }],
           }} />
 
-          {/* Reflet secondaire petit */}
+          {/* Bordure extérieure métal */}
           <View style={{
-            position: 'absolute',
-            bottom: BALL_SIZE * 0.2,
-            right: BALL_SIZE * 0.15,
-            width: 3,
-            height: 3,
-            borderRadius: 1.5,
-            backgroundColor: 'rgba(255,255,255,0.04)',
-          }} />
-
-          {/* Bord intérieur coloré */}
-          <View style={{
-            position: 'absolute',
-            top: 2,
-            left: 2,
-            right: 2,
-            bottom: 2,
+            position: 'absolute', top: 1, left: 1, right: 1, bottom: 1,
             borderRadius: BALL_SIZE / 2,
-            borderWidth: 0.5,
-            borderColor: innerGlow,
+            borderWidth: 0.3,
+            borderColor: 'rgba(74,79,85,0.3)',
           }} />
 
-          {/* Numéro */}
-          <Text style={{
-            color: isHighlighted ? '#FFF' : primaryColor,
-            fontSize: 9,
-            fontWeight: 'bold',
-            opacity: isHighlighted ? 1 : 0.7,
-          }}>
-            {index + 1}
-          </Text>
-        </View>
+          {/* Contenu : numéro ou indicateur loading */}
+          {status === 'loading' ? (
+            <Animated.View style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: '#00D984',
+              opacity: loadPulse,
+            }} />
+          ) : (
+            <Text style={{
+              color: status === 'unread' ? '#00D984' : (isBot ? 'rgba(232,64,64,0.6)' : 'rgba(77,166,255,0.6)'),
+              fontSize: 9,
+              fontWeight: 'bold',
+            }}>
+              {index + 1}
+            </Text>
+          )}
+        </Animated.View>
       </Pressable>
     </Animated.View>
   );
@@ -463,495 +614,12 @@ const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
               isBot={isBot}
               isHighlighted={isHighlighted}
               isNew={msg._isNew}
+              status={msg._status || 'read'}
               onPress={() => onBallPress(msg, i)}
             />
           </View>
         );
       })}
-    </View>
-  );
-};
-
-// ============================================
-// BALLE D'ATTENTE — ALIXEN réfléchit
-// ============================================
-const WaitingBall = () => {
-  const pulseAnim = useRef(new Animated.Value(0.3)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: false }),
-        Animated.timing(pulseAnim, { toValue: 0.3, duration: 500, useNativeDriver: false }),
-      ])
-    ).start();
-  }, []);
-
-  return (
-    <Animated.View style={{
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-      backgroundColor: '#252A30',
-      borderWidth: 1.5,
-      borderColor: pulseAnim.interpolate({
-        inputRange: [0.3, 1],
-        outputRange: ['rgba(232,64,64,0.2)', 'rgba(232,64,64,0.7)'],
-      }),
-      justifyContent: 'center',
-      alignItems: 'center',
-      shadowColor: '#E84040',
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: pulseAnim,
-      shadowRadius: 8,
-      elevation: 5,
-    }}>
-      <Animated.Text style={{ fontSize: 12, opacity: pulseAnim }}>{'\uD83E\uDDE0'}</Animated.Text>
-    </Animated.View>
-  );
-};
-
-// ============================================
-// GÉNÉRATEUR DE PARTICULES ALIXEN
-// ============================================
-const generateParticles = (CX, CY, screenW, imageH) => {
-  const particles = [];
-
-  // ============================================
-  // GROUPE 1 : AU-DESSUS DE LA TÊTE (25 particules)
-  // Jaune/vert lumineux — énergie du cerveau qui émane
-  // Doivent être VISIBLES, tailles variées, certaines grosses
-  // Remplir tout l'arc au-dessus du crâne
-  // ============================================
-  for (let i = 0; i < 25; i++) {
-    const spreadX = -screenW * 0.3 + Math.random() * screenW * 0.6;
-    const topY = Math.random() * 45;
-    particles.push({
-      baseX: CX + spreadX,
-      baseY: topY,
-      size: 1.5 + Math.random() * 5.5,
-      color: Math.random() > 0.35
-        ? 'rgba(210,225,80,' + (0.15 + Math.random() * 0.35) + ')'
-        : 'rgba(130,225,140,' + (0.12 + Math.random() * 0.28) + ')',
-      ampX: 2 + Math.random() * 7,
-      ampY: 2 + Math.random() * 8,
-      durationX: 2500 + Math.random() * 3500,
-      durationY: 3000 + Math.random() * 3500,
-      animX: new Animated.Value(Math.random()),
-      animY: new Animated.Value(Math.random()),
-      animOpacity: new Animated.Value(0.1 + Math.random() * 0.15),
-      minOpacity: 0.06 + Math.random() * 0.1,
-      maxOpacity: 0.25 + Math.random() * 0.4,
-      pulseDuration: 1200 + Math.random() * 2500,
-      layer: Math.random() > 0.4 ? 'front' : 'back',
-    });
-  }
-
-  // ============================================
-  // GROUPE 2 : CÔTÉ GAUCHE DENSE (25 particules)
-  // Turquoise/cyan — correspond à la joue gauche du visage
-  // BEAUCOUP de particules, du bord gauche de l'écran
-  // jusqu'au centre du visage, sur toute la hauteur
-  // ============================================
-  for (let i = 0; i < 25; i++) {
-    particles.push({
-      baseX: 5 + Math.random() * (CX - 15),
-      baseY: 15 + Math.random() * (imageH - 30),
-      size: 1 + Math.random() * 6.5,
-      color: Math.random() > 0.25
-        ? 'rgba(0,210,210,' + (0.08 + Math.random() * 0.25) + ')'
-        : 'rgba(0,230,190,' + (0.06 + Math.random() * 0.2) + ')',
-      ampX: 3 + Math.random() * 8,
-      ampY: 2 + Math.random() * 6,
-      durationX: 3500 + Math.random() * 5000,
-      durationY: 3000 + Math.random() * 4500,
-      animX: new Animated.Value(Math.random()),
-      animY: new Animated.Value(Math.random()),
-      animOpacity: new Animated.Value(0.04 + Math.random() * 0.1),
-      minOpacity: 0.03 + Math.random() * 0.07,
-      maxOpacity: 0.12 + Math.random() * 0.25,
-      pulseDuration: 2000 + Math.random() * 4000,
-      layer: 'back',
-    });
-  }
-
-  // ============================================
-  // GROUPE 3 : CÔTÉ DROIT DENSE (25 particules)
-  // Violet/rose/mauve — correspond au côté droit du visage
-  // Même densité que le côté gauche mais en violet
-  // Du centre jusqu'au bord droit de l'écran
-  // ============================================
-  for (let i = 0; i < 25; i++) {
-    particles.push({
-      baseX: CX + 15 + Math.random() * (CX - 15),
-      baseY: 15 + Math.random() * (imageH - 30),
-      size: 1 + Math.random() * 6.5,
-      color: Math.random() > 0.3
-        ? 'rgba(185,135,210,' + (0.07 + Math.random() * 0.2) + ')'
-        : Math.random() > 0.5
-          ? 'rgba(210,155,190,' + (0.05 + Math.random() * 0.15) + ')'
-          : 'rgba(160,120,200,' + (0.06 + Math.random() * 0.18) + ')',
-      ampX: 3 + Math.random() * 8,
-      ampY: 2 + Math.random() * 6,
-      durationX: 3500 + Math.random() * 5000,
-      durationY: 3000 + Math.random() * 4500,
-      animX: new Animated.Value(Math.random()),
-      animY: new Animated.Value(Math.random()),
-      animOpacity: new Animated.Value(0.04 + Math.random() * 0.08),
-      minOpacity: 0.02 + Math.random() * 0.06,
-      maxOpacity: 0.1 + Math.random() * 0.22,
-      pulseDuration: 2000 + Math.random() * 4000,
-      layer: 'back',
-    });
-  }
-
-  // ============================================
-  // GROUPE 4 : FRONT & CERVEAU (15 particules)
-  // Jaune vif — DEVANT l'image, sur le front
-  // Petites, rapides, très lumineuses
-  // Simulent l'activité cérébrale en temps réel
-  // ============================================
-  for (let i = 0; i < 15; i++) {
-    particles.push({
-      baseX: CX - 35 + Math.random() * 70,
-      baseY: 10 + Math.random() * 50,
-      size: 0.8 + Math.random() * 3,
-      color: Math.random() > 0.45
-        ? 'rgba(225,235,100,' + (0.2 + Math.random() * 0.4) + ')'
-        : 'rgba(185,225,85,' + (0.15 + Math.random() * 0.35) + ')',
-      ampX: 1 + Math.random() * 4,
-      ampY: 1 + Math.random() * 3.5,
-      durationX: 1800 + Math.random() * 2200,
-      durationY: 2000 + Math.random() * 2200,
-      animX: new Animated.Value(Math.random()),
-      animY: new Animated.Value(Math.random()),
-      animOpacity: new Animated.Value(0.12 + Math.random() * 0.2),
-      minOpacity: 0.08 + Math.random() * 0.1,
-      maxOpacity: 0.3 + Math.random() * 0.45,
-      pulseDuration: 700 + Math.random() * 1200,
-      layer: 'front',
-    });
-  }
-
-  // ============================================
-  // GROUPE 5 : JOUES & BAS DU VISAGE (10 particules)
-  // Cyan doux DEVANT l'image — très faible opacité
-  // Donne un effet de vie sans cacher les détails
-  // ============================================
-  for (let i = 0; i < 10; i++) {
-    particles.push({
-      baseX: CX - 50 + Math.random() * 100,
-      baseY: imageH * 0.35 + Math.random() * (imageH * 0.4),
-      size: 1 + Math.random() * 3.5,
-      color: 'rgba(0,215,205,' + (0.04 + Math.random() * 0.08) + ')',
-      ampX: 2 + Math.random() * 5,
-      ampY: 1.5 + Math.random() * 4,
-      durationX: 4000 + Math.random() * 5000,
-      durationY: 3500 + Math.random() * 4500,
-      animX: new Animated.Value(Math.random()),
-      animY: new Animated.Value(Math.random()),
-      animOpacity: new Animated.Value(0.02 + Math.random() * 0.04),
-      minOpacity: 0.01 + Math.random() * 0.03,
-      maxOpacity: 0.05 + Math.random() * 0.1,
-      pulseDuration: 3000 + Math.random() * 5000,
-      layer: 'front',
-    });
-  }
-
-  // ============================================
-  // GROUPE 6 : DERRIÈRE LA TÊTE (15 particules)
-  // Mix de toutes les couleurs — autour du contour
-  // de la tête, dans le halo. Moyennement visibles.
-  // Comblent l'espace entre le visage et les bords
-  // ============================================
-  for (let i = 0; i < 15; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 35 + Math.random() * 55;
-    const colors = [
-      'rgba(0,200,200,' + (0.06 + Math.random() * 0.15) + ')',
-      'rgba(170,130,200,' + (0.05 + Math.random() * 0.12) + ')',
-      'rgba(200,220,90,' + (0.05 + Math.random() * 0.12) + ')',
-      'rgba(0,220,170,' + (0.06 + Math.random() * 0.14) + ')',
-    ];
-    particles.push({
-      baseX: CX + Math.cos(angle) * dist,
-      baseY: CY + Math.sin(angle) * dist * 0.8,
-      size: 2 + Math.random() * 5,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      ampX: 3 + Math.random() * 6,
-      ampY: 2 + Math.random() * 5,
-      durationX: 3500 + Math.random() * 4500,
-      durationY: 3000 + Math.random() * 4000,
-      animX: new Animated.Value(Math.random()),
-      animY: new Animated.Value(Math.random()),
-      animOpacity: new Animated.Value(0.04 + Math.random() * 0.08),
-      minOpacity: 0.02 + Math.random() * 0.06,
-      maxOpacity: 0.1 + Math.random() * 0.2,
-      pulseDuration: 2500 + Math.random() * 4000,
-      layer: 'back',
-    });
-  }
-
-  // ============================================
-  // GROUPE 7 : FOND GÉNÉRAL (30 particules)
-  // Éparpillées sur TOUT l'espace — coins, bords, partout
-  // Toutes couleurs (cyan, violet, jaune, blanc, vert, rose)
-  // Grosses et petites mélangées
-  // Remplissent les zones vides pour que rien ne soit mort
-  // ============================================
-  for (let i = 0; i < 30; i++) {
-    const colors = [
-      'rgba(0,200,210,' + (0.03 + Math.random() * 0.1) + ')',
-      'rgba(180,135,210,' + (0.02 + Math.random() * 0.08) + ')',
-      'rgba(210,225,90,' + (0.02 + Math.random() * 0.08) + ')',
-      'rgba(255,255,255,' + (0.02 + Math.random() * 0.06) + ')',
-      'rgba(0,225,175,' + (0.03 + Math.random() * 0.09) + ')',
-      'rgba(210,155,185,' + (0.02 + Math.random() * 0.07) + ')',
-      'rgba(100,200,230,' + (0.03 + Math.random() * 0.08) + ')',
-    ];
-    particles.push({
-      baseX: Math.random() * screenW,
-      baseY: Math.random() * imageH,
-      size: 1.5 + Math.random() * 8,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      ampX: 3 + Math.random() * 10,
-      ampY: 3 + Math.random() * 8,
-      durationX: 4500 + Math.random() * 7000,
-      durationY: 4500 + Math.random() * 6000,
-      animX: new Animated.Value(Math.random()),
-      animY: new Animated.Value(Math.random()),
-      animOpacity: new Animated.Value(0.02 + Math.random() * 0.05),
-      minOpacity: 0.01 + Math.random() * 0.03,
-      maxOpacity: 0.06 + Math.random() * 0.12,
-      pulseDuration: 4000 + Math.random() * 6000,
-      layer: 'back',
-    });
-  }
-
-  return particles;
-};
-
-// ============================================
-// ALIXEN HEADER — Visage de particules vivantes
-// ============================================
-const AlixenHeader = () => {
-  const IMAGE_HEIGHT = SCREEN_WIDTH * 0.55;
-  const CX = SCREEN_WIDTH / 2;
-  const CY = IMAGE_HEIGHT / 2;
-
-  const particles = useRef(
-    generateParticles(CX, CY, SCREEN_WIDTH, IMAGE_HEIGHT)
-  ).current;
-
-  useEffect(() => {
-    particles.forEach((p) => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(p.animX, {
-            toValue: 1,
-            duration: p.durationX,
-            useNativeDriver: true,
-          }),
-          Animated.timing(p.animX, {
-            toValue: 0,
-            duration: p.durationX,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(p.animY, {
-            toValue: 1,
-            duration: p.durationY,
-            useNativeDriver: true,
-          }),
-          Animated.timing(p.animY, {
-            toValue: 0,
-            duration: p.durationY,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(p.animOpacity, {
-            toValue: p.maxOpacity,
-            duration: p.pulseDuration,
-            useNativeDriver: true,
-          }),
-          Animated.timing(p.animOpacity, {
-            toValue: p.minOpacity,
-            duration: p.pulseDuration,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    });
-  }, []);
-
-  return (
-    <View style={{
-      width: SCREEN_WIDTH,
-      height: IMAGE_HEIGHT + 30,
-      backgroundColor: '#080E18',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* FOND SOMBRE BLEU-NUIT */}
-      <View style={{
-        position: 'absolute',
-        top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: '#080E18',
-      }} />
-
-      {/* LUEUR AMBIANTE — plus grande, plus visible */}
-      <View style={{
-        position: 'absolute',
-        top: CY - 60,
-        left: CX - 80,
-        width: 160,
-        height: 120,
-        borderRadius: 80,
-        backgroundColor: 'rgba(0,200,180,0.06)',
-      }} />
-
-      {/* LUEUR DU CERVEAU — plus intense */}
-      <View style={{
-        position: 'absolute',
-        top: 0,
-        left: CX - 55,
-        width: 110,
-        height: 65,
-        borderRadius: 55,
-        backgroundColor: 'rgba(180,220,60,0.045)',
-      }} />
-
-      {/* LUEUR VIOLETTE côté droit */}
-      <View style={{
-        position: 'absolute',
-        top: CY - 30,
-        right: 10,
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: 'rgba(170,130,200,0.03)',
-      }} />
-
-      {/* PARTICULES BACK — derrière l'image */}
-      {particles.filter(p => p.layer === 'back').map((p, i) => (
-        <Animated.View
-          key={`back-${i}`}
-          style={{
-            position: 'absolute',
-            left: p.baseX,
-            top: p.baseY,
-            width: p.size,
-            height: p.size,
-            borderRadius: p.size / 2,
-            backgroundColor: p.color,
-            opacity: p.animOpacity,
-            transform: [
-              {
-                translateX: p.animX.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [-p.ampX, p.ampX],
-                }),
-              },
-              {
-                translateY: p.animY.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [-p.ampY, p.ampY],
-                }),
-              },
-            ],
-          }}
-        />
-      ))}
-
-      {/* IMAGE ALIXEN */}
-      <Image
-        source={require('./assets/alixen-header.png')}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: SCREEN_WIDTH,
-          height: IMAGE_HEIGHT,
-        }}
-        resizeMode="contain"
-      />
-
-      {/* PARTICULES FRONT — devant l'image */}
-      {particles.filter(p => p.layer === 'front').map((p, i) => (
-        <Animated.View
-          key={`front-${i}`}
-          style={{
-            position: 'absolute',
-            left: p.baseX,
-            top: p.baseY,
-            width: p.size,
-            height: p.size,
-            borderRadius: p.size / 2,
-            backgroundColor: p.color,
-            opacity: p.animOpacity,
-            transform: [
-              {
-                translateX: p.animX.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [-p.ampX, p.ampX],
-                }),
-              },
-              {
-                translateY: p.animY.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [-p.ampY, p.ampY],
-                }),
-              },
-            ],
-          }}
-        />
-      ))}
-
-      {/* NOM ALIXEN */}
-      <View style={{
-        position: 'absolute',
-        bottom: 8,
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-      }}>
-        <Text style={{
-          color: 'rgba(0,220,190,0.5)',
-          fontSize: 11,
-          fontWeight: 'bold',
-          letterSpacing: 5,
-        }}>
-          ALIXEN
-        </Text>
-        <Text style={{
-          color: 'rgba(0,200,170,0.2)',
-          fontSize: 7,
-          letterSpacing: 2,
-          marginTop: 1,
-        }}>
-          ESPRIT BIENVEILLANT
-        </Text>
-      </View>
-
-      {/* COURBE DE SÉPARATION */}
-      <View style={{
-        position: 'absolute',
-        bottom: -15,
-        left: -10,
-        right: -10,
-        height: 30,
-        borderTopLeftRadius: 200,
-        borderTopRightRadius: 200,
-        backgroundColor: '#020405',
-      }} />
     </View>
   );
 };
@@ -964,7 +632,6 @@ export default function MedicAiPage() {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
 
   // Données utilisateur (chargées au mount)
   const [userProfile, setUserProfile] = useState(null);
@@ -1020,6 +687,7 @@ export default function MedicAiPage() {
       content: text,
       timestamp: new Date(),
       _isNew: true,
+      _status: 'unread',
     }]);
   }, []);
 
@@ -1113,6 +781,7 @@ export default function MedicAiPage() {
       content: greeting,
       timestamp: new Date(),
       _isNew: true,
+      _status: 'unread',
     }]);
   };
 
@@ -1160,9 +829,15 @@ ${mealsList}
     // navigation.navigate('Repas', { recipe: recipeName, section: 'recettes' });
   };
 
-  // ── Modal message (balle pressée) ──────────────────────────────────────
+  // ── Modal message (balle pressée) — marque comme lu ──────────────────────
   const handleBallPress = (message, index) => {
+    if (message._status === 'loading') return;
     setSelectedMessage({ ...message, index });
+    if (message._status === 'unread') {
+      setMessages(prev => prev.map(m =>
+        m.id === message.id ? { ...m, _status: 'read' } : m
+      ));
+    }
   };
 
   const closeModal = () => {
@@ -1193,72 +868,79 @@ ${mealsList}
     setSearchIndex(newIndex);
   };
 
-  // ── Envoi de message et appel IA ─────────────────────────────────────────
+  // ── Envoi de message et appel IA (cycle loading → unread → read) ────────
   const sendMessage = async () => {
     if (!inputText.trim() || isLoading) return;
-
-    const userMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: inputText.trim(),
-      timestamp: new Date(),
-      _isNew: true,
-    };
-
-    setMessages(prev => [...prev, userMessage]);
+    const userText = inputText.trim();
     setInputText('');
     setIsLoading(true);
-    setIsTyping(true);
+
+    const userMsg = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: userText,
+      timestamp: new Date(),
+      _isNew: true,
+      _status: 'read',
+    };
+
+    const botMsgId = (Date.now() + 1).toString();
+    const botMsgLoading = {
+      id: botMsgId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      _isNew: true,
+      _status: 'loading',
+    };
+
+    setMessages(prev => [...prev, userMsg, botMsgLoading]);
 
     try {
-      const userContext = buildUserContext();
+      const context = buildUserContext();
+      const messagesToSend = [...messages, userMsg]
+        .map(m => ({ role: m.role, content: m.content }))
+        .filter(m => m.content);
 
-      const chatHistory = [...messages, userMessage]
-        .slice(-20)
-        .map(m => ({ role: m.role, content: m.content }));
-
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/lixman-chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          messages: chatHistory,
-          userId: TEST_USER_ID,
-          userContext: userContext,
-        }),
-      });
+      const response = await fetch(
+        SUPABASE_URL + '/functions/v1/lixman-chat',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'apikey': SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ messages: messagesToSend, userId: TEST_USER_ID, userContext: context }),
+        }
+      );
 
       const data = await response.json();
 
-      if (data.error) {
-        addBotMessage("Désolé, j'ai atteint la limite de tokens pour aujourd'hui. Revenez demain ou utilisez des Lix pour continuer. \uD83D\uDD0B");
-      } else {
-        const botMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: data.message || data.content?.[0]?.text || "Hmm, je n'ai pas pu traiter votre message. Réessayez ?",
-          timestamp: new Date(),
-          _isNew: true,
-        };
-        setMessages(prev => [...prev, botMessage]);
+      if (data.message) {
+        setMessages(prev => prev.map(m =>
+          m.id === botMsgId ? { ...m, content: data.message, _status: 'unread' } : m
+        ));
         if (data.tokens_used) setTokenUsed(prev => prev + data.tokens_used);
+      } else {
+        setMessages(prev => prev.map(m =>
+          m.id === botMsgId ? { ...m, content: data.error || "Désolé, erreur de connexion.", _status: 'unread' } : m
+        ));
       }
     } catch (error) {
       console.error('Erreur ALIXEN:', error);
-      addBotMessage("Oups, une erreur est survenue. Vérifiez votre connexion et réessayez. \uD83D\uDD04");
-    } finally {
-      setIsLoading(false);
-      setIsTyping(false);
+      setMessages(prev => prev.map(m =>
+        m.id === botMsgId ? { ...m, content: "Erreur réseau. Vérifiez votre connexion.", _status: 'unread' } : m
+      ));
     }
+    setIsLoading(false);
   };
 
   // ── RENDER ───────────────────────────────────────────────────────────────
   return (
     <View style={{ flex: 1 }}>
-      {/* Fond métallique avec particules */}
-      <MetalParticleBackground />
+      {/* Fond PCB avec grille de circuits */}
+      <PCBBackground />
 
       <StatusBar barStyle="light-content" />
 
@@ -1330,36 +1012,40 @@ ${mealsList}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ZONE ALIXEN — Visage de particules vivantes */}
-          <AlixenHeader />
+          {/* ALIXEN Brain — Cerveau dans bulle métallique */}
+          <AlixenBrain />
 
-          {/* OUTILS MediBook + Secret Pocket */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 6 }}>
-            <TouchableOpacity onPress={() => addBotMessage("Le MediBook sera disponible prochainement. \uD83D\uDCCB")}
-              style={{ backgroundColor: 'rgba(0,217,132,0.04)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)', paddingHorizontal: 10, paddingVertical: 4, flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 11, marginRight: 4 }}>{'\uD83D\uDCCB'}</Text>
-              <Text style={{ color: 'rgba(0,217,132,0.6)', fontSize: 8, fontWeight: 'bold' }}>MediBook</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. \uD83D\uDD10")}
-              style={{ backgroundColor: 'rgba(255,180,0,0.03)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,180,0,0.1)', paddingHorizontal: 10, paddingVertical: 4, flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 11, marginRight: 4 }}>{'\uD83D\uDD10'}</Text>
-              <Text style={{ color: 'rgba(255,180,0,0.6)', fontSize: 8, fontWeight: 'bold' }}>Secret Pocket</Text>
-            </TouchableOpacity>
+          {/* Circuits de connexion vers les dossiers */}
+          <CircuitConnectors />
+
+          {/* Dossiers métalliques */}
+          <View style={{ flexDirection: 'row', paddingHorizontal: 12, marginBottom: 6 }}>
+            <MetalFolder
+              title="MediBook"
+              subtitle="Dossier médical"
+              borderColor="rgba(0,217,132,0.3)"
+              onPress={() => addBotMessage("Le MediBook sera disponible prochainement. \uD83D\uDCCB")}
+            />
+            <MetalFolder
+              title="Secret Pocket"
+              subtitle="Coffre-fort santé"
+              borderColor="rgba(212,175,55,0.3)"
+              onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. \uD83D\uDD10")}
+            />
           </View>
 
-          {/* RÉSEAU DE BALLES MÉTALLIQUES */}
+          {/* Circuit vers les boules */}
+          <View style={{ alignItems: 'center', marginBottom: 4 }}>
+            <View style={{ width: 1, height: 10, backgroundColor: 'rgba(0,217,132,0.1)' }} />
+            <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(0,217,132,0.3)' }} />
+          </View>
+
+          {/* RÉSEAU DE BALLES MÉTALLIQUES EN S */}
           <SynapticNetwork
             messages={messages}
             highlightedIndices={searchResults.length > 0 && searchIndex >= 0 ? [searchResults[searchIndex]] : []}
             onBallPress={handleBallPress}
           />
-
-          {/* BALLE D'ATTENTE si ALIXEN réfléchit */}
-          {isTyping && (
-            <View style={{ marginLeft: PADDING_H }}>
-              <WaitingBall />
-            </View>
-          )}
 
           {/* LÉGENDE */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 6 }}>
@@ -1375,8 +1061,8 @@ ${mealsList}
 
           {/* Résultat de recherche */}
           {searchResults.length > 0 && searchIndex >= 0 && (
-            <Text style={{ textAlign: 'center', color: 'rgba(77,166,255,0.5)', fontSize: 8, marginTop: 4 }}>
-              Balle #{searchResults[searchIndex] + 1} — {searchIndex + 1}/{searchResults.length}
+            <Text style={{ textAlign: 'center', color: 'rgba(77,166,255,0.4)', fontSize: 8, marginTop: 3 }}>
+              Boule #{searchResults[searchIndex] + 1} — {searchIndex + 1}/{searchResults.length}
             </Text>
           )}
           {searchQuery.trim() !== '' && searchResults.length === 0 && (
@@ -1386,69 +1072,91 @@ ${mealsList}
           )}
         </ScrollView>
 
-        {/* ===== BARRE DE SAISIE + RECHERCHE ===== */}
-        <View style={{
-          flexDirection: 'row', alignItems: 'center', gap: 4,
-          paddingHorizontal: 8, paddingVertical: 6,
-          backgroundColor: 'rgba(3,4,6,0.97)',
-          borderTopWidth: 1, borderTopColor: 'rgba(74,79,85,0.15)',
-        }}>
-          {/* Barre recherche */}
-          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center',
-            backgroundColor: 'rgba(10,14,22,0.9)', borderRadius: 14,
-            borderWidth: 1, borderColor: 'rgba(77,166,255,0.1)',
-            paddingHorizontal: 8, paddingVertical: Platform.OS === 'ios' ? 7 : 4,
-          }}>
-            <TextInput
-              style={{ flex: 1, color: '#4DA6FF', fontSize: 10, paddingVertical: 0 }}
-              placeholder="Chercher..."
-              placeholderTextColor="rgba(77,166,255,0.2)"
-              value={searchQuery}
-              onChangeText={handleSearch}
-            />
-            <TouchableOpacity onPress={() => navigateSearch(-1)} style={{ paddingHorizontal: 3 }}>
-              <Text style={{ color: 'rgba(77,166,255,0.4)', fontSize: 10 }}>{'\u25C0'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigateSearch(1)} style={{ paddingHorizontal: 3 }}>
-              <Text style={{ color: 'rgba(77,166,255,0.4)', fontSize: 10 }}>{'\u25B6'}</Text>
+        {/* ===== ZONE DE SAISIE TRIPARTITE ===== */}
+        <View style={{ paddingHorizontal: 8, paddingBottom: 6, paddingTop: 4, backgroundColor: 'rgba(3,4,6,0.97)', borderTopWidth: 1, borderTopColor: 'rgba(74,79,85,0.15)' }}>
+          {/* Ligne du haut : Recherche (gauche) + Upload (droite) */}
+          <View style={{ flexDirection: 'row', marginBottom: 4, gap: 6 }}>
+            {/* Recherche */}
+            <View style={{
+              flex: 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#1e2228',
+              borderRadius: 14,
+              borderWidth: 0.6,
+              borderColor: 'rgba(77,166,255,0.15)',
+              paddingHorizontal: 8,
+              paddingVertical: Platform.OS === 'ios' ? 6 : 3,
+            }}>
+              <TextInput
+                style={{ flex: 1, color: '#4DA6FF', fontSize: 9, paddingVertical: 0 }}
+                placeholder="Chercher..."
+                placeholderTextColor="rgba(77,166,255,0.2)"
+                value={searchQuery}
+                onChangeText={handleSearch}
+              />
+              <TouchableOpacity onPress={() => navigateSearch(-1)} style={{ paddingHorizontal: 2 }}>
+                <Text style={{ color: 'rgba(77,166,255,0.3)', fontSize: 9 }}>{'\u25C0'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigateSearch(1)} style={{ paddingHorizontal: 2 }}>
+                <Text style={{ color: 'rgba(77,166,255,0.3)', fontSize: 9 }}>{'\u25B6'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Upload */}
+            <TouchableOpacity
+              onPress={() => addBotMessage("L'import de fichiers sera disponible prochainement.")}
+              style={{
+                backgroundColor: '#1e2228',
+                borderRadius: 14,
+                borderWidth: 0.6,
+                borderColor: 'rgba(212,175,55,0.15)',
+                paddingHorizontal: 12,
+                paddingVertical: Platform.OS === 'ios' ? 6 : 3,
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ color: 'rgba(212,175,55,0.4)', fontSize: 9 }}>Upload</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Barre message */}
-          <View style={{ flex: 1,
-            backgroundColor: 'rgba(10,14,22,0.9)', borderRadius: 14,
-            borderWidth: 1, borderColor: 'rgba(0,217,132,0.1)',
-            paddingHorizontal: 10, paddingVertical: Platform.OS === 'ios' ? 7 : 4,
-          }}>
-            <TextInput
-              ref={inputRef}
-              style={{ color: '#FFF', fontSize: 10, paddingVertical: 0, maxHeight: 60 }}
-              placeholder="Consultez ALIXEN..."
-              placeholderTextColor="rgba(255,255,255,0.15)"
-              selectionColor="#00D984"
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-              blurOnSubmit={false}
-            />
-          </View>
-
-          {/* Bouton envoyer */}
-          <TouchableOpacity
-            onPress={sendMessage}
-            disabled={!inputText.trim() || isLoading}
-            style={{
-              width: 28, height: 28, borderRadius: 14,
-              backgroundColor: inputText.trim() ? '#00D984' : 'rgba(0,217,132,0.08)',
-              borderWidth: inputText.trim() ? 0 : 1,
+          {/* Ligne du bas : Message + Envoyer */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <View style={{
+              flex: 1,
+              backgroundColor: '#1e2228',
+              borderRadius: 14,
+              borderWidth: 0.6,
               borderColor: 'rgba(0,217,132,0.15)',
-              justifyContent: 'center', alignItems: 'center',
-              shadowColor: inputText.trim() ? '#00D984' : 'transparent',
-              shadowOpacity: 0.3, shadowRadius: 6, elevation: inputText.trim() ? 4 : 0,
-            }}
-          >
-            <Text style={{ color: inputText.trim() ? '#000' : 'rgba(0,217,132,0.3)', fontSize: 12, fontWeight: 'bold' }}>{'\u27A4'}</Text>
-          </TouchableOpacity>
+              paddingHorizontal: 10,
+              paddingVertical: Platform.OS === 'ios' ? 7 : 4,
+            }}>
+              <TextInput
+                ref={inputRef}
+                style={{ color: '#FFF', fontSize: 10, paddingVertical: 0, maxHeight: 60 }}
+                placeholder="Consultez ALIXEN..."
+                placeholderTextColor="rgba(0,217,132,0.2)"
+                selectionColor="#00D984"
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+                blurOnSubmit={false}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={sendMessage}
+              disabled={!inputText.trim() || isLoading}
+              style={{
+                width: 30, height: 30, borderRadius: 15,
+                backgroundColor: inputText.trim() ? '#00D984' : 'rgba(0,217,132,0.08)',
+                borderWidth: inputText.trim() ? 0 : 0.6,
+                borderColor: 'rgba(0,217,132,0.2)',
+                justifyContent: 'center', alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: inputText.trim() ? '#000' : 'rgba(0,217,132,0.3)', fontSize: 12, fontWeight: 'bold' }}>{'\u27A4'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
 
