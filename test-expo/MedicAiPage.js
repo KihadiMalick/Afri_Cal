@@ -473,7 +473,7 @@ const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
 };
 
 // ============================================
-// BALLE D'ATTENTE — LixMan réfléchit
+// BALLE D'ATTENTE — ALIXEN réfléchit
 // ============================================
 const WaitingBall = () => {
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
@@ -508,6 +508,373 @@ const WaitingBall = () => {
     }}>
       <Animated.Text style={{ fontSize: 12, opacity: pulseAnim }}>{'\uD83E\uDDE0'}</Animated.Text>
     </Animated.View>
+  );
+};
+
+// ============================================
+// GÉNÉRATEUR DE PARTICULES ALIXEN
+// ============================================
+const generateParticles = (CX, CY, screenW, imageH) => {
+  const particles = [];
+
+  // GROUPE 1 : AU-DESSUS DE LA TÊTE (jaune/vert)
+  for (let i = 0; i < 15; i++) {
+    const angle = -0.8 + Math.random() * 1.6;
+    const dist = 10 + Math.random() * 50;
+    particles.push({
+      baseX: CX + Math.cos(angle) * dist * 0.8 - 3,
+      baseY: 5 + Math.random() * 35,
+      size: 1 + Math.random() * 4,
+      color: Math.random() > 0.4
+        ? `rgba(200,220,80,${0.15 + Math.random() * 0.3})`
+        : `rgba(120,220,140,${0.1 + Math.random() * 0.25})`,
+      ampX: 2 + Math.random() * 5,
+      ampY: 2 + Math.random() * 6,
+      durationX: 3000 + Math.random() * 4000,
+      durationY: 3500 + Math.random() * 4000,
+      animX: new Animated.Value(Math.random()),
+      animY: new Animated.Value(Math.random()),
+      animOpacity: new Animated.Value(0.1 + Math.random() * 0.2),
+      minOpacity: 0.05 + Math.random() * 0.1,
+      maxOpacity: 0.2 + Math.random() * 0.35,
+      pulseDuration: 1500 + Math.random() * 3000,
+      layer: Math.random() > 0.5 ? 'front' : 'back',
+    });
+  }
+
+  // GROUPE 2 : CÔTÉ GAUCHE (turquoise/cyan)
+  for (let i = 0; i < 12; i++) {
+    particles.push({
+      baseX: 5 + Math.random() * (CX - 30),
+      baseY: 20 + Math.random() * (imageH - 50),
+      size: 1.5 + Math.random() * 5,
+      color: Math.random() > 0.3
+        ? `rgba(0,200,200,${0.08 + Math.random() * 0.2})`
+        : `rgba(0,220,180,${0.06 + Math.random() * 0.15})`,
+      ampX: 3 + Math.random() * 6,
+      ampY: 2 + Math.random() * 5,
+      durationX: 4000 + Math.random() * 5000,
+      durationY: 3500 + Math.random() * 4500,
+      animX: new Animated.Value(Math.random()),
+      animY: new Animated.Value(Math.random()),
+      animOpacity: new Animated.Value(0.05 + Math.random() * 0.1),
+      minOpacity: 0.03 + Math.random() * 0.06,
+      maxOpacity: 0.12 + Math.random() * 0.2,
+      pulseDuration: 2000 + Math.random() * 4000,
+      layer: 'back',
+    });
+  }
+
+  // GROUPE 3 : CÔTÉ DROIT (violet/rose)
+  for (let i = 0; i < 12; i++) {
+    particles.push({
+      baseX: CX + 20 + Math.random() * (CX - 20),
+      baseY: 20 + Math.random() * (imageH - 50),
+      size: 1.5 + Math.random() * 5,
+      color: Math.random() > 0.3
+        ? `rgba(180,130,200,${0.06 + Math.random() * 0.15})`
+        : `rgba(200,150,180,${0.05 + Math.random() * 0.12})`,
+      ampX: 3 + Math.random() * 6,
+      ampY: 2 + Math.random() * 5,
+      durationX: 4000 + Math.random() * 5000,
+      durationY: 3500 + Math.random() * 4500,
+      animX: new Animated.Value(Math.random()),
+      animY: new Animated.Value(Math.random()),
+      animOpacity: new Animated.Value(0.04 + Math.random() * 0.08),
+      minOpacity: 0.02 + Math.random() * 0.05,
+      maxOpacity: 0.1 + Math.random() * 0.18,
+      pulseDuration: 2000 + Math.random() * 4000,
+      layer: 'back',
+    });
+  }
+
+  // GROUPE 4 : FRONT / ZONE CERVEAU (jaune vif, DEVANT l'image)
+  for (let i = 0; i < 10; i++) {
+    particles.push({
+      baseX: CX - 25 + Math.random() * 50,
+      baseY: 15 + Math.random() * 40,
+      size: 0.8 + Math.random() * 2.5,
+      color: Math.random() > 0.5
+        ? `rgba(220,230,100,${0.2 + Math.random() * 0.35})`
+        : `rgba(180,220,80,${0.15 + Math.random() * 0.3})`,
+      ampX: 1.5 + Math.random() * 3,
+      ampY: 1 + Math.random() * 3,
+      durationX: 2000 + Math.random() * 2500,
+      durationY: 2200 + Math.random() * 2500,
+      animX: new Animated.Value(Math.random()),
+      animY: new Animated.Value(Math.random()),
+      animOpacity: new Animated.Value(0.15 + Math.random() * 0.2),
+      minOpacity: 0.08 + Math.random() * 0.1,
+      maxOpacity: 0.3 + Math.random() * 0.4,
+      pulseDuration: 800 + Math.random() * 1500,
+      layer: 'front',
+    });
+  }
+
+  // GROUPE 5 : JOUES ET BAS DU VISAGE (cyan/turquoise DEVANT)
+  for (let i = 0; i < 8; i++) {
+    particles.push({
+      baseX: CX - 40 + Math.random() * 80,
+      baseY: imageH * 0.4 + Math.random() * (imageH * 0.35),
+      size: 1 + Math.random() * 3,
+      color: `rgba(0,210,200,${0.05 + Math.random() * 0.1})`,
+      ampX: 2 + Math.random() * 4,
+      ampY: 1.5 + Math.random() * 3,
+      durationX: 4000 + Math.random() * 5000,
+      durationY: 3500 + Math.random() * 4500,
+      animX: new Animated.Value(Math.random()),
+      animY: new Animated.Value(Math.random()),
+      animOpacity: new Animated.Value(0.03 + Math.random() * 0.05),
+      minOpacity: 0.01 + Math.random() * 0.03,
+      maxOpacity: 0.06 + Math.random() * 0.1,
+      pulseDuration: 3000 + Math.random() * 5000,
+      layer: 'front',
+    });
+  }
+
+  // GROUPE 6 : FOND ÉPARPILLÉ (toutes couleurs)
+  for (let i = 0; i < 20; i++) {
+    const colors = [
+      `rgba(0,200,200,${0.03 + Math.random() * 0.08})`,
+      `rgba(180,130,200,${0.02 + Math.random() * 0.06})`,
+      `rgba(200,220,80,${0.02 + Math.random() * 0.06})`,
+      `rgba(255,255,255,${0.02 + Math.random() * 0.05})`,
+      `rgba(0,220,170,${0.03 + Math.random() * 0.07})`,
+      `rgba(200,150,180,${0.02 + Math.random() * 0.05})`,
+    ];
+    particles.push({
+      baseX: Math.random() * screenW,
+      baseY: Math.random() * imageH,
+      size: 2 + Math.random() * 7,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      ampX: 3 + Math.random() * 8,
+      ampY: 3 + Math.random() * 7,
+      durationX: 5000 + Math.random() * 7000,
+      durationY: 5000 + Math.random() * 6000,
+      animX: new Animated.Value(Math.random()),
+      animY: new Animated.Value(Math.random()),
+      animOpacity: new Animated.Value(0.02 + Math.random() * 0.04),
+      minOpacity: 0.01 + Math.random() * 0.02,
+      maxOpacity: 0.05 + Math.random() * 0.1,
+      pulseDuration: 4000 + Math.random() * 6000,
+      layer: 'back',
+    });
+  }
+
+  return particles;
+};
+
+// ============================================
+// ALIXEN HEADER — Visage de particules vivantes
+// ============================================
+const AlixenHeader = () => {
+  const IMAGE_HEIGHT = SCREEN_WIDTH * 0.55;
+  const CX = SCREEN_WIDTH / 2;
+  const CY = IMAGE_HEIGHT / 2;
+
+  const particles = useRef(
+    generateParticles(CX, CY, SCREEN_WIDTH, IMAGE_HEIGHT)
+  ).current;
+
+  useEffect(() => {
+    particles.forEach((p) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(p.animX, {
+            toValue: 1,
+            duration: p.durationX,
+            useNativeDriver: true,
+          }),
+          Animated.timing(p.animX, {
+            toValue: 0,
+            duration: p.durationX,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(p.animY, {
+            toValue: 1,
+            duration: p.durationY,
+            useNativeDriver: true,
+          }),
+          Animated.timing(p.animY, {
+            toValue: 0,
+            duration: p.durationY,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(p.animOpacity, {
+            toValue: p.maxOpacity,
+            duration: p.pulseDuration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(p.animOpacity, {
+            toValue: p.minOpacity,
+            duration: p.pulseDuration,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    });
+  }, []);
+
+  return (
+    <View style={{
+      width: SCREEN_WIDTH,
+      height: IMAGE_HEIGHT + 30,
+      backgroundColor: '#080E18',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      {/* FOND SOMBRE BLEU-NUIT */}
+      <View style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: '#080E18',
+      }} />
+
+      {/* LUEUR AMBIANTE turquoise */}
+      <View style={{
+        position: 'absolute',
+        top: CY - 40,
+        left: CX - 60,
+        width: 120,
+        height: 80,
+        borderRadius: 60,
+        backgroundColor: 'rgba(0,200,180,0.04)',
+      }} />
+
+      {/* LUEUR DU CERVEAU jaune/vert */}
+      <View style={{
+        position: 'absolute',
+        top: 5,
+        left: CX - 40,
+        width: 80,
+        height: 50,
+        borderRadius: 40,
+        backgroundColor: 'rgba(180,220,60,0.03)',
+      }} />
+
+      {/* PARTICULES BACK — derrière l'image */}
+      {particles.filter(p => p.layer === 'back').map((p, i) => (
+        <Animated.View
+          key={`back-${i}`}
+          style={{
+            position: 'absolute',
+            left: p.baseX,
+            top: p.baseY,
+            width: p.size,
+            height: p.size,
+            borderRadius: p.size / 2,
+            backgroundColor: p.color,
+            opacity: p.animOpacity,
+            transform: [
+              {
+                translateX: p.animX.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-p.ampX, p.ampX],
+                }),
+              },
+              {
+                translateY: p.animY.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-p.ampY, p.ampY],
+                }),
+              },
+            ],
+          }}
+        />
+      ))}
+
+      {/* IMAGE ALIXEN */}
+      <Image
+        source={require('./assets/alixen-header.png')}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: SCREEN_WIDTH,
+          height: IMAGE_HEIGHT,
+        }}
+        resizeMode="contain"
+      />
+
+      {/* PARTICULES FRONT — devant l'image */}
+      {particles.filter(p => p.layer === 'front').map((p, i) => (
+        <Animated.View
+          key={`front-${i}`}
+          style={{
+            position: 'absolute',
+            left: p.baseX,
+            top: p.baseY,
+            width: p.size,
+            height: p.size,
+            borderRadius: p.size / 2,
+            backgroundColor: p.color,
+            opacity: p.animOpacity,
+            transform: [
+              {
+                translateX: p.animX.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-p.ampX, p.ampX],
+                }),
+              },
+              {
+                translateY: p.animY.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-p.ampY, p.ampY],
+                }),
+              },
+            ],
+          }}
+        />
+      ))}
+
+      {/* NOM ALIXEN */}
+      <View style={{
+        position: 'absolute',
+        bottom: 8,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+      }}>
+        <Text style={{
+          color: 'rgba(0,220,190,0.5)',
+          fontSize: 11,
+          fontWeight: 'bold',
+          letterSpacing: 5,
+        }}>
+          ALIXEN
+        </Text>
+        <Text style={{
+          color: 'rgba(0,200,170,0.2)',
+          fontSize: 7,
+          letterSpacing: 2,
+          marginTop: 1,
+        }}>
+          ESPRIT BIENVEILLANT
+        </Text>
+      </View>
+
+      {/* COURBE DE SÉPARATION */}
+      <View style={{
+        position: 'absolute',
+        bottom: -15,
+        left: -10,
+        right: -10,
+        height: 30,
+        borderTopLeftRadius: 200,
+        borderTopRightRadius: 200,
+        backgroundColor: '#020405',
+      }} />
+    </View>
   );
 };
 
@@ -598,7 +965,7 @@ export default function MedicAiPage() {
       generateGreeting(profileData[0], summaryData[0]);
     } catch (error) {
       console.error('Erreur chargement données:', error);
-      addBotMessage("Bonjour ! Je suis LixMan, votre coach nutritionniste IA personnel. Comment puis-je vous aider aujourd'hui ?");
+      addBotMessage("Bonjour ! Je suis ALIXEN, votre coach nutritionniste IA personnel. Comment puis-je vous aider aujourd'hui ?");
     }
   };
 
@@ -644,7 +1011,7 @@ export default function MedicAiPage() {
       if (hour > 13) {
         greeting = `${timeGreeting} ${name} ! Ravi de vous revoir dans votre espace santé. \uD83D\uDC4B\n\nJe remarque que vous n'avez encore rien mangé aujourd'hui... Tout va bien ?\n\nN'oubliez pas que sauter des repas n'est jamais bon pour le métabolisme. Même un fruit ou un yaourt, c'est mieux que rien. \uD83C\uDF4E`;
       } else {
-        greeting = `Bienvenue ${name} dans votre espace santé intelligent ! \uD83D\uDC4B\n\nJe suis LixMan, votre coach nutritionniste IA personnel. Ici, tout est confidentiel et pensé pour votre bien-être.\n\nParlez-moi de vos objectifs santé, je suis tout ouïe.`;
+        greeting = `Bienvenue ${name} dans votre espace santé intelligent ! \uD83D\uDC4B\n\nJe suis ALIXEN, votre coach nutritionniste IA personnel. Ici, tout est confidentiel et pensé pour votre bien-être.\n\nParlez-moi de vos objectifs santé, je suis tout ouïe.`;
       }
     } else {
       const calories = summary.total_calories || 0;
@@ -801,7 +1168,7 @@ ${mealsList}
         if (data.tokens_used) setTokenUsed(prev => prev + data.tokens_used);
       }
     } catch (error) {
-      console.error('Erreur LixMan:', error);
+      console.error('Erreur ALIXEN:', error);
       addBotMessage("Oups, une erreur est survenue. Vérifiez votre connexion et réessayez. \uD83D\uDD04");
     } finally {
       setIsLoading(false);
@@ -885,27 +1252,8 @@ ${mealsList}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           keyboardShouldPersistTaps="handled"
         >
-          {/* AVATAR LIXMAN en haut du réseau */}
-          <View style={{ alignItems: 'center', marginTop: 6, marginBottom: 2 }}>
-            <View style={{
-              width: 44, height: 44, borderRadius: 22,
-              borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.4)',
-              backgroundColor: 'rgba(0,217,132,0.03)',
-              justifyContent: 'center', alignItems: 'center',
-            }}>
-              <Image source={require('./assets/lixman-avatar.png')}
-                style={{ width: 36, height: 36, borderRadius: 18 }} resizeMode="cover" />
-            </View>
-            <Text style={{ color: 'rgba(0,217,132,0.6)', fontSize: 7, fontWeight: 'bold', letterSpacing: 2, marginTop: 2 }}>
-              LIXMAN
-            </Text>
-            <Text style={{ color: 'rgba(0,217,132,0.25)', fontSize: 6, letterSpacing: 1.5 }}>
-              ESPACE SANT{'\u00C9'} INTELLIGENT
-            </Text>
-            {/* Circuit vers le réseau */}
-            <View style={{ width: 1, height: 6, backgroundColor: 'rgba(0,217,132,0.15)', marginTop: 2 }} />
-            <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(0,217,132,0.3)' }} />
-          </View>
+          {/* ZONE ALIXEN — Visage de particules vivantes */}
+          <AlixenHeader />
 
           {/* OUTILS MediBook + Secret Pocket */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 6 }}>
@@ -928,7 +1276,7 @@ ${mealsList}
             onBallPress={handleBallPress}
           />
 
-          {/* BALLE D'ATTENTE si LixMan réfléchit */}
+          {/* BALLE D'ATTENTE si ALIXEN réfléchit */}
           {isTyping && (
             <View style={{ marginLeft: PADDING_H }}>
               <WaitingBall />
@@ -939,7 +1287,7 @@ ${mealsList}
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 6 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#252A30', borderWidth: 1, borderColor: 'rgba(232,64,64,0.4)' }} />
-              <Text style={{ color: '#555', fontSize: 7 }}>LixMan</Text>
+              <Text style={{ color: '#555', fontSize: 7 }}>ALIXEN</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#252A30', borderWidth: 1, borderColor: 'rgba(77,166,255,0.4)' }} />
@@ -997,7 +1345,7 @@ ${mealsList}
             <TextInput
               ref={inputRef}
               style={{ color: '#FFF', fontSize: 10, paddingVertical: 0, maxHeight: 60 }}
-              placeholder="Consultez LixMan..."
+              placeholder="Consultez ALIXEN..."
               placeholderTextColor="rgba(255,255,255,0.15)"
               selectionColor="#00D984"
               value={inputText}
@@ -1060,7 +1408,7 @@ ${mealsList}
                     <Image source={require('./assets/lixman-avatar.png')}
                       style={{ width: 22, height: 22, borderRadius: 11, marginRight: 8, borderWidth: 1, borderColor: '#E84040' }}
                       resizeMode="cover" />
-                    <Text style={{ color: '#E84040', fontSize: 12, fontWeight: 'bold' }}>LixMan</Text>
+                    <Text style={{ color: '#E84040', fontSize: 12, fontWeight: 'bold' }}>ALIXEN</Text>
                   </>
                 ) : (
                   <Text style={{ color: '#4DA6FF', fontSize: 12, fontWeight: 'bold' }}>{'\uD83D\uDC64'} Vous</Text>
@@ -1116,14 +1464,14 @@ ${mealsList}
             borderWidth: 1,
             borderColor: '#333',
           }}>
-            {/* Avatar LixMan */}
+            {/* Avatar ALIXEN */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
               <Image
                 source={require('./assets/lixman-avatar.png')}
                 style={{ width: 30, height: 30, borderRadius: 15, marginRight: 10, borderWidth: 1, borderColor: '#00D984' }}
                 resizeMode="cover"
               />
-              <Text style={{ color: '#00D984', fontSize: 14, fontWeight: 'bold' }}>LixMan</Text>
+              <Text style={{ color: '#00D984', fontSize: 14, fontWeight: 'bold' }}>ALIXEN</Text>
             </View>
 
             {/* Message */}
