@@ -36,6 +36,19 @@ const SUPABASE_ANON_KEY =
 const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 // ============================================
+// SYSTÈME ÉNERGIE LIXUM
+// ============================================
+const ENERGY_CONFIG = {
+  TOKEN_DIVISOR: 100,
+  TEST_ENERGY_LIMIT: 500,
+  GOLD_ENERGY_LIMIT: 150,
+  PLATINUM_ENERGY_LIMIT: 350,
+  LIX_PER_RECHARGE_UNIT: 100,
+  ENERGY_PER_RECHARGE: 10,
+  SESSION_DURATION_MS: 6 * 60 * 60 * 1000,
+};
+
+// ============================================
 // TABS CONFIG
 // ============================================
 const TABS = [
@@ -384,47 +397,49 @@ const NeumorphCard = ({ title, icon, accentColor, onPress }) => {
 };
 
 // ============================================
-// LIQUID TUBE INPUT — Tube transparent avec liquide + bille + lock
+// LIQUID TUBE INPUT — Tube verre avec liquide + bille + lock
 // ============================================
-const LiquidTubeInput = ({ children, tokensUsed, tokenLimit, onLockPress }) => {
-  const percent = Math.max(0, Math.min(1, tokensUsed / tokenLimit));
-  const isLocked = percent >= 1;
+const LiquidTubeInput = ({ children, energyPercent, isLocked, onLockPress }) => {
+  const percent = energyPercent; // 1 = plein, 0 = vide
   const shakeAnim = useRef(new Animated.Value(0)).current;
+  const [barHeight, setBarHeight] = useState(50);
 
   let liquidColor;
-  if (percent < 0.6) liquidColor = '#00D984';
-  else if (percent < 0.8) liquidColor = '#F0C040';
-  else if (percent < 0.95) liquidColor = '#F08030';
-  else liquidColor = '#E05050';
-
-  const triggerShake = useCallback(() => {
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 6, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -6, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 4, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -4, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
-    ]).start();
-  }, [shakeAnim]);
+  if (percent > 0.6) liquidColor = '#00D984';
+  else if (percent > 0.3) liquidColor = '#F0C040';
+  else if (percent > 0.1) liquidColor = '#F08030';
+  else if (percent > 0) liquidColor = '#E05050';
+  else liquidColor = 'transparent';
 
   const TUBE_THICK = 3;
-  const TUBE_RADIUS = 24;
+  const TUBE_RADIUS = 22;
   const TUBE_MARGIN = 14;
-  const tubeWidth = SCREEN_WIDTH - TUBE_MARGIN * 2;
+  const containerWidth = SCREEN_WIDTH - TUBE_MARGIN * 2;
 
   return (
     <View style={{ marginHorizontal: TUBE_MARGIN, marginBottom: 6 }}>
-      <Animated.View style={{
-        position: 'relative',
-        transform: [{ translateX: isLocked ? shakeAnim : 0 }],
-      }}>
-        {/* TUBE TRANSPARENT (fond) */}
+      <Animated.View
+        onLayout={(e) => setBarHeight(e.nativeEvent.layout.height)}
+        style={{
+          position: 'relative',
+          transform: [{ translateX: isLocked ? shakeAnim : 0 }],
+        }}
+      >
+        {/* TUBE VERRE (fond) */}
         <View style={{
           position: 'absolute',
           top: 0, left: 0, right: 0, bottom: 0,
           borderRadius: TUBE_RADIUS,
           borderWidth: TUBE_THICK,
-          borderColor: 'rgba(0,0,0,0.04)',
+          borderColor: 'rgba(0,0,0,0.06)',
+        }} />
+        {/* Couche intérieure du tube (verre) */}
+        <View style={{
+          position: 'absolute',
+          top: 1, left: 1, right: 1, bottom: 1,
+          borderRadius: TUBE_RADIUS - 1,
+          borderWidth: 1.5,
+          borderColor: 'rgba(200,215,225,0.25)',
         }} />
 
         {/* LIQUIDE — Côté DROIT */}
@@ -432,24 +447,24 @@ const LiquidTubeInput = ({ children, tokensUsed, tokenLimit, onLockPress }) => {
           <View style={{
             position: 'absolute',
             top: TUBE_RADIUS,
-            right: 0,
-            width: TUBE_THICK,
-            height: Math.min(percent / 0.2, 1) * 20,
+            right: 0.5,
+            width: TUBE_THICK - 1,
+            height: Math.min(percent / 0.25, 1) * Math.max(0, barHeight - TUBE_RADIUS * 2),
             backgroundColor: liquidColor,
-            borderRadius: TUBE_THICK / 2,
+            borderRadius: (TUBE_THICK - 1) / 2,
           }} />
         )}
 
         {/* Coin BAS-DROIT */}
-        {percent > 0.15 && (
+        {percent > 0.2 && (
           <View style={{
             position: 'absolute',
             bottom: 0, right: 0,
             width: TUBE_RADIUS,
             height: TUBE_RADIUS,
             borderBottomRightRadius: TUBE_RADIUS,
-            borderBottomWidth: TUBE_THICK,
-            borderRightWidth: TUBE_THICK,
+            borderBottomWidth: TUBE_THICK - 1,
+            borderRightWidth: TUBE_THICK - 1,
             borderColor: liquidColor,
             backgroundColor: 'transparent',
           }} />
@@ -459,137 +474,156 @@ const LiquidTubeInput = ({ children, tokensUsed, tokenLimit, onLockPress }) => {
         {percent > 0.25 && (
           <View style={{
             position: 'absolute',
-            bottom: 0,
+            bottom: 0.5,
             right: TUBE_RADIUS,
-            height: TUBE_THICK,
-            width: Math.min((percent - 0.25) / 0.35, 1) * (tubeWidth - TUBE_RADIUS * 2),
+            height: TUBE_THICK - 1,
+            width: Math.min((percent - 0.25) / 0.25, 1) * (containerWidth - TUBE_RADIUS * 2),
             backgroundColor: liquidColor,
-            borderRadius: TUBE_THICK / 2,
-            alignSelf: 'flex-end',
+            borderRadius: (TUBE_THICK - 1) / 2,
           }} />
         )}
 
         {/* Coin BAS-GAUCHE */}
-        {percent > 0.55 && (
+        {percent > 0.45 && (
           <View style={{
             position: 'absolute',
             bottom: 0, left: 0,
             width: TUBE_RADIUS,
             height: TUBE_RADIUS,
             borderBottomLeftRadius: TUBE_RADIUS,
-            borderBottomWidth: TUBE_THICK,
-            borderLeftWidth: TUBE_THICK,
+            borderBottomWidth: TUBE_THICK - 1,
+            borderLeftWidth: TUBE_THICK - 1,
             borderColor: liquidColor,
             backgroundColor: 'transparent',
           }} />
         )}
 
         {/* Côté GAUCHE */}
-        {percent > 0.6 && (
+        {percent > 0.5 && (
           <View style={{
             position: 'absolute',
             bottom: TUBE_RADIUS,
-            left: 0,
-            width: TUBE_THICK,
-            height: Math.min((percent - 0.6) / 0.2, 1) * 20,
+            left: 0.5,
+            width: TUBE_THICK - 1,
+            height: Math.min((percent - 0.5) / 0.25, 1) * Math.max(0, barHeight - TUBE_RADIUS * 2),
             backgroundColor: liquidColor,
-            borderRadius: TUBE_THICK / 2,
+            borderRadius: (TUBE_THICK - 1) / 2,
           }} />
         )}
 
         {/* Coin HAUT-GAUCHE */}
-        {percent > 0.75 && (
+        {percent > 0.7 && (
           <View style={{
             position: 'absolute',
             top: 0, left: 0,
             width: TUBE_RADIUS,
             height: TUBE_RADIUS,
             borderTopLeftRadius: TUBE_RADIUS,
-            borderTopWidth: TUBE_THICK,
-            borderLeftWidth: TUBE_THICK,
+            borderTopWidth: TUBE_THICK - 1,
+            borderLeftWidth: TUBE_THICK - 1,
             borderColor: liquidColor,
             backgroundColor: 'transparent',
           }} />
         )}
 
         {/* Côté HAUT */}
-        {percent > 0.8 && (
+        {percent > 0.75 && (
           <View style={{
             position: 'absolute',
-            top: 0,
+            top: 0.5,
             left: TUBE_RADIUS,
-            height: TUBE_THICK,
-            width: Math.min((percent - 0.8) / 0.2, 1) * (tubeWidth - TUBE_RADIUS * 2),
+            height: TUBE_THICK - 1,
+            width: Math.min((percent - 0.75) / 0.25, 1) * (containerWidth - TUBE_RADIUS * 2),
             backgroundColor: liquidColor,
-            borderRadius: TUBE_THICK / 2,
+            borderRadius: (TUBE_THICK - 1) / 2,
           }} />
         )}
 
-        {/* BILLE DE PLOMB NOIRE */}
-        {percent > 0 && percent < 1 && (
+        {/* Coin HAUT-DROIT */}
+        {percent > 0.9 && (
           <View style={{
             position: 'absolute',
-            ...(percent < 0.2 ? {
-              right: -2,
-              top: TUBE_RADIUS + percent / 0.2 * 20,
-            } : percent < 0.6 ? {
-              bottom: -2,
-              right: TUBE_RADIUS + (percent - 0.2) / 0.4 * (tubeWidth - TUBE_RADIUS * 2),
-            } : percent < 0.8 ? {
-              left: -2,
-              bottom: TUBE_RADIUS + (percent - 0.6) / 0.2 * 20,
+            top: 0, right: 0,
+            width: TUBE_RADIUS,
+            height: TUBE_RADIUS,
+            borderTopRightRadius: TUBE_RADIUS,
+            borderTopWidth: TUBE_THICK - 1,
+            borderRightWidth: TUBE_THICK - 1,
+            borderColor: liquidColor,
+            backgroundColor: 'transparent',
+          }} />
+        )}
+
+        {/* BILLE DE PLOMB */}
+        {percent > 0 && percent < 0.98 && (
+          <View style={{
+            position: 'absolute',
+            ...(percent <= 0.25 ? {
+              right: -3,
+              top: TUBE_RADIUS + (percent / 0.25) * Math.max(0, barHeight - TUBE_RADIUS * 2),
+            } : percent <= 0.5 ? {
+              bottom: -3,
+              right: TUBE_RADIUS + ((percent - 0.25) / 0.25) * (containerWidth - TUBE_RADIUS * 2),
+            } : percent <= 0.75 ? {
+              left: -3,
+              bottom: TUBE_RADIUS + ((percent - 0.5) / 0.25) * Math.max(0, barHeight - TUBE_RADIUS * 2),
             } : {
-              top: -2,
-              left: TUBE_RADIUS + (percent - 0.8) / 0.2 * (tubeWidth - TUBE_RADIUS * 2),
+              top: -3,
+              left: TUBE_RADIUS + ((percent - 0.75) / 0.25) * (containerWidth - TUBE_RADIUS * 2),
             }),
-            width: 8,
-            height: 8,
-            borderRadius: 4,
+            width: 10,
+            height: 10,
+            borderRadius: 5,
             backgroundColor: '#1A1D22',
-            borderWidth: 1,
-            borderColor: '#333',
+            borderWidth: 1.5,
+            borderColor: '#444',
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.3,
+            shadowOpacity: 0.4,
             shadowRadius: 2,
-            elevation: 3,
-            zIndex: 10,
+            elevation: 5,
+            zIndex: 15,
           }} />
         )}
 
-        {/* LOCK NOIR — coin haut-droit */}
+        {/* LOCK */}
         <TouchableOpacity
-          onPress={() => {
-            if (isLocked) {
-              onLockPress && onLockPress();
-            }
-          }}
+          onPress={() => { if (isLocked) onLockPress(); }}
           style={{
             position: 'absolute',
-            top: -5,
-            right: -5,
-            width: 18,
-            height: 18,
-            borderRadius: 9,
-            backgroundColor: isLocked ? '#1A1D22' : 'rgba(30,30,40,0.3)',
+            top: -4, right: -4,
+            width: isLocked ? 20 : 14,
+            height: isLocked ? 20 : 14,
+            borderRadius: isLocked ? 10 : 7,
+            backgroundColor: isLocked ? '#1A1D22' : 'rgba(180,185,190,0.3)',
             justifyContent: 'center',
             alignItems: 'center',
-            borderWidth: 1,
-            borderColor: isLocked ? '#E05050' : 'rgba(0,0,0,0.1)',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: isLocked ? 0.4 : 0.1,
-            shadowRadius: 3,
-            elevation: isLocked ? 4 : 1,
+            borderWidth: isLocked ? 1.5 : 0.5,
+            borderColor: isLocked ? '#E05050' : 'rgba(0,0,0,0.08)',
             zIndex: 20,
           }}
         >
-          <Text style={{ fontSize: 8, color: isLocked ? '#E05050' : '#999' }}>
+          <Text style={{ fontSize: isLocked ? 9 : 6 }}>
             {isLocked ? '🔒' : '🔓'}
           </Text>
         </TouchableOpacity>
 
-        {/* CONTENU : Loupe + Input + Envoyer */}
+        {/* Indicateur % discret */}
+        <View style={{
+          position: 'absolute',
+          bottom: -12,
+          right: 4,
+          zIndex: 20,
+        }}>
+          <Text style={{
+            color: percent > 0.3 ? 'rgba(0,160,120,0.3)' : 'rgba(220,80,60,0.4)',
+            fontSize: 7,
+          }}>
+            {Math.round(percent * 100)}%
+          </Text>
+        </View>
+
+        {/* CONTENU */}
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -763,8 +797,8 @@ const NeumorphBall = ({ index, isBot, isSearchHit, status, onPress }) => {
     numColor = '#00A878';
     shadowColor = '#00D984';
   } else {
-    borderColor = isBot ? 'rgba(210,80,80,0.3)' : 'rgba(70,140,220,0.3)';
-    numColor = isBot ? 'rgba(200,70,70,0.55)' : 'rgba(60,130,210,0.55)';
+    borderColor = isBot ? 'rgba(220,60,60,0.45)' : 'rgba(70,140,220,0.3)';
+    numColor = isBot ? 'rgba(210,50,50,0.65)' : 'rgba(60,130,210,0.55)';
     shadowColor = isBot ? '#D06060' : '#4A8CDC';
   }
 
@@ -852,9 +886,9 @@ const ConstellationNetwork = ({ messages, searchHits, onBallPress }) => {
   useMemo(() => {
     positions.length = 0;
     const padX = 22;
-    const padY = 8;
+    const padY = 4;
     const areaW = SCREEN_WIDTH - padX * 2;
-    const areaH = Math.max(200, Math.ceil(messages.length / 4) * 65 + 40);
+    const areaH = Math.max(120, Math.ceil(messages.length / 4) * 50 + 20);
 
     messages.forEach((m, i) => {
       let x, y, ok, att = 0;
@@ -1019,8 +1053,9 @@ export default function MedicAiPage() {
   // Données utilisateur (chargées au mount)
   const [userProfile, setUserProfile] = useState(null);
   const [todaySummary, setTodaySummary] = useState(null);
-  const [tokenUsed, setTokenUsed] = useState(0);
-  const [tokenLimit, setTokenLimit] = useState(1000);
+  const [energyUsed, setEnergyUsed] = useState(0);
+  const [energyLimit, setEnergyLimit] = useState(ENERGY_CONFIG.TEST_ENERGY_LIMIT);
+  const [lastResetTime, setLastResetTime] = useState(Date.now());
 
   // Plats disponibles + modal recette
   const [availableMeals, setAvailableMeals] = useState([]);
@@ -1091,12 +1126,25 @@ export default function MedicAiPage() {
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
+  // ── Énergie restante (pour le tube) ─────────────────────────────────────
+  const energyPercent = Math.max(0, Math.min(1, 1 - energyUsed / energyLimit));
+
   // ── Lock quand quota atteint ──────────────────────────────────────────────
   useEffect(() => {
-    if (tokenUsed >= tokenLimit) {
-      setIsLocked(true);
-    }
-  }, [tokenUsed, tokenLimit]);
+    setIsLocked(energyUsed >= energyLimit);
+  }, [energyUsed, energyLimit]);
+
+  // ── Timer reset automatique 6h ────────────────────────────────────────────
+  useEffect(() => {
+    const checkReset = setInterval(() => {
+      if (Date.now() - lastResetTime >= ENERGY_CONFIG.SESSION_DURATION_MS) {
+        setEnergyUsed(0);
+        setLastResetTime(Date.now());
+        setIsLocked(false);
+      }
+    }, 60000);
+    return () => clearInterval(checkReset);
+  }, [lastResetTime]);
 
   const handleLockPress = () => {
     setShowLockModal(true);
@@ -1146,8 +1194,8 @@ export default function MedicAiPage() {
       );
       const data = await res.json();
       if (data.length > 0) {
-        setTokenUsed(data[0].tokens_used);
-        setTokenLimit(data[0].tokens_limit);
+        const usedEnergy = Math.ceil((data[0].tokens_used || 0) / ENERGY_CONFIG.TOKEN_DIVISOR);
+        setEnergyUsed(usedEnergy);
       }
     } catch (error) {
       // Pas grave, on affiche les défauts
@@ -1289,7 +1337,7 @@ ${mealsList}
 
   // ── Envoi de message et appel IA ────────────────────────────────────────
   const sendMessage = async () => {
-    if (!inputText.trim() || isLoading) return;
+    if (!inputText.trim() || isLoading || isLocked) return;
     const userText = inputText.trim();
     setInputText('');
     setIsLoading(true);
@@ -1357,7 +1405,14 @@ ${mealsList}
       };
       setMessages(prev => [...prev, botMsg]);
 
-      if (data.tokens_used) setTokenUsed(prev => prev + data.tokens_used);
+      if (data.tokens_used) {
+        const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
+        setEnergyUsed(prev => {
+          const newUsed = prev + energyCost;
+          console.log(`[ÉNERGIE] Tokens: ${data.tokens_used} → Coût: ${energyCost} énergie | Total: ${newUsed}/${energyLimit}`);
+          return newUsed;
+        });
+      }
 
     } catch (error) {
       console.error('Erreur ALIXEN:', error);
@@ -1437,7 +1492,7 @@ ${mealsList}
             justifyContent: 'center',
             gap: 12,
             paddingHorizontal: 16,
-            marginVertical: 10,
+            marginVertical: 6,
           }}>
             <NeumorphCard
               title="MediBook"
@@ -1466,7 +1521,7 @@ ${mealsList}
           </Animated.View>
 
           {/* Légende discrète */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 14, marginTop: 8, marginBottom: 6 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 14, marginTop: 2, marginBottom: 2 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#EDF0F4', borderWidth: 1, borderColor: 'rgba(210,80,80,0.3)' }} />
               <Text style={{ color: 'rgba(0,0,0,0.3)', fontSize: 8 }}>ALIXEN</Text>
@@ -1553,7 +1608,7 @@ ${mealsList}
           opacity: inputEntry,
           transform: [{ translateY: inputEntry.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }],
         }}>
-          <LiquidTubeInput tokensUsed={tokenUsed} tokenLimit={tokenLimit} onLockPress={handleLockPress}>
+          <LiquidTubeInput energyPercent={energyPercent} isLocked={isLocked} onLockPress={handleLockPress}>
             {/* Loupe neumorphique */}
             <TouchableOpacity
               onPress={() => setSearchVisible(!searchVisible)}
@@ -1732,18 +1787,22 @@ ${mealsList}
             elevation: 10,
           }}>
             <Text style={{ fontSize: 30, marginBottom: 10 }}>🔒</Text>
-            <Text style={{ color: '#1A2030', fontSize: 16, fontWeight: 'bold', marginBottom: 6 }}>
+            <Text style={{ color: '#1A2030', fontSize: 16, fontWeight: 'bold', marginBottom: 4 }}>
               Énergie épuisée
             </Text>
-            <Text style={{ color: '#888', fontSize: 12, textAlign: 'center', marginBottom: 16, lineHeight: 18 }}>
-              Vous avez utilisé toute votre énergie de conversation. Rechargez pour continuer à consulter ALIXEN.
+            <Text style={{ color: '#888', fontSize: 11, textAlign: 'center', marginBottom: 4 }}>
+              {energyUsed} énergie consommée sur {energyLimit}
+            </Text>
+            <Text style={{ color: '#AAA', fontSize: 10, textAlign: 'center', marginBottom: 16, lineHeight: 16 }}>
+              Rechargez pour continuer à consulter ALIXEN.
             </Text>
 
-            {/* Option 1 : Payer en Lix */}
+            {/* Option 1 : Recharger 100 Lix */}
             <TouchableOpacity
               onPress={() => {
+                setEnergyUsed(prev => Math.max(0, prev - ENERGY_CONFIG.ENERGY_PER_RECHARGE));
                 setShowLockModal(false);
-                addBotMessage("Paiement en Lix bientôt disponible !");
+                addBotMessage("Recharge de 10 énergie effectuée ! Continuons. 💚");
               }}
               style={{
                 width: '100%',
@@ -1755,11 +1814,34 @@ ${mealsList}
               }}
             >
               <Text style={{ color: '#FFF', fontSize: 13, fontWeight: 'bold' }}>
-                Recharger avec 100 Lix
+                Recharger — 100 Lix = +10 énergie
               </Text>
             </TouchableOpacity>
 
-            {/* Option 2 : S'abonner */}
+            {/* Option 2 : Mega recharge 500 Lix */}
+            <TouchableOpacity
+              onPress={() => {
+                setEnergyUsed(prev => Math.max(0, prev - 50));
+                setShowLockModal(false);
+                addBotMessage("Recharge de 50 énergie effectuée ! ALIXEN est prête. 🚀");
+              }}
+              style={{
+                width: '100%',
+                backgroundColor: 'rgba(0,217,132,0.1)',
+                borderRadius: 14,
+                paddingVertical: 12,
+                alignItems: 'center',
+                borderWidth: 1,
+                borderColor: 'rgba(0,217,132,0.2)',
+                marginBottom: 8,
+              }}
+            >
+              <Text style={{ color: '#00A878', fontSize: 13, fontWeight: '600' }}>
+                Mega Recharge — 500 Lix = +50 énergie
+              </Text>
+            </TouchableOpacity>
+
+            {/* Option 3 : Upgrader */}
             <TouchableOpacity
               onPress={() => {
                 setShowLockModal(false);
@@ -1767,26 +1849,21 @@ ${mealsList}
               }}
               style={{
                 width: '100%',
-                backgroundColor: 'rgba(0,0,0,0.05)',
+                backgroundColor: 'rgba(0,0,0,0.04)',
                 borderRadius: 14,
                 paddingVertical: 12,
                 alignItems: 'center',
-                borderWidth: 1,
-                borderColor: 'rgba(0,0,0,0.08)',
                 marginBottom: 8,
               }}
             >
-              <Text style={{ color: '#1A2030', fontSize: 13, fontWeight: '600' }}>
-                S'abonner — Illimité
+              <Text style={{ color: '#1A2030', fontSize: 12 }}>
+                Upgrader mon abonnement
               </Text>
             </TouchableOpacity>
 
-            {/* Option 3 : Attendre */}
-            <TouchableOpacity
-              onPress={() => setShowLockModal(false)}
-              style={{ paddingVertical: 8 }}
-            >
-              <Text style={{ color: '#AAA', fontSize: 11 }}>
+            {/* Option 4 : Attendre */}
+            <TouchableOpacity onPress={() => setShowLockModal(false)}>
+              <Text style={{ color: '#BBB', fontSize: 10, marginTop: 4 }}>
                 Attendre le rechargement (6h)
               </Text>
             </TouchableOpacity>
