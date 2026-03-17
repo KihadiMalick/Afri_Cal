@@ -249,9 +249,10 @@ const MetalParticleBackground = () => {
 // ============================================
 // BALLE MÉTALLIQUE — Noeud du réseau
 // ============================================
-const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew }) => {
+const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew, status }) => {
   const scaleAnim = useRef(new Animated.Value(isNew ? 0 : 1)).current;
   const wobbleAnim = useRef(new Animated.Value(0)).current;
+  const loadingAnim = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
     if (isNew) {
@@ -272,6 +273,20 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew }) => {
     ).start();
   }, []);
 
+  // Animation de chargement (pulse) pour l'état loading
+  useEffect(() => {
+    if (status === 'loading') {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(loadingAnim, { toValue: 1, duration: 400, useNativeDriver: false }),
+          Animated.timing(loadingAnim, { toValue: 0.3, duration: 400, useNativeDriver: false }),
+        ])
+      ).start();
+    } else {
+      loadingAnim.setValue(1);
+    }
+  }, [status]);
+
   const wobbleTranslateY = wobbleAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, -1.5],
@@ -281,10 +296,32 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew }) => {
     outputRange: [1, 1.015, 1],
   });
 
-  const primaryColor = isBot ? '#E84040' : '#4DA6FF';
-  const innerGlow = isBot ? 'rgba(232,64,64,0.15)' : 'rgba(77,166,255,0.15)';
+  // Couleurs selon le rôle ET le statut
+  let primaryColor, borderColor, innerGlow;
+
+  if (status === 'loading') {
+    primaryColor = '#E84040';
+    borderColor = loadingAnim.interpolate({
+      inputRange: [0.3, 1],
+      outputRange: ['rgba(232,64,64,0.2)', 'rgba(232,64,64,0.8)'],
+    });
+    innerGlow = 'rgba(232,64,64,0.2)';
+  } else if (status === 'unread') {
+    primaryColor = '#00D984';
+    borderColor = 'rgba(0,217,132,0.6)';
+    innerGlow = 'rgba(0,217,132,0.2)';
+  } else {
+    primaryColor = isBot ? '#E84040' : '#4DA6FF';
+    borderColor = isBot ? 'rgba(232,64,64,0.5)' : 'rgba(77,166,255,0.5)';
+    innerGlow = isBot ? 'rgba(232,64,64,0.15)' : 'rgba(77,166,255,0.15)';
+  }
 
   const BALL_SIZE = 28;
+
+  const handlePress = () => {
+    if (status === 'loading') return;
+    onPress();
+  };
 
   return (
     <Animated.View style={{
@@ -294,19 +331,19 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew }) => {
         { scale: wobbleScale },
       ],
     }}>
-      <Pressable onPress={onPress}>
-        <View style={{
+      <Pressable onPress={handlePress}>
+        <Animated.View style={{
           width: BALL_SIZE,
           height: BALL_SIZE,
           borderRadius: BALL_SIZE / 2,
           backgroundColor: '#252A30',
-          borderWidth: 1.2,
-          borderColor: isHighlighted ? primaryColor : '#4A4F55',
-          shadowColor: isHighlighted ? primaryColor : '#000',
-          shadowOffset: { width: 0, height: isHighlighted ? 0 : 2 },
-          shadowOpacity: isHighlighted ? 0.6 : 0.4,
-          shadowRadius: isHighlighted ? 8 : 4,
-          elevation: isHighlighted ? 8 : 3,
+          borderWidth: status === 'loading' ? 2 : status === 'unread' ? 1.8 : 1.2,
+          borderColor: isHighlighted ? (typeof primaryColor === 'string' ? primaryColor : '#E84040') : (status === 'loading' || status === 'unread' ? borderColor : '#4A4F55'),
+          shadowColor: status === 'loading' ? '#E84040' : status === 'unread' ? '#00D984' : (isBot ? '#E84040' : '#4DA6FF'),
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: status === 'loading' || status === 'unread' ? 0.5 : (isHighlighted ? 0.6 : 0.2),
+          shadowRadius: status === 'loading' || status === 'unread' ? 10 : (isHighlighted ? 8 : 4),
+          elevation: status === 'loading' || status === 'unread' ? 8 : 3,
           justifyContent: 'center',
           alignItems: 'center',
           overflow: 'hidden',
@@ -323,18 +360,7 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew }) => {
             transform: [{ rotate: '-15deg' }],
           }} />
 
-          {/* Reflet secondaire petit */}
-          <View style={{
-            position: 'absolute',
-            bottom: BALL_SIZE * 0.2,
-            right: BALL_SIZE * 0.15,
-            width: 3,
-            height: 3,
-            borderRadius: 1.5,
-            backgroundColor: 'rgba(255,255,255,0.04)',
-          }} />
-
-          {/* Bord intérieur coloré */}
+          {/* Anneau intérieur */}
           <View style={{
             position: 'absolute',
             top: 2,
@@ -346,16 +372,20 @@ const MetalBall = ({ index, isBot, onPress, isHighlighted, isNew }) => {
             borderColor: innerGlow,
           }} />
 
-          {/* Numéro */}
-          <Text style={{
-            color: isHighlighted ? '#FFF' : primaryColor,
-            fontSize: 9,
-            fontWeight: 'bold',
-            opacity: isHighlighted ? 1 : 0.7,
-          }}>
-            {index + 1}
-          </Text>
-        </View>
+          {/* Numéro ou 🧠 si loading */}
+          {status === 'loading' ? (
+            <Animated.Text style={{ fontSize: 12, opacity: loadingAnim }}>{'\uD83E\uDDE0'}</Animated.Text>
+          ) : (
+            <Text style={{
+              color: isHighlighted ? '#FFF' : (status === 'unread' ? '#00D984' : primaryColor),
+              fontSize: 9,
+              fontWeight: 'bold',
+              opacity: isHighlighted ? 1 : 0.7,
+            }}>
+              {index + 1}
+            </Text>
+          )}
+        </Animated.View>
       </Pressable>
     </Animated.View>
   );
@@ -463,6 +493,7 @@ const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
               isBot={isBot}
               isHighlighted={isHighlighted}
               isNew={msg._isNew}
+              status={msg._status || 'read'}
               onPress={() => onBallPress(msg, i)}
             />
           </View>
@@ -472,44 +503,6 @@ const SynapticNetwork = ({ messages, highlightedIndices, onBallPress }) => {
   );
 };
 
-// ============================================
-// BALLE D'ATTENTE — LixMan réfléchit
-// ============================================
-const WaitingBall = () => {
-  const pulseAnim = useRef(new Animated.Value(0.3)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: false }),
-        Animated.timing(pulseAnim, { toValue: 0.3, duration: 500, useNativeDriver: false }),
-      ])
-    ).start();
-  }, []);
-
-  return (
-    <Animated.View style={{
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-      backgroundColor: '#252A30',
-      borderWidth: 1.5,
-      borderColor: pulseAnim.interpolate({
-        inputRange: [0.3, 1],
-        outputRange: ['rgba(232,64,64,0.2)', 'rgba(232,64,64,0.7)'],
-      }),
-      justifyContent: 'center',
-      alignItems: 'center',
-      shadowColor: '#E84040',
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: pulseAnim,
-      shadowRadius: 8,
-      elevation: 5,
-    }}>
-      <Animated.Text style={{ fontSize: 12, opacity: pulseAnim }}>{'\uD83E\uDDE0'}</Animated.Text>
-    </Animated.View>
-  );
-};
 
 // ============================================
 // COMPOSANT PRINCIPAL
@@ -519,7 +512,6 @@ export default function MedicAiPage() {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
 
   // Données utilisateur (chargées au mount)
   const [userProfile, setUserProfile] = useState(null);
@@ -575,6 +567,7 @@ export default function MedicAiPage() {
       content: text,
       timestamp: new Date(),
       _isNew: true,
+      _status: 'unread',
     }]);
   }, []);
 
@@ -717,7 +710,13 @@ ${mealsList}
 
   // ── Modal message (balle pressée) ──────────────────────────────────────
   const handleBallPress = (message, index) => {
+    if (message._status === 'loading') return;
     setSelectedMessage({ ...message, index });
+    if (message._status === 'unread') {
+      setMessages(prev => prev.map(m =>
+        m.id === message.id ? { ...m, _status: 'read' } : m
+      ));
+    }
   };
 
   const closeModal = () => {
@@ -752,34 +751,49 @@ ${mealsList}
   const sendMessage = async () => {
     if (!inputText.trim() || isLoading) return;
 
-    const userMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: inputText.trim(),
-      timestamp: new Date(),
-      _isNew: true,
-    };
-
-    setMessages(prev => [...prev, userMessage]);
+    const userText = inputText.trim();
     setInputText('');
     setIsLoading(true);
-    setIsTyping(true);
+
+    // 1. Créer la bulle utilisateur (bleue, état normal)
+    const userMsg = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: userText,
+      timestamp: new Date(),
+      _isNew: true,
+      _status: 'read',
+    };
+
+    // 2. Créer la bulle LixMan en loading (rouge pulsante, pas encore de contenu)
+    const botMsgId = (Date.now() + 1).toString();
+    const botMsgLoading = {
+      id: botMsgId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      _isNew: true,
+      _status: 'loading',
+    };
+
+    setMessages(prev => [...prev, userMsg, botMsgLoading]);
 
     try {
+      // 3. Appeler la Edge Function
       const userContext = buildUserContext();
-
-      const chatHistory = [...messages, userMessage]
-        .slice(-20)
-        .map(m => ({ role: m.role, content: m.content }));
+      const messagesToSend = [...messages, userMsg]
+        .map(m => ({ role: m.role, content: m.content }))
+        .filter(m => m.content);
 
       const response = await fetch(`${SUPABASE_URL}/functions/v1/lixman-chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
-          messages: chatHistory,
+          messages: messagesToSend,
           userId: TEST_USER_ID,
           userContext: userContext,
         }),
@@ -787,26 +801,33 @@ ${mealsList}
 
       const data = await response.json();
 
-      if (data.error) {
-        addBotMessage("Désolé, j'ai atteint la limite de tokens pour aujourd'hui. Revenez demain ou utilisez des Lix pour continuer. \uD83D\uDD0B");
-      } else {
-        const botMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: data.message || data.content?.[0]?.text || "Hmm, je n'ai pas pu traiter votre message. Réessayez ?",
-          timestamp: new Date(),
-          _isNew: true,
-        };
-        setMessages(prev => [...prev, botMessage]);
+      if (data.message) {
+        // 4. SUCCÈS — Mettre à jour la bulle loading → unread (VERTE)
+        setMessages(prev => prev.map(m =>
+          m.id === botMsgId
+            ? { ...m, content: data.message, _status: 'unread' }
+            : m
+        ));
         if (data.tokens_used) setTokenUsed(prev => prev + data.tokens_used);
+      } else {
+        // Erreur — mettre un message d'erreur dans la bulle
+        setMessages(prev => prev.map(m =>
+          m.id === botMsgId
+            ? { ...m, content: data.error || "Désolé, je n'ai pas pu répondre. Réessayez.", _status: 'unread' }
+            : m
+        ));
       }
     } catch (error) {
       console.error('Erreur LixMan:', error);
-      addBotMessage("Oups, une erreur est survenue. Vérifiez votre connexion et réessayez. \uD83D\uDD04");
-    } finally {
-      setIsLoading(false);
-      setIsTyping(false);
+      // Erreur réseau
+      setMessages(prev => prev.map(m =>
+        m.id === botMsgId
+          ? { ...m, content: "Erreur de connexion. Vérifiez votre internet et réessayez.", _status: 'unread' }
+          : m
+      ));
     }
+
+    setIsLoading(false);
   };
 
   // ── RENDER ───────────────────────────────────────────────────────────────
@@ -928,22 +949,20 @@ ${mealsList}
             onBallPress={handleBallPress}
           />
 
-          {/* BALLE D'ATTENTE si LixMan réfléchit */}
-          {isTyping && (
-            <View style={{ marginLeft: PADDING_H }}>
-              <WaitingBall />
-            </View>
-          )}
 
           {/* LÉGENDE */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 6 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#252A30', borderWidth: 1, borderColor: 'rgba(232,64,64,0.4)' }} />
-              <Text style={{ color: '#555', fontSize: 7 }}>LixMan</Text>
-            </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12, marginTop: 6 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#252A30', borderWidth: 1, borderColor: 'rgba(77,166,255,0.4)' }} />
               <Text style={{ color: '#555', fontSize: 7 }}>Vous</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#252A30', borderWidth: 1, borderColor: 'rgba(0,217,132,0.6)' }} />
+              <Text style={{ color: '#555', fontSize: 7 }}>Non lu</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#252A30', borderWidth: 1, borderColor: 'rgba(232,64,64,0.4)' }} />
+              <Text style={{ color: '#555', fontSize: 7 }}>LixMan</Text>
             </View>
           </View>
 
