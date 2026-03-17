@@ -210,307 +210,332 @@ const FormattedText = ({ text, style, onRecipePress }) => {
   );
 };
 
-// ============================================
-// FOND BLANC + MOTIFS GÉOMÉTRIQUES DE CIRCUITS VERTS
-// ============================================
-const circuitSegments = Array.from({ length: 200 }, () => {
-  const x = Math.random() * SCREEN_WIDTH;
-  const y = Math.random() * 1200;
-  const isHorizontal = Math.random() > 0.4;
-  const length = 15 + Math.random() * 40;
-  return {
-    x,
-    y,
-    length,
-    isHorizontal,
-    hasNode: Math.random() > 0.6,
-    hasCorner: Math.random() > 0.7,
-    cornerLength: 8 + Math.random() * 20,
-    cornerDir: Math.random() > 0.5 ? 1 : -1,
-    opacity: 0.08 + Math.random() * 0.14,
-  };
-});
-
-const circuitNodes = Array.from({ length: 80 }, () => ({
-  x: Math.random() * SCREEN_WIDTH,
-  y: Math.random() * 1200,
-  size: 1.5 + Math.random() * 3,
-  opacity: 0.06 + Math.random() * 0.12,
-}));
-
-const CircuitPatternBackground = () => {
-  var w = SCREEN_WIDTH;
-  var h = SCREEN_HEIGHT;
-
-  return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-      <LinearGradient
-        colors={['#2A3040', '#283040', '#2A3040', '#273040']}
-        locations={[0, 0.35, 0.7, 1]}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-      />
-      <Svg width={w} height={h} style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
-        <Polygon points={'0,0 ' + (w * 0.6) + ',0 ' + (w * 0.3) + ',' + (h * 0.35)}
-          fill="rgba(0,180,140,0.06)" stroke="rgba(0,180,140,0.12)" strokeWidth="0.5" />
-        <Polygon points={w + ',0 ' + w + ',' + (h * 0.4) + ' ' + (w * 0.5) + ',' + (h * 0.15)}
-          fill="rgba(0,160,130,0.06)" stroke="rgba(0,160,130,0.09)" strokeWidth="0.5" />
-        <Polygon points={'0,' + (h * 0.6) + ' ' + (w * 0.4) + ',' + (h * 0.45) + ' ' + (w * 0.2) + ',' + h}
-          fill="rgba(0,180,140,0.045)" stroke="rgba(0,180,140,0.09)" strokeWidth="0.5" />
-        <Polygon points={w + ',' + (h * 0.5) + ' ' + (w * 0.6) + ',' + h + ' ' + w + ',' + h}
-          fill="rgba(0,160,130,0.045)" stroke="rgba(0,160,130,0.09)" strokeWidth="0.5" />
-        <Polygon points={(w * 0.1) + ',' + (h * 0.2) + ' ' + (w * 0.35) + ',' + (h * 0.1) + ' ' + (w * 0.25) + ',' + (h * 0.35)}
-          fill="rgba(0,180,140,0.075)" stroke="rgba(0,180,140,0.135)" strokeWidth="0.8" />
-        <Polygon points={(w * 0.65) + ',' + (h * 0.25) + ' ' + (w * 0.9) + ',' + (h * 0.15) + ' ' + (w * 0.8) + ',' + (h * 0.4)}
-          fill="rgba(0,160,130,0.06)" stroke="rgba(0,160,130,0.12)" strokeWidth="0.8" />
-        <Polygon points={(w * 0.3) + ',' + (h * 0.65) + ' ' + (w * 0.55) + ',' + (h * 0.55) + ' ' + (w * 0.45) + ',' + (h * 0.8)}
-          fill="rgba(0,180,140,0.06)" stroke="rgba(0,180,140,0.12)" strokeWidth="0.8" />
-        <Polygon points={(w * 0.7) + ',' + (h * 0.6) + ' ' + (w * 0.95) + ',' + (h * 0.7) + ' ' + (w * 0.85) + ',' + (h * 0.85)}
-          fill="rgba(212,175,55,0.0375)" stroke="rgba(212,175,55,0.075)" strokeWidth="0.5" />
-        <Polygon points={(w * 0.5) + ',' + (h * 0.05) + ' ' + (w * 0.55) + ',' + (h * 0.02) + ' ' + (w * 0.53) + ',' + (h * 0.08)}
-          fill="rgba(0,180,140,0.105)" />
-        <Polygon points={(w * 0.15) + ',' + (h * 0.5) + ' ' + (w * 0.2) + ',' + (h * 0.47) + ' ' + (w * 0.18) + ',' + (h * 0.53)}
-          fill="rgba(0,160,130,0.105)" />
-        <Polygon points={(w * 0.85) + ',' + (h * 0.9) + ' ' + (w * 0.9) + ',' + (h * 0.87) + ' ' + (w * 0.88) + ',' + (h * 0.93)}
-          fill="rgba(0,180,140,0.09)" />
-        <Line x1={w * 0.3} y1={h * 0.35} x2={w * 0.5} y2={h * 0.15} stroke="rgba(0,180,140,0.08)" strokeWidth="0.5" />
-        <Line x1={w * 0.8} y1={h * 0.4} x2={w * 0.6} y2={h * 0.55} stroke="rgba(0,160,130,0.06)" strokeWidth="0.5" />
-        <Line x1={w * 0.2} y1={h * 0.7} x2={w * 0.45} y2={h * 0.8} stroke="rgba(0,180,140,0.06)" strokeWidth="0.5" />
-        <SvgCircle cx={w * 0.3} cy={h * 0.35} r="2" fill="rgba(0,180,140,0.15)" />
-        <SvgCircle cx={w * 0.5} cy={h * 0.15} r="2" fill="rgba(0,180,140,0.15)" />
-        <SvgCircle cx={w * 0.8} cy={h * 0.4} r="1.5" fill="rgba(0,160,130,0.12)" />
-        <SvgCircle cx={w * 0.25} cy={h * 0.35} r="1.5" fill="rgba(0,180,140,0.12)" />
-        <SvgCircle cx={w * 0.6} cy={h * 0.55} r="2" fill="rgba(0,160,130,0.14)" />
-        <SvgCircle cx={w * 0.45} cy={h * 0.8} r="1.5" fill="rgba(0,180,140,0.10)" />
-      </Svg>
-
-      {/* Circuit segments overlay */}
-      {circuitSegments.map((seg, i) => (
-        <View key={`seg-${i}`}>
-          <View style={{
-            position: 'absolute',
-            left: seg.x,
-            top: seg.y,
-            width: seg.isHorizontal ? seg.length : 1,
-            height: seg.isHorizontal ? 1 : seg.length,
-            backgroundColor: `rgba(0,180,140,${seg.opacity * 1.5})`,
-          }} />
-          {seg.hasCorner && (
-            <View style={{
-              position: 'absolute',
-              left: seg.isHorizontal ? seg.x + seg.length : seg.x - (seg.cornerDir > 0 ? 0 : seg.cornerLength),
-              top: seg.isHorizontal ? seg.y - (seg.cornerDir > 0 ? seg.cornerLength : 0) : seg.y + seg.length,
-              width: seg.isHorizontal ? 1 : seg.cornerLength,
-              height: seg.isHorizontal ? seg.cornerLength : 1,
-              backgroundColor: `rgba(0,180,140,${seg.opacity * 1.2})`,
-            }} />
-          )}
-          {seg.hasNode && (
-            <View style={{
-              position: 'absolute',
-              left: seg.isHorizontal ? seg.x + seg.length - 1.5 : seg.x - 1.5,
-              top: seg.isHorizontal ? seg.y - 1.5 : seg.y + seg.length - 1.5,
-              width: 3,
-              height: 3,
-              borderRadius: 1.5,
-              backgroundColor: `rgba(0,180,140,${seg.opacity * 1.8})`,
-            }} />
-          )}
-        </View>
-      ))}
-
-      {/* Circuit nodes overlay */}
-      {circuitNodes.map((n, i) => (
-        <View key={`node-${i}`} style={{
-          position: 'absolute',
-          left: n.x,
-          top: n.y,
-          width: n.size,
-          height: n.size,
-          borderRadius: n.size / 2,
-          backgroundColor: `rgba(0,180,140,${n.opacity * 1.5})`,
-        }} />
-      ))}
-    </View>
-  );
-};
 
 // ============================================
-// ALIXEN BRAIN — Cerveau dans bulle métallique
+// ALIXEN HEADER — Image paysage + Particules animées
 // ============================================
-const AlixenBrain = () => {
-  const pulseAnim = useRef(new Animated.Value(0.2)).current;
+const AlixenHeader = () => {
+  const particles = useRef(
+    Array.from({ length: 40 }, () => ({
+      x: Math.random() * SCREEN_WIDTH,
+      y: Math.random() * 90,
+      size: 1.5 + Math.random() * 5,
+      color: ['rgba(160,130,210,A)', 'rgba(210,180,80,A)', 'rgba(0,200,210,A)', 'rgba(180,190,200,A)', 'rgba(0,217,132,A)', 'rgba(200,100,160,A)'][Math.floor(Math.random() * 6)]
+        .replace('A', (0.08 + Math.random() * 0.2).toFixed(2)),
+      animX: new Animated.Value(Math.random()),
+      animY: new Animated.Value(Math.random()),
+      animOpacity: new Animated.Value(0.05 + Math.random() * 0.1),
+      ampX: 2 + Math.random() * 6,
+      ampY: 1.5 + Math.random() * 5,
+      durationX: 3000 + Math.random() * 5000,
+      durationY: 3500 + Math.random() * 4500,
+      minOpacity: 0.03 + Math.random() * 0.06,
+      maxOpacity: 0.1 + Math.random() * 0.25,
+      pulseDuration: 2000 + Math.random() * 4000,
+    }))
+  ).current;
 
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 0.5, duration: 2000, useNativeDriver: false }),
-        Animated.timing(pulseAnim, { toValue: 0.2, duration: 2000, useNativeDriver: false }),
-      ])
-    ).start();
+    particles.forEach((p) => {
+      Animated.loop(Animated.sequence([
+        Animated.timing(p.animX, { toValue: 1, duration: p.durationX, useNativeDriver: true }),
+        Animated.timing(p.animX, { toValue: 0, duration: p.durationX, useNativeDriver: true }),
+      ])).start();
+      Animated.loop(Animated.sequence([
+        Animated.timing(p.animY, { toValue: 1, duration: p.durationY, useNativeDriver: true }),
+        Animated.timing(p.animY, { toValue: 0, duration: p.durationY, useNativeDriver: true }),
+      ])).start();
+      Animated.loop(Animated.sequence([
+        Animated.timing(p.animOpacity, { toValue: p.maxOpacity, duration: p.pulseDuration, useNativeDriver: true }),
+        Animated.timing(p.animOpacity, { toValue: p.minOpacity, duration: p.pulseDuration, useNativeDriver: true }),
+      ])).start();
+    });
   }, []);
 
   return (
-    <View style={{ alignItems: 'center', paddingTop: 6, paddingBottom: 0 }}>
-      {/* Bulle métallique du cerveau */}
-      <View style={{
-        width: 70,
-        height: 70,
-        borderRadius: 35,
-        backgroundColor: '#252A30',
-        borderWidth: 1.5,
-        borderColor: 'rgba(74,79,85,0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 8,
-      }}>
-        {/* Reflet métallique */}
-        <View style={{
+    <View style={{
+      width: SCREEN_WIDTH,
+      height: 95,
+      backgroundColor: '#080E18',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      {/* Particules DERRIÈRE l'image */}
+      {particles.filter((_, i) => i < 20).map((p, i) => (
+        <Animated.View key={`bp-${i}`} style={{
           position: 'absolute',
-          top: 3,
-          left: 8,
-          width: 28,
-          height: 16,
-          borderRadius: 10,
-          backgroundColor: 'rgba(255,255,255,0.06)',
-          transform: [{ rotate: '-15deg' }],
+          left: p.x,
+          top: p.y,
+          width: p.size,
+          height: p.size,
+          borderRadius: p.size / 2,
+          backgroundColor: p.color,
+          opacity: p.animOpacity,
+          transform: [
+            { translateX: p.animX.interpolate({ inputRange: [0, 1], outputRange: [-p.ampX, p.ampX] }) },
+            { translateY: p.animY.interpolate({ inputRange: [0, 1], outputRange: [-p.ampY, p.ampY] }) },
+          ],
         }} />
+      ))}
 
-        {/* Image du cerveau (lixman-avatar.png) */}
-        <Image
-          source={require('./assets/lixman-avatar.png')}
-          style={{ width: 56, height: 56, borderRadius: 28 }}
-          resizeMode="cover"
-        />
-
-        {/* Anneau vert externe animé */}
-        <Animated.View style={{
+      {/* Image ALIXEN en paysage */}
+      <Image
+        source={require('./assets/alixen-header.png')}
+        style={{
           position: 'absolute',
-          top: -3,
-          left: -3,
-          right: -3,
-          bottom: -3,
-          borderRadius: 38,
-          borderWidth: 0.5,
-          borderColor: 'rgba(0,180,160,0.5)',
-          opacity: pulseAnim,
-        }} />
-      </View>
-    </View>
-  );
-};
-
-// ============================================
-// BORDS MÉTALLIQUES LATÉRAUX — Rails de circuit vivants
-// ============================================
-const MetalRails = () => {
-  const pulseAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(pulseAnim, { toValue: 1, duration: 4000, useNativeDriver: false })
-    ).start();
-  }, []);
-
-  const pulseY = pulseAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: ['0%', '100%', '0%'],
-  });
-
-  return (
-    <>
-      {/* Rail gauche */}
-      <View style={{
-        position: 'absolute',
-        left: 0,
-        top: 0,
-        bottom: 0,
-        width: 6,
-        backgroundColor: '#1A1D22',
-        borderRightWidth: 0.5,
-        borderRightColor: 'rgba(0,220,210,0.2)',
-        zIndex: 10,
-      }}>
-        <View style={{
-          position: 'absolute',
-          right: 1,
           top: 0,
-          bottom: 0,
-          width: 0.8,
-          backgroundColor: 'rgba(0,220,210,0.12)',
-        }} />
-        <Animated.View style={{
-          position: 'absolute',
-          right: 0,
-          top: pulseY,
-          width: 3,
-          height: 3,
-          borderRadius: 1.5,
-          backgroundColor: 'rgba(0,240,220,0.55)',
-          marginTop: -1.5,
-        }} />
-        {[15, 30, 50, 70, 85].map((pct, i) => (
-          <View key={`ln-${i}`} style={{
-            position: 'absolute',
-            right: 0,
-            top: `${pct}%`,
-            width: 2,
-            height: 2,
-            borderRadius: 1,
-            backgroundColor: 'rgba(0,220,210,0.18)',
-          }} />
-        ))}
-      </View>
-
-      {/* Rail droit */}
-      <View style={{
-        position: 'absolute',
-        right: 0,
-        top: 0,
-        bottom: 0,
-        width: 6,
-        backgroundColor: '#1A1D22',
-        borderLeftWidth: 0.5,
-        borderLeftColor: 'rgba(0,220,210,0.2)',
-        zIndex: 10,
-      }}>
-        <View style={{
-          position: 'absolute',
-          left: 1,
-          top: 0,
-          bottom: 0,
-          width: 0.8,
-          backgroundColor: 'rgba(0,220,210,0.12)',
-        }} />
-        <Animated.View style={{
-          position: 'absolute',
           left: 0,
-          top: pulseAnim.interpolate({
-            inputRange: [0, 0.5, 1],
-            outputRange: ['100%', '0%', '100%'],
-          }),
-          width: 3,
-          height: 3,
-          borderRadius: 1.5,
-          backgroundColor: 'rgba(0,240,220,0.55)',
-          marginTop: -1.5,
+          width: SCREEN_WIDTH,
+          height: 95,
+        }}
+        resizeMode="cover"
+      />
+
+      {/* Particules DEVANT l'image (faible opacité) */}
+      {particles.filter((_, i) => i >= 20).map((p, i) => (
+        <Animated.View key={`fp-${i}`} style={{
+          position: 'absolute',
+          left: p.x,
+          top: p.y,
+          width: p.size,
+          height: p.size,
+          borderRadius: p.size / 2,
+          backgroundColor: p.color,
+          opacity: p.animOpacity,
+          transform: [
+            { translateX: p.animX.interpolate({ inputRange: [0, 1], outputRange: [-p.ampX, p.ampX] }) },
+            { translateY: p.animY.interpolate({ inputRange: [0, 1], outputRange: [-p.ampY, p.ampY] }) },
+          ],
         }} />
-        {[15, 30, 50, 70, 85].map((pct, i) => (
-          <View key={`rn-${i}`} style={{
-            position: 'absolute',
-            left: 0,
-            top: `${pct}%`,
-            width: 2,
-            height: 2,
-            borderRadius: 1,
-            backgroundColor: 'rgba(0,220,210,0.18)',
-          }} />
-        ))}
+      ))}
+
+      {/* Dégradé de fondu en bas */}
+      <View style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 20,
+        backgroundColor: 'transparent',
+      }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(30,37,48,0.3)' }} />
+        <View style={{ flex: 1, backgroundColor: 'rgba(30,37,48,0.6)' }} />
+        <View style={{ flex: 1, backgroundColor: 'rgba(30,37,48,0.9)' }} />
       </View>
-    </>
+
+      {/* Nom ALIXEN */}
+      <View style={{ position: 'absolute', bottom: 6, left: 0, right: 0, alignItems: 'center' }}>
+        <Text style={{ color: 'rgba(0,217,132,0.5)', fontSize: 10, fontWeight: 'bold', letterSpacing: 5 }}>
+          ALIXEN
+        </Text>
+      </View>
+    </View>
+  );
+};
+
+// ============================================
+// CADRE MÉTALLIQUE AVEC CREUX
+// ============================================
+const MetalFrame = ({ children }) => (
+  <View style={{
+    flex: 1,
+    marginHorizontal: 8,
+    marginTop: 4,
+    marginBottom: 4,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(20,25,35,0.5)',
+    borderWidth: 1.5,
+    borderColor: '#3A3F46',
+  }}>
+    {/* Effet de creux — ombre intérieure en haut */}
+    <View style={{
+      position: 'absolute',
+      top: 0, left: 0, right: 0,
+      height: 6,
+      backgroundColor: 'rgba(0,0,0,0.15)',
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      zIndex: 1,
+    }} />
+
+    {/* Effet de creux — ombre intérieure en bas */}
+    <View style={{
+      position: 'absolute',
+      bottom: 0, left: 0, right: 0,
+      height: 6,
+      backgroundColor: 'rgba(0,0,0,0.1)',
+      borderBottomLeftRadius: 16,
+      borderBottomRightRadius: 16,
+      zIndex: 1,
+    }} />
+
+    {/* Reflet subtil sur le bord gauche */}
+    <View style={{
+      position: 'absolute',
+      top: 10, left: 0,
+      width: 1,
+      height: '80%',
+      backgroundColor: 'rgba(255,255,255,0.03)',
+      zIndex: 1,
+    }} />
+
+    {/* Reflet subtil sur le bord droit */}
+    <View style={{
+      position: 'absolute',
+      top: 10, right: 0,
+      width: 1,
+      height: '80%',
+      backgroundColor: 'rgba(255,255,255,0.03)',
+      zIndex: 1,
+    }} />
+
+    {children}
+  </View>
+);
+
+// ============================================
+// DOTS DE CHARGEMENT (3 points qui pulsent en séquence)
+// ============================================
+const LoadingDots = () => {
+  const dot1 = useRef(new Animated.Value(0.3)).current;
+  const dot2 = useRef(new Animated.Value(0.3)).current;
+  const dot3 = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const animate = (dot, delay) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dot, { toValue: 1, duration: 400, useNativeDriver: false }),
+          Animated.timing(dot, { toValue: 0.3, duration: 400, useNativeDriver: false }),
+        ])
+      ).start();
+    };
+    animate(dot1, 0);
+    animate(dot2, 200);
+    animate(dot3, 400);
+  }, []);
+
+  return (
+    <View style={{ flexDirection: 'row', gap: 6, paddingVertical: 4 }}>
+      {[dot1, dot2, dot3].map((dot, i) => (
+        <Animated.View key={i} style={{
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: '#00D984',
+          opacity: dot,
+        }} />
+      ))}
+    </View>
+  );
+};
+
+// ============================================
+// CARTE DE RÉPONSE — Messages alternés user/IA
+// ============================================
+const ResponseCard = ({ currentMessage, isLoading, isUserMessage }) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [displayedText, setDisplayedText] = useState('');
+
+  useEffect(() => {
+    if (currentMessage || isLoading) {
+      fadeAnim.setValue(0);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [currentMessage, isLoading]);
+
+  useEffect(() => {
+    if (currentMessage && !isUserMessage && !isLoading) {
+      setDisplayedText('');
+      const text = currentMessage;
+      let idx = 0;
+      const interval = setInterval(() => {
+        idx += 2;
+        if (idx >= text.length) {
+          setDisplayedText(text);
+          clearInterval(interval);
+        } else {
+          setDisplayedText(text.substring(0, idx));
+        }
+      }, 15);
+      return () => clearInterval(interval);
+    } else if (isUserMessage && currentMessage) {
+      setDisplayedText(currentMessage);
+    }
+  }, [currentMessage, isUserMessage, isLoading]);
+
+  if (!currentMessage && !isLoading) return null;
+
+  return (
+    <Animated.View style={{
+      opacity: fadeAnim,
+      marginHorizontal: 12,
+      marginBottom: 8,
+      borderRadius: 14,
+      overflow: 'hidden',
+      backgroundColor: '#252A30',
+      borderWidth: 1,
+      borderColor: isLoading ? 'rgba(0,217,132,0.2)' : (isUserMessage ? 'rgba(77,166,255,0.2)' : 'rgba(232,64,64,0.2)'),
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.25,
+      shadowRadius: 5,
+      elevation: 5,
+      minHeight: 60,
+    }}>
+      {/* Reflet métallique */}
+      <View style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0,
+        height: 20,
+        borderTopLeftRadius: 14,
+        borderTopRightRadius: 14,
+        backgroundColor: 'rgba(255,255,255,0.03)',
+      }} />
+
+      <View style={{ padding: 14 }}>
+        {/* Indicateur qui parle */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+          <View style={{
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: isLoading ? '#00D984' : (isUserMessage ? '#4DA6FF' : '#E84040'),
+            marginRight: 6,
+          }} />
+          <Text style={{
+            color: isLoading ? 'rgba(0,217,132,0.5)' : (isUserMessage ? 'rgba(77,166,255,0.5)' : 'rgba(232,64,64,0.5)'),
+            fontSize: 9,
+            fontWeight: 'bold',
+            letterSpacing: 1,
+          }}>
+            {isLoading ? 'ALIXEN R\u00C9FL\u00C9CHIT...' : (isUserMessage ? 'VOUS' : 'ALIXEN')}
+          </Text>
+        </View>
+
+        {/* Contenu */}
+        {isLoading ? (
+          <LoadingDots />
+        ) : (
+          <Text style={{
+            color: 'rgba(220,225,230,0.85)',
+            fontSize: 13,
+            lineHeight: 20,
+          }}>
+            {displayedText}
+            {!isUserMessage && displayedText.length < (currentMessage || '').length && (
+              <Text style={{ color: '#00D984' }}>|</Text>
+            )}
+          </Text>
+        )}
+      </View>
+    </Animated.View>
   );
 };
 
@@ -1137,6 +1162,11 @@ export default function MedicAiPage() {
   // Navigation
   const [activeTab, setActiveTab] = useState('medicai');
 
+  // Carte de réponse
+  const [cardMessage, setCardMessage] = useState(null);
+  const [cardIsUser, setCardIsUser] = useState(false);
+  const [cardIsLoading, setCardIsLoading] = useState(false);
+
   // Clavier
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -1165,6 +1195,15 @@ export default function MedicAiPage() {
     ]).start();
   }, []);
 
+  // ── Afficher le message de bienvenue dans la carte ──────────────────────
+  useEffect(() => {
+    if (messages.length === 1 && messages[0].role === 'assistant') {
+      setCardMessage(messages[0].content);
+      setCardIsUser(false);
+      setCardIsLoading(false);
+    }
+  }, [messages.length]);
+
   // ── Keyboard listener ────────────────────────────────────────────────────
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => {
@@ -1184,7 +1223,7 @@ export default function MedicAiPage() {
       content: text,
       timestamp: new Date(),
       _isNew: true,
-      _status: 'unread',
+      _status: 'read',
     }]);
   }, []);
 
@@ -1278,7 +1317,7 @@ export default function MedicAiPage() {
       content: greeting,
       timestamp: new Date(),
       _isNew: true,
-      _status: 'unread',
+      _status: 'read',
     }]);
   };
 
@@ -1372,6 +1411,12 @@ ${mealsList}
     setInputText('');
     setIsLoading(true);
 
+    // 1. Afficher le message user dans la carte
+    setCardMessage(userText);
+    setCardIsUser(true);
+    setCardIsLoading(false);
+
+    // 2. Créer la boule user
     const userMsg = {
       id: Date.now().toString(),
       role: 'user',
@@ -1380,19 +1425,17 @@ ${mealsList}
       _isNew: true,
       _status: 'read',
     };
+    setMessages(prev => [...prev, userMsg]);
 
+    // 3. Après 800ms, passer en mode chargement
+    setTimeout(() => {
+      setCardMessage(null);
+      setCardIsUser(false);
+      setCardIsLoading(true);
+    }, 800);
+
+    // 4. Appel à l'API
     const botMsgId = (Date.now() + 1).toString();
-    const botMsgLoading = {
-      id: botMsgId,
-      role: 'assistant',
-      content: '',
-      timestamp: new Date(),
-      _isNew: true,
-      _status: 'loading',
-    };
-
-    setMessages(prev => [...prev, userMsg, botMsgLoading]);
-
     try {
       const context = buildUserContext();
       const messagesToSend = [...messages, userMsg]
@@ -1413,22 +1456,41 @@ ${mealsList}
       );
 
       const data = await response.json();
+      const replyText = data.message || data.error || "Erreur de connexion.";
 
-      if (data.message) {
-        setMessages(prev => prev.map(m =>
-          m.id === botMsgId ? { ...m, content: data.message, _status: 'unread' } : m
-        ));
-        if (data.tokens_used) setTokenUsed(prev => prev + data.tokens_used);
-      } else {
-        setMessages(prev => prev.map(m =>
-          m.id === botMsgId ? { ...m, content: data.error || "Désolé, erreur de connexion.", _status: 'unread' } : m
-        ));
-      }
+      // 5. Afficher la réponse IA dans la carte (effet machine à écrire)
+      setCardIsLoading(false);
+      setCardMessage(replyText);
+      setCardIsUser(false);
+
+      // 6. Créer la boule IA
+      const botMsg = {
+        id: botMsgId,
+        role: 'assistant',
+        content: replyText,
+        timestamp: new Date(),
+        _isNew: true,
+        _status: 'read',
+      };
+      setMessages(prev => [...prev, botMsg]);
+
+      if (data.tokens_used) setTokenUsed(prev => prev + data.tokens_used);
+
     } catch (error) {
       console.error('Erreur ALIXEN:', error);
-      setMessages(prev => prev.map(m =>
-        m.id === botMsgId ? { ...m, content: "Erreur réseau. Vérifiez votre connexion.", _status: 'unread' } : m
-      ));
+      setCardIsLoading(false);
+      setCardMessage("Erreur r\u00E9seau. V\u00E9rifiez votre connexion.");
+      setCardIsUser(false);
+
+      const botMsg = {
+        id: botMsgId,
+        role: 'assistant',
+        content: "Erreur r\u00E9seau. V\u00E9rifiez votre connexion.",
+        timestamp: new Date(),
+        _isNew: true,
+        _status: 'read',
+      };
+      setMessages(prev => [...prev, botMsg]);
     }
     setIsLoading(false);
   };
@@ -1436,13 +1498,15 @@ ${mealsList}
   // ── RENDER ───────────────────────────────────────────────────────────────
   return (
     <View style={{ flex: 1 }}>
-      {/* Fond sombre avec motifs de circuits */}
-      <CircuitPatternBackground />
-      <MetalRails />
+      {/* FOND DÉGRADÉ (comme Dashboard/Repas) */}
+      <LinearGradient
+        colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+      />
 
       <StatusBar barStyle="light-content" />
 
-      {/* ===== HEADER — Minimaliste et premium ===== */}
+      {/* ===== HEADER — MedicAi + badge En ligne ===== */}
       <View style={{
         paddingTop: Platform.OS === 'android' ? 35 : 50,
         paddingHorizontal: 16,
@@ -1471,127 +1535,105 @@ ${mealsList}
         </View>
       </View>
 
-      {/* Ombre de profondeur sous le header */}
-      <View style={{
-        height: 8,
-        backgroundColor: 'transparent',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-        elevation: 3,
-        zIndex: 5,
-      }} />
+      {/* ZONE ALIXEN — Image paysage + particules */}
+      <AlixenHeader />
 
-      {/* ===== ZONE DE CHAT ===== */}
+      {/* ===== ZONE DE CONTENU dans le cadre métallique ===== */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        <ScrollView
-          ref={scrollViewRef}
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 10, paddingHorizontal: 8 }}
-          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* ALIXEN Brain — Cerveau dans bulle métallique */}
-          <Animated.View style={{
-            transform: [
-              { translateY: brainEntry.interpolate({ inputRange: [0, 1], outputRange: [-30, 0] }) },
-              { scale: brainEntry },
-            ],
-            opacity: brainEntry,
-          }}>
-            <AlixenBrain />
-          </Animated.View>
+        <MetalFrame>
+          <ScrollView
+            ref={scrollViewRef}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: 10, paddingTop: 8 }}
+            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Circuits de connexion vers les dossiers */}
+            <Animated.View style={{
+              opacity: cardsEntry,
+              transform: [{ scale: cardsEntry.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }],
+            }}>
+              <CircuitConnectors />
 
-          {/* Circuits de connexion vers les dossiers */}
-          <Animated.View style={{
-            opacity: cardsEntry,
-            transform: [{ scale: cardsEntry.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }],
-          }}>
-            <CircuitConnectors />
+              {/* Dossiers métalliques + Sablier au centre */}
+              <View style={{ flexDirection: 'row', paddingHorizontal: 12, marginBottom: 6, alignItems: 'center' }}>
+                <MetalFolder
+                  title="MediBook"
+                  subtitle="Dossier m\u00E9dical"
+                  borderColor="rgba(0,217,132,0.25)"
+                  accentColor="#00D984"
+                  onPress={() => addBotMessage("Le MediBook sera disponible prochainement. \uD83D\uDCCB")}
+                />
 
-            {/* Dossiers métalliques + Sablier au centre */}
-            <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 4, alignItems: 'center' }}>
-              <MetalFolder
-                title="MediBook"
-                subtitle="Dossier médical"
-                borderColor="rgba(0,217,132,0.25)"
-                accentColor="#00D984"
-                onPress={() => addBotMessage("Le MediBook sera disponible prochainement. \uD83D\uDCCB")}
-              />
+                {/* SABLIER AU CENTRE */}
+                <View style={{ marginHorizontal: 6 }}>
+                  <HourglassTimer tokensUsed={tokenUsed} tokenLimit={tokenLimit} />
+                </View>
 
-              {/* SABLIER AU CENTRE */}
-              <View style={{ marginHorizontal: 6 }}>
-                <HourglassTimer tokensUsed={tokenUsed} tokenLimit={tokenLimit} />
+                <MetalFolder
+                  title="Secret Pocket"
+                  subtitle="Coffre-fort sant\u00E9"
+                  borderColor="rgba(212,175,55,0.25)"
+                  accentColor="#D4AF37"
+                  onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. \uD83D\uDD10")}
+                />
+              </View>
+            </Animated.View>
+
+            {/* Circuit vers les boules */}
+            <Animated.View style={{
+              opacity: ballsEntry,
+              transform: [{ translateY: ballsEntry.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+            }}>
+              <View style={{ alignItems: 'center', marginBottom: 4 }}>
+                <View style={{ width: 1.5, height: 8, backgroundColor: 'rgba(0,220,210,0.15)' }} />
+                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,220,210,0.25)' }} />
               </View>
 
-              <MetalFolder
-                title="Secret Pocket"
-                subtitle="Coffre-fort santé"
-                borderColor="rgba(212,175,55,0.25)"
-                accentColor="#D4AF37"
-                onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. \uD83D\uDD10")}
+              {/* RÉSEAU DE BALLES MÉTALLIQUES EN S */}
+              <SynapticNetwork
+                messages={messages}
+                highlightedIndices={searchResults.length > 0 && searchIndex >= 0 ? [searchResults[searchIndex]] : []}
+                onBallPress={handleBallPress}
               />
-            </View>
-          </Animated.View>
+            </Animated.View>
 
-          {/* Circuit descendant des dossiers vers les boules + réseau */}
-          <Animated.View style={{
-            opacity: ballsEntry,
-            transform: [{ translateY: ballsEntry.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
-          }}>
-            <View style={{ alignItems: 'center', marginBottom: 4 }}>
-              <View style={{ width: 1.5, height: 8, backgroundColor: 'rgba(0,220,210,0.25)' }} />
-              <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,220,210,0.55)' }} />
+            {/* LÉGENDE */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2D3238', borderWidth: 1, borderColor: 'rgba(255,80,80,0.5)' }} />
+                <Text style={{ color: 'rgba(200,210,220,0.5)', fontSize: 9 }}>ALIXEN</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2D3238', borderWidth: 1, borderColor: 'rgba(77,166,255,0.4)' }} />
+                <Text style={{ color: 'rgba(200,210,220,0.5)', fontSize: 9 }}>Vous</Text>
+              </View>
             </View>
 
-            {/* RÉSEAU DE BALLES MÉTALLIQUES EN S */}
-            <SynapticNetwork
-              messages={messages}
-              highlightedIndices={searchResults.length > 0 && searchIndex >= 0 ? [searchResults[searchIndex]] : []}
-              onBallPress={handleBallPress}
+            {/* Résultat de recherche */}
+            {searchResults.length > 0 && searchIndex >= 0 && (
+              <Text style={{ textAlign: 'center', color: 'rgba(0,217,132,0.6)', fontSize: 9, marginTop: 3 }}>
+                Boule #{searchResults[searchIndex] + 1} — {searchIndex + 1}/{searchResults.length}
+              </Text>
+            )}
+            {searchQuery.trim() !== '' && searchResults.length === 0 && (
+              <Text style={{ textAlign: 'center', color: 'rgba(200,210,220,0.4)', fontSize: 8, marginTop: 4 }}>
+                Aucun r\u00E9sultat
+              </Text>
+            )}
+
+            {/* CARTE DE RÉPONSE */}
+            <ResponseCard
+              currentMessage={cardMessage}
+              isLoading={cardIsLoading}
+              isUserMessage={cardIsUser}
             />
-          </Animated.View>
-
-          {/* LÉGENDE */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 6 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2D3238', borderWidth: 1, borderColor: 'rgba(255,80,80,0.5)' }} />
-              <Text style={{ color: 'rgba(200,210,220,0.5)', fontSize: 9 }}>ALIXEN</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2D3238', borderWidth: 1, borderColor: 'rgba(77,166,255,0.4)' }} />
-              <Text style={{ color: 'rgba(200,210,220,0.5)', fontSize: 9 }}>Vous</Text>
-            </View>
-          </View>
-
-          {/* Résultat de recherche */}
-          {searchResults.length > 0 && searchIndex >= 0 && (
-            <Text style={{ textAlign: 'center', color: 'rgba(0,217,132,0.6)', fontSize: 9, marginTop: 3 }}>
-              Boule #{searchResults[searchIndex] + 1} — {searchIndex + 1}/{searchResults.length}
-            </Text>
-          )}
-          {searchQuery.trim() !== '' && searchResults.length === 0 && (
-            <Text style={{ textAlign: 'center', color: 'rgba(200,210,220,0.4)', fontSize: 8, marginTop: 4 }}>
-              Aucun résultat
-            </Text>
-          )}
-        </ScrollView>
-
-        {/* Ombre de profondeur au-dessus de la zone de saisie */}
-        <View style={{
-          height: 6,
-          backgroundColor: 'transparent',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: 0.1,
-          shadowRadius: 5,
-          elevation: 3,
-        }} />
+          </ScrollView>
+        </MetalFrame>
 
         {/* ===== CARTE MÉTALLIQUE DE SAISIE ===== */}
         <Animated.View style={{
