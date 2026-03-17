@@ -1,6 +1,6 @@
 // ──────────────────────────────────────────────────────────────────────────────
-// MedicAiPage.js — MedicAi : Thème Cabinet Médical + Constellation Libre
-// Fond gris clair, boules neumorphiques, positionnement force-directed
+// MedicAiPage.js — MedicAi : Thème Cabinet Médical + S-Path Synaptique
+// Fond gris clair, boules neumorphiques, creux liquide, input redesign
 // ──────────────────────────────────────────────────────────────────────────────
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
@@ -328,11 +328,11 @@ const NeumorphCard = ({ title, icon, accentColor, onPress }) => {
         backgroundColor: '#E4E8EC',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: 'rgba(0,0,0,0.2)',
-        shadowOffset: { width: 5, height: 5 },
-        shadowOpacity: 0.5,
-        shadowRadius: 10,
-        elevation: 8,
+        shadowColor: 'rgba(0,0,0,0.25)',
+        shadowOffset: { width: 6, height: 6 },
+        shadowOpacity: 0.6,
+        shadowRadius: 12,
+        elevation: 10,
         borderWidth: 0.5,
         borderColor: 'rgba(255,255,255,0.5)',
         transform: [{ scale: scaleVal }],
@@ -397,229 +397,267 @@ const NeumorphCard = ({ title, icon, accentColor, onPress }) => {
 };
 
 // ============================================
-// LIQUID TUBE INPUT — Tube verre avec liquide + bille + lock
+// GROOVE LIQUID INPUT — Creux/rainure avec liquide anti-horaire
 // ============================================
-const LiquidTubeInput = ({ children, energyPercent, isLocked, onLockPress }) => {
-  const percent = energyPercent; // 1 = plein, 0 = vide
-  const shakeAnim = useRef(new Animated.Value(0)).current;
+const GrooveLiquidInput = ({ children, energyPercent, isLocked, onLockPress }) => {
+  const consumed = 1 - energyPercent; // consumed progresses as energy depletes
   const [barHeight, setBarHeight] = useState(50);
 
   let liquidColor;
-  if (percent > 0.6) liquidColor = '#00D984';
-  else if (percent > 0.3) liquidColor = '#F0C040';
-  else if (percent > 0.1) liquidColor = '#F08030';
-  else if (percent > 0) liquidColor = '#E05050';
-  else liquidColor = 'transparent';
+  if (energyPercent > 0.6) liquidColor = '#00D984';
+  else if (energyPercent > 0.3) liquidColor = '#F0C040';
+  else if (energyPercent > 0.1) liquidColor = '#F08030';
+  else if (energyPercent > 0) liquidColor = '#E05050';
+  else liquidColor = '#E05050';
 
-  const TUBE_THICK = 3;
-  const TUBE_RADIUS = 22;
-  const TUBE_MARGIN = 14;
-  const containerWidth = SCREEN_WIDTH - TUBE_MARGIN * 2;
+  const GROOVE_THICK = 4;
+  const GROOVE_RADIUS = 20;
+  const GROOVE_MARGIN = 20;
+  const containerWidth = SCREEN_WIDTH - GROOVE_MARGIN * 2;
+  const sideH = Math.max(0, barHeight - GROOVE_RADIUS * 2);
+
+  // Anti-clockwise from top-right:
+  // Segment 0: RIGHT side (top→bottom)
+  // Segment 1: BOTTOM side (right→left)
+  // Segment 2: LEFT side (bottom→top)
+  // Segment 3: TOP side (left→right back to start)
+  // Liquid fills from top-right anti-clockwise. consumed = how much is consumed (empty groove).
 
   return (
-    <View style={{ marginHorizontal: TUBE_MARGIN, marginBottom: 6 }}>
-      <Animated.View
+    <View style={{ marginHorizontal: GROOVE_MARGIN, marginBottom: 6 }}>
+      <View
         onLayout={(e) => setBarHeight(e.nativeEvent.layout.height)}
-        style={{
-          position: 'relative',
-          transform: [{ translateX: isLocked ? shakeAnim : 0 }],
-        }}
+        style={{ position: 'relative' }}
       >
-        {/* TUBE VERRE (fond) */}
+        {/* GROOVE BASE — Double rainure (creux inset effect) */}
         <View style={{
           position: 'absolute',
           top: 0, left: 0, right: 0, bottom: 0,
-          borderRadius: TUBE_RADIUS,
-          borderWidth: TUBE_THICK,
-          borderColor: 'rgba(0,0,0,0.06)',
+          borderRadius: GROOVE_RADIUS,
+          borderWidth: GROOVE_THICK,
+          borderColor: 'rgba(0,0,0,0.08)',
         }} />
-        {/* Couche intérieure du tube (verre) */}
+        {/* Inner shadow for groove depth */}
         <View style={{
           position: 'absolute',
           top: 1, left: 1, right: 1, bottom: 1,
-          borderRadius: TUBE_RADIUS - 1,
-          borderWidth: 1.5,
-          borderColor: 'rgba(200,215,225,0.25)',
+          borderRadius: GROOVE_RADIUS - 1,
+          borderWidth: 2,
+          borderColor: 'rgba(0,0,0,0.04)',
+        }} />
+        {/* Light edge for 3D groove */}
+        <View style={{
+          position: 'absolute',
+          top: -1, left: -1, right: -1, bottom: -1,
+          borderRadius: GROOVE_RADIUS + 1,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.6)',
         }} />
 
-        {/* LIQUIDE — Côté DROIT */}
-        {percent > 0 && (
+        {/* LIQUID — fills anti-clockwise from top-right */}
+        {/* Segment 0: RIGHT side (top→bottom) — 0 to 0.25 of perimeter */}
+        {consumed < 0.25 && (
           <View style={{
             position: 'absolute',
-            top: TUBE_RADIUS,
-            right: 0.5,
-            width: TUBE_THICK - 1,
-            height: Math.min(percent / 0.25, 1) * Math.max(0, barHeight - TUBE_RADIUS * 2),
+            top: GROOVE_RADIUS,
+            right: 0,
+            width: GROOVE_THICK,
+            height: consumed <= 0 ? sideH : Math.max(0, (1 - consumed / 0.25)) * sideH,
             backgroundColor: liquidColor,
-            borderRadius: (TUBE_THICK - 1) / 2,
+            borderRadius: GROOVE_THICK / 2,
+            bottom: consumed <= 0 ? undefined : GROOVE_RADIUS,
+          }} />
+        )}
+        {consumed <= 0 && (
+          <>
+            {/* Corner top-right */}
+            <View style={{
+              position: 'absolute', top: 0, right: 0,
+              width: GROOVE_RADIUS, height: GROOVE_RADIUS,
+              borderTopRightRadius: GROOVE_RADIUS,
+              borderTopWidth: GROOVE_THICK, borderRightWidth: GROOVE_THICK,
+              borderColor: liquidColor, backgroundColor: 'transparent',
+            }} />
+            {/* Corner bottom-right */}
+            <View style={{
+              position: 'absolute', bottom: 0, right: 0,
+              width: GROOVE_RADIUS, height: GROOVE_RADIUS,
+              borderBottomRightRadius: GROOVE_RADIUS,
+              borderBottomWidth: GROOVE_THICK, borderRightWidth: GROOVE_THICK,
+              borderColor: liquidColor, backgroundColor: 'transparent',
+            }} />
+          </>
+        )}
+        {consumed > 0 && consumed < 0.25 && (
+          <View style={{
+            position: 'absolute', bottom: 0, right: 0,
+            width: GROOVE_RADIUS, height: GROOVE_RADIUS,
+            borderBottomRightRadius: GROOVE_RADIUS,
+            borderBottomWidth: GROOVE_THICK, borderRightWidth: GROOVE_THICK,
+            borderColor: liquidColor, backgroundColor: 'transparent',
           }} />
         )}
 
-        {/* Coin BAS-DROIT */}
-        {percent > 0.2 && (
+        {/* Segment 1: BOTTOM side (right→left) — 0.25 to 0.5 */}
+        {consumed < 0.5 && (
           <View style={{
             position: 'absolute',
-            bottom: 0, right: 0,
-            width: TUBE_RADIUS,
-            height: TUBE_RADIUS,
-            borderBottomRightRadius: TUBE_RADIUS,
-            borderBottomWidth: TUBE_THICK - 1,
-            borderRightWidth: TUBE_THICK - 1,
-            borderColor: liquidColor,
-            backgroundColor: 'transparent',
-          }} />
-        )}
-
-        {/* Côté BAS */}
-        {percent > 0.25 && (
-          <View style={{
-            position: 'absolute',
-            bottom: 0.5,
-            right: TUBE_RADIUS,
-            height: TUBE_THICK - 1,
-            width: Math.min((percent - 0.25) / 0.25, 1) * (containerWidth - TUBE_RADIUS * 2),
+            bottom: 0,
+            left: consumed < 0.25 ? GROOVE_RADIUS : GROOVE_RADIUS + ((consumed - 0.25) / 0.25) * (containerWidth - GROOVE_RADIUS * 2),
+            height: GROOVE_THICK,
+            width: consumed < 0.25
+              ? (containerWidth - GROOVE_RADIUS * 2)
+              : Math.max(0, (1 - (consumed - 0.25) / 0.25)) * (containerWidth - GROOVE_RADIUS * 2),
             backgroundColor: liquidColor,
-            borderRadius: (TUBE_THICK - 1) / 2,
+            borderRadius: GROOVE_THICK / 2,
+          }} />
+        )}
+        {consumed < 0.25 && (
+          <View style={{
+            position: 'absolute', bottom: 0, left: 0,
+            width: GROOVE_RADIUS, height: GROOVE_RADIUS,
+            borderBottomLeftRadius: GROOVE_RADIUS,
+            borderBottomWidth: GROOVE_THICK, borderLeftWidth: GROOVE_THICK,
+            borderColor: liquidColor, backgroundColor: 'transparent',
+          }} />
+        )}
+        {consumed >= 0.25 && consumed < 0.5 && (
+          <View style={{
+            position: 'absolute', bottom: 0, left: 0,
+            width: GROOVE_RADIUS, height: GROOVE_RADIUS,
+            borderBottomLeftRadius: GROOVE_RADIUS,
+            borderBottomWidth: GROOVE_THICK, borderLeftWidth: GROOVE_THICK,
+            borderColor: liquidColor, backgroundColor: 'transparent',
           }} />
         )}
 
-        {/* Coin BAS-GAUCHE */}
-        {percent > 0.45 && (
+        {/* Segment 2: LEFT side (bottom→top) — 0.5 to 0.75 */}
+        {consumed < 0.75 && (
           <View style={{
             position: 'absolute',
-            bottom: 0, left: 0,
-            width: TUBE_RADIUS,
-            height: TUBE_RADIUS,
-            borderBottomLeftRadius: TUBE_RADIUS,
-            borderBottomWidth: TUBE_THICK - 1,
-            borderLeftWidth: TUBE_THICK - 1,
-            borderColor: liquidColor,
-            backgroundColor: 'transparent',
-          }} />
-        )}
-
-        {/* Côté GAUCHE */}
-        {percent > 0.5 && (
-          <View style={{
-            position: 'absolute',
-            bottom: TUBE_RADIUS,
-            left: 0.5,
-            width: TUBE_THICK - 1,
-            height: Math.min((percent - 0.5) / 0.25, 1) * Math.max(0, barHeight - TUBE_RADIUS * 2),
+            left: 0,
+            bottom: consumed < 0.5 ? GROOVE_RADIUS : GROOVE_RADIUS + ((consumed - 0.5) / 0.25) * sideH,
+            width: GROOVE_THICK,
+            height: consumed < 0.5
+              ? sideH
+              : Math.max(0, (1 - (consumed - 0.5) / 0.25)) * sideH,
             backgroundColor: liquidColor,
-            borderRadius: (TUBE_THICK - 1) / 2,
+            borderRadius: GROOVE_THICK / 2,
+          }} />
+        )}
+        {consumed < 0.5 && (
+          <View style={{
+            position: 'absolute', top: 0, left: 0,
+            width: GROOVE_RADIUS, height: GROOVE_RADIUS,
+            borderTopLeftRadius: GROOVE_RADIUS,
+            borderTopWidth: GROOVE_THICK, borderLeftWidth: GROOVE_THICK,
+            borderColor: liquidColor, backgroundColor: 'transparent',
+          }} />
+        )}
+        {consumed >= 0.5 && consumed < 0.75 && (
+          <View style={{
+            position: 'absolute', top: 0, left: 0,
+            width: GROOVE_RADIUS, height: GROOVE_RADIUS,
+            borderTopLeftRadius: GROOVE_RADIUS,
+            borderTopWidth: GROOVE_THICK, borderLeftWidth: GROOVE_THICK,
+            borderColor: liquidColor, backgroundColor: 'transparent',
           }} />
         )}
 
-        {/* Coin HAUT-GAUCHE */}
-        {percent > 0.7 && (
+        {/* Segment 3: TOP side (left→right) — 0.75 to 1.0 */}
+        {consumed < 1 && (
           <View style={{
             position: 'absolute',
-            top: 0, left: 0,
-            width: TUBE_RADIUS,
-            height: TUBE_RADIUS,
-            borderTopLeftRadius: TUBE_RADIUS,
-            borderTopWidth: TUBE_THICK - 1,
-            borderLeftWidth: TUBE_THICK - 1,
-            borderColor: liquidColor,
-            backgroundColor: 'transparent',
-          }} />
-        )}
-
-        {/* Côté HAUT */}
-        {percent > 0.75 && (
-          <View style={{
-            position: 'absolute',
-            top: 0.5,
-            left: TUBE_RADIUS,
-            height: TUBE_THICK - 1,
-            width: Math.min((percent - 0.75) / 0.25, 1) * (containerWidth - TUBE_RADIUS * 2),
+            top: 0,
+            left: consumed < 0.75 ? GROOVE_RADIUS : GROOVE_RADIUS + ((consumed - 0.75) / 0.25) * (containerWidth - GROOVE_RADIUS * 2),
+            height: GROOVE_THICK,
+            width: consumed < 0.75
+              ? (containerWidth - GROOVE_RADIUS * 2)
+              : Math.max(0, (1 - (consumed - 0.75) / 0.25)) * (containerWidth - GROOVE_RADIUS * 2),
             backgroundColor: liquidColor,
-            borderRadius: (TUBE_THICK - 1) / 2,
+            borderRadius: GROOVE_THICK / 2,
+          }} />
+        )}
+        {consumed < 0.75 && (
+          <View style={{
+            position: 'absolute', top: 0, right: 0,
+            width: GROOVE_RADIUS, height: GROOVE_RADIUS,
+            borderTopRightRadius: GROOVE_RADIUS,
+            borderTopWidth: GROOVE_THICK, borderRightWidth: GROOVE_THICK,
+            borderColor: liquidColor, backgroundColor: 'transparent',
           }} />
         )}
 
-        {/* Coin HAUT-DROIT */}
-        {percent > 0.9 && (
+        {/* BILLE DE PLOMB — at the liquid front (where consumed ends) */}
+        {energyPercent > 0 && energyPercent < 0.98 && (
           <View style={{
             position: 'absolute',
-            top: 0, right: 0,
-            width: TUBE_RADIUS,
-            height: TUBE_RADIUS,
-            borderTopRightRadius: TUBE_RADIUS,
-            borderTopWidth: TUBE_THICK - 1,
-            borderRightWidth: TUBE_THICK - 1,
-            borderColor: liquidColor,
-            backgroundColor: 'transparent',
-          }} />
-        )}
-
-        {/* BILLE DE PLOMB */}
-        {percent > 0 && percent < 0.98 && (
-          <View style={{
-            position: 'absolute',
-            ...(percent <= 0.25 ? {
+            ...(consumed <= 0.25 ? {
               right: -3,
-              top: TUBE_RADIUS + (percent / 0.25) * Math.max(0, barHeight - TUBE_RADIUS * 2),
-            } : percent <= 0.5 ? {
+              top: GROOVE_RADIUS + (consumed / 0.25) * sideH,
+            } : consumed <= 0.5 ? {
               bottom: -3,
-              right: TUBE_RADIUS + ((percent - 0.25) / 0.25) * (containerWidth - TUBE_RADIUS * 2),
-            } : percent <= 0.75 ? {
+              right: GROOVE_RADIUS + ((consumed - 0.25) / 0.25) * (containerWidth - GROOVE_RADIUS * 2),
+            } : consumed <= 0.75 ? {
               left: -3,
-              bottom: TUBE_RADIUS + ((percent - 0.5) / 0.25) * Math.max(0, barHeight - TUBE_RADIUS * 2),
+              bottom: GROOVE_RADIUS + ((consumed - 0.5) / 0.25) * sideH,
             } : {
               top: -3,
-              left: TUBE_RADIUS + ((percent - 0.75) / 0.25) * (containerWidth - TUBE_RADIUS * 2),
+              left: GROOVE_RADIUS + ((consumed - 0.75) / 0.25) * (containerWidth - GROOVE_RADIUS * 2),
             }),
             width: 10,
             height: 10,
             borderRadius: 5,
             backgroundColor: '#1A1D22',
             borderWidth: 1.5,
-            borderColor: '#444',
+            borderColor: '#555',
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.4,
+            shadowOpacity: 0.5,
             shadowRadius: 2,
             elevation: 5,
             zIndex: 15,
           }} />
         )}
 
-        {/* LOCK */}
-        <TouchableOpacity
-          onPress={() => { if (isLocked) onLockPress(); }}
-          style={{
-            position: 'absolute',
-            top: -4, right: -4,
-            width: isLocked ? 20 : 14,
-            height: isLocked ? 20 : 14,
-            borderRadius: isLocked ? 10 : 7,
-            backgroundColor: isLocked ? '#1A1D22' : 'rgba(180,185,190,0.3)',
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderWidth: isLocked ? 1.5 : 0.5,
-            borderColor: isLocked ? '#E05050' : 'rgba(0,0,0,0.08)',
-            zIndex: 20,
-          }}
-        >
-          <Text style={{ fontSize: isLocked ? 9 : 6 }}>
-            {isLocked ? '🔒' : '🔓'}
-          </Text>
-        </TouchableOpacity>
+        {/* CREUX D'ARRIVÉE — top-right corner where bille falls when locked */}
+        <View style={{
+          position: 'absolute',
+          top: -5, right: -5,
+          width: 16, height: 16,
+          borderRadius: 8,
+          backgroundColor: isLocked ? '#1A1D22' : 'rgba(200,205,210,0.4)',
+          borderWidth: isLocked ? 2 : 1,
+          borderColor: isLocked ? '#E05050' : 'rgba(0,0,0,0.06)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 20,
+          // Inset shadow effect
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: isLocked ? 0.4 : 0.1,
+          shadowRadius: 2,
+          elevation: isLocked ? 4 : 1,
+        }}>
+          {isLocked && (
+            <TouchableOpacity onPress={onLockPress}>
+              <Text style={{ fontSize: 7 }}>🔒</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Indicateur % discret */}
         <View style={{
           position: 'absolute',
-          bottom: -12,
-          right: 4,
+          bottom: -14,
+          right: 6,
           zIndex: 20,
         }}>
           <Text style={{
-            color: percent > 0.3 ? 'rgba(0,160,120,0.3)' : 'rgba(220,80,60,0.4)',
+            color: energyPercent > 0.3 ? 'rgba(0,160,120,0.3)' : 'rgba(220,80,60,0.4)',
             fontSize: 7,
           }}>
-            {Math.round(percent * 100)}%
+            {Math.round(energyPercent * 100)}%
           </Text>
         </View>
 
@@ -633,7 +671,7 @@ const LiquidTubeInput = ({ children, energyPercent, isLocked, onLockPress }) => 
         }}>
           {children}
         </View>
-      </Animated.View>
+      </View>
     </View>
   );
 };
@@ -875,94 +913,47 @@ const NeumorphBall = ({ index, isBot, isSearchHit, status, onPress }) => {
 };
 
 // ============================================
-// CONSTELLATION NETWORK — Positionnement force-directed
+// SYNAPTIC NETWORK — S-path serpentine layout (8 balls/row)
 // ============================================
-const ConstellationNetwork = ({ messages, searchHits, onBallPress }) => {
-  const positions = useRef([]).current;
+const getBallPosition = (index, totalCount) => {
+  const BALLS_PER_ROW = 8;
   const BALL_SIZE = 30;
-  const BALL_RADIUS = BALL_SIZE / 2;
+  const GAP_X = 6;
+  const GAP_Y = 10;
+  const PAD_X = 18;
 
-  // Calculer les positions quand messages change
-  useMemo(() => {
-    positions.length = 0;
-    const padX = 22;
-    const padY = 4;
-    const areaW = SCREEN_WIDTH - padX * 2;
-    const areaH = Math.max(120, Math.ceil(messages.length / 4) * 50 + 20);
+  const row = Math.floor(index / BALLS_PER_ROW);
+  const col = index % BALLS_PER_ROW;
+  const isReversed = row % 2 === 1;
 
-    messages.forEach((m, i) => {
-      let x, y, ok, att = 0;
-      do {
-        ok = true;
-        // Biais : ALIXEN légèrement plus haut, User légèrement plus bas
-        const yBias = m.role === 'assistant' ? 0.35 : 0.65;
-        x = padX + Math.random() * areaW;
-        y = padY + areaH * (yBias - 0.25 + Math.random() * 0.5);
-        // Vérifier pas de chevauchement
-        for (let j = 0; j < positions.length; j++) {
-          const dx = x - positions[j].x, dy = y - positions[j].y;
-          if (Math.sqrt(dx * dx + dy * dy) < BALL_SIZE * 1.4) { ok = false; break; }
-        }
-        att++;
-      } while (!ok && att < 200);
-      positions.push({ x, y, vx: 0, vy: 0 });
-    });
+  const availableW = SCREEN_WIDTH - PAD_X * 2;
+  const cellW = (availableW - (BALLS_PER_ROW - 1) * GAP_X) / BALLS_PER_ROW;
+  const actualCol = isReversed ? (BALLS_PER_ROW - 1 - col) : col;
 
-    // Relaxation de forces (80 itérations)
-    for (let iter = 0; iter < 80; iter++) {
-      for (let i = 0; i < positions.length; i++) {
-        positions[i].vx = 0;
-        positions[i].vy = 0;
-        // Répulsion entre toutes les boules
-        for (let j = 0; j < positions.length; j++) {
-          if (i === j) continue;
-          const dx = positions[i].x - positions[j].x;
-          const dy = positions[i].y - positions[j].y;
-          const d = Math.max(Math.sqrt(dx * dx + dy * dy), 1);
-          const minDist = BALL_SIZE * 1.6;
-          if (d < minDist) {
-            const force = (minDist - d) / minDist * 2;
-            positions[i].vx += (dx / d) * force;
-            positions[i].vy += (dy / d) * force;
-          }
-        }
-        // Attraction vers la paire question/réponse
-        if (i > 0) {
-          const pair = i % 2 === 1 ? i - 1 : i + 1;
-          if (pair < positions.length && pair >= 0) {
-            const dx = positions[pair].x - positions[i].x;
-            const dy = positions[pair].y - positions[i].y;
-            const d = Math.sqrt(dx * dx + dy * dy);
-            if (d > BALL_SIZE * 3) {
-              positions[i].vx += dx * 0.012;
-              positions[i].vy += dy * 0.012;
-            }
-          }
-        }
-      }
-      // Appliquer les vitesses avec limites
-      positions.forEach(p => {
-        p.x = Math.max(padX, Math.min(SCREEN_WIDTH - padX, p.x + p.vx));
-        p.y = Math.max(padY, Math.min(padY + areaH, p.y + p.vy));
-      });
-    }
-  }, [messages.length]);
+  const x = PAD_X + actualCol * (cellW + GAP_X) + cellW / 2 - BALL_SIZE / 2;
+  const y = row * (BALL_SIZE + GAP_Y);
 
-  const containerHeight = positions.length > 0
-    ? Math.max(...positions.map(p => p.y)) + BALL_SIZE + 20
-    : 200;
+  return { x, y };
+};
+
+const SynapticNetwork = ({ messages, searchHits, onBallPress }) => {
+  const BALL_SIZE = 30;
+  const GAP_Y = 10;
+  const BALLS_PER_ROW = 8;
+  const totalRows = Math.ceil(messages.length / BALLS_PER_ROW);
+  const containerHeight = Math.max(60, totalRows * (BALL_SIZE + GAP_Y) + 10);
 
   return (
-    <View style={{ height: containerHeight, position: 'relative' }}>
-      {/* Lignes de connexion paires question→réponse */}
+    <View style={{ minHeight: containerHeight, position: 'relative', paddingVertical: 6 }}>
+      {/* Lignes de connexion S-path entre boules consécutives */}
       {messages.map((msg, i) => {
-        if (i === 0 || i % 2 === 0) return null;
-        const pairIdx = i - 1;
-        if (!positions[i] || !positions[pairIdx]) return null;
-        const x1 = positions[pairIdx].x;
-        const y1 = positions[pairIdx].y;
-        const x2 = positions[i].x;
-        const y2 = positions[i].y;
+        if (i === 0) return null;
+        const pos1 = getBallPosition(i - 1, messages.length);
+        const pos2 = getBallPosition(i, messages.length);
+        const x1 = pos1.x + BALL_SIZE / 2;
+        const y1 = pos1.y + BALL_SIZE / 2;
+        const x2 = pos2.x + BALL_SIZE / 2;
+        const y2 = pos2.y + BALL_SIZE / 2;
         const dx = x2 - x1;
         const dy = y2 - y1;
         const len = Math.sqrt(dx * dx + dy * dy);
@@ -974,7 +965,7 @@ const ConstellationNetwork = ({ messages, searchHits, onBallPress }) => {
             top: y1,
             width: len,
             height: 1,
-            backgroundColor: 'rgba(0,180,130,0.12)',
+            backgroundColor: 'rgba(0,180,130,0.1)',
             transform: [{ rotate: `${angle}deg` }],
             transformOrigin: '0 0',
           }} />
@@ -983,13 +974,13 @@ const ConstellationNetwork = ({ messages, searchHits, onBallPress }) => {
 
       {/* Boules */}
       {messages.map((msg, i) => {
-        if (!positions[i]) return null;
+        const pos = getBallPosition(i, messages.length);
         const isSearch = searchHits && searchHits.has(i);
         return (
           <View key={msg.id} style={{
             position: 'absolute',
-            left: positions[i].x - BALL_RADIUS,
-            top: positions[i].y - BALL_RADIUS,
+            left: pos.x,
+            top: pos.y,
           }}>
             <NeumorphBall
               index={i}
@@ -1491,8 +1482,9 @@ ${mealsList}
             flexDirection: 'row',
             justifyContent: 'center',
             gap: 12,
-            paddingHorizontal: 16,
-            marginVertical: 6,
+            paddingHorizontal: 18,
+            marginTop: 8,
+            marginBottom: 10,
           }}>
             <NeumorphCard
               title="MediBook"
@@ -1508,12 +1500,12 @@ ${mealsList}
             />
           </View>
 
-          {/* Constellation de boules */}
+          {/* Réseau synaptique S-path */}
           <Animated.View style={{
             opacity: contentEntry,
             transform: [{ translateY: contentEntry.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
           }}>
-            <ConstellationNetwork
+            <SynapticNetwork
               messages={messages}
               searchHits={searchHits}
               onBallPress={handleBallPress}
@@ -1608,18 +1600,18 @@ ${mealsList}
           opacity: inputEntry,
           transform: [{ translateY: inputEntry.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }],
         }}>
-          <LiquidTubeInput energyPercent={energyPercent} isLocked={isLocked} onLockPress={handleLockPress}>
-            {/* Loupe neumorphique */}
+          <GrooveLiquidInput energyPercent={energyPercent} isLocked={isLocked} onLockPress={handleLockPress}>
+            {/* Loupe — bouton CARRÉ */}
             <TouchableOpacity
               onPress={() => setSearchVisible(!searchVisible)}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
+                width: 34,
+                height: 34,
+                borderRadius: 12,
                 backgroundColor: '#E4E8EC',
                 justifyContent: 'center',
                 alignItems: 'center',
-                shadowColor: 'rgba(0,0,0,0.12)',
+                shadowColor: 'rgba(0,0,0,0.15)',
                 shadowOffset: { width: 2, height: 2 },
                 shadowOpacity: 0.5,
                 shadowRadius: 4,
@@ -1628,22 +1620,22 @@ ${mealsList}
                 borderColor: 'rgba(255,255,255,0.6)',
               }}
             >
-              <Text style={{ fontSize: 16, color: '#888' }}>🔍</Text>
+              <Text style={{ fontSize: 15, color: '#888' }}>🔍</Text>
             </TouchableOpacity>
 
             {/* Champ message */}
             <View style={{
               flex: 1,
               backgroundColor: '#FFF',
-              borderRadius: 16,
+              borderRadius: 14,
               paddingHorizontal: 12,
-              paddingVertical: Platform.OS === 'ios' ? 7 : 4,
+              paddingVertical: Platform.OS === 'ios' ? 6 : 3,
               borderWidth: 1,
               borderColor: 'rgba(0,0,0,0.05)',
             }}>
               <TextInput
                 ref={inputRef}
-                style={{ color: '#3A4550', fontSize: 12, paddingVertical: 0, maxHeight: 55 }}
+                style={{ color: '#3A4550', fontSize: 12, paddingVertical: 0, maxHeight: 45 }}
                 placeholder="Consultez ALIXEN..."
                 placeholderTextColor="rgba(0,0,0,0.2)"
                 selectionColor="#00A878"
@@ -1655,7 +1647,7 @@ ${mealsList}
               />
             </View>
 
-            {/* Bouton Envoyer */}
+            {/* Bouton Envoyer — ROND BLANC, ➤ vert quand texte */}
             <TouchableOpacity
               onPress={() => {
                 if (isLocked) {
@@ -1672,30 +1664,30 @@ ${mealsList}
               }}
               disabled={(!inputText.trim() && !isLocked) || isLoading}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                backgroundColor: isLocked ? 'rgba(60,60,70,0.8)' : (inputText.trim() ? '#4DA6FF' : '#E4E8EC'),
+                width: 38,
+                height: 38,
+                borderRadius: 19,
+                backgroundColor: isLocked ? 'rgba(60,60,70,0.8)' : '#FFFFFF',
                 justifyContent: 'center',
                 alignItems: 'center',
-                shadowColor: isLocked ? '#000' : (inputText.trim() ? 'rgba(77,166,255,0.3)' : 'rgba(0,0,0,0.1)'),
-                shadowOffset: { width: 2, height: 2 },
+                shadowColor: isLocked ? '#000' : 'rgba(0,0,0,0.15)',
+                shadowOffset: { width: 3, height: 3 },
                 shadowOpacity: 0.4,
-                shadowRadius: 4,
-                elevation: 3,
+                shadowRadius: 5,
+                elevation: 4,
                 borderWidth: 0.5,
-                borderColor: isLocked ? '#444' : 'rgba(255,255,255,0.5)',
+                borderColor: isLocked ? '#444' : 'rgba(0,0,0,0.06)',
               }}
             >
               <Text style={{
-                color: isLocked ? '#E05050' : (inputText.trim() ? '#FFF' : 'rgba(0,0,0,0.15)'),
-                fontSize: isLocked ? 12 : 14,
+                color: isLocked ? '#E05050' : (inputText.trim() ? '#00D984' : 'rgba(0,0,0,0.12)'),
+                fontSize: isLocked ? 12 : 16,
                 fontWeight: 'bold',
               }}>
                 {isLocked ? '🔒' : '➤'}
               </Text>
             </TouchableOpacity>
-          </LiquidTubeInput>
+          </GrooveLiquidInput>
         </Animated.View>
       </KeyboardAvoidingView>
 
