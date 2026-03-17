@@ -13,6 +13,7 @@ import Svg, {
   LinearGradient as SvgLinearGradient, Stop,
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -307,366 +308,57 @@ const FormattedResponseText = ({ text, style }) => {
 };
 
 // ============================================
-// NEUMORPH CARD — Grande carte neumorphique
+// METAL CARD — Style LIXUM sombre avec dégradé
 // ============================================
-const NeumorphCard = ({ title, icon, accentColor, onPress }) => {
+const MetalCard = ({ title, icon, onPress }) => {
   const pressAnim = useRef(new Animated.Value(0)).current;
   const handlePressIn = () => Animated.timing(pressAnim, { toValue: 1, duration: 120, useNativeDriver: false }).start();
   const handlePressOut = () => Animated.timing(pressAnim, { toValue: 0, duration: 180, useNativeDriver: false }).start();
 
   const scaleVal = pressAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] });
-  const innerOp = pressAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.2] });
-
-  const CARD_SIZE = (SCREEN_WIDTH - 48) / 2;
 
   return (
-    <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut} onPress={onPress}>
+    <Pressable delayPressIn={120} onPressIn={handlePressIn} onPressOut={handlePressOut} onPress={onPress}>
       <Animated.View style={{
-        width: CARD_SIZE,
-        height: CARD_SIZE * 0.7,
-        borderRadius: 18,
-        backgroundColor: '#E4E8EC',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: 'rgba(0,0,0,0.2)',
-        shadowOffset: { width: 5, height: 5 },
-        shadowOpacity: 0.5,
-        shadowRadius: 10,
-        elevation: 8,
-        borderWidth: 0.5,
-        borderColor: 'rgba(255,255,255,0.5)',
+        width: wp(150),
+        height: wp(100),
+        borderRadius: wp(16),
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
         transform: [{ scale: scaleVal }],
-        overflow: 'hidden',
       }}>
-        {/* Reflet neumorphique lumineux en haut */}
-        <View style={{
-          position: 'absolute',
-          top: 0, left: 0, right: 0,
-          height: 25,
-          borderTopLeftRadius: 18,
-          borderTopRightRadius: 18,
-          backgroundColor: 'rgba(255,255,255,0.5)',
-        }} />
+        <LinearGradient
+          colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+          style={{
+            flex: 1,
+            borderRadius: wp(16),
+            borderWidth: 1,
+            borderColor: '#4A4F55',
+            justifyContent: 'center',
+            alignItems: 'center',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Icône */}
+          <Text style={{ fontSize: 32, marginBottom: 8 }}>{icon}</Text>
 
-        {/* Fond sombre dans l'ouverture du dossier */}
-        <View style={{
-          position: 'absolute',
-          top: 22,
-          left: 10,
-          right: 10,
-          bottom: 30,
-          borderRadius: 10,
-          backgroundColor: 'rgba(30,35,45,0.06)',
-          borderWidth: 0.5,
-          borderColor: 'rgba(0,0,0,0.03)',
-        }} />
-
-        {/* Ombre intérieure quand pressé */}
-        <Animated.View style={{
-          position: 'absolute',
-          top: 3, left: 3, right: 3, bottom: 3,
-          borderRadius: 16,
-          borderWidth: 2,
-          borderColor: 'rgba(0,0,0,0.08)',
-          opacity: innerOp,
-        }} />
-
-        {/* Ombre en bas (profondeur) */}
-        <View style={{
-          position: 'absolute',
-          bottom: 0, left: 0, right: 0,
-          height: 20,
-          borderBottomLeftRadius: 18,
-          borderBottomRightRadius: 18,
-          backgroundColor: 'rgba(0,0,0,0.03)',
-        }} />
-
-        {/* Icône */}
-        <Text style={{ fontSize: 32, marginBottom: 6 }}>{icon}</Text>
-
-        {/* Titre */}
-        <Text style={{
-          color: accentColor,
-          fontSize: 14,
-          fontWeight: 'bold',
-          letterSpacing: 0.5,
-        }}>{title}</Text>
+          {/* Titre */}
+          <Text style={{
+            color: '#00D984',
+            fontSize: fp(14),
+            fontWeight: '700',
+            letterSpacing: 0.5,
+          }}>{title}</Text>
+        </LinearGradient>
       </Animated.View>
     </Pressable>
   );
 };
 
-// ============================================
-// GROOVE LIQUID INPUT — Creux avec liquide autour de la zone de saisie
-// ============================================
-const GrooveLiquidInput = ({ children, energyPercent, isLocked, onLockPress }) => {
-  const percent = energyPercent; // 1 = plein, 0 = vide
-  const shakeAnim = useRef(new Animated.Value(0)).current;
-
-  // Couleur du liquide
-  let liquidColor;
-  if (percent > 0.6) liquidColor = '#00D984';
-  else if (percent > 0.3) liquidColor = '#E8C840';
-  else if (percent > 0.1) liquidColor = '#E89040';
-  else if (percent > 0) liquidColor = '#D85050';
-  else liquidColor = 'transparent';
-
-  const GROOVE_WIDTH = 4;
-  const GROOVE_OFFSET = 6;
-  const CORNER_RADIUS = 22;
-  const [barHeight, setBarHeight] = useState(48);
-  const barWidth = SCREEN_WIDTH - 40; // marginHorizontal: 20 de chaque côté
-
-  const triggerShake = () => {
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 5, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -5, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 3, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -3, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
-    ]).start();
-  };
-
-  return (
-    <Animated.View
-      onLayout={(e) => setBarHeight(e.nativeEvent.layout.height)}
-      style={{
-        position: 'relative',
-        transform: [{ translateX: isLocked ? shakeAnim : 0 }],
-      }}
-    >
-      {/* Rainure extérieure (ombre = creux) */}
-      <View style={{
-        position: 'absolute',
-        top: -GROOVE_OFFSET,
-        left: -GROOVE_OFFSET,
-        right: -GROOVE_OFFSET,
-        bottom: -GROOVE_OFFSET,
-        borderRadius: CORNER_RADIUS + GROOVE_OFFSET,
-        borderWidth: GROOVE_WIDTH,
-        borderColor: 'rgba(0,0,0,0.06)',
-      }} />
-
-      {/* Rainure intérieure (lumière = fond du creux) */}
-      <View style={{
-        position: 'absolute',
-        top: -GROOVE_OFFSET + 1,
-        left: -GROOVE_OFFSET + 1,
-        right: -GROOVE_OFFSET + 1,
-        bottom: -GROOVE_OFFSET + 1,
-        borderRadius: CORNER_RADIUS + GROOVE_OFFSET - 1,
-        borderWidth: GROOVE_WIDTH - 2,
-        borderColor: 'rgba(255,255,255,0.15)',
-      }} />
-
-      {/* LIQUIDE dans le creux — sens anti-horaire depuis coin DROIT */}
-      {(() => {
-        const consumed = 1 - percent;
-        if (consumed <= 0) return null;
-
-        const totalW = barWidth + GROOVE_OFFSET * 2;
-        const totalH = barHeight + GROOVE_OFFSET * 2;
-        const offset = -GROOVE_OFFSET;
-
-        return (
-          <>
-            {/* Côté HAUT — du coin droit vers la gauche */}
-            <View style={{
-              position: 'absolute',
-              top: offset,
-              right: offset,
-              height: GROOVE_WIDTH,
-              width: Math.min(consumed / 0.3, 1) * (totalW - CORNER_RADIUS),
-              backgroundColor: liquidColor,
-              borderRadius: GROOVE_WIDTH / 2,
-            }} />
-
-            {/* Coin HAUT-GAUCHE */}
-            {consumed > 0.25 && (
-              <View style={{
-                position: 'absolute',
-                top: offset,
-                left: offset,
-                width: CORNER_RADIUS,
-                height: CORNER_RADIUS,
-                borderTopLeftRadius: CORNER_RADIUS,
-                borderTopWidth: GROOVE_WIDTH,
-                borderLeftWidth: GROOVE_WIDTH,
-                borderColor: liquidColor,
-                backgroundColor: 'transparent',
-              }} />
-            )}
-
-            {/* Côté GAUCHE (descend) */}
-            {consumed > 0.3 && (
-              <View style={{
-                position: 'absolute',
-                top: offset + CORNER_RADIUS,
-                left: offset,
-                width: GROOVE_WIDTH,
-                height: Math.min((consumed - 0.3) / 0.2, 1) * (totalH - CORNER_RADIUS * 2),
-                backgroundColor: liquidColor,
-                borderRadius: GROOVE_WIDTH / 2,
-              }} />
-            )}
-
-            {/* Coin BAS-GAUCHE */}
-            {consumed > 0.48 && (
-              <View style={{
-                position: 'absolute',
-                bottom: offset,
-                left: offset,
-                width: CORNER_RADIUS,
-                height: CORNER_RADIUS,
-                borderBottomLeftRadius: CORNER_RADIUS,
-                borderBottomWidth: GROOVE_WIDTH,
-                borderLeftWidth: GROOVE_WIDTH,
-                borderColor: liquidColor,
-                backgroundColor: 'transparent',
-              }} />
-            )}
-
-            {/* Côté BAS (va vers la droite) */}
-            {consumed > 0.5 && (
-              <View style={{
-                position: 'absolute',
-                bottom: offset,
-                left: offset + CORNER_RADIUS,
-                height: GROOVE_WIDTH,
-                width: Math.min((consumed - 0.5) / 0.3, 1) * (totalW - CORNER_RADIUS * 2),
-                backgroundColor: liquidColor,
-                borderRadius: GROOVE_WIDTH / 2,
-              }} />
-            )}
-
-            {/* Coin BAS-DROIT */}
-            {consumed > 0.78 && (
-              <View style={{
-                position: 'absolute',
-                bottom: offset,
-                right: offset,
-                width: CORNER_RADIUS,
-                height: CORNER_RADIUS,
-                borderBottomRightRadius: CORNER_RADIUS,
-                borderBottomWidth: GROOVE_WIDTH,
-                borderRightWidth: GROOVE_WIDTH,
-                borderColor: liquidColor,
-                backgroundColor: 'transparent',
-              }} />
-            )}
-
-            {/* Côté DROIT (remonte) */}
-            {consumed > 0.8 && (
-              <View style={{
-                position: 'absolute',
-                bottom: offset + CORNER_RADIUS,
-                right: offset,
-                width: GROOVE_WIDTH,
-                height: Math.min((consumed - 0.8) / 0.2, 1) * (totalH - CORNER_RADIUS * 2),
-                backgroundColor: liquidColor,
-                borderRadius: GROOVE_WIDTH / 2,
-              }} />
-            )}
-          </>
-        );
-      })()}
-
-      {/* BILLE DE PLOMB NOIRE */}
-      {(() => {
-        const consumed = 1 - percent;
-        if (consumed >= 0.98 || consumed <= 0) return null;
-
-        const totalW = barWidth + GROOVE_OFFSET * 2;
-        const totalH = barHeight + GROOVE_OFFSET * 2;
-        const offset = -GROOVE_OFFSET;
-        let ballStyle = {};
-
-        if (consumed <= 0.3) {
-          const progress = consumed / 0.3;
-          ballStyle = {
-            top: offset - 3,
-            right: offset + progress * (totalW - CORNER_RADIUS),
-          };
-        } else if (consumed <= 0.5) {
-          const progress = (consumed - 0.3) / 0.2;
-          ballStyle = {
-            left: offset - 3,
-            top: offset + CORNER_RADIUS + progress * (totalH - CORNER_RADIUS * 2),
-          };
-        } else if (consumed <= 0.8) {
-          const progress = (consumed - 0.5) / 0.3;
-          ballStyle = {
-            bottom: offset - 3,
-            left: offset + CORNER_RADIUS + progress * (totalW - CORNER_RADIUS * 2),
-          };
-        } else {
-          const progress = (consumed - 0.8) / 0.2;
-          ballStyle = {
-            right: offset - 3,
-            bottom: offset + CORNER_RADIUS + progress * (totalH - CORNER_RADIUS * 2),
-          };
-        }
-
-        return (
-          <View style={{
-            position: 'absolute',
-            ...ballStyle,
-            width: 10,
-            height: 10,
-            borderRadius: 5,
-            backgroundColor: '#1A1D22',
-            borderWidth: 1.5,
-            borderColor: '#555',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.4,
-            shadowRadius: 2,
-            elevation: 6,
-            zIndex: 15,
-          }} />
-        );
-      })()}
-
-      {/* CREUX D'ARRIVÉE (rond) — coin haut-droit */}
-      <View style={{
-        position: 'absolute',
-        top: -GROOVE_OFFSET - 4,
-        right: -GROOVE_OFFSET - 4,
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-        backgroundColor: isLocked ? '#1A1D22' : 'rgba(0,0,0,0.04)',
-        borderWidth: 2,
-        borderColor: isLocked ? '#D85050' : 'rgba(0,0,0,0.06)',
-        zIndex: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-        {isLocked && (
-          <View style={{
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: '#333',
-            borderWidth: 1,
-            borderColor: '#555',
-          }} />
-        )}
-      </View>
-
-      {/* CONTENU : Recherche + Input + Envoyer */}
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 4,
-        paddingVertical: 5,
-      }}>
-        {children}
-      </View>
-    </Animated.View>
-  );
-};
+// (GrooveLiquidInput removed — replaced by gradient input bar in render)
 
 // ============================================
 // LOADING DOTS (3 points qui pulsent en séquence)
@@ -991,15 +683,158 @@ const SynapticNetwork = ({ messages, searchHits, onBallPress }) => {
 };
 
 // ============================================
-// MODAL SCROLL CONTENT — ScrollView avec flèche de scroll
+// HIGHLIGHTED TEXT — Surlignage des mots-clés dans le texte
 // ============================================
-const ModalScrollContent = ({ selectedMessage, closeModal, handleRecipePress }) => {
+const HighlightedText = ({ text, searchTerm, currentIndex, style, onLayoutOccurrence }) => {
+  if (!text || !searchTerm || !searchTerm.trim()) {
+    return <Text style={style}>{text}</Text>;
+  }
+
+  const term = searchTerm.toLowerCase();
+  const parts = [];
+  let remaining = text;
+  let globalIdx = 0;
+  let occurrenceIdx = 0;
+
+  while (remaining.length > 0) {
+    const lowerRemaining = remaining.toLowerCase();
+    const matchPos = lowerRemaining.indexOf(term);
+    if (matchPos === -1) {
+      parts.push({ text: remaining, isHighlight: false, idx: -1 });
+      break;
+    }
+    if (matchPos > 0) {
+      parts.push({ text: remaining.substring(0, matchPos), isHighlight: false, idx: -1 });
+    }
+    parts.push({
+      text: remaining.substring(matchPos, matchPos + searchTerm.length),
+      isHighlight: true,
+      idx: occurrenceIdx,
+    });
+    occurrenceIdx++;
+    remaining = remaining.substring(matchPos + searchTerm.length);
+    globalIdx += matchPos + searchTerm.length;
+  }
+
+  return (
+    <Text style={style}>
+      {parts.map((part, i) => {
+        if (!part.isHighlight) {
+          return <Text key={i}>{part.text}</Text>;
+        }
+        const isActive = part.idx === currentIndex;
+        return (
+          <Text
+            key={i}
+            onLayout={onLayoutOccurrence ? (e) => onLayoutOccurrence(part.idx, e.nativeEvent.layout.y) : undefined}
+            style={{
+              backgroundColor: isActive ? 'rgba(212, 175, 55, 0.6)' : 'rgba(212, 175, 55, 0.3)',
+              borderRadius: 4,
+              paddingHorizontal: 2,
+            }}
+          >
+            {part.text}
+          </Text>
+        );
+      })}
+    </Text>
+  );
+};
+
+// Compte les occurrences d'un terme dans un texte
+const countOccurrences = (text, term) => {
+  if (!text || !term || !term.trim()) return 0;
+  const lower = text.toLowerCase();
+  const lowerTerm = term.toLowerCase();
+  let count = 0;
+  let pos = 0;
+  while ((pos = lower.indexOf(lowerTerm, pos)) !== -1) {
+    count++;
+    pos += lowerTerm.length;
+  }
+  return count;
+};
+
+// ============================================
+// MODAL SCROLL CONTENT — ScrollView avec surlignage + flèches navigation
+// ============================================
+const ModalScrollContent = ({ selectedMessage, closeModal, handleRecipePress, searchTerm }) => {
   const [isScrollable, setIsScrollable] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(false);
+  const [currentHighlightIndex, setCurrentHighlightIndex] = useState(0);
+  const scrollRef = useRef(null);
+  const occurrenceYPositions = useRef({});
+
+  const totalOccurrences = countOccurrences(selectedMessage.content, searchTerm);
+  const hasSearch = searchTerm && searchTerm.trim() && totalOccurrences > 0;
+
+  const handleLayoutOccurrence = (idx, y) => {
+    occurrenceYPositions.current[idx] = y;
+  };
+
+  const navigateHighlight = (direction) => {
+    if (totalOccurrences === 0) return;
+    let nextIndex;
+    if (direction === 'next') {
+      nextIndex = (currentHighlightIndex + 1) % totalOccurrences;
+    } else {
+      nextIndex = (currentHighlightIndex - 1 + totalOccurrences) % totalOccurrences;
+    }
+    setCurrentHighlightIndex(nextIndex);
+    const y = occurrenceYPositions.current[nextIndex];
+    if (y !== undefined && scrollRef.current) {
+      scrollRef.current.scrollTo({ y: Math.max(0, y - 40), animated: true });
+    }
+  };
 
   return (
     <View>
+      {/* Barre de navigation recherche */}
+      {hasSearch && (
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+          marginBottom: 8,
+          paddingVertical: 4,
+        }}>
+          <Pressable
+            onPress={() => navigateHighlight('prev')}
+            style={{
+              width: wp(30),
+              height: wp(30),
+              borderRadius: wp(15),
+              backgroundColor: '#3A3F46',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: '#FFF', fontSize: 14, fontWeight: 'bold' }}>‹</Text>
+          </Pressable>
+
+          <Text style={{ color: '#999', fontSize: 11 }}>
+            {currentHighlightIndex + 1} sur {totalOccurrences} résultat{totalOccurrences > 1 ? 's' : ''}
+          </Text>
+
+          <Pressable
+            onPress={() => navigateHighlight('next')}
+            style={{
+              width: wp(30),
+              height: wp(30),
+              borderRadius: wp(15),
+              backgroundColor: '#3A3F46',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: '#FFF', fontSize: 14, fontWeight: 'bold' }}>›</Text>
+          </Pressable>
+        </View>
+      )}
+
       <ScrollView
+        ref={scrollRef}
         style={{ maxHeight: SCREEN_HEIGHT * 0.45 }}
         onContentSizeChange={(w, h) => setIsScrollable(h > 300)}
         onScroll={({ nativeEvent }) => {
@@ -1008,7 +843,15 @@ const ModalScrollContent = ({ selectedMessage, closeModal, handleRecipePress }) 
         }}
         scrollEventThrottle={16}
       >
-        {selectedMessage.role === 'assistant' ? (
+        {hasSearch ? (
+          <HighlightedText
+            text={selectedMessage.content}
+            searchTerm={searchTerm}
+            currentIndex={currentHighlightIndex}
+            style={{ color: '#3A4550', fontSize: 13, lineHeight: 21 }}
+            onLayoutOccurrence={handleLayoutOccurrence}
+          />
+        ) : selectedMessage.role === 'assistant' ? (
           <FormattedText
             text={selectedMessage.content}
             style={{ color: '#3A4550', fontSize: 13, lineHeight: 21 }}
@@ -1111,9 +954,6 @@ export default function MedicAiPage() {
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
-  // ── Énergie restante (pour le tube) ─────────────────────────────────────
-  const energyPercent = Math.max(0, Math.min(1, 1 - energyUsed / energyLimit));
-
   // ── Lock quand quota atteint ──────────────────────────────────────────────
   useEffect(() => {
     setIsLocked(energyUsed >= energyLimit);
@@ -1130,10 +970,6 @@ export default function MedicAiPage() {
     }, 60000);
     return () => clearInterval(checkReset);
   }, [lastResetTime]);
-
-  const handleLockPress = () => {
-    setShowLockModal(true);
-  };
 
   const addBotMessage = useCallback((text) => {
     setMessages(prev => [...prev, {
@@ -1471,25 +1307,23 @@ ${mealsList}
           {/* Image docteur */}
           <DoctorHeader />
 
-          {/* Cartes neumorphiques MediBook / SecretPocket */}
+          {/* Cartes MetalCard LIXUM — MediBook / SecretPocket */}
           <View style={{
             flexDirection: 'row',
             justifyContent: 'center',
-            gap: 12,
+            gap: wp(12),
             paddingHorizontal: 16,
             marginTop: 8,
             marginBottom: 8,
           }}>
-            <NeumorphCard
+            <MetalCard
               title="MediBook"
               icon="📊"
-              accentColor="#00A878"
               onPress={() => addBotMessage("Le MediBook sera disponible prochainement. Votre dossier médical complet avec bilans, rappels et médicaments.")}
             />
-            <NeumorphCard
+            <MetalCard
               title="Secret Pocket"
               icon="🔒"
-              accentColor="#B89A30"
               onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. Votre coffre-fort santé chiffré.")}
             />
           </View>
@@ -1589,13 +1423,36 @@ ${mealsList}
           </View>
         )}
 
-        {/* Zone de saisie avec creux liquide */}
+        {/* Zone de saisie avec dégradé emerald */}
         <Animated.View style={{
           opacity: inputEntry,
           transform: [{ translateY: inputEntry.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }],
         }}>
-          <View style={{ marginHorizontal: 20, marginBottom: 8, paddingTop: 4 }}>
-            <GrooveLiquidInput energyPercent={energyPercent} isLocked={isLocked} onLockPress={() => setShowLockModal(true)}>
+          <View style={{
+            marginHorizontal: 14,
+            marginBottom: 6,
+            borderRadius: 22,
+            overflow: 'hidden',
+          }}>
+            {/* Dégradé en fond */}
+            <LinearGradient
+              colors={['rgba(0,217,132,0.05)', 'rgba(0,217,132,0.15)', 'rgba(0,217,132,0.3)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                position: 'absolute',
+                top: 0, left: 0, right: 0, bottom: 0,
+                borderRadius: 22,
+              }}
+            />
+
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: 8,
+              paddingVertical: 6,
+              gap: 6,
+            }}>
               {/* Bouton Recherche — carré arrondi séparé */}
               <TouchableOpacity
                 onPress={() => setSearchVisible(!searchVisible)}
@@ -1618,7 +1475,7 @@ ${mealsList}
                 <Text style={{ fontSize: 15, color: '#888' }}>🔍</Text>
               </TouchableOpacity>
 
-              {/* Champ message — plus court */}
+              {/* Champ message */}
               <View style={{
                 flex: 1,
                 backgroundColor: '#FFFFFF',
@@ -1693,7 +1550,7 @@ ${mealsList}
                   {isLocked ? '🔒' : '➤'}
                 </Text>
               </TouchableOpacity>
-            </GrooveLiquidInput>
+            </View>
           </View>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -1750,8 +1607,8 @@ ${mealsList}
               </TouchableOpacity>
             </View>
 
-            {/* Contenu scrollable avec ScrollArrow */}
-            <ModalScrollContent selectedMessage={selectedMessage} closeModal={closeModal} handleRecipePress={handleRecipePress} />
+            {/* Contenu scrollable avec surlignage et navigation */}
+            <ModalScrollContent selectedMessage={selectedMessage} closeModal={closeModal} handleRecipePress={handleRecipePress} searchTerm={searchQuery} />
 
             {/* Heure */}
             <Text style={{ color: 'rgba(0,0,0,0.2)', fontSize: 8, marginTop: 8, textAlign: 'right' }}>
