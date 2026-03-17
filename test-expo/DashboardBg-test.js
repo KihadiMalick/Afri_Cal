@@ -16,6 +16,7 @@ import Svg, { Line, Circle, Rect, Path, G, Defs, Defs as SvgDefs, Mask, LinearGr
 import { Ionicons } from '@expo/vector-icons';
 import RepasPage from './RepasPage';
 import ActivityPage from './ActivityPage';
+import NeumorphPage from './NeumorphPage';
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase client (même que RepasPage)
@@ -3136,7 +3137,8 @@ export default function App() {
       case 'medicai':
         return <PlaceholderPage icon={'🏥'} title="MedicAi" locked />;
       case 'profile':
-        return <PlaceholderPage icon={'👤'} title="Profil" />;
+        // TEMPORAIRE: NeumorphPage remplace Profil pour tests design
+        return <NeumorphPage />;
       default:
         return null;
     }
