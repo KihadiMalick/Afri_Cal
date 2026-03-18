@@ -1112,6 +1112,7 @@ export default function MedicAiPage() {
   // Secret Pocket state
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showAddDataSheet, setShowAddDataSheet] = useState(false);
+  const [showCompactConfirm, setShowCompactConfirm] = useState(false);
 
   // Refs
   const scrollViewRef = useRef(null);
@@ -1532,9 +1533,9 @@ ${mealsList}
       </LinearGradient>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(40) }}>
-        {/* Illustration — reduced spacing */}
-        <View style={{ alignItems: 'center', marginTop: wp(12), marginBottom: wp(10) }}>
-          <Svg width={wp(64)} height={wp(64)} viewBox="0 0 64 64" fill="none">
+        {/* Illustration — compact spacing */}
+        <View style={{ alignItems: 'center', marginTop: wp(8), marginBottom: wp(6) }}>
+          <Svg width={wp(56)} height={wp(56)} viewBox="0 0 64 64" fill="none">
             <Rect x="12" y="8" width="28" height="48" rx="3" stroke="#00D984" strokeWidth="1.5" />
             <Line x1="18" y1="18" x2="34" y2="18" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" />
             <Line x1="18" y1="24" x2="34" y2="24" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" />
@@ -1659,10 +1660,10 @@ ${mealsList}
         <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: fp(11), marginTop: wp(12) }}>Appuyez pour deverrouiller</Text>
       </View>
 
-      {/* Texte confiance — fixed: added paddingBottom wp(40) */}
+      {/* Texte confiance — fixed: paddingBottom wp(50) */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: wp(6), paddingBottom: wp(40),
+        gap: wp(6), paddingBottom: wp(50), marginBottom: wp(10),
       }}>
         <Svg width={wp(12)} height={wp(12)} viewBox="0 0 24 24" fill="none">
           <Rect x="5" y="11" width="14" height="10" rx="2" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
@@ -1703,7 +1704,16 @@ ${mealsList}
           </View>
         </View>
         <Pressable delayPressIn={120}
-          onPress={() => { setIsUnlocked(false); setCurrentSubPage('main'); }}
+          onPress={() => {
+            Alert.alert(
+              'Verrouiller',
+              'Votre Secret Pocket sera verrouille.',
+              [
+                { text: 'Verrouiller', onPress: () => { setIsUnlocked(false); setCurrentSubPage('main'); } },
+                { text: 'Annuler', style: 'cancel' },
+              ]
+            );
+          }}
           style={({ pressed }) => ({
             flexDirection: 'row', alignItems: 'center', gap: wp(4),
             backgroundColor: 'rgba(212,175,55,0.1)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)',
@@ -1814,7 +1824,8 @@ ${mealsList}
                     {renderCategoryIcon(cat.icon, cat.color, wp(18))}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{cat.title}</Text>
+                    <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>{cat.title}</Text>
+                    <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)' }}>{cat.desc}</Text>
                   </View>
                   <Text style={{ fontSize: fp(16), color: 'rgba(255,255,255,0.2)' }}>{">"}</Text>
                 </Pressable>
@@ -2673,7 +2684,10 @@ ${mealsList}
               {/* Option 1 : Compacter et ranger */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => { setShowNewSessionSheet(false); console.log('Compactage Secret Pocket'); }}
+                onPress={() => {
+                  setShowNewSessionSheet(false);
+                  setTimeout(() => setShowCompactConfirm(true), 300);
+                }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   paddingVertical: wp(14), paddingHorizontal: wp(12),
@@ -2773,6 +2787,100 @@ ${mealsList}
             </LinearGradient>
           </Pressable>
         </Pressable>
+      </Modal>
+
+      {/* ===== MODAL — Confirmation Compacter et ranger ===== */}
+      <Modal
+        visible={showCompactConfirm}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCompactConfirm(false)}
+      >
+        <View style={{
+          flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24),
+        }}>
+          <LinearGradient
+            colors={['#2A2F36', '#1E2328', '#252A30']}
+            style={{
+              borderRadius: wp(20), paddingHorizontal: wp(24), paddingVertical: wp(28),
+              width: '100%', alignItems: 'center',
+            }}
+          >
+            {/* Icone bouclier gold */}
+            <View style={{
+              width: wp(60), height: wp(60), borderRadius: wp(30),
+              backgroundColor: 'rgba(212,175,55,0.12)',
+              justifyContent: 'center', alignItems: 'center', marginBottom: wp(16),
+              borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+            }}>
+              <Svg width={wp(28)} height={wp(28)} viewBox="0 0 24 24" fill="none">
+                <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round"/>
+                <Rect x="9" y="10" width="6" height="5" rx="1" stroke="#D4AF37" strokeWidth="1.5"/>
+                <Path d="M10 10V8a2 2 0 014 0v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+              </Svg>
+            </View>
+
+            <Text style={{
+              fontSize: fp(18), fontWeight: '700', color: '#FFFFFF',
+              textAlign: 'center', marginBottom: wp(8),
+            }}>Compacter cette discussion ?</Text>
+
+            <Text style={{
+              fontSize: fp(13), color: 'rgba(255,255,255,0.5)',
+              textAlign: 'center', lineHeight: fp(19), marginBottom: wp(8),
+            }}>
+              Votre conversation sera compactee et rangee dans votre Secret Pocket.
+            </Text>
+
+            {/* Info securite */}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center',
+              backgroundColor: 'rgba(212,175,55,0.08)',
+              borderRadius: wp(10), padding: wp(10),
+              marginBottom: wp(24), width: '100%',
+            }}>
+              <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(8) }}>
+                <Path d="M12 2a7 7 0 00-7 7v0a7 7 0 007 7" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                <Path d="M17 5.5A6.97 6.97 0 0119 9v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                <Path d="M12 10v6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+              </Svg>
+              <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.7)', flex: 1 }}>
+                Vous aurez besoin de votre empreinte digitale pour la retrouver dans Secret Pocket.
+              </Text>
+            </View>
+
+            {/* Bouton Confirmer */}
+            <Pressable
+              delayPressIn={120}
+              onPress={() => {
+                setShowCompactConfirm(false);
+                console.log('Discussion compactee vers Secret Pocket');
+              }}
+              style={{ width: '100%', marginBottom: wp(10) }}
+            >
+              <LinearGradient
+                colors={['#D4AF37', '#B8941F']}
+                style={{
+                  width: '100%', paddingVertical: wp(14),
+                  borderRadius: wp(14), alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>
+                  Confirmer et ranger
+                </Text>
+              </LinearGradient>
+            </Pressable>
+
+            {/* Bouton Annuler */}
+            <Pressable
+              onPress={() => setShowCompactConfirm(false)}
+              style={{ width: '100%', paddingVertical: wp(12), alignItems: 'center' }}
+            >
+              <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Annuler</Text>
+            </Pressable>
+          </LinearGradient>
+        </View>
       </Modal>
     </View>
   );
