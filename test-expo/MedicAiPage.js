@@ -2641,7 +2641,7 @@ ${mealsList}
               position: 'absolute',
               left: 0, top: 0, bottom: 0,
               width: `${Math.min((messages.length / 30) * 100, 100)}%`,
-              backgroundColor: 'rgba(0, 217, 132, 0.12)',
+              backgroundColor: 'rgba(0, 217, 132, 0.25)',
               borderTopLeftRadius: wp(28),
               borderBottomLeftRadius: wp(28),
             }}/>
@@ -2719,27 +2719,26 @@ ${mealsList}
                 </LinearGradient>
               </Pressable>
 
-              {/* Champ message */}
+              {/* Champ message — zone délimitée */}
               <View style={{
                 flex: 1,
-                backgroundColor: 'transparent',
-                borderRadius: 18,
-                paddingHorizontal: wp(8),
-                paddingVertical: Platform.OS === 'ios' ? 7 : 4,
+                backgroundColor: '#FFFFFF',
+                borderRadius: wp(20),
+                paddingHorizontal: wp(14),
+                marginHorizontal: wp(6),
+                borderWidth: 1,
+                borderColor: 'rgba(0, 0, 0, 0.06)',
               }}>
                 <TextInput
                   ref={inputRef}
                   style={{
-                    flex: 1,
-                    backgroundColor: 'transparent',
-                    color: '#2D3436',
                     fontSize: fp(14),
-                    paddingHorizontal: wp(8),
+                    color: '#2D3436',
                     paddingVertical: wp(8),
                     maxHeight: 50,
                   }}
                   placeholder="Consultez ALIXEN..."
-                  placeholderTextColor="rgba(0,0,0,0.2)"
+                  placeholderTextColor="rgba(0, 0, 0, 0.3)"
                   selectionColor="#00A878"
                   value={inputText}
                   onChangeText={setInputText}
