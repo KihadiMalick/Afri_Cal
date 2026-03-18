@@ -1747,7 +1747,7 @@ ${mealsList}
       setScanResults(null);
       setScanSteps([]);
       setUploadState('idle');
-      startAIScan(file.uri, file.name, file.mimeType, null);
+      startAIScan(file.uri, file.name, file.mimeType, null, context);
     } catch (error) {
       console.log('Erreur sélection document:', error);
       Alert.alert('Erreur', 'Impossible de sélectionner le document.');
@@ -1773,7 +1773,7 @@ ${mealsList}
       setScanResults(null);
       setScanSteps([]);
       setUploadState('idle');
-      startAIScan(result.assets[0].uri, 'Photo capturée', 'image/jpeg', result.assets[0].base64);
+      startAIScan(result.assets[0].uri, 'Photo capturée', 'image/jpeg', result.assets[0].base64, context);
     } catch (error) {
       console.log('Erreur caméra:', error);
       Alert.alert('Erreur', 'Impossible de prendre la photo.');
@@ -1799,14 +1799,15 @@ ${mealsList}
       setScanResults(null);
       setScanSteps([]);
       setUploadState('idle');
-      startAIScan(result.assets[0].uri, 'Image sélectionnée', 'image/jpeg', result.assets[0].base64);
+      startAIScan(result.assets[0].uri, 'Image sélectionnée', 'image/jpeg', result.assets[0].base64, context);
     } catch (error) {
       console.log('Erreur galerie:', error);
       Alert.alert('Erreur', "Impossible de sélectionner l'image.");
     }
   };
 
-  const callScanAPI = async (fileUri, fileName, mimeType, base64Data) => {
+  const callScanAPI = async (fileUri, fileName, mimeType, base64Data, context = null) => {
+    const effectiveContext = context || scanContext || 'chat';
     try {
       let imageBase64 = base64Data;
 
@@ -1852,20 +1853,37 @@ ${mealsList}
       }
 
       // Si base64 disponible (photo depuis caméra ou galerie), appeler la VRAIE API
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/scan-medical`, {
+      // Choisir l'endpoint selon le contexte
+      const isMedical = effectiveContext === 'medibook' || effectiveContext === 'carnet';
+      const scanEndpoint = isMedical
+        ? '/functions/v1/scan-medical'
+        : '/functions/v1/scan-meal';
+
+      const fetchBody = isMedical
+        ? {
+            image: imageBase64,
+            context: effectiveContext,
+            imageBase64: imageBase64,
+            mimeType: mimeType || 'image/jpeg',
+            userId: TEST_USER_ID,
+            category: scanCategory || 'lab-results',
+          }
+        : {
+            action: 'scan',
+            image: imageBase64,
+            imageBase64: imageBase64,
+            mimeType: mimeType || 'image/jpeg',
+            userId: TEST_USER_ID,
+          };
+
+      const response = await fetch(`${SUPABASE_URL}${scanEndpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           'apikey': SUPABASE_ANON_KEY,
         },
-        body: JSON.stringify({
-          imageBase64: imageBase64,
-          mimeType: mimeType || 'image/jpeg',
-          userId: TEST_USER_ID,
-          context: scanContext || 'medibook',
-          category: scanCategory || 'lab-results',
-        }),
+        body: JSON.stringify(fetchBody),
       });
 
       if (!response.ok) {
@@ -1881,7 +1899,7 @@ ${mealsList}
     }
   };
 
-  const startAIScan = async (fileUri, fileName, mimeType, base64Data = null) => {
+  const startAIScan = async (fileUri, fileName, mimeType, base64Data = null, context = null) => {
     setUploadState('scanning');
     setScanSteps([]);
     setScanResults(null);
@@ -1902,8 +1920,8 @@ ${mealsList}
       }
     })();
 
-    // EN PARALLÈLE, lancer le vrai appel API
-    const apiPromise = callScanAPI(fileUri, fileName, mimeType, base64Data);
+    // EN PARALLÈLE, lancer le vrai appel API (passer context directement pour éviter le problème React state async)
+    const apiPromise = callScanAPI(fileUri, fileName, mimeType, base64Data, context);
 
     // Attendre les deux
     const [_, apiResult] = await Promise.all([animationPromise, apiPromise]);
@@ -2377,6 +2395,63 @@ ${mealsList}
           </View>
         )}
 
+        {/* Vaccinations extraites */}
+        {scanResults?.vaccinations && scanResults.vaccinations.length > 0 && (
+          <View style={{ marginTop: wp(16) }}>
+            <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#00D984', marginBottom: wp(10) }}>
+              Vaccins détectés
+            </Text>
+            {scanResults.vaccinations.map((vac, index) => (
+              <View key={index} style={{
+                backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12),
+                padding: wp(12), marginBottom: wp(8),
+                borderLeftWidth: 3, borderLeftColor: '#00D984',
+              }}>
+                <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{vac.name}</Text>
+                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)' }}>
+                  {vac.date || ''}{vac.dose ? ' — ' + vac.dose : ''}
+                </Text>
+                {vac.nextDue && <Text style={{ fontSize: fp(12), color: '#FF8C42' }}>Prochain rappel : {vac.nextDue}</Text>}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Allergies extraites */}
+        {scanResults?.allergies && scanResults.allergies.length > 0 && (
+          <View style={{ marginTop: wp(16) }}>
+            <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FF8C42', marginBottom: wp(10) }}>
+              Allergies détectées
+            </Text>
+            {scanResults.allergies.map((allergy, index) => (
+              <View key={index} style={{
+                backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12),
+                padding: wp(12), marginBottom: wp(8),
+                borderLeftWidth: 3, borderLeftColor: allergy.severity === 'severe' ? '#FF6B6B' : '#FF8C42',
+              }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{allergy.allergen}</Text>
+                  <View style={{
+                    paddingHorizontal: wp(8), paddingVertical: wp(2),
+                    backgroundColor: allergy.severity === 'severe' ? 'rgba(255,107,107,0.2)' : 'rgba(255,140,66,0.2)',
+                    borderRadius: wp(6),
+                  }}>
+                    <Text style={{
+                      fontSize: fp(9), fontWeight: '700',
+                      color: allergy.severity === 'severe' ? '#FF6B6B' : '#FF8C42',
+                    }}>
+                      {allergy.severity === 'severe' ? 'SÉVÈRE' : allergy.severity === 'moderate' ? 'MODÉRÉ' : 'LÉGER'}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', marginTop: wp(4) }}>
+                  {allergy.type || ''}{allergy.reaction ? ' — ' + allergy.reaction : ''}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
         {/* Boutons */}
         <View style={{ marginTop: wp(28), marginBottom: wp(40) }}>
           <Pressable delayPressIn={120}
@@ -2525,7 +2600,7 @@ ${mealsList}
             </Text>
           ))}
           {onTransfer && (
-            <Text style={{ width: wp(30), fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>{'🔒'}</Text>
+            <Text style={{ width: wp(30), marginLeft: wp(8), fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>{'🔒'}</Text>
           )}
         </LinearGradient>
 
@@ -2558,6 +2633,7 @@ ${mealsList}
                   width: wp(30), height: wp(28), borderRadius: wp(8),
                   backgroundColor: 'rgba(212,175,55,0.1)',
                   justifyContent: 'center', alignItems: 'center',
+                  marginLeft: wp(8),
                 }}
               >
                 <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
