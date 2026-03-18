@@ -522,7 +522,7 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage }) => {
       ) : (
         <FormattedResponseText
           text={displayedText + (!isUserMessage && displayedText.length < (currentMessage || '').length ? '|' : '')}
-          style={{ color: '#3A4550', fontSize: 13, lineHeight: 20 }}
+          style={{ color: '#3A4550', fontSize: 13, lineHeight: fp(22) }}
         />
       )}
     </Animated.View>
@@ -991,6 +991,7 @@ export default function MedicAiPage() {
   const [isLocked, setIsLocked] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
   const [showDocumentSheet, setShowDocumentSheet] = useState(false);
+  const [showNewSessionSheet, setShowNewSessionSheet] = useState(false);
 
   // Refs
   const scrollViewRef = useRef(null);
@@ -1052,14 +1053,27 @@ export default function MedicAiPage() {
   }, [lastResetTime]);
 
   const addBotMessage = useCallback((text) => {
-    setMessages(prev => [...prev, {
-      id: Date.now().toString(),
-      role: 'assistant',
-      content: text,
-      timestamp: new Date(),
-      _isNew: true,
-      _status: 'read',
-    }]);
+    setMessages(prev => {
+      if (prev.length >= 30) {
+        Alert.alert(
+          'Session pleine',
+          'Vous avez atteint la limite de 30 echanges par session.\n\nCompactez cette conversation pour la ranger dans votre Secret Pocket et demarrer une nouvelle session.',
+          [
+            { text: 'Compacter et ranger', onPress: () => console.log('Compactage Secret Pocket') },
+            { text: 'Annuler', style: 'cancel' },
+          ]
+        );
+        return prev;
+      }
+      return [...prev, {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: text,
+        timestamp: new Date(),
+        _isNew: true,
+        _status: 'read',
+      }];
+    });
   }, []);
 
   const loadUserData = async () => {
@@ -1271,7 +1285,10 @@ ${mealsList}
       _isNew: true,
       _status: 'read',
     };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages(prev => {
+      if (prev.length >= 30) return prev;
+      return [...prev, userMsg];
+    });
 
     // 3. Après 800ms, passer en mode chargement
     setTimeout(() => {
@@ -1318,7 +1335,10 @@ ${mealsList}
         _isNew: true,
         _status: 'read',
       };
-      setMessages(prev => [...prev, botMsg]);
+      setMessages(prev => {
+        if (prev.length >= 30) return prev;
+        return [...prev, botMsg];
+      });
 
       if (data.tokens_used) {
         const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
@@ -1343,7 +1363,10 @@ ${mealsList}
         _isNew: true,
         _status: 'read',
       };
-      setMessages(prev => [...prev, botMsg]);
+      setMessages(prev => {
+        if (prev.length >= 30) return prev;
+        return [...prev, botMsg];
+      });
     }
     setIsLoading(false);
   };
@@ -1368,30 +1391,32 @@ ${mealsList}
         <View>
           <Text style={{ color: '#1A2030', fontSize: 22, fontWeight: 'bold' }}>MedicAi</Text>
           <Text style={{ color: 'rgba(0,150,120,0.45)', fontSize: 7, letterSpacing: 2 }}>ESPACE SANTÉ INTELLIGENT</Text>
-          <Text style={{
-            fontSize: fp(10),
-            fontWeight: '500',
-            color: 'rgba(0,217,132,0.5)',
-            letterSpacing: 2,
-            marginTop: wp(2),
-          }}>LXM-2K7F4A</Text>
         </View>
-        <View style={{
-          backgroundColor: 'rgba(0,180,130,0.08)',
-          borderWidth: 1,
-          borderColor: 'rgba(0,180,130,0.2)',
-          borderRadius: 14,
-          paddingHorizontal: 8,
-          paddingVertical: 3,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 4,
-        }}>
-          <Svg width={wp(10)} height={wp(10)} viewBox="0 0 24 24" fill="#00D984">
-            <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-          </Svg>
-          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#00D984' }} />
-          <Text style={{ color: '#00A878', fontSize: 10 }}>En ligne</Text>
+        <View style={{ alignItems: 'flex-end' }}>
+          <View style={{
+            backgroundColor: 'rgba(0,180,130,0.08)',
+            borderWidth: 1,
+            borderColor: 'rgba(0,180,130,0.2)',
+            borderRadius: 14,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+          }}>
+            <Svg width={wp(10)} height={wp(10)} viewBox="0 0 24 24" fill="#00D984">
+              <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </Svg>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#00D984' }} />
+            <Text style={{ color: '#00A878', fontSize: 10 }}>En ligne</Text>
+          </View>
+          <Text style={{
+            fontSize: fp(9),
+            fontWeight: '600',
+            color: 'rgba(0,217,132,0.4)',
+            letterSpacing: 1.5,
+            marginTop: wp(3),
+          }}>LXM-2K7F4A</Text>
         </View>
       </View>
 
@@ -1418,7 +1443,7 @@ ${mealsList}
             gap: wp(12),
             paddingHorizontal: wp(24),
             marginTop: 8,
-            marginBottom: 4,
+            marginBottom: wp(14),
           }}>
             <MetalCard
               title="MediBook"
@@ -1458,28 +1483,7 @@ ${mealsList}
               messages={messages}
               searchHits={searchHits}
               onBallPress={handleBallPress}
-              onNewSession={() => {
-                Alert.alert(
-                  'Nouvelle session',
-                  'Souhaitez-vous compacter cette discussion et la ranger dans votre Secret Pocket ? Vous pourrez la reimporter plus tard.',
-                  [
-                    {
-                      text: 'Compacter et ranger',
-                      onPress: () => {
-                        console.log('Compactage vers Secret Pocket');
-                      }
-                    },
-                    {
-                      text: 'Supprimer la session',
-                      style: 'destructive',
-                      onPress: () => {
-                        console.log('Session supprimee');
-                      }
-                    },
-                    { text: 'Annuler', style: 'cancel' },
-                  ]
-                );
-              }}
+              onNewSession={() => setShowNewSessionSheet(true)}
             />
           </Animated.View>
 
@@ -2140,6 +2144,152 @@ ${mealsList}
               {/* Bouton Annuler */}
               <Pressable
                 onPress={() => setShowDocumentSheet(false)}
+                style={{
+                  paddingVertical: wp(14), alignItems: 'center',
+                  borderRadius: wp(14), borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.1)',
+                }}
+              >
+                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* === BOTTOM SHEET — Nouvelle session === */}
+      <Modal
+        visible={showNewSessionSheet}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowNewSessionSheet(false)}
+      >
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            justifyContent: 'flex-end',
+          }}
+          onPress={() => setShowNewSessionSheet(false)}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient
+              colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{
+                borderTopLeftRadius: wp(24),
+                borderTopRightRadius: wp(24),
+                paddingHorizontal: wp(20),
+                paddingTop: wp(12),
+                paddingBottom: wp(34),
+              }}
+            >
+              {/* Poignee */}
+              <View style={{
+                width: wp(40), height: wp(4), borderRadius: wp(2),
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                alignSelf: 'center', marginBottom: wp(20),
+              }}/>
+
+              {/* Titre */}
+              <Text style={{
+                fontSize: fp(20), fontWeight: '700', color: '#FFFFFF', marginBottom: wp(4),
+              }}>Nouvelle session</Text>
+              <Text style={{
+                fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(24), lineHeight: fp(18),
+              }}>Que souhaitez-vous faire de cette conversation ?</Text>
+
+              {/* Option 1 : Compacter et ranger */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => { setShowNewSessionSheet(false); console.log('Compactage Secret Pocket'); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(212,175,55,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round"/>
+                    <Rect x="9" y="10" width="6" height="5" rx="1" stroke="#D4AF37" strokeWidth="1.5"/>
+                    <Path d="M10 10V8a2 2 0 014 0v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Compacter et ranger</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Sauvegarder dans votre Secret Pocket</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Option 2 : Demarrer a zero */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => { setShowNewSessionSheet(false); console.log('Nouvelle session vierge'); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(0,217,132,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Circle cx="12" cy="12" r="9" stroke="#00D984" strokeWidth="1.5" fill="none"/>
+                    <Line x1="12" y1="8" x2="12" y2="16" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Line x1="8" y1="12" x2="16" y2="12" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Nouvelle session vierge</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Sans sauvegarder la conversation</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Option 3 : Supprimer */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => { setShowNewSessionSheet(false); console.log('Session supprimee'); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,107,107,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(16),
+                  borderWidth: 1, borderColor: 'rgba(255,107,107,0.1)',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(255,107,107,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <Path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FF6B6B', marginBottom: wp(2) }}>Supprimer la session</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,107,107,0.4)' }}>Cette action est irreversible</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,107,107,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Bouton Annuler */}
+              <Pressable
+                onPress={() => setShowNewSessionSheet(false)}
                 style={{
                   paddingVertical: wp(14), alignItems: 'center',
                   borderRadius: wp(14), borderWidth: 1,
