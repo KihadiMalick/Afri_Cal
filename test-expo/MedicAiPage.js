@@ -14,8 +14,6 @@ import Svg, {
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import MediBookPage from './MediBookPage';
-import SecretPocketPage from './SecretPocketPage';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -951,6 +949,119 @@ const ModalScrollContent = ({ selectedMessage, closeModal, handleRecipePress, se
 };
 
 // ============================================
+// MEDIBOOK — DATA + ICONS
+// ============================================
+const mbDataStatus = [
+  { name: 'Nutrition', days: 87, total: 90, percent: 96 },
+  { name: 'Hydratation', days: 72, total: 90, percent: 80 },
+  { name: 'Activite physique', days: 45, total: 90, percent: 50 },
+  { name: 'Humeur', days: 60, total: 90, percent: 67 },
+  { name: 'Conversations ALIXEN', days: 8, total: null, percent: null, status: 'OK' },
+  { name: 'Secret Pocket', days: null, total: null, percent: null, status: 'Optionnel' },
+];
+
+const mbSections = [
+  { icon: 'user', title: 'Page de garde', desc: 'Nom, age, LixTag, periode', color: '#00D984' },
+  { icon: 'body', title: 'Profil morphologique', desc: 'Poids, taille, BMI, BMR, TDEE', color: '#4DA6FF' },
+  { icon: 'food', title: 'Nutrition 3 mois', desc: 'Calories, macros, tendances', color: '#FF8C42' },
+  { icon: 'water', title: 'Hydratation', desc: 'Moyenne vs objectif', color: '#4DA6FF' },
+  { icon: 'run', title: 'Activite physique', desc: 'Frequence, types, calories', color: '#00D984' },
+  { icon: 'mood', title: "Courbe d'humeur", desc: 'Evolution et correlations', color: '#9B6DFF' },
+  { icon: 'alert', title: "Points d'attention", desc: 'Carences, alertes ALIXEN', color: '#FF6B6B' },
+  { icon: 'qr', title: 'QR Code profil', desc: 'Lien vers votre profil Lixum', color: '#D4AF37' },
+];
+
+const MbSectionIcon = ({ type, color, size = wp(18) }) => {
+  switch (type) {
+    case 'user':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Circle cx="12" cy="8" r="4" stroke={color} strokeWidth="1.5" /><Path d="M4 21v-1a6 6 0 0112 0v1" stroke={color} strokeWidth="1.5" strokeLinecap="round" /></Svg>);
+    case 'body':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Circle cx="12" cy="5" r="3" stroke={color} strokeWidth="1.5" /><Path d="M12 10v8m-4-6h8" stroke={color} strokeWidth="1.5" strokeLinecap="round" /><Path d="M9 22l3-4 3 4" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>);
+    case 'food':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Path d="M3 2v8c0 1.1.9 2 2 2h2a2 2 0 002-2V2" stroke={color} strokeWidth="1.5" strokeLinecap="round" /><Line x1="6" y1="2" x2="6" y2="22" stroke={color} strokeWidth="1.5" strokeLinecap="round" /><Path d="M18 2c0 4-2 6-2 10h4c0-4-2-6-2-10z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><Line x1="18" y1="12" x2="18" y2="22" stroke={color} strokeWidth="1.5" strokeLinecap="round" /></Svg>);
+    case 'water':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Path d="M12 2c-4 6-7 9-7 13a7 7 0 0014 0c0-4-3-7-7-13z" stroke={color} strokeWidth="1.5" strokeLinejoin="round" /></Svg>);
+    case 'run':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Circle cx="14" cy="4" r="2" stroke={color} strokeWidth="1.5" /><Path d="M6 20l4-4 2 2 4-5 2 1" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><Path d="M10 16l-2-4 5-3" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>);
+    case 'mood':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5" /><Path d="M8 14s1.5 2 4 2 4-2 4-2" stroke={color} strokeWidth="1.5" strokeLinecap="round" /><Circle cx="9" cy="10" r="0.5" fill={color} /><Circle cx="15" cy="10" r="0.5" fill={color} /></Svg>);
+    case 'alert':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke={color} strokeWidth="1.5" strokeLinejoin="round" /><Line x1="12" y1="9" x2="12" y2="13" stroke={color} strokeWidth="1.5" strokeLinecap="round" /><Circle cx="12" cy="16" r="0.5" fill={color} /></Svg>);
+    case 'qr':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Rect x="3" y="3" width="7" height="7" rx="1" stroke={color} strokeWidth="1.5" /><Rect x="14" y="3" width="7" height="7" rx="1" stroke={color} strokeWidth="1.5" /><Rect x="3" y="14" width="7" height="7" rx="1" stroke={color} strokeWidth="1.5" /><Rect x="14" y="14" width="4" height="4" rx="0.5" stroke={color} strokeWidth="1.5" /><Line x1="21" y1="14" x2="21" y2="21" stroke={color} strokeWidth="1.5" strokeLinecap="round" /><Line x1="14" y1="21" x2="21" y2="21" stroke={color} strokeWidth="1.5" strokeLinecap="round" /></Svg>);
+    default: return null;
+  }
+};
+
+const mbGetBarColor = (percent) => {
+  if (percent >= 80) return '#00D984';
+  if (percent >= 50) return '#FF8C42';
+  return '#FF6B6B';
+};
+
+const MbProgressRow = ({ item }) => {
+  const hasPercent = item.percent !== null;
+  // Fix: Conversations ALIXEN = emerald, Secret Pocket = gold (not black)
+  const barColor = hasPercent
+    ? mbGetBarColor(item.percent)
+    : item.status === 'OK' ? '#00D984' : '#D4AF37';
+  const detail = item.total
+    ? `${item.days} jours sur ${item.total}`
+    : item.days ? `${item.days} sessions` : '';
+
+  return (
+    <View style={{ marginBottom: wp(14) }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(4) }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436' }}>{item.name}</Text>
+          {detail ? <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)' }}>{detail}</Text> : null}
+        </View>
+        <Text style={{ fontSize: fp(12), fontWeight: '700', color: hasPercent ? barColor : barColor }}>
+          {hasPercent ? `${item.percent}%` : item.status}
+        </Text>
+      </View>
+      <View style={{ height: wp(6), borderRadius: wp(3), backgroundColor: '#E8ECF0', overflow: 'hidden' }}>
+        <View style={{
+          height: '100%',
+          width: hasPercent ? `${item.percent}%` : (item.status === 'OK' ? '30%' : '15%'),
+          borderRadius: wp(3), backgroundColor: barColor,
+        }} />
+      </View>
+    </View>
+  );
+};
+
+// ============================================
+// SECRET POCKET — DATA + ICONS
+// ============================================
+const spCategories = [
+  { id: 'diagnostics', title: 'Diagnostics a surveiller', desc: 'Diabete, hypertension, cholesterol...', icon: 'heart-pulse', color: '#FF6B6B', count: 2 },
+  { id: 'allergies', title: 'Allergies et intolerances', desc: 'Alimentaires, medicamenteuses...', icon: 'shield-alert', color: '#FF8C42', count: 1 },
+  { id: 'medications', title: 'Medicaments en cours', desc: 'Traitements actuels et posologie', icon: 'pill', color: '#4DA6FF', count: 0 },
+  { id: 'lab-results', title: "Resultats d'analyses", desc: 'Bilans sanguins, examens...', icon: 'flask', color: '#00D984', count: 3 },
+  { id: 'notes', title: 'Notes personnelles', desc: 'Vos observations de sante', icon: 'edit', color: '#9B6DFF', count: 5 },
+  { id: 'conversations', title: 'Conversations sensibles', desc: 'Echanges prives avec ALIXEN', icon: 'message-lock', color: '#D4AF37', count: 4 },
+];
+
+const renderCategoryIcon = (iconName, color, size = wp(20)) => {
+  switch (iconName) {
+    case 'heart-pulse':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke={color} strokeWidth="1.5" /><Path d="M3 12h4l3-6 4 12 3-6h4" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>);
+    case 'shield-alert':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke={color} strokeWidth="1.5" /><Line x1="12" y1="9" x2="12" y2="13" stroke={color} strokeWidth="1.5" strokeLinecap="round" /><Circle cx="12" cy="16" r="0.5" fill={color} /></Svg>);
+    case 'pill':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Path d="M10.5 1.5l-8 8a4.24 4.24 0 006 6l8-8a4.24 4.24 0 00-6-6z" stroke={color} strokeWidth="1.5" /><Line x1="8" y1="8" x2="14" y2="14" stroke={color} strokeWidth="1.5" strokeLinecap="round" /></Svg>);
+    case 'flask':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Path d="M9 2v6l-5 8a3 3 0 002.6 4.5h10.8A3 3 0 0020 16l-5-8V2" stroke={color} strokeWidth="1.5" strokeLinecap="round" /><Line x1="9" y1="2" x2="15" y2="2" stroke={color} strokeWidth="1.5" strokeLinecap="round" /><Path d="M7 15h10" stroke={color} strokeWidth="1.5" strokeLinecap="round" /></Svg>);
+    case 'edit':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke={color} strokeWidth="1.5" /></Svg>);
+    case 'message-lock':
+      return (<Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke={color} strokeWidth="1.5" /><Rect x="9" y="8" width="6" height="5" rx="1" stroke={color} strokeWidth="1.5" /><Path d="M10 8V6.5a2 2 0 014 0V8" stroke={color} strokeWidth="1.5" strokeLinecap="round" /></Svg>);
+    default: return null;
+  }
+};
+
+// ============================================
 // COMPOSANT PRINCIPAL
 // ============================================
 export default function MedicAiPage() {
@@ -998,6 +1109,10 @@ export default function MedicAiPage() {
   const [showDocumentSheet, setShowDocumentSheet] = useState(false);
   const [showNewSessionSheet, setShowNewSessionSheet] = useState(false);
 
+  // Secret Pocket state
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [showAddDataSheet, setShowAddDataSheet] = useState(false);
+
   // Refs
   const scrollViewRef = useRef(null);
   const inputRef = useRef(null);
@@ -1006,6 +1121,10 @@ export default function MedicAiPage() {
   const contentEntry = useRef(new Animated.Value(0)).current;
   const inputEntry = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  // Sub-page animation refs
+  const mbGenerateScale = useRef(new Animated.Value(1)).current;
+  const spAddScale = useRef(new Animated.Value(1)).current;
 
   // ── Chargement des données au mount ──────────────────────────────────────
   useEffect(() => {
@@ -1376,12 +1495,353 @@ ${mealsList}
     setIsLoading(false);
   };
 
+  // ── RENDER MEDIBOOK ─────────────────────────────────────────────────────
+  const renderMediBook = () => (
+    <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+      <StatusBar barStyle="light-content" />
+      {/* Header */}
+      <LinearGradient
+        colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+        style={{
+          paddingTop: Platform.OS === 'android' ? 35 : 50,
+          paddingBottom: wp(14), paddingHorizontal: wp(16),
+          flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+          borderBottomWidth: 1, borderBottomColor: '#4A4F55',
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
+          <Pressable delayPressIn={120} onPress={() => setCurrentSubPage('main')}
+            style={({ pressed }) => ({
+              width: wp(36), height: wp(36), borderRadius: wp(18),
+              backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55',
+              justifyContent: 'center', alignItems: 'center',
+              transform: [{ scale: pressed ? 0.92 : 1 }],
+            })}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View>
+            <Text style={{ color: '#FFFFFF', fontSize: fp(22), fontWeight: '700' }}>MediBook</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: fp(12) }}>Votre rapport sante</Text>
+          </View>
+        </View>
+        <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
+          <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
+        </View>
+      </LinearGradient>
+
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(40) }}>
+        {/* Illustration — reduced spacing */}
+        <View style={{ alignItems: 'center', marginTop: wp(12), marginBottom: wp(10) }}>
+          <Svg width={wp(64)} height={wp(64)} viewBox="0 0 64 64" fill="none">
+            <Rect x="12" y="8" width="28" height="48" rx="3" stroke="#00D984" strokeWidth="1.5" />
+            <Line x1="18" y1="18" x2="34" y2="18" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" />
+            <Line x1="18" y1="24" x2="34" y2="24" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" />
+            <Line x1="18" y1="30" x2="30" y2="30" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" />
+            <Line x1="18" y1="36" x2="28" y2="36" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" />
+            <Circle cx="46" cy="20" r="6" stroke="#00D984" strokeWidth="1.5" />
+            <Path d="M46 26v10c0 4-3 7-7 7s-7-3-7-7" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" />
+            <Circle cx="46" cy="20" r="2" fill="#00D984" />
+          </Svg>
+        </View>
+
+        {/* Etat des donnees */}
+        <View style={{
+          backgroundColor: '#FAFBFC', borderRadius: wp(16),
+          borderLeftWidth: wp(3), borderLeftColor: '#00D984',
+          padding: wp(16), marginBottom: wp(20),
+          shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.08, shadowRadius: 12, elevation: 4,
+        }}>
+          <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#2D3436', marginBottom: wp(16) }}>
+            Etat de vos donnees
+          </Text>
+          {mbDataStatus.map((item, i) => <MbProgressRow key={i} item={item} />)}
+        </View>
+
+        {/* Contenu du rapport */}
+        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#2D3436', marginTop: wp(4), marginBottom: wp(14) }}>
+          Contenu de votre MediBook
+        </Text>
+        {mbSections.map((sec, i) => (
+          <LinearGradient key={i} colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+            style={{
+              flexDirection: 'row', alignItems: 'center',
+              borderRadius: wp(12), padding: wp(12), marginBottom: wp(8),
+              borderWidth: 1, borderColor: '#4A4F55',
+            }}>
+            <View style={{
+              width: wp(36), height: wp(36), borderRadius: wp(18),
+              backgroundColor: `${sec.color}20`,
+              justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+            }}>
+              <MbSectionIcon type={sec.icon} color={sec.color} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: '#FFFFFF', fontSize: fp(13), fontWeight: '600' }}>{sec.title}</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: fp(11) }}>{sec.desc}</Text>
+            </View>
+          </LinearGradient>
+        ))}
+
+        {/* Bouton Generer */}
+        <Pressable delayPressIn={120}
+          onPress={() => Alert.alert('MediBook', 'La generation de votre MediBook sera disponible prochainement !')}
+          onPressIn={() => Animated.timing(mbGenerateScale, { toValue: 0.95, duration: 120, useNativeDriver: true }).start()}
+          onPressOut={() => Animated.spring(mbGenerateScale, { toValue: 1, useNativeDriver: true }).start()}>
+          <Animated.View style={{ transform: [{ scale: mbGenerateScale }], marginTop: wp(24), marginBottom: wp(32) }}>
+            <LinearGradient colors={['#00D984', '#00B871']}
+              style={{ borderRadius: wp(16), paddingVertical: wp(16), flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: wp(10) }}>
+              <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
+                <Rect x="4" y="2" width="12" height="18" rx="2" stroke="#FFF" strokeWidth="1.5" />
+                <Line x1="8" y1="7" x2="12" y2="7" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" />
+                <Line x1="8" y1="11" x2="12" y2="11" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" />
+                <Path d="M16 8l4 4-4 4" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+              <View>
+                <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '700' }}>Generer mon MediBook</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: fp(11) }}>500 Lix — Rapport PDF 3 mois</Text>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+        </Pressable>
+      </ScrollView>
+    </View>
+  );
+
+  // ── RENDER SECRET POCKET — LOCKED ──────────────────────────────────────
+  const renderSecretPocketLocked = () => (
+    <LinearGradient colors={['#1A1D22', '#252A30', '#1A1D22']} style={{ flex: 1 }}>
+      <StatusBar barStyle="light-content" />
+      <View style={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(16) }}>
+        <Pressable delayPressIn={120}
+          onPress={() => { setIsUnlocked(false); setCurrentSubPage('main'); }}
+          style={({ pressed }) => ({
+            width: wp(36), height: wp(36), borderRadius: wp(18),
+            backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55',
+            justifyContent: 'center', alignItems: 'center',
+            transform: [{ scale: pressed ? 0.92 : 1 }],
+          })}>
+          <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+            <Path d="M15 19l-7-7 7-7" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </Svg>
+        </Pressable>
+      </View>
+
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: wp(40) }}>
+        <Svg width={wp(90)} height={wp(90)} viewBox="0 0 64 64" fill="none">
+          <Path d="M32 4L8 16v12c0 16.5 10.2 31.9 24 36 13.8-4.1 24-19.5 24-36V16L32 4z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" />
+          <Rect x="22" y="26" width="20" height="16" rx="3" stroke="#D4AF37" strokeWidth="1.5" />
+          <Path d="M26 26v-4a6 6 0 0112 0v4" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
+          <Circle cx="32" cy="34" r="2" fill="#D4AF37" />
+          <Line x1="32" y1="36" x2="32" y2="39" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
+        </Svg>
+        <Text style={{ color: '#D4AF37', fontSize: fp(24), fontWeight: '800', letterSpacing: 1, marginTop: wp(20) }}>Secret Pocket</Text>
+        <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: fp(13), marginTop: wp(6) }}>Votre coffre-fort sante confidentiel</Text>
+
+        <Pressable delayPressIn={120} onPress={() => setIsUnlocked(true)}
+          style={({ pressed }) => ({
+            width: wp(70), height: wp(70), borderRadius: wp(35),
+            backgroundColor: 'rgba(212,175,55,0.1)', borderWidth: 1.5, borderColor: '#D4AF37',
+            justifyContent: 'center', alignItems: 'center', marginTop: wp(32),
+            transform: [{ scale: pressed ? 0.92 : 1 }],
+          })}>
+          <Svg width={wp(32)} height={wp(32)} viewBox="0 0 24 24" fill="none">
+            <Path d="M12 2a7 7 0 00-7 7v0a7 7 0 007 7" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
+            <Path d="M17 5.5A6.97 6.97 0 0119 9v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
+            <Path d="M12 6a3 3 0 00-3 3v4" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
+            <Path d="M15 9a3 3 0 00-3-3" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
+            <Path d="M12 10v6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
+            <Path d="M8 16a5 5 0 004 4" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
+          </Svg>
+        </Pressable>
+        <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: fp(11), marginTop: wp(12) }}>Appuyez pour deverrouiller</Text>
+      </View>
+
+      {/* Texte confiance — fixed: added paddingBottom wp(40) */}
+      <View style={{
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: wp(6), paddingBottom: wp(40),
+      }}>
+        <Svg width={wp(12)} height={wp(12)} viewBox="0 0 24 24" fill="none">
+          <Rect x="5" y="11" width="14" height="10" rx="2" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
+          <Path d="M8 11V7a4 4 0 018 0v4" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" />
+        </Svg>
+        <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: fp(10) }}>Chiffrement de bout en bout</Text>
+      </View>
+    </LinearGradient>
+  );
+
+  // ── RENDER SECRET POCKET — UNLOCKED ────────────────────────────────────
+  const renderSecretPocketUnlocked = () => (
+    <LinearGradient colors={['#1A1D22', '#252A30', '#1E2328']} style={{ flex: 1 }}>
+      <StatusBar barStyle="light-content" />
+      {/* Header */}
+      <View style={{
+        paddingTop: Platform.OS === 'android' ? 35 : 50,
+        paddingBottom: wp(12), paddingHorizontal: wp(16),
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        borderBottomWidth: 1, borderBottomColor: 'rgba(74,79,85,0.5)',
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
+          <Pressable delayPressIn={120}
+            onPress={() => { setIsUnlocked(false); setCurrentSubPage('main'); }}
+            style={({ pressed }) => ({
+              width: wp(36), height: wp(36), borderRadius: wp(18),
+              backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55',
+              justifyContent: 'center', alignItems: 'center',
+              transform: [{ scale: pressed ? 0.92 : 1 }],
+            })}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View>
+            <Text style={{ color: '#D4AF37', fontSize: fp(20), fontWeight: '700' }}>Secret Pocket</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: fp(11) }}>Espace confidentiel</Text>
+          </View>
+        </View>
+        <Pressable delayPressIn={120}
+          onPress={() => { setIsUnlocked(false); setCurrentSubPage('main'); }}
+          style={({ pressed }) => ({
+            flexDirection: 'row', alignItems: 'center', gap: wp(4),
+            backgroundColor: 'rgba(212,175,55,0.1)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)',
+            borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(5),
+            transform: [{ scale: pressed ? 0.92 : 1 }],
+          })}>
+          <Svg width={wp(12)} height={wp(12)} viewBox="0 0 24 24" fill="none">
+            <Rect x="5" y="11" width="14" height="10" rx="2" stroke="#D4AF37" strokeWidth="1.5" />
+            <Path d="M8 11V7a4 4 0 018 0v4" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
+          </Svg>
+          <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '600' }}>Verrouiller</Text>
+        </Pressable>
+      </View>
+
+      {/* Indicateur securite */}
+      <View style={{
+        flexDirection: 'row', alignItems: 'center', gap: wp(6),
+        backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(8),
+        marginHorizontal: wp(16), marginTop: wp(10), marginBottom: wp(16),
+        padding: wp(8), paddingHorizontal: wp(12),
+      }}>
+        <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+          <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="rgba(212,175,55,0.6)" strokeWidth="1.5" />
+        </Svg>
+        <Text style={{ color: 'rgba(212,175,55,0.6)', fontSize: fp(10) }}>Chiffre et securise — Auto-lock 30s</Text>
+      </View>
+
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(40) }}>
+        {/* Categories — MetalCard gradient */}
+        {spCategories.map((cat) => (
+          <Pressable key={cat.id} delayPressIn={120}
+            onPress={() => console.log('Ouvrir ' + cat.id)}
+            style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }], marginBottom: wp(10) })}>
+            <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+              style={{
+                flexDirection: 'row', alignItems: 'center',
+                borderRadius: wp(16), padding: wp(16),
+                borderWidth: 1, borderColor: '#4A4F55',
+              }}>
+              <View style={{
+                width: wp(44), height: wp(44), borderRadius: wp(22),
+                backgroundColor: `${cat.color}1F`,
+                justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+              }}>
+                {renderCategoryIcon(cat.icon, cat.color)}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#FFFFFF', fontSize: fp(14), fontWeight: '600' }}>{cat.title}</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.35)', fontSize: fp(11), marginTop: wp(2) }}>{cat.desc}</Text>
+              </View>
+              {cat.count > 0 ? (
+                <View style={{
+                  width: wp(24), height: wp(24), borderRadius: wp(12),
+                  backgroundColor: `${cat.color}33`,
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(8),
+                }}>
+                  <Text style={{ color: cat.color, fontSize: fp(11), fontWeight: '700' }}>{cat.count}</Text>
+                </View>
+              ) : (
+                <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: fp(10), marginRight: wp(8) }}>Vide</Text>
+              )}
+              <Text style={{ color: 'rgba(255,255,255,0.15)', fontSize: fp(16) }}>{">"}</Text>
+            </LinearGradient>
+          </Pressable>
+        ))}
+
+        {/* Bouton ajouter — opens bottom sheet */}
+        <Pressable delayPressIn={120}
+          onPress={() => setShowAddDataSheet(true)}
+          onPressIn={() => Animated.timing(spAddScale, { toValue: 0.95, duration: 120, useNativeDriver: true }).start()}
+          onPressOut={() => Animated.spring(spAddScale, { toValue: 1, useNativeDriver: true }).start()}>
+          <Animated.View style={{ transform: [{ scale: spAddScale }], marginTop: wp(16), marginBottom: wp(32) }}>
+            <LinearGradient colors={['#D4AF37', '#B8941F']}
+              style={{ borderRadius: wp(16), paddingVertical: wp(16), flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: wp(8) }}>
+              <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2" strokeLinecap="round" />
+                <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2" strokeLinecap="round" />
+              </Svg>
+              <Text style={{ color: '#FFFFFF', fontSize: fp(15), fontWeight: '700' }}>Ajouter des donnees</Text>
+            </LinearGradient>
+          </Animated.View>
+        </Pressable>
+      </ScrollView>
+
+      {/* Bottom Sheet — Ajouter des donnees */}
+      <Modal visible={showAddDataSheet} transparent animationType="slide" onRequestClose={() => setShowAddDataSheet(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} onPress={() => setShowAddDataSheet(false)}>
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }} />
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>Ajouter des donnees</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>Dans quelle categorie souhaitez-vous ajouter ?</Text>
+              {spCategories.map((cat) => (
+                <Pressable key={cat.id} delayPressIn={120}
+                  onPress={() => { setShowAddDataSheet(false); console.log('Ajouter dans ' + cat.id); }}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    paddingVertical: wp(12), paddingHorizontal: wp(12),
+                    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(8),
+                    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                  }}>
+                  <View style={{
+                    width: wp(40), height: wp(40), borderRadius: wp(10),
+                    backgroundColor: cat.color + '18',
+                    justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                  }}>
+                    {renderCategoryIcon(cat.icon, cat.color, wp(18))}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{cat.title}</Text>
+                  </View>
+                  <Text style={{ fontSize: fp(16), color: 'rgba(255,255,255,0.2)' }}>{">"}</Text>
+                </Pressable>
+              ))}
+              <Pressable onPress={() => setShowAddDataSheet(false)}
+                style={{ marginTop: wp(8), paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </LinearGradient>
+  );
+
+  // ── RENDER SECRET POCKET — Dispatcher ──────────────────────────────────
+  const renderSecretPocket = () => {
+    if (!isUnlocked) return renderSecretPocketLocked();
+    return renderSecretPocketUnlocked();
+  };
+
   // ── RENDER ───────────────────────────────────────────────────────────────
   if (currentSubPage === 'medibook') {
-    return <MediBookPage onBack={() => setCurrentSubPage('main')} />;
+    return renderMediBook();
   }
   if (currentSubPage === 'secretpocket') {
-    return <SecretPocketPage onBack={() => setCurrentSubPage('main')} />;
+    return renderSecretPocket();
   }
 
   return (

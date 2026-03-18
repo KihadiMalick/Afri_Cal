@@ -1,3 +1,6 @@
+// NOTE: Ce fichier est une version standalone.
+// Pour le test Snack, tout est integre dans MedicAiPage.js
+// Ce fichier sera utilise lors de la migration vers la structure finale (EAS Build)
 // ──────────────────────────────────────────────────────────────────────────────
 // SecretPocketPage.js — Secret Pocket : Coffre-Fort Sante Chiffre
 // ──────────────────────────────────────────────────────────────────────────────
