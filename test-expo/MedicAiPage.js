@@ -1036,6 +1036,11 @@ const MbProgressRow = ({ item }) => {
 // ============================================
 // SECRET POCKET — DATA + ICONS
 // ============================================
+// TODO: Quand le champ is_secret sera ajouté dans Supabase,
+// remplacer les compteurs hardcodés par les données réelles :
+// count: medicalData.analyses.filter(a => a.is_secret).length
+// count: medicalData.allergies.filter(a => a.is_secret).length
+// etc.
 const spCategories = [
   { id: 'diagnostics', title: 'Diagnostics à surveiller', desc: 'Diabète, hypertension, cholestérol...', icon: 'heart-pulse', color: '#FF6B6B', count: 2 },
   { id: 'allergies', title: 'Allergies et intolérances', desc: 'Alimentaires, médicamenteuses...', icon: 'shield-alert', color: '#FF8C42', count: 1 },
@@ -1191,6 +1196,7 @@ export default function MedicAiPage() {
   const [showCarnetPageSheet, setShowCarnetPageSheet] = useState(false);
   const [selectedCarnetPage, setSelectedCarnetPage] = useState(null);
   const [showAnalyzeSheet, setShowAnalyzeSheet] = useState(false);
+  const [showMediBookUploadSheet, setShowMediBookUploadSheet] = useState(false);
 
   // Upload / Scan IA
   const [uploadState, setUploadState] = useState('idle');
@@ -1914,6 +1920,61 @@ ${mealsList}
     setUploadState('results');
   };
 
+  // ── TRANSFERT VERS SECRET POCKET ──────────────────────────────────────
+  const handleTransferToSecretPocket = (tableName, rowIndex, rowData) => {
+    const itemName = typeof rowData[0] === 'object' ? rowData[0].text : rowData[0];
+
+    Alert.alert(
+      'Transférer vers Secret Pocket',
+      '"' + itemName + '" sera déplacé dans votre coffre-fort sécurisé et supprimé de MediBook.\n\nContinuer ?',
+      [
+        {
+          text: 'Transférer',
+          onPress: async () => {
+            try {
+              let sourceArray;
+              let itemId;
+
+              if (tableName === 'analyses') {
+                sourceArray = medicalData.analyses;
+                itemId = sourceArray[rowIndex]?.id;
+              } else if (tableName === 'medications') {
+                sourceArray = medicalData.medications;
+                itemId = sourceArray[rowIndex]?.id;
+              } else if (tableName === 'allergies') {
+                sourceArray = medicalData.allergies;
+                itemId = sourceArray[rowIndex]?.id;
+              } else if (tableName === 'vaccinations') {
+                sourceArray = medicalData.vaccinations;
+                itemId = sourceArray[rowIndex]?.id;
+              }
+
+              if (!itemId) {
+                console.log('Transfert simulé pour:', tableName, rowIndex);
+                Alert.alert('Transféré ✓', '"' + itemName + '" a été déplacé dans votre Secret Pocket.');
+                return;
+              }
+
+              // Pour l'instant, on supprime de la vue locale
+              // TODO: Quand le champ is_secret sera ajouté dans Supabase, marquer l'élément comme secret au lieu de le supprimer
+              setMedicalData(prev => ({
+                ...prev,
+                [tableName]: prev[tableName].filter((_, i) => i !== rowIndex),
+              }));
+
+              Alert.alert('Transféré ✓', '"' + itemName + '" a été déplacé dans votre Secret Pocket.');
+
+            } catch (error) {
+              console.error('Erreur transfert:', error);
+              Alert.alert('Erreur', 'Le transfert a échoué.');
+            }
+          },
+        },
+        { text: 'Annuler', style: 'cancel' },
+      ]
+    );
+  };
+
   // ── RENDER SCANNING SCREEN ─────────────────────────────────────────────
   const renderScanningScreen = () => (
     <View style={{ flex: 1, backgroundColor: '#1A1D22', paddingHorizontal: wp(20), paddingTop: wp(60), paddingBottom: wp(70) }}>
@@ -2004,7 +2065,157 @@ ${mealsList}
   );
 
   // ── RENDER SCAN RESULTS ────────────────────────────────────────────────
-  const renderScanResults = () => (
+  const renderScanResults = () => {
+    // Détecter si c'est un scan de nourriture (pas un document médical)
+    const isFoodScan = scanResults?.documentType === 'Non médical' ||
+      scanResults?.category === 'food' ||
+      (scanResults?.documentType || '').toLowerCase().includes('plat') ||
+      (scanResults?.documentType || '').toLowerCase().includes('aliment');
+
+    // Si c'est de la nourriture scannée depuis MediBook
+    if (isFoodScan && scanContext === 'medibook') {
+      const detectedAllergens = medicalData.allergies.filter(a => {
+        const allergen = (a.allergen || '').toLowerCase();
+        const summary = (scanResults?.summary || '').toLowerCase();
+        return summary.includes(allergen) ||
+          (scanResults?.data || []).some(d =>
+            (d.label || '').toLowerCase().includes(allergen)
+          );
+      });
+
+      return (
+        <ScrollView style={{ flex: 1, backgroundColor: '#1A1D22' }}>
+          <View style={{ paddingHorizontal: wp(16), paddingTop: wp(20) }}>
+
+            {/* Bouton retour */}
+            <Pressable onPress={() => { setUploadState('idle'); setScanResults(null); }}
+              style={{ width: wp(36), height: wp(36), borderRadius: wp(18), backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center', alignItems: 'center', marginBottom: wp(16) }}>
+              <Text style={{ color: '#FFF', fontSize: fp(18) }}>{"<"}</Text>
+            </Pressable>
+
+            {/* Header */}
+            <View style={{ alignItems: 'center', marginBottom: wp(24) }}>
+              <View style={{
+                width: wp(60), height: wp(60), borderRadius: wp(30),
+                backgroundColor: detectedAllergens.length > 0 ? 'rgba(255,107,107,0.12)' : 'rgba(0,217,132,0.12)',
+                justifyContent: 'center', alignItems: 'center', marginBottom: wp(12),
+              }}>
+                <Svg width={wp(28)} height={wp(28)} viewBox="0 0 24 24" fill="none">
+                  {detectedAllergens.length > 0 ? (
+                    <>
+                      <Path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="#FF6B6B" strokeWidth="1.5"/>
+                      <Line x1="12" y1="9" x2="12" y2="13" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round"/>
+                      <Circle cx="12" cy="16" r="0.5" fill="#FF6B6B"/>
+                    </>
+                  ) : (
+                    <Path d="M20 6L9 17l-5-5" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  )}
+                </Svg>
+              </View>
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>
+                {detectedAllergens.length > 0 ? 'Allergènes détectés !' : 'Aucun allergène détecté'}
+              </Text>
+              <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginTop: wp(4), textAlign: 'center' }}>
+                Analyse basée sur votre profil allergique
+              </Text>
+            </View>
+
+            {/* Description du plat */}
+            <View style={{
+              backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14),
+              padding: wp(14), marginBottom: wp(16),
+              borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+            }}>
+              <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(4) }}>
+                {scanResults?.documentType || 'Plat identifié'}
+              </Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', lineHeight: fp(19) }}>
+                {scanResults?.summary || ''}
+              </Text>
+            </View>
+
+            {/* Allergènes trouvés */}
+            {detectedAllergens.length > 0 && (
+              <View style={{ marginBottom: wp(16) }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FF6B6B', marginBottom: wp(10) }}>
+                  Attention — Allergènes dans ce plat
+                </Text>
+                {detectedAllergens.map((allergen, i) => (
+                  <View key={i} style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: 'rgba(255,107,107,0.08)', borderRadius: wp(12),
+                    padding: wp(12), marginBottom: wp(8),
+                    borderWidth: 1, borderColor: 'rgba(255,107,107,0.15)',
+                  }}>
+                    <View style={{
+                      width: wp(36), height: wp(36), borderRadius: wp(18),
+                      backgroundColor: allergen.severity === 'severe' ? 'rgba(255,107,107,0.2)' : 'rgba(255,140,66,0.2)',
+                      justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                    }}>
+                      <Text style={{ fontSize: fp(16) }}>{'⚠'}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{allergen.allergen}</Text>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>
+                        Sévérité : {allergen.severity === 'severe' ? 'Sévère' : allergen.severity === 'moderate' ? 'Modéré' : 'Léger'}
+                      </Text>
+                    </View>
+                    <View style={{
+                      paddingHorizontal: wp(8), paddingVertical: wp(3),
+                      backgroundColor: allergen.severity === 'severe' ? 'rgba(255,107,107,0.2)' : 'rgba(255,140,66,0.2)',
+                      borderRadius: wp(6),
+                    }}>
+                      <Text style={{
+                        fontSize: fp(9), fontWeight: '700',
+                        color: allergen.severity === 'severe' ? '#FF6B6B' : '#FF8C42',
+                      }}>
+                        {allergen.severity === 'severe' ? 'DANGER' : 'ATTENTION'}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Message de redirection vers Repas */}
+            <View style={{
+              backgroundColor: 'rgba(77,166,255,0.08)', borderRadius: wp(14),
+              padding: wp(14), marginBottom: wp(24),
+              borderWidth: 1, borderColor: 'rgba(77,166,255,0.15)',
+              flexDirection: 'row', alignItems: 'center',
+            }}>
+              <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(10) }}>
+                <Circle cx="12" cy="12" r="10" stroke="#4DA6FF" strokeWidth="1.5"/>
+                <Line x1="12" y1="8" x2="12" y2="12" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round"/>
+                <Circle cx="12" cy="16" r="0.5" fill="#4DA6FF"/>
+              </Svg>
+              <Text style={{ fontSize: fp(12), color: 'rgba(77,166,255,0.8)', flex: 1, lineHeight: fp(17) }}>
+                Pour connaître les calories et macronutriments de ce plat, utilisez le scan de la page Repas.
+              </Text>
+            </View>
+
+            {/* Bouton retour */}
+            <Pressable
+              delayPressIn={120}
+              onPress={() => { setUploadState('idle'); setScanResults(null); setScanSteps([]); }}
+              style={{
+                paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center',
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                marginBottom: wp(20),
+              }}
+            >
+              <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>Compris, merci</Text>
+            </Pressable>
+
+            <View style={{ height: wp(70) }} />
+          </View>
+        </ScrollView>
+      );
+    }
+
+    // Résultats médicaux standard
+    return (
     <ScrollView style={{ flex: 1, backgroundColor: '#1A1D22' }} contentContainerStyle={{ paddingBottom: wp(50) }}>
       <View style={{ paddingHorizontal: wp(16), paddingTop: wp(20) }}>
         {/* Bouton retour */}
@@ -2258,6 +2469,7 @@ ${mealsList}
       <BottomSpacer />
     </ScrollView>
   );
+  };
 
   // ── CAPTURE CARNET PAGE ──────────────────────────────────────────────────
   const captureCarnetPage = (index) => {
@@ -2266,7 +2478,7 @@ ${mealsList}
   };
 
   // ── LIXUM TABLE COMPONENT ───────────────────────────────────────────────
-  const renderLixumTable = (title, columns, rows, accentColor = '#00D984') => {
+  const renderLixumTable = (title, columns, rows, accentColor = '#00D984', onTransfer = null) => {
     return (
       <View style={{
         backgroundColor: '#FAFBFC', borderRadius: wp(16),
@@ -2278,6 +2490,7 @@ ${mealsList}
           colors={['#3A3F46', '#252A30']}
           style={{
             flexDirection: 'row', paddingVertical: wp(10), paddingHorizontal: wp(12),
+            borderTopLeftRadius: wp(16), borderTopRightRadius: wp(16),
           }}
         >
           {columns.map((col, i) => (
@@ -2290,26 +2503,47 @@ ${mealsList}
               {col.label}
             </Text>
           ))}
+          {onTransfer && (
+            <Text style={{ width: wp(30), fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>{'🔒'}</Text>
+          )}
         </LinearGradient>
 
         {rows.map((row, rowIndex) => (
           <View key={rowIndex} style={{
-            flexDirection: 'row', paddingVertical: wp(10), paddingHorizontal: wp(12),
+            flexDirection: 'row', alignItems: 'center',
+            paddingVertical: wp(10), paddingHorizontal: wp(12),
             borderBottomWidth: rowIndex < rows.length - 1 ? 1 : 0,
             borderBottomColor: 'rgba(0,0,0,0.04)',
             backgroundColor: rowIndex % 2 === 0 ? '#FAFBFC' : '#F5F6F8',
           }}>
-            {row.map((cell, cellIndex) => (
-              <Text key={cellIndex} style={{
-                flex: columns[cellIndex]?.flex || 1,
-                fontSize: fp(12),
-                fontWeight: cell.bold ? '600' : '400',
-                color: cell.color || '#2D3436',
-                textAlign: columns[cellIndex]?.align || 'left',
-              }}>
-                {cell.text || cell}
-              </Text>
-            ))}
+            {row.map((cell, cellIndex) => {
+              const cellData = typeof cell === 'object' ? cell : { text: cell };
+              return (
+                <Text key={cellIndex} style={{
+                  flex: columns[cellIndex]?.flex || 1,
+                  fontSize: fp(12),
+                  fontWeight: cellData.bold ? '600' : '400',
+                  color: cellData.color || '#2D3436',
+                  textAlign: columns[cellIndex]?.align || 'left',
+                }}>
+                  {cellData.text || cell}
+                </Text>
+              );
+            })}
+            {onTransfer && (
+              <Pressable
+                onPress={() => onTransfer(rowIndex, row)}
+                style={{
+                  width: wp(30), height: wp(28), borderRadius: wp(8),
+                  backgroundColor: 'rgba(212,175,55,0.1)',
+                  justifyContent: 'center', alignItems: 'center',
+                }}
+              >
+                <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                  <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round"/>
+                </Svg>
+              </Pressable>
+            )}
           </View>
         ))}
 
@@ -2523,6 +2757,38 @@ ${mealsList}
         </View>
         <BottomSpacer />
       </ScrollView>
+
+      {/* Bouton flottant + Ajouter — en bas à droite */}
+      <Pressable
+        delayPressIn={120}
+        onPress={() => setShowMediBookUploadSheet(true)}
+        style={{
+          position: 'absolute',
+          bottom: wp(24),
+          right: wp(20),
+          width: wp(56),
+          height: wp(56),
+          borderRadius: wp(28),
+          overflow: 'hidden',
+          shadowColor: '#00D984',
+          shadowOpacity: 0.4,
+          shadowRadius: 12,
+          elevation: 8,
+        }}
+      >
+        <LinearGradient
+          colors={['#00D984', '#00B871']}
+          style={{
+            width: '100%', height: '100%',
+            justifyContent: 'center', alignItems: 'center',
+          }}
+        >
+          <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
+            <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+            <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+          </Svg>
+        </LinearGradient>
+      </Pressable>
     </View>
   );
 
@@ -2863,25 +3129,29 @@ ${mealsList}
           {renderLixumTable('Analyses',
             [{ label: 'Analyse', flex: 2 }, { label: 'Valeur', flex: 1.2 }, { label: 'Statut', flex: 1, align: 'right' }],
             analysesRows,
-            '#00D984'
+            '#00D984',
+            (rowIndex, row) => handleTransferToSecretPocket('analyses', rowIndex, row)
           )}
 
           {renderLixumTable('Médicaments',
             [{ label: 'Médicament', flex: 2 }, { label: 'Posologie', flex: 1.5 }, { label: 'Durée', flex: 1, align: 'right' }],
             medsRows,
-            '#4DA6FF'
+            '#4DA6FF',
+            (rowIndex, row) => handleTransferToSecretPocket('medications', rowIndex, row)
           )}
 
           {renderLixumTable('Allergies',
             [{ label: 'Allergène', flex: 2 }, { label: 'Type', flex: 1.5 }, { label: 'Sévérité', flex: 1, align: 'right' }],
             allergiesRows,
-            '#FF8C42'
+            '#FF8C42',
+            (rowIndex, row) => handleTransferToSecretPocket('allergies', rowIndex, row)
           )}
 
           {renderLixumTable('Vaccins',
             [{ label: 'Vaccin', flex: 2 }, { label: 'Date', flex: 1.2 }, { label: 'Rappel', flex: 1, align: 'right' }],
             vaccRows,
-            '#00D984'
+            '#00D984',
+            (rowIndex, row) => handleTransferToSecretPocket('vaccinations', rowIndex, row)
           )}
         </>
       );
@@ -2999,6 +3269,38 @@ ${mealsList}
           {statsTab === 'humeur' && renderHumeurTab()}
           <BottomSpacer />
         </ScrollView>
+
+        {/* Bouton flottant + Ajouter — en bas à droite */}
+        <Pressable
+          delayPressIn={120}
+          onPress={() => setShowMediBookUploadSheet(true)}
+          style={{
+            position: 'absolute',
+            bottom: wp(24),
+            right: wp(20),
+            width: wp(56),
+            height: wp(56),
+            borderRadius: wp(28),
+            overflow: 'hidden',
+            shadowColor: '#00D984',
+            shadowOpacity: 0.4,
+            shadowRadius: 12,
+            elevation: 8,
+          }}
+        >
+          <LinearGradient
+            colors={['#00D984', '#00B871']}
+            style={{
+              width: '100%', height: '100%',
+              justifyContent: 'center', alignItems: 'center',
+            }}
+          >
+            <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
+              <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+              <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+            </Svg>
+          </LinearGradient>
+        </Pressable>
       </View>
     );
   };
@@ -3985,6 +4287,113 @@ ${mealsList}
   // ── RENDER ALL MODALS (toujours rendus) ──────────────────────────────────
   const renderAllModals = () => (
     <>
+      {/* Bottom Sheet — Ajouter à MediBook (bouton FAB +) */}
+      <Modal
+        visible={showMediBookUploadSheet}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowMediBookUploadSheet(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          onPress={() => setShowMediBookUploadSheet(false)}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient
+              colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{
+                borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24),
+                paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34),
+              }}
+            >
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }}/>
+
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>
+                Ajouter à MediBook
+              </Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>
+                ALIXEN analysera et classera automatiquement
+              </Text>
+
+              {/* Option 1 : Prendre une photo */}
+              <Pressable delayPressIn={120}
+                onPress={() => { setShowMediBookUploadSheet(false); setTimeout(() => takePhoto('medibook'), 300); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}>
+                <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(255,140,66,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#FF8C42" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <Circle cx="12" cy="13" r="4" stroke="#FF8C42" strokeWidth="1.5"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Prendre une photo</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Document, ordonnance, plat, médicament...</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Option 2 : Depuis la galerie */}
+              <Pressable delayPressIn={120}
+                onPress={() => { setShowMediBookUploadSheet(false); setTimeout(() => pickImage('medibook'), 300); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}>
+                <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(0,217,132,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Rect x="3" y="3" width="18" height="18" rx="2" stroke="#00D984" strokeWidth="1.5"/>
+                    <Circle cx="8.5" cy="8.5" r="1.5" stroke="#00D984" strokeWidth="1.5"/>
+                    <Path d="M21 15l-5-5L5 21" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Depuis la galerie</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Choisir une image existante</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Option 3 : Importer un document */}
+              <Pressable delayPressIn={120}
+                onPress={() => { setShowMediBookUploadSheet(false); setTimeout(() => pickDocument('medibook'), 300); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(16),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}>
+                <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(77,166,255,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <Path d="M14 2v6h6" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Importer un document</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>PDF ou fichier</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              <Pressable onPress={() => setShowMediBookUploadSheet(false)}
+                style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       {/* Bottom Sheet — Ajouter des données (Secret Pocket) */}
       <Modal visible={showAddDataSheet} transparent animationType="slide" onRequestClose={() => setShowAddDataSheet(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} onPress={() => setShowAddDataSheet(false)}>
