@@ -72,6 +72,10 @@ const BUBBLE_COLOR_USER = '#3498DB';  // Bleu - messages utilisateur
 // ============================================
 // LOCK ICON
 // ============================================
+const BottomSpacer = () => (
+  <View style={{ height: wp(70) }} />
+);
+
 const LockIcon = ({ size = 20 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24">
     <Rect x="5" y="11" width="14" height="10" rx="2" fill="#8892A0" opacity={0.6} />
@@ -1169,6 +1173,7 @@ export default function MedicAiPage() {
   const [newChildName, setNewChildName] = useState('');
   const [showChildNameInput, setShowChildNameInput] = useState(false);
   const [newChildIsFree, setNewChildIsFree] = useState(false);
+  const [editingChildId, setEditingChildId] = useState(null);
   const [showCarnetPageSheet, setShowCarnetPageSheet] = useState(false);
   const [selectedCarnetPage, setSelectedCarnetPage] = useState(null);
   const [showAnalyzeSheet, setShowAnalyzeSheet] = useState(false);
@@ -1787,7 +1792,7 @@ ${mealsList}
 
   // ── RENDER SCANNING SCREEN ─────────────────────────────────────────────
   const renderScanningScreen = () => (
-    <View style={{ flex: 1, backgroundColor: '#1A1D22', paddingHorizontal: wp(20), paddingTop: wp(60), paddingBottom: wp(50) }}>
+    <View style={{ flex: 1, backgroundColor: '#1A1D22', paddingHorizontal: wp(20), paddingTop: wp(60), paddingBottom: wp(70) }}>
       {/* Bouton retour */}
       <Pressable
         onPress={() => {
@@ -2047,6 +2052,7 @@ ${mealsList}
           </Pressable>
         </View>
       </View>
+      <BottomSpacer />
     </ScrollView>
   );
 
@@ -2065,26 +2071,6 @@ ${mealsList}
         shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
       }}>
-        {/* Badge insigne titre */}
-        <View style={{
-          flexDirection: 'row', alignItems: 'center',
-          paddingHorizontal: wp(12), paddingVertical: wp(10),
-          backgroundColor: '#FAFBFC',
-        }}>
-          <View style={{
-            paddingHorizontal: wp(12), paddingVertical: wp(5),
-            backgroundColor: accentColor + '15',
-            borderRadius: wp(10), borderWidth: 1.5,
-            borderColor: accentColor + '40',
-            alignSelf: 'flex-start',
-          }}>
-            <Text style={{
-              fontSize: fp(12), fontWeight: '700', color: accentColor,
-              letterSpacing: 0.5,
-            }}>{title}</Text>
-          </View>
-        </View>
-
         <LinearGradient
           colors={['#3A3F46', '#252A30']}
           style={{
@@ -2332,6 +2318,7 @@ ${mealsList}
             </View>
           </View>
         </View>
+        <BottomSpacer />
       </ScrollView>
     </View>
   );
@@ -2482,6 +2469,7 @@ ${mealsList}
               </Text>
             </View>
           )}
+          <BottomSpacer />
         </ScrollView>
       </View>
     );
@@ -2795,6 +2783,7 @@ ${mealsList}
           {statsTab === 'santé' && renderSanteTab()}
           {statsTab === 'activité' && renderActiviteTab()}
           {statsTab === 'humeur' && renderHumeurTab()}
+          <BottomSpacer />
         </ScrollView>
       </View>
     );
@@ -2911,6 +2900,7 @@ ${mealsList}
             </LinearGradient>
           </Animated.View>
         </Pressable>
+        <BottomSpacer />
       </ScrollView>
     </View>
   );
@@ -2942,7 +2932,7 @@ ${mealsList}
         </Pressable>
       </View>
 
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: wp(50) }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: wp(70) }}>
         <Svg width={wp(90)} height={wp(90)} viewBox="0 0 64 64" fill="none">
           <Path d="M32 4L8 16v12c0 16.5 10.2 31.9 24 36 13.8-4.1 24-19.5 24-36V16L32 4z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" />
           <Rect x="22" y="26" width="20" height="16" rx="3" stroke="#D4AF37" strokeWidth="1.5" />
@@ -3122,6 +3112,7 @@ ${mealsList}
             </LinearGradient>
           </Animated.View>
         </Pressable>
+        <BottomSpacer />
       </ScrollView>
     </LinearGradient>
   );
@@ -3138,7 +3129,7 @@ ${mealsList}
     if (uploadState === 'results') return renderScanResults();
     if (uploadState === 'integrating') {
       return (
-        <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center', paddingBottom: wp(50) }}>
+        <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center', paddingBottom: wp(70) }}>
           <ActivityIndicator size="large" color="#00D984" />
           <Text style={{ fontSize: fp(16), fontWeight: '600', color: '#FFF', marginTop: wp(16) }}>
             Intégration en cours...
@@ -4526,7 +4517,18 @@ ${mealsList}
                 <Pressable
                   key={child.id}
                   delayPressIn={120}
-                  onPress={() => { setActiveProfile(child.id); setShowProfileSwitcher(false); }}
+                  onPress={() => {
+                    if (child.name === 'Mon enfant' || child.name.startsWith('Enfant ')) {
+                      setShowProfileSwitcher(false);
+                      setNewChildIsFree(child.free);
+                      setNewChildName('');
+                      setEditingChildId(child.id);
+                      setTimeout(() => setShowChildNameInput(true), 400);
+                    } else {
+                      setActiveProfile(child.id);
+                      setShowProfileSwitcher(false);
+                    }
+                  }}
                   style={{
                     flexDirection: 'row', alignItems: 'center',
                     paddingVertical: wp(14), paddingHorizontal: wp(12),
@@ -4568,6 +4570,7 @@ ${mealsList}
                   const isFree = children.length === 0;
                   setNewChildIsFree(isFree);
                   setNewChildName('');
+                  setEditingChildId(null);
                   setTimeout(() => setShowChildNameInput(true), 400);
                 }}
                 style={{
@@ -4836,13 +4839,18 @@ ${mealsList}
             <Text style={{
               fontSize: fp(18), fontWeight: '700', color: '#FFF',
               textAlign: 'center', marginBottom: wp(6),
-            }}>Ajouter un enfant</Text>
+            }}>{editingChildId ? 'Nommer cet enfant' : 'Ajouter un enfant'}</Text>
 
             <Text style={{
               fontSize: fp(12), color: 'rgba(255,255,255,0.4)',
               textAlign: 'center', marginBottom: wp(20),
             }}>
-              {newChildIsFree ? 'Premier enfant gratuit' : 'Coût : 5 000 Lix (5 $)'}
+              {editingChildId
+                ? 'Entrez le prénom de votre enfant'
+                : newChildIsFree
+                  ? 'Premier enfant gratuit'
+                  : 'Coût : 5 000 Lix'
+              }
             </Text>
 
             <View style={{
@@ -4872,14 +4880,22 @@ ${mealsList}
                   Alert.alert('Nom requis', 'Veuillez entrer le prénom de l\'enfant.');
                   return;
                 }
-                const newChild = {
-                  id: 'child-' + children.length,
-                  name: newChildName.trim(),
-                  age: '',
-                  free: newChildIsFree,
-                };
-                setChildren(prev => [...prev, newChild]);
-                setActiveProfile(newChild.id);
+                if (editingChildId) {
+                  setChildren(prev => prev.map(c =>
+                    c.id === editingChildId ? { ...c, name: newChildName.trim() } : c
+                  ));
+                  setActiveProfile(editingChildId);
+                  setEditingChildId(null);
+                } else {
+                  const newChild = {
+                    id: 'child-' + children.length,
+                    name: newChildName.trim(),
+                    age: '',
+                    free: newChildIsFree,
+                  };
+                  setChildren(prev => [...prev, newChild]);
+                  setActiveProfile(newChild.id);
+                }
                 setShowChildNameInput(false);
                 setNewChildName('');
               }}
@@ -4892,13 +4908,18 @@ ${mealsList}
                 }}
               >
                 <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>
-                  {newChildIsFree ? 'Ajouter gratuitement' : 'Ajouter (5 000 Lix)'}
+                  {editingChildId
+                    ? 'Confirmer'
+                    : newChildIsFree
+                      ? 'Ajouter gratuitement'
+                      : 'Ajouter (5 000 Lix)'
+                  }
                 </Text>
               </LinearGradient>
             </Pressable>
 
             <Pressable
-              onPress={() => { setShowChildNameInput(false); setNewChildName(''); }}
+              onPress={() => { setShowChildNameInput(false); setNewChildName(''); setEditingChildId(null); }}
               style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(8) }}
             >
               <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Annuler</Text>
