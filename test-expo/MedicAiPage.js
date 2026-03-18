@@ -1175,6 +1175,9 @@ export default function MedicAiPage() {
   const [showProfileSheet, setShowProfileSheet] = useState(false);
   const [showAddChildSheet, setShowAddChildSheet] = useState(false);
   const [newChildName, setNewChildName] = useState('');
+  const [showCarnetPageSheet, setShowCarnetPageSheet] = useState(false);
+  const [selectedCarnetPage, setSelectedCarnetPage] = useState(null);
+  const [showAnalyzeSheet, setShowAnalyzeSheet] = useState(false);
 
   // Upload / Scan IA
   const [uploadState, setUploadState] = useState('idle');
@@ -2040,56 +2043,9 @@ ${mealsList}
   );
 
   // ── CAPTURE CARNET PAGE ──────────────────────────────────────────────────
-  const captureCarnetPage = async (index) => {
-    try {
-      Alert.alert(
-        'Page ' + (index + 1),
-        'Comment souhaitez-vous ajouter cette page ?',
-        [
-          {
-            text: 'Prendre une photo',
-            onPress: async () => {
-              const permission = await ImagePicker.requestCameraPermissionsAsync();
-              if (!permission.granted) return;
-              const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                quality: 0.8,
-                base64: true,
-              });
-              if (!result.canceled) {
-                const photo = result.assets[0];
-                setCarnetPhotos(prev => {
-                  const updated = [...prev];
-                  updated[index] = { uri: photo.uri, base64: photo.base64, index };
-                  return updated;
-                });
-              }
-            }
-          },
-          {
-            text: 'Depuis la galerie',
-            onPress: async () => {
-              const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                quality: 0.8,
-                base64: true,
-              });
-              if (!result.canceled) {
-                const photo = result.assets[0];
-                setCarnetPhotos(prev => {
-                  const updated = [...prev];
-                  updated[index] = { uri: photo.uri, base64: photo.base64, index };
-                  return updated;
-                });
-              }
-            }
-          },
-          { text: 'Annuler', style: 'cancel' },
-        ]
-      );
-    } catch (error) {
-      console.log('Erreur capture carnet:', error);
-    }
+  const captureCarnetPage = (index) => {
+    setSelectedCarnetPage(index);
+    setShowCarnetPageSheet(true);
   };
 
   // ── PROFILE BADGE COMPONENT ──────────────────────────────────────────────
@@ -2219,7 +2175,7 @@ ${mealsList}
 
   // ── RENDER CARNET CAPTURE ──────────────────────────────────────────────────
   const renderCarnetCapture = () => {
-    const caseSize = (Dimensions.get('window').width - wp(16) * 2 - wp(6) * 4) / 5;
+    const caseSize = (Dimensions.get('window').width - wp(16) * 2 - wp(8) * 3) / 4;
     const capturedCount = carnetPhotos.filter(p => p).length;
 
     return (
@@ -2255,7 +2211,7 @@ ${mealsList}
         </LinearGradient>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(40) }}>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(6) }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8) }}>
             {Array.from({ length: 25 }, (_, index) => (
               carnetPhotos[index] ? (
                 <Pressable
@@ -2278,7 +2234,7 @@ ${mealsList}
                   }}
                   style={{
                     width: caseSize, height: caseSize,
-                    borderRadius: wp(8), overflow: 'hidden',
+                    borderRadius: wp(12), overflow: 'hidden',
                     borderWidth: 2, borderColor: '#00D984',
                   }}
                 >
@@ -2301,7 +2257,7 @@ ${mealsList}
                   onPress={() => captureCarnetPage(index)}
                   style={{
                     width: caseSize, height: caseSize,
-                    borderRadius: wp(8), borderWidth: 1.5,
+                    borderRadius: wp(12), borderWidth: 1.5,
                     borderColor: 'rgba(255,255,255,0.1)', borderStyle: 'dashed',
                     justifyContent: 'center', alignItems: 'center',
                     backgroundColor: 'rgba(255,255,255,0.03)',
@@ -2325,20 +2281,7 @@ ${mealsList}
                 onPress={() => {
                   const photos = carnetPhotos.filter(p => p);
                   if (photos.length === 0) return;
-                  Alert.alert(
-                    'Analyser ' + photos.length + ' page' + (photos.length > 1 ? 's' : ''),
-                    'ALIXEN va analyser vos pages et extraire toutes les informations médicales (vaccins, médicaments, diagnostics...).',
-                    [
-                      {
-                        text: 'Lancer l\'analyse',
-                        onPress: () => {
-                          console.log('Lancement analyse carnet:', photos.length, 'pages');
-                          startAIScan(photos[0].uri, 'Carnet de santé (' + photos.length + ' pages)', 'image/jpeg', photos[0].base64);
-                        }
-                      },
-                      { text: 'Annuler', style: 'cancel' },
-                    ]
-                  );
+                  setShowAnalyzeSheet(true);
                 }}
               >
                 <LinearGradient
@@ -2458,6 +2401,80 @@ ${mealsList}
             </View>
           ))}
         </StatsCard>
+
+        <View style={{
+          backgroundColor: '#FAFBFC', borderRadius: wp(16),
+          padding: wp(16), marginBottom: wp(12),
+          shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+        }}>
+          <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(12) }}>
+            Médicaments en cours
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+            <View style={{
+              width: wp(8), height: wp(8), borderRadius: wp(4),
+              backgroundColor: '#4DA6FF', marginRight: wp(10),
+            }}/>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436' }}>Vitamine D3</Text>
+              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)' }}>1000 UI / jour — 3 mois</Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+            <View style={{
+              width: wp(8), height: wp(8), borderRadius: wp(4),
+              backgroundColor: '#4DA6FF', marginRight: wp(10),
+            }}/>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436' }}>Fer (Tardyféron)</Text>
+              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)' }}>80 mg / jour — 2 mois</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={{
+          backgroundColor: '#FAFBFC', borderRadius: wp(16),
+          padding: wp(16), marginBottom: wp(12),
+          shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+        }}>
+          <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(12) }}>
+            Allergies et intolérances
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+            <View style={{
+              width: wp(8), height: wp(8), borderRadius: wp(4),
+              backgroundColor: '#FF8C42', marginRight: wp(10),
+            }}/>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436' }}>Arachides</Text>
+              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)' }}>Allergie alimentaire confirmée</Text>
+            </View>
+            <View style={{
+              paddingHorizontal: wp(8), paddingVertical: wp(3),
+              backgroundColor: 'rgba(255,107,107,0.1)', borderRadius: wp(8),
+            }}>
+              <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF6B6B' }}>SÉVÈRE</Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{
+              width: wp(8), height: wp(8), borderRadius: wp(4),
+              backgroundColor: '#FF8C42', marginRight: wp(10),
+            }}/>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436' }}>Lactose</Text>
+              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)' }}>Intolérance modérée</Text>
+            </View>
+            <View style={{
+              paddingHorizontal: wp(8), paddingVertical: wp(3),
+              backgroundColor: 'rgba(255,140,66,0.1)', borderRadius: wp(8),
+            }}>
+              <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF8C42' }}>MODÉRÉ</Text>
+            </View>
+          </View>
+        </View>
 
         <StatsCard title="Vaccins à jour">
           {['BCG', 'DTP', 'Hépatite B', 'Fièvre jaune'].map((v, i) => (
@@ -2622,8 +2639,11 @@ ${mealsList}
             <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: fp(12) }}>Votre rapport santé</Text>
           </View>
         </View>
-        <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
-          <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+          <ProfileBadge />
+          <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
+            <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
+          </View>
         </View>
       </LinearGradient>
 
@@ -4434,6 +4454,207 @@ ${mealsList}
               <Pressable onPress={() => setShowProfileSheet(false)}
                 style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
                 <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Fermer</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Bottom Sheet — Carnet Page (Photo / Galerie) */}
+      <Modal
+        visible={showCarnetPageSheet}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCarnetPageSheet(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          onPress={() => setShowCarnetPageSheet(false)}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient
+              colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{
+                borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24),
+                paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34),
+              }}
+            >
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }}/>
+
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>
+                Page {selectedCarnetPage !== null ? selectedCarnetPage + 1 : ''}
+              </Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>
+                Comment souhaitez-vous ajouter cette page ?
+              </Text>
+
+              {/* Prendre une photo */}
+              <Pressable
+                delayPressIn={120}
+                onPress={async () => {
+                  setShowCarnetPageSheet(false);
+                  const permission = await ImagePicker.requestCameraPermissionsAsync();
+                  if (!permission.granted) return;
+                  const result = await ImagePicker.launchCameraAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    quality: 0.8,
+                    base64: true,
+                  });
+                  if (!result.canceled) {
+                    const photo = result.assets[0];
+                    setCarnetPhotos(prev => {
+                      const updated = [...prev];
+                      updated[selectedCarnetPage] = { uri: photo.uri, base64: photo.base64, index: selectedCarnetPage };
+                      return updated;
+                    });
+                  }
+                }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(255,140,66,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#FF8C42" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <Circle cx="12" cy="13" r="4" stroke="#FF8C42" strokeWidth="1.5"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Prendre une photo</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Photographier la page du carnet</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Depuis la galerie */}
+              <Pressable
+                delayPressIn={120}
+                onPress={async () => {
+                  setShowCarnetPageSheet(false);
+                  const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    quality: 0.8,
+                    base64: true,
+                  });
+                  if (!result.canceled) {
+                    const photo = result.assets[0];
+                    setCarnetPhotos(prev => {
+                      const updated = [...prev];
+                      updated[selectedCarnetPage] = { uri: photo.uri, base64: photo.base64, index: selectedCarnetPage };
+                      return updated;
+                    });
+                  }
+                }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(16),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(0,217,132,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Rect x="3" y="3" width="18" height="18" rx="2" stroke="#00D984" strokeWidth="1.5"/>
+                    <Circle cx="8.5" cy="8.5" r="1.5" stroke="#00D984" strokeWidth="1.5"/>
+                    <Path d="M21 15l-5-5L5 21" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Depuis la galerie</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Choisir une photo existante</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => setShowCarnetPageSheet(false)}
+                style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}
+              >
+                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Bottom Sheet — Analyser pages carnet */}
+      <Modal
+        visible={showAnalyzeSheet}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowAnalyzeSheet(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          onPress={() => setShowAnalyzeSheet(false)}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient
+              colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{
+                borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24),
+                paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34),
+                alignItems: 'center',
+              }}
+            >
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(24) }}/>
+
+              <View style={{
+                width: wp(60), height: wp(60), borderRadius: wp(30),
+                backgroundColor: 'rgba(0,217,132,0.12)',
+                justifyContent: 'center', alignItems: 'center',
+                marginBottom: wp(16), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+              }}>
+                <Svg width={wp(28)} height={wp(28)} viewBox="0 0 24 24" fill="none">
+                  <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <Path d="M14 2v6h6" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </Svg>
+              </View>
+
+              <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', marginBottom: wp(8) }}>
+                Analyser {carnetPhotos.filter(p => p).length} page{carnetPhotos.filter(p => p).length > 1 ? 's' : ''}
+              </Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: fp(19), marginBottom: wp(24), paddingHorizontal: wp(10) }}>
+                ALIXEN va analyser vos pages et extraire toutes les informations médicales : vaccins, médicaments, diagnostics, examens...
+              </Text>
+
+              <Pressable
+                delayPressIn={120}
+                onPress={() => {
+                  setShowAnalyzeSheet(false);
+                  const photos = carnetPhotos.filter(p => p);
+                  if (photos.length > 0) {
+                    startAIScan(photos[0].uri, 'Carnet de santé (' + photos.length + ' pages)', 'image/jpeg', photos[0].base64);
+                  }
+                }}
+                style={{ width: '100%' }}
+              >
+                <LinearGradient
+                  colors={['#00D984', '#00B871']}
+                  style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center', width: '100%' }}
+                >
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Lancer l'analyse</Text>
+                </LinearGradient>
+              </Pressable>
+
+              <Pressable
+                onPress={() => setShowAnalyzeSheet(false)}
+                style={{ paddingVertical: wp(14), alignItems: 'center', width: '100%', marginTop: wp(8) }}
+              >
+                <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Annuler</Text>
               </Pressable>
             </LinearGradient>
           </Pressable>
