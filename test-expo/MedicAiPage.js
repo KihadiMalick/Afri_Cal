@@ -1164,7 +1164,7 @@ export default function MedicAiPage() {
   ]);
   const [carnetPhotos, setCarnetPhotos] = useState([]);
   const [statsTab, setStatsTab] = useState('nutrition');
-  const [showProfileSheet, setShowProfileSheet] = useState(false);
+  const [showProfileSwitcher, setShowProfileSwitcher] = useState(false);
   const [showAddChildSheet, setShowAddChildSheet] = useState(false);
   const [newChildName, setNewChildName] = useState('');
   const [showCarnetPageSheet, setShowCarnetPageSheet] = useState(false);
@@ -1202,6 +1202,20 @@ export default function MedicAiPage() {
   // Refs
   const scrollViewRef = useRef(null);
   const inputRef = useRef(null);
+  const carnetPulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (mediBookView === 'carnet' && carnetPhotos.filter(p => p).length === 0) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(carnetPulseAnim, { toValue: 1.08, duration: 800, useNativeDriver: true }),
+          Animated.timing(carnetPulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      carnetPulseAnim.setValue(1);
+    }
+  }, [mediBookView, carnetPhotos]);
 
   // Animations d'entrée
   const contentEntry = useRef(new Animated.Value(0)).current;
@@ -1860,7 +1874,7 @@ ${mealsList}
 
   // ── RENDER SCAN RESULTS ────────────────────────────────────────────────
   const renderScanResults = () => (
-    <ScrollView style={{ flex: 1, backgroundColor: '#1A1D22' }}>
+    <ScrollView style={{ flex: 1, backgroundColor: '#1A1D22' }} contentContainerStyle={{ paddingBottom: wp(40) }}>
       <View style={{ paddingHorizontal: wp(16), paddingTop: wp(20) }}>
         {/* Bouton retour */}
         <Pressable
@@ -2049,6 +2063,25 @@ ${mealsList}
         shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
       }}>
+        {/* Badge insigne titre */}
+        <View style={{
+          flexDirection: 'row', alignItems: 'center',
+          paddingHorizontal: wp(12), paddingVertical: wp(10),
+          backgroundColor: '#FAFBFC',
+        }}>
+          <View style={{
+            paddingHorizontal: wp(10), paddingVertical: wp(4),
+            backgroundColor: accentColor + '18',
+            borderRadius: wp(8), borderWidth: 1,
+            borderColor: accentColor + '30',
+          }}>
+            <Text style={{
+              fontSize: fp(11), fontWeight: '700', color: accentColor,
+              letterSpacing: 0.5,
+            }}>{title}</Text>
+          </View>
+        </View>
+
         <LinearGradient
           colors={['#3A3F46', '#252A30']}
           style={{
@@ -2099,30 +2132,33 @@ ${mealsList}
     );
   };
 
-  // ── PROFILE BADGE COMPONENT ──────────────────────────────────────────────
-  const ProfileBadge = () => {
-    const profileName = activeProfile === 'self' ? 'Moi' : (children.find(c => c.id === activeProfile)?.name || 'Moi');
-    return (
-      <Pressable
-        onPress={() => {
-          console.log('=== BOUTON MOI PRESSÉ ===');
-          setShowProfileSheet(true);
-        }}
-        style={{
-          backgroundColor: 'rgba(0,217,132,0.15)',
-          borderRadius: wp(14),
-          paddingHorizontal: wp(12),
-          paddingVertical: wp(6),
-          flexDirection: 'row',
-          alignItems: 'center',
-        }}
-      >
-        <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#00D984' }}>
-          {profileName} ▾
-        </Text>
-      </Pressable>
-    );
-  };
+  // ── PROFILE SWITCH BUTTON COMPONENT ──────────────────────────────────────
+  const renderProfileSwitchButton = () => (
+    <Pressable
+      onPress={() => setShowProfileSwitcher(true)}
+      delayPressIn={120}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,217,132,0.12)',
+        borderRadius: wp(14),
+        paddingHorizontal: wp(10),
+        paddingVertical: wp(6),
+        borderWidth: 1,
+        borderColor: 'rgba(0,217,132,0.2)',
+      }}
+    >
+      <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(5) }}>
+        <Path d="M17 1l4 4-4 4" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <Path d="M3 11V9a4 4 0 014-4h14" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <Path d="M7 23l-4-4 4-4" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <Path d="M21 13v2a4 4 0 01-4 4H3" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </Svg>
+      <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#00D984' }}>
+        {activeProfile === 'self' ? 'Moi' : (children.find(c => c.id === activeProfile)?.name || 'Moi')}
+      </Text>
+    </Pressable>
+  );
 
   // ── RENDER MEDIBOOK LANDING ────────────────────────────────────────────────
   const renderMediBookLanding = () => (
@@ -2155,7 +2191,7 @@ ${mealsList}
           </View>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
-          <ProfileBadge />
+          {renderProfileSwitchButton()}
           <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
             <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
           </View>
@@ -2333,7 +2369,7 @@ ${mealsList}
               <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: fp(12) }}>25 emplacements disponibles</Text>
             </View>
           </View>
-          <ProfileBadge />
+          {renderProfileSwitchButton()}
         </LinearGradient>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(40) }}>
@@ -2376,6 +2412,25 @@ ${mealsList}
                   }}>
                     <Text style={{ color: '#FFF', fontSize: fp(8), fontWeight: '700' }}>{index + 1}</Text>
                   </View>
+                </Pressable>
+              ) : (index === 0 && capturedCount === 0) ? (
+                <Pressable key={index} onPress={() => captureCarnetPage(0)}>
+                  <Animated.View style={{
+                    width: caseSize, height: caseSize,
+                    borderRadius: wp(12), borderWidth: 2,
+                    borderColor: '#00D984', borderStyle: 'dashed',
+                    justifyContent: 'center', alignItems: 'center',
+                    backgroundColor: 'rgba(0,217,132,0.08)',
+                    transform: [{ scale: carnetPulseAnim }],
+                  }}>
+                    <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none" style={{ marginBottom: wp(4) }}>
+                      <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <Circle cx="12" cy="13" r="4" stroke="#00D984" strokeWidth="1.5"/>
+                    </Svg>
+                    <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '600' }}>
+                      Commencez ici
+                    </Text>
+                  </Animated.View>
                 </Pressable>
               ) : (
                 <Pressable
@@ -2555,7 +2610,7 @@ ${mealsList}
         {renderLixumTable(
           'Médicaments',
           [
-            { label: 'Nom', flex: 2 },
+            { label: 'Médicament', flex: 2 },
             { label: 'Posologie', flex: 1.5 },
             { label: 'Durée', flex: 1, align: 'right' },
           ],
@@ -2711,7 +2766,7 @@ ${mealsList}
               <Text style={{ color: '#FFFFFF', fontSize: fp(22), fontWeight: '700' }}>Mes Stats</Text>
             </View>
           </View>
-          <ProfileBadge />
+          {renderProfileSwitchButton()}
         </LinearGradient>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(40) }}>
@@ -2778,7 +2833,7 @@ ${mealsList}
           </View>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
-          <ProfileBadge />
+          {renderProfileSwitchButton()}
           <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
             <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
           </View>
@@ -4444,14 +4499,14 @@ ${mealsList}
 
       {/* ===== MODAL — Profil Switcher MediBook ===== */}
       <Modal
-        visible={showProfileSheet}
+        visible={showProfileSwitcher}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setShowProfileSheet(false)}
+        onRequestClose={() => setShowProfileSwitcher(false)}
       >
         <Pressable
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
-          onPress={() => setShowProfileSheet(false)}
+          onPress={() => setShowProfileSwitcher(false)}
         >
           <Pressable onPress={(e) => e.stopPropagation()}>
             <LinearGradient
@@ -4464,16 +4519,16 @@ ${mealsList}
               <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }}/>
 
               <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>
-                Profil MediBook
+                Changer de profil
               </Text>
               <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>
                 Sélectionnez le carnet à consulter
               </Text>
 
-              {/* Option : Moi-même */}
+              {/* Mon carnet */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => { setActiveProfile('self'); setShowProfileSheet(false); }}
+                onPress={() => { setActiveProfile('self'); setShowProfileSwitcher(false); }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   paddingVertical: wp(14), paddingHorizontal: wp(12),
@@ -4498,18 +4553,18 @@ ${mealsList}
                   <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>LXM-2K7F4A</Text>
                 </View>
                 {activeProfile === 'self' && (
-                  <View style={{ width: wp(20), height: wp(20), borderRadius: wp(10), backgroundColor: '#00D984', justifyContent: 'center', alignItems: 'center' }}>
+                  <View style={{ width: wp(22), height: wp(22), borderRadius: wp(11), backgroundColor: '#00D984', justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ color: '#FFF', fontSize: fp(12), fontWeight: '700' }}>✓</Text>
                   </View>
                 )}
               </Pressable>
 
-              {/* Enfants existants */}
+              {/* Enfants */}
               {children.map((child) => (
                 <Pressable
                   key={child.id}
                   delayPressIn={120}
-                  onPress={() => { setActiveProfile(child.id); setShowProfileSheet(false); }}
+                  onPress={() => { setActiveProfile(child.id); setShowProfileSwitcher(false); }}
                   style={{
                     flexDirection: 'row', alignItems: 'center',
                     paddingVertical: wp(14), paddingHorizontal: wp(12),
@@ -4536,42 +4591,41 @@ ${mealsList}
                     </Text>
                   </View>
                   {activeProfile === child.id && (
-                    <View style={{ width: wp(20), height: wp(20), borderRadius: wp(10), backgroundColor: '#4DA6FF', justifyContent: 'center', alignItems: 'center' }}>
+                    <View style={{ width: wp(22), height: wp(22), borderRadius: wp(11), backgroundColor: '#4DA6FF', justifyContent: 'center', alignItems: 'center' }}>
                       <Text style={{ color: '#FFF', fontSize: fp(12), fontWeight: '700' }}>✓</Text>
                     </View>
                   )}
                 </Pressable>
               ))}
 
-              {/* Bouton ajouter un enfant */}
+              {/* Ajouter un enfant */}
               <Pressable
                 delayPressIn={120}
                 onPress={() => {
-                  setShowProfileSheet(false);
-                  if (children.length >= 1 && children.every(c => !c.free || children.length > 1)) {
+                  setShowProfileSwitcher(false);
+                  setTimeout(() => {
                     Alert.alert(
                       'Ajouter un enfant',
-                      'L\'ajout d\'un enfant supplémentaire coûte 5 000 Lix (5 $). Chaque enfant aura son propre carnet de santé et suivi personnalisé.\n\nSouhaitez-vous continuer ?',
+                      children.length === 0
+                        ? 'Votre premier enfant est gratuit ! Chaque enfant supplémentaire coûte 5 000 Lix.'
+                        : 'L\'ajout d\'un enfant supplémentaire coûte 5 000 Lix (5 $).',
                       [
-                        { text: 'Ajouter (5 000 Lix)', onPress: () => {
-                          const newChild = { id: 'child-' + children.length, name: 'Enfant ' + (children.length + 1), age: '', free: false };
+                        { text: 'Ajouter', onPress: () => {
+                          const isFree = children.length === 0;
+                          const newChild = { id: 'child-' + children.length, name: 'Enfant ' + (children.length + 1), age: '', free: isFree };
                           setChildren(prev => [...prev, newChild]);
                           setActiveProfile(newChild.id);
                         }},
                         { text: 'Annuler', style: 'cancel' },
                       ]
                     );
-                  } else {
-                    const newChild = { id: 'child-' + children.length, name: 'Enfant ' + (children.length + 1), age: '', free: false };
-                    setChildren(prev => [...prev, newChild]);
-                    setActiveProfile(newChild.id);
-                  }
+                  }, 400);
                 }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   paddingVertical: wp(14), paddingHorizontal: wp(12),
                   borderRadius: wp(14), marginBottom: wp(12),
-                  borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.1)', borderStyle: 'dashed',
+                  borderWidth: 1.5, borderColor: 'rgba(212,175,55,0.2)', borderStyle: 'dashed',
                 }}
               >
                 <View style={{
@@ -4584,12 +4638,12 @@ ${mealsList}
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#D4AF37' }}>Ajouter un enfant</Text>
                   <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)' }}>
-                    {children.length < 1 ? '1er enfant gratuit' : '5 000 Lix par enfant'}
+                    {children.length === 0 ? '1er enfant gratuit' : '5 000 Lix par enfant'}
                   </Text>
                 </View>
               </Pressable>
 
-              <Pressable onPress={() => setShowProfileSheet(false)}
+              <Pressable onPress={() => setShowProfileSwitcher(false)}
                 style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
                 <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Fermer</Text>
               </Pressable>
