@@ -1042,12 +1042,12 @@ const MbProgressRow = ({ item }) => {
 // count: medicalData.allergies.filter(a => a.is_secret).length
 // etc.
 const spCategories = [
-  { id: 'diagnostics', title: 'Diagnostics à surveiller', desc: 'Diabète, hypertension, cholestérol...', icon: 'heart-pulse', color: '#FF6B6B', count: 2 },
-  { id: 'allergies', title: 'Allergies et intolérances', desc: 'Alimentaires, médicamenteuses...', icon: 'shield-alert', color: '#FF8C42', count: 1 },
+  { id: 'diagnostics', title: 'Diagnostics à surveiller', desc: 'Diabète, hypertension, cholestérol...', icon: 'heart-pulse', color: '#FF6B6B', count: 0 },
+  { id: 'allergies', title: 'Allergies et intolérances', desc: 'Alimentaires, médicamenteuses...', icon: 'shield-alert', color: '#FF8C42', count: 0 },
   { id: 'medications', title: 'Médicaments en cours', desc: 'Traitements actuels et posologie', icon: 'pill', color: '#4DA6FF', count: 0 },
-  { id: 'lab-results', title: "Résultats d'analyses", desc: 'Bilans sanguins, examens...', icon: 'flask', color: '#00D984', count: 3 },
-  { id: 'notes', title: 'Notes personnelles', desc: 'Vos observations de santé', icon: 'edit', color: '#9B6DFF', count: 5 },
-  { id: 'conversations', title: 'Conversations sensibles', desc: 'Échanges privés avec ALIXEN', icon: 'message-lock', color: '#D4AF37', count: 4 },
+  { id: 'lab-results', title: "Résultats d'analyses", desc: 'Bilans sanguins, examens...', icon: 'flask', color: '#00D984', count: 0 },
+  { id: 'notes', title: 'Notes personnelles', desc: 'Vos observations de santé', icon: 'edit', color: '#9B6DFF', count: 0 },
+  { id: 'conversations', title: 'Conversations sensibles', desc: 'Échanges privés avec ALIXEN', icon: 'message-lock', color: '#D4AF37', count: 0 },
 ];
 
 const renderCategoryIcon = (iconName, color, size = wp(20)) => {
@@ -1743,6 +1743,10 @@ ${mealsList}
       });
       if (result.canceled) return;
       const file = result.assets[0];
+      // Reset avant nouveau scan
+      setScanResults(null);
+      setScanSteps([]);
+      setUploadState('idle');
       startAIScan(file.uri, file.name, file.mimeType, null);
     } catch (error) {
       console.log('Erreur sélection document:', error);
@@ -1765,6 +1769,10 @@ ${mealsList}
         base64: true,
       });
       if (result.canceled) return;
+      // Reset avant nouveau scan
+      setScanResults(null);
+      setScanSteps([]);
+      setUploadState('idle');
       startAIScan(result.assets[0].uri, 'Photo capturée', 'image/jpeg', result.assets[0].base64);
     } catch (error) {
       console.log('Erreur caméra:', error);
@@ -1787,6 +1795,10 @@ ${mealsList}
         base64: true,
       });
       if (result.canceled) return;
+      // Reset avant nouveau scan
+      setScanResults(null);
+      setScanSteps([]);
+      setUploadState('idle');
       startAIScan(result.assets[0].uri, 'Image sélectionnée', 'image/jpeg', result.assets[0].base64);
     } catch (error) {
       console.log('Erreur galerie:', error);
@@ -1914,6 +1926,15 @@ ${mealsList}
       Alert.alert('Erreur d\'analyse', apiResult.error);
       setUploadState('idle');
       return;
+    }
+
+    // TODO: Déployer l'Edge Function scan-medical dans Supabase
+    // Pour l'instant, si le résultat ne contient pas de données médicales, afficher un message
+    if (!apiResult.data || apiResult.data.length === 0) {
+      Alert.alert(
+        'Analyse en cours de développement',
+        'Le scan de documents médicaux (ordonnances, bilans) sera pleinement fonctionnel dans la prochaine mise à jour. Pour l\'instant, seuls les bilans sanguins au format standard sont supportés.',
+      );
     }
 
     setScanResults(apiResult);
@@ -2628,12 +2649,12 @@ ${mealsList}
           <LinearGradient
             colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
             style={{
-              borderRadius: wp(20), padding: wp(24),
-              marginBottom: wp(16), borderWidth: 1, borderColor: '#4A4F55',
+              borderRadius: wp(16), padding: wp(16),
+              marginBottom: wp(10), borderWidth: 1, borderColor: '#4A4F55',
             }}
           >
-            <View style={{ alignItems: 'center', marginBottom: wp(16) }}>
-              <Svg width={wp(50)} height={wp(50)} viewBox="0 0 24 24" fill="none">
+            <View style={{ alignItems: 'center', marginBottom: wp(10) }}>
+              <Svg width={wp(36)} height={wp(36)} viewBox="0 0 24 24" fill="none">
                 <Rect x="4" y="2" width="16" height="20" rx="2" stroke="#00D984" strokeWidth="1.5"/>
                 <Line x1="4" y1="2" x2="4" y2="22" stroke="#00D984" strokeWidth="3" strokeLinecap="round"/>
                 <Line x1="8" y1="6" x2="16" y2="6" stroke="#00D984" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
@@ -2643,11 +2664,11 @@ ${mealsList}
                 <Circle cx="18" cy="18" r="2" stroke="#00D984" strokeWidth="1.2"/>
               </Svg>
             </View>
-            <Text style={{ fontSize: fp(17), fontWeight: '700', color: '#FFF', textAlign: 'center', marginBottom: wp(6) }}>
+            <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', textAlign: 'center', marginBottom: wp(4) }}>
               Importer mon carnet de santé
             </Text>
-            <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: fp(17) }}>
-              Photographiez les pages de votre carnet physique. ALIXEN scannera et extraira toutes les informations.
+            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: fp(15) }}>
+              Photographiez les pages de votre carnet physique.
             </Text>
           </LinearGradient>
         </Pressable>
@@ -2657,20 +2678,20 @@ ${mealsList}
           <LinearGradient
             colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
             style={{
-              borderRadius: wp(20), padding: wp(24),
-              marginBottom: wp(16), borderWidth: 1, borderColor: '#4A4F55',
+              borderRadius: wp(16), padding: wp(16),
+              marginBottom: wp(10), borderWidth: 1, borderColor: '#4A4F55',
             }}
           >
-            <View style={{ alignItems: 'center', marginBottom: wp(16) }}>
-              <Svg width={wp(50)} height={wp(50)} viewBox="0 0 24 24" fill="none">
+            <View style={{ alignItems: 'center', marginBottom: wp(10) }}>
+              <Svg width={wp(36)} height={wp(36)} viewBox="0 0 24 24" fill="none">
                 <Path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </Svg>
             </View>
-            <Text style={{ fontSize: fp(17), fontWeight: '700', color: '#FFF', textAlign: 'center', marginBottom: wp(6) }}>
+            <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', textAlign: 'center', marginBottom: wp(4) }}>
               Continuer avec mes données
             </Text>
-            <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: fp(17) }}>
-              Utilisez les données enregistrées dans l'app (nutrition, activité, humeur) pour générer votre rapport.
+            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: fp(15) }}>
+              Données de l'app pour générer votre rapport.
             </Text>
           </LinearGradient>
         </Pressable>
@@ -2764,7 +2785,7 @@ ${mealsList}
         onPress={() => setShowMediBookUploadSheet(true)}
         style={{
           position: 'absolute',
-          bottom: wp(24),
+          bottom: wp(80),
           right: wp(20),
           width: wp(56),
           height: wp(56),
@@ -2774,6 +2795,7 @@ ${mealsList}
           shadowOpacity: 0.4,
           shadowRadius: 12,
           elevation: 8,
+          zIndex: 100,
         }}
       >
         <LinearGradient
@@ -3276,7 +3298,7 @@ ${mealsList}
           onPress={() => setShowMediBookUploadSheet(true)}
           style={{
             position: 'absolute',
-            bottom: wp(24),
+            bottom: wp(80),
             right: wp(20),
             width: wp(56),
             height: wp(56),
@@ -3286,6 +3308,7 @@ ${mealsList}
             shadowOpacity: 0.4,
             shadowRadius: 12,
             elevation: 8,
+            zIndex: 100,
           }}
         >
           <LinearGradient
@@ -3571,7 +3594,12 @@ ${mealsList}
         {/* Categories — MetalCard gradient */}
         {spCategories.map((cat) => (
           <Pressable key={cat.id} delayPressIn={120}
-            onPress={() => console.log('Ouvrir ' + cat.id)}
+            onPress={() => {
+              Alert.alert(
+                cat.title,
+                'Les données transférées depuis MediBook apparaîtront ici.\n\nPour ajouter des données, utilisez le bouton + dans MediBook puis transférez-les ici.',
+              );
+            }}
             style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }], marginBottom: wp(10) })}>
             <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
               style={{
@@ -3612,22 +3640,17 @@ ${mealsList}
           </Pressable>
         ))}
 
-        {/* Bouton ajouter — opens bottom sheet */}
-        <Pressable delayPressIn={120}
-          onPress={() => setShowAddDataSheet(true)}
-          onPressIn={() => Animated.timing(spAddScale, { toValue: 0.95, duration: 120, useNativeDriver: true }).start()}
-          onPressOut={() => Animated.spring(spAddScale, { toValue: 1, useNativeDriver: true }).start()}>
-          <Animated.View style={{ transform: [{ scale: spAddScale }], marginTop: wp(16), marginBottom: wp(32) }}>
-            <LinearGradient colors={['#D4AF37', '#B8941F']}
-              style={{ borderRadius: wp(16), paddingVertical: wp(16), flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: wp(8) }}>
-              <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
-                <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2" strokeLinecap="round" />
-                <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2" strokeLinecap="round" />
-              </Svg>
-              <Text style={{ color: '#FFFFFF', fontSize: fp(15), fontWeight: '700' }}>Ajouter des données</Text>
-            </LinearGradient>
-          </Animated.View>
-        </Pressable>
+        {/* Info — transfert depuis MediBook */}
+        <View style={{
+          padding: wp(16), marginTop: wp(10),
+          backgroundColor: 'rgba(212,175,55,0.05)',
+          borderRadius: wp(14), borderWidth: 1,
+          borderColor: 'rgba(212,175,55,0.1)',
+        }}>
+          <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.35)', textAlign: 'center', lineHeight: fp(17) }}>
+            Pour ajouter des données sensibles, importez-les d'abord dans MediBook puis transférez-les ici avec le bouton bouclier {'🛡'}
+          </Text>
+        </View>
         <BottomSpacer />
       </ScrollView>
     </LinearGradient>
@@ -4394,116 +4417,7 @@ ${mealsList}
         </Pressable>
       </Modal>
 
-      {/* Bottom Sheet — Ajouter des données (Secret Pocket) */}
-      <Modal visible={showAddDataSheet} transparent animationType="slide" onRequestClose={() => setShowAddDataSheet(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} onPress={() => setShowAddDataSheet(false)}>
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
-              style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
-              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }} />
-              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>Ajouter des données</Text>
-              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>Dans quelle catégorie souhaitez-vous ajouter ?</Text>
-              {spCategories.map((cat) => (
-                <Pressable key={cat.id} delayPressIn={120}
-                  onPress={() => {
-                    setShowAddDataSheet(false);
-                    setTimeout(() => {
-                      setSelectedCategory(cat);
-                      setShowCategoryUploadSheet(true);
-                    }, 300);
-                  }}
-                  style={{
-                    flexDirection: 'row', alignItems: 'center',
-                    paddingVertical: wp(12), paddingHorizontal: wp(12),
-                    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(8),
-                    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-                  }}>
-                  <View style={{
-                    width: wp(40), height: wp(40), borderRadius: wp(10),
-                    backgroundColor: cat.color + '18',
-                    justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
-                  }}>
-                    {renderCategoryIcon(cat.icon, cat.color, wp(18))}
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>{cat.title}</Text>
-                    <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)' }}>{cat.desc}</Text>
-                  </View>
-                  <Text style={{ fontSize: fp(16), color: 'rgba(255,255,255,0.2)' }}>{">"}</Text>
-                </Pressable>
-              ))}
-              <Pressable onPress={() => setShowAddDataSheet(false)}
-                style={{ marginTop: wp(8), paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
-              </Pressable>
-            </LinearGradient>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {/* Bottom Sheet — Upload catégorie Secret Pocket */}
-      <Modal visible={showCategoryUploadSheet} transparent animationType="slide" onRequestClose={() => setShowCategoryUploadSheet(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} onPress={() => setShowCategoryUploadSheet(false)}>
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
-              style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
-              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }} />
-              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>{selectedCategory?.title}</Text>
-              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>Comment souhaitez-vous ajouter des données ?</Text>
-              <Pressable delayPressIn={120}
-                onPress={() => { setShowCategoryUploadSheet(false); setTimeout(() => pickImage('secretpocket', selectedCategory?.id), 300); }}
-                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(14), paddingHorizontal: wp(12), backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(10), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
-                <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(0,217,132,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
-                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Rect x="3" y="3" width="18" height="18" rx="2" stroke="#00D984" strokeWidth="1.5" fill="none"/>
-                    <Circle cx="8.5" cy="8.5" r="1.5" stroke="#00D984" strokeWidth="1.5" fill="none"/>
-                    <Path d="M21 15l-5-5L5 21" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                  </Svg>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Depuis la galerie</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Charger une photo existante</Text>
-                </View>
-                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
-              </Pressable>
-              <Pressable delayPressIn={120}
-                onPress={() => { setShowCategoryUploadSheet(false); setTimeout(() => takePhoto('secretpocket', selectedCategory?.id), 300); }}
-                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(14), paddingHorizontal: wp(12), backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(10), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
-                <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(255,140,66,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
-                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#FF8C42" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <Circle cx="12" cy="13" r="4" stroke="#FF8C42" strokeWidth="1.5" fill="none"/>
-                  </Svg>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Prendre une photo</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Utiliser la caméra</Text>
-                </View>
-                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
-              </Pressable>
-              <Pressable delayPressIn={120}
-                onPress={() => { setShowCategoryUploadSheet(false); setTimeout(() => pickDocument('secretpocket', selectedCategory?.id), 300); }}
-                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(14), paddingHorizontal: wp(12), backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(16), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
-                <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(77,166,255,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
-                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <Path d="M14 2v6h6" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                  </Svg>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Scanner un document</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>PDF, Word ou image</Text>
-                </View>
-                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
-              </Pressable>
-              <Pressable onPress={() => setShowCategoryUploadSheet(false)}
-                style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
-              </Pressable>
-            </LinearGradient>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {/* Secret Pocket modals removed — scan/upload purged from Secret Pocket */}
 
       {/* === BOTTOM SHEET — Ajouter un document === */}
       <Modal
