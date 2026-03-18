@@ -3127,151 +3127,6 @@ ${mealsList}
           </Animated.View>
         </Pressable>
       </ScrollView>
-
-      {/* Bottom Sheet — Ajouter des données */}
-      <Modal visible={showAddDataSheet} transparent animationType="slide" onRequestClose={() => setShowAddDataSheet(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} onPress={() => setShowAddDataSheet(false)}>
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
-              style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
-              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }} />
-              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>Ajouter des données</Text>
-              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>Dans quelle catégorie souhaitez-vous ajouter ?</Text>
-              {spCategories.map((cat) => (
-                <Pressable key={cat.id} delayPressIn={120}
-                  onPress={() => {
-                    setShowAddDataSheet(false);
-                    setTimeout(() => {
-                      setSelectedCategory(cat);
-                      setShowCategoryUploadSheet(true);
-                    }, 300);
-                  }}
-                  style={{
-                    flexDirection: 'row', alignItems: 'center',
-                    paddingVertical: wp(12), paddingHorizontal: wp(12),
-                    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(8),
-                    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-                  }}>
-                  <View style={{
-                    width: wp(40), height: wp(40), borderRadius: wp(10),
-                    backgroundColor: cat.color + '18',
-                    justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
-                  }}>
-                    {renderCategoryIcon(cat.icon, cat.color, wp(18))}
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>{cat.title}</Text>
-                    <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)' }}>{cat.desc}</Text>
-                  </View>
-                  <Text style={{ fontSize: fp(16), color: 'rgba(255,255,255,0.2)' }}>{">"}</Text>
-                </Pressable>
-              ))}
-              <Pressable onPress={() => setShowAddDataSheet(false)}
-                style={{ marginTop: wp(8), paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
-              </Pressable>
-            </LinearGradient>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {/* Bottom Sheet — Upload catégorie Secret Pocket */}
-      <Modal visible={showCategoryUploadSheet} transparent animationType="slide" onRequestClose={() => setShowCategoryUploadSheet(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} onPress={() => setShowCategoryUploadSheet(false)}>
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
-              style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
-              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }} />
-              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>{selectedCategory?.title}</Text>
-              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>Comment souhaitez-vous ajouter des données ?</Text>
-
-              {/* Galerie */}
-              <Pressable delayPressIn={120}
-                onPress={() => { setShowCategoryUploadSheet(false); setTimeout(() => pickImage('secretpocket', selectedCategory?.id), 300); }}
-                style={{
-                  flexDirection: 'row', alignItems: 'center',
-                  paddingVertical: wp(14), paddingHorizontal: wp(12),
-                  backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(10),
-                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-                }}>
-                <View style={{
-                  width: wp(44), height: wp(44), borderRadius: wp(12),
-                  backgroundColor: 'rgba(0,217,132,0.1)',
-                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
-                }}>
-                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Rect x="3" y="3" width="18" height="18" rx="2" stroke="#00D984" strokeWidth="1.5" fill="none"/>
-                    <Circle cx="8.5" cy="8.5" r="1.5" stroke="#00D984" strokeWidth="1.5" fill="none"/>
-                    <Path d="M21 15l-5-5L5 21" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                  </Svg>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Depuis la galerie</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Charger une photo existante</Text>
-                </View>
-                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
-              </Pressable>
-
-              {/* Caméra */}
-              <Pressable delayPressIn={120}
-                onPress={() => { setShowCategoryUploadSheet(false); setTimeout(() => takePhoto('secretpocket', selectedCategory?.id), 300); }}
-                style={{
-                  flexDirection: 'row', alignItems: 'center',
-                  paddingVertical: wp(14), paddingHorizontal: wp(12),
-                  backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(10),
-                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-                }}>
-                <View style={{
-                  width: wp(44), height: wp(44), borderRadius: wp(12),
-                  backgroundColor: 'rgba(255,140,66,0.1)',
-                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
-                }}>
-                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#FF8C42" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <Circle cx="12" cy="13" r="4" stroke="#FF8C42" strokeWidth="1.5" fill="none"/>
-                  </Svg>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Prendre une photo</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Utiliser la caméra</Text>
-                </View>
-                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
-              </Pressable>
-
-              {/* Document */}
-              <Pressable delayPressIn={120}
-                onPress={() => { setShowCategoryUploadSheet(false); setTimeout(() => pickDocument('secretpocket', selectedCategory?.id), 300); }}
-                style={{
-                  flexDirection: 'row', alignItems: 'center',
-                  paddingVertical: wp(14), paddingHorizontal: wp(12),
-                  backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(16),
-                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-                }}>
-                <View style={{
-                  width: wp(44), height: wp(44), borderRadius: wp(12),
-                  backgroundColor: 'rgba(77,166,255,0.1)',
-                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
-                }}>
-                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <Path d="M14 2v6h6" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                  </Svg>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Scanner un document</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>PDF, Word ou image</Text>
-                </View>
-                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
-              </Pressable>
-
-              <Pressable onPress={() => setShowCategoryUploadSheet(false)}
-                style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
-              </Pressable>
-            </LinearGradient>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </LinearGradient>
   );
 
@@ -3281,35 +3136,30 @@ ${mealsList}
     return renderSecretPocketUnlocked();
   };
 
-  // ── RENDER ───────────────────────────────────────────────────────────────
-  if (uploadState === 'scanning') {
-    return renderScanningScreen();
-  }
-  if (uploadState === 'results') {
-    return renderScanResults();
-  }
-  if (uploadState === 'integrating') {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#00D984" />
-        <Text style={{ fontSize: fp(16), fontWeight: '600', color: '#FFF', marginTop: wp(16) }}>
-          Intégration en cours...
-        </Text>
-        <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginTop: wp(4) }}>
-          Organisation des données
-        </Text>
-      </View>
-    );
-  }
+  // ── RENDER CONTENT (conditionnel) ─────────────────────────────────────
+  const renderContent = () => {
+    if (uploadState === 'scanning') return renderScanningScreen();
+    if (uploadState === 'results') return renderScanResults();
+    if (uploadState === 'integrating') {
+      return (
+        <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#00D984" />
+          <Text style={{ fontSize: fp(16), fontWeight: '600', color: '#FFF', marginTop: wp(16) }}>
+            Intégration en cours...
+          </Text>
+          <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginTop: wp(4) }}>
+            Organisation des données
+          </Text>
+        </View>
+      );
+    }
+    if (currentSubPage === 'medibook') return renderMediBook();
+    if (currentSubPage === 'secretpocket') return renderSecretPocket();
+    return renderMain();
+  };
 
-  if (currentSubPage === 'medibook') {
-    return renderMediBook();
-  }
-  if (currentSubPage === 'secretpocket') {
-    return renderSecretPocket();
-  }
-
-  return (
+  // ── RENDER MAIN (page principale MedicAi) ──────────────────────────────
+  const renderMain = () => (
     <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
       <StatusBar barStyle="dark-content" />
 
@@ -3928,6 +3778,122 @@ ${mealsList}
           </View>
         </View>
       )}
+    </View>
+  );
+
+  // ── RENDER ALL MODALS (toujours rendus) ──────────────────────────────────
+  const renderAllModals = () => (
+    <>
+      {/* Bottom Sheet — Ajouter des données (Secret Pocket) */}
+      <Modal visible={showAddDataSheet} transparent animationType="slide" onRequestClose={() => setShowAddDataSheet(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} onPress={() => setShowAddDataSheet(false)}>
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }} />
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>Ajouter des données</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>Dans quelle catégorie souhaitez-vous ajouter ?</Text>
+              {spCategories.map((cat) => (
+                <Pressable key={cat.id} delayPressIn={120}
+                  onPress={() => {
+                    setShowAddDataSheet(false);
+                    setTimeout(() => {
+                      setSelectedCategory(cat);
+                      setShowCategoryUploadSheet(true);
+                    }, 300);
+                  }}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    paddingVertical: wp(12), paddingHorizontal: wp(12),
+                    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(8),
+                    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                  }}>
+                  <View style={{
+                    width: wp(40), height: wp(40), borderRadius: wp(10),
+                    backgroundColor: cat.color + '18',
+                    justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                  }}>
+                    {renderCategoryIcon(cat.icon, cat.color, wp(18))}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>{cat.title}</Text>
+                    <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)' }}>{cat.desc}</Text>
+                  </View>
+                  <Text style={{ fontSize: fp(16), color: 'rgba(255,255,255,0.2)' }}>{">"}</Text>
+                </Pressable>
+              ))}
+              <Pressable onPress={() => setShowAddDataSheet(false)}
+                style={{ marginTop: wp(8), paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Bottom Sheet — Upload catégorie Secret Pocket */}
+      <Modal visible={showCategoryUploadSheet} transparent animationType="slide" onRequestClose={() => setShowCategoryUploadSheet(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} onPress={() => setShowCategoryUploadSheet(false)}>
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }} />
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>{selectedCategory?.title}</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>Comment souhaitez-vous ajouter des données ?</Text>
+              <Pressable delayPressIn={120}
+                onPress={() => { setShowCategoryUploadSheet(false); setTimeout(() => pickImage('secretpocket', selectedCategory?.id), 300); }}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(14), paddingHorizontal: wp(12), backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(10), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(0,217,132,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Rect x="3" y="3" width="18" height="18" rx="2" stroke="#00D984" strokeWidth="1.5" fill="none"/>
+                    <Circle cx="8.5" cy="8.5" r="1.5" stroke="#00D984" strokeWidth="1.5" fill="none"/>
+                    <Path d="M21 15l-5-5L5 21" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Depuis la galerie</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Charger une photo existante</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+              <Pressable delayPressIn={120}
+                onPress={() => { setShowCategoryUploadSheet(false); setTimeout(() => takePhoto('secretpocket', selectedCategory?.id), 300); }}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(14), paddingHorizontal: wp(12), backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(10), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(255,140,66,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#FF8C42" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <Circle cx="12" cy="13" r="4" stroke="#FF8C42" strokeWidth="1.5" fill="none"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Prendre une photo</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Utiliser la caméra</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+              <Pressable delayPressIn={120}
+                onPress={() => { setShowCategoryUploadSheet(false); setTimeout(() => pickDocument('secretpocket', selectedCategory?.id), 300); }}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(14), paddingHorizontal: wp(12), backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(16), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(77,166,255,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <Path d="M14 2v6h6" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Scanner un document</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>PDF, Word ou image</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+              <Pressable onPress={() => setShowCategoryUploadSheet(false)}
+                style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* === BOTTOM SHEET — Ajouter un document === */}
       <Modal
@@ -4852,6 +4818,14 @@ ${mealsList}
           </Pressable>
         </Pressable>
       </Modal>
+    </>
+  );
+
+  // ── FINAL RETURN ───────────────────────────────────────────────────────
+  return (
+    <View style={{ flex: 1 }}>
+      {renderContent()}
+      {renderAllModals()}
     </View>
   );
 }
