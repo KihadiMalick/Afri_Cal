@@ -14,6 +14,8 @@ import Svg, {
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import MediBookPage from './MediBookPage';
+import SecretPocketPage from './SecretPocketPage';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -952,6 +954,9 @@ const ModalScrollContent = ({ selectedMessage, closeModal, handleRecipePress, se
 // COMPOSANT PRINCIPAL
 // ============================================
 export default function MedicAiPage() {
+  // Sub-page navigation
+  const [currentSubPage, setCurrentSubPage] = useState('main');
+
   // Messages du chat
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
@@ -1372,6 +1377,13 @@ ${mealsList}
   };
 
   // ── RENDER ───────────────────────────────────────────────────────────────
+  if (currentSubPage === 'medibook') {
+    return <MediBookPage onBack={() => setCurrentSubPage('main')} />;
+  }
+  if (currentSubPage === 'secretpocket') {
+    return <SecretPocketPage onBack={() => setCurrentSubPage('main')} />;
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
       <StatusBar barStyle="dark-content" />
@@ -1457,7 +1469,7 @@ ${mealsList}
                   <Line x1="19" y1="4" x2="23" y2="4" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
                 </Svg>
               }
-              onPress={() => addBotMessage("Le MediBook sera disponible prochainement. Votre dossier médical complet avec bilans, rappels et médicaments.")}
+              onPress={() => setCurrentSubPage('medibook')}
             />
             <MetalCard
               title="Secret Pocket"
@@ -1469,7 +1481,7 @@ ${mealsList}
                   <Path d="M10 10V8a2 2 0 014 0v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
                 </Svg>
               }
-              onPress={() => addBotMessage("Le Secret Pocket sera disponible prochainement. Votre coffre-fort santé chiffré.")}
+              onPress={() => setCurrentSubPage('secretpocket')}
             />
           </View>
 
