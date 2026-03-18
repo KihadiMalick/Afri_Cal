@@ -1113,6 +1113,18 @@ export default function MedicAiPage() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showAddDataSheet, setShowAddDataSheet] = useState(false);
   const [showCompactConfirm, setShowCompactConfirm] = useState(false);
+  const [showRechargeSheet, setShowRechargeSheet] = useState(false);
+
+  // Énergie — valeurs dérivées
+  const energyLeft = energyLimit - energyUsed;
+  const energyPercent = Math.max(0, Math.min(100, (energyLeft / energyLimit) * 100));
+  const getEnergyColor = (pct) => {
+    if (pct > 60) return '#00D984';
+    if (pct > 35) return '#F1C40F';
+    if (pct > 15) return '#FF8C42';
+    return '#FF6B6B';
+  };
+  const energyColor = getEnergyColor(energyPercent);
 
   // Refs
   const scrollViewRef = useRef(null);
@@ -1648,16 +1660,21 @@ ${mealsList}
             justifyContent: 'center', alignItems: 'center', marginTop: wp(32),
             transform: [{ scale: pressed ? 0.92 : 1 }],
           })}>
-          <Svg width={wp(32)} height={wp(32)} viewBox="0 0 24 24" fill="none">
-            <Path d="M12 2C9.24 2 7 4.24 7 7v4" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
-            <Path d="M17 7v2c0 2.76-2.24 5-5 5" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
-            <Path d="M7 15a8 8 0 004 1c1.1 0 2.15-.22 3.1-.62" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
-            <Path d="M12 6a1 1 0 011 1v4a1 1 0 01-2 0V7a1 1 0 011-1z" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
-            <Path d="M5 11v1a7 7 0 003.29 5.94" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
-            <Path d="M19 11v1a7 7 0 01-1.5 4.33" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
-            <Path d="M4 7.5A8.96 8.96 0 003 12c0 3.5 2 6.5 5 8" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
-            <Path d="M20 7.5c.65 1.35 1 2.88 1 4.5 0 2.5-1 4.8-2.7 6.5" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
-            <Path d="M9 3.5A6.97 6.97 0 0112 2.5c1.93 0 3.68.78 4.95 2.05" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+          <Svg width={wp(34)} height={wp(34)} viewBox="0 0 24 24" fill="none">
+            <Path d="M3.5 11c0-4.69 3.81-8.5 8.5-8.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+            <Path d="M20.5 11c0-4.69-3.81-8.5-8.5-8.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+            <Path d="M5.5 11c0-3.59 2.91-6.5 6.5-6.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+            <Path d="M18.5 11c0-3.59-2.91-6.5-6.5-6.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+            <Path d="M7.5 11a4.5 4.5 0 014.5-4.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+            <Path d="M16.5 11a4.5 4.5 0 00-4.5-4.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+            <Path d="M9.5 11a2.5 2.5 0 015 0" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+            <Path d="M3.5 11v1.5c0 2.5 1 4.8 2.6 6.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+            <Path d="M20.5 11v1.5c0 2.5-1 4.8-2.6 6.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+            <Path d="M5.5 11v3c0 2 1.2 3.8 3 5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+            <Path d="M18.5 11v3c0 2-1.2 3.8-3 5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+            <Path d="M9.5 11v5c0 1 .5 2 1.5 2.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+            <Path d="M14.5 11v5c0 1-.5 2-1.5 2.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+            <Path d="M12 11v8" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
           </Svg>
         </Pressable>
         <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: fp(11), marginTop: wp(12) }}>Appuyez pour déverrouiller</Text>
@@ -1885,23 +1902,39 @@ ${mealsList}
           <Text style={{ color: 'rgba(0,150,120,0.45)', fontSize: 7, letterSpacing: 2 }}>ESPACE SANTÉ INTELLIGENT</Text>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
-          <View style={{
-            backgroundColor: 'rgba(0,180,130,0.08)',
-            borderWidth: 1,
-            borderColor: 'rgba(0,180,130,0.2)',
-            borderRadius: 14,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 4,
-          }}>
-            <Svg width={wp(10)} height={wp(10)} viewBox="0 0 24 24" fill="#00D984">
-              <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-            </Svg>
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#00D984' }} />
-            <Text style={{ color: '#00A878', fontSize: 10 }}>En ligne</Text>
-          </View>
+          {energyLeft > 0 ? (
+            <View style={{
+              backgroundColor: 'rgba(0,180,130,0.08)',
+              borderWidth: 1,
+              borderColor: 'rgba(0,180,130,0.2)',
+              borderRadius: 14,
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+            }}>
+              <Svg width={wp(10)} height={wp(10)} viewBox="0 0 24 24" fill="#00D984">
+                <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </Svg>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#00D984' }} />
+              <Text style={{ color: '#00A878', fontSize: 10 }}>En ligne</Text>
+            </View>
+          ) : (
+            <View style={{
+              flexDirection: 'row', alignItems: 'center',
+              borderRadius: wp(12), paddingHorizontal: wp(10), paddingVertical: wp(4),
+              borderWidth: 1, borderColor: 'rgba(255,107,107,0.3)',
+              backgroundColor: 'rgba(255,107,107,0.08)',
+              gap: 4,
+            }}>
+              <Svg width={wp(10)} height={wp(10)} viewBox="0 0 24 24" fill="#FF6B6B">
+                <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </Svg>
+              <View style={{ width: wp(6), height: wp(6), borderRadius: wp(3), backgroundColor: '#FF6B6B' }} />
+              <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#FF6B6B' }}>Hors énergie</Text>
+            </View>
+          )}
           <Text style={{
             fontSize: fp(9),
             fontWeight: '600',
@@ -2061,6 +2094,17 @@ ${mealsList}
             borderRadius: 22,
             overflow: 'hidden',
           }}>
+            {/* Barre d'énergie en fond */}
+            <View style={{
+              position: 'absolute', left: 0, top: 0, bottom: 0, right: 0,
+              borderRadius: 22, overflow: 'hidden', zIndex: 0,
+            }}>
+              <View style={{
+                width: `${energyPercent}%`, height: '100%',
+                backgroundColor: energyColor, opacity: 0.12,
+              }} />
+            </View>
+
             {/* Dégradé en fond */}
             <LinearGradient
               colors={['rgba(0,217,132,0.05)', 'rgba(0,217,132,0.15)', 'rgba(0,217,132,0.3)']}
@@ -2180,47 +2224,44 @@ ${mealsList}
                 />
               </View>
 
-              {/* Bouton Envoyer — rond blanc */}
-              <TouchableOpacity
-                onPress={() => {
-                  if (isLocked) {
-                    Animated.sequence([
-                      Animated.timing(shakeAnim, { toValue: 5, duration: 50, useNativeDriver: true }),
-                      Animated.timing(shakeAnim, { toValue: -5, duration: 50, useNativeDriver: true }),
-                      Animated.timing(shakeAnim, { toValue: 3, duration: 50, useNativeDriver: true }),
-                      Animated.timing(shakeAnim, { toValue: -3, duration: 50, useNativeDriver: true }),
-                      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
-                    ]).start();
-                    setShowLockModal(true);
-                    return;
-                  }
-                  if (inputText.trim()) sendMessage();
-                }}
-                disabled={!inputText.trim() && !isLocked}
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 19,
-                  backgroundColor: isLocked ? 'rgba(40,40,50,0.8)' : '#FFFFFF',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  shadowColor: isLocked ? '#D85050' : 'rgba(0,0,0,0.15)',
-                  shadowOffset: { width: 3, height: 3 },
-                  shadowOpacity: 0.5,
-                  shadowRadius: 5,
-                  elevation: 5,
-                  borderWidth: 1,
-                  borderColor: isLocked ? 'rgba(216,80,80,0.3)' : 'rgba(0,0,0,0.06)',
-                }}
-              >
-                <Text style={{
-                  color: isLocked ? '#D85050' : (inputText.trim() ? '#00D984' : 'rgba(0,0,0,0.12)'),
-                  fontSize: 15,
-                  fontWeight: 'bold',
-                }}>
-                  {isLocked ? '🔒' : '➤'}
-                </Text>
-              </TouchableOpacity>
+              {/* Bouton Envoyer / X rouge si énergie vide */}
+              {isLocked ? (
+                <Pressable
+                  delayPressIn={120}
+                  onPress={() => setShowRechargeSheet(true)}
+                  style={({ pressed }) => ({
+                    width: wp(38), height: wp(38), borderRadius: wp(19),
+                    backgroundColor: 'rgba(255,107,107,0.15)',
+                    borderWidth: 1.5, borderColor: '#FF6B6B',
+                    justifyContent: 'center', alignItems: 'center',
+                    transform: [{ scale: pressed ? 0.92 : 1 }],
+                  })}
+                >
+                  <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                    <Line x1="18" y1="6" x2="6" y2="18" stroke="#FF6B6B" strokeWidth="2.5" strokeLinecap="round"/>
+                    <Line x1="6" y1="6" x2="18" y2="18" stroke="#FF6B6B" strokeWidth="2.5" strokeLinecap="round"/>
+                  </Svg>
+                </Pressable>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => { if (inputText.trim()) sendMessage(); }}
+                  disabled={!inputText.trim()}
+                  style={{
+                    width: 38, height: 38, borderRadius: 19,
+                    backgroundColor: '#FFFFFF',
+                    justifyContent: 'center', alignItems: 'center',
+                    shadowColor: 'rgba(0,0,0,0.15)',
+                    shadowOffset: { width: 3, height: 3 },
+                    shadowOpacity: 0.5, shadowRadius: 5, elevation: 5,
+                    borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)',
+                  }}
+                >
+                  <Text style={{
+                    color: inputText.trim() ? '#00D984' : 'rgba(0,0,0,0.12)',
+                    fontSize: 15, fontWeight: 'bold',
+                  }}>{'➤'}</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </Animated.View>
@@ -2871,12 +2912,14 @@ ${mealsList}
               marginBottom: wp(24), width: '100%',
             }}>
               <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(8) }}>
-                <Path d="M12 2C9.24 2 7 4.24 7 7v4" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
-                <Path d="M17 7v2c0 2.76-2.24 5-5 5" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
-                <Path d="M12 6a1 1 0 011 1v4a1 1 0 01-2 0V7a1 1 0 011-1z" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
-                <Path d="M5 11v1a7 7 0 003.29 5.94" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
-                <Path d="M19 11v1a7 7 0 01-1.5 4.33" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
-                <Path d="M9 3.5A6.97 6.97 0 0112 2.5c1.93 0 3.68.78 4.95 2.05" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+                <Path d="M3.5 11c0-4.69 3.81-8.5 8.5-8.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+                <Path d="M20.5 11c0-4.69-3.81-8.5-8.5-8.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+                <Path d="M5.5 11c0-3.59 2.91-6.5 6.5-6.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+                <Path d="M18.5 11c0-3.59-2.91-6.5-6.5-6.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+                <Path d="M9.5 11a2.5 2.5 0 015 0" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+                <Path d="M3.5 11v1.5c0 2.5 1 4.8 2.6 6.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+                <Path d="M20.5 11v1.5c0 2.5-1 4.8-2.6 6.5" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
+                <Path d="M12 11v8" stroke="#D4AF37" strokeWidth="1.3" strokeLinecap="round"/>
               </Svg>
               <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.7)', flex: 1 }}>
                 Vous aurez besoin de votre empreinte digitale pour la retrouver dans Secret Pocket.
@@ -2911,6 +2954,100 @@ ${mealsList}
               style={{ width: '100%', paddingVertical: wp(12), alignItems: 'center' }}
             >
               <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Annuler</Text>
+            </Pressable>
+          </LinearGradient>
+        </View>
+      </Modal>
+
+      {/* ===== MODAL — Recharge énergie ===== */}
+      <Modal
+        visible={showRechargeSheet}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowRechargeSheet(false)}
+      >
+        <View style={{
+          flex: 1, backgroundColor: 'rgba(0,0,0,0.7)',
+          justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24),
+        }}>
+          <LinearGradient
+            colors={['#2A2F36', '#1E2328', '#252A30']}
+            style={{
+              borderRadius: wp(20), paddingHorizontal: wp(24), paddingVertical: wp(28),
+              width: '100%', alignItems: 'center',
+            }}
+          >
+            {/* Icône éclair barré */}
+            <View style={{
+              width: wp(60), height: wp(60), borderRadius: wp(30),
+              backgroundColor: 'rgba(255,107,107,0.12)',
+              justifyContent: 'center', alignItems: 'center',
+              marginBottom: wp(16), borderWidth: 1, borderColor: 'rgba(255,107,107,0.2)',
+            }}>
+              <Svg width={wp(28)} height={wp(28)} viewBox="0 0 24 24" fill="none">
+                <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="#FF6B6B" strokeWidth="1.5" strokeLinejoin="round"/>
+                <Line x1="4" y1="4" x2="20" y2="20" stroke="#FF6B6B" strokeWidth="2" strokeLinecap="round"/>
+              </Svg>
+            </View>
+
+            <Text style={{
+              fontSize: fp(18), fontWeight: '700', color: '#FFFFFF',
+              textAlign: 'center', marginBottom: wp(8),
+            }}>Énergie épuisée</Text>
+
+            <Text style={{
+              fontSize: fp(13), color: 'rgba(255,255,255,0.5)',
+              textAlign: 'center', lineHeight: fp(19), marginBottom: wp(20),
+            }}>
+              Vous avez utilisé toute votre énergie pour cette session. Rechargez pour continuer à discuter avec ALIXEN.
+            </Text>
+
+            {/* Option : Recharger avec Lix */}
+            <Pressable delayPressIn={120}
+              onPress={() => {
+                setEnergyUsed(prev => Math.max(0, prev - ENERGY_CONFIG.ENERGY_PER_RECHARGE));
+                setShowRechargeSheet(false);
+              }}
+              style={{ width: '100%', marginBottom: wp(10) }}>
+              <LinearGradient colors={['#00D984', '#00B871']}
+                style={{
+                  width: '100%', paddingVertical: wp(14),
+                  borderRadius: wp(14), alignItems: 'center',
+                  flexDirection: 'row', justifyContent: 'center',
+                }}>
+                <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(8) }}>
+                  <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#FFFFFF"/>
+                </Svg>
+                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>
+                  Recharger — 100 Lix = 10 énergie
+                </Text>
+              </LinearGradient>
+            </Pressable>
+
+            {/* Info délai */}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center',
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              borderRadius: wp(10), padding: wp(12),
+              marginBottom: wp(16), width: '100%',
+            }}>
+              <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(8) }}>
+                <Circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5"/>
+                <Line x1="12" y1="7" x2="12" y2="12" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round"/>
+                <Line x1="12" y1="12" x2="15" y2="14" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round"/>
+              </Svg>
+              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', flex: 1 }}>
+                Ou attendez la recharge automatique toutes les 6 heures
+              </Text>
+            </View>
+
+            {/* Bouton Fermer */}
+            <Pressable onPress={() => setShowRechargeSheet(false)}
+              style={{
+                width: '100%', paddingVertical: wp(12), alignItems: 'center',
+                borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+              }}>
+              <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Fermer</Text>
             </Pressable>
           </LinearGradient>
         </View>
