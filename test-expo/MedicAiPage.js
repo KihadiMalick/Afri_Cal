@@ -61,10 +61,10 @@ const TABS = [
 ];
 
 // ============================================
-// BUBBLE COLORS — Palette LIXUM 6 couleurs cyclique
+// BUBBLE COLORS — Bicolore cerveau ALIXEN (Rouge IA / Bleu User)
 // ============================================
-const BUBBLE_COLORS = ['#00D984', '#4DA6FF', '#D4AF37', '#FF8C42', '#FF6B6B', '#9B6DFF'];
-// Emerald, Blue, Gold, Orange, Coral, Purple — cycle sur chaque bulle
+const BUBBLE_COLOR_AI = '#E74C3C';    // Rouge - reponses ALIXEN
+const BUBBLE_COLOR_USER = '#3498DB';  // Bleu - messages utilisateur
 
 // ============================================
 // LOCK ICON
@@ -326,8 +326,8 @@ const MetalCard = ({ title, titleColor = '#00D984', iconElement, onPress }) => {
   return (
     <Pressable delayPressIn={120} onPressIn={handlePressIn} onPressOut={handlePressOut} onPress={onPress}>
       <Animated.View style={{
-        width: wp(150),
-        height: wp(100),
+        width: wp(130),
+        height: wp(85),
         borderRadius: wp(16),
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -349,14 +349,14 @@ const MetalCard = ({ title, titleColor = '#00D984', iconElement, onPress }) => {
           }}
         >
           {/* Icône SVG */}
-          <View style={{ marginBottom: 8 }}>
+          <View style={{ marginBottom: 6 }}>
             {iconElement}
           </View>
 
           {/* Titre */}
           <Text style={{
             color: titleColor,
-            fontSize: fp(14),
+            fontSize: fp(12),
             fontWeight: '700',
             letterSpacing: 0.5,
           }}>{title}</Text>
@@ -539,7 +539,7 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
   const loadPulse = useRef(new Animated.Value(0.3)).current;
 
   const BALL_SIZE = 30;
-  const bubbleColor = BUBBLE_COLORS[index % BUBBLE_COLORS.length];
+  const bubbleColor = isBot ? BUBBLE_COLOR_AI : BUBBLE_COLOR_USER;
 
   useEffect(() => {
     // Entrée avec spring
@@ -658,9 +658,13 @@ const getBallPosition = (index) => {
   };
 };
 
-const SynapticNetwork = ({ messages, searchHits, onBallPress }) => {
-  const totalRows = Math.ceil(messages.length / BALLS_PER_ROW);
+const SynapticNetwork = ({ messages, searchHits, onBallPress, onNewSession }) => {
+  const totalCount = messages.length + 1; // +1 for "new session" button
+  const totalRows = Math.ceil(totalCount / BALLS_PER_ROW);
   const containerHeight = totalRows * (S_BALL_SIZE + 12) + 10;
+
+  // Position of the "new session" button = next slot after last message
+  const newSessionPos = getBallPosition(messages.length);
 
   return (
     <View style={{ height: containerHeight, position: 'relative', marginHorizontal: 8 }}>
@@ -722,6 +726,37 @@ const SynapticNetwork = ({ messages, searchHits, onBallPress }) => {
           </View>
         );
       })}
+
+      {/* Bouton Nouvelle session — dernier element du S */}
+      {messages.length > 0 && (
+        <View style={{
+          position: 'absolute',
+          left: newSessionPos.x - S_BALL_SIZE / 2,
+          top: newSessionPos.y,
+        }}>
+          <Pressable
+            delayPressIn={120}
+            onPress={onNewSession}
+            style={({ pressed }) => ({
+              width: S_BALL_SIZE,
+              height: S_BALL_SIZE,
+              borderRadius: S_BALL_SIZE / 2,
+              backgroundColor: '#252A30',
+              borderWidth: wp(2),
+              borderColor: '#00D984',
+              borderStyle: 'dashed',
+              justifyContent: 'center',
+              alignItems: 'center',
+              transform: [{ scale: pressed ? 0.92 : 1 }],
+            })}
+          >
+            <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+              <Line x1="12" y1="5" x2="12" y2="19" stroke="#00D984" strokeWidth="2.5" strokeLinecap="round"/>
+              <Line x1="5" y1="12" x2="19" y2="12" stroke="#00D984" strokeWidth="2.5" strokeLinecap="round"/>
+            </Svg>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 };
@@ -1333,6 +1368,13 @@ ${mealsList}
         <View>
           <Text style={{ color: '#1A2030', fontSize: 22, fontWeight: 'bold' }}>MedicAi</Text>
           <Text style={{ color: 'rgba(0,150,120,0.45)', fontSize: 7, letterSpacing: 2 }}>ESPACE SANTÉ INTELLIGENT</Text>
+          <Text style={{
+            fontSize: fp(10),
+            fontWeight: '500',
+            color: 'rgba(0,217,132,0.5)',
+            letterSpacing: 2,
+            marginTop: wp(2),
+          }}>LXM-2K7F4A</Text>
         </View>
         <View style={{
           backgroundColor: 'rgba(0,180,130,0.08)',
@@ -1345,6 +1387,9 @@ ${mealsList}
           alignItems: 'center',
           gap: 4,
         }}>
+          <Svg width={wp(10)} height={wp(10)} viewBox="0 0 24 24" fill="#00D984">
+            <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </Svg>
           <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#00D984' }} />
           <Text style={{ color: '#00A878', fontSize: 10 }}>En ligne</Text>
         </View>
@@ -1371,20 +1416,20 @@ ${mealsList}
             flexDirection: 'row',
             justifyContent: 'center',
             gap: wp(12),
-            paddingHorizontal: 16,
+            paddingHorizontal: wp(24),
             marginTop: 8,
             marginBottom: 4,
           }}>
             <MetalCard
               title="MediBook"
               iconElement={
-                <Svg width={wp(36)} height={wp(36)} viewBox="0 0 24 24" fill="none">
+                <Svg width={wp(30)} height={wp(30)} viewBox="0 0 24 24" fill="none">
                   <Rect x="3" y="2" width="14" height="20" rx="2" stroke="#00D984" strokeWidth="1.5" fill="none"/>
                   <Line x1="7" y1="8" x2="13" y2="8" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
                   <Line x1="7" y1="12" x2="13" y2="12" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
                   <Line x1="7" y1="16" x2="11" y2="16" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
-                  <Line x1="19" y1="3" x2="19" y2="7" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
-                  <Line x1="17" y1="5" x2="21" y2="5" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                  <Line x1="21" y1="2" x2="21" y2="6" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                  <Line x1="19" y1="4" x2="23" y2="4" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
                 </Svg>
               }
               onPress={() => addBotMessage("Le MediBook sera disponible prochainement. Votre dossier médical complet avec bilans, rappels et médicaments.")}
@@ -1393,7 +1438,7 @@ ${mealsList}
               title="Secret Pocket"
               titleColor="#D4AF37"
               iconElement={
-                <Svg width={wp(36)} height={wp(36)} viewBox="0 0 24 24" fill="none">
+                <Svg width={wp(30)} height={wp(30)} viewBox="0 0 24 24" fill="none">
                   <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" fill="none"/>
                   <Rect x="9" y="10" width="6" height="5" rx="1" stroke="#D4AF37" strokeWidth="1.5" fill="none"/>
                   <Path d="M10 10V8a2 2 0 014 0v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
@@ -1413,6 +1458,28 @@ ${mealsList}
               messages={messages}
               searchHits={searchHits}
               onBallPress={handleBallPress}
+              onNewSession={() => {
+                Alert.alert(
+                  'Nouvelle session',
+                  'Souhaitez-vous compacter cette discussion et la ranger dans votre Secret Pocket ? Vous pourrez la reimporter plus tard.',
+                  [
+                    {
+                      text: 'Compacter et ranger',
+                      onPress: () => {
+                        console.log('Compactage vers Secret Pocket');
+                      }
+                    },
+                    {
+                      text: 'Supprimer la session',
+                      style: 'destructive',
+                      onPress: () => {
+                        console.log('Session supprimee');
+                      }
+                    },
+                    { text: 'Annuler', style: 'cancel' },
+                  ]
+                );
+              }}
             />
           </Animated.View>
 
@@ -1651,7 +1718,7 @@ ${mealsList}
                 }}
               >
                 <Text style={{
-                  color: isLocked ? '#D85050' : (inputText.trim() ? '#00A878' : 'rgba(0,0,0,0.12)'),
+                  color: isLocked ? '#D85050' : (inputText.trim() ? '#00D984' : 'rgba(0,0,0,0.12)'),
                   fontSize: 15,
                   fontWeight: 'bold',
                 }}>
