@@ -420,7 +420,7 @@ const LoadingDots = () => {
         fontSize: fp(12),
         color: 'rgba(0, 217, 132, 0.7)',
         fontStyle: 'italic',
-      }}>ALIXEN reflechit...</Text>
+      }}>ALIXEN réfléchit...</Text>
     </View>
   );
 };
@@ -954,19 +954,19 @@ const ModalScrollContent = ({ selectedMessage, closeModal, handleRecipePress, se
 const mbDataStatus = [
   { name: 'Nutrition', days: 87, total: 90, percent: 96 },
   { name: 'Hydratation', days: 72, total: 90, percent: 80 },
-  { name: 'Activite physique', days: 45, total: 90, percent: 50 },
+  { name: 'Activité physique', days: 45, total: 90, percent: 50 },
   { name: 'Humeur', days: 60, total: 90, percent: 67 },
   { name: 'Conversations ALIXEN', days: 8, total: null, percent: null, status: 'OK' },
   { name: 'Secret Pocket', days: null, total: null, percent: null, status: 'Optionnel' },
 ];
 
 const mbSections = [
-  { icon: 'user', title: 'Page de garde', desc: 'Nom, age, LixTag, periode', color: '#00D984' },
+  { icon: 'user', title: 'Page de garde', desc: 'Nom, âge, LixTag, période', color: '#00D984' },
   { icon: 'body', title: 'Profil morphologique', desc: 'Poids, taille, BMI, BMR, TDEE', color: '#4DA6FF' },
   { icon: 'food', title: 'Nutrition 3 mois', desc: 'Calories, macros, tendances', color: '#FF8C42' },
   { icon: 'water', title: 'Hydratation', desc: 'Moyenne vs objectif', color: '#4DA6FF' },
-  { icon: 'run', title: 'Activite physique', desc: 'Frequence, types, calories', color: '#00D984' },
-  { icon: 'mood', title: "Courbe d'humeur", desc: 'Evolution et correlations', color: '#9B6DFF' },
+  { icon: 'run', title: 'Activité physique', desc: 'Fréquence, types, calories', color: '#00D984' },
+  { icon: 'mood', title: "Courbe d'humeur", desc: 'Évolution et corrélations', color: '#9B6DFF' },
   { icon: 'alert', title: "Points d'attention", desc: 'Carences, alertes ALIXEN', color: '#FF6B6B' },
   { icon: 'qr', title: 'QR Code profil', desc: 'Lien vers votre profil Lixum', color: '#D4AF37' },
 ];
@@ -1035,12 +1035,12 @@ const MbProgressRow = ({ item }) => {
 // SECRET POCKET — DATA + ICONS
 // ============================================
 const spCategories = [
-  { id: 'diagnostics', title: 'Diagnostics a surveiller', desc: 'Diabete, hypertension, cholesterol...', icon: 'heart-pulse', color: '#FF6B6B', count: 2 },
-  { id: 'allergies', title: 'Allergies et intolerances', desc: 'Alimentaires, medicamenteuses...', icon: 'shield-alert', color: '#FF8C42', count: 1 },
-  { id: 'medications', title: 'Medicaments en cours', desc: 'Traitements actuels et posologie', icon: 'pill', color: '#4DA6FF', count: 0 },
-  { id: 'lab-results', title: "Resultats d'analyses", desc: 'Bilans sanguins, examens...', icon: 'flask', color: '#00D984', count: 3 },
-  { id: 'notes', title: 'Notes personnelles', desc: 'Vos observations de sante', icon: 'edit', color: '#9B6DFF', count: 5 },
-  { id: 'conversations', title: 'Conversations sensibles', desc: 'Echanges prives avec ALIXEN', icon: 'message-lock', color: '#D4AF37', count: 4 },
+  { id: 'diagnostics', title: 'Diagnostics à surveiller', desc: 'Diabète, hypertension, cholestérol...', icon: 'heart-pulse', color: '#FF6B6B', count: 2 },
+  { id: 'allergies', title: 'Allergies et intolérances', desc: 'Alimentaires, médicamenteuses...', icon: 'shield-alert', color: '#FF8C42', count: 1 },
+  { id: 'medications', title: 'Médicaments en cours', desc: 'Traitements actuels et posologie', icon: 'pill', color: '#4DA6FF', count: 0 },
+  { id: 'lab-results', title: "Résultats d'analyses", desc: 'Bilans sanguins, examens...', icon: 'flask', color: '#00D984', count: 3 },
+  { id: 'notes', title: 'Notes personnelles', desc: 'Vos observations de santé', icon: 'edit', color: '#9B6DFF', count: 5 },
+  { id: 'conversations', title: 'Conversations sensibles', desc: 'Échanges privés avec ALIXEN', icon: 'message-lock', color: '#D4AF37', count: 4 },
 ];
 
 const renderCategoryIcon = (iconName, color, size = wp(20)) => {
@@ -1182,9 +1182,9 @@ export default function MedicAiPage() {
       if (prev.length >= 30) {
         Alert.alert(
           'Session pleine',
-          'Vous avez atteint la limite de 30 echanges par session.\n\nCompactez cette conversation pour la ranger dans votre Secret Pocket et demarrer une nouvelle session.',
+          'Vous avez atteint la limite de 30 échanges par session.\n\nCompactez cette conversation pour la ranger dans votre Secret Pocket et démarrer une nouvelle session.',
           [
-            { text: 'Compacter et ranger', onPress: () => console.log('Compactage Secret Pocket') },
+            { text: 'Compacter et ranger', onPress: () => console.log('Compactage vers Secret Pocket') },
             { text: 'Annuler', style: 'cancel' },
           ]
         );
@@ -1383,10 +1383,10 @@ ${mealsList}
     if (messages.length >= 30) {
       Alert.alert(
         'Session pleine',
-        'Vous avez atteint la limite de 30 echanges. Souhaitez-vous compacter cette conversation et la ranger dans votre Secret Pocket ?',
+        'Vous avez atteint la limite de 30 échanges. Souhaitez-vous compacter cette conversation et la ranger dans votre Secret Pocket ?',
         [
-          { text: 'Compacter et ranger', onPress: () => console.log('Compactage Secret Pocket') },
-          { text: 'Continuer quand meme', style: 'cancel' },
+          { text: 'Compacter et ranger', onPress: () => console.log('Compactage vers Secret Pocket') },
+          { text: 'Continuer quand même', style: 'cancel' },
         ]
       );
       return;
@@ -1524,7 +1524,7 @@ ${mealsList}
           </Pressable>
           <View>
             <Text style={{ color: '#FFFFFF', fontSize: fp(22), fontWeight: '700' }}>MediBook</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: fp(12) }}>Votre rapport sante</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: fp(12) }}>Votre rapport santé</Text>
           </View>
         </View>
         <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
@@ -1556,7 +1556,7 @@ ${mealsList}
           shadowOpacity: 0.08, shadowRadius: 12, elevation: 4,
         }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#2D3436', marginBottom: wp(16) }}>
-            Etat de vos donnees
+            État de vos données
           </Text>
           {mbDataStatus.map((item, i) => <MbProgressRow key={i} item={item} />)}
         </View>
@@ -1588,7 +1588,7 @@ ${mealsList}
 
         {/* Bouton Generer */}
         <Pressable delayPressIn={120}
-          onPress={() => Alert.alert('MediBook', 'La generation de votre MediBook sera disponible prochainement !')}
+          onPress={() => Alert.alert('MediBook', 'La génération de votre MediBook sera disponible prochainement !')}
           onPressIn={() => Animated.timing(mbGenerateScale, { toValue: 0.95, duration: 120, useNativeDriver: true }).start()}
           onPressOut={() => Animated.spring(mbGenerateScale, { toValue: 1, useNativeDriver: true }).start()}>
           <Animated.View style={{ transform: [{ scale: mbGenerateScale }], marginTop: wp(24), marginBottom: wp(32) }}>
@@ -1601,7 +1601,7 @@ ${mealsList}
                 <Path d="M16 8l4 4-4 4" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </Svg>
               <View>
-                <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '700' }}>Generer mon MediBook</Text>
+                <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '700' }}>Générer mon MediBook</Text>
                 <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: fp(11) }}>500 Lix — Rapport PDF 3 mois</Text>
               </View>
             </LinearGradient>
@@ -1620,7 +1620,7 @@ ${mealsList}
           onPress={() => { setIsUnlocked(false); setCurrentSubPage('main'); }}
           style={({ pressed }) => ({
             width: wp(36), height: wp(36), borderRadius: wp(18),
-            backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55',
+            backgroundColor: 'rgba(212,175,55,0.1)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)',
             justifyContent: 'center', alignItems: 'center',
             transform: [{ scale: pressed ? 0.92 : 1 }],
           })}>
@@ -1639,7 +1639,7 @@ ${mealsList}
           <Line x1="32" y1="36" x2="32" y2="39" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
         </Svg>
         <Text style={{ color: '#D4AF37', fontSize: fp(24), fontWeight: '800', letterSpacing: 1, marginTop: wp(20) }}>Secret Pocket</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: fp(13), marginTop: wp(6) }}>Votre coffre-fort sante confidentiel</Text>
+        <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: fp(13), marginTop: wp(6) }}>Votre coffre-fort santé confidentiel</Text>
 
         <Pressable delayPressIn={120} onPress={() => setIsUnlocked(true)}
           style={({ pressed }) => ({
@@ -1649,15 +1649,18 @@ ${mealsList}
             transform: [{ scale: pressed ? 0.92 : 1 }],
           })}>
           <Svg width={wp(32)} height={wp(32)} viewBox="0 0 24 24" fill="none">
-            <Path d="M12 2a7 7 0 00-7 7v0a7 7 0 007 7" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
-            <Path d="M17 5.5A6.97 6.97 0 0119 9v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
-            <Path d="M12 6a3 3 0 00-3 3v4" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
-            <Path d="M15 9a3 3 0 00-3-3" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
-            <Path d="M12 10v6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
-            <Path d="M8 16a5 5 0 004 4" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
+            <Path d="M12 2C9.24 2 7 4.24 7 7v4" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+            <Path d="M17 7v2c0 2.76-2.24 5-5 5" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+            <Path d="M7 15a8 8 0 004 1c1.1 0 2.15-.22 3.1-.62" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+            <Path d="M12 6a1 1 0 011 1v4a1 1 0 01-2 0V7a1 1 0 011-1z" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+            <Path d="M5 11v1a7 7 0 003.29 5.94" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+            <Path d="M19 11v1a7 7 0 01-1.5 4.33" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+            <Path d="M4 7.5A8.96 8.96 0 003 12c0 3.5 2 6.5 5 8" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+            <Path d="M20 7.5c.65 1.35 1 2.88 1 4.5 0 2.5-1 4.8-2.7 6.5" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+            <Path d="M9 3.5A6.97 6.97 0 0112 2.5c1.93 0 3.68.78 4.95 2.05" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
           </Svg>
         </Pressable>
-        <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: fp(11), marginTop: wp(12) }}>Appuyez pour deverrouiller</Text>
+        <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: fp(11), marginTop: wp(12) }}>Appuyez pour déverrouiller</Text>
       </View>
 
       {/* Texte confiance — fixed: paddingBottom wp(50) */}
@@ -1707,7 +1710,7 @@ ${mealsList}
           onPress={() => {
             Alert.alert(
               'Verrouiller',
-              'Votre Secret Pocket sera verrouille.',
+              'Votre Secret Pocket sera verrouillé.',
               [
                 { text: 'Verrouiller', onPress: () => { setIsUnlocked(false); setCurrentSubPage('main'); } },
                 { text: 'Annuler', style: 'cancel' },
@@ -1738,7 +1741,7 @@ ${mealsList}
         <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
           <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="rgba(212,175,55,0.6)" strokeWidth="1.5" />
         </Svg>
-        <Text style={{ color: 'rgba(212,175,55,0.6)', fontSize: fp(10) }}>Chiffre et securise — Auto-lock 30s</Text>
+        <Text style={{ color: 'rgba(212,175,55,0.6)', fontSize: fp(10) }}>Chiffré et sécurisé — Auto-lock 30s</Text>
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(40) }}>
@@ -1773,7 +1776,13 @@ ${mealsList}
                   <Text style={{ color: cat.color, fontSize: fp(11), fontWeight: '700' }}>{cat.count}</Text>
                 </View>
               ) : (
-                <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: fp(10), marginRight: wp(8) }}>Vide</Text>
+                <View style={{
+                  width: wp(24), height: wp(24), borderRadius: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(8),
+                }}>
+                  <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.2)' }}>0</Text>
+                </View>
               )}
               <Text style={{ color: 'rgba(255,255,255,0.15)', fontSize: fp(16) }}>{">"}</Text>
             </LinearGradient>
@@ -1792,21 +1801,21 @@ ${mealsList}
                 <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2" strokeLinecap="round" />
                 <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2" strokeLinecap="round" />
               </Svg>
-              <Text style={{ color: '#FFFFFF', fontSize: fp(15), fontWeight: '700' }}>Ajouter des donnees</Text>
+              <Text style={{ color: '#FFFFFF', fontSize: fp(15), fontWeight: '700' }}>Ajouter des données</Text>
             </LinearGradient>
           </Animated.View>
         </Pressable>
       </ScrollView>
 
-      {/* Bottom Sheet — Ajouter des donnees */}
+      {/* Bottom Sheet — Ajouter des données */}
       <Modal visible={showAddDataSheet} transparent animationType="slide" onRequestClose={() => setShowAddDataSheet(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} onPress={() => setShowAddDataSheet(false)}>
           <Pressable onPress={(e) => e.stopPropagation()}>
             <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
               style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
               <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }} />
-              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>Ajouter des donnees</Text>
-              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>Dans quelle categorie souhaitez-vous ajouter ?</Text>
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>Ajouter des données</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>Dans quelle catégorie souhaitez-vous ajouter ?</Text>
               {spCategories.map((cat) => (
                 <Pressable key={cat.id} delayPressIn={120}
                   onPress={() => { setShowAddDataSheet(false); console.log('Ajouter dans ' + cat.id); }}
@@ -2501,7 +2510,7 @@ ${mealsList}
               }}>Ajouter un document</Text>
               <Text style={{
                 fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(24),
-              }}>Choisissez le type de fichier a analyser par ALIXEN</Text>
+              }}>Choisissez le type de fichier à analyser par ALIXEN</Text>
 
               {/* Option 1 : Bilan sanguin */}
               <Pressable
@@ -2567,7 +2576,7 @@ ${mealsList}
               {/* Option 3 : Resultats labo */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => { setShowDocumentSheet(false); console.log('Resultats labo'); }}
+                onPress={() => { setShowDocumentSheet(false); console.log('Résultats labo'); }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   paddingVertical: wp(14), paddingHorizontal: wp(12),
@@ -2588,7 +2597,7 @@ ${mealsList}
                   </Svg>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Resultats laboratoire</Text>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Résultats laboratoire</Text>
                   <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>PDF ou photo de vos analyses</Text>
                 </View>
                 <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
@@ -2612,14 +2621,21 @@ ${mealsList}
                   justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
                 }}>
                   <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <Path d="M7 10l5 5 5-5" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <Line x1="12" y1="15" x2="12" y2="3" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Rect x="3" y="6" width="18" height="14" rx="2" stroke="#9B6DFF" strokeWidth="1.5"/>
+                    <Path d="M3 10h18" stroke="#9B6DFF" strokeWidth="1.5"/>
+                    <Line x1="12" y1="3" x2="12" y2="6" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Line x1="12" y1="10" x2="12" y2="20" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Line x1="3" y1="15" x2="21" y2="15" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Circle cx="12" cy="15" r="1.5" stroke="#9B6DFF" strokeWidth="1.5"/>
+                    <Path d="M8 2l0 2.5" stroke="#9B6DFF" strokeWidth="1.2" strokeLinecap="round"/>
+                    <Path d="M16 2l0 2.5" stroke="#9B6DFF" strokeWidth="1.2" strokeLinecap="round"/>
+                    <Path d="M6.5 3L8 4.5 9.5 3" stroke="#9B6DFF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <Path d="M14.5 3L16 4.5 17.5 3" stroke="#9B6DFF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                   </Svg>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Conversation compactee</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Reimporter depuis Secret Pocket</Text>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Conversation compactée</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Réimporter depuis Secret Pocket</Text>
                 </View>
                 <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
               </Pressable>
@@ -2702,9 +2718,16 @@ ${mealsList}
                   justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
                 }}>
                   <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round"/>
-                    <Rect x="9" y="10" width="6" height="5" rx="1" stroke="#D4AF37" strokeWidth="1.5"/>
-                    <Path d="M10 10V8a2 2 0 014 0v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Rect x="3" y="6" width="18" height="14" rx="2" stroke="#D4AF37" strokeWidth="1.5"/>
+                    <Path d="M3 10h18" stroke="#D4AF37" strokeWidth="1.5"/>
+                    <Line x1="12" y1="3" x2="12" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Line x1="12" y1="10" x2="12" y2="20" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Line x1="3" y1="15" x2="21" y2="15" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Circle cx="12" cy="15" r="1.5" stroke="#D4AF37" strokeWidth="1.5"/>
+                    <Path d="M8 2l0 2.5" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+                    <Path d="M16 2l0 2.5" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+                    <Path d="M6.5 3L8 4.5 9.5 3" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <Path d="M14.5 3L16 4.5 17.5 3" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                   </Svg>
                 </View>
                 <View style={{ flex: 1 }}>
@@ -2747,7 +2770,7 @@ ${mealsList}
               {/* Option 3 : Supprimer */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => { setShowNewSessionSheet(false); console.log('Session supprimee'); }}
+                onPress={() => { setShowNewSessionSheet(false); console.log('Session supprimée'); }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   paddingVertical: wp(14), paddingHorizontal: wp(12),
@@ -2768,7 +2791,7 @@ ${mealsList}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FF6B6B', marginBottom: wp(2) }}>Supprimer la session</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,107,107,0.4)' }}>Cette action est irreversible</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,107,107,0.4)' }}>Cette action est irréversible</Text>
                 </View>
                 <Text style={{ fontSize: fp(18), color: 'rgba(255,107,107,0.25)' }}>{">"}</Text>
               </Pressable>
@@ -2807,7 +2830,7 @@ ${mealsList}
               width: '100%', alignItems: 'center',
             }}
           >
-            {/* Icone bouclier gold */}
+            {/* Icone boite compactée gold */}
             <View style={{
               width: wp(60), height: wp(60), borderRadius: wp(30),
               backgroundColor: 'rgba(212,175,55,0.12)',
@@ -2815,9 +2838,16 @@ ${mealsList}
               borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
             }}>
               <Svg width={wp(28)} height={wp(28)} viewBox="0 0 24 24" fill="none">
-                <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round"/>
-                <Rect x="9" y="10" width="6" height="5" rx="1" stroke="#D4AF37" strokeWidth="1.5"/>
-                <Path d="M10 10V8a2 2 0 014 0v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                <Rect x="3" y="6" width="18" height="14" rx="2" stroke="#D4AF37" strokeWidth="1.5"/>
+                <Path d="M3 10h18" stroke="#D4AF37" strokeWidth="1.5"/>
+                <Line x1="12" y1="3" x2="12" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                <Line x1="12" y1="10" x2="12" y2="20" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                <Line x1="3" y1="15" x2="21" y2="15" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                <Circle cx="12" cy="15" r="1.5" stroke="#D4AF37" strokeWidth="1.5"/>
+                <Path d="M8 2l0 2.5" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+                <Path d="M16 2l0 2.5" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+                <Path d="M6.5 3L8 4.5 9.5 3" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                <Path d="M14.5 3L16 4.5 17.5 3" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
               </Svg>
             </View>
 
@@ -2830,7 +2860,7 @@ ${mealsList}
               fontSize: fp(13), color: 'rgba(255,255,255,0.5)',
               textAlign: 'center', lineHeight: fp(19), marginBottom: wp(8),
             }}>
-              Votre conversation sera compactee et rangee dans votre Secret Pocket.
+              Votre conversation sera compactée et rangée dans votre Secret Pocket.
             </Text>
 
             {/* Info securite */}
@@ -2841,9 +2871,12 @@ ${mealsList}
               marginBottom: wp(24), width: '100%',
             }}>
               <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(8) }}>
-                <Path d="M12 2a7 7 0 00-7 7v0a7 7 0 007 7" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
-                <Path d="M17 5.5A6.97 6.97 0 0119 9v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
-                <Path d="M12 10v6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                <Path d="M12 2C9.24 2 7 4.24 7 7v4" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+                <Path d="M17 7v2c0 2.76-2.24 5-5 5" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+                <Path d="M12 6a1 1 0 011 1v4a1 1 0 01-2 0V7a1 1 0 011-1z" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+                <Path d="M5 11v1a7 7 0 003.29 5.94" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+                <Path d="M19 11v1a7 7 0 01-1.5 4.33" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
+                <Path d="M9 3.5A6.97 6.97 0 0112 2.5c1.93 0 3.68.78 4.95 2.05" stroke="#D4AF37" strokeWidth="1.2" strokeLinecap="round"/>
               </Svg>
               <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.7)', flex: 1 }}>
                 Vous aurez besoin de votre empreinte digitale pour la retrouver dans Secret Pocket.
@@ -2855,7 +2888,7 @@ ${mealsList}
               delayPressIn={120}
               onPress={() => {
                 setShowCompactConfirm(false);
-                console.log('Discussion compactee vers Secret Pocket');
+                console.log('Discussion compactée vers Secret Pocket');
               }}
               style={{ width: '100%', marginBottom: wp(10) }}
             >
