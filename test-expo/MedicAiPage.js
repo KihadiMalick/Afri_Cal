@@ -571,6 +571,8 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
   // Opacite reduite si recherche active et pas un hit
   const dimmed = isSearchActive && !isSearchHit;
 
+  const isActive = status === 'unread' || isSearchHit;
+
   return (
     <Animated.View style={{
       transform: [
@@ -579,33 +581,25 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
         { translateY: wobbleY.interpolate({ inputRange: [0, 1], outputRange: [-0.8, 0.8] }) },
       ],
       opacity: dimmed ? 0.3 : 1,
+      alignItems: 'center',
     }}>
       <Pressable onPress={() => { if (status !== 'loading') onPress(); }}>
         <View style={{
-          width: BALL_SIZE,
-          height: BALL_SIZE,
-          borderRadius: BALL_SIZE / 2,
-          backgroundColor: 'transparent',
-          borderWidth: isSearchHit ? wp(3) : wp(2.5),
+          width: wp(38),
+          height: wp(38),
+          borderRadius: wp(19),
+          backgroundColor: bubbleColor + (isActive ? '40' : '20'),
+          borderWidth: isActive ? wp(3) : wp(2),
           borderColor: bubbleColor,
-          shadowColor: (status === 'unread' || isSearchHit) ? bubbleColor : 'rgba(0,0,0,0.15)',
+          shadowColor: bubbleColor,
           shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: (status === 'unread' || isSearchHit) ? 0.4 : 0.2,
-          shadowRadius: (status === 'unread' || isSearchHit) ? 8 : 4,
-          elevation: (status === 'unread' || isSearchHit) ? 4 : 2,
+          shadowOpacity: isActive ? 0.5 : 0.2,
+          shadowRadius: isActive ? 10 : 4,
+          elevation: isActive ? 5 : 2,
           justifyContent: 'center',
           alignItems: 'center',
           overflow: 'hidden',
         }}>
-          {/* Centre sombre MetalCard */}
-          <View style={{
-            position: 'absolute',
-            width: BALL_SIZE - wp(5),
-            height: BALL_SIZE - wp(5),
-            borderRadius: (BALL_SIZE - wp(5)) / 2,
-            backgroundColor: '#1E2530',
-          }} />
-
           {/* Contenu */}
           {status === 'loading' ? (
             <Animated.View style={{
@@ -616,8 +610,8 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
           ) : (
             <Text style={{
               color: bubbleColor,
-              fontSize: fp(11),
-              fontWeight: '600',
+              fontSize: fp(12),
+              fontWeight: '700',
               zIndex: 1,
             }}>
               {index + 1}
@@ -628,9 +622,9 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
           {isSearchHit && (
             <View style={{
               position: 'absolute',
-              width: BALL_SIZE + 6,
-              height: BALL_SIZE + 6,
-              borderRadius: (BALL_SIZE + 6) / 2,
+              width: wp(38) + 6,
+              height: wp(38) + 6,
+              borderRadius: (wp(38) + 6) / 2,
               borderWidth: 2,
               borderColor: '#00D984',
               zIndex: -1,
@@ -638,6 +632,15 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
           )}
         </View>
       </Pressable>
+      {/* Point indicateur sous la bulle */}
+      <View style={{
+        width: wp(5),
+        height: wp(5),
+        borderRadius: wp(2.5),
+        backgroundColor: bubbleColor,
+        marginTop: wp(3),
+        opacity: 0.6,
+      }} />
     </Animated.View>
   );
 };
@@ -1158,6 +1161,8 @@ export default function MedicAiPage() {
   const [showAddDataSheet, setShowAddDataSheet] = useState(false);
   const [showCompactConfirm, setShowCompactConfirm] = useState(false);
   const [showRechargeSheet, setShowRechargeSheet] = useState(false);
+  const [showCategoryUploadSheet, setShowCategoryUploadSheet] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   // Navigation interne MediBook
   const [mediBookView, setMediBookView] = useState('landing');
@@ -1189,6 +1194,15 @@ export default function MedicAiPage() {
     return '#FF6B6B';
   };
   const energyColor = getEnergyColor(energyPercent);
+
+  // Progress bar color — evolves with message count
+  const getProgressColor = () => {
+    const progress = Math.min((messages.length / 30) * 100, 100);
+    if (progress < 50) return 'rgba(0, 217, 132, 0.25)';
+    if (progress < 75) return 'rgba(255, 140, 66, 0.25)';
+    if (progress < 90) return 'rgba(255, 107, 107, 0.25)';
+    return 'rgba(231, 76, 60, 0.35)';
+  };
 
   // Refs
   const scrollViewRef = useRef(null);
@@ -2915,12 +2929,8 @@ ${mealsList}
                   onPress={() => {
                     setShowAddDataSheet(false);
                     setTimeout(() => {
-                      Alert.alert(cat.title, 'Comment souhaitez-vous ajouter des données ?', [
-                        { text: 'Scanner un document (PDF)', onPress: () => pickDocument('secretpocket', cat.id) },
-                        { text: 'Prendre une photo', onPress: () => takePhoto('secretpocket', cat.id) },
-                        { text: 'Depuis la galerie', onPress: () => pickImage('secretpocket', cat.id) },
-                        { text: 'Annuler', style: 'cancel' },
-                      ]);
+                      setSelectedCategory(cat);
+                      setShowCategoryUploadSheet(true);
                     }, 300);
                   }}
                   style={{
@@ -2945,6 +2955,104 @@ ${mealsList}
               ))}
               <Pressable onPress={() => setShowAddDataSheet(false)}
                 style={{ marginTop: wp(8), paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Bottom Sheet — Upload catégorie Secret Pocket */}
+      <Modal visible={showCategoryUploadSheet} transparent animationType="slide" onRequestClose={() => setShowCategoryUploadSheet(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} onPress={() => setShowCategoryUploadSheet(false)}>
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }} />
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>{selectedCategory?.title}</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>Comment souhaitez-vous ajouter des données ?</Text>
+
+              {/* Galerie */}
+              <Pressable delayPressIn={120}
+                onPress={() => { setShowCategoryUploadSheet(false); setTimeout(() => pickImage('secretpocket', selectedCategory?.id), 300); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}>
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(0,217,132,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Rect x="3" y="3" width="18" height="18" rx="2" stroke="#00D984" strokeWidth="1.5" fill="none"/>
+                    <Circle cx="8.5" cy="8.5" r="1.5" stroke="#00D984" strokeWidth="1.5" fill="none"/>
+                    <Path d="M21 15l-5-5L5 21" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Depuis la galerie</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Charger une photo existante</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Caméra */}
+              <Pressable delayPressIn={120}
+                onPress={() => { setShowCategoryUploadSheet(false); setTimeout(() => takePhoto('secretpocket', selectedCategory?.id), 300); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}>
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(255,140,66,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#FF8C42" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <Circle cx="12" cy="13" r="4" stroke="#FF8C42" strokeWidth="1.5" fill="none"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Prendre une photo</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Utiliser la caméra</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Document */}
+              <Pressable delayPressIn={120}
+                onPress={() => { setShowCategoryUploadSheet(false); setTimeout(() => pickDocument('secretpocket', selectedCategory?.id), 300); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), marginBottom: wp(16),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}>
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(77,166,255,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <Path d="M14 2v6h6" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Scanner un document</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>PDF, Word ou image</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              <Pressable onPress={() => setShowCategoryUploadSheet(false)}
+                style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
                 <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
               </Pressable>
             </LinearGradient>
@@ -3208,12 +3316,12 @@ ${mealsList}
             elevation: 3,
             position: 'relative',
           }}>
-            {/* Barre de progression emerald — derrière tout le contenu */}
+            {/* Barre de progression — couleur évolue selon le remplissage */}
             <View style={{
               position: 'absolute',
               left: 0, top: 0, bottom: 0,
               width: `${Math.min((messages.length / 30) * 100, 100)}%`,
-              backgroundColor: 'rgba(0, 217, 132, 0.25)',
+              backgroundColor: getProgressColor(),
               borderTopLeftRadius: wp(28),
               borderBottomLeftRadius: wp(28),
             }}/>
@@ -3309,7 +3417,7 @@ ${mealsList}
                     paddingVertical: wp(8),
                     maxHeight: 50,
                   }}
-                  placeholder="Consultez ALIXEN..."
+                  placeholder="Votre message"
                   placeholderTextColor="rgba(0, 0, 0, 0.3)"
                   selectionColor="#00A878"
                   value={inputText}
@@ -3644,15 +3752,15 @@ ${mealsList}
               {/* Titre */}
               <Text style={{
                 fontSize: fp(20), fontWeight: '700', color: '#FFFFFF', marginBottom: wp(4),
-              }}>Ajouter un document</Text>
+              }}>Ajouter un fichier</Text>
               <Text style={{
                 fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(24),
-              }}>Choisissez le type de fichier à analyser par ALIXEN</Text>
+              }}>Que souhaitez-vous envoyer à ALIXEN ?</Text>
 
-              {/* Option 1 : Bilan sanguin */}
+              {/* Option 1 : Charger une photo */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => { setShowDocumentSheet(false); setTimeout(() => pickDocument('medibook'), 300); }}
+                onPress={() => { setShowDocumentSheet(false); setTimeout(() => pickImage('medibook'), 300); }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   paddingVertical: wp(14), paddingHorizontal: wp(12),
@@ -3667,32 +3775,22 @@ ${mealsList}
                   justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
                 }}>
                   <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <Path d="M14 2v6h6" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <Line x1="9" y1="13" x2="15" y2="13" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
-                    <Line x1="9" y1="17" x2="13" y2="17" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Rect x="3" y="3" width="18" height="18" rx="2" stroke="#00D984" strokeWidth="1.5" fill="none"/>
+                    <Circle cx="8.5" cy="8.5" r="1.5" stroke="#00D984" strokeWidth="1.5" fill="none"/>
+                    <Path d="M21 15l-5-5L5 21" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                   </Svg>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Bilan sanguin</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Importez un fichier PDF</Text>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Charger une photo</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Depuis votre galerie</Text>
                 </View>
                 <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
               </Pressable>
 
-              {/* Option 2 : Ordonnance */}
+              {/* Option 2 : Prendre une photo */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => {
-                  setShowDocumentSheet(false);
-                  setTimeout(() => {
-                    Alert.alert('Ordonnance', 'Comment souhaitez-vous ajouter votre ordonnance ?', [
-                      { text: 'Prendre une photo', onPress: () => takePhoto('medibook') },
-                      { text: 'Depuis la galerie', onPress: () => pickImage('medibook') },
-                      { text: 'Annuler', style: 'cancel' },
-                    ]);
-                  }, 300);
-                }}
+                onPress={() => { setShowDocumentSheet(false); setTimeout(() => takePhoto('medibook'), 300); }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   paddingVertical: wp(14), paddingHorizontal: wp(12),
@@ -3707,19 +3805,18 @@ ${mealsList}
                   justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
                 }}>
                   <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Rect x="2" y="3" width="20" height="18" rx="2" stroke="#FF8C42" strokeWidth="1.5" fill="none"/>
-                    <Circle cx="12" cy="11" r="3" stroke="#FF8C42" strokeWidth="1.5" fill="none"/>
-                    <Path d="M7 21v-1a5 5 0 0110 0v1" stroke="#FF8C42" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+                    <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#FF8C42" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <Circle cx="12" cy="13" r="4" stroke="#FF8C42" strokeWidth="1.5" fill="none"/>
                   </Svg>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Ordonnance</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Prenez ou importez une photo</Text>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Prendre une photo</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Utiliser la caméra</Text>
                 </View>
                 <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
               </Pressable>
 
-              {/* Option 3 : Resultats labo */}
+              {/* Option 3 : Importer un document */}
               <Pressable
                 delayPressIn={120}
                 onPress={() => { setShowDocumentSheet(false); setTimeout(() => pickDocument('medibook'), 300); }}
@@ -3737,19 +3834,48 @@ ${mealsList}
                   justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
                 }}>
                   <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Path d="M9 2v4m6-4v4" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-                    <Path d="M8 2h8a2 2 0 012 2v3l-3 11a2 2 0 01-2 2h-2a2 2 0 01-2-2L6 7V4a2 2 0 012-2z" stroke="#4DA6FF" strokeWidth="1.5" strokeLinejoin="round" fill="none"/>
-                    <Circle cx="12" cy="12" r="2" stroke="#4DA6FF" strokeWidth="1.5" fill="none"/>
+                    <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <Path d="M14 2v6h6" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                   </Svg>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Résultats laboratoire</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>PDF ou photo de vos analyses</Text>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Importer un document</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>PDF, Word ou image</Text>
                 </View>
                 <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
               </Pressable>
 
-              {/* Option 4 : Importer une conversation compactee */}
+              {/* Option 4 : Uploader mes macros */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => { setShowDocumentSheet(false); Alert.alert('Macros', 'ALIXEN va vous guider pour partager vos macronutriments. Cette fonctionnalité arrive très bientôt !'); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(212,175,55,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Line x1="18" y1="20" x2="18" y2="10" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Line x1="12" y1="20" x2="12" y2="4" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Line x1="6" y1="20" x2="6" y2="14" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Uploader mes macros</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Partager vos données nutritionnelles</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Option 5 : Conversation compactée */}
               <Pressable
                 delayPressIn={120}
                 onPress={() => { setShowDocumentSheet(false); setTimeout(() => pickDocument('secretpocket', 'conversations'), 300); }}
