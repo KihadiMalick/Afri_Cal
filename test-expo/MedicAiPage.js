@@ -1159,6 +1159,18 @@ export default function MedicAiPage() {
   const [showCompactConfirm, setShowCompactConfirm] = useState(false);
   const [showRechargeSheet, setShowRechargeSheet] = useState(false);
 
+  // Navigation interne MediBook
+  const [mediBookView, setMediBookView] = useState('landing');
+  const [activeProfile, setActiveProfile] = useState('self');
+  const [children, setChildren] = useState([
+    { id: 'child-0', name: 'Mon enfant', age: '', free: true },
+  ]);
+  const [carnetPhotos, setCarnetPhotos] = useState([]);
+  const [statsTab, setStatsTab] = useState('nutrition');
+  const [showProfileSheet, setShowProfileSheet] = useState(false);
+  const [showAddChildSheet, setShowAddChildSheet] = useState(false);
+  const [newChildName, setNewChildName] = useState('');
+
   // Upload / Scan IA
   const [uploadState, setUploadState] = useState('idle');
   const [scanResults, setScanResults] = useState(null);
@@ -2013,8 +2025,560 @@ ${mealsList}
     </ScrollView>
   );
 
-  // ── RENDER MEDIBOOK ─────────────────────────────────────────────────────
-  const renderMediBook = () => (
+  // ── CAPTURE CARNET PAGE ──────────────────────────────────────────────────
+  const captureCarnetPage = async (index) => {
+    try {
+      Alert.alert(
+        'Page ' + (index + 1),
+        'Comment souhaitez-vous ajouter cette page ?',
+        [
+          {
+            text: 'Prendre une photo',
+            onPress: async () => {
+              const permission = await ImagePicker.requestCameraPermissionsAsync();
+              if (!permission.granted) return;
+              const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                quality: 0.8,
+                base64: true,
+              });
+              if (!result.canceled) {
+                const photo = result.assets[0];
+                setCarnetPhotos(prev => {
+                  const updated = [...prev];
+                  updated[index] = { uri: photo.uri, base64: photo.base64, index };
+                  return updated;
+                });
+              }
+            }
+          },
+          {
+            text: 'Depuis la galerie',
+            onPress: async () => {
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                quality: 0.8,
+                base64: true,
+              });
+              if (!result.canceled) {
+                const photo = result.assets[0];
+                setCarnetPhotos(prev => {
+                  const updated = [...prev];
+                  updated[index] = { uri: photo.uri, base64: photo.base64, index };
+                  return updated;
+                });
+              }
+            }
+          },
+          { text: 'Annuler', style: 'cancel' },
+        ]
+      );
+    } catch (error) {
+      console.log('Erreur capture carnet:', error);
+    }
+  };
+
+  // ── PROFILE BADGE COMPONENT ──────────────────────────────────────────────
+  const ProfileBadge = () => {
+    const profileName = activeProfile === 'self' ? 'Moi' : (children.find(c => c.id === activeProfile)?.name || 'Moi');
+    return (
+      <Pressable delayPressIn={120} onPress={() => setShowProfileSheet(true)}
+        style={{ backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(4), flexDirection: 'row', alignItems: 'center' }}>
+        <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '600' }}>{profileName} ▾</Text>
+      </Pressable>
+    );
+  };
+
+  // ── RENDER MEDIBOOK LANDING ────────────────────────────────────────────────
+  const renderMediBookLanding = () => (
+    <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+      <StatusBar barStyle="light-content" />
+      <LinearGradient
+        colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+        style={{
+          paddingTop: Platform.OS === 'android' ? 35 : 50,
+          paddingBottom: wp(14), paddingHorizontal: wp(16),
+          flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+          borderBottomWidth: 1, borderBottomColor: '#4A4F55',
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
+          <Pressable delayPressIn={120} onPress={() => { setMediBookView('landing'); setCurrentSubPage('main'); }}
+            style={({ pressed }) => ({
+              width: wp(36), height: wp(36), borderRadius: wp(18),
+              backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55',
+              justifyContent: 'center', alignItems: 'center',
+              transform: [{ scale: pressed ? 0.92 : 1 }],
+            })}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View>
+            <Text style={{ color: '#FFFFFF', fontSize: fp(22), fontWeight: '700' }}>MediBook</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: fp(12) }}>Votre rapport santé</Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+          <ProfileBadge />
+          <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
+            <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(20), paddingBottom: wp(40) }}>
+        {/* Carte 1 : Importer mon carnet de santé */}
+        <Pressable delayPressIn={120} onPress={() => setMediBookView('carnet')}>
+          <LinearGradient
+            colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+            style={{
+              borderRadius: wp(20), padding: wp(24),
+              marginBottom: wp(16), borderWidth: 1, borderColor: '#4A4F55',
+            }}
+          >
+            <View style={{ alignItems: 'center', marginBottom: wp(16) }}>
+              <Svg width={wp(50)} height={wp(50)} viewBox="0 0 24 24" fill="none">
+                <Rect x="4" y="2" width="16" height="20" rx="2" stroke="#00D984" strokeWidth="1.5"/>
+                <Line x1="4" y1="2" x2="4" y2="22" stroke="#00D984" strokeWidth="3" strokeLinecap="round"/>
+                <Line x1="8" y1="6" x2="16" y2="6" stroke="#00D984" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
+                <Line x1="8" y1="10" x2="16" y2="10" stroke="#00D984" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
+                <Line x1="8" y1="14" x2="14" y2="14" stroke="#00D984" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
+                <Circle cx="18" cy="18" r="5" fill="#252A30" stroke="#00D984" strokeWidth="1.5"/>
+                <Circle cx="18" cy="18" r="2" stroke="#00D984" strokeWidth="1.2"/>
+              </Svg>
+            </View>
+            <Text style={{ fontSize: fp(17), fontWeight: '700', color: '#FFF', textAlign: 'center', marginBottom: wp(6) }}>
+              Importer mon carnet de santé
+            </Text>
+            <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: fp(17) }}>
+              Photographiez les pages de votre carnet physique. ALIXEN scannera et extraira toutes les informations.
+            </Text>
+          </LinearGradient>
+        </Pressable>
+
+        {/* Carte 2 : Continuer avec mes données */}
+        <Pressable delayPressIn={120} onPress={() => setMediBookView('report')}>
+          <LinearGradient
+            colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+            style={{
+              borderRadius: wp(20), padding: wp(24),
+              marginBottom: wp(16), borderWidth: 1, borderColor: '#4A4F55',
+            }}
+          >
+            <View style={{ alignItems: 'center', marginBottom: wp(16) }}>
+              <Svg width={wp(50)} height={wp(50)} viewBox="0 0 24 24" fill="none">
+                <Path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </Svg>
+            </View>
+            <Text style={{ fontSize: fp(17), fontWeight: '700', color: '#FFF', textAlign: 'center', marginBottom: wp(6) }}>
+              Continuer avec mes données
+            </Text>
+            <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: fp(17) }}>
+              Utilisez les données enregistrées dans l'app (nutrition, activité, humeur) pour générer votre rapport.
+            </Text>
+          </LinearGradient>
+        </Pressable>
+
+        {/* Carte 3 : Mes Stats */}
+        <Pressable delayPressIn={120} onPress={() => setMediBookView('stats')}>
+          <View style={{
+            flexDirection: 'row', alignItems: 'center',
+            backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(14),
+            padding: wp(14), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+          }}>
+            <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(12) }}>
+              <Line x1="18" y1="20" x2="18" y2="10" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
+              <Line x1="12" y1="20" x2="12" y2="4" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
+              <Line x1="6" y1="20" x2="6" y2="14" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
+            </Svg>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#2D3436' }}>Mes Stats</Text>
+              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)' }}>Graphiques et évolution santé</Text>
+            </View>
+            <Text style={{ fontSize: fp(16), color: 'rgba(0,0,0,0.2)' }}>{">"}</Text>
+          </View>
+        </Pressable>
+      </ScrollView>
+    </View>
+  );
+
+  // ── RENDER CARNET CAPTURE ──────────────────────────────────────────────────
+  const renderCarnetCapture = () => {
+    const caseSize = (Dimensions.get('window').width - wp(16) * 2 - wp(6) * 4) / 5;
+    const capturedCount = carnetPhotos.filter(p => p).length;
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient
+          colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+          style={{
+            paddingTop: Platform.OS === 'android' ? 35 : 50,
+            paddingBottom: wp(14), paddingHorizontal: wp(16),
+            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+            borderBottomWidth: 1, borderBottomColor: '#4A4F55',
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
+            <Pressable delayPressIn={120} onPress={() => setMediBookView('landing')}
+              style={({ pressed }) => ({
+                width: wp(36), height: wp(36), borderRadius: wp(18),
+                backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55',
+                justifyContent: 'center', alignItems: 'center',
+                transform: [{ scale: pressed ? 0.92 : 1 }],
+              })}>
+              <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+                <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </Pressable>
+            <View>
+              <Text style={{ color: '#FFFFFF', fontSize: fp(22), fontWeight: '700' }}>Carnet de santé</Text>
+              <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: fp(12) }}>25 emplacements disponibles</Text>
+            </View>
+          </View>
+          <ProfileBadge />
+        </LinearGradient>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(40) }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(6) }}>
+            {Array.from({ length: 25 }, (_, index) => (
+              carnetPhotos[index] ? (
+                <Pressable
+                  key={index}
+                  onPress={() => {
+                    Alert.alert(
+                      'Page ' + (index + 1),
+                      'Supprimer cette photo ?',
+                      [
+                        { text: 'Supprimer', style: 'destructive', onPress: () => {
+                          setCarnetPhotos(prev => {
+                            const updated = [...prev];
+                            updated[index] = undefined;
+                            return updated;
+                          });
+                        }},
+                        { text: 'Annuler', style: 'cancel' },
+                      ]
+                    );
+                  }}
+                  style={{
+                    width: caseSize, height: caseSize,
+                    borderRadius: wp(8), overflow: 'hidden',
+                    borderWidth: 2, borderColor: '#00D984',
+                  }}
+                >
+                  <Image
+                    source={{ uri: carnetPhotos[index].uri }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                  <View style={{
+                    position: 'absolute', top: wp(2), left: wp(2),
+                    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: wp(8),
+                    paddingHorizontal: wp(4), paddingVertical: wp(1),
+                  }}>
+                    <Text style={{ color: '#FFF', fontSize: fp(8), fontWeight: '700' }}>{index + 1}</Text>
+                  </View>
+                </Pressable>
+              ) : (
+                <Pressable
+                  key={index}
+                  onPress={() => captureCarnetPage(index)}
+                  style={{
+                    width: caseSize, height: caseSize,
+                    borderRadius: wp(8), borderWidth: 1.5,
+                    borderColor: 'rgba(255,255,255,0.1)', borderStyle: 'dashed',
+                    justifyContent: 'center', alignItems: 'center',
+                    backgroundColor: 'rgba(255,255,255,0.03)',
+                  }}
+                >
+                  <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: fp(16) }}>+</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.15)', fontSize: fp(8), marginTop: wp(2) }}>{index + 1}</Text>
+                </Pressable>
+              )
+            ))}
+          </View>
+
+          <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginTop: wp(12) }}>
+            {capturedCount} page{capturedCount > 1 ? 's' : ''} capturée{capturedCount > 1 ? 's' : ''} sur 25
+          </Text>
+
+          {capturedCount > 0 && (
+            <View style={{ marginTop: wp(20), paddingHorizontal: wp(8) }}>
+              <Pressable
+                delayPressIn={120}
+                onPress={() => {
+                  const photos = carnetPhotos.filter(p => p);
+                  if (photos.length === 0) return;
+                  Alert.alert(
+                    'Analyser ' + photos.length + ' page' + (photos.length > 1 ? 's' : ''),
+                    'ALIXEN va analyser vos pages et extraire toutes les informations médicales (vaccins, médicaments, diagnostics...).',
+                    [
+                      {
+                        text: 'Lancer l\'analyse',
+                        onPress: () => {
+                          console.log('Lancement analyse carnet:', photos.length, 'pages');
+                          startAIScan(photos[0].uri, 'Carnet de santé (' + photos.length + ' pages)', 'image/jpeg', photos[0].base64);
+                        }
+                      },
+                      { text: 'Annuler', style: 'cancel' },
+                    ]
+                  );
+                }}
+              >
+                <LinearGradient
+                  colors={['#00D984', '#00B871']}
+                  style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center' }}
+                >
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>
+                    Intégrer ({capturedCount} page{capturedCount > 1 ? 's' : ''})
+                  </Text>
+                </LinearGradient>
+              </Pressable>
+              <Text style={{
+                fontSize: fp(12), color: 'rgba(255,255,255,0.3)',
+                textAlign: 'center', marginTop: wp(10),
+              }}>
+                Vous pouvez ajouter d'autres pages avant d'intégrer
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  // ── RENDER MEDIBOOK STATS ──────────────────────────────────────────────────
+  const renderMediBookStats = () => {
+    const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    const caloriesData = [1920, 1750, 2050, 1800, 1650, 2200, 1850];
+    const burnedData = [320, 280, 450, 180, 510, 0, 220];
+    const moodData = [3, 4, 3, 2, 4, 5, 4];
+
+    const StatsCard = ({ title, children: cardChildren }) => (
+      <View style={{
+        backgroundColor: '#FAFBFC', borderRadius: wp(16),
+        padding: wp(16), marginBottom: wp(12),
+        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+      }}>
+        <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(12) }}>
+          {title}
+        </Text>
+        {cardChildren}
+      </View>
+    );
+
+    const renderNutritionTab = () => (
+      <>
+        <StatsCard title="Calories moyennes / jour">
+          <Text style={{ fontSize: fp(28), fontWeight: '700', color: '#00D984' }}>1 850 kcal</Text>
+          <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)', marginTop: wp(4) }}>Objectif : 2 100 kcal</Text>
+          <View style={{ height: wp(6), backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(3), marginTop: wp(10) }}>
+            <View style={{ width: '88%', height: '100%', backgroundColor: '#00D984', borderRadius: wp(3) }} />
+          </View>
+        </StatsCard>
+
+        <StatsCard title="Répartition macros">
+          {[
+            { label: 'Protéines', value: '92g', pct: 30, color: '#4DA6FF' },
+            { label: 'Glucides', value: '215g', pct: 46, color: '#00D984' },
+            { label: 'Lipides', value: '62g', pct: 24, color: '#FF8C42' },
+          ].map((macro, i) => (
+            <View key={i} style={{ marginBottom: wp(10) }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
+                <Text style={{ fontSize: fp(12), color: '#2D3436', fontWeight: '600' }}>{macro.label}</Text>
+                <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)' }}>{macro.value} — {macro.pct}%</Text>
+              </View>
+              <View style={{ height: wp(6), backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(3) }}>
+                <View style={{ width: macro.pct + '%', height: '100%', backgroundColor: macro.color, borderRadius: wp(3) }} />
+              </View>
+            </View>
+          ))}
+        </StatsCard>
+
+        <StatsCard title="Derniers 7 jours">
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: wp(80) }}>
+            {caloriesData.map((cal, i) => {
+              const maxCal = 2200;
+              const h = (cal / maxCal) * wp(65);
+              const inTarget = cal >= 1800 && cal <= 2200;
+              return (
+                <View key={i} style={{ alignItems: 'center', flex: 1 }}>
+                  <View style={{ width: wp(16), height: h, backgroundColor: inTarget ? '#00D984' : '#FF8C42', borderRadius: wp(4) }} />
+                  <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>{weekDays[i]}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </StatsCard>
+      </>
+    );
+
+    const renderSanteTab = () => (
+      <>
+        <StatsCard title="Score Vitalité">
+          <View style={{ alignItems: 'center', marginVertical: wp(8) }}>
+            <View style={{
+              width: wp(100), height: wp(100), borderRadius: wp(50),
+              borderWidth: wp(6), borderColor: '#00D984',
+              justifyContent: 'center', alignItems: 'center',
+              backgroundColor: 'rgba(0,217,132,0.05)',
+            }}>
+              <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#00D984' }}>84</Text>
+              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.3)' }}>/100</Text>
+            </View>
+          </View>
+        </StatsCard>
+
+        <StatsCard title="Dernières analyses">
+          {[
+            { label: 'Cholestérol élevé', color: '#FF6B6B' },
+            { label: 'Fer bas', color: '#FF8C42' },
+            { label: 'Vitamine D insuffisante', color: '#FF8C42' },
+          ].map((item, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+              <View style={{ width: wp(4), height: wp(24), backgroundColor: item.color, borderRadius: wp(2), marginRight: wp(10) }} />
+              <Text style={{ fontSize: fp(13), color: '#2D3436' }}>{item.label}</Text>
+            </View>
+          ))}
+        </StatsCard>
+
+        <StatsCard title="Vaccins à jour">
+          {['BCG', 'DTP', 'Hépatite B', 'Fièvre jaune'].map((v, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+              <View style={{
+                width: wp(18), height: wp(18), borderRadius: wp(9),
+                backgroundColor: 'rgba(0,217,132,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(8),
+              }}>
+                <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>✓</Text>
+              </View>
+              <Text style={{ fontSize: fp(13), color: '#2D3436' }}>{v}</Text>
+            </View>
+          ))}
+        </StatsCard>
+      </>
+    );
+
+    const renderActiviteTab = () => (
+      <>
+        <StatsCard title="Cette semaine">
+          <Text style={{ fontSize: fp(28), fontWeight: '700', color: '#00D984' }}>12 450 pas / jour</Text>
+          <Text style={{ fontSize: fp(16), fontWeight: '600', color: '#4DA6FF', marginTop: wp(6) }}>4h32 d'activité</Text>
+        </StatsCard>
+
+        <StatsCard title="Calories brûlées">
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: wp(80) }}>
+            {burnedData.map((cal, i) => {
+              const maxCal = 510;
+              const h = Math.max(wp(4), (cal / maxCal) * wp(65));
+              return (
+                <View key={i} style={{ alignItems: 'center', flex: 1 }}>
+                  <View style={{ width: wp(16), height: h, backgroundColor: '#FF8C42', borderRadius: wp(4) }} />
+                  <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>{weekDays[i]}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </StatsCard>
+      </>
+    );
+
+    const renderHumeurTab = () => (
+      <>
+        <StatsCard title="Humeur moyenne">
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(10) }}>
+            <Text style={{ fontSize: fp(32) }}>😊</Text>
+            <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#00D984' }}>Plutôt bien</Text>
+          </View>
+        </StatsCard>
+
+        <StatsCard title="Courbe 7 jours">
+          <View style={{ height: wp(80), flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+            {moodData.map((val, i) => {
+              const h = (val / 5) * wp(65);
+              return (
+                <View key={i} style={{ alignItems: 'center', flex: 1 }}>
+                  <View style={{
+                    width: wp(10), height: wp(10), borderRadius: wp(5),
+                    backgroundColor: '#00D984',
+                    marginBottom: h,
+                  }} />
+                  <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>{weekDays[i]}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </StatsCard>
+      </>
+    );
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient
+          colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+          style={{
+            paddingTop: Platform.OS === 'android' ? 35 : 50,
+            paddingBottom: wp(14), paddingHorizontal: wp(16),
+            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+            borderBottomWidth: 1, borderBottomColor: '#4A4F55',
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
+            <Pressable delayPressIn={120} onPress={() => setMediBookView('landing')}
+              style={({ pressed }) => ({
+                width: wp(36), height: wp(36), borderRadius: wp(18),
+                backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55',
+                justifyContent: 'center', alignItems: 'center',
+                transform: [{ scale: pressed ? 0.92 : 1 }],
+              })}>
+              <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+                <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </Pressable>
+            <View>
+              <Text style={{ color: '#FFFFFF', fontSize: fp(22), fontWeight: '700' }}>Mes Stats</Text>
+            </View>
+          </View>
+          <ProfileBadge />
+        </LinearGradient>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(40) }}>
+          {/* Onglets */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: wp(12) }}>
+            {['nutrition', 'santé', 'activité', 'humeur'].map(tab => (
+              <Pressable
+                key={tab}
+                onPress={() => setStatsTab(tab)}
+                style={{
+                  paddingHorizontal: wp(18), paddingVertical: wp(8),
+                  borderRadius: wp(20), marginRight: wp(8),
+                  backgroundColor: statsTab === tab ? '#00D984' : 'rgba(0,0,0,0.05)',
+                }}
+              >
+                <Text style={{
+                  fontSize: fp(13), fontWeight: '600',
+                  color: statsTab === tab ? '#FFF' : '#2D3436',
+                }}>
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+
+          {statsTab === 'nutrition' && renderNutritionTab()}
+          {statsTab === 'santé' && renderSanteTab()}
+          {statsTab === 'activité' && renderActiviteTab()}
+          {statsTab === 'humeur' && renderHumeurTab()}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  // ── RENDER MEDIBOOK REPORT (ancien contenu) ────────────────────────────────
+  const renderMediBookReport = () => (
     <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
       <StatusBar barStyle="light-content" />
       {/* Header */}
@@ -2028,7 +2592,7 @@ ${mealsList}
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
-          <Pressable delayPressIn={120} onPress={() => setCurrentSubPage('main')}
+          <Pressable delayPressIn={120} onPress={() => setMediBookView('landing')}
             style={({ pressed }) => ({
               width: wp(36), height: wp(36), borderRadius: wp(18),
               backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55',
@@ -2127,6 +2691,14 @@ ${mealsList}
       </ScrollView>
     </View>
   );
+
+  // ── RENDER MEDIBOOK (ROUTER) ───────────────────────────────────────────────
+  const renderMediBook = () => {
+    if (mediBookView === 'carnet') return renderCarnetCapture();
+    if (mediBookView === 'stats') return renderMediBookStats();
+    if (mediBookView === 'report') return renderMediBookReport();
+    return renderMediBookLanding();
+  };
 
   // ── RENDER SECRET POCKET — LOCKED ──────────────────────────────────────
   const renderSecretPocketLocked = () => (
@@ -3584,6 +4156,162 @@ ${mealsList}
             </Pressable>
           </LinearGradient>
         </View>
+      </Modal>
+
+      {/* ===== MODAL — Profil Switcher MediBook ===== */}
+      <Modal
+        visible={showProfileSheet}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowProfileSheet(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          onPress={() => setShowProfileSheet(false)}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient
+              colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{
+                borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24),
+                paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34),
+              }}
+            >
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }}/>
+
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>
+                Profil MediBook
+              </Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>
+                Sélectionnez le carnet à consulter
+              </Text>
+
+              {/* Option : Moi-même */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => { setActiveProfile('self'); setShowProfileSheet(false); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: activeProfile === 'self' ? 'rgba(0,217,132,0.1)' : 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1,
+                  borderColor: activeProfile === 'self' ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(22),
+                  backgroundColor: 'rgba(0,217,132,0.15)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
+                    <Circle cx="12" cy="8" r="4" stroke="#00D984" strokeWidth="1.5"/>
+                    <Path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF' }}>Mon carnet</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>LXM-2K7F4A</Text>
+                </View>
+                {activeProfile === 'self' && (
+                  <View style={{ width: wp(20), height: wp(20), borderRadius: wp(10), backgroundColor: '#00D984', justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: '#FFF', fontSize: fp(12), fontWeight: '700' }}>✓</Text>
+                  </View>
+                )}
+              </Pressable>
+
+              {/* Enfants existants */}
+              {children.map((child) => (
+                <Pressable
+                  key={child.id}
+                  delayPressIn={120}
+                  onPress={() => { setActiveProfile(child.id); setShowProfileSheet(false); }}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    paddingVertical: wp(14), paddingHorizontal: wp(12),
+                    backgroundColor: activeProfile === child.id ? 'rgba(77,166,255,0.1)' : 'rgba(255,255,255,0.05)',
+                    borderRadius: wp(14), marginBottom: wp(10),
+                    borderWidth: 1,
+                    borderColor: activeProfile === child.id ? 'rgba(77,166,255,0.3)' : 'rgba(255,255,255,0.08)',
+                  }}
+                >
+                  <View style={{
+                    width: wp(44), height: wp(44), borderRadius: wp(22),
+                    backgroundColor: 'rgba(77,166,255,0.15)',
+                    justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                  }}>
+                    <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
+                      <Circle cx="12" cy="8" r="3" stroke="#4DA6FF" strokeWidth="1.5"/>
+                      <Path d="M8 21v-1a4 4 0 018 0v1" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round"/>
+                    </Svg>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF' }}>{child.name}</Text>
+                    <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>
+                      {child.free ? 'Gratuit' : '5 000 Lix'}
+                    </Text>
+                  </View>
+                  {activeProfile === child.id && (
+                    <View style={{ width: wp(20), height: wp(20), borderRadius: wp(10), backgroundColor: '#4DA6FF', justifyContent: 'center', alignItems: 'center' }}>
+                      <Text style={{ color: '#FFF', fontSize: fp(12), fontWeight: '700' }}>✓</Text>
+                    </View>
+                  )}
+                </Pressable>
+              ))}
+
+              {/* Bouton ajouter un enfant */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => {
+                  setShowProfileSheet(false);
+                  if (children.length >= 1 && children.every(c => !c.free || children.length > 1)) {
+                    Alert.alert(
+                      'Ajouter un enfant',
+                      'L\'ajout d\'un enfant supplémentaire coûte 5 000 Lix (5 $). Chaque enfant aura son propre carnet de santé et suivi personnalisé.\n\nSouhaitez-vous continuer ?',
+                      [
+                        { text: 'Ajouter (5 000 Lix)', onPress: () => {
+                          const newChild = { id: 'child-' + children.length, name: 'Enfant ' + (children.length + 1), age: '', free: false };
+                          setChildren(prev => [...prev, newChild]);
+                          setActiveProfile(newChild.id);
+                        }},
+                        { text: 'Annuler', style: 'cancel' },
+                      ]
+                    );
+                  } else {
+                    const newChild = { id: 'child-' + children.length, name: 'Enfant ' + (children.length + 1), age: '', free: false };
+                    setChildren(prev => [...prev, newChild]);
+                    setActiveProfile(newChild.id);
+                  }
+                }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  borderRadius: wp(14), marginBottom: wp(12),
+                  borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.1)', borderStyle: 'dashed',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(22),
+                  backgroundColor: 'rgba(212,175,55,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Text style={{ color: '#D4AF37', fontSize: fp(20), fontWeight: '300' }}>+</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#D4AF37' }}>Ajouter un enfant</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)' }}>
+                    {children.length < 1 ? '1er enfant gratuit' : '5 000 Lix par enfant'}
+                  </Text>
+                </View>
+              </Pressable>
+
+              <Pressable onPress={() => setShowProfileSheet(false)}
+                style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Fermer</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );
