@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -1164,6 +1165,7 @@ export default function MedicAiPage() {
   const [scanSteps, setScanSteps] = useState([]);
   const [scanContext, setScanContext] = useState(null);
   const [scanCategory, setScanCategory] = useState(null);
+  const [scanFileName, setScanFileName] = useState('');
 
   // Énergie — valeurs dérivées
   const energyLeft = energyLimit - energyUsed;
@@ -1618,53 +1620,113 @@ ${mealsList}
     }
   };
 
+  const callScanAPI = async (fileUri, fileName, mimeType) => {
+    try {
+      const base64 = await FileSystem.readAsStringAsync(fileUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/scan-medical`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          imageBase64: base64,
+          mimeType: mimeType || 'image/jpeg',
+          userId: TEST_USER_ID,
+          context: scanContext,
+          category: scanCategory,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Scan API error:', errorText);
+        return { error: 'L\'analyse a échoué. Réessayez.' };
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Scan API call error:', error);
+      return { error: 'Erreur de connexion. Vérifiez votre réseau.' };
+    }
+  };
+
   const startAIScan = async (fileUri, fileName, mimeType) => {
     setUploadState('scanning');
     setScanSteps([]);
     setScanResults(null);
+    setScanFileName(fileName || 'Document');
 
     const steps = [
       { text: 'Ouverture du document...', delay: 800 },
       { text: 'Détection du type de document...', delay: 1200 },
-      { text: 'Extraction des informations médicales...', delay: 1500 },
-      { text: 'Analyse des valeurs et références...', delay: 1800 },
-      { text: "Identification des points d'attention...", delay: 1200 },
-      { text: 'Structuration des données...', delay: 1000 },
-      { text: 'Préparation du résumé...', delay: 800 },
+      { text: 'Lecture du contenu...', delay: 1000 },
+      { text: 'Envoi à ALIXEN pour analyse...', delay: 1500 },
     ];
 
-    for (let i = 0; i < steps.length; i++) {
-      if (uploadState === 'idle') return; // annulé
-      await new Promise(resolve => setTimeout(resolve, steps[i].delay));
-      setScanSteps(prev => [...prev, { ...steps[i], completed: true }]);
+    // Jouer les étapes d'animation PENDANT que l'API travaille
+    const animationPromise = (async () => {
+      for (let i = 0; i < steps.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, steps[i].delay));
+        setScanSteps(prev => [...prev, { text: steps[i].text, completed: true }]);
+      }
+    })();
+
+    // EN PARALLÈLE, lancer le vrai appel API
+    const apiPromise = callScanAPI(fileUri, fileName, mimeType);
+
+    // Attendre les deux
+    const [_, apiResult] = await Promise.all([animationPromise, apiPromise]);
+
+    // Ajouter les dernières étapes après retour API
+    const postSteps = [
+      'Analyse des valeurs et références...',
+      'Identification des points d\'attention...',
+      'Préparation du résumé...',
+    ];
+
+    for (let i = 0; i < postSteps.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      setScanSteps(prev => [...prev, { text: postSteps[i], completed: true }]);
     }
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    setScanResults({
-      documentType: 'Bilan sanguin complet',
-      date: '15 mars 2026',
-      source: fileName,
-      summary: "Bilan sanguin réalisé au laboratoire BioMed. Résultats globalement normaux avec quelques points d'attention.",
-      data: [
-        { label: 'Glycémie à jeun', value: '1.05 g/L', ref: '0.70 - 1.10 g/L', status: 'normal' },
-        { label: 'Cholestérol total', value: '2.35 g/L', ref: '< 2.00 g/L', status: 'elevated' },
-        { label: 'HDL Cholestérol', value: '0.55 g/L', ref: '> 0.40 g/L', status: 'normal' },
-        { label: 'Triglycérides', value: '1.20 g/L', ref: '< 1.50 g/L', status: 'normal' },
-        { label: 'Hémoglobine', value: '14.2 g/dL', ref: '13.0 - 17.0 g/dL', status: 'normal' },
-        { label: 'Fer sérique', value: '45 µg/dL', ref: '60 - 170 µg/dL', status: 'low' },
-      ],
-      alerts: [
-        "Cholestérol total légèrement élevé — surveiller l'alimentation",
-        'Fer sérique bas — risque d\'anémie, consulter votre médecin',
-      ],
-    });
+    if (apiResult.error) {
+      Alert.alert('Erreur d\'analyse', apiResult.error);
+      setUploadState('idle');
+      return;
+    }
+
+    setScanResults(apiResult);
     setUploadState('results');
   };
 
   // ── RENDER SCANNING SCREEN ─────────────────────────────────────────────
   const renderScanningScreen = () => (
     <View style={{ flex: 1, backgroundColor: '#1A1D22', paddingHorizontal: wp(20), paddingTop: wp(60) }}>
+      {/* Bouton retour */}
+      <Pressable
+        onPress={() => {
+          setUploadState('idle');
+          setScanSteps([]);
+        }}
+        style={{
+          position: 'absolute', top: wp(16), left: wp(16), zIndex: 10,
+          width: wp(36), height: wp(36), borderRadius: wp(18),
+          backgroundColor: 'rgba(255,255,255,0.08)',
+          justifyContent: 'center', alignItems: 'center',
+          borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+        }}
+      >
+        <Text style={{ color: '#FFF', fontSize: fp(18) }}>{"<"}</Text>
+      </Pressable>
+
       <View style={{ alignItems: 'center', marginBottom: wp(40) }}>
         <View style={{
           width: wp(70), height: wp(70), borderRadius: wp(35),
@@ -1681,13 +1743,39 @@ ${mealsList}
           ALIXEN analyse...
         </Text>
         <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)' }}>
+          {scanFileName}
+        </Text>
+        <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.25)', marginTop: wp(2) }}>
           Ne fermez pas l'application
         </Text>
       </View>
 
       <View style={{ paddingHorizontal: wp(8) }}>
         {scanSteps.map((step, index) => (
-          <ScanStepRow key={index} step={step} index={index} isLatest={index === scanSteps.length - 1} />
+          <View key={index} style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: wp(10),
+            borderBottomWidth: 1,
+            borderBottomColor: 'rgba(255,255,255,0.04)',
+          }}>
+            <View style={{
+              width: wp(22), height: wp(22), borderRadius: wp(11),
+              backgroundColor: 'rgba(0,217,132,0.15)',
+              justifyContent: 'center', alignItems: 'center',
+              marginRight: wp(12),
+            }}>
+              <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '700' }}>{'✓'}</Text>
+            </View>
+            <Text style={{
+              fontSize: fp(13),
+              color: index === scanSteps.length - 1 ? '#00D984' : 'rgba(255,255,255,0.6)',
+              fontWeight: index === scanSteps.length - 1 ? '600' : '400',
+              flex: 1,
+            }}>
+              {step.text}
+            </Text>
+          </View>
         ))}
         {scanSteps.length < 7 && (
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), opacity: 0.6 }}>
@@ -1712,6 +1800,33 @@ ${mealsList}
   const renderScanResults = () => (
     <ScrollView style={{ flex: 1, backgroundColor: '#1A1D22' }}>
       <View style={{ paddingHorizontal: wp(16), paddingTop: wp(20) }}>
+        {/* Bouton retour */}
+        <Pressable
+          onPress={() => {
+            Alert.alert(
+              'Quitter l\'analyse ?',
+              'Les données extraites seront perdues.',
+              [
+                { text: 'Quitter', style: 'destructive', onPress: () => {
+                  setUploadState('idle');
+                  setScanResults(null);
+                  setScanSteps([]);
+                }},
+                { text: 'Continuer', style: 'cancel' },
+              ]
+            );
+          }}
+          style={{
+            width: wp(36), height: wp(36), borderRadius: wp(18),
+            backgroundColor: 'rgba(255,255,255,0.08)',
+            justifyContent: 'center', alignItems: 'center',
+            borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+            marginBottom: wp(8),
+          }}
+        >
+          <Text style={{ color: '#FFF', fontSize: fp(18) }}>{"<"}</Text>
+        </Pressable>
+
         {/* Header résultats */}
         <View style={{ alignItems: 'center', marginBottom: wp(24) }}>
           <View style={{
@@ -1740,6 +1855,11 @@ ${mealsList}
           <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)' }}>
             {scanResults?.date} — {scanResults?.source}
           </Text>
+          {scanResults?.laboratory && scanResults.laboratory !== 'Non spécifié' && (
+            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginTop: wp(2) }}>
+              {scanResults.laboratory}
+            </Text>
+          )}
           <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.6)', marginTop: wp(8), lineHeight: fp(19) }}>
             {scanResults?.summary}
           </Text>
@@ -1767,6 +1887,30 @@ ${mealsList}
             }}>{item.value}</Text>
           </View>
         ))}
+
+        {/* Section Médicaments (si ordonnance) */}
+        {scanResults?.medications && scanResults.medications.length > 0 && (
+          <View style={{ marginTop: wp(16) }}>
+            <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#4DA6FF', marginBottom: wp(10) }}>
+              Médicaments prescrits
+            </Text>
+            {scanResults.medications.map((med, index) => (
+              <View key={index} style={{
+                paddingVertical: wp(12), paddingHorizontal: wp(12),
+                backgroundColor: 'rgba(77,166,255,0.06)',
+                borderRadius: wp(10), marginBottom: wp(6),
+                borderLeftWidth: wp(3), borderLeftColor: '#4DA6FF',
+              }}>
+                <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>
+                  {med.name}
+                </Text>
+                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)', marginTop: wp(2) }}>
+                  {med.dosage} — {med.frequency} — {med.duration}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Alertes */}
         {scanResults?.alerts && scanResults.alerts.length > 0 && (
@@ -2439,39 +2583,33 @@ ${mealsList}
           transform: [{ translateY: inputEntry.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }],
         }}>
           <View style={{
-            marginHorizontal: 14,
-            marginBottom: 6,
-            borderRadius: 22,
+            marginHorizontal: wp(12),
+            marginBottom: wp(12),
+            borderRadius: wp(28),
             overflow: 'hidden',
+            backgroundColor: '#FFFFFF',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.08,
+            shadowRadius: 8,
+            elevation: 3,
+            position: 'relative',
           }}>
-            {/* Barre d'énergie en fond */}
+            {/* Barre de progression emerald — derrière tout le contenu */}
             <View style={{
-              position: 'absolute', left: 0, top: 0, bottom: 0, right: 0,
-              borderRadius: 22, overflow: 'hidden', zIndex: 0,
-            }}>
-              <View style={{
-                width: `${energyPercent}%`, height: '100%',
-                backgroundColor: energyColor, opacity: 0.12,
-              }} />
-            </View>
-
-            {/* Dégradé en fond */}
-            <LinearGradient
-              colors={['rgba(0,217,132,0.05)', 'rgba(0,217,132,0.15)', 'rgba(0,217,132,0.3)']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{
-                position: 'absolute',
-                top: 0, left: 0, right: 0, bottom: 0,
-                borderRadius: 22,
-              }}
-            />
+              position: 'absolute',
+              left: 0, top: 0, bottom: 0,
+              width: `${Math.min((messages.length / 30) * 100, 100)}%`,
+              backgroundColor: 'rgba(0, 217, 132, 0.12)',
+              borderTopLeftRadius: wp(28),
+              borderBottomLeftRadius: wp(28),
+            }}/>
 
             <View style={{
               flexDirection: 'row',
               alignItems: 'center',
-              paddingHorizontal: 8,
-              paddingVertical: 6,
+              paddingHorizontal: wp(4),
+              paddingVertical: wp(4),
               gap: 6,
             }}>
               {/* Bouton "+" ajout document */}
@@ -2543,24 +2681,20 @@ ${mealsList}
               {/* Champ message */}
               <View style={{
                 flex: 1,
-                backgroundColor: '#FFFFFF',
+                backgroundColor: 'transparent',
                 borderRadius: 18,
-                paddingHorizontal: 12,
+                paddingHorizontal: wp(8),
                 paddingVertical: Platform.OS === 'ios' ? 7 : 4,
-                borderWidth: 1,
-                borderColor: 'rgba(0,0,0,0.05)',
-                shadowColor: 'rgba(0,0,0,0.04)',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.3,
-                shadowRadius: 3,
-                elevation: 1,
               }}>
                 <TextInput
                   ref={inputRef}
                   style={{
-                    color: '#3A4550',
-                    fontSize: 12,
-                    paddingVertical: 0,
+                    flex: 1,
+                    backgroundColor: 'transparent',
+                    color: '#2D3436',
+                    fontSize: fp(14),
+                    paddingHorizontal: wp(8),
+                    paddingVertical: wp(8),
                     maxHeight: 50,
                   }}
                   placeholder="Consultez ALIXEN..."
