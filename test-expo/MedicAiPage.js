@@ -1167,6 +1167,8 @@ export default function MedicAiPage() {
   const [showProfileSwitcher, setShowProfileSwitcher] = useState(false);
   const [showAddChildSheet, setShowAddChildSheet] = useState(false);
   const [newChildName, setNewChildName] = useState('');
+  const [showChildNameInput, setShowChildNameInput] = useState(false);
+  const [newChildIsFree, setNewChildIsFree] = useState(false);
   const [showCarnetPageSheet, setShowCarnetPageSheet] = useState(false);
   const [selectedCarnetPage, setSelectedCarnetPage] = useState(null);
   const [showAnalyzeSheet, setShowAnalyzeSheet] = useState(false);
@@ -1785,7 +1787,7 @@ ${mealsList}
 
   // ── RENDER SCANNING SCREEN ─────────────────────────────────────────────
   const renderScanningScreen = () => (
-    <View style={{ flex: 1, backgroundColor: '#1A1D22', paddingHorizontal: wp(20), paddingTop: wp(60) }}>
+    <View style={{ flex: 1, backgroundColor: '#1A1D22', paddingHorizontal: wp(20), paddingTop: wp(60), paddingBottom: wp(50) }}>
       {/* Bouton retour */}
       <Pressable
         onPress={() => {
@@ -1874,7 +1876,7 @@ ${mealsList}
 
   // ── RENDER SCAN RESULTS ────────────────────────────────────────────────
   const renderScanResults = () => (
-    <ScrollView style={{ flex: 1, backgroundColor: '#1A1D22' }} contentContainerStyle={{ paddingBottom: wp(40) }}>
+    <ScrollView style={{ flex: 1, backgroundColor: '#1A1D22' }} contentContainerStyle={{ paddingBottom: wp(50) }}>
       <View style={{ paddingHorizontal: wp(16), paddingTop: wp(20) }}>
         {/* Bouton retour */}
         <Pressable
@@ -2070,13 +2072,14 @@ ${mealsList}
           backgroundColor: '#FAFBFC',
         }}>
           <View style={{
-            paddingHorizontal: wp(10), paddingVertical: wp(4),
-            backgroundColor: accentColor + '18',
-            borderRadius: wp(8), borderWidth: 1,
-            borderColor: accentColor + '30',
+            paddingHorizontal: wp(12), paddingVertical: wp(5),
+            backgroundColor: accentColor + '15',
+            borderRadius: wp(10), borderWidth: 1.5,
+            borderColor: accentColor + '40',
+            alignSelf: 'flex-start',
           }}>
             <Text style={{
-              fontSize: fp(11), fontWeight: '700', color: accentColor,
+              fontSize: fp(12), fontWeight: '700', color: accentColor,
               letterSpacing: 0.5,
             }}>{title}</Text>
           </View>
@@ -2141,21 +2144,22 @@ ${mealsList}
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'rgba(0,217,132,0.12)',
-        borderRadius: wp(14),
-        paddingHorizontal: wp(10),
-        paddingVertical: wp(6),
+        borderRadius: wp(12),
+        paddingHorizontal: wp(8),
+        paddingVertical: wp(5),
         borderWidth: 1,
         borderColor: 'rgba(0,217,132,0.2)',
+        maxWidth: wp(90),
       }}
     >
-      <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(5) }}>
+      <Svg width={wp(12)} height={wp(12)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(4) }}>
         <Path d="M17 1l4 4-4 4" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         <Path d="M3 11V9a4 4 0 014-4h14" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         <Path d="M7 23l-4-4 4-4" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         <Path d="M21 13v2a4 4 0 01-4 4H3" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       </Svg>
-      <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#00D984' }}>
-        {activeProfile === 'self' ? 'Moi' : (children.find(c => c.id === activeProfile)?.name || 'Moi')}
+      <Text style={{ fontSize: fp(10), fontWeight: '600', color: '#00D984' }} numberOfLines={1}>
+        {activeProfile === 'self' ? 'Moi' : (children.find(c => c.id === activeProfile)?.name || 'Enfant')}
       </Text>
     </Pressable>
   );
@@ -2165,40 +2169,37 @@ ${mealsList}
     <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
       <StatusBar barStyle="light-content" />
       <LinearGradient
-        colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+        colors={['#3A3F46', '#252A30']}
         style={{
           paddingTop: Platform.OS === 'android' ? 35 : 50,
-          paddingBottom: wp(14), paddingHorizontal: wp(16),
-          flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+          paddingBottom: wp(12), paddingHorizontal: wp(12),
+          flexDirection: 'row', alignItems: 'center',
           borderBottomWidth: 1, borderBottomColor: '#4A4F55',
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
-          <Pressable delayPressIn={120} onPress={() => { setMediBookView('landing'); setCurrentSubPage('main'); }}
-            style={({ pressed }) => ({
-              width: wp(36), height: wp(36), borderRadius: wp(18),
-              backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55',
-              justifyContent: 'center', alignItems: 'center',
-              transform: [{ scale: pressed ? 0.92 : 1 }],
-            })}>
-            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
-              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </Pressable>
-          <View>
-            <Text style={{ color: '#FFFFFF', fontSize: fp(22), fontWeight: '700' }}>MediBook</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: fp(12) }}>Votre rapport santé</Text>
-          </View>
+        <Pressable delayPressIn={120} onPress={() => { setMediBookView('landing'); setCurrentSubPage('main'); }}
+          style={({ pressed }) => ({
+            width: wp(36), height: wp(36), borderRadius: wp(18),
+            backgroundColor: 'rgba(255,255,255,0.08)',
+            justifyContent: 'center', alignItems: 'center',
+            marginRight: wp(10),
+            transform: [{ scale: pressed ? 0.92 : 1 }],
+          })}>
+          <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+            <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </Svg>
+        </Pressable>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>MediBook</Text>
+          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>Votre rapport santé</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
-          {renderProfileSwitchButton()}
-          <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
-            <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
-          </View>
+        {renderProfileSwitchButton()}
+        <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(8), paddingVertical: wp(4), marginLeft: wp(6) }}>
+          <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
         </View>
       </LinearGradient>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(20), paddingBottom: wp(40) }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(20), paddingBottom: wp(50) }}>
         {/* Carte 1 : Importer mon carnet de santé */}
         <Pressable delayPressIn={120} onPress={() => setMediBookView('carnet')}>
           <LinearGradient
@@ -2344,35 +2345,34 @@ ${mealsList}
       <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
         <StatusBar barStyle="light-content" />
         <LinearGradient
-          colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+          colors={['#3A3F46', '#252A30']}
           style={{
             paddingTop: Platform.OS === 'android' ? 35 : 50,
-            paddingBottom: wp(14), paddingHorizontal: wp(16),
-            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+            paddingBottom: wp(12), paddingHorizontal: wp(12),
+            flexDirection: 'row', alignItems: 'center',
             borderBottomWidth: 1, borderBottomColor: '#4A4F55',
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
-            <Pressable delayPressIn={120} onPress={() => setMediBookView('landing')}
-              style={({ pressed }) => ({
-                width: wp(36), height: wp(36), borderRadius: wp(18),
-                backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55',
-                justifyContent: 'center', alignItems: 'center',
-                transform: [{ scale: pressed ? 0.92 : 1 }],
-              })}>
-              <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
-                <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-            </Pressable>
-            <View>
-              <Text style={{ color: '#FFFFFF', fontSize: fp(22), fontWeight: '700' }}>Carnet de santé</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: fp(12) }}>25 emplacements disponibles</Text>
-            </View>
+          <Pressable delayPressIn={120} onPress={() => setMediBookView('landing')}
+            style={({ pressed }) => ({
+              width: wp(36), height: wp(36), borderRadius: wp(18),
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              justifyContent: 'center', alignItems: 'center',
+              marginRight: wp(10),
+              transform: [{ scale: pressed ? 0.92 : 1 }],
+            })}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>Carnet de santé</Text>
+            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>25 emplacements disponibles</Text>
           </View>
           {renderProfileSwitchButton()}
         </LinearGradient>
 
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(40) }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(50) }}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8) }}>
             {Array.from({ length: 25 }, (_, index) => (
               carnetPhotos[index] ? (
@@ -2745,31 +2745,30 @@ ${mealsList}
           colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
           style={{
             paddingTop: Platform.OS === 'android' ? 35 : 50,
-            paddingBottom: wp(14), paddingHorizontal: wp(16),
-            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+            paddingBottom: wp(12), paddingHorizontal: wp(12),
+            flexDirection: 'row', alignItems: 'center',
             borderBottomWidth: 1, borderBottomColor: '#4A4F55',
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
-            <Pressable delayPressIn={120} onPress={() => setMediBookView('landing')}
-              style={({ pressed }) => ({
-                width: wp(36), height: wp(36), borderRadius: wp(18),
-                backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55',
-                justifyContent: 'center', alignItems: 'center',
-                transform: [{ scale: pressed ? 0.92 : 1 }],
-              })}>
-              <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
-                <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-            </Pressable>
-            <View>
-              <Text style={{ color: '#FFFFFF', fontSize: fp(22), fontWeight: '700' }}>Mes Stats</Text>
-            </View>
+          <Pressable delayPressIn={120} onPress={() => setMediBookView('landing')}
+            style={({ pressed }) => ({
+              width: wp(36), height: wp(36), borderRadius: wp(18),
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              justifyContent: 'center', alignItems: 'center',
+              marginRight: wp(10),
+              transform: [{ scale: pressed ? 0.92 : 1 }],
+            })}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>Mes Stats</Text>
           </View>
           {renderProfileSwitchButton()}
         </LinearGradient>
 
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(40) }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
           {/* Onglets */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: wp(12) }}>
             {['nutrition', 'santé', 'activité', 'humeur'].map(tab => (
@@ -2810,37 +2809,34 @@ ${mealsList}
         colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
         style={{
           paddingTop: Platform.OS === 'android' ? 35 : 50,
-          paddingBottom: wp(14), paddingHorizontal: wp(16),
-          flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+          paddingBottom: wp(12), paddingHorizontal: wp(12),
+          flexDirection: 'row', alignItems: 'center',
           borderBottomWidth: 1, borderBottomColor: '#4A4F55',
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
-          <Pressable delayPressIn={120} onPress={() => setMediBookView('landing')}
-            style={({ pressed }) => ({
-              width: wp(36), height: wp(36), borderRadius: wp(18),
-              backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55',
-              justifyContent: 'center', alignItems: 'center',
-              transform: [{ scale: pressed ? 0.92 : 1 }],
-            })}>
-            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
-              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </Pressable>
-          <View>
-            <Text style={{ color: '#FFFFFF', fontSize: fp(22), fontWeight: '700' }}>MediBook</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: fp(12) }}>Votre rapport santé</Text>
-          </View>
+        <Pressable delayPressIn={120} onPress={() => setMediBookView('landing')}
+          style={({ pressed }) => ({
+            width: wp(36), height: wp(36), borderRadius: wp(18),
+            backgroundColor: 'rgba(255,255,255,0.08)',
+            justifyContent: 'center', alignItems: 'center',
+            marginRight: wp(10),
+            transform: [{ scale: pressed ? 0.92 : 1 }],
+          })}>
+          <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+            <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </Svg>
+        </Pressable>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>MediBook</Text>
+          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>Votre rapport santé</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
-          {renderProfileSwitchButton()}
-          <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
-            <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
-          </View>
+        {renderProfileSwitchButton()}
+        <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(8), paddingVertical: wp(4), marginLeft: wp(6) }}>
+          <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
         </View>
       </LinearGradient>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(40) }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
         {/* Illustration — compact spacing */}
         <View style={{ alignItems: 'center', marginTop: wp(8), marginBottom: wp(6) }}>
           <Svg width={wp(56)} height={wp(56)} viewBox="0 0 64 64" fill="none">
@@ -2946,7 +2942,7 @@ ${mealsList}
         </Pressable>
       </View>
 
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: wp(40) }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: wp(50) }}>
         <Svg width={wp(90)} height={wp(90)} viewBox="0 0 64 64" fill="none">
           <Path d="M32 4L8 16v12c0 16.5 10.2 31.9 24 36 13.8-4.1 24-19.5 24-36V16L32 4z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" />
           <Rect x="22" y="26" width="20" height="16" rx="3" stroke="#D4AF37" strokeWidth="1.5" />
@@ -3065,7 +3061,7 @@ ${mealsList}
         <Text style={{ color: 'rgba(212,175,55,0.6)', fontSize: fp(10) }}>Chiffré et sécurisé — Auto-lock 30s</Text>
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(40) }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
         {/* Categories — MetalCard gradient */}
         {spCategories.map((cat) => (
           <Pressable key={cat.id} delayPressIn={120}
@@ -3142,7 +3138,7 @@ ${mealsList}
     if (uploadState === 'results') return renderScanResults();
     if (uploadState === 'integrating') {
       return (
-        <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center', paddingBottom: wp(50) }}>
           <ActivityIndicator size="large" color="#00D984" />
           <Text style={{ fontSize: fp(16), fontWeight: '600', color: '#FFF', marginTop: wp(16) }}>
             Intégration en cours...
@@ -4569,23 +4565,10 @@ ${mealsList}
                 delayPressIn={120}
                 onPress={() => {
                   setShowProfileSwitcher(false);
-                  setTimeout(() => {
-                    Alert.alert(
-                      'Ajouter un enfant',
-                      children.length === 0
-                        ? 'Votre premier enfant est gratuit ! Chaque enfant supplémentaire coûte 5 000 Lix.'
-                        : 'L\'ajout d\'un enfant supplémentaire coûte 5 000 Lix (5 $).',
-                      [
-                        { text: 'Ajouter', onPress: () => {
-                          const isFree = children.length === 0;
-                          const newChild = { id: 'child-' + children.length, name: 'Enfant ' + (children.length + 1), age: '', free: isFree };
-                          setChildren(prev => [...prev, newChild]);
-                          setActiveProfile(newChild.id);
-                        }},
-                        { text: 'Annuler', style: 'cancel' },
-                      ]
-                    );
-                  }, 400);
+                  const isFree = children.length === 0;
+                  setNewChildIsFree(isFree);
+                  setNewChildName('');
+                  setTimeout(() => setShowChildNameInput(true), 400);
                 }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
@@ -4817,6 +4800,111 @@ ${mealsList}
             </LinearGradient>
           </Pressable>
         </Pressable>
+      </Modal>
+
+      {/* Modal — Saisie nom enfant */}
+      <Modal
+        visible={showChildNameInput}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowChildNameInput(false)}
+      >
+        <View style={{
+          flex: 1, backgroundColor: 'rgba(0,0,0,0.7)',
+          justifyContent: 'center', alignItems: 'center',
+          paddingHorizontal: wp(24),
+        }}>
+          <LinearGradient
+            colors={['#2A2F36', '#1E2328', '#252A30']}
+            style={{
+              borderRadius: wp(20), paddingHorizontal: wp(24),
+              paddingVertical: wp(28), width: '100%',
+            }}
+          >
+            <View style={{
+              width: wp(50), height: wp(50), borderRadius: wp(25),
+              backgroundColor: 'rgba(77,166,255,0.12)',
+              justifyContent: 'center', alignItems: 'center',
+              alignSelf: 'center', marginBottom: wp(16),
+            }}>
+              <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
+                <Circle cx="12" cy="8" r="3" stroke="#4DA6FF" strokeWidth="1.5"/>
+                <Path d="M8 21v-1a4 4 0 018 0v1" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round"/>
+              </Svg>
+            </View>
+
+            <Text style={{
+              fontSize: fp(18), fontWeight: '700', color: '#FFF',
+              textAlign: 'center', marginBottom: wp(6),
+            }}>Ajouter un enfant</Text>
+
+            <Text style={{
+              fontSize: fp(12), color: 'rgba(255,255,255,0.4)',
+              textAlign: 'center', marginBottom: wp(20),
+            }}>
+              {newChildIsFree ? 'Premier enfant gratuit' : 'Coût : 5 000 Lix (5 $)'}
+            </Text>
+
+            <View style={{
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              borderRadius: wp(12), paddingHorizontal: wp(14),
+              borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+              marginBottom: wp(24),
+            }}>
+              <TextInput
+                style={{
+                  fontSize: fp(15), color: '#FFF',
+                  paddingVertical: wp(12),
+                }}
+                placeholder="Prénom de l'enfant"
+                placeholderTextColor="rgba(255,255,255,0.25)"
+                value={newChildName}
+                onChangeText={setNewChildName}
+                autoFocus={true}
+                maxLength={30}
+              />
+            </View>
+
+            <Pressable
+              delayPressIn={120}
+              onPress={() => {
+                if (newChildName.trim().length === 0) {
+                  Alert.alert('Nom requis', 'Veuillez entrer le prénom de l\'enfant.');
+                  return;
+                }
+                const newChild = {
+                  id: 'child-' + children.length,
+                  name: newChildName.trim(),
+                  age: '',
+                  free: newChildIsFree,
+                };
+                setChildren(prev => [...prev, newChild]);
+                setActiveProfile(newChild.id);
+                setShowChildNameInput(false);
+                setNewChildName('');
+              }}
+            >
+              <LinearGradient
+                colors={['#4DA6FF', '#3A8FE8']}
+                style={{
+                  paddingVertical: wp(14), borderRadius: wp(14),
+                  alignItems: 'center', width: '100%',
+                }}
+              >
+                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>
+                  {newChildIsFree ? 'Ajouter gratuitement' : 'Ajouter (5 000 Lix)'}
+                </Text>
+              </LinearGradient>
+            </Pressable>
+
+            <Pressable
+              onPress={() => { setShowChildNameInput(false); setNewChildName(''); }}
+              style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(8) }}
+            >
+              <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Annuler</Text>
+            </Pressable>
+          </LinearGradient>
+        </View>
       </Modal>
     </>
   );
