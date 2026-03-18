@@ -6,7 +6,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   Image, Platform, Animated, KeyboardAvoidingView,
-  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Alert,
+  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Alert, Modal,
 } from 'react-native';
 import Svg, {
   Defs, Rect, Path, Circle, Line,
@@ -59,6 +59,12 @@ const TABS = [
   { key: 'medicai', label: 'MedicAi', iconActive: 'medkit', iconInactive: 'medkit-outline', locked: false, isMedicAi: true },
   { key: 'profile', label: 'Profil', iconActive: 'person', iconInactive: 'person-outline' },
 ];
+
+// ============================================
+// BUBBLE COLORS — Palette LIXUM 6 couleurs cyclique
+// ============================================
+const BUBBLE_COLORS = ['#00D984', '#4DA6FF', '#D4AF37', '#FF8C42', '#FF6B6B', '#9B6DFF'];
+// Emerald, Blue, Gold, Orange, Coral, Purple — cycle sur chaque bulle
 
 // ============================================
 // LOCK ICON
@@ -526,13 +532,14 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage }) => {
 // ============================================
 // NEUMORPH BALL — Boule neumorphique cabinet médical
 // ============================================
-const NeumorphBall = ({ index, isBot, isSearchHit, status, onPress }) => {
+const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPress }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const wobbleX = useRef(new Animated.Value(0)).current;
   const wobbleY = useRef(new Animated.Value(0)).current;
   const loadPulse = useRef(new Animated.Value(0.3)).current;
 
   const BALL_SIZE = 30;
+  const bubbleColor = BUBBLE_COLORS[index % BUBBLE_COLORS.length];
 
   useEffect(() => {
     // Entrée avec spring
@@ -558,25 +565,8 @@ const NeumorphBall = ({ index, isBot, isSearchHit, status, onPress }) => {
     }
   }, [status]);
 
-  // Couleurs
-  let borderColor, numColor, shadowColor;
-  if (isSearchHit) {
-    borderColor = 'rgba(0,200,100,0.7)';
-    numColor = 'rgba(0,160,80,0.7)';
-    shadowColor = '#00C864';
-  } else if (status === 'loading') {
-    borderColor = 'rgba(0,200,130,0.4)';
-    numColor = 'rgba(0,200,130,0.5)';
-    shadowColor = '#00D984';
-  } else if (status === 'unread') {
-    borderColor = 'rgba(0,200,130,0.6)';
-    numColor = '#00A878';
-    shadowColor = '#00D984';
-  } else {
-    borderColor = isBot ? 'rgba(220,60,60,0.45)' : 'rgba(70,140,220,0.3)';
-    numColor = isBot ? 'rgba(210,50,50,0.65)' : 'rgba(60,130,210,0.55)';
-    shadowColor = isBot ? '#D06060' : '#4A8CDC';
-  }
+  // Opacite reduite si recherche active et pas un hit
+  const dimmed = isSearchActive && !isSearchHit;
 
   return (
     <Animated.View style={{
@@ -585,64 +575,63 @@ const NeumorphBall = ({ index, isBot, isSearchHit, status, onPress }) => {
         { translateX: wobbleX.interpolate({ inputRange: [0, 1], outputRange: [-1, 1] }) },
         { translateY: wobbleY.interpolate({ inputRange: [0, 1], outputRange: [-0.8, 0.8] }) },
       ],
+      opacity: dimmed ? 0.3 : 1,
     }}>
       <Pressable onPress={() => { if (status !== 'loading') onPress(); }}>
         <View style={{
           width: BALL_SIZE,
           height: BALL_SIZE,
           borderRadius: BALL_SIZE / 2,
-          backgroundColor: '#EDF0F4',
-          borderWidth: isSearchHit ? 2 : 1,
-          borderColor: borderColor,
-          // Ombre neumorphique sombre (bas-droite)
-          shadowColor: isSearchHit ? shadowColor : 'rgba(0,0,0,0.12)',
-          shadowOffset: { width: 2, height: 2 },
-          shadowOpacity: isSearchHit ? 0.4 : 0.3,
-          shadowRadius: isSearchHit ? 8 : 4,
-          elevation: isSearchHit ? 6 : 3,
+          backgroundColor: 'transparent',
+          borderWidth: isSearchHit ? wp(3) : wp(2.5),
+          borderColor: bubbleColor,
+          shadowColor: (status === 'unread' || isSearchHit) ? bubbleColor : 'rgba(0,0,0,0.15)',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: (status === 'unread' || isSearchHit) ? 0.4 : 0.2,
+          shadowRadius: (status === 'unread' || isSearchHit) ? 8 : 4,
+          elevation: (status === 'unread' || isSearchHit) ? 4 : 2,
           justifyContent: 'center',
           alignItems: 'center',
           overflow: 'hidden',
         }}>
-          {/* Highlight neumorphique haut-gauche (lumière) */}
+          {/* Centre sombre MetalCard */}
           <View style={{
             position: 'absolute',
-            top: 1,
-            left: BALL_SIZE * 0.1,
-            width: BALL_SIZE * 0.5,
-            height: BALL_SIZE * 0.3,
-            borderRadius: BALL_SIZE,
-            backgroundColor: 'rgba(255,255,255,0.5)',
-            transform: [{ rotate: '-15deg' }],
-          }} />
-
-          {/* Ombre intérieure bas */}
-          <View style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 2,
-            right: 2,
-            height: BALL_SIZE * 0.3,
-            borderBottomLeftRadius: BALL_SIZE / 2,
-            borderBottomRightRadius: BALL_SIZE / 2,
-            backgroundColor: 'rgba(0,0,0,0.03)',
+            width: BALL_SIZE - wp(5),
+            height: BALL_SIZE - wp(5),
+            borderRadius: (BALL_SIZE - wp(5)) / 2,
+            backgroundColor: '#1E2530',
           }} />
 
           {/* Contenu */}
           {status === 'loading' ? (
             <Animated.View style={{
               width: 8, height: 8, borderRadius: 4,
-              backgroundColor: '#00D984',
+              backgroundColor: bubbleColor,
               opacity: loadPulse,
             }} />
           ) : (
             <Text style={{
-              color: numColor,
-              fontSize: 10,
-              fontWeight: 'bold',
+              color: bubbleColor,
+              fontSize: fp(11),
+              fontWeight: '600',
+              zIndex: 1,
             }}>
               {index + 1}
             </Text>
+          )}
+
+          {/* Glow pour bulle search hit */}
+          {isSearchHit && (
+            <View style={{
+              position: 'absolute',
+              width: BALL_SIZE + 6,
+              height: BALL_SIZE + 6,
+              borderRadius: (BALL_SIZE + 6) / 2,
+              borderWidth: 2,
+              borderColor: '#00D984',
+              zIndex: -1,
+            }} />
           )}
         </View>
       </Pressable>
@@ -726,6 +715,7 @@ const SynapticNetwork = ({ messages, searchHits, onBallPress }) => {
               index={i}
               isBot={msg.role === 'assistant'}
               isSearchHit={isSearch}
+              isSearchActive={searchHits && searchHits.size > 0}
               status={msg._status || 'read'}
               onPress={() => onBallPress(msg, i)}
             />
@@ -965,6 +955,7 @@ export default function MedicAiPage() {
   // Lock state
   const [isLocked, setIsLocked] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
+  const [showDocumentSheet, setShowDocumentSheet] = useState(false);
 
   // Refs
   const scrollViewRef = useRef(null);
@@ -1213,6 +1204,20 @@ ${mealsList}
   // ── Envoi de message et appel IA ────────────────────────────────────────
   const sendMessage = async () => {
     if (!inputText.trim() || isLoading || isLocked) return;
+
+    // Limite 30 bulles par session
+    if (messages.length >= 30) {
+      Alert.alert(
+        'Session pleine',
+        'Vous avez atteint la limite de 30 echanges. Souhaitez-vous compacter cette conversation et la ranger dans votre Secret Pocket ?',
+        [
+          { text: 'Compacter et ranger', onPress: () => console.log('Compactage Secret Pocket') },
+          { text: 'Continuer quand meme', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+
     const userText = inputText.trim();
     setInputText('');
     setIsLoading(true);
@@ -1515,18 +1520,7 @@ ${mealsList}
               {/* Bouton "+" ajout document */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => {
-                  Alert.alert(
-                    'Ajouter un document',
-                    'Choisissez le type de document a analyser par ALIXEN',
-                    [
-                      { text: 'Bilan sanguin (PDF)', onPress: () => console.log('Bilan sanguin') },
-                      { text: 'Ordonnance (Photo)', onPress: () => console.log('Ordonnance') },
-                      { text: 'Resultats labo', onPress: () => console.log('Resultats labo') },
-                      { text: 'Annuler', style: 'cancel' },
-                    ]
-                  );
-                }}
+                onPress={() => setShowDocumentSheet(true)}
                 style={({ pressed }) => ({
                   width: wp(38),
                   height: wp(38),
@@ -1556,27 +1550,38 @@ ${mealsList}
                 </LinearGradient>
               </Pressable>
 
-              {/* Bouton Recherche — carré arrondi séparé */}
-              <TouchableOpacity
+              {/* Bouton Recherche — style MetalCard comme le "+" */}
+              <Pressable
+                delayPressIn={120}
                 onPress={() => setSearchVisible(!searchVisible)}
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 12,
-                  backgroundColor: '#E8ECF0',
+                style={({ pressed }) => ({
+                  width: wp(38),
+                  height: wp(38),
+                  borderRadius: wp(19),
+                  borderWidth: 1,
+                  borderColor: '#4A4F55',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  shadowColor: 'rgba(0,0,0,0.1)',
-                  shadowOffset: { width: 2, height: 2 },
-                  shadowOpacity: 0.4,
-                  shadowRadius: 4,
-                  elevation: 3,
-                  borderWidth: 0.5,
-                  borderColor: 'rgba(255,255,255,0.5)',
-                }}
+                  overflow: 'hidden',
+                  transform: [{ scale: pressed ? 0.92 : 1 }],
+                })}
               >
-                <Text style={{ fontSize: 15, color: '#888' }}>🔍</Text>
-              </TouchableOpacity>
+                <LinearGradient
+                  colors={['#3A3F46', '#252A30']}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: wp(19),
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                    <Circle cx="11" cy="11" r="7" stroke="#00D984" strokeWidth="2" fill="none"/>
+                    <Line x1="16.5" y1="16.5" x2="21" y2="21" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
+                  </Svg>
+                </LinearGradient>
+              </Pressable>
 
               {/* Champ message */}
               <View style={{
@@ -1902,6 +1907,184 @@ ${mealsList}
           </View>
         </View>
       )}
+
+      {/* === BOTTOM SHEET — Ajouter un document === */}
+      <Modal
+        visible={showDocumentSheet}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowDocumentSheet(false)}
+      >
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            justifyContent: 'flex-end',
+          }}
+          onPress={() => setShowDocumentSheet(false)}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient
+              colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{
+                borderTopLeftRadius: wp(24),
+                borderTopRightRadius: wp(24),
+                paddingHorizontal: wp(20),
+                paddingTop: wp(12),
+                paddingBottom: wp(34),
+              }}
+            >
+              {/* Poignee */}
+              <View style={{
+                width: wp(40), height: wp(4), borderRadius: wp(2),
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                alignSelf: 'center', marginBottom: wp(20),
+              }}/>
+
+              {/* Titre */}
+              <Text style={{
+                fontSize: fp(20), fontWeight: '700', color: '#FFFFFF', marginBottom: wp(4),
+              }}>Ajouter un document</Text>
+              <Text style={{
+                fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(24),
+              }}>Choisissez le type de fichier a analyser par ALIXEN</Text>
+
+              {/* Option 1 : Bilan sanguin */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => { setShowDocumentSheet(false); console.log('Bilan sanguin'); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(0,217,132,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <Path d="M14 2v6h6" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <Line x1="9" y1="13" x2="15" y2="13" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Line x1="9" y1="17" x2="13" y2="17" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Bilan sanguin</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Importez un fichier PDF</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Option 2 : Ordonnance */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => { setShowDocumentSheet(false); console.log('Ordonnance'); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(255,140,66,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Rect x="2" y="3" width="20" height="18" rx="2" stroke="#FF8C42" strokeWidth="1.5" fill="none"/>
+                    <Circle cx="12" cy="11" r="3" stroke="#FF8C42" strokeWidth="1.5" fill="none"/>
+                    <Path d="M7 21v-1a5 5 0 0110 0v1" stroke="#FF8C42" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Ordonnance</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Prenez ou importez une photo</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Option 3 : Resultats labo */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => { setShowDocumentSheet(false); console.log('Resultats labo'); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(77,166,255,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M9 2v4m6-4v4" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+                    <Path d="M8 2h8a2 2 0 012 2v3l-3 11a2 2 0 01-2 2h-2a2 2 0 01-2-2L6 7V4a2 2 0 012-2z" stroke="#4DA6FF" strokeWidth="1.5" strokeLinejoin="round" fill="none"/>
+                    <Circle cx="12" cy="12" r="2" stroke="#4DA6FF" strokeWidth="1.5" fill="none"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Resultats laboratoire</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>PDF ou photo de vos analyses</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Option 4 : Importer une conversation compactee */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => { setShowDocumentSheet(false); console.log('Import conversation'); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(16),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(155,109,255,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <Path d="M7 10l5 5 5-5" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <Line x1="12" y1="15" x2="12" y2="3" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Conversation compactee</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Reimporter depuis Secret Pocket</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Bouton Annuler */}
+              <Pressable
+                onPress={() => setShowDocumentSheet(false)}
+                style={{
+                  paddingVertical: wp(14), alignItems: 'center',
+                  borderRadius: wp(14), borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.1)',
+                }}
+              >
+                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
