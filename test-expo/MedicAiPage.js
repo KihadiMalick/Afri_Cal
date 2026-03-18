@@ -1168,6 +1168,20 @@ export default function MedicAiPage() {
   ]);
   const [carnetPhotos, setCarnetPhotos] = useState([]);
   const [statsTab, setStatsTab] = useState('nutrition');
+
+  // Données médicales chargées depuis Supabase
+  const [medicalData, setMedicalData] = useState({
+    analyses: [],
+    medications: [],
+    allergies: [],
+    vaccinations: [],
+    diagnostics: [],
+    vitalityScore: 0,
+    profileId: null,
+  });
+  const [medicalDataLoading, setMedicalDataLoading] = useState(false);
+  const [nutritionWeekData, setNutritionWeekData] = useState(null);
+
   const [showProfileSwitcher, setShowProfileSwitcher] = useState(false);
   const [showAddChildSheet, setShowAddChildSheet] = useState(false);
   const [newChildName, setNewChildName] = useState('');
@@ -1266,6 +1280,13 @@ export default function MedicAiPage() {
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
+  // ── Charger données médicales quand on entre dans Mes Stats ──────────────
+  React.useEffect(() => {
+    if (mediBookView === 'stats') {
+      loadMedicalData();
+    }
+  }, [mediBookView]);
+
   // ── Lock quand quota atteint ──────────────────────────────────────────────
   useEffect(() => {
     setIsLocked(energyUsed >= energyLimit);
@@ -1358,6 +1379,109 @@ export default function MedicAiPage() {
       if (Array.isArray(data)) setAvailableMeals(data);
     } catch (error) {
       console.error('Erreur chargement plats:', error);
+    }
+  };
+
+  // ── Parse dates françaises ───────────────────────────────────────────────
+  const parseFrenchDate = (dateStr) => {
+    if (!dateStr) return null;
+    const months = {
+      'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04',
+      'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08',
+      'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12',
+    };
+    const match = dateStr.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
+    if (match) {
+      const month = months[match[2].toLowerCase()];
+      if (month) return match[3] + '-' + month + '-' + match[1].padStart(2, '0');
+    }
+    const slashMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (slashMatch) return slashMatch[3] + '-' + slashMatch[2] + '-' + slashMatch[1];
+    return null;
+  };
+
+  // ── Chargement données médicales depuis Supabase ──────────────────────────
+  const loadMedicalData = async () => {
+    setMedicalDataLoading(true);
+    try {
+      const userId = TEST_USER_ID;
+      const headers = {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      };
+
+      // Charger le profil
+      const profileRes = await fetch(
+        SUPABASE_URL + '/rest/v1/health_profiles?user_id=eq.' + userId + '&profile_type=eq.self&limit=1',
+        { headers }
+      );
+      const profiles = await profileRes.json();
+      const profileId = profiles[0]?.id || null;
+      const vitalityScore = profiles[0]?.vitality_score || 0;
+
+      // Charger les analyses
+      const analysesRes = await fetch(
+        SUPABASE_URL + '/rest/v1/medical_analyses?user_id=eq.' + userId + '&order=created_at.desc',
+        { headers }
+      );
+      const analyses = await analysesRes.json();
+
+      // Charger les médicaments actifs
+      const medsRes = await fetch(
+        SUPABASE_URL + '/rest/v1/medications?user_id=eq.' + userId + '&status=eq.active&order=created_at.desc',
+        { headers }
+      );
+      const medications = await medsRes.json();
+
+      // Charger les allergies
+      const allergiesRes = await fetch(
+        SUPABASE_URL + '/rest/v1/allergies?user_id=eq.' + userId + '&order=created_at.desc',
+        { headers }
+      );
+      const allergiesData = await allergiesRes.json();
+
+      // Charger les vaccinations
+      const vaccRes = await fetch(
+        SUPABASE_URL + '/rest/v1/vaccinations?user_id=eq.' + userId + '&order=administration_date.desc',
+        { headers }
+      );
+      const vaccinations = await vaccRes.json();
+
+      // Charger les diagnostics
+      const diagRes = await fetch(
+        SUPABASE_URL + '/rest/v1/diagnostics?user_id=eq.' + userId + '&order=created_at.desc',
+        { headers }
+      );
+      const diagnostics = await diagRes.json();
+
+      // Charger les 7 derniers jours de nutrition
+      const today = new Date().toISOString().split('T')[0];
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const nutritionRes = await fetch(
+        SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + userId +
+        '&date=gte.' + sevenDaysAgo + '&date=lte.' + today + '&order=date.asc',
+        { headers }
+      );
+      const nutritionData = await nutritionRes.json();
+      if (Array.isArray(nutritionData) && nutritionData.length > 0) {
+        setNutritionWeekData(nutritionData);
+      }
+
+      setMedicalData({
+        analyses: Array.isArray(analyses) ? analyses : [],
+        medications: Array.isArray(medications) ? medications : [],
+        allergies: Array.isArray(allergiesData) ? allergiesData : [],
+        vaccinations: Array.isArray(vaccinations) ? vaccinations : [],
+        diagnostics: Array.isArray(diagnostics) ? diagnostics : [],
+        vitalityScore: vitalityScore,
+        profileId: profileId,
+      });
+
+    } catch (error) {
+      console.error('Erreur chargement données médicales:', error);
+    } finally {
+      setMedicalDataLoading(false);
     }
   };
 
@@ -2024,17 +2148,96 @@ ${mealsList}
         {/* Boutons */}
         <View style={{ marginTop: wp(28), marginBottom: wp(40) }}>
           <Pressable delayPressIn={120}
-            onPress={() => {
+            onPress={async () => {
               setUploadState('integrating');
-              setTimeout(() => {
+
+              try {
+                const userId = TEST_USER_ID;
+                const headers = {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=minimal',
+                };
+
+                // 1. Sauvegarder le document scanné
+                await fetch(SUPABASE_URL + '/rest/v1/scanned_documents', {
+                  method: 'POST',
+                  headers,
+                  body: JSON.stringify({
+                    user_id: userId,
+                    document_type: scanResults.documentType || 'Document médical',
+                    document_date: scanResults.date || null,
+                    laboratory: scanResults.laboratory || null,
+                    patient_name: scanResults.patient || null,
+                    summary: scanResults.summary || '',
+                    raw_ai_response: scanResults,
+                    scan_context: scanContext || 'medibook',
+                    scan_category: scanCategory || 'lab-results',
+                    items_extracted: (scanResults.data?.length || 0) + (scanResults.medications?.length || 0),
+                  }),
+                });
+
+                // 2. Insérer les analyses médicales
+                if (scanResults.data && scanResults.data.length > 0) {
+                  const analysesInsert = scanResults.data.map(item => ({
+                    user_id: userId,
+                    label: item.label,
+                    value: item.value,
+                    value_numeric: parseFloat(item.value) || null,
+                    unit: item.value.split(' ').pop() || null,
+                    reference_range: item.ref || null,
+                    status: item.status || 'normal',
+                    category: scanResults.documentType || 'Bilan',
+                    document_date: scanResults.date ? parseFrenchDate(scanResults.date) : null,
+                    laboratory: scanResults.laboratory || null,
+                  }));
+
+                  await fetch(SUPABASE_URL + '/rest/v1/medical_analyses', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(analysesInsert),
+                  });
+                }
+
+                // 3. Insérer les médicaments
+                if (scanResults.medications && scanResults.medications.length > 0) {
+                  const medsInsert = scanResults.medications.map(med => ({
+                    user_id: userId,
+                    name: med.name,
+                    dosage: med.dosage || null,
+                    frequency: med.frequency || null,
+                    duration: med.duration || null,
+                    status: 'active',
+                  }));
+
+                  await fetch(SUPABASE_URL + '/rest/v1/medications', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(medsInsert),
+                  });
+                }
+
+                // 4. Succès
                 setUploadState('idle');
                 setScanResults(null);
                 setScanSteps([]);
+
                 Alert.alert(
                   'Données intégrées ✓',
-                  'Les informations ont été ajoutées dans votre ' + (scanContext === 'secretpocket' ? 'Secret Pocket' : 'MediBook') + '.',
+                  'Les informations ont été ajoutées avec succès. Consultez vos Mes Stats pour voir les résultats.',
                 );
-              }, 1500);
+
+                // Recharger les données si on est dans un contexte MediBook
+                if (scanContext === 'medibook' || scanContext === 'secretpocket') {
+                  loadMedicalData();
+                }
+
+              } catch (error) {
+                console.error('Erreur insertion Supabase:', error);
+                setUploadState('idle');
+                Alert.alert('Erreur', "L'intégration a échoué. Réessayez.");
+              }
             }}>
             <LinearGradient colors={['#00D984', '#00B871']}
               style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center', marginBottom: wp(10) }}>
@@ -2496,182 +2699,193 @@ ${mealsList}
       </View>
     );
 
-    const renderNutritionTab = () => (
-      <>
-        <StatsCard title="Calories moyennes / jour">
-          <Text style={{ fontSize: fp(28), fontWeight: '700', color: '#00D984' }}>1 850 kcal</Text>
-          <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)', marginTop: wp(4) }}>Objectif : 2 100 kcal</Text>
-          <View style={{ height: wp(6), backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(3), marginTop: wp(10) }}>
-            <View style={{ width: '88%', height: '100%', backgroundColor: '#00D984', borderRadius: wp(3) }} />
-          </View>
-        </StatsCard>
+    const renderNutritionTab = () => {
+      // Données live ou fallback hardcodé
+      const hasLiveData = nutritionWeekData && nutritionWeekData.length > 0;
+      const liveCalories = hasLiveData ? nutritionWeekData.map(d => d.total_calories || 0) : caloriesData;
+      const avgCalories = hasLiveData
+        ? Math.round(liveCalories.reduce((s, c) => s + c, 0) / liveCalories.length)
+        : 1850;
+      const liveProtein = hasLiveData
+        ? Math.round(nutritionWeekData.reduce((s, d) => s + (d.total_protein || 0), 0) / nutritionWeekData.length)
+        : 92;
+      const liveCarbs = hasLiveData
+        ? Math.round(nutritionWeekData.reduce((s, d) => s + (d.total_carbs || 0), 0) / nutritionWeekData.length)
+        : 215;
+      const liveFat = hasLiveData
+        ? Math.round(nutritionWeekData.reduce((s, d) => s + (d.total_fat || 0), 0) / nutritionWeekData.length)
+        : 62;
+      const totalMacros = liveProtein + liveCarbs + liveFat || 1;
+      const pctProtein = Math.round((liveProtein / totalMacros) * 100);
+      const pctCarbs = Math.round((liveCarbs / totalMacros) * 100);
+      const pctFat = 100 - pctProtein - pctCarbs;
+      const calPct = Math.min(100, Math.round((avgCalories / 2100) * 100));
 
-        <StatsCard title="Répartition macros">
-          {[
-            { label: 'Protéines', value: '92g', pct: 30, color: '#4DA6FF' },
-            { label: 'Glucides', value: '215g', pct: 46, color: '#00D984' },
-            { label: 'Lipides', value: '62g', pct: 24, color: '#FF8C42' },
-          ].map((macro, i) => (
-            <View key={i} style={{ marginBottom: wp(10) }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
-                <Text style={{ fontSize: fp(12), color: '#2D3436', fontWeight: '600' }}>{macro.label}</Text>
-                <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)' }}>{macro.value} — {macro.pct}%</Text>
-              </View>
-              <View style={{ height: wp(6), backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(3) }}>
-                <View style={{ width: macro.pct + '%', height: '100%', backgroundColor: macro.color, borderRadius: wp(3) }} />
-              </View>
+      const chartCalories = hasLiveData ? liveCalories : caloriesData;
+      const chartDays = hasLiveData
+        ? nutritionWeekData.map(d => {
+            const dt = new Date(d.date);
+            return ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][dt.getDay()];
+          })
+        : weekDays;
+
+      return (
+        <>
+          <StatsCard title="Calories moyennes / jour">
+            <Text style={{ fontSize: fp(28), fontWeight: '700', color: '#00D984' }}>{avgCalories.toLocaleString('fr-FR')} kcal</Text>
+            <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)', marginTop: wp(4) }}>Objectif : 2 100 kcal</Text>
+            <View style={{ height: wp(6), backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(3), marginTop: wp(10) }}>
+              <View style={{ width: calPct + '%', height: '100%', backgroundColor: '#00D984', borderRadius: wp(3) }} />
             </View>
-          ))}
-        </StatsCard>
+          </StatsCard>
 
-        <StatsCard title="Derniers 7 jours">
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: wp(80) }}>
-            {caloriesData.map((cal, i) => {
-              const maxCal = 2200;
-              const h = (cal / maxCal) * wp(65);
-              const inTarget = cal >= 1800 && cal <= 2200;
-              return (
-                <View key={i} style={{ alignItems: 'center', flex: 1 }}>
-                  <View style={{ width: wp(16), height: h, backgroundColor: inTarget ? '#00D984' : '#FF8C42', borderRadius: wp(4) }} />
-                  <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>{weekDays[i]}</Text>
+          <StatsCard title="Répartition macros">
+            {[
+              { label: 'Protéines', value: liveProtein + 'g', pct: pctProtein, color: '#4DA6FF' },
+              { label: 'Glucides', value: liveCarbs + 'g', pct: pctCarbs, color: '#00D984' },
+              { label: 'Lipides', value: liveFat + 'g', pct: pctFat, color: '#FF8C42' },
+            ].map((macro, i) => (
+              <View key={i} style={{ marginBottom: wp(10) }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
+                  <Text style={{ fontSize: fp(12), color: '#2D3436', fontWeight: '600' }}>{macro.label}</Text>
+                  <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)' }}>{macro.value} — {macro.pct}%</Text>
                 </View>
-              );
-            })}
-          </View>
-        </StatsCard>
-      </>
-    );
+                <View style={{ height: wp(6), backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(3) }}>
+                  <View style={{ width: macro.pct + '%', height: '100%', backgroundColor: macro.color, borderRadius: wp(3) }} />
+                </View>
+              </View>
+            ))}
+          </StatsCard>
 
-    const renderSanteTab = () => (
-      <>
-        <StatsCard title="Score Vitalité">
-          <View style={{ alignItems: 'center', marginVertical: wp(8) }}>
-            <View style={{
-              width: wp(100), height: wp(100), borderRadius: wp(50),
-              borderWidth: wp(6), borderColor: '#00D984',
-              justifyContent: 'center', alignItems: 'center',
-              backgroundColor: 'rgba(0,217,132,0.05)',
-            }}>
-              <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#00D984' }}>84</Text>
-              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.3)' }}>/100</Text>
+          <StatsCard title="Derniers 7 jours">
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: wp(80) }}>
+              {chartCalories.map((cal, i) => {
+                const maxCal = Math.max(2200, ...chartCalories);
+                const h = (cal / maxCal) * wp(65);
+                const inTarget = cal >= 1800 && cal <= 2200;
+                return (
+                  <View key={i} style={{ alignItems: 'center', flex: 1 }}>
+                    <View style={{ width: wp(16), height: h, backgroundColor: inTarget ? '#00D984' : '#FF8C42', borderRadius: wp(4) }} />
+                    <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>{chartDays[i] || ''}</Text>
+                  </View>
+                );
+              })}
             </View>
+          </StatsCard>
+        </>
+      );
+    };
+
+    const renderSanteTab = () => {
+      if (medicalDataLoading) {
+        return (
+          <View style={{ padding: wp(40), alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#00D984" />
+            <Text style={{ fontSize: fp(13), color: 'rgba(0,0,0,0.4)', marginTop: wp(10) }}>
+              Chargement des données...
+            </Text>
           </View>
-        </StatsCard>
+        );
+      }
 
-        {renderLixumTable(
-          'Analyses',
-          [
-            { label: 'Analyse', flex: 2 },
-            { label: 'Valeur', flex: 1.2 },
-            { label: 'Statut', flex: 1, align: 'right' },
-          ],
-          [
-            [
-              { text: 'Cholestérol total', bold: true },
-              '2.45 g/L',
-              { text: 'Élevé', color: '#FF6B6B', bold: true },
-            ],
-            [
-              { text: 'Fer sérique', bold: true },
-              '45 µg/dL',
-              { text: 'Bas', color: '#FF8C42', bold: true },
-            ],
-            [
-              { text: 'Vitamine D', bold: true },
-              '22 ng/mL',
-              { text: 'Bas', color: '#FF8C42', bold: true },
-            ],
-            [
-              { text: 'Glycémie', bold: true },
-              '1.05 g/L',
-              { text: 'Normal', color: '#00D984' },
-            ],
-            [
-              { text: 'Hémoglobine', bold: true },
-              '14.2 g/dL',
-              { text: 'Normal', color: '#00D984' },
-            ],
-          ],
-          '#00D984'
-        )}
+      const analysesRows = medicalData.analyses.map(a => [
+        { text: a.label, bold: true },
+        a.value,
+        {
+          text: a.status === 'normal' ? 'Normal'
+            : a.status === 'elevated' ? 'Élevé'
+            : a.status === 'low' ? 'Bas'
+            : a.status === 'critical' ? 'Critique'
+            : a.status,
+          color: a.status === 'normal' ? '#00D984'
+            : a.status === 'elevated' ? '#FF6B6B'
+            : a.status === 'low' ? '#FF8C42'
+            : a.status === 'critical' ? '#FF6B6B'
+            : '#999',
+          bold: true,
+        },
+      ]);
 
-        {renderLixumTable(
-          'Médicaments',
-          [
-            { label: 'Médicament', flex: 2 },
-            { label: 'Posologie', flex: 1.5 },
-            { label: 'Durée', flex: 1, align: 'right' },
-          ],
-          [
-            [
-              { text: 'Vitamine D3', bold: true },
-              '1000 UI/jour',
-              { text: '3 mois', color: '#00D984' },
-            ],
-            [
-              { text: 'Fer (Tardyféron)', bold: true },
-              '80 mg/jour',
-              { text: '2 mois', color: '#FF8C42' },
-            ],
-          ],
-          '#4DA6FF'
-        )}
+      const medsRows = medicalData.medications.map(m => [
+        { text: m.name, bold: true },
+        (m.dosage || '') + (m.frequency ? ' / ' + m.frequency : ''),
+        { text: m.duration || '-', color: '#00D984' },
+      ]);
 
-        {renderLixumTable(
-          'Allergies',
-          [
-            { label: 'Allergène', flex: 2 },
-            { label: 'Type', flex: 1.5 },
-            { label: 'Sévérité', flex: 1, align: 'right' },
-          ],
-          [
-            [
-              { text: 'Arachides', bold: true },
-              'Alimentaire',
-              { text: 'Sévère', color: '#FF6B6B', bold: true },
-            ],
-            [
-              { text: 'Lactose', bold: true },
-              'Intolérance',
-              { text: 'Modéré', color: '#FF8C42', bold: true },
-            ],
-          ],
-          '#FF8C42'
-        )}
+      const allergiesRows = medicalData.allergies.map(a => [
+        { text: a.allergen, bold: true },
+        a.type || '-',
+        {
+          text: a.severity === 'severe' ? 'Sévère'
+            : a.severity === 'moderate' ? 'Modéré'
+            : a.severity === 'mild' ? 'Léger'
+            : a.severity === 'life_threatening' ? 'Vital'
+            : a.severity || '-',
+          color: a.severity === 'severe' || a.severity === 'life_threatening' ? '#FF6B6B'
+            : a.severity === 'moderate' ? '#FF8C42'
+            : '#00D984',
+          bold: true,
+        },
+      ]);
 
-        {renderLixumTable(
-          'Vaccins',
-          [
-            { label: 'Vaccin', flex: 2 },
-            { label: 'Date', flex: 1.2 },
-            { label: 'Rappel', flex: 1, align: 'right' },
-          ],
-          [
-            [
-              { text: 'BCG', bold: true },
-              'Naissance',
-              { text: '✓ À jour', color: '#00D984' },
-            ],
-            [
-              { text: 'DTP', bold: true },
-              '12/2024',
-              { text: '✓ À jour', color: '#00D984' },
-            ],
-            [
-              { text: 'Hépatite B', bold: true },
-              '03/2025',
-              { text: '✓ À jour', color: '#00D984' },
-            ],
-            [
-              { text: 'Fièvre jaune', bold: true },
-              '06/2023',
-              { text: 'Rappel 2033', color: '#FF8C42' },
-            ],
-          ],
-          '#00D984'
-        )}
-      </>
-    );
+      const vaccRows = medicalData.vaccinations.map(v => {
+        const dateStr = v.administration_date
+          ? new Date(v.administration_date).toLocaleDateString('fr-FR', { month: '2-digit', year: 'numeric' })
+          : '-';
+        const rappelStr = v.next_due_date
+          ? 'Rappel ' + new Date(v.next_due_date).getFullYear()
+          : '✓ À jour';
+        const rappelColor = v.next_due_date ? '#FF8C42' : '#00D984';
+
+        return [
+          { text: v.vaccine_name, bold: true },
+          dateStr,
+          { text: rappelStr, color: rappelColor },
+        ];
+      });
+
+      return (
+        <>
+          <StatsCard title="Score Vitalité">
+            <View style={{ alignItems: 'center', marginVertical: wp(8) }}>
+              <View style={{
+                width: wp(100), height: wp(100), borderRadius: wp(50),
+                borderWidth: wp(6), borderColor: '#00D984',
+                justifyContent: 'center', alignItems: 'center',
+                backgroundColor: 'rgba(0,217,132,0.05)',
+              }}>
+                <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#00D984' }}>{medicalData.vitalityScore || 0}</Text>
+                <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.3)' }}>/100</Text>
+              </View>
+            </View>
+          </StatsCard>
+
+          {renderLixumTable('Analyses',
+            [{ label: 'Analyse', flex: 2 }, { label: 'Valeur', flex: 1.2 }, { label: 'Statut', flex: 1, align: 'right' }],
+            analysesRows,
+            '#00D984'
+          )}
+
+          {renderLixumTable('Médicaments',
+            [{ label: 'Médicament', flex: 2 }, { label: 'Posologie', flex: 1.5 }, { label: 'Durée', flex: 1, align: 'right' }],
+            medsRows,
+            '#4DA6FF'
+          )}
+
+          {renderLixumTable('Allergies',
+            [{ label: 'Allergène', flex: 2 }, { label: 'Type', flex: 1.5 }, { label: 'Sévérité', flex: 1, align: 'right' }],
+            allergiesRows,
+            '#FF8C42'
+          )}
+
+          {renderLixumTable('Vaccins',
+            [{ label: 'Vaccin', flex: 2 }, { label: 'Date', flex: 1.2 }, { label: 'Rappel', flex: 1, align: 'right' }],
+            vaccRows,
+            '#00D984'
+          )}
+        </>
+      );
+    };
 
     const renderActiviteTab = () => (
       <>
