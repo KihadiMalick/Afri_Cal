@@ -585,19 +585,23 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
     }}>
       <Pressable onPress={() => { if (status !== 'loading') onPress(); }}>
         <View style={{
-          width: wp(38),
-          height: wp(38),
-          borderRadius: wp(19),
-          backgroundColor: bubbleColor + (isActive ? '40' : '20'),
-          borderWidth: isActive ? wp(3) : wp(2),
-          borderColor: bubbleColor,
-          shadowColor: bubbleColor,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isActive ? 0.5 : 0.2,
-          shadowRadius: isActive ? 10 : 4,
-          elevation: isActive ? 5 : 2,
+          width: wp(32),
+          height: wp(32),
+          borderRadius: wp(10),
+          backgroundColor: isActive
+            ? (isBot ? 'rgba(231,76,60,0.25)' : 'rgba(52,152,219,0.25)')
+            : (isBot ? 'rgba(231,76,60,0.12)' : 'rgba(52,152,219,0.12)'),
           justifyContent: 'center',
           alignItems: 'center',
+          borderWidth: isActive ? 1.5 : 0.5,
+          borderColor: bubbleColor,
+          ...(isActive ? {
+            shadowColor: bubbleColor,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.4,
+            shadowRadius: 6,
+            elevation: 4,
+          } : {}),
           overflow: 'hidden',
         }}>
           {/* Contenu */}
@@ -610,7 +614,7 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
           ) : (
             <Text style={{
               color: bubbleColor,
-              fontSize: fp(12),
+              fontSize: fp(11),
               fontWeight: '700',
               zIndex: 1,
             }}>
@@ -622,9 +626,9 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
           {isSearchHit && (
             <View style={{
               position: 'absolute',
-              width: wp(38) + 6,
-              height: wp(38) + 6,
-              borderRadius: (wp(38) + 6) / 2,
+              width: wp(32) + 6,
+              height: wp(32) + 6,
+              borderRadius: wp(10) + 3,
               borderWidth: 2,
               borderColor: '#00D984',
               zIndex: -1,
@@ -632,15 +636,6 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
           )}
         </View>
       </Pressable>
-      {/* Point indicateur sous la bulle */}
-      <View style={{
-        width: wp(5),
-        height: wp(5),
-        borderRadius: wp(2.5),
-        backgroundColor: bubbleColor,
-        marginTop: wp(3),
-        opacity: 0.6,
-      }} />
     </Animated.View>
   );
 };
@@ -744,22 +739,19 @@ const SynapticNetwork = ({ messages, searchHits, onBallPress, onNewSession }) =>
             delayPressIn={120}
             onPress={onNewSession}
             style={({ pressed }) => ({
-              width: S_BALL_SIZE,
-              height: S_BALL_SIZE,
-              borderRadius: S_BALL_SIZE / 2,
-              backgroundColor: '#252A30',
-              borderWidth: wp(2),
-              borderColor: '#00D984',
-              borderStyle: 'dashed',
+              width: wp(32),
+              height: wp(32),
+              borderRadius: wp(10),
+              backgroundColor: 'rgba(0,217,132,0.08)',
               justifyContent: 'center',
               alignItems: 'center',
+              borderWidth: 1.5,
+              borderColor: 'rgba(0,217,132,0.3)',
+              borderStyle: 'dashed',
               transform: [{ scale: pressed ? 0.92 : 1 }],
             })}
           >
-            <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
-              <Line x1="12" y1="5" x2="12" y2="19" stroke="#00D984" strokeWidth="2.5" strokeLinecap="round"/>
-              <Line x1="5" y1="12" x2="19" y2="12" stroke="#00D984" strokeWidth="2.5" strokeLinecap="round"/>
-            </Svg>
+            <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '300' }}>+</Text>
           </Pressable>
         </View>
       )}
@@ -2048,13 +2040,86 @@ ${mealsList}
     setShowCarnetPageSheet(true);
   };
 
+  // ── LIXUM TABLE COMPONENT ───────────────────────────────────────────────
+  const renderLixumTable = (title, columns, rows, accentColor = '#00D984') => {
+    return (
+      <View style={{
+        backgroundColor: '#FAFBFC', borderRadius: wp(16),
+        overflow: 'hidden', marginBottom: wp(12),
+        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+      }}>
+        <LinearGradient
+          colors={['#3A3F46', '#252A30']}
+          style={{
+            flexDirection: 'row', paddingVertical: wp(10), paddingHorizontal: wp(12),
+          }}
+        >
+          {columns.map((col, i) => (
+            <Text key={i} style={{
+              flex: col.flex || 1,
+              fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.7)',
+              letterSpacing: 0.5, textTransform: 'uppercase',
+              textAlign: col.align || 'left',
+            }}>
+              {col.label}
+            </Text>
+          ))}
+        </LinearGradient>
+
+        {rows.map((row, rowIndex) => (
+          <View key={rowIndex} style={{
+            flexDirection: 'row', paddingVertical: wp(10), paddingHorizontal: wp(12),
+            borderBottomWidth: rowIndex < rows.length - 1 ? 1 : 0,
+            borderBottomColor: 'rgba(0,0,0,0.04)',
+            backgroundColor: rowIndex % 2 === 0 ? '#FAFBFC' : '#F5F6F8',
+          }}>
+            {row.map((cell, cellIndex) => (
+              <Text key={cellIndex} style={{
+                flex: columns[cellIndex]?.flex || 1,
+                fontSize: fp(12),
+                fontWeight: cell.bold ? '600' : '400',
+                color: cell.color || '#2D3436',
+                textAlign: columns[cellIndex]?.align || 'left',
+              }}>
+                {cell.text || cell}
+              </Text>
+            ))}
+          </View>
+        ))}
+
+        {rows.length === 0 && (
+          <View style={{ padding: wp(20), alignItems: 'center' }}>
+            <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.3)', fontStyle: 'italic' }}>
+              Aucune donnée enregistrée
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
   // ── PROFILE BADGE COMPONENT ──────────────────────────────────────────────
   const ProfileBadge = () => {
     const profileName = activeProfile === 'self' ? 'Moi' : (children.find(c => c.id === activeProfile)?.name || 'Moi');
     return (
-      <Pressable delayPressIn={120} onPress={() => setShowProfileSheet(true)}
-        style={{ backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(4), flexDirection: 'row', alignItems: 'center' }}>
-        <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '600' }}>{profileName} ▾</Text>
+      <Pressable
+        onPress={() => {
+          console.log('=== BOUTON MOI PRESSÉ ===');
+          setShowProfileSheet(true);
+        }}
+        style={{
+          backgroundColor: 'rgba(0,217,132,0.15)',
+          borderRadius: wp(14),
+          paddingHorizontal: wp(12),
+          paddingVertical: wp(6),
+          flexDirection: 'row',
+          alignItems: 'center',
+        }}
+      >
+        <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#00D984' }}>
+          {profileName} ▾
+        </Text>
       </Pressable>
     );
   };
@@ -2169,6 +2234,67 @@ ${mealsList}
             <Text style={{ fontSize: fp(16), color: 'rgba(0,0,0,0.2)' }}>{">"}</Text>
           </View>
         </Pressable>
+
+        {/* Section info en bas du landing */}
+        <View style={{ marginTop: wp(20), paddingHorizontal: wp(4) }}>
+          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#2D3436', marginBottom: wp(12) }}>
+            Comment ça marche ?
+          </Text>
+
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: wp(14) }}>
+            <View style={{
+              width: wp(28), height: wp(28), borderRadius: wp(8),
+              backgroundColor: 'rgba(0,217,132,0.1)',
+              justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+            }}>
+              <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '700' }}>1</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436', marginBottom: wp(2) }}>
+                Photographiez ou importez
+              </Text>
+              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', lineHeight: fp(16) }}>
+                Votre carnet de santé, bilans, ordonnances, résultats d'analyses...
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: wp(14) }}>
+            <View style={{
+              width: wp(28), height: wp(28), borderRadius: wp(8),
+              backgroundColor: 'rgba(77,166,255,0.1)',
+              justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+            }}>
+              <Text style={{ color: '#4DA6FF', fontSize: fp(13), fontWeight: '700' }}>2</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436', marginBottom: wp(2) }}>
+                ALIXEN analyse tout
+              </Text>
+              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', lineHeight: fp(16) }}>
+                Vaccins, médicaments, diagnostics, allergies — chaque info va dans la bonne section.
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: wp(20) }}>
+            <View style={{
+              width: wp(28), height: wp(28), borderRadius: wp(8),
+              backgroundColor: 'rgba(212,175,55,0.1)',
+              justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+            }}>
+              <Text style={{ color: '#D4AF37', fontSize: fp(13), fontWeight: '700' }}>3</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436', marginBottom: wp(2) }}>
+                Générez votre MediBook
+              </Text>
+              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', lineHeight: fp(16) }}>
+                Un rapport PDF complet à imprimer pour votre médecin. 500 Lix.
+              </Text>
+            </View>
+          </View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -2389,106 +2515,118 @@ ${mealsList}
           </View>
         </StatsCard>
 
-        <StatsCard title="Dernières analyses">
-          {[
-            { label: 'Cholestérol élevé', color: '#FF6B6B' },
-            { label: 'Fer bas', color: '#FF8C42' },
-            { label: 'Vitamine D insuffisante', color: '#FF8C42' },
-          ].map((item, i) => (
-            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-              <View style={{ width: wp(4), height: wp(24), backgroundColor: item.color, borderRadius: wp(2), marginRight: wp(10) }} />
-              <Text style={{ fontSize: fp(13), color: '#2D3436' }}>{item.label}</Text>
-            </View>
-          ))}
-        </StatsCard>
+        {renderLixumTable(
+          'Analyses',
+          [
+            { label: 'Analyse', flex: 2 },
+            { label: 'Valeur', flex: 1.2 },
+            { label: 'Statut', flex: 1, align: 'right' },
+          ],
+          [
+            [
+              { text: 'Cholestérol total', bold: true },
+              '2.45 g/L',
+              { text: 'Élevé', color: '#FF6B6B', bold: true },
+            ],
+            [
+              { text: 'Fer sérique', bold: true },
+              '45 µg/dL',
+              { text: 'Bas', color: '#FF8C42', bold: true },
+            ],
+            [
+              { text: 'Vitamine D', bold: true },
+              '22 ng/mL',
+              { text: 'Bas', color: '#FF8C42', bold: true },
+            ],
+            [
+              { text: 'Glycémie', bold: true },
+              '1.05 g/L',
+              { text: 'Normal', color: '#00D984' },
+            ],
+            [
+              { text: 'Hémoglobine', bold: true },
+              '14.2 g/dL',
+              { text: 'Normal', color: '#00D984' },
+            ],
+          ],
+          '#00D984'
+        )}
 
-        <View style={{
-          backgroundColor: '#FAFBFC', borderRadius: wp(16),
-          padding: wp(16), marginBottom: wp(12),
-          shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
-        }}>
-          <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(12) }}>
-            Médicaments en cours
-          </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-            <View style={{
-              width: wp(8), height: wp(8), borderRadius: wp(4),
-              backgroundColor: '#4DA6FF', marginRight: wp(10),
-            }}/>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436' }}>Vitamine D3</Text>
-              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)' }}>1000 UI / jour — 3 mois</Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-            <View style={{
-              width: wp(8), height: wp(8), borderRadius: wp(4),
-              backgroundColor: '#4DA6FF', marginRight: wp(10),
-            }}/>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436' }}>Fer (Tardyféron)</Text>
-              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)' }}>80 mg / jour — 2 mois</Text>
-            </View>
-          </View>
-        </View>
+        {renderLixumTable(
+          'Médicaments',
+          [
+            { label: 'Nom', flex: 2 },
+            { label: 'Posologie', flex: 1.5 },
+            { label: 'Durée', flex: 1, align: 'right' },
+          ],
+          [
+            [
+              { text: 'Vitamine D3', bold: true },
+              '1000 UI/jour',
+              { text: '3 mois', color: '#00D984' },
+            ],
+            [
+              { text: 'Fer (Tardyféron)', bold: true },
+              '80 mg/jour',
+              { text: '2 mois', color: '#FF8C42' },
+            ],
+          ],
+          '#4DA6FF'
+        )}
 
-        <View style={{
-          backgroundColor: '#FAFBFC', borderRadius: wp(16),
-          padding: wp(16), marginBottom: wp(12),
-          shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
-        }}>
-          <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(12) }}>
-            Allergies et intolérances
-          </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-            <View style={{
-              width: wp(8), height: wp(8), borderRadius: wp(4),
-              backgroundColor: '#FF8C42', marginRight: wp(10),
-            }}/>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436' }}>Arachides</Text>
-              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)' }}>Allergie alimentaire confirmée</Text>
-            </View>
-            <View style={{
-              paddingHorizontal: wp(8), paddingVertical: wp(3),
-              backgroundColor: 'rgba(255,107,107,0.1)', borderRadius: wp(8),
-            }}>
-              <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF6B6B' }}>SÉVÈRE</Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{
-              width: wp(8), height: wp(8), borderRadius: wp(4),
-              backgroundColor: '#FF8C42', marginRight: wp(10),
-            }}/>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436' }}>Lactose</Text>
-              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)' }}>Intolérance modérée</Text>
-            </View>
-            <View style={{
-              paddingHorizontal: wp(8), paddingVertical: wp(3),
-              backgroundColor: 'rgba(255,140,66,0.1)', borderRadius: wp(8),
-            }}>
-              <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF8C42' }}>MODÉRÉ</Text>
-            </View>
-          </View>
-        </View>
+        {renderLixumTable(
+          'Allergies',
+          [
+            { label: 'Allergène', flex: 2 },
+            { label: 'Type', flex: 1.5 },
+            { label: 'Sévérité', flex: 1, align: 'right' },
+          ],
+          [
+            [
+              { text: 'Arachides', bold: true },
+              'Alimentaire',
+              { text: 'Sévère', color: '#FF6B6B', bold: true },
+            ],
+            [
+              { text: 'Lactose', bold: true },
+              'Intolérance',
+              { text: 'Modéré', color: '#FF8C42', bold: true },
+            ],
+          ],
+          '#FF8C42'
+        )}
 
-        <StatsCard title="Vaccins à jour">
-          {['BCG', 'DTP', 'Hépatite B', 'Fièvre jaune'].map((v, i) => (
-            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
-              <View style={{
-                width: wp(18), height: wp(18), borderRadius: wp(9),
-                backgroundColor: 'rgba(0,217,132,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(8),
-              }}>
-                <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>✓</Text>
-              </View>
-              <Text style={{ fontSize: fp(13), color: '#2D3436' }}>{v}</Text>
-            </View>
-          ))}
-        </StatsCard>
+        {renderLixumTable(
+          'Vaccins',
+          [
+            { label: 'Vaccin', flex: 2 },
+            { label: 'Date', flex: 1.2 },
+            { label: 'Rappel', flex: 1, align: 'right' },
+          ],
+          [
+            [
+              { text: 'BCG', bold: true },
+              'Naissance',
+              { text: '✓ À jour', color: '#00D984' },
+            ],
+            [
+              { text: 'DTP', bold: true },
+              '12/2024',
+              { text: '✓ À jour', color: '#00D984' },
+            ],
+            [
+              { text: 'Hépatite B', bold: true },
+              '03/2025',
+              { text: '✓ À jour', color: '#00D984' },
+            ],
+            [
+              { text: 'Fièvre jaune', bold: true },
+              '06/2023',
+              { text: 'Rappel 2033', color: '#FF8C42' },
+            ],
+          ],
+          '#00D984'
+        )}
       </>
     );
 
