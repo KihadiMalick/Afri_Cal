@@ -6053,6 +6053,55 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
               </Pressable>
 
+              {/* Option : Partager ma localisation */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => {
+                  setShowDocumentSheet(false);
+                  setTimeout(() => {
+                    Alert.alert(
+                      'Partager ma localisation',
+                      'ALIXEN utilisera ta position une seule fois pour te recommander des supermarchés, restaurants et salles de sport à proximité.\n\nTa localisation sera automatiquement effacée après utilisation — ALIXEN ne la conserve pas.',
+                      [
+                        {
+                          text: 'Partager',
+                          onPress: () => shareLocationOneTime(),
+                        },
+                        { text: 'Non merci', style: 'cancel' },
+                      ]
+                    );
+                  }, 300);
+                }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(0,217,132,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <Circle cx="12" cy="10" r="3" stroke="#00D984" strokeWidth="1.5"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Partager ma localisation</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Usage unique — effacée après utilisation</Text>
+                </View>
+                <View style={{
+                  backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(6),
+                  paddingHorizontal: wp(6), paddingVertical: wp(2),
+                }}>
+                  <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#00D984' }}>1x</Text>
+                </View>
+              </Pressable>
+
               {/* Option 5 : Conversation compactée */}
               <Pressable
                 delayPressIn={120}
