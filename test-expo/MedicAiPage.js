@@ -1573,14 +1573,69 @@ export default function MedicAiPage() {
     if (!userProfile) return 'Données utilisateur non disponibles.';
 
     const today = new Date().toLocaleDateString('fr-FR');
+    const dayOfMonth = new Date().getDate();
+    const hour = new Date().getHours();
     const cal = todaySummary?.total_calories || 0;
     const protein = todaySummary?.total_protein || 0;
     const carbs = todaySummary?.total_carbs || 0;
     const fat = todaySummary?.total_fat || 0;
 
     const mealsList = availableMeals.length > 0
-      ? availableMeals.map(m => `${m.name} (${m.calories_per_serving || '?'} kcal)`).join(', ')
+      ? availableMeals.slice(0, 20).map(m => m.name + ' (' + (m.calories_per_serving || '?') + ' kcal)').join(', ')
       : 'Liste non chargée';
+
+    // Médicaments actifs
+    const activeMeds = medicalData.medications.length > 0
+      ? medicalData.medications.map(m => {
+          const dosage = m.dosage || (m.dosage_value ? m.dosage_value + ' ' + (m.dosage_unit || 'mg') : '');
+          const freq = m.frequency || (m.frequency_per_day ? m.frequency_per_day + 'x/jour' : '');
+          const dayInfo = m.start_date && m.end_date
+            ? 'jour ' + Math.min(
+                Math.ceil((Date.now() - new Date(m.start_date).getTime()) / (1000 * 60 * 60 * 24)),
+                Math.ceil((new Date(m.end_date).getTime() - new Date(m.start_date).getTime()) / (1000 * 60 * 60 * 24))
+              ) + '/' + Math.ceil((new Date(m.end_date).getTime() - new Date(m.start_date).getTime()) / (1000 * 60 * 60 * 24))
+            : '';
+          return m.name + ' ' + dosage + ' ' + freq + (dayInfo ? ' (' + dayInfo + ')' : '');
+        }).join('; ')
+      : 'Aucun traitement en cours';
+
+    // Allergies
+    const allergiesList = medicalData.allergies.length > 0
+      ? medicalData.allergies.map(a => a.allergen + ' (' + (a.severity === 'severe' ? 'SÉVÈRE' : a.severity === 'moderate' ? 'modéré' : a.severity || '') + ')').join(', ')
+      : 'Aucune allergie enregistrée';
+
+    // Analyses à venir
+    const upcomingAnalyses = medicalData.scheduledAnalyses && medicalData.scheduledAnalyses.length > 0
+      ? medicalData.scheduledAnalyses.map(a => {
+          const days = Math.ceil((new Date(a.scheduled_date) - new Date()) / (1000 * 60 * 60 * 24));
+          return a.label + ' dans ' + days + ' jours' + (a.laboratory ? ' au ' + a.laboratory : '');
+        }).join('; ')
+      : 'Aucune analyse planifiée';
+
+    // Résultats anormaux récents
+    const abnormalResults = medicalData.analyses
+      ? medicalData.analyses
+          .filter(a => a.status === 'elevated' || a.status === 'low' || a.status === 'critical')
+          .map(a => a.label + ': ' + a.value + ' (' + a.status + ')')
+          .join(', ')
+      : '';
+
+    // Diagnostics
+    const diagList = medicalData.diagnostics && medicalData.diagnostics.length > 0
+      ? medicalData.diagnostics.map(d => d.condition || d.label || '').join(', ')
+      : '';
+
+    // Score vitalité
+    const vitalityScore = medicalData.vitalityScore || 0;
+
+    // Contexte temporel pour proactivité
+    let temporalContext = '';
+    if (dayOfMonth >= 25) {
+      temporalContext = 'CONTEXTE TEMPOREL : Nous sommes le ' + dayOfMonth + ' du mois. C\'est bientôt la fin du mois — si pertinent, tu peux proposer un plan de courses pour le mois prochain.';
+    }
+    if (hour >= 17 && hour <= 20 && cal < (userProfile.tdee || 2000) * 0.6) {
+      temporalContext += ' Il est ' + hour + 'h et l\'utilisateur n\'a mangé que ' + cal + ' kcal. Tu peux suggérer des idées de dîner.';
+    }
 
     return `
 DONNÉES UTILISATEUR (${today}) :
@@ -1589,13 +1644,38 @@ DONNÉES UTILISATEUR (${today}) :
 - Poids : ${userProfile.weight || 'N/A'} kg | Taille : ${userProfile.height || 'N/A'} cm
 - Objectif : ${userProfile.goal || 'N/A'}
 - BMR : ${userProfile.bmr || 'N/A'} kcal | TDEE : ${userProfile.tdee || 'N/A'} kcal
+- Score Vitalité : ${vitalityScore}/100
 
 MACROS AUJOURD'HUI :
 - Calories : ${cal} / ${userProfile.tdee || 2000} kcal
 - Protéines : ${protein}g | Glucides : ${carbs}g | Lipides : ${fat}g
 
-PLATS DISPONIBLES DANS L'APP (liste de la base de recettes) :
+DONNÉES MÉDICALES :
+- Médicaments en cours : ${activeMeds}
+- Allergies connues : ${allergiesList}
+- Prochaines analyses : ${upcomingAnalyses}
+${abnormalResults ? '- Résultats anormaux récents : ' + abnormalResults : ''}
+${diagList ? '- Diagnostics à surveiller : ' + diagList : ''}
+
+${temporalContext}
+
+PLATS DISPONIBLES DANS L'APP :
 ${mealsList}
+
+INSTRUCTIONS DE RÉPONSE OBLIGATOIRES :
+1. Tu es ALIXEN, coach santé IA chaleureux et bienveillant. Tu tutoies l'utilisateur.
+2. IMPORTANT — CHOIX RAPIDES : À la fin de CHAQUE réponse, tu DOIS proposer 2 à 5 choix rapides pour que l'utilisateur puisse répondre en un clic. Utilise EXACTEMENT ce format sur des lignes séparées :
+[CHOIX:1:Texte du premier choix]
+[CHOIX:2:Texte du deuxième choix]
+[CHOIX:3:Texte du troisième choix]
+[CHOIX:PRÉCISER:Autre chose...]
+Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour permettre la saisie libre.
+3. Les choix doivent être pertinents et anticiper ce que l'utilisateur veut probablement demander ensuite.
+4. Si l'utilisateur a des allergies, TOUJOURS les vérifier avant de recommander un plat ou un médicament.
+5. Si l'utilisateur demande des infos sur un médicament qu'il prend, utilise les données ci-dessus.
+6. Ne pose JAMAIS de diagnostic. Tu peux suggérer de consulter un médecin.
+7. Sois proactif : si tu vois des résultats anormaux ou des analyses à venir, mentionne-les naturellement.
+8. Garde tes réponses concises (max 150 mots avant les choix).
     `;
   };
 
