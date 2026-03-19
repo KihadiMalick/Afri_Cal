@@ -1772,8 +1772,11 @@ ${mealsList}
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            image: base64Data,
+            imageBase64: base64Data,
+            mimeType: 'image/jpeg',
+            userId: '00000000-0000-0000-0000-000000000001',
             context: context || 'medibook',
+            category: 'notes',
           }),
         }
       );
