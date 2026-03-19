@@ -1996,6 +1996,40 @@ ${mealsList}
     return takenHistory.some(h => h.date === today && h.time === time);
   };
 
+  const archiveMedication = async (medicationId, medicationName) => {
+    Alert.alert(
+      'Archiver ce médicament ?',
+      '"' + medicationName + '" sera déplacé dans vos médicaments archivés. Vous pourrez toujours le consulter.',
+      [
+        {
+          text: 'Archiver',
+          onPress: async () => {
+            try {
+              await fetch(
+                SUPABASE_URL + '/rest/v1/medications?id=eq.' + medicationId,
+                {
+                  method: 'PATCH',
+                  headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal',
+                  },
+                  body: JSON.stringify({ status: 'completed' }),
+                }
+              );
+              loadMedicalData();
+            } catch (error) {
+              console.error('Erreur archivage:', error);
+              Alert.alert('Erreur', 'L\'archivage a échoué.');
+            }
+          },
+        },
+        { text: 'Annuler', style: 'cancel' },
+      ]
+    );
+  };
+
   const searchMedications = async (query) => {
     setMedSearchQuery(query);
     if (query.length < 2) {
@@ -2071,7 +2105,7 @@ ${mealsList}
           reminder_enabled: newMedReminder,
           taken_today: false,
           source: 'manual',
-          medication_db_id: selectedMedFromDb.id,
+          medication_db_id: (selectedMedFromDb.id && !String(selectedMedFromDb.id).startsWith('ai-')) ? selectedMedFromDb.id : null,
         }),
       });
 
@@ -3737,7 +3771,7 @@ ${mealsList}
           </View>
         </LinearGradient>
 
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(100) }}>
           <View style={{ flexDirection: 'row', marginVertical: wp(12), gap: wp(8) }}>
             {[
               { key: 'done', label: 'Effectuées (' + doneList.length + ')' },
@@ -3847,23 +3881,24 @@ ${mealsList}
         </ScrollView>
 
       {analysesTab === 'scheduled' && (
-        <Pressable delayPressIn={120}
-          onPress={() => setShowAddAnalysisSheet(true)}
-          style={({ pressed }) => ({
-            position: 'absolute', bottom: wp(24), right: wp(16),
-            flexDirection: 'row', alignItems: 'center',
-            backgroundColor: '#00D984', borderRadius: wp(28),
-            paddingHorizontal: wp(18), paddingVertical: wp(14),
-            shadowColor: '#00D984', shadowOpacity: 0.4, shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 }, elevation: 8, gap: wp(8),
-            transform: [{ scale: pressed ? 0.95 : 1 }],
-          })}>
-          <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
-            <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
-            <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
-          </Svg>
-          <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>Planifier une analyse</Text>
-        </Pressable>
+        <View style={{ position: 'absolute', bottom: wp(30), left: 0, right: 0, alignItems: 'center' }}>
+          <Pressable delayPressIn={120}
+            onPress={() => setShowAddAnalysisSheet(true)}
+            style={({ pressed }) => ({
+              flexDirection: 'row', alignItems: 'center',
+              backgroundColor: '#00D984', borderRadius: wp(28),
+              paddingHorizontal: wp(22), paddingVertical: wp(14),
+              shadowColor: '#00D984', shadowOpacity: 0.4, shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 }, elevation: 8, gap: wp(8),
+              transform: [{ scale: pressed ? 0.95 : 1 }],
+            })}>
+            <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+              <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+              <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+            </Svg>
+            <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>Planifier une analyse</Text>
+          </Pressable>
+        </View>
       )}
       </View>
     );
@@ -3917,11 +3952,11 @@ ${mealsList}
           </View>
         </LinearGradient>
 
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(100) }}>
           <View style={{ flexDirection: 'row', marginVertical: wp(12), gap: wp(8) }}>
             {[
               { key: 'active', label: 'En cours (' + activeList.length + ')' },
-              { key: 'terminated', label: 'Terminés (' + terminatedList.length + ')' },
+              { key: 'terminated', label: 'Archivés (' + terminatedList.length + ')' },
             ].map(tab => (
               <Pressable key={tab.key} onPress={() => setMedsTab(tab.key)}
                 style={{
@@ -4076,6 +4111,22 @@ ${mealsList}
                         {med.reminder_enabled ? 'Rappel activé' : 'Activer le rappel'}
                       </Text>
                     </Pressable>
+                    <Pressable delayPressIn={120}
+                      onPress={() => archiveMedication(med.id, med.name)}
+                      style={({ pressed }) => ({
+                        flexDirection: 'row', alignItems: 'center', marginTop: wp(4), gap: wp(4),
+                        backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: wp(10),
+                        paddingHorizontal: wp(10), paddingVertical: wp(5), alignSelf: 'flex-start',
+                        borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)',
+                        transform: [{ scale: pressed ? 0.95 : 1 }],
+                      })}>
+                      <Svg width={wp(12)} height={wp(12)} viewBox="0 0 24 24" fill="none">
+                        <Path d="M21 8v13H3V8" stroke="rgba(0,0,0,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <Path d="M1 3h22v5H1z" stroke="rgba(0,0,0,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <Line x1="10" y1="12" x2="14" y2="12" stroke="rgba(0,0,0,0.3)" strokeWidth="1.5" strokeLinecap="round"/>
+                      </Svg>
+                      <Text style={{ fontSize: fp(10), color: 'rgba(0,0,0,0.3)' }}>Archiver</Text>
+                    </Pressable>
                   </View>
                 );
               })
@@ -4085,7 +4136,7 @@ ${mealsList}
           {medsTab === 'terminated' && (
             terminatedList.length === 0 ? (
               <View style={{ padding: wp(30), alignItems: 'center' }}>
-                <Text style={{ fontSize: fp(14), color: 'rgba(0,0,0,0.3)', textAlign: 'center' }}>Aucun traitement terminé.</Text>
+                <Text style={{ fontSize: fp(14), color: 'rgba(0,0,0,0.3)', textAlign: 'center' }}>Aucun traitement archivé.</Text>
               </View>
             ) : (
               terminatedList.map((med, i) => (
@@ -4104,10 +4155,10 @@ ${mealsList}
                     </Text>
                   )}
                   <View style={{
-                    backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(6),
+                    backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: wp(6),
                     paddingHorizontal: wp(8), paddingVertical: wp(2), alignSelf: 'flex-start', marginTop: wp(6),
                   }}>
-                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: '#00D984' }}>Terminé ✓</Text>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: 'rgba(0,0,0,0.35)' }}>Archivé</Text>
                   </View>
                 </View>
               ))
@@ -4116,27 +4167,28 @@ ${mealsList}
           <BottomSpacer />
         </ScrollView>
 
-      {/* FAB Ajouter un médicament */}
-      <Pressable
-        delayPressIn={120}
-        onPress={() => setShowAddMedSheet(true)}
-        style={({ pressed }) => ({
-          position: 'absolute', bottom: wp(24), right: wp(16),
-          flexDirection: 'row', alignItems: 'center',
-          backgroundColor: '#4DA6FF',
-          borderRadius: wp(28), paddingHorizontal: wp(18), paddingVertical: wp(14),
-          shadowColor: '#4DA6FF', shadowOpacity: 0.4, shadowRadius: 12,
-          shadowOffset: { width: 0, height: 4 }, elevation: 8,
-          gap: wp(8),
-          transform: [{ scale: pressed ? 0.95 : 1 }],
-        })}
-      >
-        <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
-          <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
-          <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
-        </Svg>
-        <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>Ajouter un médicament</Text>
-      </Pressable>
+      {/* FAB Ajouter un médicament — centré */}
+      <View style={{ position: 'absolute', bottom: wp(30), left: 0, right: 0, alignItems: 'center' }}>
+        <Pressable
+          delayPressIn={120}
+          onPress={() => setShowAddMedSheet(true)}
+          style={({ pressed }) => ({
+            flexDirection: 'row', alignItems: 'center',
+            backgroundColor: '#4DA6FF',
+            borderRadius: wp(28), paddingHorizontal: wp(22), paddingVertical: wp(14),
+            shadowColor: '#4DA6FF', shadowOpacity: 0.4, shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 }, elevation: 8,
+            gap: wp(8),
+            transform: [{ scale: pressed ? 0.95 : 1 }],
+          })}
+        >
+          <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+            <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+            <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+          </Svg>
+          <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>Ajouter un médicament</Text>
+        </Pressable>
+      </View>
       </View>
     );
   };
@@ -6838,7 +6890,14 @@ ${mealsList}
                     placeholder="JJ/MM/AAAA"
                     placeholderTextColor="rgba(255,255,255,0.25)"
                     value={newAnalysisDate}
-                    onChangeText={setNewAnalysisDate}
+                    onChangeText={(text) => {
+                      // Auto-format: ajouter les / automatiquement
+                      const cleaned = text.replace(/[^0-9]/g, '');
+                      let formatted = cleaned;
+                      if (cleaned.length > 2) formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
+                      if (cleaned.length > 4) formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4, 8);
+                      setNewAnalysisDate(formatted);
+                    }}
                     keyboardType="numeric"
                     maxLength={10}
                   />
