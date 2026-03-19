@@ -1167,6 +1167,9 @@ export default function MedicAiPage() {
 
   // Navigation interne MediBook
   const [mediBookView, setMediBookView] = useState('landing');
+  const [reportSection, setReportSection] = useState('hub');
+  const [analysesTab, setAnalysesTab] = useState('done');
+  const [medsTab, setMedsTab] = useState('active');
   const [activeProfile, setActiveProfile] = useState('self');
   const [children, setChildren] = useState([
     { id: 'child-0', name: 'Mon enfant', age: '', free: true },
@@ -1183,6 +1186,8 @@ export default function MedicAiPage() {
     diagnostics: [],
     vitalityScore: 0,
     profileId: null,
+    medsTerminated: [],
+    scheduledAnalyses: [],
   });
   const [medicalDataLoading, setMedicalDataLoading] = useState(false);
   const [nutritionWeekData, setNutritionWeekData] = useState(null);
@@ -1288,7 +1293,7 @@ export default function MedicAiPage() {
 
   // ── Charger données médicales quand on entre dans Mes Stats ──────────────
   React.useEffect(() => {
-    if (mediBookView === 'stats') {
+    if (mediBookView === 'stats' || mediBookView === 'report') {
       loadMedicalData();
     }
   }, [mediBookView]);
@@ -1461,6 +1466,20 @@ export default function MedicAiPage() {
       );
       const diagnostics = await diagRes.json();
 
+      // Charger les médicaments terminés
+      const medsTermRes = await fetch(
+        SUPABASE_URL + '/rest/v1/medications?user_id=eq.' + userId + '&status=eq.completed&order=end_date.desc',
+        { headers }
+      );
+      const medsTerminated = await medsTermRes.json();
+
+      // Charger les analyses planifiées
+      const scheduledRes = await fetch(
+        SUPABASE_URL + '/rest/v1/medical_analyses?user_id=eq.' + userId + '&is_scheduled=eq.true&order=scheduled_date.asc',
+        { headers }
+      );
+      const scheduledAnalyses = await scheduledRes.json();
+
       // Charger les 7 derniers jours de nutrition
       const today = new Date().toISOString().split('T')[0];
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -1480,6 +1499,8 @@ export default function MedicAiPage() {
         allergies: Array.isArray(allergiesData) ? allergiesData : [],
         vaccinations: Array.isArray(vaccinations) ? vaccinations : [],
         diagnostics: Array.isArray(diagnostics) ? diagnostics : [],
+        medsTerminated: Array.isArray(medsTerminated) ? medsTerminated : [],
+        scheduledAnalyses: Array.isArray(scheduledAnalyses) ? scheduledAnalyses : [],
         vitalityScore: vitalityScore,
         profileId: profileId,
       });
