@@ -43,7 +43,9 @@ const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 // SYSTÈME ÉNERGIE LIXUM
 // ============================================
 const ENERGY_CONFIG = {
-  TOKEN_DIVISOR: 100,
+  TOKEN_DIVISOR_SONNET: 50,       // Chat simple : tokens / 50 (~8-12 énergie)
+  TOKEN_DIVISOR_OPUS: 30,         // Opus + web search : tokens / 30 (~30-50 énergie)
+  TOKEN_DIVISOR_VISION: 40,       // Photo/Document : tokens / 40 (~15-25 énergie)
   TEST_ENERGY_LIMIT: 500,
   GOLD_ENERGY_LIMIT: 150,
   PLATINUM_ENERGY_LIMIT: 350,
@@ -1502,7 +1504,7 @@ export default function MedicAiPage() {
       );
       const data = await res.json();
       if (data.length > 0) {
-        const usedEnergy = Math.ceil((data[0].tokens_used || 0) / ENERGY_CONFIG.TOKEN_DIVISOR);
+        const usedEnergy = Math.ceil((data[0].tokens_used || 0) / ENERGY_CONFIG.TOKEN_DIVISOR_SONNET);
         setEnergyUsed(usedEnergy);
       }
     } catch (error) {
@@ -1871,7 +1873,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         });
 
         if (data.tokens_used) {
-          const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
+          const divisor = ENERGY_CONFIG.TOKEN_DIVISOR_VISION;
+          const energyCost = Math.ceil(data.tokens_used / divisor);
           setEnergyUsed(prev => prev + energyCost);
         }
       } catch (error) {
@@ -1963,7 +1966,10 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         });
 
         if (data.tokens_used) {
-          const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
+          const divisor = data.model_used === 'opus'
+            ? ENERGY_CONFIG.TOKEN_DIVISOR_OPUS
+            : ENERGY_CONFIG.TOKEN_DIVISOR_SONNET;
+          const energyCost = Math.ceil(data.tokens_used / divisor);
           setEnergyUsed(prev => prev + energyCost);
         }
       } catch (error) {
@@ -2144,10 +2150,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       });
 
       if (data.tokens_used) {
-        const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
+        const divisor = data.model_used === 'opus'
+          ? ENERGY_CONFIG.TOKEN_DIVISOR_OPUS
+          : ENERGY_CONFIG.TOKEN_DIVISOR_SONNET;
+        const energyCost = Math.ceil(data.tokens_used / divisor);
         setEnergyUsed(prev => {
           const newUsed = prev + energyCost;
-          console.log(`[ÉNERGIE] Tokens: ${data.tokens_used} → Coût: ${energyCost} énergie | Total: ${newUsed}/${energyLimit}`);
+          console.log('[ÉNERGIE] Modèle: ' + (data.model_used || 'sonnet') + (data.web_search_used ? ' +web' : '') + ' | Tokens: ' + data.tokens_used + ' → Coût: ' + energyCost + ' énergie | Total: ' + newUsed + '/' + energyLimit);
           return newUsed;
         });
       }
@@ -6042,6 +6051,55 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                   <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Partager vos données nutritionnelles</Text>
                 </View>
                 <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Option : Partager ma localisation */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => {
+                  setShowDocumentSheet(false);
+                  setTimeout(() => {
+                    Alert.alert(
+                      'Partager ma localisation',
+                      'ALIXEN utilisera ta position une seule fois pour te recommander des supermarchés, restaurants et salles de sport à proximité.\n\nTa localisation sera automatiquement effacée après utilisation — ALIXEN ne la conserve pas.',
+                      [
+                        {
+                          text: 'Partager',
+                          onPress: () => shareLocationOneTime(),
+                        },
+                        { text: 'Non merci', style: 'cancel' },
+                      ]
+                    );
+                  }, 300);
+                }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  backgroundColor: 'rgba(0,217,132,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <Circle cx="12" cy="10" r="3" stroke="#00D984" strokeWidth="1.5"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Partager ma localisation</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Usage unique — effacée après utilisation</Text>
+                </View>
+                <View style={{
+                  backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(6),
+                  paddingHorizontal: wp(6), paddingVertical: wp(2),
+                }}>
+                  <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#00D984' }}>1x</Text>
+                </View>
               </Pressable>
 
               {/* Option 5 : Conversation compactée */}
