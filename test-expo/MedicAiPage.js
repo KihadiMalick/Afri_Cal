@@ -5203,14 +5203,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           <Text style={{
             fontSize: fp(9),
             fontWeight: '600',
-            color: energyPercent <= 15 ? 'rgba(255,107,107,0.6)' : energyPercent <= 40 ? 'rgba(255,140,66,0.5)' : 'rgba(0,217,132,0.4)',
-            marginTop: wp(2),
-          }}>
-            {energyLeft > 0 ? energyLeft + ' énergie' : 'Énergie épuisée'}
-          </Text>
-          <Text style={{
-            fontSize: fp(9),
-            fontWeight: '600',
             color: 'rgba(0,217,132,0.4)',
             letterSpacing: 1.5,
             marginTop: wp(3),
