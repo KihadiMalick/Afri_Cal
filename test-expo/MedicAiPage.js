@@ -1180,6 +1180,12 @@ export default function MedicAiPage() {
   const [newMedFrequency, setNewMedFrequency] = useState(2);
   const [newMedDuration, setNewMedDuration] = useState('7 jours');
   const [newMedReminder, setNewMedReminder] = useState(true);
+  const [showAddAnalysisSheet, setShowAddAnalysisSheet] = useState(false);
+  const [newAnalysisLabel, setNewAnalysisLabel] = useState('');
+  const [newAnalysisDate, setNewAnalysisDate] = useState('');
+  const [newAnalysisDoctor, setNewAnalysisDoctor] = useState('');
+  const [newAnalysisLab, setNewAnalysisLab] = useState('');
+  const [newAnalysisNotes, setNewAnalysisNotes] = useState('');
   const [activeProfile, setActiveProfile] = useState('self');
   const [children, setChildren] = useState([
     { id: 'child-0', name: 'Mon enfant', age: '', free: true },
@@ -2098,6 +2104,133 @@ ${mealsList}
     if (lower.includes('mois')) return num * 30;
     if (lower.includes('semaine')) return num * 7;
     return num;
+  };
+
+  const searchMedicationAI = async (query) => {
+    try {
+      Alert.alert(
+        'Recherche IA — 50 Lix',
+        'ALIXEN va chercher "' + query + '" dans sa base de connaissances médicales.\n\nCoût : 50 Lix',
+        [
+          {
+            text: 'Rechercher',
+            onPress: async () => {
+              try {
+                setMedSearchResults([{ _loading: true, name: 'Recherche en cours...', id: 'loading' }]);
+
+                const response = await fetch(
+                  SUPABASE_URL + '/functions/v1/search-medication',
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      query: query,
+                      userId: TEST_USER_ID,
+                    }),
+                  }
+                );
+
+                const result = await response.json();
+
+                if (result.found && result.medication) {
+                  // Convertir au format attendu par la liste
+                  const med = {
+                    id: 'ai-' + Date.now(),
+                    name: result.medication.name,
+                    brand_names: result.medication.brand_names || [],
+                    active_ingredient: result.medication.active_ingredient || '',
+                    category: result.medication.category || '',
+                    common_dosages: result.medication.common_dosages || [],
+                    common_frequencies: result.medication.common_frequencies || [],
+                    common_durations: result.medication.common_durations || [],
+                    form: result.medication.form || 'Comprimé',
+                    warnings: result.medication.warnings || '',
+                    interactions: result.medication.interactions || [],
+                    _fromAI: true,
+                  };
+                  setMedSearchResults([med]);
+                } else {
+                  setMedSearchResults([]);
+                  Alert.alert(
+                    'Non trouvé',
+                    result.suggestion || 'ALIXEN n\'a pas trouvé ce médicament. Vérifiez l\'orthographe et réessayez.',
+                  );
+                }
+              } catch (error) {
+                console.error('Erreur recherche IA:', error);
+                setMedSearchResults([]);
+                Alert.alert('Erreur', 'La recherche IA a échoué. Vérifiez votre connexion.');
+              }
+            },
+          },
+          { text: 'Annuler', style: 'cancel', onPress: () => setMedSearchResults([]) },
+        ]
+      );
+    } catch (error) {
+      console.error('Erreur searchMedicationAI:', error);
+    }
+  };
+
+  const confirmAddAnalysis = async () => {
+    if (!newAnalysisLabel.trim()) {
+      Alert.alert('Champ requis', 'Veuillez entrer le type d\'analyse.');
+      return;
+    }
+    if (!newAnalysisDate.trim()) {
+      Alert.alert('Champ requis', 'Veuillez entrer la date prévue (format : JJ/MM/AAAA).');
+      return;
+    }
+
+    try {
+      // Parser la date JJ/MM/AAAA
+      const dateParts = newAnalysisDate.split('/');
+      let scheduledDate = null;
+      if (dateParts.length === 3) {
+        scheduledDate = dateParts[2] + '-' + dateParts[1] + '-' + dateParts[0];
+      } else {
+        // Essayer format AAAA-MM-JJ directement
+        scheduledDate = newAnalysisDate;
+      }
+
+      await fetch(SUPABASE_URL + '/rest/v1/medical_analyses', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          user_id: TEST_USER_ID,
+          label: newAnalysisLabel.trim(),
+          value: 'À effectuer',
+          status: 'unknown',
+          is_scheduled: true,
+          scheduled_date: scheduledDate,
+          reminder_enabled: true,
+          prescribed_by: newAnalysisDoctor.trim() || null,
+          laboratory: newAnalysisLab.trim() || null,
+          notes: newAnalysisNotes.trim() || null,
+        }),
+      });
+
+      setShowAddAnalysisSheet(false);
+      setNewAnalysisLabel('');
+      setNewAnalysisDate('');
+      setNewAnalysisDoctor('');
+      setNewAnalysisLab('');
+      setNewAnalysisNotes('');
+
+      loadMedicalData();
+
+      Alert.alert('Analyse planifiée ✓', newAnalysisLabel.trim() + ' a été ajoutée à vos analyses à venir.');
+    } catch (error) {
+      console.error('Erreur ajout analyse:', error);
+      Alert.alert('Erreur', 'L\'ajout a échoué. Réessayez.');
+    }
   };
 
   const handleTransferToSecretPocket = (tableName, rowIndex, rowData) => {
@@ -3712,6 +3845,26 @@ ${mealsList}
           )}
           <BottomSpacer />
         </ScrollView>
+
+      {analysesTab === 'scheduled' && (
+        <Pressable delayPressIn={120}
+          onPress={() => setShowAddAnalysisSheet(true)}
+          style={({ pressed }) => ({
+            position: 'absolute', bottom: wp(24), right: wp(16),
+            flexDirection: 'row', alignItems: 'center',
+            backgroundColor: '#00D984', borderRadius: wp(28),
+            paddingHorizontal: wp(18), paddingVertical: wp(14),
+            shadowColor: '#00D984', shadowOpacity: 0.4, shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 }, elevation: 8, gap: wp(8),
+            transform: [{ scale: pressed ? 0.95 : 1 }],
+          })}>
+          <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+            <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+            <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+          </Svg>
+          <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>Planifier une analyse</Text>
+        </Pressable>
+      )}
       </View>
     );
   };
@@ -6375,6 +6528,15 @@ ${mealsList}
                   {/* Résultats */}
                   <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.4 }}>
                     {medSearchResults.map((med, i) => (
+                        med._loading ? (
+                          <View key="loading" style={{
+                            flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                            paddingVertical: wp(20), gap: wp(10),
+                          }}>
+                            <ActivityIndicator size="small" color="#D4AF37" />
+                            <Text style={{ fontSize: fp(13), color: '#D4AF37' }}>ALIXEN recherche...</Text>
+                          </View>
+                        ) : (
                       <Pressable key={med.id || i} delayPressIn={120}
                         onPress={() => selectMedFromDb(med)}
                         style={({ pressed }) => ({
@@ -6406,6 +6568,7 @@ ${mealsList}
                         </View>
                         <Text style={{ fontSize: fp(16), color: 'rgba(255,255,255,0.2)' }}>{">"}</Text>
                       </Pressable>
+                        )
                     ))}
 
                     {medSearchQuery.length >= 2 && medSearchResults.length === 0 && (
@@ -6414,7 +6577,7 @@ ${mealsList}
                           Aucun médicament trouvé pour "{medSearchQuery}"
                         </Text>
                         <Pressable delayPressIn={120}
-                          onPress={() => Alert.alert('Recherche IA', 'La recherche IA approfondie (50 Lix) sera disponible prochainement.')}
+                          onPress={() => searchMedicationAI(medSearchQuery)}
                           style={{
                             flexDirection: 'row', alignItems: 'center',
                             backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(12),
@@ -6597,6 +6760,152 @@ ${mealsList}
                   </Pressable>
                 </ScrollView>
               )}
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ===== MODAL — Planifier une analyse ===== */}
+      <Modal
+        visible={showAddAnalysisSheet}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowAddAnalysisSheet(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          onPress={() => setShowAddAnalysisSheet(false)}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient
+              colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{
+                borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24),
+                paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34),
+              }}
+            >
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }}/>
+
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>
+                Planifier une analyse
+              </Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>
+                Ajoutez une analyse à venir pour recevoir un rappel
+              </Text>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Type d'analyse */}
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Type d'analyse *</Text>
+                <View style={{
+                  backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12),
+                  paddingHorizontal: wp(14), marginBottom: wp(14),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                }}>
+                  <TextInput
+                    style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
+                    placeholder="Ex : Bilan sanguin complet, NFS, Glycémie..."
+                    placeholderTextColor="rgba(255,255,255,0.25)"
+                    value={newAnalysisLabel}
+                    onChangeText={setNewAnalysisLabel}
+                  />
+                </View>
+
+                {/* Suggestions rapides */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(14) }}>
+                  <View style={{ flexDirection: 'row', gap: wp(6) }}>
+                    {['Bilan sanguin complet', 'NFS', 'Glycémie', 'Bilan lipidique', 'Bilan hépatique', 'Bilan rénal', 'TSH', 'Vitamine D', 'Fer sérique', 'CRP'].map(s => (
+                      <Pressable key={s} onPress={() => setNewAnalysisLabel(s)}
+                        style={{
+                          paddingHorizontal: wp(12), paddingVertical: wp(6), borderRadius: wp(8),
+                          backgroundColor: newAnalysisLabel === s ? '#00D984' : 'rgba(255,255,255,0.06)',
+                          borderWidth: 1, borderColor: newAnalysisLabel === s ? '#00D984' : 'rgba(255,255,255,0.08)',
+                        }}>
+                        <Text style={{ fontSize: fp(11), color: newAnalysisLabel === s ? '#FFF' : 'rgba(255,255,255,0.4)' }}>{s}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </ScrollView>
+
+                {/* Date */}
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Date prévue *</Text>
+                <View style={{
+                  backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12),
+                  paddingHorizontal: wp(14), marginBottom: wp(14),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                }}>
+                  <TextInput
+                    style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
+                    placeholder="JJ/MM/AAAA"
+                    placeholderTextColor="rgba(255,255,255,0.25)"
+                    value={newAnalysisDate}
+                    onChangeText={setNewAnalysisDate}
+                    keyboardType="numeric"
+                    maxLength={10}
+                  />
+                </View>
+
+                {/* Médecin */}
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Médecin prescripteur</Text>
+                <View style={{
+                  backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12),
+                  paddingHorizontal: wp(14), marginBottom: wp(14),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                }}>
+                  <TextInput
+                    style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
+                    placeholder="Dr. ..."
+                    placeholderTextColor="rgba(255,255,255,0.25)"
+                    value={newAnalysisDoctor}
+                    onChangeText={setNewAnalysisDoctor}
+                  />
+                </View>
+
+                {/* Laboratoire */}
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Laboratoire</Text>
+                <View style={{
+                  backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12),
+                  paddingHorizontal: wp(14), marginBottom: wp(14),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                }}>
+                  <TextInput
+                    style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
+                    placeholder="Nom du laboratoire"
+                    placeholderTextColor="rgba(255,255,255,0.25)"
+                    value={newAnalysisLab}
+                    onChangeText={setNewAnalysisLab}
+                  />
+                </View>
+
+                {/* Notes */}
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Notes</Text>
+                <View style={{
+                  backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12),
+                  paddingHorizontal: wp(14), marginBottom: wp(20),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                }}>
+                  <TextInput
+                    style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12), minHeight: wp(50) }}
+                    placeholder="Analyses spécifiques demandées, consignes à jeun..."
+                    placeholderTextColor="rgba(255,255,255,0.25)"
+                    value={newAnalysisNotes}
+                    onChangeText={setNewAnalysisNotes}
+                    multiline
+                  />
+                </View>
+
+                {/* Bouton confirmer */}
+                <Pressable delayPressIn={120} onPress={confirmAddAnalysis}>
+                  <LinearGradient colors={['#00D984', '#00B871']}
+                    style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center', marginBottom: wp(10) }}>
+                    <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Planifier cette analyse</Text>
+                  </LinearGradient>
+                </Pressable>
+
+                <Pressable onPress={() => setShowAddAnalysisSheet(false)}
+                  style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
+                </Pressable>
+              </ScrollView>
             </LinearGradient>
           </Pressable>
         </Pressable>
