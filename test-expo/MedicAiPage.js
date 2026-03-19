@@ -1732,35 +1732,112 @@ ${mealsList}
     setIsLoading(false);
   };
 
-  // ── UPLOAD & SCAN IA ────────────────────────────────────────────────────
-  const pickDocument = async (context, category = null) => {
+  // ── NOUVEAU PIPELINE SCAN MEDICAL ────────────────────────────────────
+  const startMedicalScan = async (base64Data, fileName, context) => {
+    // 1. Reset complet
+    setScanResults(null);
+    setScanSteps([]);
+    setScanContext(context);
+    setUploadState('scanning');
+    setScanFileName(fileName || 'Document');
+
+    // 2. Animation progressive des étapes
+    const steps = [
+      'Ouverture du document...',
+      'Détection du type de document...',
+      'Lecture du contenu...',
+      'Envoi à ALIXEN pour analyse...',
+      'Analyse des valeurs et références...',
+      'Identification des points d\'attention...',
+      'Traitement en cours...',
+    ];
+
+    // Lancer l'animation des étapes
+    let currentStep = 0;
+    const stepInterval = setInterval(() => {
+      if (currentStep < steps.length - 1) {
+        setScanSteps(prev => [...prev, { text: steps[currentStep], done: true }]);
+        currentStep++;
+      }
+    }, 1500);
+
     try {
-      setScanContext(context);
-      setScanCategory(category);
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/*'],
-        copyToCacheDirectory: true,
-      });
-      if (result.canceled) return;
-      const file = result.assets[0];
-      // Reset avant nouveau scan
-      setScanResults(null);
-      setScanSteps([]);
-      setUploadState('idle');
-      startAIScan(file.uri, file.name, file.mimeType, null, context);
+      // 3. Appel à l'Edge Function scan-medical
+      const response = await fetch(
+        SUPABASE_URL + '/functions/v1/scan-medical',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: base64Data,
+            context: context || 'medibook',
+          }),
+        }
+      );
+
+      clearInterval(stepInterval);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Erreur scan-medical:', response.status, errorText);
+        throw new Error('Erreur serveur: ' + response.status);
+      }
+
+      const result = await response.json();
+
+      // 4. Vérifier si le résultat contient une erreur
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      // 5. Marquer toutes les étapes comme terminées
+      setScanSteps(steps.map(text => ({ text, done: true })));
+
+      // 6. Attendre un court instant pour que l'utilisateur voie les checkmarks
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // 7. Afficher les résultats
+      setScanResults(result);
+      setUploadState('results');
+
     } catch (error) {
-      console.log('Erreur sélection document:', error);
-      Alert.alert('Erreur', 'Impossible de sélectionner le document.');
+      clearInterval(stepInterval);
+      console.error('Erreur scan médical:', error);
+      setUploadState('idle');
+      setScanResults(null);
+      Alert.alert(
+        'Erreur d\'analyse',
+        'ALIXEN n\'a pas pu analyser ce document. Vérifiez que l\'image est lisible et réessayez.\n\nDétail : ' + (error.message || 'Erreur inconnue'),
+      );
     }
   };
 
-  const takePhoto = async (context, category = null) => {
+  const pickImage = async (context) => {
     try {
-      setScanContext(context);
-      setScanCategory(category);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        base64: true,
+      });
+      if (!result.canceled && result.assets[0]) {
+        const photo = result.assets[0];
+        if (context === 'medibook' || context === 'carnet') {
+          startMedicalScan(photo.base64, 'Photo importée', context);
+        }
+      }
+    } catch (error) {
+      console.log('Erreur pickImage:', error);
+    }
+  };
+
+  const takePhoto = async (context) => {
+    try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Permission requise', "L'accès à la caméra est nécessaire pour scanner vos documents.");
+        Alert.alert('Permission requise', 'Autorisez l\'accès à la caméra pour prendre des photos.');
         return;
       }
       const result = await ImagePicker.launchCameraAsync({
@@ -1768,195 +1845,31 @@ ${mealsList}
         quality: 0.8,
         base64: true,
       });
-      if (result.canceled) return;
-      // Reset avant nouveau scan
-      setScanResults(null);
-      setScanSteps([]);
-      setUploadState('idle');
-      startAIScan(result.assets[0].uri, 'Photo capturée', 'image/jpeg', result.assets[0].base64, context);
+      if (!result.canceled && result.assets[0]) {
+        const photo = result.assets[0];
+        if (context === 'medibook' || context === 'carnet') {
+          startMedicalScan(photo.base64, 'Photo capturée', context);
+        }
+      }
     } catch (error) {
-      console.log('Erreur caméra:', error);
-      Alert.alert('Erreur', 'Impossible de prendre la photo.');
+      console.log('Erreur takePhoto:', error);
     }
   };
 
-  const pickImage = async (context, category = null) => {
+  const pickDocument = async (context) => {
     try {
-      setScanContext(context);
-      setScanCategory(category);
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert('Permission requise', "L'accès à la galerie est nécessaire.");
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.8,
-        base64: true,
-      });
-      if (result.canceled) return;
-      // Reset avant nouveau scan
-      setScanResults(null);
-      setScanSteps([]);
-      setUploadState('idle');
-      startAIScan(result.assets[0].uri, 'Image sélectionnée', 'image/jpeg', result.assets[0].base64, context);
-    } catch (error) {
-      console.log('Erreur galerie:', error);
-      Alert.alert('Erreur', "Impossible de sélectionner l'image.");
-    }
-  };
-
-  const callScanAPI = async (fileUri, fileName, mimeType, base64Data, context = null) => {
-    const effectiveContext = context || scanContext || 'chat';
-    try {
-      let imageBase64 = base64Data;
-
-      // Si pas de base64 fourni (cas du DocumentPicker pour les PDFs),
-      // on ne peut pas lire un PDF en base64 dans Expo Snack sans FileSystem.
-      // Retourner des résultats simulés réalistes pour le test.
-      if (!imageBase64) {
-        console.log('Document PDF sélectionné — scan simulé (Snack ne supporte pas FileSystem)');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        return {
-          documentType: 'Bilan sanguin complet',
-          date: '15 mars 2026',
-          laboratory: 'Laboratoire BioMed — Paris',
-          patient: 'KIHADI Malick',
-          summary: 'Bilan sanguin réalisé à jeun. Résultats globalement normaux avec anomalies au niveau du bilan lipidique et du bilan martial nécessitant un suivi.',
-          data: [
-            { label: 'Glycémie à jeun', value: '1.05 g/L', ref: '0.70 - 1.10 g/L', status: 'normal' },
-            { label: 'Hémoglobine', value: '14.2 g/dL', ref: '13.0 - 17.0 g/dL', status: 'normal' },
-            { label: 'Globules blancs', value: '7.200 G/L', ref: '4.000 - 10.000 G/L', status: 'normal' },
-            { label: 'Plaquettes', value: '245 G/L', ref: '150 - 400 G/L', status: 'normal' },
-            { label: 'Cholestérol total', value: '2.45 g/L', ref: '< 2.00 g/L', status: 'elevated' },
-            { label: 'LDL Cholestérol', value: '1.72 g/L', ref: '< 1.60 g/L', status: 'elevated' },
-            { label: 'HDL Cholestérol', value: '0.48 g/L', ref: '> 0.40 g/L', status: 'normal' },
-            { label: 'Triglycérides', value: '1.25 g/L', ref: '< 1.50 g/L', status: 'normal' },
-            { label: 'Fer sérique', value: '45 µg/dL', ref: '60 - 170 µg/dL', status: 'low' },
-            { label: 'Ferritine', value: '18 ng/mL', ref: '30 - 300 ng/mL', status: 'low' },
-            { label: 'Transferrine', value: '3.8 g/L', ref: '2.0 - 3.6 g/L', status: 'elevated' },
-            { label: 'Vitamine D', value: '22 ng/mL', ref: '30 - 100 ng/mL', status: 'low' },
-            { label: 'Vitamine B12', value: '380 pg/mL', ref: '200 - 900 pg/mL', status: 'normal' },
-            { label: 'Créatinine', value: '9.8 mg/L', ref: '7.0 - 13.0 mg/L', status: 'normal' },
-            { label: 'ASAT (TGO)', value: '28 UI/L', ref: '< 40 UI/L', status: 'normal' },
-            { label: 'ALAT (TGP)', value: '32 UI/L', ref: '< 41 UI/L', status: 'normal' },
-          ],
-          medications: [],
-          alerts: [
-            'Cholestérol total et LDL élevés — Surveiller l\'alimentation, réduire les graisses saturées',
-            'Fer sérique et ferritine bas — Risque d\'anémie ferriprive, consulter votre médecin',
-            'Transferrine élevée — Confirme la carence en fer (compensation physiologique)',
-            'Vitamine D insuffisante — Supplémentation recommandée',
-          ],
-          category: 'lab-results',
-        };
-      }
-
-      // Si base64 disponible (photo depuis caméra ou galerie), appeler la VRAIE API
-      // Choisir l'endpoint selon le contexte
-      const isMedical = effectiveContext === 'medibook' || effectiveContext === 'carnet';
-      const scanEndpoint = isMedical
-        ? '/functions/v1/scan-medical'
-        : '/functions/v1/scan-meal';
-
-      const fetchBody = isMedical
-        ? {
-            image: imageBase64,
-            context: effectiveContext,
-            imageBase64: imageBase64,
-            mimeType: mimeType || 'image/jpeg',
-            userId: TEST_USER_ID,
-            category: scanCategory || 'lab-results',
-          }
-        : {
-            action: 'scan',
-            image: imageBase64,
-            imageBase64: imageBase64,
-            mimeType: mimeType || 'image/jpeg',
-            userId: TEST_USER_ID,
-          };
-
-      const response = await fetch(`${SUPABASE_URL}${scanEndpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify(fetchBody),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Scan API error:', errorText);
-        return { error: 'L\'analyse a échoué. Réessayez.' };
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Scan API call error:', error);
-      return { error: 'Erreur de connexion. Vérifiez votre réseau.' };
-    }
-  };
-
-  const startAIScan = async (fileUri, fileName, mimeType, base64Data = null, context = null) => {
-    setUploadState('scanning');
-    setScanSteps([]);
-    setScanResults(null);
-    setScanFileName(fileName || 'Document');
-
-    const steps = [
-      { text: 'Ouverture du document...', delay: 800 },
-      { text: 'Détection du type de document...', delay: 1200 },
-      { text: 'Lecture du contenu...', delay: 1000 },
-      { text: 'Envoi à ALIXEN pour analyse...', delay: 1500 },
-    ];
-
-    // Jouer les étapes d'animation PENDANT que l'API travaille
-    const animationPromise = (async () => {
-      for (let i = 0; i < steps.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, steps[i].delay));
-        setScanSteps(prev => [...prev, { text: steps[i].text, completed: true }]);
-      }
-    })();
-
-    // EN PARALLÈLE, lancer le vrai appel API (passer context directement pour éviter le problème React state async)
-    const apiPromise = callScanAPI(fileUri, fileName, mimeType, base64Data, context);
-
-    // Attendre les deux
-    const [_, apiResult] = await Promise.all([animationPromise, apiPromise]);
-
-    // Ajouter les dernières étapes après retour API
-    const postSteps = [
-      'Analyse des valeurs et références...',
-      'Identification des points d\'attention...',
-      'Préparation du résumé...',
-    ];
-
-    for (let i = 0; i < postSteps.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 600));
-      setScanSteps(prev => [...prev, { text: postSteps[i], completed: true }]);
-    }
-
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    if (apiResult.error) {
-      Alert.alert('Erreur d\'analyse', apiResult.error);
-      setUploadState('idle');
-      return;
-    }
-
-    // TODO: Déployer l'Edge Function scan-medical dans Supabase
-    // Pour l'instant, si le résultat ne contient pas de données médicales, afficher un message
-    if (!apiResult.data || apiResult.data.length === 0) {
       Alert.alert(
-        'Analyse en cours de développement',
-        'Le scan de documents médicaux (ordonnances, bilans) sera pleinement fonctionnel dans la prochaine mise à jour. Pour l\'instant, seuls les bilans sanguins au format standard sont supportés.',
+        'Importer un document',
+        'Pour l\'instant, prenez une photo du document ou importez depuis la galerie.',
+        [
+          { text: 'Prendre une photo', onPress: () => takePhoto(context) },
+          { text: 'Depuis la galerie', onPress: () => pickImage(context) },
+          { text: 'Annuler', style: 'cancel' },
+        ]
       );
+    } catch (error) {
+      console.log('Erreur pickDocument:', error);
     }
-
-    setScanResults(apiResult);
-    setUploadState('results');
   };
 
   // ── TRANSFERT VERS SECRET POCKET ──────────────────────────────────────
@@ -2345,94 +2258,82 @@ ${mealsList}
           </View>
         ))}
 
-        {/* Section Médicaments (si ordonnance) */}
+        {/* Section Médicaments */}
         {scanResults?.medications && scanResults.medications.length > 0 && (
-          <View style={{ marginTop: wp(16) }}>
-            <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#4DA6FF', marginBottom: wp(10) }}>
-              Médicaments prescrits
+          <View style={{ marginTop: wp(20) }}>
+            <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>
+              Médicaments détectés
             </Text>
-            {scanResults.medications.map((med, index) => (
-              <View key={index} style={{
-                paddingVertical: wp(12), paddingHorizontal: wp(12),
-                backgroundColor: 'rgba(77,166,255,0.06)',
-                borderRadius: wp(10), marginBottom: wp(6),
-                borderLeftWidth: wp(3), borderLeftColor: '#4DA6FF',
+            {scanResults.medications.map((med, i) => (
+              <View key={i} style={{
+                backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12),
+                padding: wp(14), marginBottom: wp(8),
+                borderLeftWidth: 3, borderLeftColor: '#4DA6FF',
               }}>
-                <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>
-                  {med.name}
-                </Text>
-                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)', marginTop: wp(2) }}>
-                  {med.dosage} — {med.frequency} — {med.duration}
-                </Text>
+                <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{med.name}</Text>
+                {med.dosage && (
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', marginTop: wp(3) }}>
+                    {med.dosage}{med.frequency ? ' — ' + med.frequency : ''}
+                  </Text>
+                )}
+                {med.duration && (
+                  <Text style={{ fontSize: fp(12), color: '#00D984', marginTop: wp(2) }}>
+                    Durée : {med.duration}
+                  </Text>
+                )}
+                {med.notes && (
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', fontStyle: 'italic', marginTop: wp(4) }}>
+                    {med.notes}
+                  </Text>
+                )}
               </View>
             ))}
           </View>
         )}
 
-        {/* Alertes */}
-        {scanResults?.alerts && scanResults.alerts.length > 0 && (
-          <View style={{ marginTop: wp(16) }}>
-            <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FF6B6B', marginBottom: wp(10) }}>
-              Points d'attention
-            </Text>
-            {scanResults.alerts.map((alertText, index) => (
-              <View key={index} style={{
-                flexDirection: 'row', alignItems: 'flex-start',
-                paddingVertical: wp(10), paddingHorizontal: wp(12),
-                backgroundColor: 'rgba(255,107,107,0.06)', borderRadius: wp(10), marginBottom: wp(6),
-                borderWidth: 1, borderColor: 'rgba(255,107,107,0.1)',
-              }}>
-                <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(8), marginTop: wp(2) }}>
-                  <Path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="#FF6B6B" strokeWidth="1.5"/>
-                  <Line x1="12" y1="9" x2="12" y2="13" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round"/>
-                  <Circle cx="12" cy="16" r="0.5" fill="#FF6B6B"/>
-                </Svg>
-                <Text style={{ fontSize: fp(12), color: 'rgba(255,107,107,0.8)', flex: 1, lineHeight: fp(17) }}>
-                  {alertText}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Vaccinations extraites */}
+        {/* Section Vaccinations */}
         {scanResults?.vaccinations && scanResults.vaccinations.length > 0 && (
-          <View style={{ marginTop: wp(16) }}>
-            <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#00D984', marginBottom: wp(10) }}>
+          <View style={{ marginTop: wp(20) }}>
+            <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>
               Vaccins détectés
             </Text>
-            {scanResults.vaccinations.map((vac, index) => (
-              <View key={index} style={{
+            {scanResults.vaccinations.map((vac, i) => (
+              <View key={i} style={{
                 backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12),
-                padding: wp(12), marginBottom: wp(8),
+                padding: wp(14), marginBottom: wp(8),
                 borderLeftWidth: 3, borderLeftColor: '#00D984',
               }}>
                 <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{vac.name}</Text>
-                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)' }}>
+                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', marginTop: wp(3) }}>
                   {vac.date || ''}{vac.dose ? ' — ' + vac.dose : ''}
                 </Text>
-                {vac.nextDue && <Text style={{ fontSize: fp(12), color: '#FF8C42' }}>Prochain rappel : {vac.nextDue}</Text>}
+                {vac.nextDue && (
+                  <Text style={{ fontSize: fp(12), color: '#FF8C42', marginTop: wp(2) }}>
+                    Prochain rappel : {vac.nextDue}
+                  </Text>
+                )}
               </View>
             ))}
           </View>
         )}
 
-        {/* Allergies extraites */}
+        {/* Section Allergies */}
         {scanResults?.allergies && scanResults.allergies.length > 0 && (
-          <View style={{ marginTop: wp(16) }}>
-            <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FF8C42', marginBottom: wp(10) }}>
+          <View style={{ marginTop: wp(20) }}>
+            <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>
               Allergies détectées
             </Text>
-            {scanResults.allergies.map((allergy, index) => (
-              <View key={index} style={{
+            {scanResults.allergies.map((allergy, i) => (
+              <View key={i} style={{
                 backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12),
-                padding: wp(12), marginBottom: wp(8),
-                borderLeftWidth: 3, borderLeftColor: allergy.severity === 'severe' ? '#FF6B6B' : '#FF8C42',
+                padding: wp(14), marginBottom: wp(8),
+                borderLeftWidth: 3,
+                borderLeftColor: allergy.severity === 'severe' || allergy.severity === 'life_threatening' ? '#FF6B6B' : '#FF8C42',
               }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{allergy.allergen}</Text>
+                  <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF', flex: 1 }}>{allergy.allergen}</Text>
                   <View style={{
-                    paddingHorizontal: wp(8), paddingVertical: wp(2),
+                    paddingHorizontal: wp(8), paddingVertical: wp(3),
                     backgroundColor: allergy.severity === 'severe' ? 'rgba(255,107,107,0.2)' : 'rgba(255,140,66,0.2)',
                     borderRadius: wp(6),
                   }}>
@@ -2440,12 +2341,40 @@ ${mealsList}
                       fontSize: fp(9), fontWeight: '700',
                       color: allergy.severity === 'severe' ? '#FF6B6B' : '#FF8C42',
                     }}>
-                      {allergy.severity === 'severe' ? 'SÉVÈRE' : allergy.severity === 'moderate' ? 'MODÉRÉ' : 'LÉGER'}
+                      {allergy.severity === 'severe' ? 'SÉVÈRE' : allergy.severity === 'moderate' ? 'MODÉRÉ' : allergy.severity === 'mild' ? 'LÉGER' : allergy.severity?.toUpperCase() || ''}
                     </Text>
                   </View>
                 </View>
-                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', marginTop: wp(4) }}>
-                  {allergy.type || ''}{allergy.reaction ? ' — ' + allergy.reaction : ''}
+                {allergy.type && (
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', marginTop: wp(3) }}>
+                    Type : {allergy.type}
+                  </Text>
+                )}
+                {allergy.reaction && (
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginTop: wp(2) }}>
+                    Réaction : {allergy.reaction}
+                  </Text>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Section Alertes */}
+        {scanResults?.alerts && scanResults.alerts.length > 0 && (
+          <View style={{ marginTop: wp(20) }}>
+            <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FF6B6B', marginBottom: wp(12) }}>
+              Points d'attention
+            </Text>
+            {scanResults.alerts.map((alert, i) => (
+              <View key={i} style={{
+                backgroundColor: alert.type === 'critical' ? 'rgba(255,107,107,0.08)' : 'rgba(255,140,66,0.08)',
+                borderRadius: wp(12), padding: wp(14), marginBottom: wp(8),
+                borderWidth: 1,
+                borderColor: alert.type === 'critical' ? 'rgba(255,107,107,0.2)' : 'rgba(255,140,66,0.2)',
+              }}>
+                <Text style={{ fontSize: fp(13), color: alert.type === 'critical' ? '#FF6B6B' : '#FF8C42' }}>
+                  {typeof alert === 'string' ? alert : alert.message}
                 </Text>
               </View>
             ))}
@@ -2467,92 +2396,102 @@ ${mealsList}
                   'Prefer': 'return=minimal',
                 };
 
-                // 1. Sauvegarder le document scanné
+                // Insérer les analyses
+                if (scanResults.data && scanResults.data.length > 0) {
+                  await fetch(SUPABASE_URL + '/rest/v1/medical_analyses', {
+                    method: 'POST', headers,
+                    body: JSON.stringify(scanResults.data.map(item => ({
+                      user_id: userId,
+                      label: item.label,
+                      value: item.value,
+                      value_numeric: parseFloat(item.value) || null,
+                      reference_range: item.ref || null,
+                      status: item.status || 'normal',
+                      category: scanResults.category || 'other',
+                    }))),
+                  });
+                }
+
+                // Insérer les médicaments
+                if (scanResults.medications && scanResults.medications.length > 0) {
+                  await fetch(SUPABASE_URL + '/rest/v1/medications', {
+                    method: 'POST', headers,
+                    body: JSON.stringify(scanResults.medications.map(med => ({
+                      user_id: userId,
+                      name: med.name,
+                      dosage: med.dosage || null,
+                      frequency: med.frequency || null,
+                      duration: med.duration || null,
+                      status: 'active',
+                    }))),
+                  });
+                }
+
+                // Insérer les vaccinations
+                if (scanResults.vaccinations && scanResults.vaccinations.length > 0) {
+                  await fetch(SUPABASE_URL + '/rest/v1/vaccinations', {
+                    method: 'POST', headers,
+                    body: JSON.stringify(scanResults.vaccinations.map(vac => ({
+                      user_id: userId,
+                      vaccine_name: vac.name,
+                      administration_date: vac.date || null,
+                      dose_number: parseInt(vac.dose) || 1,
+                      status: 'completed',
+                    }))),
+                  });
+                }
+
+                // Insérer les allergies
+                if (scanResults.allergies && scanResults.allergies.length > 0) {
+                  await fetch(SUPABASE_URL + '/rest/v1/allergies', {
+                    method: 'POST', headers,
+                    body: JSON.stringify(scanResults.allergies.map(a => ({
+                      user_id: userId,
+                      allergen: a.allergen,
+                      type: a.type || null,
+                      severity: a.severity || 'moderate',
+                      reaction: a.reaction || null,
+                    }))),
+                  });
+                }
+
+                // Sauvegarder le document scanné
                 await fetch(SUPABASE_URL + '/rest/v1/scanned_documents', {
-                  method: 'POST',
-                  headers,
+                  method: 'POST', headers,
                   body: JSON.stringify({
                     user_id: userId,
-                    document_type: scanResults.documentType || 'Document médical',
-                    document_date: scanResults.date || null,
-                    laboratory: scanResults.laboratory || null,
-                    patient_name: scanResults.patient || null,
+                    document_type: scanResults.documentType || 'Document',
                     summary: scanResults.summary || '',
                     raw_ai_response: scanResults,
-                    scan_context: scanContext || 'medibook',
-                    scan_category: scanCategory || 'lab-results',
-                    items_extracted: (scanResults.data?.length || 0) + (scanResults.medications?.length || 0),
+                    scan_context: 'medibook',
+                    items_extracted: (scanResults.data?.length || 0) + (scanResults.medications?.length || 0) + (scanResults.vaccinations?.length || 0) + (scanResults.allergies?.length || 0),
                   }),
                 });
 
-                // 2. Insérer les analyses médicales
-                if (scanResults.data && scanResults.data.length > 0) {
-                  const analysesInsert = scanResults.data.map(item => ({
-                    user_id: userId,
-                    label: item.label,
-                    value: item.value,
-                    value_numeric: parseFloat(item.value) || null,
-                    unit: item.value.split(' ').pop() || null,
-                    reference_range: item.ref || null,
-                    status: item.status || 'normal',
-                    category: scanResults.documentType || 'Bilan',
-                    document_date: scanResults.date ? parseFrenchDate(scanResults.date) : null,
-                    laboratory: scanResults.laboratory || null,
-                  }));
-
-                  await fetch(SUPABASE_URL + '/rest/v1/medical_analyses', {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(analysesInsert),
-                  });
-                }
-
-                // 3. Insérer les médicaments
-                if (scanResults.medications && scanResults.medications.length > 0) {
-                  const medsInsert = scanResults.medications.map(med => ({
-                    user_id: userId,
-                    name: med.name,
-                    dosage: med.dosage || null,
-                    frequency: med.frequency || null,
-                    duration: med.duration || null,
-                    status: 'active',
-                  }));
-
-                  await fetch(SUPABASE_URL + '/rest/v1/medications', {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(medsInsert),
-                  });
-                }
-
-                // 4. Succès
-                setUploadState('idle');
+                // Succès
                 setScanResults(null);
                 setScanSteps([]);
+                setUploadState('idle');
 
                 Alert.alert(
                   'Données intégrées ✓',
-                  'Les informations ont été ajoutées avec succès. Consultez vos Mes Stats pour voir les résultats.',
+                  'Les informations ont été ajoutées à votre MediBook. Consultez Mes Stats pour voir les résultats.',
                 );
 
-                // Recharger les données si on est dans un contexte MediBook
-                if (scanContext === 'medibook' || scanContext === 'secretpocket') {
-                  loadMedicalData();
-                }
+                // Recharger les données médicales
+                loadMedicalData();
 
               } catch (error) {
-                console.error('Erreur insertion Supabase:', error);
+                console.error('Erreur intégration:', error);
                 setUploadState('idle');
-                Alert.alert('Erreur', "L'intégration a échoué. Réessayez.");
+                Alert.alert('Erreur', 'L\'intégration a échoué. Réessayez.');
               }
             }}>
             <LinearGradient colors={['#00D984', '#00B871']}
               style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center', marginBottom: wp(10) }}>
               <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Valider et intégrer</Text>
               <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.7)', marginTop: wp(2) }}>
-                {scanContext === 'secretpocket'
-                  ? 'Ajouter dans ' + (scanCategory || 'Secret Pocket')
-                  : 'Intégrer dans votre MediBook'}
+                Intégrer dans votre MediBook
               </Text>
             </LinearGradient>
           </Pressable>
@@ -3724,7 +3663,7 @@ ${mealsList}
           borderColor: 'rgba(212,175,55,0.1)',
         }}>
           <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.35)', textAlign: 'center', lineHeight: fp(17) }}>
-            Pour ajouter des données sensibles, importez-les d'abord dans MediBook puis transférez-les ici avec le bouton bouclier {'🛡'}
+            Pour ajouter des données, importez-les d'abord dans MediBook puis transférez-les ici.
           </Text>
         </View>
         <BottomSpacer />
@@ -4657,7 +4596,7 @@ ${mealsList}
               {/* Option 5 : Conversation compactée */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => { setShowDocumentSheet(false); setTimeout(() => pickDocument('secretpocket', 'conversations'), 300); }}
+                onPress={() => { setShowDocumentSheet(false); setTimeout(() => pickDocument('medibook'), 300); }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   paddingVertical: wp(14), paddingHorizontal: wp(12),
@@ -5394,7 +5333,7 @@ ${mealsList}
                   setShowAnalyzeSheet(false);
                   const photos = carnetPhotos.filter(p => p);
                   if (photos.length > 0) {
-                    startAIScan(photos[0].uri, 'Carnet de santé (' + photos.length + ' pages)', 'image/jpeg', photos[0].base64);
+                    startMedicalScan(photos[0].base64, 'Carnet de santé (' + photos.length + ' pages)', 'carnet');
                   }
                 }}
                 style={{ width: '100%' }}
