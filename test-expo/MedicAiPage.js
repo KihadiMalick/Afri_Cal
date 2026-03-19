@@ -623,7 +623,7 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuickReply, 
 // ============================================
 // NEUMORPH BALL — Boule neumorphique cabinet médical
 // ============================================
-const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPress }) => {
+const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPress, hasAttachment }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const wobbleX = useRef(new Animated.Value(0)).current;
   const wobbleY = useRef(new Animated.Value(0)).current;
@@ -723,6 +723,14 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
             }} />
           )}
         </View>
+          {/* Point indicateur document */}
+          {hasAttachment && (
+            <View style={{
+              position: 'absolute', bottom: -wp(4),
+              width: wp(6), height: wp(6), borderRadius: wp(3),
+              backgroundColor: isBot ? BUBBLE_COLOR_AI : BUBBLE_COLOR_USER,
+            }} />
+          )}
       </Pressable>
     </Animated.View>
   );
@@ -811,6 +819,7 @@ const SynapticNetwork = ({ messages, searchHits, onBallPress, onNewSession }) =>
               isSearchActive={searchHits && searchHits.size > 0}
               status={msg._status || 'read'}
               onPress={() => onBallPress(msg, i)}
+              hasAttachment={msg._hasAttachment}
             />
           </View>
         );
@@ -1786,6 +1795,106 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     `;
   };
 
+  const sendImageToAlixen = async (base64Data, fileName, mimeType) => {
+    if (isLoading || isLocked) return;
+    if (messages.length >= 30) return;
+
+    const userText = 'Photo envoyée : ' + (fileName || 'Document');
+    const userMsg = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: userText,
+      timestamp: new Date(),
+      _isNew: true,
+      _status: 'read',
+      _hasAttachment: true,
+    };
+
+    setCardMessage(userText);
+    setCardIsUser(true);
+    setCardIsLoading(false);
+
+    setMessages(prev => {
+      if (prev.length >= 30) return prev;
+      return [...prev, userMsg];
+    });
+
+    setTimeout(async () => {
+      setCardMessage(null);
+      setCardIsUser(false);
+      setCardIsLoading(true);
+      setIsLoading(true);
+
+      const botMsgId = (Date.now() + 1).toString();
+      try {
+        const context = buildUserContext();
+        const textMessages = [...messages, userMsg]
+          .map(m => ({ role: m.role, content: m.content }))
+          .filter(m => m.content);
+
+        const response = await fetch(
+          SUPABASE_URL + '/functions/v1/lixman-chat',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'apikey': SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              messages: textMessages,
+              userId: TEST_USER_ID,
+              userContext: context,
+              imageBase64: base64Data,
+              mimeType: mimeType || 'image/jpeg',
+            }),
+          }
+        );
+
+        const data = await response.json();
+        const replyText = data.message || data.error || 'Erreur de connexion.';
+
+        setCardIsLoading(false);
+        setCardMessage(replyText);
+        setCardIsUser(false);
+
+        setMessages(prev => {
+          if (prev.length >= 30) return prev;
+          return [...prev, {
+            id: botMsgId,
+            role: 'assistant',
+            content: replyText,
+            timestamp: new Date(),
+            _isNew: true,
+            _status: 'read',
+          }];
+        });
+
+        if (data.tokens_used) {
+          const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
+          setEnergyUsed(prev => prev + energyCost);
+        }
+      } catch (error) {
+        console.error('Erreur envoi image ALIXEN:', error);
+        setCardIsLoading(false);
+        setCardMessage('Erreur réseau. Vérifiez votre connexion.');
+        setCardIsUser(false);
+        setMessages(prev => {
+          if (prev.length >= 30) return prev;
+          return [...prev, {
+            id: botMsgId,
+            role: 'assistant',
+            content: 'Erreur réseau. Vérifiez votre connexion.',
+            timestamp: new Date(),
+            _isNew: true,
+            _status: 'read',
+          }];
+        });
+      }
+      setIsLoading(false);
+    }, 800);
+  };
+
   const handleQuickReply = (text) => {
     if (!text || isLoading || isLocked) return;
     if (messages.length >= 30) return;
@@ -2160,7 +2269,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       });
       if (!result.canceled && result.assets[0]) {
         const photo = result.assets[0];
-        if (context === 'medibook' || context === 'carnet') {
+        if (context === 'chat') {
+          sendImageToAlixen(photo.base64, 'Photo importée', 'image/jpeg');
+        } else if (context === 'medibook' || context === 'carnet') {
           startMedicalScan(photo.base64, 'Photo importée', context);
         }
       }
@@ -2183,7 +2294,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       });
       if (!result.canceled && result.assets[0]) {
         const photo = result.assets[0];
-        if (context === 'medibook' || context === 'carnet') {
+        if (context === 'chat') {
+          sendImageToAlixen(photo.base64, 'Photo capturée', 'image/jpeg');
+        } else if (context === 'medibook' || context === 'carnet') {
           startMedicalScan(photo.base64, 'Photo capturée', context);
         }
       }
@@ -5811,12 +5924,12 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               }}>Ajouter un fichier</Text>
               <Text style={{
                 fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(24),
-              }}>Que souhaitez-vous envoyer à ALIXEN ?</Text>
+              }}>ALIXEN peut analyser photos, documents et plus encore</Text>
 
               {/* Option 1 : Charger une photo */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => { setShowDocumentSheet(false); setTimeout(() => pickImage('medibook'), 300); }}
+                onPress={() => { setShowDocumentSheet(false); setTimeout(() => pickImage('chat'), 300); }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   paddingVertical: wp(14), paddingHorizontal: wp(12),
@@ -5846,7 +5959,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               {/* Option 2 : Prendre une photo */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => { setShowDocumentSheet(false); setTimeout(() => takePhoto('medibook'), 300); }}
+                onPress={() => { setShowDocumentSheet(false); setTimeout(() => takePhoto('chat'), 300); }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   paddingVertical: wp(14), paddingHorizontal: wp(12),
