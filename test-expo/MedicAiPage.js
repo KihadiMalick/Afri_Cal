@@ -1935,6 +1935,116 @@ ${mealsList}
     }
   };
 
+  const searchMedications = async (query) => {
+    setMedSearchQuery(query);
+    if (query.length < 2) {
+      setMedSearchResults([]);
+      return;
+    }
+    try {
+      const res = await fetch(
+        SUPABASE_URL + '/rest/v1/rpc/search_medications_db',
+        {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ search_term: query, max_results: 8 }),
+        }
+      );
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setMedSearchResults(data);
+      }
+    } catch (error) {
+      console.error('Erreur recherche médicament:', error);
+    }
+  };
+
+  const selectMedFromDb = (med) => {
+    setSelectedMedFromDb(med);
+    setNewMedDosageValue(med.common_dosages && med.common_dosages.length > 0 ? med.common_dosages[0].replace(/[^0-9.]/g, '') : '500');
+    setNewMedDosageUnit(med.common_dosages && med.common_dosages.length > 0 ? med.common_dosages[0].replace(/[0-9.]/g, '') || 'mg' : 'mg');
+    setNewMedFrequency(med.common_frequencies && med.common_frequencies.length > 0 ? parseInt(med.common_frequencies[0]) || 2 : 2);
+    setNewMedDuration(med.common_durations && med.common_durations.length > 0 ? med.common_durations[0] : '7 jours');
+    setAddMedStep('dosage');
+  };
+
+  const confirmAddMedication = async () => {
+    if (!selectedMedFromDb) return;
+    try {
+      const startDate = new Date().toISOString().split('T')[0];
+      const durationDays = parseDurationToDays(newMedDuration);
+      const endDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      const defaultTimes = {
+        1: ['08:00'],
+        2: ['08:00', '20:00'],
+        3: ['08:00', '14:00', '20:00'],
+        4: ['08:00', '12:00', '16:00', '20:00'],
+      };
+
+      await fetch(SUPABASE_URL + '/rest/v1/medications', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          user_id: TEST_USER_ID,
+          name: selectedMedFromDb.name,
+          dosage: newMedDosageValue + ' ' + newMedDosageUnit,
+          frequency: newMedFrequency + 'x/jour',
+          duration: newMedDuration,
+          status: 'active',
+          start_date: startDate,
+          end_date: endDate,
+          dosage_value: parseFloat(newMedDosageValue) || 0,
+          dosage_unit: newMedDosageUnit,
+          frequency_per_day: newMedFrequency,
+          frequency_times: defaultTimes[newMedFrequency] || ['08:00'],
+          reminder_enabled: newMedReminder,
+          taken_today: false,
+          source: 'manual',
+          medication_db_id: selectedMedFromDb.id,
+        }),
+      });
+
+      // Fermer et reset
+      setShowAddMedSheet(false);
+      setAddMedStep('search');
+      setMedSearchQuery('');
+      setMedSearchResults([]);
+      setSelectedMedFromDb(null);
+
+      // Recharger les données
+      loadMedicalData();
+
+      Alert.alert(
+        'Médicament ajouté ✓',
+        selectedMedFromDb.name + ' ' + newMedDosageValue + ' ' + newMedDosageUnit + ' a été ajouté à vos traitements en cours.',
+      );
+    } catch (error) {
+      console.error('Erreur ajout médicament:', error);
+      Alert.alert('Erreur', 'L\'ajout a échoué. Réessayez.');
+    }
+  };
+
+  const parseDurationToDays = (duration) => {
+    if (!duration) return 7;
+    const lower = duration.toLowerCase();
+    if (lower.includes('continu')) return 365;
+    const numMatch = lower.match(/(\d+)/);
+    const num = numMatch ? parseInt(numMatch[1]) : 7;
+    if (lower.includes('mois')) return num * 30;
+    if (lower.includes('semaine')) return num * 7;
+    return num;
+  };
+
   const handleTransferToSecretPocket = (tableName, rowIndex, rowData) => {
     const itemName = typeof rowData[0] === 'object' ? rowData[0].text : rowData[0];
 
@@ -6095,6 +6205,293 @@ ${mealsList}
             </Pressable>
           </LinearGradient>
         </View>
+      </Modal>
+
+      {/* ===== MODAL — Ajout Médicament ===== */}
+      <Modal
+        visible={showAddMedSheet}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => { setShowAddMedSheet(false); setAddMedStep('search'); setMedSearchQuery(''); setMedSearchResults([]); setSelectedMedFromDb(null); }}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          onPress={() => { setShowAddMedSheet(false); setAddMedStep('search'); }}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient
+              colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{
+                borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24),
+                paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34),
+                maxHeight: SCREEN_HEIGHT * 0.85,
+              }}
+            >
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }}/>
+
+              {addMedStep === 'search' ? (
+                <>
+                  <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>
+                    Ajouter un médicament
+                  </Text>
+                  <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(16) }}>
+                    Recherchez dans notre base de 150+ médicaments
+                  </Text>
+
+                  {/* Barre de recherche */}
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(14),
+                    paddingHorizontal: wp(14), marginBottom: wp(12),
+                    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                  }}>
+                    <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(8) }}>
+                      <Circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5"/>
+                      <Line x1="16.5" y1="16.5" x2="21" y2="21" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round"/>
+                    </Svg>
+                    <TextInput
+                      style={{ flex: 1, fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
+                      placeholder="Nom du médicament..."
+                      placeholderTextColor="rgba(255,255,255,0.25)"
+                      value={medSearchQuery}
+                      onChangeText={searchMedications}
+                      autoFocus={true}
+                    />
+                    {medSearchQuery.length > 0 && (
+                      <Pressable onPress={() => { setMedSearchQuery(''); setMedSearchResults([]); }}>
+                        <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: fp(16) }}>✕</Text>
+                      </Pressable>
+                    )}
+                  </View>
+
+                  {/* Résultats */}
+                  <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.4 }}>
+                    {medSearchResults.map((med, i) => (
+                      <Pressable key={med.id || i} delayPressIn={120}
+                        onPress={() => selectMedFromDb(med)}
+                        style={({ pressed }) => ({
+                          flexDirection: 'row', alignItems: 'center',
+                          paddingVertical: wp(12), paddingHorizontal: wp(12),
+                          backgroundColor: pressed ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+                          borderRadius: wp(12), marginBottom: wp(6),
+                          borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+                        })}>
+                        <View style={{
+                          width: wp(38), height: wp(38), borderRadius: wp(12),
+                          backgroundColor: 'rgba(77,166,255,0.1)',
+                          justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                        }}>
+                          <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                            <Path d="M10.5 1.5l-8 8a4.24 4.24 0 006 6l8-8a4.24 4.24 0 00-6-6z" stroke="#4DA6FF" strokeWidth="1.5"/>
+                          </Svg>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{med.name}</Text>
+                          <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>
+                            {med.category || ''}{med.form ? ' — ' + med.form : ''}
+                          </Text>
+                          {med.brand_names && med.brand_names.length > 0 && (
+                            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)', marginTop: wp(1) }}>
+                              {med.brand_names.slice(0, 3).join(', ')}
+                            </Text>
+                          )}
+                        </View>
+                        <Text style={{ fontSize: fp(16), color: 'rgba(255,255,255,0.2)' }}>{">"}</Text>
+                      </Pressable>
+                    ))}
+
+                    {medSearchQuery.length >= 2 && medSearchResults.length === 0 && (
+                      <View style={{ padding: wp(20), alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: wp(12) }}>
+                          Aucun médicament trouvé pour "{medSearchQuery}"
+                        </Text>
+                        <Pressable delayPressIn={120}
+                          onPress={() => Alert.alert('Recherche IA', 'La recherche IA approfondie (50 Lix) sera disponible prochainement.')}
+                          style={{
+                            flexDirection: 'row', alignItems: 'center',
+                            backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(12),
+                            paddingHorizontal: wp(16), paddingVertical: wp(10),
+                            borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+                          }}>
+                          <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(8) }}>
+                            <Circle cx="12" cy="12" r="9" stroke="#D4AF37" strokeWidth="1.5"/>
+                            <Path d="M12 8v4l3 3" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                          </Svg>
+                          <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#D4AF37' }}>
+                            Recherche IA approfondie — 50 Lix
+                          </Text>
+                        </Pressable>
+                      </View>
+                    )}
+                  </ScrollView>
+
+                  <Pressable onPress={() => { setShowAddMedSheet(false); setAddMedStep('search'); setMedSearchQuery(''); setMedSearchResults([]); }}
+                    style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginTop: wp(8) }}>
+                    <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  {/* ÉTAPE DOSAGE */}
+                  <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>
+                    {selectedMedFromDb ? selectedMedFromDb.name : 'Médicament'}
+                  </Text>
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(20) }}>
+                    {selectedMedFromDb ? (selectedMedFromDb.category || '') + (selectedMedFromDb.form ? ' — ' + selectedMedFromDb.form : '') : ''}
+                  </Text>
+
+                  {/* Warning si disponible */}
+                  {selectedMedFromDb && selectedMedFromDb.warnings && (
+                    <View style={{
+                      backgroundColor: 'rgba(255,140,66,0.08)', borderRadius: wp(12),
+                      padding: wp(12), marginBottom: wp(16),
+                      borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)',
+                    }}>
+                      <Text style={{ fontSize: fp(11), color: '#FF8C42', lineHeight: fp(16) }}>
+                        {'⚠ '}{selectedMedFromDb.warnings}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Dosage */}
+                  <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(8) }}>Dosage</Text>
+                  <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16) }}>
+                    <View style={{
+                      flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12),
+                      paddingHorizontal: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                    }}>
+                      <TextInput
+                        style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(12), textAlign: 'center' }}
+                        value={newMedDosageValue}
+                        onChangeText={setNewMedDosageValue}
+                        keyboardType="numeric"
+                        placeholder="500"
+                        placeholderTextColor="rgba(255,255,255,0.2)"
+                      />
+                    </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', gap: wp(6), alignItems: 'center' }}>
+                        {['mg', 'mL', 'UI', 'g', 'µg'].map(unit => (
+                          <Pressable key={unit} onPress={() => setNewMedDosageUnit(unit)}
+                            style={{
+                              paddingHorizontal: wp(14), paddingVertical: wp(10), borderRadius: wp(10),
+                              backgroundColor: newMedDosageUnit === unit ? '#4DA6FF' : 'rgba(255,255,255,0.06)',
+                              borderWidth: 1, borderColor: newMedDosageUnit === unit ? '#4DA6FF' : 'rgba(255,255,255,0.1)',
+                            }}>
+                            <Text style={{ fontSize: fp(13), fontWeight: '600', color: newMedDosageUnit === unit ? '#FFF' : 'rgba(255,255,255,0.4)' }}>{unit}</Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                    </ScrollView>
+                  </View>
+
+                  {/* Dosages suggérés */}
+                  {selectedMedFromDb && selectedMedFromDb.common_dosages && selectedMedFromDb.common_dosages.length > 0 && (
+                    <View style={{ marginBottom: wp(16) }}>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginBottom: wp(6) }}>Dosages courants :</Text>
+                      <View style={{ flexDirection: 'row', gap: wp(6), flexWrap: 'wrap' }}>
+                        {selectedMedFromDb.common_dosages.map((d, i) => (
+                          <Pressable key={i} onPress={() => {
+                            const num = d.replace(/[^0-9.]/g, '');
+                            const unit = d.replace(/[0-9.]/g, '').trim() || 'mg';
+                            if (num) setNewMedDosageValue(num);
+                            if (unit) setNewMedDosageUnit(unit);
+                          }}
+                            style={{
+                              paddingHorizontal: wp(12), paddingVertical: wp(6), borderRadius: wp(8),
+                              backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                            }}>
+                            <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)' }}>{d}</Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Fréquence */}
+                  <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(8) }}>Fréquence</Text>
+                  <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16) }}>
+                    {[1, 2, 3, 4].map(freq => (
+                      <Pressable key={freq} onPress={() => setNewMedFrequency(freq)}
+                        style={{
+                          flex: 1, paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center',
+                          backgroundColor: newMedFrequency === freq ? '#4DA6FF' : 'rgba(255,255,255,0.06)',
+                          borderWidth: 1, borderColor: newMedFrequency === freq ? '#4DA6FF' : 'rgba(255,255,255,0.1)',
+                        }}>
+                        <Text style={{ fontSize: fp(14), fontWeight: '700', color: newMedFrequency === freq ? '#FFF' : 'rgba(255,255,255,0.4)' }}>{freq}x</Text>
+                        <Text style={{ fontSize: fp(9), color: newMedFrequency === freq ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.25)' }}>/jour</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+
+                  {/* Durée */}
+                  <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(8) }}>Durée du traitement</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(16) }}>
+                    <View style={{ flexDirection: 'row', gap: wp(6) }}>
+                      {['3 jours', '5 jours', '7 jours', '10 jours', '14 jours', '21 jours', '1 mois', '2 mois', '3 mois', 'continu'].map(dur => (
+                        <Pressable key={dur} onPress={() => setNewMedDuration(dur)}
+                          style={{
+                            paddingHorizontal: wp(14), paddingVertical: wp(10), borderRadius: wp(10),
+                            backgroundColor: newMedDuration === dur ? '#4DA6FF' : 'rgba(255,255,255,0.06)',
+                            borderWidth: 1, borderColor: newMedDuration === dur ? '#4DA6FF' : 'rgba(255,255,255,0.1)',
+                          }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '600', color: newMedDuration === dur ? '#FFF' : 'rgba(255,255,255,0.4)' }}>{dur}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </ScrollView>
+
+                  {/* Rappel toggle */}
+                  <Pressable delayPressIn={120} onPress={() => setNewMedReminder(!newMedReminder)}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                      backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14),
+                      padding: wp(14), marginBottom: wp(20),
+                      borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                    }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(10) }}>
+                      <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                        <Path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke={newMedReminder ? '#00D984' : 'rgba(255,255,255,0.3)'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <Path d="M13.73 21a2 2 0 01-3.46 0" stroke={newMedReminder ? '#00D984' : 'rgba(255,255,255,0.3)'} strokeWidth="1.5" strokeLinecap="round"/>
+                      </Svg>
+                      <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Rappels de prise</Text>
+                    </View>
+                    <View style={{
+                      width: wp(44), height: wp(24), borderRadius: wp(12),
+                      backgroundColor: newMedReminder ? '#00D984' : 'rgba(255,255,255,0.15)',
+                      justifyContent: 'center',
+                      paddingHorizontal: wp(2),
+                    }}>
+                      <View style={{
+                        width: wp(20), height: wp(20), borderRadius: wp(10),
+                        backgroundColor: '#FFF',
+                        alignSelf: newMedReminder ? 'flex-end' : 'flex-start',
+                      }} />
+                    </View>
+                  </Pressable>
+
+                  {/* Boutons */}
+                  <Pressable delayPressIn={120} onPress={confirmAddMedication}>
+                    <LinearGradient colors={['#4DA6FF', '#3A8FE8']}
+                      style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center', marginBottom: wp(10) }}>
+                      <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>
+                        Ajouter {selectedMedFromDb ? selectedMedFromDb.name : ''} {newMedDosageValue} {newMedDosageUnit}
+                      </Text>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.6)', marginTop: wp(2) }}>
+                        {newMedFrequency}x/jour — {newMedDuration}
+                      </Text>
+                    </LinearGradient>
+                  </Pressable>
+
+                  <Pressable onPress={() => { setAddMedStep('search'); setSelectedMedFromDb(null); }}
+                    style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                    <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Retour à la recherche</Text>
+                  </Pressable>
+                </ScrollView>
+              )}
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
       </Modal>
     </>
   );
