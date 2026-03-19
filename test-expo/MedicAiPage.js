@@ -1170,6 +1170,16 @@ export default function MedicAiPage() {
   const [reportSection, setReportSection] = useState('hub');
   const [analysesTab, setAnalysesTab] = useState('done');
   const [medsTab, setMedsTab] = useState('active');
+  const [showAddMedSheet, setShowAddMedSheet] = useState(false);
+  const [medSearchQuery, setMedSearchQuery] = useState('');
+  const [medSearchResults, setMedSearchResults] = useState([]);
+  const [selectedMedFromDb, setSelectedMedFromDb] = useState(null);
+  const [addMedStep, setAddMedStep] = useState('search');
+  const [newMedDosageValue, setNewMedDosageValue] = useState('500');
+  const [newMedDosageUnit, setNewMedDosageUnit] = useState('mg');
+  const [newMedFrequency, setNewMedFrequency] = useState(2);
+  const [newMedDuration, setNewMedDuration] = useState('7 jours');
+  const [newMedReminder, setNewMedReminder] = useState(true);
   const [activeProfile, setActiveProfile] = useState('self');
   const [children, setChildren] = useState([
     { id: 'child-0', name: 'Mon enfant', age: '', free: true },
@@ -1897,6 +1907,34 @@ ${mealsList}
   };
 
   // ── TRANSFERT VERS SECRET POCKET ──────────────────────────────────────
+  const toggleMedicationReminder = async (medicationId, currentValue) => {
+    try {
+      const newValue = !currentValue;
+      await fetch(
+        SUPABASE_URL + '/rest/v1/medications?id=eq.' + medicationId,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({ reminder_enabled: newValue }),
+        }
+      );
+      // Mettre à jour localement
+      setMedicalData(prev => ({
+        ...prev,
+        medications: prev.medications.map(m =>
+          m.id === medicationId ? { ...m, reminder_enabled: newValue } : m
+        ),
+      }));
+    } catch (error) {
+      console.error('Erreur toggle rappel:', error);
+    }
+  };
+
   const handleTransferToSecretPocket = (tableName, rowIndex, rowData) => {
     const itemName = typeof rowData[0] === 'object' ? rowData[0].text : rowData[0];
 
@@ -3559,6 +3597,19 @@ ${mealsList}
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Médicaments</Text>
           </View>
+          <Pressable delayPressIn={120}
+            onPress={() => setShowAddMedSheet(true)}
+            style={({ pressed }) => ({
+              width: wp(36), height: wp(36), borderRadius: wp(18),
+              backgroundColor: 'rgba(0,217,132,0.15)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.3)',
+              justifyContent: 'center', alignItems: 'center',
+              transform: [{ scale: pressed ? 0.92 : 1 }],
+            })}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Line x1="12" y1="5" x2="12" y2="19" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
+              <Line x1="5" y1="12" x2="19" y2="12" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
+            </Svg>
+          </Pressable>
         </LinearGradient>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
@@ -3646,14 +3697,36 @@ ${mealsList}
                         ))}
                       </View>
                     )}
-                    {med.reminder_enabled && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(8), gap: wp(4) }}>
-                        <Svg width={wp(12)} height={wp(12)} viewBox="0 0 24 24" fill="none">
-                          <Path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </Svg>
-                        <Text style={{ fontSize: fp(10), color: '#00D984' }}>Rappel activé</Text>
-                      </View>
-                    )}
+                    <Pressable
+                      delayPressIn={120}
+                      onPress={() => toggleMedicationReminder(med.id, med.reminder_enabled)}
+                      style={({ pressed }) => ({
+                        flexDirection: 'row', alignItems: 'center', marginTop: wp(8), gap: wp(4),
+                        backgroundColor: med.reminder_enabled ? 'rgba(0,217,132,0.08)' : 'rgba(0,0,0,0.04)',
+                        borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(5),
+                        alignSelf: 'flex-start',
+                        borderWidth: 1,
+                        borderColor: med.reminder_enabled ? 'rgba(0,217,132,0.2)' : 'rgba(0,0,0,0.08)',
+                        transform: [{ scale: pressed ? 0.95 : 1 }],
+                      })}
+                    >
+                      <Svg width={wp(12)} height={wp(12)} viewBox="0 0 24 24" fill="none">
+                        {med.reminder_enabled ? (
+                          <>
+                            <Path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            <Path d="M13.73 21a2 2 0 01-3.46 0" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                          </>
+                        ) : (
+                          <>
+                            <Path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="rgba(0,0,0,0.25)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            <Line x1="3" y1="3" x2="21" y2="21" stroke="rgba(0,0,0,0.25)" strokeWidth="1.5" strokeLinecap="round"/>
+                          </>
+                        )}
+                      </Svg>
+                      <Text style={{ fontSize: fp(10), color: med.reminder_enabled ? '#00D984' : 'rgba(0,0,0,0.3)' }}>
+                        {med.reminder_enabled ? 'Rappel activé' : 'Activer le rappel'}
+                      </Text>
+                    </Pressable>
                   </View>
                 );
               })
