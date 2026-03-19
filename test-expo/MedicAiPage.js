@@ -1637,7 +1637,7 @@ export default function MedicAiPage() {
   const generateGreeting = (profile, summary) => {
     const hour = new Date().getHours();
     const timeGreeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
-    const name = profile?.first_name || 'cher membre';
+    const name = profile?.full_name?.split(' ')[0] || 'cher membre';
 
     let greeting = '';
 
@@ -1744,7 +1744,7 @@ export default function MedicAiPage() {
 
     return `
 DONNÉES UTILISATEUR (${today}) :
-- Nom : ${userProfile.first_name || 'N/A'} ${userProfile.last_name || ''}
+- Nom : ${userProfile.full_name || 'N/A'}
 - Âge : ${userProfile.age || 'N/A'} ans | Sexe : ${userProfile.gender || 'N/A'}
 - Poids : ${userProfile.weight || 'N/A'} kg | Taille : ${userProfile.height || 'N/A'} cm
 - Objectif : ${userProfile.goal || 'N/A'}
@@ -1879,9 +1879,20 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
   };
 
   const handlePreciserPress = () => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    scrollViewRef.current?.scrollToEnd({ animated: true });
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 150);
+    setTimeout(() => {
+      Keyboard.dismiss();
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 100);
+    }, 300);
   };
 
   // ── Gestion clic recette ─────────────────────────────────────────────────
