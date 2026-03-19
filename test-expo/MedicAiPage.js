@@ -1454,7 +1454,7 @@ export default function MedicAiPage() {
   const loadUserData = async () => {
     try {
       const profileRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/users_profile?id=eq.${TEST_USER_ID}&select=*`,
+        `${SUPABASE_URL}/rest/v1/users_profile?user_id=eq.${TEST_USER_ID}&select=*`,
         { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
       );
       const profileData = await profileRes.json();
