@@ -3368,10 +3368,9 @@ ${mealsList}
   };
 
   // ── RENDER MEDIBOOK REPORT (ancien contenu) ────────────────────────────────
-  const renderMediBookReport = () => (
+  const renderPdfPreview = () => (
     <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
       <StatusBar barStyle="light-content" />
-      {/* Header */}
       <LinearGradient
         colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
         style={{
@@ -3381,7 +3380,7 @@ ${mealsList}
           borderBottomWidth: 1, borderBottomColor: '#4A4F55',
         }}
       >
-        <Pressable delayPressIn={120} onPress={() => setMediBookView('landing')}
+        <Pressable delayPressIn={120} onPress={() => setReportSection('hub')}
           style={({ pressed }) => ({
             width: wp(36), height: wp(36), borderRadius: wp(18),
             backgroundColor: 'rgba(255,255,255,0.08)',
@@ -3394,8 +3393,8 @@ ${mealsList}
           </Svg>
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>MediBook</Text>
-          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>Votre rapport santé</Text>
+          <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>MediBook PDF</Text>
+          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>Prévisualisation du rapport</Text>
         </View>
         {renderProfileSwitchButton()}
         <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(8), paddingVertical: wp(4), marginLeft: wp(6) }}>
@@ -3404,7 +3403,6 @@ ${mealsList}
       </LinearGradient>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
-        {/* Illustration — compact spacing */}
         <View style={{ alignItems: 'center', marginTop: wp(8), marginBottom: wp(6) }}>
           <Svg width={wp(56)} height={wp(56)} viewBox="0 0 64 64" fill="none">
             <Rect x="12" y="8" width="28" height="48" rx="3" stroke="#00D984" strokeWidth="1.5" />
@@ -3418,7 +3416,6 @@ ${mealsList}
           </Svg>
         </View>
 
-        {/* Etat des donnees */}
         <View style={{
           backgroundColor: '#FAFBFC', borderRadius: wp(16),
           borderLeftWidth: wp(3), borderLeftColor: '#00D984',
@@ -3432,7 +3429,6 @@ ${mealsList}
           {mbDataStatus.map((item, i) => <MbProgressRow key={i} item={item} />)}
         </View>
 
-        {/* Contenu du rapport */}
         <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#2D3436', marginTop: wp(4), marginBottom: wp(14) }}>
           Contenu de votre MediBook
         </Text>
@@ -3445,7 +3441,7 @@ ${mealsList}
             }}>
             <View style={{
               width: wp(36), height: wp(36), borderRadius: wp(18),
-              backgroundColor: `${sec.color}20`,
+              backgroundColor: sec.color + '20',
               justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
             }}>
               <MbSectionIcon type={sec.icon} color={sec.color} />
@@ -3457,9 +3453,8 @@ ${mealsList}
           </LinearGradient>
         ))}
 
-        {/* Bouton Generer */}
         <Pressable delayPressIn={120}
-          onPress={() => Alert.alert('MediBook', 'La génération de votre MediBook sera disponible prochainement !')}
+          onPress={() => Alert.alert('MediBook', 'La génération PDF sera disponible prochainement !')}
           onPressIn={() => Animated.timing(mbGenerateScale, { toValue: 0.95, duration: 120, useNativeDriver: true }).start()}
           onPressOut={() => Animated.spring(mbGenerateScale, { toValue: 1, useNativeDriver: true }).start()}>
           <Animated.View style={{ transform: [{ scale: mbGenerateScale }], marginTop: wp(24), marginBottom: wp(32) }}>
@@ -3482,6 +3477,13 @@ ${mealsList}
       </ScrollView>
     </View>
   );
+
+  const renderMediBookReport = () => {
+    if (reportSection === 'pdf-preview') return renderPdfPreview();
+    if (reportSection === 'analyses') return renderAnalysesDetail();
+    if (reportSection === 'medications') return renderMedicationsDetail();
+    return renderReportHub();
+  };
 
   // ── RENDER MEDIBOOK (ROUTER) ───────────────────────────────────────────────
   const renderMediBook = () => {
