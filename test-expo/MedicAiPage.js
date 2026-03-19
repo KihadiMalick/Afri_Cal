@@ -296,6 +296,76 @@ const ScrollArrow = () => {
   );
 };
 
+// Parse les [CHOIX:X:texte] dans le texte
+const parseQuickReplies = (text) => {
+  if (!text) return { cleanText: '', choices: [] };
+  const choices = [];
+  const regex = /\[CHOIX:([^:]+):([^\]]+)\]/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    choices.push({ key: match[1], label: match[2] });
+  }
+  const cleanText = text.replace(/\[CHOIX:[^\]]+\]/g, '').trim();
+  return { cleanText, choices };
+};
+
+// Composant boutons Quick Reply
+const QuickReplyButtons = ({ choices, onPress, onPreciser }) => {
+  if (!choices || choices.length === 0) return null;
+  return (
+    <View style={{ marginTop: wp(10), gap: wp(6) }}>
+      {choices.map((choice, i) => {
+        const isPreciser = choice.key === 'PRÉCISER' || choice.key === 'PRECISER';
+        return (
+          <Pressable
+            key={i}
+            delayPressIn={120}
+            onPress={() => isPreciser ? (onPreciser && onPreciser()) : (onPress && onPress(choice.label))}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: isPreciser ? 'rgba(0,0,0,0.03)' : 'rgba(0,217,132,0.06)',
+              borderRadius: wp(12),
+              paddingVertical: wp(10),
+              paddingHorizontal: wp(14),
+              borderWidth: 1,
+              borderColor: isPreciser ? 'rgba(0,0,0,0.08)' : 'rgba(0,217,132,0.15)',
+              transform: [{ scale: pressed ? 0.97 : 1 }],
+            })}
+          >
+            {!isPreciser && (
+              <View style={{
+                width: wp(22), height: wp(22), borderRadius: wp(11),
+                backgroundColor: 'rgba(0,217,132,0.12)',
+                justifyContent: 'center', alignItems: 'center',
+                marginRight: wp(10),
+              }}>
+                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>{choice.key}</Text>
+              </View>
+            )}
+            {isPreciser && (
+              <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(10) }}>
+                <Path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="rgba(0,0,0,0.3)" strokeWidth="1.5"/>
+              </Svg>
+            )}
+            <Text style={{
+              fontSize: fp(13),
+              fontWeight: isPreciser ? '400' : '500',
+              color: isPreciser ? 'rgba(0,0,0,0.4)' : '#2D3436',
+              flex: 1,
+            }}>
+              {choice.label}
+            </Text>
+            {!isPreciser && (
+              <Text style={{ fontSize: fp(14), color: 'rgba(0,217,132,0.4)' }}>{"›"}</Text>
+            )}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+};
+
 // ============================================
 // FORMATTED RESPONSE TEXT — Parse **bold** markdown
 // ============================================
@@ -435,7 +505,7 @@ const LoadingDots = () => {
 // ============================================
 // RESPONSE CARD — Carte blanche en bas
 // ============================================
-const ResponseCard = ({ currentMessage, isLoading, isUserMessage }) => {
+const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuickReply, onPreciserPress }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [displayedText, setDisplayedText] = useState('');
 
@@ -526,12 +596,26 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage }) => {
       {/* Contenu */}
       {isLoading ? (
         <LoadingDots />
-      ) : (
-        <FormattedResponseText
-          text={displayedText + (!isUserMessage && displayedText.length < (currentMessage || '').length ? '|' : '')}
-          style={{ color: '#3A4550', fontSize: 13, lineHeight: fp(22) }}
-        />
-      )}
+      ) : (() => {
+        const fullText = displayedText + (!isUserMessage && displayedText.length < (currentMessage || '').length ? '|' : '');
+        const { cleanText, choices } = parseQuickReplies(fullText);
+        const isTypingDone = !isUserMessage && displayedText.length >= (currentMessage || '').length;
+        return (
+          <>
+            <FormattedResponseText
+              text={cleanText}
+              style={{ color: '#3A4550', fontSize: 13, lineHeight: fp(22) }}
+            />
+            {isTypingDone && !isUserMessage && choices.length > 0 && (
+              <QuickReplyButtons
+                choices={choices}
+                onPress={onQuickReply}
+                onPreciser={onPreciserPress}
+              />
+            )}
+          </>
+        );
+      })()}
     </Animated.View>
   );
 };
@@ -839,7 +923,7 @@ const countOccurrences = (text, term) => {
 // ============================================
 // MODAL SCROLL CONTENT — ScrollView avec surlignage + flèches navigation
 // ============================================
-const ModalScrollContent = ({ selectedMessage, closeModal, handleRecipePress, searchTerm }) => {
+const ModalScrollContent = ({ selectedMessage, closeModal, handleRecipePress, searchTerm, onQuickReply, onPreciserPress }) => {
   const [isScrollable, setIsScrollable] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(false);
   const [currentHighlightIndex, setCurrentHighlightIndex] = useState(0);
@@ -945,6 +1029,17 @@ const ModalScrollContent = ({ selectedMessage, closeModal, handleRecipePress, se
           />
         )}
       </ScrollView>
+      {selectedMessage.role === 'assistant' && (() => {
+        const { choices } = parseQuickReplies(selectedMessage.content);
+        if (choices.length === 0) return null;
+        return (
+          <QuickReplyButtons
+            choices={choices}
+            onPress={onQuickReply}
+            onPreciser={onPreciserPress}
+          />
+        );
+      })()}
       {isScrollable && !isAtBottom && <ScrollArrow />}
     </View>
   );
@@ -1124,6 +1219,7 @@ export default function MedicAiPage() {
   // Données utilisateur (chargées au mount)
   const [userProfile, setUserProfile] = useState(null);
   const [todaySummary, setTodaySummary] = useState(null);
+  const [todayMeals, setTodayMeals] = useState([]);
   const [energyUsed, setEnergyUsed] = useState(0);
   const [energyLimit, setEnergyLimit] = useState(ENERGY_CONFIG.TEST_ENERGY_LIMIT);
   const [lastResetTime, setLastResetTime] = useState(Date.now());
@@ -1371,6 +1467,15 @@ export default function MedicAiPage() {
       );
       const summaryData = await summaryRes.json();
       if (summaryData.length > 0) setTodaySummary(summaryData[0]);
+
+      // Charger les repas du jour
+      const todayStr = new Date().toISOString().split('T')[0];
+      const mealsRes = await fetch(
+        SUPABASE_URL + '/rest/v1/meals?user_id=eq.' + TEST_USER_ID + '&date=eq.' + todayStr + '&select=name,meal_type,calories,protein,carbs,fat&order=created_at.asc',
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+      );
+      const mealsData = await mealsRes.json();
+      if (Array.isArray(mealsData)) setTodayMeals(mealsData);
 
       generateGreeting(profileData[0], summaryData[0]);
     } catch (error) {
@@ -1650,6 +1755,8 @@ MACROS AUJOURD'HUI :
 - Calories : ${cal} / ${userProfile.tdee || 2000} kcal
 - Protéines : ${protein}g | Glucides : ${carbs}g | Lipides : ${fat}g
 
+${todayMeals.length > 0 ? '\nREPAS DU JOUR :\n' + todayMeals.map(m => '- ' + (m.meal_type === 'breakfast' ? 'Petit-déjeuner' : m.meal_type === 'lunch' ? 'Déjeuner' : m.meal_type === 'dinner' ? 'Dîner' : m.meal_type === 'snack' ? 'Collation' : (m.meal_type || 'Repas')) + ' : ' + (m.name || '?') + ' (' + (m.calories || '?') + ' kcal, P:' + (m.protein || 0) + 'g G:' + (m.carbs || 0) + 'g L:' + (m.fat || 0) + 'g)').join('\n') : '\nREPAS DU JOUR : Aucun repas enregistré aujourd\'hui.'}
+
 DONNÉES MÉDICALES :
 - Médicaments en cours : ${activeMeds}
 - Allergies connues : ${allergiesList}
@@ -1677,6 +1784,104 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 7. Sois proactif : si tu vois des résultats anormaux ou des analyses à venir, mentionne-les naturellement.
 8. Garde tes réponses concises (max 150 mots avant les choix).
     `;
+  };
+
+  const handleQuickReply = (text) => {
+    if (!text || isLoading || isLocked) return;
+    if (messages.length >= 30) return;
+
+    const userMsg = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: text,
+      timestamp: new Date(),
+      _isNew: true,
+      _status: 'read',
+    };
+
+    setCardMessage(text);
+    setCardIsUser(true);
+    setCardIsLoading(false);
+
+    setMessages(prev => {
+      if (prev.length >= 30) return prev;
+      return [...prev, userMsg];
+    });
+
+    setTimeout(async () => {
+      setCardMessage(null);
+      setCardIsUser(false);
+      setCardIsLoading(true);
+      setIsLoading(true);
+
+      const botMsgId = (Date.now() + 1).toString();
+      try {
+        const context = buildUserContext();
+        const allMessages = [...messages, userMsg]
+          .map(m => ({ role: m.role, content: m.content }))
+          .filter(m => m.content);
+
+        const response = await fetch(
+          SUPABASE_URL + '/functions/v1/lixman-chat',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'apikey': SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({ messages: allMessages, userId: TEST_USER_ID, userContext: context }),
+          }
+        );
+
+        const data = await response.json();
+        const replyText = data.message || data.error || 'Erreur de connexion.';
+
+        setCardIsLoading(false);
+        setCardMessage(replyText);
+        setCardIsUser(false);
+
+        setMessages(prev => {
+          if (prev.length >= 30) return prev;
+          return [...prev, {
+            id: botMsgId,
+            role: 'assistant',
+            content: replyText,
+            timestamp: new Date(),
+            _isNew: true,
+            _status: 'read',
+          }];
+        });
+
+        if (data.tokens_used) {
+          const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
+          setEnergyUsed(prev => prev + energyCost);
+        }
+      } catch (error) {
+        console.error('Erreur Quick Reply:', error);
+        setCardIsLoading(false);
+        setCardMessage('Erreur réseau. Vérifiez votre connexion.');
+        setCardIsUser(false);
+        setMessages(prev => {
+          if (prev.length >= 30) return prev;
+          return [...prev, {
+            id: botMsgId,
+            role: 'assistant',
+            content: 'Erreur réseau. Vérifiez votre connexion.',
+            timestamp: new Date(),
+            _isNew: true,
+            _status: 'read',
+          }];
+        });
+      }
+      setIsLoading(false);
+    }, 800);
+  };
+
+  const handlePreciserPress = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
 
   // ── Gestion clic recette ─────────────────────────────────────────────────
@@ -4956,6 +5161,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             currentMessage={cardMessage}
             isLoading={cardIsLoading}
             isUserMessage={cardIsUser}
+            onQuickReply={handleQuickReply}
+            onPreciserPress={handlePreciserPress}
           />
         </ScrollView>
 
@@ -5248,7 +5455,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             </View>
 
             {/* Contenu scrollable avec surlignage et navigation */}
-            <ModalScrollContent selectedMessage={selectedMessage} closeModal={closeModal} handleRecipePress={handleRecipePress} searchTerm={searchQuery} />
+            <ModalScrollContent selectedMessage={selectedMessage} closeModal={closeModal} handleRecipePress={handleRecipePress} searchTerm={searchQuery} onQuickReply={(text) => { closeModal(); setTimeout(() => handleQuickReply(text), 300); }} onPreciserPress={() => { closeModal(); setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 300); }} />
 
             {/* Heure */}
             <Text style={{ color: 'rgba(0,0,0,0.2)', fontSize: 8, marginTop: 8, textAlign: 'right' }}>
