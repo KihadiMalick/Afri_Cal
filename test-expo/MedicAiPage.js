@@ -3367,6 +3367,336 @@ ${mealsList}
     );
   };
 
+  const renderAnalysesDetail = () => {
+    const doneList = medicalData.analyses.filter(a => !a.is_scheduled);
+    const scheduledList = medicalData.scheduledAnalyses;
+    const getDaysUntil = (dateStr) => {
+      if (!dateStr) return null;
+      return Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
+    };
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient colors={['#3A3F46', '#252A30']}
+          style={{
+            paddingTop: Platform.OS === 'android' ? 35 : 50,
+            paddingBottom: wp(12), paddingHorizontal: wp(12),
+            flexDirection: 'row', alignItems: 'center',
+            borderBottomWidth: 1, borderBottomColor: '#4A4F55',
+          }}>
+          <Pressable delayPressIn={120} onPress={() => setReportSection('hub')}
+            style={({ pressed }) => ({
+              width: wp(36), height: wp(36), borderRadius: wp(18),
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              justifyContent: 'center', alignItems: 'center', marginRight: wp(10),
+              transform: [{ scale: pressed ? 0.92 : 1 }],
+            })}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Analyses médicales</Text>
+          </View>
+        </LinearGradient>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
+          <View style={{ flexDirection: 'row', marginVertical: wp(12), gap: wp(8) }}>
+            {[
+              { key: 'done', label: 'Effectuées (' + doneList.length + ')' },
+              { key: 'scheduled', label: 'À venir (' + scheduledList.length + ')' },
+            ].map(tab => (
+              <Pressable key={tab.key} onPress={() => setAnalysesTab(tab.key)}
+                style={{
+                  flex: 1, paddingVertical: wp(10), borderRadius: wp(14), alignItems: 'center',
+                  backgroundColor: analysesTab === tab.key ? '#00D984' : 'rgba(0,0,0,0.05)',
+                }}>
+                <Text style={{
+                  fontSize: fp(13), fontWeight: '600',
+                  color: analysesTab === tab.key ? '#FFF' : '#2D3436',
+                }}>{tab.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {analysesTab === 'done' && (
+            doneList.length === 0 ? (
+              <View style={{ padding: wp(30), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(14), color: 'rgba(0,0,0,0.3)', textAlign: 'center' }}>
+                  Aucune analyse effectuée.{'\n'}Scannez un bilan sanguin pour commencer.
+                </Text>
+              </View>
+            ) : (
+              doneList.map((a, i) => (
+                <View key={i} style={{
+                  backgroundColor: '#FAFBFC', borderRadius: wp(14), padding: wp(14),
+                  marginBottom: wp(8), borderLeftWidth: wp(3),
+                  borderLeftColor: a.status === 'normal' ? '#00D984' : a.status === 'elevated' ? '#FF8C42' : a.status === 'low' ? '#FF8C42' : a.status === 'critical' ? '#FF6B6B' : '#999',
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
+                }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436', flex: 1 }}>{a.label}</Text>
+                    <Text style={{
+                      fontSize: fp(13), fontWeight: '700',
+                      color: a.status === 'normal' ? '#00D984' : a.status === 'elevated' || a.status === 'low' ? '#FF8C42' : '#FF6B6B',
+                    }}>{a.value}</Text>
+                  </View>
+                  {a.reference_range && (
+                    <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.35)', marginTop: wp(4) }}>Réf : {a.reference_range}</Text>
+                  )}
+                  {a.laboratory && (
+                    <Text style={{ fontSize: fp(10), color: 'rgba(0,0,0,0.25)', marginTop: wp(2) }}>
+                      {a.laboratory}{a.analysis_date ? ' — ' + new Date(a.analysis_date).toLocaleDateString('fr-FR') : ''}
+                    </Text>
+                  )}
+                </View>
+              ))
+            )
+          )}
+
+          {analysesTab === 'scheduled' && (
+            scheduledList.length === 0 ? (
+              <View style={{ padding: wp(30), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(14), color: 'rgba(0,0,0,0.3)', textAlign: 'center' }}>
+                  Aucune analyse planifiée.{'\n'}ALIXEN peut vous aider à en programmer.
+                </Text>
+              </View>
+            ) : (
+              scheduledList.map((a, i) => {
+                const days = getDaysUntil(a.scheduled_date);
+                const isUrgent = days !== null && days <= 7;
+                return (
+                  <View key={i} style={{
+                    backgroundColor: '#FAFBFC', borderRadius: wp(14), padding: wp(14),
+                    marginBottom: wp(8), borderLeftWidth: wp(3),
+                    borderLeftColor: isUrgent ? '#FF6B6B' : '#FF8C42',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
+                  }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436', flex: 1 }}>{a.label}</Text>
+                      <View style={{
+                        backgroundColor: isUrgent ? 'rgba(255,107,107,0.15)' : 'rgba(255,140,66,0.15)',
+                        borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3),
+                      }}>
+                        <Text style={{ fontSize: fp(11), fontWeight: '700', color: isUrgent ? '#FF6B6B' : '#FF8C42' }}>J-{days}</Text>
+                      </View>
+                    </View>
+                    <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.5)', marginTop: wp(4) }}>
+                      {a.scheduled_date ? new Date(a.scheduled_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+                    </Text>
+                    {a.prescribed_by && (
+                      <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.35)', marginTop: wp(2) }}>Prescrit par {a.prescribed_by}</Text>
+                    )}
+                    {a.laboratory && (
+                      <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.35)' }}>{a.laboratory}</Text>
+                    )}
+                    {a.notes && (
+                      <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.3)', fontStyle: 'italic', marginTop: wp(4) }}>{a.notes}</Text>
+                    )}
+                    {a.reminder_enabled && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(6), gap: wp(4) }}>
+                        <Svg width={wp(12)} height={wp(12)} viewBox="0 0 24 24" fill="none">
+                          <Path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </Svg>
+                        <Text style={{ fontSize: fp(10), color: '#00D984' }}>Rappel activé</Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              })
+            )
+          )}
+          <BottomSpacer />
+        </ScrollView>
+      </View>
+    );
+  };
+
+  const renderMedicationsDetail = () => {
+    const activeList = medicalData.medications;
+    const terminatedList = medicalData.medsTerminated;
+    const getProgress = (med) => {
+      if (!med.start_date || !med.end_date) return null;
+      const start = new Date(med.start_date).getTime();
+      const end = new Date(med.end_date).getTime();
+      const now = Date.now();
+      const total = end - start;
+      if (total <= 0) return 100;
+      return Math.min(100, Math.max(0, Math.round(((now - start) / total) * 100)));
+    };
+    const getDayInfo = (med) => {
+      if (!med.start_date || !med.end_date) return '';
+      const start = new Date(med.start_date);
+      const end = new Date(med.end_date);
+      const now = new Date();
+      const daysDone = Math.ceil((now - start) / (1000 * 60 * 60 * 24));
+      const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+      return 'Jour ' + Math.min(daysDone, totalDays) + '/' + totalDays;
+    };
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient colors={['#3A3F46', '#252A30']}
+          style={{
+            paddingTop: Platform.OS === 'android' ? 35 : 50,
+            paddingBottom: wp(12), paddingHorizontal: wp(12),
+            flexDirection: 'row', alignItems: 'center',
+            borderBottomWidth: 1, borderBottomColor: '#4A4F55',
+          }}>
+          <Pressable delayPressIn={120} onPress={() => setReportSection('hub')}
+            style={({ pressed }) => ({
+              width: wp(36), height: wp(36), borderRadius: wp(18),
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              justifyContent: 'center', alignItems: 'center', marginRight: wp(10),
+              transform: [{ scale: pressed ? 0.92 : 1 }],
+            })}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Médicaments</Text>
+          </View>
+        </LinearGradient>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
+          <View style={{ flexDirection: 'row', marginVertical: wp(12), gap: wp(8) }}>
+            {[
+              { key: 'active', label: 'En cours (' + activeList.length + ')' },
+              { key: 'terminated', label: 'Terminés (' + terminatedList.length + ')' },
+            ].map(tab => (
+              <Pressable key={tab.key} onPress={() => setMedsTab(tab.key)}
+                style={{
+                  flex: 1, paddingVertical: wp(10), borderRadius: wp(14), alignItems: 'center',
+                  backgroundColor: medsTab === tab.key ? '#4DA6FF' : 'rgba(0,0,0,0.05)',
+                }}>
+                <Text style={{
+                  fontSize: fp(13), fontWeight: '600',
+                  color: medsTab === tab.key ? '#FFF' : '#2D3436',
+                }}>{tab.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {medsTab === 'active' && (
+            activeList.length === 0 ? (
+              <View style={{ padding: wp(30), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(14), color: 'rgba(0,0,0,0.3)', textAlign: 'center' }}>
+                  Aucun traitement en cours.{'\n'}Scannez une ordonnance ou ajoutez manuellement.
+                </Text>
+              </View>
+            ) : (
+              activeList.map((med, i) => {
+                const progress = getProgress(med);
+                const dayInfo = getDayInfo(med);
+                const freq = med.frequency_per_day || 1;
+                const takenCount = med.taken_today ? freq : 0;
+                return (
+                  <View key={i} style={{
+                    backgroundColor: '#FAFBFC', borderRadius: wp(16), padding: wp(16),
+                    marginBottom: wp(10), borderLeftWidth: wp(4), borderLeftColor: '#4DA6FF',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+                  }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#2D3436' }}>{med.name}</Text>
+                        <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)', marginTop: wp(2) }}>
+                          {med.dosage || (med.dosage_value ? med.dosage_value + ' ' + (med.dosage_unit || 'mg') : '')}{med.frequency ? ' — ' + med.frequency : ''}
+                        </Text>
+                      </View>
+                      {dayInfo ? (
+                        <View style={{
+                          backgroundColor: 'rgba(77,166,255,0.1)', borderRadius: wp(8),
+                          paddingHorizontal: wp(8), paddingVertical: wp(4),
+                        }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '600', color: '#4DA6FF' }}>{dayInfo}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    {progress !== null && (
+                      <View style={{ marginTop: wp(10) }}>
+                        <View style={{ height: wp(6), backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(3), overflow: 'hidden' }}>
+                          <View style={{ width: progress + '%', height: '100%', backgroundColor: progress >= 80 ? '#00D984' : '#4DA6FF', borderRadius: wp(3) }} />
+                        </View>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(4) }}>
+                          <Text style={{ fontSize: fp(10), color: 'rgba(0,0,0,0.3)' }}>
+                            {med.start_date ? new Date(med.start_date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : ''}
+                          </Text>
+                          <Text style={{ fontSize: fp(10), color: 'rgba(0,0,0,0.3)' }}>
+                            {med.end_date ? new Date(med.end_date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : ''}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                    {freq > 0 && med.frequency_times && med.frequency_times.length > 0 && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(10), gap: wp(6), flexWrap: 'wrap' }}>
+                        {med.frequency_times.map((time, ti) => (
+                          <View key={ti} style={{
+                            flexDirection: 'row', alignItems: 'center',
+                            backgroundColor: ti < takenCount ? 'rgba(0,217,132,0.1)' : 'rgba(0,0,0,0.04)',
+                            borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(5),
+                            borderWidth: 1, borderColor: ti < takenCount ? 'rgba(0,217,132,0.2)' : 'rgba(0,0,0,0.06)',
+                          }}>
+                            <Text style={{ fontSize: fp(11), fontWeight: '600', color: ti < takenCount ? '#00D984' : 'rgba(0,0,0,0.35)' }}>
+                              {time}{ti < takenCount ? ' ✓' : ''}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                    {med.reminder_enabled && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(8), gap: wp(4) }}>
+                        <Svg width={wp(12)} height={wp(12)} viewBox="0 0 24 24" fill="none">
+                          <Path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </Svg>
+                        <Text style={{ fontSize: fp(10), color: '#00D984' }}>Rappel activé</Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              })
+            )
+          )}
+
+          {medsTab === 'terminated' && (
+            terminatedList.length === 0 ? (
+              <View style={{ padding: wp(30), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(14), color: 'rgba(0,0,0,0.3)', textAlign: 'center' }}>Aucun traitement terminé.</Text>
+              </View>
+            ) : (
+              terminatedList.map((med, i) => (
+                <View key={i} style={{
+                  backgroundColor: '#FAFBFC', borderRadius: wp(14), padding: wp(14),
+                  marginBottom: wp(8), borderLeftWidth: wp(3), borderLeftColor: 'rgba(0,0,0,0.1)', opacity: 0.7,
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
+                }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>{med.name}</Text>
+                  <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)', marginTop: wp(2) }}>
+                    {med.dosage || ''}{med.duration ? ' — ' + med.duration : ''}
+                  </Text>
+                  {med.start_date && med.end_date && (
+                    <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>
+                      Du {new Date(med.start_date).toLocaleDateString('fr-FR')} au {new Date(med.end_date).toLocaleDateString('fr-FR')}
+                    </Text>
+                  )}
+                  <View style={{
+                    backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(6),
+                    paddingHorizontal: wp(8), paddingVertical: wp(2), alignSelf: 'flex-start', marginTop: wp(6),
+                  }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: '#00D984' }}>Terminé ✓</Text>
+                  </View>
+                </View>
+              ))
+            )
+          )}
+          <BottomSpacer />
+        </ScrollView>
+      </View>
+    );
+  };
+
   const renderReportHub = () => {
     const activeCount = medicalData.medications.length;
     const terminatedCount = medicalData.medsTerminated.length;
