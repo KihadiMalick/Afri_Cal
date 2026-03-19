@@ -43,15 +43,12 @@ const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 // SYSTÈME ÉNERGIE LIXUM
 // ============================================
 const ENERGY_CONFIG = {
-  TOKEN_DIVISOR_SONNET: 50,       // Chat simple : tokens / 50 (~8-12 énergie)
-  TOKEN_DIVISOR_OPUS: 30,         // Opus + web search : tokens / 30 (~30-50 énergie)
-  TOKEN_DIVISOR_VISION: 40,       // Photo/Document : tokens / 40 (~15-25 énergie)
-  TEST_ENERGY_LIMIT: 500,
-  GOLD_ENERGY_LIMIT: 150,
-  PLATINUM_ENERGY_LIMIT: 350,
-  LIX_PER_RECHARGE_UNIT: 100,
-  ENERGY_PER_RECHARGE: 10,
-  SESSION_DURATION_MS: 6 * 60 * 60 * 1000,
+  TOKEN_DIVISOR: 60,
+  FREE_DAILY_ENERGY: 25,
+  SILVER_DAILY_ENERGY: 60,
+  GOLD_DAILY_ENERGY: 150,
+  PLATINUM_DAILY_ENERGY: 300,
+  SESSION_DURATION_MS: 24 * 60 * 60 * 1000,
 };
 
 // ============================================
@@ -1232,7 +1229,7 @@ export default function MedicAiPage() {
   const [todaySummary, setTodaySummary] = useState(null);
   const [todayMeals, setTodayMeals] = useState([]);
   const [energyUsed, setEnergyUsed] = useState(0);
-  const [energyLimit, setEnergyLimit] = useState(ENERGY_CONFIG.TEST_ENERGY_LIMIT);
+  const [energyLimit, setEnergyLimit] = useState(ENERGY_CONFIG.FREE_DAILY_ENERGY);
   const [lastResetTime, setLastResetTime] = useState(Date.now());
 
   // Plats disponibles + modal recette
@@ -1335,7 +1332,7 @@ export default function MedicAiPage() {
   const [scanFileName, setScanFileName] = useState('');
 
   // Énergie — valeurs dérivées
-  const energyLeft = energyLimit - energyUsed;
+  const energyLeft = Math.max(0, energyLimit - energyUsed);
   const energyPercent = Math.max(0, Math.min(100, (energyLeft / energyLimit) * 100));
   const getEnergyColor = (pct) => {
     if (pct > 60) return '#00D984';
@@ -1347,7 +1344,7 @@ export default function MedicAiPage() {
 
   // Progress bar color — evolves with message count
   const getProgressColor = () => {
-    const progress = Math.min((messages.length / 30) * 100, 100);
+    const progress = Math.min((energyUsed / energyLimit) * 100, 100);
     if (progress < 50) return 'rgba(0, 217, 132, 0.25)';
     if (progress < 75) return 'rgba(255, 140, 66, 0.25)';
     if (progress < 90) return 'rgba(255, 107, 107, 0.25)';
@@ -1386,6 +1383,7 @@ export default function MedicAiPage() {
     loadUserData();
     loadTokenQuota();
     loadAvailableMeals();
+    loadMedicalData();
 
     Animated.stagger(200, [
       Animated.spring(contentEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
@@ -1873,8 +1871,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         });
 
         if (data.tokens_used) {
-          const divisor = ENERGY_CONFIG.TOKEN_DIVISOR_VISION;
-          const energyCost = Math.ceil(data.tokens_used / divisor);
+          const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
           setEnergyUsed(prev => prev + energyCost);
         }
       } catch (error) {
@@ -1966,10 +1963,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         });
 
         if (data.tokens_used) {
-          const divisor = data.model_used === 'opus'
-            ? ENERGY_CONFIG.TOKEN_DIVISOR_OPUS
-            : ENERGY_CONFIG.TOKEN_DIVISOR_SONNET;
-          const energyCost = Math.ceil(data.tokens_used / divisor);
+          const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
           setEnergyUsed(prev => prev + energyCost);
         }
       } catch (error) {
@@ -2150,15 +2144,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       });
 
       if (data.tokens_used) {
-        const divisor = data.model_used === 'opus'
-          ? ENERGY_CONFIG.TOKEN_DIVISOR_OPUS
-          : ENERGY_CONFIG.TOKEN_DIVISOR_SONNET;
-        const energyCost = Math.ceil(data.tokens_used / divisor);
-        setEnergyUsed(prev => {
-          const newUsed = prev + energyCost;
-          console.log('[ÉNERGIE] Modèle: ' + (data.model_used || 'sonnet') + (data.web_search_used ? ' +web' : '') + ' | Tokens: ' + data.tokens_used + ' → Coût: ' + energyCost + ' énergie | Total: ' + newUsed + '/' + energyLimit);
-          return newUsed;
-        });
+        const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
+        setEnergyUsed(prev => prev + energyCost);
+        console.log('[ÉNERGIE] Tokens: ' + data.tokens_used + ' | Coût: ' + energyCost + ' énergie | Modèle: ' + (data.model_used || 'sonnet'));
       }
 
     } catch (error) {
@@ -5215,6 +5203,14 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           <Text style={{
             fontSize: fp(9),
             fontWeight: '600',
+            color: energyPercent <= 15 ? 'rgba(255,107,107,0.6)' : energyPercent <= 40 ? 'rgba(255,140,66,0.5)' : 'rgba(0,217,132,0.4)',
+            marginTop: wp(2),
+          }}>
+            {energyLeft > 0 ? energyLeft + ' énergie' : 'Énergie épuisée'}
+          </Text>
+          <Text style={{
+            fontSize: fp(9),
+            fontWeight: '600',
             color: 'rgba(0,217,132,0.4)',
             letterSpacing: 1.5,
             marginTop: wp(3),
@@ -5384,7 +5380,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             <View style={{
               position: 'absolute',
               left: 0, top: 0, bottom: 0,
-              width: `${Math.min((messages.length / 30) * 100, 100)}%`,
+              width: `${Math.min((energyUsed / energyLimit) * 100, 100)}%`,
               backgroundColor: getProgressColor(),
               borderTopLeftRadius: wp(28),
               borderBottomLeftRadius: wp(28),
@@ -6463,7 +6459,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             {/* Option : Recharger avec Lix */}
             <Pressable delayPressIn={120}
               onPress={() => {
-                setEnergyUsed(prev => Math.max(0, prev - ENERGY_CONFIG.ENERGY_PER_RECHARGE));
+                setEnergyUsed(prev => Math.max(0, prev - 30));
                 setShowRechargeSheet(false);
               }}
               style={{ width: '100%', marginBottom: wp(10) }}>
@@ -6471,15 +6467,33 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 style={{
                   width: '100%', paddingVertical: wp(14),
                   borderRadius: wp(14), alignItems: 'center',
-                  flexDirection: 'row', justifyContent: 'center',
                 }}>
-                <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(8) }}>
-                  <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#FFFFFF"/>
-                </Svg>
                 <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>
-                  Recharger — 100 Lix = 10 énergie
+                  Recharger +30 énergie — 300 Lix
                 </Text>
               </LinearGradient>
+            </Pressable>
+
+            {/* Option : Mega recharge */}
+            <Pressable delayPressIn={120}
+              onPress={() => {
+                setEnergyUsed(prev => Math.max(0, prev - 80));
+                setShowRechargeSheet(false);
+              }}
+              style={{ width: '100%', marginBottom: wp(10) }}>
+              <View style={{
+                width: '100%', paddingVertical: wp(14),
+                borderRadius: wp(14), alignItems: 'center',
+                backgroundColor: 'rgba(0,217,132,0.1)',
+                borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+              }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#00D984' }}>
+                  Recharger +80 énergie — 700 Lix
+                </Text>
+                <Text style={{ fontSize: fp(11), color: 'rgba(0,217,132,0.5)', marginTop: wp(2) }}>
+                  Meilleur rapport qualité-prix
+                </Text>
+              </View>
             </Pressable>
 
             {/* Info délai */}
