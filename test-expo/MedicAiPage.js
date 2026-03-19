@@ -43,7 +43,9 @@ const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 // SYSTÈME ÉNERGIE LIXUM
 // ============================================
 const ENERGY_CONFIG = {
-  TOKEN_DIVISOR: 100,
+  TOKEN_DIVISOR_SONNET: 50,       // Chat simple : tokens / 50 (~8-12 énergie)
+  TOKEN_DIVISOR_OPUS: 30,         // Opus + web search : tokens / 30 (~30-50 énergie)
+  TOKEN_DIVISOR_VISION: 40,       // Photo/Document : tokens / 40 (~15-25 énergie)
   TEST_ENERGY_LIMIT: 500,
   GOLD_ENERGY_LIMIT: 150,
   PLATINUM_ENERGY_LIMIT: 350,
@@ -1502,7 +1504,7 @@ export default function MedicAiPage() {
       );
       const data = await res.json();
       if (data.length > 0) {
-        const usedEnergy = Math.ceil((data[0].tokens_used || 0) / ENERGY_CONFIG.TOKEN_DIVISOR);
+        const usedEnergy = Math.ceil((data[0].tokens_used || 0) / ENERGY_CONFIG.TOKEN_DIVISOR_SONNET);
         setEnergyUsed(usedEnergy);
       }
     } catch (error) {
@@ -1871,7 +1873,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         });
 
         if (data.tokens_used) {
-          const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
+          const divisor = ENERGY_CONFIG.TOKEN_DIVISOR_VISION;
+          const energyCost = Math.ceil(data.tokens_used / divisor);
           setEnergyUsed(prev => prev + energyCost);
         }
       } catch (error) {
@@ -1963,7 +1966,10 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         });
 
         if (data.tokens_used) {
-          const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
+          const divisor = data.model_used === 'opus'
+            ? ENERGY_CONFIG.TOKEN_DIVISOR_OPUS
+            : ENERGY_CONFIG.TOKEN_DIVISOR_SONNET;
+          const energyCost = Math.ceil(data.tokens_used / divisor);
           setEnergyUsed(prev => prev + energyCost);
         }
       } catch (error) {
@@ -2144,10 +2150,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       });
 
       if (data.tokens_used) {
-        const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
+        const divisor = data.model_used === 'opus'
+          ? ENERGY_CONFIG.TOKEN_DIVISOR_OPUS
+          : ENERGY_CONFIG.TOKEN_DIVISOR_SONNET;
+        const energyCost = Math.ceil(data.tokens_used / divisor);
         setEnergyUsed(prev => {
           const newUsed = prev + energyCost;
-          console.log(`[ÉNERGIE] Tokens: ${data.tokens_used} → Coût: ${energyCost} énergie | Total: ${newUsed}/${energyLimit}`);
+          console.log('[ÉNERGIE] Modèle: ' + (data.model_used || 'sonnet') + (data.web_search_used ? ' +web' : '') + ' | Tokens: ' + data.tokens_used + ' → Coût: ' + energyCost + ' énergie | Total: ' + newUsed + '/' + energyLimit);
           return newUsed;
         });
       }
