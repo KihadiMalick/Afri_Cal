@@ -1935,6 +1935,61 @@ ${mealsList}
     }
   };
 
+  const toggleMedicationTaken = async (medicationId, timeIndex, currentTakenHistory, freqTimes) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const time = freqTimes[timeIndex];
+      let history = Array.isArray(currentTakenHistory) ? [...currentTakenHistory] : [];
+
+      // Vérifier si déjà pris à cette heure aujourd'hui
+      const existingIndex = history.findIndex(h => h.date === today && h.time === time);
+      if (existingIndex >= 0) {
+        // Retirer (toggle off)
+        history.splice(existingIndex, 1);
+      } else {
+        // Ajouter (toggle on)
+        history.push({ date: today, time: time, taken: true, taken_at: new Date().toISOString() });
+      }
+
+      // Calculer si toutes les prises du jour sont faites
+      const todayTaken = history.filter(h => h.date === today).length;
+      const allTakenToday = todayTaken >= freqTimes.length;
+
+      await fetch(
+        SUPABASE_URL + '/rest/v1/medications?id=eq.' + medicationId,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({
+            taken_history: history,
+            taken_today: allTakenToday,
+          }),
+        }
+      );
+
+      // Mettre à jour localement
+      setMedicalData(prev => ({
+        ...prev,
+        medications: prev.medications.map(m =>
+          m.id === medicationId ? { ...m, taken_history: history, taken_today: allTakenToday } : m
+        ),
+      }));
+    } catch (error) {
+      console.error('Erreur toggle prise:', error);
+    }
+  };
+
+  const isTakenAtTime = (takenHistory, time) => {
+    if (!Array.isArray(takenHistory)) return false;
+    const today = new Date().toISOString().split('T')[0];
+    return takenHistory.some(h => h.date === today && h.time === time);
+  };
+
   const searchMedications = async (query) => {
     setMedSearchQuery(query);
     if (query.length < 2) {
@@ -3707,19 +3762,6 @@ ${mealsList}
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Médicaments</Text>
           </View>
-          <Pressable delayPressIn={120}
-            onPress={() => setShowAddMedSheet(true)}
-            style={({ pressed }) => ({
-              width: wp(36), height: wp(36), borderRadius: wp(18),
-              backgroundColor: 'rgba(0,217,132,0.15)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.3)',
-              justifyContent: 'center', alignItems: 'center',
-              transform: [{ scale: pressed ? 0.92 : 1 }],
-            })}>
-            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
-              <Line x1="12" y1="5" x2="12" y2="19" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
-              <Line x1="5" y1="12" x2="19" y2="12" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
-            </Svg>
-          </Pressable>
         </LinearGradient>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
@@ -3791,22 +3833,66 @@ ${mealsList}
                         </View>
                       </View>
                     )}
-                    {freq > 0 && med.frequency_times && med.frequency_times.length > 0 && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(10), gap: wp(6), flexWrap: 'wrap' }}>
-                        {med.frequency_times.map((time, ti) => (
-                          <View key={ti} style={{
-                            flexDirection: 'row', alignItems: 'center',
-                            backgroundColor: ti < takenCount ? 'rgba(0,217,132,0.1)' : 'rgba(0,0,0,0.04)',
-                            borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(5),
-                            borderWidth: 1, borderColor: ti < takenCount ? 'rgba(0,217,132,0.2)' : 'rgba(0,0,0,0.06)',
-                          }}>
-                            <Text style={{ fontSize: fp(11), fontWeight: '600', color: ti < takenCount ? '#00D984' : 'rgba(0,0,0,0.35)' }}>
-                              {time}{ti < takenCount ? ' ✓' : ''}
+                    {(() => {
+                      const defaultTimes = { 1: ['08:00'], 2: ['08:00', '20:00'], 3: ['08:00', '14:00', '20:00'], 4: ['08:00', '12:00', '16:00', '20:00'] };
+                      const times = (med.frequency_times && med.frequency_times.length > 0) ? med.frequency_times : (defaultTimes[freq] || ['08:00']);
+                      const todayTakenCount = Array.isArray(med.taken_history) ? med.taken_history.filter(h => h.date === new Date().toISOString().split('T')[0]).length : 0;
+                      return (
+                        <View style={{ marginTop: wp(10) }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(6) }}>
+                            <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.35)' }}>Prises du jour</Text>
+                            <Text style={{ fontSize: fp(11), fontWeight: '600', color: todayTakenCount >= times.length ? '#00D984' : 'rgba(0,0,0,0.3)' }}>
+                              {todayTakenCount}/{times.length}
                             </Text>
                           </View>
-                        ))}
-                      </View>
-                    )}
+                          {times.map((time, ti) => {
+                            const taken = isTakenAtTime(med.taken_history, time);
+                            return (
+                              <Pressable key={ti} delayPressIn={120}
+                                onPress={() => toggleMedicationTaken(med.id, ti, med.taken_history, times)}
+                                style={({ pressed }) => ({
+                                  flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                                  backgroundColor: taken ? 'rgba(0,217,132,0.08)' : 'rgba(0,0,0,0.02)',
+                                  borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(8),
+                                  marginBottom: wp(4),
+                                  borderWidth: 1,
+                                  borderColor: taken ? 'rgba(0,217,132,0.2)' : 'rgba(0,0,0,0.06)',
+                                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                                })}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+                                  <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                                    <Circle cx="12" cy="12" r="9" stroke={taken ? '#00D984' : 'rgba(0,0,0,0.2)'} strokeWidth="1.5"/>
+                                    <Line x1="12" y1="7" x2="12" y2="12" stroke={taken ? '#00D984' : 'rgba(0,0,0,0.2)'} strokeWidth="1.5" strokeLinecap="round"/>
+                                    <Line x1="12" y1="12" x2="15" y2="14" stroke={taken ? '#00D984' : 'rgba(0,0,0,0.2)'} strokeWidth="1.5" strokeLinecap="round"/>
+                                  </Svg>
+                                  <Text style={{ fontSize: fp(13), fontWeight: '600', color: taken ? '#00D984' : '#2D3436' }}>
+                                    {time}
+                                  </Text>
+                                  {taken && (
+                                    <Text style={{ fontSize: fp(10), color: 'rgba(0,217,132,0.6)' }}>
+                                      Pris
+                                    </Text>
+                                  )}
+                                </View>
+                                <View style={{
+                                  width: wp(24), height: wp(24), borderRadius: wp(6),
+                                  backgroundColor: taken ? '#00D984' : 'rgba(0,0,0,0.04)',
+                                  borderWidth: taken ? 0 : 1.5,
+                                  borderColor: 'rgba(0,0,0,0.12)',
+                                  justifyContent: 'center', alignItems: 'center',
+                                }}>
+                                  {taken && (
+                                    <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                                      <Path d="M20 6L9 17l-5-5" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </Svg>
+                                  )}
+                                </View>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      );
+                    })()}
                     <Pressable
                       delayPressIn={120}
                       onPress={() => toggleMedicationReminder(med.id, med.reminder_enabled)}
@@ -3876,6 +3962,28 @@ ${mealsList}
           )}
           <BottomSpacer />
         </ScrollView>
+
+      {/* FAB Ajouter un médicament */}
+      <Pressable
+        delayPressIn={120}
+        onPress={() => setShowAddMedSheet(true)}
+        style={({ pressed }) => ({
+          position: 'absolute', bottom: wp(24), right: wp(16),
+          flexDirection: 'row', alignItems: 'center',
+          backgroundColor: '#4DA6FF',
+          borderRadius: wp(28), paddingHorizontal: wp(18), paddingVertical: wp(14),
+          shadowColor: '#4DA6FF', shadowOpacity: 0.4, shadowRadius: 12,
+          shadowOffset: { width: 0, height: 4 }, elevation: 8,
+          gap: wp(8),
+          transform: [{ scale: pressed ? 0.95 : 1 }],
+        })}
+      >
+        <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+          <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+          <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+        </Svg>
+        <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>Ajouter un médicament</Text>
+      </Pressable>
       </View>
     );
   };
