@@ -3367,7 +3367,195 @@ ${mealsList}
     );
   };
 
-  // ── RENDER MEDIBOOK REPORT (ancien contenu) ────────────────────────────────
+  const renderReportHub = () => {
+    const activeCount = medicalData.medications.length;
+    const terminatedCount = medicalData.medsTerminated.length;
+    const doneAnalyses = medicalData.analyses.length;
+    const scheduledCount = medicalData.scheduledAnalyses.length;
+    const allergiesCount = medicalData.allergies.length;
+    const vaccCount = medicalData.vaccinations.length;
+    const diagCount = medicalData.diagnostics.length;
+    const nextScheduled = medicalData.scheduledAnalyses.length > 0 ? medicalData.scheduledAnalyses[0] : null;
+    const daysUntilNext = nextScheduled ? Math.ceil((new Date(nextScheduled.scheduled_date) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+
+    const SectionCard = ({ title, subtitle, count, color, icon, onPress, badge }) => (
+      <Pressable delayPressIn={120} onPress={onPress}
+        style={({ pressed }) => ({
+          backgroundColor: '#FAFBFC', borderRadius: wp(16), padding: wp(16),
+          marginBottom: wp(10), flexDirection: 'row', alignItems: 'center',
+          shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+          borderLeftWidth: wp(4), borderLeftColor: color,
+          transform: [{ scale: pressed ? 0.97 : 1 }],
+        })}>
+        <View style={{
+          width: wp(44), height: wp(44), borderRadius: wp(14),
+          backgroundColor: color + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+        }}>
+          {icon}
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#2D3436' }}>{title}</Text>
+          <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginTop: wp(2) }}>{subtitle}</Text>
+        </View>
+        {badge && (
+          <View style={{
+            backgroundColor: badge.bgColor || 'rgba(255,107,107,0.15)',
+            borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), marginRight: wp(8),
+          }}>
+            <Text style={{ fontSize: fp(10), fontWeight: '700', color: badge.color || '#FF6B6B' }}>{badge.text}</Text>
+          </View>
+        )}
+        <View style={{
+          backgroundColor: color + '20', borderRadius: wp(10),
+          paddingHorizontal: wp(10), paddingVertical: wp(4), marginRight: wp(8),
+        }}>
+          <Text style={{ fontSize: fp(13), fontWeight: '700', color: color }}>{count}</Text>
+        </View>
+        <Text style={{ fontSize: fp(16), color: 'rgba(0,0,0,0.15)' }}>{">"}</Text>
+      </Pressable>
+    );
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient
+          colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+          style={{
+            paddingTop: Platform.OS === 'android' ? 35 : 50,
+            paddingBottom: wp(12), paddingHorizontal: wp(12),
+            flexDirection: 'row', alignItems: 'center',
+            borderBottomWidth: 1, borderBottomColor: '#4A4F55',
+          }}>
+          <Pressable delayPressIn={120} onPress={() => { setReportSection('hub'); setMediBookView('landing'); }}
+            style={({ pressed }) => ({
+              width: wp(36), height: wp(36), borderRadius: wp(18),
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              justifyContent: 'center', alignItems: 'center', marginRight: wp(10),
+              transform: [{ scale: pressed ? 0.92 : 1 }],
+            })}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>Mes données</Text>
+            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>Centre de commande santé</Text>
+          </View>
+          {renderProfileSwitchButton()}
+        </LinearGradient>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(50) }}>
+          {/* Score Vitalité + prochain RDV */}
+          <View style={{
+            backgroundColor: '#FAFBFC', borderRadius: wp(16), padding: wp(16), marginBottom: wp(16),
+            flexDirection: 'row', alignItems: 'center',
+            shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+          }}>
+            <View style={{
+              width: wp(56), height: wp(56), borderRadius: wp(28),
+              borderWidth: wp(4), borderColor: '#00D984',
+              justifyContent: 'center', alignItems: 'center', marginRight: wp(14),
+            }}>
+              <Text style={{ fontSize: fp(18), fontWeight: '800', color: '#00D984' }}>{medicalData.vitalityScore || 0}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>Score Vitalité</Text>
+              {nextScheduled ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(4) }}>
+                  <View style={{
+                    backgroundColor: daysUntilNext <= 7 ? 'rgba(255,107,107,0.15)' : 'rgba(255,140,66,0.15)',
+                    borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(2), marginRight: wp(6),
+                  }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: daysUntilNext <= 7 ? '#FF6B6B' : '#FF8C42' }}>J-{daysUntilNext}</Text>
+                  </View>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', flex: 1 }} numberOfLines={1}>{nextScheduled.label}</Text>
+                </View>
+              ) : (
+                <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>Aucune analyse planifiée</Text>
+              )}
+            </View>
+          </View>
+
+          {medicalDataLoading && (
+            <View style={{ padding: wp(20), alignItems: 'center' }}>
+              <ActivityIndicator size="large" color="#00D984" />
+            </View>
+          )}
+
+          <SectionCard title="Analyses médicales"
+            subtitle={scheduledCount > 0 ? scheduledCount + ' analyse' + (scheduledCount > 1 ? 's' : '') + ' à venir' : 'Historique de vos bilans'}
+            count={doneAnalyses} color="#00D984"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M9 2v6l-5 8a3 3 0 002.6 4.5h10.8A3 3 0 0020 16l-5-8V2" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" /><Line x1="9" y1="2" x2="15" y2="2" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" /></Svg>}
+            onPress={() => setReportSection('analyses')}
+            badge={scheduledCount > 0 ? { text: scheduledCount + ' à venir', color: '#FF8C42', bgColor: 'rgba(255,140,66,0.15)' } : null}
+          />
+
+          <SectionCard title="Médicaments"
+            subtitle={activeCount > 0 ? activeCount + ' traitement' + (activeCount > 1 ? 's' : '') + ' en cours' : 'Aucun traitement actif'}
+            count={activeCount + terminatedCount} color="#4DA6FF"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M10.5 1.5l-8 8a4.24 4.24 0 006 6l8-8a4.24 4.24 0 00-6-6z" stroke="#4DA6FF" strokeWidth="1.5" /><Line x1="8" y1="8" x2="14" y2="14" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" /></Svg>}
+            onPress={() => setReportSection('medications')}
+            badge={activeCount > 0 ? { text: activeCount + ' actif' + (activeCount > 1 ? 's' : ''), color: '#00D984', bgColor: 'rgba(0,217,132,0.15)' } : null}
+          />
+
+          <SectionCard title="Allergies et intolérances"
+            subtitle={allergiesCount > 0 ? 'Profil allergique enregistré' : 'Aucune allergie enregistrée'}
+            count={allergiesCount} color="#FF8C42"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#FF8C42" strokeWidth="1.5" /></Svg>}
+            onPress={() => Alert.alert('Allergies', 'Détail allergies — prochaine mise à jour.')}
+          />
+
+          <SectionCard title="Carnet vaccinal"
+            subtitle={vaccCount > 0 ? vaccCount + ' vaccin' + (vaccCount > 1 ? 's' : '') + ' enregistré' + (vaccCount > 1 ? 's' : '') : 'Aucun vaccin enregistré'}
+            count={vaccCount} color="#9B6DFF"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M18 2l4 4-9.5 9.5-4-4L18 2z" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><Path d="M8.5 11.5L2 18v4h4l6.5-6.5" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
+            onPress={() => Alert.alert('Vaccins', 'Détail vaccins — prochaine mise à jour.')}
+          />
+
+          <SectionCard title="Diagnostics à surveiller"
+            subtitle={diagCount > 0 ? diagCount + ' diagnostic' + (diagCount > 1 ? 's' : '') : 'Aucun diagnostic enregistré'}
+            count={diagCount} color="#FF6B6B"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke="#FF6B6B" strokeWidth="1.5" /><Path d="M3 12h4l3-6 4 12 3-6h4" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
+            onPress={() => Alert.alert('Diagnostics', 'Détail diagnostics — prochaine mise à jour.')}
+          />
+
+          <Pressable delayPressIn={120} onPress={() => setReportSection('pdf-preview')} style={{ marginTop: wp(12), marginBottom: wp(16) }}>
+            <LinearGradient colors={['#00D984', '#00B871']}
+              style={{ borderRadius: wp(16), paddingVertical: wp(16), flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: wp(10) }}>
+              <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
+                <Rect x="4" y="2" width="12" height="18" rx="2" stroke="#FFF" strokeWidth="1.5" />
+                <Line x1="8" y1="7" x2="12" y2="7" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" />
+                <Path d="M16 8l4 4-4 4" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+              <View>
+                <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '700' }}>Générer mon MediBook</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: fp(11) }}>500 Lix — Rapport PDF 3 mois</Text>
+              </View>
+            </LinearGradient>
+          </Pressable>
+
+          <BottomSpacer />
+        </ScrollView>
+
+        <Pressable delayPressIn={120} onPress={() => setShowMediBookUploadSheet(true)}
+          style={{
+            position: 'absolute', bottom: wp(80), right: wp(20),
+            width: wp(56), height: wp(56), borderRadius: wp(28), overflow: 'hidden',
+            shadowColor: '#00D984', shadowOpacity: 0.4, shadowRadius: 12, elevation: 8, zIndex: 100,
+          }}>
+          <LinearGradient colors={['#00D984', '#00B871']}
+            style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+            <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
+              <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+              <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+            </Svg>
+          </LinearGradient>
+        </Pressable>
+      </View>
+    );
+  };
+
   const renderPdfPreview = () => (
     <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
       <StatusBar barStyle="light-content" />
