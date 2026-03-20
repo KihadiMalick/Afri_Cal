@@ -67,7 +67,80 @@ const LIX_PACKS = [
   { name: 'Ultra', price: '$99.99', lix: 129990, bonus: '+30%', color: '#D4AF37' },
 ];
 
-// PLACEHOLDER — sera rempli par chunk 2
 export default function LixVersePage() {
-  return (<View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: '#D4AF37', fontSize: 24, fontWeight: '800' }}>LixVerse</Text><Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 8 }}>Chunk 1 ✓ — Données chargées</Text></View>);
+  const [activeTab, setActiveTab] = useState('defi');
+  const [lixBalance, setLixBalance] = useState(500);
+  const [ownedCharacters, setOwnedCharacters] = useState([]);
+  const [challenges, setChallenges] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [myGroups, setMyGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedChallenge, setSelectedChallenge] = useState(null);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showJoinGroup, setShowJoinGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const [leaderboardTab, setLeaderboardTab] = useState('groups');
+  const [showCharacterDetail, setShowCharacterDetail] = useState(null);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [spinResult, setSpinResult] = useState(null);
+  const [freeSpinUsed, setFreeSpinUsed] = useState(false);
+  const notifScrollX = useRef(new Animated.Value(0)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+
+  useEffect(() => { loadAll(); }, []);
+  useEffect(() => {
+    if (notifications.length === 0) return;
+    Animated.loop(Animated.timing(notifScrollX, { toValue: -(notifications.length * wp(280)), duration: notifications.length * 5000, useNativeDriver: true })).start();
+  }, [notifications]);
+
+  const loadAll = async () => {
+    setLoading(true);
+    try {
+      const [a,b,c,d,e] = await Promise.all([
+        fetch(SUPABASE_URL+'/rest/v1/users_profile?user_id=eq.'+TEST_USER_ID+'&select=lix_balance',{headers:hdrs}),
+        fetch(SUPABASE_URL+'/rest/v1/lixverse_user_characters?user_id=eq.'+TEST_USER_ID+'&select=character_id',{headers:hdrs}),
+        fetch(SUPABASE_URL+'/rest/v1/lixverse_challenges?is_active=eq.true&order=start_date.asc',{headers:hdrs}),
+        fetch(SUPABASE_URL+'/rest/v1/lixverse_notifications?order=created_at.desc&limit=20',{headers:hdrs}),
+        fetch(SUPABASE_URL+'/rest/v1/lixverse_group_members?user_id=eq.'+TEST_USER_ID+'&select=group_id,personal_score,lixverse_groups(id,name,member_count,total_score,invite_code)',{headers:hdrs}),
+      ]);
+      const [aD,bD,cD,dD,eD] = await Promise.all([a.json(),b.json(),c.json(),d.json(),e.json()]);
+      if(aD[0]?.lix_balance!=null)setLixBalance(aD[0].lix_balance);
+      if(Array.isArray(bD))setOwnedCharacters(bD.map(x=>x.character_id));
+      if(Array.isArray(cD))setChallenges(cD);
+      if(Array.isArray(dD))setNotifications(dD);
+      if(Array.isArray(eD))setMyGroups(eD);
+    }catch(err){console.error('Load:',err);}
+    setLoading(false);
+  };
+
+  const renderDefiTab = () => (<ScrollView style={{flex:1}} contentContainerStyle={{padding:wp(16),paddingBottom:wp(100)}}><Text style={{color:'#FFF',fontSize:fp(14)}}>Défi — sera rempli par chunk 2</Text></ScrollView>);
+  const renderCharactersTab = () => (<ScrollView style={{flex:1}} contentContainerStyle={{padding:wp(16),paddingBottom:wp(100)}}><Text style={{color:'#FFF',fontSize:fp(14)}}>Caractères — sera rempli par chunk 3</Text></ScrollView>);
+  const renderLixSpinTab = () => (<ScrollView style={{flex:1}} contentContainerStyle={{padding:wp(16),paddingBottom:wp(100)}}><Text style={{color:'#FFF',fontSize:fp(14)}}>Lix & Spin — sera rempli par chunk 4</Text></ScrollView>);
+
+  return (
+    <View style={{flex:1}}>
+      <LinearGradient colors={['#1A1D22','#252A30','#1E2328']} style={{flex:1}}>
+        <StatusBar barStyle="light-content"/>
+        <View style={{paddingTop:Platform.OS==='android'?35:50,paddingBottom:wp(6),paddingHorizontal:wp(16),flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+          <View>
+            <Text style={{fontSize:fp(24),fontWeight:'800',color:'#D4AF37',letterSpacing:1}}>LixVerse</Text>
+            <Text style={{fontSize:fp(9),color:'rgba(255,255,255,0.3)',letterSpacing:2.5}}>UNIVERS LIXUM</Text>
+          </View>
+          <View style={{flexDirection:'row',alignItems:'center',gap:wp(6),backgroundColor:'rgba(212,175,55,0.12)',borderRadius:wp(12),paddingHorizontal:wp(12),paddingVertical:wp(6),borderWidth:1,borderColor:'rgba(212,175,55,0.25)'}}>
+            <View style={{width:wp(10),height:wp(10),borderRadius:wp(5),backgroundColor:'#D4AF37'}}/>
+            <Text style={{fontSize:fp(14),fontWeight:'700',color:'#D4AF37'}}>{lixBalance} Lix</Text>
+          </View>
+        </View>
+        {notifications.length>0&&(<View style={{height:wp(28),backgroundColor:'rgba(212,175,55,0.06)',borderBottomWidth:1,borderBottomColor:'rgba(212,175,55,0.1)',overflow:'hidden',justifyContent:'center'}}><Animated.View style={{flexDirection:'row',transform:[{translateX:notifScrollX}]}}>{[...notifications,...notifications].map((n,i)=>(<View key={i} style={{width:wp(280),flexDirection:'row',alignItems:'center',paddingHorizontal:wp(10),gap:wp(6)}}><View style={{width:wp(6),height:wp(6),borderRadius:wp(3),backgroundColor:n.color||'#D4AF37'}}/><Text style={{fontSize:fp(10),color:'rgba(255,255,255,0.5)',flex:1}} numberOfLines={1}>{n.message}</Text></View>))}</Animated.View></View>)}
+        <View style={{flexDirection:'row',marginHorizontal:wp(16),marginVertical:wp(10),gap:wp(6)}}>
+          {[{key:'defi',label:'Défi',icon:'🏆'},{key:'characters',label:'Caractères',icon:'🃏'},{key:'lixspin',label:'Lix & Spin',icon:'💎'}].map(tab=>(<Pressable key={tab.key} onPress={()=>setActiveTab(tab.key)} style={{flex:1,paddingVertical:wp(10),borderRadius:wp(12),alignItems:'center',backgroundColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.05)',borderWidth:1,borderColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.08)'}}><Text style={{fontSize:fp(14)}}>{tab.icon}</Text><Text style={{fontSize:fp(10),fontWeight:'600',marginTop:wp(2),color:activeTab===tab.key?'#1A1D22':'rgba(255,255,255,0.4)'}}>{tab.label}</Text></Pressable>))}
+        </View>
+        {activeTab==='defi'&&renderDefiTab()}
+        {activeTab==='characters'&&renderCharactersTab()}
+        {activeTab==='lixspin'&&renderLixSpinTab()}
+      </LinearGradient>
+    </View>
+  );
 }
