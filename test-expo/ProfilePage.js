@@ -96,6 +96,63 @@ export default function ProfilePage() {
   const [editHeight, setEditHeight] = useState('');
   const [editLocation, setEditLocation] = useState('');
   const [lang, setLang] = useState('fr');
+  const T = {
+    fr: {
+      personalData: 'DONNÉES PERSONNELLES',
+      age: 'Âge', weight: 'Poids', height: 'Taille', bmi: 'IMC',
+      years: 'ans', kg: 'kg', cm: 'cm',
+      editProfile: 'Modifier mon profil',
+      settings: 'PARAMÈTRES',
+      location: 'Ma localisation', locationSub: 'Pour les recommandations ALIXEN',
+      subscription: 'Mon abonnement', subscriptionSub: 'Gérer, changer ou résilier',
+      notifications: 'Notifications', notifSub: 'Rappels médicaments, analyses',
+      learn: 'APPRENDRE',
+      glossary: 'Comprendre les termes', glossarySub: 'BMR, TDEE, Macros, IMC...',
+      guide: 'Guide LIXUM', guideSub: 'Toutes les fonctionnalités',
+      legal: 'LÉGAL & SUPPORT',
+      privacy: 'Politique de confidentialité',
+      terms: 'Termes et conditions',
+      contact: 'Nous contacter',
+      rate: 'Évaluer LIXUM',
+      logout: 'Se déconnecter',
+      deleteAccount: 'Supprimer mon compte',
+      logoutConfirm: 'Es-tu sûr ?',
+      deleteConfirm: 'Action irréversible.',
+      cancel: 'Annuler',
+      notDefined: 'Non définie',
+      free: 'Gratuit',
+      objective: 'Objectif',
+      madeWith: 'Fait avec ❤️ au Burundi',
+    },
+    en: {
+      personalData: 'PERSONAL DATA',
+      age: 'Age', weight: 'Weight', height: 'Height', bmi: 'BMI',
+      years: 'yrs', kg: 'kg', cm: 'cm',
+      editProfile: 'Edit my profile',
+      settings: 'SETTINGS',
+      location: 'My location', locationSub: 'For ALIXEN recommendations',
+      subscription: 'My subscription', subscriptionSub: 'Manage, change or cancel',
+      notifications: 'Notifications', notifSub: 'Medication, test reminders',
+      learn: 'LEARN',
+      glossary: 'Understand the terms', glossarySub: 'BMR, TDEE, Macros, BMI...',
+      guide: 'LIXUM Guide', guideSub: 'All features',
+      legal: 'LEGAL & SUPPORT',
+      privacy: 'Privacy policy',
+      terms: 'Terms and conditions',
+      contact: 'Contact us',
+      rate: 'Rate LIXUM',
+      logout: 'Log out',
+      deleteAccount: 'Delete my account',
+      logoutConfirm: 'Are you sure?',
+      deleteConfirm: 'This action is irreversible.',
+      cancel: 'Cancel',
+      notDefined: 'Not set',
+      free: 'Free',
+      objective: 'Goal',
+      madeWith: 'Made with ❤️ in Burundi',
+    },
+  };
+  const t = T[lang] || T.fr;
   const [toast, setToast] = useState(null);
 
   const showToast = (message, color) => {
@@ -120,29 +177,23 @@ export default function ProfilePage() {
 
   const saveProfile = async () => {
     try {
-      const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
-      const updates = {
+      const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+      const body = {
         full_name: editName.trim(),
         age: parseInt(editAge) || null,
         weight: parseFloat(editWeight) || null,
         height: parseFloat(editHeight) || null,
       };
-      // Sauvegarder les champs de base
-      await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, {
-        method: 'PATCH', headers: h, body: JSON.stringify(updates),
+      const res = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, {
+        method: 'PATCH', headers: h, body: JSON.stringify(body),
       });
-      // Mettre à jour le state local immédiatement
-      setProfile(prev => prev ? {
-        ...prev,
-        full_name: editName.trim(),
-        age: parseInt(editAge) || prev.age,
-        weight: parseFloat(editWeight) || prev.weight,
-        height: parseFloat(editHeight) || prev.height,
-      } : prev);
+      const data = await res.json();
+      if (data && data[0]) {
+        setProfile(data[0]);
+        setLixBalance(data[0].lix_balance || 0);
+      }
       setShowEditProfile(false);
       showToast('Profil mis à jour ✓', '#00D984');
-      // Recharger en arrière-plan pour sync
-      loadProfile();
     } catch (e) { showToast('Erreur de sauvegarde', '#FF6B6B'); }
   };
 
@@ -191,7 +242,7 @@ export default function ProfilePage() {
       <Modal visible={showEditProfile} transparent animationType="fade" onRequestClose={() => setShowEditProfile(false)}>
         <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
           <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
-            <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#00D984', marginBottom: wp(20) }}>Modifier mon profil</Text>
+            <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#00D984', marginBottom: wp(20) }}>{t.editProfile}</Text>
 
             {/* Nom */}
             <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(4) }}>Nom complet</Text>
@@ -305,7 +356,7 @@ export default function ProfilePage() {
 
       {/* Modal Localisation */}
       <Modal visible={showLocationPicker} transparent animationType="fade" onRequestClose={() => setShowLocationPicker(false)}>
-        <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
+        <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20), paddingTop: Platform.OS === 'android' ? 35 : 50 }}>
           <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%' }}>
             <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>Ma localisation</Text>
             <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(16) }}>ALIXEN utilisera cette info pour recommander des lieux près de toi.</Text>
@@ -482,15 +533,15 @@ export default function ProfilePage() {
 
           {/* Données */}
           <View style={{ marginBottom: wp(8) }}>
-            <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.25)', paddingHorizontal: wp(16), paddingVertical: wp(8), letterSpacing: 1.5 }}>DONNÉES PERSONNELLES</Text>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.25)', paddingHorizontal: wp(16), paddingVertical: wp(8), letterSpacing: 1.5 }}>{t.personalData}</Text>
             <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', marginHorizontal: wp(12), borderRadius: wp(14), overflow: 'hidden' }}>
               <View style={{ flexDirection: 'row', paddingVertical: wp(12), paddingHorizontal: wp(16), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
-                {[{ l: 'Âge', v: (profile?.age || '—') + ' ans' }, { l: 'Poids', v: (profile?.weight || '—') + ' kg' }, { l: 'Taille', v: (profile?.height || '—') + ' cm' }, { l: 'IMC', v: imc, c: imcColor }].map((d, i) => (
+                {[{ l: t.age, v: (profile?.age || '—') + ' ' + t.years }, { l: t.weight, v: (profile?.weight || '—') + ' ' + t.kg }, { l: t.height, v: (profile?.height || '—') + ' ' + t.cm }, { l: t.bmi, v: imc, c: imcColor }].map((d, i) => (
                   <View key={i} style={{ flex: 1, alignItems: 'center' }}><Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>{d.l}</Text><Text style={{ fontSize: fp(14), fontWeight: '700', color: d.c || '#FFF', marginTop: wp(2) }}>{d.v}</Text></View>
                 ))}
               </View>
               <View style={{ flexDirection: 'row', paddingVertical: wp(12), paddingHorizontal: wp(16) }}>
-                {[{ l: 'BMR', v: (profile?.bmr || '—') + ' kcal' }, { l: 'TDEE', v: (profile?.tdee || '—') + ' kcal' }, { l: 'Objectif', v: profile?.goal || '—' }].map((d, i) => (
+                {[{ l: 'BMR', v: (profile?.bmr || '—') + ' kcal' }, { l: 'TDEE', v: (profile?.tdee || '—') + ' kcal' }, { l: t.objective, v: profile?.goal || '—' }].map((d, i) => (
                   <View key={i} style={{ flex: 1, alignItems: 'center' }}><Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>{d.l}</Text><Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF', marginTop: wp(2) }}>{d.v}</Text></View>
                 ))}
               </View>
@@ -498,43 +549,43 @@ export default function ProfilePage() {
           </View>
 
           <Pressable delayPressIn={120} onPress={() => setShowEditProfile(true)} style={({ pressed }) => ({ marginHorizontal: wp(16), marginBottom: wp(20), transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-            <LinearGradient colors={['#00D984', '#00B871']} style={{ paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center' }}><Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>Modifier mon profil</Text></LinearGradient>
+            <LinearGradient colors={['#00D984', '#00B871']} style={{ paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center' }}><Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>{t.editProfile}</Text></LinearGradient>
           </Pressable>
 
           {/* Paramètres */}
-          <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.25)', paddingHorizontal: wp(16), paddingVertical: wp(8), letterSpacing: 1.5 }}>PARAMÈTRES</Text>
+          <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.25)', paddingHorizontal: wp(16), paddingVertical: wp(8), letterSpacing: 1.5 }}>{t.settings}</Text>
           <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', marginHorizontal: wp(12), borderRadius: wp(14), overflow: 'hidden', marginBottom: wp(16) }}>
-            <Section icon="📍" title="Ma localisation" subtitle="Pour les recommandations ALIXEN" color="#FF8C42" rightText={editLocation || 'Non définie'} onPress={() => setShowLocationPicker(true)} />
-            <Section icon="💳" title="Mon abonnement" subtitle="Gérer, changer ou résilier" color="#D4AF37" rightText={subTier} onPress={() => setShowSubscription(true)} />
-            <Section icon="🔔" title="Notifications" subtitle="Rappels médicaments, analyses" color="#4DA6FF" onPress={() => showToast('🔔 Disponible après le build', '#4DA6FF')} />
+            <Section icon="📍" title={t.location} subtitle={t.locationSub} color="#FF8C42" rightText={editLocation || t.notDefined} onPress={() => setShowLocationPicker(true)} />
+            <Section icon="💳" title={t.subscription} subtitle={t.subscriptionSub} color="#D4AF37" rightText={subTier} onPress={() => setShowSubscription(true)} />
+            <Section icon="🔔" title={t.notifications} subtitle={t.notifSub} color="#4DA6FF" onPress={() => showToast('🔔 Disponible après le build', '#4DA6FF')} />
 
           </View>
 
-          <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.25)', paddingHorizontal: wp(16), paddingVertical: wp(8), letterSpacing: 1.5 }}>APPRENDRE</Text>
+          <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.25)', paddingHorizontal: wp(16), paddingVertical: wp(8), letterSpacing: 1.5 }}>{t.learn}</Text>
           <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', marginHorizontal: wp(12), borderRadius: wp(14), overflow: 'hidden', marginBottom: wp(16) }}>
-            <Section icon="📖" title="Comprendre les termes" subtitle="BMR, TDEE, Macros, IMC..." color="#00D984" onPress={() => setShowGlossary(true)} />
-            <Section icon="🗺" title="Guide LIXUM" subtitle="Toutes les fonctionnalités" color="#4DA6FF" onPress={() => setShowFeatures(true)} />
+            <Section icon="📖" title={t.glossary} subtitle={t.glossarySub} color="#00D984" onPress={() => setShowGlossary(true)} />
+            <Section icon="🗺" title={t.guide} subtitle={t.guideSub} color="#4DA6FF" onPress={() => setShowFeatures(true)} />
           </View>
 
-          <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.25)', paddingHorizontal: wp(16), paddingVertical: wp(8), letterSpacing: 1.5 }}>LÉGAL & SUPPORT</Text>
+          <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.25)', paddingHorizontal: wp(16), paddingVertical: wp(8), letterSpacing: 1.5 }}>{t.legal}</Text>
           <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', marginHorizontal: wp(12), borderRadius: wp(14), overflow: 'hidden', marginBottom: wp(16) }}>
-            <Section icon="🔐" title="Politique de confidentialité" color="#9B6DFF" onPress={() => setShowPrivacy(true)} />
-            <Section icon="📜" title="Termes et conditions" color="#FF8C42" onPress={() => setShowTerms(true)} />
-            <Section icon="💬" title="Nous contacter" subtitle="support@lixum.app" color="#00D984" onPress={() => showToast('💬 support@lixum.app', '#00D984')} />
-            <Section icon="⭐" title="Évaluer LIXUM" color="#D4AF37" onPress={() => showToast('⭐ Merci ! Disponible au lancement', '#D4AF37')} />
+            <Section icon="🔐" title={t.privacy} color="#9B6DFF" onPress={() => setShowPrivacy(true)} />
+            <Section icon="📜" title={t.terms} color="#FF8C42" onPress={() => setShowTerms(true)} />
+            <Section icon="💬" title={t.contact} subtitle="support@lixum.app" color="#00D984" onPress={() => showToast('💬 support@lixum.app', '#00D984')} />
+            <Section icon="⭐" title={t.rate} color="#D4AF37" onPress={() => showToast('⭐ Merci ! Disponible au lancement', '#D4AF37')} />
           </View>
 
-          <Pressable delayPressIn={120} onPress={() => Alert.alert('Déconnexion', 'Es-tu sûr ?', [{ text: 'Annuler', style: 'cancel' }, { text: 'Déconnexion', style: 'destructive' }])} style={({ pressed }) => ({ marginHorizontal: wp(16), marginBottom: wp(16), paddingVertical: wp(14), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,107,107,0.05)', borderWidth: 1, borderColor: 'rgba(255,107,107,0.15)' })}>
-            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FF6B6B' }}>Se déconnecter</Text>
+          <Pressable delayPressIn={120} onPress={() => Alert.alert('Déconnexion', t.logoutConfirm, [{ text: t.cancel, style: 'cancel' }, { text: 'Déconnexion', style: 'destructive' }])} style={({ pressed }) => ({ marginHorizontal: wp(16), marginBottom: wp(16), paddingVertical: wp(14), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,107,107,0.05)', borderWidth: 1, borderColor: 'rgba(255,107,107,0.15)' })}>
+            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FF6B6B' }}>{t.logout}</Text>
           </Pressable>
 
-          <Pressable onPress={() => Alert.alert('Supprimer', 'Action irréversible.', [{ text: 'Annuler', style: 'cancel' }, { text: 'Supprimer', style: 'destructive' }])} style={{ marginHorizontal: wp(16), marginBottom: wp(16), alignItems: 'center' }}>
-            <Text style={{ fontSize: fp(12), color: 'rgba(255,107,107,0.4)' }}>Supprimer mon compte</Text>
+          <Pressable onPress={() => Alert.alert('Supprimer', t.deleteConfirm, [{ text: t.cancel, style: 'cancel' }, { text: 'Supprimer', style: 'destructive' }])} style={{ marginHorizontal: wp(16), marginBottom: wp(16), alignItems: 'center' }}>
+            <Text style={{ fontSize: fp(12), color: 'rgba(255,107,107,0.4)' }}>{t.deleteAccount}</Text>
           </Pressable>
 
           <View style={{ alignItems: 'center', paddingBottom: wp(20) }}>
             <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.15)' }}>LIXUM v1.0.0-beta</Text>
-            <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.1)', marginTop: wp(2) }}>Fait avec ❤️ au Burundi</Text>
+            <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.1)', marginTop: wp(2) }}>{t.madeWith}</Text>
           </View>
         </ScrollView>
         {renderModals()}
