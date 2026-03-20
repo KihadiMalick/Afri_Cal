@@ -72,7 +72,105 @@ export default function ProfilePage() {
   const subColor = profile?.is_premium ? '#D4AF37' : 'rgba(255,255,255,0.3)';
 
   // PLACEHOLDER MODALS — filled in chunk 2 and 3
-  const renderModals = () => null;
+  const renderModals = () => (
+    <>
+      {/* Modal Éditer Profil */}
+      <Modal visible={showEditProfile} transparent animationType="fade" onRequestClose={() => setShowEditProfile(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
+          <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%' }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(20) }}>Modifier mon profil</Text>
+            {[{ label: 'Nom complet', value: editName, set: setEditName, ph: 'Malick KIHADI', kb: 'default' }, { label: 'Âge', value: editAge, set: setEditAge, ph: '25', kb: 'numeric' }, { label: 'Poids (kg)', value: editWeight, set: setEditWeight, ph: '75', kb: 'numeric' }, { label: 'Taille (cm)', value: editHeight, set: setEditHeight, ph: '178', kb: 'numeric' }].map((f, i) => (
+              <View key={i} style={{ marginBottom: wp(12) }}>
+                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(4) }}>{f.label}</Text>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(10), paddingHorizontal: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(10) }} value={f.value} onChangeText={f.set} placeholder={f.ph} placeholderTextColor="rgba(255,255,255,0.2)" keyboardType={f.kb} />
+                </View>
+              </View>
+            ))}
+            <Pressable delayPressIn={120} onPress={saveProfile} style={{ marginTop: wp(8) }}><LinearGradient colors={['#00D984', '#00B871']} style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>Enregistrer</Text></LinearGradient></Pressable>
+            <Pressable onPress={() => setShowEditProfile(false)} style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(4) }}><Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>Annuler</Text></Pressable>
+          </LinearGradient>
+        </View>
+      </Modal>
+
+      {/* Modal Localisation */}
+      <Modal visible={showLocationPicker} transparent animationType="fade" onRequestClose={() => setShowLocationPicker(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
+          <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%' }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>Ma localisation</Text>
+            <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(16) }}>ALIXEN utilisera cette info pour recommander des lieux près de toi.</Text>
+            <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(10), paddingHorizontal: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: wp(16) }}>
+              <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} value={editLocation} onChangeText={setEditLocation} placeholder="Ex : Bujumbura" placeholderTextColor="rgba(255,255,255,0.2)" />
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(16) }}>
+              <View style={{ flexDirection: 'row', gap: wp(6) }}>
+                {['Bujumbura', 'Kigali', 'Nairobi', 'Dakar', 'Abidjan', 'Kinshasa', 'Lagos', 'Douala', 'Paris', 'Bruxelles'].map(c => (
+                  <Pressable key={c} onPress={() => setEditLocation(c)} style={{ paddingHorizontal: wp(12), paddingVertical: wp(6), borderRadius: wp(8), backgroundColor: editLocation === c ? '#00D984' : 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: editLocation === c ? '#00D984' : 'rgba(255,255,255,0.08)' }}><Text style={{ fontSize: fp(12), color: editLocation === c ? '#FFF' : 'rgba(255,255,255,0.4)' }}>{c}</Text></Pressable>
+                ))}
+              </View>
+            </ScrollView>
+            <Pressable delayPressIn={120} onPress={() => editLocation.trim() ? saveLocation(editLocation.trim()) : Alert.alert('Choisis une ville')}><LinearGradient colors={['#00D984', '#00B871']} style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>Enregistrer</Text></LinearGradient></Pressable>
+            <Pressable onPress={() => setShowLocationPicker(false)} style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(4) }}><Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>Annuler</Text></Pressable>
+          </LinearGradient>
+        </View>
+      </Modal>
+
+      {/* Modal Glossaire */}
+      <Modal visible={showGlossary} transparent animationType="fade" onRequestClose={() => setShowGlossary(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
+            <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#00D984', marginBottom: wp(20) }}>Comprendre les termes</Text>
+            {[
+              { t: 'BMR', d: 'Basal Metabolic Rate — Calories brûlées au repos pour survivre.' },
+              { t: 'TDEE', d: 'Total Daily Energy Expenditure — Calories totales brûlées par jour avec activité.' },
+              { t: 'Protéines', d: 'Pour les muscles et os. Sources : viande, poisson, œufs, légumineuses.' },
+              { t: 'Glucides', d: 'Source d\'énergie principale. Sources : riz, pain, manioc, plantain.' },
+              { t: 'Lipides', d: 'Graisses pour le cerveau et hormones. Sources : huile, avocat, noix.' },
+              { t: 'IMC', d: 'Indice de Masse Corporelle. Poids / Taille². Normal : 18.5-24.9.' },
+              { t: 'Score Vitalité', d: 'Score LIXUM 0-100 basé sur nutrition, hydratation, activité, mood et suivi médical.' },
+              { t: 'Lix', d: 'Monnaie virtuelle LIXUM. 1$ = 1000 Lix. Recharge énergie, ouvre caisses.' },
+              { t: 'Énergie', d: 'Carburant pour ALIXEN et scans. Reset chaque jour à minuit.' },
+              { t: 'Xscan', d: 'Scanner un plat avec la caméra pour calories et macros via IA.' },
+            ].map((g, i) => (
+              <View key={i} style={{ marginBottom: wp(14), backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12), padding: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#00D984', marginBottom: wp(4) }}>{g.t}</Text>
+                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', lineHeight: fp(18) }}>{g.d}</Text>
+              </View>
+            ))}
+            <Pressable onPress={() => setShowGlossary(false)} style={{ paddingVertical: wp(14), alignItems: 'center' }}><Text style={{ fontSize: fp(15), fontWeight: '600', color: '#00D984' }}>Fermer</Text></Pressable>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Modal Guide */}
+      <Modal visible={showFeatures} transparent animationType="fade" onRequestClose={() => setShowFeatures(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
+            <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#4DA6FF', marginBottom: wp(20) }}>Guide LIXUM</Text>
+            {[
+              { i: '🏠', n: 'Dashboard', d: 'Vue d\'ensemble : calories, hydratation, vitalité, humeur.' },
+              { i: '🍽', n: 'Repas', d: 'Scan photo ou saisie manuelle. Suivi macros temps réel.' },
+              { i: '🏃', n: 'Activité', d: 'Marche et course avec distance, durée, calories.' },
+              { i: '🤖', n: 'ALIXEN', d: 'Coach santé IA. Nutrition, médicaments, recommandations locales.' },
+              { i: '📋', n: 'MediBook', d: 'Dossier médical : médicaments, analyses, allergies.' },
+              { i: '🔒', n: 'Secret Pocket', d: 'Coffre-fort sécurisé pour documents santé.' },
+              { i: '🏆', n: 'LixVerse', d: 'Défis, groupes, Wall of Health, caractères, Spin Wheel.' },
+              { i: '🎰', n: 'Spin Wheel', d: 'Tourne la roue pour Lix, énergie ou caisses.' },
+              { i: '🃏', n: 'Caractères', d: '13 cartes à collectionner avec bonus et réductions.' },
+            ].map((f, i) => (
+              <View key={i} style={{ flexDirection: 'row', marginBottom: wp(12), backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12), padding: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+                <Text style={{ fontSize: fp(28), marginRight: wp(12) }}>{f.i}</Text>
+                <View style={{ flex: 1 }}><Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>{f.n}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.45)', lineHeight: fp(16) }}>{f.d}</Text></View>
+              </View>
+            ))}
+            <Pressable onPress={() => setShowFeatures(false)} style={{ paddingVertical: wp(14), alignItems: 'center' }}><Text style={{ fontSize: fp(15), fontWeight: '600', color: '#4DA6FF' }}>Fermer</Text></Pressable>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* PLACEHOLDER — chunk 3 ajoute Subscription, Privacy, Terms */}
+    </>
+  );
 
   return (
     <View style={{ flex: 1 }}>
