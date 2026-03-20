@@ -234,7 +234,58 @@ export default function LixVersePage() {
       </View>
     </ScrollView>
   );
-  const renderCharactersTab = () => (<ScrollView style={{flex:1}} contentContainerStyle={{padding:wp(16),paddingBottom:wp(100)}}><Text style={{color:'#FFF',fontSize:fp(14)}}>Caractères — sera rempli par chunk 3</Text></ScrollView>);
+  const openCrate = (crateId, cost, tier) => {
+    if (lixBalance < cost) { Alert.alert('Lix insuffisants', 'Il faut ' + cost + ' Lix.\nTon solde: ' + lixBalance); return; }
+    const tierChars = crateId === 'hyper' ? [...ALL_CHARACTERS.filter(c => c.tier === 'elite'), ...ALL_CHARACTERS.filter(c => c.tier === 'hyper')] : ALL_CHARACTERS.filter(c => c.tier === tier);
+    let sel;
+    if (crateId === 'hyper') { sel = Math.random() < 0.15 ? ALL_CHARACTERS.find(c => c.id === 'goldia') : tierChars.filter(c => c.tier === 'elite')[Math.floor(Math.random() * 3)]; }
+    else { sel = tierChars[Math.floor(Math.random() * tierChars.length)]; }
+    const dup = ownedCharacters.includes(sel.id);
+    const ref = dup ? (sel.tier === 'standard' ? 100 : sel.tier === 'rare' ? 250 : sel.tier === 'elite' ? 700 : 2000) : 0;
+    setLixBalance(p => p - cost + ref);
+    if (!dup) setOwnedCharacters(p => [...p, sel.id]);
+    const tc = TIER_CONFIG[sel.tier];
+    if (dup) { Alert.alert(sel.emoji + ' Doublon !', sel.name + ' déjà possédé\n+' + ref + ' Lix remboursés'); }
+    else { Alert.alert('🎉 ' + sel.name, tc.label + '\n' + sel.desc + '\n\nAbonné: ' + sel.bonus_abonne + '\nNon abonné: ' + sel.bonus_non_abonne + ' (' + sel.unlock_hours + 'h)'); }
+    const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+    if (!dup) fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters', { method: 'POST', headers: h, body: JSON.stringify({ user_id: TEST_USER_ID, character_id: sel.id, tier: sel.tier, obtained_via: 'crate' }) }).catch(() => {});
+    fetch(SUPABASE_URL + '/rest/v1/lixverse_crate_history', { method: 'POST', headers: h, body: JSON.stringify({ user_id: TEST_USER_ID, crate_type: crateId, lix_spent: cost, character_won: sel.id, was_doublon: dup, lix_refunded: ref }) }).catch(() => {});
+    fetch(SUPABASE_URL + '/rest/v1/lixverse_notifications', { method: 'POST', headers: h, body: JSON.stringify({ notification_type: 'character_won', lixtag: 'LXM-2K7F4A', message: 'LXM-2K7F4A a obtenu ' + sel.name + ' !', character_id: sel.id, color: sel.color }) }).catch(() => {});
+  };
+
+  const renderCharactersTab = () => (
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(100) }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(16) }}>
+        <View><Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Ma collection</Text><Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{ownedCharacters.length}/12</Text></View>
+        <View style={{ backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)' }}><Text style={{ fontSize: fp(11), fontWeight: '700', color: '#D4AF37' }}>{Math.round((ownedCharacters.length / 12) * 100)}%</Text></View>
+      </View>
+      {['standard', 'rare', 'elite', 'hyper'].map(tier => {
+        const cfg = TIER_CONFIG[tier]; const chars = ALL_CHARACTERS.filter(c => c.tier === tier);
+        return (
+          <View key={tier} style={{ marginBottom: wp(20) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), marginBottom: wp(10) }}><View style={{ backgroundColor: cfg.bg, borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4) }}><Text style={{ fontSize: fp(11), fontWeight: '700', color: cfg.color }}>{cfg.label}</Text></View><Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>{chars.filter(c => ownedCharacters.includes(c.id)).length}/{chars.length}</Text></View>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8) }}>
+              {chars.map(ch => { const own = ownedCharacters.includes(ch.id); return (
+                <Pressable key={ch.id} delayPressIn={120} onPress={() => setShowCharacterDetail(ch)} style={({ pressed }) => ({ width: (SCREEN_WIDTH - wp(48)) / 3, borderRadius: wp(16), padding: wp(12), alignItems: 'center', backgroundColor: own ? cfg.bg : 'rgba(255,255,255,0.02)', borderWidth: own ? 1.5 : 1, borderColor: own ? cfg.border : 'rgba(255,255,255,0.06)', opacity: own ? 1 : 0.45, transform: [{ scale: pressed ? 0.93 : 1 }] })}>
+                  <Text style={{ fontSize: fp(28), marginBottom: wp(6) }}>{own ? ch.emoji : '❓'}</Text>
+                  <Text style={{ fontSize: fp(9), fontWeight: '700', textAlign: 'center', color: own ? cfg.color : 'rgba(255,255,255,0.25)' }}>{own ? ch.name : '???'}</Text>
+                  {own && <View style={{ backgroundColor: cfg.color, borderRadius: wp(4), paddingHorizontal: wp(6), paddingVertical: wp(1), marginTop: wp(4) }}><Text style={{ fontSize: fp(7), fontWeight: '700', color: '#FFF' }}>POSSÉDÉ</Text></View>}
+                </Pressable>
+              ); })}
+            </View>
+          </View>
+        );
+      })}
+      <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12), marginTop: wp(8) }}>Ouvrir une caisse</Text>
+      {CRATES.map(cr => (
+        <Pressable key={cr.id} delayPressIn={120} onPress={() => openCrate(cr.id, cr.cost, cr.tier)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), borderWidth: 1.5, borderColor: cr.color + '40', backgroundColor: cr.color + '08', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+          <Text style={{ fontSize: fp(28), marginRight: wp(12) }}>{cr.emoji}</Text>
+          <View style={{ flex: 1 }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{cr.name}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>{cr.desc}</Text></View>
+          <View style={{ backgroundColor: cr.color + '25', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(5) }}><Text style={{ fontSize: fp(12), fontWeight: '700', color: cr.color }}>{cr.cost}</Text></View>
+        </Pressable>
+      ))}
+    </ScrollView>
+  );
   const renderLixSpinTab = () => (<ScrollView style={{flex:1}} contentContainerStyle={{padding:wp(16),paddingBottom:wp(100)}}><Text style={{color:'#FFF',fontSize:fp(14)}}>Lix & Spin — sera rempli par chunk 4</Text></ScrollView>);
 
   return (
