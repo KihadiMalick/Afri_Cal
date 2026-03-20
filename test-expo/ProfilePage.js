@@ -168,7 +168,75 @@ export default function ProfilePage() {
         </View>
       </Modal>
 
-      {/* PLACEHOLDER — chunk 3 ajoute Subscription, Privacy, Terms */}
+      {/* Modal Abonnement */}
+      <Modal visible={showSubscription} transparent animationType="fade" onRequestClose={() => setShowSubscription(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
+            <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#D4AF37', marginBottom: wp(16) }}>Mon abonnement</Text>
+            <View style={{ backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: wp(16), padding: wp(20), marginBottom: wp(20), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)', alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)' }}>Plan actuel</Text>
+              <Text style={{ fontSize: fp(28), fontWeight: '800', color: subColor, marginTop: wp(4) }}>{subTier}</Text>
+            </View>
+            {[
+              { name: 'Silver', price: '$4.99/mois', lix: '6 000 Lix', energy: '60/jour', color: '#A4B0BE', features: 'ALIXEN + Recettes + 3 Xscans/jour' },
+              { name: 'Gold', price: '$9.99/mois', lix: '12 000 Lix', energy: '150/jour', color: '#D4AF37', features: 'Silver + MediBook + Secret Pocket + Scan médical' },
+              { name: 'Platinum', price: '$14.99/mois', lix: '20 000 Lix', energy: '300/jour', color: '#00CEC9', features: 'TOUT débloqué + Famille + Priorité' },
+            ].map((p, i) => (
+              <Pressable key={i} delayPressIn={120} onPress={() => Alert.alert(p.name, 'Disponible après le Play Store.\n\n' + p.features)} style={({ pressed }) => ({ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(16), marginBottom: wp(8), borderWidth: 1, borderColor: p.color + '30', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(6) }}><Text style={{ fontSize: fp(16), fontWeight: '700', color: p.color }}>{p.name}</Text><Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>{p.price}</Text></View>
+                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>{p.lix} | Énergie {p.energy}</Text>
+                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)', marginTop: wp(4) }}>{p.features}</Text>
+              </Pressable>
+            ))}
+            <Pressable onPress={() => Alert.alert('Résiliation', 'Actif jusqu\'à la fin de la période.')} style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(8) }}><Text style={{ fontSize: fp(12), color: 'rgba(255,107,107,0.5)' }}>Résilier mon abonnement</Text></Pressable>
+            <Pressable onPress={() => setShowSubscription(false)} style={{ paddingVertical: wp(12), alignItems: 'center' }}><Text style={{ fontSize: fp(15), fontWeight: '600', color: '#D4AF37' }}>Fermer</Text></Pressable>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Modal Confidentialité */}
+      <Modal visible={showPrivacy} transparent animationType="fade" onRequestClose={() => setShowPrivacy(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
+            <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#9B6DFF', marginBottom: wp(16) }}>Politique de confidentialité</Text>
+            {[
+              { t: 'Données collectées', d: 'Profil, repas, scans, données médicales, activité — uniquement ce que tu fournis.' },
+              { t: 'Utilisation', d: 'Suivi santé personnalisé via ALIXEN. Aucune donnée vendue à des tiers.' },
+              { t: 'Stockage', d: 'Serveurs sécurisés Supabase (AWS). Secret Pocket chiffré.' },
+              { t: 'Localisation', d: 'Usage unique effacé après utilisation. En profil, sauvegardé avec ton accord.' },
+              { t: 'IA', d: 'Conversations ALIXEN via API Anthropic. Non stockées au-delà du traitement.' },
+              { t: 'Suppression', d: 'Demande suppression complète à tout moment depuis le profil.' },
+              { t: 'RGPD', d: 'Droit d\'accès, rectification, portabilité et suppression de tes données.' },
+            ].map((s, i) => (
+              <View key={i} style={{ marginBottom: wp(14) }}><Text style={{ fontSize: fp(14), fontWeight: '700', color: '#9B6DFF', marginBottom: wp(4) }}>{s.t}</Text><Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.45)', lineHeight: fp(18) }}>{s.d}</Text></View>
+            ))}
+            <Pressable onPress={() => setShowPrivacy(false)} style={{ paddingVertical: wp(14), alignItems: 'center' }}><Text style={{ fontSize: fp(15), fontWeight: '600', color: '#9B6DFF' }}>Fermer</Text></Pressable>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Modal Termes */}
+      <Modal visible={showTerms} transparent animationType="fade" onRequestClose={() => setShowTerms(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
+            <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#FF8C42', marginBottom: wp(16) }}>Termes et conditions</Text>
+            {[
+              { t: 'Acceptation', d: 'En utilisant LIXUM, tu acceptes ces termes.' },
+              { t: 'Service', d: 'LIXUM est un compagnon santé IA. Ne remplace PAS un avis médical.' },
+              { t: 'Compte', d: 'Tu es responsable de la sécurité de ton compte. Un seul par personne.' },
+              { t: 'Lix et achats', d: 'Monnaie virtuelle non remboursable. Abonnements résiliables.' },
+              { t: 'Caractères', d: 'Objets virtuels basés sur la chance. Probabilités affichées.' },
+              { t: 'Contenu', d: 'Pas de contenu inapproprié. Messages Wall of Health modérés.' },
+              { t: 'Propriété', d: 'LIXUM, ALIXEN, LixVerse sont propriété de LIXUM. Reproduction interdite.' },
+              { t: 'Responsabilité', d: 'LIXUM non responsable des décisions santé basées sur l\'app.' },
+              { t: 'Modifications', d: 'Termes modifiables. Utilisateurs informés des changements.' },
+            ].map((s, i) => (
+              <View key={i} style={{ marginBottom: wp(14) }}><Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FF8C42', marginBottom: wp(4) }}>{s.t}</Text><Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.45)', lineHeight: fp(18) }}>{s.d}</Text></View>
+            ))}
+            <Pressable onPress={() => setShowTerms(false)} style={{ paddingVertical: wp(14), alignItems: 'center' }}><Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FF8C42' }}>Fermer</Text></Pressable>
+          </ScrollView>
+        </View>
+      </Modal>
     </>
   );
 
