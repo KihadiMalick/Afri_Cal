@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image } from 'react-native';
 import Svg, { Defs, Rect, Path, Circle, Line, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -16,47 +16,48 @@ const HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPA
 const POST_HEADERS = { ...HEADERS, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
 const ALL_CHARACTERS = [
-  { id: 'nutrix', name: 'NUTRIX', tier: 'standard', color: '#00D984', emoji: '🥗', desc: 'Recettes gratuites, plans -50%', bonus_abonne: 'Recettes : 5→0 Lix', bonus_non_abonne: 'Recettes 24h', unlock_hours: 24 },
-  { id: 'scanix', name: 'SCANIX', tier: 'standard', color: '#4DA6FF', emoji: '📷', desc: 'Xscans extra -50%', bonus_abonne: 'Xscan : 20→10 Lix', bonus_non_abonne: 'Xscans illimités 24h', unlock_hours: 24 },
-  { id: 'sporta', name: 'SPORTA', tier: 'standard', color: '#FF8C42', emoji: '🏃', desc: 'Sport -50%', bonus_abonne: 'Programme : 40→20 Lix', bonus_non_abonne: 'Sport 24h', unlock_hours: 24 },
-  { id: 'healix', name: 'HEALIX', tier: 'rare', color: '#E74C3C', emoji: '💬', desc: 'Chat énergie réduite', bonus_abonne: 'Énergie : 8→5', bonus_non_abonne: 'Chat 72h', unlock_hours: 72 },
-  { id: 'medika', name: 'MEDIKA', tier: 'rare', color: '#00D984', emoji: '💊', desc: 'Médical -50%', bonus_abonne: 'Recherche : 50→25', bonus_non_abonne: 'MediBook 72h', unlock_hours: 72 },
-  { id: 'lokia', name: 'LOKIA', tier: 'rare', color: '#9B6DFF', emoji: '📍', desc: 'Localisation gratuite', bonus_abonne: 'Loc : 15→0 Lix', bonus_non_abonne: 'Reco locales 72h', unlock_hours: 72 },
-  { id: 'shielda', name: 'SHIELDA', tier: 'rare', color: '#D4AF37', emoji: '🛡', desc: 'PDF -40%', bonus_abonne: 'PDF : 500→300', bonus_non_abonne: 'Secret Pocket 72h', unlock_hours: 72 },
-  { id: 'famila', name: 'FAMILA', tier: 'rare', color: '#FF6B6B', emoji: '👨‍👩‍👧', desc: 'Famille -50%', bonus_abonne: 'Enfant : 5000→2500', bonus_non_abonne: 'Famille 72h', unlock_hours: 72 },
-  { id: 'opusx', name: 'OPUSX', tier: 'elite', color: '#4DA6FF', emoji: '🧠', desc: 'Opus -40%', bonus_abonne: 'Opus : 25→15 énergie', bonus_non_abonne: 'Opus 7 jours', unlock_hours: 168 },
-  { id: 'webix', name: 'WEBIX', tier: 'elite', color: '#00D984', emoji: '🌐', desc: 'Web -40%', bonus_abonne: 'Web : 42→25 énergie', bonus_non_abonne: 'Web 7 jours', unlock_hours: 168 },
-  { id: 'docta', name: 'DOCTA', tier: 'elite', color: '#FF8C42', emoji: '📋', desc: 'Scan bonus', bonus_abonne: 'Scan : 15→0 Lix', bonus_non_abonne: 'Scan 7 jours', unlock_hours: 168 },
-  { id: 'goldia', name: 'GOLDIA', tier: 'hyper', color: '#D4AF37', emoji: '👑', desc: '+50% énergie + premium', bonus_abonne: '+50% énergie', bonus_non_abonne: 'TOUT 30 jours', unlock_hours: 720 },
+  { id: 'emerald_owl', name: 'EMERALD OWL', tier: 'standard', color: '#00D984', emoji: '🦉', image: require('./assets/emerald_owl.png'), desc: '3 recettes perso gratuites', bonus_abonne: 'Recettes 5→3 Lix', bonus_non_abonne: '3 recettes gratuites', uses: 3, unlock_hours: 0 },
+  { id: 'hawk_eye', name: 'HAWK EYE', tier: 'standard', color: '#4DA6FF', emoji: '🦅', desc: '2 Xscans gratuits', bonus_abonne: 'Xscan 20→15 Lix', bonus_non_abonne: '2 Xscans gratuits', uses: 2, unlock_hours: 0 },
+  { id: 'ruby_tiger', name: 'RUBY TIGER', tier: 'standard', color: '#FF4757', emoji: '🐯', desc: '1 programme sport gratuit', bonus_abonne: 'Programme 40→30 Lix', bonus_non_abonne: '1 programme sport', uses: 1, unlock_hours: 0 },
+  { id: 'jade_phoenix', name: 'JADE PHOENIX', tier: 'rare', color: '#2ED573', emoji: '🔥', desc: '5 messages ALIXEN gratuits', bonus_abonne: 'Énergie ALIXEN -2/message', bonus_non_abonne: '5 messages ALIXEN', uses: 5, unlock_hours: 0 },
+  { id: 'silver_wolf', name: 'SILVER WOLF', tier: 'rare', color: '#A4B0BE', emoji: '🐺', desc: 'MediBook 48h consultation', bonus_abonne: 'Recherche médicament 50→35 Lix', bonus_non_abonne: 'MediBook 48h', uses: 0, unlock_hours: 48 },
+  { id: 'amber_fox', name: 'AMBER FOX', tier: 'rare', color: '#FF8C42', emoji: '🦊', desc: '2 recommandations locales', bonus_abonne: 'Localisation 15→10 Lix', bonus_non_abonne: '2 recommandations locales', uses: 2, unlock_hours: 0 },
+  { id: 'iron_rhino', name: 'IRON RHINO', tier: 'rare', color: '#747D8C', emoji: '🦏', desc: 'Secret Pocket 48h lecture', bonus_abonne: 'MediBook PDF 500→400 Lix', bonus_non_abonne: 'Secret Pocket 48h', uses: 0, unlock_hours: 48 },
+  { id: 'coral_dolphin', name: 'CORAL DOLPHIN', tier: 'rare', color: '#FF6B81', emoji: '🐬', desc: '1 profil enfant 48h', bonus_abonne: 'Ajout enfant 5000→4000 Lix', bonus_non_abonne: '1 profil enfant 48h', uses: 1, unlock_hours: 48 },
+  { id: 'obsidian_dragon', name: 'OBSIDIAN DRAGON', tier: 'elite', color: '#5352ED', emoji: '🐉', desc: '10 messages ALIXEN premium', bonus_abonne: 'Énergie complexe -5', bonus_non_abonne: '10 messages ALIXEN premium', uses: 10, unlock_hours: 0 },
+  { id: 'gold_chicken', name: 'GOLD CHICKEN', tier: 'elite', color: '#D4AF37', emoji: '🐔', desc: '3 Spins + 5 recherches prix', bonus_abonne: '+1 Spin gratuit/jour', bonus_non_abonne: '3 Spins + 5 recherches', uses: 8, unlock_hours: 0 },
+  { id: 'licornium', name: 'LICORNIUM', tier: 'elite', color: '#00D984', emoji: '🦄', desc: '2 scans médicaux', bonus_abonne: 'Scan médical 30→20 Lix', bonus_non_abonne: '2 scans médicaux', uses: 2, unlock_hours: 0 },
+  { id: 'diamond_lion', name: 'DIAMOND LION', tier: 'hyper', color: '#00CEC9', emoji: '🦁', desc: 'TOUT 7 jours (5 msgs/j, 2 scans/j)', bonus_abonne: '+25% énergie 30 jours', bonus_non_abonne: 'TOUT 7 jours limité', uses: 0, unlock_hours: 168 },
+  { id: 'tardigrum', name: 'TARDIGRUM', tier: 'ultimate', color: '#DFE6E9', emoji: '🔱', desc: 'TOUT 365 jours — Le Graal', bonus_abonne: '+50% énergie 365 jours', bonus_non_abonne: 'TOUT 365j (8msg/j, 3scan/j)', uses: 0, unlock_hours: 8760 },
 ];
 
 const TIER_CONFIG = {
   standard: { label: 'Standard', color: '#00D984', bg: 'rgba(0,217,132,0.1)', border: 'rgba(0,217,132,0.3)' },
   rare: { label: 'Rare', color: '#4DA6FF', bg: 'rgba(77,166,255,0.1)', border: 'rgba(77,166,255,0.3)' },
-  elite: { label: 'Elite', color: '#9B6DFF', bg: 'rgba(155,109,255,0.1)', border: 'rgba(155,109,255,0.3)' },
-  hyper: { label: 'Hyper Rare', color: '#D4AF37', bg: 'rgba(212,175,55,0.1)', border: 'rgba(212,175,55,0.3)' },
+  elite: { label: 'Elite', color: '#D4AF37', bg: 'rgba(212,175,55,0.1)', border: 'rgba(212,175,55,0.3)' },
+  hyper: { label: 'Hyper Rare', color: '#00CEC9', bg: 'rgba(0,206,201,0.1)', border: 'rgba(0,206,201,0.3)' },
+  ultimate: { label: 'Ultime', color: '#DFE6E9', bg: 'rgba(223,230,233,0.08)', border: 'rgba(223,230,233,0.25)' },
 };
 
 const CRATES = [
-  { id: 'standard', name: 'Caisse Standard', cost: 300, tier: 'standard', color: '#00D984', desc: '1 Standard', emoji: '📦' },
-  { id: 'rare', name: 'Caisse Rare', cost: 800, tier: 'rare', color: '#4DA6FF', desc: '1 Rare', emoji: '🎁' },
-  { id: 'elite', name: 'Caisse Elite', cost: 2000, tier: 'elite', color: '#9B6DFF', desc: '1 Elite', emoji: '💎' },
-  { id: 'hyper', name: 'Caisse Hyper', cost: 5000, tier: 'hyper', color: '#D4AF37', desc: 'Elite ou GOLDIA', emoji: '👑' },
+  { id: 'standard', name: 'Caisse Standard', cost: 300, tier: 'standard', color: '#00D984', desc: 'Standard 60% | Rare 25% | Elite 12%', emoji: '📦' },
+  { id: 'rare', name: 'Caisse Rare', cost: 800, tier: 'rare', color: '#4DA6FF', desc: 'Rare 65% | Elite 25% | Hyper 8%', emoji: '🎁' },
+  { id: 'elite', name: 'Caisse Elite', cost: 2000, tier: 'elite', color: '#D4AF37', desc: 'Elite 80% | Hyper 15% | Ultime 5%', emoji: '💎' },
+  { id: 'hyper', name: 'Caisse Hyper', cost: 5000, tier: 'hyper', color: '#00CEC9', desc: 'Hyper 92% | Ultime 8%', emoji: '👑' },
 ];
 
 const SPIN_RESULTS = [
-  { label: '5 Lix', weight: 25, type: 'lix', value: 5, color: '#00D984' },
-  { label: '10 Lix', weight: 15, type: 'lix', value: 10, color: '#00D984' },
+  { label: '5 Lix', weight: 30, type: 'lix', value: 5, color: '#00D984' },
+  { label: '10 Lix', weight: 18, type: 'lix', value: 10, color: '#00D984' },
   { label: '25 Lix', weight: 8, type: 'lix', value: 25, color: '#4DA6FF' },
-  { label: '50 Lix', weight: 3, type: 'lix', value: 50, color: '#D4AF37' },
-  { label: '100 Lix', weight: 1, type: 'lix', value: 100, color: '#D4AF37' },
-  { label: 'Caisse Standard', weight: 15, type: 'crate', value: 'standard', color: '#00D984' },
-  { label: 'Caisse Rare', weight: 8, type: 'crate', value: 'rare', color: '#4DA6FF' },
-  { label: 'Caisse Elite', weight: 3, type: 'crate', value: 'elite', color: '#9B6DFF' },
-  { label: 'Caisse Hyper', weight: 1, type: 'crate', value: 'hyper', color: '#D4AF37' },
-  { label: '+15 Énergie', weight: 10, type: 'energy', value: 15, color: '#FF8C42' },
-  { label: '+30 Énergie', weight: 5, type: 'energy', value: 30, color: '#FF8C42' },
-  { label: 'Rien...', weight: 6, type: 'nothing', value: 0, color: '#666' },
+  { label: '50 Lix', weight: 2, type: 'lix', value: 50, color: '#D4AF37' },
+  { label: '+10 Énergie', weight: 12, type: 'energy', value: 10, color: '#FF8C42' },
+  { label: '+20 Énergie', weight: 5, type: 'energy', value: 20, color: '#FF8C42' },
+  { label: 'Caisse Standard', weight: 10, type: 'crate', value: 'standard', color: '#00D984' },
+  { label: 'Caisse Rare', weight: 5, type: 'crate', value: 'rare', color: '#4DA6FF' },
+  { label: 'Caisse Elite', weight: 1.5, type: 'crate', value: 'elite', color: '#D4AF37' },
+  { label: 'Caisse Hyper', weight: 0.3, type: 'crate', value: 'hyper', color: '#00CEC9' },
+  { label: 'Rien...', weight: 8.2, type: 'nothing', value: 0, color: '#666' },
 ];
 
 const LIX_PACKS = [
@@ -341,30 +342,72 @@ export default function LixVersePage() {
   );
   const openCrate = (crateId, cost, tier) => {
     if (lixBalance < cost) { Alert.alert('Lix insuffisants', 'Il faut ' + cost + ' Lix.\nTon solde: ' + lixBalance); return; }
-    const tierChars = crateId === 'hyper' ? [...ALL_CHARACTERS.filter(c => c.tier === 'elite'), ...ALL_CHARACTERS.filter(c => c.tier === 'hyper')] : ALL_CHARACTERS.filter(c => c.tier === tier);
-    let sel;
-    if (crateId === 'hyper') { sel = Math.random() < 0.15 ? ALL_CHARACTERS.find(c => c.id === 'goldia') : tierChars.filter(c => c.tier === 'elite')[Math.floor(Math.random() * 3)]; }
-    else { sel = tierChars[Math.floor(Math.random() * tierChars.length)]; }
+
+    // Drop rates par type de caisse
+    const rates = {
+      standard: { standard: 0.60, rare: 0.25, elite: 0.12, hyper: 0.025, ultimate: 0.005 },
+      rare: { rare: 0.65, elite: 0.25, hyper: 0.08, ultimate: 0.02 },
+      elite: { elite: 0.80, hyper: 0.15, ultimate: 0.05 },
+      hyper: { hyper: 0.92, ultimate: 0.08 },
+    };
+    const crateRates = rates[crateId] || rates.standard;
+
+    // Sélection du tier par probabilité
+    let rand = Math.random();
+    let selectedTier = Object.keys(crateRates)[0];
+    for (const [t, prob] of Object.entries(crateRates)) {
+      rand -= prob;
+      if (rand <= 0) { selectedTier = t; break; }
+    }
+
+    // Sélection du caractère dans le tier
+    const tierChars = ALL_CHARACTERS.filter(c => c.tier === selectedTier);
+    let sel = tierChars[Math.floor(Math.random() * tierChars.length)];
+
+    // Vérifier doublon
     const dup = ownedCharacters.includes(sel.id);
-    const ref = dup ? (sel.tier === 'standard' ? 100 : sel.tier === 'rare' ? 250 : sel.tier === 'elite' ? 700 : 2000) : 0;
+    const maxStack = 3;
+    const refundTable = { standard: 100, rare: 250, elite: 700, hyper: 2000, ultimate: 5000 };
+    const ref = dup ? (refundTable[sel.tier] || 100) : 0;
+
     setLixBalance(p => p - cost + ref);
     if (!dup) setOwnedCharacters(p => [...p, sel.id]);
+
     const tc = TIER_CONFIG[sel.tier];
-    if (dup) { Alert.alert(sel.emoji + ' Doublon !', sel.name + ' déjà possédé\n+' + ref + ' Lix remboursés'); }
-    else { Alert.alert('🎉 ' + sel.name, tc.label + '\n' + sel.desc + '\n\nAbonné: ' + sel.bonus_abonne + '\nNon abonné: ' + sel.bonus_non_abonne + ' (' + sel.unlock_hours + 'h)'); }
+    const tierEmoji = sel.tier === 'ultimate' ? '⚡' : sel.tier === 'hyper' ? '💎' : sel.tier === 'elite' ? '👑' : sel.tier === 'rare' ? '✨' : '📦';
+
+    if (dup) {
+      Alert.alert(
+        tierEmoji + ' Doublon — ' + sel.name,
+        'Tu possèdes déjà cette carte !\n\n' +
+        (sel.uses > 0 ? '+' + sel.uses + ' utilisations ajoutées' : '+' + sel.unlock_hours + 'h ajoutées') +
+        '\n\nRemboursement : +' + ref + ' Lix'
+      );
+    } else {
+      Alert.alert(
+        '🎉 ' + sel.name + ' — ' + tc.label,
+        sel.desc + '\n\n' +
+        '📋 Abonné : ' + sel.bonus_abonne + '\n' +
+        '🎫 Non abonné : ' + sel.bonus_non_abonne +
+        (sel.uses > 0 ? '\n\n⚡ ' + sel.uses + ' utilisations' : '') +
+        (sel.unlock_hours > 0 ? '\n\n⏱ ' + (sel.unlock_hours >= 720 ? Math.round(sel.unlock_hours / 24) + ' jours' : sel.unlock_hours + 'h') + ' d\'accès' : '')
+      );
+    }
+
+    // Save Supabase
     const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
     if (!dup) fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters', { method: 'POST', headers: h, body: JSON.stringify({ user_id: TEST_USER_ID, character_id: sel.id, tier: sel.tier, obtained_via: 'crate' }) }).catch(() => {});
     fetch(SUPABASE_URL + '/rest/v1/lixverse_crate_history', { method: 'POST', headers: h, body: JSON.stringify({ user_id: TEST_USER_ID, crate_type: crateId, lix_spent: cost, character_won: sel.id, was_doublon: dup, lix_refunded: ref }) }).catch(() => {});
-    fetch(SUPABASE_URL + '/rest/v1/lixverse_notifications', { method: 'POST', headers: h, body: JSON.stringify({ notification_type: 'character_won', lixtag: 'LXM-2K7F4A', message: 'LXM-2K7F4A a obtenu ' + sel.name + ' !', character_id: sel.id, color: sel.color }) }).catch(() => {});
+    fetch(SUPABASE_URL + '/rest/v1/lixverse_notifications', { method: 'POST', headers: h, body: JSON.stringify({ notification_type: 'character_won', lixtag: 'LXM-2K7F4A', message: 'LXM-2K7F4A a obtenu ' + sel.name + ' (' + tc.label + ') !', character_id: sel.id, color: sel.color }) }).catch(() => {});
   };
 
   const renderCharactersTab = () => (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(100) }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(16) }}>
-        <View><Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Ma collection</Text><Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{ownedCharacters.length}/12</Text></View>
-        <View style={{ backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)' }}><Text style={{ fontSize: fp(11), fontWeight: '700', color: '#D4AF37' }}>{Math.round((ownedCharacters.length / 12) * 100)}%</Text></View>
+        <View><Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Ma collection</Text><Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{ownedCharacters.length}/13</Text></View>
+        <View style={{ backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)' }}><Text style={{ fontSize: fp(11), fontWeight: '700', color: '#D4AF37' }}>{Math.round((ownedCharacters.length / 13) * 100)}%</Text></View>
       </View>
-      {['standard', 'rare', 'elite', 'hyper'].map(tier => {
+      {['standard', 'rare', 'elite', 'hyper', 'ultimate'].map(tier => {
         const cfg = TIER_CONFIG[tier]; const chars = ALL_CHARACTERS.filter(c => c.tier === tier);
         return (
           <View key={tier} style={{ marginBottom: wp(20) }}>
@@ -511,18 +554,163 @@ export default function LixVersePage() {
       </Modal>
       {showCharacterDetail && (
         <Modal visible={true} transparent animationType="fade" onRequestClose={() => setShowCharacterDetail(null)}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
-            <LinearGradient colors={['#2A2F36','#1E2328','#252A30']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%', alignItems: 'center' }}>
-              <Text style={{ fontSize: fp(48), marginBottom: wp(10) }}>{showCharacterDetail.emoji}</Text>
-              <View style={{ backgroundColor: TIER_CONFIG[showCharacterDetail.tier].bg, borderRadius: wp(8), paddingHorizontal: wp(12), paddingVertical: wp(4), marginBottom: wp(8) }}><Text style={{ fontSize: fp(11), fontWeight: '700', color: TIER_CONFIG[showCharacterDetail.tier].color }}>{TIER_CONFIG[showCharacterDetail.tier].label}</Text></View>
-              <Text style={{ fontSize: fp(22), fontWeight: '800', color: showCharacterDetail.color, marginBottom: wp(6) }}>{showCharacterDetail.name}</Text>
-              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: wp(16) }}>{showCharacterDetail.desc}</Text>
-              <View style={{ width: '100%', backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(8), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984', marginBottom: wp(4) }}>SI ABONNÉ :</Text><Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)' }}>{showCharacterDetail.bonus_abonne}</Text></View>
-              <View style={{ width: '100%', backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(20), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)' }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: '#D4AF37', marginBottom: wp(4) }}>SI NON ABONNÉ :</Text><Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)' }}>{showCharacterDetail.bonus_non_abonne} ({showCharacterDetail.unlock_hours}h)</Text></View>
-              {ownedCharacters.includes(showCharacterDetail.id) ? <View style={{ backgroundColor: showCharacterDetail.color + '20', borderRadius: wp(14), paddingVertical: wp(12), width: '100%', alignItems: 'center' }}><Text style={{ fontSize: fp(14), fontWeight: '700', color: showCharacterDetail.color }}>✓ Possédé</Text></View> : <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), paddingVertical: wp(12), width: '100%', alignItems: 'center' }}><Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Ouvre des caisses !</Text></View>}
-              <Pressable onPress={() => setShowCharacterDetail(null)} style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(12) }}><Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Fermer</Text></Pressable>
-            </LinearGradient>
-          </View>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' }} onPress={() => setShowCharacterDetail(null)}>
+            <Pressable onPress={() => {}} style={{ width: wp(260), alignItems: 'center' }}>
+              {/* === LA CARTE DYNAMIQUE === */}
+              <View style={{
+                width: wp(260), borderRadius: wp(16), overflow: 'hidden',
+                borderWidth: wp(3),
+                borderColor: showCharacterDetail.tier === 'ultimate' ? '#DFE6E9' : showCharacterDetail.tier === 'hyper' ? '#00CEC9' : showCharacterDetail.tier === 'elite' ? '#D4AF37' : showCharacterDetail.tier === 'rare' ? '#A4B0BE' : '#CD7F32',
+              }}>
+                {/* --- HEADER BADGES --- */}
+                <View style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+                  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+                  padding: wp(8),
+                }}>
+                  {/* Icône fonctionnalité */}
+                  <View style={{
+                    width: wp(32), height: wp(32), borderRadius: wp(16),
+                    backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1.5,
+                    borderColor: TIER_CONFIG[showCharacterDetail.tier].color,
+                    justifyContent: 'center', alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(14) }}>{showCharacterDetail.emoji}</Text>
+                  </View>
+                  {/* Tier badge */}
+                  <View style={{
+                    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: wp(6),
+                    paddingHorizontal: wp(8), paddingVertical: wp(3),
+                    borderWidth: 1, borderColor: TIER_CONFIG[showCharacterDetail.tier].color,
+                  }}>
+                    <Text style={{ fontSize: fp(9), fontWeight: '800', color: TIER_CONFIG[showCharacterDetail.tier].color, letterSpacing: 1 }}>
+                      {TIER_CONFIG[showCharacterDetail.tier].label.toUpperCase()}
+                    </Text>
+                  </View>
+                  {/* Compteur */}
+                  <View style={{
+                    width: wp(28), height: wp(28), borderRadius: wp(14),
+                    backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1.5,
+                    borderColor: TIER_CONFIG[showCharacterDetail.tier].color,
+                    justifyContent: 'center', alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#FFF' }}>x1</Text>
+                  </View>
+                </View>
+
+                {/* --- DURÉE / USES badge (sous le compteur) --- */}
+                <View style={{
+                  position: 'absolute', top: wp(40), right: wp(8), zIndex: 10,
+                  backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: wp(6),
+                  paddingHorizontal: wp(6), paddingVertical: wp(2),
+                  borderWidth: 1, borderColor: showCharacterDetail.uses > 0 ? '#00D984' : '#FF8C42',
+                }}>
+                  <Text style={{ fontSize: fp(8), fontWeight: '700', color: showCharacterDetail.uses > 0 ? '#00D984' : '#FF8C42' }}>
+                    {showCharacterDetail.uses > 0 ? showCharacterDetail.uses + ' USES' : showCharacterDetail.unlock_hours > 0 ? (showCharacterDetail.unlock_hours >= 720 ? Math.round(showCharacterDetail.unlock_hours / 24) + 'J' : showCharacterDetail.unlock_hours + 'H') : '∞'}
+                  </Text>
+                </View>
+
+                {/* --- IMAGE ILLUSTRATION --- */}
+                {showCharacterDetail.image ? (
+                  <Image
+                    source={showCharacterDetail.image}
+                    style={{ width: wp(254), height: wp(340), resizeMode: 'cover' }}
+                  />
+                ) : (
+                  <View style={{
+                    width: wp(254), height: wp(340),
+                    backgroundColor: TIER_CONFIG[showCharacterDetail.tier].bg,
+                    justifyContent: 'center', alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(80) }}>{showCharacterDetail.emoji}</Text>
+                  </View>
+                )}
+
+                {/* --- BARRE DE PROGRESSION --- */}
+                <View style={{
+                  position: 'absolute', bottom: wp(80), left: wp(10), right: wp(10), zIndex: 10,
+                }}>
+                  <View style={{
+                    height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(0,0,0,0.4)',
+                    overflow: 'hidden',
+                  }}>
+                    <View style={{
+                      height: '100%', borderRadius: wp(2), width: '100%',
+                      backgroundColor: TIER_CONFIG[showCharacterDetail.tier].color,
+                    }} />
+                  </View>
+                  <Text style={{
+                    fontSize: fp(8), color: 'rgba(255,255,255,0.6)', textAlign: 'right', marginTop: wp(2),
+                  }}>
+                    {showCharacterDetail.uses > 0 ? showCharacterDetail.uses + '/' + showCharacterDetail.uses + ' utilisations' : showCharacterDetail.unlock_hours > 0 ? 'Plein' : ''}
+                  </Text>
+                </View>
+
+                {/* --- PLAQUE NOM EN BAS --- */}
+                <View style={{
+                  backgroundColor: 'rgba(0,0,0,0.75)',
+                  paddingVertical: wp(12), paddingHorizontal: wp(14),
+                  borderTopWidth: 2,
+                  borderTopColor: showCharacterDetail.tier === 'ultimate' ? '#DFE6E9' : showCharacterDetail.tier === 'hyper' ? '#00CEC9' : showCharacterDetail.tier === 'elite' ? '#D4AF37' : showCharacterDetail.tier === 'rare' ? '#A4B0BE' : '#CD7F32',
+                }}>
+                  <Text style={{
+                    fontSize: fp(18), fontWeight: '800', color: TIER_CONFIG[showCharacterDetail.tier].color,
+                    textAlign: 'center', letterSpacing: 2,
+                  }}>
+                    {showCharacterDetail.name}
+                  </Text>
+                  <Text style={{
+                    fontSize: fp(10), color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginTop: wp(4),
+                  }}>
+                    {showCharacterDetail.desc}
+                  </Text>
+                </View>
+              </View>
+
+              {/* === BONUS INFO SOUS LA CARTE === */}
+              <View style={{ width: '100%', marginTop: wp(12), gap: wp(6) }}>
+                <View style={{
+                  backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(10),
+                  padding: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                }}>
+                  <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#00D984', marginBottom: wp(2) }}>ABONNÉ</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }}>{showCharacterDetail.bonus_abonne}</Text>
+                </View>
+                <View style={{
+                  backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(10),
+                  padding: wp(10), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+                }}>
+                  <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37', marginBottom: wp(2) }}>NON ABONNÉ</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }}>{showCharacterDetail.bonus_non_abonne}</Text>
+                </View>
+              </View>
+
+              {/* Possédé ou non */}
+              <View style={{ marginTop: wp(12) }}>
+                {ownedCharacters.includes(showCharacterDetail.id) ? (
+                  <View style={{
+                    backgroundColor: TIER_CONFIG[showCharacterDetail.tier].color + '30',
+                    borderRadius: wp(12), paddingVertical: wp(10), paddingHorizontal: wp(24),
+                  }}>
+                    <Text style={{ fontSize: fp(13), fontWeight: '700', color: TIER_CONFIG[showCharacterDetail.tier].color }}>✓ Possédé</Text>
+                  </View>
+                ) : (
+                  <View style={{
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    borderRadius: wp(12), paddingVertical: wp(10), paddingHorizontal: wp(24),
+                  }}>
+                    <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)' }}>Ouvre des caisses !</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Fermer */}
+              <Pressable onPress={() => setShowCharacterDetail(null)}
+                style={{ paddingVertical: wp(14) }}>
+                <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Fermer</Text>
+              </Pressable>
+            </Pressable>
+          </Pressable>
         </Modal>
       )}
       {/* Modal Sticker Detail */}
