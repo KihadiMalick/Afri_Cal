@@ -96,6 +96,12 @@ export default function ProfilePage() {
   const [editHeight, setEditHeight] = useState('');
   const [editLocation, setEditLocation] = useState('');
   const [lang, setLang] = useState('fr');
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, color) => {
+    setToast({ message, color: color || '#00D984' });
+    setTimeout(() => setToast(null), 2500);
+  };
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
   useEffect(() => { loadProfile(); }, []);
@@ -114,14 +120,35 @@ export default function ProfilePage() {
 
   const saveProfile = async () => {
     try {
-      await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, { method: 'PATCH', headers: { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }, body: JSON.stringify({ full_name: editName.trim(), age: parseInt(editAge) || null, weight: parseFloat(editWeight) || null, height: parseFloat(editHeight) || null }) });
-      Alert.alert('Profil mis à jour ✓'); setShowEditProfile(false); loadProfile();
-    } catch (e) { Alert.alert('Erreur'); }
+      const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+      const updates = {
+        full_name: editName.trim(),
+        age: parseInt(editAge) || null,
+        weight: parseFloat(editWeight) || null,
+        height: parseFloat(editHeight) || null,
+      };
+      // Sauvegarder les champs de base
+      await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, {
+        method: 'PATCH', headers: h, body: JSON.stringify(updates),
+      });
+      // Mettre à jour le state local immédiatement
+      setProfile(prev => prev ? {
+        ...prev,
+        full_name: editName.trim(),
+        age: parseInt(editAge) || prev.age,
+        weight: parseFloat(editWeight) || prev.weight,
+        height: parseFloat(editHeight) || prev.height,
+      } : prev);
+      setShowEditProfile(false);
+      showToast('Profil mis à jour ✓', '#00D984');
+      // Recharger en arrière-plan pour sync
+      loadProfile();
+    } catch (e) { showToast('Erreur de sauvegarde', '#FF6B6B'); }
   };
 
   const saveLocation = async (city) => {
     setEditLocation(city); setShowLocationPicker(false);
-    Alert.alert('Localisation enregistrée ✓', city + '\n\nALIXEN utilisera cette info.');
+    showToast('📍 ' + city + ' enregistrée', '#FF8C42');
   };
 
   const Section = ({ icon, title, subtitle, onPress, color, rightText }) => (
@@ -365,13 +392,13 @@ export default function ProfilePage() {
               { name: 'Gold', price: '$9.99/mois', lix: '12 000 Lix', energy: '150/jour', color: '#D4AF37', features: 'Silver + MediBook + Secret Pocket + Scan médical' },
               { name: 'Platinum', price: '$14.99/mois', lix: '20 000 Lix', energy: '300/jour', color: '#00CEC9', features: 'TOUT débloqué + Famille + Priorité' },
             ].map((p, i) => (
-              <Pressable key={i} delayPressIn={120} onPress={() => Alert.alert(p.name, 'Disponible après le Play Store.\n\n' + p.features)} style={({ pressed }) => ({ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(16), marginBottom: wp(8), borderWidth: 1, borderColor: p.color + '30', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+              <Pressable key={i} delayPressIn={120} onPress={() => showToast('💳 ' + p.name + ' — disponible au lancement', p.color)} style={({ pressed }) => ({ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(16), marginBottom: wp(8), borderWidth: 1, borderColor: p.color + '30', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(6) }}><Text style={{ fontSize: fp(16), fontWeight: '700', color: p.color }}>{p.name}</Text><Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>{p.price}</Text></View>
                 <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>{p.lix} | Énergie {p.energy}</Text>
                 <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)', marginTop: wp(4) }}>{p.features}</Text>
               </Pressable>
             ))}
-            <Pressable onPress={() => Alert.alert('Résiliation', 'Actif jusqu\'à la fin de la période.')} style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(8) }}><Text style={{ fontSize: fp(12), color: 'rgba(255,107,107,0.5)' }}>Résilier mon abonnement</Text></Pressable>
+            <Pressable onPress={() => showToast('Actif jusqu\'à la fin de la période', '#FF6B6B')} style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(8) }}><Text style={{ fontSize: fp(12), color: 'rgba(255,107,107,0.5)' }}>Résilier mon abonnement</Text></Pressable>
             <Pressable onPress={() => setShowSubscription(false)} style={{ paddingVertical: wp(12), alignItems: 'center' }}><Text style={{ fontSize: fp(15), fontWeight: '600', color: '#D4AF37' }}>Fermer</Text></Pressable>
           </ScrollView>
         </View>
@@ -479,7 +506,7 @@ export default function ProfilePage() {
           <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', marginHorizontal: wp(12), borderRadius: wp(14), overflow: 'hidden', marginBottom: wp(16) }}>
             <Section icon="📍" title="Ma localisation" subtitle="Pour les recommandations ALIXEN" color="#FF8C42" rightText={editLocation || 'Non définie'} onPress={() => setShowLocationPicker(true)} />
             <Section icon="💳" title="Mon abonnement" subtitle="Gérer, changer ou résilier" color="#D4AF37" rightText={subTier} onPress={() => setShowSubscription(true)} />
-            <Section icon="🔔" title="Notifications" subtitle="Rappels médicaments, analyses" color="#4DA6FF" onPress={() => Alert.alert('Notifications', 'Disponible après le build APK.')} />
+            <Section icon="🔔" title="Notifications" subtitle="Rappels médicaments, analyses" color="#4DA6FF" onPress={() => showToast('🔔 Disponible après le build', '#4DA6FF')} />
 
           </View>
 
@@ -493,8 +520,8 @@ export default function ProfilePage() {
           <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', marginHorizontal: wp(12), borderRadius: wp(14), overflow: 'hidden', marginBottom: wp(16) }}>
             <Section icon="🔐" title="Politique de confidentialité" color="#9B6DFF" onPress={() => setShowPrivacy(true)} />
             <Section icon="📜" title="Termes et conditions" color="#FF8C42" onPress={() => setShowTerms(true)} />
-            <Section icon="💬" title="Nous contacter" subtitle="support@lixum.app" color="#00D984" onPress={() => Alert.alert('Contact', 'support@lixum.app')} />
-            <Section icon="⭐" title="Évaluer LIXUM" color="#D4AF37" onPress={() => Alert.alert('Merci !', 'Disponible après le Play Store.')} />
+            <Section icon="💬" title="Nous contacter" subtitle="support@lixum.app" color="#00D984" onPress={() => showToast('💬 support@lixum.app', '#00D984')} />
+            <Section icon="⭐" title="Évaluer LIXUM" color="#D4AF37" onPress={() => showToast('⭐ Merci ! Disponible au lancement', '#D4AF37')} />
           </View>
 
           <Pressable delayPressIn={120} onPress={() => Alert.alert('Déconnexion', 'Es-tu sûr ?', [{ text: 'Annuler', style: 'cancel' }, { text: 'Déconnexion', style: 'destructive' }])} style={({ pressed }) => ({ marginHorizontal: wp(16), marginBottom: wp(16), paddingVertical: wp(14), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,107,107,0.05)', borderWidth: 1, borderColor: 'rgba(255,107,107,0.15)' })}>
@@ -511,6 +538,23 @@ export default function ProfilePage() {
           </View>
         </ScrollView>
         {renderModals()}
+        {/* Toast notification custom */}
+        {toast && (
+          <View style={{
+            position: 'absolute', top: Platform.OS === 'android' ? 45 : 60,
+            left: wp(20), right: wp(20),
+            backgroundColor: '#252A30', borderRadius: wp(14),
+            paddingVertical: wp(14), paddingHorizontal: wp(20),
+            flexDirection: 'row', alignItems: 'center', gap: wp(10),
+            borderWidth: 1.5, borderColor: toast.color + '40',
+            shadowColor: toast.color, shadowOpacity: 0.3, shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 }, elevation: 10,
+            zIndex: 9999,
+          }}>
+            <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: toast.color }} />
+            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF', flex: 1 }}>{toast.message}</Text>
+          </View>
+        )}
       </LinearGradient>
     </View>
   );
