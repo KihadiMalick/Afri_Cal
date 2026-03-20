@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image } from 'react-native';
 import Svg, { Defs, Rect, Path, Circle, Line, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -16,7 +16,7 @@ const HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPA
 const POST_HEADERS = { ...HEADERS, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
 const ALL_CHARACTERS = [
-  { id: 'emerald_owl', name: 'EMERALD OWL', tier: 'standard', color: '#00D984', emoji: '🦉', desc: '3 recettes perso gratuites', bonus_abonne: 'Recettes 5→3 Lix', bonus_non_abonne: '3 recettes gratuites', uses: 3, unlock_hours: 0 },
+  { id: 'emerald_owl', name: 'EMERALD OWL', tier: 'standard', color: '#00D984', emoji: '🦉', image: require('./assets/emerald_owl.png'), desc: '3 recettes perso gratuites', bonus_abonne: 'Recettes 5→3 Lix', bonus_non_abonne: '3 recettes gratuites', uses: 3, unlock_hours: 0 },
   { id: 'hawk_eye', name: 'HAWK EYE', tier: 'standard', color: '#4DA6FF', emoji: '🦅', desc: '2 Xscans gratuits', bonus_abonne: 'Xscan 20→15 Lix', bonus_non_abonne: '2 Xscans gratuits', uses: 2, unlock_hours: 0 },
   { id: 'ruby_tiger', name: 'RUBY TIGER', tier: 'standard', color: '#FF4757', emoji: '🐯', desc: '1 programme sport gratuit', bonus_abonne: 'Programme 40→30 Lix', bonus_non_abonne: '1 programme sport', uses: 1, unlock_hours: 0 },
   { id: 'jade_phoenix', name: 'JADE PHOENIX', tier: 'rare', color: '#2ED573', emoji: '🔥', desc: '5 messages ALIXEN gratuits', bonus_abonne: 'Énergie ALIXEN -2/message', bonus_non_abonne: '5 messages ALIXEN', uses: 5, unlock_hours: 0 },
@@ -554,18 +554,163 @@ export default function LixVersePage() {
       </Modal>
       {showCharacterDetail && (
         <Modal visible={true} transparent animationType="fade" onRequestClose={() => setShowCharacterDetail(null)}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
-            <LinearGradient colors={['#2A2F36','#1E2328','#252A30']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%', alignItems: 'center' }}>
-              <Text style={{ fontSize: fp(48), marginBottom: wp(10) }}>{showCharacterDetail.emoji}</Text>
-              <View style={{ backgroundColor: TIER_CONFIG[showCharacterDetail.tier].bg, borderRadius: wp(8), paddingHorizontal: wp(12), paddingVertical: wp(4), marginBottom: wp(8) }}><Text style={{ fontSize: fp(11), fontWeight: '700', color: TIER_CONFIG[showCharacterDetail.tier].color }}>{TIER_CONFIG[showCharacterDetail.tier].label}</Text></View>
-              <Text style={{ fontSize: fp(22), fontWeight: '800', color: showCharacterDetail.color, marginBottom: wp(6) }}>{showCharacterDetail.name}</Text>
-              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: wp(16) }}>{showCharacterDetail.desc}</Text>
-              <View style={{ width: '100%', backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(8), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984', marginBottom: wp(4) }}>SI ABONNÉ :</Text><Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)' }}>{showCharacterDetail.bonus_abonne}</Text></View>
-              <View style={{ width: '100%', backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(20), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)' }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: '#D4AF37', marginBottom: wp(4) }}>SI NON ABONNÉ :</Text><Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)' }}>{showCharacterDetail.bonus_non_abonne} ({showCharacterDetail.unlock_hours}h)</Text></View>
-              {ownedCharacters.includes(showCharacterDetail.id) ? <View style={{ backgroundColor: showCharacterDetail.color + '20', borderRadius: wp(14), paddingVertical: wp(12), width: '100%', alignItems: 'center' }}><Text style={{ fontSize: fp(14), fontWeight: '700', color: showCharacterDetail.color }}>✓ Possédé</Text></View> : <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), paddingVertical: wp(12), width: '100%', alignItems: 'center' }}><Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Ouvre des caisses !</Text></View>}
-              <Pressable onPress={() => setShowCharacterDetail(null)} style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(12) }}><Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Fermer</Text></Pressable>
-            </LinearGradient>
-          </View>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' }} onPress={() => setShowCharacterDetail(null)}>
+            <Pressable onPress={() => {}} style={{ width: wp(260), alignItems: 'center' }}>
+              {/* === LA CARTE DYNAMIQUE === */}
+              <View style={{
+                width: wp(260), borderRadius: wp(16), overflow: 'hidden',
+                borderWidth: wp(3),
+                borderColor: showCharacterDetail.tier === 'ultimate' ? '#DFE6E9' : showCharacterDetail.tier === 'hyper' ? '#00CEC9' : showCharacterDetail.tier === 'elite' ? '#D4AF37' : showCharacterDetail.tier === 'rare' ? '#A4B0BE' : '#CD7F32',
+              }}>
+                {/* --- HEADER BADGES --- */}
+                <View style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+                  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+                  padding: wp(8),
+                }}>
+                  {/* Icône fonctionnalité */}
+                  <View style={{
+                    width: wp(32), height: wp(32), borderRadius: wp(16),
+                    backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1.5,
+                    borderColor: TIER_CONFIG[showCharacterDetail.tier].color,
+                    justifyContent: 'center', alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(14) }}>{showCharacterDetail.emoji}</Text>
+                  </View>
+                  {/* Tier badge */}
+                  <View style={{
+                    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: wp(6),
+                    paddingHorizontal: wp(8), paddingVertical: wp(3),
+                    borderWidth: 1, borderColor: TIER_CONFIG[showCharacterDetail.tier].color,
+                  }}>
+                    <Text style={{ fontSize: fp(9), fontWeight: '800', color: TIER_CONFIG[showCharacterDetail.tier].color, letterSpacing: 1 }}>
+                      {TIER_CONFIG[showCharacterDetail.tier].label.toUpperCase()}
+                    </Text>
+                  </View>
+                  {/* Compteur */}
+                  <View style={{
+                    width: wp(28), height: wp(28), borderRadius: wp(14),
+                    backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1.5,
+                    borderColor: TIER_CONFIG[showCharacterDetail.tier].color,
+                    justifyContent: 'center', alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#FFF' }}>x1</Text>
+                  </View>
+                </View>
+
+                {/* --- DURÉE / USES badge (sous le compteur) --- */}
+                <View style={{
+                  position: 'absolute', top: wp(40), right: wp(8), zIndex: 10,
+                  backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: wp(6),
+                  paddingHorizontal: wp(6), paddingVertical: wp(2),
+                  borderWidth: 1, borderColor: showCharacterDetail.uses > 0 ? '#00D984' : '#FF8C42',
+                }}>
+                  <Text style={{ fontSize: fp(8), fontWeight: '700', color: showCharacterDetail.uses > 0 ? '#00D984' : '#FF8C42' }}>
+                    {showCharacterDetail.uses > 0 ? showCharacterDetail.uses + ' USES' : showCharacterDetail.unlock_hours > 0 ? (showCharacterDetail.unlock_hours >= 720 ? Math.round(showCharacterDetail.unlock_hours / 24) + 'J' : showCharacterDetail.unlock_hours + 'H') : '∞'}
+                  </Text>
+                </View>
+
+                {/* --- IMAGE ILLUSTRATION --- */}
+                {showCharacterDetail.image ? (
+                  <Image
+                    source={showCharacterDetail.image}
+                    style={{ width: wp(254), height: wp(340), resizeMode: 'cover' }}
+                  />
+                ) : (
+                  <View style={{
+                    width: wp(254), height: wp(340),
+                    backgroundColor: TIER_CONFIG[showCharacterDetail.tier].bg,
+                    justifyContent: 'center', alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(80) }}>{showCharacterDetail.emoji}</Text>
+                  </View>
+                )}
+
+                {/* --- BARRE DE PROGRESSION --- */}
+                <View style={{
+                  position: 'absolute', bottom: wp(80), left: wp(10), right: wp(10), zIndex: 10,
+                }}>
+                  <View style={{
+                    height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(0,0,0,0.4)',
+                    overflow: 'hidden',
+                  }}>
+                    <View style={{
+                      height: '100%', borderRadius: wp(2), width: '100%',
+                      backgroundColor: TIER_CONFIG[showCharacterDetail.tier].color,
+                    }} />
+                  </View>
+                  <Text style={{
+                    fontSize: fp(8), color: 'rgba(255,255,255,0.6)', textAlign: 'right', marginTop: wp(2),
+                  }}>
+                    {showCharacterDetail.uses > 0 ? showCharacterDetail.uses + '/' + showCharacterDetail.uses + ' utilisations' : showCharacterDetail.unlock_hours > 0 ? 'Plein' : ''}
+                  </Text>
+                </View>
+
+                {/* --- PLAQUE NOM EN BAS --- */}
+                <View style={{
+                  backgroundColor: 'rgba(0,0,0,0.75)',
+                  paddingVertical: wp(12), paddingHorizontal: wp(14),
+                  borderTopWidth: 2,
+                  borderTopColor: showCharacterDetail.tier === 'ultimate' ? '#DFE6E9' : showCharacterDetail.tier === 'hyper' ? '#00CEC9' : showCharacterDetail.tier === 'elite' ? '#D4AF37' : showCharacterDetail.tier === 'rare' ? '#A4B0BE' : '#CD7F32',
+                }}>
+                  <Text style={{
+                    fontSize: fp(18), fontWeight: '800', color: TIER_CONFIG[showCharacterDetail.tier].color,
+                    textAlign: 'center', letterSpacing: 2,
+                  }}>
+                    {showCharacterDetail.name}
+                  </Text>
+                  <Text style={{
+                    fontSize: fp(10), color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginTop: wp(4),
+                  }}>
+                    {showCharacterDetail.desc}
+                  </Text>
+                </View>
+              </View>
+
+              {/* === BONUS INFO SOUS LA CARTE === */}
+              <View style={{ width: '100%', marginTop: wp(12), gap: wp(6) }}>
+                <View style={{
+                  backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(10),
+                  padding: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                }}>
+                  <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#00D984', marginBottom: wp(2) }}>ABONNÉ</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }}>{showCharacterDetail.bonus_abonne}</Text>
+                </View>
+                <View style={{
+                  backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(10),
+                  padding: wp(10), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+                }}>
+                  <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37', marginBottom: wp(2) }}>NON ABONNÉ</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }}>{showCharacterDetail.bonus_non_abonne}</Text>
+                </View>
+              </View>
+
+              {/* Possédé ou non */}
+              <View style={{ marginTop: wp(12) }}>
+                {ownedCharacters.includes(showCharacterDetail.id) ? (
+                  <View style={{
+                    backgroundColor: TIER_CONFIG[showCharacterDetail.tier].color + '30',
+                    borderRadius: wp(12), paddingVertical: wp(10), paddingHorizontal: wp(24),
+                  }}>
+                    <Text style={{ fontSize: fp(13), fontWeight: '700', color: TIER_CONFIG[showCharacterDetail.tier].color }}>✓ Possédé</Text>
+                  </View>
+                ) : (
+                  <View style={{
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    borderRadius: wp(12), paddingVertical: wp(10), paddingHorizontal: wp(24),
+                  }}>
+                    <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)' }}>Ouvre des caisses !</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Fermer */}
+              <Pressable onPress={() => setShowCharacterDetail(null)}
+                style={{ paddingVertical: wp(14) }}>
+                <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Fermer</Text>
+              </Pressable>
+            </Pressable>
+          </Pressable>
         </Modal>
       )}
       {/* Modal Sticker Detail */}
