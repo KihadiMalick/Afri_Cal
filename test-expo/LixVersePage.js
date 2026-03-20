@@ -89,6 +89,8 @@ export default function LixVersePage() {
   const [wallStickers, setWallStickers] = useState([]);
   const [selectedSticker, setSelectedSticker] = useState(null);
   const [showGiftModal, setShowGiftModal] = useState(false);
+  const [floatingHearts, setFloatingHearts] = useState([]);
+  const [shakingSticker, setShakingSticker] = useState(null);
   const [stickerCatalog, setStickerCatalog] = useState([]);
   const [myCertification, setMyCertification] = useState(null);
   const [showCertificationModal, setShowCertificationModal] = useState(false);
@@ -100,6 +102,24 @@ export default function LixVersePage() {
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
   useEffect(() => { loadAll(); }, []);
+  // Fake realtime — animation aléatoire toutes les 10-20s
+  useEffect(() => {
+    if (wallStickers.length === 0) return;
+    const interval = setInterval(() => {
+      const randomIdx = Math.floor(Math.random() * wallStickers.length);
+      const randomSticker = wallStickers[randomIdx];
+      if (randomSticker) {
+        setShakingSticker(randomSticker.id);
+        // Ajouter un cœur flottant
+        const heartId = Date.now() + Math.random();
+        setFloatingHearts(prev => [...prev, { id: heartId, stickerId: randomSticker.id, x: Math.random() * wp(30) - wp(15) }]);
+        setTimeout(() => setShakingSticker(null), 600);
+        setTimeout(() => setFloatingHearts(prev => prev.filter(h => h.id !== heartId)), 1500);
+      }
+    }, 10000 + Math.random() * 10000);
+    return () => clearInterval(interval);
+  }, [wallStickers]);
+
   useEffect(() => {
     if (notifications.length === 0) return;
     Animated.loop(Animated.timing(notifScrollX, { toValue: -(notifications.length * wp(280)), duration: notifications.length * 5000, useNativeDriver: true })).start();
@@ -221,47 +241,80 @@ export default function LixVersePage() {
               </View>
             ) : (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: wp(10), paddingBottom: wp(8) }}>
-                {wallStickers.slice(0, 12).map((sticker, i) => (
-                  <Pressable key={sticker.id || i} delayPressIn={80}
-                    onPress={() => setSelectedSticker(sticker)}
-                    style={({ pressed }) => ({
+                {wallStickers.slice(0, 12).map((sticker, i) => {
+                  const isShaking = shakingSticker === sticker.id;
+                  const hearts = floatingHearts.filter(h => h.stickerId === sticker.id);
+                  return (
+                    <View key={sticker.id || i} style={{
                       width: wp(75), alignItems: 'center', padding: wp(6),
                       transform: [
-                        { scale: pressed ? 0.88 : 1 },
                         { rotate: (sticker.rotation || (i % 2 === 0 ? -5 : 5)) + 'deg' },
+                        { translateX: isShaking ? (Math.random() > 0.5 ? wp(2) : -wp(2)) : 0 },
                       ],
-                    })}>
-                    {/* Aimant */}
-                    <View style={{
-                      width: wp(18), height: wp(6), borderRadius: wp(3),
-                      backgroundColor: 'rgba(255,255,255,0.15)', marginBottom: wp(-3), zIndex: 2,
-                    }} />
-                    {/* Sticker card */}
-                    <View style={{
-                      backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(10),
-                      padding: wp(8), alignItems: 'center', width: '100%',
-                      borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
                     }}>
-                      <Text style={{ fontSize: fp(22) }}>{sticker.sticker_emoji}</Text>
-                      <Text style={{ fontSize: fp(7), fontWeight: '600', color: '#FFF', marginTop: wp(3) }} numberOfLines={1}>
-                        {sticker.display_name}
-                      </Text>
-                      <Text style={{ fontSize: fp(6), color: 'rgba(255,255,255,0.35)', marginTop: wp(1), fontStyle: 'italic' }} numberOfLines={1}>
-                        {sticker.message}
-                      </Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4), marginTop: wp(3) }}>
-                        <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.25)' }}>
-                          {sticker.like_count >= 1000 ? (sticker.like_count / 1000).toFixed(1) + 'K' : sticker.like_count} 🩶
+                      {/* Cœurs flottants */}
+                      {hearts.map(h => (
+                        <Text key={h.id} style={{
+                          position: 'absolute', top: -wp(10), left: wp(30) + (h.x || 0),
+                          fontSize: fp(14), zIndex: 20, opacity: 0.8,
+                        }}>🩶</Text>
+                      ))}
+                      {/* Aimant */}
+                      <View style={{
+                        width: wp(18), height: wp(6), borderRadius: wp(3),
+                        backgroundColor: 'rgba(255,255,255,0.15)', marginBottom: wp(-3), zIndex: 2,
+                      }} />
+                      {/* Sticker card */}
+                      <View style={{
+                        backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(10),
+                        padding: wp(6), alignItems: 'center', width: '100%',
+                        borderWidth: 1, borderColor: isShaking ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)',
+                      }}>
+                        <Text style={{ fontSize: fp(22) }}>{sticker.sticker_emoji}</Text>
+                        <Text style={{ fontSize: fp(7), fontWeight: '600', color: '#FFF', marginTop: wp(3) }} numberOfLines={1}>
+                          {sticker.display_name}
                         </Text>
-                        {sticker.lix_received > 0 && (
-                          <Text style={{ fontSize: fp(7), color: 'rgba(212,175,55,0.4)' }}>
-                            {sticker.lix_received} L
-                          </Text>
-                        )}
+                        <Text style={{ fontSize: fp(6), color: 'rgba(255,255,255,0.35)', marginTop: wp(1), fontStyle: 'italic' }} numberOfLines={1}>
+                          {sticker.message}
+                        </Text>
+                        {/* Like + Gift — directement sur le sticker */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginTop: wp(3) }}>
+                          {/* Bouton Like — tap = cœur s'envole + shake */}
+                          <Pressable
+                            onPress={() => {
+                              setWallStickers(prev => prev.map(s => s.id === sticker.id ? { ...s, like_count: (s.like_count || 0) + 1 } : s));
+                              setShakingSticker(sticker.id);
+                              const hId = Date.now() + Math.random();
+                              setFloatingHearts(prev => [...prev, { id: hId, stickerId: sticker.id, x: Math.random() * wp(20) - wp(10) }]);
+                              setTimeout(() => setShakingSticker(null), 400);
+                              setTimeout(() => setFloatingHearts(prev => prev.filter(h => h.id !== hId)), 1200);
+                              fetch(SUPABASE_URL + '/rest/v1/rpc/like_wall_sticker', { method: 'POST', headers: { ...hdrs, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_sticker_id: sticker.id, p_user_id: TEST_USER_ID }) }).catch(() => {});
+                            }}
+                            style={({ pressed }) => ({
+                              flexDirection: 'row', alignItems: 'center', gap: wp(2),
+                              transform: [{ scale: pressed ? 1.4 : 1 }],
+                            })}
+                          >
+                            <Text style={{ fontSize: fp(9) }}>🩶</Text>
+                            <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.3)' }}>
+                              {(sticker.like_count || 0) >= 1000 ? ((sticker.like_count || 0) / 1000).toFixed(1) + 'K' : (sticker.like_count || 0)}
+                            </Text>
+                          </Pressable>
+                          {/* Bouton Cadeau — ouvre le modal gift */}
+                          <Pressable
+                            onPress={() => { setSelectedSticker(sticker); setShowGiftModal(true); }}
+                            style={({ pressed }) => ({ transform: [{ scale: pressed ? 1.3 : 1 }] })}
+                          >
+                            <Text style={{ fontSize: fp(9) }}>🎁</Text>
+                          </Pressable>
+                          {sticker.lix_received > 0 && (
+                            <Text style={{ fontSize: fp(6), color: 'rgba(212,175,55,0.4)' }}>{sticker.lix_received}L</Text>
+                          )}
+                        </View>
                       </View>
                     </View>
-                  </Pressable>
-                ))}
+                  );
+                })}
               </View>
             )}
           </LinearGradient>
@@ -711,62 +764,6 @@ export default function LixVersePage() {
               </Pressable>
             </Pressable>
           </Pressable>
-        </Modal>
-      )}
-      {/* Modal Sticker Detail */}
-      {selectedSticker && !showGiftModal && (
-        <Modal visible={true} transparent animationType="fade" onRequestClose={() => setSelectedSticker(null)}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
-            <LinearGradient colors={['#3A3F46', '#2D3238', '#3A3F46']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(74,79,85,0.6)' }}>
-              <Text style={{ fontSize: fp(56), marginBottom: wp(8) }}>{selectedSticker.sticker_emoji}</Text>
-              <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>{selectedSticker.display_name}</Text>
-              {selectedSticker.country_flag && <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(6) }}>{selectedSticker.country_flag} {selectedSticker.country}</Text>}
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(10), paddingHorizontal: wp(14), paddingVertical: wp(8), marginBottom: wp(12) }}>
-                <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.6)', fontStyle: 'italic', textAlign: 'center' }}>"{selectedSticker.message}"</Text>
-              </View>
-              <View style={{ flexDirection: 'row', gap: wp(16), marginBottom: wp(16) }}>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#FFF' }}>{selectedSticker.vitality_score?.toFixed(0) || '—'}</Text>
-                  <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>Vitalité</Text>
-                </View>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#FFF' }}>{selectedSticker.like_count >= 1000 ? (selectedSticker.like_count / 1000).toFixed(1) + 'K' : selectedSticker.like_count}</Text>
-                  <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>🩶 Likes</Text>
-                </View>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#D4AF37' }}>{selectedSticker.lix_received}</Text>
-                  <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>Lix reçus</Text>
-                </View>
-              </View>
-              {/* Bouton Like */}
-              <Pressable delayPressIn={50}
-                onPress={() => {
-                  setSelectedSticker(s => ({ ...s, like_count: (s.like_count || 0) + 1 }));
-                  setWallStickers(prev => prev.map(s => s.id === selectedSticker.id ? { ...s, like_count: (s.like_count || 0) + 1 } : s));
-                  fetch(SUPABASE_URL + '/rest/v1/rpc/like_wall_sticker', { method: 'POST', headers: { ...hdrs, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_sticker_id: selectedSticker.id, p_user_id: TEST_USER_ID }) }).catch(() => {});
-                }}
-                style={({ pressed }) => ({
-                  width: '100%', paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center',
-                  backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
-                  transform: [{ scale: pressed ? 0.95 : 1 }], marginBottom: wp(8),
-                })}>
-                <Text style={{ fontSize: fp(16), fontWeight: '600', color: '#FFF' }}>🩶 Liker</Text>
-              </Pressable>
-              {/* Bouton Offrir Lix */}
-              <Pressable delayPressIn={120}
-                onPress={() => setShowGiftModal(true)}
-                style={({ pressed }) => ({
-                  width: '100%', paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center',
-                  backgroundColor: 'rgba(212,175,55,0.12)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)',
-                  transform: [{ scale: pressed ? 0.95 : 1 }], marginBottom: wp(8),
-                })}>
-                <Text style={{ fontSize: fp(16), fontWeight: '600', color: '#D4AF37' }}>🎁 Offrir des Lix</Text>
-              </Pressable>
-              <Pressable onPress={() => setSelectedSticker(null)} style={{ paddingVertical: wp(10) }}>
-                <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>Fermer</Text>
-              </Pressable>
-            </LinearGradient>
-          </View>
         </Modal>
       )}
       {/* Modal Gift Lix */}
