@@ -378,6 +378,48 @@ export default function LixVersePage() {
         {activeTab==='characters'&&renderCharactersTab()}
         {activeTab==='lixspin'&&renderLixSpinTab()}
       </LinearGradient>
+      <Modal visible={showCreateGroup} transparent animationType="fade" onRequestClose={() => setShowCreateGroup(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
+          <LinearGradient colors={['#2A2F36','#1E2328','#252A30']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%' }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>Créer un groupe</Text>
+            <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(20) }}>{selectedChallenge?.title || 'Défi'}</Text>
+            <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: wp(20) }}>
+              <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="Nom de ton équipe..." placeholderTextColor="rgba(255,255,255,0.25)" value={newGroupName} onChangeText={setNewGroupName} autoFocus maxLength={30} />
+            </View>
+            <Pressable delayPressIn={120} onPress={createGroup}><LinearGradient colors={['#D4AF37','#B8941F']} style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>Créer et inviter</Text></LinearGradient></Pressable>
+            <Pressable onPress={() => setShowCreateGroup(false)} style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(8) }}><Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Annuler</Text></Pressable>
+          </LinearGradient>
+        </View>
+      </Modal>
+      <Modal visible={showJoinGroup} transparent animationType="fade" onRequestClose={() => setShowJoinGroup(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
+          <LinearGradient colors={['#2A2F36','#1E2328','#252A30']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%' }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>Rejoindre un groupe</Text>
+            <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(20) }}>Code d'invitation de ton ami</Text>
+            <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: wp(20) }}>
+              <TextInput style={{ fontSize: fp(18), color: '#D4AF37', paddingVertical: wp(14), textAlign: 'center', letterSpacing: 2, fontWeight: '700' }} placeholder="XXXXX-XXXX" placeholderTextColor="rgba(212,175,55,0.3)" value={joinCode} onChangeText={setJoinCode} autoFocus autoCapitalize="characters" maxLength={10} />
+            </View>
+            <Pressable delayPressIn={120} onPress={joinGroup}><LinearGradient colors={['#00D984','#00B871']} style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>Rejoindre</Text></LinearGradient></Pressable>
+            <Pressable onPress={() => setShowJoinGroup(false)} style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(8) }}><Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Annuler</Text></Pressable>
+          </LinearGradient>
+        </View>
+      </Modal>
+      {showCharacterDetail && (
+        <Modal visible={true} transparent animationType="fade" onRequestClose={() => setShowCharacterDetail(null)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
+            <LinearGradient colors={['#2A2F36','#1E2328','#252A30']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%', alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(48), marginBottom: wp(10) }}>{showCharacterDetail.emoji}</Text>
+              <View style={{ backgroundColor: TIER_CONFIG[showCharacterDetail.tier].bg, borderRadius: wp(8), paddingHorizontal: wp(12), paddingVertical: wp(4), marginBottom: wp(8) }}><Text style={{ fontSize: fp(11), fontWeight: '700', color: TIER_CONFIG[showCharacterDetail.tier].color }}>{TIER_CONFIG[showCharacterDetail.tier].label}</Text></View>
+              <Text style={{ fontSize: fp(22), fontWeight: '800', color: showCharacterDetail.color, marginBottom: wp(6) }}>{showCharacterDetail.name}</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: wp(16) }}>{showCharacterDetail.desc}</Text>
+              <View style={{ width: '100%', backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(8), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984', marginBottom: wp(4) }}>SI ABONNÉ :</Text><Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)' }}>{showCharacterDetail.bonus_abonne}</Text></View>
+              <View style={{ width: '100%', backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(20), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)' }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: '#D4AF37', marginBottom: wp(4) }}>SI NON ABONNÉ :</Text><Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)' }}>{showCharacterDetail.bonus_non_abonne} ({showCharacterDetail.unlock_hours}h)</Text></View>
+              {ownedCharacters.includes(showCharacterDetail.id) ? <View style={{ backgroundColor: showCharacterDetail.color + '20', borderRadius: wp(14), paddingVertical: wp(12), width: '100%', alignItems: 'center' }}><Text style={{ fontSize: fp(14), fontWeight: '700', color: showCharacterDetail.color }}>✓ Possédé</Text></View> : <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), paddingVertical: wp(12), width: '100%', alignItems: 'center' }}><Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Ouvre des caisses !</Text></View>}
+              <Pressable onPress={() => setShowCharacterDetail(null)} style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(12) }}><Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Fermer</Text></Pressable>
+            </LinearGradient>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
