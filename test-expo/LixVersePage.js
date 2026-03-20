@@ -89,6 +89,11 @@ export default function LixVersePage() {
   const [selectedSticker, setSelectedSticker] = useState(null);
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [stickerCatalog, setStickerCatalog] = useState([]);
+  const [myCertification, setMyCertification] = useState(null);
+  const [showCertificationModal, setShowCertificationModal] = useState(false);
+  const [showStickerCreation, setShowStickerCreation] = useState(false);
+  const [selectedStickerChoice, setSelectedStickerChoice] = useState(null);
+  const [stickerMessage, setStickerMessage] = useState('');
   const notifScrollX = useRef(new Animated.Value(0)).current;
   const spinAnim = useRef(new Animated.Value(0)).current;
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
@@ -123,6 +128,12 @@ export default function LixVersePage() {
       const catRes = await fetch(SUPABASE_URL + '/rest/v1/wall_sticker_catalog?is_available=eq.true&order=sort_order.asc', { headers: hdrs });
       const catData = await catRes.json();
       if (Array.isArray(catData)) setStickerCatalog(catData);
+      // Ma certification
+      const certMonth = new Date().toISOString().slice(0, 7);
+      const prevMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
+      const certRes = await fetch(SUPABASE_URL + '/rest/v1/wall_certifications?user_id=eq.' + TEST_USER_ID + '&or=(month_year.eq.' + certMonth + ',month_year.eq.' + prevMonth + ')&order=month_year.desc&limit=1', { headers: hdrs });
+      const certData = await certRes.json();
+      if (Array.isArray(certData) && certData.length > 0) setMyCertification(certData[0]);
     }catch(err){console.error('Load:',err);}
     setLoading(false);
   };
@@ -162,6 +173,20 @@ export default function LixVersePage() {
       <View style={{ marginBottom: wp(16) }}>
         <View style={{ paddingHorizontal: wp(16), marginBottom: wp(8), flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ fontSize: fp(18), fontWeight: '800', color: '#D4AF37', letterSpacing: 1 }}>WALL OF HEALTH</Text>
+          {/* Badge certification si éligible */}
+          {myCertification && myCertification.is_certified && !myCertification.has_sticker && (
+            <Pressable delayPressIn={120} onPress={() => setShowCertificationModal(true)}
+              style={({ pressed }) => ({
+                flexDirection: 'row', alignItems: 'center', gap: wp(4),
+                backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(8),
+                paddingHorizontal: wp(8), paddingVertical: wp(4),
+                borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)',
+                transform: [{ scale: pressed ? 0.95 : 1 }],
+              })}>
+              <Text style={{ fontSize: fp(12) }}>❓</Text>
+              <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37' }}>BADGE</Text>
+            </Pressable>
+          )}
           <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>{wallStickers.length} stickers</Text>
         </View>
         {/* Le mur gris métallique */}
@@ -589,6 +614,212 @@ export default function LixVersePage() {
                 <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>Annuler</Text>
               </Pressable>
             </LinearGradient>
+          </View>
+        </Modal>
+      )}
+      {/* Modal Certification */}
+      {showCertificationModal && myCertification && (
+        <Modal visible={true} transparent animationType="fade" onRequestClose={() => setShowCertificationModal(false)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%', alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(48), marginBottom: wp(8) }}>🎉</Text>
+              <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#D4AF37', marginBottom: wp(4) }}>Félicitations !</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: wp(16), lineHeight: fp(19) }}>
+                Tu as maintenu un Score Vitalité de {myCertification.avg_vitality_score?.toFixed(0) || '—'} pendant {myCertification.days_above_threshold || '—'} jours !{'\n'}Score anti-triche : {myCertification.total_score?.toFixed(0)}/100
+              </Text>
+              <View style={{ flexDirection: 'row', gap: wp(12), marginBottom: wp(20) }}>
+                <View style={{ alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(12), paddingHorizontal: wp(14), paddingVertical: wp(10) }}>
+                  <Text style={{ fontSize: fp(9), color: 'rgba(0,217,132,0.6)', marginBottom: wp(2) }}>Régularité</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#00D984' }}>{myCertification.score_regularity?.toFixed(0)}</Text>
+                </View>
+                <View style={{ alignItems: 'center', backgroundColor: 'rgba(77,166,255,0.1)', borderRadius: wp(12), paddingHorizontal: wp(14), paddingVertical: wp(10) }}>
+                  <Text style={{ fontSize: fp(9), color: 'rgba(77,166,255,0.6)', marginBottom: wp(2) }}>Cohérence</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#4DA6FF' }}>{myCertification.score_coherence?.toFixed(0)}</Text>
+                </View>
+                <View style={{ alignItems: 'center', backgroundColor: 'rgba(155,109,255,0.1)', borderRadius: wp(12), paddingHorizontal: wp(14), paddingVertical: wp(10) }}>
+                  <Text style={{ fontSize: fp(9), color: 'rgba(155,109,255,0.6)', marginBottom: wp(2) }}>Engagement</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#9B6DFF' }}>{myCertification.score_engagement?.toFixed(0)}</Text>
+                </View>
+              </View>
+              <Pressable delayPressIn={120} onPress={() => { setShowCertificationModal(false); setShowStickerCreation(true); }}>
+                <LinearGradient colors={['#D4AF37', '#B8941F']} style={{ paddingHorizontal: wp(36), paddingVertical: wp(14), borderRadius: wp(14) }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>Choisir mon sticker</Text>
+                </LinearGradient>
+              </Pressable>
+              <Pressable onPress={() => setShowCertificationModal(false)} style={{ paddingVertical: wp(12), marginTop: wp(8) }}>
+                <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Plus tard</Text>
+              </Pressable>
+            </LinearGradient>
+          </View>
+        </Modal>
+      )}
+
+      {/* Modal Création Sticker */}
+      {showStickerCreation && (
+        <Modal visible={true} transparent animationType="fade" onRequestClose={() => setShowStickerCreation(false)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+            <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 60, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
+              <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#D4AF37', textAlign: 'center', marginBottom: wp(4) }}>Choisis ton sticker</Text>
+              <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: wp(20) }}>Il sera collé sur le Wall of Health</Text>
+
+              {/* Stickers gratuits */}
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#00D984', marginBottom: wp(8) }}>Gratuits</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8), marginBottom: wp(16) }}>
+                {stickerCatalog.filter(s => s.category === 'free').map(s => (
+                  <Pressable key={s.id} onPress={() => setSelectedStickerChoice(s)}
+                    style={({ pressed }) => ({
+                      width: (SCREEN_WIDTH - wp(56)) / 4, paddingVertical: wp(10), borderRadius: wp(12), alignItems: 'center',
+                      backgroundColor: selectedStickerChoice?.id === s.id ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.05)',
+                      borderWidth: selectedStickerChoice?.id === s.id ? 2 : 1,
+                      borderColor: selectedStickerChoice?.id === s.id ? '#D4AF37' : 'rgba(255,255,255,0.08)',
+                      transform: [{ scale: pressed ? 0.92 : 1 }],
+                    })}>
+                    <Text style={{ fontSize: fp(24) }}>{s.emoji}</Text>
+                    <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{s.name}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* Stickers premium */}
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#D4AF37', marginBottom: wp(8) }}>Premium</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8), marginBottom: wp(16) }}>
+                {stickerCatalog.filter(s => s.category === 'premium').map(s => (
+                  <Pressable key={s.id} onPress={() => setSelectedStickerChoice(s)}
+                    style={({ pressed }) => ({
+                      width: (SCREEN_WIDTH - wp(56)) / 4, paddingVertical: wp(10), borderRadius: wp(12), alignItems: 'center',
+                      backgroundColor: selectedStickerChoice?.id === s.id ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.05)',
+                      borderWidth: selectedStickerChoice?.id === s.id ? 2 : 1,
+                      borderColor: selectedStickerChoice?.id === s.id ? '#D4AF37' : 'rgba(255,255,255,0.08)',
+                      transform: [{ scale: pressed ? 0.92 : 1 }],
+                    })}>
+                    <Text style={{ fontSize: fp(24) }}>{s.emoji}</Text>
+                    <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{s.name}</Text>
+                    <View style={{ backgroundColor: 'rgba(212,175,55,0.2)', borderRadius: wp(4), paddingHorizontal: wp(4), paddingVertical: wp(1), marginTop: wp(2) }}>
+                      <Text style={{ fontSize: fp(7), fontWeight: '700', color: '#D4AF37' }}>{s.cost_lix} Lix</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* Drapeaux */}
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#4DA6FF', marginBottom: wp(8) }}>Drapeaux</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(20) }}>
+                <View style={{ flexDirection: 'row', gap: wp(8) }}>
+                  {stickerCatalog.filter(s => s.category === 'country').map(s => (
+                    <Pressable key={s.id} onPress={() => setSelectedStickerChoice(s)}
+                      style={({ pressed }) => ({
+                        paddingVertical: wp(8), paddingHorizontal: wp(12), borderRadius: wp(10), alignItems: 'center',
+                        backgroundColor: selectedStickerChoice?.id === s.id ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.05)',
+                        borderWidth: selectedStickerChoice?.id === s.id ? 2 : 1,
+                        borderColor: selectedStickerChoice?.id === s.id ? '#D4AF37' : 'rgba(255,255,255,0.08)',
+                        transform: [{ scale: pressed ? 0.92 : 1 }],
+                      })}>
+                      <Text style={{ fontSize: fp(20) }}>{s.emoji}</Text>
+                      <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{s.name}</Text>
+                      <Text style={{ fontSize: fp(7), color: '#D4AF37', marginTop: wp(1) }}>100 Lix</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
+
+              {/* Message */}
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF', marginBottom: wp(8) }}>Ton message</Text>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: wp(16) }}>
+                <TextInput
+                  style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12), textAlign: 'center' }}
+                  placeholder="Pour mes enfants"
+                  placeholderTextColor="rgba(255,255,255,0.2)"
+                  value={stickerMessage}
+                  onChangeText={(t) => setStickerMessage(t.slice(0, 25))}
+                  maxLength={25}
+                />
+              </View>
+              <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)', textAlign: 'center', marginBottom: wp(20) }}>{stickerMessage.length}/25 caractères</Text>
+
+              {/* Preview */}
+              {selectedStickerChoice && stickerMessage.trim() && (
+                <View style={{ alignItems: 'center', marginBottom: wp(20) }}>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginBottom: wp(8) }}>Aperçu</Text>
+                  <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(14), padding: wp(14), alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', transform: [{ rotate: '-3deg' }] }}>
+                    <View style={{ width: wp(20), height: wp(6), borderRadius: wp(3), backgroundColor: 'rgba(255,255,255,0.15)', marginBottom: wp(-2) }} />
+                    <Text style={{ fontSize: fp(32), marginTop: wp(4) }}>{selectedStickerChoice.emoji}</Text>
+                    <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#FFF', marginTop: wp(4) }}>Malick K.</Text>
+                    <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', marginTop: wp(2) }}>"{stickerMessage}"</Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Bouton Coller */}
+              <Pressable delayPressIn={120}
+                onPress={() => {
+                  if (!selectedStickerChoice) { Alert.alert('Choisis un sticker'); return; }
+                  if (!stickerMessage.trim()) { Alert.alert('Écris ton message'); return; }
+                  const cost = selectedStickerChoice.cost_lix || 0;
+                  if (cost > 0 && lixBalance < cost) { Alert.alert('Lix insuffisants', 'Il te faut ' + cost + ' Lix pour ce sticker.'); return; }
+                  if (cost > 0) setLixBalance(p => p - cost);
+                  const newSticker = {
+                    id: Date.now().toString(),
+                    user_id: TEST_USER_ID,
+                    display_name: 'Malick K.',
+                    country: 'Burundi',
+                    country_flag: '🇧🇮',
+                    sticker_emoji: selectedStickerChoice.emoji,
+                    sticker_id: selectedStickerChoice.id,
+                    message: stickerMessage.trim(),
+                    vitality_score: myCertification?.avg_vitality_score || 0,
+                    month_year: myCertification?.month_year || '',
+                    like_count: 0,
+                    lix_received: 0,
+                    rotation: Math.floor(Math.random() * 20) - 10,
+                  };
+                  setWallStickers(prev => [newSticker, ...prev]);
+                  // Save to Supabase
+                  const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+                  fetch(SUPABASE_URL + '/rest/v1/wall_stickers', { method: 'POST', headers: h, body: JSON.stringify({
+                    user_id: TEST_USER_ID,
+                    certification_id: myCertification?.id,
+                    display_name: 'Malick K.',
+                    country: 'Burundi',
+                    country_flag: '🇧🇮',
+                    sticker_emoji: selectedStickerChoice.emoji,
+                    sticker_id: selectedStickerChoice.id,
+                    sticker_cost: cost,
+                    message: stickerMessage.trim(),
+                    vitality_score: myCertification?.avg_vitality_score || 0,
+                    month_year: myCertification?.month_year || '',
+                    position_x: Math.random(),
+                    position_y: Math.random(),
+                    rotation: newSticker.rotation,
+                  }) }).catch(() => {});
+                  // Mark certification as has_sticker
+                  if (myCertification?.id) {
+                    fetch(SUPABASE_URL + '/rest/v1/wall_certifications?id=eq.' + myCertification.id, { method: 'PATCH', headers: h, body: JSON.stringify({ has_sticker: true }) }).catch(() => {});
+                    setMyCertification(prev => prev ? { ...prev, has_sticker: true } : prev);
+                  }
+                  // Notification
+                  fetch(SUPABASE_URL + '/rest/v1/lixverse_notifications', { method: 'POST', headers: h, body: JSON.stringify({
+                    notification_type: 'wall_sticker',
+                    lixtag: 'LXM-2K7F4A',
+                    message: 'Malick K. a collé un sticker ' + selectedStickerChoice.emoji + ' sur le Wall of Health !',
+                    color: '#D4AF37',
+                  }) }).catch(() => {});
+                  setShowStickerCreation(false);
+                  setSelectedStickerChoice(null);
+                  setStickerMessage('');
+                  Alert.alert('🎉 Sticker collé !', 'Ton sticker est maintenant visible sur le Wall of Health. Les membres peuvent te liker et t\'offrir des Lix !');
+                }}
+                style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], opacity: (!selectedStickerChoice || !stickerMessage.trim()) ? 0.4 : 1 })}>
+                <LinearGradient colors={['#D4AF37', '#B8941F']} style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>
+                    Coller au Wall of Health {selectedStickerChoice?.cost_lix > 0 ? '(' + selectedStickerChoice.cost_lix + ' Lix)' : '(Gratuit)'}
+                  </Text>
+                </LinearGradient>
+              </Pressable>
+
+              <Pressable onPress={() => { setShowStickerCreation(false); setSelectedStickerChoice(null); setStickerMessage(''); }} style={{ paddingVertical: wp(14), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>Annuler</Text>
+              </Pressable>
+            </ScrollView>
           </View>
         </Modal>
       )}
