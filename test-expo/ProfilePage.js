@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, Platform, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, Image } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,6 +12,72 @@ const fp = (size) => Math.round(PixelRatio.roundToNearestPixel((W / BASE_WIDTH) 
 const SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
 const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
+
+// ScrollPicker — identique au Register
+const ProfileScrollPicker = (pickerProps) => {
+  const values = pickerProps.values;
+  const selectedValue = pickerProps.selectedValue;
+  const onSelect = pickerProps.onSelect;
+  const unit = pickerProps.unit;
+  const color = pickerProps.color || '#00D984';
+  const pickerHeight = pickerProps.height || 160;
+  const ITEM_H = 40;
+  const scrollRef = useRef(null);
+
+  const initialIdx = Math.max(0, values.indexOf(selectedValue));
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo({ y: initialIdx * ITEM_H, animated: false });
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const snapToNearest = useCallback((event) => {
+    const y = event.nativeEvent.contentOffset.y;
+    const idx = Math.round(y / ITEM_H);
+    const clamped = Math.max(0, Math.min(idx, values.length - 1));
+    if (values[clamped] !== selectedValue) onSelect(values[clamped]);
+  }, [values, selectedValue, onSelect]);
+
+  return (
+    <View style={{ height: pickerHeight, borderRadius: wp(12), overflow: 'hidden', borderWidth: 1, borderColor: color + '18', backgroundColor: '#0A0E14' }}>
+      <View style={{ position: 'absolute', top: pickerHeight / 2 - ITEM_H / 2, left: wp(4), right: wp(4), height: ITEM_H, borderRadius: wp(8), backgroundColor: color + '0D', zIndex: 0 }}>
+        <View style={{ position: 'absolute', left: 0, top: wp(4), bottom: wp(4), width: wp(3), borderRadius: wp(2), backgroundColor: color }} />
+      </View>
+      <LinearGradient colors={['#0A0E14', 'rgba(10,14,20,0.5)', 'rgba(10,14,20,0)']} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: pickerHeight * 0.35, zIndex: 3 }} pointerEvents="none" />
+      <LinearGradient colors={['rgba(10,14,20,0)', 'rgba(10,14,20,0.5)', '#0A0E14']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: pickerHeight * 0.35, zIndex: 3 }} pointerEvents="none" />
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={ITEM_H}
+        decelerationRate={0.92}
+        bounces={false}
+        overScrollMode="never"
+        nestedScrollEnabled={true}
+        onMomentumScrollEnd={snapToNearest}
+        onScrollEndDrag={(e) => {
+          const v = e.nativeEvent.velocity;
+          if (!v || Math.abs(v.y) < 0.1) snapToNearest(e);
+        }}
+        contentContainerStyle={{ paddingTop: pickerHeight / 2 - ITEM_H / 2, paddingBottom: pickerHeight / 2 - ITEM_H / 2 }}
+      >
+        {values.map((val, i) => {
+          const isSel = val === selectedValue;
+          return (
+            <View key={val + '-' + i} style={{ height: ITEM_H, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: isSel ? color : 'rgba(255,255,255,0.15)', fontSize: isSel ? fp(18) : fp(12), fontWeight: isSel ? '800' : '400' }}>
+                {isSel ? val + ' ' + unit : String(val)}
+              </Text>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+};
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
@@ -107,76 +173,39 @@ export default function ProfilePage() {
             </View>
 
             {/* Âge / Poids / Taille — ScrollPickers */}
-            <View style={{ flexDirection: 'row', gap: wp(6), marginBottom: wp(16) }}>
-              {/* POIDS */}
+            <View style={{ flexDirection: 'row', gap: wp(6), marginBottom: wp(16), height: wp(160) }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', marginBottom: wp(4), textAlign: 'center', fontWeight: '700', letterSpacing: 1.5 }}>POIDS</Text>
-                <View style={{ height: wp(140), borderRadius: wp(12), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)', overflow: 'hidden' }}>
-                  {/* Bande de sélection */}
-                  <View style={{ position: 'absolute', top: wp(55), left: wp(4), right: wp(4), height: wp(30), borderRadius: wp(8), backgroundColor: 'rgba(0,217,132,0.08)', zIndex: 0 }}>
-                    <View style={{ position: 'absolute', left: 0, top: wp(4), bottom: wp(4), width: wp(3), borderRadius: wp(2), backgroundColor: '#00D984' }} />
-                  </View>
-                  <ScrollView
-                    showsVerticalScrollIndicator={false}
-                    snapToInterval={wp(30)}
-                    decelerationRate={0.92}
-                    contentContainerStyle={{ paddingTop: wp(55), paddingBottom: wp(55) }}
-                    onMomentumScrollEnd={(e) => { const idx = Math.round(e.nativeEvent.contentOffset.y / wp(30)); const val = Math.max(30, Math.min(200, 30 + idx)); setEditWeight(String(val)); }}
-                    onScrollEndDrag={(e) => { const idx = Math.round(e.nativeEvent.contentOffset.y / wp(30)); const val = Math.max(30, Math.min(200, 30 + idx)); setEditWeight(String(val)); }}
-                  >
-                    {Array.from({ length: 171 }, (_, i) => 30 + i).map(v => (
-                      <View key={v} style={{ height: wp(30), justifyContent: 'center', alignItems: 'center' }}>
-                        <Text style={{ fontSize: parseInt(editWeight) === v ? fp(18) : fp(12), fontWeight: parseInt(editWeight) === v ? '800' : '400', color: parseInt(editWeight) === v ? '#00D984' : 'rgba(255,255,255,0.15)' }}>{parseInt(editWeight) === v ? v + ' kg' : String(v)}</Text>
-                      </View>
-                    ))}
-                  </ScrollView>
-                </View>
+                <ProfileScrollPicker
+                  values={Array.from({ length: 171 }, (_, i) => 30 + i)}
+                  selectedValue={parseInt(editWeight) || 70}
+                  onSelect={(v) => setEditWeight(String(v))}
+                  unit="kg"
+                  color="#00D984"
+                  height={wp(130)}
+                />
               </View>
-              {/* TAILLE */}
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', marginBottom: wp(4), textAlign: 'center', fontWeight: '700', letterSpacing: 1.5 }}>TAILLE</Text>
-                <View style={{ height: wp(140), borderRadius: wp(12), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(0,191,166,0.15)', overflow: 'hidden' }}>
-                  <View style={{ position: 'absolute', top: wp(55), left: wp(4), right: wp(4), height: wp(30), borderRadius: wp(8), backgroundColor: 'rgba(0,191,166,0.08)', zIndex: 0 }}>
-                    <View style={{ position: 'absolute', left: 0, top: wp(4), bottom: wp(4), width: wp(3), borderRadius: wp(2), backgroundColor: '#00BFA6' }} />
-                  </View>
-                  <ScrollView
-                    showsVerticalScrollIndicator={false}
-                    snapToInterval={wp(30)}
-                    decelerationRate={0.92}
-                    contentContainerStyle={{ paddingTop: wp(55), paddingBottom: wp(55) }}
-                    onMomentumScrollEnd={(e) => { const idx = Math.round(e.nativeEvent.contentOffset.y / wp(30)); const val = Math.max(120, Math.min(220, 120 + idx)); setEditHeight(String(val)); }}
-                    onScrollEndDrag={(e) => { const idx = Math.round(e.nativeEvent.contentOffset.y / wp(30)); const val = Math.max(120, Math.min(220, 120 + idx)); setEditHeight(String(val)); }}
-                  >
-                    {Array.from({ length: 101 }, (_, i) => 120 + i).map(v => (
-                      <View key={v} style={{ height: wp(30), justifyContent: 'center', alignItems: 'center' }}>
-                        <Text style={{ fontSize: parseInt(editHeight) === v ? fp(18) : fp(12), fontWeight: parseInt(editHeight) === v ? '800' : '400', color: parseInt(editHeight) === v ? '#00BFA6' : 'rgba(255,255,255,0.15)' }}>{parseInt(editHeight) === v ? v + ' cm' : String(v)}</Text>
-                      </View>
-                    ))}
-                  </ScrollView>
-                </View>
+                <ProfileScrollPicker
+                  values={Array.from({ length: 101 }, (_, i) => 120 + i)}
+                  selectedValue={parseInt(editHeight) || 175}
+                  onSelect={(v) => setEditHeight(String(v))}
+                  unit="cm"
+                  color="#00BFA6"
+                  height={wp(130)}
+                />
               </View>
-              {/* ÂGE */}
               <View style={{ flex: 0.8 }}>
                 <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', marginBottom: wp(4), textAlign: 'center', fontWeight: '700', letterSpacing: 1.5 }}>ÂGE</Text>
-                <View style={{ height: wp(140), borderRadius: wp(12), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)', overflow: 'hidden' }}>
-                  <View style={{ position: 'absolute', top: wp(55), left: wp(4), right: wp(4), height: wp(30), borderRadius: wp(8), backgroundColor: 'rgba(212,175,55,0.08)', zIndex: 0 }}>
-                    <View style={{ position: 'absolute', left: 0, top: wp(4), bottom: wp(4), width: wp(3), borderRadius: wp(2), backgroundColor: '#D4AF37' }} />
-                  </View>
-                  <ScrollView
-                    showsVerticalScrollIndicator={false}
-                    snapToInterval={wp(30)}
-                    decelerationRate={0.92}
-                    contentContainerStyle={{ paddingTop: wp(55), paddingBottom: wp(55) }}
-                    onMomentumScrollEnd={(e) => { const idx = Math.round(e.nativeEvent.contentOffset.y / wp(30)); const val = Math.max(12, Math.min(95, 12 + idx)); setEditAge(String(val)); }}
-                    onScrollEndDrag={(e) => { const idx = Math.round(e.nativeEvent.contentOffset.y / wp(30)); const val = Math.max(12, Math.min(95, 12 + idx)); setEditAge(String(val)); }}
-                  >
-                    {Array.from({ length: 84 }, (_, i) => 12 + i).map(v => (
-                      <View key={v} style={{ height: wp(30), justifyContent: 'center', alignItems: 'center' }}>
-                        <Text style={{ fontSize: parseInt(editAge) === v ? fp(18) : fp(12), fontWeight: parseInt(editAge) === v ? '800' : '400', color: parseInt(editAge) === v ? '#D4AF37' : 'rgba(255,255,255,0.15)' }}>{parseInt(editAge) === v ? v + ' ans' : String(v)}</Text>
-                      </View>
-                    ))}
-                  </ScrollView>
-                </View>
+                <ProfileScrollPicker
+                  values={Array.from({ length: 84 }, (_, i) => 12 + i)}
+                  selectedValue={parseInt(editAge) || 25}
+                  onSelect={(v) => setEditAge(String(v))}
+                  unit="ans"
+                  color="#D4AF37"
+                  height={wp(130)}
+                />
               </View>
             </View>
 
@@ -402,11 +431,11 @@ export default function ProfilePage() {
           {/* Header */}
           <View style={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingBottom: wp(20) }}>
             {/* Drapeaux langue en haut à droite */}
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: wp(16), marginBottom: wp(10), gap: wp(6) }}>
-              <Pressable onPress={() => setLang('fr')} style={{ paddingHorizontal: wp(8), paddingVertical: wp(4), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'fr' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'fr' ? 'rgba(0,217,132,0.08)' : 'transparent' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: wp(16), marginBottom: wp(12), gap: wp(6) }}>
+              <Pressable onPress={() => setLang('fr')} style={{ paddingHorizontal: wp(8), paddingVertical: wp(5), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'fr' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'fr' ? 'rgba(0,217,132,0.08)' : 'transparent' }}>
                 <Text style={{ fontSize: fp(14) }}>🇫🇷</Text>
               </Pressable>
-              <Pressable onPress={() => setLang('en')} style={{ paddingHorizontal: wp(8), paddingVertical: wp(4), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'en' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'en' ? 'rgba(0,217,132,0.08)' : 'transparent' }}>
+              <Pressable onPress={() => setLang('en')} style={{ paddingHorizontal: wp(8), paddingVertical: wp(5), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'en' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'en' ? 'rgba(0,217,132,0.08)' : 'transparent' }}>
                 <Text style={{ fontSize: fp(14) }}>🇬🇧</Text>
               </Pressable>
             </View>
@@ -451,7 +480,7 @@ export default function ProfilePage() {
             <Section icon="📍" title="Ma localisation" subtitle="Pour les recommandations ALIXEN" color="#FF8C42" rightText={editLocation || 'Non définie'} onPress={() => setShowLocationPicker(true)} />
             <Section icon="💳" title="Mon abonnement" subtitle="Gérer, changer ou résilier" color="#D4AF37" rightText={subTier} onPress={() => setShowSubscription(true)} />
             <Section icon="🔔" title="Notifications" subtitle="Rappels médicaments, analyses" color="#4DA6FF" onPress={() => Alert.alert('Notifications', 'Disponible après le build APK.')} />
-            <Section icon="🌍" title="Langue" subtitle="Français" color="#9B6DFF" rightText="FR" onPress={() => Alert.alert('Langue', 'D\'autres langues bientôt.')} />
+
           </View>
 
           <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.25)', paddingHorizontal: wp(16), paddingVertical: wp(8), letterSpacing: 1.5 }}>APPRENDRE</Text>
