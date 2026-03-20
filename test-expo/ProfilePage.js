@@ -71,25 +71,116 @@ export default function ProfilePage() {
   const subTier = profile?.is_premium ? 'Gold' : 'Gratuit';
   const subColor = profile?.is_premium ? '#D4AF37' : 'rgba(255,255,255,0.3)';
 
-  // PLACEHOLDER MODALS — filled in chunk 2 and 3
+  const ACTIVITY_LEVELS = [
+    { label: 'Sédentaire', desc: 'Peu ou pas d\'exercice', emoji: '🛋️' },
+    { label: 'Légèrement actif', desc: '1-2 fois/semaine', emoji: '🚶‍♂️' },
+    { label: 'Modérément actif', desc: '3-5 fois/semaine', emoji: '🚴‍♂️' },
+    { label: 'Très actif', desc: '6-7 fois/semaine', emoji: '🏋️‍♂️' },
+    { label: 'Extrêmement actif', desc: 'Athlète / travail physique', emoji: '🔥' },
+  ];
+  const DIETS = [
+    { key: 'classic', label: 'Classique', emoji: '🍗', color: '#00D984' },
+    { key: 'vegetarian', label: 'Végétarien', emoji: '🥬', color: '#00BFA6' },
+    { key: 'vegan', label: 'Végan', emoji: '🌱', color: '#00D984' },
+    { key: 'keto', label: 'Kéto', emoji: '🥑', color: '#D4AF37' },
+    { key: 'halal', label: 'Halal', emoji: '🌙', color: '#00BFA6' },
+  ];
+  const GOALS = [
+    { key: 'lose', label: 'Perte de poids', emoji: '📉', color: '#00BFA6' },
+    { key: 'maintain', label: 'Maintien', emoji: '⚖️', color: '#00D984' },
+    { key: 'gain', label: 'Prise de masse', emoji: '📈', color: '#D4AF37' },
+  ];
+
   const renderModals = () => (
     <>
-      {/* Modal Éditer Profil */}
+      {/* Modal Éditer Profil — COMPLET */}
       <Modal visible={showEditProfile} transparent animationType="fade" onRequestClose={() => setShowEditProfile(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
-          <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%' }}>
-            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(20) }}>Modifier mon profil</Text>
-            {[{ label: 'Nom complet', value: editName, set: setEditName, ph: 'Malick KIHADI', kb: 'default' }, { label: 'Âge', value: editAge, set: setEditAge, ph: '25', kb: 'numeric' }, { label: 'Poids (kg)', value: editWeight, set: setEditWeight, ph: '75', kb: 'numeric' }, { label: 'Taille (cm)', value: editHeight, set: setEditHeight, ph: '178', kb: 'numeric' }].map((f, i) => (
-              <View key={i} style={{ marginBottom: wp(12) }}>
-                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(4) }}>{f.label}</Text>
-                <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(10), paddingHorizontal: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(10) }} value={f.value} onChangeText={f.set} placeholder={f.ph} placeholderTextColor="rgba(255,255,255,0.2)" keyboardType={f.kb} />
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
+            <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#00D984', marginBottom: wp(20) }}>Modifier mon profil</Text>
+
+            {/* Nom */}
+            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(4) }}>Nom complet</Text>
+            <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(10), paddingHorizontal: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: wp(12) }}>
+              <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(10) }} value={editName} onChangeText={setEditName} placeholder="Malick KIHADI" placeholderTextColor="rgba(255,255,255,0.2)" />
+            </View>
+
+            {/* Âge / Poids / Taille en ligne */}
+            <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16) }}>
+              {[{ l: 'Âge', v: editAge, s: setEditAge, u: 'ans' }, { l: 'Poids', v: editWeight, s: setEditWeight, u: 'kg' }, { l: 'Taille', v: editHeight, s: setEditHeight, u: 'cm' }].map((f, i) => (
+                <View key={i} style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', marginBottom: wp(3) }}>{f.l} ({f.u})</Text>
+                  <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(10), paddingHorizontal: wp(10), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                    <TextInput style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(10), textAlign: 'center', fontWeight: '700' }} value={f.v} onChangeText={f.s} keyboardType="numeric" />
+                  </View>
                 </View>
-              </View>
-            ))}
-            <Pressable delayPressIn={120} onPress={saveProfile} style={{ marginTop: wp(8) }}><LinearGradient colors={['#00D984', '#00B871']} style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>Enregistrer</Text></LinearGradient></Pressable>
-            <Pressable onPress={() => setShowEditProfile(false)} style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(4) }}><Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>Annuler</Text></Pressable>
-          </LinearGradient>
+              ))}
+            </View>
+
+            {/* Sexe */}
+            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(8) }}>Sexe</Text>
+            <View style={{ flexDirection: 'row', gap: wp(10), marginBottom: wp(16) }}>
+              {[{ key: 'male', label: 'Homme', emoji: '♂️', color: '#4A90D9' }, { key: 'female', label: 'Femme', emoji: '♀️', color: '#E875A0' }].map(g => {
+                const sel = (profile?.gender || 'male') === g.key;
+                return (
+                  <Pressable key={g.key} onPress={() => setProfile(p => p ? { ...p, gender: g.key } : p)} style={{ flex: 1, paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', backgroundColor: sel ? g.color + '15' : 'rgba(255,255,255,0.04)', borderWidth: 1.5, borderColor: sel ? g.color + '40' : 'rgba(255,255,255,0.08)' }}>
+                    <Text style={{ fontSize: fp(20) }}>{g.emoji}</Text>
+                    <Text style={{ fontSize: fp(11), fontWeight: '600', color: sel ? g.color : 'rgba(255,255,255,0.4)', marginTop: wp(4) }}>{g.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Niveau d'activité */}
+            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(8) }}>Niveau d'activité</Text>
+            {ACTIVITY_LEVELS.map((lvl, i) => {
+              const sel = (profile?.activity_level ?? 2) === i;
+              return (
+                <Pressable key={i} onPress={() => setProfile(p => p ? { ...p, activity_level: i } : p)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), paddingHorizontal: wp(12), borderRadius: wp(10), marginBottom: wp(6), backgroundColor: sel ? 'rgba(0,217,132,0.08)' : 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: sel ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.06)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+                  <Text style={{ fontSize: fp(20), marginRight: wp(10) }}>{lvl.emoji}</Text>
+                  <View style={{ flex: 1 }}><Text style={{ fontSize: fp(12), fontWeight: '600', color: sel ? '#00D984' : '#FFF' }}>{lvl.label}</Text><Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>{lvl.desc}</Text></View>
+                  {sel && <Text style={{ fontSize: fp(14), color: '#00D984' }}>✓</Text>}
+                </Pressable>
+              );
+            })}
+
+            {/* Régime alimentaire */}
+            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(8), marginTop: wp(12) }}>Régime alimentaire</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(6), marginBottom: wp(16) }}>
+              {DIETS.map(d => {
+                const sel = (profile?.diet || 'classic') === d.key;
+                return (
+                  <Pressable key={d.key} onPress={() => setProfile(p => p ? { ...p, diet: d.key } : p)} style={{ paddingVertical: wp(8), paddingHorizontal: wp(12), borderRadius: wp(10), backgroundColor: sel ? d.color + '15' : 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: sel ? d.color + '35' : 'rgba(255,255,255,0.06)' }}>
+                    <Text style={{ fontSize: fp(11), color: sel ? d.color : 'rgba(255,255,255,0.4)' }}>{d.emoji} {d.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Objectif */}
+            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(8) }}>Mon objectif</Text>
+            <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(20) }}>
+              {GOALS.map(g => {
+                const sel = (profile?.goal || 'maintain') === g.key;
+                return (
+                  <Pressable key={g.key} onPress={() => setProfile(p => p ? { ...p, goal: g.key } : p)} style={{ flex: 1, paddingVertical: wp(14), borderRadius: wp(12), alignItems: 'center', backgroundColor: sel ? g.color + '12' : 'rgba(255,255,255,0.03)', borderWidth: 1.5, borderColor: sel ? g.color + '40' : 'rgba(255,255,255,0.06)' }}>
+                    <Text style={{ fontSize: fp(22) }}>{g.emoji}</Text>
+                    <Text style={{ fontSize: fp(9), fontWeight: '600', color: sel ? g.color : 'rgba(255,255,255,0.4)', marginTop: wp(4), textAlign: 'center' }}>{g.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Boutons */}
+            <Pressable delayPressIn={120} onPress={saveProfile} style={{ marginBottom: wp(8) }}>
+              <LinearGradient colors={['#00D984', '#00B871']} style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>Enregistrer les modifications</Text>
+              </LinearGradient>
+            </Pressable>
+            <Pressable onPress={() => setShowEditProfile(false)} style={{ paddingVertical: wp(12), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>Annuler</Text>
+            </Pressable>
+          </ScrollView>
         </View>
       </Modal>
 
