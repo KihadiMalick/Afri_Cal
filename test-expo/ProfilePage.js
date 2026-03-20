@@ -29,6 +29,7 @@ export default function ProfilePage() {
   const [editWeight, setEditWeight] = useState('');
   const [editHeight, setEditHeight] = useState('');
   const [editLocation, setEditLocation] = useState('');
+  const [lang, setLang] = useState('fr');
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
   useEffect(() => { loadProfile(); }, []);
@@ -95,7 +96,7 @@ export default function ProfilePage() {
     <>
       {/* Modal Éditer Profil — COMPLET */}
       <Modal visible={showEditProfile} transparent animationType="fade" onRequestClose={() => setShowEditProfile(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+        <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
           <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
             <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#00D984', marginBottom: wp(20) }}>Modifier mon profil</Text>
 
@@ -105,16 +106,78 @@ export default function ProfilePage() {
               <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(10) }} value={editName} onChangeText={setEditName} placeholder="Malick KIHADI" placeholderTextColor="rgba(255,255,255,0.2)" />
             </View>
 
-            {/* Âge / Poids / Taille en ligne */}
-            <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16) }}>
-              {[{ l: 'Âge', v: editAge, s: setEditAge, u: 'ans' }, { l: 'Poids', v: editWeight, s: setEditWeight, u: 'kg' }, { l: 'Taille', v: editHeight, s: setEditHeight, u: 'cm' }].map((f, i) => (
-                <View key={i} style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', marginBottom: wp(3) }}>{f.l} ({f.u})</Text>
-                  <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(10), paddingHorizontal: wp(10), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                    <TextInput style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(10), textAlign: 'center', fontWeight: '700' }} value={f.v} onChangeText={f.s} keyboardType="numeric" />
+            {/* Âge / Poids / Taille — ScrollPickers */}
+            <View style={{ flexDirection: 'row', gap: wp(6), marginBottom: wp(16) }}>
+              {/* POIDS */}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', marginBottom: wp(4), textAlign: 'center', fontWeight: '700', letterSpacing: 1.5 }}>POIDS</Text>
+                <View style={{ height: wp(140), borderRadius: wp(12), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)', overflow: 'hidden' }}>
+                  {/* Bande de sélection */}
+                  <View style={{ position: 'absolute', top: wp(55), left: wp(4), right: wp(4), height: wp(30), borderRadius: wp(8), backgroundColor: 'rgba(0,217,132,0.08)', zIndex: 0 }}>
+                    <View style={{ position: 'absolute', left: 0, top: wp(4), bottom: wp(4), width: wp(3), borderRadius: wp(2), backgroundColor: '#00D984' }} />
                   </View>
+                  <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    snapToInterval={wp(30)}
+                    decelerationRate={0.92}
+                    contentContainerStyle={{ paddingTop: wp(55), paddingBottom: wp(55) }}
+                    onMomentumScrollEnd={(e) => { const idx = Math.round(e.nativeEvent.contentOffset.y / wp(30)); const val = Math.max(30, Math.min(200, 30 + idx)); setEditWeight(String(val)); }}
+                    onScrollEndDrag={(e) => { const idx = Math.round(e.nativeEvent.contentOffset.y / wp(30)); const val = Math.max(30, Math.min(200, 30 + idx)); setEditWeight(String(val)); }}
+                  >
+                    {Array.from({ length: 171 }, (_, i) => 30 + i).map(v => (
+                      <View key={v} style={{ height: wp(30), justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: parseInt(editWeight) === v ? fp(18) : fp(12), fontWeight: parseInt(editWeight) === v ? '800' : '400', color: parseInt(editWeight) === v ? '#00D984' : 'rgba(255,255,255,0.15)' }}>{parseInt(editWeight) === v ? v + ' kg' : String(v)}</Text>
+                      </View>
+                    ))}
+                  </ScrollView>
                 </View>
-              ))}
+              </View>
+              {/* TAILLE */}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', marginBottom: wp(4), textAlign: 'center', fontWeight: '700', letterSpacing: 1.5 }}>TAILLE</Text>
+                <View style={{ height: wp(140), borderRadius: wp(12), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(0,191,166,0.15)', overflow: 'hidden' }}>
+                  <View style={{ position: 'absolute', top: wp(55), left: wp(4), right: wp(4), height: wp(30), borderRadius: wp(8), backgroundColor: 'rgba(0,191,166,0.08)', zIndex: 0 }}>
+                    <View style={{ position: 'absolute', left: 0, top: wp(4), bottom: wp(4), width: wp(3), borderRadius: wp(2), backgroundColor: '#00BFA6' }} />
+                  </View>
+                  <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    snapToInterval={wp(30)}
+                    decelerationRate={0.92}
+                    contentContainerStyle={{ paddingTop: wp(55), paddingBottom: wp(55) }}
+                    onMomentumScrollEnd={(e) => { const idx = Math.round(e.nativeEvent.contentOffset.y / wp(30)); const val = Math.max(120, Math.min(220, 120 + idx)); setEditHeight(String(val)); }}
+                    onScrollEndDrag={(e) => { const idx = Math.round(e.nativeEvent.contentOffset.y / wp(30)); const val = Math.max(120, Math.min(220, 120 + idx)); setEditHeight(String(val)); }}
+                  >
+                    {Array.from({ length: 101 }, (_, i) => 120 + i).map(v => (
+                      <View key={v} style={{ height: wp(30), justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: parseInt(editHeight) === v ? fp(18) : fp(12), fontWeight: parseInt(editHeight) === v ? '800' : '400', color: parseInt(editHeight) === v ? '#00BFA6' : 'rgba(255,255,255,0.15)' }}>{parseInt(editHeight) === v ? v + ' cm' : String(v)}</Text>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
+              {/* ÂGE */}
+              <View style={{ flex: 0.8 }}>
+                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', marginBottom: wp(4), textAlign: 'center', fontWeight: '700', letterSpacing: 1.5 }}>ÂGE</Text>
+                <View style={{ height: wp(140), borderRadius: wp(12), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)', overflow: 'hidden' }}>
+                  <View style={{ position: 'absolute', top: wp(55), left: wp(4), right: wp(4), height: wp(30), borderRadius: wp(8), backgroundColor: 'rgba(212,175,55,0.08)', zIndex: 0 }}>
+                    <View style={{ position: 'absolute', left: 0, top: wp(4), bottom: wp(4), width: wp(3), borderRadius: wp(2), backgroundColor: '#D4AF37' }} />
+                  </View>
+                  <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    snapToInterval={wp(30)}
+                    decelerationRate={0.92}
+                    contentContainerStyle={{ paddingTop: wp(55), paddingBottom: wp(55) }}
+                    onMomentumScrollEnd={(e) => { const idx = Math.round(e.nativeEvent.contentOffset.y / wp(30)); const val = Math.max(12, Math.min(95, 12 + idx)); setEditAge(String(val)); }}
+                    onScrollEndDrag={(e) => { const idx = Math.round(e.nativeEvent.contentOffset.y / wp(30)); const val = Math.max(12, Math.min(95, 12 + idx)); setEditAge(String(val)); }}
+                  >
+                    {Array.from({ length: 84 }, (_, i) => 12 + i).map(v => (
+                      <View key={v} style={{ height: wp(30), justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: parseInt(editAge) === v ? fp(18) : fp(12), fontWeight: parseInt(editAge) === v ? '800' : '400', color: parseInt(editAge) === v ? '#D4AF37' : 'rgba(255,255,255,0.15)' }}>{parseInt(editAge) === v ? v + ' ans' : String(v)}</Text>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
             </View>
 
             {/* Sexe */}
@@ -186,7 +249,7 @@ export default function ProfilePage() {
 
       {/* Modal Localisation */}
       <Modal visible={showLocationPicker} transparent animationType="fade" onRequestClose={() => setShowLocationPicker(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
+        <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
           <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%' }}>
             <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>Ma localisation</Text>
             <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(16) }}>ALIXEN utilisera cette info pour recommander des lieux près de toi.</Text>
@@ -208,7 +271,7 @@ export default function ProfilePage() {
 
       {/* Modal Glossaire */}
       <Modal visible={showGlossary} transparent animationType="fade" onRequestClose={() => setShowGlossary(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+        <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
           <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
             <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#00D984', marginBottom: wp(20) }}>Comprendre les termes</Text>
             {[
@@ -235,7 +298,7 @@ export default function ProfilePage() {
 
       {/* Modal Guide */}
       <Modal visible={showFeatures} transparent animationType="fade" onRequestClose={() => setShowFeatures(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+        <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
           <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
             <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#4DA6FF', marginBottom: wp(20) }}>Guide LIXUM</Text>
             {[
@@ -261,7 +324,7 @@ export default function ProfilePage() {
 
       {/* Modal Abonnement */}
       <Modal visible={showSubscription} transparent animationType="fade" onRequestClose={() => setShowSubscription(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+        <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
           <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
             <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#D4AF37', marginBottom: wp(16) }}>Mon abonnement</Text>
             <View style={{ backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: wp(16), padding: wp(20), marginBottom: wp(20), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)', alignItems: 'center' }}>
@@ -287,7 +350,7 @@ export default function ProfilePage() {
 
       {/* Modal Confidentialité */}
       <Modal visible={showPrivacy} transparent animationType="fade" onRequestClose={() => setShowPrivacy(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+        <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
           <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
             <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#9B6DFF', marginBottom: wp(16) }}>Politique de confidentialité</Text>
             {[
@@ -308,7 +371,7 @@ export default function ProfilePage() {
 
       {/* Modal Termes */}
       <Modal visible={showTerms} transparent animationType="fade" onRequestClose={() => setShowTerms(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+        <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
           <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
             <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#FF8C42', marginBottom: wp(16) }}>Termes et conditions</Text>
             {[
@@ -337,8 +400,17 @@ export default function ProfilePage() {
         <StatusBar barStyle="light-content" />
         <ScrollView contentContainerStyle={{ paddingBottom: wp(100) }}>
           {/* Header */}
-          <View style={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingBottom: wp(20), alignItems: 'center' }}>
-            <View style={{ width: wp(80), height: wp(80), borderRadius: wp(40), backgroundColor: 'rgba(0,217,132,0.12)', borderWidth: 2, borderColor: '#00D984', justifyContent: 'center', alignItems: 'center', marginBottom: wp(10) }}><Text style={{ fontSize: fp(36) }}>👤</Text></View>
+          <View style={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingBottom: wp(20) }}>
+            {/* Drapeaux langue en haut à droite */}
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: wp(16), marginBottom: wp(10), gap: wp(6) }}>
+              <Pressable onPress={() => setLang('fr')} style={{ paddingHorizontal: wp(8), paddingVertical: wp(4), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'fr' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'fr' ? 'rgba(0,217,132,0.08)' : 'transparent' }}>
+                <Text style={{ fontSize: fp(14) }}>🇫🇷</Text>
+              </Pressable>
+              <Pressable onPress={() => setLang('en')} style={{ paddingHorizontal: wp(8), paddingVertical: wp(4), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'en' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'en' ? 'rgba(0,217,132,0.08)' : 'transparent' }}>
+                <Text style={{ fontSize: fp(14) }}>🇬🇧</Text>
+              </Pressable>
+            </View>
+            <View style={{ alignItems: 'center' }}>
             <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>{profile?.full_name || '...'}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginTop: wp(4) }}>
               <View style={{ backgroundColor: subColor + '20', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2), borderWidth: 1, borderColor: subColor + '40' }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: subColor }}>{subTier}</Text></View>
@@ -348,6 +420,7 @@ export default function ProfilePage() {
               {[{ v: lixBalance, l: 'Lix', c: '#D4AF37' }, { v: ownedCharacters + '/13', l: 'Cartes', c: '#4DA6FF' }, { v: profile?.discipline_streak || 0, l: 'Streak', c: '#00D984' }].map((s, i) => (
                 <View key={i} style={{ alignItems: 'center' }}><Text style={{ fontSize: fp(18), fontWeight: '800', color: s.c }}>{s.v}</Text><Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{s.l}</Text></View>
               ))}
+            </View>
             </View>
           </View>
 
