@@ -115,7 +115,125 @@ export default function LixVersePage() {
     setLoading(false);
   };
 
-  const renderDefiTab = () => (<ScrollView style={{flex:1}} contentContainerStyle={{padding:wp(16),paddingBottom:wp(100)}}><Text style={{color:'#FFF',fontSize:fp(14)}}>Défi — sera rempli par chunk 2</Text></ScrollView>);
+  const createGroup = async () => {
+    if (!newGroupName.trim() || !selectedChallenge) return;
+    try {
+      const code = selectedChallenge.challenge_type.toUpperCase().slice(0, 5) + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+      const res = await fetch(SUPABASE_URL + '/rest/v1/lixverse_groups', { method: 'POST', headers: h, body: JSON.stringify({ challenge_id: selectedChallenge.id, name: newGroupName.trim(), created_by: TEST_USER_ID, creator_lixtag: 'LXM-2K7F4A', invite_code: code, member_count: 1 }) });
+      const g = await res.json();
+      if (g && g[0]) {
+        await fetch(SUPABASE_URL + '/rest/v1/lixverse_group_members', { method: 'POST', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ group_id: g[0].id, user_id: TEST_USER_ID, lixtag: 'LXM-2K7F4A', country: 'Burundi' }) });
+        Alert.alert('Groupe créé ✓', '"' + newGroupName.trim() + '"\n\nCode : ' + code);
+        setShowCreateGroup(false); setNewGroupName(''); loadAll();
+      }
+    } catch (e) { Alert.alert('Erreur', 'Création échouée.'); }
+  };
+
+  const joinGroup = async () => {
+    if (!joinCode.trim()) return;
+    try {
+      const h = { ...hdrs, 'Content-Type': 'application/json' };
+      const res = await fetch(SUPABASE_URL + '/rest/v1/lixverse_groups?invite_code=eq.' + joinCode.trim().toUpperCase() + '&select=*', { headers: hdrs });
+      const gs = await res.json();
+      if (!gs || gs.length === 0) { Alert.alert('Code invalide'); return; }
+      const g = gs[0];
+      await fetch(SUPABASE_URL + '/rest/v1/lixverse_group_members', { method: 'POST', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ group_id: g.id, user_id: TEST_USER_ID, lixtag: 'LXM-2K7F4A', country: 'Burundi' }) });
+      await fetch(SUPABASE_URL + '/rest/v1/lixverse_groups?id=eq.' + g.id, { method: 'PATCH', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ member_count: g.member_count + 1 }) });
+      Alert.alert('Rejoint ✓', '"' + g.name + '"'); setShowJoinGroup(false); setJoinCode(''); loadAll();
+    } catch (e) { Alert.alert('Erreur', 'Impossible de rejoindre.'); }
+  };
+
+  const renderDefiTab = () => (
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100) }}>
+      <View style={{ paddingHorizontal: wp(16), paddingTop: wp(16), marginBottom: wp(16) }}>
+        <LinearGradient colors={['#D4AF37', '#B8941F', '#D4AF37']} style={{ borderRadius: wp(20), padding: wp(20), alignItems: 'center', borderWidth: 1, borderColor: 'rgba(212,175,55,0.5)' }}>
+          <Text style={{ fontSize: fp(28), marginBottom: wp(8) }}>🏛</Text>
+          <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#FFF', letterSpacing: 1 }}>WALL OF HEALTH</Text>
+          <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.7)', marginTop: wp(4), textAlign: 'center' }}>Le classement mondial de la santé LIXUM</Text>
+          <View style={{ flexDirection: 'row', gap: wp(16), marginTop: wp(12) }}>
+            {[{ v: challenges.length, l: 'Défis actifs' }, { v: myGroups.length, l: 'Mes groupes' }, { v: ownedCharacters.length, l: 'Caractères' }].map((s, i) => (
+              <View key={i} style={{ alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#FFF' }}>{s.v}</Text>
+                <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.6)' }}>{s.l}</Text>
+              </View>
+            ))}
+          </View>
+        </LinearGradient>
+      </View>
+      {myGroups.length > 0 && (
+        <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
+          <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Mes équipes</Text>
+          {myGroups.map((gm, i) => {
+            const g = gm.lixverse_groups; if (!g) return null;
+            return (
+              <View key={i} style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(8), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View style={{ flex: 1 }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{g.name}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginTop: wp(2) }}>{g.member_count} membres | Score: {g.total_score}</Text></View>
+                  <View style={{ backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}><Text style={{ fontSize: fp(10), fontWeight: '600', color: '#00D984' }}>Mon: {gm.personal_score || 0}</Text></View>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(8), backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
+                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)' }}>Code: </Text><Text style={{ fontSize: fp(10), fontWeight: '700', color: '#D4AF37', letterSpacing: 1 }}>{g.invite_code}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+      <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
+        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Défis du mois</Text>
+        {loading ? <ActivityIndicator color="#D4AF37" style={{ padding: wp(20) }} /> : challenges.map(ch => {
+          const dl = new Date(ch.registration_deadline); const hLeft = Math.max(0, Math.ceil((dl - new Date()) / 3600000));
+          return (
+            <Pressable key={ch.id} delayPressIn={120} onPress={() => setSelectedChallenge(selectedChallenge?.id === ch.id ? null : ch)} style={({ pressed }) => ({ borderRadius: wp(16), marginBottom: wp(10), borderWidth: 1.5, borderColor: ch.color + '40', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+              <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ padding: wp(16) }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(24), marginRight: wp(10) }}>{ch.icon}</Text>
+                  <View style={{ flex: 1 }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{ch.title}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{ch.duration_days}j | Max {ch.max_group_size}/équipe</Text></View>
+                  <View style={{ backgroundColor: 'rgba(255,107,107,0.15)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3) }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FF6B6B' }}>{hLeft}h</Text></View>
+                </View>
+                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', marginBottom: wp(8) }}>{ch.description}</Text>
+                <View style={{ flexDirection: 'row', gap: wp(6) }}>
+                  {[{ e: '🥇', v: ch.reward_lix_first }, { e: '🥈', v: ch.reward_lix_second }, { e: '🥉', v: ch.reward_lix_third }].map((r, j) => (
+                    <View key={j} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: j === 0 ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.05)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), gap: wp(4) }}>
+                      <Text style={{ fontSize: fp(10) }}>{r.e}</Text><Text style={{ fontSize: fp(10), fontWeight: '600', color: j === 0 ? '#D4AF37' : 'rgba(255,255,255,0.4)' }}>{r.v} Lix</Text>
+                    </View>
+                  ))}
+                </View>
+                {selectedChallenge?.id === ch.id && (
+                  <View style={{ marginTop: wp(10), flexDirection: 'row', gap: wp(8) }}>
+                    <Pressable onPress={() => setShowCreateGroup(true)} style={{ flex: 1, paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', backgroundColor: ch.color + '20', borderWidth: 1, borderColor: ch.color + '40' }}><Text style={{ fontSize: fp(12), fontWeight: '700', color: ch.color }}>Créer un groupe</Text></Pressable>
+                    <Pressable onPress={() => setShowJoinGroup(true)} style={{ flex: 1, paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}><Text style={{ fontSize: fp(12), fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>Rejoindre</Text></Pressable>
+                  </View>
+                )}
+              </LinearGradient>
+            </Pressable>
+          );
+        })}
+      </View>
+      <View style={{ paddingHorizontal: wp(16) }}>
+        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Classements</Text>
+        <View style={{ flexDirection: 'row', gap: wp(6), marginBottom: wp(12) }}>
+          {['Groupes', 'Personnel', 'Pays', 'Mondial'].map((t, i) => (
+            <Pressable key={t} onPress={() => setLeaderboardTab(['groups', 'personal', 'country', 'global'][i])} style={{ flex: 1, paddingVertical: wp(8), borderRadius: wp(10), alignItems: 'center', backgroundColor: leaderboardTab === ['groups', 'personal', 'country', 'global'][i] ? '#D4AF37' : 'rgba(255,255,255,0.05)' }}>
+              <Text style={{ fontSize: fp(10), fontWeight: '600', color: leaderboardTab === ['groups', 'personal', 'country', 'global'][i] ? '#1A1D22' : 'rgba(255,255,255,0.4)' }}>{t}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(14), padding: wp(16), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+          {[1, 2, 3, 4, 5].map(r => (
+            <View key={r} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), borderBottomWidth: r < 5 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
+              <View style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: r <= 3 ? (r === 1 ? 'rgba(212,175,55,0.2)' : r === 2 ? 'rgba(192,192,192,0.2)' : 'rgba(205,127,50,0.2)') : 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10) }}>
+                <Text style={{ fontSize: fp(12), fontWeight: '700', color: r === 1 ? '#D4AF37' : r === 2 ? '#C0C0C0' : r === 3 ? '#CD7F32' : 'rgba(255,255,255,0.3)' }}>{r}</Text>
+              </View>
+              <View style={{ flex: 1 }}><Text style={{ fontSize: fp(13), fontWeight: '600', color: r <= 3 ? '#FFF' : 'rgba(255,255,255,0.5)' }}>{['Team Burundi', 'Les Champions', 'Dakar Fit', 'Équipe 4', 'Équipe 5'][r - 1]}</Text></View>
+              <Text style={{ fontSize: fp(14), fontWeight: '700', color: r <= 3 ? '#D4AF37' : 'rgba(255,255,255,0.3)' }}>{600 - r * 80} pts</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    </ScrollView>
+  );
   const renderCharactersTab = () => (<ScrollView style={{flex:1}} contentContainerStyle={{padding:wp(16),paddingBottom:wp(100)}}><Text style={{color:'#FFF',fontSize:fp(14)}}>Caractères — sera rempli par chunk 3</Text></ScrollView>);
   const renderLixSpinTab = () => (<ScrollView style={{flex:1}} contentContainerStyle={{padding:wp(16),paddingBottom:wp(100)}}><Text style={{color:'#FFF',fontSize:fp(14)}}>Lix & Spin — sera rempli par chunk 4</Text></ScrollView>);
 
