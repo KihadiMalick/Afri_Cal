@@ -40,10 +40,10 @@ const TIER_CONFIG = {
 };
 
 const CRATES = [
-  { id: 'standard', name: 'Caisse Standard', cost: 300, tier: 'standard', color: '#00D984', desc: 'Standard 60% | Rare 25% | Elite 12%', emoji: '📦' },
-  { id: 'rare', name: 'Caisse Rare', cost: 800, tier: 'rare', color: '#4DA6FF', desc: 'Rare 65% | Elite 25% | Hyper 8%', emoji: '🎁' },
-  { id: 'elite', name: 'Caisse Elite', cost: 2000, tier: 'elite', color: '#D4AF37', desc: 'Elite 80% | Hyper 15% | Ultime 5%', emoji: '💎' },
-  { id: 'hyper', name: 'Caisse Hyper', cost: 5000, tier: 'hyper', color: '#00CEC9', desc: 'Hyper 92% | Ultime 8%', emoji: '👑' },
+  { id: 'bronze', name: 'Caisse Bronze', cost: 300, color: '#CD7F32', emoji: '📦', desc: 'Lix + Énergie + chance carte Standard', rewards: { lix_min: 50, lix_max: 100, energy_min: 10, energy_max: 20, card_chance: 0.30, card_tiers: ['standard'] } },
+  { id: 'silver', name: 'Caisse Argent', cost: 800, color: '#A4B0BE', emoji: '🎁', desc: 'Lix + Énergie + chance carte Rare', rewards: { lix_min: 100, lix_max: 250, energy_min: 20, energy_max: 40, card_chance: 0.25, card_tiers: ['standard', 'rare'] } },
+  { id: 'gold', name: 'Caisse Or', cost: 2000, color: '#D4AF37', emoji: '💎', desc: 'Lix + Énergie + chance carte Elite', rewards: { lix_min: 250, lix_max: 500, energy_min: 30, energy_max: 60, card_chance: 0.20, card_tiers: ['rare', 'elite'] } },
+  { id: 'platinum', name: 'Caisse Platine', cost: 5000, color: '#00CEC9', emoji: '👑', desc: 'Lix + Énergie + chance Hyper/Ultime', rewards: { lix_min: 500, lix_max: 1000, energy_min: 50, energy_max: 100, card_chance: 0.15, card_tiers: ['elite', 'hyper', 'ultimate'] } },
 ];
 
 const SPIN_RESULTS = [
@@ -393,65 +393,48 @@ export default function LixVersePage() {
       </View>
     </ScrollView>
   );
-  const openCrate = (crateId, cost, tier) => {
-    if (lixBalance < cost) { Alert.alert('Lix insuffisants', 'Il faut ' + cost + ' Lix.\nTon solde: ' + lixBalance); return; }
-
-    // Drop rates par type de caisse
-    const rates = {
-      standard: { standard: 0.60, rare: 0.25, elite: 0.12, hyper: 0.025, ultimate: 0.005 },
-      rare: { rare: 0.65, elite: 0.25, hyper: 0.08, ultimate: 0.02 },
-      elite: { elite: 0.80, hyper: 0.15, ultimate: 0.05 },
-      hyper: { hyper: 0.92, ultimate: 0.08 },
-    };
-    const crateRates = rates[crateId] || rates.standard;
-
-    // Sélection du tier par probabilité
-    let rand = Math.random();
-    let selectedTier = Object.keys(crateRates)[0];
-    for (const [t, prob] of Object.entries(crateRates)) {
-      rand -= prob;
-      if (rand <= 0) { selectedTier = t; break; }
+  const openCrate = (crate) => {
+    if (lixBalance < crate.cost) { Alert.alert('Lix insuffisants', 'Il faut ' + crate.cost + ' Lix.\nTon solde: ' + lixBalance); return; }
+    setLixBalance(p => p - crate.cost);
+    const r = crate.rewards;
+    const lixWon = Math.floor(r.lix_min + Math.random() * (r.lix_max - r.lix_min));
+    setLixBalance(p => p + lixWon);
+    const energyWon = Math.floor(r.energy_min + Math.random() * (r.energy_max - r.energy_min));
+    let cardWon = null;
+    let cardDup = false;
+    let cardRef = 0;
+    if (Math.random() < r.card_chance) {
+      const tierW = { standard: 60, rare: 25, elite: 12, hyper: 2.5, ultimate: 0.5 };
+      const totalW = r.card_tiers.reduce((s, t) => s + (tierW[t] || 1), 0);
+      let rn = Math.random() * totalW;
+      let selTier = r.card_tiers[0];
+      for (const t of r.card_tiers) { rn -= (tierW[t] || 1); if (rn <= 0) { selTier = t; break; } }
+      const tierChars = ALL_CHARACTERS.filter(c => c.tier === selTier);
+      cardWon = tierChars[Math.floor(Math.random() * tierChars.length)];
+      cardDup = ownedCharacters.includes(cardWon.id);
+      const refT = { standard: 100, rare: 250, elite: 700, hyper: 2000, ultimate: 5000 };
+      cardRef = cardDup ? (refT[cardWon.tier] || 100) : 0;
+      if (cardDup) setLixBalance(p => p + cardRef);
+      else setOwnedCharacters(p => [...p, cardWon.id]);
     }
-
-    // Sélection du caractère dans le tier
-    const tierChars = ALL_CHARACTERS.filter(c => c.tier === selectedTier);
-    let sel = tierChars[Math.floor(Math.random() * tierChars.length)];
-
-    // Vérifier doublon
-    const dup = ownedCharacters.includes(sel.id);
-    const maxStack = 3;
-    const refundTable = { standard: 100, rare: 250, elite: 700, hyper: 2000, ultimate: 5000 };
-    const ref = dup ? (refundTable[sel.tier] || 100) : 0;
-
-    setLixBalance(p => p - cost + ref);
-    if (!dup) setOwnedCharacters(p => [...p, sel.id]);
-
-    const tc = TIER_CONFIG[sel.tier];
-    const tierEmoji = sel.tier === 'ultimate' ? '⚡' : sel.tier === 'hyper' ? '💎' : sel.tier === 'elite' ? '👑' : sel.tier === 'rare' ? '✨' : '📦';
-
-    if (dup) {
-      Alert.alert(
-        tierEmoji + ' Doublon — ' + sel.name,
-        'Tu possèdes déjà cette carte !\n\n' +
-        (sel.uses > 0 ? '+' + sel.uses + ' utilisations ajoutées' : '+' + sel.unlock_hours + 'h ajoutées') +
-        '\n\nRemboursement : +' + ref + ' Lix'
-      );
+    let msg = '💰 +' + lixWon + ' Lix\n⚡ +' + energyWon + ' Énergie';
+    if (cardWon) {
+      const tc = TIER_CONFIG[cardWon.tier];
+      if (cardDup) {
+        msg += '\n\n' + cardWon.emoji + ' ' + cardWon.name + ' (' + tc.label + ') DOUBLON\n+' + cardRef + ' Lix remboursés';
+      } else {
+        msg += '\n\n🎉 CARTE GAGNÉE !\n' + cardWon.emoji + ' ' + cardWon.name + ' (' + tc.label + ')\n' + cardWon.desc;
+      }
     } else {
-      Alert.alert(
-        '🎉 ' + sel.name + ' — ' + tc.label,
-        sel.desc + '\n\n' +
-        '📋 Abonné : ' + sel.bonus_abonne + '\n' +
-        '🎫 Non abonné : ' + sel.bonus_non_abonne +
-        (sel.uses > 0 ? '\n\n⚡ ' + sel.uses + ' utilisations' : '') +
-        (sel.unlock_hours > 0 ? '\n\n⏱ ' + (sel.unlock_hours >= 720 ? Math.round(sel.unlock_hours / 24) + ' jours' : sel.unlock_hours + 'h') + ' d\'accès' : '')
-      );
+      msg += '\n\nPas de carte cette fois...';
     }
-
-    // Save Supabase
+    Alert.alert(crate.emoji + ' ' + crate.name, msg);
     const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
-    if (!dup) fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters', { method: 'POST', headers: h, body: JSON.stringify({ user_id: TEST_USER_ID, character_id: sel.id, tier: sel.tier, obtained_via: 'crate' }) }).catch(() => {});
-    fetch(SUPABASE_URL + '/rest/v1/lixverse_crate_history', { method: 'POST', headers: h, body: JSON.stringify({ user_id: TEST_USER_ID, crate_type: crateId, lix_spent: cost, character_won: sel.id, was_doublon: dup, lix_refunded: ref }) }).catch(() => {});
-    fetch(SUPABASE_URL + '/rest/v1/lixverse_notifications', { method: 'POST', headers: h, body: JSON.stringify({ notification_type: 'character_won', lixtag: 'LXM-2K7F4A', message: 'LXM-2K7F4A a obtenu ' + sel.name + ' (' + tc.label + ') !', character_id: sel.id, color: sel.color }) }).catch(() => {});
+    if (cardWon && !cardDup) {
+      fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters', { method: 'POST', headers: h, body: JSON.stringify({ user_id: TEST_USER_ID, character_id: cardWon.id, tier: cardWon.tier, obtained_via: 'crate' }) }).catch(() => {});
+      fetch(SUPABASE_URL + '/rest/v1/lixverse_notifications', { method: 'POST', headers: h, body: JSON.stringify({ notification_type: 'character_won', lixtag: 'LXM-2K7F4A', message: 'LXM-2K7F4A a obtenu ' + cardWon.name + ' !', character_id: cardWon.id, color: cardWon.color }) }).catch(() => {});
+    }
+    fetch(SUPABASE_URL + '/rest/v1/lixverse_crate_history', { method: 'POST', headers: h, body: JSON.stringify({ user_id: TEST_USER_ID, crate_type: crate.id, lix_spent: crate.cost, character_won: cardWon ? cardWon.id : 'none', was_doublon: cardDup, lix_refunded: cardRef }) }).catch(() => {});
   };
 
   const renderCharactersTab = () => (
@@ -466,20 +449,54 @@ export default function LixVersePage() {
           <View key={tier} style={{ marginBottom: wp(20) }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), marginBottom: wp(10) }}><View style={{ backgroundColor: cfg.bg, borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4) }}><Text style={{ fontSize: fp(11), fontWeight: '700', color: cfg.color }}>{cfg.label}</Text></View><Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>{chars.filter(c => ownedCharacters.includes(c.id)).length}/{chars.length}</Text></View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8) }}>
-              {chars.map(ch => { const own = ownedCharacters.includes(ch.id); return (
-                <Pressable key={ch.id} delayPressIn={120} onPress={() => setShowCharacterDetail(ch)} style={({ pressed }) => ({ width: (SCREEN_WIDTH - wp(48)) / 3, borderRadius: wp(16), padding: wp(12), alignItems: 'center', backgroundColor: own ? cfg.bg : 'rgba(255,255,255,0.02)', borderWidth: own ? 1.5 : 1, borderColor: own ? cfg.border : 'rgba(255,255,255,0.06)', opacity: own ? 1 : 0.45, transform: [{ scale: pressed ? 0.93 : 1 }] })}>
-                  <Text style={{ fontSize: fp(28), marginBottom: wp(6) }}>{own ? ch.emoji : '❓'}</Text>
-                  <Text style={{ fontSize: fp(9), fontWeight: '700', textAlign: 'center', color: own ? cfg.color : 'rgba(255,255,255,0.25)' }}>{own ? ch.name : '???'}</Text>
-                  {own && <View style={{ backgroundColor: cfg.color, borderRadius: wp(4), paddingHorizontal: wp(6), paddingVertical: wp(1), marginTop: wp(4) }}><Text style={{ fontSize: fp(7), fontWeight: '700', color: '#FFF' }}>POSSÉDÉ</Text></View>}
-                </Pressable>
-              ); })}
+              {chars.map(ch => {
+                const own = ownedCharacters.includes(ch.id);
+                return (
+                  <Pressable key={ch.id} delayPressIn={120} onPress={() => setShowCharacterDetail(ch)}
+                    style={({ pressed }) => ({
+                      width: (SCREEN_WIDTH - wp(48)) / 3,
+                      borderRadius: wp(14), overflow: 'hidden',
+                      backgroundColor: own ? cfg.bg : 'rgba(255,255,255,0.03)',
+                      borderWidth: own ? 1.5 : 1,
+                      borderColor: own ? cfg.border : 'rgba(255,255,255,0.08)',
+                      transform: [{ scale: pressed ? 0.93 : 1 }],
+                    })}>
+                    {/* Image miniature */}
+                    <View style={{ width: '100%', height: wp(80), justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.15)' }}>
+                      {ch.image ? (
+                        <Image source={ch.image} style={{ width: '100%', height: wp(80), resizeMode: 'cover', opacity: own ? 1 : 0.25 }} />
+                      ) : (
+                        <Text style={{ fontSize: fp(32), opacity: own ? 1 : 0.25 }}>{ch.emoji}</Text>
+                      )}
+                      {!own && (
+                        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center' }}>
+                          <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                            <Rect x="3" y="11" width="18" height="11" rx="2" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"/>
+                            <Path d="M7 11V7a5 5 0 0110 0v4" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
+                          </Svg>
+                        </View>
+                      )}
+                    </View>
+                    <View style={{ padding: wp(6), alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(8), fontWeight: '700', textAlign: 'center', color: own ? cfg.color : 'rgba(255,255,255,0.4)' }}>{ch.name}</Text>
+                      {own ? (
+                        <View style={{ backgroundColor: cfg.color, borderRadius: wp(4), paddingHorizontal: wp(5), paddingVertical: wp(1), marginTop: wp(3) }}>
+                          <Text style={{ fontSize: fp(6), fontWeight: '700', color: '#FFF' }}>POSSÉDÉ</Text>
+                        </View>
+                      ) : (
+                        <Text style={{ fontSize: fp(6), color: 'rgba(255,255,255,0.2)', marginTop: wp(3) }}>Non possédé</Text>
+                      )}
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
         );
       })}
       <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12), marginTop: wp(8) }}>Ouvrir une caisse</Text>
       {CRATES.map(cr => (
-        <Pressable key={cr.id} delayPressIn={120} onPress={() => openCrate(cr.id, cr.cost, cr.tier)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), borderWidth: 1.5, borderColor: cr.color + '40', backgroundColor: cr.color + '08', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+        <Pressable key={cr.id} delayPressIn={120} onPress={() => openCrate(cr)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), borderWidth: 1.5, borderColor: cr.color + '40', backgroundColor: cr.color + '08', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
           <Text style={{ fontSize: fp(28), marginRight: wp(12) }}>{cr.emoji}</Text>
           <View style={{ flex: 1 }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{cr.name}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>{cr.desc}</Text></View>
           <View style={{ backgroundColor: cr.color + '25', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(5) }}><Text style={{ fontSize: fp(12), fontWeight: '700', color: cr.color }}>{cr.cost}</Text></View>
