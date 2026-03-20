@@ -286,7 +286,75 @@ export default function LixVersePage() {
       ))}
     </ScrollView>
   );
-  const renderLixSpinTab = () => (<ScrollView style={{flex:1}} contentContainerStyle={{padding:wp(16),paddingBottom:wp(100)}}><Text style={{color:'#FFF',fontSize:fp(14)}}>Lix & Spin — sera rempli par chunk 4</Text></ScrollView>);
+  const doSpin = () => {
+    if (isSpinning) return;
+    const cost = freeSpinUsed ? 50 : 0;
+    if (cost > 0 && lixBalance < cost) { Alert.alert('Lix insuffisants', 'Il faut 50 Lix.\nSolde: ' + lixBalance); return; }
+    setIsSpinning(true); setSpinResult(null);
+    if (cost > 0) setLixBalance(p => p - cost);
+    if (!freeSpinUsed) setFreeSpinUsed(true);
+    const tw = SPIN_RESULTS.reduce((s, r) => s + r.weight, 0);
+    let rn = Math.random() * tw; let res = SPIN_RESULTS[0];
+    for (const r of SPIN_RESULTS) { rn -= r.weight; if (rn <= 0) { res = r; break; } }
+    spinAnim.setValue(0);
+    Animated.timing(spinAnim, { toValue: (5 + Math.random() * 3) * 360, duration: 3000 + Math.random() * 1500, useNativeDriver: true }).start(() => {
+      setIsSpinning(false); setSpinResult(res);
+      if (res.type === 'lix') setLixBalance(p => p + res.value);
+      fetch(SUPABASE_URL + '/rest/v1/lixverse_spin_history', { method: 'POST', headers: { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }, body: JSON.stringify({ user_id: TEST_USER_ID, result_type: res.type, result_value: String(res.value), lix_spent: cost, was_free: cost === 0 }) }).catch(() => {});
+    });
+  };
+
+  const renderLixSpinTab = () => {
+    const spinCost = freeSpinUsed ? 50 : 0;
+    const rot = spinAnim.interpolate({ inputRange: [0, 360], outputRange: ['0deg', '360deg'] });
+    return (
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100) }}>
+        <View style={{ alignItems: 'center', paddingTop: wp(16), marginBottom: wp(20) }}>
+          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', letterSpacing: 2, marginBottom: wp(4) }}>MON SOLDE</Text>
+          <Text style={{ fontSize: fp(32), fontWeight: '800', color: '#D4AF37' }}>{lixBalance.toLocaleString('fr-FR')}</Text>
+          <Text style={{ fontSize: fp(12), color: 'rgba(212,175,55,0.5)' }}>Lix</Text>
+        </View>
+        <View style={{ alignItems: 'center', marginBottom: wp(24) }}>
+          <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(14) }}>Spin Wheel</Text>
+          {!freeSpinUsed && <View style={{ backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(10), paddingHorizontal: wp(14), paddingVertical: wp(6), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)' }}><Text style={{ fontSize: fp(12), fontWeight: '600', color: '#00D984' }}>1 tour gratuit !</Text></View>}
+          <View style={{ width: wp(200), height: wp(200), marginBottom: wp(16) }}>
+            <Animated.View style={{ width: wp(200), height: wp(200), borderRadius: wp(100), borderWidth: wp(4), borderColor: '#D4AF37', justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(212,175,55,0.04)', transform: [{ rotate: rot }] }}>
+              {[0,1,2,3,4,5,6,7,8,9,10,11].map(i => (<View key={i} style={{ position: 'absolute', width: wp(2), height: wp(80), backgroundColor: ['#00D984','#4DA6FF','#FF8C42','#9B6DFF','#D4AF37','#FF6B6B','#00D984','#4DA6FF','#FF8C42','#9B6DFF','#D4AF37','#FF6B6B'][i] + '30', top: wp(20), left: wp(99), transform: [{ rotate: (i*30)+'deg' }], transformOrigin: 'bottom center' }} />))}
+              <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), backgroundColor: '#D4AF37', justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: fp(10), fontWeight: '800', color: '#FFF' }}>LIX</Text></View>
+            </Animated.View>
+          </View>
+          <Pressable delayPressIn={120} onPress={doSpin} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], opacity: isSpinning ? 0.5 : 1 })}>
+            <LinearGradient colors={spinCost === 0 ? ['#00D984','#00B871'] : ['#D4AF37','#B8941F']} style={{ paddingHorizontal: wp(36), paddingVertical: wp(14), borderRadius: wp(24) }}>
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>{isSpinning ? '...' : spinCost === 0 ? 'Tourner GRATUIT' : 'Tourner — 50 Lix'}</Text>
+            </LinearGradient>
+          </Pressable>
+          {spinResult && <View style={{ marginTop: wp(16), paddingVertical: wp(14), paddingHorizontal: wp(24), borderRadius: wp(14), alignItems: 'center', backgroundColor: spinResult.color + '15', borderWidth: 1, borderColor: spinResult.color + '30' }}><Text style={{ fontSize: fp(18), fontWeight: '700', color: spinResult.type === 'nothing' ? 'rgba(255,255,255,0.3)' : spinResult.color }}>{spinResult.type === 'nothing' ? '😔 Rien' : '🎉 ' + spinResult.label}</Text></View>}
+        </View>
+        <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginHorizontal: wp(16), marginBottom: wp(20) }} />
+        <View style={{ paddingHorizontal: wp(16) }}>
+          <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Acheter des Lix</Text>
+          {[{ n: 'Micro', p: '$0.99', l: 990, b: '', c: '#00D984' }, { n: 'Basic', p: '$4.99', l: 5240, b: '+5%', c: '#4DA6FF' }, { n: 'Standard', p: '$9.99', l: 10990, b: '+10%', c: '#9B6DFF' }, { n: 'Mega', p: '$29.99', l: 35990, b: '+20%', c: '#D4AF37' }, { n: 'Ultra', p: '$99.99', l: 129990, b: '+30%', c: '#D4AF37' }].map((pk, i) => (
+            <Pressable key={i} delayPressIn={120} onPress={() => Alert.alert('Achat', pk.n + ' : ' + pk.p + ' → ' + pk.l.toLocaleString('fr-FR') + ' Lix\n\nBientôt disponible.')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: pk.c + '25', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+              <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: pk.c + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}><Text style={{ fontSize: fp(16), fontWeight: '800', color: pk.c }}>L</Text></View>
+              <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{pk.n}</Text>{pk.b ? <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37' }}>{pk.b}</Text></View> : null}</View><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{pk.l.toLocaleString('fr-FR')} Lix</Text></View>
+              <View style={{ backgroundColor: pk.c + '20', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}><Text style={{ fontSize: fp(13), fontWeight: '700', color: pk.c }}>{pk.p}</Text></View>
+            </Pressable>
+          ))}
+          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: wp(12) }}>Les Lix ne débloquent pas le premium. Abonnez-vous pour MedicAi et plus.</Text>
+        </View>
+        <View style={{ paddingHorizontal: wp(16), marginTop: wp(24) }}>
+          <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Recharger énergie</Text>
+          {[{ n: 'Mini', e: 30, l: 300, d: '~3 chats' }, { n: 'Standard', e: 80, l: 700, d: '~8 chats' }, { n: 'XL', e: 200, l: 1500, d: '~20 chats' }].map((pk, i) => (
+            <Pressable key={i} delayPressIn={120} onPress={() => { if (lixBalance < pk.l) { Alert.alert('Insuffisant', pk.l + ' Lix requis'); return; } setLixBalance(p => p - pk.l); Alert.alert('✓', '+' + pk.e + ' énergie !'); }} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(12), borderRadius: wp(12), marginBottom: wp(6), backgroundColor: 'rgba(0,217,132,0.05)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+              <Text style={{ fontSize: fp(14), marginRight: wp(10) }}>⚡</Text>
+              <View style={{ flex: 1 }}><Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>+{pk.e} énergie</Text><Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{pk.d}</Text></View>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#00D984' }}>{pk.l} Lix</Text>
+            </Pressable>
+          ))}
+        </View>
+      </ScrollView>
+    );
+  };
 
   return (
     <View style={{flex:1}}>
