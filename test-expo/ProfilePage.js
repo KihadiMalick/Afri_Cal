@@ -241,7 +241,8 @@ export default function ProfilePage() {
       {/* Modal Éditer Profil — COMPLET */}
       <Modal visible={showEditProfile} transparent animationType="fade" onRequestClose={() => setShowEditProfile(false)}>
         <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
-          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
+          <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
+          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 50 : 60, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
             <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#00D984', marginBottom: wp(20) }}>{t.editProfile}</Text>
 
             {/* Nom */}
@@ -357,6 +358,7 @@ export default function ProfilePage() {
       {/* Modal Localisation */}
       <Modal visible={showLocationPicker} transparent animationType="fade" onRequestClose={() => setShowLocationPicker(false)}>
         <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20), paddingTop: Platform.OS === 'android' ? 35 : 50 }}>
+          <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
           <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%' }}>
             <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>Ma localisation</Text>
             <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(16) }}>ALIXEN utilisera cette info pour recommander des lieux près de toi.</Text>
@@ -379,7 +381,8 @@ export default function ProfilePage() {
       {/* Modal Glossaire */}
       <Modal visible={showGlossary} transparent animationType="fade" onRequestClose={() => setShowGlossary(false)}>
         <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
-          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
+          <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
+          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 50 : 60, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
             <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#00D984', marginBottom: wp(20) }}>Comprendre les termes</Text>
             {[
               { t: 'BMR', d: 'Basal Metabolic Rate — Calories brûlées au repos pour survivre.' },
@@ -406,7 +409,8 @@ export default function ProfilePage() {
       {/* Modal Guide */}
       <Modal visible={showFeatures} transparent animationType="fade" onRequestClose={() => setShowFeatures(false)}>
         <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
-          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
+          <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
+          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 50 : 60, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
             <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#4DA6FF', marginBottom: wp(20) }}>Guide LIXUM</Text>
             {[
               { i: '🏠', n: 'Dashboard', d: 'Vue d\'ensemble : calories, hydratation, vitalité, humeur.' },
@@ -432,7 +436,8 @@ export default function ProfilePage() {
       {/* Modal Abonnement */}
       <Modal visible={showSubscription} transparent animationType="fade" onRequestClose={() => setShowSubscription(false)}>
         <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
-          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
+          <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
+          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 50 : 60, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
             <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#D4AF37', marginBottom: wp(16) }}>Mon abonnement</Text>
             <View style={{ backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: wp(16), padding: wp(20), marginBottom: wp(20), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)', alignItems: 'center' }}>
               <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)' }}>Plan actuel</Text>
@@ -458,7 +463,8 @@ export default function ProfilePage() {
       {/* Modal Confidentialité */}
       <Modal visible={showPrivacy} transparent animationType="fade" onRequestClose={() => setShowPrivacy(false)}>
         <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
-          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
+          <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
+          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 50 : 60, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
             <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#9B6DFF', marginBottom: wp(16) }}>Politique de confidentialité</Text>
             {[
               { t: 'Données collectées', d: 'Profil, repas, scans, données médicales, activité — uniquement ce que tu fournis.' },
@@ -479,7 +485,8 @@ export default function ProfilePage() {
       {/* Modal Termes */}
       <Modal visible={showTerms} transparent animationType="fade" onRequestClose={() => setShowTerms(false)}>
         <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
-          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
+          <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
+          <ScrollView contentContainerStyle={{ paddingTop: Platform.OS === 'android' ? 50 : 60, paddingHorizontal: wp(20), paddingBottom: wp(40) }}>
             <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#FF8C42', marginBottom: wp(16) }}>Termes et conditions</Text>
             {[
               { t: 'Acceptation', d: 'En utilisant LIXUM, tu acceptes ces termes.' },
@@ -507,7 +514,7 @@ export default function ProfilePage() {
         <StatusBar barStyle="light-content" />
         <ScrollView contentContainerStyle={{ paddingBottom: wp(100) }}>
           {/* Header */}
-          <View style={{ paddingTop: Platform.OS === 'android' ? 40 : 55, paddingBottom: wp(20) }}>
+          <View style={{ paddingTop: Platform.OS === 'android' ? 50 : 60, paddingBottom: wp(20) }}>
             {/* Drapeaux langue en haut à droite */}
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: wp(16), marginBottom: wp(12), gap: wp(6) }}>
               <Pressable onPress={() => setLang('fr')} style={{ paddingHorizontal: wp(8), paddingVertical: wp(5), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'fr' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'fr' ? 'rgba(0,217,132,0.08)' : 'transparent' }}>
@@ -534,17 +541,40 @@ export default function ProfilePage() {
           {/* Données */}
           <View style={{ marginBottom: wp(8) }}>
             <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.25)', paddingHorizontal: wp(16), paddingVertical: wp(8), letterSpacing: 1.5 }}>{t.personalData}</Text>
-            <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', marginHorizontal: wp(12), borderRadius: wp(14), overflow: 'hidden' }}>
-              <View style={{ flexDirection: 'row', paddingVertical: wp(12), paddingHorizontal: wp(16), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
-                {[{ l: t.age, v: (profile?.age || '—') + ' ' + t.years }, { l: t.weight, v: (profile?.weight || '—') + ' ' + t.kg }, { l: t.height, v: (profile?.height || '—') + ' ' + t.cm }, { l: t.bmi, v: imc, c: imcColor }].map((d, i) => (
-                  <View key={i} style={{ flex: 1, alignItems: 'center' }}><Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>{d.l}</Text><Text style={{ fontSize: fp(14), fontWeight: '700', color: d.c || '#FFF', marginTop: wp(2) }}>{d.v}</Text></View>
-                ))}
-              </View>
-              <View style={{ flexDirection: 'row', paddingVertical: wp(12), paddingHorizontal: wp(16) }}>
-                {[{ l: 'BMR', v: (profile?.bmr || '—') + ' kcal' }, { l: 'TDEE', v: (profile?.tdee || '—') + ' kcal' }, { l: t.objective, v: profile?.goal || '—' }].map((d, i) => (
-                  <View key={i} style={{ flex: 1, alignItems: 'center' }}><Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>{d.l}</Text><Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF', marginTop: wp(2) }}>{d.v}</Text></View>
-                ))}
-              </View>
+            <View style={{ marginHorizontal: wp(12), borderRadius: wp(16), overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+              <LinearGradient colors={['rgba(255,255,255,0.04)', 'rgba(255,255,255,0.02)']} style={{ padding: wp(16) }}>
+                {/* Ligne 1 : Âge, Poids, Taille, IMC */}
+                <View style={{ flexDirection: 'row', marginBottom: wp(14) }}>
+                  {[
+                    { l: t.age, v: (profile?.age || '—'), u: t.years, c: '#FFF' },
+                    { l: t.weight, v: (profile?.weight || '—'), u: t.kg, c: '#FFF' },
+                    { l: t.height, v: (profile?.height || '—'), u: t.cm, c: '#FFF' },
+                    { l: t.bmi, v: imc, u: '', c: imcColor },
+                  ].map((d, i) => (
+                    <View key={i} style={{ flex: 1, alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginBottom: wp(4) }}>{d.l}</Text>
+                      <Text style={{ fontSize: fp(17), fontWeight: '800', color: d.c }}>{d.v}</Text>
+                      {d.u ? <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)', marginTop: wp(1) }}>{d.u}</Text> : null}
+                    </View>
+                  ))}
+                </View>
+                {/* Séparateur */}
+                <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginBottom: wp(14) }} />
+                {/* Ligne 2 : BMR, TDEE, Objectif */}
+                <View style={{ flexDirection: 'row' }}>
+                  {[
+                    { l: 'BMR', v: (profile?.bmr || '—'), u: 'kcal', c: '#D4AF37' },
+                    { l: 'TDEE', v: (profile?.tdee || '—'), u: 'kcal', c: '#00D984' },
+                    { l: t.objective, v: profile?.goal === 'lose' ? (lang === 'fr' ? 'Perte' : 'Lose') : profile?.goal === 'gain' ? (lang === 'fr' ? 'Prise' : 'Gain') : profile?.goal === 'maintain' ? (lang === 'fr' ? 'Maintien' : 'Maintain') : '—', u: '', c: '#4DA6FF' },
+                  ].map((d, i) => (
+                    <View key={i} style={{ flex: 1, alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginBottom: wp(4) }}>{d.l}</Text>
+                      <Text style={{ fontSize: fp(15), fontWeight: '700', color: d.c }}>{d.v}</Text>
+                      {d.u ? <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)', marginTop: wp(1) }}>{d.u}</Text> : null}
+                    </View>
+                  ))}
+                </View>
+              </LinearGradient>
             </View>
           </View>
 
