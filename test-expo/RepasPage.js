@@ -745,7 +745,6 @@ const RepasPage = ({ onNavigate }) => {
   const [lastScannedCode, setLastScannedCode] = useState(null);
   const [lookingUp, setLookingUp] = useState(false);
   const [showCartResults, setShowCartResults] = useState(false);
-  const [scanError, setScanError] = useState(null);
   // Personnalisé
   const [userMood, setUserMood] = useState(null); // { mood_level, weather }
   const [moodRecipes, setMoodRecipes] = useState([]);
