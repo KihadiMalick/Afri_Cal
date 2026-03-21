@@ -65,13 +65,13 @@ const MOCK_RECIPES = [
     name: 'Thieboudienne',
     origin: '🇸🇳 Sénégal',
     cal: 520,
-    image: 'https://images.unsplash.com/photo-1567982047351-76b6f93e38ee?w=300&h=200&fit=crop',
+    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Thieboudienne.jpg/1280px-Thieboudienne.jpg',
   },
   {
     name: 'Pizza Margherita',
     origin: '🇮🇹 Italie',
     cal: 680,
-    image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=300&h=200&fit=crop',
+    image: 'https://images.unsplash.com/photo-1604068549290-dea0e4a305ca?w=300&h=200&fit=crop',
   },
   {
     name: 'Couscous Royal',
@@ -89,7 +89,7 @@ const MOCK_RECIPES = [
     name: 'Okra Soup',
     origin: '🇳🇬 Nigeria',
     cal: 220,
-    image: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=300&h=200&fit=crop',
+    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Okra_soup_with_fish.jpg/1280px-Okra_soup_with_fish.jpg',
   },
   {
     name: 'Salade Mixte',
@@ -235,7 +235,7 @@ const SectionTitle = ({ title, rightAction, rightLabel }) => (
 // COMPOSANT — MealDayCard (FIX 4 — compact)
 // ============================================
 const MEAL_CARD_WIDTH = wp(160);
-const MEAL_CARD_HEIGHT = wp(150);
+const MEAL_CARD_HEIGHT = wp(170);
 
 const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => {
 
@@ -253,7 +253,7 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
         }}>
           <LinearGradient
             colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-            style={{ borderRadius: 15, overflow: 'hidden' }}
+            style={{ borderRadius: 15, overflow: 'hidden', height: MEAL_CARD_HEIGHT }}
           >
             {/* Ligne émeraude */}
             <View style={{
@@ -286,7 +286,7 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
             <ScrollView
               nestedScrollEnabled={true}
               showsVerticalScrollIndicator={false}
-              style={{ maxHeight: hasMultiple ? wp(110) : undefined, paddingHorizontal: wp(11) }}
+              style={{ maxHeight: wp(90), paddingHorizontal: wp(11), flexShrink: 1 }}
               contentContainerStyle={{ paddingBottom: wp(4), paddingTop: wp(6) }}
             >
               {(hasMultiple ? allMeals : [allMeals[0] || {}]).map((m, idx) => {
@@ -344,7 +344,7 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
             )}
 
             {/* Bouton Ajouter en bas */}
-            <View style={{ paddingHorizontal: wp(11), paddingBottom: wp(11), paddingTop: wp(4) }}>
+            <View style={{ paddingHorizontal: wp(11), paddingBottom: wp(8), paddingTop: wp(2), marginTop: 'auto' }}>
               <Pressable delayPressIn={120}
                 onPress={() => { if (onAddMeal) onAddMeal(slotKey); }}
                 style={({ pressed }) => ({
@@ -390,7 +390,7 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
           colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
           style={{
             borderRadius: 15, padding: wp(11),
-            minHeight: MEAL_CARD_HEIGHT,
+            height: MEAL_CARD_HEIGHT,
             justifyContent: 'center', alignItems: 'center',
           }}
         >
@@ -2191,10 +2191,38 @@ const RepasPage = ({ onNavigate }) => {
                     marginBottom: wp(5),
                     borderWidth: 0.5, borderColor: '#3A3F46',
                   }}>
-                    <Svg width={16} height={16} viewBox="0 0 20 20">
-                      <Ellipse cx="10" cy="14" rx="8" ry="3.5" fill="none" stroke="#5A6070" strokeWidth={1}/>
-                      <Path d="M2 14C2 12 5 9.5 10 9.5C15 9.5 18 12 18 14" fill="none" stroke="#5A6070" strokeWidth={1}/>
-                    </Svg>
+                    {index % 4 === 0 && (
+                      <Svg width={16} height={16} viewBox="0 0 20 20">
+                        <Ellipse cx="10" cy="14" rx="8" ry="3.5" fill="none" stroke="#FF8C42" strokeWidth={1}/>
+                        <Path d="M2 14C2 12 5 9.5 10 9.5C15 9.5 18 12 18 14" fill="none" stroke="#FF8C42" strokeWidth={1}/>
+                        <Path d="M7 12C7 10.5 8 10 8 9" fill="none" stroke="#FF8C42" strokeWidth={0.6} opacity={0.5}/>
+                        <Path d="M13 11.5C13 10 14 9.5 14 8.5" fill="none" stroke="#FF8C42" strokeWidth={0.6} opacity={0.5}/>
+                      </Svg>
+                    )}
+                    {index % 4 === 1 && (
+                      <Svg width={16} height={16} viewBox="0 0 20 20">
+                        <Rect x="4" y="8" width="8" height="6" rx="1" fill="none" stroke="#00D984" strokeWidth={1}/>
+                        <Path d="M12 9C13.5 9 14.5 9.5 14.5 10.5C14.5 11.5 13.5 12 12 12" fill="none" stroke="#00D984" strokeWidth={0.8}/>
+                        <Path d="M6 7C6 5.5 7 5 7 4" fill="none" stroke="#00D984" strokeWidth={0.6} opacity={0.5}/>
+                        <Path d="M9 6.5C9 5 10 4.5 10 3.5" fill="none" stroke="#00D984" strokeWidth={0.6} opacity={0.5}/>
+                      </Svg>
+                    )}
+                    {index % 4 === 2 && (
+                      <Svg width={16} height={16} viewBox="0 0 20 20">
+                        <Circle cx="10" cy="11" r="7" fill="none" stroke="#4DA6FF" strokeWidth={1}/>
+                        <Circle cx="10" cy="11" r="4.5" fill="none" stroke="#4DA6FF" strokeWidth={0.6} opacity={0.4}/>
+                        <Line x1="2" y1="6" x2="2" y2="16" stroke="#4DA6FF" strokeWidth={0.8} strokeLinecap="round"/>
+                        <Line x1="18" y1="6" x2="18" y2="16" stroke="#4DA6FF" strokeWidth={0.8} strokeLinecap="round"/>
+                      </Svg>
+                    )}
+                    {index % 4 === 3 && (
+                      <Svg width={16} height={16} viewBox="0 0 20 20">
+                        <Path d="M6 5L4 15H16L14 5" fill="none" stroke="#D4AF37" strokeWidth={1} strokeLinecap="round"/>
+                        <Path d="M3 15H17" stroke="#D4AF37" strokeWidth={1} strokeLinecap="round"/>
+                        <Circle cx="8" cy="10" r="1" fill="#D4AF37" opacity={0.5}/>
+                        <Circle cx="12" cy="9" r="0.8" fill="#D4AF37" opacity={0.4}/>
+                      </Svg>
+                    )}
                   </View>
                   <Text style={{
                     color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center',
