@@ -19,7 +19,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Dimensions, Text, StyleSheet, Pressable, Image,
   Animated, ScrollView, PixelRatio, Platform, TouchableOpacity, TextInput,
-  KeyboardAvoidingView, Keyboard, FlatList,
+  KeyboardAvoidingView, Keyboard, FlatList, Modal, ActivityIndicator, StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Path, Rect, Ellipse, Defs, Mask, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
@@ -730,6 +730,8 @@ const RepasPage = ({ onNavigate }) => {
   const [recipesPage, setRecipesPage] = useState(0);
   const [recipesHasMore, setRecipesHasMore] = useState(true);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [recipeIngredients, setRecipeIngredients] = useState([]);
+  const [loadingIngredients, setLoadingIngredients] = useState(false);
   // Personnalisé
   const [userMood, setUserMood] = useState(null); // { mood_level, weather }
   const [moodRecipes, setMoodRecipes] = useState([]);
@@ -875,6 +877,33 @@ const RepasPage = ({ onNavigate }) => {
     setRecipesPage(0);
     loadRecipes(0);
     loadMoodRecipes();
+  };
+
+  // Ouvrir la fiche recette détaillée + charger ingrédients
+  const openRecipeDetail = async (recipe) => {
+    setSelectedRecipe(recipe);
+    setLoadingIngredients(true);
+    try {
+      const { data, error } = await supabase
+        .from('meal_components_master')
+        .select('component_name, percentage_estimate')
+        .eq('meal_id', recipe.id)
+        .order('percentage_estimate', { ascending: false });
+
+      if (!error && data) {
+        setRecipeIngredients(data);
+      } else {
+        setRecipeIngredients([]);
+      }
+    } catch (e) {
+      setRecipeIngredients([]);
+    }
+    setLoadingIngredients(false);
+  };
+
+  const closeRecipeDetail = () => {
+    setSelectedRecipe(null);
+    setRecipeIngredients([]);
   };
 
   // === XSCAN AR STATES ===
@@ -3352,7 +3381,7 @@ const RepasPage = ({ onNavigate }) => {
                   columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: wp(10) }}
                   renderItem={({ item: recipe }) => (
                     <Pressable
-                      onPress={() => setSelectedRecipe(recipe)}
+                      onPress={() => openRecipeDetail(recipe)}
                       style={({ pressed }) => ({
                         width: '48%',
                         marginBottom: wp(12),
@@ -3499,7 +3528,7 @@ const RepasPage = ({ onNavigate }) => {
                       contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(10) }}
                     >
                       {moodRecipes.slice(0, 10).map((recipe) => (
-                        <Pressable key={recipe.id} onPress={() => setSelectedRecipe(recipe)}
+                        <Pressable key={recipe.id} onPress={() => openRecipeDetail(recipe)}
                           style={({ pressed }) => ({
                             width: wp(130), borderRadius: 14, overflow: 'hidden',
                             backgroundColor: '#1E2530',
@@ -3575,7 +3604,7 @@ const RepasPage = ({ onNavigate }) => {
                   columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: wp(10) }}
                   renderItem={({ item: recipe }) => (
                     <Pressable
-                      onPress={() => setSelectedRecipe(recipe)}
+                      onPress={() => openRecipeDetail(recipe)}
                       style={({ pressed }) => ({
                         width: '48%',
                         marginBottom: wp(12),
@@ -3625,6 +3654,402 @@ const RepasPage = ({ onNavigate }) => {
             )}
           </View>
         )}
+
+        {/* MODAL — Fiche Recette Détaillée */}
+        <Modal
+          visible={selectedRecipe !== null}
+          animationType="slide"
+          transparent={false}
+          onRequestClose={closeRecipeDetail}
+        >
+          <View style={{
+            flex: 1,
+            backgroundColor: '#1A1D22',
+          }}>
+            <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
+
+            <ScrollView
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+            >
+              {selectedRecipe && (
+                <>
+                  {/* ══════ IMAGE HEADER ══════ */}
+                  <View style={{
+                    width: '100%',
+                    height: wp(280),
+                    backgroundColor: '#252A30',
+                  }}>
+                    <Image
+                      source={{ uri: selectedRecipe.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800' }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0.85,
+                      }}
+                      resizeMode="cover"
+                    />
+                    {/* Gradient overlay bas */}
+                    <LinearGradient
+                      colors={['transparent', 'rgba(26,29,34,0.6)', '#1A1D22']}
+                      style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: wp(100),
+                      }}
+                    />
+
+                    {/* Bouton fermer — cercle métallique */}
+                    <TouchableOpacity
+                      onPress={closeRecipeDetail}
+                      style={{
+                        position: 'absolute',
+                        top: wp(45),
+                        right: wp(16),
+                        width: wp(36),
+                        height: wp(36),
+                        borderRadius: wp(18),
+                        backgroundColor: 'rgba(37,42,48,0.9)',
+                        borderWidth: 1,
+                        borderColor: '#4A4F55',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 10,
+                      }}
+                    >
+                      <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '700' }}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* ══════ INFOS PRINCIPALES ══════ */}
+                  <View style={{ paddingHorizontal: wp(18), marginTop: -wp(20) }}>
+
+                    {/* Drapeau + Nom */}
+                    <Text style={{
+                      fontSize: fp(22),
+                      fontWeight: '800',
+                      color: '#FFFFFF',
+                      marginBottom: wp(4),
+                    }}>
+                      {getFlag(selectedRecipe.country_origin)} {selectedRecipe.name}
+                    </Text>
+
+                    {/* Pays · Région */}
+                    <Text style={{
+                      fontSize: fp(12),
+                      color: '#9CA3AF',
+                      marginBottom: wp(2),
+                    }}>
+                      {selectedRecipe.country_origin} · {selectedRecipe.region}
+                    </Text>
+
+                    {/* Catégorie — badge */}
+                    <View style={{
+                      alignSelf: 'flex-start',
+                      backgroundColor: 'rgba(0,217,132,0.15)',
+                      borderRadius: wp(8),
+                      paddingHorizontal: wp(10),
+                      paddingVertical: wp(3),
+                      marginTop: wp(6),
+                      marginBottom: wp(16),
+                    }}>
+                      <Text style={{
+                        fontSize: fp(10),
+                        fontWeight: '600',
+                        color: '#00D984',
+                      }}>
+                        {selectedRecipe.category}
+                      </Text>
+                    </View>
+
+                    {/* ══════ CARD VALEURS NUTRITIONNELLES ══════ */}
+                    <View style={{
+                      borderRadius: wp(14),
+                      borderWidth: 1,
+                      borderColor: '#4A4F55',
+                      padding: wp(14),
+                      marginBottom: wp(20),
+                      backgroundColor: '#252A30',
+                    }}>
+                      <Text style={{
+                        fontSize: fp(11),
+                        fontWeight: '700',
+                        color: '#D4AF37',
+                        letterSpacing: 1.5,
+                        textTransform: 'uppercase',
+                        marginBottom: wp(12),
+                        textAlign: 'center',
+                      }}>
+                        Valeurs nutritionnelles · 100g
+                      </Text>
+
+                      {/* Ligne 1 : Kcal + Protéines + Glucides */}
+                      <View style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        marginBottom: wp(12),
+                      }}>
+                        {/* Kcal */}
+                        <View style={{ alignItems: 'center', flex: 1 }}>
+                          <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginBottom: wp(3) }}>🔥 Calories</Text>
+                          <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#FF8C42' }}>
+                            {Math.round(selectedRecipe.kcal_per_100g)}
+                          </Text>
+                          <Text style={{ fontSize: fp(9), color: '#6B7280' }}>kcal</Text>
+                        </View>
+
+                        {/* Protéines */}
+                        <View style={{ alignItems: 'center', flex: 1 }}>
+                          <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginBottom: wp(3) }}>Protéines</Text>
+                          <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#FF6B6B' }}>
+                            {selectedRecipe.protein_per_100g?.toFixed(1) || '0'}
+                          </Text>
+                          <View style={{
+                            width: wp(50), height: wp(4), borderRadius: wp(2),
+                            backgroundColor: 'rgba(255,107,107,0.15)', marginTop: wp(3),
+                          }}>
+                            <View style={{
+                              width: `${Math.min((selectedRecipe.protein_per_100g || 0) / 30 * 100, 100)}%`,
+                              height: '100%', borderRadius: wp(2), backgroundColor: '#FF6B6B',
+                            }} />
+                          </View>
+                          <Text style={{ fontSize: fp(8), color: '#6B7280', marginTop: wp(2) }}>g</Text>
+                        </View>
+
+                        {/* Glucides */}
+                        <View style={{ alignItems: 'center', flex: 1 }}>
+                          <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginBottom: wp(3) }}>Glucides</Text>
+                          <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#FFD93D' }}>
+                            {selectedRecipe.carbs_per_100g?.toFixed(1) || '0'}
+                          </Text>
+                          <View style={{
+                            width: wp(50), height: wp(4), borderRadius: wp(2),
+                            backgroundColor: 'rgba(255,217,61,0.15)', marginTop: wp(3),
+                          }}>
+                            <View style={{
+                              width: `${Math.min((selectedRecipe.carbs_per_100g || 0) / 60 * 100, 100)}%`,
+                              height: '100%', borderRadius: wp(2), backgroundColor: '#FFD93D',
+                            }} />
+                          </View>
+                          <Text style={{ fontSize: fp(8), color: '#6B7280', marginTop: wp(2) }}>g</Text>
+                        </View>
+                      </View>
+
+                      {/* Ligne 2 : Lipides + Fibres */}
+                      <View style={{
+                        flexDirection: 'row',
+                        justifyContent: 'center',
+                        gap: wp(30),
+                      }}>
+                        {/* Lipides */}
+                        <View style={{ alignItems: 'center' }}>
+                          <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginBottom: wp(3) }}>Lipides</Text>
+                          <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#4DA6FF' }}>
+                            {selectedRecipe.fat_per_100g?.toFixed(1) || '0'}
+                          </Text>
+                          <View style={{
+                            width: wp(50), height: wp(4), borderRadius: wp(2),
+                            backgroundColor: 'rgba(77,166,255,0.15)', marginTop: wp(3),
+                          }}>
+                            <View style={{
+                              width: `${Math.min((selectedRecipe.fat_per_100g || 0) / 30 * 100, 100)}%`,
+                              height: '100%', borderRadius: wp(2), backgroundColor: '#4DA6FF',
+                            }} />
+                          </View>
+                          <Text style={{ fontSize: fp(8), color: '#6B7280', marginTop: wp(2) }}>g</Text>
+                        </View>
+
+                        {/* Fibres */}
+                        <View style={{ alignItems: 'center' }}>
+                          <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginBottom: wp(3) }}>Fibres</Text>
+                          <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#00D984' }}>
+                            {selectedRecipe.fiber_per_100g?.toFixed(1) || '0'}
+                          </Text>
+                          <View style={{
+                            width: wp(50), height: wp(4), borderRadius: wp(2),
+                            backgroundColor: 'rgba(0,217,132,0.15)', marginTop: wp(3),
+                          }}>
+                            <View style={{
+                              width: `${Math.min((selectedRecipe.fiber_per_100g || 0) / 15 * 100, 100)}%`,
+                              height: '100%', borderRadius: wp(2), backgroundColor: '#00D984',
+                            }} />
+                          </View>
+                          <Text style={{ fontSize: fp(8), color: '#6B7280', marginTop: wp(2) }}>g</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* ══════ SECTION INGRÉDIENTS ══════ */}
+                    <View style={{ marginBottom: wp(20) }}>
+                      <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        marginBottom: wp(12),
+                      }}>
+                        <View style={{
+                          width: wp(3),
+                          height: wp(18),
+                          backgroundColor: '#D4AF37',
+                          borderRadius: wp(2),
+                          marginRight: wp(8),
+                        }} />
+                        <Text style={{
+                          fontSize: fp(14),
+                          fontWeight: '700',
+                          color: '#FFFFFF',
+                        }}>
+                          Ingrédients
+                        </Text>
+                        <Text style={{
+                          fontSize: fp(11),
+                          color: '#6B7280',
+                          marginLeft: wp(6),
+                        }}>
+                          ({recipeIngredients.length})
+                        </Text>
+                      </View>
+
+                      {loadingIngredients ? (
+                        <View style={{ paddingVertical: wp(20), alignItems: 'center' }}>
+                          <ActivityIndicator size="small" color="#D4AF37" />
+                          <Text style={{ fontSize: fp(10), color: '#6B7280', marginTop: wp(6) }}>
+                            Chargement des ingrédients...
+                          </Text>
+                        </View>
+                      ) : recipeIngredients.length === 0 ? (
+                        <View style={{
+                          paddingVertical: wp(16),
+                          paddingHorizontal: wp(12),
+                          backgroundColor: 'rgba(255,140,66,0.08)',
+                          borderRadius: wp(10),
+                          borderWidth: 1,
+                          borderColor: 'rgba(255,140,66,0.2)',
+                        }}>
+                          <Text style={{ fontSize: fp(11), color: '#FF8C42', textAlign: 'center' }}>
+                            Composition détaillée bientôt disponible
+                          </Text>
+                        </View>
+                      ) : (
+                        <View style={{
+                          backgroundColor: '#252A30',
+                          borderRadius: wp(12),
+                          borderWidth: 1,
+                          borderColor: '#4A4F55',
+                          overflow: 'hidden',
+                        }}>
+                          {recipeIngredients.map((ing, index) => (
+                            <View
+                              key={index}
+                              style={{
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                paddingVertical: wp(10),
+                                paddingHorizontal: wp(14),
+                                borderBottomWidth: index < recipeIngredients.length - 1 ? 1 : 0,
+                                borderBottomColor: 'rgba(74,79,85,0.4)',
+                              }}
+                            >
+                              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                                <View style={{
+                                  width: wp(6),
+                                  height: wp(6),
+                                  borderRadius: wp(3),
+                                  backgroundColor: index < 3 ? '#D4AF37' : index < 6 ? '#FF8C42' : '#4A4F55',
+                                  marginRight: wp(10),
+                                }} />
+                                <Text style={{
+                                  fontSize: fp(12),
+                                  color: '#E5E7EB',
+                                  flex: 1,
+                                }}
+                                  numberOfLines={1}
+                                >
+                                  {ing.component_name}
+                                </Text>
+                              </View>
+                              <Text style={{
+                                fontSize: fp(11),
+                                fontWeight: '700',
+                                color: index < 3 ? '#D4AF37' : '#9CA3AF',
+                                marginLeft: wp(8),
+                              }}>
+                                {ing.percentage_estimate}%
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+
+                    {/* ══════ SECTION DESCRIPTION ══════ */}
+                    {selectedRecipe.description ? (
+                      <View style={{ marginBottom: wp(20) }}>
+                        <View style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          marginBottom: wp(10),
+                        }}>
+                          <View style={{
+                            width: wp(3),
+                            height: wp(18),
+                            backgroundColor: '#4DA6FF',
+                            borderRadius: wp(2),
+                            marginRight: wp(8),
+                          }} />
+                          <Text style={{
+                            fontSize: fp(14),
+                            fontWeight: '700',
+                            color: '#FFFFFF',
+                          }}>
+                            Description
+                          </Text>
+                        </View>
+                        <Text style={{
+                          fontSize: fp(12),
+                          color: '#D1D5DB',
+                          lineHeight: fp(18),
+                          paddingHorizontal: wp(4),
+                        }}>
+                          {selectedRecipe.description}
+                        </Text>
+                      </View>
+                    ) : null}
+
+                    {/* ══════ BOUTON AJOUTER — PLACEHOLDER CHUNK 4 ══════ */}
+                    <TouchableOpacity
+                      disabled={true}
+                      style={{
+                        backgroundColor: 'rgba(0,217,132,0.15)',
+                        borderRadius: wp(14),
+                        borderWidth: 1,
+                        borderColor: 'rgba(0,217,132,0.3)',
+                        paddingVertical: wp(14),
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'row',
+                        marginBottom: wp(40),
+                        opacity: 0.5,
+                      }}
+                    >
+                      <Text style={{
+                        fontSize: fp(15),
+                        fontWeight: '700',
+                        color: '#00D984',
+                      }}>
+                        🍽️  Ajouter ce plat · 30 Lix
+                      </Text>
+                    </TouchableOpacity>
+
+                  </View>
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </Modal>
 
         {/* MODAL — Comment ajouter un repas ? */}
         {showAddModal && (
