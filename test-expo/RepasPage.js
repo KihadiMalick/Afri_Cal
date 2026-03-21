@@ -19,7 +19,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Dimensions, Text, StyleSheet, Pressable, Image,
   Animated, ScrollView, PixelRatio, Platform, TouchableOpacity, TextInput,
-  KeyboardAvoidingView, Keyboard,
+  KeyboardAvoidingView, Keyboard, FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Path, Rect, Ellipse, Defs, Mask, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
@@ -457,6 +457,70 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
 };
 
 // ============================================
+// MAPPING DRAPEAUX PAYS (60+)
+// ============================================
+const COUNTRY_FLAGS = {
+  // ── Afrique de l'Ouest ──
+  'Sénégal': '🇸🇳', 'Nigeria': '🇳🇬', 'Ghana': '🇬🇭', 'Mali': '🇲🇱',
+  'Côte d\'Ivoire': '🇨🇮', "Côte d'Ivoire": '🇨🇮', 'Burkina Faso': '🇧🇫',
+  'Guinée': '🇬🇳', 'Bénin': '🇧🇯', 'Togo': '🇹🇬', 'Niger': '🇳🇪',
+  'Sierra Leone': '🇸🇱', 'Liberia': '🇱🇷', 'Gambie': '🇬🇲',
+  'Guinée-Bissau': '🇬🇼', 'Cap-Vert': '🇨🇻', 'Mauritanie': '🇲🇷',
+
+  // ── Afrique de l'Est ──
+  'Éthiopie': '🇪🇹', 'Kenya': '🇰🇪', 'Tanzanie': '🇹🇿', 'Ouganda': '🇺🇬',
+  'Rwanda': '🇷🇼', 'Burundi': '🇧🇮', 'Somalie': '🇸🇴', 'Érythrée': '🇪🇷',
+  'Djibouti': '🇩🇯', 'Soudan': '🇸🇩', 'Soudan du Sud': '🇸🇸',
+  'Madagascar': '🇲🇬', 'Comores': '🇰🇲', 'Maurice': '🇲🇺',
+  'Seychelles': '🇸🇨', 'Malawi': '🇲🇼', 'Mozambique': '🇲🇿',
+
+  // ── Afrique Centrale ──
+  'Cameroun': '🇨🇲', 'RDC': '🇨🇩', 'Congo': '🇨🇬', 'Gabon': '🇬🇦',
+  'Centrafrique': '🇨🇫', 'Tchad': '🇹🇩', 'Guinée équatoriale': '🇬🇶',
+  'São Tomé-et-Príncipe': '🇸🇹',
+
+  // ── Afrique Australe ──
+  'Afrique du Sud': '🇿🇦', 'Zimbabwe': '🇿🇼', 'Zambie': '🇿🇲',
+  'Botswana': '🇧🇼', 'Namibie': '🇳🇦', 'Angola': '🇦🇴',
+  'Eswatini': '🇸🇿', 'Lesotho': '🇱🇸',
+
+  // ── Afrique du Nord ──
+  'Maroc': '🇲🇦', 'Algérie': '🇩🇿', 'Tunisie': '🇹🇳', 'Égypte': '🇪🇬',
+  'Libye': '🇱🇾',
+
+  // ── Europe ──
+  'France': '🇫🇷', 'Italie': '🇮🇹', 'Espagne': '🇪🇸', 'Portugal': '🇵🇹',
+  'Royaume-Uni': '🇬🇧', 'Allemagne': '🇩🇪', 'Belgique': '🇧🇪',
+  'Grèce': '🇬🇷', 'Pays-Bas': '🇳🇱', 'Suisse': '🇨🇭',
+
+  // ── Amérique ──
+  'États-Unis': '🇺🇸', 'Brésil': '🇧🇷', 'Mexique': '🇲🇽',
+  'Colombie': '🇨🇴', 'Argentine': '🇦🇷', 'Pérou': '🇵🇪',
+  'Jamaïque': '🇯🇲', 'Haïti': '🇭🇹', 'Cuba': '🇨🇺',
+  'Canada': '🇨🇦', 'Trinité-et-Tobago': '🇹🇹',
+
+  // ── Moyen-Orient ──
+  'Liban': '🇱🇧', 'Turquie': '🇹🇷', 'Irak': '🇮🇶', 'Iran': '🇮🇷',
+  'Arabie saoudite': '🇸🇦', 'Yémen': '🇾🇪', 'Palestine': '🇵🇸',
+  'Syrie': '🇸🇾', 'Jordanie': '🇯🇴', 'Émirats arabes unis': '🇦🇪',
+
+  // ── Asie ──
+  'Inde': '🇮🇳', 'Chine': '🇨🇳', 'Japon': '🇯🇵', 'Corée du Sud': '🇰🇷',
+  'Thaïlande': '🇹🇭', 'Vietnam': '🇻🇳', 'Indonésie': '🇮🇩',
+  'Philippines': '🇵🇭', 'Pakistan': '🇵🇰', 'Bangladesh': '🇧🇩',
+  'Sri Lanka': '🇱🇰', 'Malaisie': '🇲🇾',
+
+  // ── Fallback régions ──
+  'Panafricain': '🌍', 'Afrique de l\'Ouest': '🌍', "Afrique de l'Ouest": '🌍',
+  'Afrique de l\'Est': '🌍', "Afrique de l'Est": '🌍',
+  'Afrique Centrale': '🌍', 'Afrique Australe': '🌍',
+  'Afrique du Nord': '🌍', 'International': '🌐',
+};
+
+// Fonction helper pour récupérer le drapeau
+const getFlag = (country) => COUNTRY_FLAGS[country] || '🌍';
+
+// ============================================
 // COMPOSANT PRINCIPAL — RepasPage
 // ============================================
 const RepasPage = ({ onNavigate }) => {
@@ -713,34 +777,6 @@ const RepasPage = ({ onNavigate }) => {
     'tired_sunny': { cats: ['Plat', 'Snack', 'Petit-déjeuner'], msg_fr: 'Besoin d\'un boost ? Protéines et énergie au menu ! ⚡', msg_en: 'Need a boost? Protein and energy on the menu! ⚡' },
     'tired_cloudy': { cats: ['Plat', 'Petit-déjeuner'], msg_fr: 'Rechargez les batteries avec un plat costaud 🔋', msg_en: 'Recharge with a hearty dish 🔋' },
     'tired_rainy': { cats: ['Soupe', 'Plat'], msg_fr: 'Fatigue + pluie = soupe chaude et protéines 💪', msg_en: 'Tired + rain = warm soup and protein 💪' },
-  };
-
-  const getCountryFlag = (country) => {
-    const flags = {
-      'Sénégal': '🇸🇳', 'Nigeria': '🇳🇬', 'Cameroun': '🇨🇲', 'Bénin': '🇧🇯',
-      'Côte d\'Ivoire': '🇨🇮', 'Ghana': '🇬🇭', 'Mali': '🇲🇱', 'Burkina Faso': '🇧🇫',
-      'Guinée': '🇬🇳', 'Togo': '🇹🇬', 'Niger': '🇳🇪', 'Gambie': '🇬🇲',
-      'Sierra Leone': '🇸🇱', 'Liberia': '🇱🇷', 'Mauritanie': '🇲🇷',
-      'Kenya': '🇰🇪', 'Tanzanie': '🇹🇿', 'Ouganda': '🇺🇬', 'Rwanda': '🇷🇼',
-      'Burundi': '🇧🇮', 'Éthiopie': '🇪🇹', 'Somalie': '🇸🇴', 'Érythrée': '🇪🇷',
-      'Soudan': '🇸🇩', 'Djibouti': '🇩🇯', 'Madagascar': '🇲🇬',
-      'RDC': '🇨🇩', 'Congo': '🇨🇬', 'Gabon': '🇬🇦', 'Tchad': '🇹🇩',
-      'Centrafrique': '🇨🇫', 'Guinée Équatoriale': '🇬🇶',
-      'Maroc': '🇲🇦', 'Algérie': '🇩🇿', 'Tunisie': '🇹🇳', 'Égypte': '🇪🇬', 'Libye': '🇱🇾',
-      'Afrique du Sud': '🇿🇦', 'Zimbabwe': '🇿🇼', 'Mozambique': '🇲🇿',
-      'Namibie': '🇳🇦', 'Botswana': '🇧🇼', 'Zambie': '🇿🇲', 'Malawi': '🇲🇼',
-      'Angola': '🇦🇴', 'Lesotho': '🇱🇸', 'Eswatini': '🇸🇿',
-      'France': '🇫🇷', 'Italie': '🇮🇹', 'Espagne': '🇪🇸', 'Grèce': '🇬🇷',
-      'Allemagne': '🇩🇪', 'Portugal': '🇵🇹', 'Royaume-Uni': '🇬🇧',
-      'États-Unis': '🇺🇸', 'Mexique': '🇲🇽', 'Brésil': '🇧🇷', 'Argentine': '🇦🇷',
-      'Colombie': '🇨🇴', 'Pérou': '🇵🇪', 'Jamaïque': '🇯🇲', 'Haïti': '🇭🇹',
-      'Japon': '🇯🇵', 'Corée du Sud': '🇰🇷', 'Chine': '🇨🇳', 'Thaïlande': '🇹🇭',
-      'Vietnam': '🇻🇳', 'Inde': '🇮🇳', 'Indonésie': '🇮🇩', 'Philippines': '🇵🇭',
-      'Liban': '🇱🇧', 'Turquie': '🇹🇷', 'Iran': '🇮🇷', 'Irak': '🇮🇶',
-      'Israël': '🇮🇱', 'Syrie': '🇸🇾', 'Yémen': '🇾🇪',
-      'Panafricain': '🌍', 'International': '🌍',
-    };
-    return flags[country] || '🍽️';
   };
 
   // Charger les recettes depuis meals_master
@@ -3308,34 +3344,36 @@ const RepasPage = ({ onNavigate }) => {
                 </View>
 
                 {/* Grille 2 colonnes */}
-                <View style={{
-                  flexDirection: 'row', flexWrap: 'wrap',
-                  paddingHorizontal: wp(12),
-                  justifyContent: 'space-between',
-                }}>
-                  {recipesData.map((recipe, index) => (
+                <FlatList
+                  data={recipesData}
+                  keyExtractor={(item) => item.id}
+                  numColumns={2}
+                  scrollEnabled={false}
+                  columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: wp(10) }}
+                  renderItem={({ item: recipe }) => (
                     <Pressable
-                      key={recipe.id}
                       onPress={() => setSelectedRecipe(recipe)}
                       style={({ pressed }) => ({
                         width: '48%',
-                        marginBottom: wp(8),
-                        borderRadius: 14, overflow: 'hidden',
+                        marginBottom: wp(12),
+                        borderRadius: wp(10), overflow: 'hidden',
                         backgroundColor: '#1E2530',
                         borderWidth: 1, borderColor: pressed ? 'rgba(0,217,132,0.2)' : 'rgba(255,255,255,0.04)',
                         transform: [{ scale: pressed ? 0.97 : 1 }],
+                        height: wp(200),
                       })}
                     >
-                      {/* Zone image placeholder — gradient + emoji drapeau */}
+                      {/* Zone image — 58% hauteur */}
                       <View style={{
-                        height: wp(50), backgroundColor: '#151B23',
+                        height: '58%', backgroundColor: '#151B23',
                         justifyContent: 'center', alignItems: 'center',
+                        borderTopLeftRadius: wp(10), borderTopRightRadius: wp(10),
                       }}>
                         <LinearGradient
                           colors={['rgba(0,217,132,0.06)', 'rgba(0,217,132,0.02)', 'transparent']}
                           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                         />
-                        <Text style={{ fontSize: 28 }}>{getCountryFlag(recipe.country_origin)}</Text>
+                        <Text style={{ fontSize: 28 }}>{getFlag(recipe.country_origin)}</Text>
                         {/* Badge calories */}
                         <View style={{
                           position: 'absolute', top: wp(6), right: wp(6),
@@ -3343,29 +3381,29 @@ const RepasPage = ({ onNavigate }) => {
                           paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
                         }}>
                           <Text style={{ color: '#FF8C42', fontSize: fp(8), fontWeight: '700' }}>
-                            {recipe.kcal_per_100g} kcal
+                            {Math.round(recipe.kcal_per_100g)} kcal
                           </Text>
                         </View>
                       </View>
 
                       {/* Infos */}
-                      <View style={{ padding: wp(8) }}>
+                      <View style={{ padding: wp(8), flex: 1, justifyContent: 'center' }}>
                         <Text style={{
-                          color: '#EAEEF3', fontSize: fp(11), fontWeight: '700',
-                        }} numberOfLines={1}>{recipe.name}</Text>
-                        <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 2 }} numberOfLines={1}>
-                          {recipe.country_origin} • {recipe.region}
+                          color: '#FFFFFF', fontSize: fp(11), fontWeight: '700',
+                        }} numberOfLines={1}>{getFlag(recipe.country_origin)} {recipe.name}</Text>
+                        <Text style={{ color: '#9CA3AF', fontSize: fp(9), marginTop: 2 }} numberOfLines={1}>
+                          {Math.round(recipe.kcal_per_100g)} kcal · {recipe.country_origin}
                         </Text>
                         {/* Mini macros */}
                         <View style={{ flexDirection: 'row', marginTop: wp(4), gap: wp(6) }}>
-                          <Text style={{ color: '#FF6B6B', fontSize: fp(7), fontWeight: '600' }}>{recipe.protein_per_100g}P</Text>
-                          <Text style={{ color: '#FFD93D', fontSize: fp(7), fontWeight: '600' }}>{recipe.carbs_per_100g}G</Text>
-                          <Text style={{ color: '#4DA6FF', fontSize: fp(7), fontWeight: '600' }}>{recipe.fat_per_100g}L</Text>
+                          <Text style={{ color: '#FF6B6B', fontSize: fp(8), fontWeight: '600' }}>{recipe.protein_per_100g}P</Text>
+                          <Text style={{ color: '#FFD93D', fontSize: fp(8), fontWeight: '600' }}>{recipe.carbs_per_100g}G</Text>
+                          <Text style={{ color: '#4DA6FF', fontSize: fp(8), fontWeight: '600' }}>{recipe.fat_per_100g}L</Text>
                         </View>
                       </View>
                     </Pressable>
-                  ))}
-                </View>
+                  )}
+                />
 
                 {/* Bouton Charger plus */}
                 {recipesHasMore && recipesData.length > 0 && (
@@ -3477,7 +3515,7 @@ const RepasPage = ({ onNavigate }) => {
                               colors={['rgba(212,175,55,0.08)', 'rgba(212,175,55,0.02)', 'transparent']}
                               style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                             />
-                            <Text style={{ fontSize: 24 }}>{getCountryFlag(recipe.country_origin)}</Text>
+                            <Text style={{ fontSize: 24 }}>{getFlag(recipe.country_origin)}</Text>
                             <View style={{
                               position: 'absolute', top: wp(4), right: wp(4),
                               backgroundColor: 'rgba(0,0,0,0.6)',
@@ -3529,44 +3567,60 @@ const RepasPage = ({ onNavigate }) => {
                 </ScrollView>
 
                 {/* Grille filtrée */}
-                <View style={{
-                  flexDirection: 'row', flexWrap: 'wrap',
-                  paddingHorizontal: wp(12),
-                  justifyContent: 'space-between',
-                }}>
-                  {(recipesRegion !== 'all' ? recipesData : moodRecipes).map((recipe, index) => (
+                <FlatList
+                  data={recipesRegion !== 'all' ? recipesData : moodRecipes}
+                  keyExtractor={(item, index) => item.id + '-p-' + index}
+                  numColumns={2}
+                  scrollEnabled={false}
+                  columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: wp(10) }}
+                  renderItem={({ item: recipe }) => (
                     <Pressable
-                      key={recipe.id + '-p-' + index}
                       onPress={() => setSelectedRecipe(recipe)}
                       style={({ pressed }) => ({
                         width: '48%',
-                        marginBottom: wp(8),
-                        borderRadius: 14, overflow: 'hidden',
+                        marginBottom: wp(12),
+                        borderRadius: wp(10), overflow: 'hidden',
                         backgroundColor: '#1E2530',
                         borderWidth: 1, borderColor: pressed ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.04)',
                         transform: [{ scale: pressed ? 0.97 : 1 }],
+                        height: wp(200),
                       })}
                     >
+                      {/* Zone image — 58% hauteur */}
                       <View style={{
-                        height: wp(50), backgroundColor: '#151B23',
+                        height: '58%', backgroundColor: '#151B23',
                         justifyContent: 'center', alignItems: 'center',
+                        borderTopLeftRadius: wp(10), borderTopRightRadius: wp(10),
                       }}>
-                        <Text style={{ fontSize: 24 }}>{getCountryFlag(recipe.country_origin)}</Text>
+                        <LinearGradient
+                          colors={['rgba(212,175,55,0.08)', 'rgba(212,175,55,0.02)', 'transparent']}
+                          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                        />
+                        <Text style={{ fontSize: 28 }}>{getFlag(recipe.country_origin)}</Text>
                         <View style={{
-                          position: 'absolute', top: wp(4), right: wp(4),
+                          position: 'absolute', top: wp(6), right: wp(6),
                           backgroundColor: 'rgba(0,0,0,0.6)',
-                          paddingHorizontal: 5, paddingVertical: 1, borderRadius: 5,
+                          paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
                         }}>
-                          <Text style={{ color: '#FF8C42', fontSize: fp(7), fontWeight: '700' }}>{recipe.kcal_per_100g} kcal</Text>
+                          <Text style={{ color: '#FF8C42', fontSize: fp(8), fontWeight: '700' }}>
+                            {Math.round(recipe.kcal_per_100g)} kcal
+                          </Text>
                         </View>
                       </View>
-                      <View style={{ padding: wp(8) }}>
-                        <Text style={{ color: '#EAEEF3', fontSize: fp(10), fontWeight: '700' }} numberOfLines={1}>{recipe.name}</Text>
-                        <Text style={{ color: '#5A6070', fontSize: fp(7), marginTop: 1 }} numberOfLines={1}>{recipe.country_origin} • {recipe.category}</Text>
+                      <View style={{ padding: wp(8), flex: 1, justifyContent: 'center' }}>
+                        <Text style={{ color: '#FFFFFF', fontSize: fp(11), fontWeight: '700' }} numberOfLines={1}>{getFlag(recipe.country_origin)} {recipe.name}</Text>
+                        <Text style={{ color: '#9CA3AF', fontSize: fp(9), marginTop: 2 }} numberOfLines={1}>
+                          {Math.round(recipe.kcal_per_100g)} kcal · {recipe.country_origin}
+                        </Text>
+                        <View style={{ flexDirection: 'row', marginTop: wp(4), gap: wp(6) }}>
+                          <Text style={{ color: '#FF6B6B', fontSize: fp(8), fontWeight: '600' }}>{recipe.protein_per_100g}P</Text>
+                          <Text style={{ color: '#FFD93D', fontSize: fp(8), fontWeight: '600' }}>{recipe.carbs_per_100g}G</Text>
+                          <Text style={{ color: '#4DA6FF', fontSize: fp(8), fontWeight: '600' }}>{recipe.fat_per_100g}L</Text>
+                        </View>
                       </View>
                     </Pressable>
-                  ))}
-                </View>
+                  )}
+                />
               </ScrollView>
             )}
           </View>
