@@ -654,6 +654,164 @@ const RepasPage = ({ onNavigate }) => {
 
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [scanError, setScanError] = useState(null);
+
+  // === XSCAN AR STATES ===
+  const [arPhase, setArPhase] = useState('idle');
+  // 'idle' = pas actif
+  // 'center' = en attente du tap central
+  // 'navigating' = en train de naviguer vers un coin
+  // 'tapping' = en train de taper sur un coin (3 taps)
+  // 'complete' = 4 coins terminés
+  const [arCenterPlanted, setArCenterPlanted] = useState(false);
+  const [arCurrentCorner, setArCurrentCorner] = useState(0); // 0-3
+  const [arCornerTaps, setArCornerTaps] = useState(0); // 0-3 taps sur le coin actuel
+  const [arCornersDone, setArCornersDone] = useState([false, false, false, false]);
+  const [arPhotos, setArPhotos] = useState([null, null, null, null]);
+  const [arLastTapTime, setArLastTapTime] = useState(0);
+  const centerStakeAnim = useRef(new Animated.Value(0)).current; // 0=pas planté, 1=planté
+  const cornerStakeAnims = useRef([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
+  const ropeProgressAnims = useRef([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
+  const [arCornerPulse] = useState(new Animated.Value(0));
+
+  // Positions des 4 coins (en % de l'écran caméra)
+  const AR_CORNERS = [
+    { key: 'topLeft', label: '↖', x: 0.18, y: 0.25, emoji: '🏔️' },
+    { key: 'topRight', label: '↗', x: 0.82, y: 0.25, emoji: '🏔️' },
+    { key: 'bottomLeft', label: '↙', x: 0.18, y: 0.75, emoji: '🏔️' },
+    { key: 'bottomRight', label: '↘', x: 0.82, y: 0.75, emoji: '🏔️' },
+  ];
+
+  // Pulse animation pour le coin actif
+  useEffect(() => {
+    if (arPhase === 'navigating' || arPhase === 'tapping') {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(arCornerPulse, { toValue: 1, duration: 800, useNativeDriver: true }),
+          Animated.timing(arCornerPulse, { toValue: 0, duration: 800, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      arCornerPulse.setValue(0);
+    }
+  }, [arPhase]);
+
+  // Fonction reset AR
+  const resetArState = () => {
+    setArPhase('idle');
+    setArCenterPlanted(false);
+    setArCurrentCorner(0);
+    setArCornerTaps(0);
+    setArCornersDone([false, false, false, false]);
+    setArPhotos([null, null, null, null]);
+    setArLastTapTime(0);
+    centerStakeAnim.setValue(0);
+    cornerStakeAnims.forEach(a => a.setValue(0));
+    ropeProgressAnims.forEach(a => a.setValue(0));
+  };
+
+  // Fonction planter le pieu central
+  const plantCenterStake = () => {
+    if (arPhase !== 'center') return;
+    setArCenterPlanted(true);
+    Animated.spring(centerStakeAnim, {
+      toValue: 1,
+      friction: 4,
+      tension: 100,
+      useNativeDriver: true,
+    }).start(() => {
+      // Après l'animation, passer à la navigation
+      setArPhase('navigating');
+      setArCurrentCorner(0);
+    });
+  };
+
+  // Fonction taper sur un coin (3 taps nécessaires)
+  const tapCornerStake = async () => {
+    const now = Date.now();
+    if (now - arLastTapTime < 500) return; // Intervalle minimum 500ms
+    setArLastTapTime(now);
+
+    const newTapCount = arCornerTaps + 1;
+    setArCornerTaps(newTapCount);
+
+    // Animation du pieu qui s'enfonce progressivement
+    Animated.spring(cornerStakeAnims[arCurrentCorner], {
+      toValue: newTapCount / 3,
+      friction: 5,
+      tension: 120,
+      useNativeDriver: true,
+    }).start();
+
+    // 1er tap = capture photo silencieuse
+    if (newTapCount === 1 && cameraRef.current) {
+      try {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.5,
+          base64: true,
+          skipProcessing: true,
+          exif: false,
+        });
+        const updated = [...arPhotos];
+        updated[arCurrentCorner] = photo;
+        setArPhotos(updated);
+      } catch (e) {
+        console.log('AR photo capture error:', e);
+      }
+    }
+
+    // 3ème tap = coin terminé
+    if (newTapCount >= 3) {
+      const updatedDone = [...arCornersDone];
+      updatedDone[arCurrentCorner] = true;
+      setArCornersDone(updatedDone);
+
+      // Animation corde complète
+      Animated.timing(ropeProgressAnims[arCurrentCorner], {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+
+      // Vérifier si tous les coins sont faits
+      const allDone = updatedDone.every(d => d);
+      if (allDone) {
+        setTimeout(() => setArPhase('complete'), 600);
+      } else {
+        // Passer au prochain coin non fait
+        setTimeout(() => {
+          const nextCorner = updatedDone.findIndex(d => !d);
+          setArCurrentCorner(nextCorner);
+          setArCornerTaps(0);
+          setArPhase('navigating');
+        }, 500);
+      }
+    }
+  };
+
+  // Lancer le mode AR (appelé depuis activateScan)
+  const startArScan = async () => {
+    if (!permission?.granted) {
+      const result = await requestPermission();
+      if (!result.granted) {
+        alert(lang === 'fr' ? 'Permission caméra requise' : 'Camera permission required');
+        return;
+      }
+    }
+    resetArState();
+    setArPhase('center');
+    setScanScreen('ar_scan');
+  };
+
   const [alternativeDishes, setAlternativeDishes] = useState([]);
   const [currentDishName, setCurrentDishName] = useState('');
 
@@ -1551,8 +1709,8 @@ const RepasPage = ({ onNavigate }) => {
           return;
         }
       }
-      // Ouvrir la caméra
-      setScanScreen('camera');
+      // Ouvrir le mode AR scan
+      startArScan();
     });
   };
   const SCREEN_WIDTH = Dimensions.get('window').width;
