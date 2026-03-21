@@ -4874,6 +4874,302 @@ const RepasPage = ({ onNavigate }) => {
           </View>
         )}
 
+        {/* ══════ MODAL CARTSCAN — Caméra + Grille Produits ══════ */}
+        <Modal
+          visible={showCartScan && !showCartResults}
+          animationType="slide"
+          transparent={false}
+          onRequestClose={closeCartScan}
+        >
+          <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
+            <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
+
+            {/* ══════ HEADER ══════ */}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingTop: wp(45),
+              paddingBottom: wp(12),
+              paddingHorizontal: wp(16),
+              backgroundColor: '#1A1D22',
+            }}>
+              <TouchableOpacity onPress={closeCartScan}>
+                <Text style={{ fontSize: fp(14), color: '#9CA3AF' }}>✕ Fermer</Text>
+              </TouchableOpacity>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFFFFF' }}>
+                  🛒 CARTSCAN
+                </Text>
+                <Text style={{ fontSize: fp(9), color: '#4DA6FF' }}>
+                  Scannez vos produits
+                </Text>
+              </View>
+              <Text style={{
+                fontSize: fp(13),
+                fontWeight: '700',
+                color: '#4DA6FF',
+              }}>
+                {cartProducts.length} 📦
+              </Text>
+            </View>
+
+            {/* ══════ ZONE CAMÉRA ══════ */}
+            <View style={{
+              height: wp(220),
+              marginHorizontal: wp(16),
+              borderRadius: wp(16),
+              overflow: 'hidden',
+              borderWidth: 2,
+              borderColor: lookingUp ? '#FF8C42' : scanError ? '#FF6B6B' : '#4DA6FF',
+              backgroundColor: '#000',
+            }}>
+              <CameraView
+                style={{ flex: 1 }}
+                facing="back"
+                barcodeScannerSettings={{
+                  barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
+                }}
+                onBarcodeScanned={scanningActive && !lookingUp ? handleBarcodeScan : undefined}
+              />
+
+              {/* Ligne de scan */}
+              <View style={{
+                position: 'absolute',
+                top: '48%',
+                left: wp(20),
+                right: wp(20),
+                height: 2,
+                backgroundColor: lookingUp ? '#FF8C42' : '#4DA6FF',
+                opacity: 0.8,
+                borderRadius: 1,
+              }} />
+
+              {/* Coins du cadre */}
+              <View style={{ position: 'absolute', top: wp(12), left: wp(12), width: wp(24), height: wp(24), borderTopWidth: 3, borderLeftWidth: 3, borderColor: '#4DA6FF', borderTopLeftRadius: wp(4) }} />
+              <View style={{ position: 'absolute', top: wp(12), right: wp(12), width: wp(24), height: wp(24), borderTopWidth: 3, borderRightWidth: 3, borderColor: '#4DA6FF', borderTopRightRadius: wp(4) }} />
+              <View style={{ position: 'absolute', bottom: wp(12), left: wp(12), width: wp(24), height: wp(24), borderBottomWidth: 3, borderLeftWidth: 3, borderColor: '#4DA6FF', borderBottomLeftRadius: wp(4) }} />
+              <View style={{ position: 'absolute', bottom: wp(12), right: wp(12), width: wp(24), height: wp(24), borderBottomWidth: 3, borderRightWidth: 3, borderColor: '#4DA6FF', borderBottomRightRadius: wp(4) }} />
+
+              {/* Overlay statut — recherche */}
+              {lookingUp && (
+                <View style={{
+                  position: 'absolute',
+                  bottom: wp(10),
+                  alignSelf: 'center',
+                  backgroundColor: 'rgba(255,140,66,0.9)',
+                  borderRadius: wp(8),
+                  paddingHorizontal: wp(14),
+                  paddingVertical: wp(5),
+                }}>
+                  <Text style={{ fontSize: fp(10), color: '#FFF', fontWeight: '600' }}>
+                    Recherche du produit...
+                  </Text>
+                </View>
+              )}
+
+              {/* Overlay statut — erreur */}
+              {scanError && (
+                <View style={{
+                  position: 'absolute',
+                  bottom: wp(10),
+                  alignSelf: 'center',
+                  backgroundColor: 'rgba(255,107,107,0.9)',
+                  borderRadius: wp(8),
+                  paddingHorizontal: wp(14),
+                  paddingVertical: wp(5),
+                }}>
+                  <Text style={{ fontSize: fp(10), color: '#FFF', fontWeight: '600' }}>
+                    {scanError}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* ══════ GRILLE PRODUITS SCANNÉS ══════ */}
+            <View style={{ flex: 1, paddingHorizontal: wp(16), marginTop: wp(12) }}>
+
+              {cartProducts.length === 0 ? (
+                <View style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: 0.5,
+                }}>
+                  <Text style={{ fontSize: fp(40), marginBottom: wp(10) }}>📷</Text>
+                  <Text style={{ fontSize: fp(12), color: '#9CA3AF', textAlign: 'center' }}>
+                    Pointez la caméra vers un code-barres
+                  </Text>
+                  <Text style={{ fontSize: fp(10), color: '#6B7280', textAlign: 'center', marginTop: wp(4) }}>
+                    Chaque produit sera ajouté automatiquement
+                  </Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={cartProducts}
+                  keyExtractor={(item) => item.barcode}
+                  numColumns={2}
+                  columnWrapperStyle={{ justifyContent: 'space-between' }}
+                  showsVerticalScrollIndicator={false}
+                  renderItem={({ item }) => (
+                    <View style={{
+                      width: '48%',
+                      backgroundColor: '#252A30',
+                      borderRadius: wp(12),
+                      borderWidth: 1,
+                      borderColor: '#4A4F55',
+                      marginBottom: wp(10),
+                      overflow: 'hidden',
+                    }}>
+                      {/* Image produit ou placeholder */}
+                      <View style={{
+                        height: wp(70),
+                        backgroundColor: '#333A42',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                        {item.image_url ? (
+                          <Image
+                            source={{ uri: item.image_url }}
+                            style={{ width: '100%', height: '100%' }}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <Text style={{ fontSize: fp(28) }}>📦</Text>
+                        )}
+                        {/* Badge Nutriscore */}
+                        {item.nutriscore && (
+                          <View style={{
+                            position: 'absolute',
+                            top: wp(4),
+                            right: wp(4),
+                            backgroundColor: getNutriColor(item.nutriscore),
+                            borderRadius: wp(4),
+                            width: wp(20),
+                            height: wp(20),
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}>
+                            <Text style={{
+                              fontSize: fp(11),
+                              fontWeight: '800',
+                              color: '#1A1D22',
+                            }}>
+                              {item.nutriscore.toUpperCase()}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+
+                      {/* Infos */}
+                      <View style={{ padding: wp(8) }}>
+                        <Text style={{
+                          fontSize: fp(10),
+                          fontWeight: '700',
+                          color: '#FFFFFF',
+                          marginBottom: wp(2),
+                        }} numberOfLines={2}>
+                          {item.product_name}
+                        </Text>
+                        {item.brand && (
+                          <Text style={{ fontSize: fp(8), color: '#6B7280', marginBottom: wp(4) }} numberOfLines={1}>
+                            {item.brand}
+                          </Text>
+                        )}
+                        <Text style={{
+                          fontSize: fp(11),
+                          fontWeight: '800',
+                          color: '#FF8C42',
+                        }}>
+                          {Math.round(item.kcal_per_100g)} kcal
+                        </Text>
+                        <View style={{ flexDirection: 'row', marginTop: wp(2), gap: wp(4) }}>
+                          <Text style={{ fontSize: fp(8), color: '#FF6B6B' }}>
+                            P:{parseFloat(item.protein_per_100g || 0).toFixed(0)}
+                          </Text>
+                          <Text style={{ fontSize: fp(8), color: '#FFD93D' }}>
+                            G:{parseFloat(item.carbs_per_100g || 0).toFixed(0)}
+                          </Text>
+                          <Text style={{ fontSize: fp(8), color: '#4DA6FF' }}>
+                            L:{parseFloat(item.fat_per_100g || 0).toFixed(0)}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Bouton supprimer */}
+                      <TouchableOpacity
+                        onPress={() => removeFromCart(item.barcode)}
+                        style={{
+                          position: 'absolute',
+                          top: wp(4),
+                          left: wp(4),
+                          backgroundColor: 'rgba(26,29,34,0.8)',
+                          borderRadius: wp(10),
+                          width: wp(20),
+                          height: wp(20),
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Text style={{ fontSize: fp(10), color: '#FF6B6B' }}>✕</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                  ListFooterComponent={<View style={{ height: wp(80) }} />}
+                />
+              )}
+            </View>
+
+            {/* ══════ BARRE BAS : TOTAL + BOUTON ANALYSER ══════ */}
+            {cartProducts.length > 0 && (
+              <View style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                backgroundColor: '#252A30',
+                borderTopWidth: 1,
+                borderTopColor: '#4A4F55',
+                paddingHorizontal: wp(16),
+                paddingVertical: wp(12),
+                paddingBottom: wp(25),
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                {/* Mini total */}
+                <View>
+                  <Text style={{ fontSize: fp(10), color: '#9CA3AF' }}>
+                    {cartProducts.length} produit{cartProducts.length > 1 ? 's' : ''}
+                  </Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FF8C42' }}>
+                    {getCartTotals().kcal} kcal
+                  </Text>
+                </View>
+
+                {/* Bouton Analyser */}
+                <TouchableOpacity
+                  onPress={() => setShowCartResults(true)}
+                  style={{
+                    backgroundColor: '#4DA6FF',
+                    borderRadius: wp(12),
+                    paddingHorizontal: wp(24),
+                    paddingVertical: wp(12),
+                  }}
+                >
+                  <Text style={{
+                    fontSize: fp(13),
+                    fontWeight: '700',
+                    color: '#1A1D22',
+                  }}>
+                    Analyser mon caddie 🔍
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </Modal>
+
         {/* BOTTOM TAB BAR — positionnée en absolute en bas, HORS du ScrollView */}
         <View style={{
           position: 'absolute',
