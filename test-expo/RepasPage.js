@@ -19,7 +19,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Dimensions, Text, StyleSheet, Pressable, Image,
   Animated, ScrollView, PixelRatio, Platform, TouchableOpacity, TextInput,
-  KeyboardAvoidingView, Keyboard, FlatList, Modal, ActivityIndicator, StatusBar, Alert,
+  KeyboardAvoidingView, Keyboard, FlatList, Modal, ActivityIndicator, StatusBar, Alert, Vibration,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Path, Rect, Ellipse, Defs, Mask, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
@@ -746,6 +746,13 @@ const RepasPage = ({ onNavigate }) => {
   const [showAddConfirm, setShowAddConfirm] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [addingMeal, setAddingMeal] = useState(false);
+  const [showCartScan, setShowCartScan] = useState(false);
+  const [cartProducts, setCartProducts] = useState([]);
+  const [scanningActive, setScanningActive] = useState(true);
+  const [lastScannedCode, setLastScannedCode] = useState(null);
+  const [lookingUp, setLookingUp] = useState(false);
+  const [showCartResults, setShowCartResults] = useState(false);
+  const [scanError, setScanError] = useState(null);
   // Personnalisé
   const [userMood, setUserMood] = useState(null); // { mood_level, weather }
   const [moodRecipes, setMoodRecipes] = useState([]);
@@ -1002,6 +1009,106 @@ const RepasPage = ({ onNavigate }) => {
       setAddingMeal(false);
       Alert.alert('Erreur', 'Impossible d\'ajouter ce plat. Réessayez.');
     }
+  };
+
+  // ══════ CARTSCAN — Fonctions ══════
+
+  const lookupBarcode = async (barcode) => {
+    // Éviter les doublons dans le caddie
+    if (cartProducts.find(p => p.barcode === barcode)) {
+      setScanError('Déjà scanné !');
+      setTimeout(() => setScanError(null), 1500);
+      return;
+    }
+
+    setLookingUp(true);
+    setScanError(null);
+
+    try {
+      const response = await fetch(
+        'https://yuhordnzfpcswztujozi.supabase.co/functions/v1/lookup-barcode',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMzk0MzksImV4cCI6MjA1MzkxNTQzOX0.H2mCpGz_RGvMR8TBtX1QLyEJHFVKpXHcNMEf5vGn13M',
+          },
+          body: JSON.stringify({ barcode }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.product) {
+        Vibration.vibrate(100);
+        setCartProducts(prev => [...prev, result.product]);
+      } else {
+        setScanError('Produit non trouvé');
+        setTimeout(() => setScanError(null), 2000);
+      }
+    } catch (e) {
+      console.error('Barcode lookup error:', e);
+      setScanError('Erreur réseau');
+      setTimeout(() => setScanError(null), 2000);
+    }
+
+    setLookingUp(false);
+  };
+
+  const handleBarcodeScan = ({ type, data }) => {
+    if (!scanningActive || lookingUp) return;
+    if (data === lastScannedCode) return;
+
+    setLastScannedCode(data);
+    setScanningActive(false);
+
+    lookupBarcode(data).then(() => {
+      // Pause 1.5s avant de réactiver le scan
+      setTimeout(() => {
+        setScanningActive(true);
+        setLastScannedCode(null);
+      }, 1500);
+    });
+  };
+
+  const removeFromCart = (barcode) => {
+    setCartProducts(prev => prev.filter(p => p.barcode !== barcode));
+  };
+
+  const clearCart = () => {
+    setCartProducts([]);
+    setShowCartResults(false);
+    setScanError(null);
+    setLastScannedCode(null);
+    setScanningActive(true);
+  };
+
+  const closeCartScan = () => {
+    setShowCartScan(false);
+    setShowCartResults(false);
+    clearCart();
+  };
+
+  const getCartTotals = () => {
+    const totals = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+    cartProducts.forEach(p => {
+      totals.kcal += Math.round(p.kcal_per_100g || 0);
+      totals.protein += parseFloat(p.protein_per_100g || 0);
+      totals.carbs += parseFloat(p.carbs_per_100g || 0);
+      totals.fat += parseFloat(p.fat_per_100g || 0);
+    });
+    return {
+      kcal: Math.round(totals.kcal),
+      protein: totals.protein.toFixed(1),
+      carbs: totals.carbs.toFixed(1),
+      fat: totals.fat.toFixed(1),
+    };
+  };
+
+  const getNutriColor = (score) => {
+    if (!score) return '#6B7280';
+    const colors = { a: '#00D984', b: '#A8E06C', c: '#FFD93D', d: '#FF8C42', e: '#FF6B6B' };
+    return colors[score.toLowerCase()] || '#6B7280';
   };
 
   // Effet typewriter pour la recette générée
@@ -4685,7 +4792,37 @@ const RepasPage = ({ onNavigate }) => {
                   <Ionicons name="chevron-forward" size={16} color="#FF8C42" />
                 </Pressable>
 
-                {/* Option 3 : Saisie Manuelle */}
+                {/* Option 3 : CartScan */}
+                <Pressable
+                  onPress={() => {
+                    setShowAddModal(false);
+                    setTimeout(() => setShowCartScan(true), 300);
+                  }}
+                  style={({ pressed }) => ({
+                    flexDirection: 'row', alignItems: 'center',
+                    padding: wp(14), borderRadius: 14, marginBottom: wp(10),
+                    backgroundColor: pressed ? 'rgba(77,166,255,0.12)' : 'rgba(77,166,255,0.04)',
+                    borderWidth: 1.2, borderColor: pressed ? 'rgba(77,166,255,0.4)' : 'rgba(77,166,255,0.15)',
+                  })}
+                >
+                  <View style={{
+                    width: wp(40), height: wp(40), borderRadius: wp(12),
+                    backgroundColor: 'rgba(77,166,255,0.08)',
+                    justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                    borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)',
+                  }}>
+                    <Text style={{ fontSize: fp(20) }}>🛒</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#4DA6FF', fontSize: fp(14), fontWeight: '800' }}>CartScan</Text>
+                    <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: 2 }}>
+                      {lang === 'fr' ? 'Scanner les produits de votre caddie' : 'Scan your cart products'}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="#4DA6FF" />
+                </Pressable>
+
+                {/* Option 4 : Saisie Manuelle */}
                 <Pressable
                   onPress={() => {
                     setShowAddModal(false);
