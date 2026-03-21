@@ -65,7 +65,7 @@ const MOCK_RECIPES = [
     name: 'Thieboudienne',
     origin: '🇸🇳 Sénégal',
     cal: 520,
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Thieboudienne.jpg/1280px-Thieboudienne.jpg',
+    image: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=300&h=200&fit=crop',
   },
   {
     name: 'Pizza Margherita',
@@ -77,7 +77,7 @@ const MOCK_RECIPES = [
     name: 'Couscous Royal',
     origin: '🇲🇦 Maroc',
     cal: 450,
-    image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=300&h=200&fit=crop',
+    image: 'https://images.unsplash.com/photo-1541518763669-27fef04b14ea?w=300&h=200&fit=crop',
   },
   {
     name: 'Brochettes Viande',
@@ -86,10 +86,10 @@ const MOCK_RECIPES = [
     image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=300&h=200&fit=crop',
   },
   {
-    name: 'Okra Soup',
-    origin: '🇳🇬 Nigeria',
-    cal: 220,
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Okra_soup_with_fish.jpg/1280px-Okra_soup_with_fish.jpg',
+    name: 'Poulet Yassa',
+    origin: '🇸🇳 Sénégal',
+    cal: 320,
+    image: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=300&h=200&fit=crop',
   },
   {
     name: 'Salade Mixte',
@@ -306,16 +306,6 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
                     borderBottomWidth: hasMultiple && idx < allMeals.length - 1 ? 0.5 : 0,
                     borderBottomColor: 'rgba(255,255,255,0.05)',
                   }}>
-                    <View style={{
-                      width: wp(30), height: wp(30), borderRadius: 10,
-                      backgroundColor: '#252A30', justifyContent: 'center', alignItems: 'center',
-                      marginRight: wp(8),
-                    }}>
-                      <Svg width={20} height={20} viewBox="0 0 24 24">
-                        <Ellipse cx="12" cy="16" rx="8" ry="4" fill="none" stroke="#5A6070" strokeWidth={1.2}/>
-                        <Path d="M4 16C4 13 7 10 12 10C17 10 20 13 20 16" fill="none" stroke="#5A6070" strokeWidth={1.2}/>
-                      </Svg>
-                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{
                         color: '#EAEEF3', fontSize: fp(11), fontWeight: '700',
@@ -324,9 +314,11 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
                         <Text style={{
                           color: '#FF8C42', fontSize: fp(11), fontWeight: '700',
                         }}>{mealData.calories} kcal</Text>
-                        <Text style={{ color: '#3A4050', fontSize: fp(7), marginLeft: wp(6) }}>
-                          {mealData.protein}P {mealData.carbs}G {mealData.fat}L
-                        </Text>
+                        <View style={{ flexDirection: 'row', marginLeft: wp(6), gap: wp(4) }}>
+                          <Text style={{ color: '#FF6B6B', fontSize: fp(8), fontWeight: '600' }}>{mealData.protein}P</Text>
+                          <Text style={{ color: '#FFD93D', fontSize: fp(8), fontWeight: '600' }}>{mealData.carbs}G</Text>
+                          <Text style={{ color: '#4DA6FF', fontSize: fp(8), fontWeight: '600' }}>{mealData.fat}L</Text>
+                        </View>
                       </View>
                     </View>
                   </View>
@@ -2090,7 +2082,7 @@ const RepasPage = ({ onNavigate }) => {
           </View>
 
           {/* ======== 6. SECTION RECETTES (FIX 3+5+7) ======== */}
-          <View style={{ marginTop: wp(28) }}>
+          <View style={{ marginTop: wp(20) }}>
             <SectionTitle
               title={lang === 'fr' ? 'Recettes' : 'Recipes'}
               rightLabel={lang === 'fr' ? 'Voir tout ›' : 'See all ›'}
@@ -2104,16 +2096,21 @@ const RepasPage = ({ onNavigate }) => {
               {MOCK_RECIPES.map((recipe, index) => (
                 <Pressable key={index} delayPressIn={120}
                   style={({ pressed }) => ({
-                    width: wp(130),
-                    borderRadius: 14,
+                    width: wp(140),
+                    borderRadius: 16,
                     overflow: 'hidden',
                     transform: [{ scale: pressed ? 0.96 : 1 }],
-                    elevation: 6,
+                    elevation: 8,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    backgroundColor: '#1E2530',
                   })}
                 >
                   {/* Zone image — photo réelle */}
                   <View style={{
-                    width: '100%', height: wp(90),
+                    width: '100%', height: wp(95),
                     backgroundColor: '#1A1D22',
                   }}>
                     <Image
