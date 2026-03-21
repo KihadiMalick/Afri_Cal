@@ -715,6 +715,34 @@ const RepasPage = ({ onNavigate }) => {
     'tired_rainy': { cats: ['Soupe', 'Plat'], msg_fr: 'Fatigue + pluie = soupe chaude et protéines 💪', msg_en: 'Tired + rain = warm soup and protein 💪' },
   };
 
+  const getCountryFlag = (country) => {
+    const flags = {
+      'Sénégal': '🇸🇳', 'Nigeria': '🇳🇬', 'Cameroun': '🇨🇲', 'Bénin': '🇧🇯',
+      'Côte d\'Ivoire': '🇨🇮', 'Ghana': '🇬🇭', 'Mali': '🇲🇱', 'Burkina Faso': '🇧🇫',
+      'Guinée': '🇬🇳', 'Togo': '🇹🇬', 'Niger': '🇳🇪', 'Gambie': '🇬🇲',
+      'Sierra Leone': '🇸🇱', 'Liberia': '🇱🇷', 'Mauritanie': '🇲🇷',
+      'Kenya': '🇰🇪', 'Tanzanie': '🇹🇿', 'Ouganda': '🇺🇬', 'Rwanda': '🇷🇼',
+      'Burundi': '🇧🇮', 'Éthiopie': '🇪🇹', 'Somalie': '🇸🇴', 'Érythrée': '🇪🇷',
+      'Soudan': '🇸🇩', 'Djibouti': '🇩🇯', 'Madagascar': '🇲🇬',
+      'RDC': '🇨🇩', 'Congo': '🇨🇬', 'Gabon': '🇬🇦', 'Tchad': '🇹🇩',
+      'Centrafrique': '🇨🇫', 'Guinée Équatoriale': '🇬🇶',
+      'Maroc': '🇲🇦', 'Algérie': '🇩🇿', 'Tunisie': '🇹🇳', 'Égypte': '🇪🇬', 'Libye': '🇱🇾',
+      'Afrique du Sud': '🇿🇦', 'Zimbabwe': '🇿🇼', 'Mozambique': '🇲🇿',
+      'Namibie': '🇳🇦', 'Botswana': '🇧🇼', 'Zambie': '🇿🇲', 'Malawi': '🇲🇼',
+      'Angola': '🇦🇴', 'Lesotho': '🇱🇸', 'Eswatini': '🇸🇿',
+      'France': '🇫🇷', 'Italie': '🇮🇹', 'Espagne': '🇪🇸', 'Grèce': '🇬🇷',
+      'Allemagne': '🇩🇪', 'Portugal': '🇵🇹', 'Royaume-Uni': '🇬🇧',
+      'États-Unis': '🇺🇸', 'Mexique': '🇲🇽', 'Brésil': '🇧🇷', 'Argentine': '🇦🇷',
+      'Colombie': '🇨🇴', 'Pérou': '🇵🇪', 'Jamaïque': '🇯🇲', 'Haïti': '🇭🇹',
+      'Japon': '🇯🇵', 'Corée du Sud': '🇰🇷', 'Chine': '🇨🇳', 'Thaïlande': '🇹🇭',
+      'Vietnam': '🇻🇳', 'Inde': '🇮🇳', 'Indonésie': '🇮🇩', 'Philippines': '🇵🇭',
+      'Liban': '🇱🇧', 'Turquie': '🇹🇷', 'Iran': '🇮🇷', 'Irak': '🇮🇶',
+      'Israël': '🇮🇱', 'Syrie': '🇸🇾', 'Yémen': '🇾🇪',
+      'Panafricain': '🌍', 'International': '🌍',
+    };
+    return flags[country] || '🍽️';
+  };
+
   // Charger les recettes depuis meals_master
   const loadRecipes = async (page = 0, search = '', region = 'all', category = 'all', append = false) => {
     setRecipesLoading(true);
@@ -3282,33 +3310,32 @@ const RepasPage = ({ onNavigate }) => {
                 {/* Grille 2 colonnes */}
                 <View style={{
                   flexDirection: 'row', flexWrap: 'wrap',
-                  paddingHorizontal: wp(12), gap: wp(8),
+                  paddingHorizontal: wp(12),
+                  justifyContent: 'space-between',
                 }}>
                   {recipesData.map((recipe, index) => (
                     <Pressable
                       key={recipe.id}
                       onPress={() => setSelectedRecipe(recipe)}
                       style={({ pressed }) => ({
-                        width: (W - wp(32)) / 2,
+                        width: '48%',
+                        marginBottom: wp(8),
                         borderRadius: 14, overflow: 'hidden',
                         backgroundColor: '#1E2530',
                         borderWidth: 1, borderColor: pressed ? 'rgba(0,217,132,0.2)' : 'rgba(255,255,255,0.04)',
                         transform: [{ scale: pressed ? 0.97 : 1 }],
-                        marginBottom: wp(4),
                       })}
                     >
                       {/* Zone image placeholder — gradient + emoji drapeau */}
                       <View style={{
-                        height: wp(70), backgroundColor: '#151B23',
+                        height: wp(50), backgroundColor: '#151B23',
                         justifyContent: 'center', alignItems: 'center',
                       }}>
                         <LinearGradient
                           colors={['rgba(0,217,132,0.06)', 'rgba(0,217,132,0.02)', 'transparent']}
                           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                         />
-                        <Text style={{ fontSize: 28 }}>
-                          {recipe.country_origin === 'France' ? '🇫🇷' : recipe.country_origin === 'Sénégal' ? '🇸🇳' : recipe.country_origin === 'Grèce' ? '🇬🇷' : recipe.country_origin === 'Corée du Sud' ? '🇰🇷' : recipe.region?.includes('Ouest') ? '🌍' : recipe.region?.includes('Est') ? '🌍' : recipe.region?.includes('Nord') ? '🌍' : recipe.region?.includes('Europe') ? '🇪🇺' : '🍽️'}
-                        </Text>
+                        <Text style={{ fontSize: 28 }}>{getCountryFlag(recipe.country_origin)}</Text>
                         {/* Badge calories */}
                         <View style={{
                           position: 'absolute', top: wp(6), right: wp(6),
@@ -3450,7 +3477,7 @@ const RepasPage = ({ onNavigate }) => {
                               colors={['rgba(212,175,55,0.08)', 'rgba(212,175,55,0.02)', 'transparent']}
                               style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                             />
-                            <Text style={{ fontSize: 24 }}>🍽️</Text>
+                            <Text style={{ fontSize: 24 }}>{getCountryFlag(recipe.country_origin)}</Text>
                             <View style={{
                               position: 'absolute', top: wp(4), right: wp(4),
                               backgroundColor: 'rgba(0,0,0,0.6)',
@@ -3504,26 +3531,27 @@ const RepasPage = ({ onNavigate }) => {
                 {/* Grille filtrée */}
                 <View style={{
                   flexDirection: 'row', flexWrap: 'wrap',
-                  paddingHorizontal: wp(12), gap: wp(8),
+                  paddingHorizontal: wp(12),
+                  justifyContent: 'space-between',
                 }}>
                   {(recipesRegion !== 'all' ? recipesData : moodRecipes).map((recipe, index) => (
                     <Pressable
                       key={recipe.id + '-p-' + index}
                       onPress={() => setSelectedRecipe(recipe)}
                       style={({ pressed }) => ({
-                        width: (W - wp(32)) / 2,
+                        width: '48%',
+                        marginBottom: wp(8),
                         borderRadius: 14, overflow: 'hidden',
                         backgroundColor: '#1E2530',
                         borderWidth: 1, borderColor: pressed ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.04)',
                         transform: [{ scale: pressed ? 0.97 : 1 }],
-                        marginBottom: wp(4),
                       })}
                     >
                       <View style={{
-                        height: wp(60), backgroundColor: '#151B23',
+                        height: wp(50), backgroundColor: '#151B23',
                         justifyContent: 'center', alignItems: 'center',
                       }}>
-                        <Text style={{ fontSize: 24 }}>🍽️</Text>
+                        <Text style={{ fontSize: 24 }}>{getCountryFlag(recipe.country_origin)}</Text>
                         <View style={{
                           position: 'absolute', top: wp(4), right: wp(4),
                           backgroundColor: 'rgba(0,0,0,0.6)',
