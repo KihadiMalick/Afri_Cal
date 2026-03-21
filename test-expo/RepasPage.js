@@ -19,7 +19,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Dimensions, Text, StyleSheet, Pressable, Image,
   Animated, ScrollView, PixelRatio, Platform, TouchableOpacity, TextInput,
-  KeyboardAvoidingView, Keyboard, FlatList, Modal, ActivityIndicator, StatusBar,
+  KeyboardAvoidingView, Keyboard, FlatList, Modal, ActivityIndicator, StatusBar, Alert, Vibration,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Path, Rect, Ellipse, Defs, Mask, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
@@ -520,6 +520,13 @@ const COUNTRY_FLAGS = {
 // Fonction helper pour récupérer le drapeau
 const getFlag = (country) => COUNTRY_FLAGS[country] || '🌍';
 
+const MEAL_SLOTS = [
+  { key: 'breakfast', label: '☀️ Petit-déjeuner', icon: '☀️' },
+  { key: 'lunch', label: '🍽️ Déjeuner', icon: '🍽️' },
+  { key: 'dinner', label: '🌙 Dîner', icon: '🌙' },
+  { key: 'snack', label: '🍎 Snack', icon: '🍎' },
+];
+
 // ============================================
 // COMPOSANT PRINCIPAL — RepasPage
 // ============================================
@@ -736,6 +743,16 @@ const RepasPage = ({ onNavigate }) => {
   const [loadingSteps, setLoadingSteps] = useState(false);
   const [displayedSteps, setDisplayedSteps] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showAddConfirm, setShowAddConfirm] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [addingMeal, setAddingMeal] = useState(false);
+  const [showCartScan, setShowCartScan] = useState(false);
+  const [cartProducts, setCartProducts] = useState([]);
+  const [scanningActive, setScanningActive] = useState(true);
+  const [lastScannedCode, setLastScannedCode] = useState(null);
+  const [lookingUp, setLookingUp] = useState(false);
+  const [showCartResults, setShowCartResults] = useState(false);
+  const [scanError, setScanError] = useState(null);
   // Personnalisé
   const [userMood, setUserMood] = useState(null); // { mood_level, weather }
   const [moodRecipes, setMoodRecipes] = useState([]);
@@ -912,6 +929,186 @@ const RepasPage = ({ onNavigate }) => {
     setDisplayedSteps('');
     setIsTyping(false);
     setLoadingSteps(false);
+  };
+
+  const addRecipeToMeals = async () => {
+    if (!selectedRecipe || !selectedSlot || addingMeal) return;
+    setAddingMeal(true);
+
+    try {
+      const userId = '00000000-0000-0000-0000-000000000001'; // Test user
+      const today = new Date().toISOString().split('T')[0];
+
+      // Portion standard : 300g pour un plat principal, 150g pour snack/accompagnement
+      const isSnackOrSide = selectedRecipe.category?.includes('Snack')
+        || selectedRecipe.category?.includes('Accompagnement')
+        || selectedSlot === 'snack';
+      const portionGrams = isSnackOrSide ? 150 : 300;
+      const factor = portionGrams / 100;
+
+      const mealData = {
+        user_id: userId,
+        date: today,
+        meal_type: selectedSlot,
+        meal_name: selectedRecipe.name,
+        food_items: [{
+          name: selectedRecipe.name,
+          quantity_g: portionGrams,
+          kcal: Math.round(selectedRecipe.kcal_per_100g * factor),
+          protein: parseFloat((selectedRecipe.protein_per_100g * factor).toFixed(1)),
+          carbs: parseFloat((selectedRecipe.carbs_per_100g * factor).toFixed(1)),
+          fat: parseFloat((selectedRecipe.fat_per_100g * factor).toFixed(1)),
+        }],
+        total_kcal: Math.round(selectedRecipe.kcal_per_100g * factor),
+        total_protein: parseFloat((selectedRecipe.protein_per_100g * factor).toFixed(1)),
+        total_carbs: parseFloat((selectedRecipe.carbs_per_100g * factor).toFixed(1)),
+        total_fat: parseFloat((selectedRecipe.fat_per_100g * factor).toFixed(1)),
+        source: 'recipe',
+      };
+
+      // 1. Ajouter dans meals
+      const { error: mealError } = await supabase
+        .from('meals')
+        .insert(mealData);
+
+      if (mealError) throw mealError;
+
+      // 2. Mettre à jour daily_summary via RPC
+      const { error: summaryError } = await supabase.rpc(
+        'add_meal_and_update_summary',
+        {
+          p_user_id: userId,
+          p_date: today,
+          p_kcal: Math.round(selectedRecipe.kcal_per_100g * factor),
+          p_protein: parseFloat((selectedRecipe.protein_per_100g * factor).toFixed(1)),
+          p_carbs: parseFloat((selectedRecipe.carbs_per_100g * factor).toFixed(1)),
+          p_fat: parseFloat((selectedRecipe.fat_per_100g * factor).toFixed(1)),
+        }
+      );
+
+      // Note : si la RPC échoue (pas grave), le repas est quand même enregistré
+      if (summaryError) console.warn('Summary update warning:', summaryError);
+
+      // 3. Succès → fermer tout + toast
+      setShowAddConfirm(false);
+      setSelectedSlot(null);
+      setAddingMeal(false);
+      closeRecipeDetail();
+
+      // Toast succès
+      if (typeof showToast === 'function') {
+        showToast(`✅ ${selectedRecipe.name} ajouté au ${
+          selectedSlot === 'breakfast' ? 'petit-déjeuner' :
+          selectedSlot === 'lunch' ? 'déjeuner' :
+          selectedSlot === 'dinner' ? 'dîner' : 'snack'
+        }`);
+      }
+
+    } catch (e) {
+      console.error('Add recipe error:', e);
+      setAddingMeal(false);
+      Alert.alert('Erreur', 'Impossible d\'ajouter ce plat. Réessayez.');
+    }
+  };
+
+  // ══════ CARTSCAN — Fonctions ══════
+
+  const lookupBarcode = async (barcode) => {
+    // Éviter les doublons dans le caddie
+    if (cartProducts.find(p => p.barcode === barcode)) {
+      setScanError('Déjà scanné !');
+      setTimeout(() => setScanError(null), 1500);
+      return;
+    }
+
+    setLookingUp(true);
+    setScanError(null);
+
+    try {
+      const response = await fetch(
+        'https://yuhordnzfpcswztujozi.supabase.co/functions/v1/lookup-barcode',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMzk0MzksImV4cCI6MjA1MzkxNTQzOX0.H2mCpGz_RGvMR8TBtX1QLyEJHFVKpXHcNMEf5vGn13M',
+          },
+          body: JSON.stringify({ barcode }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.product) {
+        Vibration.vibrate(100);
+        setCartProducts(prev => [...prev, result.product]);
+      } else {
+        setScanError('Produit non trouvé');
+        setTimeout(() => setScanError(null), 2000);
+      }
+    } catch (e) {
+      console.error('Barcode lookup error:', e);
+      setScanError('Erreur réseau');
+      setTimeout(() => setScanError(null), 2000);
+    }
+
+    setLookingUp(false);
+  };
+
+  const handleBarcodeScan = ({ type, data }) => {
+    if (!scanningActive || lookingUp) return;
+    if (data === lastScannedCode) return;
+
+    setLastScannedCode(data);
+    setScanningActive(false);
+
+    lookupBarcode(data).then(() => {
+      // Pause 1.5s avant de réactiver le scan
+      setTimeout(() => {
+        setScanningActive(true);
+        setLastScannedCode(null);
+      }, 1500);
+    });
+  };
+
+  const removeFromCart = (barcode) => {
+    setCartProducts(prev => prev.filter(p => p.barcode !== barcode));
+  };
+
+  const clearCart = () => {
+    setCartProducts([]);
+    setShowCartResults(false);
+    setScanError(null);
+    setLastScannedCode(null);
+    setScanningActive(true);
+  };
+
+  const closeCartScan = () => {
+    setShowCartScan(false);
+    setShowCartResults(false);
+    clearCart();
+  };
+
+  const getCartTotals = () => {
+    const totals = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+    cartProducts.forEach(p => {
+      totals.kcal += Math.round(p.kcal_per_100g || 0);
+      totals.protein += parseFloat(p.protein_per_100g || 0);
+      totals.carbs += parseFloat(p.carbs_per_100g || 0);
+      totals.fat += parseFloat(p.fat_per_100g || 0);
+    });
+    return {
+      kcal: Math.round(totals.kcal),
+      protein: totals.protein.toFixed(1),
+      carbs: totals.carbs.toFixed(1),
+      fat: totals.fat.toFixed(1),
+    };
+  };
+
+  const getNutriColor = (score) => {
+    if (!score) return '#6B7280';
+    const colors = { a: '#00D984', b: '#A8E06C', c: '#FFD93D', d: '#FF8C42', e: '#FF6B6B' };
+    return colors[score.toLowerCase()] || '#6B7280';
   };
 
   // Effet typewriter pour la recette générée
@@ -4280,20 +4477,20 @@ const RepasPage = ({ onNavigate }) => {
                       )}
                     </View>
 
-                    {/* ══════ BOUTON AJOUTER — PLACEHOLDER CHUNK 4 ══════ */}
+                    {/* ══════ BOUTON AJOUTER ══════ */}
                     <TouchableOpacity
-                      disabled={true}
+                      onPress={() => setShowAddConfirm(true)}
+                      activeOpacity={0.85}
                       style={{
-                        backgroundColor: 'rgba(0,217,132,0.15)',
                         borderRadius: wp(14),
-                        borderWidth: 1,
-                        borderColor: 'rgba(0,217,132,0.3)',
+                        borderWidth: 1.5,
+                        borderColor: '#00D984',
                         paddingVertical: wp(14),
                         alignItems: 'center',
                         justifyContent: 'center',
                         flexDirection: 'row',
                         marginBottom: wp(40),
-                        opacity: 0.5,
+                        backgroundColor: 'rgba(0,217,132,0.12)',
                       }}
                     >
                       <Text style={{
@@ -4301,7 +4498,7 @@ const RepasPage = ({ onNavigate }) => {
                         fontWeight: '700',
                         color: '#00D984',
                       }}>
-                        🍽️  Ajouter ce plat · 30 Lix
+                        🍽️  Ajouter ce plat
                       </Text>
                     </TouchableOpacity>
 
@@ -4309,6 +4506,184 @@ const RepasPage = ({ onNavigate }) => {
                 </>
               )}
             </ScrollView>
+          </View>
+        </Modal>
+
+        {/* MODAL — Confirmation ajout repas */}
+        <Modal
+          visible={showAddConfirm}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => {
+            setShowAddConfirm(false);
+            setSelectedSlot(null);
+          }}
+        >
+          <View style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingHorizontal: wp(20),
+          }}>
+            <View style={{
+              width: '100%',
+              backgroundColor: '#1A1D22',
+              borderRadius: wp(18),
+              borderWidth: 1,
+              borderColor: '#4A4F55',
+              padding: wp(20),
+            }}>
+              {/* Header */}
+              <Text style={{
+                fontSize: fp(16),
+                fontWeight: '800',
+                color: '#FFFFFF',
+                textAlign: 'center',
+                marginBottom: wp(4),
+              }}>
+                Ajouter à mon journal
+              </Text>
+
+              {selectedRecipe && (
+                <>
+                  {/* Résumé plat */}
+                  <View style={{
+                    backgroundColor: '#252A30',
+                    borderRadius: wp(12),
+                    padding: wp(14),
+                    marginTop: wp(14),
+                    marginBottom: wp(16),
+                    borderWidth: 1,
+                    borderColor: '#4A4F55',
+                  }}>
+                    <Text style={{
+                      fontSize: fp(14),
+                      fontWeight: '700',
+                      color: '#FFFFFF',
+                      marginBottom: wp(4),
+                    }}>
+                      {getFlag(selectedRecipe.country_origin)} {selectedRecipe.name}
+                    </Text>
+                    <Text style={{
+                      fontSize: fp(11),
+                      color: '#9CA3AF',
+                      marginBottom: wp(6),
+                    }}>
+                      Portion : {selectedRecipe.category?.includes('Snack') || selectedRecipe.category?.includes('Accompagnement') ? '150g' : '300g'}
+                    </Text>
+                    <View style={{ flexDirection: 'row', gap: wp(12) }}>
+                      <Text style={{ fontSize: fp(11), color: '#FF8C42', fontWeight: '700' }}>
+                        🔥 {Math.round(selectedRecipe.kcal_per_100g * (selectedRecipe.category?.includes('Snack') || selectedRecipe.category?.includes('Accompagnement') ? 1.5 : 3))} kcal
+                      </Text>
+                      <Text style={{ fontSize: fp(10), color: '#FF6B6B' }}>
+                        P:{(selectedRecipe.protein_per_100g * (selectedRecipe.category?.includes('Snack') || selectedRecipe.category?.includes('Accompagnement') ? 1.5 : 3)).toFixed(0)}g
+                      </Text>
+                      <Text style={{ fontSize: fp(10), color: '#FFD93D' }}>
+                        G:{(selectedRecipe.carbs_per_100g * (selectedRecipe.category?.includes('Snack') || selectedRecipe.category?.includes('Accompagnement') ? 1.5 : 3)).toFixed(0)}g
+                      </Text>
+                      <Text style={{ fontSize: fp(10), color: '#4DA6FF' }}>
+                        L:{(selectedRecipe.fat_per_100g * (selectedRecipe.category?.includes('Snack') || selectedRecipe.category?.includes('Accompagnement') ? 1.5 : 3)).toFixed(0)}g
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Sélection créneau */}
+                  <Text style={{
+                    fontSize: fp(12),
+                    fontWeight: '600',
+                    color: '#9CA3AF',
+                    marginBottom: wp(10),
+                  }}>
+                    Choisir le créneau :
+                  </Text>
+
+                  <View style={{
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    gap: wp(8),
+                    marginBottom: wp(20),
+                  }}>
+                    {MEAL_SLOTS.map((slot) => (
+                      <TouchableOpacity
+                        key={slot.key}
+                        onPress={() => setSelectedSlot(slot.key)}
+                        style={{
+                          flex: 1,
+                          minWidth: '45%',
+                          paddingVertical: wp(12),
+                          paddingHorizontal: wp(10),
+                          borderRadius: wp(10),
+                          borderWidth: 1.5,
+                          borderColor: selectedSlot === slot.key ? '#00D984' : '#4A4F55',
+                          backgroundColor: selectedSlot === slot.key
+                            ? 'rgba(0,217,132,0.12)'
+                            : '#252A30',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Text style={{
+                          fontSize: fp(11),
+                          fontWeight: selectedSlot === slot.key ? '700' : '500',
+                          color: selectedSlot === slot.key ? '#00D984' : '#9CA3AF',
+                        }}>
+                          {slot.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Boutons action */}
+                  <View style={{ flexDirection: 'row', gap: wp(10) }}>
+                    {/* Annuler */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowAddConfirm(false);
+                        setSelectedSlot(null);
+                      }}
+                      style={{
+                        flex: 1,
+                        paddingVertical: wp(13),
+                        borderRadius: wp(12),
+                        borderWidth: 1,
+                        borderColor: '#4A4F55',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ fontSize: fp(13), color: '#9CA3AF', fontWeight: '600' }}>
+                        Annuler
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* Confirmer */}
+                    <TouchableOpacity
+                      onPress={addRecipeToMeals}
+                      disabled={!selectedSlot || addingMeal}
+                      style={{
+                        flex: 1.5,
+                        paddingVertical: wp(13),
+                        borderRadius: wp(12),
+                        backgroundColor: selectedSlot ? '#00D984' : 'rgba(0,217,132,0.2)',
+                        alignItems: 'center',
+                        opacity: selectedSlot ? 1 : 0.5,
+                      }}
+                    >
+                      {addingMeal ? (
+                        <ActivityIndicator size="small" color="#1A1D22" />
+                      ) : (
+                        <Text style={{
+                          fontSize: fp(13),
+                          fontWeight: '700',
+                          color: selectedSlot ? '#1A1D22' : '#6B7280',
+                        }}>
+                          Confirmer ✓
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </View>
           </View>
         </Modal>
 
@@ -4417,7 +4792,37 @@ const RepasPage = ({ onNavigate }) => {
                   <Ionicons name="chevron-forward" size={16} color="#FF8C42" />
                 </Pressable>
 
-                {/* Option 3 : Saisie Manuelle */}
+                {/* Option 3 : CartScan */}
+                <Pressable
+                  onPress={() => {
+                    setShowAddModal(false);
+                    setTimeout(() => setShowCartScan(true), 300);
+                  }}
+                  style={({ pressed }) => ({
+                    flexDirection: 'row', alignItems: 'center',
+                    padding: wp(14), borderRadius: 14, marginBottom: wp(10),
+                    backgroundColor: pressed ? 'rgba(77,166,255,0.12)' : 'rgba(77,166,255,0.04)',
+                    borderWidth: 1.2, borderColor: pressed ? 'rgba(77,166,255,0.4)' : 'rgba(77,166,255,0.15)',
+                  })}
+                >
+                  <View style={{
+                    width: wp(40), height: wp(40), borderRadius: wp(12),
+                    backgroundColor: 'rgba(77,166,255,0.08)',
+                    justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                    borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)',
+                  }}>
+                    <Text style={{ fontSize: fp(20) }}>🛒</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#4DA6FF', fontSize: fp(14), fontWeight: '800' }}>CartScan</Text>
+                    <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: 2 }}>
+                      {lang === 'fr' ? 'Scanner les produits de votre caddie' : 'Scan your cart products'}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="#4DA6FF" />
+                </Pressable>
+
+                {/* Option 4 : Saisie Manuelle */}
                 <Pressable
                   onPress={() => {
                     setShowAddModal(false);
