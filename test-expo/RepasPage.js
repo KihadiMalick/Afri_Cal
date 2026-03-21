@@ -3327,12 +3327,17 @@ const RepasPage = ({ onNavigate }) => {
               />
             )}
 
-            <View style={{
-              flex: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
-              paddingHorizontal: wp(30),
-            }}>
+            <ScrollView
+              contentContainerStyle={{
+                flexGrow: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                paddingHorizontal: wp(30),
+                paddingTop: Platform.OS === 'android' ? 60 : 80,
+                paddingBottom: Platform.OS === 'android' ? 60 : 40,
+              }}
+              showsVerticalScrollIndicator={false}
+            >
               {/* Icône principale */}
               <View style={{
                 width: wp(80), height: wp(80), borderRadius: wp(40),
@@ -3492,7 +3497,7 @@ const RepasPage = ({ onNavigate }) => {
                   </Text>
                 </Pressable>
               </View>
-            </View>
+            </ScrollView>
           </View>
         )}
 
