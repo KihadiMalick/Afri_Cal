@@ -520,13 +520,6 @@ const COUNTRY_FLAGS = {
 // Fonction helper pour récupérer le drapeau
 const getFlag = (country) => COUNTRY_FLAGS[country] || '🌍';
 
-const MEAL_SLOTS = [
-  { key: 'breakfast', label: '☀️ Petit-déjeuner', icon: '☀️' },
-  { key: 'lunch', label: '🍽️ Déjeuner', icon: '🍽️' },
-  { key: 'dinner', label: '🌙 Dîner', icon: '🌙' },
-  { key: 'snack', label: '🍎 Snack', icon: '🍎' },
-];
-
 // ============================================
 // COMPOSANT PRINCIPAL — RepasPage
 // ============================================
