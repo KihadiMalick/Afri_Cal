@@ -240,13 +240,11 @@ const MEAL_CARD_HEIGHT = wp(150);
 const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => {
 
   if (meal) {
+    const allMeals = meals || [];
+    const hasMultiple = allMeals.length > 1;
+
     return (
-      <Pressable delayPressIn={120}
-        style={({ pressed }) => ({
-          width: MEAL_CARD_WIDTH,
-          transform: [{ scale: pressed ? 0.975 : 1 }],
-        })}
-      >
+      <View style={{ width: MEAL_CARD_WIDTH }}>
         <View style={{
           borderRadius: 16, padding: 1,
           backgroundColor: '#4A4F55', elevation: 8,
@@ -255,7 +253,7 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
         }}>
           <LinearGradient
             colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-            style={{ borderRadius: 15, padding: wp(11), minHeight: MEAL_CARD_HEIGHT }}
+            style={{ borderRadius: 15, overflow: 'hidden' }}
           >
             {/* Ligne émeraude */}
             <View style={{
@@ -263,80 +261,113 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
               height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
             }}/>
 
-            {/* Header compact */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+            {/* Header */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: wp(11), paddingHorizontal: wp(11) }}>
               <Text style={{ fontSize: 14 }}>{icon}</Text>
               <Text style={{
                 color: '#8892A0', fontSize: fp(9), fontWeight: '700',
                 letterSpacing: 1, marginLeft: 4, textTransform: 'uppercase',
               }}>{label}</Text>
-              <Text style={{ color: '#3A4050', fontSize: fp(9), marginLeft: 'auto' }}>{meal.time}</Text>
+              {hasMultiple && (
+                <View style={{
+                  marginLeft: 'auto',
+                  backgroundColor: 'rgba(0,217,132,0.1)',
+                  paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4,
+                }}>
+                  <Text style={{ color: '#00D984', fontSize: fp(8), fontWeight: '700' }}>{allMeals.length}</Text>
+                </View>
+              )}
+              {!hasMultiple && (
+                <Text style={{ color: '#3A4050', fontSize: fp(9), marginLeft: 'auto' }}>{meal.time}</Text>
+              )}
             </View>
 
-            {/* Miniature SVG + infos */}
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{
-                width: wp(36), height: wp(36), borderRadius: 14,
-                backgroundColor: '#252A30', justifyContent: 'center', alignItems: 'center',
-                marginRight: wp(10),
-              }}>
-                <Svg width={30} height={30} viewBox="0 0 36 36">
-                  <Ellipse cx="18" cy="25" rx="14" ry="6" fill="none" stroke="#5A6070" strokeWidth={1.5}/>
-                  <Path d="M4 25C4 21 10 17 18 17C26 17 32 21 32 25" fill="none" stroke="#5A6070" strokeWidth={1.5}/>
-                  <Path d="M14 15C14.5 12 16 10 18 10C20 10 21.5 12 22 15" fill="none" stroke="#5A6070" strokeWidth={1} opacity={0.5}/>
-                  <Path d="M16 12C16 10 17 8 18 7" fill="none" stroke="#5A6070" strokeWidth={0.8} opacity={0.4}/>
-                  <Path d="M20 13C20.5 11 21 9 21 8" fill="none" stroke="#5A6070" strokeWidth={0.8} opacity={0.4}/>
+            {/* Zone scrollable si plusieurs repas */}
+            <ScrollView
+              nestedScrollEnabled={true}
+              showsVerticalScrollIndicator={false}
+              style={{ maxHeight: hasMultiple ? wp(110) : undefined, paddingHorizontal: wp(11) }}
+              contentContainerStyle={{ paddingBottom: wp(4), paddingTop: wp(6) }}
+            >
+              {(hasMultiple ? allMeals : [allMeals[0] || {}]).map((m, idx) => {
+                const mealData = hasMultiple ? {
+                  name: m.food_name,
+                  calories: Math.round(m.calories || 0),
+                  protein: Math.round(m.protein_g || 0),
+                  carbs: Math.round(m.carbs_g || 0),
+                  fat: Math.round(m.fat_g || 0),
+                } : meal;
+
+                return (
+                  <View key={idx} style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    paddingBottom: hasMultiple && idx < allMeals.length - 1 ? wp(6) : 0,
+                    marginBottom: hasMultiple && idx < allMeals.length - 1 ? wp(6) : 0,
+                    borderBottomWidth: hasMultiple && idx < allMeals.length - 1 ? 0.5 : 0,
+                    borderBottomColor: 'rgba(255,255,255,0.05)',
+                  }}>
+                    <View style={{
+                      width: wp(30), height: wp(30), borderRadius: 10,
+                      backgroundColor: '#252A30', justifyContent: 'center', alignItems: 'center',
+                      marginRight: wp(8),
+                    }}>
+                      <Svg width={20} height={20} viewBox="0 0 24 24">
+                        <Ellipse cx="12" cy="16" rx="8" ry="4" fill="none" stroke="#5A6070" strokeWidth={1.2}/>
+                        <Path d="M4 16C4 13 7 10 12 10C17 10 20 13 20 16" fill="none" stroke="#5A6070" strokeWidth={1.2}/>
+                      </Svg>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{
+                        color: '#EAEEF3', fontSize: fp(11), fontWeight: '700',
+                      }} numberOfLines={1}>{mealData.name}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                        <Text style={{
+                          color: '#FF8C42', fontSize: fp(11), fontWeight: '700',
+                        }}>{mealData.calories} kcal</Text>
+                        <Text style={{ color: '#3A4050', fontSize: fp(7), marginLeft: wp(6) }}>
+                          {mealData.protein}P {mealData.carbs}G {mealData.fat}L
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </ScrollView>
+
+            {/* Indicateur scroll si multiple */}
+            {hasMultiple && (
+              <View style={{ alignItems: 'center', paddingBottom: wp(2) }}>
+                <Svg width={16} height={8} viewBox="0 0 16 8">
+                  <Path d="M4 2L8 6L12 2" fill="none" stroke="#5A6070" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"/>
                 </Svg>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{
-                  color: '#EAEEF3', fontSize: fp(12), fontWeight: '700',
-                }} numberOfLines={1}>{meal.name}</Text>
-                <Text style={{
-                  color: '#FF8C42', fontSize: fp(13), fontWeight: '700', marginTop: 2,
-                }}>{meal.calories} kcal</Text>
+            )}
 
-                {/* Macros compacts — 2 visibles max */}
-                <View style={{ flexDirection: 'row', marginTop: wp(4), gap: wp(6), flexWrap: 'nowrap' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FF6B6B', marginRight: 2 }}/>
-                    <Text style={{ color: '#5A6070', fontSize: fp(7) }} numberOfLines={1}>{meal.protein}g P</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFD93D', marginRight: 2 }}/>
-                    <Text style={{ color: '#5A6070', fontSize: fp(7) }} numberOfLines={1}>{meal.carbs}g G</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#4DA6FF', marginRight: 2 }}/>
-                    <Text style={{ color: '#5A6070', fontSize: fp(7) }} numberOfLines={1}>{meal.fat}g L</Text>
-                  </View>
-                </View>
-              </View>
+            {/* Bouton Ajouter en bas */}
+            <View style={{ paddingHorizontal: wp(11), paddingBottom: wp(11), paddingTop: wp(4) }}>
+              <Pressable delayPressIn={120}
+                onPress={() => { if (onAddMeal) onAddMeal(slotKey); }}
+                style={({ pressed }) => ({
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                  paddingVertical: wp(5),
+                  borderRadius: 10,
+                  backgroundColor: pressed ? 'rgba(0,217,132,0.12)' : 'rgba(0,217,132,0.04)',
+                  borderWidth: 1,
+                  borderColor: pressed ? 'rgba(0,217,132,0.4)' : 'rgba(0,217,132,0.15)',
+                })}
+              >
+                <Svg width={10} height={10} viewBox="0 0 10 10" style={{ marginRight: 3 }}>
+                  <Line x1="5" y1="1" x2="5" y2="9" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round"/>
+                  <Line x1="1" y1="5" x2="9" y2="5" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round"/>
+                </Svg>
+                <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '700' }}>
+                  {lang === 'fr' ? 'Ajouter' : 'Add'}
+                </Text>
+              </Pressable>
             </View>
-
-            {/* Bouton + Ajouter — plus visible */}
-            <Pressable delayPressIn={120}
-              onPress={() => { if (onAddMeal) onAddMeal(slotKey); }}
-              style={({ pressed }) => ({
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-                marginTop: wp(8), paddingVertical: wp(5),
-                borderRadius: 12,
-                backgroundColor: pressed ? 'rgba(0,217,132,0.12)' : 'rgba(0,217,132,0.06)',
-                borderWidth: 1,
-                borderColor: pressed ? 'rgba(0,217,132,0.4)' : 'rgba(0,217,132,0.2)',
-              })}
-            >
-              <Svg width={12} height={12} viewBox="0 0 12 12" style={{ marginRight: 4 }}>
-                <Line x1="6" y1="2" x2="6" y2="10" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round"/>
-                <Line x1="2" y1="6" x2="10" y2="6" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round"/>
-              </Svg>
-              <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>
-                {lang === 'fr' ? 'Ajouter' : 'Add'}
-              </Text>
-            </Pressable>
           </LinearGradient>
         </View>
-      </Pressable>
+      </View>
     );
   }
 
