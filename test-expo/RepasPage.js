@@ -655,6 +655,164 @@ const RepasPage = ({ onNavigate }) => {
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [scanError, setScanError] = useState(null);
 
+  // === RECETTES STATES ===
+  const [showRecipes, setShowRecipes] = useState(false);
+  const [recipesTab, setRecipesTab] = useState('general'); // 'general' | 'personalized'
+  const [recipesData, setRecipesData] = useState([]);
+  const [recipesLoading, setRecipesLoading] = useState(false);
+  const [recipesSearch, setRecipesSearch] = useState('');
+  const [recipesRegion, setRecipesRegion] = useState('all');
+  const [recipesCategory, setRecipesCategory] = useState('all');
+  const [recipesPage, setRecipesPage] = useState(0);
+  const [recipesHasMore, setRecipesHasMore] = useState(true);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  // Personnalisé
+  const [userMood, setUserMood] = useState(null); // { mood_level, weather }
+  const [moodRecipes, setMoodRecipes] = useState([]);
+  const [moodMessage, setMoodMessage] = useState('');
+
+  const RECIPE_REGIONS = [
+    { key: 'all', label: '🌍 Tout', labelEn: '🌍 All' },
+    { key: 'Afrique de l\'Ouest', label: '🇸🇳 Afrique Ouest', labelEn: '🇸🇳 West Africa' },
+    { key: 'Afrique de l\'Est', label: '🇰🇪 Afrique Est', labelEn: '🇰🇪 East Africa' },
+    { key: 'Afrique Centrale', label: '🇨🇩 Afrique Centrale', labelEn: '🇨🇩 Central Africa' },
+    { key: 'Afrique du Nord', label: '🇲🇦 Afrique Nord', labelEn: '🇲🇦 North Africa' },
+    { key: 'Afrique Australe', label: '🇿🇦 Afrique Australe', labelEn: '🇿🇦 Southern Africa' },
+    { key: 'Europe', label: '🇫🇷 Europe', labelEn: '🇫🇷 Europe' },
+    { key: 'Asie', label: '🇯🇵 Asie', labelEn: '🇯🇵 Asia' },
+    { key: 'Amérique', label: '🇺🇸 Amérique', labelEn: '🇺🇸 Americas' },
+    { key: 'Moyen-Orient', label: '🇱🇧 Moyen-Orient', labelEn: '🇱🇧 Middle East' },
+  ];
+
+  const RECIPE_CATEGORIES = [
+    { key: 'all', label: '🍽️ Tout', labelEn: '🍽️ All' },
+    { key: 'Plat', label: '🍲 Consistant', labelEn: '🍲 Main' },
+    { key: 'Soupe', label: '🥣 Soupe', labelEn: '🥣 Soup' },
+    { key: 'Salade', label: '🥗 Salade', labelEn: '🥗 Salad' },
+    { key: 'Petit-déjeuner', label: '🌅 Petit-déj', labelEn: '🌅 Breakfast' },
+    { key: 'Snack', label: '🍿 Snack', labelEn: '🍿 Snack' },
+    { key: 'Dessert', label: '🍰 Dessert', labelEn: '🍰 Dessert' },
+    { key: 'Accompagnement', label: '🥘 Accomp.', labelEn: '🥘 Side' },
+    { key: 'Boisson', label: '🥤 Boisson', labelEn: '🥤 Drink' },
+  ];
+
+  // Matrice Mood × Météo → catégories recommandées
+  const MOOD_MATRIX = {
+    'happy_sunny': { cats: ['Salade', 'Snack', 'Boisson'], msg_fr: 'Belle journée, beau mood ! Des plats frais et colorés pour vous ☀️', msg_en: 'Great day, great mood! Fresh and colorful dishes for you ☀️' },
+    'happy_cloudy': { cats: ['Plat', 'Salade'], msg_fr: 'Bonne humeur même sous les nuages ! Un plat savoureux ? ⛅', msg_en: 'Good mood even under clouds! A tasty dish? ⛅' },
+    'happy_rainy': { cats: ['Plat', 'Soupe'], msg_fr: 'Joyeux malgré la pluie ! Un bon plat chaud pour célébrer 🌧️', msg_en: 'Happy despite the rain! A warm dish to celebrate 🌧️' },
+    'neutral_sunny': { cats: ['Salade', 'Plat', 'Snack'], msg_fr: 'Journée tranquille, plats équilibrés et agréables 🌤️', msg_en: 'Chill day, balanced and pleasant dishes 🌤️' },
+    'neutral_cloudy': { cats: ['Plat', 'Accompagnement'], msg_fr: 'Un classique pour une journée classique ⛅', msg_en: 'A classic for a classic day ⛅' },
+    'neutral_rainy': { cats: ['Soupe', 'Plat'], msg_fr: 'Temps de pluie, temps de soupe ! 🌧️', msg_en: 'Rainy day, soup day! 🌧️' },
+    'sad_sunny': { cats: ['Snack', 'Salade', 'Dessert'], msg_fr: 'Le soleil est là pour vous ! Des plats légers pour remonter le moral 🌞', msg_en: 'The sun is here for you! Light dishes to lift your spirits 🌞' },
+    'sad_cloudy': { cats: ['Soupe', 'Plat'], msg_fr: 'Un peu gris ? Du réconfort dans l\'assiette 🍲', msg_en: 'Feeling gray? Comfort on the plate 🍲' },
+    'sad_rainy': { cats: ['Soupe', 'Plat', 'Dessert'], msg_fr: 'Un peu gris dehors et dedans ? Du réconfort chaud pour vous ❤️', msg_en: 'Gray outside and inside? Warm comfort for you ❤️' },
+    'stressed_sunny': { cats: ['Salade', 'Boisson'], msg_fr: 'On respire... Des plats légers pour apaiser le corps 🧘', msg_en: 'Let\'s breathe... Light dishes to soothe 🧘' },
+    'stressed_cloudy': { cats: ['Soupe', 'Salade'], msg_fr: 'Déstressez avec un plat simple et apaisant 🍃', msg_en: 'De-stress with a simple soothing dish 🍃' },
+    'stressed_rainy': { cats: ['Soupe', 'Boisson'], msg_fr: 'Pluie et stress ? Une soupe chaude, rien de mieux 🫖', msg_en: 'Rain and stress? A warm soup, nothing better 🫖' },
+    'tired_sunny': { cats: ['Plat', 'Snack', 'Petit-déjeuner'], msg_fr: 'Besoin d\'un boost ? Protéines et énergie au menu ! ⚡', msg_en: 'Need a boost? Protein and energy on the menu! ⚡' },
+    'tired_cloudy': { cats: ['Plat', 'Petit-déjeuner'], msg_fr: 'Rechargez les batteries avec un plat costaud 🔋', msg_en: 'Recharge with a hearty dish 🔋' },
+    'tired_rainy': { cats: ['Soupe', 'Plat'], msg_fr: 'Fatigue + pluie = soupe chaude et protéines 💪', msg_en: 'Tired + rain = warm soup and protein 💪' },
+  };
+
+  // Charger les recettes depuis meals_master
+  const loadRecipes = async (page = 0, search = '', region = 'all', category = 'all', append = false) => {
+    setRecipesLoading(true);
+    try {
+      let query = supabase
+        .from('meals_master')
+        .select('*')
+        .order('name', { ascending: true })
+        .range(page * 20, (page + 1) * 20 - 1);
+
+      if (search.length >= 2) {
+        query = query.ilike('search_name', '%' + search.toLowerCase() + '%');
+      }
+      if (region !== 'all') {
+        if (region === 'Asie') {
+          query = query.or('region.ilike.%Asie%');
+        } else if (region === 'Amérique') {
+          query = query.or('region.ilike.%Am%rique%');
+        } else {
+          query = query.ilike('region', '%' + region + '%');
+        }
+      }
+      if (category !== 'all') {
+        query = query.ilike('category', '%' + category + '%');
+      }
+
+      const { data, error } = await query;
+      if (error) console.error('Recipes load error:', error);
+      if (data) {
+        setRecipesData(append ? [...recipesData, ...data] : data);
+        setRecipesHasMore(data.length >= 20);
+      }
+    } catch (e) {
+      console.error('Recipes error:', e);
+    }
+    setRecipesLoading(false);
+  };
+
+  // Charger le mood du jour et les recettes personnalisées
+  const loadMoodRecipes = async () => {
+    try {
+      // 1. Récupérer le dernier mood du jour
+      const today = new Date().toISOString().split('T')[0];
+      const { data: moodData } = await supabase
+        .from('moods')
+        .select('mood_level, weather')
+        .eq('user_id', TEST_USER_ID)
+        .gte('created_at', today + 'T00:00:00')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      let mood = moodData && moodData[0] ? moodData[0] : null;
+      setUserMood(mood);
+
+      if (!mood) {
+        setMoodMessage(lang === 'fr' ? 'Enregistrez votre humeur sur le Dashboard pour des recommandations personnalisées !' : 'Record your mood on the Dashboard for personalized recommendations!');
+        setMoodRecipes([]);
+        return;
+      }
+
+      // 2. Mapper mood_level vers notre clé
+      const moodMap = { 'happy': 'happy', 'neutral': 'neutral', 'sad': 'sad', 'stressed': 'stressed', 'tired': 'tired', 'joyeux': 'happy', 'neutre': 'neutral', 'triste': 'sad', 'stressé': 'stressed', 'fatigué': 'tired' };
+      const weatherMap = { 'sunny': 'sunny', 'cloudy': 'cloudy', 'rainy': 'rainy', 'ensoleillé': 'sunny', 'nuageux': 'cloudy', 'pluvieux': 'rainy', 'sun': 'sunny', 'cloud': 'cloudy', 'rain': 'rainy' };
+
+      const mKey = moodMap[(mood.mood_level || '').toLowerCase()] || 'neutral';
+      const wKey = weatherMap[(mood.weather || '').toLowerCase()] || 'cloudy';
+      const matrixKey = mKey + '_' + wKey;
+      const matrix = MOOD_MATRIX[matrixKey] || MOOD_MATRIX['neutral_cloudy'];
+
+      setMoodMessage(lang === 'fr' ? matrix.msg_fr : matrix.msg_en);
+
+      // 3. Charger les recettes qui matchent les catégories recommandées
+      const catFilters = matrix.cats.map(c => 'category.ilike.%' + c + '%').join(',');
+      const { data: recs } = await supabase
+        .from('meals_master')
+        .select('*')
+        .or(catFilters)
+        .order('name', { ascending: true })
+        .limit(30);
+
+      if (recs) setMoodRecipes(recs);
+    } catch (e) {
+      console.error('Mood recipes error:', e);
+    }
+  };
+
+  // Ouvrir l'écran Recettes
+  const openRecipes = () => {
+    setShowRecipes(true);
+    setRecipesTab('general');
+    setRecipesSearch('');
+    setRecipesRegion('all');
+    setRecipesCategory('all');
+    setRecipesPage(0);
+    loadRecipes(0);
+    loadMoodRecipes();
+  };
+
   // === XSCAN AR STATES ===
   const [arPhase, setArPhase] = useState('idle');
   // 'idle' = pas actif
@@ -2280,6 +2438,7 @@ const RepasPage = ({ onNavigate }) => {
             <SectionTitle
               title={lang === 'fr' ? 'Recettes' : 'Recipes'}
               rightLabel={lang === 'fr' ? 'Voir tout ›' : 'See all ›'}
+              rightAction={openRecipes}
             />
 
             <ScrollView
