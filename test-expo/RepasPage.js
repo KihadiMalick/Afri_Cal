@@ -653,6 +653,7 @@ const RepasPage = ({ onNavigate }) => {
   // Les infos visuelles de l'IA (texture, volume, ingredients_seen)
 
   const [showAlternatives, setShowAlternatives] = useState(false);
+  const [scanError, setScanError] = useState(null);
   const [alternativeDishes, setAlternativeDishes] = useState([]);
   const [currentDishName, setCurrentDishName] = useState('');
 
@@ -864,9 +865,43 @@ const RepasPage = ({ onNavigate }) => {
         setCurrentDishName(lang === 'fr' ? 'Plat non identifié' : 'Unidentified meal');
       }
 
+      // Détecter si l'image n'est pas de la nourriture
+      const currentResult = scanResult || result.suggestions?.[0] || result.ai_fallback || {};
+      const ingredients = currentResult.ingredients || result.suggestions?.[0]?.ingredients || result.ai_fallback?.ingredients || [];
+      const confidence = currentResult.confidence || result.suggestions?.[0]?.confidence || result.ai_fallback?.confidence || 0;
+      const totalCal = currentResult.totals?.calories || currentResult.calories || result.suggestions?.[0]?.calories || result.ai_fallback?.totals?.calories || 0;
+      const dishName = (currentDishName || currentResult.name_fr || currentResult.dish_name_fr || '').toLowerCase();
+
+      const suspectTerms = ['aucun', 'non identifié', 'unknown', 'unidentified', 'no ingredient', 'illustration', 'artistique', 'image', 'photo', 'dessin', 'logo', 'texte', 'document'];
+      const hasSuspectName = suspectTerms.some(term => dishName.includes(term));
+      const hasSuspectIngredient = ingredients.length <= 1 && ingredients.some(ing => {
+        const ingName = (ing.name || '').toLowerCase();
+        return suspectTerms.some(term => ingName.includes(term));
+      });
+      const isLowConfidenceLowCal = confidence < 50 && totalCal <= 150 && ingredients.length <= 1;
+      const isNotFood = hasSuspectName || hasSuspectIngredient || isLowConfidenceLowCal;
+
       setAnalysisProgress(100);
-      setSelectedMealType(getAutoMealType());
-      setTimeout(() => setScanScreen('result'), 500);
+
+      if (isNotFood) {
+        // Ce n'est probablement pas de la nourriture
+        const errorMessages = lang === 'fr' ? [
+          { title: 'Hmm, ça ne ressemble pas à un plat 🤔', subtitle: 'Il semble que cette image soit autre chose que de la nourriture. Essayez avec une vraie photo de repas !' },
+          { title: 'Oups, pas de nourriture détectée 🍽️', subtitle: 'Notre IA a cherché partout mais n\'a trouvé aucun aliment dans cette image. Prenez une photo de votre assiette !' },
+          { title: 'Ce n\'est pas comestible... enfin, on espère ! 😄', subtitle: 'L\'image ne semble pas contenir de nourriture. Essayez avec un vrai plat, on fera le reste !' },
+        ] : [
+          { title: 'Hmm, that doesn\'t look like food 🤔', subtitle: 'This image seems to be something other than food. Try with a real meal photo!' },
+          { title: 'Oops, no food detected 🍽️', subtitle: 'Our AI searched everywhere but found no food in this image. Take a picture of your plate!' },
+          { title: 'That\'s not edible... we hope! 😄', subtitle: 'The image doesn\'t seem to contain food. Try with a real dish, we\'ll handle the rest!' },
+        ];
+        const randomMsg = errorMessages[Math.floor(Math.random() * errorMessages.length)];
+        setScanError(randomMsg);
+        setTimeout(() => setScanScreen('error'), 500);
+      } else {
+        setScanError(null);
+        setSelectedMealType(getAutoMealType());
+        setTimeout(() => setScanScreen('result'), 500);
+      }
 
     } catch (error) {
       clearInterval(textInterval);
@@ -1217,6 +1252,7 @@ const RepasPage = ({ onNavigate }) => {
         setAlternativeDishes([]);
         setCurrentDishName('');
         setScanMode('none');
+        setScanError(null);
         setScanSuggestions([]);
         setSelectedSuggestion(null);
         setAiVisual(null);
@@ -3270,6 +3306,196 @@ const RepasPage = ({ onNavigate }) => {
           </View>
         )}
 
+        {/* ÉCRAN ERREUR — Image non-alimentaire */}
+        {scanScreen === 'error' && scanError && (
+          <View style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            zIndex: 2000,
+            backgroundColor: '#0D1117',
+          }}>
+            {/* Photo floue en fond */}
+            {capturedPhoto && (
+              <Image
+                source={{ uri: capturedPhoto.uri }}
+                style={{
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  opacity: 0.08,
+                }}
+                blurRadius={20}
+              />
+            )}
+
+            <View style={{
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingHorizontal: wp(30),
+            }}>
+              {/* Icône principale */}
+              <View style={{
+                width: wp(80), height: wp(80), borderRadius: wp(40),
+                backgroundColor: 'rgba(255,140,66,0.08)',
+                borderWidth: 2, borderColor: 'rgba(255,140,66,0.2)',
+                justifyContent: 'center', alignItems: 'center',
+                marginBottom: wp(24),
+              }}>
+                <Svg width={40} height={40} viewBox="0 0 40 40">
+                  {/* Loupe avec X */}
+                  <Circle cx="17" cy="17" r="10" fill="none" stroke="#FF8C42" strokeWidth={2.5}/>
+                  <Line x1="25" y1="25" x2="35" y2="35" stroke="#FF8C42" strokeWidth={2.5} strokeLinecap="round"/>
+                  {/* X dans la loupe */}
+                  <Line x1="13" y1="13" x2="21" y2="21" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round"/>
+                  <Line x1="21" y1="13" x2="13" y2="21" stroke="#FF8C42" strokeWidth={2} strokeLinecap="round"/>
+                </Svg>
+              </View>
+
+              {/* Mini photo capturée */}
+              {capturedPhoto && (
+                <View style={{
+                  width: wp(100), height: wp(100), borderRadius: 16,
+                  overflow: 'hidden', marginBottom: wp(24),
+                  borderWidth: 2, borderColor: 'rgba(255,140,66,0.2)',
+                  opacity: 0.7,
+                }}>
+                  <Image
+                    source={{ uri: capturedPhoto.uri }}
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                  {/* Barre diagonale "pas de nourriture" */}
+                  <View style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    justifyContent: 'center', alignItems: 'center',
+                  }}>
+                    <View style={{
+                      width: '140%', height: 3, backgroundColor: 'rgba(255,59,48,0.6)',
+                      transform: [{ rotate: '-45deg' }],
+                    }}/>
+                  </View>
+                </View>
+              )}
+
+              {/* Titre chaleureux */}
+              <Text style={{
+                color: '#EAEEF3', fontSize: fp(20), fontWeight: '800',
+                textAlign: 'center', marginBottom: wp(10),
+                lineHeight: fp(26),
+              }}>
+                {scanError.title}
+              </Text>
+
+              {/* Sous-titre explicatif */}
+              <Text style={{
+                color: '#8892A0', fontSize: fp(13), textAlign: 'center',
+                lineHeight: fp(20), marginBottom: wp(30),
+              }}>
+                {scanError.subtitle}
+              </Text>
+
+              {/* Conseils */}
+              <View style={{
+                width: '100%', borderRadius: 16,
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+                padding: wp(16), marginBottom: wp(30),
+              }}>
+                <Text style={{
+                  color: '#8892A0', fontSize: fp(10), fontWeight: '700',
+                  letterSpacing: 1.5, marginBottom: wp(10),
+                }}>
+                  {lang === 'fr' ? 'CONSEILS POUR UN BON SCAN' : 'TIPS FOR A GOOD SCAN'}
+                </Text>
+                {[
+                  { emoji: '📸', text: lang === 'fr' ? 'Prenez la photo de haut, bien centrée' : 'Take the photo from above, well centered' },
+                  { emoji: '💡', text: lang === 'fr' ? 'Assurez-vous d\'un bon éclairage' : 'Make sure lighting is good' },
+                  { emoji: '🍽️', text: lang === 'fr' ? 'Le plat doit être bien visible dans le cadre' : 'The dish should be clearly visible in frame' },
+                  { emoji: '🚫', text: lang === 'fr' ? 'Évitez les images floues ou non-alimentaires' : 'Avoid blurry or non-food images' },
+                ].map((tip, i) => (
+                  <View key={i} style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    marginBottom: i < 3 ? wp(8) : 0,
+                  }}>
+                    <Text style={{ fontSize: 14, marginRight: wp(8) }}>{tip.emoji}</Text>
+                    <Text style={{ color: '#EAEEF3', fontSize: fp(11), flex: 1 }}>{tip.text}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* Boutons */}
+              <View style={{ width: '100%', gap: wp(10) }}>
+                {/* Réessayer */}
+                <Pressable
+                  onPress={() => {
+                    setScanScreen('none');
+                    setScanError(null);
+                    setScanResult(null);
+                    setCapturedPhoto(null);
+                    setCurrentDishName('');
+                    setScanMode('none');
+                    setScanError(null);
+                    setScanSuggestions([]);
+                    setAiVisual(null);
+                    // Relancer directement la galerie
+                    pickImageFromGallery();
+                  }}
+                  style={({ pressed }) => ({
+                    paddingVertical: wp(14), borderRadius: 14,
+                    backgroundColor: pressed ? '#00B572' : '#00D984',
+                    alignItems: 'center',
+                  })}
+                >
+                  <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
+                    {lang === 'fr' ? '📸 Réessayer avec une autre photo' : '📸 Try again with another photo'}
+                  </Text>
+                </Pressable>
+
+                {/* Saisie manuelle */}
+                <Pressable
+                  onPress={() => {
+                    setScanScreen('none');
+                    setScanError(null);
+                    setScanResult(null);
+                    setCapturedPhoto(null);
+                    setCurrentDishName('');
+                    openManualEntry();
+                  }}
+                  style={({ pressed }) => ({
+                    paddingVertical: wp(12), borderRadius: 14,
+                    backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+                    borderWidth: 1, borderColor: '#3A3F46',
+                    alignItems: 'center',
+                  })}
+                >
+                  <Text style={{ color: '#8892A0', fontSize: fp(13), fontWeight: '600' }}>
+                    {lang === 'fr' ? '✏️ Saisir manuellement' : '✏️ Enter manually'}
+                  </Text>
+                </Pressable>
+
+                {/* Fermer */}
+                <Pressable
+                  onPress={() => {
+                    setScanScreen('none');
+                    setScanError(null);
+                    setScanResult(null);
+                    setCapturedPhoto(null);
+                    setCurrentDishName('');
+                    setScanMode('none');
+                    setScanError(null);
+                    setScanSuggestions([]);
+                    setAiVisual(null);
+                  }}
+                  style={{ alignItems: 'center', paddingVertical: wp(8) }}
+                >
+                  <Text style={{ color: '#5A6070', fontSize: fp(12) }}>
+                    {lang === 'fr' ? 'Fermer' : 'Close'}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* ÉCRAN RÉSULTAT */}
         {scanScreen === 'result' && scanResult && (
           <View style={{
@@ -3300,6 +3526,7 @@ const RepasPage = ({ onNavigate }) => {
                   setAlternativeDishes([]);
                   setCurrentDishName('');
                   setScanMode('none');
+                  setScanError(null);
                   setScanSuggestions([]);
                   setSelectedSuggestion(null);
                   setAiVisual(null);
