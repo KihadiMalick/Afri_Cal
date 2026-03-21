@@ -732,6 +732,10 @@ const RepasPage = ({ onNavigate }) => {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [recipeIngredients, setRecipeIngredients] = useState([]);
   const [loadingIngredients, setLoadingIngredients] = useState(false);
+  const [recipeSteps, setRecipeSteps] = useState(null);
+  const [loadingSteps, setLoadingSteps] = useState(false);
+  const [displayedSteps, setDisplayedSteps] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   // Personnalisé
   const [userMood, setUserMood] = useState(null); // { mood_level, weather }
   const [moodRecipes, setMoodRecipes] = useState([]);
@@ -904,6 +908,94 @@ const RepasPage = ({ onNavigate }) => {
   const closeRecipeDetail = () => {
     setSelectedRecipe(null);
     setRecipeIngredients([]);
+    setRecipeSteps(null);
+    setDisplayedSteps('');
+    setIsTyping(false);
+    setLoadingSteps(false);
+  };
+
+  // Effet typewriter pour la recette générée
+  const typewriterEffect = (fullText, callback) => {
+    setIsTyping(true);
+    setDisplayedSteps('');
+    let index = 0;
+    const speed = 12;
+
+    const interval = setInterval(() => {
+      if (index < fullText.length) {
+        const chunk = fullText.slice(index, Math.min(index + 3, fullText.length));
+        setDisplayedSteps(prev => prev + chunk);
+        index += 3;
+      } else {
+        clearInterval(interval);
+        setIsTyping(false);
+        if (callback) callback();
+      }
+    }, speed);
+
+    return () => clearInterval(interval);
+  };
+
+  // Générer les étapes de la recette via ALIXEN
+  const generateRecipeSteps = async () => {
+    if (!selectedRecipe || loadingSteps) return;
+    setLoadingSteps(true);
+
+    try {
+      // 1. Vérifier le cache d'abord
+      const { data: cached, error: cacheError } = await supabase
+        .from('recipe_steps_cache')
+        .select('steps_text')
+        .eq('meal_id', selectedRecipe.id)
+        .eq('language', 'fr')
+        .maybeSingle();
+
+      if (cached && cached.steps_text) {
+        setRecipeSteps(cached.steps_text);
+        setLoadingSteps(false);
+        typewriterEffect(cached.steps_text);
+        return;
+      }
+
+      // 2. Pas de cache → appeler Edge Function
+      const ingredientsList = recipeIngredients
+        .map(ing => `${ing.component_name} (${ing.percentage_estimate}%)`)
+        .join(', ');
+
+      const response = await fetch(
+        'https://yuhordnzfpcswztujozi.supabase.co/functions/v1/generate-recipe',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMzk0MzksImV4cCI6MjA1MzkxNTQzOX0.H2mCpGz_RGvMR8TBtX1QLyEJHFVKpXHcNMEf5vGn13M',
+          },
+          body: JSON.stringify({
+            meal_name: selectedRecipe.name,
+            country: selectedRecipe.country_origin,
+            region: selectedRecipe.region,
+            category: selectedRecipe.category,
+            ingredients: ingredientsList,
+            description: selectedRecipe.description || '',
+            language: 'fr',
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.steps) {
+        setRecipeSteps(result.steps);
+        setLoadingSteps(false);
+        typewriterEffect(result.steps);
+      } else {
+        throw new Error(result.error || 'Erreur génération');
+      }
+    } catch (e) {
+      console.error('Recipe generation error:', e);
+      setLoadingSteps(false);
+      setRecipeSteps('__ERROR__');
+    }
   };
 
   // === XSCAN AR STATES ===
@@ -4018,6 +4110,175 @@ const RepasPage = ({ onNavigate }) => {
                         </Text>
                       </View>
                     ) : null}
+
+                    {/* ══════ SECTION PRÉPARATION ALIXEN ══════ */}
+                    <View style={{ marginBottom: wp(20) }}>
+                      <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        marginBottom: wp(12),
+                      }}>
+                        <View style={{
+                          width: wp(3),
+                          height: wp(18),
+                          backgroundColor: '#FF8C42',
+                          borderRadius: wp(2),
+                          marginRight: wp(8),
+                        }} />
+                        <Text style={{
+                          fontSize: fp(14),
+                          fontWeight: '700',
+                          color: '#FFFFFF',
+                        }}>
+                          Préparation
+                        </Text>
+                        <Text style={{
+                          fontSize: fp(9),
+                          color: '#FF8C42',
+                          marginLeft: wp(8),
+                          fontStyle: 'italic',
+                        }}>
+                          par ALIXEN
+                        </Text>
+                      </View>
+
+                      {/* ── État : Pas encore généré ── */}
+                      {!recipeSteps && !loadingSteps && (
+                        <TouchableOpacity
+                          onPress={generateRecipeSteps}
+                          activeOpacity={0.85}
+                          style={{
+                            borderRadius: wp(14),
+                            borderWidth: 1.5,
+                            borderColor: '#FF8C42',
+                            paddingVertical: wp(16),
+                            paddingHorizontal: wp(16),
+                            alignItems: 'center',
+                            backgroundColor: 'rgba(255,140,66,0.08)',
+                          }}
+                        >
+                          <Text style={{
+                            fontSize: fp(22),
+                            marginBottom: wp(6),
+                          }}>🧑‍🍳</Text>
+                          <Text style={{
+                            fontSize: fp(14),
+                            fontWeight: '700',
+                            color: '#FF8C42',
+                            marginBottom: wp(4),
+                          }}>
+                            Générer la recette complète
+                          </Text>
+                          <Text style={{
+                            fontSize: fp(10),
+                            color: '#6B7280',
+                          }}>
+                            15 Lix · Étapes détaillées par ALIXEN IA
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {/* ── État : Chargement ── */}
+                      {loadingSteps && (
+                        <View style={{
+                          borderRadius: wp(14),
+                          borderWidth: 1,
+                          borderColor: '#4A4F55',
+                          paddingVertical: wp(24),
+                          paddingHorizontal: wp(16),
+                          alignItems: 'center',
+                          backgroundColor: '#252A30',
+                        }}>
+                          <ActivityIndicator size="small" color="#FF8C42" />
+                          <Text style={{
+                            fontSize: fp(11),
+                            color: '#FF8C42',
+                            marginTop: wp(10),
+                            fontStyle: 'italic',
+                          }}>
+                            ALIXEN prépare votre recette...
+                          </Text>
+                          <Text style={{
+                            fontSize: fp(9),
+                            color: '#6B7280',
+                            marginTop: wp(4),
+                          }}>
+                            Analyse des ingrédients et traditions culinaires
+                          </Text>
+                        </View>
+                      )}
+
+                      {/* ── État : Erreur ── */}
+                      {recipeSteps === '__ERROR__' && (
+                        <View style={{
+                          borderRadius: wp(14),
+                          borderWidth: 1,
+                          borderColor: 'rgba(255,107,107,0.3)',
+                          paddingVertical: wp(16),
+                          paddingHorizontal: wp(16),
+                          backgroundColor: 'rgba(255,107,107,0.08)',
+                          alignItems: 'center',
+                        }}>
+                          <Text style={{ fontSize: fp(11), color: '#FF6B6B', textAlign: 'center' }}>
+                            Impossible de générer la recette pour le moment.
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => {
+                              setRecipeSteps(null);
+                              setDisplayedSteps('');
+                            }}
+                            style={{ marginTop: wp(10) }}
+                          >
+                            <Text style={{ fontSize: fp(11), color: '#FF8C42', fontWeight: '600' }}>
+                              Réessayer
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+
+                      {/* ── État : Recette affichée (typewriter) ── */}
+                      {recipeSteps && recipeSteps !== '__ERROR__' && (
+                        <View style={{
+                          borderRadius: wp(14),
+                          borderWidth: 1,
+                          borderColor: '#4A4F55',
+                          padding: wp(16),
+                          backgroundColor: '#252A30',
+                        }}>
+                          <Text style={{
+                            fontSize: fp(12),
+                            color: '#D1D5DB',
+                            lineHeight: fp(20),
+                          }}>
+                            {displayedSteps}
+                            {isTyping && (
+                              <Text style={{ color: '#FF8C42', fontWeight: '700' }}>▊</Text>
+                            )}
+                          </Text>
+
+                          {/* Badge "Généré par ALIXEN" en bas */}
+                          {!isTyping && displayedSteps.length > 0 && (
+                            <View style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              marginTop: wp(14),
+                              paddingTop: wp(10),
+                              borderTopWidth: 1,
+                              borderTopColor: 'rgba(74,79,85,0.4)',
+                            }}>
+                              <Text style={{
+                                fontSize: fp(9),
+                                color: '#6B7280',
+                                fontStyle: 'italic',
+                              }}>
+                                🤖 Recette générée par ALIXEN · basée sur {recipeIngredients.length} ingrédients
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      )}
+                    </View>
 
                     {/* ══════ BOUTON AJOUTER — PLACEHOLDER CHUNK 4 ══════ */}
                     <TouchableOpacity
