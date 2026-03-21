@@ -3114,6 +3114,436 @@ const RepasPage = ({ onNavigate }) => {
           </View>
         )}
 
+        {/* ÉCRAN RECETTES — plein écran */}
+        {showRecipes && !selectedRecipe && (
+          <View style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            zIndex: 1400,
+            backgroundColor: '#0D1117',
+          }}>
+            {/* Header */}
+            <View style={{
+              flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+              paddingTop: Platform.OS === 'android' ? 50 : 60,
+              paddingHorizontal: wp(16), paddingBottom: wp(10),
+              borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.05)',
+            }}>
+              <Pressable onPress={() => setShowRecipes(false)}>
+                <Text style={{ color: '#8892A0', fontSize: fp(14) }}>✕ {lang === 'fr' ? 'Fermer' : 'Close'}</Text>
+              </Pressable>
+              <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800', letterSpacing: 1 }}>
+                {lang === 'fr' ? 'RECETTES' : 'RECIPES'}
+              </Text>
+              <View style={{ width: 60 }} />
+            </View>
+
+            {/* 2 Onglets : Général / Personnalisé */}
+            <View style={{
+              flexDirection: 'row', marginHorizontal: wp(16), marginTop: wp(10),
+              borderRadius: 14, overflow: 'hidden',
+              backgroundColor: 'rgba(255,255,255,0.03)',
+              borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
+            }}>
+              <Pressable
+                onPress={() => { setRecipesTab('general'); if (recipesData.length === 0) loadRecipes(0); }}
+                style={{
+                  flex: 1, paddingVertical: wp(12), alignItems: 'center',
+                  backgroundColor: recipesTab === 'general' ? 'rgba(0,217,132,0.12)' : 'transparent',
+                  borderRightWidth: 0.5, borderRightColor: 'rgba(255,255,255,0.05)',
+                }}
+              >
+                <Text style={{ fontSize: 16, marginBottom: 2 }}>🌍</Text>
+                <Text style={{
+                  color: recipesTab === 'general' ? '#00D984' : '#8892A0',
+                  fontSize: fp(11), fontWeight: recipesTab === 'general' ? '800' : '600',
+                }}>{lang === 'fr' ? 'Général' : 'General'}</Text>
+                <Text style={{ color: '#00D984', fontSize: fp(7), fontWeight: '600', marginTop: 1 }}>
+                  {lang === 'fr' ? '524 plats' : '524 dishes'}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => { setRecipesTab('personalized'); loadMoodRecipes(); }}
+                style={{
+                  flex: 1, paddingVertical: wp(12), alignItems: 'center',
+                  backgroundColor: recipesTab === 'personalized' ? 'rgba(212,175,55,0.10)' : 'transparent',
+                }}
+              >
+                <Text style={{ fontSize: 16, marginBottom: 2 }}>🧠</Text>
+                <Text style={{
+                  color: recipesTab === 'personalized' ? '#D4AF37' : '#8892A0',
+                  fontSize: fp(11), fontWeight: recipesTab === 'personalized' ? '800' : '600',
+                }}>{lang === 'fr' ? 'Personnalisé' : 'Personalized'}</Text>
+                <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '600', marginTop: 1 }}>
+                  {lang === 'fr' ? 'Mood + Météo' : 'Mood + Weather'}
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* ═══ ONGLET GÉNÉRAL ═══ */}
+            {recipesTab === 'general' && (
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: wp(100) }}
+              >
+                {/* Barre de recherche */}
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  backgroundColor: 'rgba(255,255,255,0.03)',
+                  borderRadius: 14, paddingHorizontal: wp(12),
+                  marginHorizontal: wp(16), marginTop: wp(12),
+                  borderWidth: 1, borderColor: recipesSearch.length > 0 ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.05)',
+                }}>
+                  <Text style={{ color: '#5A6070', fontSize: 16, marginRight: 8 }}>🔍</Text>
+                  <TextInput
+                    value={recipesSearch}
+                    onChangeText={(text) => {
+                      setRecipesSearch(text);
+                      setRecipesPage(0);
+                      loadRecipes(0, text, recipesRegion, recipesCategory);
+                    }}
+                    placeholder={lang === 'fr' ? 'Chercher un plat...' : 'Search a dish...'}
+                    placeholderTextColor="#5A6070"
+                    style={{ flex: 1, color: '#EAEEF3', fontSize: fp(13), paddingVertical: wp(11) }}
+                  />
+                  {recipesSearch.length > 0 && (
+                    <Pressable onPress={() => { setRecipesSearch(''); loadRecipes(0, '', recipesRegion, recipesCategory); }}>
+                      <Text style={{ color: '#8892A0', fontSize: 16 }}>✕</Text>
+                    </Pressable>
+                  )}
+                </View>
+
+                {/* Chips Régions — scroll horizontal */}
+                <ScrollView
+                  horizontal showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(12), gap: wp(6) }}
+                >
+                  {RECIPE_REGIONS.map((r) => {
+                    const active = recipesRegion === r.key;
+                    return (
+                      <Pressable key={r.key} onPress={() => {
+                        setRecipesRegion(r.key);
+                        setRecipesPage(0);
+                        loadRecipes(0, recipesSearch, r.key, recipesCategory);
+                      }}>
+                        <View style={{
+                          paddingHorizontal: wp(10), paddingVertical: wp(7),
+                          borderRadius: 10,
+                          backgroundColor: active ? 'rgba(0,217,132,0.12)' : 'rgba(255,255,255,0.03)',
+                          borderWidth: 1, borderColor: active ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.06)',
+                        }}>
+                          <Text style={{
+                            color: active ? '#00D984' : '#8892A0',
+                            fontSize: fp(10), fontWeight: active ? '700' : '500',
+                          }}>{lang === 'fr' ? r.label : r.labelEn}</Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+
+                {/* Chips Catégories — scroll horizontal */}
+                <ScrollView
+                  horizontal showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(8), gap: wp(6), paddingBottom: wp(12) }}
+                >
+                  {RECIPE_CATEGORIES.map((c) => {
+                    const active = recipesCategory === c.key;
+                    return (
+                      <Pressable key={c.key} onPress={() => {
+                        setRecipesCategory(c.key);
+                        setRecipesPage(0);
+                        loadRecipes(0, recipesSearch, recipesRegion, c.key);
+                      }}>
+                        <View style={{
+                          paddingHorizontal: wp(10), paddingVertical: wp(7),
+                          borderRadius: 10,
+                          backgroundColor: active ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
+                          borderWidth: 1, borderColor: active ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.06)',
+                        }}>
+                          <Text style={{
+                            color: active ? '#D4AF37' : '#8892A0',
+                            fontSize: fp(10), fontWeight: active ? '700' : '500',
+                          }}>{lang === 'fr' ? c.label : c.labelEn}</Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+
+                {/* Compteur résultats */}
+                <View style={{ paddingHorizontal: wp(16), marginBottom: wp(8) }}>
+                  <Text style={{ color: '#5A6070', fontSize: fp(10) }}>
+                    {recipesData.length} {lang === 'fr' ? 'recettes trouvées' : 'recipes found'}
+                    {recipesLoading ? (lang === 'fr' ? ' • Chargement...' : ' • Loading...') : ''}
+                  </Text>
+                </View>
+
+                {/* Grille 2 colonnes */}
+                <View style={{
+                  flexDirection: 'row', flexWrap: 'wrap',
+                  paddingHorizontal: wp(12), gap: wp(8),
+                }}>
+                  {recipesData.map((recipe, index) => (
+                    <Pressable
+                      key={recipe.id}
+                      onPress={() => setSelectedRecipe(recipe)}
+                      style={({ pressed }) => ({
+                        width: (W - wp(32)) / 2,
+                        borderRadius: 14, overflow: 'hidden',
+                        backgroundColor: '#1E2530',
+                        borderWidth: 1, borderColor: pressed ? 'rgba(0,217,132,0.2)' : 'rgba(255,255,255,0.04)',
+                        transform: [{ scale: pressed ? 0.97 : 1 }],
+                        marginBottom: wp(4),
+                      })}
+                    >
+                      {/* Zone image placeholder — gradient + emoji drapeau */}
+                      <View style={{
+                        height: wp(70), backgroundColor: '#151B23',
+                        justifyContent: 'center', alignItems: 'center',
+                      }}>
+                        <LinearGradient
+                          colors={['rgba(0,217,132,0.06)', 'rgba(0,217,132,0.02)', 'transparent']}
+                          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                        />
+                        <Text style={{ fontSize: 28 }}>
+                          {recipe.country_origin === 'France' ? '🇫🇷' : recipe.country_origin === 'Sénégal' ? '🇸🇳' : recipe.country_origin === 'Grèce' ? '🇬🇷' : recipe.country_origin === 'Corée du Sud' ? '🇰🇷' : recipe.region?.includes('Ouest') ? '🌍' : recipe.region?.includes('Est') ? '🌍' : recipe.region?.includes('Nord') ? '🌍' : recipe.region?.includes('Europe') ? '🇪🇺' : '🍽️'}
+                        </Text>
+                        {/* Badge calories */}
+                        <View style={{
+                          position: 'absolute', top: wp(6), right: wp(6),
+                          backgroundColor: 'rgba(0,0,0,0.6)',
+                          paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
+                        }}>
+                          <Text style={{ color: '#FF8C42', fontSize: fp(8), fontWeight: '700' }}>
+                            {recipe.kcal_per_100g} kcal
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Infos */}
+                      <View style={{ padding: wp(8) }}>
+                        <Text style={{
+                          color: '#EAEEF3', fontSize: fp(11), fontWeight: '700',
+                        }} numberOfLines={1}>{recipe.name}</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 2 }} numberOfLines={1}>
+                          {recipe.country_origin} • {recipe.region}
+                        </Text>
+                        {/* Mini macros */}
+                        <View style={{ flexDirection: 'row', marginTop: wp(4), gap: wp(6) }}>
+                          <Text style={{ color: '#FF6B6B', fontSize: fp(7), fontWeight: '600' }}>{recipe.protein_per_100g}P</Text>
+                          <Text style={{ color: '#FFD93D', fontSize: fp(7), fontWeight: '600' }}>{recipe.carbs_per_100g}G</Text>
+                          <Text style={{ color: '#4DA6FF', fontSize: fp(7), fontWeight: '600' }}>{recipe.fat_per_100g}L</Text>
+                        </View>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+
+                {/* Bouton Charger plus */}
+                {recipesHasMore && recipesData.length > 0 && (
+                  <Pressable
+                    onPress={() => {
+                      const nextPage = recipesPage + 1;
+                      setRecipesPage(nextPage);
+                      loadRecipes(nextPage, recipesSearch, recipesRegion, recipesCategory, true);
+                    }}
+                    style={({ pressed }) => ({
+                      marginHorizontal: wp(40), marginTop: wp(16),
+                      paddingVertical: wp(12), borderRadius: 12,
+                      backgroundColor: pressed ? 'rgba(0,217,132,0.12)' : 'rgba(0,217,132,0.06)',
+                      borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                      alignItems: 'center',
+                    })}
+                  >
+                    <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '700' }}>
+                      {recipesLoading ? '⏳' : (lang === 'fr' ? '+ Voir plus' : '+ See more')}
+                    </Text>
+                  </Pressable>
+                )}
+              </ScrollView>
+            )}
+
+            {/* ═══ ONGLET PERSONNALISÉ ═══ */}
+            {recipesTab === 'personalized' && (
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: wp(100) }}
+              >
+                {/* Carte Mood + Météo du jour */}
+                <View style={{
+                  marginHorizontal: wp(16), marginTop: wp(14),
+                  borderRadius: 16, padding: 1, backgroundColor: '#4A4F55',
+                }}>
+                  <LinearGradient
+                    colors={['#3A3F46', '#252A30', '#1A1D22']}
+                    style={{ borderRadius: 15, padding: wp(16) }}
+                  >
+                    <View style={{ position: 'absolute', top: 0, left: 16, right: 16, height: 1, backgroundColor: 'rgba(212,175,55,0.10)' }} />
+
+                    {userMood ? (
+                      <>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                          <Text style={{ fontSize: 22, marginRight: wp(8) }}>
+                            {userMood.mood_level === 'happy' || userMood.mood_level === 'joyeux' ? '😊' : userMood.mood_level === 'sad' || userMood.mood_level === 'triste' ? '😢' : userMood.mood_level === 'stressed' || userMood.mood_level === 'stressé' ? '😠' : userMood.mood_level === 'tired' || userMood.mood_level === 'fatigué' ? '😴' : '😐'}
+                          </Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '700' }}>
+                              {userMood.mood_level}
+                            </Text>
+                            <Text style={{ color: '#5A6070', fontSize: fp(10) }}>
+                              {userMood.weather === 'sunny' || userMood.weather === 'ensoleillé' ? '☀️ Ensoleillé' : userMood.weather === 'rainy' || userMood.weather === 'pluvieux' ? '🌧️ Pluvieux' : '⛅ Nuageux'}
+                            </Text>
+                          </View>
+                          <View style={{
+                            backgroundColor: 'rgba(212,175,55,0.08)',
+                            paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
+                          }}>
+                            <Text style={{ color: '#D4AF37', fontSize: fp(8), fontWeight: '700' }}>IA</Text>
+                          </View>
+                        </View>
+                        <Text style={{ color: '#D4AF37', fontSize: fp(12), fontStyle: 'italic', lineHeight: fp(18) }}>
+                          "{moodMessage}"
+                        </Text>
+                      </>
+                    ) : (
+                      <View style={{ alignItems: 'center', paddingVertical: wp(10) }}>
+                        <Text style={{ fontSize: 30, marginBottom: wp(8) }}>🎭</Text>
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '700', textAlign: 'center', marginBottom: wp(4) }}>
+                          {lang === 'fr' ? 'Pas encore de mood aujourd\'hui' : 'No mood recorded today'}
+                        </Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(10), textAlign: 'center' }}>
+                          {moodMessage}
+                        </Text>
+                      </View>
+                    )}
+                  </LinearGradient>
+                </View>
+
+                {/* Section "Pour votre humeur" — scroll horizontal */}
+                {moodRecipes.length > 0 && (
+                  <View style={{ marginTop: wp(20) }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(16), marginBottom: wp(10) }}>
+                      <View style={{ width: 3, height: 16, borderRadius: 1.5, backgroundColor: '#D4AF37', marginRight: 8 }} />
+                      <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '800', letterSpacing: 1.5 }}>
+                        {lang === 'fr' ? 'POUR VOTRE HUMEUR' : 'FOR YOUR MOOD'}
+                      </Text>
+                    </View>
+                    <ScrollView
+                      horizontal showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(10) }}
+                    >
+                      {moodRecipes.slice(0, 10).map((recipe) => (
+                        <Pressable key={recipe.id} onPress={() => setSelectedRecipe(recipe)}
+                          style={({ pressed }) => ({
+                            width: wp(130), borderRadius: 14, overflow: 'hidden',
+                            backgroundColor: '#1E2530',
+                            borderWidth: 1, borderColor: pressed ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.04)',
+                            transform: [{ scale: pressed ? 0.96 : 1 }],
+                          })}
+                        >
+                          <View style={{
+                            height: wp(65), backgroundColor: '#151B23',
+                            justifyContent: 'center', alignItems: 'center',
+                          }}>
+                            <LinearGradient
+                              colors={['rgba(212,175,55,0.08)', 'rgba(212,175,55,0.02)', 'transparent']}
+                              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                            />
+                            <Text style={{ fontSize: 24 }}>🍽️</Text>
+                            <View style={{
+                              position: 'absolute', top: wp(4), right: wp(4),
+                              backgroundColor: 'rgba(0,0,0,0.6)',
+                              paddingHorizontal: 5, paddingVertical: 1, borderRadius: 5,
+                            }}>
+                              <Text style={{ color: '#FF8C42', fontSize: fp(7), fontWeight: '700' }}>{recipe.kcal_per_100g} kcal</Text>
+                            </View>
+                          </View>
+                          <View style={{ padding: wp(7) }}>
+                            <Text style={{ color: '#EAEEF3', fontSize: fp(10), fontWeight: '700' }} numberOfLines={1}>{recipe.name}</Text>
+                            <Text style={{ color: '#5A6070', fontSize: fp(7), marginTop: 1 }} numberOfLines={1}>{recipe.country_origin}</Text>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+
+                {/* Filtres région + catégorie pour affiner */}
+                <View style={{ marginTop: wp(20), paddingHorizontal: wp(16) }}>
+                  <Text style={{ color: '#8892A0', fontSize: fp(10), fontWeight: '700', letterSpacing: 1.5, marginBottom: wp(8) }}>
+                    {lang === 'fr' ? 'AFFINER PAR RÉGION' : 'FILTER BY REGION'}
+                  </Text>
+                </View>
+                <ScrollView
+                  horizontal showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(6), paddingBottom: wp(12) }}
+                >
+                  {RECIPE_REGIONS.map((r) => {
+                    const active = recipesRegion === r.key;
+                    return (
+                      <Pressable key={r.key} onPress={() => {
+                        setRecipesRegion(r.key);
+                        setRecipesPage(0);
+                        loadRecipes(0, recipesSearch, r.key, recipesCategory);
+                      }}>
+                        <View style={{
+                          paddingHorizontal: wp(10), paddingVertical: wp(7), borderRadius: 10,
+                          backgroundColor: active ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
+                          borderWidth: 1, borderColor: active ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.06)',
+                        }}>
+                          <Text style={{ color: active ? '#D4AF37' : '#8892A0', fontSize: fp(10), fontWeight: active ? '700' : '500' }}>
+                            {lang === 'fr' ? r.label : r.labelEn}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+
+                {/* Grille filtrée */}
+                <View style={{
+                  flexDirection: 'row', flexWrap: 'wrap',
+                  paddingHorizontal: wp(12), gap: wp(8),
+                }}>
+                  {(recipesRegion !== 'all' ? recipesData : moodRecipes).map((recipe, index) => (
+                    <Pressable
+                      key={recipe.id + '-p-' + index}
+                      onPress={() => setSelectedRecipe(recipe)}
+                      style={({ pressed }) => ({
+                        width: (W - wp(32)) / 2,
+                        borderRadius: 14, overflow: 'hidden',
+                        backgroundColor: '#1E2530',
+                        borderWidth: 1, borderColor: pressed ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.04)',
+                        transform: [{ scale: pressed ? 0.97 : 1 }],
+                        marginBottom: wp(4),
+                      })}
+                    >
+                      <View style={{
+                        height: wp(60), backgroundColor: '#151B23',
+                        justifyContent: 'center', alignItems: 'center',
+                      }}>
+                        <Text style={{ fontSize: 24 }}>🍽️</Text>
+                        <View style={{
+                          position: 'absolute', top: wp(4), right: wp(4),
+                          backgroundColor: 'rgba(0,0,0,0.6)',
+                          paddingHorizontal: 5, paddingVertical: 1, borderRadius: 5,
+                        }}>
+                          <Text style={{ color: '#FF8C42', fontSize: fp(7), fontWeight: '700' }}>{recipe.kcal_per_100g} kcal</Text>
+                        </View>
+                      </View>
+                      <View style={{ padding: wp(8) }}>
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(10), fontWeight: '700' }} numberOfLines={1}>{recipe.name}</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(7), marginTop: 1 }} numberOfLines={1}>{recipe.country_origin} • {recipe.category}</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        )}
+
         {/* MODAL — Comment ajouter un repas ? */}
         {showAddModal && (
           <View style={{
