@@ -5170,6 +5170,329 @@ const RepasPage = ({ onNavigate }) => {
           </View>
         </Modal>
 
+        {/* ══════ MODAL RÉSULTATS CADDIE ══════ */}
+        <Modal
+          visible={showCartResults}
+          animationType="slide"
+          transparent={false}
+          onRequestClose={() => setShowCartResults(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
+            <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
+
+            {/* ══════ HEADER ══════ */}
+            <View style={{
+              paddingTop: wp(45),
+              paddingBottom: wp(14),
+              paddingHorizontal: wp(16),
+              borderBottomWidth: 1,
+              borderBottomColor: '#4A4F55',
+            }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <TouchableOpacity onPress={() => setShowCartResults(false)}>
+                  <Text style={{ fontSize: fp(13), color: '#4DA6FF' }}>← Retour</Text>
+                </TouchableOpacity>
+                <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFFFFF' }}>
+                  Bilan Caddie
+                </Text>
+                <Text style={{ fontSize: fp(12), color: '#9CA3AF' }}>
+                  {cartProducts.length} produits
+                </Text>
+              </View>
+            </View>
+
+            <ScrollView
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+            >
+              {/* ══════ CARTE TOTAL CALORIES ══════ */}
+              <View style={{
+                margin: wp(16),
+                borderRadius: wp(16),
+                borderWidth: 1,
+                borderColor: '#4A4F55',
+                padding: wp(18),
+                backgroundColor: '#252A30',
+              }}>
+                <Text style={{
+                  fontSize: fp(10),
+                  color: '#9CA3AF',
+                  textAlign: 'center',
+                  textTransform: 'uppercase',
+                  letterSpacing: 1.5,
+                  marginBottom: wp(8),
+                }}>
+                  Total de votre caddie · pour 100g/produit
+                </Text>
+
+                {/* Calories total */}
+                <Text style={{
+                  fontSize: fp(36),
+                  fontWeight: '900',
+                  color: '#FF8C42',
+                  textAlign: 'center',
+                }}>
+                  {getCartTotals().kcal}
+                </Text>
+                <Text style={{
+                  fontSize: fp(12),
+                  color: '#FF8C42',
+                  textAlign: 'center',
+                  marginBottom: wp(14),
+                }}>
+                  kilocalories
+                </Text>
+
+                {/* Macros en ligne */}
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-around',
+                }}>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#FF6B6B' }}>
+                      {getCartTotals().protein}
+                    </Text>
+                    <Text style={{ fontSize: fp(9), color: '#9CA3AF' }}>Protéines (g)</Text>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#FFD93D' }}>
+                      {getCartTotals().carbs}
+                    </Text>
+                    <Text style={{ fontSize: fp(9), color: '#9CA3AF' }}>Glucides (g)</Text>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#4DA6FF' }}>
+                      {getCartTotals().fat}
+                    </Text>
+                    <Text style={{ fontSize: fp(9), color: '#9CA3AF' }}>Lipides (g)</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* ══════ LÉGENDE NUTRISCORE ══════ */}
+              <View style={{
+                flexDirection: 'row',
+                justifyContent: 'center',
+                gap: wp(6),
+                marginBottom: wp(14),
+                paddingHorizontal: wp(16),
+              }}>
+                {[
+                  { score: 'A', color: '#00D984', label: 'Excellent' },
+                  { score: 'B', color: '#A8E06C', label: 'Bon' },
+                  { score: 'C', color: '#FFD93D', label: 'Moyen' },
+                  { score: 'D', color: '#FF8C42', label: 'Médiocre' },
+                  { score: 'E', color: '#FF6B6B', label: 'Mauvais' },
+                ].map(ns => (
+                  <View key={ns.score} style={{ alignItems: 'center' }}>
+                    <View style={{
+                      width: wp(22),
+                      height: wp(22),
+                      borderRadius: wp(4),
+                      backgroundColor: ns.color,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: wp(2),
+                    }}>
+                      <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#1A1D22' }}>
+                        {ns.score}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{ns.label}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* ══════ LISTE DÉTAILLÉE DES PRODUITS ══════ */}
+              <View style={{ paddingHorizontal: wp(16) }}>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginBottom: wp(12),
+                }}>
+                  <View style={{
+                    width: wp(3),
+                    height: wp(18),
+                    backgroundColor: '#4DA6FF',
+                    borderRadius: wp(2),
+                    marginRight: wp(8),
+                  }} />
+                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFFFFF' }}>
+                    Détail par produit
+                  </Text>
+                </View>
+
+                {cartProducts.map((product, index) => (
+                  <View
+                    key={product.barcode}
+                    style={{
+                      backgroundColor: '#252A30',
+                      borderRadius: wp(12),
+                      borderWidth: 1,
+                      borderColor: '#4A4F55',
+                      marginBottom: wp(10),
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <View style={{
+                      flexDirection: 'row',
+                      padding: wp(12),
+                    }}>
+                      {/* Image */}
+                      <View style={{
+                        width: wp(55),
+                        height: wp(55),
+                        borderRadius: wp(8),
+                        backgroundColor: '#333A42',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: wp(12),
+                        overflow: 'hidden',
+                      }}>
+                        {product.image_url ? (
+                          <Image
+                            source={{ uri: product.image_url }}
+                            style={{ width: '100%', height: '100%' }}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <Text style={{ fontSize: fp(22) }}>📦</Text>
+                        )}
+                      </View>
+
+                      {/* Infos */}
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(3) }}>
+                          {product.nutriscore && (
+                            <View style={{
+                              backgroundColor: getNutriColor(product.nutriscore),
+                              borderRadius: wp(3),
+                              width: wp(18),
+                              height: wp(18),
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              marginRight: wp(6),
+                            }}>
+                              <Text style={{ fontSize: fp(9), fontWeight: '800', color: '#1A1D22' }}>
+                                {product.nutriscore.toUpperCase()}
+                              </Text>
+                            </View>
+                          )}
+                          <Text style={{
+                            fontSize: fp(12),
+                            fontWeight: '700',
+                            color: '#FFFFFF',
+                            flex: 1,
+                          }} numberOfLines={1}>
+                            {product.product_name}
+                          </Text>
+                        </View>
+
+                        {product.brand && (
+                          <Text style={{ fontSize: fp(9), color: '#6B7280', marginBottom: wp(4) }}>
+                            {product.brand}{product.quantity ? ` · ${product.quantity}` : ''}
+                          </Text>
+                        )}
+
+                        {/* Macros en ligne */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '800', color: '#FF8C42' }}>
+                            {Math.round(product.kcal_per_100g)} kcal
+                          </Text>
+                          <Text style={{ fontSize: fp(9), color: '#FF6B6B' }}>
+                            P:{parseFloat(product.protein_per_100g || 0).toFixed(1)}
+                          </Text>
+                          <Text style={{ fontSize: fp(9), color: '#FFD93D' }}>
+                            G:{parseFloat(product.carbs_per_100g || 0).toFixed(1)}
+                          </Text>
+                          <Text style={{ fontSize: fp(9), color: '#4DA6FF' }}>
+                            L:{parseFloat(product.fat_per_100g || 0).toFixed(1)}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Bouton supprimer */}
+                      <TouchableOpacity
+                        onPress={() => removeFromCart(product.barcode)}
+                        style={{
+                          width: wp(28),
+                          height: wp(28),
+                          borderRadius: wp(14),
+                          backgroundColor: 'rgba(255,107,107,0.1)',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          alignSelf: 'center',
+                        }}
+                      >
+                        <Text style={{ fontSize: fp(12), color: '#FF6B6B' }}>🗑</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+              </View>
+
+              {/* Espace en bas pour le bouton */}
+              <View style={{ height: wp(100) }} />
+            </ScrollView>
+
+            {/* ══════ BOUTONS BAS ══════ */}
+            <View style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              backgroundColor: '#252A30',
+              borderTopWidth: 1,
+              borderTopColor: '#4A4F55',
+              paddingHorizontal: wp(16),
+              paddingVertical: wp(12),
+              paddingBottom: wp(25),
+              flexDirection: 'row',
+              gap: wp(10),
+            }}>
+              {/* Scanner encore */}
+              <TouchableOpacity
+                onPress={() => setShowCartResults(false)}
+                style={{
+                  flex: 1,
+                  paddingVertical: wp(13),
+                  borderRadius: wp(12),
+                  borderWidth: 1,
+                  borderColor: '#4A4F55',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontSize: fp(12), color: '#9CA3AF', fontWeight: '600' }}>
+                  + Scanner
+                </Text>
+              </TouchableOpacity>
+
+              {/* Terminer et fermer */}
+              <TouchableOpacity
+                onPress={() => {
+                  const count = cartProducts.length;
+                  closeCartScan();
+                  if (typeof showToast === 'function') {
+                    showToast(`✅ ${count} produits analysés`);
+                  }
+                }}
+                style={{
+                  flex: 2,
+                  paddingVertical: wp(13),
+                  borderRadius: wp(12),
+                  backgroundColor: '#00D984',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#1A1D22' }}>
+                  Terminer ✓
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
         {/* BOTTOM TAB BAR — positionnée en absolute en bas, HORS du ScrollView */}
         <View style={{
           position: 'absolute',
