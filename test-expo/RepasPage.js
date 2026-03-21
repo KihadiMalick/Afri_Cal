@@ -3256,6 +3256,392 @@ const RepasPage = ({ onNavigate }) => {
           </View>
         )}
 
+        {/* ÉCRAN XSCAN AR — Mode Pieux & Cordes */}
+        {scanScreen === 'ar_scan' && (
+          <View style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            zIndex: 2000,
+            backgroundColor: '#000',
+          }}>
+            <CameraView
+              ref={cameraRef}
+              style={{ flex: 1 }}
+              facing="back"
+            >
+              <View style={{ flex: 1 }}>
+
+                {/* Header AR */}
+                <View style={{
+                  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                  paddingTop: Platform.OS === 'android' ? 50 : 60,
+                  paddingHorizontal: wp(20),
+                  zIndex: 10,
+                }}>
+                  <Pressable
+                    onPress={() => { setScanScreen('none'); resetArState(); }}
+                    style={{
+                      width: 40, height: 40, borderRadius: 20,
+                      backgroundColor: 'rgba(0,0,0,0.5)',
+                      justifyContent: 'center', alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#FFF', fontSize: 20, fontWeight: '300' }}>✕</Text>
+                  </Pressable>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                    <Text style={{ color: '#00D984', fontSize: fp(16), fontWeight: '900' }}>X</Text>
+                    <Text style={{ color: '#FFF', fontSize: fp(16), fontWeight: '900' }}>SCAN</Text>
+                    <View style={{
+                      marginLeft: 8, backgroundColor: 'rgba(212,175,55,0.2)',
+                      paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4,
+                    }}>
+                      <Text style={{ color: '#D4AF37', fontSize: fp(8), fontWeight: '800' }}>AR</Text>
+                    </View>
+                  </View>
+
+                  {/* Compteur photos */}
+                  <View style={{
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
+                  }}>
+                    <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '700' }}>
+                      📸 {arPhotos.filter(p => p !== null).length}/4
+                    </Text>
+                  </View>
+                </View>
+
+                {/* ═══ CORDES SVG — relient centre aux coins ═══ */}
+                {arCenterPlanted && (
+                  <Svg
+                    width={SCREEN_WIDTH}
+                    height={SCREEN_HEIGHT}
+                    style={{ position: 'absolute', top: 0, left: 0, zIndex: 2 }}
+                    pointerEvents="none"
+                  >
+                    {AR_CORNERS.map((corner, i) => {
+                      const cx = SCREEN_WIDTH / 2;
+                      const cy = SCREEN_HEIGHT / 2;
+                      const tx = corner.x * SCREEN_WIDTH;
+                      const ty = corner.y * SCREEN_HEIGHT;
+                      const isDone = arCornersDone[i];
+                      const isActive = arCurrentCorner === i && !isDone;
+
+                      return (
+                        <React.Fragment key={corner.key}>
+                          {/* Corde — ligne pointillée qui se solidifie */}
+                          <Line
+                            x1={cx} y1={cy}
+                            x2={tx} y2={ty}
+                            stroke={isDone ? '#00D984' : isActive ? '#D4AF37' : 'rgba(255,255,255,0.15)'}
+                            strokeWidth={isDone ? 2.5 : isActive ? 2 : 1}
+                            strokeDasharray={isDone ? '0' : '6,4'}
+                            opacity={isDone ? 0.8 : isActive ? 0.7 : 0.3}
+                          />
+                          {/* Point d'ancrage au centre */}
+                          <Circle cx={cx} cy={cy} r={3} fill="#D4AF37" opacity={0.6} />
+                        </React.Fragment>
+                      );
+                    })}
+                  </Svg>
+                )}
+
+                {/* ═══ PHASE 1 : RÉTICULE CENTRAL — en attente du tap ═══ */}
+                {arPhase === 'center' && (
+                  <View style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    justifyContent: 'center', alignItems: 'center',
+                    zIndex: 5,
+                  }}>
+                    {/* Instruction */}
+                    <View style={{
+                      position: 'absolute', top: SCREEN_HEIGHT * 0.15,
+                      backgroundColor: 'rgba(0,0,0,0.6)',
+                      paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
+                      borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)',
+                    }}>
+                      <Text style={{ color: '#D4AF37', fontSize: fp(13), fontWeight: '700', textAlign: 'center' }}>
+                        {lang === 'fr' ? '🎯 Placez le viseur au centre du plat' : '🎯 Place the reticle at the center'}
+                      </Text>
+                      <Text style={{ color: '#8892A0', fontSize: fp(10), textAlign: 'center', marginTop: 4 }}>
+                        {lang === 'fr' ? 'Puis tapez pour planter le pieu' : 'Then tap to plant the stake'}
+                      </Text>
+                    </View>
+
+                    {/* Réticule de visée */}
+                    <Pressable onPress={plantCenterStake}>
+                      <View style={{
+                        width: wp(80), height: wp(80),
+                        justifyContent: 'center', alignItems: 'center',
+                      }}>
+                        <Svg width={wp(80)} height={wp(80)} viewBox="0 0 80 80">
+                          {/* Cercle externe */}
+                          <Circle cx="40" cy="40" r="35" fill="none" stroke="#D4AF37" strokeWidth={1.5} opacity={0.6} />
+                          {/* Croix de visée */}
+                          <Line x1="40" y1="10" x2="40" y2="25" stroke="#D4AF37" strokeWidth={1.5} strokeLinecap="round" />
+                          <Line x1="40" y1="55" x2="40" y2="70" stroke="#D4AF37" strokeWidth={1.5} strokeLinecap="round" />
+                          <Line x1="10" y1="40" x2="25" y2="40" stroke="#D4AF37" strokeWidth={1.5} strokeLinecap="round" />
+                          <Line x1="55" y1="40" x2="70" y2="40" stroke="#D4AF37" strokeWidth={1.5} strokeLinecap="round" />
+                          {/* Point central */}
+                          <Circle cx="40" cy="40" r="4" fill="#D4AF37" opacity={0.8} />
+                          <Circle cx="40" cy="40" r="2" fill="#FFF" opacity={0.6} />
+                        </Svg>
+                      </View>
+                    </Pressable>
+                  </View>
+                )}
+
+                {/* ═══ PIEU CENTRAL PLANTÉ — animation ═══ */}
+                {arCenterPlanted && (
+                  <Animated.View style={{
+                    position: 'absolute',
+                    top: SCREEN_HEIGHT / 2 - wp(20),
+                    left: SCREEN_WIDTH / 2 - wp(12),
+                    zIndex: 6,
+                    transform: [{
+                      scale: centerStakeAnim.interpolate({
+                        inputRange: [0, 0.5, 1],
+                        outputRange: [0, 1.3, 1],
+                      }),
+                    }],
+                    opacity: centerStakeAnim,
+                  }}>
+                    <Svg width={wp(24)} height={wp(40)} viewBox="0 0 24 40">
+                      {/* Pieu en bois */}
+                      <Rect x="8" y="0" width="8" height="32" rx="2" fill="#8B6914" />
+                      <Rect x="9" y="0" width="2" height="32" fill="#A07D1A" opacity={0.5} />
+                      {/* Pointe */}
+                      <Path d="M8 32L12 40L16 32" fill="#6B4F10" />
+                      {/* Tête du pieu */}
+                      <Rect x="6" y="0" width="12" height="4" rx="1" fill="#D4AF37" />
+                      <Rect x="7" y="1" width="4" height="2" rx="0.5" fill="#E8C547" opacity={0.4} />
+                    </Svg>
+                  </Animated.View>
+                )}
+
+                {/* ═══ 4 COINS — pieux cibles ═══ */}
+                {arCenterPlanted && AR_CORNERS.map((corner, i) => {
+                  const isDone = arCornersDone[i];
+                  const isActive = arCurrentCorner === i && !isDone && (arPhase === 'navigating' || arPhase === 'tapping');
+                  const tapProgress = isActive ? arCornerTaps / 3 : isDone ? 1 : 0;
+
+                  return (
+                    <Animated.View
+                      key={corner.key}
+                      style={{
+                        position: 'absolute',
+                        top: corner.y * SCREEN_HEIGHT - wp(25),
+                        left: corner.x * SCREEN_WIDTH - wp(25),
+                        width: wp(50), height: wp(50),
+                        zIndex: 7,
+                        opacity: isActive ? 1 : isDone ? 0.6 : 0.4,
+                        transform: isActive ? [{
+                          scale: arCornerPulse.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [1, 1.15],
+                          }),
+                        }] : [],
+                      }}
+                    >
+                      <Pressable
+                        onPress={() => {
+                          if (isActive) {
+                            setArPhase('tapping');
+                            tapCornerStake();
+                          }
+                        }}
+                        style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+                      >
+                        {/* Cercle cible */}
+                        <View style={{
+                          width: wp(44), height: wp(44), borderRadius: wp(22),
+                          borderWidth: 2,
+                          borderColor: isDone ? '#00D984' : isActive ? '#D4AF37' : 'rgba(255,255,255,0.2)',
+                          backgroundColor: isDone
+                            ? 'rgba(0,217,132,0.15)'
+                            : isActive
+                              ? 'rgba(212,175,55,0.12)'
+                              : 'rgba(0,0,0,0.3)',
+                          justifyContent: 'center', alignItems: 'center',
+                        }}>
+                          {isDone ? (
+                            <Text style={{ color: '#00D984', fontSize: 18, fontWeight: '900' }}>✓</Text>
+                          ) : (
+                            <Svg width={wp(20)} height={wp(30)} viewBox="0 0 20 30">
+                              {/* Mini pieu */}
+                              <Rect x="7" y="0" width="6" height={20 * (1 - tapProgress)} rx="1"
+                                fill={isActive ? '#D4AF37' : '#5A6070'} />
+                              <Path d={`M7 ${20 * (1 - tapProgress)}L10 ${24 * (1 - tapProgress)}L13 ${20 * (1 - tapProgress)}`}
+                                fill={isActive ? '#A08020' : '#3A4050'} />
+                              {/* Ligne sol */}
+                              <Line x1="3" y1="20" x2="17" y2="20"
+                                stroke={isActive ? '#D4AF37' : '#5A6070'} strokeWidth={1} opacity={0.4} />
+                            </Svg>
+                          )}
+                        </View>
+
+                        {/* Label numéro */}
+                        <View style={{
+                          position: 'absolute', top: -8, right: -4,
+                          backgroundColor: isDone ? '#00D984' : isActive ? '#D4AF37' : '#3A4050',
+                          width: 18, height: 18, borderRadius: 9,
+                          justifyContent: 'center', alignItems: 'center',
+                        }}>
+                          <Text style={{ color: isDone || isActive ? '#000' : '#8892A0', fontSize: 10, fontWeight: '800' }}>
+                            {i + 1}
+                          </Text>
+                        </View>
+
+                        {/* Barre de progression 3 taps */}
+                        {isActive && arCornerTaps > 0 && (
+                          <View style={{
+                            position: 'absolute', bottom: -10,
+                            flexDirection: 'row', gap: 3,
+                          }}>
+                            {[0, 1, 2].map(t => (
+                              <View key={t} style={{
+                                width: 8, height: 4, borderRadius: 2,
+                                backgroundColor: t < arCornerTaps ? '#D4AF37' : 'rgba(255,255,255,0.2)',
+                              }} />
+                            ))}
+                          </View>
+                        )}
+                      </Pressable>
+                    </Animated.View>
+                  );
+                })}
+
+                {/* ═══ INSTRUCTION NAVIGATION ═══ */}
+                {(arPhase === 'navigating' || arPhase === 'tapping') && (
+                  <View style={{
+                    position: 'absolute',
+                    bottom: Platform.OS === 'android' ? 100 : 120,
+                    left: wp(20), right: wp(20),
+                    zIndex: 10,
+                  }}>
+                    <View style={{
+                      backgroundColor: 'rgba(0,0,0,0.7)',
+                      borderRadius: 16, padding: wp(14),
+                      borderWidth: 1,
+                      borderColor: arPhase === 'tapping' ? 'rgba(212,175,55,0.4)' : 'rgba(0,217,132,0.2)',
+                      alignItems: 'center',
+                    }}>
+                      <Text style={{
+                        color: '#EAEEF3', fontSize: fp(14), fontWeight: '700',
+                        textAlign: 'center', marginBottom: 4,
+                      }}>
+                        {arPhase === 'tapping'
+                          ? (lang === 'fr'
+                            ? `🔨 Tapez ! (${arCornerTaps}/3)`
+                            : `🔨 Tap! (${arCornerTaps}/3)`)
+                          : (lang === 'fr'
+                            ? `📍 Dirigez vers le point ${arCurrentCorner + 1}`
+                            : `📍 Move to point ${arCurrentCorner + 1}`)
+                        }
+                      </Text>
+                      <Text style={{ color: '#8892A0', fontSize: fp(10), textAlign: 'center' }}>
+                        {arPhase === 'tapping'
+                          ? (lang === 'fr' ? 'Tapez 3 fois pour ancrer le pieu' : 'Tap 3 times to anchor the stake')
+                          : (lang === 'fr' ? 'Bougez le téléphone vers le coin qui brille' : 'Move your phone to the glowing corner')
+                        }
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* ═══ PHASE COMPLÈTE — Résumé 4 photos ═══ */}
+                {arPhase === 'complete' && (
+                  <View style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.85)',
+                    justifyContent: 'center', alignItems: 'center',
+                    zIndex: 20,
+                    paddingHorizontal: wp(20),
+                  }}>
+                    {/* Titre */}
+                    <Text style={{ color: '#00D984', fontSize: fp(22), fontWeight: '900', marginBottom: wp(6) }}>
+                      {lang === 'fr' ? '4 angles capturés !' : '4 angles captured!'}
+                    </Text>
+                    <Text style={{ color: '#8892A0', fontSize: fp(12), marginBottom: wp(20), textAlign: 'center' }}>
+                      {lang === 'fr' ? 'Analyse multi-angle en cours...' : 'Multi-angle analysis in progress...'}
+                    </Text>
+
+                    {/* Grille 2x2 des photos */}
+                    <View style={{
+                      flexDirection: 'row', flexWrap: 'wrap',
+                      gap: wp(8), justifyContent: 'center',
+                      marginBottom: wp(24),
+                    }}>
+                      {arPhotos.map((photo, i) => (
+                        <View key={i} style={{
+                          width: wp(120), height: wp(90), borderRadius: 12,
+                          overflow: 'hidden',
+                          borderWidth: 2, borderColor: photo ? '#00D984' : '#3A3F46',
+                          backgroundColor: '#1A1D22',
+                        }}>
+                          {photo ? (
+                            <Image source={{ uri: photo.uri }} style={{ width: '100%', height: '100%' }} />
+                          ) : (
+                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                              <Text style={{ color: '#3A3F46', fontSize: 20 }}>📷</Text>
+                            </View>
+                          )}
+                          <View style={{
+                            position: 'absolute', top: 4, left: 4,
+                            backgroundColor: photo ? '#00D984' : '#3A3F46',
+                            width: 18, height: 18, borderRadius: 9,
+                            justifyContent: 'center', alignItems: 'center',
+                          }}>
+                            <Text style={{ color: photo ? '#000' : '#8892A0', fontSize: 9, fontWeight: '800' }}>{i + 1}</Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+
+                    {/* Bouton Analyser */}
+                    <Pressable
+                      onPress={() => {
+                        // Prendre la meilleure photo (la première non-null) comme photo principale
+                        const bestPhoto = arPhotos.find(p => p !== null);
+                        if (bestPhoto) {
+                          setCapturedPhoto(bestPhoto);
+                          setScanScreen('analyzing');
+                          resetArState();
+                          runAnalysis(bestPhoto);
+                        }
+                      }}
+                      style={({ pressed }) => ({
+                        width: '100%',
+                        paddingVertical: wp(14), borderRadius: 14,
+                        backgroundColor: pressed ? '#00B572' : '#00D984',
+                        alignItems: 'center',
+                      })}
+                    >
+                      <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
+                        {lang === 'fr' ? '🔬 Lancer l\'analyse multi-angle' : '🔬 Launch multi-angle analysis'}
+                      </Text>
+                    </Pressable>
+
+                    {/* Badge premium */}
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      backgroundColor: 'rgba(212,175,55,0.08)',
+                      paddingHorizontal: 14, paddingVertical: 6,
+                      borderRadius: 10, marginTop: wp(14),
+                    }}>
+                      <Text style={{ fontSize: 14, marginRight: 6 }}>🏆</Text>
+                      <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '600' }}>
+                        +15 Lix • XSCAN AR
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+              </View>
+            </CameraView>
+          </View>
+        )}
+
         {/* ÉCRAN CAMÉRA — plein écran */}
         {scanScreen === 'camera' && (
           <View style={{
