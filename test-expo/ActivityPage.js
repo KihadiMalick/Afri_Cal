@@ -773,7 +773,7 @@ const SportModal = ({ visible, sportKey, onClose, onSave }) => {
                   fontStyle: 'italic',
                   lineHeight: fp(12),
                 }}>
-                  Estimation basée sur les valeurs MET du Compendium of Physical Activities (Ainsworth et al., 2011) et les recommandations OMS. Les calories réelles varient selon le poids, l'âge et le métabolisme individuel.
+                  Estimation basée sur les valeurs MET du Compendium of Physical Activities (Ainsworth et al., 2011) et les recommandations OMS.
                 </Text>
               </View>
 
@@ -848,6 +848,9 @@ const ActivityPage = ({ onNavigate }) => {
   // Live GPS placeholder
   const [showLivePlaceholder, setShowLivePlaceholder] = useState(false);
 
+  // Anti-triche: +5 Lix une seule fois par jour
+  const [lixRewardedToday, setLixRewardedToday] = useState(false);
+
   // Shoe animation
   const shoeAnim = useRef(new Animated.Value(0)).current;
 
@@ -860,8 +863,27 @@ const ActivityPage = ({ onNavigate }) => {
     ).start();
   }, []);
 
-  // Load today's activities
-  useEffect(() => { loadTodayActivities(); }, []);
+  // Load today's activities + check Lix reward
+  useEffect(() => {
+    loadTodayActivities();
+    const checkLixReward = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const { data } = await supabase
+          .from('user_activities')
+          .select('id')
+          .eq('user_id', TEST_USER_ID)
+          .gte('created_at', today + 'T00:00:00')
+          .limit(1);
+        if (data && data.length > 0) {
+          setLixRewardedToday(true);
+        }
+      } catch (e) {
+        console.warn('Lix reward check failed:', e);
+      }
+    };
+    checkLixReward();
+  }, []);
 
   // ── Tab handler ─────────────────────────────────────────────────────────
   const handleTabPress = (key) => {
@@ -905,6 +927,10 @@ const ActivityPage = ({ onNavigate }) => {
       }
 
       await loadTodayActivities();
+      if (!lixRewardedToday) {
+        setLixRewardedToday(true);
+        // TODO: Appel API pour créditer +5 Lix au compte utilisateur
+      }
       return true;
     } catch (e) {
       console.error('Save error:', e);
@@ -1499,33 +1525,37 @@ const ActivityPage = ({ onNavigate }) => {
 
               {/* CENTER: Knob buttons (36px) */}
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ color: '#555', fontSize: 9, marginRight: 4 }}>{String.fromCodePoint(0x25C0)}</Text>
-                <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}>
-                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                    <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateLeft }] }}>
-                      <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
+                <View style={{ alignItems: 'center' }}>
+                  <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}>
+                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                      <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateLeft }] }}>
+                        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
+                          </View>
                         </View>
-                      </View>
-                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                    </Animated.View>
-                  </View>
-                </Pressable>
+                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                      </Animated.View>
+                    </View>
+                  </Pressable>
+                  <Text style={{ fontSize: fp(7), color: '#6B7280', marginTop: wp(2) }}>Reculer</Text>
+                </View>
                 <View style={{ width: 16 }} />
-                <Pressable onPressIn={() => startWalkMoving(1)} onPressOut={stopWalkMoving}>
-                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                    <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateRight }] }}>
-                      <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
+                <View style={{ alignItems: 'center' }}>
+                  <Pressable onPressIn={() => startWalkMoving(1)} onPressOut={stopWalkMoving}>
+                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                      <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateRight }] }}>
+                        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
+                          </View>
                         </View>
-                      </View>
-                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                    </Animated.View>
-                  </View>
-                </Pressable>
-                <Text style={{ color: '#555', fontSize: 9, marginLeft: 4 }}>{String.fromCodePoint(0x25B6)}</Text>
+                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                      </Animated.View>
+                    </View>
+                  </Pressable>
+                  <Text style={{ fontSize: fp(7), color: '#6B7280', marginTop: wp(2) }}>Avancer</Text>
+                </View>
               </View>
 
               {/* RIGHT: Duration */}
@@ -1535,9 +1565,9 @@ const ActivityPage = ({ onNavigate }) => {
               </View>
             </View>
 
-            {/* Maintenez hint */}
-            <Text style={{ textAlign: 'center', color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: 'bold', marginTop: 2, letterSpacing: 0.5 }}>
-              {String.fromCodePoint(0x261F)} MAINTENEZ POUR AVANCER
+            {/* Hint */}
+            <Text style={{ fontSize: fp(9), color: '#6B7280', textAlign: 'center', letterSpacing: 0.5, marginTop: 2 }}>
+              ◀ Appuyez pour avancer ▶
             </Text>
 
             {/* Boutons CONFIRMER + LIVE */}
@@ -1836,33 +1866,37 @@ const ActivityPage = ({ onNavigate }) => {
 
               {/* CENTER: Knob buttons (36px) */}
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ color: '#555', fontSize: 9, marginRight: 4 }}>{String.fromCodePoint(0x25C0)}</Text>
-                <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}>
-                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                    <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateLeft }] }}>
-                      <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
+                <View style={{ alignItems: 'center' }}>
+                  <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}>
+                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                      <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateLeft }] }}>
+                        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
+                          </View>
                         </View>
-                      </View>
-                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                    </Animated.View>
-                  </View>
-                </Pressable>
+                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                      </Animated.View>
+                    </View>
+                  </Pressable>
+                  <Text style={{ fontSize: fp(7), color: '#6B7280', marginTop: wp(2) }}>Reculer</Text>
+                </View>
                 <View style={{ width: 16 }} />
-                <Pressable onPressIn={() => startRunMoving(1)} onPressOut={stopRunMoving}>
-                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                    <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateRight }] }}>
-                      <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
+                <View style={{ alignItems: 'center' }}>
+                  <Pressable onPressIn={() => startRunMoving(1)} onPressOut={stopRunMoving}>
+                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                      <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateRight }] }}>
+                        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
+                          </View>
                         </View>
-                      </View>
-                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                    </Animated.View>
-                  </View>
-                </Pressable>
-                <Text style={{ color: '#555', fontSize: 9, marginLeft: 4 }}>{String.fromCodePoint(0x25B6)}</Text>
+                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                      </Animated.View>
+                    </View>
+                  </Pressable>
+                  <Text style={{ fontSize: fp(7), color: '#6B7280', marginTop: wp(2) }}>Avancer</Text>
+                </View>
               </View>
 
               {/* RIGHT: Duration */}
@@ -1872,9 +1906,9 @@ const ActivityPage = ({ onNavigate }) => {
               </View>
             </View>
 
-            {/* Maintenez hint */}
-            <Text style={{ textAlign: 'center', color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: 'bold', marginTop: 2, letterSpacing: 0.5 }}>
-              {String.fromCodePoint(0x261F)} MAINTENEZ POUR AVANCER
+            {/* Hint */}
+            <Text style={{ fontSize: fp(9), color: '#6B7280', textAlign: 'center', letterSpacing: 0.5, marginTop: 2 }}>
+              ◀ Appuyez pour avancer ▶
             </Text>
 
             {/* Boutons CONFIRMER + LIVE */}
@@ -2048,22 +2082,44 @@ const ActivityPage = ({ onNavigate }) => {
           )}
 
           {/* REWARD BADGE */}
-          <View style={{
-            alignItems: 'center', marginTop: wp(12), marginBottom: wp(16),
-          }}>
+          {lixRewardedToday ? (
             <View style={{
-              flexDirection: 'row', alignItems: 'center',
-              backgroundColor: 'rgba(212,175,55,0.08)',
-              paddingHorizontal: wp(16), paddingVertical: wp(8),
+              alignSelf: 'center',
+              backgroundColor: 'rgba(0,217,132,0.08)',
+              borderWidth: 1,
+              borderColor: 'rgba(0,217,132,0.2)',
               borderRadius: wp(10),
-              borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+              paddingVertical: wp(8),
+              paddingHorizontal: wp(16),
+              marginVertical: wp(12),
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: wp(6),
             }}>
-              <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>{String.fromCodePoint(0x1F3C6)}</Text>
-              <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '600' }}>
-                +5 Lix par activité
+              <Text style={{ fontSize: fp(11), color: '#00D984', fontWeight: '600' }}>
+                ✅ Bonus Lix du jour obtenu !
               </Text>
             </View>
-          </View>
+          ) : (
+            <View style={{
+              alignSelf: 'center',
+              backgroundColor: 'rgba(212,175,55,0.08)',
+              borderWidth: 1,
+              borderColor: 'rgba(212,175,55,0.2)',
+              borderRadius: wp(10),
+              paddingVertical: wp(8),
+              paddingHorizontal: wp(16),
+              marginVertical: wp(12),
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: wp(6),
+            }}>
+              <Text style={{ fontSize: fp(14) }}>{String.fromCodePoint(0x1F3C6)}</Text>
+              <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#D4AF37' }}>
+                +5 Lix pour votre première activité du jour
+              </Text>
+            </View>
+          )}
         </ScrollView>
       </View>
 
