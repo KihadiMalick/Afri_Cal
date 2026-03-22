@@ -859,6 +859,14 @@ const ActivityPage = ({ onNavigate }) => {
   // Anti-triche: +5 Lix une seule fois par jour
   const [lixRewardedToday, setLixRewardedToday] = useState(false);
 
+  // Smart recommendations
+  const [caloriesToBurn, setCaloriesToBurn] = useState(0);
+  const [dailyTarget, setDailyTarget] = useState(2000);
+  const [totalEaten, setTotalEaten] = useState(0);
+  const [totalBurnedActivities, setTotalBurnedActivities] = useState(0);
+  const [userMood, setUserMood] = useState(null);
+  const [recommendation, setRecommendation] = useState(null);
+
   // Shoe animation
   const shoeAnim = useRef(new Animated.Value(0)).current;
 
@@ -871,7 +879,124 @@ const ActivityPage = ({ onNavigate }) => {
     ).start();
   }, []);
 
-  // Load today's activities + check Lix reward
+  // ── Smart recommendation generator ────────────────────────────────────
+  const generateRecommendation = (toBurn, mood, weight) => {
+    if (toBurn <= 0) {
+      setRecommendation({
+        type: 'maintain',
+        emoji: '✅',
+        title: 'Vous êtes dans votre objectif',
+        subtitle: 'Une petite marche de 15 min maintient votre métabolisme actif',
+        activity: 'Marche',
+        duration: '15 min',
+        distance: '1 km',
+        color: '#00D984',
+      });
+      return;
+    }
+
+    const walkHours = toBurn / (3.5 * weight);
+    const walkMin = Math.ceil(walkHours * 60);
+    const walkKm = (walkMin * 5 / 60).toFixed(1);
+
+    const runHours = toBurn / (7.0 * weight);
+    const runMin = Math.ceil(runHours * 60);
+    const runKm = (runMin * 8 / 60).toFixed(1);
+
+    let preferActivity = 'both';
+    if (mood) {
+      const moodLower = mood.toLowerCase();
+      if (moodLower.includes('fatigué') || moodLower.includes('triste') ||
+          moodLower.includes('stressé') || moodLower === 'tired' ||
+          moodLower === 'sad' || moodLower === 'stressed') {
+        preferActivity = 'walk';
+      }
+      if (moodLower.includes('énergique') || moodLower.includes('heureux') ||
+          moodLower.includes('motivé') || moodLower === 'happy' ||
+          moodLower === 'energetic') {
+        preferActivity = 'run';
+      }
+    }
+
+    if (preferActivity === 'walk' || (preferActivity === 'both' && toBurn < 150)) {
+      setRecommendation({
+        type: 'burn',
+        emoji: '🚶',
+        title: `${toBurn} kcal à compenser`,
+        subtitle: `Une marche de ${walkMin} min (≈${walkKm} km) suffirait pour revenir à votre objectif`,
+        activity: 'Marche',
+        duration: `${walkMin} min`,
+        distance: `${walkKm} km`,
+        color: '#FF8C42',
+        moodNote: mood ? 'Adapté à votre humeur du jour' : null,
+      });
+    } else if (preferActivity === 'run') {
+      setRecommendation({
+        type: 'burn',
+        emoji: '🏃',
+        title: `${toBurn} kcal à compenser`,
+        subtitle: `Une course de ${runMin} min (≈${runKm} km) vous remettrait dans votre objectif`,
+        activity: 'Course',
+        duration: `${runMin} min`,
+        distance: `${runKm} km`,
+        color: '#FF8C42',
+        moodNote: mood ? 'Vous êtes en forme, profitez-en !' : null,
+      });
+    } else {
+      setRecommendation({
+        type: 'burn',
+        emoji: '🔥',
+        title: `${toBurn} kcal à compenser`,
+        subtitle: `Marche ${walkMin} min (${walkKm} km) ou Course ${runMin} min (${runKm} km)`,
+        activity: 'Les deux',
+        duration: `${walkMin} min ou ${runMin} min`,
+        distance: `${walkKm} km ou ${runKm} km`,
+        color: '#FF8C42',
+        moodNote: null,
+      });
+    }
+  };
+
+  // ── Fetch smart data (profile + daily summary) ──────────────────────
+  const fetchSmartData = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      const { data: profile } = await supabase
+        .from('users_profile')
+        .select('daily_calorie_target, current_mood, weight')
+        .eq('user_id', TEST_USER_ID)
+        .maybeSingle();
+
+      const target = profile?.daily_calorie_target || 2000;
+      const mood = profile?.current_mood || null;
+      const weight = profile?.weight || 70;
+      setDailyTarget(target);
+      setUserMood(mood);
+
+      const { data: summary } = await supabase
+        .from('daily_summary')
+        .select('total_calories, total_calories_burned')
+        .eq('user_id', TEST_USER_ID)
+        .eq('date', today)
+        .maybeSingle();
+
+      const eaten = summary?.total_calories || 0;
+      const burned = summary?.total_calories_burned || 0;
+      setTotalEaten(eaten);
+      setTotalBurnedActivities(burned);
+
+      const balance = eaten - burned - target;
+      const toBurn = balance > 0 ? balance : 0;
+      setCaloriesToBurn(toBurn);
+
+      generateRecommendation(toBurn, mood, weight);
+    } catch (e) {
+      console.warn('Smart data fetch error:', e);
+    }
+  };
+
+  // Load today's activities + check Lix reward + fetch smart data
   useEffect(() => {
     loadTodayActivities();
     const checkLixReward = async () => {
@@ -891,6 +1016,7 @@ const ActivityPage = ({ onNavigate }) => {
       }
     };
     checkLixReward();
+    fetchSmartData();
   }, []);
 
   // ── Tab handler ─────────────────────────────────────────────────────────
@@ -935,6 +1061,7 @@ const ActivityPage = ({ onNavigate }) => {
       }
 
       await loadTodayActivities();
+      fetchSmartData();
       if (!lixRewardedToday) {
         setLixRewardedToday(true);
         // TODO: Appel API pour créditer +5 Lix au compte utilisateur
@@ -1179,42 +1306,43 @@ const ActivityPage = ({ onNavigate }) => {
           <MetalCard style={{ borderWidth: 1, borderColor: '#4A4F55', borderRadius: wp(14), padding: wp(14), marginBottom: wp(8) }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: fp(9), color: '#6B7280', fontWeight: '600', marginBottom: wp(2) }}>
-                  {String.fromCodePoint(0x1F525)} Brûlé
-                </Text>
-                <Text style={{ fontSize: fp(22), color: '#FF8C42', fontWeight: '900' }}>
+                <Text style={{ fontSize: fp(9), color: '#6B7280' }}>🔥 Brûlé</Text>
+                <Text style={{ fontSize: fp(20), fontWeight: '900', color: '#FF8C42' }}>
                   {totalCalories}
                 </Text>
-                <Text style={{ fontSize: fp(8), color: '#6B7280', fontWeight: '600' }}>kcal</Text>
+                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>kcal</Text>
               </View>
 
-              <View style={{
-                width: 1, height: wp(30),
-                backgroundColor: 'rgba(74,79,85,0.5)',
-              }} />
+              <View style={{ width: 1, height: wp(30), backgroundColor: 'rgba(74,79,85,0.5)' }} />
 
               <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: fp(9), color: '#6B7280', fontWeight: '600', marginBottom: wp(2) }}>
-                  {String.fromCodePoint(0x23F1)} Temps
+                <Text style={{ fontSize: fp(9), color: '#6B7280' }}>🎯 À brûler</Text>
+                <Text style={{
+                  fontSize: fp(20), fontWeight: '900',
+                  color: caloriesToBurn > 0 ? '#FF6B6B' : '#00D984',
+                }}>
+                  {caloriesToBurn}
                 </Text>
-                <Text style={{ fontSize: fp(22), color: '#FFFFFF', fontWeight: '900' }}>
+                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>kcal</Text>
+              </View>
+
+              <View style={{ width: 1, height: wp(30), backgroundColor: 'rgba(74,79,85,0.5)' }} />
+
+              <View style={{ alignItems: 'center', flex: 1 }}>
+                <Text style={{ fontSize: fp(9), color: '#6B7280' }}>⏱ Temps</Text>
+                <Text style={{ fontSize: fp(20), fontWeight: '900', color: '#FFFFFF' }}>
                   {formatDuration(totalDuration)}
                 </Text>
               </View>
 
-              <View style={{
-                width: 1, height: wp(30),
-                backgroundColor: 'rgba(74,79,85,0.5)',
-              }} />
+              <View style={{ width: 1, height: wp(30), backgroundColor: 'rgba(74,79,85,0.5)' }} />
 
               <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: fp(9), color: '#6B7280', fontWeight: '600', marginBottom: wp(2) }}>
-                  {String.fromCodePoint(0x1F4A7)} Eau perdue
-                </Text>
-                <Text style={{ fontSize: fp(22), color: '#4DA6FF', fontWeight: '900' }}>
+                <Text style={{ fontSize: fp(9), color: '#6B7280' }}>💧 Eau perdue</Text>
+                <Text style={{ fontSize: fp(20), fontWeight: '900', color: '#4DA6FF' }}>
                   {totalWater}
                 </Text>
-                <Text style={{ fontSize: fp(8), color: '#6B7280', fontWeight: '600' }}>ml</Text>
+                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>ml</Text>
               </View>
             </View>
           </MetalCard>
@@ -2087,6 +2215,97 @@ const ActivityPage = ({ onNavigate }) => {
                 </MetalCard>
               );
             })
+          )}
+
+          {/* ══════ RECOMMANDATION DU JOUR ══════ */}
+          {recommendation && (
+            <View style={{ paddingHorizontal: wp(16), marginTop: wp(12) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                <View style={{
+                  width: wp(3), height: wp(16),
+                  backgroundColor: recommendation.color,
+                  borderRadius: wp(2),
+                  marginRight: wp(8),
+                }} />
+                <Text style={{
+                  fontSize: fp(16), fontWeight: '900', color: '#FFFFFF', letterSpacing: 1,
+                }}>
+                  RECOMMANDATION
+                </Text>
+              </View>
+
+              <View style={{
+                borderRadius: wp(14),
+                borderWidth: 1,
+                borderColor: recommendation.type === 'maintain'
+                  ? 'rgba(0,217,132,0.2)'
+                  : 'rgba(255,140,66,0.2)',
+                backgroundColor: recommendation.type === 'maintain'
+                  ? 'rgba(0,217,132,0.06)'
+                  : 'rgba(255,140,66,0.06)',
+                padding: wp(14),
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+                  <Text style={{ fontSize: fp(22), marginRight: wp(8) }}>{recommendation.emoji}</Text>
+                  <Text style={{
+                    fontSize: fp(14), fontWeight: '700',
+                    color: recommendation.color, flex: 1,
+                  }}>
+                    {recommendation.title}
+                  </Text>
+                </View>
+
+                <Text style={{
+                  fontSize: fp(11), color: '#D1D5DB', lineHeight: fp(16),
+                  marginBottom: wp(8),
+                }}>
+                  {recommendation.subtitle}
+                </Text>
+
+                {recommendation.type === 'burn' && (
+                  <View style={{
+                    flexDirection: 'row', justifyContent: 'space-around',
+                    backgroundColor: '#252A30', borderRadius: wp(10),
+                    padding: wp(10),
+                  }}>
+                    <View style={{ alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Activité</Text>
+                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFFFFF' }}>
+                        {recommendation.activity}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Durée</Text>
+                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FF8C42' }}>
+                        {recommendation.duration}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Distance</Text>
+                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#4DA6FF' }}>
+                        {recommendation.distance}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {recommendation.moodNote && (
+                  <Text style={{
+                    fontSize: fp(9), color: '#D4AF37', fontStyle: 'italic',
+                    marginTop: wp(8), textAlign: 'center',
+                  }}>
+                    🧠 {recommendation.moodNote}
+                  </Text>
+                )}
+
+                <Text style={{
+                  fontSize: fp(7), color: '#4A4F55', textAlign: 'center',
+                  marginTop: wp(8),
+                }}>
+                  Calcul basé sur les valeurs MET (Ainsworth et al., 2011)
+                </Text>
+              </View>
+            </View>
           )}
 
           {/* REWARD BADGE */}
