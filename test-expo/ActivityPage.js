@@ -1701,23 +1701,35 @@ const ActivityPage = ({ onNavigate }) => {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
                 <Text style={{ fontSize: fp(8), color: '#6B7280' }}>◀</Text>
                 <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}>
-                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                    <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateLeft }] }}>
-                      <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
+                  <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
+                    <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <View style={{ position: 'absolute', top: 0, left: wp(8), right: wp(8), height: wp(12), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                      <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateLeft }] }}>
+                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
+                        </View>
+                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                      </Animated.View>
+                      <View style={{ position: 'absolute', bottom: wp(6) }}>
+                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)' }}>◀</Text>
                       </View>
-                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                    </Animated.View>
+                    </View>
                   </View>
                 </Pressable>
                 <Pressable onPressIn={() => startWalkMoving(1)} onPressOut={stopWalkMoving}>
-                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                    <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateRight }] }}>
-                      <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
+                  <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
+                    <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <View style={{ position: 'absolute', top: 0, left: wp(8), right: wp(8), height: wp(12), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                      <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateRight }] }}>
+                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
+                        </View>
+                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                      </Animated.View>
+                      <View style={{ position: 'absolute', bottom: wp(6) }}>
+                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)' }}>▶</Text>
                       </View>
-                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                    </Animated.View>
+                    </View>
                   </View>
                 </Pressable>
                 <Text style={{ fontSize: fp(8), color: '#6B7280' }}>▶</Text>
@@ -2033,23 +2045,35 @@ const ActivityPage = ({ onNavigate }) => {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
                 <Text style={{ fontSize: fp(8), color: '#6B7280' }}>◀</Text>
                 <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}>
-                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                    <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateLeft }] }}>
-                      <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
+                  <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
+                    <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <View style={{ position: 'absolute', top: 0, left: wp(8), right: wp(8), height: wp(12), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                      <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateLeft }] }}>
+                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
+                        </View>
+                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                      </Animated.View>
+                      <View style={{ position: 'absolute', bottom: wp(6) }}>
+                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)' }}>◀</Text>
                       </View>
-                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                    </Animated.View>
+                    </View>
                   </View>
                 </Pressable>
                 <Pressable onPressIn={() => startRunMoving(1)} onPressOut={stopRunMoving}>
-                  <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                    <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateRight }] }}>
-                      <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
+                  <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
+                    <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <View style={{ position: 'absolute', top: 0, left: wp(8), right: wp(8), height: wp(12), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                      <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateRight }] }}>
+                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
+                        </View>
+                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                      </Animated.View>
+                      <View style={{ position: 'absolute', bottom: wp(6) }}>
+                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)' }}>▶</Text>
                       </View>
-                      <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                    </Animated.View>
+                    </View>
                   </View>
                 </Pressable>
                 <Text style={{ fontSize: fp(8), color: '#6B7280' }}>▶</Text>
