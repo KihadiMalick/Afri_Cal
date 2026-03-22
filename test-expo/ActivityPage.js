@@ -1302,64 +1302,99 @@ const ActivityPage = ({ onNavigate }) => {
             </View>
           </View>
 
-          {/* DAY SUMMARY */}
-          <MetalCard style={{ borderWidth: 1, borderColor: '#4A4F55', borderRadius: wp(14), padding: wp(14), marginBottom: wp(8) }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: fp(9), color: '#6B7280' }}>🔥 Brûlé</Text>
-                <Text style={{ fontSize: fp(20), fontWeight: '900', color: '#FF8C42' }}>
+          {/* DAY SUMMARY — Premium 2-line layout */}
+          <View style={{
+            marginHorizontal: wp(16),
+            marginTop: wp(8),
+            marginBottom: wp(8),
+            borderRadius: wp(16),
+            borderWidth: 1,
+            borderColor: '#4A4F55',
+            backgroundColor: '#252A30',
+            padding: wp(16),
+          }}>
+            {/* Ligne principale : Brûlé + À brûler */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(14) }}>
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(4) }}>
+                  <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M12 2C12 2 4 12 4 16C4 20.4183 7.58172 24 12 24C16.4183 24 20 20.4183 20 16C20 12 12 2 12 2Z" fill="#FF8C42" />
+                    <Path d="M12 18C10.3431 18 9 16.6569 9 15C9 13 12 9 12 9C12 9 15 13 15 15C15 16.6569 13.6569 18 12 18Z" fill="#FFD93D" />
+                  </Svg>
+                  <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginLeft: wp(4), fontWeight: '600' }}>BRÛLÉ</Text>
+                </View>
+                <Text style={{ fontSize: fp(28), fontWeight: '900', color: '#FF8C42' }}>
                   {totalCalories}
                 </Text>
-                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>kcal</Text>
+                <Text style={{ fontSize: fp(9), color: '#6B7280' }}>kcal</Text>
               </View>
 
-              <View style={{ width: 1, height: wp(30), backgroundColor: 'rgba(74,79,85,0.5)' }} />
+              <View style={{ width: 1, backgroundColor: 'rgba(74,79,85,0.4)', marginHorizontal: wp(4) }} />
 
-              <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: fp(9), color: '#6B7280' }}>🎯 À brûler</Text>
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(4) }}>
+                  <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                    <Circle cx="12" cy="12" r="10" stroke={caloriesToBurn > 0 ? '#FF6B6B' : '#00D984'} strokeWidth="2" fill="none" />
+                    <Path d="M12 6V12L16 14" stroke={caloriesToBurn > 0 ? '#FF6B6B' : '#00D984'} strokeWidth="2" strokeLinecap="round" />
+                  </Svg>
+                  <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginLeft: wp(4), fontWeight: '600' }}>À BRÛLER</Text>
+                </View>
                 <Text style={{
-                  fontSize: fp(20), fontWeight: '900',
+                  fontSize: fp(28), fontWeight: '900',
                   color: caloriesToBurn > 0 ? '#FF6B6B' : '#00D984',
                 }}>
                   {caloriesToBurn}
                 </Text>
-                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>kcal</Text>
-              </View>
-
-              <View style={{ width: 1, height: wp(30), backgroundColor: 'rgba(74,79,85,0.5)' }} />
-
-              <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: fp(9), color: '#6B7280' }}>⏱ Temps</Text>
-                <Text style={{ fontSize: fp(20), fontWeight: '900', color: '#FFFFFF' }}>
-                  {formatDuration(totalDuration)}
-                </Text>
-              </View>
-
-              <View style={{ width: 1, height: wp(30), backgroundColor: 'rgba(74,79,85,0.5)' }} />
-
-              <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: fp(9), color: '#6B7280' }}>💧 Eau perdue</Text>
-                <Text style={{ fontSize: fp(20), fontWeight: '900', color: '#4DA6FF' }}>
-                  {totalWater}
-                </Text>
-                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>ml</Text>
+                <Text style={{ fontSize: fp(9), color: '#6B7280' }}>kcal</Text>
               </View>
             </View>
-          </MetalCard>
+
+            {/* Séparateur horizontal */}
+            <View style={{ height: 1, backgroundColor: 'rgba(74,79,85,0.3)', marginBottom: wp(12) }} />
+
+            {/* Ligne secondaire : Temps + Eau perdue */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                  <Circle cx="12" cy="12" r="10" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+                  <Path d="M12 6V12H16" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
+                </Svg>
+                <View style={{ marginLeft: wp(6) }}>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>TEMPS</Text>
+                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFFFFF' }}>
+                    {formatDuration(totalDuration)}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                  <Path d="M12 2L6 12C6 16.4183 8.68629 20 12 20C15.3137 20 18 16.4183 18 12L12 2Z" fill="#4DA6FF" opacity="0.8" />
+                </Svg>
+                <View style={{ marginLeft: wp(6) }}>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>EAU PERDUE</Text>
+                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#4DA6FF' }}>
+                    {totalWater} ml
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
 
           {/* MARCHE — SIDE-SCROLL TAPIS ROULANT */}
           <SectionTitle title="Marche" />
           <MetalCard style={{ marginBottom: wp(2) }}>
             {/* Header + data compact */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-              <WalkShoeIcon size={wp(14)} />
-              <Text style={{ color: '#EAEEF3', fontSize: fp(15), fontWeight: '800', letterSpacing: 1.5, marginLeft: wp(4) }}>
+              <Text style={{ color: '#FFFFFF', fontSize: fp(14), fontWeight: '800', letterSpacing: 0.5 }}>
                 MARCHE
               </Text>
               <View style={{ flex: 1 }} />
-              <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '700', marginRight: 8 }}>{String.fromCodePoint(0x1F4CD)}{walkDistStr}</Text>
-              <Text style={{ color: '#FF8C42', fontSize: fp(11), fontWeight: '700', marginRight: 8 }}>{String.fromCodePoint(0x1F525)}{walkCal}kcal</Text>
-              <Text style={{ color: '#4DA6FF', fontSize: fp(11), fontWeight: '700' }}>{String.fromCodePoint(0x1F4A7)}{walkWater}ml</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '600' }}>{String.fromCodePoint(0x1F4CD)}{walkDistStr}</Text>
+                <Text style={{ color: '#FF8C42', fontSize: fp(11), fontWeight: '600' }}>{String.fromCodePoint(0x1F525)}{walkCal}kcal</Text>
+                <Text style={{ color: '#4DA6FF', fontSize: fp(11), fontWeight: '600' }}>{String.fromCodePoint(0x1F4A7)}{walkWater}ml</Text>
+              </View>
             </View>
 
             {/* Canvas SVG side-scroll */}
@@ -1771,14 +1806,15 @@ const ActivityPage = ({ onNavigate }) => {
           <MetalCard style={{ marginBottom: wp(2) }}>
             {/* Header + data compact */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-              <RunShoeIcon size={wp(14)} />
-              <Text style={{ color: '#EAEEF3', fontSize: fp(15), fontWeight: '800', letterSpacing: 1.5, marginLeft: wp(4) }}>
+              <Text style={{ color: '#FFFFFF', fontSize: fp(14), fontWeight: '800', letterSpacing: 0.5 }}>
                 COURSE
               </Text>
               <View style={{ flex: 1 }} />
-              <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '700', marginRight: 8 }}>{String.fromCodePoint(0x1F4CD)}{runDistStr}</Text>
-              <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700', marginRight: 8 }}>{String.fromCodePoint(0x1F525)}{runCalories}kcal</Text>
-              <Text style={{ color: '#4DA6FF', fontSize: fp(11), fontWeight: '700' }}>{String.fromCodePoint(0x1F4A7)}{runWater}ml</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '600' }}>{String.fromCodePoint(0x1F4CD)}{runDistStr}</Text>
+                <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600' }}>{String.fromCodePoint(0x1F525)}{runCalories}kcal</Text>
+                <Text style={{ color: '#4DA6FF', fontSize: fp(11), fontWeight: '600' }}>{String.fromCodePoint(0x1F4A7)}{runWater}ml</Text>
+              </View>
             </View>
 
             {/* Canvas SVG — Savane Africaine + Lottie Jaguar overlay */}
