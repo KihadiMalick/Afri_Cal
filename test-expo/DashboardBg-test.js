@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Line, Circle, Rect, Path, G, Defs, Defs as SvgDefs, Mask, LinearGradient as SvgLinearGradient, Stop, Polygon, ClipPath, Ellipse, Text as SvgText } from 'react-native-svg';
+import Svg, { Line, Circle, Rect, Path, G, Defs, Defs as SvgDefs, LinearGradient as SvgLinearGradient, Stop, Polygon, ClipPath, Ellipse, Text as SvgText } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import RepasPage from './RepasPage';
 import ActivityPage from './ActivityPage';
@@ -57,24 +57,6 @@ const seededRandom = (seed) => {
   const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
 };
-// ============================================
-// SPOTLIGHT — Zones et positions de scroll pour le tooltip guidé
-// ============================================
-const SPOTLIGHT_ZONES = [
-  // Étape 1 — Réacteur gauche (Consommé)
-  { x: wp(28), y: wp(125), width: wp(100), height: wp(110), borderRadius: wp(20) },
-  // Étape 2 — ADN central + Score Vitalité
-  { x: wp(120), y: wp(115), width: wp(80), height: wp(140), borderRadius: wp(15) },
-  // Étape 3 — Réacteur droit (Reste)
-  { x: W - wp(128), y: wp(125), width: wp(100), height: wp(110), borderRadius: wp(20) },
-  // Étape 4 — Carte Hydratation
-  { x: wp(14), y: wp(155), width: W - wp(28), height: wp(110), borderRadius: wp(18) },
-  // Étape 5 — Carte Coach ALIXEN
-  { x: wp(14), y: wp(280), width: W - wp(28), height: wp(140), borderRadius: wp(18) },
-];
-
-const SCROLL_POSITIONS = [0, 0, 0, wp(170), wp(380)];
-
 // ============================================
 // COMPOSANT — Background métallique propre
 // ============================================
@@ -1288,7 +1270,7 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubble
 // ============================================================
 // COMPOSANT — Carte Hydratation compacte (dashboard)
 // ============================================================
-const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }) => {
+const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, tooltipStep }) => {
   const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
   const glasses = Math.round(currentMl / 250);
   const totalGlasses = Math.round(goalMl / 250);
@@ -1296,7 +1278,19 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }
   const goalL = (goalMl / 1000).toFixed(1);
 
   return (
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={onPress}>
+      <MetalCard style={{
+        marginHorizontal: 0,
+        marginBottom: wp(12),
+        ...(tooltipStep === 2 && {
+          borderColor: '#4DA6FF',
+          borderWidth: 2,
+          shadowColor: '#4DA6FF',
+          shadowOpacity: 0.6,
+          shadowRadius: 20,
+          elevation: 20,
+          zIndex: 10001,
+        }),
+      }} onPress={onPress}>
 
         {/* ========== LIGNE 1 : Titre à gauche — Données à droite ========== */}
         <View style={{
@@ -1603,7 +1597,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 // ============================================================
 // COMPOSANT — Dashboard Content (page Accueil)
 // ============================================================
-const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef, dailyTarget, lastMeal }) => {
+const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef, dailyTarget, lastMeal, tooltipStep }) => {
   const OBJECTIVE = dailyTarget || DAILY_OBJECTIVE;
   const streakDays = 12;
   const streakColor = streakDays >= 14 ? '#D4AF37'
@@ -1644,7 +1638,19 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       </View>
 
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }}>
+      <MetalCard style={{
+        marginHorizontal: 0,
+        marginBottom: wp(12),
+        ...(tooltipStep === 1 && {
+          borderColor: '#FF8C42',
+          borderWidth: 2,
+          shadowColor: '#FF8C42',
+          shadowOpacity: 0.6,
+          shadowRadius: 20,
+          elevation: 20,
+          zIndex: 10001,
+        }),
+      }}>
         {/* HEADER — une seule ligne, tout aligné */}
         <View style={{
           flexDirection: 'row',
@@ -1796,6 +1802,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         gender={gender}
         onPress={onHydrationPress}
         sportAlert={sportAlert}
+        tooltipStep={tooltipStep}
       />
 
       {/* ======================================================= */}
@@ -1803,7 +1810,19 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       {/* ======================================================= */}
 
       {/* DERNIER REPAS */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert('Dernier Repas', 'Détails nutritionnels complets — bientôt disponible')}>
+      <MetalCard style={{
+        marginHorizontal: 0,
+        marginBottom: wp(12),
+        ...(tooltipStep === 3 && {
+          borderColor: '#00D984',
+          borderWidth: 2,
+          shadowColor: '#00D984',
+          shadowOpacity: 0.6,
+          shadowRadius: 20,
+          elevation: 20,
+          zIndex: 10001,
+        }),
+      }} onPress={() => Alert.alert('Dernier Repas', 'Détails nutritionnels complets — bientôt disponible')}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
           <ForkKnifeIcon />
           <Text style={{
@@ -1887,7 +1906,19 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       </MetalCard>
 
       {/* COACH ALIXEN */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert('Coach ALIXEN', 'Recommandations personnalisées IA — bientôt disponible')}>
+      <MetalCard style={{
+        marginHorizontal: 0,
+        marginBottom: wp(12),
+        ...(tooltipStep === 4 && {
+          borderColor: '#00D984',
+          borderWidth: 2,
+          shadowColor: '#00D984',
+          shadowOpacity: 0.6,
+          shadowRadius: 20,
+          elevation: 20,
+          zIndex: 10001,
+        }),
+      }} onPress={() => Alert.alert('Coach ALIXEN', 'Recommandations personnalisées IA — bientôt disponible')}>
         {/* Header Coach */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
           {/* Icône Coach ALIXEN — Avatar PNG */}
@@ -2042,7 +2073,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             }}>(7 jours)</Text>
           </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginRight: wp(20) }}>
             <LockIcon size={wp(16)} />
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <LixCoinIcon size={wp(12)} />
@@ -2163,15 +2194,9 @@ export default function App() {
 
   const [tooltipStep, setTooltipStep] = useState(1);
   // 0 = pas de tooltip (fermé)
-  // 1 à 5 = étape active
+  // 1 à 4 = étape active
   // Au premier lancement : setTooltipStep(1)
   const scrollRef = React.useRef(null);
-
-  // Scroll automatique vers l'élément ciblé par le tooltip
-  React.useEffect(() => {
-    if (tooltipStep === 0) return;
-    scrollRef.current?.scrollTo({ y: SCROLL_POSITIONS[tooltipStep - 1], animated: true });
-  }, [tooltipStep]);
   /*
   // TODO: Activer anti-screenshot après migration vers EAS Build
   // ANTI-SCREENSHOT — Décommenter quand build standalone (pas Snack/Expo Go)
@@ -2309,28 +2334,22 @@ export default function App() {
 
     const steps = [
       {
-        title: 'Calories Consommées',
-        description: 'Ce réacteur montre les calories que vous avez mangées aujourd\'hui. Le glow orange grandit avec votre progression.',
-        icon: '🔥',
+        title: 'Bilan Énergétique',
+        description: 'Vos deux réacteurs montrent les calories consommées et restantes. L\'ADN central affiche votre Score Vitalité.',
+        icon: '⚡',
         color: '#FF8C42',
-      },
-      {
-        title: 'Score Vitalité',
-        description: 'Votre score de santé quotidien sur 100. Il combine nutrition, hydratation, activité et discipline.',
-        icon: '🧬',
-        color: '#00D984',
-      },
-      {
-        title: 'Calories Restantes',
-        description: 'Ce réacteur montre combien de calories vous pouvez encore consommer. Le sport augmente ce nombre !',
-        icon: '💪',
-        color: '#4DA6FF',
       },
       {
         title: 'Hydratation',
         description: 'Suivez votre consommation d\'eau. L\'app calcule automatiquement l\'eau perdue pendant le sport.',
         icon: '💧',
-        color: '#00BFA6',
+        color: '#4DA6FF',
+      },
+      {
+        title: 'Dernier Repas',
+        description: 'Votre dernier repas scanné avec ses macronutriments détaillés. Tapez pour voir plus.',
+        icon: '🍽️',
+        color: '#00D984',
       },
       {
         title: 'Coach ALIXEN',
@@ -2341,10 +2360,8 @@ export default function App() {
     ];
 
     const currentStep = steps[tooltipStep - 1];
+    if (!currentStep) return null;
     const isLast = tooltipStep === steps.length;
-
-    // Zone du spotlight pour l'étape en cours
-    const spotlight = SPOTLIGHT_ZONES[tooltipStep - 1];
 
     return (
       <View style={{
@@ -2352,105 +2369,64 @@ export default function App() {
         top: 0, left: 0, right: 0, bottom: 0,
         zIndex: 9999,
       }}>
-        {/* Overlay avec trou spotlight */}
-        <Svg
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-          width={W}
-          height={H + 100}
-        >
-          <Defs>
-            <Mask id="spotlightMask">
-              {/* Tout en blanc = visible (opaque) */}
-              <Rect x="0" y="0" width={W} height={H + 100} fill="white" />
-              {/* Trou en noir = transparent (le spotlight) */}
-              <Rect
-                x={spotlight.x - 4}
-                y={spotlight.y - 4}
-                width={spotlight.width + 8}
-                height={spotlight.height + 8}
-                rx={spotlight.borderRadius + 4}
-                ry={spotlight.borderRadius + 4}
-                fill="black"
-              />
-            </Mask>
-          </Defs>
-          {/* Rectangle sombre avec le masque (trou) */}
-          <Rect
-            x="0" y="0"
-            width={W}
-            height={H + 100}
-            fill="rgba(0, 0, 0, 0.78)"
-            mask="url(#spotlightMask)"
-          />
-          {/* Bordure lumineuse autour du spotlight */}
-          <Rect
-            x={spotlight.x - 2}
-            y={spotlight.y - 2}
-            width={spotlight.width + 4}
-            height={spotlight.height + 4}
-            rx={spotlight.borderRadius + 2}
-            ry={spotlight.borderRadius + 2}
-            fill="none"
-            stroke={currentStep.color}
-            strokeWidth={1.5}
-            opacity={0.5}
-          />
-        </Svg>
-
-        {/* Bulle de tooltip — position dynamique */}
+        {/* Overlay sombre simple — PAS de SVG Mask */}
         <View style={{
           position: 'absolute',
-          // Si l'élément est en haut → bulle en bas, et vice versa
-          ...(spotlight.y < 400
-            ? { bottom: 100 }
-            : { top: spotlight.y - 220 }
-          ),
-          left: 20,
-          right: 20,
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        }} />
+
+        {/* Bulle de tooltip — TOUJOURS en bas, position fixe */}
+        <View style={{
+          position: 'absolute',
+          bottom: wp(90),
+          left: wp(16),
+          right: wp(16),
           backgroundColor: '#1E2530',
-          borderRadius: 20,
-          padding: 20,
-          borderWidth: 1,
-          borderColor: currentStep.color + '30',
+          borderRadius: wp(18),
+          padding: wp(18),
+          borderWidth: 1.5,
+          borderColor: currentStep.color + '40',
           shadowColor: currentStep.color,
           shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.2,
+          shadowOpacity: 0.25,
           shadowRadius: 15,
           elevation: 10,
+          zIndex: 10000,
         }}>
           {/* Indicateur d'étape */}
           <View style={{
             flexDirection: 'row',
             justifyContent: 'center',
-            marginBottom: 12,
-            gap: 6,
+            marginBottom: wp(10),
+            gap: wp(5),
           }}>
             {steps.map((_, i) => (
               <View key={i} style={{
-                width: i + 1 === tooltipStep ? 20 : 6,
-                height: 6,
-                borderRadius: 3,
+                width: i + 1 === tooltipStep ? wp(18) : wp(6),
+                height: wp(5),
+                borderRadius: wp(3),
                 backgroundColor: i + 1 === tooltipStep ? currentStep.color : 'rgba(255,255,255,0.15)',
               }} />
             ))}
           </View>
 
-          {/* Étape numéro */}
+          {/* Numéro */}
           <Text style={{
             color: currentStep.color,
-            fontSize: 10,
+            fontSize: fp(9),
             fontWeight: '700',
             letterSpacing: 2,
             textAlign: 'center',
-            marginBottom: 6,
+            marginBottom: wp(5),
           }}>{tooltipStep} / {steps.length}</Text>
 
           {/* Icône + Titre */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-            <Text style={{ fontSize: 22, marginRight: 8 }}>{currentStep.icon}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: wp(6) }}>
+            <Text style={{ fontSize: fp(20), marginRight: wp(6) }}>{currentStep.icon}</Text>
             <Text style={{
               color: '#EAEEF3',
-              fontSize: 18,
+              fontSize: fp(16),
               fontWeight: '800',
             }}>{currentStep.title}</Text>
           </View>
@@ -2458,46 +2434,44 @@ export default function App() {
           {/* Description */}
           <Text style={{
             color: '#8892A0',
-            fontSize: 13,
-            lineHeight: 20,
+            fontSize: fp(12),
+            lineHeight: fp(18),
             textAlign: 'center',
-            marginBottom: 16,
+            marginBottom: wp(14),
           }}>{currentStep.description}</Text>
 
           {/* Boutons */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            {/* Passer */}
             <TouchableOpacity onPress={() => setTooltipStep(0)}>
-              <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '500' }}>Passer</Text>
+              <Text style={{ color: '#8892A0', fontSize: fp(12), fontWeight: '500' }}>Passer</Text>
             </TouchableOpacity>
 
-            {/* Suivant / Commencer */}
             <TouchableOpacity
               onPress={() => {
                 if (isLast) {
                   setTooltipStep(0);
-                  // Plus tard : sauvegarder dans Supabase
-                  // await supabase.from('users_profile').update({ has_seen_tooltip: true })
                 } else {
                   setTooltipStep(tooltipStep + 1);
+                  // Scroll vers la carte suivante
+                  const scrollPositions = [0, 0, wp(150), wp(320)];
+                  scrollRef.current?.scrollTo({ y: scrollPositions[tooltipStep] || 0, animated: true });
                 }
               }}
               style={{
                 backgroundColor: currentStep.color,
-                borderRadius: 12,
-                paddingHorizontal: 20,
-                paddingVertical: 10,
+                borderRadius: wp(10),
+                paddingHorizontal: wp(18),
+                paddingVertical: wp(8),
               }}
             >
               <Text style={{
                 color: '#0D1117',
-                fontSize: 14,
+                fontSize: fp(13),
                 fontWeight: '800',
               }}>{isLast ? 'Commencer !' : 'Suivant →'}</Text>
             </TouchableOpacity>
           </View>
         </View>
-
       </View>
     );
   };
@@ -3229,6 +3203,7 @@ export default function App() {
             scrollRef={scrollRef}
             dailyTarget={realDailyTarget}
             lastMeal={lastMeal}
+            tooltipStep={tooltipStep}
           />
         );
       case 'meals':
