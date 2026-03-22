@@ -867,6 +867,10 @@ const ActivityPage = ({ onNavigate }) => {
   const [userMood, setUserMood] = useState(null);
   const [recommendation, setRecommendation] = useState(null);
 
+  const [weeklyMinutes, setWeeklyMinutes] = useState(0);
+  const [showPostReport, setShowPostReport] = useState(false);
+  const [lastActivity, setLastActivity] = useState(null);
+
   // Shoe animation
   const shoeAnim = useRef(new Animated.Value(0)).current;
 
@@ -1017,7 +1021,31 @@ const ActivityPage = ({ onNavigate }) => {
     };
     checkLixReward();
     fetchSmartData();
+    fetchWeeklyMinutes();
   }, []);
+
+  const fetchWeeklyMinutes = async () => {
+    try {
+      const userId = '00000000-0000-0000-0000-000000000001';
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+      const mondayISO = monday.toISOString();
+
+      const { data } = await supabase
+        .from('user_activities')
+        .select('duration_minutes')
+        .eq('user_id', userId)
+        .gte('created_at', mondayISO);
+
+      const total = (data || []).reduce((sum, a) => sum + (a.duration_minutes || 0), 0);
+      setWeeklyMinutes(total);
+    } catch (e) {
+      console.warn('Weekly minutes fetch error:', e);
+    }
+  };
 
   // ── Tab handler ─────────────────────────────────────────────────────────
   const handleTabPress = (key) => {
@@ -1126,6 +1154,17 @@ const ActivityPage = ({ onNavigate }) => {
     const ok = await saveActivity('course', runDuration, runCalories, 'modere', runWater);
     if (ok) {
       setRunSaved(true);
+      setLastActivity({
+        type: 'run',
+        name: 'Course',
+        distance: runDistStr,
+        duration: runDuration,
+        kcal: runCalories,
+        water: runWater,
+        speed: null,
+      });
+      setShowPostReport(true);
+      fetchWeeklyMinutes();
       setTimeout(() => {
         setRunSaved(false);
         setRunScrollOffset(0);
@@ -1138,7 +1177,17 @@ const ActivityPage = ({ onNavigate }) => {
     const ok = await saveActivity(sportKey, duration, calories, intensity, waterLost);
     if (ok) {
       setModalVisible(false);
-      alert(`${ACTIVITY_DATA[sportKey].label} ajouté(e) ! ${calories} kcal`);
+      setLastActivity({
+        type: 'other',
+        name: ACTIVITY_DATA[sportKey].label,
+        distance: null,
+        duration: duration,
+        kcal: calories,
+        water: null,
+        speed: null,
+      });
+      setShowPostReport(true);
+      fetchWeeklyMinutes();
     }
   };
 
@@ -1379,6 +1428,71 @@ const ActivityPage = ({ onNavigate }) => {
                 </View>
               </View>
             </View>
+          </View>
+
+          {/* ══════ OBJECTIF OMS HEBDOMADAIRE ══════ */}
+          <View style={{
+            marginHorizontal: wp(16),
+            marginBottom: wp(6),
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#252A30',
+            borderRadius: wp(12),
+            borderWidth: 0.5,
+            borderColor: 'rgba(74,79,85,0.4)',
+            padding: wp(10),
+          }}>
+            {/* Mini anneau de progression */}
+            <View style={{ width: wp(44), height: wp(44), marginRight: wp(10) }}>
+              <Svg width={wp(44)} height={wp(44)} viewBox="0 0 44 44">
+                <Circle
+                  cx="22" cy="22" r="18"
+                  stroke="rgba(74,79,85,0.3)"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <Circle
+                  cx="22" cy="22" r="18"
+                  stroke={weeklyMinutes >= 150 ? '#00D984' : '#FF8C42'}
+                  strokeWidth="4"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 18}`}
+                  strokeDashoffset={`${2 * Math.PI * 18 * (1 - Math.min(weeklyMinutes / 150, 1))}`}
+                  transform="rotate(-90 22 22)"
+                />
+              </Svg>
+              <View style={{
+                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Text style={{
+                  fontSize: fp(10), fontWeight: '800',
+                  color: weeklyMinutes >= 150 ? '#00D984' : '#FFFFFF',
+                }}>
+                  {Math.min(Math.round((weeklyMinutes / 150) * 100), 100)}%
+                </Text>
+              </View>
+            </View>
+
+            {/* Texte */}
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                <Text style={{ fontSize: fp(16), fontWeight: '800', color: weeklyMinutes >= 150 ? '#00D984' : '#FFFFFF' }}>
+                  {weeklyMinutes}
+                </Text>
+                <Text style={{ fontSize: fp(10), color: '#6B7280', marginLeft: wp(3) }}>
+                  / 150 min
+                </Text>
+              </View>
+              <Text style={{ fontSize: fp(8), color: '#6B7280', marginTop: wp(2) }}>
+                Objectif activité hebdomadaire · Recommandation OMS
+              </Text>
+            </View>
+
+            {weeklyMinutes >= 150 && (
+              <Text style={{ fontSize: fp(18) }}>🏅</Text>
+            )}
           </View>
 
           {/* MARCHE — SIDE-SCROLL TAPIS ROULANT */}
@@ -1755,6 +1869,17 @@ const ActivityPage = ({ onNavigate }) => {
                   );
                   if (success) {
                     setWalkSaved(true);
+                    setLastActivity({
+                      type: 'walk',
+                      name: 'Marche',
+                      distance: walkDistStr,
+                      duration: Math.round(walkDurMin * walkMul),
+                      kcal: walkCal,
+                      water: walkWater,
+                      speed: null,
+                    });
+                    setShowPostReport(true);
+                    fetchWeeklyMinutes();
                     setTimeout(() => {
                       setWalkSaved(false);
                       setWalkScrollOffset(0);
@@ -2455,10 +2580,16 @@ const ActivityPage = ({ onNavigate }) => {
                 • Suivi GPS en temps réel du parcours{'\n'}
                 • Calcul de distance par géolocalisation{'\n'}
                 • Tracé du chemin sur carte{'\n'}
-                • Calories basées sur la distance réelle (pas de compteur de pas){'\n'}
-                • Point de départ → Point d'arrivée{'\n'}
-                • Historique des parcours{'\n'}
-                • Compatible Marche et Course
+                • Détection automatique de l'intensité par la vitesse :{'\n'}
+                {'    '}Marche lente {'<'} 4 km/h → MET 2.5{'\n'}
+                {'    '}Marche normale 4-5.5 km/h → MET 3.5{'\n'}
+                {'    '}Marche rapide 5.5-7 km/h → MET 4.3{'\n'}
+                {'    '}Course lente 7-9 km/h → MET 7.0{'\n'}
+                {'    '}Course modérée 9-12 km/h → MET 9.0{'\n'}
+                {'    '}Course rapide {'>'} 12 km/h → MET 11.5{'\n'}
+                • Calories = MET × poids × durée (pas de capteur nécessaire){'\n'}
+                • Rapport post-activité avec vitesse moyenne et intensité{'\n'}
+                • Historique des parcours
               </Text>
             </View>
 
@@ -2469,7 +2600,7 @@ const ActivityPage = ({ onNavigate }) => {
               borderWidth: 1, borderColor: 'rgba(77,166,255,0.15)',
             }}>
               <Text style={{ fontSize: fp(8), color: '#4DA6FF', lineHeight: fp(12) }}>
-                🔧 BUILD EAS : Utiliser expo-location watchPositionAsync() pour le tracking GPS. Calcul calories = MET × poids_kg × durée_heures. MET marche = 3.5, marche rapide = 4.3, course lente = 7.0, course rapide = 11.5. Source : Compendium of Physical Activities (Ainsworth 2011). Eau perdue = durée_min × 10ml (moyenne OMS climat tempéré), × 15ml en climat chaud.
+                🔧 BUILD EAS : expo-location watchPositionAsync() · Vitesse = distance / temps · L'intensité est déduite automatiquement de la vitesse, zéro capteur cardiaque nécessaire · Eau perdue = durée × 10ml (climat tempéré) ou × 15ml (climat chaud) · Source : Compendium of Physical Activities (Ainsworth 2011)
               </Text>
             </View>
 
@@ -2485,6 +2616,147 @@ const ActivityPage = ({ onNavigate }) => {
               </Text>
             </TouchableOpacity>
           </View>
+        </View>
+      </Modal>
+
+      {/* ══════ RAPPORT POST-ACTIVITÉ ══════ */}
+      <Modal
+        visible={showPostReport}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowPostReport(false)}
+      >
+        <View style={{
+          flex: 1, backgroundColor: 'rgba(0,0,0,0.85)',
+          justifyContent: 'center', paddingHorizontal: wp(20),
+        }}>
+          {lastActivity && (
+            <View style={{
+              backgroundColor: '#1A1D22', borderRadius: wp(18),
+              borderWidth: 1, borderColor: '#4A4F55', padding: wp(20),
+              alignItems: 'center',
+            }}>
+              <Text style={{ fontSize: fp(40), marginBottom: wp(8) }}>🎉</Text>
+
+              <Text style={{
+                fontSize: fp(18), fontWeight: '800', color: '#00D984',
+                marginBottom: wp(4),
+              }}>
+                Bravo !
+              </Text>
+
+              <Text style={{
+                fontSize: fp(11), color: '#9CA3AF', textAlign: 'center',
+                marginBottom: wp(16),
+              }}>
+                {lastActivity.type === 'walk' ? 'Belle marche' :
+                 lastActivity.type === 'run' ? 'Belle course' :
+                 `Session de ${lastActivity.name}`} terminée
+              </Text>
+
+              {/* Résumé en grille */}
+              <View style={{
+                flexDirection: 'row', flexWrap: 'wrap',
+                justifyContent: 'space-around', width: '100%',
+                backgroundColor: '#252A30', borderRadius: wp(12),
+                padding: wp(14), marginBottom: wp(14),
+              }}>
+                {lastActivity.distance ? (
+                  <View style={{ alignItems: 'center', minWidth: '30%', marginBottom: wp(8) }}>
+                    <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Distance</Text>
+                    <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFFFFF' }}>
+                      {lastActivity.distance}
+                    </Text>
+                  </View>
+                ) : null}
+
+                <View style={{ alignItems: 'center', minWidth: '30%', marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Durée</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFFFFF' }}>
+                    {lastActivity.duration} min
+                  </Text>
+                </View>
+
+                <View style={{ alignItems: 'center', minWidth: '30%', marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Calories</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FF8C42' }}>
+                    {lastActivity.kcal} kcal
+                  </Text>
+                </View>
+
+                {lastActivity.water ? (
+                  <View style={{ alignItems: 'center', minWidth: '30%' }}>
+                    <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Eau perdue</Text>
+                    <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#4DA6FF' }}>
+                      {lastActivity.water} ml
+                    </Text>
+                  </View>
+                ) : null}
+
+                {lastActivity.speed ? (
+                  <View style={{ alignItems: 'center', minWidth: '30%' }}>
+                    <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Vitesse moy.</Text>
+                    <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#D4AF37' }}>
+                      {lastActivity.speed} km/h
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+
+              {/* Équivalent alimentaire fun */}
+              <View style={{
+                backgroundColor: 'rgba(255,140,66,0.08)',
+                borderRadius: wp(10),
+                borderWidth: 1,
+                borderColor: 'rgba(255,140,66,0.15)',
+                padding: wp(10),
+                width: '100%',
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: wp(14),
+              }}>
+                <Text style={{ fontSize: fp(22), marginRight: wp(8) }}>
+                  {lastActivity.kcal < 50 ? '🍎' :
+                   lastActivity.kcal < 100 ? '🍌' :
+                   lastActivity.kcal < 200 ? '🥐' :
+                   lastActivity.kcal < 350 ? '🍔' :
+                   lastActivity.kcal < 500 ? '🍕' : '🎂'}
+                </Text>
+                <Text style={{ fontSize: fp(10), color: '#D1D5DB', flex: 1 }}>
+                  Équivalent de {
+                    lastActivity.kcal < 50 ? `${(lastActivity.kcal / 52).toFixed(1)} pomme` :
+                    lastActivity.kcal < 100 ? `${(lastActivity.kcal / 89).toFixed(1)} banane` :
+                    lastActivity.kcal < 200 ? `${(lastActivity.kcal / 120).toFixed(1)} croissant` :
+                    lastActivity.kcal < 350 ? `${(lastActivity.kcal / 295).toFixed(1)} burger` :
+                    lastActivity.kcal < 500 ? `${(lastActivity.kcal / 266).toFixed(1)} part de pizza` :
+                    `${(lastActivity.kcal / 350).toFixed(1)} part de gâteau`
+                  } brûlé{lastActivity.kcal >= 100 ? 'e' : ''}
+                </Text>
+              </View>
+
+              {/* Objectif OMS mis à jour */}
+              <Text style={{
+                fontSize: fp(9), color: '#6B7280', textAlign: 'center',
+                marginBottom: wp(14),
+              }}>
+                Objectif OMS cette semaine : {weeklyMinutes} / 150 min
+                {weeklyMinutes >= 150 ? ' ✅' : ` · encore ${150 - weeklyMinutes} min`}
+              </Text>
+
+              {/* Bouton fermer */}
+              <TouchableOpacity
+                onPress={() => setShowPostReport(false)}
+                style={{
+                  paddingVertical: wp(12), paddingHorizontal: wp(40),
+                  borderRadius: wp(12), backgroundColor: '#00D984',
+                }}
+              >
+                <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#1A1D22' }}>
+                  Continuer 💪
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </Modal>
     </View>
