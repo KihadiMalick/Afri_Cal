@@ -1100,6 +1100,39 @@ const RepasPage = ({ onNavigate }) => {
     setLookingUp(false);
   };
 
+  const captureCartPhoto = async () => {
+    try {
+      setScanError('Capture photo en cours...');
+
+      // En attendant le build EAS, afficher un message
+      // En production : const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
+      // puis appel au pipeline scan-meal
+
+      setTimeout(() => {
+        setScanError(null);
+        Alert.alert(
+          '📸 Mode Photo CartScan',
+          'La capture photo pour CartScan sera disponible dans la version build (EAS). ' +
+          'En attendant, utilisez le scan code-barres pour les produits emballés.',
+          [
+            {
+              text: 'Retour au barcode',
+              onPress: () => setCartPhotoMode(false),
+            },
+            {
+              text: 'OK',
+              style: 'cancel',
+            },
+          ]
+        );
+      }, 500);
+    } catch (e) {
+      console.error('Cart photo error:', e);
+      setScanError('Erreur capture photo');
+      setTimeout(() => setScanError(null), 2000);
+    }
+  };
+
   const handleBarcodeScan = ({ type, data }) => {
     if (!scanningActive || lookingUp) return;
     if (data === lastScannedCode) return;
@@ -5060,12 +5093,12 @@ const RepasPage = ({ onNavigate }) => {
           onRequestClose={closeCartScan}
         >
           <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
-            <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
+            <StatusBar barStyle="light-content" backgroundColor="#1A1D22" translucent={false} />
 
             {/* HEADER */}
             <View style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-              paddingTop: wp(45), paddingBottom: wp(10), paddingHorizontal: wp(16),
+              paddingTop: wp(52), paddingBottom: wp(10), paddingHorizontal: wp(16),
             }}>
               <TouchableOpacity onPress={closeCartScan}>
                 <Text style={{ fontSize: fp(14), color: '#9CA3AF' }}>✕ Fermer</Text>
@@ -5094,9 +5127,16 @@ const RepasPage = ({ onNavigate }) => {
                 onBarcodeScanned={!cartPhotoMode && scanningActive && !lookingUp ? handleBarcodeScan : undefined}
               />
 
-              {/* Ligne de scan (mode barcode uniquement) */}
-              {!cartPhotoMode && (
+              {/* Ligne de scan / réticule photo */}
+              {!cartPhotoMode ? (
                 <View style={{ position: 'absolute', top: '48%', left: wp(20), right: wp(20), height: 2, backgroundColor: '#4DA6FF', opacity: 0.8 }} />
+              ) : (
+                <View style={{ position: 'absolute', top: '50%', left: '50%', marginTop: -wp(20), marginLeft: -wp(20) }}>
+                  <View style={{ width: wp(40), height: wp(40), borderRadius: wp(20), borderWidth: 2, borderColor: 'rgba(255,140,66,0.6)', alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ width: wp(2), height: wp(16), backgroundColor: 'rgba(255,140,66,0.6)', position: 'absolute' }} />
+                    <View style={{ width: wp(16), height: wp(2), backgroundColor: 'rgba(255,140,66,0.6)', position: 'absolute' }} />
+                  </View>
+                </View>
               )}
 
               {/* Coins */}
@@ -5105,48 +5145,39 @@ const RepasPage = ({ onNavigate }) => {
               <View style={{ position: 'absolute', bottom: wp(10), left: wp(10), width: wp(22), height: wp(22), borderBottomWidth: 3, borderLeftWidth: 3, borderColor: cartPhotoMode ? '#FF8C42' : '#4DA6FF', borderBottomLeftRadius: wp(4) }} />
               <View style={{ position: 'absolute', bottom: wp(10), right: wp(10), width: wp(22), height: wp(22), borderBottomWidth: 3, borderRightWidth: 3, borderColor: cartPhotoMode ? '#FF8C42' : '#4DA6FF', borderBottomRightRadius: wp(4) }} />
 
-              {/* Bouton photo dans le coin — toujours visible */}
-              {!cartPhotoMode && (
-                <TouchableOpacity
-                  onPress={() => setCartPhotoMode(true)}
-                  style={{
-                    position: 'absolute', bottom: wp(10), right: wp(10),
-                    backgroundColor: 'rgba(255,140,66,0.9)', borderRadius: wp(20),
-                    width: wp(40), height: wp(40), alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  <Text style={{ fontSize: fp(18) }}>📸</Text>
-                </TouchableOpacity>
-              )}
-
               {/* Mode photo : bouton capture central + retour barcode */}
               {cartPhotoMode && (
-                <View style={{ position: 'absolute', bottom: wp(10), left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: wp(20) }}>
-                  {/* Retour barcode */}
+                <View style={{
+                  position: 'absolute', bottom: wp(10), left: 0, right: 0,
+                  flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: wp(16),
+                }}>
                   <TouchableOpacity
                     onPress={() => { setCartPhotoMode(false); setPhotoPromptVisible(false); }}
-                    style={{ backgroundColor: 'rgba(77,166,255,0.9)', borderRadius: wp(16), paddingHorizontal: wp(12), paddingVertical: wp(6) }}
+                    style={{ backgroundColor: 'rgba(77,166,255,0.9)', borderRadius: wp(14), paddingHorizontal: wp(12), paddingVertical: wp(6) }}
                   >
                     <Text style={{ fontSize: fp(10), color: '#FFF', fontWeight: '600' }}>📊 Barcode</Text>
                   </TouchableOpacity>
 
-                  {/* Bouton capture */}
                   <TouchableOpacity
-                    onPress={() => {
-                      // TODO : Prendre la photo et envoyer au pipeline scan-meal
-                      setScanError('Mode photo bientôt disponible');
-                      setTimeout(() => setScanError(null), 2000);
-                    }}
+                    onPress={captureCartPhoto}
                     style={{
-                      backgroundColor: '#FF8C42', borderRadius: wp(30),
+                      backgroundColor: '#FF8C42', borderRadius: wp(28),
                       width: wp(56), height: wp(56), alignItems: 'center', justifyContent: 'center',
-                      borderWidth: 3, borderColor: 'rgba(255,255,255,0.5)',
+                      borderWidth: 3, borderColor: 'rgba(255,255,255,0.4)',
                     }}
                   >
-                    <Text style={{ fontSize: fp(22) }}>📸</Text>
+                    <View style={{
+                      width: wp(44), height: wp(44), borderRadius: wp(22),
+                      borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)',
+                      alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <View style={{
+                        width: wp(36), height: wp(36), borderRadius: wp(18),
+                        backgroundColor: 'rgba(255,255,255,0.9)',
+                      }} />
+                    </View>
                   </TouchableOpacity>
 
-                  {/* Prix */}
                   <View style={{ backgroundColor: 'rgba(255,140,66,0.9)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
                     <Text style={{ fontSize: fp(9), color: '#FFF', fontWeight: '700' }}>50 Lix</Text>
                   </View>
@@ -5166,51 +5197,71 @@ const RepasPage = ({ onNavigate }) => {
               )}
             </View>
 
-            {/* ══════ POPUP PHOTO PROMPT (produit non trouvé) ══════ */}
-            {photoPromptVisible && (
-              <View style={{
-                marginHorizontal: wp(16), marginTop: wp(8),
-                backgroundColor: 'rgba(255,140,66,0.1)', borderRadius: wp(12),
-                borderWidth: 1, borderColor: 'rgba(255,140,66,0.3)',
-                padding: wp(12), flexDirection: 'row', alignItems: 'center',
-              }}>
-                <Text style={{ fontSize: fp(24), marginRight: wp(10) }}>📸</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FF8C42', marginBottom: wp(2) }}>
-                    Produit non trouvé ou sans code-barres ?
+            {/* ══════ BANDEAU MODE PHOTO — sous la caméra ══════ */}
+            <TouchableOpacity
+              onPress={() => {
+                setCartPhotoMode(true);
+                setPhotoPromptVisible(false);
+              }}
+              activeOpacity={0.85}
+              style={{
+                marginHorizontal: wp(16),
+                marginTop: wp(6),
+                marginBottom: wp(4),
+                borderRadius: wp(10),
+                paddingVertical: wp(8),
+                paddingHorizontal: wp(14),
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: photoPromptVisible
+                  ? 'rgba(255,140,66,0.15)'
+                  : 'rgba(255,255,255,0.04)',
+                borderWidth: photoPromptVisible ? 1 : 0,
+                borderColor: 'rgba(255,140,66,0.3)',
+              }}
+            >
+              {photoPromptVisible ? (
+                <>
+                  <Text style={{ fontSize: fp(11), color: '#FF8C42', fontWeight: '600', flex: 1 }}>
+                    Produit non trouvé ou sans code-barres ? Prenez une photo !
                   </Text>
-                  <Text style={{ fontSize: fp(10), color: '#D1D5DB' }}>
-                    Prenez une photo pour l'ajouter à votre caddie !
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'center', gap: wp(4) }}>
+                  <View style={{
+                    backgroundColor: '#FF8C42',
+                    borderRadius: wp(6),
+                    paddingHorizontal: wp(10),
+                    paddingVertical: wp(4),
+                    marginLeft: wp(8),
+                  }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FFF' }}>📸 Photo</Text>
+                  </View>
+                  <Text style={{ fontSize: fp(8), color: '#FF8C42', marginLeft: wp(4) }}>50 Lix</Text>
                   <TouchableOpacity
-                    onPress={() => {
-                      setCartPhotoMode(true);
+                    onPress={(e) => {
+                      e.stopPropagation();
                       setPhotoPromptVisible(false);
+                      setScanningActive(true);
+                      setLastScannedCode(null);
                     }}
-                    style={{
-                      backgroundColor: '#FF8C42', borderRadius: wp(8),
-                      paddingHorizontal: wp(12), paddingVertical: wp(6),
-                    }}
+                    style={{ marginLeft: wp(6), padding: wp(4) }}
                   >
-                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FFF' }}>Photo</Text>
+                    <Text style={{ fontSize: fp(12), color: '#6B7280' }}>✕</Text>
                   </TouchableOpacity>
-                  <Text style={{ fontSize: fp(8), color: '#FF8C42' }}>50 Lix</Text>
-                </View>
-                {/* Bouton fermer le prompt */}
-                <TouchableOpacity
-                  onPress={() => {
-                    setPhotoPromptVisible(false);
-                    setScanningActive(true);
-                    setLastScannedCode(null);
-                  }}
-                  style={{ marginLeft: wp(6), padding: wp(4) }}
-                >
-                  <Text style={{ fontSize: fp(12), color: '#6B7280' }}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+                </>
+              ) : (
+                <>
+                  <Text style={{ fontSize: fp(10), color: '#6B7280' }}>
+                    📸 Pas de code-barres ?
+                  </Text>
+                  <Text style={{ fontSize: fp(10), color: '#FF8C42', fontWeight: '600', marginLeft: wp(4) }}>
+                    Prendre une photo
+                  </Text>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280', marginLeft: wp(4) }}>
+                    · 50 Lix
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
 
             {/* ══════ GRILLE PRODUITS ══════ */}
             <View style={{ flex: 1, paddingHorizontal: wp(16), marginTop: wp(8) }}>
