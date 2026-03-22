@@ -1311,22 +1311,22 @@ const ActivityPage = ({ onNavigate }) => {
             borderWidth: 1,
             borderColor: '#4A4F55',
             backgroundColor: '#252A30',
-            padding: wp(16),
+            padding: wp(10),
           }}>
             {/* Ligne principale : Brûlé + À brûler */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(14) }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(8) }}>
               <View style={{ flex: 1, alignItems: 'center' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(4) }}>
                   <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
                     <Path d="M12 2C12 2 4 12 4 16C4 20.4183 7.58172 24 12 24C16.4183 24 20 20.4183 20 16C20 12 12 2 12 2Z" fill="#FF8C42" />
                     <Path d="M12 18C10.3431 18 9 16.6569 9 15C9 13 12 9 12 9C12 9 15 13 15 15C15 16.6569 13.6569 18 12 18Z" fill="#FFD93D" />
                   </Svg>
-                  <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginLeft: wp(4), fontWeight: '600' }}>BRÛLÉ</Text>
+                  <Text style={{ fontSize: fp(9), color: '#9CA3AF', marginLeft: wp(4), fontWeight: '600' }}>BRÛLÉ</Text>
                 </View>
-                <Text style={{ fontSize: fp(28), fontWeight: '900', color: '#FF8C42' }}>
+                <Text style={{ fontSize: fp(22), fontWeight: '900', color: '#FF8C42' }}>
                   {totalCalories}
                 </Text>
-                <Text style={{ fontSize: fp(9), color: '#6B7280' }}>kcal</Text>
+                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>kcal</Text>
               </View>
 
               <View style={{ width: 1, backgroundColor: 'rgba(74,79,85,0.4)', marginHorizontal: wp(4) }} />
@@ -1337,20 +1337,20 @@ const ActivityPage = ({ onNavigate }) => {
                     <Circle cx="12" cy="12" r="10" stroke={caloriesToBurn > 0 ? '#FF6B6B' : '#00D984'} strokeWidth="2" fill="none" />
                     <Path d="M12 6V12L16 14" stroke={caloriesToBurn > 0 ? '#FF6B6B' : '#00D984'} strokeWidth="2" strokeLinecap="round" />
                   </Svg>
-                  <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginLeft: wp(4), fontWeight: '600' }}>À BRÛLER</Text>
+                  <Text style={{ fontSize: fp(9), color: '#9CA3AF', marginLeft: wp(4), fontWeight: '600' }}>À BRÛLER</Text>
                 </View>
                 <Text style={{
-                  fontSize: fp(28), fontWeight: '900',
+                  fontSize: fp(22), fontWeight: '900',
                   color: caloriesToBurn > 0 ? '#FF6B6B' : '#00D984',
                 }}>
                   {caloriesToBurn}
                 </Text>
-                <Text style={{ fontSize: fp(9), color: '#6B7280' }}>kcal</Text>
+                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>kcal</Text>
               </View>
             </View>
 
             {/* Séparateur horizontal */}
-            <View style={{ height: 1, backgroundColor: 'rgba(74,79,85,0.3)', marginBottom: wp(12) }} />
+            <View style={{ height: 1, backgroundColor: 'rgba(74,79,85,0.3)', marginBottom: wp(6) }} />
 
             {/* Ligne secondaire : Temps + Eau perdue */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
@@ -1360,8 +1360,8 @@ const ActivityPage = ({ onNavigate }) => {
                   <Path d="M12 6V12H16" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
                 </Svg>
                 <View style={{ marginLeft: wp(6) }}>
-                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>TEMPS</Text>
-                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFFFFF' }}>
+                  <Text style={{ fontSize: fp(7), color: '#6B7280' }}>TEMPS</Text>
+                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFFFFF' }}>
                     {formatDuration(totalDuration)}
                   </Text>
                 </View>
@@ -1372,8 +1372,8 @@ const ActivityPage = ({ onNavigate }) => {
                   <Path d="M12 2L6 12C6 16.4183 8.68629 20 12 20C15.3137 20 18 16.4183 18 12L12 2Z" fill="#4DA6FF" opacity="0.8" />
                 </Svg>
                 <View style={{ marginLeft: wp(6) }}>
-                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>EAU PERDUE</Text>
-                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#4DA6FF' }}>
+                  <Text style={{ fontSize: fp(7), color: '#6B7280' }}>EAU PERDUE</Text>
+                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#4DA6FF' }}>
                     {totalWater} ml
                   </Text>
                 </View>
@@ -1687,19 +1687,19 @@ const ActivityPage = ({ onNavigate }) => {
               <TouchableOpacity
                 onPress={() => setWalkRoundTrip(!walkRoundTrip)}
                 style={{
+                  width: wp(90),
                   backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.1)' : 'rgba(255,255,255,0.06)',
                   borderRadius: wp(6),
                   paddingHorizontal: wp(8),
                   paddingVertical: wp(4),
                 }}
               >
-                <Text style={{ fontSize: fp(8), color: walkRoundTrip ? '#00D984' : '#6B7280' }}>
+                <Text style={{ fontSize: fp(7), color: walkRoundTrip ? '#00D984' : '#6B7280' }}>
                   {walkRoundTrip ? '↔ Aller/Retour ×2' : '↔ Aller/Retour'}
                 </Text>
               </TouchableOpacity>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
-                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>◀</Text>
                 <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}>
                   <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
                     <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -1732,7 +1732,6 @@ const ActivityPage = ({ onNavigate }) => {
                     </View>
                   </View>
                 </Pressable>
-                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>▶</Text>
               </View>
 
               <View style={{ alignItems: 'flex-end' }}>
@@ -2031,19 +2030,19 @@ const ActivityPage = ({ onNavigate }) => {
               <TouchableOpacity
                 onPress={() => setRunRoundTrip(!runRoundTrip)}
                 style={{
+                  width: wp(90),
                   backgroundColor: runRoundTrip ? 'rgba(0,217,132,0.1)' : 'rgba(255,255,255,0.06)',
                   borderRadius: wp(6),
                   paddingHorizontal: wp(8),
                   paddingVertical: wp(4),
                 }}
               >
-                <Text style={{ fontSize: fp(8), color: runRoundTrip ? '#00D984' : '#6B7280' }}>
+                <Text style={{ fontSize: fp(7), color: runRoundTrip ? '#00D984' : '#6B7280' }}>
                   {runRoundTrip ? '↔ Aller/Retour ×2' : '↔ Aller/Retour'}
                 </Text>
               </TouchableOpacity>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
-                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>◀</Text>
                 <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}>
                   <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
                     <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -2076,7 +2075,6 @@ const ActivityPage = ({ onNavigate }) => {
                     </View>
                   </View>
                 </Pressable>
-                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>▶</Text>
               </View>
 
               <View style={{ alignItems: 'flex-end' }}>
