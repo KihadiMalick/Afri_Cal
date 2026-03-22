@@ -61,21 +61,19 @@ const seededRandom = (seed) => {
 // SPOTLIGHT — Zones et positions de scroll pour le tooltip guidé
 // ============================================
 const SPOTLIGHT_ZONES = [
-  // Étape 1 — Réacteur gauche (Consommé) → décalé à droite
-  { x: 28, y: 155, width: 110, height: 130, borderRadius: 20 },
-  // Étape 2 — ADN central + Score Vitalité → décalé à droite
-  { x: 128, y: 145, width: 90, height: 170, borderRadius: 15 },
-  // Étape 3 — Réacteur droit (Reste) → décalé à droite
-  { x: 210, y: 155, width: 110, height: 130, borderRadius: 20 },
-  // Étape 4 — Carte Hydratation → REMONTÉ (était trop bas)
-  { x: 14, y: 185, width: W - 28, height: 130, borderRadius: 18 },
-  // Étape 5 — Carte Coach LixMan → DESCENDU légèrement
-  { x: 14, y: 340, width: W - 28, height: 160, borderRadius: 18 },
+  // Étape 1 — Réacteur gauche (Consommé)
+  { x: wp(28), y: wp(125), width: wp(100), height: wp(110), borderRadius: wp(20) },
+  // Étape 2 — ADN central + Score Vitalité
+  { x: wp(120), y: wp(115), width: wp(80), height: wp(140), borderRadius: wp(15) },
+  // Étape 3 — Réacteur droit (Reste)
+  { x: W - wp(128), y: wp(125), width: wp(100), height: wp(110), borderRadius: wp(20) },
+  // Étape 4 — Carte Hydratation
+  { x: wp(14), y: wp(155), width: W - wp(28), height: wp(110), borderRadius: wp(18) },
+  // Étape 5 — Carte Coach ALIXEN
+  { x: wp(14), y: wp(280), width: W - wp(28), height: wp(140), borderRadius: wp(18) },
 ];
 
-// Étape 4 : scroll de 200 (Hydratation visible)
-// Étape 5 : scroll de 450 (Coach visible)
-const SCROLL_POSITIONS = [0, 0, 0, 200, 450];
+const SCROLL_POSITIONS = [0, 0, 0, wp(170), wp(380)];
 
 // ============================================
 // COMPOSANT — Background métallique propre
@@ -1718,7 +1716,9 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               fontWeight: '700',
               color: '#FF3B30',
               marginTop: 3,
-            }}>- 870 Kcal/Sport</Text>
+            }}>
+              {burnedExtra > 0 ? `- ${burnedExtra} Kcal/Sport` : ''}
+            </Text>
           </View>
 
           {/* Vitalité */}
@@ -1748,10 +1748,20 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               textShadowColor: 'rgba(77, 166, 255, 0.2)',
               textShadowOffset: { width: 0, height: 0 },
               textShadowRadius: 4,
-            }}>{Math.round((remaining / OBJECTIVE) * 100)}%</Text>
+            }}>{Math.min(Math.round((remaining / OBJECTIVE) * 100), 100)}%</Text>
             <Text style={{
               fontSize: fp(9), fontWeight: '600', color: '#8892A0', marginTop: 2,
             }}>Reste</Text>
+            {remaining > OBJECTIVE && (
+              <Text style={{
+                fontSize: fp(8),
+                fontWeight: '700',
+                color: '#00D984',
+                marginTop: 3,
+              }}>
+                + {remaining - OBJECTIVE} bonus sport
+              </Text>
+            )}
           </View>
         </View>
       </MetalCard>
@@ -1844,11 +1854,11 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         </View>
       </MetalCard>
 
-      {/* COACH LIXMAN */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert('Coach LixMan', 'Recommandations personnalisées IA — bientôt disponible')}>
+      {/* COACH ALIXEN */}
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert('Coach ALIXEN', 'Recommandations personnalisées IA — bientôt disponible')}>
         {/* Header Coach */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-          {/* Icône Coach LixMan — Avatar PNG */}
+          {/* Icône Coach ALIXEN — Avatar PNG */}
           <Image
             source={require('./assets/lixman-avatar.png')}
             style={{
@@ -1865,7 +1875,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             fontWeight: '700',
             letterSpacing: wp(1),
             marginLeft: wp(8),
-          }}>COACH LIXMAN</Text>
+          }}>COACH ALIXEN</Text>
           {/* Badge "IA" */}
           <View style={{
             backgroundColor: 'rgba(212, 175, 55, 0.12)',
@@ -1911,15 +1921,21 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <Text style={{ color: '#8892A0', fontSize: fp(8), fontWeight: '700', letterSpacing: wp(1), marginBottom: wp(4) }}>SUGGESTIONS</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
             <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
-            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>25g de protéines au prochain repas</Text>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>
+              {consumedTotal === 0 ? 'Scannez un repas pour activer les suggestions' : '25g de protéines au prochain repas'}
+            </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
             <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
-            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>1 verre d'eau (hydratation à 60%)</Text>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>
+              {`${Math.max(0, Math.ceil((hydrationGoal - hydrationMl) / 250))} verre${Math.ceil((hydrationGoal - hydrationMl) / 250) > 1 ? 's' : ''} d'eau (hydratation à ${Math.round((hydrationMl / hydrationGoal) * 100)}%)`}
+            </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
-            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>15 min de marche pour brûler 85 kcal</Text>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>
+              {burnedExtra > 0 ? `Bonne séance ! ${burnedExtra} kcal brûlées` : '15 min de marche pour brûler 85 kcal'}
+            </Text>
           </View>
         </View>
 
@@ -1967,25 +1983,35 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           { text: 'Débloquer', onPress: () => console.log('Navigate to shop') },
         ]
       )}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
-          <StatsIcon />
-          <Text style={{
-            color: '#EAEEF3',
-            fontSize: fp(14),
-            fontWeight: '700',
-            letterSpacing: wp(1),
-            marginLeft: wp(8),
-          }}>MES STATS (7 jours)</Text>
-        </View>
-        <View style={{ alignItems: 'center' }}>
-          <LockIcon size={wp(28)} />
-          <Text style={{ color: '#8892A0', fontSize: fp(13), fontWeight: '600', marginTop: wp(8) }}>Débloquer</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(4) }}>
-            <LixCoinIcon size={wp(12)} />
-            <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '700' }}> 200 Lix</Text>
-            <Text style={{ color: '#8892A0', fontSize: fp(12), marginHorizontal: wp(6) }}>ou</Text>
-            <StarIcon />
-            <Text style={{ color: '#D4AF37', fontSize: fp(13), fontWeight: '700' }}> Premium</Text>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <StatsIcon />
+            <Text style={{
+              color: '#EAEEF3',
+              fontSize: fp(14),
+              fontWeight: '700',
+              letterSpacing: wp(1),
+              marginLeft: wp(8),
+            }}>MES STATS</Text>
+            <Text style={{
+              color: '#8892A0',
+              fontSize: fp(10),
+              marginLeft: wp(4),
+            }}>(7 jours)</Text>
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+            <LockIcon size={wp(16)} />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <LixCoinIcon size={wp(12)} />
+              <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700', marginLeft: wp(3) }}>200</Text>
+            </View>
+            <Text style={{ color: '#6B7280', fontSize: fp(9) }}>ou</Text>
+            <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>★ Pro</Text>
           </View>
         </View>
       </MetalCard>
@@ -2254,7 +2280,7 @@ export default function App() {
         color: '#00BFA6',
       },
       {
-        title: 'Coach LixMan',
+        title: 'Coach ALIXEN',
         description: 'Votre coach IA personnel. Il analyse vos données et vous donne des conseils adaptés chaque jour.',
         icon: '🧠',
         color: '#00D984',
