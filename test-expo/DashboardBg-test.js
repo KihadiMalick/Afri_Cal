@@ -690,7 +690,7 @@ const metalStyles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 12,
     marginHorizontal: wp(14),
-    marginBottom: wp(12),
+    marginBottom: wp(10),
   },
   innerGradient: {
     borderRadius: wp(17),
@@ -1620,6 +1620,29 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(15), paddingTop: wp(8) }}
       showsVerticalScrollIndicator={false}
     >
+      {/* ====== SALUT PERSONNALISÉ ====== */}
+      <View style={{ marginBottom: wp(6) }}>
+        <Text style={{
+          fontSize: fp(14),
+          fontWeight: '600',
+          color: '#EAEEF3',
+        }}>
+          {new Date().getHours() < 12 ? 'Bonjour' :
+           new Date().getHours() < 18 ? 'Bon après-midi' :
+           'Bonsoir'} 👋
+        </Text>
+        <Text style={{
+          fontSize: fp(10),
+          color: '#6B7280',
+          marginTop: wp(2),
+        }}>
+          {consumedTotal === 0
+            ? 'Commencez par scanner votre premier repas'
+            : `${consumedTotal} kcal consommées aujourd'hui`
+          }
+        </Text>
+      </View>
+
       {/* ====== CARTE PRINCIPALE — Bilan Énergétique Area Fill ====== */}
       <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }}>
         {/* HEADER — une seule ligne, tout aligné */}
@@ -1793,35 +1816,44 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {/* Placeholder image repas — assiette fumante */}
-          <View style={{
-            width: wp(52),
-            height: wp(52),
-            borderRadius: wp(12),
-            backgroundColor: 'rgba(30, 37, 48, 0.8)',
-            borderWidth: 1,
-            borderColor: 'rgba(62, 72, 85, 0.3)',
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginRight: wp(12),
-          }}>
-            <Svg width={wp(28)} height={wp(28)} viewBox="0 0 32 32">
-              <Defs>
-                <SvgLinearGradient id="plateGrd" x1="0.5" y1="0" x2="0.5" y2="1">
-                  <Stop offset="0%" stopColor="#8892A0" />
-                  <Stop offset="100%" stopColor="#6B7B8D" />
-                </SvgLinearGradient>
-              </Defs>
-              {/* Assiette */}
-              <Ellipse cx="16" cy="22" rx="13" ry="5" fill="url(#plateGrd)" opacity={0.3} />
-              <Ellipse cx="16" cy="20" rx="12" ry="4.5" fill="none" stroke="#8892A0" strokeWidth={1.2} opacity={0.5} />
-              <Ellipse cx="16" cy="20" rx="8" ry="3" fill="none" stroke="#8892A0" strokeWidth={0.8} opacity={0.3} />
-              {/* Vapeur / fumée */}
-              <Path d="M11 14 Q11 11 13 12 Q15 13 13 10" fill="none" stroke="#8892A0" strokeWidth={1} strokeLinecap="round" opacity={0.4} />
-              <Path d="M16 13 Q16 10 18 11 Q20 12 18 9" fill="none" stroke="#8892A0" strokeWidth={1} strokeLinecap="round" opacity={0.35} />
-              <Path d="M21 14 Q21 11 23 12 Q25 13 23 10" fill="none" stroke="#8892A0" strokeWidth={1} strokeLinecap="round" opacity={0.3} />
-            </Svg>
-          </View>
+          {/* Image repas — vraie image si disponible, sinon placeholder */}
+          {lastMeal && lastMeal.image_url ? (
+            <Image
+              source={{ uri: lastMeal.image_url }}
+              style={{
+                width: wp(52),
+                height: wp(52),
+                borderRadius: wp(12),
+                marginRight: wp(12),
+              }}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={{
+              width: wp(52),
+              height: wp(52),
+              borderRadius: wp(12),
+              backgroundColor: 'rgba(30, 37, 48, 0.8)',
+              borderWidth: 1,
+              borderColor: 'rgba(62, 72, 85, 0.3)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginRight: wp(12),
+            }}>
+              <Svg width={wp(28)} height={wp(28)} viewBox="0 0 32 32">
+                <Defs>
+                  <SvgLinearGradient id="plateGrd" x1="0.5" y1="0" x2="0.5" y2="1">
+                    <Stop offset="0%" stopColor="#8892A0" />
+                    <Stop offset="100%" stopColor="#6B7B8D" />
+                  </SvgLinearGradient>
+                </Defs>
+                <Ellipse cx="16" cy="22" rx="13" ry="5" fill="url(#plateGrd)" opacity={0.3} />
+                <Ellipse cx="16" cy="20" rx="12" ry="4.5" fill="none" stroke="#8892A0" strokeWidth={1.2} opacity={0.5} />
+                <Path d="M11 14 Q11 11 13 12 Q15 13 13 10" fill="none" stroke="#8892A0" strokeWidth={1} strokeLinecap="round" opacity={0.4} />
+                <Path d="M16 13 Q16 10 18 11 Q20 12 18 9" fill="none" stroke="#8892A0" strokeWidth={1} strokeLinecap="round" opacity={0.35} />
+              </Svg>
+            </View>
+          )}
           <View style={{ flex: 1 }}>
             <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>
               {lastMeal ? lastMeal.food_name : 'Aucun repas'}
@@ -1941,7 +1973,13 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
 
         {/* Lien Voir Recettes */}
         <TouchableOpacity
-          onPress={() => Alert.alert('Recettes', 'Recettes adaptées à votre profil — bientôt disponible')}
+          onPress={() => {
+            Alert.alert(
+              'Recettes adaptées',
+              'Retrouvez vos recettes personnalisées dans l\'onglet Repas → Recettes !',
+              [{ text: 'Aller aux Recettes', onPress: () => {} }]
+            );
+          }}
           activeOpacity={0.7}
         >
           <Text style={{
@@ -2189,13 +2227,28 @@ export default function App() {
       // 3. Dernier repas
       const { data: meals } = await supabase
         .from('meals')
-        .select('food_name, calories, protein_g, carbs_g, fat_g, meal_time')
+        .select('food_name, calories, protein_g, carbs_g, fat_g, meal_time, image_url')
         .eq('user_id', TEST_USER_ID)
         .order('meal_time', { ascending: false })
         .limit(1);
 
       if (meals && meals.length > 0) {
         setLastMeal(meals[0]);
+      }
+
+      // 4. Vérifier le mood du jour
+      const todayStr = new Date().toISOString().split('T')[0];
+      const { data: todayMood } = await supabase
+        .from('moods')
+        .select('mood_level, weather')
+        .eq('user_id', TEST_USER_ID)
+        .gte('created_at', todayStr + 'T00:00:00')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (todayMood && todayMood.length > 0) {
+        setCurrentMood(todayMood[0].mood_level);
+        setMoodFilled(true);
       }
 
     } catch (err) {
@@ -2241,7 +2294,7 @@ export default function App() {
   // Calorie logic
   const consumedTotal = realConsumed;
   const burnedExtra = activities.reduce((sum, a) => sum + a.kcalBurned, 0);
-  const burnedTotal = 870; // BMR spread + sport
+  const burnedTotal = burnedExtra; // Calories brûlées par les activités du jour
   const surplus = Math.max(0, consumedTotal - burnedExtra - DAILY_OBJECTIVE);
 
   // Sport → hydration water loss
@@ -3101,10 +3154,32 @@ export default function App() {
                 {selectedWeather && (
                   <View style={{ marginTop: 25, alignItems: 'center' }}>
                     <TouchableOpacity
-                      onPress={() => {
+                      onPress={async () => {
                         setCurrentMood(moodResult);
                         setMoodFilled(true);
                         setShowMoodModal(false);
+
+                        // Sauvegarder mood + weather dans Supabase
+                        try {
+                          // 1. Sauvegarder dans la table moods
+                          await supabase.from('moods').insert({
+                            user_id: TEST_USER_ID,
+                            mood_level: moodResult,
+                            weather: selectedWeather,
+                            tap_count: tapCount,
+                            max_gauge_percent: moodLevel,
+                          });
+
+                          // 2. Mettre à jour current_mood et current_weather dans users_profile
+                          await supabase.from('users_profile').update({
+                            current_mood: moodResult,
+                            current_weather: selectedWeather,
+                            last_mood_at: new Date().toISOString(),
+                          }).eq('user_id', TEST_USER_ID);
+
+                        } catch (e) {
+                          console.warn('Mood save error:', e);
+                        }
                       }}
                       style={{
                         backgroundColor: '#00D984',
