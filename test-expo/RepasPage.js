@@ -212,10 +212,10 @@ const SectionTitle = ({ title, rightAction, rightLabel }) => (
         backgroundColor: '#00D984', marginRight: 8,
       }}/>
       <Text style={{
-        color: '#EAEEF3',
-        fontSize: fp(14),
-        fontWeight: '800',
-        letterSpacing: 2,
+        color: '#FFFFFF',
+        fontSize: fp(16),
+        fontWeight: '900',
+        letterSpacing: 1,
         textTransform: 'uppercase',
       }}>
         {title}
@@ -410,6 +410,7 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
             justifyContent: 'center', alignItems: 'center',
             backgroundColor: 'rgba(255,255,255,0.03)',
             marginTop: wp(8),
+            opacity: 0.3,
           }}>
             {slotKey === 'breakfast' && (
               <Svg width={24} height={24} viewBox="0 0 24 24">
@@ -447,8 +448,14 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
               </Svg>
             )}
           </View>
-          <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: wp(5) }}>
-            {lang === 'fr' ? 'Ajouter' : 'Add'}
+          <Text style={{ color: '#4A4F55', fontSize: fp(10), textAlign: 'center', marginTop: wp(4) }}>
+            {slotKey === 'breakfast' ? (lang === 'fr' ? "Qu'avez-vous mangé ce matin ?" : 'What did you eat this morning?') :
+             slotKey === 'lunch' ? (lang === 'fr' ? 'Ajoutez votre déjeuner' : 'Add your lunch') :
+             slotKey === 'dinner' ? (lang === 'fr' ? "Qu'y a-t-il au menu ce soir ?" : "What's on the menu tonight?") :
+             (lang === 'fr' ? 'Un petit creux ?' : 'Feeling peckish?')}
+          </Text>
+          <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '600', marginTop: wp(6) }}>
+            {lang === 'fr' ? '+ Ajouter' : '+ Add'}
           </Text>
         </LinearGradient>
       </View>
@@ -2555,9 +2562,9 @@ const RepasPage = ({ onNavigate }) => {
                     </View>
                     <View style={{
                       backgroundColor: 'rgba(255,140,66,0.12)',
-                      paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8,
+                      paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
                     }}>
-                      <Text style={{ color: '#FF8C42', fontSize: fp(14), fontWeight: '800' }}>{calPercent}%</Text>
+                      <Text style={{ color: '#FF8C42', fontSize: fp(12), fontWeight: '800' }}>{calPercent}%</Text>
                     </View>
                   </View>
 
@@ -2597,7 +2604,7 @@ const RepasPage = ({ onNavigate }) => {
           </View>
 
           {/* ======== 3. CARTE XSCAN — MetalCard NON cliquable ======== */}
-          <View style={{ marginHorizontal: wp(16), marginTop: wp(20) }}>
+          <View style={{ marginHorizontal: wp(16), marginTop: wp(10) }}>
             <View style={{
               borderRadius: 18, padding: 1.2,
               backgroundColor: '#4A4F55', elevation: 12,
@@ -2606,7 +2613,7 @@ const RepasPage = ({ onNavigate }) => {
             }}>
               <LinearGradient
                 colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-                style={{ borderRadius: 17, padding: wp(18) }}
+                style={{ borderRadius: 17, padding: wp(12) }}
               >
                 {/* Ligne émeraude top */}
                 <View style={{
@@ -2615,7 +2622,7 @@ const RepasPage = ({ onNavigate }) => {
                 }}/>
 
                 {/* HEADER : XSCAN en haut à gauche */}
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: wp(20) }}>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: wp(12) }}>
                   <Text style={{
                     color: '#00D984', fontSize: fp(22), fontWeight: '900', letterSpacing: 1,
                   }}>X</Text>
@@ -2625,7 +2632,7 @@ const RepasPage = ({ onNavigate }) => {
                 </View>
 
                 {/* CENTRE : Bouton X avec profondeur */}
-                <View style={{ alignItems: 'center', marginBottom: wp(16) }}>
+                <View style={{ alignItems: 'center', marginBottom: wp(10) }}>
 
                   {/* Conteneur relatif pour les anneaux animés */}
                   <View style={{ justifyContent: 'center', alignItems: 'center' }}>
@@ -2635,7 +2642,7 @@ const RepasPage = ({ onNavigate }) => {
                       <>
                         <Animated.View style={{
                           position: 'absolute',
-                          width: wp(82), height: wp(82), borderRadius: wp(41),
+                          width: wp(58), height: wp(58), borderRadius: wp(29),
                           borderWidth: 2, borderColor: '#00D984',
                           opacity: ring1Anim.interpolate({
                             inputRange: [0, 0.3, 0.7, 1],
@@ -2647,7 +2654,7 @@ const RepasPage = ({ onNavigate }) => {
                         }}/>
                         <Animated.View style={{
                           position: 'absolute',
-                          width: wp(96), height: wp(96), borderRadius: wp(48),
+                          width: wp(68), height: wp(68), borderRadius: wp(34),
                           borderWidth: 1.5, borderColor: '#00D984',
                           opacity: ring2Anim.interpolate({
                             inputRange: [0, 0.3, 0.7, 1],
@@ -2659,7 +2666,7 @@ const RepasPage = ({ onNavigate }) => {
                         }}/>
                         <Animated.View style={{
                           position: 'absolute',
-                          width: wp(115), height: wp(115), borderRadius: wp(57.5),
+                          width: wp(80), height: wp(80), borderRadius: wp(40),
                           borderWidth: 1, borderColor: '#00D984',
                           opacity: ring3Anim.interpolate({
                             inputRange: [0, 0.3, 0.7, 1],
@@ -2680,7 +2687,7 @@ const RepasPage = ({ onNavigate }) => {
                       });
                     }}
                     style={{
-                    width: wp(120), height: wp(120), borderRadius: wp(60),
+                    width: wp(75), height: wp(75), borderRadius: wp(37.5),
                     backgroundColor: '#22272E',
                     borderWidth: 1.5,
                     borderColor: '#3A3F46',
@@ -2695,7 +2702,7 @@ const RepasPage = ({ onNavigate }) => {
 
                     {/* Anneau intermédiaire — crée la marche du creux */}
                     <View style={{
-                      width: wp(106), height: wp(106), borderRadius: wp(53),
+                      width: wp(65), height: wp(65), borderRadius: wp(32.5),
                       backgroundColor: '#1A1F26',
                       borderWidth: 1,
                       borderColor: '#2E333A',
@@ -2704,7 +2711,7 @@ const RepasPage = ({ onNavigate }) => {
 
                       {/* Rainure circulaire — bordure émeraude supprimée */}
                       <View style={{
-                        width: wp(96), height: wp(96), borderRadius: wp(48),
+                        width: wp(58), height: wp(58), borderRadius: wp(29),
                         borderWidth: 0,
                         borderColor: 'transparent',
                         backgroundColor: 'transparent',
@@ -2713,7 +2720,7 @@ const RepasPage = ({ onNavigate }) => {
 
                         {/* Fond du creux — avec glow animé */}
                         <View style={{
-                          width: wp(88), height: wp(88), borderRadius: wp(44),
+                          width: wp(52), height: wp(52), borderRadius: wp(26),
                           backgroundColor: isXPressed ? '#162A1E' : '#14181E',
                           borderWidth: 1,
                           borderColor: isXPressed ? 'rgba(0,217,132,0.2)' : '#1E2228',
@@ -2745,9 +2752,9 @@ const RepasPage = ({ onNavigate }) => {
                             }}
                             onPress={activateScan}
                             style={({ pressed }) => ({
-                              width: wp(72),
-                              height: wp(72),
-                              borderRadius: wp(36),
+                              width: wp(44),
+                              height: wp(44),
+                              borderRadius: wp(22),
                               backgroundColor: pressed ? '#1E2530' : '#2A2F38',
                               borderWidth: 1.5,
                               borderColor: '#2A2F36',
@@ -2758,7 +2765,7 @@ const RepasPage = ({ onNavigate }) => {
                             })}
                           >
                             {/* X SVG — GRAND et visible */}
-                            <Svg width={wp(40)} height={wp(40)} viewBox="0 0 40 40">
+                            <Svg width={wp(26)} height={wp(26)} viewBox="0 0 40 40">
                               {/* Lignes du X */}
                               <Line x1="7" y1="7" x2="33" y2="33"
                                     stroke="#00D984" strokeWidth={3.5} strokeLinecap="round"/>
@@ -2790,19 +2797,16 @@ const RepasPage = ({ onNavigate }) => {
 
                 {/* Texte sous le bouton */}
                 <Text style={{
-                  color: '#8892A0', fontSize: fp(13), textAlign: 'center',
-                  marginBottom: wp(20),
+                  color: '#8892A0', fontSize: fp(12), textAlign: 'center',
+                  marginBottom: wp(12),
                 }}>
                   {lang === 'fr' ? 'Scanner votre repas' : 'Scan your meal'}
                 </Text>
 
-                {/* BAS : Charger Photo (gauche) + Scan Avancé IA (droite) */}
+                {/* BAS : Charger Photo — centré */}
                 <View style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
                   alignItems: 'center',
                 }}>
-                  {/* Charger Photo — bas gauche */}
                   <Pressable
                     onPress={pickImageFromGallery}
                     delayPressIn={120}
@@ -2829,40 +2833,28 @@ const RepasPage = ({ onNavigate }) => {
                       {lang === 'fr' ? 'Charger Photo' : 'Load Photo'}
                     </Text>
                   </Pressable>
-
-                  {/* Scan Avancé IA — bas droite */}
-                  <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: 'rgba(212,175,55,0.08)',
-                    paddingHorizontal: wp(10),
-                    paddingVertical: wp(6),
-                    borderRadius: 10,
-                    borderWidth: 0.5,
-                    borderColor: 'rgba(212,175,55,0.2)',
-                  }}>
-                    <View style={{
-                      width: 5, height: 5, borderRadius: 2.5,
-                      backgroundColor: '#D4AF37', marginRight: 5,
-                    }}/>
-                    <Text style={{
-                      color: '#D4AF37', fontSize: fp(9), fontWeight: '800', letterSpacing: 1,
-                    }}>
-                      {lang === 'fr' ? 'SCAN AVANCÉ IA' : 'AI ADVANCED SCAN'}
-                    </Text>
-                  </View>
                 </View>
 
               </LinearGradient>
             </View>
           </View>
 
+          <Text style={{
+            fontSize: fp(9),
+            color: '#6B7280',
+            textAlign: 'center',
+            marginTop: wp(4),
+            fontStyle: 'italic',
+          }}>
+            Scan IA avancé · Reconnaissance multi-angle · Claude Sonnet 4
+          </Text>
+
           {/* ======== DOTS SCANS — sous la carte Xscan ======== */}
           <View style={{
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            marginTop: wp(12),
+            marginTop: wp(4),
             gap: wp(6),
           }}>
             {[0, 1, 2].map((i) => {
@@ -2935,8 +2927,8 @@ const RepasPage = ({ onNavigate }) => {
             activeOpacity={0.85}
             style={{
               marginHorizontal: wp(16),
-              marginTop: wp(12),
-              marginBottom: wp(12),
+              marginTop: wp(8),
+              marginBottom: wp(8),
               borderRadius: wp(16),
               borderWidth: 1,
               borderColor: 'rgba(77,166,255,0.25)',
@@ -2987,32 +2979,33 @@ const RepasPage = ({ onNavigate }) => {
           <Pressable
             onPress={openManualEntry}
             style={({ pressed }) => ({
-              marginHorizontal: wp(40),
-              marginTop: wp(14),
+              marginHorizontal: wp(50),
+              marginTop: wp(8),
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
-              paddingVertical: wp(11),
-              borderRadius: 14,
+              paddingVertical: wp(8),
+              borderRadius: 12,
               backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
               borderWidth: 1,
               borderColor: pressed ? '#5A6070' : '#3A3F46',
+              opacity: 0.7,
             })}
           >
-            <Svg width={16} height={16} viewBox="0 0 16 16" style={{ marginRight: 8 }}>
+            <Svg width={14} height={14} viewBox="0 0 16 16" style={{ marginRight: 6 }}>
               <Path d="M12 1.5L14.5 4L5 13.5L1.5 14.5L2.5 11L12 1.5Z"
                     fill="none" stroke="#8892A0" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round"/>
               <Path d="M10 3.5L12.5 6" stroke="#8892A0" strokeWidth={1.2} strokeLinecap="round"/>
             </Svg>
             <Text style={{
-              color: '#8892A0', fontSize: fp(13), fontWeight: '600',
+              color: '#8892A0', fontSize: fp(11), fontWeight: '600',
             }}>
               {lang === 'fr' ? 'Ajouter Manuellement' : 'Add Manually'}
             </Text>
           </Pressable>
 
           {/* ======== 5. SECTION PLAT DU JOUR (FIX 3+4+7) ======== */}
-          <View style={{ marginTop: wp(24) }}>
+          <View style={{ marginTop: wp(8) }}>
             <SectionTitle title={lang === 'fr' ? 'Plat du jour' : 'Meals today'} />
 
             <ScrollView
@@ -3057,7 +3050,7 @@ const RepasPage = ({ onNavigate }) => {
           </View>
 
           {/* ======== 6. SECTION RECETTES (FIX 3+5+7) ======== */}
-          <View style={{ marginTop: wp(20) }}>
+          <View style={{ marginTop: wp(12) }}>
             <SectionTitle
               title={lang === 'fr' ? 'Recettes' : 'Recipes'}
               rightLabel={lang === 'fr' ? 'Voir tout ›' : 'See all ›'}
@@ -3135,11 +3128,11 @@ const RepasPage = ({ onNavigate }) => {
           {/* Séparateur */}
           <View style={{
             height: 1, backgroundColor: 'rgba(255,255,255,0.04)',
-            marginHorizontal: wp(16), marginTop: wp(28),
+            marginHorizontal: wp(16), marginTop: wp(12),
           }}/>
 
           {/* ======== 7. SECTION PLATS FRÉQUENTS (FIX 3+6+7) ======== */}
-          <View style={{ marginTop: wp(16), marginBottom: wp(16) }}>
+          <View style={{ marginTop: wp(12), marginBottom: wp(16) }}>
             <SectionTitle title={lang === 'fr' ? 'Plats fréquents' : 'Frequent meals'} />
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false}
@@ -3162,7 +3155,7 @@ const RepasPage = ({ onNavigate }) => {
                     backgroundColor: '#252A32',
                     justifyContent: 'center', alignItems: 'center',
                     marginBottom: wp(5),
-                    borderWidth: 0.5, borderColor: '#3A3F46',
+                    borderWidth: 1, borderColor: index % 4 === 0 ? 'rgba(255,140,66,0.3)' : index % 4 === 1 ? 'rgba(0,217,132,0.3)' : index % 4 === 2 ? 'rgba(77,166,255,0.3)' : 'rgba(212,175,55,0.3)',
                   }}>
                     {index % 4 === 0 && (
                       <Svg width={16} height={16} viewBox="0 0 20 20">
