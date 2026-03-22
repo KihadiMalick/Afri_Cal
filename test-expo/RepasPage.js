@@ -739,7 +739,9 @@ const RepasPage = ({ onNavigate }) => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [addingMeal, setAddingMeal] = useState(false);
   const [showCartScan, setShowCartScan] = useState(false);
-  const [cartMode, setCartMode] = useState(null); // null = écran choix, 'barcode', 'photo'
+  const [cartPhotoMode, setCartPhotoMode] = useState(false);
+  const [photoPromptVisible, setPhotoPromptVisible] = useState(false);
+  const [failedBarcode, setFailedBarcode] = useState(null);
   const [cartProducts, setCartProducts] = useState([]);
   const [scanningActive, setScanningActive] = useState(true);
   const [lastScannedCode, setLastScannedCode] = useState(null);
@@ -1045,6 +1047,7 @@ const RepasPage = ({ onNavigate }) => {
       setTimeout(() => setScanError(null), 1500);
       return;
     }
+
     setLookingUp(true);
     setScanError(null);
 
@@ -1055,44 +1058,45 @@ const RepasPage = ({ onNavigate }) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMzk0MzksImV4cCI6MjA1MzkxNTQzOX0.H2mCpGz_RGvMR8TBtX1QLyEJHFVKpXHcNMEf5vGn13M',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMzk0MzksImV4cCI6MjA1MzkxNTQzOX0.H2mCpGz_RGvMR8TBtX1QLyEJHFVKpXHcNMEf5vGn13M',
           },
           body: JSON.stringify({ barcode }),
         }
       );
+
       const result = await response.json();
 
       if (result.product) {
-        // Filtrer les produits non-alimentaires (médicaments, cosmétiques...)
+        // Filtrer les produits non-alimentaires
         const productName = (result.product.product_name || '').toLowerCase();
         const categories = (result.product.categories || '').toLowerCase();
         const nonFoodKeywords = ['medicine', 'medicament', 'pharmaceutical', 'cough',
           'tablet', 'capsule', 'syrup', 'cosmetic', 'shampoo', 'soap', 'detergent',
-          'cleaning', 'nettoyant', 'savon', 'dentifrice', 'toothpaste', 'medicinal'];
+          'cleaning', 'nettoyant', 'savon', 'dentifrice', 'toothpaste'];
 
         const isNonFood = nonFoodKeywords.some(kw =>
           productName.includes(kw) || categories.includes(kw)
         );
 
         if (isNonFood) {
-          setScanError('Produit non-alimentaire');
+          setScanError('Produit non-alimentaire détecté');
           setTimeout(() => setScanError(null), 2000);
         } else {
           Vibration.vibrate(100);
-          // Vérifier les alertes instantanément
-          const alerts = await checkProductAlerts(result.product);
-          const productWithAlerts = { ...result.product, alerts: alerts };
-          setCartProducts(prev => [...prev, productWithAlerts]);
+          setCartProducts(prev => [...prev, result.product]);
+          checkProductAlerts(result.product);
         }
       } else {
-        setScanError('Produit non répertorié — essayez le mode Photo');
-        setTimeout(() => setScanError(null), 2000);
+        // PRODUIT NON TROUVÉ → proposer le mode photo
+        setFailedBarcode(barcode);
+        setPhotoPromptVisible(true);
       }
     } catch (e) {
       console.error('Barcode lookup error:', e);
       setScanError('Erreur réseau');
       setTimeout(() => setScanError(null), 2000);
     }
+
     setLookingUp(false);
   };
 
@@ -1200,11 +1204,14 @@ const RepasPage = ({ onNavigate }) => {
 
   const clearCart = () => {
     setCartProducts([]);
-    setCartMode(null);
+    setCartPhotoMode(false);
+    setPhotoPromptVisible(false);
+    setFailedBarcode(null);
     setCartReport(null);
     setShowCartReport(false);
     setShowStoreInput(false);
     setStoreName('');
+    setStoreResults([]);
     setScanError(null);
     setLastScannedCode(null);
     setScanningActive(true);
@@ -1213,7 +1220,20 @@ const RepasPage = ({ onNavigate }) => {
 
   const closeCartScan = () => {
     setShowCartScan(false);
-    clearCart();
+    setCartPhotoMode(false);
+    setPhotoPromptVisible(false);
+    setFailedBarcode(null);
+    setCartProducts([]);
+    setSelectedCartProduct(null);
+    setShowStoreInput(false);
+    setStoreName('');
+    setStoreResults([]);
+    setGeneratingReport(false);
+    setCartReport(null);
+    setShowCartReport(false);
+    setScanError(null);
+    setLastScannedCode(null);
+    setScanningActive(true);
   };
 
   const getCartTotals = () => {
@@ -5008,7 +5028,7 @@ const RepasPage = ({ onNavigate }) => {
           </View>
         )}
 
-        {/* ══════ MODAL CARTSCAN v2 ══════ */}
+        {/* ══════ MODAL CARTSCAN v3 — Caméra Unifiée ══════ */}
         <Modal
           visible={showCartScan && !showStoreInput && !showCartReport}
           animationType="slide"
@@ -5018,307 +5038,217 @@ const RepasPage = ({ onNavigate }) => {
           <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
             <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
 
-            {/* ══════ HEADER ══════ */}
+            {/* HEADER */}
             <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              paddingTop: wp(45),
-              paddingBottom: wp(12),
-              paddingHorizontal: wp(16),
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+              paddingTop: wp(45), paddingBottom: wp(10), paddingHorizontal: wp(16),
             }}>
-              <TouchableOpacity onPress={cartMode ? () => { setCartMode(null); } : closeCartScan}>
-                <Text style={{ fontSize: fp(14), color: '#9CA3AF' }}>
-                  {cartMode ? '← Retour' : '✕ Fermer'}
-                </Text>
+              <TouchableOpacity onPress={closeCartScan}>
+                <Text style={{ fontSize: fp(14), color: '#9CA3AF' }}>✕ Fermer</Text>
               </TouchableOpacity>
               <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFFFFF' }}>
-                  🛒 CARTSCAN
-                </Text>
-                <Text style={{ fontSize: fp(9), color: '#4DA6FF' }}>
-                  {cartMode === 'barcode' ? 'Mode code-barres' : cartMode === 'photo' ? 'Mode photo' : 'Assistant courses'}
-                </Text>
+                <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFFFFF' }}>🛒 CARTSCAN</Text>
+                <Text style={{ fontSize: fp(9), color: '#4DA6FF' }}>Assistant de courses</Text>
               </View>
               <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#4DA6FF' }}>
                 {cartProducts.length} 📦
               </Text>
             </View>
 
-            {/* ══════ ÉCRAN CHOIX (cartMode === null) ══════ */}
-            {!cartMode && cartProducts.length === 0 && (
-              <View style={{ flex: 1, paddingHorizontal: wp(20), justifyContent: 'center' }}>
-                <Text style={{
-                  fontSize: fp(18), fontWeight: '800', color: '#FFFFFF',
-                  textAlign: 'center', marginBottom: wp(8),
-                }}>
-                  Comment voulez-vous scanner ?
-                </Text>
-                <Text style={{
-                  fontSize: fp(11), color: '#9CA3AF',
-                  textAlign: 'center', marginBottom: wp(30),
-                }}>
-                  Scannez vos produits un par un. LIXUM vérifie chaque article avec votre profil santé.
-                </Text>
+            {/* ══════ ZONE CAMÉRA POLYVALENTE ══════ */}
+            <View style={{
+              height: wp(200), marginHorizontal: wp(16), borderRadius: wp(16),
+              overflow: 'hidden', borderWidth: 2,
+              borderColor: cartPhotoMode ? '#FF8C42' : lookingUp ? '#FF8C42' : scanError ? '#FF6B6B' : '#4DA6FF',
+              backgroundColor: '#000',
+            }}>
+              <CameraView
+                style={{ flex: 1 }} facing="back"
+                barcodeScannerSettings={{
+                  barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
+                }}
+                onBarcodeScanned={!cartPhotoMode && scanningActive && !lookingUp ? handleBarcodeScan : undefined}
+              />
 
-                {/* Bouton Code-barres (GRATUIT) */}
+              {/* Ligne de scan (mode barcode uniquement) */}
+              {!cartPhotoMode && (
+                <View style={{ position: 'absolute', top: '48%', left: wp(20), right: wp(20), height: 2, backgroundColor: '#4DA6FF', opacity: 0.8 }} />
+              )}
+
+              {/* Coins */}
+              <View style={{ position: 'absolute', top: wp(10), left: wp(10), width: wp(22), height: wp(22), borderTopWidth: 3, borderLeftWidth: 3, borderColor: cartPhotoMode ? '#FF8C42' : '#4DA6FF', borderTopLeftRadius: wp(4) }} />
+              <View style={{ position: 'absolute', top: wp(10), right: wp(10), width: wp(22), height: wp(22), borderTopWidth: 3, borderRightWidth: 3, borderColor: cartPhotoMode ? '#FF8C42' : '#4DA6FF', borderTopRightRadius: wp(4) }} />
+              <View style={{ position: 'absolute', bottom: wp(10), left: wp(10), width: wp(22), height: wp(22), borderBottomWidth: 3, borderLeftWidth: 3, borderColor: cartPhotoMode ? '#FF8C42' : '#4DA6FF', borderBottomLeftRadius: wp(4) }} />
+              <View style={{ position: 'absolute', bottom: wp(10), right: wp(10), width: wp(22), height: wp(22), borderBottomWidth: 3, borderRightWidth: 3, borderColor: cartPhotoMode ? '#FF8C42' : '#4DA6FF', borderBottomRightRadius: wp(4) }} />
+
+              {/* Bouton photo dans le coin — toujours visible */}
+              {!cartPhotoMode && (
                 <TouchableOpacity
-                  onPress={() => setCartMode('barcode')}
+                  onPress={() => setCartPhotoMode(true)}
                   style={{
-                    backgroundColor: 'rgba(77,166,255,0.08)',
-                    borderRadius: wp(16),
-                    borderWidth: 1.5,
-                    borderColor: 'rgba(77,166,255,0.3)',
-                    padding: wp(20),
-                    marginBottom: wp(14),
-                    flexDirection: 'row',
-                    alignItems: 'center',
+                    position: 'absolute', bottom: wp(10), right: wp(10),
+                    backgroundColor: 'rgba(255,140,66,0.9)', borderRadius: wp(20),
+                    width: wp(40), height: wp(40), alignItems: 'center', justifyContent: 'center',
                   }}
                 >
-                  <View style={{
-                    width: wp(50), height: wp(50), borderRadius: wp(12),
-                    backgroundColor: 'rgba(77,166,255,0.15)',
-                    alignItems: 'center', justifyContent: 'center', marginRight: wp(14),
-                  }}>
-                    <Text style={{ fontSize: fp(24) }}>📊</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#4DA6FF' }}>
-                      Code-barres
-                    </Text>
-                    <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginTop: wp(3) }}>
-                      Scannez les produits emballés du supermarché
-                    </Text>
-                  </View>
-                  <View style={{
-                    backgroundColor: 'rgba(0,217,132,0.15)',
-                    borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3),
-                  }}>
-                    <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#00D984' }}>GRATUIT</Text>
-                  </View>
+                  <Text style={{ fontSize: fp(18) }}>📸</Text>
                 </TouchableOpacity>
+              )}
 
-                {/* Bouton Photo produit (PAYANT) */}
-                <TouchableOpacity
-                  onPress={() => setCartMode('photo')}
-                  style={{
-                    backgroundColor: 'rgba(255,140,66,0.08)',
-                    borderRadius: wp(16),
-                    borderWidth: 1.5,
-                    borderColor: 'rgba(255,140,66,0.3)',
-                    padding: wp(20),
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                  }}
-                >
-                  <View style={{
-                    width: wp(50), height: wp(50), borderRadius: wp(12),
-                    backgroundColor: 'rgba(255,140,66,0.15)',
-                    alignItems: 'center', justifyContent: 'center', marginRight: wp(14),
-                  }}>
-                    <Text style={{ fontSize: fp(24) }}>📸</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FF8C42' }}>
-                      Photo produit
-                    </Text>
-                    <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginTop: wp(3) }}>
-                      Fruits, légumes, épices et produits sans code-barres
-                    </Text>
-                  </View>
-                  <View style={{
-                    backgroundColor: 'rgba(255,140,66,0.15)',
-                    borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3),
-                  }}>
-                    <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF8C42' }}>50 Lix</Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* ══════ ÉCRAN CHOIX quand il y a déjà des produits ══════ */}
-            {!cartMode && cartProducts.length > 0 && (
-              <View style={{ paddingHorizontal: wp(16), marginTop: wp(8) }}>
-                <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(12) }}>
+              {/* Mode photo : bouton capture central + retour barcode */}
+              {cartPhotoMode && (
+                <View style={{ position: 'absolute', bottom: wp(10), left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: wp(20) }}>
+                  {/* Retour barcode */}
                   <TouchableOpacity
-                    onPress={() => setCartMode('barcode')}
+                    onPress={() => { setCartPhotoMode(false); setPhotoPromptVisible(false); }}
+                    style={{ backgroundColor: 'rgba(77,166,255,0.9)', borderRadius: wp(16), paddingHorizontal: wp(12), paddingVertical: wp(6) }}
+                  >
+                    <Text style={{ fontSize: fp(10), color: '#FFF', fontWeight: '600' }}>📊 Barcode</Text>
+                  </TouchableOpacity>
+
+                  {/* Bouton capture */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      // TODO : Prendre la photo et envoyer au pipeline scan-meal
+                      setScanError('Mode photo bientôt disponible');
+                      setTimeout(() => setScanError(null), 2000);
+                    }}
                     style={{
-                      flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
-                      borderWidth: 1, borderColor: 'rgba(77,166,255,0.3)',
-                      backgroundColor: 'rgba(77,166,255,0.08)', alignItems: 'center',
+                      backgroundColor: '#FF8C42', borderRadius: wp(30),
+                      width: wp(56), height: wp(56), alignItems: 'center', justifyContent: 'center',
+                      borderWidth: 3, borderColor: 'rgba(255,255,255,0.5)',
                     }}
                   >
-                    <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#4DA6FF' }}>
-                      📊 Code-barres
-                    </Text>
+                    <Text style={{ fontSize: fp(22) }}>📸</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setCartMode('photo')}
-                    style={{
-                      flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
-                      borderWidth: 1, borderColor: 'rgba(255,140,66,0.3)',
-                      backgroundColor: 'rgba(255,140,66,0.08)', alignItems: 'center',
-                    }}
-                  >
-                    <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#FF8C42' }}>
-                      📸 Photo · 50 Lix
-                    </Text>
-                  </TouchableOpacity>
+
+                  {/* Prix */}
+                  <View style={{ backgroundColor: 'rgba(255,140,66,0.9)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
+                    <Text style={{ fontSize: fp(9), color: '#FFF', fontWeight: '700' }}>50 Lix</Text>
+                  </View>
                 </View>
-              </View>
-            )}
+              )}
 
-            {/* ══════ ZONE CAMÉRA BARCODE ══════ */}
-            {cartMode === 'barcode' && (
+              {/* Overlays statut */}
+              {lookingUp && (
+                <View style={{ position: 'absolute', bottom: wp(55), alignSelf: 'center', backgroundColor: 'rgba(255,140,66,0.9)', borderRadius: wp(8), paddingHorizontal: wp(12), paddingVertical: wp(4) }}>
+                  <Text style={{ fontSize: fp(10), color: '#FFF', fontWeight: '600' }}>Recherche...</Text>
+                </View>
+              )}
+              {scanError && !photoPromptVisible && (
+                <View style={{ position: 'absolute', bottom: wp(55), alignSelf: 'center', backgroundColor: 'rgba(255,107,107,0.9)', borderRadius: wp(8), paddingHorizontal: wp(12), paddingVertical: wp(4) }}>
+                  <Text style={{ fontSize: fp(10), color: '#FFF', fontWeight: '600' }}>{scanError}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* ══════ POPUP PHOTO PROMPT (produit non trouvé) ══════ */}
+            {photoPromptVisible && (
               <View style={{
-                height: wp(200),
-                marginHorizontal: wp(16),
-                borderRadius: wp(16),
-                overflow: 'hidden',
-                borderWidth: 2,
-                borderColor: lookingUp ? '#FF8C42' : scanError ? '#FF6B6B' : '#4DA6FF',
-                backgroundColor: '#000',
-                marginBottom: wp(8),
+                marginHorizontal: wp(16), marginTop: wp(8),
+                backgroundColor: 'rgba(255,140,66,0.1)', borderRadius: wp(12),
+                borderWidth: 1, borderColor: 'rgba(255,140,66,0.3)',
+                padding: wp(12), flexDirection: 'row', alignItems: 'center',
               }}>
-                <CameraView
-                  style={{ flex: 1 }}
-                  facing="back"
-                  barcodeScannerSettings={{
-                    barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
+                <Text style={{ fontSize: fp(24), marginRight: wp(10) }}>📸</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FF8C42', marginBottom: wp(2) }}>
+                    Produit non trouvé ou sans code-barres ?
+                  </Text>
+                  <Text style={{ fontSize: fp(10), color: '#D1D5DB' }}>
+                    Prenez une photo pour l'ajouter à votre caddie !
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'center', gap: wp(4) }}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setCartPhotoMode(true);
+                      setPhotoPromptVisible(false);
+                    }}
+                    style={{
+                      backgroundColor: '#FF8C42', borderRadius: wp(8),
+                      paddingHorizontal: wp(12), paddingVertical: wp(6),
+                    }}
+                  >
+                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FFF' }}>Photo</Text>
+                  </TouchableOpacity>
+                  <Text style={{ fontSize: fp(8), color: '#FF8C42' }}>50 Lix</Text>
+                </View>
+                {/* Bouton fermer le prompt */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setPhotoPromptVisible(false);
+                    setScanningActive(true);
+                    setLastScannedCode(null);
                   }}
-                  onBarcodeScanned={scanningActive && !lookingUp ? handleBarcodeScan : undefined}
-                />
-                <View style={{
-                  position: 'absolute', top: '48%', left: wp(20), right: wp(20),
-                  height: 2, backgroundColor: lookingUp ? '#FF8C42' : '#4DA6FF',
-                  opacity: 0.8, borderRadius: 1,
-                }} />
-                <View style={{ position: 'absolute', top: wp(10), left: wp(10), width: wp(22), height: wp(22), borderTopWidth: 3, borderLeftWidth: 3, borderColor: '#4DA6FF', borderTopLeftRadius: wp(4) }} />
-                <View style={{ position: 'absolute', top: wp(10), right: wp(10), width: wp(22), height: wp(22), borderTopWidth: 3, borderRightWidth: 3, borderColor: '#4DA6FF', borderTopRightRadius: wp(4) }} />
-                <View style={{ position: 'absolute', bottom: wp(10), left: wp(10), width: wp(22), height: wp(22), borderBottomWidth: 3, borderLeftWidth: 3, borderColor: '#4DA6FF', borderBottomLeftRadius: wp(4) }} />
-                <View style={{ position: 'absolute', bottom: wp(10), right: wp(10), width: wp(22), height: wp(22), borderBottomWidth: 3, borderRightWidth: 3, borderColor: '#4DA6FF', borderBottomRightRadius: wp(4) }} />
-
-                {lookingUp && (
-                  <View style={{ position: 'absolute', bottom: wp(8), alignSelf: 'center', backgroundColor: 'rgba(255,140,66,0.9)', borderRadius: wp(8), paddingHorizontal: wp(12), paddingVertical: wp(4) }}>
-                    <Text style={{ fontSize: fp(10), color: '#FFF', fontWeight: '600' }}>Recherche...</Text>
-                  </View>
-                )}
-                {scanError && (
-                  <View style={{ position: 'absolute', bottom: wp(8), alignSelf: 'center', backgroundColor: 'rgba(255,107,107,0.9)', borderRadius: wp(8), paddingHorizontal: wp(12), paddingVertical: wp(4) }}>
-                    <Text style={{ fontSize: fp(10), color: '#FFF', fontWeight: '600' }}>{scanError}</Text>
-                  </View>
-                )}
+                  style={{ marginLeft: wp(6), padding: wp(4) }}
+                >
+                  <Text style={{ fontSize: fp(12), color: '#6B7280' }}>✕</Text>
+                </TouchableOpacity>
               </View>
             )}
 
-            {/* ══════ ZONE PHOTO (placeholder — utilise Xscan pipeline) ══════ */}
-            {cartMode === 'photo' && (
-              <View style={{
-                height: wp(200), marginHorizontal: wp(16),
-                borderRadius: wp(16), borderWidth: 2, borderColor: '#FF8C42',
-                backgroundColor: '#252A30', marginBottom: wp(8),
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Text style={{ fontSize: fp(40), marginBottom: wp(8) }}>📸</Text>
-                <Text style={{ fontSize: fp(12), color: '#FF8C42', fontWeight: '600' }}>
-                  Prendre une photo du produit
-                </Text>
-                <Text style={{ fontSize: fp(9), color: '#6B7280', marginTop: wp(4) }}>
-                  Fruits, légumes, épices · 50 Lix par photo
-                </Text>
-                {/* Note : Connecter ici la caméra + appel scan-meal pour analyser la photo */}
-                {/* C'est le même pipeline que Xscan mais pour un produit isolé */}
-              </View>
-            )}
-
-            {/* ══════ GRILLE PRODUITS AVEC BADGES ALERTE ══════ */}
-            {cartProducts.length > 0 && (
-              <View style={{ flex: 1, paddingHorizontal: wp(16), marginTop: wp(4) }}>
+            {/* ══════ GRILLE PRODUITS ══════ */}
+            <View style={{ flex: 1, paddingHorizontal: wp(16), marginTop: wp(8) }}>
+              {cartProducts.length === 0 && !photoPromptVisible ? (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}>
+                  <Text style={{ fontSize: fp(40), marginBottom: wp(10) }}>🛒</Text>
+                  <Text style={{ fontSize: fp(12), color: '#9CA3AF', textAlign: 'center' }}>
+                    Pointez vers un code-barres pour commencer
+                  </Text>
+                  <Text style={{ fontSize: fp(10), color: '#6B7280', textAlign: 'center', marginTop: wp(4) }}>
+                    Ou tapez 📸 pour scanner sans code-barres
+                  </Text>
+                </View>
+              ) : (
                 <FlatList
                   data={cartProducts}
-                  keyExtractor={(item) => item.barcode || item.product_name + Math.random()}
+                  keyExtractor={(item) => item.barcode || item.product_name}
                   numColumns={2}
                   columnWrapperStyle={{ justifyContent: 'space-between' }}
                   showsVerticalScrollIndicator={false}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      activeOpacity={0.85}
-                      onPress={() => setSelectedCartProduct(item)}
-                      style={{
-                        width: '48%',
-                        backgroundColor: '#252A30',
-                        borderRadius: wp(12),
-                        borderWidth: 1,
-                        borderColor: getAlertBadgeColor(item.alerts) ? getAlertBadgeColor(item.alerts) : '#4A4F55',
-                        marginBottom: wp(10),
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {/* Image */}
-                      <View style={{
-                        height: wp(65), backgroundColor: '#333A42',
-                        alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        {item.image_url ? (
-                          <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
-                        ) : (
-                          <Text style={{ fontSize: fp(24) }}>📦</Text>
-                        )}
-                        {/* Badge Nutriscore */}
-                        {item.nutriscore && (
-                          <View style={{
-                            position: 'absolute', top: wp(4), right: wp(4),
-                            backgroundColor: getNutriColor(item.nutriscore),
-                            borderRadius: wp(4), width: wp(18), height: wp(18),
-                            alignItems: 'center', justifyContent: 'center',
-                          }}>
-                            <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#1A1D22' }}>
-                              {item.nutriscore.toUpperCase()}
-                            </Text>
-                          </View>
-                        )}
-                        {/* Badge Alerte "!" */}
-                        {item.alerts && item.alerts.length > 0 && (
-                          <View style={{
-                            position: 'absolute', top: wp(4), left: wp(4),
-                            backgroundColor: getAlertBadgeColor(item.alerts),
-                            borderRadius: wp(10), width: wp(20), height: wp(20),
-                            alignItems: 'center', justifyContent: 'center',
-                          }}>
-                            <Text style={{ fontSize: fp(12), fontWeight: '900', color: '#FFFFFF' }}>!</Text>
-                          </View>
-                        )}
-                      </View>
-
-                      {/* Infos */}
-                      <View style={{ padding: wp(7) }}>
-                        <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FFFFFF', marginBottom: wp(2) }} numberOfLines={2}>
-                          {item.product_name}
-                        </Text>
-                        <Text style={{ fontSize: fp(11), fontWeight: '800', color: '#FF8C42' }}>
-                          {Math.round(item.kcal_per_100g || 0)} kcal
-                        </Text>
-                        <View style={{ flexDirection: 'row', marginTop: wp(2), gap: wp(4) }}>
-                          <Text style={{ fontSize: fp(8), color: '#FF6B6B' }}>P:{parseFloat(item.protein_per_100g || 0).toFixed(0)}</Text>
-                          <Text style={{ fontSize: fp(8), color: '#FFD93D' }}>G:{parseFloat(item.carbs_per_100g || 0).toFixed(0)}</Text>
-                          <Text style={{ fontSize: fp(8), color: '#4DA6FF' }}>L:{parseFloat(item.fat_per_100g || 0).toFixed(0)}</Text>
+                  renderItem={({ item }) => {
+                    const alerts = item.alerts || [];
+                    const hasDanger = alerts.some(a => a.type === 'danger');
+                    const hasWarning = alerts.some(a => a.type === 'warning');
+                    return (
+                      <TouchableOpacity
+                        onPress={() => setSelectedCartProduct(item)}
+                        activeOpacity={0.85}
+                        style={{
+                          width: '48%', backgroundColor: '#252A30', borderRadius: wp(12),
+                          borderWidth: 1, marginBottom: wp(10), overflow: 'hidden',
+                          borderColor: hasDanger ? '#FF6B6B' : hasWarning ? '#FF8C42' : '#4A4F55',
+                        }}
+                      >
+                        <View style={{ height: wp(65), backgroundColor: '#333A42', alignItems: 'center', justifyContent: 'center' }}>
+                          {item.image_url ? (
+                            <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+                          ) : (
+                            <Text style={{ fontSize: fp(24) }}>📦</Text>
+                          )}
+                          {item.nutriscore && (
+                            <View style={{ position: 'absolute', top: wp(4), right: wp(4), backgroundColor: getNutriColor(item.nutriscore), borderRadius: wp(4), width: wp(18), height: wp(18), alignItems: 'center', justifyContent: 'center' }}>
+                              <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#1A1D22' }}>{item.nutriscore.toUpperCase()}</Text>
+                            </View>
+                          )}
+                          {alerts.length > 0 && (
+                            <View style={{ position: 'absolute', top: wp(4), left: wp(4), backgroundColor: hasDanger ? '#FF6B6B' : hasWarning ? '#FF8C42' : '#4DA6FF', borderRadius: wp(10), width: wp(20), height: wp(20), alignItems: 'center', justifyContent: 'center' }}>
+                              <Text style={{ fontSize: fp(11), fontWeight: '800', color: '#FFF' }}>!</Text>
+                            </View>
+                          )}
                         </View>
-                      </View>
-                    </TouchableOpacity>
-                  )}
+                        <View style={{ padding: wp(7) }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FFFFFF', marginBottom: wp(2) }} numberOfLines={2}>{item.product_name}</Text>
+                          <Text style={{ fontSize: fp(11), fontWeight: '800', color: '#FF8C42' }}>{Math.round(item.kcal_per_100g || 0)} kcal</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  }}
                   ListFooterComponent={<View style={{ height: wp(80) }} />}
                 />
-              </View>
-            )}
-
-            {/* ══════ ÉTAT VIDE (mode sélectionné mais pas de produits) ══════ */}
-            {cartMode && cartProducts.length === 0 && (
-              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}>
-                <Text style={{ fontSize: fp(12), color: '#9CA3AF', textAlign: 'center' }}>
-                  {cartMode === 'barcode' ? 'Pointez vers un code-barres' : 'Prenez en photo un produit'}
-                </Text>
-              </View>
-            )}
+              )}
+            </View>
 
             {/* ══════ BARRE BAS ══════ */}
             {cartProducts.length > 0 && (
@@ -5329,29 +5259,25 @@ const RepasPage = ({ onNavigate }) => {
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
               }}>
                 <View>
-                  <Text style={{ fontSize: fp(10), color: '#9CA3AF' }}>
-                    {cartProducts.length} produit{cartProducts.length > 1 ? 's' : ''}
-                    {cartProducts.filter(p => p.alerts && p.alerts.length > 0).length > 0 &&
-                      ` · ${cartProducts.filter(p => p.alerts && p.alerts.length > 0).length} alerte${cartProducts.filter(p => p.alerts && p.alerts.length > 0).length > 1 ? 's' : ''}`
-                    }
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(10), color: '#9CA3AF' }}>
+                      {cartProducts.length} produit{cartProducts.length > 1 ? 's' : ''}
+                    </Text>
+                    {cartProducts.filter(p => p.alerts && p.alerts.length > 0).length > 0 && (
+                      <Text style={{ fontSize: fp(10), color: '#FF8C42', marginLeft: wp(4) }}>
+                        · {cartProducts.filter(p => p.alerts && p.alerts.length > 0).length} alerte{cartProducts.filter(p => p.alerts && p.alerts.length > 0).length > 1 ? 's' : ''}
+                      </Text>
+                    )}
+                  </View>
                   <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FF8C42' }}>
                     {getCartTotals().kcal} kcal
                   </Text>
                 </View>
                 <TouchableOpacity
-                  onPress={() => {
-                    loadRecentStores();
-                    setShowStoreInput(true);
-                  }}
-                  style={{
-                    backgroundColor: '#4DA6FF', borderRadius: wp(12),
-                    paddingHorizontal: wp(20), paddingVertical: wp(12),
-                  }}
+                  onPress={() => setShowStoreInput(true)}
+                  style={{ backgroundColor: '#4DA6FF', borderRadius: wp(12), paddingHorizontal: wp(22), paddingVertical: wp(12) }}
                 >
-                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#1A1D22' }}>
-                    Générer Rapport 📋
-                  </Text>
+                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#1A1D22' }}>Générer Rapport 📋</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -5771,7 +5697,7 @@ const RepasPage = ({ onNavigate }) => {
               <TouchableOpacity
                 onPress={() => {
                   setShowCartReport(false);
-                  setCartMode('barcode');
+                  setCartPhotoMode(false);
                 }}
                 style={{
                   flex: 1, paddingVertical: wp(13), borderRadius: wp(12),
