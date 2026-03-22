@@ -2896,6 +2896,60 @@ const RepasPage = ({ onNavigate }) => {
             </View>
           </View>
 
+          {/* ======== CARTE CARTSCAN — sous XSCAN ======== */}
+          <TouchableOpacity
+            onPress={() => setShowCartScan(true)}
+            activeOpacity={0.85}
+            style={{
+              marginHorizontal: wp(16),
+              marginTop: wp(12),
+              marginBottom: wp(12),
+              borderRadius: wp(16),
+              borderWidth: 1,
+              borderColor: 'rgba(77,166,255,0.25)',
+              backgroundColor: 'rgba(77,166,255,0.06)',
+              padding: wp(16),
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+          >
+            {/* Icône caddie */}
+            <View style={{
+              width: wp(50),
+              height: wp(50),
+              borderRadius: wp(14),
+              backgroundColor: 'rgba(77,166,255,0.12)',
+              borderWidth: 1,
+              borderColor: 'rgba(77,166,255,0.2)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: wp(14),
+            }}>
+              <Text style={{ fontSize: fp(24) }}>🛒</Text>
+            </View>
+
+            {/* Texte */}
+            <View style={{ flex: 1 }}>
+              <Text style={{
+                fontSize: fp(15),
+                fontWeight: '800',
+                color: '#4DA6FF',
+                marginBottom: wp(2),
+              }}>
+                CARTSCAN
+              </Text>
+              <Text style={{
+                fontSize: fp(10),
+                color: '#9CA3AF',
+              }}>
+                Faites vos courses avec LIXUM — scannez vos produits et obtenez un rapport nutritionnel complet
+              </Text>
+            </View>
+
+            {/* Flèche */}
+            <Text style={{ fontSize: fp(18), color: '#4DA6FF', marginLeft: wp(8) }}>›</Text>
+          </TouchableOpacity>
+
           {/* ======== AJOUTER MANUELLEMENT — centré sous les dots ======== */}
           <Pressable
             onPress={openManualEntry}
@@ -4946,37 +5000,7 @@ const RepasPage = ({ onNavigate }) => {
                   <Ionicons name="chevron-forward" size={16} color="#FF8C42" />
                 </Pressable>
 
-                {/* Option 3 : CartScan */}
-                <Pressable
-                  onPress={() => {
-                    setShowAddModal(false);
-                    setTimeout(() => setShowCartScan(true), 300);
-                  }}
-                  style={({ pressed }) => ({
-                    flexDirection: 'row', alignItems: 'center',
-                    padding: wp(14), borderRadius: 14, marginBottom: wp(10),
-                    backgroundColor: pressed ? 'rgba(77,166,255,0.12)' : 'rgba(77,166,255,0.04)',
-                    borderWidth: 1.2, borderColor: pressed ? 'rgba(77,166,255,0.4)' : 'rgba(77,166,255,0.15)',
-                  })}
-                >
-                  <View style={{
-                    width: wp(40), height: wp(40), borderRadius: wp(12),
-                    backgroundColor: 'rgba(77,166,255,0.08)',
-                    justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
-                    borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)',
-                  }}>
-                    <Text style={{ fontSize: fp(20) }}>🛒</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#4DA6FF', fontSize: fp(14), fontWeight: '800' }}>CartScan</Text>
-                    <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: 2 }}>
-                      {lang === 'fr' ? 'Scanner les produits de votre caddie' : 'Scan your cart products'}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color="#4DA6FF" />
-                </Pressable>
-
-                {/* Option 4 : Saisie Manuelle */}
+                {/* Option 3 : Saisie Manuelle */}
                 <Pressable
                   onPress={() => {
                     setShowAddModal(false);
