@@ -1195,25 +1195,6 @@ const ActivityPage = ({ onNavigate }) => {
                 MARCHE
               </Text>
               <View style={{ flex: 1 }} />
-              <TouchableOpacity
-                onPress={() => setShowLivePlaceholder(true)}
-                style={{
-                  backgroundColor: 'rgba(255,107,107,0.15)',
-                  borderRadius: wp(6),
-                  paddingHorizontal: wp(8),
-                  paddingVertical: wp(3),
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: wp(4),
-                  marginRight: 8,
-                }}
-              >
-                <View style={{
-                  width: wp(6), height: wp(6), borderRadius: wp(3),
-                  backgroundColor: '#FF6B6B',
-                }} />
-                <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF6B6B' }}>LIVE</Text>
-              </TouchableOpacity>
               <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '700', marginRight: 8 }}>{String.fromCodePoint(0x1F4CD)}{walkDistStr}</Text>
               <Text style={{ color: '#FF8C42', fontSize: fp(11), fontWeight: '700', marginRight: 8 }}>{String.fromCodePoint(0x1F525)}{walkCal}kcal</Text>
               <Text style={{ color: '#4DA6FF', fontSize: fp(11), fontWeight: '700' }}>{String.fromCodePoint(0x1F4A7)}{walkWater}ml</Text>
@@ -1559,37 +1540,64 @@ const ActivityPage = ({ onNavigate }) => {
               {String.fromCodePoint(0x261F)} MAINTENEZ POUR AVANCER
             </Text>
 
-            {/* Bouton CONFIRMER */}
-            <Pressable
-              onPress={async () => {
-                if (walkCal === 0) return;
-                const success = await saveActivity('marche',
-                  Math.round(walkDurMin * walkMul),
-                  walkCal,
-                  'modere',
-                  walkWater
-                );
-                if (success) {
-                  setWalkSaved(true);
-                  setTimeout(() => {
-                    setWalkSaved(false);
-                    setWalkScrollOffset(0);
-                  }, 1500);
-                }
-              }}
-              disabled={walkSaved || walkScrollOffset === 0}
-              style={({ pressed }) => ({
-                paddingVertical: 10,
-                borderRadius: 12,
-                backgroundColor: walkSaved ? '#00D984' : walkScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
-                alignItems: 'center',
-                marginTop: 3,
-              })}
-            >
-              <Text style={{ color: '#0D1117', fontSize: 14, fontWeight: '800' }}>
-                {walkSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` MARCHE — ${walkCal} kcal`}
-              </Text>
-            </Pressable>
+            {/* Boutons CONFIRMER + LIVE */}
+            <View style={{ flexDirection: 'row', gap: wp(8), marginTop: wp(6) }}>
+              <Pressable
+                onPress={async () => {
+                  if (walkCal === 0) return;
+                  const success = await saveActivity('marche',
+                    Math.round(walkDurMin * walkMul),
+                    walkCal,
+                    'modere',
+                    walkWater
+                  );
+                  if (success) {
+                    setWalkSaved(true);
+                    setTimeout(() => {
+                      setWalkSaved(false);
+                      setWalkScrollOffset(0);
+                    }, 1500);
+                  }
+                }}
+                disabled={walkSaved || walkScrollOffset === 0}
+                style={({ pressed }) => ({
+                  flex: 2,
+                  paddingVertical: wp(12),
+                  borderRadius: wp(10),
+                  backgroundColor: walkSaved ? '#00D984' : walkScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                })}
+              >
+                <Text style={{ color: '#1A1D22', fontSize: fp(12), fontWeight: '700' }}>
+                  {walkSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` Valider — ${walkCal} kcal`}
+                </Text>
+              </Pressable>
+
+              <TouchableOpacity
+                onPress={() => setShowLivePlaceholder(true)}
+                style={{
+                  flex: 1,
+                  backgroundColor: 'rgba(255,107,107,0.12)',
+                  borderRadius: wp(10),
+                  borderWidth: 1.5,
+                  borderColor: 'rgba(255,107,107,0.4)',
+                  paddingVertical: wp(12),
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: wp(4),
+                }}
+              >
+                <View style={{
+                  width: wp(7), height: wp(7), borderRadius: wp(4),
+                  backgroundColor: '#FF6B6B',
+                }} />
+                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FF6B6B' }}>
+                  LIVE
+                </Text>
+              </TouchableOpacity>
+            </View>
           </MetalCard>
 
           {/* COURSE — SAVANE AFRICAINE + JAGUAR */}
@@ -1602,25 +1610,6 @@ const ActivityPage = ({ onNavigate }) => {
                 COURSE
               </Text>
               <View style={{ flex: 1 }} />
-              <TouchableOpacity
-                onPress={() => setShowLivePlaceholder(true)}
-                style={{
-                  backgroundColor: 'rgba(255,107,107,0.15)',
-                  borderRadius: wp(6),
-                  paddingHorizontal: wp(8),
-                  paddingVertical: wp(3),
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: wp(4),
-                  marginRight: 8,
-                }}
-              >
-                <View style={{
-                  width: wp(6), height: wp(6), borderRadius: wp(3),
-                  backgroundColor: '#FF6B6B',
-                }} />
-                <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF6B6B' }}>LIVE</Text>
-              </TouchableOpacity>
               <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '700', marginRight: 8 }}>{String.fromCodePoint(0x1F4CD)}{runDistStr}</Text>
               <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700', marginRight: 8 }}>{String.fromCodePoint(0x1F525)}{runCalories}kcal</Text>
               <Text style={{ color: '#4DA6FF', fontSize: fp(11), fontWeight: '700' }}>{String.fromCodePoint(0x1F4A7)}{runWater}ml</Text>
@@ -1888,22 +1877,49 @@ const ActivityPage = ({ onNavigate }) => {
               {String.fromCodePoint(0x261F)} MAINTENEZ POUR AVANCER
             </Text>
 
-            {/* Bouton CONFIRMER */}
-            <Pressable
-              onPress={handleAddRun}
-              disabled={runSaved || runScrollOffset === 0}
-              style={({ pressed }) => ({
-                paddingVertical: 10,
-                borderRadius: 12,
-                backgroundColor: runSaved ? '#00D984' : runScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
-                alignItems: 'center',
-                marginTop: 3,
-              })}
-            >
-              <Text style={{ color: '#0D1117', fontSize: 14, fontWeight: '800' }}>
-                {runSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` COURSE — ${runCalories} kcal`}
-              </Text>
-            </Pressable>
+            {/* Boutons CONFIRMER + LIVE */}
+            <View style={{ flexDirection: 'row', gap: wp(8), marginTop: wp(6) }}>
+              <Pressable
+                onPress={handleAddRun}
+                disabled={runSaved || runScrollOffset === 0}
+                style={({ pressed }) => ({
+                  flex: 2,
+                  paddingVertical: wp(12),
+                  borderRadius: wp(10),
+                  backgroundColor: runSaved ? '#00D984' : runScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                })}
+              >
+                <Text style={{ color: '#1A1D22', fontSize: fp(12), fontWeight: '700' }}>
+                  {runSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` Valider — ${runCalories} kcal`}
+                </Text>
+              </Pressable>
+
+              <TouchableOpacity
+                onPress={() => setShowLivePlaceholder(true)}
+                style={{
+                  flex: 1,
+                  backgroundColor: 'rgba(255,107,107,0.12)',
+                  borderRadius: wp(10),
+                  borderWidth: 1.5,
+                  borderColor: 'rgba(255,107,107,0.4)',
+                  paddingVertical: wp(12),
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: wp(4),
+                }}
+              >
+                <View style={{
+                  width: wp(7), height: wp(7), borderRadius: wp(4),
+                  backgroundColor: '#FF6B6B',
+                }} />
+                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FF6B6B' }}>
+                  LIVE
+                </Text>
+              </TouchableOpacity>
+            </View>
           </MetalCard>
 
           {/* OTHER SPORTS GRID */}
