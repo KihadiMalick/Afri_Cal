@@ -307,9 +307,9 @@ const MetalCard = ({ children, style, onPress, noPadding = false }) => {
 
 const metalStyles = StyleSheet.create({
   outerBorder: {
-    borderRadius: wp(18),
-    padding: wp(1.2),
-    backgroundColor: '#4A4F55',
+    borderRadius: wp(14),
+    padding: wp(0.5),
+    backgroundColor: 'rgba(74,79,85,0.4)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.5,
@@ -336,12 +336,12 @@ const metalStyles = StyleSheet.create({
 const SectionTitle = ({ title, rightAction, rightLabel }) => (
   <View style={{
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: wp(16), marginBottom: wp(4),
+    paddingHorizontal: wp(16), marginBottom: wp(4), marginTop: wp(6),
   }}>
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <View style={{
-        width: 3, height: 18, borderRadius: 1.5,
-        backgroundColor: '#00D984', marginRight: 8,
+        width: 3, height: wp(16), borderRadius: 1.5,
+        backgroundColor: '#00D984', marginRight: wp(6),
       }} />
       <Text style={{
         color: '#FFFFFF', fontSize: fp(16), fontWeight: '900',
@@ -1095,7 +1095,7 @@ const ActivityPage = ({ onNavigate }) => {
   // ── Run constants & calculations ──────────────────────────────────────
   const RUN_SCENE_W = 8400;       // 42km marathon canvas
   const RUN_MAX_DIST = 42000;     // 42 km in metres
-  const RUN_CANVAS_H = 100;       // compact canvas height
+  const RUN_CANVAS_H = 85;        // compact canvas height
 
   // Jaguar animation frame
 
@@ -1158,7 +1158,7 @@ const ActivityPage = ({ onNavigate }) => {
   // ── Walk constants ─────────────────────────────────────────────────────
   const WALK_SCENE_W = 2000;
   const WALK_MAX_DIST = 10000;
-  const WALK_CANVAS_H = 100;  // compact canvas height
+  const WALK_CANVAS_H = 85;   // compact canvas height
 
   // ── Walk computed values ──────────────────────────────────────────────
   const walkMaxS = WALK_SCENE_W - walkCanvasW;
@@ -1306,7 +1306,7 @@ const ActivityPage = ({ onNavigate }) => {
           <View style={{
             marginHorizontal: wp(16),
             marginTop: wp(8),
-            marginBottom: wp(8),
+            marginBottom: wp(4),
             borderRadius: wp(16),
             borderWidth: 1,
             borderColor: '#4A4F55',
@@ -1384,17 +1384,18 @@ const ActivityPage = ({ onNavigate }) => {
           {/* MARCHE — SIDE-SCROLL TAPIS ROULANT */}
           <SectionTitle title="Marche" />
           <MetalCard style={{ marginBottom: wp(2) }}>
-            {/* Header + data compact */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-              <Text style={{ color: '#FFFFFF', fontSize: fp(14), fontWeight: '800', letterSpacing: 0.5 }}>
-                MARCHE
-              </Text>
-              <View style={{ flex: 1 }} />
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
-                <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '600' }}>{String.fromCodePoint(0x1F4CD)}{walkDistStr}</Text>
-                <Text style={{ color: '#FF8C42', fontSize: fp(11), fontWeight: '600' }}>{String.fromCodePoint(0x1F525)}{walkCal}kcal</Text>
-                <Text style={{ color: '#4DA6FF', fontSize: fp(11), fontWeight: '600' }}>{String.fromCodePoint(0x1F4A7)}{walkWater}ml</Text>
-              </View>
+            {/* Stats compact — aligned right */}
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              paddingHorizontal: wp(10),
+              paddingVertical: wp(6),
+              gap: wp(10),
+            }}>
+              <Text style={{ fontSize: fp(10), color: '#FF6B6B', fontWeight: '600' }}>📍{walkDistStr}</Text>
+              <Text style={{ fontSize: fp(10), color: '#FF8C42', fontWeight: '600' }}>🔥{walkCal}kcal</Text>
+              <Text style={{ fontSize: fp(10), color: '#4DA6FF', fontWeight: '600' }}>💧{walkWater}ml</Text>
             </View>
 
             {/* Canvas SVG side-scroll */}
@@ -1675,71 +1676,72 @@ const ActivityPage = ({ onNavigate }) => {
               />
             </View>
 
-            {/* Single line: Aller/Retour | Knob buttons | Duration */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, marginTop: 3 }}>
-              {/* LEFT: Aller/Retour */}
+            {/* Compact single-line controls */}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: wp(10),
+              paddingVertical: wp(6),
+            }}>
               <TouchableOpacity
                 onPress={() => setWalkRoundTrip(!walkRoundTrip)}
                 style={{
-                  borderWidth: 1,
-                  borderColor: walkRoundTrip ? '#00D984' : '#333',
-                  borderRadius: 8,
-                  paddingHorizontal: 5,
-                  paddingVertical: 2,
-                  backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
+                  backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.1)' : 'rgba(255,255,255,0.06)',
+                  borderRadius: wp(6),
+                  paddingHorizontal: wp(8),
+                  paddingVertical: wp(4),
                 }}
               >
-                <Text style={{ color: walkRoundTrip ? '#00D984' : '#999', fontSize: 9 }}>
-                  {walkRoundTrip ? '\u2194 Aller/Retour \u00D72' : '\u2194 Aller/Retour'}
+                <Text style={{ fontSize: fp(8), color: walkRoundTrip ? '#00D984' : '#6B7280' }}>
+                  {walkRoundTrip ? '↔ Aller/Retour ×2' : '↔ Aller/Retour'}
                 </Text>
               </TouchableOpacity>
 
-              {/* CENTER: Knob buttons (36px) */}
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ alignItems: 'center' }}>
-                  <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}>
-                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                      <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateLeft }] }}>
-                        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
-                          </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>◀</Text>
+                <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}>
+                  <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
+                    <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <View style={{ position: 'absolute', top: 0, left: wp(8), right: wp(8), height: wp(12), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                      <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateLeft }] }}>
+                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
                         </View>
-                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
                       </Animated.View>
+                      <View style={{ position: 'absolute', bottom: wp(6) }}>
+                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)' }}>◀</Text>
+                      </View>
                     </View>
-                  </Pressable>
-                  <Text style={{ fontSize: fp(7), color: '#6B7280', marginTop: wp(2) }}>Reculer</Text>
-                </View>
-                <View style={{ width: 16 }} />
-                <View style={{ alignItems: 'center' }}>
-                  <Pressable onPressIn={() => startWalkMoving(1)} onPressOut={stopWalkMoving}>
-                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                      <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateRight }] }}>
-                        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
-                          </View>
+                  </View>
+                </Pressable>
+                <Pressable onPressIn={() => startWalkMoving(1)} onPressOut={stopWalkMoving}>
+                  <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
+                    <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <View style={{ position: 'absolute', top: 0, left: wp(8), right: wp(8), height: wp(12), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                      <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateRight }] }}>
+                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
                         </View>
-                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
                       </Animated.View>
+                      <View style={{ position: 'absolute', bottom: wp(6) }}>
+                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)' }}>▶</Text>
+                      </View>
                     </View>
-                  </Pressable>
-                  <Text style={{ fontSize: fp(7), color: '#6B7280', marginTop: wp(2) }}>Avancer</Text>
-                </View>
+                  </View>
+                </Pressable>
+                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>▶</Text>
               </View>
 
-              {/* RIGHT: Duration */}
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ color: '#00D984', fontSize: 13, fontWeight: 'bold' }}>{walkDurStr}</Text>
-                <Text style={{ color: '#666', fontSize: 7 }}>vitesse norm.</Text>
+                <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#00D984' }}>
+                  {walkDurStr}
+                </Text>
+                <Text style={{ fontSize: fp(7), color: '#6B7280' }}>vitesse norm.</Text>
               </View>
             </View>
-
-            {/* Hint */}
-            <Text style={{ fontSize: fp(9), color: '#6B7280', textAlign: 'center', letterSpacing: 0.5, marginTop: 2 }}>
-              ◀ Appuyez pour avancer ▶
-            </Text>
 
             {/* Boutons CONFIRMER + LIVE */}
             <View style={{ flexDirection: 'row', gap: wp(8), marginTop: wp(6) }}>
@@ -1763,14 +1765,14 @@ const ActivityPage = ({ onNavigate }) => {
                 disabled={walkSaved || walkScrollOffset === 0}
                 style={({ pressed }) => ({
                   flex: 2,
-                  paddingVertical: wp(12),
+                  paddingVertical: wp(9),
                   borderRadius: wp(10),
                   backgroundColor: walkSaved ? '#00D984' : walkScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
                   alignItems: 'center',
                   justifyContent: 'center',
                 })}
               >
-                <Text style={{ color: '#1A1D22', fontSize: fp(12), fontWeight: '700' }}>
+                <Text style={{ color: '#1A1D22', fontSize: fp(11), fontWeight: '700' }}>
                   {walkSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` Valider — ${walkCal} kcal`}
                 </Text>
               </Pressable>
@@ -1783,7 +1785,7 @@ const ActivityPage = ({ onNavigate }) => {
                   borderRadius: wp(10),
                   borderWidth: 1.5,
                   borderColor: 'rgba(255,107,107,0.4)',
-                  paddingVertical: wp(12),
+                  paddingVertical: wp(9),
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1794,7 +1796,7 @@ const ActivityPage = ({ onNavigate }) => {
                   width: wp(7), height: wp(7), borderRadius: wp(4),
                   backgroundColor: '#FF6B6B',
                 }} />
-                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FF6B6B' }}>
+                <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FF6B6B' }}>
                   LIVE
                 </Text>
               </TouchableOpacity>
@@ -1804,17 +1806,18 @@ const ActivityPage = ({ onNavigate }) => {
           {/* COURSE — SAVANE AFRICAINE + JAGUAR */}
           <SectionTitle title="Course" />
           <MetalCard style={{ marginBottom: wp(2) }}>
-            {/* Header + data compact */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-              <Text style={{ color: '#FFFFFF', fontSize: fp(14), fontWeight: '800', letterSpacing: 0.5 }}>
-                COURSE
-              </Text>
-              <View style={{ flex: 1 }} />
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
-                <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '600' }}>{String.fromCodePoint(0x1F4CD)}{runDistStr}</Text>
-                <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600' }}>{String.fromCodePoint(0x1F525)}{runCalories}kcal</Text>
-                <Text style={{ color: '#4DA6FF', fontSize: fp(11), fontWeight: '600' }}>{String.fromCodePoint(0x1F4A7)}{runWater}ml</Text>
-              </View>
+            {/* Stats compact — aligned right */}
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              paddingHorizontal: wp(10),
+              paddingVertical: wp(6),
+              gap: wp(10),
+            }}>
+              <Text style={{ fontSize: fp(10), color: '#FF6B6B', fontWeight: '600' }}>📍{runDistStr}</Text>
+              <Text style={{ fontSize: fp(10), color: '#FF8C42', fontWeight: '600' }}>🔥{runCalories}kcal</Text>
+              <Text style={{ fontSize: fp(10), color: '#4DA6FF', fontWeight: '600' }}>💧{runWater}ml</Text>
             </View>
 
             {/* Canvas SVG — Savane Africaine + Lottie Jaguar overlay */}
@@ -2017,71 +2020,72 @@ const ActivityPage = ({ onNavigate }) => {
               />
             </View>
 
-            {/* Single line: Aller/Retour | Knob buttons | Duration */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, marginTop: 3 }}>
-              {/* LEFT: Aller/Retour */}
+            {/* Compact single-line controls */}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: wp(10),
+              paddingVertical: wp(6),
+            }}>
               <TouchableOpacity
                 onPress={() => setRunRoundTrip(!runRoundTrip)}
                 style={{
-                  borderWidth: 1,
-                  borderColor: runRoundTrip ? '#00D984' : '#333',
-                  borderRadius: 8,
-                  paddingHorizontal: 5,
-                  paddingVertical: 2,
-                  backgroundColor: runRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
+                  backgroundColor: runRoundTrip ? 'rgba(0,217,132,0.1)' : 'rgba(255,255,255,0.06)',
+                  borderRadius: wp(6),
+                  paddingHorizontal: wp(8),
+                  paddingVertical: wp(4),
                 }}
               >
-                <Text style={{ color: runRoundTrip ? '#00D984' : '#999', fontSize: 9 }}>
-                  {runRoundTrip ? '\u2194 Aller/Retour \u00D72' : '\u2194 Aller/Retour'}
+                <Text style={{ fontSize: fp(8), color: runRoundTrip ? '#00D984' : '#6B7280' }}>
+                  {runRoundTrip ? '↔ Aller/Retour ×2' : '↔ Aller/Retour'}
                 </Text>
               </TouchableOpacity>
 
-              {/* CENTER: Knob buttons (36px) */}
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{ alignItems: 'center' }}>
-                  <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}>
-                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                      <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateLeft }] }}>
-                        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
-                          </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>◀</Text>
+                <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}>
+                  <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
+                    <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <View style={{ position: 'absolute', top: 0, left: wp(8), right: wp(8), height: wp(12), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                      <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateLeft }] }}>
+                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
                         </View>
-                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
                       </Animated.View>
+                      <View style={{ position: 'absolute', bottom: wp(6) }}>
+                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)' }}>◀</Text>
+                      </View>
                     </View>
-                  </Pressable>
-                  <Text style={{ fontSize: fp(7), color: '#6B7280', marginTop: wp(2) }}>Reculer</Text>
-                </View>
-                <View style={{ width: 16 }} />
-                <View style={{ alignItems: 'center' }}>
-                  <Pressable onPressIn={() => startRunMoving(1)} onPressOut={stopRunMoving}>
-                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#111', borderWidth: 1, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                      <Animated.View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateRight }] }}>
-                        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 0.5, borderColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
-                            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#2A2A2A' }} />
-                          </View>
+                  </View>
+                </Pressable>
+                <Pressable onPressIn={() => startRunMoving(1)} onPressOut={stopRunMoving}>
+                  <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
+                    <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <View style={{ position: 'absolute', top: 0, left: wp(8), right: wp(8), height: wp(12), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                      <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateRight }] }}>
+                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
                         </View>
-                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 9, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
+                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
                       </Animated.View>
+                      <View style={{ position: 'absolute', bottom: wp(6) }}>
+                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)' }}>▶</Text>
+                      </View>
                     </View>
-                  </Pressable>
-                  <Text style={{ fontSize: fp(7), color: '#6B7280', marginTop: wp(2) }}>Avancer</Text>
-                </View>
+                  </View>
+                </Pressable>
+                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>▶</Text>
               </View>
 
-              {/* RIGHT: Duration */}
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ color: '#00D984', fontSize: 13, fontWeight: 'bold' }}>{runDurStr}</Text>
-                <Text style={{ color: '#666', fontSize: 7 }}>allure norm.</Text>
+                <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#00D984' }}>
+                  {runDurStr}
+                </Text>
+                <Text style={{ fontSize: fp(7), color: '#6B7280' }}>allure norm.</Text>
               </View>
             </View>
-
-            {/* Hint */}
-            <Text style={{ fontSize: fp(9), color: '#6B7280', textAlign: 'center', letterSpacing: 0.5, marginTop: 2 }}>
-              ◀ Appuyez pour avancer ▶
-            </Text>
 
             {/* Boutons CONFIRMER + LIVE */}
             <View style={{ flexDirection: 'row', gap: wp(8), marginTop: wp(6) }}>
@@ -2090,14 +2094,14 @@ const ActivityPage = ({ onNavigate }) => {
                 disabled={runSaved || runScrollOffset === 0}
                 style={({ pressed }) => ({
                   flex: 2,
-                  paddingVertical: wp(12),
+                  paddingVertical: wp(9),
                   borderRadius: wp(10),
                   backgroundColor: runSaved ? '#00D984' : runScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
                   alignItems: 'center',
                   justifyContent: 'center',
                 })}
               >
-                <Text style={{ color: '#1A1D22', fontSize: fp(12), fontWeight: '700' }}>
+                <Text style={{ color: '#1A1D22', fontSize: fp(11), fontWeight: '700' }}>
                   {runSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` Valider — ${runCalories} kcal`}
                 </Text>
               </Pressable>
@@ -2110,7 +2114,7 @@ const ActivityPage = ({ onNavigate }) => {
                   borderRadius: wp(10),
                   borderWidth: 1.5,
                   borderColor: 'rgba(255,107,107,0.4)',
-                  paddingVertical: wp(12),
+                  paddingVertical: wp(9),
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -2121,7 +2125,7 @@ const ActivityPage = ({ onNavigate }) => {
                   width: wp(7), height: wp(7), borderRadius: wp(4),
                   backgroundColor: '#FF6B6B',
                 }} />
-                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FF6B6B' }}>
+                <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FF6B6B' }}>
                   LIVE
                 </Text>
               </TouchableOpacity>
