@@ -1017,7 +1017,7 @@ const RepasPage = ({ onNavigate }) => {
     try {
       const userId = '00000000-0000-0000-0000-000000000001';
       const response = await fetch(
-        'https://yuhordnzfpcswztujozi.supabase.co/functions/v1/analyze-cart',
+        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/analyze-cart',
         {
           method: 'POST',
           headers: {
@@ -1050,7 +1050,7 @@ const RepasPage = ({ onNavigate }) => {
 
     try {
       const response = await fetch(
-        'https://yuhordnzfpcswztujozi.supabase.co/functions/v1/lookup-barcode',
+        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/lookup-barcode',
         {
           method: 'POST',
           headers: {
@@ -1097,7 +1097,7 @@ const RepasPage = ({ onNavigate }) => {
     try {
       const userId = '00000000-0000-0000-0000-000000000001';
       const response = await fetch(
-        'https://yuhordnzfpcswztujozi.supabase.co/functions/v1/analyze-cart',
+        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/analyze-cart',
         {
           method: 'POST',
           headers: {
@@ -1125,7 +1125,7 @@ const RepasPage = ({ onNavigate }) => {
     try {
       const userId = '00000000-0000-0000-0000-000000000001';
       const response = await fetch(
-        'https://yuhordnzfpcswztujozi.supabase.co/functions/v1/analyze-cart',
+        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/analyze-cart',
         {
           method: 'POST',
           headers: {
@@ -1153,7 +1153,7 @@ const RepasPage = ({ onNavigate }) => {
     try {
       const userId = '00000000-0000-0000-0000-000000000001';
       const response = await fetch(
-        'https://yuhordnzfpcswztujozi.supabase.co/functions/v1/analyze-cart',
+        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/analyze-cart',
         {
           method: 'POST',
           headers: {
@@ -1278,7 +1278,7 @@ const RepasPage = ({ onNavigate }) => {
         .join(', ');
 
       const response = await fetch(
-        'https://yuhordnzfpcswztujozi.supabase.co/functions/v1/generate-recipe',
+        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/generate-recipe',
         {
           method: 'POST',
           headers: {
