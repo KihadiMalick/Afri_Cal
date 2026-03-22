@@ -333,11 +333,11 @@ const metalStyles = StyleSheet.create({
 });
 
 // ── SectionTitle ─────────────────────────────────────────────────────────────
-const SectionTitle = ({ title, rightAction, rightLabel }) => (
-  <View style={{
+const SectionTitle = ({ title, rightAction, rightLabel, style }) => (
+  <View style={[{
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: wp(16), marginBottom: wp(4), marginTop: wp(6),
-  }}>
+  }, style]}>
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <View style={{
         width: 3, height: wp(16), borderRadius: 1.5,
@@ -870,6 +870,8 @@ const ActivityPage = ({ onNavigate }) => {
   const [weeklyMinutes, setWeeklyMinutes] = useState(0);
   const [showPostReport, setShowPostReport] = useState(false);
   const [lastActivity, setLastActivity] = useState(null);
+  const [walkGlow, setWalkGlow] = useState(false);
+  const [runGlow, setRunGlow] = useState(false);
 
   // Shoe animation
   const shoeAnim = useRef(new Animated.Value(0)).current;
@@ -1036,14 +1038,25 @@ const ActivityPage = ({ onNavigate }) => {
 
       const { data } = await supabase
         .from('user_activities')
-        .select('duration_minutes')
+        .select('*')
         .eq('user_id', userId)
         .gte('created_at', mondayISO);
 
-      const total = (data || []).reduce((sum, a) => sum + (a.duration_minutes || 0), 0);
-      setWeeklyMinutes(total);
+      if (data && data.length > 0) {
+        let total = 0;
+        for (const a of data) {
+          if (a.duration_minutes) {
+            total += a.duration_minutes;
+          } else if (a.duration) {
+            total += parseInt(a.duration) || 0;
+          } else if (a.duration_seconds) {
+            total += Math.round(a.duration_seconds / 60);
+          }
+        }
+        setWeeklyMinutes(total);
+      }
     } catch (e) {
-      console.warn('Weekly minutes fetch error:', e);
+      console.warn('Weekly minutes error:', e);
     }
   };
 
@@ -1223,6 +1236,7 @@ const ActivityPage = ({ onNavigate }) => {
 
   // ── Walk knob interaction ─────────────────────────────────────────────
   const startWalkMoving = (direction) => {
+    setWalkGlow(true);
     const activeRotateAnim = direction === 1 ? walkRotateAnimRight : walkRotateAnimLeft;
     walkHoldStartRef.current = Date.now();
     walkSpeedRef.current = 2;
@@ -1241,6 +1255,7 @@ const ActivityPage = ({ onNavigate }) => {
     }, 50);
   };
   const stopWalkMoving = () => {
+    setWalkGlow(false);
     if (walkIntervalRef.current) {
       clearInterval(walkIntervalRef.current);
       walkIntervalRef.current = null;
@@ -1253,6 +1268,7 @@ const ActivityPage = ({ onNavigate }) => {
 
   // ── Run knob interaction ──────────────────────────────────────────────
   const startRunMoving = (direction) => {
+    setRunGlow(true);
     const activeRotateAnim = direction === 1 ? runRotateAnimRight : runRotateAnimLeft;
     runHoldStartRef.current = Date.now();
     runSpeedRef.current = 2;
@@ -1273,6 +1289,7 @@ const ActivityPage = ({ onNavigate }) => {
     }, 50);
   };
   const stopRunMoving = () => {
+    setRunGlow(false);
     isRunMovingRef.current = false;
     setIsRunning(false);
     if (runIntervalRef.current) {
@@ -1433,7 +1450,8 @@ const ActivityPage = ({ onNavigate }) => {
           {/* ══════ OBJECTIF OMS HEBDOMADAIRE ══════ */}
           <View style={{
             marginHorizontal: wp(16),
-            marginBottom: wp(6),
+            marginTop: wp(2),
+            marginBottom: wp(4),
             flexDirection: 'row',
             alignItems: 'center',
             backgroundColor: '#252A30',
@@ -1496,8 +1514,19 @@ const ActivityPage = ({ onNavigate }) => {
           </View>
 
           {/* MARCHE — SIDE-SCROLL TAPIS ROULANT */}
-          <SectionTitle title="Marche" />
-          <MetalCard style={{ marginBottom: wp(2) }}>
+          <SectionTitle title="Marche" style={{ marginTop: wp(4) }} />
+          <MetalCard style={{
+            marginBottom: wp(2),
+            borderRadius: wp(14),
+            borderWidth: 0.5,
+            borderColor: walkGlow ? 'rgba(0,217,132,0.5)' : 'rgba(74,79,85,0.3)',
+            backgroundColor: 'rgba(37,42,48,0.7)',
+            shadowColor: walkGlow ? '#00D984' : 'transparent',
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: walkGlow ? 0.3 : 0,
+            shadowRadius: walkGlow ? 12 : 0,
+            elevation: walkGlow ? 8 : 0,
+          }}>
             {/* Stats compact — aligned right */}
             <View style={{
               flexDirection: 'row',
@@ -1514,7 +1543,7 @@ const ActivityPage = ({ onNavigate }) => {
 
             {/* Canvas SVG side-scroll */}
             <View
-              style={{ position: 'relative', height: WALK_CANVAS_H, borderRadius: 14, overflow: 'hidden', backgroundColor: 'rgba(0,217,132,0.03)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.08)' }}
+              style={{ position: 'relative', height: WALK_CANVAS_H, borderRadius: wp(10), overflow: 'hidden', backgroundColor: 'rgba(0,217,132,0.03)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.08)' }}
               onLayout={(e) => setWalkCanvasW(e.nativeEvent.layout.width)}
             >
               <Svg width={walkCanvasW} height={WALK_CANVAS_H} viewBox={`${walkScrollOffset} 0 ${walkCanvasW} ${WALK_CANVAS_H}`}>
@@ -1795,17 +1824,19 @@ const ActivityPage = ({ onNavigate }) => {
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              paddingHorizontal: wp(10),
-              paddingVertical: wp(6),
+              paddingHorizontal: wp(8),
+              paddingVertical: wp(4),
+              marginTop: wp(4),
             }}>
               <TouchableOpacity
                 onPress={() => setWalkRoundTrip(!walkRoundTrip)}
                 style={{
-                  width: wp(90),
-                  backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.1)' : 'rgba(255,255,255,0.06)',
+                  backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
                   borderRadius: wp(6),
-                  paddingHorizontal: wp(8),
-                  paddingVertical: wp(4),
+                  borderWidth: 0.5,
+                  borderColor: walkRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(74,79,85,0.4)',
+                  paddingHorizontal: wp(6),
+                  paddingVertical: wp(3),
                 }}
               >
                 <Text style={{ fontSize: fp(7), color: walkRoundTrip ? '#00D984' : '#6B7280' }}>
@@ -1813,7 +1844,7 @@ const ActivityPage = ({ onNavigate }) => {
                 </Text>
               </TouchableOpacity>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8) }}>
                 <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}>
                   <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
                     <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -1928,8 +1959,19 @@ const ActivityPage = ({ onNavigate }) => {
           </MetalCard>
 
           {/* COURSE — SAVANE AFRICAINE + JAGUAR */}
-          <SectionTitle title="Course" />
-          <MetalCard style={{ marginBottom: wp(2) }}>
+          <SectionTitle title="Course" style={{ marginTop: wp(12) }} />
+          <MetalCard style={{
+            marginBottom: wp(2),
+            borderRadius: wp(14),
+            borderWidth: 0.5,
+            borderColor: runGlow ? 'rgba(255,140,66,0.5)' : 'rgba(74,79,85,0.3)',
+            backgroundColor: 'rgba(37,42,48,0.7)',
+            shadowColor: runGlow ? '#FF8C42' : 'transparent',
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: runGlow ? 0.3 : 0,
+            shadowRadius: runGlow ? 12 : 0,
+            elevation: runGlow ? 8 : 0,
+          }}>
             {/* Stats compact — aligned right */}
             <View style={{
               flexDirection: 'row',
@@ -1946,7 +1988,7 @@ const ActivityPage = ({ onNavigate }) => {
 
             {/* Canvas SVG — Savane Africaine + Lottie Jaguar overlay */}
             <View
-              style={{ position: 'relative', height: RUN_CANVAS_H, borderRadius: 14, overflow: 'hidden', backgroundColor: '#D4632A', borderWidth: 1, borderColor: 'rgba(232,148,74,0.3)' }}
+              style={{ position: 'relative', height: RUN_CANVAS_H, borderRadius: wp(10), overflow: 'hidden', backgroundColor: '#D4632A', borderWidth: 1, borderColor: 'rgba(232,148,74,0.3)' }}
               onLayout={(e) => setRunCanvasW(e.nativeEvent.layout.width)}
             >
               {/* SVG Savanna background (decor only — no jaguar) */}
@@ -2149,17 +2191,19 @@ const ActivityPage = ({ onNavigate }) => {
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              paddingHorizontal: wp(10),
-              paddingVertical: wp(6),
+              paddingHorizontal: wp(8),
+              paddingVertical: wp(4),
+              marginTop: wp(4),
             }}>
               <TouchableOpacity
                 onPress={() => setRunRoundTrip(!runRoundTrip)}
                 style={{
-                  width: wp(90),
-                  backgroundColor: runRoundTrip ? 'rgba(0,217,132,0.1)' : 'rgba(255,255,255,0.06)',
+                  backgroundColor: runRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
                   borderRadius: wp(6),
-                  paddingHorizontal: wp(8),
-                  paddingVertical: wp(4),
+                  borderWidth: 0.5,
+                  borderColor: runRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(74,79,85,0.4)',
+                  paddingHorizontal: wp(6),
+                  paddingVertical: wp(3),
                 }}
               >
                 <Text style={{ fontSize: fp(7), color: runRoundTrip ? '#00D984' : '#6B7280' }}>
@@ -2167,7 +2211,7 @@ const ActivityPage = ({ onNavigate }) => {
                 </Text>
               </TouchableOpacity>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8) }}>
                 <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}>
                   <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
                     <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
