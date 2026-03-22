@@ -1038,23 +1038,12 @@ const ActivityPage = ({ onNavigate }) => {
 
       const { data } = await supabase
         .from('user_activities')
-        .select('*')
+        .select('duration_min')
         .eq('user_id', userId)
-        .gte('created_at', mondayISO);
+        .gte('performed_at', mondayISO);
 
-      if (data && data.length > 0) {
-        let total = 0;
-        for (const a of data) {
-          if (a.duration_minutes) {
-            total += a.duration_minutes;
-          } else if (a.duration) {
-            total += parseInt(a.duration) || 0;
-          } else if (a.duration_seconds) {
-            total += Math.round(a.duration_seconds / 60);
-          }
-        }
-        setWeeklyMinutes(total);
-      }
+      const total = (data || []).reduce((sum, a) => sum + (a.duration_min || 0), 0);
+      setWeeklyMinutes(total);
     } catch (e) {
       console.warn('Weekly minutes error:', e);
     }
