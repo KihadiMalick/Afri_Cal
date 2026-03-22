@@ -717,7 +717,6 @@ const RepasPage = ({ onNavigate }) => {
   // Les infos visuelles de l'IA (texture, volume, ingredients_seen)
 
   const [showAlternatives, setShowAlternatives] = useState(false);
-  const [scanError, setScanError] = useState(null);
 
   // === RECETTES STATES ===
   const [showRecipes, setShowRecipes] = useState(false);
@@ -740,11 +739,20 @@ const RepasPage = ({ onNavigate }) => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [addingMeal, setAddingMeal] = useState(false);
   const [showCartScan, setShowCartScan] = useState(false);
+  const [cartMode, setCartMode] = useState(null); // null = écran choix, 'barcode', 'photo'
   const [cartProducts, setCartProducts] = useState([]);
   const [scanningActive, setScanningActive] = useState(true);
   const [lastScannedCode, setLastScannedCode] = useState(null);
   const [lookingUp, setLookingUp] = useState(false);
-  const [showCartResults, setShowCartResults] = useState(false);
+  const [scanError, setScanError] = useState(null);
+  const [selectedCartProduct, setSelectedCartProduct] = useState(null);
+  const [showStoreInput, setShowStoreInput] = useState(false);
+  const [storeName, setStoreName] = useState('');
+  const [recentStores, setRecentStores] = useState([]);
+  const [storeResults, setStoreResults] = useState([]);
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [cartReport, setCartReport] = useState(null);
+  const [showCartReport, setShowCartReport] = useState(false);
   // Personnalisé
   const [userMood, setUserMood] = useState(null); // { mood_level, weather }
   const [moodRecipes, setMoodRecipes] = useState([]);
@@ -1003,16 +1011,40 @@ const RepasPage = ({ onNavigate }) => {
     }
   };
 
-  // ══════ CARTSCAN — Fonctions ══════
+  // ══════ CARTSCAN v2 — Fonctions ══════
+
+  const checkProductAlerts = async (product) => {
+    try {
+      const userId = '00000000-0000-0000-0000-000000000001';
+      const response = await fetch(
+        'https://yuhordnzfpcswztujozi.supabase.co/functions/v1/analyze-cart',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMzk0MzksImV4cCI6MjA1MzkxNTQzOX0.H2mCpGz_RGvMR8TBtX1QLyEJHFVKpXHcNMEf5vGn13M',
+          },
+          body: JSON.stringify({
+            action: 'check_product',
+            user_id: userId,
+            product: product,
+          }),
+        }
+      );
+      const result = await response.json();
+      return result.alerts || [];
+    } catch (e) {
+      console.error('Check product error:', e);
+      return [];
+    }
+  };
 
   const lookupBarcode = async (barcode) => {
-    // Éviter les doublons dans le caddie
     if (cartProducts.find(p => p.barcode === barcode)) {
       setScanError('Déjà scanné !');
       setTimeout(() => setScanError(null), 1500);
       return;
     }
-
     setLookingUp(true);
     setScanError(null);
 
@@ -1028,12 +1060,14 @@ const RepasPage = ({ onNavigate }) => {
           body: JSON.stringify({ barcode }),
         }
       );
-
       const result = await response.json();
 
       if (result.product) {
         Vibration.vibrate(100);
-        setCartProducts(prev => [...prev, result.product]);
+        // Vérifier les alertes instantanément
+        const alerts = await checkProductAlerts(result.product);
+        const productWithAlerts = { ...result.product, alerts: alerts };
+        setCartProducts(prev => [...prev, productWithAlerts]);
       } else {
         setScanError('Produit non trouvé');
         setTimeout(() => setScanError(null), 2000);
@@ -1043,24 +1077,105 @@ const RepasPage = ({ onNavigate }) => {
       setScanError('Erreur réseau');
       setTimeout(() => setScanError(null), 2000);
     }
-
     setLookingUp(false);
   };
 
   const handleBarcodeScan = ({ type, data }) => {
     if (!scanningActive || lookingUp) return;
     if (data === lastScannedCode) return;
-
     setLastScannedCode(data);
     setScanningActive(false);
-
     lookupBarcode(data).then(() => {
-      // Pause 1.5s avant de réactiver le scan
       setTimeout(() => {
         setScanningActive(true);
         setLastScannedCode(null);
       }, 1500);
     });
+  };
+
+  const loadRecentStores = async () => {
+    try {
+      const userId = '00000000-0000-0000-0000-000000000001';
+      const response = await fetch(
+        'https://yuhordnzfpcswztujozi.supabase.co/functions/v1/analyze-cart',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMzk0MzksImV4cCI6MjA1MzkxNTQzOX0.H2mCpGz_RGvMR8TBtX1QLyEJHFVKpXHcNMEf5vGn13M',
+          },
+          body: JSON.stringify({
+            action: 'search_stores',
+            user_id: userId,
+          }),
+        }
+      );
+      const result = await response.json();
+      setRecentStores(result.recent || []);
+    } catch (e) {
+      console.error('Load stores error:', e);
+    }
+  };
+
+  const searchStoresApi = async (query) => {
+    if (query.length < 2) {
+      setStoreResults([]);
+      return;
+    }
+    try {
+      const userId = '00000000-0000-0000-0000-000000000001';
+      const response = await fetch(
+        'https://yuhordnzfpcswztujozi.supabase.co/functions/v1/analyze-cart',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMzk0MzksImV4cCI6MjA1MzkxNTQzOX0.H2mCpGz_RGvMR8TBtX1QLyEJHFVKpXHcNMEf5vGn13M',
+          },
+          body: JSON.stringify({
+            action: 'search_stores',
+            user_id: userId,
+            query: query,
+          }),
+        }
+      );
+      const result = await response.json();
+      setStoreResults(result.stores || []);
+    } catch (e) {
+      console.error('Search stores error:', e);
+    }
+  };
+
+  const generateCartReport = async () => {
+    if (cartProducts.length === 0 || generatingReport) return;
+    setGeneratingReport(true);
+
+    try {
+      const userId = '00000000-0000-0000-0000-000000000001';
+      const response = await fetch(
+        'https://yuhordnzfpcswztujozi.supabase.co/functions/v1/analyze-cart',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMzk0MzksImV4cCI6MjA1MzkxNTQzOX0.H2mCpGz_RGvMR8TBtX1QLyEJHFVKpXHcNMEf5vGn13M',
+          },
+          body: JSON.stringify({
+            action: 'generate_report',
+            user_id: userId,
+            cart_products: cartProducts,
+            store_name: storeName || 'Non spécifié',
+          }),
+        }
+      );
+      const result = await response.json();
+      setCartReport(result);
+      setShowStoreInput(false);
+      setShowCartReport(true);
+    } catch (e) {
+      console.error('Generate report error:', e);
+    }
+    setGeneratingReport(false);
   };
 
   const removeFromCart = (barcode) => {
@@ -1069,15 +1184,19 @@ const RepasPage = ({ onNavigate }) => {
 
   const clearCart = () => {
     setCartProducts([]);
-    setShowCartResults(false);
+    setCartMode(null);
+    setCartReport(null);
+    setShowCartReport(false);
+    setShowStoreInput(false);
+    setStoreName('');
     setScanError(null);
     setLastScannedCode(null);
     setScanningActive(true);
+    setSelectedCartProduct(null);
   };
 
   const closeCartScan = () => {
     setShowCartScan(false);
-    setShowCartResults(false);
     clearCart();
   };
 
@@ -1101,6 +1220,13 @@ const RepasPage = ({ onNavigate }) => {
     if (!score) return '#6B7280';
     const colors = { a: '#00D984', b: '#A8E06C', c: '#FFD93D', d: '#FF8C42', e: '#FF6B6B' };
     return colors[score.toLowerCase()] || '#6B7280';
+  };
+
+  const getAlertBadgeColor = (alerts) => {
+    if (!alerts || alerts.length === 0) return null;
+    if (alerts.some(a => a.type === 'danger')) return '#FF6B6B';
+    if (alerts.some(a => a.type === 'warning')) return '#FF8C42';
+    return '#FFD93D';
   };
 
   // Effet typewriter pour la recette générée
