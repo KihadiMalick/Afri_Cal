@@ -336,8 +336,8 @@ const SectionTitle = ({ title, rightAction, rightLabel }) => (
         backgroundColor: '#00D984', marginRight: 8,
       }} />
       <Text style={{
-        color: '#EAEEF3', fontSize: fp(14), fontWeight: '800',
-        letterSpacing: 2, textTransform: 'uppercase',
+        color: '#FFFFFF', fontSize: fp(16), fontWeight: '900',
+        letterSpacing: 1, textTransform: 'uppercase',
       }}>
         {title}
       </Text>
@@ -759,13 +759,31 @@ const SportModal = ({ visible, sportKey, onClose, onSave }) => {
                 </View>
               </View>
 
+              {/* Sources scientifiques */}
+              <View style={{
+                marginTop: wp(10),
+                paddingTop: wp(8),
+                borderTopWidth: 1,
+                borderTopColor: 'rgba(74,79,85,0.3)',
+              }}>
+                <Text style={{
+                  fontSize: fp(8),
+                  color: '#6B7280',
+                  textAlign: 'center',
+                  fontStyle: 'italic',
+                  lineHeight: fp(12),
+                }}>
+                  Estimation basée sur les valeurs MET du Compendium of Physical Activities (Ainsworth et al., 2011) et les recommandations OMS. Les calories réelles varient selon le poids, l'âge et le métabolisme individuel.
+                </Text>
+              </View>
+
               {/* Save button */}
               <TouchableOpacity
                 onPress={() => onSave(sportKey, duration, calories, intensity, waterLost)}
                 activeOpacity={0.7}
                 style={{
                   backgroundColor: sport.color, borderRadius: wp(12),
-                  paddingVertical: wp(12), alignItems: 'center',
+                  paddingVertical: wp(12), alignItems: 'center', marginTop: wp(10),
                 }}
               >
                 <Text style={{ color: '#000', fontSize: fp(12), fontWeight: '800' }}>
@@ -823,6 +841,12 @@ const ActivityPage = ({ onNavigate }) => {
   // Sport modal
   const [modalSport, setModalSport] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  // Show all activities toggle
+  const [showAllActivities, setShowAllActivities] = useState(false);
+
+  // Live GPS placeholder
+  const [showLivePlaceholder, setShowLivePlaceholder] = useState(false);
 
   // Shoe animation
   const shoeAnim = useRef(new Animated.Value(0)).current;
@@ -1118,16 +1142,16 @@ const ActivityPage = ({ onNavigate }) => {
           </View>
 
           {/* DAY SUMMARY */}
-          <MetalCard>
+          <MetalCard style={{ borderWidth: 1, borderColor: '#4A4F55', borderRadius: wp(14), padding: wp(14) }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: fp(10), color: '#8892A0', fontWeight: '600', marginBottom: wp(2) }}>
+                <Text style={{ fontSize: fp(9), color: '#6B7280', fontWeight: '600', marginBottom: wp(2) }}>
                   {String.fromCodePoint(0x1F525)} Brûlé
                 </Text>
-                <Text style={{ fontSize: fp(18), color: '#FF8C42', fontWeight: '900' }}>
+                <Text style={{ fontSize: fp(22), color: '#FF8C42', fontWeight: '900' }}>
                   {totalCalories}
                 </Text>
-                <Text style={{ fontSize: fp(8), color: '#555E6C', fontWeight: '600' }}>kcal</Text>
+                <Text style={{ fontSize: fp(8), color: '#6B7280', fontWeight: '600' }}>kcal</Text>
               </View>
 
               <View style={{
@@ -1136,10 +1160,10 @@ const ActivityPage = ({ onNavigate }) => {
               }} />
 
               <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: fp(10), color: '#8892A0', fontWeight: '600', marginBottom: wp(2) }}>
+                <Text style={{ fontSize: fp(9), color: '#6B7280', fontWeight: '600', marginBottom: wp(2) }}>
                   {String.fromCodePoint(0x23F1)} Temps
                 </Text>
-                <Text style={{ fontSize: fp(18), color: '#EAEEF3', fontWeight: '900' }}>
+                <Text style={{ fontSize: fp(22), color: '#FFFFFF', fontWeight: '900' }}>
                   {formatDuration(totalDuration)}
                 </Text>
               </View>
@@ -1150,13 +1174,13 @@ const ActivityPage = ({ onNavigate }) => {
               }} />
 
               <View style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: fp(10), color: '#8892A0', fontWeight: '600', marginBottom: wp(2) }}>
+                <Text style={{ fontSize: fp(9), color: '#6B7280', fontWeight: '600', marginBottom: wp(2) }}>
                   {String.fromCodePoint(0x1F4A7)} Eau perdue
                 </Text>
-                <Text style={{ fontSize: fp(18), color: '#4DA6FF', fontWeight: '900' }}>
+                <Text style={{ fontSize: fp(22), color: '#4DA6FF', fontWeight: '900' }}>
                   {totalWater}
                 </Text>
-                <Text style={{ fontSize: fp(8), color: '#555E6C', fontWeight: '600' }}>ml</Text>
+                <Text style={{ fontSize: fp(8), color: '#6B7280', fontWeight: '600' }}>ml</Text>
               </View>
             </View>
           </MetalCard>
@@ -1171,6 +1195,25 @@ const ActivityPage = ({ onNavigate }) => {
                 MARCHE
               </Text>
               <View style={{ flex: 1 }} />
+              <TouchableOpacity
+                onPress={() => setShowLivePlaceholder(true)}
+                style={{
+                  backgroundColor: 'rgba(255,107,107,0.15)',
+                  borderRadius: wp(6),
+                  paddingHorizontal: wp(8),
+                  paddingVertical: wp(3),
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: wp(4),
+                  marginRight: 8,
+                }}
+              >
+                <View style={{
+                  width: wp(6), height: wp(6), borderRadius: wp(3),
+                  backgroundColor: '#FF6B6B',
+                }} />
+                <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF6B6B' }}>LIVE</Text>
+              </TouchableOpacity>
               <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '700', marginRight: 8 }}>{String.fromCodePoint(0x1F4CD)}{walkDistStr}</Text>
               <Text style={{ color: '#FF8C42', fontSize: fp(11), fontWeight: '700', marginRight: 8 }}>{String.fromCodePoint(0x1F525)}{walkCal}kcal</Text>
               <Text style={{ color: '#4DA6FF', fontSize: fp(11), fontWeight: '700' }}>{String.fromCodePoint(0x1F4A7)}{walkWater}ml</Text>
@@ -1559,6 +1602,25 @@ const ActivityPage = ({ onNavigate }) => {
                 COURSE
               </Text>
               <View style={{ flex: 1 }} />
+              <TouchableOpacity
+                onPress={() => setShowLivePlaceholder(true)}
+                style={{
+                  backgroundColor: 'rgba(255,107,107,0.15)',
+                  borderRadius: wp(6),
+                  paddingHorizontal: wp(8),
+                  paddingVertical: wp(3),
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: wp(4),
+                  marginRight: 8,
+                }}
+              >
+                <View style={{
+                  width: wp(6), height: wp(6), borderRadius: wp(3),
+                  backgroundColor: '#FF6B6B',
+                }} />
+                <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF6B6B' }}>LIVE</Text>
+              </TouchableOpacity>
               <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '700', marginRight: 8 }}>{String.fromCodePoint(0x1F4CD)}{runDistStr}</Text>
               <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700', marginRight: 8 }}>{String.fromCodePoint(0x1F525)}{runCalories}kcal</Text>
               <Text style={{ color: '#4DA6FF', fontSize: fp(11), fontWeight: '700' }}>{String.fromCodePoint(0x1F4A7)}{runWater}ml</Text>
@@ -1850,7 +1912,7 @@ const ActivityPage = ({ onNavigate }) => {
             flexDirection: 'row', flexWrap: 'wrap',
             paddingHorizontal: wp(14), gap: wp(8),
           }}>
-            {OTHER_SPORTS.map((key) => (
+            {(showAllActivities ? OTHER_SPORTS : OTHER_SPORTS.slice(0, 4)).map((key) => (
               <View key={key} style={{ width: (W - wp(14) * 2 - wp(8)) / 2 }}>
                 <SportCard
                   sportKey={key}
@@ -1860,8 +1922,48 @@ const ActivityPage = ({ onNavigate }) => {
             ))}
           </View>
 
+          {!showAllActivities && (
+            <TouchableOpacity
+              onPress={() => setShowAllActivities(true)}
+              style={{
+                marginHorizontal: wp(16),
+                marginTop: wp(4),
+                marginBottom: wp(12),
+                paddingVertical: wp(12),
+                borderRadius: wp(12),
+                borderWidth: 1,
+                borderColor: 'rgba(0,217,132,0.2)',
+                backgroundColor: 'rgba(0,217,132,0.06)',
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                gap: wp(6),
+              }}
+            >
+              <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#00D984' }}>
+                Voir plus d'activités
+              </Text>
+              <Text style={{ fontSize: fp(12), color: '#00D984' }}>+</Text>
+            </TouchableOpacity>
+          )}
+
+          {showAllActivities && (
+            <TouchableOpacity
+              onPress={() => setShowAllActivities(false)}
+              style={{
+                marginHorizontal: wp(16),
+                marginTop: wp(4),
+                marginBottom: wp(12),
+                paddingVertical: wp(8),
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: fp(11), color: '#6B7280' }}>Réduire ▲</Text>
+            </TouchableOpacity>
+          )}
+
           {/* TODAY'S HISTORY */}
-          <View style={{ marginTop: wp(8) }}>
+          <View style={{ marginTop: wp(12) }}>
             <SectionTitle title="Aujourd'hui" />
           </View>
 
@@ -1937,11 +2039,11 @@ const ActivityPage = ({ onNavigate }) => {
               flexDirection: 'row', alignItems: 'center',
               backgroundColor: 'rgba(212,175,55,0.08)',
               paddingHorizontal: wp(16), paddingVertical: wp(8),
-              borderRadius: wp(14),
+              borderRadius: wp(10),
               borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
             }}>
               <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>{String.fromCodePoint(0x1F3C6)}</Text>
-              <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '700' }}>
+              <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '600' }}>
                 +5 Lix par activité
               </Text>
             </View>
@@ -1962,6 +2064,92 @@ const ActivityPage = ({ onNavigate }) => {
         onClose={() => setModalVisible(false)}
         onSave={handleSportSave}
       />
+
+      {/* Live GPS Placeholder Modal */}
+      <Modal
+        visible={showLivePlaceholder}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowLivePlaceholder(false)}
+      >
+        <View style={{
+          flex: 1, backgroundColor: 'rgba(0,0,0,0.85)',
+          justifyContent: 'center', paddingHorizontal: wp(20),
+        }}>
+          <View style={{
+            backgroundColor: '#1A1D22', borderRadius: wp(18),
+            borderWidth: 1, borderColor: '#4A4F55', padding: wp(24),
+            alignItems: 'center',
+          }}>
+            {/* Icône GPS */}
+            <View style={{
+              width: wp(70), height: wp(70), borderRadius: wp(35),
+              backgroundColor: 'rgba(255,107,107,0.1)',
+              borderWidth: 2, borderColor: 'rgba(255,107,107,0.3)',
+              alignItems: 'center', justifyContent: 'center',
+              marginBottom: wp(16),
+            }}>
+              <Text style={{ fontSize: fp(30) }}>📍</Text>
+            </View>
+
+            <Text style={{
+              fontSize: fp(18), fontWeight: '800', color: '#FFFFFF',
+              textAlign: 'center', marginBottom: wp(6),
+            }}>
+              Mode Live GPS
+            </Text>
+
+            <Text style={{
+              fontSize: fp(11), color: '#9CA3AF', textAlign: 'center',
+              lineHeight: fp(16), marginBottom: wp(16),
+            }}>
+              Suivez votre parcours en temps réel avec le GPS de votre téléphone. LIXUM trace votre chemin, mesure la distance parcourue et calcule précisément les calories brûlées et l'eau perdue.
+            </Text>
+
+            {/* Ce qui sera disponible */}
+            <View style={{
+              backgroundColor: '#252A30', borderRadius: wp(12),
+              padding: wp(14), width: '100%', marginBottom: wp(16),
+            }}>
+              <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#D4AF37', marginBottom: wp(8) }}>
+                DISPONIBLE EN VERSION BUILD :
+              </Text>
+              <Text style={{ fontSize: fp(10), color: '#D1D5DB', lineHeight: fp(16) }}>
+                • Suivi GPS en temps réel du parcours{'\n'}
+                • Calcul de distance par géolocalisation{'\n'}
+                • Tracé du chemin sur carte{'\n'}
+                • Calories basées sur la distance réelle (pas de compteur de pas){'\n'}
+                • Point de départ → Point d'arrivée{'\n'}
+                • Historique des parcours{'\n'}
+                • Compatible Marche et Course
+              </Text>
+            </View>
+
+            {/* Note technique */}
+            <View style={{
+              backgroundColor: 'rgba(77,166,255,0.06)', borderRadius: wp(10),
+              padding: wp(10), width: '100%', marginBottom: wp(16),
+              borderWidth: 1, borderColor: 'rgba(77,166,255,0.15)',
+            }}>
+              <Text style={{ fontSize: fp(8), color: '#4DA6FF', lineHeight: fp(12) }}>
+                🔧 BUILD EAS : Utiliser expo-location watchPositionAsync() pour le tracking GPS. Calcul calories = MET × poids_kg × durée_heures. MET marche = 3.5, marche rapide = 4.3, course lente = 7.0, course rapide = 11.5. Source : Compendium of Physical Activities (Ainsworth 2011). Eau perdue = durée_min × 10ml (moyenne OMS climat tempéré), × 15ml en climat chaud.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => setShowLivePlaceholder(false)}
+              style={{
+                paddingVertical: wp(12), paddingHorizontal: wp(30),
+                borderRadius: wp(12), backgroundColor: '#00D984',
+              }}
+            >
+              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#1A1D22' }}>
+                Compris, j'ai hâte !
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
