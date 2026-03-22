@@ -59,6 +59,14 @@ const ACTIVITY_DATA = {
   football: { kcal_per_hour: 600, icon: '⚽', label: 'Football', color: '#66BB6A', water_per_hour_ml: 700 },
   basketball: { kcal_per_hour: 650, icon: '🏀', label: 'Basketball', color: '#FF7043', water_per_hour_ml: 750 },
   danse: { kcal_per_hour: 450, icon: '💃', label: 'Danse', color: '#EC407A', water_per_hour_ml: 500 },
+  tennis: { kcal_per_hour: 550, icon: '🎾', label: 'Tennis', color: '#CDDC39', water_per_hour_ml: 650 },
+  boxe: { kcal_per_hour: 700, icon: '🥊', label: 'Boxe', color: '#E53935', water_per_hour_ml: 800 },
+  randonnee: { kcal_per_hour: 400, icon: '🥾', label: 'Randonnée', color: '#8D6E63', water_per_hour_ml: 550 },
+  escalade: { kcal_per_hour: 650, icon: '🧗', label: 'Escalade', color: '#78909C', water_per_hour_ml: 600 },
+  spinning: { kcal_per_hour: 700, icon: '🚲', label: 'Spinning', color: '#FF5722', water_per_hour_ml: 750 },
+  hiit: { kcal_per_hour: 750, icon: '🔥', label: 'HIIT', color: '#FF1744', water_per_hour_ml: 850 },
+  pilates: { kcal_per_hour: 250, icon: '🤸', label: 'Pilates', color: '#CE93D8', water_per_hour_ml: 350 },
+  badminton: { kcal_per_hour: 450, icon: '🏸', label: 'Badminton', color: '#26C6DA', water_per_hour_ml: 550 },
 };
 
 const RUN_FLAGS = [
@@ -72,7 +80,7 @@ const RUN_FLAGS = [
 
 const TIME_STEPS = [5, 10, 15, 20, 30, 45, 60];
 
-const OTHER_SPORTS = ['velo', 'natation', 'musculation', 'yoga', 'corde', 'football', 'basketball', 'danse'];
+const OTHER_SPORTS = ['velo', 'natation', 'musculation', 'yoga', 'corde', 'football', 'basketball', 'danse', 'tennis', 'boxe', 'randonnee', 'escalade', 'spinning', 'hiit', 'pilates', 'badminton'];
 
 // ── Walk Immersive Trail ─────────────────────────────────────────────────────
 const WALK_DISTANCE_MAP = [
@@ -960,7 +968,7 @@ const ActivityPage = ({ onNavigate }) => {
   // ── Run constants & calculations ──────────────────────────────────────
   const RUN_SCENE_W = 8400;       // 42km marathon canvas
   const RUN_MAX_DIST = 42000;     // 42 km in metres
-  const RUN_CANVAS_H = 120;       // increased canvas height
+  const RUN_CANVAS_H = 100;       // compact canvas height
 
   // Jaguar animation frame
 
@@ -1023,7 +1031,7 @@ const ActivityPage = ({ onNavigate }) => {
   // ── Walk constants ─────────────────────────────────────────────────────
   const WALK_SCENE_W = 2000;
   const WALK_MAX_DIST = 10000;
-  const WALK_CANVAS_H = 120;  // increased canvas height
+  const WALK_CANVAS_H = 100;  // compact canvas height
 
   // ── Walk computed values ──────────────────────────────────────────────
   const walkMaxS = WALK_SCENE_W - walkCanvasW;
@@ -1168,7 +1176,7 @@ const ActivityPage = ({ onNavigate }) => {
           </View>
 
           {/* DAY SUMMARY */}
-          <MetalCard style={{ borderWidth: 1, borderColor: '#4A4F55', borderRadius: wp(14), padding: wp(14) }}>
+          <MetalCard style={{ borderWidth: 1, borderColor: '#4A4F55', borderRadius: wp(14), padding: wp(14), marginBottom: wp(8) }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View style={{ alignItems: 'center', flex: 1 }}>
                 <Text style={{ fontSize: fp(9), color: '#6B7280', fontWeight: '600', marginBottom: wp(2) }}>
@@ -1182,7 +1190,7 @@ const ActivityPage = ({ onNavigate }) => {
 
               <View style={{
                 width: 1, height: wp(30),
-                backgroundColor: 'rgba(255,255,255,0.06)',
+                backgroundColor: 'rgba(74,79,85,0.5)',
               }} />
 
               <View style={{ alignItems: 'center', flex: 1 }}>
@@ -1196,7 +1204,7 @@ const ActivityPage = ({ onNavigate }) => {
 
               <View style={{
                 width: 1, height: wp(30),
-                backgroundColor: 'rgba(255,255,255,0.06)',
+                backgroundColor: 'rgba(74,79,85,0.5)',
               }} />
 
               <View style={{ alignItems: 'center', flex: 1 }}>
@@ -1213,7 +1221,7 @@ const ActivityPage = ({ onNavigate }) => {
 
           {/* MARCHE — SIDE-SCROLL TAPIS ROULANT */}
           <SectionTitle title="Marche" />
-          <MetalCard style={{ marginBottom: wp(4) }}>
+          <MetalCard style={{ marginBottom: wp(2) }}>
             {/* Header + data compact */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
               <WalkShoeIcon size={wp(14)} />
@@ -1632,7 +1640,7 @@ const ActivityPage = ({ onNavigate }) => {
 
           {/* COURSE — SAVANE AFRICAINE + JAGUAR */}
           <SectionTitle title="Course" />
-          <MetalCard style={{ marginBottom: wp(4) }}>
+          <MetalCard style={{ marginBottom: wp(2) }}>
             {/* Header + data compact */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
               <RunShoeIcon size={wp(14)} />
@@ -1991,7 +1999,7 @@ const ActivityPage = ({ onNavigate }) => {
               }}
             >
               <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#00D984' }}>
-                Voir plus d'activités
+                Voir plus d'activités ({OTHER_SPORTS.length - 4} de plus)
               </Text>
               <Text style={{ fontSize: fp(12), color: '#00D984' }}>+</Text>
             </TouchableOpacity>
@@ -2035,7 +2043,7 @@ const ActivityPage = ({ onNavigate }) => {
                 : '';
 
               return (
-                <MetalCard key={act.id}>
+                <MetalCard key={act.id} style={{ borderLeftWidth: wp(3), borderLeftColor: '#00D984' }}>
                   <View style={{
                     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                   }}>
