@@ -547,6 +547,10 @@ const RepasPage = ({ onNavigate }) => {
   const [frequentMeals, setFrequentMeals] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
+  // === MOOD × MÉTÉO ===
+  const [userMood, setUserMood] = useState(null);
+  const [userWeather, setUserWeather] = useState(null);
+
   // === SÉLECTEUR CRÉNEAU REPAS ===
   const [selectedMealType, setSelectedMealType] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -678,6 +682,28 @@ const RepasPage = ({ onNavigate }) => {
 
   useEffect(() => {
     loadDashboardData();
+  }, []);
+
+  // === FETCH MOOD × MÉTÉO ===
+  useEffect(() => {
+    const fetchMoodWeather = async () => {
+      try {
+        const userId = '00000000-0000-0000-0000-000000000001';
+        const { data } = await supabase
+          .from('users_profile')
+          .select('current_mood, current_weather')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (data) {
+          setUserMood(data.current_mood);
+          setUserWeather(data.current_weather);
+        }
+      } catch (e) {
+        console.warn('Mood fetch error:', e);
+      }
+    };
+    fetchMoodWeather();
   }, []);
 
   // === SHAKE ANIM pour icône "Pas ce plat ?" ===
@@ -3124,6 +3150,110 @@ const RepasPage = ({ onNavigate }) => {
               ))}
             </ScrollView>
           </View>
+
+          {/* ══════ RECETTES POUR VOUS — Mood × Météo ══════ */}
+          {userMood && (
+            <View style={{ marginTop: wp(12), paddingHorizontal: wp(14) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                <View style={{
+                  width: wp(3), height: wp(16),
+                  backgroundColor: '#00D984',
+                  borderRadius: wp(2),
+                  marginRight: wp(8),
+                }} />
+                <Text style={{
+                  fontSize: fp(16), fontWeight: '900', color: '#FFFFFF', letterSpacing: 1,
+                }}>
+                  RECETTES POUR VOUS
+                </Text>
+              </View>
+
+              {/* Badge Mood × Météo */}
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: wp(10),
+                gap: wp(8),
+              }}>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: 'rgba(0,217,132,0.08)',
+                  borderRadius: wp(8),
+                  paddingHorizontal: wp(8),
+                  paddingVertical: wp(4),
+                }}>
+                  <Text style={{ fontSize: fp(12), marginRight: wp(4) }}>
+                    {userMood === 'excited' ? '🌟' : userMood === 'happy' ? '😊' : userMood === 'chill' ? '😌' : '😔'}
+                  </Text>
+                  <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '600' }}>
+                    {userMood === 'excited' ? 'Excité' : userMood === 'happy' ? 'Heureux' : userMood === 'chill' ? 'Chill' : 'Triste'}
+                  </Text>
+                </View>
+
+                {userWeather && (
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(77,166,255,0.08)',
+                    borderRadius: wp(8),
+                    paddingHorizontal: wp(8),
+                    paddingVertical: wp(4),
+                  }}>
+                    <Text style={{ fontSize: fp(12), marginRight: wp(4) }}>
+                      {userWeather === 'sunny' ? '☀️' : userWeather === 'cloudy' ? '☁️' : '🌧️'}
+                    </Text>
+                    <Text style={{ color: '#4DA6FF', fontSize: fp(10), fontWeight: '600' }}>
+                      {userWeather === 'sunny' ? 'Ensoleillé' : userWeather === 'cloudy' ? 'Nuageux' : 'Pluvieux'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Recommandations basées sur Mood × Météo */}
+              <View style={{
+                backgroundColor: '#252A30',
+                borderRadius: wp(14),
+                borderWidth: 0.5,
+                borderColor: 'rgba(74,79,85,0.4)',
+                padding: wp(14),
+              }}>
+                <Text style={{
+                  fontSize: fp(12), color: '#EAEEF3', fontWeight: '600',
+                  marginBottom: wp(6),
+                }}>
+                  {userMood === 'sad' && userWeather === 'rainy'
+                    ? '🍲 Journée cocooning — un bon plat chaud réconfortant'
+                    : userMood === 'sad' && userWeather === 'sunny'
+                    ? '🥗 Profitez du soleil avec un repas léger et vitaminé'
+                    : userMood === 'sad'
+                    ? '🍲 Un plat réconfortant pour remonter le moral'
+                    : userMood === 'chill' && userWeather === 'rainy'
+                    ? '🍜 Temps parfait pour une soupe maison'
+                    : userMood === 'chill' && userWeather === 'sunny'
+                    ? '🥙 Repas frais et équilibré pour profiter de la journée'
+                    : userMood === 'chill'
+                    ? '🥗 Quelque chose de simple et équilibré'
+                    : userMood === 'happy' && userWeather === 'sunny'
+                    ? '🥝 Énergie positive ! Essayez un smoothie bowl vitaminé'
+                    : userMood === 'happy'
+                    ? '🍛 Bonne humeur = bon moment pour essayer une nouvelle recette'
+                    : userMood === 'excited' && userWeather === 'sunny'
+                    ? '🔥 Énergie maximale ! Un repas protéiné pour performer'
+                    : userMood === 'excited'
+                    ? '💪 Plein d\'énergie ! Misez sur les protéines et les glucides complexes'
+                    : '🍽️ Découvrez nos suggestions du jour'
+                  }
+                </Text>
+
+                <Text style={{
+                  fontSize: fp(9), color: '#6B7280', fontStyle: 'italic',
+                }}>
+                  Suggestion basée sur votre humeur et la météo du jour
+                </Text>
+              </View>
+            </View>
+          )}
 
           {/* Séparateur */}
           <View style={{

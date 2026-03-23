@@ -911,16 +911,12 @@ const ActivityPage = ({ onNavigate }) => {
 
     let preferActivity = 'both';
     if (mood) {
-      const moodLower = mood.toLowerCase();
-      if (moodLower.includes('fatigué') || moodLower.includes('triste') ||
-          moodLower.includes('stressé') || moodLower === 'tired' ||
-          moodLower === 'sad' || moodLower === 'stressed') {
-        preferActivity = 'walk';
+      // Valeurs exactes sauvegardées par le Mood Modal
+      if (mood === 'sad' || mood === 'chill') {
+        preferActivity = 'walk'; // Fatigué ou tranquille → marche douce
       }
-      if (moodLower.includes('énergique') || moodLower.includes('heureux') ||
-          moodLower.includes('motivé') || moodLower === 'happy' ||
-          moodLower === 'energetic') {
-        preferActivity = 'run';
+      if (mood === 'happy' || mood === 'excited') {
+        preferActivity = 'run'; // Énergique → course
       }
     }
 
@@ -934,7 +930,7 @@ const ActivityPage = ({ onNavigate }) => {
         duration: `${walkMin} min`,
         distance: `${walkKm} km`,
         color: '#FF8C42',
-        moodNote: mood ? 'Adapté à votre humeur du jour' : null,
+        moodNote: mood === 'sad' ? 'La marche est idéale quand on a besoin de décompresser' : mood ? 'Une marche tranquille, parfait pour votre humeur chill' : null,
       });
     } else if (preferActivity === 'run') {
       setRecommendation({
@@ -946,7 +942,7 @@ const ActivityPage = ({ onNavigate }) => {
         duration: `${runMin} min`,
         distance: `${runKm} km`,
         color: '#FF8C42',
-        moodNote: mood ? 'Vous êtes en forme, profitez-en !' : null,
+        moodNote: mood === 'excited' ? 'Vous débordez d\'énergie, profitez-en !' : mood ? 'Bonne humeur = bon moment pour courir' : null,
       });
     } else {
       setRecommendation({
