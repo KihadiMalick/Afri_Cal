@@ -1925,9 +1925,9 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         {/* ===== LABELS — version épurée ===== */}
         <View style={{
           flexDirection: 'row',
-          justifyContent: 'center',
-          alignItems: 'center',
-          paddingHorizontal: 0,
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          paddingHorizontal: wp(4),
           marginTop: wp(10),
         }}>
           {/* Consommé */}
