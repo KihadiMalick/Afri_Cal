@@ -497,6 +497,13 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
               shadowRadius: highlightMood ? 25 : 6,
               elevation: highlightMood ? 20 : 4,
               ...(highlightMood && {
+                shadowColor: '#FF8C42',
+                shadowOpacity: 0.9,
+                shadowRadius: 25,
+                elevation: 20,
+                borderWidth: 3,
+                borderColor: '#FF8C42',
+                backgroundColor: 'rgba(255,140,66,0.15)',
                 transform: [{ scale: 1.3 }],
                 zIndex: 10001,
               }),
@@ -1635,14 +1642,23 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         marginBottom: wp(12),
         ...([2, 3, 4].includes(tooltipStep) && {
           borderColor: tooltipStep === 2 ? '#FF8C42' : tooltipStep === 3 ? '#00D984' : '#4DA6FF',
-          borderWidth: 2.5,
-          shadowColor: tooltipStep === 2 ? '#FF8C42' : tooltipStep === 3 ? '#00D984' : '#4DA6FF',
-          shadowOpacity: 0.8,
-          shadowRadius: 30,
-          elevation: 25,
+          borderWidth: 2,
+          backgroundColor: '#1E2530',
+          opacity: 1,
           zIndex: 10001,
         }),
       }}>
+        {/* Overlay clair quand tooltip actif */}
+        {[2, 3, 4].includes(tooltipStep) && (
+          <View style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(30, 37, 48, 0.85)',
+            borderRadius: wp(17),
+            zIndex: 0,
+          }} />
+        )}
+
         {/* HEADER — une seule ligne, tout aligné */}
         <View style={{
           flexDirection: 'row',
@@ -2024,6 +2040,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           flexDirection: 'row',
           alignItems: 'center',
           marginBottom: wp(8),
+          paddingRight: wp(16),
         }}>
           <StatsIcon />
           <Text style={{
@@ -2046,6 +2063,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           alignItems: 'center',
           justifyContent: 'center',
           gap: wp(8),
+          paddingRight: wp(16),
         }}>
           <LockIcon size={wp(14)} />
           <View style={{
@@ -2317,7 +2335,51 @@ export default function App() {
     ? `🏃 -${sportWaterLoss}ml (${activities.map(a => ACTIVITY_LABELS[a.name] || a.name).join(', ')})`
     : null;
 
-  // ===== TOOLTIP OVERLAY — Tutoriel guidé 5 étapes =====
+  // ===== TOOLTIP ARROW — Flèche animée pointant l'élément =====
+  const TooltipArrow = ({ direction, color, x, y }) => {
+    const bounceAnim = useRef(new RNAnimated.Value(0)).current;
+
+    useEffect(() => {
+      RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(bounceAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+          RNAnimated.timing(bounceAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
+        ])
+      ).start();
+      return () => bounceAnim.stopAnimation();
+    }, []);
+
+    const translateY = bounceAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, direction === 'up' ? -10 : 10],
+    });
+
+    return (
+      <RNAnimated.View style={{
+        position: 'absolute',
+        left: x,
+        top: y,
+        zIndex: 10002,
+        transform: [{ translateY }],
+      }}>
+        <Svg width={wp(30)} height={wp(40)} viewBox="0 0 30 40">
+          {direction === 'up' ? (
+            <>
+              <Path d="M15 0 L5 15 L12 15 L12 40 L18 40 L18 15 L25 15 Z" fill={color} opacity={0.9} />
+              <Path d="M15 0 L5 15 L12 15 L12 25 L18 25 L18 15 L25 15 Z" fill={color} opacity={0.4} />
+            </>
+          ) : (
+            <>
+              <Path d="M15 40 L5 25 L12 25 L12 0 L18 0 L18 25 L25 25 Z" fill={color} opacity={0.9} />
+              <Path d="M15 40 L5 25 L12 25 L12 15 L18 15 L18 25 L25 25 Z" fill={color} opacity={0.4} />
+            </>
+          )}
+        </Svg>
+      </RNAnimated.View>
+    );
+  };
+
+  // ===== TOOLTIP OVERLAY — Tutoriel guidé 4 étapes =====
   const TooltipOverlay = () => {
     if (tooltipStep === 0) return null;
 
@@ -2368,6 +2430,48 @@ export default function App() {
           top: 0, left: 0, right: 0, bottom: 0,
           backgroundColor: 'rgba(0, 0, 0, 0.82)',
         }} />
+
+        {/* Flèches animées pointant vers l'élément */}
+
+        {/* Étape 1 : Flèche vers le Mood icon en haut */}
+        {tooltipStep === 1 && (
+          <TooltipArrow
+            direction="up"
+            color="#FF8C42"
+            x={W / 2 - wp(15)}
+            y={wp(55)}
+          />
+        )}
+
+        {/* Étape 2 : Flèche vers le réacteur GAUCHE (Consommé) */}
+        {tooltipStep === 2 && (
+          <TooltipArrow
+            direction="up"
+            color="#FF8C42"
+            x={wp(55)}
+            y={wp(120)}
+          />
+        )}
+
+        {/* Étape 3 : Flèche vers l'ADN CENTRAL (Vitalité) */}
+        {tooltipStep === 3 && (
+          <TooltipArrow
+            direction="up"
+            color="#00D984"
+            x={W / 2 - wp(15)}
+            y={wp(120)}
+          />
+        )}
+
+        {/* Étape 4 : Flèche vers le réacteur DROIT (Reste) */}
+        {tooltipStep === 4 && (
+          <TooltipArrow
+            direction="up"
+            color="#4DA6FF"
+            x={W - wp(85)}
+            y={wp(120)}
+          />
+        )}
 
         {/* Bulle de tooltip — TOUJOURS en bas, position fixe */}
         <View style={{
