@@ -2519,6 +2519,15 @@ export default function App() {
       icon: bevIcon,
     }]);
 
+    // 1b. Afficher le toast de confirmation
+    setBeverageToast({
+      name: bevName,
+      icon: bevIcon,
+      effectiveMl: addedEffective,
+      kcal: totals.kcal,
+    });
+    setTimeout(() => setBeverageToast(null), 2500);
+
     // 2. Fermer le modal immédiatement
     setSelectedBeverage(null);
     setBeverageSearch('');
@@ -2615,21 +2624,32 @@ export default function App() {
 
   useEffect(() => {
     loadDashboardFromSupabase();
-    fetchDailyHydration().then(setHydrationData);
+    fetchDailyHydration().then((data) => {
+      setHydrationData(data);
+      // Synchroniser le state local avec les vraies données Supabase
+      if (data.totalEffective > 0) {
+        setHydrationMl(data.totalEffective);
+      }
+    });
   }, []);
 
   // Recharger quand on revient sur l'onglet home
   useEffect(() => {
     if (activeTab === 'home') {
       loadDashboardFromSupabase();
-      fetchDailyHydration().then(setHydrationData);
+      fetchDailyHydration().then((data) => {
+        setHydrationData(data);
+        if (data.totalEffective > 0) {
+          setHydrationMl(data.totalEffective);
+        }
+      });
     }
   }, [activeTab]);
 
   const [moodFilled, setMoodFilled] = useState(false);
   const [currentMood, setCurrentMood] = useState(null); // 'sad' | 'chill' | 'happy' | 'excited'
   const [showMoodModal, setShowMoodModal] = useState(false);
-  const [hydrationMl, setHydrationMl] = useState(1500);
+  const [hydrationMl, setHydrationMl] = useState(0);
   const [hydrationData, setHydrationData] = useState({
     totalEffective: 0, totalVolume: 0, totalKcal: 0, totalSugar: 0, entryCount: 0,
   });
@@ -2643,14 +2663,10 @@ export default function App() {
   const [sugarCubes, setSugarCubes] = useState(2);
   const [beverageLoading, setBeverageLoading] = useState(false);
   const [beverageSaving, setBeverageSaving] = useState(false);
+  const [beverageToast, setBeverageToast] = useState(null);
   const [hydroModalVisible, setHydroModalVisible] = useState(false);
   const [surplusAlertVisible, setSurplusAlertVisible] = useState(false);
-  const [hydroLogs, setHydroLogs] = useState([
-    { time: '08:30', amount: 250, type: 'eau', icon: '💧' },
-    { time: '10:15', amount: 500, type: 'eau', icon: '💧' },
-    { time: '12:45', amount: 250, type: 'eau', icon: '💧' },
-    { time: '15:00', amount: 500, type: 'eau', icon: '💧' },
-  ]);
+  const [hydroLogs, setHydroLogs] = useState([]);
 
   // Mock sport activities done today
   const [activities, setActivities] = useState([
@@ -2663,7 +2679,7 @@ export default function App() {
   const hydrationGoal = gender === 'homme' ? 2500 : 2000;
 
   // Calorie logic
-  const consumedTotal = realConsumed;
+  const consumedTotal = realConsumed + (hydrationData.totalKcal || 0);
   const burnedExtra = activities.reduce((sum, a) => sum + a.kcalBurned, 0);
   const burnedTotal = burnedExtra; // Calories brûlées par les activités du jour
   const surplus = Math.max(0, consumedTotal - burnedExtra - DAILY_OBJECTIVE);
@@ -4024,6 +4040,43 @@ export default function App() {
             </ScrollView>
           </LinearGradient>
         </Modal>
+
+        {/* ══════ TOAST BOISSON AJOUTÉE ══════ */}
+        {beverageToast && (
+          <View style={{
+            position: 'absolute',
+            top: Platform.OS === 'android' ? 40 : 55,
+            left: wp(16), right: wp(16),
+            zIndex: 99999,
+          }}>
+            <View style={{
+              backgroundColor: 'rgba(0, 217, 132, 0.12)',
+              borderWidth: 1,
+              borderColor: 'rgba(0, 217, 132, 0.3)',
+              borderRadius: wp(14),
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              shadowColor: '#00D984',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.2,
+              shadowRadius: 12,
+              elevation: 8,
+            }}>
+              <Text style={{ fontSize: 22, marginRight: 10 }}>{beverageToast.icon}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '800' }}>
+                  ✓ {beverageToast.name} ajouté
+                </Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(10), marginTop: 2 }}>
+                  {beverageToast.effectiveMl}ml effectifs • {beverageToast.kcal} kcal
+                </Text>
+              </View>
+              <DropletIcon size={18} />
+            </View>
+          </View>
+        )}
 
         {/* ===== TOOLTIP OVERLAY — Tutoriel guidé ===== */}
         <TooltipOverlay />
