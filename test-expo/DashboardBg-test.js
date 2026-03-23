@@ -2503,11 +2503,33 @@ export default function App() {
   const saveBeverage = async () => {
     if (!selectedBeverage || beverageSaving) return;
     setBeverageSaving(true);
+    const totals = calcBeverageTotals();
+    const bevName = selectedBeverage.name;
+    const bevIcon = selectedBeverage.icon;
+    const addedEffective = totals.effectiveMl;
+
+    // 1. Mise à jour LOCALE immédiate (optimiste)
+    setHydrationMl(prev => prev + addedEffective);
+    const now = new Date();
+    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    setHydroLogs(prev => [...prev, {
+      time: timeStr,
+      amount: addedEffective,
+      type: bevName,
+      icon: bevIcon,
+    }]);
+
+    // 2. Fermer le modal immédiatement
+    setSelectedBeverage(null);
+    setBeverageSearch('');
+    setShowBeverageModal(false);
+    setBeverageSaving(false);
+
+    // 3. Sauvegarder dans Supabase en arrière-plan
     try {
-      const totals = calcBeverageTotals();
       const { error } = await supabase.rpc('add_beverage_log', {
         p_user_id: TEST_USER_ID,
-        p_beverage_name: selectedBeverage.name,
+        p_beverage_name: bevName,
         p_amount_ml: beverageVolume,
         p_hydration_coeff: selectedBeverage.coeff,
         p_source: 'manual',
@@ -2516,29 +2538,16 @@ export default function App() {
         p_sugar_estimated: !selectedBeverage.sugar_known,
         p_sugar_cubes: selectedBeverage.sugar_known ? 0 : sugarCubes,
       });
-      if (error) throw error;
-      // Mettre à jour la silhouette locale
-      const addedEffective = totals.effectiveMl;
-      setHydrationMl(prev => prev + addedEffective);
-      // Ajouter dans l'historique visible du modal hydratation
-      const now = new Date();
-      const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-      setHydroLogs(prev => [...prev, {
-        time: timeStr,
-        amount: addedEffective,
-        type: selectedBeverage.name,
-        icon: selectedBeverage.icon,
-      }]);
-      // Refresh Supabase
+      if (error) {
+        console.warn('add_beverage_log error:', error.message);
+        Alert.alert('Erreur Supabase', error.message);
+      }
+      // Refresh depuis Supabase
       fetchDailyHydration().then(setHydrationData);
-      // Fermer le modal boissons → retour au modal hydratation
-      setSelectedBeverage(null);
-      setBeverageSearch('');
-      setShowBeverageModal(false);
     } catch (err) {
       console.warn('saveBeverage error:', err);
+      Alert.alert('Erreur', 'Boisson ajoutée localement. Sync Supabase échouée.');
     }
-    setBeverageSaving(false);
   };
 
   const loadDashboardFromSupabase = async () => {
