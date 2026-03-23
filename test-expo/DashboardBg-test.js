@@ -6,7 +6,7 @@
 
 import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import {
-  View, Dimensions, Text, StyleSheet, StatusBar, Alert, Pressable, Image,
+  View, Dimensions, Text, StyleSheet, StatusBar, Alert, Pressable, Image, TextInput,
   Animated as RNAnimated, ScrollView, TouchableOpacity, Platform, Modal, Easing,
   PixelRatio,
 } from 'react-native';
@@ -1589,7 +1589,13 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
             </View>
 
             {/* Bouton AJOUTER BOISSONS — PRO */}
-            <TouchableOpacity style={s.addBeverageBtn} activeOpacity={0.7}>
+            <TouchableOpacity style={s.addBeverageBtn} activeOpacity={0.7} onPress={() => {
+              setShowBeverageModal(true);
+              setBeverageCategory('all');
+              setSelectedBeverage(null);
+              setBeverageSearch('');
+              fetchBeveragesByCategory('all');
+            }}>
               <Text style={s.addBeverageBtnText}>AJOUTER BOISSONS 🥤</Text>
               <View style={s.proBadgeLg}>
                 <Ionicons name="lock-closed" size={10} color="#D4AF37" />
@@ -2418,6 +2424,108 @@ export default function App() {
     }
   };
 
+  // === FETCH BOISSONS ===
+  const BEVERAGE_CATS = [
+    { id: 'all',              label: 'Tout',     icon: '🔍' },
+    { id: 'african_juice',    label: 'Jus Afrique', icon: '🌍' },
+    { id: 'african_fermented',label: 'Fermenté', icon: '🫗' },
+    { id: 'african_hot',      label: 'Chaud Afr.', icon: '☕' },
+    { id: 'hot',              label: 'Chaud',    icon: '🍵' },
+    { id: 'cold',             label: 'Froid',    icon: '🧊' },
+    { id: 'fruit',            label: 'Fruits',   icon: '🍊' },
+    { id: 'milk',             label: 'Lait',     icon: '🥛' },
+    { id: 'alcohol',          label: 'Alcool',   icon: '🍺' },
+    { id: 'african_alcohol',  label: 'Alcool Afr.', icon: '🌴' },
+  ];
+
+  const fetchBeveragesByCategory = async (cat) => {
+    setBeverageLoading(true);
+    try {
+      let query = supabase.from('beverages_master')
+        .select('beverage_id,name,icon,category,sub_region,coeff,kcal_per_100ml,sugar_g_per_100ml,sugar_known,is_alcoholic,description')
+        .order('name');
+      if (cat !== 'all') query = query.eq('category', cat);
+      const { data, error } = await query.limit(50);
+      if (error) throw error;
+      setBeverageList(data || []);
+    } catch (err) {
+      console.warn('fetchBeverages error:', err);
+      setBeverageList([]);
+    }
+    setBeverageLoading(false);
+  };
+
+  const searchBeverages = async (q) => {
+    if (!q || q.length < 2) {
+      fetchBeveragesByCategory(beverageCategory);
+      return;
+    }
+    setBeverageLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('search_beverages_fuzzy', {
+        p_query: q, p_limit: 15,
+      });
+      if (error) throw error;
+      setBeverageList(data || []);
+    } catch (err) {
+      console.warn('searchBeverages error:', err);
+    }
+    setBeverageLoading(false);
+  };
+
+  const selectBeverage = (bev) => {
+    setSelectedBeverage(bev);
+    setBeverageVolume(250);
+    setSugarCubes(bev.sugar_known ? 0 : 2);
+  };
+
+  const QUICK_VOLUMES = [100, 150, 200, 250, 330, 500];
+
+  const calcBeverageTotals = () => {
+    if (!selectedBeverage) return { effectiveMl: 0, kcal: 0, sugarG: 0 };
+    const vol = beverageVolume;
+    const bev = selectedBeverage;
+    const baseSugar = (bev.sugar_g_per_100ml * vol) / 100;
+    const addedSugar = bev.sugar_known ? 0 : sugarCubes * SUGAR_CUBE_G;
+    const totalSugar = baseSugar + addedSugar;
+    const baseKcal = (bev.kcal_per_100ml * vol) / 100;
+    const addedKcal = addedSugar * 4;
+    const effectiveMl = Math.round(vol * bev.coeff);
+    return {
+      effectiveMl,
+      kcal: Math.round(baseKcal + addedKcal),
+      sugarG: Math.round(totalSugar * 10) / 10,
+    };
+  };
+
+  const saveBeverage = async () => {
+    if (!selectedBeverage || beverageSaving) return;
+    setBeverageSaving(true);
+    try {
+      const totals = calcBeverageTotals();
+      const { error } = await supabase.rpc('add_beverage_log', {
+        p_user_id: TEST_USER_ID,
+        p_beverage_name: selectedBeverage.name,
+        p_amount_ml: beverageVolume,
+        p_hydration_coeff: selectedBeverage.coeff,
+        p_source: 'manual',
+        p_kcal: totals.kcal,
+        p_sugar_g: totals.sugarG,
+        p_sugar_estimated: !selectedBeverage.sugar_known,
+        p_sugar_cubes: selectedBeverage.sugar_known ? 0 : sugarCubes,
+      });
+      if (error) throw error;
+      // Refresh hydration data
+      fetchDailyHydration().then(setHydrationData);
+      setSelectedBeverage(null);
+      setShowBeverageModal(false);
+      setBeverageSearch('');
+    } catch (err) {
+      console.warn('saveBeverage error:', err);
+    }
+    setBeverageSaving(false);
+  };
+
   const loadDashboardFromSupabase = async () => {
     setIsLoadingDashboard(true);
     try {
@@ -2501,6 +2609,16 @@ export default function App() {
   const [hydrationData, setHydrationData] = useState({
     totalEffective: 0, totalVolume: 0, totalKcal: 0, totalSugar: 0, entryCount: 0,
   });
+  // === STATES MODAL BOISSONS ===
+  const [showBeverageModal, setShowBeverageModal] = useState(false);
+  const [beverageCategory, setBeverageCategory] = useState('all');
+  const [beverageList, setBeverageList] = useState([]);
+  const [beverageSearch, setBeverageSearch] = useState('');
+  const [selectedBeverage, setSelectedBeverage] = useState(null);
+  const [beverageVolume, setBeverageVolume] = useState(250);
+  const [sugarCubes, setSugarCubes] = useState(2);
+  const [beverageLoading, setBeverageLoading] = useState(false);
+  const [beverageSaving, setBeverageSaving] = useState(false);
   const [hydroModalVisible, setHydroModalVisible] = useState(false);
   const [surplusAlertVisible, setSurplusAlertVisible] = useState(false);
   const [hydroLogs, setHydroLogs] = useState([
@@ -3559,6 +3677,222 @@ export default function App() {
 
         {/* ===== MOOD MODAL — TikTok Tap ===== */}
         <MoodModal />
+
+        {/* ══════ MODAL AJOUTER BOISSONS ══════ */}
+        <Modal visible={showBeverageModal} animationType="slide" transparent={false}>
+          <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
+            {/* HEADER */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 50, paddingHorizontal: wp(16), paddingBottom: 12 }}>
+              <Pressable onPress={() => { setShowBeverageModal(false); setSelectedBeverage(null); }}>
+                <Text style={{ color: '#AAA', fontSize: fp(16) }}>✕ Fermer</Text>
+              </Pressable>
+              <Text style={{ color: '#FFF', fontSize: fp(18), fontWeight: '700' }}>Ajouter une Boisson</Text>
+              <View style={{ width: 60 }} />
+            </View>
+
+            {/* BARRE DE RECHERCHE */}
+            <View style={{ marginHorizontal: wp(16), marginBottom: 10, backgroundColor: '#252A30', borderRadius: 12, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 }}>
+              <Text style={{ fontSize: 18, marginRight: 8 }}>🔍</Text>
+              <TextInput
+                placeholder="Rechercher (bissap, zobo, café...)"
+                placeholderTextColor="#666"
+                value={beverageSearch}
+                onChangeText={(t) => { setBeverageSearch(t); searchBeverages(t); }}
+                style={{ flex: 1, color: '#FFF', fontSize: fp(14), paddingVertical: 10 }}
+              />
+              {beverageSearch ? (
+                <Pressable onPress={() => { setBeverageSearch(''); fetchBeveragesByCategory(beverageCategory); }}>
+                  <Text style={{ color: '#AAA', fontSize: 16 }}>✕</Text>
+                </Pressable>
+              ) : null}
+            </View>
+
+            {/* CARROUSEL CATÉGORIES */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 44, marginBottom: 8, paddingHorizontal: wp(12) }}>
+              {BEVERAGE_CATS.map((cat) => (
+                <Pressable
+                  key={cat.id}
+                  onPress={() => { setBeverageCategory(cat.id); setBeverageSearch(''); fetchBeveragesByCategory(cat.id); }}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    paddingHorizontal: 12, paddingVertical: 6, marginRight: 8,
+                    borderRadius: 20,
+                    backgroundColor: beverageCategory === cat.id ? '#00D984' : '#333A42',
+                  }}
+                >
+                  <Text style={{ fontSize: 14, marginRight: 4 }}>{cat.icon}</Text>
+                  <Text style={{ color: beverageCategory === cat.id ? '#1A1D22' : '#CCC', fontSize: fp(12), fontWeight: '600' }}>{cat.label}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+
+            {/* GRILLE DE BOISSONS */}
+            <ScrollView style={{ flex: 1, paddingHorizontal: wp(12) }}>
+              {beverageLoading ? (
+                <Text style={{ color: '#666', textAlign: 'center', marginTop: 40, fontSize: fp(14) }}>Chargement...</Text>
+              ) : beverageList.length === 0 ? (
+                <Text style={{ color: '#666', textAlign: 'center', marginTop: 40, fontSize: fp(14) }}>Aucune boisson trouvée</Text>
+              ) : (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                  {beverageList.map((bev) => {
+                    const isSelected = selectedBeverage?.beverage_id === bev.beverage_id;
+                    const coeffColor = getCoeffColor(bev.coeff);
+                    return (
+                      <Pressable
+                        key={bev.beverage_id}
+                        onPress={() => selectBeverage(bev)}
+                        style={{
+                          width: '31%', marginBottom: 10, padding: 10, borderRadius: 12,
+                          backgroundColor: isSelected ? '#252A30' : '#1E2228',
+                          borderWidth: isSelected ? 1.5 : 1,
+                          borderColor: isSelected ? '#00D984' : '#333A42',
+                        }}
+                      >
+                        <Text style={{ fontSize: 28, textAlign: 'center' }}>{bev.icon}</Text>
+                        <Text numberOfLines={2} style={{ color: '#FFF', fontSize: fp(11), fontWeight: '600', textAlign: 'center', marginTop: 4, minHeight: 30 }}>{bev.name}</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 4 }}>
+                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: coeffColor, marginRight: 4 }} />
+                          <Text style={{ color: coeffColor, fontSize: fp(10), fontWeight: '700' }}>{(bev.coeff * 100).toFixed(0)}%</Text>
+                        </View>
+                        {bev.sub_region ? (
+                          <Text style={{ color: '#666', fontSize: fp(9), textAlign: 'center', marginTop: 2 }}>{bev.sub_region}</Text>
+                        ) : null}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+
+              {/* ZONE SÉLECTION (volume + sucre + valider) */}
+              {selectedBeverage ? (
+                <View style={{
+                  marginTop: 16, padding: 16, borderRadius: 16,
+                  backgroundColor: '#252A30', borderWidth: 1, borderColor: '#00D984',
+                }}>
+                  {/* EN-TÊTE BOISSON SÉLECTIONNÉE */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                    <Text style={{ fontSize: 32, marginRight: 10 }}>{selectedBeverage.icon}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#FFF', fontSize: fp(16), fontWeight: '700' }}>{selectedBeverage.name}</Text>
+                      {selectedBeverage.description ? (
+                        <Text numberOfLines={2} style={{ color: '#888', fontSize: fp(11), marginTop: 2 }}>{selectedBeverage.description}</Text>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  {/* VOLUMES RAPIDES */}
+                  <Text style={{ color: '#AAA', fontSize: fp(12), marginBottom: 6 }}>Volume (ml)</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}>
+                    {QUICK_VOLUMES.map((v) => (
+                      <Pressable
+                        key={v}
+                        onPress={() => setBeverageVolume(v)}
+                        style={{
+                          paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+                          marginRight: 8, marginBottom: 6,
+                          backgroundColor: beverageVolume === v ? '#00D984' : '#333A42',
+                        }}
+                      >
+                        <Text style={{ color: beverageVolume === v ? '#1A1D22' : '#CCC', fontSize: fp(13), fontWeight: '700' }}>{v}</Text>
+                      </Pressable>
+                    ))}
+                    {/* Volume custom */}
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      backgroundColor: '#333A42', borderRadius: 20, paddingHorizontal: 10,
+                    }}>
+                      <TextInput
+                        placeholder="Autre"
+                        placeholderTextColor="#666"
+                        keyboardType="numeric"
+                        value={QUICK_VOLUMES.includes(beverageVolume) ? '' : String(beverageVolume)}
+                        onChangeText={(t) => { const n = parseInt(t); if (n > 0 && n <= 2000) setBeverageVolume(n); }}
+                        style={{ color: '#FFF', fontSize: fp(13), width: 50, textAlign: 'center' }}
+                      />
+                      <Text style={{ color: '#666', fontSize: fp(11) }}>ml</Text>
+                    </View>
+                  </View>
+
+                  {/* CUBES DE SUCRE (si sugar_known = false) */}
+                  {!selectedBeverage.sugar_known ? (
+                    <View style={{ marginBottom: 12 }}>
+                      <Text style={{ color: '#AAA', fontSize: fp(12), marginBottom: 6 }}>
+                        Sucre ajouté (1 cube = 4g)
+                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        {[0, 1, 2, 3, 4, 5].map((n) => (
+                          <Pressable
+                            key={n}
+                            onPress={() => setSugarCubes(n)}
+                            style={{
+                              width: 40, height: 40, borderRadius: 8, marginRight: 6,
+                              backgroundColor: sugarCubes >= n && n > 0 ? '#FFD93D' : '#333A42',
+                              borderWidth: sugarCubes === n ? 2 : 1,
+                              borderColor: sugarCubes === n ? '#FFD93D' : '#444',
+                              justifyContent: 'center', alignItems: 'center',
+                            }}
+                          >
+                            <Text style={{ fontSize: n === 0 ? 14 : 18 }}>
+                              {n === 0 ? '🚫' : '🧊'}
+                            </Text>
+                          </Pressable>
+                        ))}
+                        <Text style={{ color: '#FFD93D', fontSize: fp(12), fontWeight: '700', marginLeft: 6 }}>
+                          {sugarCubes === 0 ? 'Sans sucre' : sugarCubes === 1 ? 'Léger' : sugarCubes <= 3 ? 'Sucré' : 'Très sucré'}
+                        </Text>
+                      </View>
+                      <Text style={{ color: '#888', fontSize: fp(10), marginTop: 4 }}>
+                        +{sugarCubes * SUGAR_CUBE_G}g de sucre → +{sugarCubes * SUGAR_CUBE_G * 4} kcal
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {/* RÉSUMÉ CALCUL TEMPS RÉEL */}
+                  {(() => {
+                    const t = calcBeverageTotals();
+                    return (
+                      <View style={{
+                        backgroundColor: '#1A1D22', borderRadius: 12, padding: 12, marginBottom: 12,
+                        flexDirection: 'row', justifyContent: 'space-around',
+                      }}>
+                        <View style={{ alignItems: 'center' }}>
+                          <Text style={{ color: '#00D984', fontSize: fp(20), fontWeight: '800' }}>{t.effectiveMl}</Text>
+                          <Text style={{ color: '#888', fontSize: fp(10) }}>ml effectifs</Text>
+                        </View>
+                        <View style={{ width: 1, backgroundColor: '#333' }} />
+                        <View style={{ alignItems: 'center' }}>
+                          <Text style={{ color: '#FF8C42', fontSize: fp(20), fontWeight: '800' }}>{t.kcal}</Text>
+                          <Text style={{ color: '#888', fontSize: fp(10) }}>kcal</Text>
+                        </View>
+                        <View style={{ width: 1, backgroundColor: '#333' }} />
+                        <View style={{ alignItems: 'center' }}>
+                          <Text style={{ color: '#FFD93D', fontSize: fp(20), fontWeight: '800' }}>{t.sugarG}g</Text>
+                          <Text style={{ color: '#888', fontSize: fp(10) }}>sucre</Text>
+                        </View>
+                      </View>
+                    );
+                  })()}
+
+                  {/* BOUTON VALIDER */}
+                  <Pressable
+                    onPress={saveBeverage}
+                    disabled={beverageSaving}
+                    style={{
+                      backgroundColor: beverageSaving ? '#555' : '#00D984',
+                      borderRadius: 12, paddingVertical: 14, alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#1A1D22', fontSize: fp(16), fontWeight: '800' }}>
+                      {beverageSaving ? 'Enregistrement...' : `✓ Ajouter ${beverageVolume}ml de ${selectedBeverage.name}`}
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : null}
+
+              <View style={{ height: 40 }} />
+            </ScrollView>
+          </View>
+        </Modal>
 
         {/* ===== TOOLTIP OVERLAY — Tutoriel guidé ===== */}
         <TooltipOverlay />
