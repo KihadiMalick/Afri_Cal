@@ -1689,9 +1689,10 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
             <Text style={{ fontSize: 20 }}>💧</Text>
           </View>
 
-          <ScrollView contentContainerStyle={{ alignItems: 'center', paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-            {/* ═══ GRANDE SILHOUETTE — STAR DE LA PAGE ═══ */}
-            <View style={{ alignItems: 'center', marginTop: 12, marginBottom: 8 }}>
+          <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+
+            {/* ═══ SILHOUETTE + PALIERS ═══ */}
+            <View style={{ alignItems: 'center', marginTop: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <SilhouetteFill fillPercent={percent} height={180} gender={gender} showBubbles />
                 <View style={{ marginLeft: 16, height: 180, justifyContent: 'space-between', paddingVertical: 8 }}>
@@ -1710,35 +1711,35 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
             </View>
 
             {/* ═══ COMPTEUR + BARRE ═══ */}
-            <View style={{ alignItems: 'center', marginBottom: 12 }}>
-              <Text style={{ fontSize: 26, fontWeight: '800' }}>
+            <View style={{ alignItems: 'center', marginTop: 12, marginBottom: 16, paddingHorizontal: 32 }}>
+              <Text style={{ fontSize: 28, fontWeight: '900' }}>
                 <Text style={{ color: '#4DA6FF' }}>{currentMl.toLocaleString('fr-FR')}</Text>
-                <Text style={{ color: '#555E6C' }}> / {goalMl.toLocaleString('fr-FR')} ml</Text>
+                <Text style={{ color: '#555E6C', fontSize: 16 }}> / {goalMl.toLocaleString('fr-FR')} ml</Text>
               </Text>
-              <View style={{ width: W - 64, height: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginTop: 8 }}>
+              <View style={{ width: '100%', height: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginTop: 10 }}>
                 <LinearGradient
                   colors={['#4DA6FF', '#00BCD4']}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={{ width: percent + '%', height: '100%', borderRadius: 4 }}
                 />
               </View>
-              <Text style={{ color: '#4DA6FF', fontSize: 13, fontWeight: '700', marginTop: 6 }}>{percent}% • {glasses}/{totalGlasses} verres</Text>
+              <Text style={{ color: '#4DA6FF', fontSize: 13, fontWeight: '700', marginTop: 8 }}>{percent}% • {glasses}/{totalGlasses} verres</Text>
             </View>
 
             {/* ═══ SECTION EAU ═══ */}
             <View style={{
-              marginHorizontal: 20, marginTop: 4,
+              marginHorizontal: 24, marginBottom: 12,
               backgroundColor: 'rgba(30,37,48,0.4)',
-              borderRadius: 16, padding: 14,
+              borderRadius: 18, padding: 18,
               borderWidth: 1, borderColor: 'rgba(77,166,255,0.08)',
             }}>
-              <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '700', letterSpacing: 2, marginBottom: 10 }}>EAU 💧</Text>
+              <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '700', letterSpacing: 2, marginBottom: 14 }}>EAU 💧</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
                 {quantities.map((item) => (
                   <View key={item.ml} style={{ alignItems: 'center' }}>
                     <TouchableOpacity
                       style={{
-                        width: 60, height: 60, borderRadius: 14,
+                        width: 64, height: 64, borderRadius: 16,
                         backgroundColor: 'rgba(21,27,35,0.8)',
                         borderWidth: 1, borderColor: 'rgba(77,166,255,0.15)',
                         justifyContent: 'center', alignItems: 'center',
@@ -1746,12 +1747,12 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                       activeOpacity={0.7}
                       onPress={() => addWater(item.ml)}
                     >
-                      <Text style={{ fontSize: 20 }}>{item.icon}</Text>
-                      <Text style={{ color: '#C0C8D4', fontSize: 10, fontWeight: '600', marginTop: 2 }}>{item.label}</Text>
+                      <Text style={{ fontSize: 22 }}>{item.icon}</Text>
+                      <Text style={{ color: '#C0C8D4', fontSize: 11, fontWeight: '700', marginTop: 2 }}>{item.label}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={{
-                        marginTop: 4, width: 24, height: 24, borderRadius: 12,
+                        marginTop: 6, width: 26, height: 26, borderRadius: 13,
                         backgroundColor: 'rgba(30,35,45,0.8)',
                         borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)',
                         justifyContent: 'center', alignItems: 'center',
@@ -1759,7 +1760,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                       activeOpacity={0.7}
                       onPress={() => removeWater(item.ml)}
                     >
-                      <Text style={{ color: '#FF3B30', fontSize: 14, fontWeight: '700', lineHeight: 16 }}>−</Text>
+                      <Text style={{ color: '#FF3B30', fontSize: 16, fontWeight: '700', lineHeight: 18 }}>−</Text>
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -1770,72 +1771,60 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
             <TouchableOpacity
               style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-                marginHorizontal: 20, marginTop: 10,
-                backgroundColor: 'rgba(0, 217, 132, 0.08)', borderRadius: 14,
+                marginHorizontal: 24, marginBottom: 20,
+                backgroundColor: 'rgba(0, 217, 132, 0.08)', borderRadius: 16,
                 borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.25)',
-                paddingVertical: 12,
+                paddingVertical: 14,
               }}
               activeOpacity={0.7}
               onPress={onAddBeverage}
             >
-              <Text style={{ color: '#00D984', fontSize: 13, fontWeight: '800', letterSpacing: 0.5 }}>
+              <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '800', letterSpacing: 0.5 }}>
                 AJOUTER BOISSONS 🥤
               </Text>
             </TouchableOpacity>
 
-            {/* ═══ HISTORIQUE — Liste scroll fixe ═══ */}
-            <View style={{ marginHorizontal: 20, marginTop: 16 }}>
-              <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '800', letterSpacing: 2, marginBottom: 8 }}>AUJOURD'HUI</Text>
+            {/* ═══ HISTORIQUE SIMPLE ═══ */}
+            <View style={{ marginHorizontal: 24 }}>
+              <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '800', letterSpacing: 2, marginBottom: 12 }}>AUJOURD'HUI</Text>
+
               {hydroLogs.length === 0 ? (
                 <View style={{
                   backgroundColor: 'rgba(30,37,48,0.3)',
-                  borderRadius: 12, padding: 16,
+                  borderRadius: 14, paddingVertical: 24, paddingHorizontal: 16,
                   borderWidth: 1, borderColor: 'rgba(74,79,85,0.15)',
-                  alignItems: 'center', height: 80, justifyContent: 'center',
+                  alignItems: 'center',
                 }}>
-                  <Text style={{ fontSize: 24, marginBottom: 4 }}>💧</Text>
+                  <Text style={{ fontSize: 28, marginBottom: 8 }}>💧</Text>
                   <Text style={{ color: '#555E6C', fontSize: 12 }}>Ajoutez votre première boisson du jour</Text>
                 </View>
               ) : (
                 <View style={{
-                  height: 160,
-                  borderRadius: 12,
-                  overflow: 'hidden',
+                  backgroundColor: 'rgba(30,37,48,0.25)',
+                  borderRadius: 14, overflow: 'hidden',
+                  borderWidth: 1, borderColor: 'rgba(74,79,85,0.12)',
                 }}>
-                  <LinearGradient
-                    colors={['rgba(30,37,48,0.6)', 'transparent']}
-                    style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 20, zIndex: 10, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
-                    pointerEvents="none"
-                  />
-                  <ScrollView
-                    nestedScrollEnabled={true}
-                    showsVerticalScrollIndicator={false}
-                    style={{ flex: 1 }}
-                  >
-                    {hydroLogs.slice().reverse().map((log, i) => (
-                      <View key={i} style={{
-                        flexDirection: 'row', alignItems: 'center',
-                        paddingVertical: 7, paddingHorizontal: 10,
-                        borderLeftWidth: 2,
-                        borderLeftColor: i === 0 ? '#00D984' : 'rgba(74,79,85,0.2)',
-                      }}>
-                        <Text style={{ fontSize: 16, width: 26 }}>{log.icon || '💧'}</Text>
-                        <Text style={{ color: '#555E6C', fontSize: 11, width: 42 }}>{log.time}</Text>
-                        <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '600', flex: 1 }}>{log.type || 'eau'}</Text>
-                        <Text style={{ color: '#4DA6FF', fontSize: 13, fontWeight: '800' }}>+{log.amount} ml</Text>
+                  {hydroLogs.slice().reverse().map((log, i, arr) => (
+                    <View key={i} style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      paddingVertical: 10, paddingHorizontal: 14,
+                      borderBottomWidth: i < arr.length - 1 ? 1 : 0,
+                      borderBottomColor: 'rgba(74,79,85,0.1)',
+                      backgroundColor: i === 0 ? 'rgba(0,217,132,0.04)' : 'transparent',
+                    }}>
+                      <Text style={{ fontSize: 18, width: 28 }}>{log.icon || '💧'}</Text>
+                      <View style={{ flex: 1, marginLeft: 8 }}>
+                        <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '600' }}>{log.type || 'eau'}</Text>
+                        <Text style={{ color: '#555E6C', fontSize: 10, marginTop: 1 }}>{log.time}</Text>
                       </View>
-                    ))}
-                  </ScrollView>
-                  <LinearGradient
-                    colors={['transparent', 'rgba(30,37,48,0.6)']}
-                    style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 20, zIndex: 10, borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}
-                    pointerEvents="none"
-                  />
+                      <Text style={{ color: '#4DA6FF', fontSize: 14, fontWeight: '800' }}>+{log.amount} ml</Text>
+                    </View>
+                  ))}
                 </View>
               )}
             </View>
 
-            {/* ═══ DÉBLOQUER HISTORIQUE — lien vers MES STATS ═══ */}
+            {/* ═══ VOIR 7 JOURS ═══ */}
             <TouchableOpacity
               onPress={() => Alert.alert(
                 'Historique Complet',
@@ -1849,59 +1838,48 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
                 backgroundColor: 'rgba(255, 255, 255, 0.04)',
                 borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)',
-                borderRadius: 16, paddingVertical: 16,
-                marginTop: 16, marginHorizontal: 20,
+                borderRadius: 16, paddingVertical: 16, paddingHorizontal: 24,
+                marginTop: 20, marginHorizontal: 24,
               }}
             >
-              <Text style={{ fontSize: 14, marginRight: 8 }}>🔒</Text>
-              <Text style={{ color: '#8892A0', fontSize: 12, fontWeight: '600' }}>Voir 7 jours et +</Text>
+              <Text style={{ fontSize: 14, marginRight: 10 }}>🔒</Text>
+              <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '600' }}>Voir 7 jours et +</Text>
               <View style={{
-                flexDirection: 'row', alignItems: 'center', marginLeft: 10,
+                flexDirection: 'row', alignItems: 'center', marginLeft: 12,
                 backgroundColor: 'rgba(0, 217, 132, 0.08)',
-                borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
+                borderRadius: 10, paddingHorizontal: 12, paddingVertical: 5,
               }}>
-                <Text style={{ color: '#00D984', fontSize: 11, fontWeight: '700' }}>100 Lix</Text>
+                <Text style={{ color: '#00D984', fontSize: 12, fontWeight: '700' }}>100 Lix</Text>
               </View>
             </TouchableOpacity>
 
             {/* ═══ RÉINITIALISER ═══ */}
             <TouchableOpacity
               onPress={() => setShowResetConfirm(true)}
-              style={{ alignSelf: 'center', marginTop: 20, marginBottom: 30 }}
+              style={{ alignSelf: 'center', marginTop: 24, marginBottom: 30 }}
             >
               <Text style={{ color: '#8892A0', fontSize: 11, opacity: 0.5 }}>Réinitialiser les données du jour</Text>
             </TouchableOpacity>
 
-            {/* Modal confirmation reset */}
+            {/* Modal reset */}
             <Modal visible={showResetConfirm} animationType="fade" transparent>
               <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 30 }}>
                 <View style={{
                   backgroundColor: '#1E2530', borderRadius: 20, padding: 24, width: '100%',
                   borderWidth: 1, borderColor: 'rgba(255,59,48,0.2)',
                 }}>
-                  <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 12 }}>
-                    Réinitialiser ?
-                  </Text>
-                  <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
-                    Votre hydratation du jour sera remise à zéro. Cette action est irréversible.
-                  </Text>
+                  <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 12 }}>Réinitialiser ?</Text>
+                  <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>Votre hydratation du jour sera remise à zéro. Cette action est irréversible.</Text>
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <TouchableOpacity
                       onPress={() => setShowResetConfirm(false)}
-                      style={{
-                        flex: 1, paddingVertical: 12, borderRadius: 12,
-                        borderWidth: 1, borderColor: 'rgba(136,146,160,0.2)', alignItems: 'center',
-                      }}
+                      style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(136,146,160,0.2)', alignItems: 'center' }}
                     >
                       <Text style={{ color: '#8892A0', fontSize: 14, fontWeight: '600' }}>Annuler</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => { setCurrentMl(0); setHydroLogs([]); setShowResetConfirm(false); }}
-                      style={{
-                        flex: 1, paddingVertical: 12, borderRadius: 12,
-                        backgroundColor: 'rgba(255,59,48,0.12)',
-                        borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)', alignItems: 'center',
-                      }}
+                      style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: 'rgba(255,59,48,0.12)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)', alignItems: 'center' }}
                     >
                       <Text style={{ color: '#FF3B30', fontSize: 14, fontWeight: '800' }}>Réinitialiser</Text>
                     </TouchableOpacity>
@@ -1909,6 +1887,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                 </View>
               </View>
             </Modal>
+
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>
