@@ -457,8 +457,8 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
     if (highlightMood) {
       const pulse = RNAnimated.loop(
         RNAnimated.sequence([
-          RNAnimated.timing(moodPulse, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-          RNAnimated.timing(moodPulse, { toValue: 0, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+          RNAnimated.timing(moodPulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+          RNAnimated.timing(moodPulse, { toValue: 0, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
         ])
       );
       pulse.start();
@@ -1308,7 +1308,7 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, 
       <MetalCard style={{
         marginHorizontal: 0,
         marginBottom: wp(12),
-        ...(tooltipStep > 0 && { opacity: 0.15, zIndex: 0 }),
+        ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
       }} onPress={onPress}>
 
         {/* ========== LIGNE 1 : Titre à gauche — Données à droite ========== */}
@@ -1633,8 +1633,8 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
     if (tooltipStep > 0) {
       const pulse = RNAnimated.loop(
         RNAnimated.sequence([
-          RNAnimated.timing(tooltipPulse, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
-          RNAnimated.timing(tooltipPulse, { toValue: 0, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
+          RNAnimated.timing(tooltipPulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
+          RNAnimated.timing(tooltipPulse, { toValue: 0, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
         ])
       );
       pulse.start();
@@ -1646,7 +1646,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
 
   const pulseOpacity = tooltipPulse.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.5, 1],
+    outputRange: [0.35, 1],
   });
 
   const pulseScale = tooltipPulse.interpolate({
@@ -1662,7 +1662,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       showsVerticalScrollIndicator={false}
     >
       {/* ====== SALUT PERSONNALISÉ ====== */}
-      <View style={{ marginBottom: wp(6), opacity: tooltipStep > 0 ? 0.15 : 1 }}>
+      <View style={{ marginBottom: wp(6), opacity: tooltipStep > 0 ? 0.05 : 1 }}>
         <Text style={{
           fontSize: fp(14),
           fontWeight: '600',
@@ -1737,7 +1737,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <RNAnimated.View style={{
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2
               ? (tooltipStep === 2 ? pulseOpacity : 1)
-              : 0.15,
+              : 0.05,
             transform: tooltipStep === 2 ? [{ scale: pulseScale }] : [],
           }}>
             <ReactorCore
@@ -1756,7 +1756,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <RNAnimated.View style={{
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3
               ? (tooltipStep === 3 ? pulseOpacity : 1)
-              : 0.15,
+              : 0.05,
             transform: tooltipStep === 3 ? [{ scale: pulseScale }] : [],
           }}>
             <DnaHelix height={REACTOR_SIZE * 1.25} width={DNA_WIDTH} />
@@ -1766,7 +1766,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <RNAnimated.View style={{
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4
               ? (tooltipStep === 4 ? pulseOpacity : 1)
-              : 0.15,
+              : 0.05,
             transform: tooltipStep === 4 ? [{ scale: pulseScale }] : [],
           }}>
             <ReactorCore
@@ -1795,7 +1795,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             alignItems: 'center', flex: 1,
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2
               ? (tooltipStep === 2 ? pulseOpacity : 1)
-              : 0.15,
+              : 0.05,
           }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
@@ -1824,7 +1824,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             alignItems: 'center', flex: 1,
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3
               ? (tooltipStep === 3 ? pulseOpacity : 1)
-              : 0.15,
+              : 0.05,
           }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
@@ -1846,7 +1846,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             alignItems: 'center', flex: 1,
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4
               ? (tooltipStep === 4 ? pulseOpacity : 1)
-              : 0.15,
+              : 0.05,
           }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
@@ -1892,7 +1892,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       <MetalCard style={{
         marginHorizontal: 0,
         marginBottom: wp(12),
-        ...(tooltipStep > 0 && { opacity: 0.15, zIndex: 0 }),
+        ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
       }} onPress={() => Alert.alert('Dernier Repas', 'Détails nutritionnels complets — bientôt disponible')}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
           <ForkKnifeIcon />
@@ -1980,7 +1980,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       <MetalCard style={{
         marginHorizontal: 0,
         marginBottom: wp(12),
-        ...(tooltipStep > 0 && { opacity: 0.15, zIndex: 0 }),
+        ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
       }} onPress={() => Alert.alert('Coach ALIXEN', 'Recommandations personnalisées IA — bientôt disponible')}>
         {/* Header Coach */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
@@ -2093,7 +2093,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <MetalCard style={{
             marginHorizontal: 0,
             marginBottom: 12,
-            ...(tooltipStep > 0 && { opacity: 0.15, zIndex: 0 }),
+            ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
           }}>
             <Text style={s.sectionTitle}>🏃 SUGGESTION ACTIVITÉ</Text>
             <Text style={s.surplusText}>Surplus : +{consumedTotal - burnedExtra - OBJECTIVE} kcal</Text>
@@ -2114,7 +2114,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       <MetalCard style={{
         marginHorizontal: 0,
         marginBottom: wp(12),
-        ...(tooltipStep > 0 && { opacity: 0.15, zIndex: 0 }),
+        ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
       }} onPress={() => Alert.alert(
         'Débloquer Mes Stats',
         'Accédez à vos statistiques sur 7 jours pour 200 Lix ou avec un abonnement Premium.',
@@ -2472,7 +2472,7 @@ export default function App() {
         <View style={{
           position: 'absolute',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
         }} />
 
         {/* Bulle de tooltip — TOUJOURS en bas, position fixe */}
@@ -2827,16 +2827,12 @@ export default function App() {
     }, [moodLevel, isExcited]);
 
     const spawnHeartsAt = (x, y) => {
-      // Limiter la zone de spawn — pas au-dessus de 100px
-      const safeY = Math.max(y, 100);
-      const safeX = Math.max(Math.min(x, W - 30), 30);
-
       const emojis = ['❤️', '🧡', '💛', '💚', '💙', '💜', '🤍'];
       const batch = Array.from({ length: 3 }, (_, i) => ({
         id: Date.now() + i + Math.random(),
         emoji: emojis[Math.floor(Math.random() * emojis.length)],
-        x: safeX + (Math.random() * 30 - 15),
-        y: safeY,
+        x: x,
+        y: y,
       }));
       setHearts(prev => [...prev, ...batch]);
       setTimeout(() => {
@@ -2845,13 +2841,10 @@ export default function App() {
     };
 
     const spawnEnergyAt = (x, y) => {
-      const safeY = Math.max(y, 100);
-      const safeX = Math.max(Math.min(x, W - 30), 30);
-
-      const newParticles = Array.from({ length: 3 }, (_, i) => ({
+      const newParticles = Array.from({ length: 2 }, (_, i) => ({
         id: Date.now() + i + Math.random(),
-        x: safeX + (Math.random() * 30 - 15),
-        y: safeY,
+        x: x,
+        y: y,
         emoji: ['⚡', '✦', '🔥'][Math.floor(Math.random() * 3)],
       }));
       setEnergyParticles(prev => [...prev, ...newParticles]);
