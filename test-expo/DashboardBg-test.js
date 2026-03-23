@@ -2421,13 +2421,13 @@ export default function App() {
         setLastMeal(meals[0]);
       }
 
-      // 4. Vérifier le mood du jour
-      const todayStr = new Date().toISOString().split('T')[0];
+      // 4. Vérifier si un mood a déjà été enregistré aujourd'hui
+      const todayStart = today + 'T00:00:00';
       const { data: todayMood } = await supabase
         .from('moods')
         .select('mood_level, weather')
         .eq('user_id', TEST_USER_ID)
-        .gte('created_at', todayStr + 'T00:00:00')
+        .gte('created_at', todayStart)
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -3375,11 +3375,6 @@ export default function App() {
                   <View style={{ marginTop: 25, alignItems: 'center' }}>
                     <TouchableOpacity
                       onPress={async () => {
-                        setCurrentMood(moodResult);
-                        setMoodFilled(true);
-                        setShowMoodModal(false);
-
-                        // Sauvegarder mood + weather dans Supabase
                         try {
                           // 1. Sauvegarder dans la table moods
                           await supabase.from('moods').insert({
@@ -3387,19 +3382,24 @@ export default function App() {
                             mood_level: moodResult,
                             weather: selectedWeather,
                             tap_count: tapCount,
-                            max_gauge_percent: moodLevel,
+                            max_gauge_percent: Math.round(moodLevel),
                           });
 
-                          // 2. Mettre à jour current_mood et current_weather dans users_profile
+                          // 2. Mettre à jour users_profile avec le mood + météo du jour
                           await supabase.from('users_profile').update({
                             current_mood: moodResult,
                             current_weather: selectedWeather,
-                            last_mood_at: new Date().toISOString(),
                           }).eq('user_id', TEST_USER_ID);
 
                         } catch (e) {
                           console.warn('Mood save error:', e);
+                          // Sauvegarder localement même si Supabase échoue
                         }
+
+                        // Mettre à jour l'état local
+                        setCurrentMood(moodResult);
+                        setMoodFilled(true);
+                        setShowMoodModal(false);
                       }}
                       style={{
                         backgroundColor: '#00D984',
