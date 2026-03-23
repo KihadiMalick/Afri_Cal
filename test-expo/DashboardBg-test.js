@@ -426,7 +426,7 @@ const MoodIcon = ({ tier, size = 42, active = false }) => {
 // ============================================================
 // COMPOSANT — Header Global (Mood + LIXUM + Lix)
 // ============================================================
-const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress, onLixPress }) => {
+const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress, onLixPress, highlightMood }) => {
   // Animation shake pour le mood non rempli
   const shakeAnim = useRef(new RNAnimated.Value(0)).current;
 
@@ -486,16 +486,20 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
               width: 38,
               height: 38,
               borderRadius: 19,
-              borderWidth: 2,
-              borderColor: moodFilled ? '#00D984' : '#FF8C42',
+              borderWidth: highlightMood ? 3 : 2,
+              borderColor: highlightMood ? '#FF8C42' : moodFilled ? '#00D984' : '#FF8C42',
               backgroundColor: 'rgba(21,27,35,0.7)',
               justifyContent: 'center',
               alignItems: 'center',
-              shadowColor: moodFilled ? '#00D984' : '#FF8C42',
+              shadowColor: highlightMood ? '#FF8C42' : moodFilled ? '#00D984' : '#FF8C42',
               shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.3,
-              shadowRadius: 6,
-              elevation: 4,
+              shadowOpacity: highlightMood ? 0.9 : 0.3,
+              shadowRadius: highlightMood ? 25 : 6,
+              elevation: highlightMood ? 20 : 4,
+              ...(highlightMood && {
+                transform: [{ scale: 1.3 }],
+                zIndex: 10001,
+              }),
             }}>
               <MoodIcon tier={currentMood === 'excited' ? 3 : currentMood === 'happy' ? 2 : currentMood === 'chill' ? 1 : 0} size={24} active={true} />
             </View>
@@ -1270,7 +1274,7 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubble
 // ============================================================
 // COMPOSANT — Carte Hydratation compacte (dashboard)
 // ============================================================
-const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, tooltipStep }) => {
+const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }) => {
   const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
   const glasses = Math.round(currentMl / 250);
   const totalGlasses = Math.round(goalMl / 250);
@@ -1278,19 +1282,7 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, 
   const goalL = (goalMl / 1000).toFixed(1);
 
   return (
-      <MetalCard style={{
-        marginHorizontal: 0,
-        marginBottom: wp(12),
-        ...(tooltipStep === 2 && {
-          borderColor: '#4DA6FF',
-          borderWidth: 2,
-          shadowColor: '#4DA6FF',
-          shadowOpacity: 0.6,
-          shadowRadius: 20,
-          elevation: 20,
-          zIndex: 10001,
-        }),
-      }} onPress={onPress}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={onPress}>
 
         {/* ========== LIGNE 1 : Titre à gauche — Données à droite ========== */}
         <View style={{
@@ -1641,13 +1633,13 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       <MetalCard style={{
         marginHorizontal: 0,
         marginBottom: wp(12),
-        ...(tooltipStep === 1 && {
-          borderColor: '#FF8C42',
-          borderWidth: 2,
-          shadowColor: '#FF8C42',
-          shadowOpacity: 0.6,
-          shadowRadius: 20,
-          elevation: 20,
+        ...([2, 3, 4].includes(tooltipStep) && {
+          borderColor: tooltipStep === 2 ? '#FF8C42' : tooltipStep === 3 ? '#00D984' : '#4DA6FF',
+          borderWidth: 2.5,
+          shadowColor: tooltipStep === 2 ? '#FF8C42' : tooltipStep === 3 ? '#00D984' : '#4DA6FF',
+          shadowOpacity: 0.8,
+          shadowRadius: 30,
+          elevation: 25,
           zIndex: 10001,
         }),
       }}>
@@ -1802,7 +1794,6 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         gender={gender}
         onPress={onHydrationPress}
         sportAlert={sportAlert}
-        tooltipStep={tooltipStep}
       />
 
       {/* ======================================================= */}
@@ -1810,19 +1801,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       {/* ======================================================= */}
 
       {/* DERNIER REPAS */}
-      <MetalCard style={{
-        marginHorizontal: 0,
-        marginBottom: wp(12),
-        ...(tooltipStep === 3 && {
-          borderColor: '#00D984',
-          borderWidth: 2,
-          shadowColor: '#00D984',
-          shadowOpacity: 0.6,
-          shadowRadius: 20,
-          elevation: 20,
-          zIndex: 10001,
-        }),
-      }} onPress={() => Alert.alert('Dernier Repas', 'Détails nutritionnels complets — bientôt disponible')}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert('Dernier Repas', 'Détails nutritionnels complets — bientôt disponible')}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
           <ForkKnifeIcon />
           <Text style={{
@@ -1906,19 +1885,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       </MetalCard>
 
       {/* COACH ALIXEN */}
-      <MetalCard style={{
-        marginHorizontal: 0,
-        marginBottom: wp(12),
-        ...(tooltipStep === 4 && {
-          borderColor: '#00D984',
-          borderWidth: 2,
-          shadowColor: '#00D984',
-          shadowOpacity: 0.6,
-          shadowRadius: 20,
-          elevation: 20,
-          zIndex: 10001,
-        }),
-      }} onPress={() => Alert.alert('Coach ALIXEN', 'Recommandations personnalisées IA — bientôt disponible')}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert('Coach ALIXEN', 'Recommandations personnalisées IA — bientôt disponible')}>
         {/* Header Coach */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
           {/* Icône Coach ALIXEN — Avatar PNG */}
@@ -2052,35 +2019,57 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           { text: 'Débloquer', onPress: () => console.log('Navigate to shop') },
         ]
       )}>
+        {/* Ligne 1 : Titre */}
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          marginBottom: wp(8),
         }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <StatsIcon />
-            <Text style={{
-              color: '#EAEEF3',
-              fontSize: fp(14),
-              fontWeight: '700',
-              letterSpacing: wp(1),
-              marginLeft: wp(8),
-            }}>MES STATS</Text>
-            <Text style={{
-              color: '#8892A0',
-              fontSize: fp(10),
-              marginLeft: wp(4),
-            }}>(7 jours)</Text>
-          </View>
+          <StatsIcon />
+          <Text style={{
+            color: '#EAEEF3',
+            fontSize: fp(14),
+            fontWeight: '700',
+            letterSpacing: wp(1),
+            marginLeft: wp(8),
+          }}>MES STATS</Text>
+          <Text style={{
+            color: '#6B7280',
+            fontSize: fp(10),
+            marginLeft: wp(4),
+          }}>(7 jours)</Text>
+        </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginRight: wp(20) }}>
-            <LockIcon size={wp(16)} />
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <LixCoinIcon size={wp(12)} />
-              <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700', marginLeft: wp(3) }}>200</Text>
-            </View>
-            <Text style={{ color: '#6B7280', fontSize: fp(9) }}>ou</Text>
-            <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>★ Pro</Text>
+        {/* Ligne 2 : Lock + Prix — centré */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: wp(8),
+        }}>
+          <LockIcon size={wp(14)} />
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0,217,132,0.08)',
+            borderRadius: wp(8),
+            paddingHorizontal: wp(8),
+            paddingVertical: wp(3),
+          }}>
+            <LixCoinIcon size={wp(12)} />
+            <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700', marginLeft: wp(3) }}>200 Lix</Text>
+          </View>
+          <Text style={{ color: '#6B7280', fontSize: fp(10) }}>ou</Text>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: 'rgba(212,175,55,0.08)',
+            borderRadius: wp(8),
+            paddingHorizontal: wp(8),
+            paddingVertical: wp(3),
+          }}>
+            <StarIcon />
+            <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '700', marginLeft: wp(3) }}>Premium</Text>
           </View>
         </View>
       </MetalCard>
@@ -2334,28 +2323,32 @@ export default function App() {
 
     const steps = [
       {
-        title: 'Bilan Énergétique',
-        description: 'Vos deux réacteurs montrent les calories consommées et restantes. L\'ADN central affiche votre Score Vitalité.',
-        icon: '⚡',
+        title: 'Votre Humeur',
+        description: 'Tapez sur ce visage chaque jour pour enregistrer votre humeur. Cela personnalise vos recettes et vos recommandations d\'activité.',
+        icon: '😊',
         color: '#FF8C42',
+        target: 'mood',
       },
       {
-        title: 'Hydratation',
-        description: 'Suivez votre consommation d\'eau. L\'app calcule automatiquement l\'eau perdue pendant le sport.',
-        icon: '💧',
+        title: 'Calories Consommées',
+        description: 'Ce réacteur orange montre tout ce que vous avez mangé aujourd\'hui. Plus vous mangez, plus le glow s\'étend. Le satellite vert représente votre objectif.',
+        icon: '🔥',
+        color: '#FF8C42',
+        target: 'bilan',
+      },
+      {
+        title: 'Score Vitalité',
+        description: 'L\'ADN central calcule votre score de santé sur 100. Il combine nutrition, hydratation, activité physique et régularité. Visez au-dessus de 80 !',
+        icon: '🧬',
+        color: '#00D984',
+        target: 'bilan',
+      },
+      {
+        title: 'Calories Restantes',
+        description: 'Ce réacteur bleu montre combien vous pouvez encore manger. Le sport augmente ce nombre — c\'est votre bonus activité !',
+        icon: '💪',
         color: '#4DA6FF',
-      },
-      {
-        title: 'Dernier Repas',
-        description: 'Votre dernier repas scanné avec ses macronutriments détaillés. Tapez pour voir plus.',
-        icon: '🍽️',
-        color: '#00D984',
-      },
-      {
-        title: 'Coach ALIXEN',
-        description: 'Votre coach IA personnel. Il analyse vos données et vous donne des conseils adaptés chaque jour.',
-        icon: '🧠',
-        color: '#00D984',
+        target: 'bilan',
       },
     ];
 
@@ -2373,7 +2366,7 @@ export default function App() {
         <View style={{
           position: 'absolute',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backgroundColor: 'rgba(0, 0, 0, 0.82)',
         }} />
 
         {/* Bulle de tooltip — TOUJOURS en bas, position fixe */}
@@ -2453,7 +2446,7 @@ export default function App() {
                 } else {
                   setTooltipStep(tooltipStep + 1);
                   // Scroll vers la carte suivante
-                  const scrollPositions = [0, 0, wp(150), wp(320)];
+                  const scrollPositions = [0, 0, 0, 0];
                   scrollRef.current?.scrollTo({ y: scrollPositions[tooltipStep] || 0, animated: true });
                 }
               }}
@@ -3237,6 +3230,7 @@ export default function App() {
             notifCount={notifCount}
             onMoodPress={() => setShowMoodModal(true)}
             onLixPress={() => setActiveTab('profile')}
+            highlightMood={tooltipStep === 1}
           />
           {renderPage()}
         </SafeAreaView>
