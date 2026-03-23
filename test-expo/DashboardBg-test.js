@@ -1474,7 +1474,7 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, 
 // ============================================================
 // COMPOSANT — Page Hydratation Fullscreen (Modal)
 // ============================================================
-const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gender, hydroLogs, setHydroLogs }) => {
+const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gender, hydroLogs, setHydroLogs, onAddBeverage }) => {
   const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
   const glasses = Math.round(currentMl / 250);
   const totalGlasses = Math.round(goalMl / 250);
@@ -1588,22 +1588,23 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
               ))}
             </View>
 
-            {/* Bouton AJOUTER BOISSONS — PRO */}
-            <TouchableOpacity style={s.addBeverageBtn} activeOpacity={0.7} onPress={() => {
-              setShowBeverageModal(true);
-              setBeverageCategory('all');
-              setSelectedBeverage(null);
-              setBeverageSearch('');
-              fetchBeveragesByCategory('all');
-            }}>
-              <Text style={s.addBeverageBtnText}>AJOUTER BOISSONS 🥤</Text>
-              <View style={s.proBadgeLg}>
-                <Ionicons name="lock-closed" size={10} color="#D4AF37" />
-                <Text style={{ color: '#D4AF37', fontSize: 10, fontWeight: '800', marginLeft: 3 }}>PRO</Text>
-              </View>
+            {/* Bouton AJOUTER BOISSONS */}
+            <TouchableOpacity
+              style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                backgroundColor: 'rgba(0, 217, 132, 0.08)', borderRadius: 14,
+                borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.25)',
+                paddingVertical: 14, paddingHorizontal: 24, marginTop: 18,
+              }}
+              activeOpacity={0.7}
+              onPress={onAddBeverage}
+            >
+              <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '800', letterSpacing: 0.5 }}>
+                AJOUTER BOISSONS 🥤
+              </Text>
             </TouchableOpacity>
             <Text style={{ color: '#555E6C', fontSize: 10, marginTop: 4, textAlign: 'center' }}>
-              L'IA analyse la composition en eau de toute boisson
+              Thé, café, jus, lait, boissons africaines et plus
             </Text>
 
             {/* Historique */}
@@ -3665,6 +3666,13 @@ export default function App() {
           gender={gender}
           hydroLogs={hydroLogs}
           setHydroLogs={setHydroLogs}
+          onAddBeverage={() => {
+            setShowBeverageModal(true);
+            setBeverageCategory('all');
+            setSelectedBeverage(null);
+            setBeverageSearch('');
+            fetchBeveragesByCategory('all');
+          }}
         />
 
         {/* Surplus alert modal */}
