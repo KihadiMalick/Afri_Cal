@@ -488,25 +488,15 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
               borderRadius: 19,
               borderWidth: highlightMood ? 3 : 2,
               borderColor: highlightMood ? '#FF8C42' : moodFilled ? '#00D984' : '#FF8C42',
-              backgroundColor: 'rgba(21,27,35,0.7)',
+              backgroundColor: highlightMood ? 'rgba(255,140,66,0.25)' : 'rgba(21,27,35,0.7)',
               justifyContent: 'center',
               alignItems: 'center',
               shadowColor: highlightMood ? '#FF8C42' : moodFilled ? '#00D984' : '#FF8C42',
               shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: highlightMood ? 0.9 : 0.3,
-              shadowRadius: highlightMood ? 25 : 6,
-              elevation: highlightMood ? 20 : 4,
-              ...(highlightMood && {
-                shadowColor: '#FF8C42',
-                shadowOpacity: 0.9,
-                shadowRadius: 25,
-                elevation: 20,
-                borderWidth: 3,
-                borderColor: '#FF8C42',
-                backgroundColor: 'rgba(255,140,66,0.15)',
-                transform: [{ scale: 1.3 }],
-                zIndex: 10001,
-              }),
+              shadowOpacity: highlightMood ? 1 : 0.3,
+              shadowRadius: highlightMood ? 20 : 6,
+              elevation: highlightMood ? 15 : 4,
+              transform: [{ scale: highlightMood ? 1.4 : 1 }],
             }}>
               <MoodIcon tier={currentMood === 'excited' ? 3 : currentMood === 'happy' ? 2 : currentMood === 'chill' ? 1 : 0} size={24} active={true} />
             </View>
@@ -1281,7 +1271,7 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubble
 // ============================================================
 // COMPOSANT — Carte Hydratation compacte (dashboard)
 // ============================================================
-const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }) => {
+const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, tooltipStep }) => {
   const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
   const glasses = Math.round(currentMl / 250);
   const totalGlasses = Math.round(goalMl / 250);
@@ -1289,7 +1279,11 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert }
   const goalL = (goalMl / 1000).toFixed(1);
 
   return (
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={onPress}>
+      <MetalCard style={{
+        marginHorizontal: 0,
+        marginBottom: wp(12),
+        ...(tooltipStep > 0 && { opacity: 0.15, zIndex: 0 }),
+      }} onPress={onPress}>
 
         {/* ========== LIGNE 1 : Titre à gauche — Données à droite ========== */}
         <View style={{
@@ -1614,7 +1608,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       showsVerticalScrollIndicator={false}
     >
       {/* ====== SALUT PERSONNALISÉ ====== */}
-      <View style={{ marginBottom: wp(6) }}>
+      <View style={{ marginBottom: wp(6), opacity: tooltipStep > 0 ? 0.15 : 1 }}>
         <Text style={{
           fontSize: fp(14),
           fontWeight: '600',
@@ -1643,22 +1637,9 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         ...([2, 3, 4].includes(tooltipStep) && {
           borderColor: tooltipStep === 2 ? '#FF8C42' : tooltipStep === 3 ? '#00D984' : '#4DA6FF',
           borderWidth: 2,
-          backgroundColor: '#1E2530',
-          opacity: 1,
           zIndex: 10001,
         }),
       }}>
-        {/* Overlay clair quand tooltip actif */}
-        {[2, 3, 4].includes(tooltipStep) && (
-          <View style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(30, 37, 48, 0.85)',
-            borderRadius: wp(17),
-            zIndex: 0,
-          }} />
-        )}
-
         {/* HEADER — une seule ligne, tout aligné */}
         <View style={{
           flexDirection: 'row',
@@ -1699,31 +1680,64 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           paddingVertical: 4,
         }}>
           {/* RÉACTEUR GAUCHE — Consommé (sens horaire) */}
-          <ReactorCore
-            size={REACTOR_SIZE}
-            value={consumedTotal}
-            percentage={Math.round((consumedTotal / OBJECTIVE) * 100)}
-            label="Consommé"
-            color="#FF8C42"
-            colorLight="#FFB87A"
-            colorDark="#CC6020"
-            clockwise={true}
-          />
+          <View style={{
+            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2 ? 1 : 0.15,
+            ...(tooltipStep === 2 && {
+              shadowColor: '#FF8C42',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 1,
+              shadowRadius: 25,
+              elevation: 20,
+            }),
+          }}>
+            <ReactorCore
+              size={REACTOR_SIZE}
+              value={consumedTotal}
+              percentage={Math.round((consumedTotal / OBJECTIVE) * 100)}
+              label="Consommé"
+              color="#FF8C42"
+              colorLight="#FFB87A"
+              colorDark="#CC6020"
+              clockwise={true}
+            />
+          </View>
 
           {/* ADN CENTRAL — Score Vitalité (125% de REACTOR_SIZE) */}
-          <DnaHelix height={REACTOR_SIZE * 1.25} width={DNA_WIDTH} />
+          <View style={{
+            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3 ? 1 : 0.15,
+            ...(tooltipStep === 3 && {
+              shadowColor: '#00D984',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 1,
+              shadowRadius: 25,
+              elevation: 20,
+            }),
+          }}>
+            <DnaHelix height={REACTOR_SIZE * 1.25} width={DNA_WIDTH} />
+          </View>
 
           {/* RÉACTEUR DROIT — Reste (sens antihoraire) */}
-          <ReactorCore
-            size={REACTOR_SIZE}
-            value={remaining}
-            percentage={Math.round((remaining / OBJECTIVE) * 100)}
-            label="Reste"
-            color="#4DA6FF"
-            colorLight="#8DCAFF"
-            colorDark="#2B7ACC"
-            clockwise={false}
-          />
+          <View style={{
+            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4 ? 1 : 0.15,
+            ...(tooltipStep === 4 && {
+              shadowColor: '#4DA6FF',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 1,
+              shadowRadius: 25,
+              elevation: 20,
+            }),
+          }}>
+            <ReactorCore
+              size={REACTOR_SIZE}
+              value={remaining}
+              percentage={Math.round((remaining / OBJECTIVE) * 100)}
+              label="Reste"
+              color="#4DA6FF"
+              colorLight="#8DCAFF"
+              colorDark="#2B7ACC"
+              clockwise={false}
+            />
+          </View>
         </View>
 
         {/* ===== LABELS — version épurée ===== */}
@@ -1735,7 +1749,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           marginTop: wp(10),
         }}>
           {/* Consommé */}
-          <View style={{ alignItems: 'center', flex: 1 }}>
+          <View style={{ alignItems: 'center', flex: 1, opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2 ? 1 : 0.15 }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
               fontSize: fp(15),
@@ -1759,7 +1773,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           </View>
 
           {/* Vitalité */}
-          <View style={{ alignItems: 'center', flex: 1 }}>
+          <View style={{ alignItems: 'center', flex: 1, opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3 ? 1 : 0.15 }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
               fontSize: fp(15),
@@ -1776,7 +1790,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           </View>
 
           {/* Reste */}
-          <View style={{ alignItems: 'center', flex: 1 }}>
+          <View style={{ alignItems: 'center', flex: 1, opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4 ? 1 : 0.15 }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
               fontSize: fp(15),
@@ -1810,6 +1824,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         gender={gender}
         onPress={onHydrationPress}
         sportAlert={sportAlert}
+        tooltipStep={tooltipStep}
       />
 
       {/* ======================================================= */}
@@ -1817,7 +1832,11 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       {/* ======================================================= */}
 
       {/* DERNIER REPAS */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert('Dernier Repas', 'Détails nutritionnels complets — bientôt disponible')}>
+      <MetalCard style={{
+        marginHorizontal: 0,
+        marginBottom: wp(12),
+        ...(tooltipStep > 0 && { opacity: 0.15, zIndex: 0 }),
+      }} onPress={() => Alert.alert('Dernier Repas', 'Détails nutritionnels complets — bientôt disponible')}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
           <ForkKnifeIcon />
           <Text style={{
@@ -1901,7 +1920,11 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       </MetalCard>
 
       {/* COACH ALIXEN */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert('Coach ALIXEN', 'Recommandations personnalisées IA — bientôt disponible')}>
+      <MetalCard style={{
+        marginHorizontal: 0,
+        marginBottom: wp(12),
+        ...(tooltipStep > 0 && { opacity: 0.15, zIndex: 0 }),
+      }} onPress={() => Alert.alert('Coach ALIXEN', 'Recommandations personnalisées IA — bientôt disponible')}>
         {/* Header Coach */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
           {/* Icône Coach ALIXEN — Avatar PNG */}
@@ -2010,7 +2033,11 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       {/* SUGGESTION ACTIVITÉ (dynamique basée sur surplus) */}
       {consumedTotal - burnedExtra > OBJECTIVE && (
         <>
-          <MetalCard style={{ marginHorizontal: 0, marginBottom: 12 }}>
+          <MetalCard style={{
+            marginHorizontal: 0,
+            marginBottom: 12,
+            ...(tooltipStep > 0 && { opacity: 0.15, zIndex: 0 }),
+          }}>
             <Text style={s.sectionTitle}>🏃 SUGGESTION ACTIVITÉ</Text>
             <Text style={s.surplusText}>Surplus : +{consumedTotal - burnedExtra - OBJECTIVE} kcal</Text>
             <View style={{ gap: 8, marginTop: 10 }}>
@@ -2027,7 +2054,11 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       )}
 
       {/* STATS AVANCÉES — FLOUTÉES */}
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12) }} onPress={() => Alert.alert(
+      <MetalCard style={{
+        marginHorizontal: 0,
+        marginBottom: wp(12),
+        ...(tooltipStep > 0 && { opacity: 0.15, zIndex: 0 }),
+      }} onPress={() => Alert.alert(
         'Débloquer Mes Stats',
         'Accédez à vos statistiques sur 7 jours pour 200 Lix ou avec un abonnement Premium.',
         [
@@ -2335,50 +2366,6 @@ export default function App() {
     ? `🏃 -${sportWaterLoss}ml (${activities.map(a => ACTIVITY_LABELS[a.name] || a.name).join(', ')})`
     : null;
 
-  // ===== TOOLTIP ARROW — Flèche animée pointant l'élément =====
-  const TooltipArrow = ({ direction, color, x, y }) => {
-    const bounceAnim = useRef(new RNAnimated.Value(0)).current;
-
-    useEffect(() => {
-      RNAnimated.loop(
-        RNAnimated.sequence([
-          RNAnimated.timing(bounceAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-          RNAnimated.timing(bounceAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
-        ])
-      ).start();
-      return () => bounceAnim.stopAnimation();
-    }, []);
-
-    const translateY = bounceAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, direction === 'up' ? -10 : 10],
-    });
-
-    return (
-      <RNAnimated.View style={{
-        position: 'absolute',
-        left: x,
-        top: y,
-        zIndex: 10002,
-        transform: [{ translateY }],
-      }}>
-        <Svg width={wp(30)} height={wp(40)} viewBox="0 0 30 40">
-          {direction === 'up' ? (
-            <>
-              <Path d="M15 0 L5 15 L12 15 L12 40 L18 40 L18 15 L25 15 Z" fill={color} opacity={0.9} />
-              <Path d="M15 0 L5 15 L12 15 L12 25 L18 25 L18 15 L25 15 Z" fill={color} opacity={0.4} />
-            </>
-          ) : (
-            <>
-              <Path d="M15 40 L5 25 L12 25 L12 0 L18 0 L18 25 L25 25 Z" fill={color} opacity={0.9} />
-              <Path d="M15 40 L5 25 L12 25 L12 15 L18 15 L18 25 L25 25 Z" fill={color} opacity={0.4} />
-            </>
-          )}
-        </Svg>
-      </RNAnimated.View>
-    );
-  };
-
   // ===== TOOLTIP OVERLAY — Tutoriel guidé 4 étapes =====
   const TooltipOverlay = () => {
     if (tooltipStep === 0) return null;
@@ -2428,50 +2415,8 @@ export default function App() {
         <View style={{
           position: 'absolute',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.82)',
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
         }} />
-
-        {/* Flèches animées pointant vers l'élément */}
-
-        {/* Étape 1 : Flèche vers le Mood icon en haut */}
-        {tooltipStep === 1 && (
-          <TooltipArrow
-            direction="up"
-            color="#FF8C42"
-            x={W / 2 - wp(15)}
-            y={wp(55)}
-          />
-        )}
-
-        {/* Étape 2 : Flèche vers le réacteur GAUCHE (Consommé) */}
-        {tooltipStep === 2 && (
-          <TooltipArrow
-            direction="up"
-            color="#FF8C42"
-            x={wp(55)}
-            y={wp(120)}
-          />
-        )}
-
-        {/* Étape 3 : Flèche vers l'ADN CENTRAL (Vitalité) */}
-        {tooltipStep === 3 && (
-          <TooltipArrow
-            direction="up"
-            color="#00D984"
-            x={W / 2 - wp(15)}
-            y={wp(120)}
-          />
-        )}
-
-        {/* Étape 4 : Flèche vers le réacteur DROIT (Reste) */}
-        {tooltipStep === 4 && (
-          <TooltipArrow
-            direction="up"
-            color="#4DA6FF"
-            x={W - wp(85)}
-            y={wp(120)}
-          />
-        )}
 
         {/* Bulle de tooltip — TOUJOURS en bas, position fixe */}
         <View style={{
