@@ -1474,6 +1474,169 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, 
 // ============================================================
 // COMPOSANT — Page Hydratation Fullscreen (Modal)
 // ============================================================
+const HydrationClock = ({ logs, totalMl, goalMl }) => {
+  const [selectedArc, setSelectedArc] = useState(null);
+  const clockSize = W - 80;
+  const center = clockSize / 2;
+  const outerR = center - 10;
+  const innerR = outerR - 30;
+  const hoursRange = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
+  const totalHours = hoursRange.length;
+
+  const hourToAngle = (h, m = 0) => {
+    const idx = h - 6 + m / 60;
+    return (idx / totalHours) * 360 - 90;
+  };
+
+  const polarToXY = (angleDeg, radius) => {
+    const rad = (angleDeg * Math.PI) / 180;
+    return {
+      x: center + radius * Math.cos(rad),
+      y: center + radius * Math.sin(rad),
+    };
+  };
+
+  const describeArc = (startAngle, endAngle, r1, r2) => {
+    const s1 = polarToXY(startAngle, r1);
+    const e1 = polarToXY(endAngle, r1);
+    const s2 = polarToXY(endAngle, r2);
+    const e2 = polarToXY(startAngle, r2);
+    const sweep = endAngle - startAngle;
+    const largeArc = sweep > 180 ? 1 : 0;
+    return [
+      `M ${s1.x} ${s1.y}`,
+      `A ${r1} ${r1} 0 ${largeArc} 1 ${e1.x} ${e1.y}`,
+      `L ${s2.x} ${s2.y}`,
+      `A ${r2} ${r2} 0 ${largeArc} 0 ${e2.x} ${e2.y}`,
+      'Z',
+    ].join(' ');
+  };
+
+  const groupedByHour = {};
+  logs.forEach((log) => {
+    const parts = log.time.split(':');
+    const h = parseInt(parts[0]);
+    const m = parseInt(parts[1] || 0);
+    const key = h;
+    if (!groupedByHour[key]) groupedByHour[key] = [];
+    groupedByHour[key].push({ ...log, hour: h, minute: m });
+  });
+
+  const arcs = [];
+  Object.entries(groupedByHour).forEach(([hourStr, entries]) => {
+    const h = parseInt(hourStr);
+    if (h < 6 || h > 23) return;
+    const totalAmount = entries.reduce((s, e) => s + (e.amount || 0), 0);
+    const startAngle = hourToAngle(h, 0) + 1;
+    const endAngle = hourToAngle(h, 55) - 1;
+    const maxBarR = outerR;
+    const minBarR = innerR + 4;
+    const ratio = Math.min(totalAmount / 500, 1);
+    const barR = minBarR + (maxBarR - minBarR) * ratio;
+    const isWater = entries.every((e) => !e.type || e.type === 'eau');
+    arcs.push({
+      key: h,
+      path: describeArc(startAngle, endAngle, barR, minBarR),
+      color: isWater ? '#4DA6FF' : '#00D984',
+      opacity: 0.7 + ratio * 0.3,
+      totalAmount,
+      entries,
+      midAngle: (startAngle + endAngle) / 2,
+      midR: (barR + minBarR) / 2,
+    });
+  });
+
+  return (
+    <View style={{ alignItems: 'center', marginVertical: 8 }}>
+      <Pressable onPress={() => setSelectedArc(null)}>
+        <Svg width={clockSize} height={clockSize} viewBox={`0 0 ${clockSize} ${clockSize}`}>
+          <Circle cx={center} cy={center} r={outerR} fill="none" stroke="rgba(74,79,85,0.2)" strokeWidth={1} />
+          <Circle cx={center} cy={center} r={innerR} fill="none" stroke="rgba(74,79,85,0.12)" strokeWidth={0.5} />
+          <Circle cx={center} cy={center} r={innerR - 2} fill="rgba(13,17,23,0.3)" />
+
+          {hoursRange.map((h) => {
+            const angle = hourToAngle(h, 30);
+            const tickStart = polarToXY(angle, outerR - 2);
+            const tickEnd = polarToXY(angle, outerR - 8);
+            const labelPos = polarToXY(angle, outerR + 14);
+            const isMajor = h % 3 === 0;
+            return (
+              <G key={h}>
+                <Line
+                  x1={tickStart.x} y1={tickStart.y}
+                  x2={tickEnd.x} y2={tickEnd.y}
+                  stroke={isMajor ? '#8892A0' : 'rgba(74,79,85,0.4)'}
+                  strokeWidth={isMajor ? 1.5 : 0.8}
+                />
+                {isMajor && (
+                  <SvgText
+                    x={labelPos.x} y={labelPos.y}
+                    fill="#8892A0"
+                    fontSize={10}
+                    fontWeight="700"
+                    textAnchor="middle"
+                    alignmentBaseline="central"
+                  >{h}h</SvgText>
+                )}
+              </G>
+            );
+          })}
+
+          {arcs.map((arc) => (
+            <Path
+              key={arc.key}
+              d={arc.path}
+              fill={selectedArc === arc.key ? arc.color : arc.color + 'AA'}
+              opacity={arc.opacity}
+              onPress={() => setSelectedArc(selectedArc === arc.key ? null : arc.key)}
+            />
+          ))}
+
+          <SvgText
+            x={center} y={center - 10}
+            fill="#EAEEF3"
+            fontSize={22}
+            fontWeight="900"
+            textAnchor="middle"
+          >{totalMl.toLocaleString('fr-FR')}</SvgText>
+          <SvgText
+            x={center} y={center + 10}
+            fill="#555E6C"
+            fontSize={11}
+            fontWeight="600"
+            textAnchor="middle"
+          >/ {goalMl.toLocaleString('fr-FR')} ml</SvgText>
+        </Svg>
+      </Pressable>
+
+      {selectedArc !== null && groupedByHour[selectedArc] && (
+        <View style={{
+          marginTop: -10,
+          backgroundColor: 'rgba(30,37,48,0.95)',
+          borderRadius: 14, padding: 12,
+          borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+          width: W - 80,
+        }}>
+          <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>
+            {selectedArc}h00
+          </Text>
+          {groupedByHour[selectedArc].map((entry, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+              <Text style={{ fontSize: 16, width: 24 }}>{entry.icon || '💧'}</Text>
+              <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '600', flex: 1 }}>
+                {entry.type || 'eau'}
+              </Text>
+              <Text style={{ color: '#4DA6FF', fontSize: 13, fontWeight: '800' }}>
+                +{entry.amount} ml
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+};
+
 const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gender, hydroLogs, setHydroLogs, onAddBeverage, showResetConfirm, setShowResetConfirm }) => {
   const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
   const glasses = Math.round(currentMl / 250);
@@ -1620,50 +1783,11 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
               </Text>
             </TouchableOpacity>
 
-            {/* ═══ HISTORIQUE — Liste compacte avec hauteur max ═══ */}
-            <View style={{ marginHorizontal: 20, marginTop: 16 }}>
-              <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '800', letterSpacing: 2, marginBottom: 8 }}>AUJOURD'HUI</Text>
-
-              {hydroLogs.length === 0 ? (
-                <View style={{
-                  backgroundColor: 'rgba(30,37,48,0.3)',
-                  borderRadius: 12, padding: 16,
-                  borderWidth: 1, borderColor: 'rgba(74,79,85,0.15)',
-                  alignItems: 'center',
-                }}>
-                  <Text style={{ fontSize: 24, marginBottom: 6 }}>💧</Text>
-                  <Text style={{ color: '#555E6C', fontSize: 12, textAlign: 'center' }}>
-                    Ajoutez votre première boisson du jour
-                  </Text>
-                </View>
-              ) : (
-                <View style={{ maxHeight: 180, overflow: 'hidden' }}>
-                  {hydroLogs.slice().reverse().slice(0, 5).map((log, i) => (
-                    <View key={i} style={{
-                      flexDirection: 'row', alignItems: 'center',
-                      paddingVertical: 6, paddingHorizontal: 10,
-                      marginBottom: 4,
-                      backgroundColor: i === 0 ? 'rgba(0,217,132,0.04)' : 'transparent',
-                      borderRadius: 8,
-                      borderLeftWidth: 2,
-                      borderLeftColor: i === 0 ? '#00D984' : 'rgba(74,79,85,0.2)',
-                    }}>
-                      <Text style={{ fontSize: 14, width: 24 }}>{log.icon || '💧'}</Text>
-                      <Text style={{ color: '#8892A0', fontSize: 11, width: 40 }}>{log.time}</Text>
-                      <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '600', flex: 1 }}>{log.type || 'eau'}</Text>
-                      <Text style={{
-                        color: '#4DA6FF', fontSize: 12, fontWeight: '800',
-                      }}>+{log.amount} ml</Text>
-                    </View>
-                  ))}
-                  {hydroLogs.length > 5 && (
-                    <View style={{ alignItems: 'center', marginTop: 4 }}>
-                      <Text style={{ color: '#555E6C', fontSize: 11 }}>▼ {hydroLogs.length - 5} entrée{hydroLogs.length - 5 > 1 ? 's' : ''} de plus</Text>
-                    </View>
-                  )}
-                </View>
-              )}
+            {/* ═══ CADRAN MONTRE HYDRATATION ═══ */}
+            <View style={{ marginHorizontal: 20, marginTop: 12 }}>
+              <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '800', letterSpacing: 2, marginBottom: 4, textAlign: 'center' }}>AUJOURD'HUI</Text>
             </View>
+            <HydrationClock logs={hydroLogs} totalMl={currentMl} goalMl={goalMl} />
 
             {/* ═══ DÉBLOQUER HISTORIQUE — lien vers MES STATS ═══ */}
             <TouchableOpacity
