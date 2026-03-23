@@ -1637,7 +1637,7 @@ const HydrationClock = ({ logs, totalMl, goalMl }) => {
   );
 };
 
-const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gender, hydroLogs, setHydroLogs, onAddBeverage, showResetConfirm, setShowResetConfirm }) => {
+const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gender, hydroLogs, setHydroLogs, onAddBeverage, showResetConfirm, setShowResetConfirm, showHistoryLock, setShowHistoryLock }) => {
   const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
   const glasses = Math.round(currentMl / 250);
   const totalGlasses = Math.round(goalMl / 250);
@@ -1826,14 +1826,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 
             {/* ═══ VOIR 7 JOURS ═══ */}
             <TouchableOpacity
-              onPress={() => Alert.alert(
-                'Historique Complet',
-                'Accédez à votre historique sur 7 jours pour 100 Lix.',
-                [
-                  { text: 'Plus tard', style: 'cancel' },
-                  { text: 'Débloquer 100 Lix', onPress: () => console.log('unlock history') },
-                ]
-              )}
+              onPress={() => setShowHistoryLock(true)}
               style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
                 backgroundColor: 'rgba(255, 255, 255, 0.04)',
@@ -1860,6 +1853,41 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
             >
               <Text style={{ color: '#8892A0', fontSize: 11, opacity: 0.5 }}>Réinitialiser les données du jour</Text>
             </TouchableOpacity>
+
+            {/* Modal historique 7 jours */}
+            <Modal visible={showHistoryLock} animationType="fade" transparent>
+              <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 30 }}>
+                <View style={{
+                  backgroundColor: '#1E2530', borderRadius: 20, padding: 24, width: '100%',
+                  borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+                }}>
+                  <Text style={{ fontSize: 32, textAlign: 'center', marginBottom: 10 }}>🔒</Text>
+                  <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 8 }}>Historique Complet</Text>
+                  <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
+                    Accédez à votre historique sur 7 jours et suivez votre progression d'hydratation.
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <TouchableOpacity
+                      onPress={() => setShowHistoryLock(false)}
+                      style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(136,146,160,0.2)', alignItems: 'center' }}
+                    >
+                      <Text style={{ color: '#8892A0', fontSize: 14, fontWeight: '600' }}>Plus tard</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => { setShowHistoryLock(false); console.log('unlock history'); }}
+                      style={{
+                        flex: 1, paddingVertical: 14, borderRadius: 12,
+                        backgroundColor: 'rgba(0,217,132,0.12)',
+                        borderWidth: 1, borderColor: 'rgba(0,217,132,0.3)', alignItems: 'center',
+                        flexDirection: 'row', justifyContent: 'center', gap: 6,
+                      }}
+                    >
+                      <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '800' }}>100 Lix</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
 
             {/* Modal reset */}
             <Modal visible={showResetConfirm} animationType="fade" transparent>
@@ -2884,6 +2912,7 @@ export default function App() {
   const [beverageToast, setBeverageToast] = useState(null);
   const [hydroModalVisible, setHydroModalVisible] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showHistoryLock, setShowHistoryLock] = useState(false);
   const [surplusAlertVisible, setSurplusAlertVisible] = useState(false);
   const [hydroLogs, setHydroLogs] = useState([]);
 
@@ -3934,6 +3963,8 @@ export default function App() {
           }}
           showResetConfirm={showResetConfirm}
           setShowResetConfirm={setShowResetConfirm}
+          showHistoryLock={showHistoryLock}
+          setShowHistoryLock={setShowHistoryLock}
         />
 
         {/* Surplus alert modal */}
