@@ -426,12 +426,31 @@ const MoodIcon = ({ tier, size = 42, active = false }) => {
       glowColor: 'rgba(212,175,55,0.35)',
       face: (s) => (
         <>
-          <Path d={`M${s*0.37} ${s*0.34} L${s*0.37} ${s*0.46} M${s*0.31} ${s*0.40} L${s*0.43} ${s*0.40}`}
-                stroke="#D4AF37" strokeWidth={2} strokeLinecap="round"/>
-          <Path d={`M${s*0.63} ${s*0.34} L${s*0.63} ${s*0.46} M${s*0.57} ${s*0.40} L${s*0.69} ${s*0.40}`}
-                stroke="#D4AF37" strokeWidth={2} strokeLinecap="round"/>
-          <Ellipse cx={s*0.5} cy={s*0.63} rx={s*0.13} ry={s*0.09}
-                   fill="none" stroke="#D4AF37" strokeWidth={2}/>
+          {/* Yeux arcs joyeux fermés */}
+          <Path d={`M${s*0.28} ${s*0.40} Q${s*0.36} ${s*0.32} ${s*0.44} ${s*0.40}`}
+                stroke="#D4AF37" strokeWidth={2.2} fill="none" strokeLinecap="round"/>
+          <Path d={`M${s*0.56} ${s*0.40} Q${s*0.64} ${s*0.32} ${s*0.72} ${s*0.40}`}
+                stroke="#D4AF37" strokeWidth={2.2} fill="none" strokeLinecap="round"/>
+          {/* Points lumineux au-dessus des yeux */}
+          <Circle cx={s*0.36} cy={s*0.33} r={s*0.025} fill="#FFE066"/>
+          <Circle cx={s*0.64} cy={s*0.33} r={s*0.025} fill="#FFE066"/>
+          {/* Grand sourire ouvert */}
+          <Path d={`M${s*0.28} ${s*0.56} Q${s*0.50} ${s*0.78} ${s*0.72} ${s*0.56}`}
+                stroke="#D4AF37" strokeWidth={2.2} fill="none" strokeLinecap="round"/>
+          {/* Remplissage sourire subtil */}
+          <Path d={`M${s*0.32} ${s*0.58} Q${s*0.50} ${s*0.74} ${s*0.68} ${s*0.58}`}
+                fill="#D4AF37" opacity={0.2}/>
+          {/* Rayons d'énergie autour */}
+          <Line x1={s*0.50} y1={s*0.02} x2={s*0.50} y2={s*0.10}
+                stroke="#D4AF37" strokeWidth={1.5} opacity={0.45} strokeLinecap="round"/>
+          <Line x1={s*0.82} y1={s*0.12} x2={s*0.76} y2={s*0.18}
+                stroke="#D4AF37" strokeWidth={1.5} opacity={0.35} strokeLinecap="round"/>
+          <Line x1={s*0.18} y1={s*0.12} x2={s*0.24} y2={s*0.18}
+                stroke="#D4AF37" strokeWidth={1.5} opacity={0.35} strokeLinecap="round"/>
+          <Line x1={s*0.92} y1={s*0.38} x2={s*0.85} y2={s*0.40}
+                stroke="#D4AF37" strokeWidth={1.5} opacity={0.3} strokeLinecap="round"/>
+          <Line x1={s*0.08} y1={s*0.38} x2={s*0.15} y2={s*0.40}
+                stroke="#D4AF37" strokeWidth={1.5} opacity={0.3} strokeLinecap="round"/>
         </>
       ),
     },
@@ -3202,8 +3221,15 @@ export default function App() {
                 {moodResult === 'excited' && confetti.length > 0 &&
                   confetti.map(item => ( <Confetto key={item.id} item={item} /> ))
                 }
-                <View style={{ marginBottom: 15 }}>
-                  <MoodIcon tier={moodMessages[moodResult].tier} size={60} active={true} />
+                <View style={{
+                  marginBottom: 15,
+                  shadowColor: moodMessages[moodResult].color,
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.6,
+                  shadowRadius: 20,
+                  elevation: 10,
+                }}>
+                  <MoodIcon tier={moodMessages[moodResult].tier} size={70} active={true} />
                 </View>
                 <Text style={{
                   color: moodMessages[moodResult].color,
@@ -3218,6 +3244,26 @@ export default function App() {
                   textAlign: 'center',
                   marginBottom: 30,
                 }}>{moodMessages[moodResult].message}</Text>
+
+                <View style={{
+                  backgroundColor: 'rgba(0,217,132,0.06)',
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: 'rgba(0,217,132,0.15)',
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  marginBottom: 20,
+                  marginTop: 10,
+                }}>
+                  <Text style={{
+                    color: '#00D984',
+                    fontSize: 12,
+                    textAlign: 'center',
+                    fontWeight: '600',
+                  }}>
+                    🔗 Votre humeur personnalise vos recettes et activités du jour
+                  </Text>
+                </View>
 
                 <TouchableOpacity
                   onPress={() => setShowWeather(true)}
