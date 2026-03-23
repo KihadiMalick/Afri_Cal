@@ -3754,35 +3754,38 @@ export default function App() {
             </View>
 
             {/* CARROUSEL CATÉGORIES */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: wp(14), paddingVertical: 6 }}
-            >
-              {BEVERAGE_CATS.map((cat) => {
-                const active = beverageCategory === cat.id;
-                return (
-                  <Pressable
-                    key={cat.id}
-                    onPress={() => { setBeverageCategory(cat.id); setBeverageSearch(''); fetchBeveragesByCategory(cat.id); }}
-                    style={{
-                      flexDirection: 'row', alignItems: 'center',
-                      paddingHorizontal: 10, paddingVertical: 5, marginRight: 6,
-                      borderRadius: 20,
-                      backgroundColor: active ? '#00D984' : 'rgba(51,58,66,0.6)',
-                      borderWidth: 1,
-                      borderColor: active ? '#00D984' : 'rgba(74,79,85,0.4)',
-                    }}
-                  >
-                    <Text style={{ fontSize: 11, marginRight: 3 }}>{cat.icon}</Text>
-                    <Text style={{
-                      color: active ? '#1A1D22' : '#AABBCC',
-                      fontSize: fp(10), fontWeight: '700',
-                    }}>{cat.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+            <View style={{ height: 36, marginBottom: 8 }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: wp(14), alignItems: 'center', height: 36 }}
+              >
+                {BEVERAGE_CATS.map((cat) => {
+                  const active = beverageCategory === cat.id;
+                  return (
+                    <Pressable
+                      key={cat.id}
+                      onPress={() => { setBeverageCategory(cat.id); setBeverageSearch(''); fetchBeveragesByCategory(cat.id); }}
+                      style={{
+                        flexDirection: 'row', alignItems: 'center',
+                        height: 30,
+                        paddingHorizontal: 10, marginRight: 6,
+                        borderRadius: 15,
+                        backgroundColor: active ? '#00D984' : 'rgba(51,58,66,0.6)',
+                        borderWidth: 1,
+                        borderColor: active ? '#00D984' : 'rgba(74,79,85,0.4)',
+                      }}
+                    >
+                      <Text style={{ fontSize: 11, marginRight: 3 }}>{cat.icon}</Text>
+                      <Text style={{
+                        color: active ? '#1A1D22' : '#AABBCC',
+                        fontSize: fp(10), fontWeight: '700',
+                      }}>{cat.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
 
             {/* GRILLE DE BOISSONS / PANNEAU SÉLECTION */}
             <ScrollView style={{ flex: 1, paddingHorizontal: wp(14) }} showsVerticalScrollIndicator={false}>
