@@ -1732,7 +1732,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 // ============================================================
 // COMPOSANT — Dashboard Content (page Accueil)
 // ============================================================
-const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef, dailyTarget, lastMeal, tooltipStep }) => {
+const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef, dailyTarget, lastMeal, tooltipStep, vitalityScore }) => {
   const OBJECTIVE = dailyTarget || DAILY_OBJECTIVE;
   const streakDays = 12;
   const streakColor = streakDays >= 14 ? '#D4AF37'
@@ -1946,11 +1946,11 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
               fontSize: fp(15),
               fontWeight: '900',
-              color: '#00D984',
-              textShadowColor: 'rgba(0, 217, 132, 0.4)',
+              color: vitalityScore >= 70 ? '#00D984' : vitalityScore >= 40 ? '#FFD93D' : '#FF6B6B',
+              textShadowColor: vitalityScore >= 70 ? 'rgba(0, 217, 132, 0.4)' : vitalityScore >= 40 ? 'rgba(255, 217, 61, 0.4)' : 'rgba(255, 107, 107, 0.4)',
               textShadowOffset: { width: 0, height: 0 },
               textShadowRadius: 6,
-            }}>84</Text>
+            }}>{vitalityScore}</Text>
             <Text style={{
               fontSize: fp(8), fontWeight: '700', color: '#D4AF37', marginTop: 2,
               letterSpacing: 1.5,
@@ -2418,6 +2418,35 @@ export default function App() {
   }, []);
   */
 
+  const calcVitalityScore = () => {
+    const OBJECTIVE = realDailyTarget || 2100;
+    let score = 0;
+
+    const netConsumed = realConsumed;
+    if (OBJECTIVE > 0 && netConsumed > 0) {
+      const ratio = netConsumed / OBJECTIVE;
+      const deviation = Math.abs(1 - ratio);
+      const nutritionPts = Math.max(0, 25 - Math.round(deviation * 83));
+      score += nutritionPts;
+    }
+
+    const hydroGoal = realGender === 'femme' ? 2000 : 2500;
+    const hydroPct = Math.min((hydrationMl / hydroGoal) * 100, 100);
+    score += Math.round((hydroPct / 100) * 25);
+
+    const weeklyMin = 0;
+    const activityPts = Math.min(Math.round((weeklyMin / 150) * 25), 25);
+    score += activityPts;
+
+    let regPts = 0;
+    if (moodFilled) regPts += 8;
+    if (lastMeal) regPts += 9;
+    regPts += Math.min(8, 8);
+    score += regPts;
+
+    return Math.min(100, Math.max(0, score));
+  };
+
   // === CHARGER DONNÉES DASHBOARD ===
   const fetchDailyHydration = async () => {
     try {
@@ -2660,10 +2689,15 @@ export default function App() {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    setVitalityScore(calcVitalityScore());
+  }, [realConsumed, hydrationMl, moodFilled, lastMeal, realDailyTarget, realGender]);
+
   const [moodFilled, setMoodFilled] = useState(false);
   const [currentMood, setCurrentMood] = useState(null); // 'sad' | 'chill' | 'happy' | 'excited'
   const [showMoodModal, setShowMoodModal] = useState(false);
   const [hydrationMl, setHydrationMl] = useState(0);
+  const [vitalityScore, setVitalityScore] = useState(0);
   const [hydrationData, setHydrationData] = useState({
     totalEffective: 0, totalVolume: 0, totalKcal: 0, totalSugar: 0, entryCount: 0,
   });
@@ -3668,6 +3702,7 @@ export default function App() {
             dailyTarget={realDailyTarget}
             lastMeal={lastMeal}
             tooltipStep={tooltipStep}
+            vitalityScore={vitalityScore}
           />
         );
       case 'meals':
