@@ -450,6 +450,22 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
     outputRange: ['-6deg', '0deg', '6deg'],
   });
 
+  // Animation pulse pour le mood highlight (tooltip étape 1)
+  const moodPulse = useRef(new RNAnimated.Value(0)).current;
+
+  useEffect(() => {
+    if (highlightMood) {
+      const pulse = RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(moodPulse, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+          RNAnimated.timing(moodPulse, { toValue: 0, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }
+  }, [highlightMood]);
+
   return (
     <View style={{
       flexDirection: 'row',
@@ -481,7 +497,18 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
 
         {/* Mood emoji avec ring */}
         <TouchableOpacity onPress={onMoodPress} activeOpacity={0.7} style={{ position: 'relative', marginRight: 8 }}>
-          <RNAnimated.View style={{ transform: [{ rotate: moodFilled ? '0deg' : rotate }] }}>
+          <RNAnimated.View style={{
+            transform: [
+              { rotate: highlightMood ? '0deg' : rotate },
+              { scale: highlightMood
+                ? moodPulse.interpolate({ inputRange: [0, 1], outputRange: [1.3, 1.5] })
+                : 1
+              },
+            ],
+            opacity: highlightMood
+              ? moodPulse.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] })
+              : 1,
+          }}>
             <View style={{
               width: 38,
               height: 38,
@@ -496,7 +523,6 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
               shadowOpacity: highlightMood ? 1 : 0.3,
               shadowRadius: highlightMood ? 20 : 6,
               elevation: highlightMood ? 15 : 4,
-              transform: [{ scale: highlightMood ? 1.4 : 1 }],
             }}>
               <MoodIcon tier={currentMood === 'excited' ? 3 : currentMood === 'happy' ? 2 : currentMood === 'chill' ? 1 : 0} size={24} active={true} />
             </View>
@@ -1600,6 +1626,34 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
   // Reste = Objectif - (Consommé - Brûlé total) → 2330 - (1585 - 870) = 1615
   const remaining = Math.max(0, OBJECTIVE - (consumedTotal - burnedTotal));
 
+  // ===== PULSE ANIMATION pour le tooltip =====
+  const tooltipPulse = useRef(new RNAnimated.Value(0)).current;
+
+  useEffect(() => {
+    if (tooltipStep > 0) {
+      const pulse = RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(tooltipPulse, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
+          RNAnimated.timing(tooltipPulse, { toValue: 0, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: false }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    } else {
+      tooltipPulse.setValue(0);
+    }
+  }, [tooltipStep]);
+
+  const pulseOpacity = tooltipPulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.5, 1],
+  });
+
+  const pulseScale = tooltipPulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.03],
+  });
+
   return (
     <ScrollView
       ref={scrollRef}
@@ -1680,15 +1734,11 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           paddingVertical: 4,
         }}>
           {/* RÉACTEUR GAUCHE — Consommé (sens horaire) */}
-          <View style={{
-            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2 ? 1 : 0.15,
-            ...(tooltipStep === 2 && {
-              shadowColor: '#FF8C42',
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 1,
-              shadowRadius: 25,
-              elevation: 20,
-            }),
+          <RNAnimated.View style={{
+            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2
+              ? (tooltipStep === 2 ? pulseOpacity : 1)
+              : 0.15,
+            transform: tooltipStep === 2 ? [{ scale: pulseScale }] : [],
           }}>
             <ReactorCore
               size={REACTOR_SIZE}
@@ -1700,32 +1750,24 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               colorDark="#CC6020"
               clockwise={true}
             />
-          </View>
+          </RNAnimated.View>
 
           {/* ADN CENTRAL — Score Vitalité (125% de REACTOR_SIZE) */}
-          <View style={{
-            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3 ? 1 : 0.15,
-            ...(tooltipStep === 3 && {
-              shadowColor: '#00D984',
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 1,
-              shadowRadius: 25,
-              elevation: 20,
-            }),
+          <RNAnimated.View style={{
+            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3
+              ? (tooltipStep === 3 ? pulseOpacity : 1)
+              : 0.15,
+            transform: tooltipStep === 3 ? [{ scale: pulseScale }] : [],
           }}>
             <DnaHelix height={REACTOR_SIZE * 1.25} width={DNA_WIDTH} />
-          </View>
+          </RNAnimated.View>
 
           {/* RÉACTEUR DROIT — Reste (sens antihoraire) */}
-          <View style={{
-            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4 ? 1 : 0.15,
-            ...(tooltipStep === 4 && {
-              shadowColor: '#4DA6FF',
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 1,
-              shadowRadius: 25,
-              elevation: 20,
-            }),
+          <RNAnimated.View style={{
+            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4
+              ? (tooltipStep === 4 ? pulseOpacity : 1)
+              : 0.15,
+            transform: tooltipStep === 4 ? [{ scale: pulseScale }] : [],
           }}>
             <ReactorCore
               size={REACTOR_SIZE}
@@ -1737,7 +1779,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               colorDark="#2B7ACC"
               clockwise={false}
             />
-          </View>
+          </RNAnimated.View>
         </View>
 
         {/* ===== LABELS — version épurée ===== */}
@@ -1749,7 +1791,12 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           marginTop: wp(10),
         }}>
           {/* Consommé */}
-          <View style={{ alignItems: 'center', flex: 1, opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2 ? 1 : 0.15 }}>
+          <RNAnimated.View style={{
+            alignItems: 'center', flex: 1,
+            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2
+              ? (tooltipStep === 2 ? pulseOpacity : 1)
+              : 0.15,
+          }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
               fontSize: fp(15),
@@ -1770,10 +1817,15 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             }}>
               {burnedExtra > 0 ? `- ${burnedExtra} Kcal/Sport` : ''}
             </Text>
-          </View>
+          </RNAnimated.View>
 
           {/* Vitalité */}
-          <View style={{ alignItems: 'center', flex: 1, opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3 ? 1 : 0.15 }}>
+          <RNAnimated.View style={{
+            alignItems: 'center', flex: 1,
+            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3
+              ? (tooltipStep === 3 ? pulseOpacity : 1)
+              : 0.15,
+          }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
               fontSize: fp(15),
@@ -1787,10 +1839,15 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               fontSize: fp(8), fontWeight: '700', color: '#D4AF37', marginTop: 2,
               letterSpacing: 1.5,
             }}>VITALITÉ</Text>
-          </View>
+          </RNAnimated.View>
 
           {/* Reste */}
-          <View style={{ alignItems: 'center', flex: 1, opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4 ? 1 : 0.15 }}>
+          <RNAnimated.View style={{
+            alignItems: 'center', flex: 1,
+            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4
+              ? (tooltipStep === 4 ? pulseOpacity : 1)
+              : 0.15,
+          }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
               fontSize: fp(15),
@@ -1813,7 +1870,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                 + {remaining - OBJECTIVE} bonus sport
               </Text>
             )}
-          </View>
+          </RNAnimated.View>
         </View>
       </MetalCard>
 
