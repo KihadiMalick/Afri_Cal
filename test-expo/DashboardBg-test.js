@@ -2427,16 +2427,13 @@ export default function App() {
 
   // === FETCH BOISSONS ===
   const BEVERAGE_CATS = [
-    { id: 'all',              label: 'Tout',     icon: '🔍' },
+    { id: 'all',              label: 'Tout',        icon: '🔍' },
     { id: 'african_juice',    label: 'Jus Afrique', icon: '🌍' },
-    { id: 'african_fermented',label: 'Fermenté', icon: '🫗' },
-    { id: 'african_hot',      label: 'Chaud Afr.', icon: '☕' },
-    { id: 'hot',              label: 'Chaud',    icon: '🍵' },
-    { id: 'cold',             label: 'Froid',    icon: '🧊' },
-    { id: 'fruit',            label: 'Fruits',   icon: '🍊' },
-    { id: 'milk',             label: 'Lait',     icon: '🥛' },
-    { id: 'alcohol',          label: 'Alcool',   icon: '🍺' },
-    { id: 'african_alcohol',  label: 'Alcool Afr.', icon: '🌴' },
+    { id: 'african_hot',      label: 'Infusions',   icon: '☕' },
+    { id: 'hot',              label: 'Chaud',       icon: '🍵' },
+    { id: 'cold',             label: 'Froid',       icon: '🧊' },
+    { id: 'fruit',            label: 'Fruits',      icon: '🍊' },
+    { id: 'milk',             label: 'Lait',        icon: '🥛' },
   ];
 
   const fetchBeveragesByCategory = async (cat) => {
@@ -2518,9 +2515,23 @@ export default function App() {
       if (error) throw error;
       // Refresh hydration data
       fetchDailyHydration().then(setHydrationData);
+      // Mettre à jour la silhouette (hydrationMl local)
+      setHydrationMl(prev => prev + totals.effectiveMl);
+      // Ajouter dans l'historique visible
+      const now = new Date();
+      const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+      setHydroLogs(prev => [...prev, {
+        time: timeStr,
+        amount: totals.effectiveMl,
+        type: selectedBeverage.name,
+        icon: selectedBeverage.icon,
+      }]);
+      // Fermer avec un petit délai pour voir le feedback
       setSelectedBeverage(null);
-      setShowBeverageModal(false);
       setBeverageSearch('');
+      setTimeout(() => {
+        setShowBeverageModal(false);
+      }, 300);
     } catch (err) {
       console.warn('saveBeverage error:', err);
     }
@@ -3688,60 +3699,107 @@ export default function App() {
 
         {/* ══════ MODAL AJOUTER BOISSONS ══════ */}
         <Modal visible={showBeverageModal} animationType="slide" transparent={false}>
-          <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
-            {/* HEADER */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 50, paddingHorizontal: wp(16), paddingBottom: 12 }}>
-              <Pressable onPress={() => { setShowBeverageModal(false); setSelectedBeverage(null); }}>
-                <Text style={{ color: '#AAA', fontSize: fp(16) }}>✕ Fermer</Text>
+          <LinearGradient
+            colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']}
+            locations={[0, 0.25, 0.5, 0.75, 1]}
+            style={{ flex: 1 }}
+          >
+            {/* HEADER — compact, premium */}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+              paddingTop: Platform.OS === 'android' ? 38 : 50,
+              paddingHorizontal: wp(14), paddingBottom: 10,
+              borderBottomWidth: 1, borderBottomColor: 'rgba(0,217,132,0.08)',
+            }}>
+              <Pressable
+                onPress={() => { setShowBeverageModal(false); setSelectedBeverage(null); }}
+                style={{
+                  width: 36, height: 36, borderRadius: 18,
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                  justifyContent: 'center', alignItems: 'center',
+                }}
+              >
+                <Ionicons name="close" size={18} color="#8892A0" />
               </Pressable>
-              <Text style={{ color: '#FFF', fontSize: fp(18), fontWeight: '700' }}>Ajouter une Boisson</Text>
-              <View style={{ width: 60 }} />
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800', letterSpacing: 1 }}>
+                  BOISSONS
+                </Text>
+                <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '600', marginTop: 1 }}>
+                  88 références • Hydration Index
+                </Text>
+              </View>
+              <View style={{ width: 36 }} />
             </View>
 
-            {/* BARRE DE RECHERCHE */}
-            <View style={{ marginHorizontal: wp(16), marginBottom: 10, backgroundColor: '#252A30', borderRadius: 12, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 }}>
-              <Text style={{ fontSize: 18, marginRight: 8 }}>🔍</Text>
+            {/* BARRE DE RECHERCHE — MetalCard style */}
+            <View style={{
+              marginHorizontal: wp(14), marginTop: 10, marginBottom: 8,
+              backgroundColor: 'rgba(37,42,48,0.8)',
+              borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(74,79,85,0.5)',
+              flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14,
+            }}>
+              <Ionicons name="search" size={16} color="#8892A0" style={{ marginRight: 8 }} />
               <TextInput
-                placeholder="Rechercher (bissap, zobo, café...)"
-                placeholderTextColor="#666"
+                placeholder="Rechercher (bissap, chai, zobo...)"
+                placeholderTextColor="#555E6C"
                 value={beverageSearch}
                 onChangeText={(t) => { setBeverageSearch(t); searchBeverages(t); }}
-                style={{ flex: 1, color: '#FFF', fontSize: fp(14), paddingVertical: 10 }}
+                style={{ flex: 1, color: '#EAEEF3', fontSize: fp(13), paddingVertical: 10 }}
               />
               {beverageSearch ? (
                 <Pressable onPress={() => { setBeverageSearch(''); fetchBeveragesByCategory(beverageCategory); }}>
-                  <Text style={{ color: '#AAA', fontSize: 16 }}>✕</Text>
+                  <Ionicons name="close-circle" size={18} color="#555E6C" />
                 </Pressable>
               ) : null}
             </View>
 
             {/* CARROUSEL CATÉGORIES */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 44, marginBottom: 8, paddingHorizontal: wp(12) }}>
-              {BEVERAGE_CATS.map((cat) => (
-                <Pressable
-                  key={cat.id}
-                  onPress={() => { setBeverageCategory(cat.id); setBeverageSearch(''); fetchBeveragesByCategory(cat.id); }}
-                  style={{
-                    flexDirection: 'row', alignItems: 'center',
-                    paddingHorizontal: 12, paddingVertical: 6, marginRight: 8,
-                    borderRadius: 20,
-                    backgroundColor: beverageCategory === cat.id ? '#00D984' : '#333A42',
-                  }}
-                >
-                  <Text style={{ fontSize: 14, marginRight: 4 }}>{cat.icon}</Text>
-                  <Text style={{ color: beverageCategory === cat.id ? '#1A1D22' : '#CCC', fontSize: fp(12), fontWeight: '600' }}>{cat.label}</Text>
-                </Pressable>
-              ))}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: wp(14), paddingVertical: 6 }}
+            >
+              {BEVERAGE_CATS.map((cat) => {
+                const active = beverageCategory === cat.id;
+                return (
+                  <Pressable
+                    key={cat.id}
+                    onPress={() => { setBeverageCategory(cat.id); setBeverageSearch(''); fetchBeveragesByCategory(cat.id); }}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      paddingHorizontal: 14, paddingVertical: 7, marginRight: 8,
+                      borderRadius: 20,
+                      backgroundColor: active ? '#00D984' : 'rgba(51,58,66,0.6)',
+                      borderWidth: 1,
+                      borderColor: active ? '#00D984' : 'rgba(74,79,85,0.4)',
+                    }}
+                  >
+                    <Text style={{ fontSize: 13, marginRight: 5 }}>{cat.icon}</Text>
+                    <Text style={{
+                      color: active ? '#1A1D22' : '#AABBCC',
+                      fontSize: fp(11), fontWeight: '700',
+                    }}>{cat.label}</Text>
+                  </Pressable>
+                );
+              })}
             </ScrollView>
 
             {/* GRILLE DE BOISSONS */}
-            <ScrollView style={{ flex: 1, paddingHorizontal: wp(12) }}>
+            <ScrollView style={{ flex: 1, paddingHorizontal: wp(14) }} showsVerticalScrollIndicator={false}>
               {beverageLoading ? (
-                <Text style={{ color: '#666', textAlign: 'center', marginTop: 40, fontSize: fp(14) }}>Chargement...</Text>
+                <View style={{ alignItems: 'center', marginTop: 60 }}>
+                  <Text style={{ fontSize: 32 }}>🔄</Text>
+                  <Text style={{ color: '#555E6C', fontSize: fp(13), marginTop: 8 }}>Chargement...</Text>
+                </View>
               ) : beverageList.length === 0 ? (
-                <Text style={{ color: '#666', textAlign: 'center', marginTop: 40, fontSize: fp(14) }}>Aucune boisson trouvée</Text>
+                <View style={{ alignItems: 'center', marginTop: 60 }}>
+                  <Text style={{ fontSize: 32 }}>🔍</Text>
+                  <Text style={{ color: '#555E6C', fontSize: fp(13), marginTop: 8 }}>Aucune boisson trouvée</Text>
+                </View>
               ) : (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', gap: wp(8), paddingTop: 6 }}>
                   {beverageList.map((bev) => {
                     const isSelected = selectedBeverage?.beverage_id === bev.beverage_id;
                     const coeffColor = getCoeffColor(bev.coeff);
@@ -3750,156 +3808,198 @@ export default function App() {
                         key={bev.beverage_id}
                         onPress={() => selectBeverage(bev)}
                         style={{
-                          width: '31%', marginBottom: 10, padding: 10, borderRadius: 12,
-                          backgroundColor: isSelected ? '#252A30' : '#1E2228',
+                          width: (W - wp(14) * 2 - wp(8) * 2) / 3,
+                          paddingVertical: 10, paddingHorizontal: 6, borderRadius: wp(14),
+                          backgroundColor: isSelected ? 'rgba(0,217,132,0.08)' : 'rgba(30,34,40,0.8)',
                           borderWidth: isSelected ? 1.5 : 1,
-                          borderColor: isSelected ? '#00D984' : '#333A42',
+                          borderColor: isSelected ? '#00D984' : 'rgba(74,79,85,0.3)',
                         }}
                       >
                         <Text style={{ fontSize: 28, textAlign: 'center' }}>{bev.icon}</Text>
-                        <Text numberOfLines={2} style={{ color: '#FFF', fontSize: fp(11), fontWeight: '600', textAlign: 'center', marginTop: 4, minHeight: 30 }}>{bev.name}</Text>
-                        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 4 }}>
-                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: coeffColor, marginRight: 4 }} />
-                          <Text style={{ color: coeffColor, fontSize: fp(10), fontWeight: '700' }}>{(bev.coeff * 100).toFixed(0)}%</Text>
+                        <Text numberOfLines={2} style={{
+                          color: '#EAEEF3', fontSize: fp(10), fontWeight: '600',
+                          textAlign: 'center', marginTop: 4, minHeight: 28,
+                        }}>{bev.name}</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 3 }}>
+                          <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: coeffColor, marginRight: 3 }} />
+                          <Text style={{ color: coeffColor, fontSize: fp(9), fontWeight: '800' }}>
+                            {(bev.coeff * 100).toFixed(0)}%
+                          </Text>
                         </View>
-                        {bev.sub_region ? (
-                          <Text style={{ color: '#666', fontSize: fp(9), textAlign: 'center', marginTop: 2 }}>{bev.sub_region}</Text>
-                        ) : null}
                       </Pressable>
                     );
                   })}
                 </View>
               )}
 
-              {/* ZONE SÉLECTION (volume + sucre + valider) */}
+              {/* ══════ ZONE SÉLECTION ══════ */}
               {selectedBeverage ? (
-                <View style={{
-                  marginTop: 16, padding: 16, borderRadius: 16,
-                  backgroundColor: '#252A30', borderWidth: 1, borderColor: '#00D984',
-                }}>
-                  {/* EN-TÊTE BOISSON SÉLECTIONNÉE */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                    <Text style={{ fontSize: 32, marginRight: 10 }}>{selectedBeverage.icon}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#FFF', fontSize: fp(16), fontWeight: '700' }}>{selectedBeverage.name}</Text>
-                      {selectedBeverage.description ? (
-                        <Text numberOfLines={2} style={{ color: '#888', fontSize: fp(11), marginTop: 2 }}>{selectedBeverage.description}</Text>
-                      ) : null}
-                    </View>
-                  </View>
-
-                  {/* VOLUMES RAPIDES */}
-                  <Text style={{ color: '#AAA', fontSize: fp(12), marginBottom: 6 }}>Volume (ml)</Text>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}>
-                    {QUICK_VOLUMES.map((v) => (
-                      <Pressable
-                        key={v}
-                        onPress={() => setBeverageVolume(v)}
-                        style={{
-                          paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-                          marginRight: 8, marginBottom: 6,
-                          backgroundColor: beverageVolume === v ? '#00D984' : '#333A42',
-                        }}
-                      >
-                        <Text style={{ color: beverageVolume === v ? '#1A1D22' : '#CCC', fontSize: fp(13), fontWeight: '700' }}>{v}</Text>
-                      </Pressable>
-                    ))}
-                    {/* Volume custom */}
-                    <View style={{
-                      flexDirection: 'row', alignItems: 'center',
-                      backgroundColor: '#333A42', borderRadius: 20, paddingHorizontal: 10,
-                    }}>
-                      <TextInput
-                        placeholder="Autre"
-                        placeholderTextColor="#666"
-                        keyboardType="numeric"
-                        value={QUICK_VOLUMES.includes(beverageVolume) ? '' : String(beverageVolume)}
-                        onChangeText={(t) => { const n = parseInt(t); if (n > 0 && n <= 2000) setBeverageVolume(n); }}
-                        style={{ color: '#FFF', fontSize: fp(13), width: 50, textAlign: 'center' }}
-                      />
-                      <Text style={{ color: '#666', fontSize: fp(11) }}>ml</Text>
-                    </View>
-                  </View>
-
-                  {/* CUBES DE SUCRE (si sugar_known = false) */}
-                  {!selectedBeverage.sugar_known ? (
-                    <View style={{ marginBottom: 12 }}>
-                      <Text style={{ color: '#AAA', fontSize: fp(12), marginBottom: 6 }}>
-                        Sucre ajouté (1 cube = 4g)
-                      </Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        {[0, 1, 2, 3, 4, 5].map((n) => (
-                          <Pressable
-                            key={n}
-                            onPress={() => setSugarCubes(n)}
-                            style={{
-                              width: 40, height: 40, borderRadius: 8, marginRight: 6,
-                              backgroundColor: sugarCubes >= n && n > 0 ? '#FFD93D' : '#333A42',
-                              borderWidth: sugarCubes === n ? 2 : 1,
-                              borderColor: sugarCubes === n ? '#FFD93D' : '#444',
-                              justifyContent: 'center', alignItems: 'center',
-                            }}
-                          >
-                            <Text style={{ fontSize: n === 0 ? 14 : 18 }}>
-                              {n === 0 ? '🚫' : '🧊'}
-                            </Text>
-                          </Pressable>
-                        ))}
-                        <Text style={{ color: '#FFD93D', fontSize: fp(12), fontWeight: '700', marginLeft: 6 }}>
-                          {sugarCubes === 0 ? 'Sans sucre' : sugarCubes === 1 ? 'Léger' : sugarCubes <= 3 ? 'Sucré' : 'Très sucré'}
-                        </Text>
-                      </View>
-                      <Text style={{ color: '#888', fontSize: fp(10), marginTop: 4 }}>
-                        +{sugarCubes * SUGAR_CUBE_G}g de sucre → +{sugarCubes * SUGAR_CUBE_G * 4} kcal
-                      </Text>
-                    </View>
-                  ) : null}
-
-                  {/* RÉSUMÉ CALCUL TEMPS RÉEL */}
-                  {(() => {
-                    const t = calcBeverageTotals();
-                    return (
-                      <View style={{
-                        backgroundColor: '#1A1D22', borderRadius: 12, padding: 12, marginBottom: 12,
-                        flexDirection: 'row', justifyContent: 'space-around',
-                      }}>
-                        <View style={{ alignItems: 'center' }}>
-                          <Text style={{ color: '#00D984', fontSize: fp(20), fontWeight: '800' }}>{t.effectiveMl}</Text>
-                          <Text style={{ color: '#888', fontSize: fp(10) }}>ml effectifs</Text>
-                        </View>
-                        <View style={{ width: 1, backgroundColor: '#333' }} />
-                        <View style={{ alignItems: 'center' }}>
-                          <Text style={{ color: '#FF8C42', fontSize: fp(20), fontWeight: '800' }}>{t.kcal}</Text>
-                          <Text style={{ color: '#888', fontSize: fp(10) }}>kcal</Text>
-                        </View>
-                        <View style={{ width: 1, backgroundColor: '#333' }} />
-                        <View style={{ alignItems: 'center' }}>
-                          <Text style={{ color: '#FFD93D', fontSize: fp(20), fontWeight: '800' }}>{t.sugarG}g</Text>
-                          <Text style={{ color: '#888', fontSize: fp(10) }}>sucre</Text>
-                        </View>
-                      </View>
-                    );
-                  })()}
-
-                  {/* BOUTON VALIDER */}
-                  <Pressable
-                    onPress={saveBeverage}
-                    disabled={beverageSaving}
+                <View style={{ marginTop: 14, borderRadius: wp(16), overflow: 'hidden' }}>
+                  <LinearGradient
+                    colors={['#2A3038', '#222830', '#1E2228']}
                     style={{
-                      backgroundColor: beverageSaving ? '#555' : '#00D984',
-                      borderRadius: 12, paddingVertical: 14, alignItems: 'center',
+                      padding: wp(14),
+                      borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                      borderRadius: wp(16),
                     }}
                   >
-                    <Text style={{ color: '#1A1D22', fontSize: fp(16), fontWeight: '800' }}>
-                      {beverageSaving ? 'Enregistrement...' : `✓ Ajouter ${beverageVolume}ml de ${selectedBeverage.name}`}
-                    </Text>
-                  </Pressable>
+                    {/* EN-TÊTE */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                      <Text style={{ fontSize: 30, marginRight: 10 }}>{selectedBeverage.icon}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(15), fontWeight: '800' }}>
+                          {selectedBeverage.name}
+                        </Text>
+                        {selectedBeverage.description ? (
+                          <Text numberOfLines={2} style={{ color: '#6B7280', fontSize: fp(10), marginTop: 2 }}>
+                            {selectedBeverage.description}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </View>
+
+                    {/* SOURCE SCIENTIFIQUE */}
+                    <View style={{
+                      backgroundColor: 'rgba(77,166,255,0.06)',
+                      borderRadius: 8, padding: 8, marginBottom: 10,
+                      borderWidth: 1, borderColor: 'rgba(77,166,255,0.1)',
+                    }}>
+                      <Text style={{ color: '#4DA6FF', fontSize: fp(8), fontWeight: '600' }}>
+                        📊 Coeff. hydratant : {(selectedBeverage.coeff * 100).toFixed(0)}% — Source : Beverage Hydration Index (Maughan et al., 2016, Am J Clin Nutr)
+                      </Text>
+                    </View>
+
+                    {/* VOLUMES RAPIDES */}
+                    <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '600', marginBottom: 6 }}>VOLUME</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10 }}>
+                      {QUICK_VOLUMES.map((v) => (
+                        <Pressable
+                          key={v}
+                          onPress={() => setBeverageVolume(v)}
+                          style={{
+                            paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16,
+                            marginRight: 7, marginBottom: 6,
+                            backgroundColor: beverageVolume === v ? '#00D984' : 'rgba(51,58,66,0.6)',
+                            borderWidth: 1,
+                            borderColor: beverageVolume === v ? '#00D984' : 'rgba(74,79,85,0.3)',
+                          }}
+                        >
+                          <Text style={{
+                            color: beverageVolume === v ? '#1A1D22' : '#AABBCC',
+                            fontSize: fp(12), fontWeight: '700',
+                          }}>{v} ml</Text>
+                        </Pressable>
+                      ))}
+                      <View style={{
+                        flexDirection: 'row', alignItems: 'center',
+                        backgroundColor: 'rgba(51,58,66,0.6)', borderRadius: 16,
+                        paddingHorizontal: 10, borderWidth: 1, borderColor: 'rgba(74,79,85,0.3)',
+                      }}>
+                        <TextInput
+                          placeholder="..."
+                          placeholderTextColor="#555"
+                          keyboardType="numeric"
+                          value={QUICK_VOLUMES.includes(beverageVolume) ? '' : String(beverageVolume)}
+                          onChangeText={(t) => { const n = parseInt(t); if (n > 0 && n <= 2000) setBeverageVolume(n); }}
+                          style={{ color: '#EAEEF3', fontSize: fp(12), width: 40, textAlign: 'center' }}
+                        />
+                        <Text style={{ color: '#555E6C', fontSize: fp(10) }}>ml</Text>
+                      </View>
+                    </View>
+
+                    {/* CUBES DE SUCRE */}
+                    {!selectedBeverage.sugar_known ? (
+                      <View style={{ marginBottom: 10 }}>
+                        <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '600', marginBottom: 6 }}>SUCRE AJOUTÉ</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                          {[0, 1, 2, 3, 4, 5].map((n) => (
+                            <Pressable
+                              key={n}
+                              onPress={() => setSugarCubes(n)}
+                              style={{
+                                width: 38, height: 38, borderRadius: 10, marginRight: 5, marginBottom: 4,
+                                backgroundColor: n === 0
+                                  ? (sugarCubes === 0 ? 'rgba(0,217,132,0.15)' : 'rgba(51,58,66,0.6)')
+                                  : (sugarCubes >= n ? 'rgba(255,217,61,0.2)' : 'rgba(51,58,66,0.6)'),
+                                borderWidth: sugarCubes === n ? 1.5 : 1,
+                                borderColor: n === 0
+                                  ? (sugarCubes === 0 ? '#00D984' : 'rgba(74,79,85,0.3)')
+                                  : (sugarCubes >= n ? '#FFD93D' : 'rgba(74,79,85,0.3)'),
+                                justifyContent: 'center', alignItems: 'center',
+                              }}
+                            >
+                              <Text style={{ fontSize: 16 }}>{n === 0 ? '🚫' : '🧊'}</Text>
+                            </Pressable>
+                          ))}
+                        </View>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+                          <Text style={{ color: '#FFD93D', fontSize: fp(10), fontWeight: '700' }}>
+                            {sugarCubes === 0 ? 'Sans sucre' : sugarCubes === 1 ? 'Léger' : sugarCubes <= 3 ? 'Sucré' : 'Très sucré'}
+                          </Text>
+                          <Text style={{ color: '#6B7280', fontSize: fp(9) }}>
+                            +{sugarCubes * SUGAR_CUBE_G}g → +{sugarCubes * SUGAR_CUBE_G * 4} kcal
+                          </Text>
+                        </View>
+                      </View>
+                    ) : null}
+
+                    {/* RÉSUMÉ 3 CHIFFRES */}
+                    {(() => {
+                      const t = calcBeverageTotals();
+                      return (
+                        <View style={{
+                          backgroundColor: 'rgba(13,17,23,0.5)', borderRadius: wp(12),
+                          padding: 12, marginBottom: 12,
+                          flexDirection: 'row', justifyContent: 'space-around',
+                          borderWidth: 1, borderColor: 'rgba(74,79,85,0.2)',
+                        }}>
+                          <View style={{ alignItems: 'center' }}>
+                            <Text style={{ color: '#00D984', fontSize: fp(18), fontWeight: '900' }}>{t.effectiveMl}</Text>
+                            <Text style={{ color: '#6B7280', fontSize: fp(9) }}>ml effectifs</Text>
+                          </View>
+                          <View style={{ width: 1, backgroundColor: 'rgba(74,79,85,0.3)' }} />
+                          <View style={{ alignItems: 'center' }}>
+                            <Text style={{ color: '#FF8C42', fontSize: fp(18), fontWeight: '900' }}>{t.kcal}</Text>
+                            <Text style={{ color: '#6B7280', fontSize: fp(9) }}>kcal</Text>
+                          </View>
+                          <View style={{ width: 1, backgroundColor: 'rgba(74,79,85,0.3)' }} />
+                          <View style={{ alignItems: 'center' }}>
+                            <Text style={{ color: '#FFD93D', fontSize: fp(18), fontWeight: '900' }}>{t.sugarG}g</Text>
+                            <Text style={{ color: '#6B7280', fontSize: fp(9) }}>sucre</Text>
+                          </View>
+                        </View>
+                      );
+                    })()}
+
+                    {/* BOUTON VALIDER */}
+                    <Pressable
+                      onPress={saveBeverage}
+                      disabled={beverageSaving}
+                      style={({ pressed }) => ({
+                        backgroundColor: beverageSaving ? '#333A42' : '#00D984',
+                        borderRadius: wp(12), paddingVertical: 14, alignItems: 'center',
+                        transform: [{ scale: pressed ? 0.97 : 1 }],
+                        shadowColor: '#00D984',
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowOpacity: beverageSaving ? 0 : 0.3,
+                        shadowRadius: 10,
+                        elevation: beverageSaving ? 0 : 6,
+                      })}
+                    >
+                      <Text style={{
+                        color: beverageSaving ? '#555E6C' : '#0D1117',
+                        fontSize: fp(14), fontWeight: '900', letterSpacing: 0.5,
+                      }}>
+                        {beverageSaving ? 'Enregistrement...' : `✓  AJOUTER ${beverageVolume}ml`}
+                      </Text>
+                    </Pressable>
+                  </LinearGradient>
                 </View>
               ) : null}
 
-              <View style={{ height: 40 }} />
+              <View style={{ height: 30 }} />
             </ScrollView>
-          </View>
+          </LinearGradient>
         </Modal>
 
         {/* ===== TOOLTIP OVERLAY — Tutoriel guidé ===== */}
