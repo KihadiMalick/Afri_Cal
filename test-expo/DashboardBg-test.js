@@ -291,35 +291,81 @@ const GoalFlag = () => (
 );
 
 // ============================================================
-// COMPOSANT — FloatingHeart (animation cœur TikTok — suit la position du doigt)
+// COMPOSANT — FloatingHeart (cœur qui suit une courbe de Bézier vers le tube)
 // ============================================================
-const FloatingHeart = ({ heart }) => {
+const FloatingHeart = ({ heart, tubeCenter }) => {
   const anim = useRef(new RNAnimated.Value(0)).current;
-  const drift = useRef((Math.random() - 0.5) * 70).current;
-  const endY = useRef(-140 - Math.random() * 80).current;
-  const heartSize = useRef(20 + Math.random() * 12).current;
+  const heartSize = 18 + Math.random() * 8;
+
+  // Point de départ : position du doigt
+  const startX = heart.x;
+  const startY = heart.y;
+
+  // Point d'arrivée : centre du tube
+  const endX = tubeCenter?.x || W / 2;
+  const endY = tubeCenter?.y || H * 0.45;
+
+  // Point de contrôle pour la courbe de Bézier
+  const controlX = startX + (endX - startX) * 0.5 + (Math.random() - 0.5) * 100;
+  const controlY = Math.min(startY, endY) - 50 - Math.random() * 60;
 
   useEffect(() => {
     RNAnimated.timing(anim, {
       toValue: 1,
-      duration: 1100,
+      duration: 700 + Math.random() * 200,
+      easing: Easing.inOut(Easing.ease),
       useNativeDriver: true,
     }).start();
   }, []);
 
+  // Interpolation quadratique de Bézier approchée
+  const translateX = anim.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [
+      startX,
+      startX + (controlX - startX) * 0.44,
+      controlX * 0.5 + (startX + endX) * 0.25,
+      endX + (controlX - endX) * 0.19,
+      endX,
+    ],
+  });
+
+  const translateY = anim.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [
+      startY,
+      startY + (controlY - startY) * 0.44,
+      controlY * 0.5 + (startY + endY) * 0.25,
+      endY + (controlY - endY) * 0.19,
+      endY,
+    ],
+  });
+
+  // Rétrécit en approchant du tube
+  const scale = anim.interpolate({
+    inputRange: [0, 0.3, 0.7, 1],
+    outputRange: [1.2, 1, 0.5, 0],
+  });
+
+  // Opacité : visible puis disparaît à l'impact
+  const opacity = anim.interpolate({
+    inputRange: [0, 0.2, 0.85, 1],
+    outputRange: [0.9, 1, 0.8, 0],
+  });
+
   return (
     <RNAnimated.Text style={{
       position: 'absolute',
-      left: heart.x - 10,
-      top: heart.y - 10,
+      left: 0,
+      top: 0,
       fontSize: heartSize,
       zIndex: 100,
       transform: [
-        { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, endY] }) },
-        { translateX: anim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, drift * 0.6, drift] }) },
-        { scale: anim.interpolate({ inputRange: [0, 0.15, 0.7, 1], outputRange: [0.4, 1.2, 1, 0.5] }) },
+        { translateX },
+        { translateY },
+        { scale },
       ],
-      opacity: anim.interpolate({ inputRange: [0, 0.2, 0.75, 1], outputRange: [1, 1, 0.6, 0] }),
+      opacity,
     }}>
       {heart.emoji}
     </RNAnimated.Text>
@@ -2625,6 +2671,8 @@ export default function App() {
     const [tierLabel, setTierLabel] = useState('');
     const [tierColor, setTierColor] = useState('#FFF');
     const [confetti, setConfetti] = useState([]);
+    const [tubeLayout, setTubeLayout] = useState({ x: W / 2, y: H * 0.45 });
+    const [tubeFlash, setTubeFlash] = useState(false);
     const decayTimer = useRef(null);
     const heartId = useRef(0);
     const inactivityTimer = useRef(null);
@@ -2827,7 +2875,18 @@ export default function App() {
     }, [moodLevel, isExcited]);
 
     const spawnHeartsAt = (x, y) => {
-      const emojis = ['❤️', '🧡', '💛', '💚', '💙', '💜', '🤍'];
+      // Couleurs adaptées au niveau actuel
+      let emojis;
+      if (isExcited || moodLevel >= 100) {
+        emojis = ['💛', '⭐', '✨', '💫', '🌟'];
+      } else if (moodLevel >= 80) {
+        emojis = ['💙', '💎', '🩵', '💠'];
+      } else if (moodLevel >= 40) {
+        emojis = ['💚', '💚', '🤍', '💚'];
+      } else {
+        emojis = ['🤍', '🩶', '🤍', '🩶'];
+      }
+
       const batch = Array.from({ length: 3 }, (_, i) => ({
         id: Date.now() + i + Math.random(),
         emoji: emojis[Math.floor(Math.random() * emojis.length)],
@@ -2837,7 +2896,7 @@ export default function App() {
       setHearts(prev => [...prev, ...batch]);
       setTimeout(() => {
         setHearts(prev => prev.filter(h => !batch.find(b => b.id === h.id)));
-      }, 1200);
+      }, 1000);
     };
 
     const spawnEnergyAt = (x, y) => {
@@ -2860,6 +2919,10 @@ export default function App() {
 
       // Spawner cœurs à la position du doigt
       spawnHeartsAt(touchX, touchY);
+
+      // Flash sur le tube
+      setTubeFlash(true);
+      setTimeout(() => setTubeFlash(false), 200);
 
       if (isExcited) return;
 
@@ -2930,8 +2993,8 @@ export default function App() {
         >
           <Pressable
             onPressIn={(event) => {
-              const { locationX, locationY } = event.nativeEvent;
-              handleTap(locationX, locationY);
+              const { pageX, pageY } = event.nativeEvent;
+              handleTap(pageX, pageY);
             }}
             style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}
           >
@@ -2951,7 +3014,7 @@ export default function App() {
             }}>
             {/* Cœurs flottants */}
             {hearts.map(heart => (
-              <FloatingHeart key={heart.id} heart={heart} />
+              <FloatingHeart key={heart.id} heart={heart} tubeCenter={tubeLayout} />
             ))}
 
             {/* Confettis (Excité) */}
@@ -2998,7 +3061,16 @@ export default function App() {
 
             {/* Barre verticale + Icônes */}
             {!moodResult && (
-              <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 300, position: 'relative' }}>
+              <View
+                onLayout={(e) => {
+                  const { x, y, width, height } = e.nativeEvent.layout;
+                  setTubeLayout({
+                    x: x + width / 2,
+                    y: y + height / 2,
+                  });
+                }}
+                style={{ flexDirection: 'row', alignItems: 'flex-end', height: 300, position: 'relative' }}
+              >
                 {/* Hand hint — visible before 3 taps */}
                 {tapCount < 3 && (
                   <RNAnimated.View style={{
@@ -3042,8 +3114,16 @@ export default function App() {
                     height: 300,
                     borderRadius: 25,
                     backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                    borderWidth: 1,
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: tubeFlash ? 2 : 1,
+                    borderColor: tubeFlash
+                      ? (isExcited ? '#D4AF37' : moodLevel >= 80 ? '#4DA6FF' : moodLevel >= 40 ? '#00D984' : '#8892A0')
+                      : 'rgba(255, 255, 255, 0.1)',
+                    shadowColor: tubeFlash
+                      ? (isExcited ? '#D4AF37' : moodLevel >= 80 ? '#4DA6FF' : moodLevel >= 40 ? '#00D984' : '#FFFFFF')
+                      : 'transparent',
+                    shadowOpacity: tubeFlash ? 0.8 : 0,
+                    shadowRadius: tubeFlash ? 15 : 0,
+                    shadowOffset: { width: 0, height: 0 },
                     overflow: 'hidden',
                     justifyContent: 'flex-end',
                   }}>
