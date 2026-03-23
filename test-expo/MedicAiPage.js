@@ -9,7 +9,7 @@ import {
   Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Alert, Modal, ActivityIndicator,
 } from 'react-native';
 import Svg, {
-  Defs, Rect, Path, Circle, Line,
+  Defs, Rect, Path, Circle, Ellipse, Line,
   LinearGradient as SvgLinearGradient, Stop,
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
@@ -622,19 +622,18 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuickReply, 
 // ============================================
 // NEUMORPH BALL — Boule neumorphique cabinet médical
 // ============================================
+let _ballGradIdx = 0;
 const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPress, hasAttachment }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const wobbleX = useRef(new Animated.Value(0)).current;
   const wobbleY = useRef(new Animated.Value(0)).current;
   const loadPulse = useRef(new Animated.Value(0.3)).current;
+  const gradId = useRef('bg' + (_ballGradIdx++)).current;
 
-  const BALL_SIZE = 30;
-  const bubbleColor = isBot ? BUBBLE_COLOR_AI : BUBBLE_COLOR_USER;
+  const BALL_SIZE = wp(32);
 
   useEffect(() => {
-    // Entrée avec spring
     Animated.spring(scaleAnim, { toValue: 1, friction: 5, tension: 80, useNativeDriver: true }).start();
-    // Wobble continu
     const dur = 2500 + (index % 5) * 500;
     Animated.loop(Animated.sequence([
       Animated.timing(wobbleX, { toValue: 1, duration: dur, useNativeDriver: true }),
@@ -655,10 +654,12 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
     }
   }, [status]);
 
-  // Opacite reduite si recherche active et pas un hit
   const dimmed = isSearchActive && !isSearchHit;
-
   const isActive = status === 'unread' || isSearchHit;
+
+  const topColor = isBot ? '#FF8A8A' : '#7DD3FC';
+  const bottomColor = isBot ? '#C0392B' : '#0A6DC2';
+  const glowColor = isBot ? '#E74C3C' : '#3498DB';
 
   return (
     <Animated.View style={{
@@ -672,64 +673,73 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
     }}>
       <Pressable onPress={() => { if (status !== 'loading') onPress(); }}>
         <View style={{
-          width: wp(32),
-          height: wp(32),
-          borderRadius: wp(10),
-          backgroundColor: isActive
-            ? (isBot ? 'rgba(231,76,60,0.25)' : 'rgba(52,152,219,0.25)')
-            : (isBot ? 'rgba(231,76,60,0.12)' : 'rgba(52,152,219,0.12)'),
-          justifyContent: 'center',
-          alignItems: 'center',
-          borderWidth: isActive ? 1.5 : 0.5,
-          borderColor: bubbleColor,
-          ...(isActive ? {
-            shadowColor: bubbleColor,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.4,
-            shadowRadius: 6,
-            elevation: 4,
-          } : {}),
-          overflow: 'hidden',
+          width: BALL_SIZE,
+          height: BALL_SIZE,
+          borderRadius: BALL_SIZE / 2,
+          shadowColor: glowColor,
+          shadowOffset: { width: 0, height: isActive ? 0 : 2 },
+          shadowOpacity: isActive ? 0.6 : 0.3,
+          shadowRadius: isActive ? 8 : 4,
+          elevation: isActive ? 6 : 3,
         }}>
-          {/* Contenu */}
+          <Svg width={BALL_SIZE} height={BALL_SIZE} viewBox="0 0 32 32">
+            <Defs>
+              <SvgLinearGradient id={gradId} x1="0.5" y1="0" x2="0.5" y2="1">
+                <Stop offset="0%" stopColor={topColor} />
+                <Stop offset="100%" stopColor={bottomColor} />
+              </SvgLinearGradient>
+            </Defs>
+            <Circle cx="16" cy="16" r="15" fill={`url(#${gradId})`} />
+            <Ellipse cx="11" cy="11" rx="5" ry="4" fill="white" opacity={0.25} />
+            <Circle cx="9" cy="9" r="1.5" fill="white" opacity={0.4} />
+          </Svg>
           {status === 'loading' ? (
             <Animated.View style={{
-              width: 8, height: 8, borderRadius: 4,
-              backgroundColor: bubbleColor,
-              opacity: loadPulse,
-            }} />
-          ) : (
-            <Text style={{
-              color: bubbleColor,
-              fontSize: fp(11),
-              fontWeight: '700',
-              zIndex: 1,
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              borderRadius: BALL_SIZE / 2,
+              justifyContent: 'center', alignItems: 'center',
             }}>
-              {index + 1}
-            </Text>
-          )}
-
-          {/* Glow pour bulle search hit */}
-          {isSearchHit && (
+              <Animated.View style={{
+                width: 8, height: 8, borderRadius: 4,
+                backgroundColor: '#FFF',
+                opacity: loadPulse,
+              }} />
+            </Animated.View>
+          ) : (
             <View style={{
-              position: 'absolute',
-              width: wp(32) + 6,
-              height: wp(32) + 6,
-              borderRadius: wp(10) + 3,
-              borderWidth: 2,
-              borderColor: '#00D984',
-              zIndex: -1,
-            }} />
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              borderRadius: BALL_SIZE / 2,
+              justifyContent: 'center', alignItems: 'center',
+            }}>
+              <Text style={{
+                color: '#FFF',
+                fontSize: fp(11),
+                fontWeight: '800',
+                textShadowColor: 'rgba(0,0,0,0.3)',
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 2,
+              }}>
+                {index + 1}
+              </Text>
+            </View>
           )}
         </View>
-          {/* Point indicateur document */}
-          {hasAttachment && (
-            <View style={{
-              position: 'absolute', bottom: -wp(4),
-              width: wp(6), height: wp(6), borderRadius: wp(3),
-              backgroundColor: isBot ? BUBBLE_COLOR_AI : BUBBLE_COLOR_USER,
-            }} />
-          )}
+        {isSearchHit && (
+          <View style={{
+            position: 'absolute', top: -3, left: -3, right: -3, bottom: -3,
+            borderRadius: (BALL_SIZE + 6) / 2,
+            borderWidth: 2,
+            borderColor: '#00D984',
+          }} />
+        )}
+        {hasAttachment && (
+          <View style={{
+            position: 'absolute', bottom: -wp(3),
+            width: wp(6), height: wp(6), borderRadius: wp(3),
+            backgroundColor: isBot ? '#E74C3C' : '#3498DB',
+            borderWidth: 1, borderColor: '#1A1D22',
+          }} />
+        )}
       </Pressable>
     </Animated.View>
   );
