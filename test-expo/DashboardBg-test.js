@@ -2605,47 +2605,6 @@ export default function App() {
   };
 
   // ===== FALLING STAR — For excited confetti =====
-  const FallingStar = ({ x, emoji, delay }) => {
-    const translateY = useRef(new RNAnimated.Value(-30)).current;
-    const opacity = useRef(new RNAnimated.Value(1)).current;
-
-    useEffect(() => {
-      const timeout = setTimeout(() => {
-        RNAnimated.parallel([
-          RNAnimated.timing(translateY, {
-            toValue: 300,
-            duration: 1500,
-            useNativeDriver: true,
-          }),
-          RNAnimated.sequence([
-            RNAnimated.timing(opacity, {
-              toValue: 1,
-              duration: 500,
-              useNativeDriver: true,
-            }),
-            RNAnimated.timing(opacity, {
-              toValue: 0,
-              duration: 1000,
-              useNativeDriver: true,
-            }),
-          ]),
-        ]).start();
-      }, delay);
-      return () => clearTimeout(timeout);
-    }, []);
-
-    return (
-      <RNAnimated.Text style={{
-        position: 'absolute',
-        top: 0,
-        left: x,
-        fontSize: 20,
-        transform: [{ translateY }],
-        opacity,
-      }}>{emoji}</RNAnimated.Text>
-    );
-  };
-
   // ===== MOOD MODAL — TikTok Tap Mechanism =====
   const MoodModal = () => {
     if (!showMoodModal) return null;
@@ -2665,7 +2624,7 @@ export default function App() {
     const [currentTier, setCurrentTier] = useState(0);
     const [tierLabel, setTierLabel] = useState('');
     const [tierColor, setTierColor] = useState('#FFF');
-    const [fallingStars, setFallingStars] = useState([]);
+    const [confetti, setConfetti] = useState([]);
     const decayTimer = useRef(null);
     const heartId = useRef(0);
     const inactivityTimer = useRef(null);
@@ -2740,41 +2699,98 @@ export default function App() {
       return () => clearTimeout(inactivityTimer.current);
     }, [moodLevel, hasStartedTapping, isExcited]);
 
-    // Falling stars when Excited triggers
+    // Screen shake animation
+    const screenShakeAnim = useRef(new RNAnimated.Value(0)).current;
+
+    // Confetti + screen shake when Excited triggers
     useEffect(() => {
       if (isExcited) {
-        const stars = Array.from({ length: 10 }, (_, i) => ({
+        const colors = ['#FF8C42', '#00D984', '#4DA6FF', '#D4AF37', '#FF6B8A', '#FFD93D', '#FFFFFF'];
+        const newConfetti = Array.from({ length: 40 }, (_, i) => ({
           id: Date.now() + i,
-          emoji: ['⭐', '🌟', '✨'][Math.floor(Math.random() * 3)],
-          x: Math.random() * 280 + 20,
+          x: Math.random() * W,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: 4 + Math.random() * 6,
+          drift: (Math.random() - 0.5) * 80,
+          rotateEnd: 360 + Math.random() * 720,
+          delay: Math.random() * 600,
         }));
-        setFallingStars(stars);
-        setTimeout(() => setFallingStars([]), 1800);
+        setConfetti(newConfetti);
+        setTimeout(() => setConfetti([]), 3500);
+
+        // SCREEN SHAKE — tout l'écran tremble
+        const shakeSequence = [];
+        for (let i = 0; i < 15; i++) {
+          shakeSequence.push(
+            RNAnimated.timing(screenShakeAnim, {
+              toValue: (Math.random() - 0.5) * 12,
+              duration: 50 + Math.random() * 30,
+              useNativeDriver: true,
+            })
+          );
+        }
+        shakeSequence.push(
+          RNAnimated.timing(screenShakeAnim, {
+            toValue: 0,
+            duration: 100,
+            useNativeDriver: true,
+          })
+        );
+        RNAnimated.sequence(shakeSequence).start();
       }
     }, [isExcited]);
 
-    const FloatingStar = ({ star }) => {
-      const anim = useRef(new RNAnimated.Value(0)).current;
+    const Confetto = ({ item }) => {
+      const fallAnim = useRef(new RNAnimated.Value(0)).current;
+      const rotateAnim = useRef(new RNAnimated.Value(0)).current;
+
       useEffect(() => {
-        RNAnimated.timing(anim, {
-          toValue: 1, duration: 1500, useNativeDriver: true,
-        }).start();
+        const delay = item.delay || 0;
+        const timer = setTimeout(() => {
+          RNAnimated.parallel([
+            RNAnimated.timing(fallAnim, {
+              toValue: 1, duration: 2000 + Math.random() * 1000,
+              useNativeDriver: true,
+            }),
+            RNAnimated.timing(rotateAnim, {
+              toValue: 1, duration: 1500 + Math.random() * 1000,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }, delay);
+        return () => clearTimeout(timer);
       }, []);
+
+      const translateY = fallAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [-20, H + 50],
+      });
+      const translateX = fallAnim.interpolate({
+        inputRange: [0, 0.3, 0.6, 1],
+        outputRange: [0, item.drift * 0.5, item.drift * -0.3, item.drift],
+      });
+      const rotate = rotateAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['0deg', `${item.rotateEnd}deg`],
+      });
+      const opacity = fallAnim.interpolate({
+        inputRange: [0, 0.1, 0.8, 1],
+        outputRange: [0, 1, 1, 0],
+      });
+
       return (
-        <RNAnimated.Text style={{
+        <RNAnimated.View style={{
           position: 'absolute',
-          left: star.x,
-          top: 20,
-          fontSize: 20 + Math.random() * 10,
+          left: item.x,
+          top: 0,
+          width: item.size,
+          height: item.size * 2.5,
+          borderRadius: item.size * 0.3,
+          backgroundColor: item.color,
+          transform: [{ translateY }, { translateX }, { rotate }],
+          opacity,
           zIndex: 100,
-          transform: [
-            { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, 300 + Math.random() * 100] }) },
-            { rotate: anim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${Math.floor(Math.random() * 360)}deg`] }) },
-          ],
-          opacity: anim.interpolate({ inputRange: [0, 0.3, 0.8, 1], outputRange: [1, 1, 0.5, 0] }),
-        }}>
-          {star.emoji}
-        </RNAnimated.Text>
+        }} />
       );
     };
 
@@ -2811,12 +2827,16 @@ export default function App() {
     }, [moodLevel, isExcited]);
 
     const spawnHeartsAt = (x, y) => {
+      // Limiter la zone de spawn — pas au-dessus de 100px
+      const safeY = Math.max(y, 100);
+      const safeX = Math.max(Math.min(x, W - 30), 30);
+
       const emojis = ['❤️', '🧡', '💛', '💚', '💙', '💜', '🤍'];
       const batch = Array.from({ length: 3 }, (_, i) => ({
         id: Date.now() + i + Math.random(),
         emoji: emojis[Math.floor(Math.random() * emojis.length)],
-        x: x + (Math.random() * 30 - 15),
-        y: y,
+        x: safeX + (Math.random() * 30 - 15),
+        y: safeY,
       }));
       setHearts(prev => [...prev, ...batch]);
       setTimeout(() => {
@@ -2825,10 +2845,13 @@ export default function App() {
     };
 
     const spawnEnergyAt = (x, y) => {
+      const safeY = Math.max(y, 100);
+      const safeX = Math.max(Math.min(x, W - 30), 30);
+
       const newParticles = Array.from({ length: 3 }, (_, i) => ({
         id: Date.now() + i + Math.random(),
-        x: x + (Math.random() * 30 - 15),
-        y: y,
+        x: safeX + (Math.random() * 30 - 15),
+        y: safeY,
         emoji: ['⚡', '✦', '🔥'][Math.floor(Math.random() * 3)],
       }));
       setEnergyParticles(prev => [...prev, ...newParticles]);
@@ -2919,14 +2942,28 @@ export default function App() {
             }}
             style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}
           >
+            <RNAnimated.View style={{
+              flex: 1,
+              width: '100%',
+              justifyContent: 'center',
+              alignItems: 'center',
+              transform: [
+                { translateX: screenShakeAnim },
+                { translateY: screenShakeAnim.interpolate({
+                    inputRange: [-12, 0, 12],
+                    outputRange: [6, 0, -6],
+                  })
+                },
+              ],
+            }}>
             {/* Cœurs flottants */}
             {hearts.map(heart => (
               <FloatingHeart key={heart.id} heart={heart} />
             ))}
 
-            {/* Étoiles tombantes (Excité) */}
-            {fallingStars.map(star => (
-              <FloatingStar key={star.id} star={star} />
+            {/* Confettis (Excité) */}
+            {confetti.map(item => (
+              <Confetto key={item.id} item={item} />
             ))}
 
             {/* Titre */}
@@ -2973,18 +3010,21 @@ export default function App() {
                 {tapCount < 3 && (
                   <RNAnimated.View style={{
                     position: 'absolute',
-                    alignSelf: 'center',
-                    top: '35%',
-                    left: 0,
-                    right: 0,
+                    top: '45%',
+                    right: wp(30),
                     alignItems: 'center',
                     transform: [{ translateY: handTranslateY }],
                     opacity: handOpacity,
                     zIndex: 10,
                   }}>
-                    <Text style={{ fontSize: 40 }}>👆</Text>
-                    <Text style={{ color: '#8892A0', fontSize: 13, marginTop: 4 }}>
-                      Tapote ici !
+                    <Text style={{ fontSize: 50 }}>👆</Text>
+                    <Text style={{
+                      color: '#8892A0',
+                      fontSize: 13,
+                      marginTop: 4,
+                      textAlign: 'center',
+                    }}>
+                      Tapotez{'\n'}partout !
                     </Text>
                   </RNAnimated.View>
                 )}
@@ -3085,22 +3125,10 @@ export default function App() {
             {/* Résultat Mood */}
             {moodResult && !showWeather && (
               <View style={{ alignItems: 'center', paddingHorizontal: 30 }}>
-                {/* Falling stars for Excited */}
-                {moodResult === 'excited' && (
-                  <>
-                    {[
-                      { x: W * 0.1, emoji: '⭐', delay: 0 },
-                      { x: W * 0.3, emoji: '🌟', delay: 200 },
-                      { x: W * 0.5, emoji: '⭐', delay: 100 },
-                      { x: W * 0.7, emoji: '🌟', delay: 300 },
-                      { x: W * 0.85, emoji: '⭐', delay: 150 },
-                      { x: W * 0.2, emoji: '🌟', delay: 400 },
-                      { x: W * 0.6, emoji: '⭐', delay: 250 },
-                    ].map((star, i) => (
-                      <FallingStar key={`star-${i}`} x={star.x} emoji={star.emoji} delay={star.delay} />
-                    ))}
-                  </>
-                )}
+                {/* Confettis for Excited result */}
+                {moodResult === 'excited' && confetti.length > 0 &&
+                  confetti.map(item => ( <Confetto key={item.id} item={item} /> ))
+                }
                 <View style={{ marginBottom: 15 }}>
                   <MoodIcon tier={moodMessages[moodResult].tier} size={60} active={true} />
                 </View>
@@ -3145,7 +3173,7 @@ export default function App() {
                     setCurrentTier(0);
                     setTierLabel('');
                     setTierColor('#FFF');
-                    setFallingStars([]);
+                    setConfetti([]);
                     tubeShakeAnim.setValue(0);
                     tierLabelOpacity.setValue(0);
                   }}
@@ -3280,6 +3308,7 @@ export default function App() {
               </View>
             )}
 
+            </RNAnimated.View>
           </Pressable>
         </LinearGradient>
       </View>
