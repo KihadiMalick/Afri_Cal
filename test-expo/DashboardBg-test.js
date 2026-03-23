@@ -57,6 +57,21 @@ const seededRandom = (seed) => {
   const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
 };
+// === HELPERS HYDRATATION ===
+const getEffectiveML = (volumeML, coeff) => Math.round(volumeML * coeff);
+
+const getCoeffColor = (coeff) => {
+  if (coeff >= 0.90) return '#00D984';
+  if (coeff >= 0.70) return '#4DA6FF';
+  if (coeff >= 0.50) return '#FFD93D';
+  return '#FF6B6B';
+};
+
+// Cubes de sucre → grammes ajoutés (1 cube standard = 4g)
+const SUGAR_CUBE_G = 4;
+const sugarCubesToGrams = (cubes) => cubes * SUGAR_CUBE_G;
+const sugarGramsToKcal = (grams) => Math.round(grams * 4);
+
 // ============================================
 // COMPOSANT — Background métallique propre
 // ============================================
@@ -2379,6 +2394,30 @@ export default function App() {
   */
 
   // === CHARGER DONNÉES DASHBOARD ===
+  const fetchDailyHydration = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase.rpc('get_daily_hydration', {
+        p_user_id: TEST_USER_ID,
+        p_date: today,
+      });
+      if (error) throw error;
+      if (data && data.length > 0) {
+        return {
+          totalEffective: data[0].total_effective_ml,
+          totalVolume: data[0].total_volume_ml,
+          totalKcal: data[0].total_kcal,
+          totalSugar: data[0].total_sugar_g,
+          entryCount: data[0].entry_count,
+        };
+      }
+      return { totalEffective: 0, totalVolume: 0, totalKcal: 0, totalSugar: 0, entryCount: 0 };
+    } catch (err) {
+      console.warn('fetchDailyHydration error:', err);
+      return { totalEffective: 0, totalVolume: 0, totalKcal: 0, totalSugar: 0, entryCount: 0 };
+    }
+  };
+
   const loadDashboardFromSupabase = async () => {
     setIsLoadingDashboard(true);
     try {
@@ -2444,12 +2483,14 @@ export default function App() {
 
   useEffect(() => {
     loadDashboardFromSupabase();
+    fetchDailyHydration().then(setHydrationData);
   }, []);
 
   // Recharger quand on revient sur l'onglet home
   useEffect(() => {
     if (activeTab === 'home') {
       loadDashboardFromSupabase();
+      fetchDailyHydration().then(setHydrationData);
     }
   }, [activeTab]);
 
@@ -2457,6 +2498,9 @@ export default function App() {
   const [currentMood, setCurrentMood] = useState(null); // 'sad' | 'chill' | 'happy' | 'excited'
   const [showMoodModal, setShowMoodModal] = useState(false);
   const [hydrationMl, setHydrationMl] = useState(1500);
+  const [hydrationData, setHydrationData] = useState({
+    totalEffective: 0, totalVolume: 0, totalKcal: 0, totalSugar: 0, entryCount: 0,
+  });
   const [hydroModalVisible, setHydroModalVisible] = useState(false);
   const [surplusAlertVisible, setSurplusAlertVisible] = useState(false);
   const [hydroLogs, setHydroLogs] = useState([
