@@ -1783,11 +1783,57 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
               </Text>
             </TouchableOpacity>
 
-            {/* ═══ CADRAN MONTRE HYDRATATION ═══ */}
-            <View style={{ marginHorizontal: 20, marginTop: 12 }}>
-              <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '800', letterSpacing: 2, marginBottom: 4, textAlign: 'center' }}>AUJOURD'HUI</Text>
+            {/* ═══ HISTORIQUE — Liste scroll fixe ═══ */}
+            <View style={{ marginHorizontal: 20, marginTop: 16 }}>
+              <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '800', letterSpacing: 2, marginBottom: 8 }}>AUJOURD'HUI</Text>
+              {hydroLogs.length === 0 ? (
+                <View style={{
+                  backgroundColor: 'rgba(30,37,48,0.3)',
+                  borderRadius: 12, padding: 16,
+                  borderWidth: 1, borderColor: 'rgba(74,79,85,0.15)',
+                  alignItems: 'center', height: 80, justifyContent: 'center',
+                }}>
+                  <Text style={{ fontSize: 24, marginBottom: 4 }}>💧</Text>
+                  <Text style={{ color: '#555E6C', fontSize: 12 }}>Ajoutez votre première boisson du jour</Text>
+                </View>
+              ) : (
+                <View style={{
+                  height: 160,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                }}>
+                  <LinearGradient
+                    colors={['rgba(30,37,48,0.6)', 'transparent']}
+                    style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 20, zIndex: 10, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
+                    pointerEvents="none"
+                  />
+                  <ScrollView
+                    nestedScrollEnabled={true}
+                    showsVerticalScrollIndicator={false}
+                    style={{ flex: 1 }}
+                  >
+                    {hydroLogs.slice().reverse().map((log, i) => (
+                      <View key={i} style={{
+                        flexDirection: 'row', alignItems: 'center',
+                        paddingVertical: 7, paddingHorizontal: 10,
+                        borderLeftWidth: 2,
+                        borderLeftColor: i === 0 ? '#00D984' : 'rgba(74,79,85,0.2)',
+                      }}>
+                        <Text style={{ fontSize: 16, width: 26 }}>{log.icon || '💧'}</Text>
+                        <Text style={{ color: '#555E6C', fontSize: 11, width: 42 }}>{log.time}</Text>
+                        <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '600', flex: 1 }}>{log.type || 'eau'}</Text>
+                        <Text style={{ color: '#4DA6FF', fontSize: 13, fontWeight: '800' }}>+{log.amount} ml</Text>
+                      </View>
+                    ))}
+                  </ScrollView>
+                  <LinearGradient
+                    colors={['transparent', 'rgba(30,37,48,0.6)']}
+                    style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 20, zIndex: 10, borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}
+                    pointerEvents="none"
+                  />
+                </View>
+              )}
             </View>
-            <HydrationClock logs={hydroLogs} totalMl={currentMl} goalMl={goalMl} />
 
             {/* ═══ DÉBLOQUER HISTORIQUE — lien vers MES STATS ═══ */}
             <TouchableOpacity
@@ -1803,8 +1849,8 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
                 backgroundColor: 'rgba(255, 255, 255, 0.04)',
                 borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)',
-                borderRadius: 14, paddingVertical: 12,
-                marginTop: 12, marginHorizontal: 20,
+                borderRadius: 16, paddingVertical: 16,
+                marginTop: 16, marginHorizontal: 20,
               }}
             >
               <Text style={{ fontSize: 14, marginRight: 8 }}>🔒</Text>
