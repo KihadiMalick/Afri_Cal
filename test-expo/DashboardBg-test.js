@@ -1527,43 +1527,44 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
           </View>
 
           <ScrollView contentContainerStyle={{ alignItems: 'center', paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-            {/* ═══ SECTION HAUTE : Stats compactes ═══ */}
-            <View style={{
-              flexDirection: 'row', alignItems: 'center',
-              marginHorizontal: 20, marginTop: 16, marginBottom: 8,
-              backgroundColor: 'rgba(30,37,48,0.6)',
-              borderRadius: 16, padding: 14,
-              borderWidth: 1, borderColor: 'rgba(77,166,255,0.1)',
-            }}>
-              <SilhouetteFill fillPercent={percent} height={80} gender={gender} showBubbles />
-              <View style={{ flex: 1, marginLeft: 16 }}>
-                <Text style={{ color: '#4DA6FF', fontSize: 28, fontWeight: '900' }}>
-                  {currentMl.toLocaleString('fr-FR')}
-                  <Text style={{ color: '#555E6C', fontSize: 16 }}> / {goalMl.toLocaleString('fr-FR')} ml</Text>
-                </Text>
-                <View style={{
-                  height: 6, backgroundColor: 'rgba(255,255,255,0.08)',
-                  borderRadius: 3, overflow: 'hidden', marginTop: 8, marginBottom: 6,
-                }}>
-                  <LinearGradient
-                    colors={['#4DA6FF', '#00BCD4']}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={{ width: percent + '%', height: '100%', borderRadius: 3 }}
-                  />
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ color: '#8892A0', fontSize: 12 }}>{glasses}/{totalGlasses} verres</Text>
-                  <Text style={{
-                    color: percent >= 80 ? '#00D984' : percent >= 50 ? '#4DA6FF' : '#FF8C42',
-                    fontSize: 13, fontWeight: '800',
-                  }}>{percent}%</Text>
+            {/* ═══ GRANDE SILHOUETTE — STAR DE LA PAGE ═══ */}
+            <View style={{ alignItems: 'center', marginTop: 12, marginBottom: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <SilhouetteFill fillPercent={percent} height={180} gender={gender} showBubbles />
+                <View style={{ marginLeft: 16, height: 180, justifyContent: 'space-between', paddingVertical: 8 }}>
+                  {palierLabels.slice().reverse().map((label, i) => {
+                    const palierPct = (4 - i) * 25;
+                    const reached = percent >= palierPct;
+                    return (
+                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <View style={{ width: 12, height: 1, backgroundColor: reached ? '#4DA6FF' : '#2A3040' }} />
+                        <Text style={{ color: reached ? '#4DA6FF' : '#555E6C', fontSize: 11, marginLeft: 6, fontWeight: reached ? '700' : '400' }}>{label}</Text>
+                      </View>
+                    );
+                  })}
                 </View>
               </View>
             </View>
 
+            {/* ═══ COMPTEUR + BARRE ═══ */}
+            <View style={{ alignItems: 'center', marginBottom: 12 }}>
+              <Text style={{ fontSize: 26, fontWeight: '800' }}>
+                <Text style={{ color: '#4DA6FF' }}>{currentMl.toLocaleString('fr-FR')}</Text>
+                <Text style={{ color: '#555E6C' }}> / {goalMl.toLocaleString('fr-FR')} ml</Text>
+              </Text>
+              <View style={{ width: W - 64, height: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginTop: 8 }}>
+                <LinearGradient
+                  colors={['#4DA6FF', '#00BCD4']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ width: percent + '%', height: '100%', borderRadius: 4 }}
+                />
+              </View>
+              <Text style={{ color: '#4DA6FF', fontSize: 13, fontWeight: '700', marginTop: 6 }}>{percent}% • {glasses}/{totalGlasses} verres</Text>
+            </View>
+
             {/* ═══ SECTION EAU ═══ */}
             <View style={{
-              marginHorizontal: 20, marginTop: 10,
+              marginHorizontal: 20, marginTop: 4,
               backgroundColor: 'rgba(30,37,48,0.4)',
               borderRadius: 16, padding: 14,
               borderWidth: 1, borderColor: 'rgba(77,166,255,0.08)',
@@ -1619,56 +1620,52 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
               </Text>
             </TouchableOpacity>
 
-            {/* ═══ TIMELINE HISTORIQUE ═══ */}
+            {/* ═══ HISTORIQUE — Liste compacte avec hauteur max ═══ */}
             <View style={{ marginHorizontal: 20, marginTop: 16 }}>
-              <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '800', letterSpacing: 2, marginBottom: 10 }}>AUJOURD'HUI</Text>
+              <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '800', letterSpacing: 2, marginBottom: 8 }}>AUJOURD'HUI</Text>
 
               {hydroLogs.length === 0 ? (
                 <View style={{
                   backgroundColor: 'rgba(30,37,48,0.3)',
-                  borderRadius: 12, padding: 20,
+                  borderRadius: 12, padding: 16,
                   borderWidth: 1, borderColor: 'rgba(74,79,85,0.15)',
                   alignItems: 'center',
                 }}>
-                  <Text style={{ fontSize: 28, marginBottom: 8 }}>💧</Text>
+                  <Text style={{ fontSize: 24, marginBottom: 6 }}>💧</Text>
                   <Text style={{ color: '#555E6C', fontSize: 12, textAlign: 'center' }}>
                     Ajoutez votre première boisson du jour
                   </Text>
                 </View>
               ) : (
-                <View>
-                  {hydroLogs.slice().reverse().map((log, i) => (
+                <View style={{ maxHeight: 180, overflow: 'hidden' }}>
+                  {hydroLogs.slice().reverse().slice(0, 5).map((log, i) => (
                     <View key={i} style={{
                       flexDirection: 'row', alignItems: 'center',
-                      paddingVertical: 8, paddingHorizontal: 12,
-                      marginBottom: 6,
-                      backgroundColor: i === 0 ? 'rgba(0,217,132,0.04)' : 'rgba(30,37,48,0.3)',
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: i === 0 ? 'rgba(0,217,132,0.12)' : 'rgba(74,79,85,0.1)',
+                      paddingVertical: 6, paddingHorizontal: 10,
+                      marginBottom: 4,
+                      backgroundColor: i === 0 ? 'rgba(0,217,132,0.04)' : 'transparent',
+                      borderRadius: 8,
+                      borderLeftWidth: 2,
+                      borderLeftColor: i === 0 ? '#00D984' : 'rgba(74,79,85,0.2)',
                     }}>
-                      <Text style={{ fontSize: 18, width: 30 }}>{log.icon || '💧'}</Text>
-                      <View style={{ flex: 1, marginLeft: 6 }}>
-                        <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '600' }}>
-                          {log.type || 'eau'}
-                        </Text>
-                        <Text style={{ color: '#8892A0', fontSize: 10, marginTop: 1 }}>
-                          {log.time}
-                        </Text>
-                      </View>
+                      <Text style={{ fontSize: 14, width: 24 }}>{log.icon || '💧'}</Text>
+                      <Text style={{ color: '#8892A0', fontSize: 11, width: 40 }}>{log.time}</Text>
+                      <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '600', flex: 1 }}>{log.type || 'eau'}</Text>
                       <Text style={{
-                        color: log.amount < 0 ? '#FF8C42' : '#4DA6FF',
-                        fontSize: 14, fontWeight: '800',
-                      }}>
-                        {log.amount > 0 ? '+' : ''}{log.amount} ml
-                      </Text>
+                        color: '#4DA6FF', fontSize: 12, fontWeight: '800',
+                      }}>+{log.amount} ml</Text>
                     </View>
                   ))}
+                  {hydroLogs.length > 5 && (
+                    <View style={{ alignItems: 'center', marginTop: 4 }}>
+                      <Text style={{ color: '#555E6C', fontSize: 11 }}>▼ {hydroLogs.length - 5} entrée{hydroLogs.length - 5 > 1 ? 's' : ''} de plus</Text>
+                    </View>
+                  )}
                 </View>
               )}
             </View>
 
-            {/* ═══ DÉBLOQUER HISTORIQUE ═══ */}
+            {/* ═══ DÉBLOQUER HISTORIQUE — lien vers MES STATS ═══ */}
             <TouchableOpacity
               onPress={() => Alert.alert(
                 'Historique Complet',
