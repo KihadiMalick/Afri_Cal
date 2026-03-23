@@ -1010,8 +1010,8 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
         <View style={{
           width: coreSize, height: coreSize, borderRadius: coreSize / 2,
           alignItems: 'center', justifyContent: 'center',
-          backgroundColor: 'rgba(13, 17, 23, 0.45)',
-          borderWidth: 1, borderColor: color + '30',
+          backgroundColor: 'transparent',
+          borderWidth: 0,
           shadowColor: color, shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.35, shadowRadius: 10, elevation: 5,
         }}>
@@ -1632,11 +1632,10 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
             <TouchableOpacity
               onPress={() => Alert.alert(
                 'Historique Complet',
-                'Accédez à votre historique sur 7 jours et plus.',
+                'Accédez à votre historique sur 7 jours pour 100 Lix.',
                 [
                   { text: 'Plus tard', style: 'cancel' },
-                  { text: '100 Lix', onPress: () => console.log('unlock history') },
-                  { text: 'Premium', onPress: () => console.log('go premium') },
+                  { text: 'Débloquer 100 Lix', onPress: () => console.log('unlock history') },
                 ]
               )}
               style={{
@@ -1665,34 +1664,60 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
               }}>
                 <Text style={{ color: '#00D984', fontSize: 11, fontWeight: '700' }}>100 Lix</Text>
               </View>
-              <Text style={{ color: '#8892A0', fontSize: 11, marginLeft: 5 }}>ou</Text>
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginLeft: 5,
-                backgroundColor: 'rgba(212, 175, 55, 0.08)',
-                borderRadius: 8,
-                paddingHorizontal: 8,
-                paddingVertical: 3,
-              }}>
-                <Text style={{ color: '#D4AF37', fontSize: 11, fontWeight: '700' }}>★ Premium</Text>
-              </View>
+              <Text style={{ color: '#8892A0', fontSize: 11, marginLeft: 5 }}>pour débloquer</Text>
             </TouchableOpacity>
 
             {/* Réinitialiser — discret avec confirmation */}
             <TouchableOpacity
-              onPress={() => Alert.alert(
-                'Réinitialiser',
-                'Voulez-vous vraiment remettre votre hydratation à zéro pour aujourd\'hui ?',
-                [
-                  { text: 'Annuler', style: 'cancel' },
-                  { text: 'Réinitialiser', style: 'destructive', onPress: () => { setCurrentMl(0); setHydroLogs([]); } },
-                ]
-              )}
+              onPress={() => setShowResetConfirm(true)}
               style={{ alignSelf: 'center', marginTop: 20, marginBottom: 30 }}
             >
               <Text style={{ color: '#8892A0', fontSize: 11, opacity: 0.5 }}>Réinitialiser les données du jour</Text>
             </TouchableOpacity>
+
+            {/* Modal confirmation reset */}
+            <Modal visible={showResetConfirm} animationType="fade" transparent>
+              <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 30 }}>
+                <View style={{
+                  backgroundColor: '#1E2530', borderRadius: 20, padding: 24, width: '100%',
+                  borderWidth: 1, borderColor: 'rgba(255,59,48,0.2)',
+                }}>
+                  <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 12 }}>
+                    Réinitialiser ?
+                  </Text>
+                  <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
+                    Votre hydratation du jour sera remise à zéro. Cette action est irréversible.
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <TouchableOpacity
+                      onPress={() => setShowResetConfirm(false)}
+                      style={{
+                        flex: 1, paddingVertical: 12, borderRadius: 12,
+                        borderWidth: 1, borderColor: 'rgba(136,146,160,0.2)',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: '#8892A0', fontSize: 14, fontWeight: '600' }}>Annuler</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setCurrentMl(0);
+                        setHydroLogs([]);
+                        setShowResetConfirm(false);
+                      }}
+                      style={{
+                        flex: 1, paddingVertical: 12, borderRadius: 12,
+                        backgroundColor: 'rgba(255,59,48,0.12)',
+                        borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: '#FF3B30', fontSize: 14, fontWeight: '800' }}>Réinitialiser</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>
@@ -2208,10 +2233,10 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
       }} onPress={() => Alert.alert(
         'Débloquer Mes Stats',
-        'Accédez à vos statistiques sur 7 jours pour 200 Lix ou avec un abonnement Premium.',
+        'Accédez à vos statistiques sur 7 jours pour 200 Lix.',
         [
           { text: 'Plus tard', style: 'cancel' },
-          { text: 'Débloquer', onPress: () => console.log('Navigate to shop') },
+          { text: 'Débloquer 200 Lix', onPress: () => console.log('Navigate to shop') },
         ]
       )}>
         {/* Ligne 1 : Titre */}
@@ -2256,18 +2281,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             <LixCoinIcon size={wp(12)} />
             <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700', marginLeft: wp(3) }}>200 Lix</Text>
           </View>
-          <Text style={{ color: '#6B7280', fontSize: fp(10) }}>ou</Text>
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: 'rgba(212,175,55,0.08)',
-            borderRadius: wp(8),
-            paddingHorizontal: wp(8),
-            paddingVertical: wp(3),
-          }}>
-            <StarIcon />
-            <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '700', marginLeft: wp(3) }}>Premium</Text>
-          </View>
+          <Text style={{ color: '#6B7280', fontSize: fp(10) }}>pour débloquer</Text>
         </View>
       </MetalCard>
 
@@ -2665,6 +2679,7 @@ export default function App() {
   const [beverageSaving, setBeverageSaving] = useState(false);
   const [beverageToast, setBeverageToast] = useState(null);
   const [hydroModalVisible, setHydroModalVisible] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [surplusAlertVisible, setSurplusAlertVisible] = useState(false);
   const [hydroLogs, setHydroLogs] = useState([]);
 
