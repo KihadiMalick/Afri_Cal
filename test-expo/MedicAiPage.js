@@ -546,6 +546,12 @@ const FormattedResponseText = ({ text, style }) => {
       });
     }
 
+    if (nextTag === 0) {
+      elements.push(<Text key={key++} style={style}>{remaining.charAt(0)}</Text>);
+      remaining = remaining.substring(1);
+      continue;
+    }
+
     remaining = nextTag === -1 ? '' : remaining.substring(nextTag);
   }
 
@@ -841,10 +847,16 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuickReply, 
         const isTypingDone = !isUserMessage && displayedText.length >= (currentMessage || '').length;
         return (
           <>
-            <FormattedResponseText
-              text={cleanText}
-              style={{ color: '#3A4550', fontSize: 13, lineHeight: fp(22) }}
-            />
+            {isTypingDone && !isUserMessage ? (
+              <FormattedResponseText
+                text={cleanText}
+                style={{ color: '#3A4550', fontSize: 13, lineHeight: fp(22) }}
+              />
+            ) : (
+              <Text style={{ color: '#3A4550', fontSize: 13, lineHeight: fp(22) }}>
+                {cleanText}
+              </Text>
+            )}
             {isTypingDone && !isUserMessage && choices.length > 0 && (
               <QuickReplyButtons
                 choices={choices}
@@ -6367,22 +6379,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(24),
               }}>Choisissez le type de contenu à partager</Text>
 
-              {/* Option 1 : Envoyer un fichier (photo/galerie/document) */}
+              {/* Option 1 : Photo ou image (galerie) */}
               <Pressable
                 delayPressIn={120}
                 onPress={() => {
                   setShowDocumentSheet(false);
                   setTimeout(() => {
-                    Alert.alert(
-                      'Envoyer un fichier',
-                      'Comment souhaitez-vous ajouter votre fichier ?',
-                      [
-                        { text: 'Prendre une photo', onPress: () => takePhoto('chat') },
-                        { text: 'Depuis la galerie', onPress: () => pickImage('chat') },
-                        { text: 'Document PDF', onPress: () => pickDocument('chat') },
-                        { text: 'Annuler', style: 'cancel' },
-                      ]
-                    );
+                    pickImage('chat');
                   }, 300);
                 }}
                 style={{
@@ -6403,13 +6406,81 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                   </Svg>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(3) }}>Envoyer un fichier</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Photo, image ou document PDF</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(3) }}>Photo ou image</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Depuis la galerie ou la caméra</Text>
                 </View>
                 <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
               </Pressable>
 
-              {/* Option 2 : Partager ma localisation */}
+              {/* Option 2 : Prendre une photo (caméra) */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => {
+                  setShowDocumentSheet(false);
+                  setTimeout(() => {
+                    takePhoto('chat');
+                  }, 300);
+                }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(16), paddingHorizontal: wp(14),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(16), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(48), height: wp(48), borderRadius: wp(14),
+                  backgroundColor: 'rgba(77,166,255,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(14),
+                }}>
+                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <Circle cx="12" cy="13" r="4" stroke="#4DA6FF" strokeWidth="1.5"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(3) }}>Prendre une photo</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Utiliser la caméra</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Option 3 : Document PDF */}
+              <Pressable
+                delayPressIn={120}
+                onPress={() => {
+                  setShowDocumentSheet(false);
+                  setTimeout(() => {
+                    pickDocument('chat');
+                  }, 300);
+                }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(16), paddingHorizontal: wp(14),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(16), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View style={{
+                  width: wp(48), height: wp(48), borderRadius: wp(14),
+                  backgroundColor: 'rgba(255,107,107,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(14),
+                }}>
+                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <Path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(3) }}>Document PDF</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Importer un document</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Option 4 : Partager ma localisation */}
               <Pressable
                 delayPressIn={120}
                 onPress={() => {
@@ -6455,7 +6526,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 </View>
               </Pressable>
 
-              {/* Option 3 : Importer conversation compactée */}
+              {/* Option 5 : Importer conversation compactée */}
               <Pressable
                 delayPressIn={120}
                 onPress={() => {
