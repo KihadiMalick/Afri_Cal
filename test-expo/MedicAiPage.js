@@ -5967,7 +5967,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 paddingBottom: wp(34),
               }}
             >
-              {/* Poignee */}
+              {/* Poignée */}
               <View style={{
                 width: wp(40), height: wp(4), borderRadius: wp(2),
                 backgroundColor: 'rgba(255,255,255,0.2)',
@@ -5977,130 +5977,54 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               {/* Titre */}
               <Text style={{
                 fontSize: fp(20), fontWeight: '700', color: '#FFFFFF', marginBottom: wp(4),
-              }}>Ajouter un fichier</Text>
+              }}>Envoyer à ALIXEN</Text>
               <Text style={{
                 fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(24),
-              }}>ALIXEN peut analyser photos, documents et plus encore</Text>
+              }}>Choisissez le type de contenu à partager</Text>
 
-              {/* Option 1 : Charger une photo */}
+              {/* Option 1 : Envoyer un fichier (photo/galerie/document) */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => { setShowDocumentSheet(false); setTimeout(() => pickImage('chat'), 300); }}
+                onPress={() => {
+                  setShowDocumentSheet(false);
+                  setTimeout(() => {
+                    Alert.alert(
+                      'Envoyer un fichier',
+                      'Comment souhaitez-vous ajouter votre fichier ?',
+                      [
+                        { text: 'Prendre une photo', onPress: () => takePhoto('chat') },
+                        { text: 'Depuis la galerie', onPress: () => pickImage('chat') },
+                        { text: 'Document PDF', onPress: () => pickDocument('chat') },
+                        { text: 'Annuler', style: 'cancel' },
+                      ]
+                    );
+                  }, 300);
+                }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
-                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  paddingVertical: wp(16), paddingHorizontal: wp(14),
                   backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderRadius: wp(16), marginBottom: wp(10),
                   borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
                 }}
               >
                 <View style={{
-                  width: wp(44), height: wp(44), borderRadius: wp(12),
+                  width: wp(48), height: wp(48), borderRadius: wp(14),
                   backgroundColor: 'rgba(0,217,132,0.1)',
-                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(14),
                 }}>
-                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Rect x="3" y="3" width="18" height="18" rx="2" stroke="#00D984" strokeWidth="1.5" fill="none"/>
-                    <Circle cx="8.5" cy="8.5" r="1.5" stroke="#00D984" strokeWidth="1.5" fill="none"/>
-                    <Path d="M21 15l-5-5L5 21" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </Svg>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Charger une photo</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Depuis votre galerie</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(3) }}>Envoyer un fichier</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Photo, image ou document PDF</Text>
                 </View>
                 <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
               </Pressable>
 
-              {/* Option 2 : Prendre une photo */}
-              <Pressable
-                delayPressIn={120}
-                onPress={() => { setShowDocumentSheet(false); setTimeout(() => takePhoto('chat'), 300); }}
-                style={{
-                  flexDirection: 'row', alignItems: 'center',
-                  paddingVertical: wp(14), paddingHorizontal: wp(12),
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: wp(14), marginBottom: wp(10),
-                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-                }}
-              >
-                <View style={{
-                  width: wp(44), height: wp(44), borderRadius: wp(12),
-                  backgroundColor: 'rgba(255,140,66,0.1)',
-                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
-                }}>
-                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#FF8C42" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <Circle cx="12" cy="13" r="4" stroke="#FF8C42" strokeWidth="1.5" fill="none"/>
-                  </Svg>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Prendre une photo</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Utiliser la caméra</Text>
-                </View>
-                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
-              </Pressable>
-
-              {/* Option 3 : Importer un document */}
-              <Pressable
-                delayPressIn={120}
-                onPress={() => { setShowDocumentSheet(false); setTimeout(() => pickDocument('medibook'), 300); }}
-                style={{
-                  flexDirection: 'row', alignItems: 'center',
-                  paddingVertical: wp(14), paddingHorizontal: wp(12),
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: wp(14), marginBottom: wp(10),
-                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-                }}
-              >
-                <View style={{
-                  width: wp(44), height: wp(44), borderRadius: wp(12),
-                  backgroundColor: 'rgba(77,166,255,0.1)',
-                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
-                }}>
-                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <Path d="M14 2v6h6" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                  </Svg>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Importer un document</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>PDF, Word ou image</Text>
-                </View>
-                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
-              </Pressable>
-
-              {/* Option 4 : Uploader mes macros */}
-              <Pressable
-                delayPressIn={120}
-                onPress={() => { setShowDocumentSheet(false); Alert.alert('Macros', 'ALIXEN va vous guider pour partager vos macronutriments. Cette fonctionnalité arrive très bientôt !'); }}
-                style={{
-                  flexDirection: 'row', alignItems: 'center',
-                  paddingVertical: wp(14), paddingHorizontal: wp(12),
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: wp(14), marginBottom: wp(10),
-                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-                }}
-              >
-                <View style={{
-                  width: wp(44), height: wp(44), borderRadius: wp(12),
-                  backgroundColor: 'rgba(212,175,55,0.1)',
-                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
-                }}>
-                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Line x1="18" y1="20" x2="18" y2="10" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
-                    <Line x1="12" y1="20" x2="12" y2="4" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
-                    <Line x1="6" y1="20" x2="6" y2="14" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
-                  </Svg>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', marginBottom: wp(2) }}>Uploader mes macros</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Partager vos données nutritionnelles</Text>
-                </View>
-                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
-              </Pressable>
-
-              {/* Option : Partager ma localisation */}
+              {/* Option 2 : Partager ma localisation */}
               <Pressable
                 delayPressIn={120}
                 onPress={() => {
@@ -6108,12 +6032,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                   setTimeout(() => {
                     Alert.alert(
                       'Partager ma localisation',
-                      'ALIXEN utilisera ta position une seule fois pour te recommander des supermarchés, restaurants et salles de sport à proximité.\n\nTa localisation sera automatiquement effacée après utilisation — ALIXEN ne la conserve pas.',
+                      'ALIXEN utilisera ta position une seule fois pour te recommander des supermarchés, restaurants et salles de sport à proximité.\n\nTa localisation sera automatiquement effacée après utilisation.',
                       [
-                        {
-                          text: 'Partager',
-                          onPress: () => shareLocationOneTime(),
-                        },
+                        { text: 'Partager', onPress: () => console.log('share location') },
                         { text: 'Non merci', style: 'cancel' },
                       ]
                     );
@@ -6121,67 +6042,73 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
-                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  paddingVertical: wp(16), paddingHorizontal: wp(14),
                   backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderRadius: wp(16), marginBottom: wp(10),
                   borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
                 }}
               >
                 <View style={{
-                  width: wp(44), height: wp(44), borderRadius: wp(12),
-                  backgroundColor: 'rgba(0,217,132,0.1)',
-                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                  width: wp(48), height: wp(48), borderRadius: wp(14),
+                  backgroundColor: 'rgba(77,166,255,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(14),
                 }}>
-                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <Circle cx="12" cy="10" r="3" stroke="#00D984" strokeWidth="1.5"/>
+                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <Circle cx="12" cy="10" r="3" stroke="#4DA6FF" strokeWidth="1.5"/>
                   </Svg>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Partager ma localisation</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(3) }}>Partager ma localisation</Text>
                   <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Usage unique — effacée après utilisation</Text>
                 </View>
                 <View style={{
-                  backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(6),
+                  backgroundColor: 'rgba(77,166,255,0.15)', borderRadius: wp(6),
                   paddingHorizontal: wp(6), paddingVertical: wp(2),
                 }}>
-                  <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#00D984' }}>1x</Text>
+                  <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#4DA6FF' }}>1x</Text>
                 </View>
               </Pressable>
 
-              {/* Option 5 : Conversation compactée */}
+              {/* Option 3 : Importer conversation compactée */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => { setShowDocumentSheet(false); setTimeout(() => pickDocument('medibook'), 300); }}
+                onPress={() => {
+                  setShowDocumentSheet(false);
+                  setTimeout(() => {
+                    Alert.alert(
+                      'Importer une conversation',
+                      'Sélectionnez une conversation compactée depuis votre Secret Pocket pour la réimporter dans cette session.',
+                      [
+                        { text: 'Ouvrir Secret Pocket', onPress: () => setCurrentSubPage('secretpocket') },
+                        { text: 'Annuler', style: 'cancel' },
+                      ]
+                    );
+                  }, 300);
+                }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
-                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  paddingVertical: wp(16), paddingHorizontal: wp(14),
                   backgroundColor: 'rgba(255,255,255,0.05)',
-                  borderRadius: wp(14), marginBottom: wp(16),
+                  borderRadius: wp(16), marginBottom: wp(20),
                   borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
                 }}
               >
                 <View style={{
-                  width: wp(44), height: wp(44), borderRadius: wp(12),
-                  backgroundColor: 'rgba(155,109,255,0.1)',
-                  justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                  width: wp(48), height: wp(48), borderRadius: wp(14),
+                  backgroundColor: 'rgba(212,175,55,0.1)',
+                  justifyContent: 'center', alignItems: 'center', marginRight: wp(14),
                 }}>
                   <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Rect x="3" y="6" width="18" height="14" rx="2" stroke="#9B6DFF" strokeWidth="1.5"/>
-                    <Path d="M3 10h18" stroke="#9B6DFF" strokeWidth="1.5"/>
-                    <Line x1="12" y1="3" x2="12" y2="6" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round"/>
-                    <Line x1="12" y1="10" x2="12" y2="20" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round"/>
-                    <Line x1="3" y1="15" x2="21" y2="15" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round"/>
-                    <Circle cx="12" cy="15" r="1.5" stroke="#9B6DFF" strokeWidth="1.5"/>
-                    <Path d="M8 2l0 2.5" stroke="#9B6DFF" strokeWidth="1.2" strokeLinecap="round"/>
-                    <Path d="M16 2l0 2.5" stroke="#9B6DFF" strokeWidth="1.2" strokeLinecap="round"/>
-                    <Path d="M6.5 3L8 4.5 9.5 3" stroke="#9B6DFF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <Path d="M14.5 3L16 4.5 17.5 3" stroke="#9B6DFF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <Rect x="3" y="6" width="18" height="14" rx="2" stroke="#D4AF37" strokeWidth="1.5"/>
+                    <Path d="M3 10h18" stroke="#D4AF37" strokeWidth="1.5"/>
+                    <Line x1="12" y1="3" x2="12" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Circle cx="12" cy="15" r="1.5" stroke="#D4AF37" strokeWidth="1.5"/>
                   </Svg>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Conversation compactée</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Réimporter depuis Secret Pocket</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(3) }}>Importer une conversation</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Depuis votre Secret Pocket</Text>
                 </View>
                 <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
               </Pressable>
@@ -6191,7 +6118,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 onPress={() => setShowDocumentSheet(false)}
                 style={{
                   paddingVertical: wp(14), alignItems: 'center',
-                  borderRadius: wp(14), borderWidth: 1,
+                  borderRadius: wp(16), borderWidth: 1,
                   borderColor: 'rgba(255,255,255,0.1)',
                 }}
               >
