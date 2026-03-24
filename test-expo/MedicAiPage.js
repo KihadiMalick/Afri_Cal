@@ -390,22 +390,166 @@ const QuickReplyButtons = ({ choices, onPress, onPreciser }) => {
 const FormattedResponseText = ({ text, style }) => {
   if (!text) return null;
 
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  const elements = [];
+  let remaining = text;
+  let key = 0;
 
-  return (
-    <Text style={style}>
-      {parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return (
-            <Text key={i} style={{ fontWeight: 'bold' }}>
-              {part.slice(2, -2)}
-            </Text>
-          );
+  while (remaining.length > 0) {
+    // TITRE emerald
+    const titreMatch = remaining.match(/^\[TITRE\]([\s\S]*?)\[\/TITRE\]/);
+    if (titreMatch && remaining.indexOf(titreMatch[0]) === 0) {
+      elements.push(
+        <View key={key++} style={{ marginBottom: wp(10), marginTop: wp(4) }}>
+          <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#00D984', letterSpacing: 0.3 }}>
+            {titreMatch[1].trim()}
+          </Text>
+          <View style={{ height: 2, backgroundColor: 'rgba(0,217,132,0.2)', borderRadius: 1, marginTop: wp(4), width: '40%' }} />
+        </View>
+      );
+      remaining = remaining.substring(titreMatch[0].length);
+      continue;
+    }
+
+    // SECTION avec emoji et titre
+    const sectionMatch = remaining.match(/^\[SECTION:(.*?)\]([\s\S]*?)\[\/SECTION\]/);
+    if (sectionMatch && remaining.indexOf(sectionMatch[0]) === 0) {
+      elements.push(
+        <View key={key++} style={{
+          marginBottom: wp(8), backgroundColor: 'rgba(0,0,0,0.02)',
+          borderRadius: wp(10), padding: wp(10),
+          borderLeftWidth: wp(3), borderLeftColor: '#00D984',
+        }}>
+          <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(4) }}>
+            {sectionMatch[1].trim()}
+          </Text>
+          {sectionMatch[2].trim().split('\n').filter(l => l.trim()).map((line, li) => {
+            const parts = line.split(/(\*\*[^*]+\*\*)/g);
+            return (
+              <Text key={li} style={{ fontSize: fp(12), color: '#3A4550', lineHeight: fp(18), marginBottom: wp(2) }}>
+                {parts.map((p, pi) => {
+                  if (p.startsWith('**') && p.endsWith('**')) {
+                    return <Text key={pi} style={{ fontWeight: 'bold', color: '#1A2030' }}>{p.slice(2, -2)}</Text>;
+                  }
+                  return <Text key={pi}>{p}</Text>;
+                })}
+              </Text>
+            );
+          })}
+        </View>
+      );
+      remaining = remaining.substring(sectionMatch[0].length);
+      continue;
+    }
+
+    // ALERTE rouge
+    const alerteMatch = remaining.match(/^\[ALERTE\]([\s\S]*?)\[\/ALERTE\]/);
+    if (alerteMatch && remaining.indexOf(alerteMatch[0]) === 0) {
+      elements.push(
+        <View key={key++} style={{
+          marginBottom: wp(8), backgroundColor: 'rgba(255,107,107,0.08)',
+          borderRadius: wp(10), padding: wp(10),
+          borderLeftWidth: wp(3), borderLeftColor: '#FF6B6B',
+          flexDirection: 'row', alignItems: 'flex-start',
+        }}>
+          <Text style={{ fontSize: fp(14), marginRight: wp(6), marginTop: wp(-1) }}>⚠️</Text>
+          <Text style={{ fontSize: fp(12), color: '#D63031', lineHeight: fp(18), flex: 1, fontWeight: '500' }}>
+            {alerteMatch[1].trim()}
+          </Text>
+        </View>
+      );
+      remaining = remaining.substring(alerteMatch[0].length);
+      continue;
+    }
+
+    // INFO bleu
+    const infoMatch = remaining.match(/^\[INFO\]([\s\S]*?)\[\/INFO\]/);
+    if (infoMatch && remaining.indexOf(infoMatch[0]) === 0) {
+      elements.push(
+        <View key={key++} style={{
+          marginBottom: wp(8), backgroundColor: 'rgba(77,166,255,0.08)',
+          borderRadius: wp(10), padding: wp(10),
+          borderLeftWidth: wp(3), borderLeftColor: '#4DA6FF',
+          flexDirection: 'row', alignItems: 'flex-start',
+        }}>
+          <Text style={{ fontSize: fp(14), marginRight: wp(6), marginTop: wp(-1) }}>💡</Text>
+          <Text style={{ fontSize: fp(12), color: '#2980B9', lineHeight: fp(18), flex: 1 }}>
+            {infoMatch[1].trim()}
+          </Text>
+        </View>
+      );
+      remaining = remaining.substring(infoMatch[0].length);
+      continue;
+    }
+
+    // SUCCESS vert
+    const successMatch = remaining.match(/^\[SUCCESS\]([\s\S]*?)\[\/SUCCESS\]/);
+    if (successMatch && remaining.indexOf(successMatch[0]) === 0) {
+      elements.push(
+        <View key={key++} style={{
+          marginBottom: wp(8), backgroundColor: 'rgba(0,217,132,0.08)',
+          borderRadius: wp(10), padding: wp(10),
+          borderLeftWidth: wp(3), borderLeftColor: '#00D984',
+          flexDirection: 'row', alignItems: 'flex-start',
+        }}>
+          <Text style={{ fontSize: fp(14), marginRight: wp(6), marginTop: wp(-1) }}>✅</Text>
+          <Text style={{ fontSize: fp(12), color: '#00A878', lineHeight: fp(18), flex: 1, fontWeight: '500' }}>
+            {successMatch[1].trim()}
+          </Text>
+        </View>
+      );
+      remaining = remaining.substring(successMatch[0].length);
+      continue;
+    }
+
+    // PRIX gold
+    const prixMatch = remaining.match(/^\[PRIX\]([\s\S]*?)\[\/PRIX\]/);
+    if (prixMatch && remaining.indexOf(prixMatch[0]) === 0) {
+      elements.push(
+        <View key={key++} style={{
+          marginBottom: wp(8), backgroundColor: 'rgba(212,175,55,0.08)',
+          borderRadius: wp(10), padding: wp(10),
+          borderLeftWidth: wp(3), borderLeftColor: '#D4AF37',
+          flexDirection: 'row', alignItems: 'center',
+        }}>
+          <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>💰</Text>
+          <Text style={{ fontSize: fp(13), color: '#B8860B', lineHeight: fp(18), flex: 1, fontWeight: '600' }}>
+            {prixMatch[1].trim()}
+          </Text>
+        </View>
+      );
+      remaining = remaining.substring(prixMatch[0].length);
+      continue;
+    }
+
+    // Texte normal jusqu'à la prochaine balise ou fin
+    const nextTag = remaining.search(/\[(TITRE|SECTION:|ALERTE|INFO|SUCCESS|PRIX)\]/);
+    const chunk = nextTag === -1 ? remaining : remaining.substring(0, nextTag);
+
+    if (chunk.length > 0) {
+      const lines = chunk.split('\n');
+      lines.forEach((line, li) => {
+        if (line.trim() === '') {
+          elements.push(<View key={key++} style={{ height: 6 }} />);
+          return;
         }
-        return <Text key={i}>{part}</Text>;
-      })}
-    </Text>
-  );
+        const parts = line.split(/(\*\*[^*]+\*\*)/g);
+        elements.push(
+          <Text key={key++} style={[style, { marginBottom: 2 }]}>
+            {parts.map((p, pi) => {
+              if (p.startsWith('**') && p.endsWith('**')) {
+                return <Text key={pi} style={{ fontWeight: 'bold', color: '#1A2030' }}>{p.slice(2, -2)}</Text>;
+              }
+              return <Text key={pi}>{p}</Text>;
+            })}
+          </Text>
+        );
+      });
+    }
+
+    remaining = nextTag === -1 ? '' : remaining.substring(nextTag);
+  }
+
+  return <View>{elements}</View>;
 };
 
 // ============================================
