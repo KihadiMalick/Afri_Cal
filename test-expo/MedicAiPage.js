@@ -390,171 +390,89 @@ const QuickReplyButtons = ({ choices, onPress, onPreciser }) => {
 const FormattedResponseText = ({ text, style }) => {
   if (!text) return null;
 
+  const tagRegex = /\[(TITRE|ALERTE|INFO|SUCCESS|PRIX)\]([\s\S]*?)\[\/\1\]|\[SECTION:([\s\S]*?)\]([\s\S]*?)\[\/SECTION\]/;
   const elements = [];
   let remaining = text;
   let key = 0;
+  let safety = 0;
 
-  while (remaining.length > 0) {
-    // TITRE emerald
-    const titreMatch = remaining.match(/^\[TITRE\]([\s\S]*?)\[\/TITRE\]/);
-    if (titreMatch && remaining.indexOf(titreMatch[0]) === 0) {
+  const renderLine = (line, lineKey) => {
+    if (line.trim() === '') return <View key={lineKey} style={{ height: 6 }} />;
+    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+    return (
+      <Text key={lineKey} style={[style, { marginBottom: 2 }]}>
+        {parts.map((p, pi) => {
+          if (p.startsWith('**') && p.endsWith('**')) {
+            return <Text key={pi} style={{ fontWeight: 'bold', color: '#1A2030' }}>{p.slice(2, -2)}</Text>;
+          }
+          return <Text key={pi}>{p}</Text>;
+        })}
+      </Text>
+    );
+  };
+
+  const renderLines = (block) => {
+    block.split('\n').forEach((line) => { elements.push(renderLine(line, key++)); });
+  };
+
+  while (remaining.length > 0 && safety < 200) {
+    safety++;
+    const match = remaining.match(tagRegex);
+    if (!match) { renderLines(remaining); break; }
+    if (match.index > 0) renderLines(remaining.substring(0, match.index));
+
+    const tagType = match[1] || 'SECTION';
+    const tagContent = match[1] ? match[2] : match[4];
+    const sectionTitle = match[3] || '';
+
+    if (tagType === 'TITRE') {
       elements.push(
         <View key={key++} style={{ marginBottom: wp(10), marginTop: wp(4) }}>
-          <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#00D984', letterSpacing: 0.3 }}>
-            {titreMatch[1].trim()}
-          </Text>
+          <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#00D984', letterSpacing: 0.3 }}>{tagContent.trim()}</Text>
           <View style={{ height: 2, backgroundColor: 'rgba(0,217,132,0.2)', borderRadius: 1, marginTop: wp(4), width: '40%' }} />
         </View>
       );
-      remaining = remaining.substring(titreMatch[0].length);
-      continue;
-    }
-
-    // SECTION avec emoji et titre
-    const sectionMatch = remaining.match(/^\[SECTION:(.*?)\]([\s\S]*?)\[\/SECTION\]/);
-    if (sectionMatch && remaining.indexOf(sectionMatch[0]) === 0) {
+    } else if (tagType === 'SECTION') {
       elements.push(
-        <View key={key++} style={{
-          marginBottom: wp(8), backgroundColor: 'rgba(0,0,0,0.02)',
-          borderRadius: wp(10), padding: wp(10),
-          borderLeftWidth: wp(3), borderLeftColor: '#00D984',
-        }}>
-          <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(4) }}>
-            {sectionMatch[1].trim()}
-          </Text>
-          {sectionMatch[2].trim().split('\n').filter(l => l.trim()).map((line, li) => {
+        <View key={key++} style={{ marginBottom: wp(8), backgroundColor: 'rgba(0,0,0,0.02)', borderRadius: wp(10), padding: wp(10), borderLeftWidth: wp(3), borderLeftColor: '#00D984' }}>
+          <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(4) }}>{sectionTitle.trim()}</Text>
+          {tagContent.trim().split('\n').filter(l => l.trim()).map((line, li) => {
             const parts = line.split(/(\*\*[^*]+\*\*)/g);
-            return (
-              <Text key={li} style={{ fontSize: fp(12), color: '#3A4550', lineHeight: fp(18), marginBottom: wp(2) }}>
-                {parts.map((p, pi) => {
-                  if (p.startsWith('**') && p.endsWith('**')) {
-                    return <Text key={pi} style={{ fontWeight: 'bold', color: '#1A2030' }}>{p.slice(2, -2)}</Text>;
-                  }
-                  return <Text key={pi}>{p}</Text>;
-                })}
-              </Text>
-            );
+            return (<Text key={li} style={{ fontSize: fp(12), color: '#3A4550', lineHeight: fp(18), marginBottom: wp(2) }}>{parts.map((p, pi) => { if (p.startsWith('**') && p.endsWith('**')) return <Text key={pi} style={{ fontWeight: 'bold', color: '#1A2030' }}>{p.slice(2, -2)}</Text>; return <Text key={pi}>{p}</Text>; })}</Text>);
           })}
         </View>
       );
-      remaining = remaining.substring(sectionMatch[0].length);
-      continue;
-    }
-
-    // ALERTE rouge
-    const alerteMatch = remaining.match(/^\[ALERTE\]([\s\S]*?)\[\/ALERTE\]/);
-    if (alerteMatch && remaining.indexOf(alerteMatch[0]) === 0) {
+    } else if (tagType === 'ALERTE') {
       elements.push(
-        <View key={key++} style={{
-          marginBottom: wp(8), backgroundColor: 'rgba(255,107,107,0.08)',
-          borderRadius: wp(10), padding: wp(10),
-          borderLeftWidth: wp(3), borderLeftColor: '#FF6B6B',
-          flexDirection: 'row', alignItems: 'flex-start',
-        }}>
+        <View key={key++} style={{ marginBottom: wp(8), backgroundColor: 'rgba(255,107,107,0.08)', borderRadius: wp(10), padding: wp(10), borderLeftWidth: wp(3), borderLeftColor: '#FF6B6B', flexDirection: 'row', alignItems: 'flex-start' }}>
           <Text style={{ fontSize: fp(14), marginRight: wp(6), marginTop: wp(-1) }}>⚠️</Text>
-          <Text style={{ fontSize: fp(12), color: '#D63031', lineHeight: fp(18), flex: 1, fontWeight: '500' }}>
-            {alerteMatch[1].trim()}
-          </Text>
+          <Text style={{ fontSize: fp(12), color: '#D63031', lineHeight: fp(18), flex: 1, fontWeight: '500' }}>{tagContent.trim()}</Text>
         </View>
       );
-      remaining = remaining.substring(alerteMatch[0].length);
-      continue;
-    }
-
-    // INFO bleu
-    const infoMatch = remaining.match(/^\[INFO\]([\s\S]*?)\[\/INFO\]/);
-    if (infoMatch && remaining.indexOf(infoMatch[0]) === 0) {
+    } else if (tagType === 'INFO') {
       elements.push(
-        <View key={key++} style={{
-          marginBottom: wp(8), backgroundColor: 'rgba(77,166,255,0.08)',
-          borderRadius: wp(10), padding: wp(10),
-          borderLeftWidth: wp(3), borderLeftColor: '#4DA6FF',
-          flexDirection: 'row', alignItems: 'flex-start',
-        }}>
+        <View key={key++} style={{ marginBottom: wp(8), backgroundColor: 'rgba(77,166,255,0.08)', borderRadius: wp(10), padding: wp(10), borderLeftWidth: wp(3), borderLeftColor: '#4DA6FF', flexDirection: 'row', alignItems: 'flex-start' }}>
           <Text style={{ fontSize: fp(14), marginRight: wp(6), marginTop: wp(-1) }}>💡</Text>
-          <Text style={{ fontSize: fp(12), color: '#2980B9', lineHeight: fp(18), flex: 1 }}>
-            {infoMatch[1].trim()}
-          </Text>
+          <Text style={{ fontSize: fp(12), color: '#2980B9', lineHeight: fp(18), flex: 1 }}>{tagContent.trim()}</Text>
         </View>
       );
-      remaining = remaining.substring(infoMatch[0].length);
-      continue;
-    }
-
-    // SUCCESS vert
-    const successMatch = remaining.match(/^\[SUCCESS\]([\s\S]*?)\[\/SUCCESS\]/);
-    if (successMatch && remaining.indexOf(successMatch[0]) === 0) {
+    } else if (tagType === 'SUCCESS') {
       elements.push(
-        <View key={key++} style={{
-          marginBottom: wp(8), backgroundColor: 'rgba(0,217,132,0.08)',
-          borderRadius: wp(10), padding: wp(10),
-          borderLeftWidth: wp(3), borderLeftColor: '#00D984',
-          flexDirection: 'row', alignItems: 'flex-start',
-        }}>
+        <View key={key++} style={{ marginBottom: wp(8), backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(10), padding: wp(10), borderLeftWidth: wp(3), borderLeftColor: '#00D984', flexDirection: 'row', alignItems: 'flex-start' }}>
           <Text style={{ fontSize: fp(14), marginRight: wp(6), marginTop: wp(-1) }}>✅</Text>
-          <Text style={{ fontSize: fp(12), color: '#00A878', lineHeight: fp(18), flex: 1, fontWeight: '500' }}>
-            {successMatch[1].trim()}
-          </Text>
+          <Text style={{ fontSize: fp(12), color: '#00A878', lineHeight: fp(18), flex: 1, fontWeight: '500' }}>{tagContent.trim()}</Text>
         </View>
       );
-      remaining = remaining.substring(successMatch[0].length);
-      continue;
-    }
-
-    // PRIX gold
-    const prixMatch = remaining.match(/^\[PRIX\]([\s\S]*?)\[\/PRIX\]/);
-    if (prixMatch && remaining.indexOf(prixMatch[0]) === 0) {
+    } else if (tagType === 'PRIX') {
       elements.push(
-        <View key={key++} style={{
-          marginBottom: wp(8), backgroundColor: 'rgba(212,175,55,0.08)',
-          borderRadius: wp(10), padding: wp(10),
-          borderLeftWidth: wp(3), borderLeftColor: '#D4AF37',
-          flexDirection: 'row', alignItems: 'center',
-        }}>
+        <View key={key++} style={{ marginBottom: wp(8), backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: wp(10), padding: wp(10), borderLeftWidth: wp(3), borderLeftColor: '#D4AF37', flexDirection: 'row', alignItems: 'center' }}>
           <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>💰</Text>
-          <Text style={{ fontSize: fp(13), color: '#B8860B', lineHeight: fp(18), flex: 1, fontWeight: '600' }}>
-            {prixMatch[1].trim()}
-          </Text>
+          <Text style={{ fontSize: fp(13), color: '#B8860B', lineHeight: fp(18), flex: 1, fontWeight: '600' }}>{tagContent.trim()}</Text>
         </View>
       );
-      remaining = remaining.substring(prixMatch[0].length);
-      continue;
     }
-
-    // Texte normal jusqu'à la prochaine balise ou fin
-    const nextTag = remaining.search(/\[(TITRE|SECTION:|ALERTE|INFO|SUCCESS|PRIX)\]/);
-    const chunk = nextTag === -1 ? remaining : remaining.substring(0, nextTag);
-
-    if (chunk.length > 0) {
-      const lines = chunk.split('\n');
-      lines.forEach((line, li) => {
-        if (line.trim() === '') {
-          elements.push(<View key={key++} style={{ height: 6 }} />);
-          return;
-        }
-        const parts = line.split(/(\*\*[^*]+\*\*)/g);
-        elements.push(
-          <Text key={key++} style={[style, { marginBottom: 2 }]}>
-            {parts.map((p, pi) => {
-              if (p.startsWith('**') && p.endsWith('**')) {
-                return <Text key={pi} style={{ fontWeight: 'bold', color: '#1A2030' }}>{p.slice(2, -2)}</Text>;
-              }
-              return <Text key={pi}>{p}</Text>;
-            })}
-          </Text>
-        );
-      });
-    }
-
-    if (nextTag === 0) {
-      elements.push(<Text key={key++} style={style}>{remaining.charAt(0)}</Text>);
-      remaining = remaining.substring(1);
-      continue;
-    }
-
-    remaining = nextTag === -1 ? '' : remaining.substring(nextTag);
+    remaining = remaining.substring(match.index + match[0].length);
   }
-
   return <View>{elements}</View>;
 };
 
@@ -614,24 +532,44 @@ const MetalCard = ({ title, titleColor = '#00D984', iconElement, onPress }) => {
 // (GrooveLiquidInput removed — replaced by gradient input bar in render)
 
 // ============================================
-// LOADING DOTS — Premium typing indicator with bounce
+// LOADING STEPS — Premium typing indicator with bounce + dynamic steps
 // ============================================
-const LoadingDots = () => {
+const LoadingSteps = ({ steps }) => {
+  const [stepIndex, setStepIndex] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
   const bounce1 = useRef(new Animated.Value(0)).current;
   const bounce2 = useRef(new Animated.Value(0)).current;
   const bounce3 = useRef(new Animated.Value(0)).current;
 
+  const displaySteps = steps && steps.length > 0 ? steps : ['Préparation de la réponse...'];
+
+  useEffect(() => {
+    setStepIndex(0);
+    fadeAnim.setValue(1);
+  }, [steps]);
+
+  useEffect(() => {
+    if (displaySteps.length <= 1) return;
+    const interval = setInterval(() => {
+      Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
+        setStepIndex(prev => {
+          const next = prev + 1;
+          return next < displaySteps.length ? next : prev;
+        });
+        Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+      });
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [displaySteps.length]);
+
   useEffect(() => {
     const createBounce = (anim, delay) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(anim, { toValue: -4, duration: 200, useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0, duration: 200, useNativeDriver: true }),
-          Animated.delay(400 - delay),
-        ])
-      );
-
+      Animated.loop(Animated.sequence([
+        Animated.delay(delay),
+        Animated.timing(anim, { toValue: -4, duration: 200, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.delay(400 - delay),
+      ]));
     createBounce(bounce1, 0).start();
     createBounce(bounce2, 150).start();
     createBounce(bounce3, 300).start();
@@ -639,33 +577,34 @@ const LoadingDots = () => {
 
   return (
     <View style={{
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0, 217, 132, 0.08)',
-      borderRadius: wp(16),
-      paddingHorizontal: wp(16),
-      paddingVertical: wp(8),
+      backgroundColor: 'rgba(0, 217, 132, 0.06)',
+      borderRadius: wp(14),
+      paddingHorizontal: wp(14),
+      paddingVertical: wp(10),
       borderWidth: 1,
-      borderColor: 'rgba(0, 217, 132, 0.15)',
-      alignSelf: 'flex-start',
-      gap: wp(8),
+      borderColor: 'rgba(0, 217, 132, 0.12)',
+      alignSelf: 'stretch',
     }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-        {[bounce1, bounce2, bounce3].map((anim, i) => (
-          <Animated.View key={i} style={{
-            width: wp(6),
-            height: wp(6),
-            borderRadius: wp(3),
-            backgroundColor: '#00D984',
-            transform: [{ translateY: anim }],
-          }} />
-        ))}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), marginBottom: wp(6) }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          {[bounce1, bounce2, bounce3].map((anim, i) => (
+            <Animated.View key={i} style={{
+              width: wp(5), height: wp(5), borderRadius: wp(2.5),
+              backgroundColor: '#00D984',
+              transform: [{ translateY: anim }],
+            }} />
+          ))}
+        </View>
+        <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984', letterSpacing: 0.5 }}>ALIXEN</Text>
       </View>
-      <Text style={{
+      <Animated.Text style={{
         fontSize: fp(12),
-        color: 'rgba(0, 217, 132, 0.7)',
+        color: 'rgba(0, 150, 100, 0.6)',
         fontStyle: 'italic',
-      }}>ALIXEN réfléchit...</Text>
+        opacity: fadeAnim,
+      }}>
+        {displaySteps[stepIndex] || 'Préparation de la réponse...'}
+      </Animated.Text>
     </View>
   );
 };
@@ -750,7 +689,7 @@ const FileQueuePreview = ({ files, onRemove }) => {
 // ============================================
 // RESPONSE CARD — Carte blanche en bas
 // ============================================
-const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuickReply, onPreciserPress }) => {
+const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuickReply, onPreciserPress, loadingSteps }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [displayedText, setDisplayedText] = useState('');
 
@@ -840,7 +779,7 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuickReply, 
 
       {/* Contenu */}
       {isLoading ? (
-        <LoadingDots />
+        <LoadingSteps steps={loadingSteps} />
       ) : (() => {
         const fullText = displayedText + (!isUserMessage && displayedText.length < (currentMessage || '').length ? '|' : '');
         const { cleanText, choices } = parseQuickReplies(fullText);
@@ -1554,6 +1493,7 @@ export default function MedicAiPage() {
   const [cardMessage, setCardMessage] = useState(null);
   const [cardIsUser, setCardIsUser] = useState(false);
   const [cardIsLoading, setCardIsLoading] = useState(false);
+  const [loadingSteps, setLoadingSteps] = useState([]);
   const [pendingAction, setPendingAction] = useState(null);
   const [fileQueue, setFileQueue] = useState([]);
 
@@ -2100,6 +2040,33 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     `;
   };
 
+  const fetchLoadingSteps = async (userMessage) => {
+    try {
+      const response = await fetch(
+        SUPABASE_URL + '/functions/v1/lixman-chat',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'apikey': SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            action: 'loading_steps',
+            userMessage: userMessage,
+            userContext: buildUserContext(),
+          }),
+        }
+      );
+      const data = await response.json();
+      if (data.steps && Array.isArray(data.steps)) {
+        setLoadingSteps(data.steps);
+      }
+    } catch (e) {
+      console.log('Loading steps fetch error:', e.message);
+    }
+  };
+
   const sendImageToAlixen = async (base64Data, fileName, mimeType) => {
     if (isLoading || isLocked) return;
     if (messages.length >= 30) return;
@@ -2123,6 +2090,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       if (prev.length >= 30) return prev;
       return [...prev, userMsg];
     });
+
+    setLoadingSteps([]);
+    fetchLoadingSteps('Analyse d\'image : ' + (fileName || 'photo'));
 
     setTimeout(async () => {
       setCardMessage(null);
@@ -2163,6 +2133,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         const finalText = alixenParsed.cleanText;
         if (data.pending_action || alixenParsed.pendingAction) setPendingAction(data.pending_action || alixenParsed.pendingAction);
 
+        setLoadingSteps([]);
         setCardIsLoading(false);
         setCardMessage(finalText);
         setCardIsUser(false);
@@ -2185,6 +2156,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         }
       } catch (error) {
         console.error('Erreur envoi image ALIXEN:', error);
+        setLoadingSteps([]);
         setCardIsLoading(false);
         setCardMessage('Erreur réseau. Vérifiez votre connexion.');
         setCardIsUser(false);
@@ -2237,6 +2209,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       return [...prev, userMsg];
     });
 
+    setLoadingSteps([]);
+    fetchLoadingSteps(text);
+
     setTimeout(async () => {
       setCardMessage(null);
       setCardIsUser(false);
@@ -2270,6 +2245,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         const finalText = alixenParsed.cleanText;
         if (data.pending_action || alixenParsed.pendingAction) setPendingAction(data.pending_action || alixenParsed.pendingAction);
 
+        setLoadingSteps([]);
         setCardIsLoading(false);
         setCardMessage(finalText);
         setCardIsUser(false);
@@ -2292,6 +2268,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         }
       } catch (error) {
         console.error('Erreur Quick Reply:', error);
+        setLoadingSteps([]);
         setCardIsLoading(false);
         setCardMessage('Erreur réseau. Vérifiez votre connexion.');
         setCardIsUser(false);
@@ -2511,7 +2488,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       return [...prev, userMsg];
     });
 
-    // 3. Après 800ms, passer en mode chargement
+    // 3. Lancer les loading steps en parallèle
+    setLoadingSteps([]);
+    fetchLoadingSteps(userText);
+
+    // 4. Après 800ms, passer en mode chargement
     setTimeout(() => {
       setCardMessage(null);
       setCardIsUser(false);
@@ -2553,6 +2534,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       if (data.pending_action || alixenParsed.pendingAction) setPendingAction(data.pending_action || alixenParsed.pendingAction);
 
       // 5. Afficher la réponse IA dans la carte
+      setLoadingSteps([]);
       setCardIsLoading(false);
       setCardMessage(finalText);
       setCardIsUser(false);
@@ -2579,6 +2561,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
     } catch (error) {
       console.error('Erreur ALIXEN:', error);
+      setLoadingSteps([]);
       setCardIsLoading(false);
       setCardMessage("Erreur réseau. Vérifiez votre connexion.");
       setCardIsUser(false);
@@ -5734,6 +5717,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             isUserMessage={cardIsUser}
             onQuickReply={handleQuickReply}
             onPreciserPress={handlePreciserPress}
+            loadingSteps={loadingSteps}
           />
         </ScrollView>
 
