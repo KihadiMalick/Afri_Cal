@@ -623,26 +623,20 @@ const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuickReply, 
 // NEUMORPH BALL — Boule neumorphique cabinet médical
 // ============================================
 let _ballGradIdx = 0;
-const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPress, hasAttachment }) => {
+const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPress, hasAttachment, contentLength, isLatest, previewText, timestamp }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
-  const wobbleX = useRef(new Animated.Value(0)).current;
-  const wobbleY = useRef(new Animated.Value(0)).current;
   const loadPulse = useRef(new Animated.Value(0.3)).current;
-  const gradId = useRef('bg' + (_ballGradIdx++)).current;
+  const latestPulse = useRef(new Animated.Value(1)).current;
+  const searchGlow = useRef(new Animated.Value(0)).current;
+  const gradId = useRef('ball' + (_ballGradIdx++)).current;
+  const [showPreview, setShowPreview] = useState(false);
 
-  const BALL_SIZE = wp(32);
+  const baseSize = wp(30);
+  const sizeBonus = contentLength > 200 ? wp(6) : contentLength > 100 ? wp(3) : 0;
+  const BALL_SIZE = baseSize + sizeBonus;
 
   useEffect(() => {
     Animated.spring(scaleAnim, { toValue: 1, friction: 5, tension: 80, useNativeDriver: true }).start();
-    const dur = 2500 + (index % 5) * 500;
-    Animated.loop(Animated.sequence([
-      Animated.timing(wobbleX, { toValue: 1, duration: dur, useNativeDriver: true }),
-      Animated.timing(wobbleX, { toValue: 0, duration: dur, useNativeDriver: true }),
-    ])).start();
-    Animated.loop(Animated.sequence([
-      Animated.timing(wobbleY, { toValue: 1, duration: dur * 0.8, useNativeDriver: true }),
-      Animated.timing(wobbleY, { toValue: 0, duration: dur * 0.8, useNativeDriver: true }),
-    ])).start();
   }, []);
 
   useEffect(() => {
@@ -654,32 +648,59 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
     }
   }, [status]);
 
+  useEffect(() => {
+    if (isLatest) {
+      Animated.loop(Animated.sequence([
+        Animated.timing(latestPulse, { toValue: 1.12, duration: 900, useNativeDriver: true }),
+        Animated.timing(latestPulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+      ])).start();
+    }
+  }, [isLatest]);
+
+  useEffect(() => {
+    if (isSearchHit) {
+      Animated.loop(Animated.sequence([
+        Animated.timing(searchGlow, { toValue: 1, duration: 600, useNativeDriver: false }),
+        Animated.timing(searchGlow, { toValue: 0.3, duration: 600, useNativeDriver: false }),
+      ])).start();
+    } else {
+      searchGlow.setValue(0);
+    }
+  }, [isSearchHit]);
+
   const dimmed = isSearchActive && !isSearchHit;
   const isActive = status === 'unread' || isSearchHit;
 
-  const topColor = isBot ? '#FF8A8A' : '#7DD3FC';
-  const bottomColor = isBot ? '#C0392B' : '#0A6DC2';
+  const topColor = isBot ? '#FF8A80' : '#7DD3FC';
+  const bottomColor = isBot ? '#C62828' : '#0A5EB5';
   const glowColor = isBot ? '#E74C3C' : '#3498DB';
+
+  const timeStr = timestamp
+    ? new Date(timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    : '';
 
   return (
     <Animated.View style={{
       transform: [
-        { scale: scaleAnim },
-        { translateX: wobbleX.interpolate({ inputRange: [0, 1], outputRange: [-1, 1] }) },
-        { translateY: wobbleY.interpolate({ inputRange: [0, 1], outputRange: [-0.8, 0.8] }) },
+        { scale: Animated.multiply(scaleAnim, isLatest ? latestPulse : new Animated.Value(1)) },
       ],
-      opacity: dimmed ? 0.3 : 1,
+      opacity: dimmed ? 0.25 : 1,
       alignItems: 'center',
     }}>
-      <Pressable onPress={() => { if (status !== 'loading') onPress(); }}>
+      <Pressable
+        onPress={() => { if (status !== 'loading') { setShowPreview(false); onPress(); } }}
+        onLongPress={() => setShowPreview(true)}
+        delayLongPress={400}
+        onPressOut={() => setTimeout(() => setShowPreview(false), 2000)}
+      >
         <View style={{
           width: BALL_SIZE,
           height: BALL_SIZE,
           borderRadius: BALL_SIZE / 2,
           shadowColor: glowColor,
-          shadowOffset: { width: 0, height: isActive ? 0 : 2 },
-          shadowOpacity: isActive ? 0.6 : 0.3,
-          shadowRadius: isActive ? 8 : 4,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isActive ? 0.6 : isLatest ? 0.4 : 0.3,
+          shadowRadius: isActive ? 8 : isLatest ? 6 : 4,
           elevation: isActive ? 6 : 3,
         }}>
           <Svg width={BALL_SIZE} height={BALL_SIZE} viewBox="0 0 32 32">
@@ -690,30 +711,26 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
               </SvgLinearGradient>
             </Defs>
             <Circle cx="16" cy="16" r="15" fill={`url(#${gradId})`} />
-            <Ellipse cx="11" cy="11" rx="5" ry="4" fill="white" opacity={0.25} />
-            <Circle cx="9" cy="9" r="1.5" fill="white" opacity={0.4} />
+            <Ellipse cx="11" cy="10" rx="5" ry="3.5" fill="white" opacity={0.22} />
+            <Circle cx="9" cy="8.5" r="1.8" fill="white" opacity={0.15} />
           </Svg>
           {status === 'loading' ? (
             <Animated.View style={{
               position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-              borderRadius: BALL_SIZE / 2,
               justifyContent: 'center', alignItems: 'center',
             }}>
               <Animated.View style={{
                 width: 8, height: 8, borderRadius: 4,
-                backgroundColor: '#FFF',
-                opacity: loadPulse,
+                backgroundColor: '#FFF', opacity: loadPulse,
               }} />
             </Animated.View>
           ) : (
             <View style={{
               position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-              borderRadius: BALL_SIZE / 2,
               justifyContent: 'center', alignItems: 'center',
             }}>
               <Text style={{
-                color: '#FFF',
-                fontSize: fp(11),
+                color: '#FFF', fontSize: fp(BALL_SIZE > baseSize ? 12 : 11),
                 fontWeight: '800',
                 textShadowColor: 'rgba(0,0,0,0.3)',
                 textShadowOffset: { width: 0, height: 1 },
@@ -725,22 +742,42 @@ const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPre
           )}
         </View>
         {isSearchHit && (
-          <View style={{
-            position: 'absolute', top: -3, left: -3, right: -3, bottom: -3,
-            borderRadius: (BALL_SIZE + 6) / 2,
+          <Animated.View style={{
+            position: 'absolute',
+            top: -3, left: -3, right: -3, bottom: -3,
+            borderRadius: BALL_SIZE / 2 + 3,
             borderWidth: 2,
-            borderColor: '#00D984',
+            borderColor: '#D4AF37',
+            opacity: searchGlow,
           }} />
         )}
         {hasAttachment && (
           <View style={{
             position: 'absolute', bottom: -wp(3),
+            alignSelf: 'center',
             width: wp(6), height: wp(6), borderRadius: wp(3),
             backgroundColor: isBot ? '#E74C3C' : '#3498DB',
-            borderWidth: 1, borderColor: '#1A1D22',
+            borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
           }} />
         )}
       </Pressable>
+      {showPreview && previewText && (
+        <View style={{
+          position: 'absolute', top: BALL_SIZE + 4,
+          backgroundColor: 'rgba(26,32,48,0.95)',
+          borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6,
+          borderWidth: 1,
+          borderColor: isBot ? 'rgba(231,76,60,0.3)' : 'rgba(52,152,219,0.3)',
+          width: wp(120), zIndex: 100,
+        }}>
+          <Text numberOfLines={2} style={{
+            color: '#EAEEF3', fontSize: fp(10), lineHeight: fp(14),
+          }}>{previewText}</Text>
+          <Text style={{
+            color: 'rgba(255,255,255,0.3)', fontSize: fp(8), marginTop: 2,
+          }}>{timeStr}</Text>
+        </View>
+      )}
     </Animated.View>
   );
 };
@@ -793,7 +830,7 @@ const SynapticNetwork = ({ messages, searchHits, onBallPress, onNewSession }) =>
               top: pos.y + S_BALL_SIZE / 2 - 0.5,
               width: maxX - minX,
               height: 1,
-              backgroundColor: 'rgba(0,180,160,0.08)',
+              backgroundColor: messages[i].role === 'assistant' ? 'rgba(231,76,60,0.12)' : 'rgba(52,152,219,0.12)',
             }} />
           );
         } else {
@@ -805,7 +842,7 @@ const SynapticNetwork = ({ messages, searchHits, onBallPress, onNewSession }) =>
               top: prevPos.y + S_BALL_SIZE / 2,
               width: 1,
               height: pos.y - prevPos.y,
-              backgroundColor: 'rgba(0,180,160,0.06)',
+              backgroundColor: messages[i].role === 'assistant' ? 'rgba(231,76,60,0.08)' : 'rgba(52,152,219,0.08)',
             }} />
           );
         }
@@ -829,6 +866,10 @@ const SynapticNetwork = ({ messages, searchHits, onBallPress, onNewSession }) =>
               status={msg._status || 'read'}
               onPress={() => onBallPress(msg, i)}
               hasAttachment={msg._hasAttachment}
+              contentLength={msg.content ? msg.content.length : 0}
+              isLatest={i === messages.length - 1}
+              previewText={msg.content ? msg.content.substring(0, 60) : ''}
+              timestamp={msg.timestamp}
             />
           </View>
         );
