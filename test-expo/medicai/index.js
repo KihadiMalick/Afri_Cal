@@ -23,6 +23,7 @@ import { SynapticNetwork, ResponseCard, LoadingSteps, FileQueuePreview, ModalScr
 import { MediBookContent } from './MediBookPages';
 import { SecretPocketContent } from './SecretPocket';
 import { AllModals } from './Modals';
+import AlertSheet from './AlertSheet';
 
 const DoctorHeader = () => (
   <View style={{
@@ -106,6 +107,13 @@ export default function MedicAiPage() {
   const [showDocumentSheet, setShowDocumentSheet] = useState(false);
   const [showNewSessionSheet, setShowNewSessionSheet] = useState(false);
 
+  // AlertSheet state
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', icon: 'info', buttons: [] });
+  const showAlert = (title, message, buttons = [{ text: 'OK', style: 'cancel' }], icon = 'info') => {
+    setAlertConfig({ visible: true, title, message, icon, buttons });
+  };
+  const hideAlert = () => setAlertConfig(prev => ({ ...prev, visible: false }));
+
   // Secret Pocket state
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showAddDataSheet, setShowAddDataSheet] = useState(false);
@@ -113,6 +121,12 @@ export default function MedicAiPage() {
   const [showRechargeSheet, setShowRechargeSheet] = useState(false);
   const [showCategoryUploadSheet, setShowCategoryUploadSheet] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [secretPocketItems, setSecretPocketItems] = useState([]);
+  const [openSpCategory, setOpenSpCategory] = useState(null);
+
+  // Session compactage
+  const [isCompacting, setIsCompacting] = useState(false);
+  const [compactStep, setCompactStep] = useState(0);
 
   // Navigation interne MediBook
   const [mediBookView, setMediBookView] = useState('landing');
@@ -195,6 +209,16 @@ export default function MedicAiPage() {
     if (progress < 90) return 'rgba(255, 107, 107, 0.25)';
     return 'rgba(231, 76, 60, 0.35)';
   };
+
+  // Dynamic Secret Pocket categories with real counts
+  const getSpCategories = () => [
+    { id: 'diagnostics', title: 'Diagnostics à surveiller', desc: 'Diabète, hypertension, cholestérol...', icon: 'heart-pulse', color: '#FF6B6B', count: secretPocketItems.filter(i => i.category === 'diagnostics').length },
+    { id: 'allergies', title: 'Allergies et intolérances', desc: 'Alimentaires, médicamenteuses...', icon: 'shield-alert', color: '#FF8C42', count: secretPocketItems.filter(i => i.category === 'allergies').length },
+    { id: 'medications', title: 'Médicaments en cours', desc: 'Traitements actuels et posologie', icon: 'pill', color: '#4DA6FF', count: secretPocketItems.filter(i => i.category === 'medications').length },
+    { id: 'lab-results', title: "Résultats d'analyses", desc: 'Bilans sanguins, examens...', icon: 'flask', color: '#00D984', count: secretPocketItems.filter(i => i.category === 'lab-results').length },
+    { id: 'notes', title: 'Notes personnelles', desc: 'Vos observations de santé', icon: 'edit', color: '#9B6DFF', count: secretPocketItems.filter(i => i.category === 'notes').length },
+    { id: 'conversations', title: 'Conversations sensibles', desc: 'Échanges privés avec ALIXEN', icon: 'message-lock', color: '#D4AF37', count: secretPocketItems.filter(i => i.category === 'conversations').length },
+  ];
 
   // Refs
   const scrollViewRef = useRef(null);
