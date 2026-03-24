@@ -502,6 +502,184 @@ const LoadingDots = () => {
 };
 
 // ============================================
+// ALIXEN VISUAL — Rendu des visuels structurés
+// ============================================
+const AlixenVisual = ({ visual }) => {
+  if (!visual) return null;
+
+  if (visual.type === 'meal_plan' && visual.data && visual.data.days) {
+    const dayOrder = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+    const dayLabels = { lundi: 'Lun', mardi: 'Mar', mercredi: 'Mer', jeudi: 'Jeu', vendredi: 'Ven', samedi: 'Sam', dimanche: 'Dim' };
+    const sortedDays = visual.data.days.sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
+
+    return (
+      <View style={{
+        marginHorizontal: 10, marginBottom: 8,
+        borderRadius: wp(16), overflow: 'hidden',
+        borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+        backgroundColor: '#FAFBFC',
+      }}>
+        <LinearGradient
+          colors={['#3A3F46', '#252A30']}
+          style={{
+            paddingVertical: wp(10), paddingHorizontal: wp(14),
+            flexDirection: 'row', alignItems: 'center', gap: wp(8),
+          }}
+        >
+          <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+            <Path d="M3 2v8c0 1.1.9 2 2 2h2a2 2 0 002-2V2" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" />
+            <Line x1="6" y1="2" x2="6" y2="22" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" />
+          </Svg>
+          <Text style={{ color: '#FFF', fontSize: fp(13), fontWeight: '700', flex: 1 }}>
+            {visual.title || 'Menu de la semaine'}
+          </Text>
+          <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: fp(10) }}>ALIXEN</Text>
+        </LinearGradient>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingVertical: wp(8) }}>
+          <View style={{ flexDirection: 'row', paddingHorizontal: wp(8), gap: wp(6) }}>
+            {sortedDays.map((day, i) => {
+              const totalKcal = (day.breakfast?.kcal || 0) + (day.lunch?.kcal || 0) + (day.dinner?.kcal || 0) + (day.snack?.kcal || 0);
+              return (
+                <View key={i} style={{
+                  width: wp(110), backgroundColor: 'rgba(0,0,0,0.02)',
+                  borderRadius: wp(12), padding: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
+                }}>
+                  <View style={{
+                    backgroundColor: '#00D984', borderRadius: wp(8),
+                    paddingVertical: wp(4), alignItems: 'center', marginBottom: wp(8),
+                  }}>
+                    <Text style={{ color: '#FFF', fontSize: fp(12), fontWeight: '800' }}>
+                      {dayLabels[day.day] || day.day}
+                    </Text>
+                  </View>
+                  {[
+                    { label: 'Petit-déj', meal: day.breakfast, emoji: '🌅' },
+                    { label: 'Déjeuner', meal: day.lunch, emoji: '☀️' },
+                    { label: 'Dîner', meal: day.dinner, emoji: '🌙' },
+                  ].map((slot, si) => (
+                    <View key={si} style={{ marginBottom: wp(6) }}>
+                      <Text style={{ fontSize: fp(9), color: 'rgba(0,0,0,0.35)', fontWeight: '600' }}>
+                        {slot.emoji} {slot.label}
+                      </Text>
+                      <Text style={{ fontSize: fp(11), color: '#2D3436', fontWeight: '500', marginTop: wp(1) }} numberOfLines={2}>
+                        {slot.meal?.name || '—'}
+                      </Text>
+                      {slot.meal?.kcal > 0 && (
+                        <Text style={{ fontSize: fp(9), color: '#00D984', fontWeight: '700', marginTop: wp(1) }}>
+                          {slot.meal.kcal} kcal
+                        </Text>
+                      )}
+                    </View>
+                  ))}
+                  {day.snack?.name ? (
+                    <View>
+                      <Text style={{ fontSize: fp(9), color: 'rgba(0,0,0,0.35)', fontWeight: '600' }}>🍎 Collation</Text>
+                      <Text style={{ fontSize: fp(11), color: '#2D3436', marginTop: wp(1) }}>{day.snack.name}</Text>
+                    </View>
+                  ) : null}
+                  <View style={{
+                    marginTop: wp(6), paddingTop: wp(6),
+                    borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)',
+                    alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: totalKcal > 0 ? '#00D984' : 'rgba(0,0,0,0.2)' }}>
+                      {totalKcal > 0 ? totalKcal + ' kcal' : '—'}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  if (visual.type === 'bar_chart' && visual.data) {
+    const { labels, values, unit, color } = visual.data;
+    const maxVal = Math.max(...values, 1);
+    return (
+      <View style={{
+        marginHorizontal: 10, marginBottom: 8,
+        borderRadius: wp(16), padding: wp(14),
+        backgroundColor: '#FAFBFC',
+        borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)',
+      }}>
+        <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(12) }}>
+          {visual.title || 'Graphique'}
+        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: wp(80) }}>
+          {values.map((val, i) => {
+            const h = Math.max(wp(4), (val / maxVal) * wp(65));
+            return (
+              <View key={i} style={{ alignItems: 'center', flex: 1 }}>
+                <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>{val}</Text>
+                <View style={{ width: wp(16), height: h, backgroundColor: color || '#00D984', borderRadius: wp(4) }} />
+                <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>{labels[i] || ''}</Text>
+              </View>
+            );
+          })}
+        </View>
+        {unit && <Text style={{ fontSize: fp(9), color: 'rgba(0,0,0,0.25)', textAlign: 'right', marginTop: wp(4) }}>en {unit}</Text>}
+      </View>
+    );
+  }
+
+  if (visual.type === 'pie_chart' && visual.data && visual.data.segments) {
+    const total = visual.data.segments.reduce((s, seg) => s + seg.value, 0) || 1;
+    return (
+      <View style={{
+        marginHorizontal: 10, marginBottom: 8,
+        borderRadius: wp(16), padding: wp(14),
+        backgroundColor: '#FAFBFC',
+        borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)',
+      }}>
+        <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(10) }}>
+          {visual.title || 'Répartition'}
+        </Text>
+        {visual.data.segments.map((seg, i) => {
+          const pct = Math.round((seg.value / total) * 100);
+          return (
+            <View key={i} style={{ marginBottom: wp(8) }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(3) }}>
+                <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#2D3436' }}>{seg.label}</Text>
+                <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)' }}>{seg.value}g — {pct}%</Text>
+              </View>
+              <View style={{ height: wp(6), backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(3) }}>
+                <View style={{ width: pct + '%', height: '100%', backgroundColor: seg.color || '#00D984', borderRadius: wp(3) }} />
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    );
+  }
+
+  if (visual.type === 'info_card' && visual.data) {
+    const iconColor = visual.data.icon === 'warning' ? '#FF8C42' : visual.data.icon === 'success' ? '#00D984' : '#4DA6FF';
+    const bgColor = visual.data.icon === 'warning' ? 'rgba(255,140,66,0.08)' : visual.data.icon === 'success' ? 'rgba(0,217,132,0.08)' : 'rgba(77,166,255,0.08)';
+    return (
+      <View style={{
+        marginHorizontal: 10, marginBottom: 8,
+        borderRadius: wp(16), padding: wp(14),
+        backgroundColor: bgColor,
+        borderWidth: 1, borderColor: iconColor + '25',
+      }}>
+        <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#2D3436', marginBottom: wp(4) }}>
+          {visual.data.title}
+        </Text>
+        <Text style={{ fontSize: fp(12), color: '#3A4550', lineHeight: fp(18) }}>
+          {visual.data.body}
+        </Text>
+      </View>
+    );
+  }
+
+  return null;
+};
+
+// ============================================
 // RESPONSE CARD — Carte blanche en bas
 // ============================================
 const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuickReply, onPreciserPress }) => {
@@ -1302,6 +1480,8 @@ export default function MedicAiPage() {
   const [cardMessage, setCardMessage] = useState(null);
   const [cardIsUser, setCardIsUser] = useState(false);
   const [cardIsLoading, setCardIsLoading] = useState(false);
+  const [pendingVisual, setPendingVisual] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null);
 
   // Clavier
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -1905,6 +2085,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         const data = await response.json();
         const replyText = data.message || data.error || 'Erreur de connexion.';
 
+        if (data.visual) setPendingVisual(data.visual);
+        if (data.pending_action) setPendingAction(data.pending_action);
+
         setCardIsLoading(false);
         setCardMessage(replyText);
         setCardIsUser(false);
@@ -1948,6 +2131,18 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   const handleQuickReply = (text) => {
     if (!text || isLoading || isLocked) return;
+
+    const isConfirmation = text.toLowerCase().includes('sauvegarde') ||
+                           text.toLowerCase().includes('oui') ||
+                           text.toLowerCase().includes('confirme') ||
+                           text.toLowerCase().includes('enregistre');
+
+    if (isConfirmation && pendingAction) {
+      executeAlixenAction(pendingAction);
+      setPendingAction(null);
+      setPendingVisual(null);
+    }
+
     if (messages.length >= 30) return;
 
     const userMsg = {
@@ -1997,6 +2192,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         const data = await response.json();
         const replyText = data.message || data.error || 'Erreur de connexion.';
 
+        if (data.visual) setPendingVisual(data.visual);
+        if (data.pending_action) setPendingAction(data.pending_action);
+
         setCardIsLoading(false);
         setCardMessage(replyText);
         setCardIsUser(false);
@@ -2036,6 +2234,94 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       }
       setIsLoading(false);
     }, 800);
+  };
+
+  const executeAlixenAction = async (action) => {
+    try {
+      const headers = {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      };
+
+      if (action.type === 'save_meal_plan') {
+        const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/save_weekly_meal_plan', {
+          method: 'POST', headers,
+          body: JSON.stringify({
+            p_user_id: TEST_USER_ID,
+            p_week_start: action.payload.week_start,
+            p_meals: action.payload.meals,
+          }),
+        });
+        const result = await res.json();
+        if (result.success) {
+          addBotMessage('Menu sauvegardé avec succès dans ta page Repas ! ✅\n\n' + (action.payload.meals.length) + ' jours ont été enregistrés.');
+        }
+      }
+
+      if (action.type === 'update_weight') {
+        await fetch(
+          SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID,
+          {
+            method: 'PATCH', headers: { ...headers, 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ weight: action.payload.weight }),
+          }
+        );
+        setUserProfile(prev => prev ? { ...prev, weight: action.payload.weight } : prev);
+        addBotMessage('Poids mis à jour : ' + action.payload.weight + ' kg ✅');
+      }
+
+      if (action.type === 'add_medication') {
+        const startDate = new Date().toISOString().split('T')[0];
+        const durationDays = action.payload.duration_days || 7;
+        const endDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        await fetch(SUPABASE_URL + '/rest/v1/medications', {
+          method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            user_id: TEST_USER_ID,
+            name: action.payload.name,
+            dosage: action.payload.dosage,
+            frequency: action.payload.frequency,
+            duration: action.payload.duration,
+            status: 'active',
+            start_date: startDate,
+            end_date: endDate,
+            reminder_enabled: true,
+            source: 'alixen',
+          }),
+        });
+        addBotMessage('Médicament ajouté : ' + action.payload.name + ' ✅\nRetrouve-le dans MediBook > Médicaments.');
+      }
+
+      if (action.type === 'add_analysis') {
+        await fetch(SUPABASE_URL + '/rest/v1/medical_analyses', {
+          method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            user_id: TEST_USER_ID,
+            label: action.payload.label,
+            value: 'À effectuer',
+            status: 'unknown',
+            is_scheduled: true,
+            scheduled_date: action.payload.scheduled_date,
+            reminder_enabled: true,
+          }),
+        });
+        addBotMessage('Analyse planifiée : ' + action.payload.label + ' ✅\nRetrouve-la dans MediBook > Analyses.');
+      }
+
+      if (action.type === 'navigate') {
+        const target = action.payload.target;
+        if (target === 'repas') setActiveTab('meals');
+        else if (target === 'activity') setActiveTab('activity');
+        else if (target === 'medibook') setCurrentSubPage('medibook');
+        else if (target === 'analyses') { setCurrentSubPage('medibook'); setMediBookView('report'); setReportSection('analyses'); }
+        else if (target === 'medications') { setCurrentSubPage('medibook'); setMediBookView('report'); setReportSection('medications'); }
+      }
+
+    } catch (error) {
+      console.error('Erreur action ALIXEN:', error);
+      addBotMessage('Erreur lors de l\'exécution. Réessayez. ❌');
+    }
   };
 
   const handlePreciserPress = () => {
@@ -2174,6 +2460,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
       const data = await response.json();
       const replyText = data.message || data.error || "Erreur de connexion.";
+
+      if (data.visual) setPendingVisual(data.visual);
+      if (data.pending_action) setPendingAction(data.pending_action);
 
       // 5. Afficher la réponse IA dans la carte
       setCardIsLoading(false);
@@ -5335,6 +5624,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               onNewSession={() => setShowNewSessionSheet(true)}
             />
           </Animated.View>
+
+          {/* Visuel ALIXEN (menu, graphique, etc.) */}
+          {pendingVisual && <AlixenVisual visual={pendingVisual} />}
 
           {/* Carte de réponse */}
           <ResponseCard
