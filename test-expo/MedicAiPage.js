@@ -295,6 +295,27 @@ const ScrollArrow = () => {
   );
 };
 
+// Parse ALIXEN_DATA du texte brut (filet de sécurité côté app)
+const parseAlixenResponse = (rawText) => {
+  if (!rawText) return { cleanText: '', visual: null, pendingAction: null };
+  let visual = null;
+  let pendingAction = null;
+  let cleanText = rawText;
+  const dataMatch = rawText.match(/\[ALIXEN_DATA\]([\s\S]*?)\[\/ALIXEN_DATA\]/);
+  if (dataMatch) {
+    cleanText = rawText.replace(/\[ALIXEN_DATA\][\s\S]*?\[\/ALIXEN_DATA\]/, '').trim();
+    try {
+      let rawJson = dataMatch[1].trim().replace(/\n/g, '').replace(/\r/g, '').replace(/\t/g, '');
+      const parsed = JSON.parse(rawJson);
+      visual = parsed.visual || null;
+      pendingAction = parsed.pending_action || null;
+    } catch (e) {
+      console.log('ALIXEN_DATA parse error:', e.message);
+    }
+  }
+  return { cleanText, visual, pendingAction };
+};
+
 // Parse les [CHOIX:X:texte] dans le texte
 const parseQuickReplies = (text) => {
   if (!text) return { cleanText: '', choices: [] };
@@ -2160,11 +2181,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         const data = await response.json();
         const replyText = data.message || data.error || 'Erreur de connexion.';
 
-        if (data.visual) setPendingVisual(data.visual);
-        if (data.pending_action) setPendingAction(data.pending_action);
+        const alixenParsed = parseAlixenResponse(replyText);
+        const finalText = alixenParsed.cleanText;
+        if (data.visual || alixenParsed.visual) setPendingVisual(data.visual || alixenParsed.visual);
+        if (data.pending_action || alixenParsed.pendingAction) setPendingAction(data.pending_action || alixenParsed.pendingAction);
 
         setCardIsLoading(false);
-        setCardMessage(replyText);
+        setCardMessage(finalText);
         setCardIsUser(false);
 
         setMessages(prev => {
@@ -2172,7 +2195,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           return [...prev, {
             id: botMsgId,
             role: 'assistant',
-            content: replyText,
+            content: finalText,
             timestamp: new Date(),
             _isNew: true,
             _status: 'read',
@@ -2267,11 +2290,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         const data = await response.json();
         const replyText = data.message || data.error || 'Erreur de connexion.';
 
-        if (data.visual) setPendingVisual(data.visual);
-        if (data.pending_action) setPendingAction(data.pending_action);
+        const alixenParsed = parseAlixenResponse(replyText);
+        const finalText = alixenParsed.cleanText;
+        if (data.visual || alixenParsed.visual) setPendingVisual(data.visual || alixenParsed.visual);
+        if (data.pending_action || alixenParsed.pendingAction) setPendingAction(data.pending_action || alixenParsed.pendingAction);
 
         setCardIsLoading(false);
-        setCardMessage(replyText);
+        setCardMessage(finalText);
         setCardIsUser(false);
 
         setMessages(prev => {
@@ -2279,7 +2304,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           return [...prev, {
             id: botMsgId,
             role: 'assistant',
-            content: replyText,
+            content: finalText,
             timestamp: new Date(),
             _isNew: true,
             _status: 'read',
@@ -2548,19 +2573,21 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       const data = await response.json();
       const replyText = data.message || data.error || "Erreur de connexion.";
 
-      if (data.visual) setPendingVisual(data.visual);
-      if (data.pending_action) setPendingAction(data.pending_action);
+      const alixenParsed = parseAlixenResponse(replyText);
+      const finalText = alixenParsed.cleanText;
+      if (data.visual || alixenParsed.visual) setPendingVisual(data.visual || alixenParsed.visual);
+      if (data.pending_action || alixenParsed.pendingAction) setPendingAction(data.pending_action || alixenParsed.pendingAction);
 
       // 5. Afficher la réponse IA dans la carte
       setCardIsLoading(false);
-      setCardMessage(replyText);
+      setCardMessage(finalText);
       setCardIsUser(false);
 
       // 6. Créer la boule IA
       const botMsg = {
         id: botMsgId,
         role: 'assistant',
-        content: replyText,
+        content: finalText,
         timestamp: new Date(),
         _isNew: true,
         _status: 'read',
