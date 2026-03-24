@@ -6,13 +6,14 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   Image, Platform, Animated, KeyboardAvoidingView,
-  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Alert, Modal, ActivityIndicator,
+  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Modal, ActivityIndicator,
 } from 'react-native';
 import Svg, {
   Defs, Rect, Path, Circle, Ellipse, Line,
   LinearGradient as SvgLinearGradient, Stop,
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import AlertSheet from './medicai/AlertSheet';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -1386,14 +1387,7 @@ const MbProgressRow = ({ item }) => {
 // count: medicalData.analyses.filter(a => a.is_secret).length
 // count: medicalData.allergies.filter(a => a.is_secret).length
 // etc.
-const spCategories = [
-  { id: 'diagnostics', title: 'Diagnostics à surveiller', desc: 'Diabète, hypertension, cholestérol...', icon: 'heart-pulse', color: '#FF6B6B', count: 0 },
-  { id: 'allergies', title: 'Allergies et intolérances', desc: 'Alimentaires, médicamenteuses...', icon: 'shield-alert', color: '#FF8C42', count: 0 },
-  { id: 'medications', title: 'Médicaments en cours', desc: 'Traitements actuels et posologie', icon: 'pill', color: '#4DA6FF', count: 0 },
-  { id: 'lab-results', title: "Résultats d'analyses", desc: 'Bilans sanguins, examens...', icon: 'flask', color: '#00D984', count: 0 },
-  { id: 'notes', title: 'Notes personnelles', desc: 'Vos observations de santé', icon: 'edit', color: '#9B6DFF', count: 0 },
-  { id: 'conversations', title: 'Conversations sensibles', desc: 'Échanges privés avec ALIXEN', icon: 'message-lock', color: '#D4AF37', count: 0 },
-];
+// spCategories is now computed dynamically via getSpCategories() inside the component
 
 const renderCategoryIcon = (iconName, color, size = wp(20)) => {
   switch (iconName) {
@@ -1576,6 +1570,36 @@ export default function MedicAiPage() {
   const [scanCategory, setScanCategory] = useState(null);
   const [scanFileName, setScanFileName] = useState('');
 
+  // AlertSheet state
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', icon: 'info', buttons: [] });
+  const showAlert = (title, message, buttons = [], icon = 'info') => {
+    setAlertConfig({ visible: true, title, message, icon, buttons });
+  };
+  const hideAlert = () => setAlertConfig(prev => ({ ...prev, visible: false }));
+
+  const getSpCategories = () => {
+    const countByCategory = {};
+    secretPocketItems.forEach(item => {
+      countByCategory[item.category] = (countByCategory[item.category] || 0) + 1;
+    });
+    return [
+      { id: 'diagnostics', title: 'Diagnostics à surveiller', desc: 'Diabète, hypertension, cholestérol...', icon: 'heart-pulse', color: '#FF6B6B', count: countByCategory['diagnostics'] || 0 },
+      { id: 'allergies', title: 'Allergies et intolérances', desc: 'Alimentaires, médicamenteuses...', icon: 'shield-alert', color: '#FF8C42', count: countByCategory['allergies'] || 0 },
+      { id: 'medications', title: 'Médicaments en cours', desc: 'Traitements actuels et posologie', icon: 'pill', color: '#4DA6FF', count: countByCategory['medications'] || 0 },
+      { id: 'lab-results', title: 'Résultats d\'analyses', desc: 'Bilans sanguins, examens...', icon: 'flask', color: '#00D984', count: countByCategory['lab-results'] || 0 },
+      { id: 'notes', title: 'Notes personnelles', desc: 'Vos observations de santé', icon: 'edit', color: '#9B6DFF', count: countByCategory['notes'] || 0 },
+      { id: 'conversations', title: 'Sessions compactées', desc: 'Discussions sauvegardées avec ALIXEN', icon: 'message-lock', color: '#D4AF37', count: countByCategory['conversations'] || 0 },
+    ];
+  };
+
+  // Secret Pocket items
+  const [secretPocketItems, setSecretPocketItems] = useState([]);
+  const [openSpCategory, setOpenSpCategory] = useState(null);
+
+  // Compactage
+  const [isCompacting, setIsCompacting] = useState(false);
+  const [compactStep, setCompactStep] = useState(0);
+
   // Énergie — valeurs dérivées
   const energyLeft = Math.max(0, energyLimit - energyUsed);
   const energyPercent = Math.max(0, Math.min(100, (energyLeft / energyLimit) * 100));
@@ -1684,13 +1708,14 @@ export default function MedicAiPage() {
   const addBotMessage = useCallback((text) => {
     setMessages(prev => {
       if (prev.length >= 30) {
-        Alert.alert(
+        showAlert(
           'Session pleine',
           'Vous avez atteint la limite de 30 échanges par session.\n\nCompactez cette conversation pour la ranger dans votre Secret Pocket et démarrer une nouvelle session.',
           [
-            { text: 'Compacter et ranger', onPress: () => console.log('Compactage vers Secret Pocket') },
+            { text: 'Compacter et ranger', color: '#D4AF37', onPress: () => setShowCompactConfirm(true) },
             { text: 'Annuler', style: 'cancel' },
-          ]
+          ],
+          'warning'
         );
         return prev;
       }
@@ -1917,6 +1942,11 @@ export default function MedicAiPage() {
       }
     }
 
+    const compactedCount = secretPocketItems.filter(i => i.category === 'conversations').length;
+    if (compactedCount > 0) {
+      greeting += '\n\nJe vois que tu as ' + compactedCount + ' discussion' + (compactedCount > 1 ? 's' : '') + ' sauvegardée' + (compactedCount > 1 ? 's' : '') + ' dans ton Secret Pocket. Si tu veux reprendre un sujet précédent, tu peux importer une session via le bouton + en bas.';
+    }
+
     setMessages(prev => [...prev, {
       id: Date.now().toString(),
       role: 'assistant',
@@ -2037,6 +2067,10 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 6. Ne pose JAMAIS de diagnostic. Tu peux suggérer de consulter un médecin.
 7. Sois proactif : si tu vois des résultats anormaux ou des analyses à venir, mentionne-les naturellement.
 8. Garde tes réponses concises (max 150 mots avant les choix).
+9. IMPORT DE SESSION : Si l'utilisateur fait référence à une conversation précédente avec toi — exemples de mots-clés : "hier", "la dernière fois", "on avait parlé", "tu m'avais dit", "rappelle-toi", "notre discussion", "tu te souviens" — tu DOIS lui répondre avec bienveillance que tu n'as pas accès aux discussions précédentes dans cette session. Propose-lui d'importer une discussion compactée depuis son Secret Pocket en cliquant sur le bouton + en bas à gauche puis "Importer une conversation". Tu peux aussi proposer le choix rapide :
+[CHOIX:1:Importer une discussion précédente]
+[CHOIX:2:Démarrer une nouvelle discussion]
+[CHOIX:PRÉCISER:Autre chose...]
     `;
   };
 
@@ -2450,13 +2484,14 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
     // Limite 30 bulles par session
     if (messages.length >= 30) {
-      Alert.alert(
+      showAlert(
         'Session pleine',
         'Vous avez atteint la limite de 30 échanges. Souhaitez-vous compacter cette conversation et la ranger dans votre Secret Pocket ?',
         [
-          { text: 'Compacter et ranger', onPress: () => console.log('Compactage vers Secret Pocket') },
+          { text: 'Compacter et ranger', color: '#D4AF37', onPress: () => setShowCompactConfirm(true) },
           { text: 'Continuer quand même', style: 'cancel' },
-        ]
+        ],
+        'warning'
       );
       return;
     }
@@ -2661,9 +2696,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       console.error('Erreur scan médical:', error);
       setUploadState('idle');
       setScanResults(null);
-      Alert.alert(
+      showAlert(
         'Erreur d\'analyse',
         'ALIXEN n\'a pas pu analyser ce document. Vérifiez que l\'image est lisible et réessayez.\n\nDétail : ' + (error.message || 'Erreur inconnue'),
+        [{ text: 'Compris', style: 'cancel' }],
+        'error'
       );
     }
   };
@@ -2699,7 +2736,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Permission requise', 'Autorisez l\'accès à la caméra pour prendre des photos.');
+        showAlert('Permission requise', 'Autorisez l\'accès à la caméra pour prendre des photos.', [{ text: 'Compris', style: 'cancel' }], 'warning');
         return;
       }
       const result = await ImagePicker.launchCameraAsync({
@@ -2729,14 +2766,15 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   const pickDocument = async (context) => {
     try {
-      Alert.alert(
+      showAlert(
         'Importer un document',
         'Pour l\'instant, prenez une photo du document ou importez depuis la galerie.',
         [
-          { text: 'Prendre une photo', onPress: () => takePhoto(context) },
-          { text: 'Depuis la galerie', onPress: () => pickImage(context) },
+          { text: 'Prendre une photo', color: '#4DA6FF', onPress: () => takePhoto(context) },
+          { text: 'Depuis la galerie', color: '#00D984', onPress: () => pickImage(context) },
           { text: 'Annuler', style: 'cancel' },
-        ]
+        ],
+        'info'
       );
     } catch (error) {
       console.log('Erreur pickDocument:', error);
@@ -2770,6 +2808,49 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     } catch (error) {
       console.error('Erreur toggle rappel:', error);
     }
+  };
+
+  // ── COMPACTAGE SESSION → SECRET POCKET ──────────────────────────────────
+  const startCompaction = () => {
+    setShowCompactConfirm(false);
+    setIsCompacting(true);
+    setCompactStep(0);
+
+    let currentStep = 0;
+    const stepInterval = setInterval(() => {
+      currentStep++;
+      setCompactStep(currentStep);
+      if (currentStep >= 3) {
+        clearInterval(stepInterval);
+
+        const compacted = {
+          id: 'session-' + Date.now(),
+          category: 'conversations',
+          tableName: 'conversations',
+          displayName: 'Session du ' + new Date().toLocaleDateString('fr-FR'),
+          data: {
+            messageCount: messages.length,
+            preview: messages.find(m => m.role === 'assistant')?.content?.substring(0, 80) || 'Session ALIXEN',
+            date: new Date().toISOString(),
+            messages: [...messages],
+          },
+          transferDate: new Date().toISOString(),
+          source: 'compaction',
+        };
+
+        setTimeout(() => {
+          setSecretPocketItems(prev => [...prev, compacted]);
+          setMessages([]);
+          setCardMessage(null);
+          setCardIsUser(false);
+          setCardIsLoading(false);
+          setPendingAction(null);
+          setIsCompacting(false);
+          setCompactStep(0);
+          loadUserData();
+        }, 1200);
+      }
+    }, 1500);
   };
 
   const toggleMedicationTaken = async (medicationId, timeIndex, currentTakenHistory, freqTimes) => {
@@ -2828,12 +2909,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
   };
 
   const archiveMedication = async (medicationId, medicationName) => {
-    Alert.alert(
+    showAlert(
       'Archiver ce médicament ?',
       '"' + medicationName + '" sera déplacé dans vos médicaments archivés. Vous pourrez toujours le consulter.',
       [
         {
           text: 'Archiver',
+          color: '#4DA6FF',
           onPress: async () => {
             try {
               await fetch(
@@ -2852,12 +2934,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               loadMedicalData();
             } catch (error) {
               console.error('Erreur archivage:', error);
-              Alert.alert('Erreur', 'L\'archivage a échoué.');
+              showAlert('Erreur', 'L\'archivage a échoué.', [{ text: 'OK', style: 'cancel' }], 'error');
             }
           },
         },
         { text: 'Annuler', style: 'cancel' },
-      ]
+      ],
+      'warning'
     );
   };
 
@@ -2950,13 +3033,15 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       // Recharger les données
       loadMedicalData();
 
-      Alert.alert(
+      showAlert(
         'Médicament ajouté ✓',
         selectedMedFromDb.name + ' ' + newMedDosageValue + ' ' + newMedDosageUnit + ' a été ajouté à vos traitements en cours.',
+        [{ text: 'OK', style: 'cancel' }],
+        'success',
       );
     } catch (error) {
       console.error('Erreur ajout médicament:', error);
-      Alert.alert('Erreur', 'L\'ajout a échoué. Réessayez.');
+      showAlert('Erreur', 'L\'ajout a échoué. Réessayez.', [{ text: 'OK', style: 'cancel' }], 'error');
     }
   };
 
@@ -2973,12 +3058,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   const searchMedicationAI = async (query) => {
     try {
-      Alert.alert(
+      showAlert(
         'Recherche IA — 50 Lix',
         'ALIXEN va chercher "' + query + '" dans sa base de connaissances médicales.\n\nCoût : 50 Lix',
         [
           {
             text: 'Rechercher',
+            color: '#00D984',
             onPress: async () => {
               try {
                 setMedSearchResults([{ _loading: true, name: 'Recherche en cours...', id: 'loading' }]);
@@ -3019,20 +3105,23 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                   setMedSearchResults([med]);
                 } else {
                   setMedSearchResults([]);
-                  Alert.alert(
+                  showAlert(
                     'Non trouvé',
                     result.suggestion || 'ALIXEN n\'a pas trouvé ce médicament. Vérifiez l\'orthographe et réessayez.',
+                    [{ text: 'OK', style: 'cancel' }],
+                    'info',
                   );
                 }
               } catch (error) {
                 console.error('Erreur recherche IA:', error);
                 setMedSearchResults([]);
-                Alert.alert('Erreur', 'La recherche IA a échoué. Vérifiez votre connexion.');
+                showAlert('Erreur', 'La recherche IA a échoué. Vérifiez votre connexion.', [{ text: 'OK', style: 'cancel' }], 'error');
               }
             },
           },
           { text: 'Annuler', style: 'cancel', onPress: () => setMedSearchResults([]) },
-        ]
+        ],
+        'info',
       );
     } catch (error) {
       console.error('Erreur searchMedicationAI:', error);
@@ -3041,11 +3130,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   const confirmAddAnalysis = async () => {
     if (!newAnalysisLabel.trim()) {
-      Alert.alert('Champ requis', 'Veuillez entrer le type d\'analyse.');
+      showAlert('Champ requis', 'Veuillez entrer le type d\'analyse.', [{ text: 'OK', style: 'cancel' }], 'warning');
       return;
     }
     if (!newAnalysisDate.trim()) {
-      Alert.alert('Champ requis', 'Veuillez entrer la date prévue (format : JJ/MM/AAAA).');
+      showAlert('Champ requis', 'Veuillez entrer la date prévue (format : JJ/MM/AAAA).', [{ text: 'OK', style: 'cancel' }], 'warning');
       return;
     }
 
@@ -3091,64 +3180,64 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
       loadMedicalData();
 
-      Alert.alert('Analyse planifiée ✓', newAnalysisLabel.trim() + ' a été ajoutée à vos analyses à venir.');
+      showAlert('Analyse planifiée ✓', newAnalysisLabel.trim() + ' a été ajoutée à vos analyses à venir.', [{ text: 'OK', style: 'cancel' }], 'success');
     } catch (error) {
       console.error('Erreur ajout analyse:', error);
-      Alert.alert('Erreur', 'L\'ajout a échoué. Réessayez.');
+      showAlert('Erreur', 'L\'ajout a échoué. Réessayez.', [{ text: 'OK', style: 'cancel' }], 'error');
     }
   };
 
   const handleTransferToSecretPocket = (tableName, rowIndex, rowData) => {
     const itemName = typeof rowData[0] === 'object' ? rowData[0].text : rowData[0];
 
-    Alert.alert(
+    const categoryMap = {
+      analyses: 'lab-results',
+      medications: 'medications',
+      allergies: 'allergies',
+      vaccinations: 'diagnostics',
+    };
+    const spCategory = categoryMap[tableName] || 'notes';
+
+    showAlert(
       'Transférer vers Secret Pocket',
-      '"' + itemName + '" sera déplacé dans votre coffre-fort sécurisé et supprimé de MediBook.\n\nContinuer ?',
+      '"' + itemName + '" sera déplacé dans votre coffre-fort sécurisé et masqué de MediBook.\n\nContinuer ?',
       [
         {
           text: 'Transférer',
-          onPress: async () => {
-            try {
-              let sourceArray;
-              let itemId;
+          color: '#D4AF37',
+          onPress: () => {
+            let sourceItem;
+            if (tableName === 'analyses') sourceItem = medicalData.analyses[rowIndex];
+            else if (tableName === 'medications') sourceItem = medicalData.medications[rowIndex];
+            else if (tableName === 'allergies') sourceItem = medicalData.allergies[rowIndex];
+            else if (tableName === 'vaccinations') sourceItem = medicalData.vaccinations[rowIndex];
 
-              if (tableName === 'analyses') {
-                sourceArray = medicalData.analyses;
-                itemId = sourceArray[rowIndex]?.id;
-              } else if (tableName === 'medications') {
-                sourceArray = medicalData.medications;
-                itemId = sourceArray[rowIndex]?.id;
-              } else if (tableName === 'allergies') {
-                sourceArray = medicalData.allergies;
-                itemId = sourceArray[rowIndex]?.id;
-              } else if (tableName === 'vaccinations') {
-                sourceArray = medicalData.vaccinations;
-                itemId = sourceArray[rowIndex]?.id;
-              }
+            setSecretPocketItems(prev => [...prev, {
+              id: 'sp-' + Date.now(),
+              category: spCategory,
+              tableName: tableName,
+              data: sourceItem || { name: itemName },
+              displayName: itemName,
+              transferDate: new Date().toISOString(),
+              source: 'medibook',
+            }]);
 
-              if (!itemId) {
-                console.log('Transfert simulé pour:', tableName, rowIndex);
-                Alert.alert('Transféré ✓', '"' + itemName + '" a été déplacé dans votre Secret Pocket.');
-                return;
-              }
+            setMedicalData(prev => ({
+              ...prev,
+              [tableName]: prev[tableName].filter((_, i) => i !== rowIndex),
+            }));
 
-              // Pour l'instant, on supprime de la vue locale
-              // TODO: Quand le champ is_secret sera ajouté dans Supabase, marquer l'élément comme secret au lieu de le supprimer
-              setMedicalData(prev => ({
-                ...prev,
-                [tableName]: prev[tableName].filter((_, i) => i !== rowIndex),
-              }));
-
-              Alert.alert('Transféré ✓', '"' + itemName + '" a été déplacé dans votre Secret Pocket.');
-
-            } catch (error) {
-              console.error('Erreur transfert:', error);
-              Alert.alert('Erreur', 'Le transfert a échoué.');
-            }
+            showAlert(
+              'Transféré',
+              '"' + itemName + '" a été déplacé dans votre Secret Pocket.',
+              [{ text: 'OK', color: '#D4AF37' }],
+              'success'
+            );
           },
         },
         { text: 'Annuler', style: 'cancel' },
-      ]
+      ],
+      'lock'
     );
   };
 
@@ -3398,17 +3487,18 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         {/* Bouton retour */}
         <Pressable
           onPress={() => {
-            Alert.alert(
+            showAlert(
               'Quitter l\'analyse ?',
               'Les données extraites seront perdues.',
               [
-                { text: 'Quitter', style: 'destructive', onPress: () => {
+                { text: 'Quitter', style: 'destructive', color: '#FF6B6B', onPress: () => {
                   setUploadState('idle');
                   setScanResults(null);
                   setScanSteps([]);
                 }},
                 { text: 'Continuer', style: 'cancel' },
-              ]
+              ],
+              'warning',
             );
           }}
           style={{
@@ -3698,9 +3788,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 setScanSteps([]);
                 setUploadState('idle');
 
-                Alert.alert(
+                showAlert(
                   'Données intégrées ✓',
                   'Les informations ont été ajoutées à votre MediBook. Consultez Mes Stats pour voir les résultats.',
+                  [{ text: 'OK', style: 'cancel' }],
+                  'success',
                 );
 
                 // Recharger les données médicales
@@ -3709,7 +3801,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               } catch (error) {
                 console.error('Erreur intégration:', error);
                 setUploadState('idle');
-                Alert.alert('Erreur', 'L\'intégration a échoué. Réessayez.');
+                showAlert('Erreur', 'L\'intégration a échoué. Réessayez.', [{ text: 'OK', style: 'cancel' }], 'error');
               }
             }}>
             <LinearGradient colors={['#00D984', '#00B871']}
@@ -4097,11 +4189,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 <Pressable
                   key={index}
                   onPress={() => {
-                    Alert.alert(
+                    showAlert(
                       'Page ' + (index + 1),
                       'Supprimer cette photo ?',
                       [
-                        { text: 'Supprimer', style: 'destructive', onPress: () => {
+                        { text: 'Supprimer', style: 'destructive', color: '#FF6B6B', onPress: () => {
                           setCarnetPhotos(prev => {
                             const updated = [...prev];
                             updated[index] = undefined;
@@ -4109,7 +4201,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                           });
                         }},
                         { text: 'Annuler', style: 'cancel' },
-                      ]
+                      ],
+                      'trash',
                     );
                   }}
                   style={{
@@ -5160,21 +5253,21 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             subtitle={allergiesCount > 0 ? 'Profil allergique enregistré' : 'Aucune allergie enregistrée'}
             count={allergiesCount} color="#FF8C42"
             icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#FF8C42" strokeWidth="1.5" /></Svg>}
-            onPress={() => Alert.alert('Allergies', 'Détail allergies — prochaine mise à jour.')}
+            onPress={() => showAlert('Allergies', 'Détail allergies — prochaine mise à jour.', [{ text: 'OK', style: 'cancel' }], 'info')}
           />
 
           <SectionCard title="Carnet vaccinal"
             subtitle={vaccCount > 0 ? vaccCount + ' vaccin' + (vaccCount > 1 ? 's' : '') + ' enregistré' + (vaccCount > 1 ? 's' : '') : 'Aucun vaccin enregistré'}
             count={vaccCount} color="#9B6DFF"
             icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M18 2l4 4-9.5 9.5-4-4L18 2z" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><Path d="M8.5 11.5L2 18v4h4l6.5-6.5" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
-            onPress={() => Alert.alert('Vaccins', 'Détail vaccins — prochaine mise à jour.')}
+            onPress={() => showAlert('Vaccins', 'Détail vaccins — prochaine mise à jour.', [{ text: 'OK', style: 'cancel' }], 'info')}
           />
 
           <SectionCard title="Diagnostics à surveiller"
             subtitle={diagCount > 0 ? diagCount + ' diagnostic' + (diagCount > 1 ? 's' : '') : 'Aucun diagnostic enregistré'}
             count={diagCount} color="#FF6B6B"
             icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke="#FF6B6B" strokeWidth="1.5" /><Path d="M3 12h4l3-6 4 12 3-6h4" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
-            onPress={() => Alert.alert('Diagnostics', 'Détail diagnostics — prochaine mise à jour.')}
+            onPress={() => showAlert('Diagnostics', 'Détail diagnostics — prochaine mise à jour.', [{ text: 'OK', style: 'cancel' }], 'info')}
           />
 
           <Pressable delayPressIn={120} onPress={() => setReportSection('pdf-preview')} style={{ marginTop: wp(12), marginBottom: wp(16) }}>
@@ -5299,7 +5392,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         ))}
 
         <Pressable delayPressIn={120}
-          onPress={() => Alert.alert('MediBook', 'La génération PDF sera disponible prochainement !')}
+          onPress={() => showAlert('MediBook', 'La génération PDF sera disponible prochainement !', [{ text: 'OK', style: 'cancel' }], 'info')}
           onPressIn={() => Animated.timing(mbGenerateScale, { toValue: 0.95, duration: 120, useNativeDriver: true }).start()}
           onPressOut={() => Animated.spring(mbGenerateScale, { toValue: 1, useNativeDriver: true }).start()}>
           <Animated.View style={{ transform: [{ scale: mbGenerateScale }], marginTop: wp(24), marginBottom: wp(32) }}>
@@ -5440,13 +5533,14 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         </View>
         <Pressable delayPressIn={120}
           onPress={() => {
-            Alert.alert(
+            showAlert(
               'Verrouiller',
               'Votre Secret Pocket sera verrouillé.',
               [
-                { text: 'Verrouiller', onPress: () => { setIsUnlocked(false); setCurrentSubPage('main'); } },
+                { text: 'Verrouiller', onPress: () => { setIsUnlocked(false); setCurrentSubPage('main'); }, color: '#D4AF37' },
                 { text: 'Annuler', style: 'cancel' },
-              ]
+              ],
+              'lock'
             );
           }}
           style={({ pressed }) => ({
@@ -5478,14 +5572,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
         {/* Categories — MetalCard gradient */}
-        {spCategories.map((cat) => (
+        {getSpCategories().map((cat) => (
           <Pressable key={cat.id} delayPressIn={120}
-            onPress={() => {
-              Alert.alert(
-                cat.title,
-                'Les données transférées depuis MediBook apparaîtront ici.\n\nPour ajouter des données, utilisez le bouton + dans MediBook puis transférez-les ici.',
-              );
-            }}
+            onPress={() => setOpenSpCategory(cat.id)}
             style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }], marginBottom: wp(10) })}>
             <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
               style={{
@@ -5539,6 +5628,52 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         </View>
         <BottomSpacer />
       </ScrollView>
+
+      {/* Modal catégorie Secret Pocket */}
+      <Modal visible={openSpCategory !== null} transparent animationType="slide" onRequestClose={() => setOpenSpCategory(null)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} onPress={() => setOpenSpCategory(null)}>
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34), maxHeight: SCREEN_HEIGHT * 0.7 }}>
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }} />
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(16) }}>
+                {getSpCategories().find(c => c.id === openSpCategory)?.title || ''}
+              </Text>
+              <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.5 }}>
+                {secretPocketItems.filter(item => item.category === openSpCategory).length === 0 ? (
+                  <View style={{ padding: wp(30), alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
+                      Aucun élément dans cette catégorie.{'\n'}Transférez des données depuis MediBook.
+                    </Text>
+                  </View>
+                ) : (
+                  secretPocketItems.filter(item => item.category === openSpCategory).map((item) => (
+                    <View key={item.id} style={{
+                      backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: wp(14), padding: wp(14),
+                      marginBottom: wp(8), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                      borderLeftWidth: wp(3), borderLeftColor: '#D4AF37',
+                    }}>
+                      <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{item.displayName}</Text>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginTop: wp(4) }}>
+                        Transféré le {new Date(item.transferDate).toLocaleDateString('fr-FR')}
+                      </Text>
+                      {item.category === 'conversations' && item.data && item.data.preview && (
+                        <Text numberOfLines={2} style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.25)', fontStyle: 'italic', marginTop: wp(4) }}>
+                          {item.data.preview}
+                        </Text>
+                      )}
+                    </View>
+                  ))
+                )}
+              </ScrollView>
+              <Pressable onPress={() => setOpenSpCategory(null)}
+                style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginTop: wp(12) }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Fermer</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </LinearGradient>
   );
 
@@ -5550,6 +5685,60 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   // ── RENDER CONTENT (conditionnel) ─────────────────────────────────────
   const renderContent = () => {
+    if (isCompacting) {
+      const compactSteps = [
+        'Compactage des messages...',
+        'Chiffrement de la session...',
+        'Rangement dans Secret Pocket...',
+        'Terminé !',
+      ];
+      return (
+        <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(30) }}>
+          <StatusBar barStyle="light-content" />
+          <View style={{
+            width: wp(80), height: wp(80), borderRadius: wp(40),
+            backgroundColor: 'rgba(212,175,55,0.12)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)',
+            justifyContent: 'center', alignItems: 'center', marginBottom: wp(30),
+          }}>
+            <Svg width={wp(36)} height={wp(36)} viewBox="0 0 24 24" fill="none">
+              <Rect x="3" y="6" width="18" height="14" rx="2" stroke="#D4AF37" strokeWidth="1.5" />
+              <Path d="M3 10h18" stroke="#D4AF37" strokeWidth="1.5" />
+              <Circle cx="12" cy="15" r="1.5" stroke="#D4AF37" strokeWidth="1.5" />
+            </Svg>
+          </View>
+          <Text style={{ fontSize: fp(22), fontWeight: '700', color: '#D4AF37', marginBottom: wp(8), textAlign: 'center' }}>
+            Compactage en cours
+          </Text>
+          <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)', marginBottom: wp(30), textAlign: 'center' }}>
+            {messages.length} messages à sécuriser
+          </Text>
+          {compactSteps.map((step, i) => (
+            <View key={i} style={{
+              flexDirection: 'row', alignItems: 'center', marginBottom: wp(12),
+              opacity: i <= compactStep ? 1 : 0.2,
+            }}>
+              <View style={{
+                width: wp(24), height: wp(24), borderRadius: wp(12),
+                backgroundColor: i < compactStep ? '#D4AF37' : i === compactStep ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.05)',
+                justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+              }}>
+                {i < compactStep ? (
+                  <Text style={{ color: '#FFF', fontSize: fp(12), fontWeight: '700' }}>✓</Text>
+                ) : i === compactStep ? (
+                  <ActivityIndicator size="small" color="#D4AF37" />
+                ) : null}
+              </View>
+              <Text style={{
+                fontSize: fp(14), color: i <= compactStep ? '#FFF' : 'rgba(255,255,255,0.2)',
+                fontWeight: i === compactStep ? '600' : '400',
+              }}>
+                {step}
+              </Text>
+            </View>
+          ))}
+        </View>
+      );
+    }
     if (uploadState === 'scanning') return renderScanningScreen();
     if (uploadState === 'results') return renderScanResults();
     if (uploadState === 'integrating') {
@@ -6470,13 +6659,14 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 onPress={() => {
                   setShowDocumentSheet(false);
                   setTimeout(() => {
-                    Alert.alert(
+                    showAlert(
                       'Partager ma localisation',
                       'ALIXEN utilisera ta position une seule fois pour te recommander des supermarchés, restaurants et salles de sport à proximité.\n\nTa localisation sera automatiquement effacée après utilisation.',
                       [
-                        { text: 'Partager', onPress: () => console.log('share location') },
+                        { text: 'Partager', onPress: () => console.log('share location'), color: '#4DA6FF' },
                         { text: 'Non merci', style: 'cancel' },
-                      ]
+                      ],
+                      'info'
                     );
                   }, 300);
                 }}
@@ -6516,13 +6706,14 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 onPress={() => {
                   setShowDocumentSheet(false);
                   setTimeout(() => {
-                    Alert.alert(
+                    showAlert(
                       'Importer une conversation',
                       'Sélectionnez une conversation compactée depuis votre Secret Pocket pour la réimporter dans cette session.',
                       [
-                        { text: 'Ouvrir Secret Pocket', onPress: () => setCurrentSubPage('secretpocket') },
+                        { text: 'Ouvrir Secret Pocket', onPress: () => setCurrentSubPage('secretpocket'), color: '#D4AF37' },
                         { text: 'Annuler', style: 'cancel' },
-                      ]
+                      ],
+                      'info'
                     );
                   }, 300);
                 }}
@@ -6801,10 +6992,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             {/* Bouton Confirmer */}
             <Pressable
               delayPressIn={120}
-              onPress={() => {
-                setShowCompactConfirm(false);
-                console.log('Discussion compactée vers Secret Pocket');
-              }}
+              onPress={() => startCompaction()}
               style={{ width: '100%', marginBottom: wp(10) }}
             >
               <LinearGradient
@@ -7370,7 +7558,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               delayPressIn={120}
               onPress={() => {
                 if (newChildName.trim().length === 0) {
-                  Alert.alert('Nom requis', 'Veuillez entrer le prénom de l\'enfant.');
+                  showAlert('Nom requis', 'Veuillez entrer le prénom de l\'enfant.', [{ text: 'OK', style: 'cancel' }], 'warning');
                   return;
                 }
                 if (editingChildId) {
@@ -7878,6 +8066,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     <View style={{ flex: 1 }}>
       {renderContent()}
       {renderAllModals()}
+      <AlertSheet {...alertConfig} onClose={hideAlert} />
     </View>
   );
 }
