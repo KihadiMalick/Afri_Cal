@@ -6,7 +6,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   Image, Platform, Animated, KeyboardAvoidingView,
-  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Alert, Modal, ActivityIndicator,
+  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Modal, ActivityIndicator,
 } from 'react-native';
 import Svg, {
   Defs, Rect, Path, Circle, Ellipse, Line,
@@ -308,13 +308,14 @@ export default function MedicAiPage() {
   const addBotMessage = useCallback((text) => {
     setMessages(prev => {
       if (prev.length >= 30) {
-        Alert.alert(
+        showAlert(
           'Session pleine',
           'Vous avez atteint la limite de 30 échanges par session.\n\nCompactez cette conversation pour la ranger dans votre Secret Pocket et démarrer une nouvelle session.',
           [
             { text: 'Compacter et ranger', onPress: () => console.log('Compactage vers Secret Pocket') },
             { text: 'Annuler', style: 'cancel' },
-          ]
+          ],
+          'warning'
         );
         return prev;
       }
@@ -541,6 +542,12 @@ export default function MedicAiPage() {
       }
     }
 
+    // Mentionner les sessions compactées disponibles
+    const compactedCount = secretPocketItems.filter(i => i.category === 'conversations').length;
+    if (compactedCount > 0) {
+      greeting += `\n\n📂 Tu as ${compactedCount} conversation${compactedCount > 1 ? 's' : ''} sauvegardée${compactedCount > 1 ? 's' : ''} dans ton Secret Pocket. Tu peux les réimporter si besoin.`;
+    }
+
     setMessages(prev => [...prev, {
       id: Date.now().toString(),
       role: 'assistant',
@@ -549,6 +556,54 @@ export default function MedicAiPage() {
       _isNew: true,
       _status: 'read',
     }]);
+  };
+
+  // ── Session compactage ─────────────────────────────────────────────────
+  const startCompaction = () => {
+    setIsCompacting(true);
+    setCompactStep(0);
+
+    const steps = [
+      { delay: 0, label: 'Analyse de la conversation...' },
+      { delay: 1500, label: 'Extraction des points clés...' },
+      { delay: 3000, label: 'Compression et chiffrement...' },
+      { delay: 4500, label: 'Transfert vers Secret Pocket...' },
+    ];
+
+    steps.forEach((step, i) => {
+      setTimeout(() => setCompactStep(i + 1), step.delay);
+    });
+
+    setTimeout(() => {
+      // Ajouter la conversation compactée dans secretPocketItems
+      const summary = messages.length > 0
+        ? messages[0].content.substring(0, 80) + '...'
+        : 'Conversation compactée';
+      setSecretPocketItems(prev => [...prev, {
+        id: 'compact-' + Date.now(),
+        category: 'conversations',
+        name: 'Session du ' + new Date().toLocaleDateString('fr-FR'),
+        data: { messageCount: messages.length, summary },
+        transferredAt: new Date().toISOString(),
+      }]);
+
+      // Reset la session
+      setMessages([]);
+      setCardMessage(null);
+      setCardIsLoading(false);
+      setIsCompacting(false);
+      setCompactStep(0);
+
+      // Relancer un greeting
+      loadUserData();
+
+      showAlert(
+        'Session compactée',
+        messages.length + ' messages ont été compactés et rangés dans votre Secret Pocket.',
+        [{ text: 'OK', style: 'cancel' }],
+        'success'
+      );
+    }, 6000);
   };
 
   // ── Construire le contexte utilisateur ───────────────────────────────────
@@ -661,6 +716,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 6. Ne pose JAMAIS de diagnostic. Tu peux suggérer de consulter un médecin.
 7. Sois proactif : si tu vois des résultats anormaux ou des analyses à venir, mentionne-les naturellement.
 8. Garde tes réponses concises (max 150 mots avant les choix).
+9. Si l'utilisateur mentionne "hier", "la dernière fois", "la semaine dernière", "notre conversation", "on avait parlé de", ou toute référence à une session précédente, propose-lui d'importer une conversation compactée depuis son Secret Pocket en utilisant [CHOIX:1:Importer une session précédente].
     `;
   };
 
@@ -1074,13 +1130,14 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
     // Limite 30 bulles par session
     if (messages.length >= 30) {
-      Alert.alert(
+      showAlert(
         'Session pleine',
         'Vous avez atteint la limite de 30 échanges. Souhaitez-vous compacter cette conversation et la ranger dans votre Secret Pocket ?',
         [
-          { text: 'Compacter et ranger', onPress: () => console.log('Compactage vers Secret Pocket') },
+          { text: 'Compacter et ranger', onPress: () => startCompaction() },
           { text: 'Continuer quand même', style: 'cancel' },
-        ]
+        ],
+        'warning'
       );
       return;
     }
@@ -1285,9 +1342,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       console.error('Erreur scan médical:', error);
       setUploadState('idle');
       setScanResults(null);
-      Alert.alert(
+      showAlert(
         'Erreur d\'analyse',
         'ALIXEN n\'a pas pu analyser ce document. Vérifiez que l\'image est lisible et réessayez.\n\nDétail : ' + (error.message || 'Erreur inconnue'),
+        [{ text: 'OK', style: 'cancel' }],
+        'error'
       );
     }
   };
@@ -1323,7 +1382,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Permission requise', 'Autorisez l\'accès à la caméra pour prendre des photos.');
+        showAlert('Permission requise', 'Autorisez l\'accès à la caméra pour prendre des photos.', [{ text: 'OK', style: 'cancel' }], 'warning');
         return;
       }
       const result = await ImagePicker.launchCameraAsync({
@@ -1353,14 +1412,15 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   const pickDocument = async (context) => {
     try {
-      Alert.alert(
+      showAlert(
         'Importer un document',
         'Pour l\'instant, prenez une photo du document ou importez depuis la galerie.',
         [
           { text: 'Prendre une photo', onPress: () => takePhoto(context) },
           { text: 'Depuis la galerie', onPress: () => pickImage(context) },
           { text: 'Annuler', style: 'cancel' },
-        ]
+        ],
+        'info'
       );
     } catch (error) {
       console.log('Erreur pickDocument:', error);
@@ -1452,7 +1512,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
   };
 
   const archiveMedication = async (medicationId, medicationName) => {
-    Alert.alert(
+    showAlert(
       'Archiver ce médicament ?',
       '"' + medicationName + '" sera déplacé dans vos médicaments archivés. Vous pourrez toujours le consulter.',
       [
@@ -1476,12 +1536,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               loadMedicalData();
             } catch (error) {
               console.error('Erreur archivage:', error);
-              Alert.alert('Erreur', 'L\'archivage a échoué.');
+              showAlert('Erreur', 'L\'archivage a échoué.', [{ text: 'OK', style: 'cancel' }], 'error');
             }
           },
         },
         { text: 'Annuler', style: 'cancel' },
-      ]
+      ],
+      'warning'
     );
   };
 
@@ -1574,13 +1635,15 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       // Recharger les données
       loadMedicalData();
 
-      Alert.alert(
-        'Médicament ajouté ✓',
+      showAlert(
+        'Médicament ajouté',
         selectedMedFromDb.name + ' ' + newMedDosageValue + ' ' + newMedDosageUnit + ' a été ajouté à vos traitements en cours.',
+        [{ text: 'OK', style: 'cancel' }],
+        'success'
       );
     } catch (error) {
       console.error('Erreur ajout médicament:', error);
-      Alert.alert('Erreur', 'L\'ajout a échoué. Réessayez.');
+      showAlert('Erreur', 'L\'ajout a échoué. Réessayez.', [{ text: 'OK', style: 'cancel' }], 'error');
     }
   };
 
@@ -1597,7 +1660,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   const searchMedicationAI = async (query) => {
     try {
-      Alert.alert(
+      showAlert(
         'Recherche IA — 50 Lix',
         'ALIXEN va chercher "' + query + '" dans sa base de connaissances médicales.\n\nCoût : 50 Lix',
         [
@@ -1625,7 +1688,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 const result = await response.json();
 
                 if (result.found && result.medication) {
-                  // Convertir au format attendu par la liste
                   const med = {
                     id: 'ai-' + Date.now(),
                     name: result.medication.name,
@@ -1643,20 +1705,23 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                   setMedSearchResults([med]);
                 } else {
                   setMedSearchResults([]);
-                  Alert.alert(
+                  showAlert(
                     'Non trouvé',
                     result.suggestion || 'ALIXEN n\'a pas trouvé ce médicament. Vérifiez l\'orthographe et réessayez.',
+                    [{ text: 'OK', style: 'cancel' }],
+                    'info'
                   );
                 }
               } catch (error) {
                 console.error('Erreur recherche IA:', error);
                 setMedSearchResults([]);
-                Alert.alert('Erreur', 'La recherche IA a échoué. Vérifiez votre connexion.');
+                showAlert('Erreur', 'La recherche IA a échoué. Vérifiez votre connexion.', [{ text: 'OK', style: 'cancel' }], 'error');
               }
             },
           },
           { text: 'Annuler', style: 'cancel', onPress: () => setMedSearchResults([]) },
-        ]
+        ],
+        'info'
       );
     } catch (error) {
       console.error('Erreur searchMedicationAI:', error);
@@ -1665,11 +1730,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   const confirmAddAnalysis = async () => {
     if (!newAnalysisLabel.trim()) {
-      Alert.alert('Champ requis', 'Veuillez entrer le type d\'analyse.');
+      showAlert('Champ requis', 'Veuillez entrer le type d\'analyse.', [{ text: 'OK', style: 'cancel' }], 'warning');
       return;
     }
     if (!newAnalysisDate.trim()) {
-      Alert.alert('Champ requis', 'Veuillez entrer la date prévue (format : JJ/MM/AAAA).');
+      showAlert('Champ requis', 'Veuillez entrer la date prévue (format : JJ/MM/AAAA).', [{ text: 'OK', style: 'cancel' }], 'warning');
       return;
     }
 
@@ -1715,17 +1780,17 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
       loadMedicalData();
 
-      Alert.alert('Analyse planifiée ✓', newAnalysisLabel.trim() + ' a été ajoutée à vos analyses à venir.');
+      showAlert('Analyse planifiée', newAnalysisLabel.trim() + ' a été ajoutée à vos analyses à venir.', [{ text: 'OK', style: 'cancel' }], 'success');
     } catch (error) {
       console.error('Erreur ajout analyse:', error);
-      Alert.alert('Erreur', 'L\'ajout a échoué. Réessayez.');
+      showAlert('Erreur', 'L\'ajout a échoué. Réessayez.', [{ text: 'OK', style: 'cancel' }], 'error');
     }
   };
 
   const handleTransferToSecretPocket = (tableName, rowIndex, rowData) => {
     const itemName = typeof rowData[0] === 'object' ? rowData[0].text : rowData[0];
 
-    Alert.alert(
+    showAlert(
       'Transférer vers Secret Pocket',
       '"' + itemName + '" sera déplacé dans votre coffre-fort sécurisé et supprimé de MediBook.\n\nContinuer ?',
       [
@@ -1735,44 +1800,58 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             try {
               let sourceArray;
               let itemId;
+              let category = tableName;
 
               if (tableName === 'analyses') {
                 sourceArray = medicalData.analyses;
                 itemId = sourceArray[rowIndex]?.id;
+                category = 'lab-results';
               } else if (tableName === 'medications') {
                 sourceArray = medicalData.medications;
                 itemId = sourceArray[rowIndex]?.id;
+                category = 'medications';
               } else if (tableName === 'allergies') {
                 sourceArray = medicalData.allergies;
                 itemId = sourceArray[rowIndex]?.id;
+                category = 'allergies';
               } else if (tableName === 'vaccinations') {
                 sourceArray = medicalData.vaccinations;
                 itemId = sourceArray[rowIndex]?.id;
+                category = 'diagnostics';
               }
+
+              // Ajouter dans secretPocketItems
+              setSecretPocketItems(prev => [...prev, {
+                id: itemId || ('sp-' + Date.now()),
+                category: category,
+                name: itemName,
+                data: rowData,
+                transferredAt: new Date().toISOString(),
+              }]);
 
               if (!itemId) {
                 console.log('Transfert simulé pour:', tableName, rowIndex);
-                Alert.alert('Transféré ✓', '"' + itemName + '" a été déplacé dans votre Secret Pocket.');
+                showAlert('Transféré', '"' + itemName + '" a été déplacé dans votre Secret Pocket.', [{ text: 'OK', style: 'cancel' }], 'success');
                 return;
               }
 
-              // Pour l'instant, on supprime de la vue locale
-              // TODO: Quand le champ is_secret sera ajouté dans Supabase, marquer l'élément comme secret au lieu de le supprimer
+              // Supprimer de la vue locale
               setMedicalData(prev => ({
                 ...prev,
                 [tableName]: prev[tableName].filter((_, i) => i !== rowIndex),
               }));
 
-              Alert.alert('Transféré ✓', '"' + itemName + '" a été déplacé dans votre Secret Pocket.');
+              showAlert('Transféré', '"' + itemName + '" a été déplacé dans votre Secret Pocket.', [{ text: 'OK', style: 'cancel' }], 'success');
 
             } catch (error) {
               console.error('Erreur transfert:', error);
-              Alert.alert('Erreur', 'Le transfert a échoué.');
+              showAlert('Erreur', 'Le transfert a échoué.', [{ text: 'OK', style: 'cancel' }], 'error');
             }
           },
         },
         { text: 'Annuler', style: 'cancel' },
-      ]
+      ],
+      'lock'
     );
   };
 
@@ -1780,6 +1859,47 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   // ── RENDER CONTENT (conditionnel) ─────────────────────────────────────
   const renderContent = () => {
+    // Écran de compactage
+    if (isCompacting) {
+      const compactSteps = [
+        'Analyse de la conversation...',
+        'Extraction des points clés...',
+        'Compression et chiffrement...',
+        'Transfert vers Secret Pocket...',
+      ];
+      return (
+        <LinearGradient colors={['#1A1D22', '#252A30', '#1A1D22']} style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <StatusBar barStyle="light-content" />
+          <Svg width={wp(60)} height={wp(60)} viewBox="0 0 24 24" fill="none">
+            <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" />
+            <Rect x="9" y="10" width="6" height="5" rx="1" stroke="#D4AF37" strokeWidth="1.5" />
+            <Path d="M10 10V8a2 2 0 014 0v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
+          </Svg>
+          <Text style={{ color: '#D4AF37', fontSize: fp(20), fontWeight: '700', marginTop: wp(20), marginBottom: wp(24) }}>Compactage en cours</Text>
+          {compactSteps.map((step, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12), width: wp(250) }}>
+              <View style={{
+                width: wp(20), height: wp(20), borderRadius: wp(10),
+                backgroundColor: compactStep > i ? 'rgba(0,217,132,0.2)' : 'rgba(255,255,255,0.05)',
+                justifyContent: 'center', alignItems: 'center', marginRight: wp(10),
+              }}>
+                {compactStep > i ? (
+                  <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '800' }}>✓</Text>
+                ) : compactStep === i ? (
+                  <ActivityIndicator size="small" color="#D4AF37" />
+                ) : (
+                  <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: fp(11) }}>○</Text>
+                )}
+              </View>
+              <Text style={{
+                color: compactStep > i ? '#00D984' : compactStep === i ? '#D4AF37' : 'rgba(255,255,255,0.3)',
+                fontSize: fp(13), fontWeight: compactStep === i ? '600' : '400',
+              }}>{step}</Text>
+            </View>
+          ))}
+        </LinearGradient>
+      );
+    }
     if (currentSubPage === 'medibook' || uploadState === 'scanning' || uploadState === 'results' || uploadState === 'integrating') {
       return (
         <MediBookContent
@@ -1814,11 +1934,12 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           showAddMedSheet={showAddMedSheet} setShowAddMedSheet={setShowAddMedSheet}
           showAddAnalysisSheet={showAddAnalysisSheet} setShowAddAnalysisSheet={setShowAddAnalysisSheet}
           mbGenerateScale={mbGenerateScale}
+          showAlert={showAlert}
         />
       );
     }
     if (currentSubPage === 'secretpocket') {
-      return <SecretPocketContent isUnlocked={isUnlocked} setIsUnlocked={setIsUnlocked} setCurrentSubPage={setCurrentSubPage} />;
+      return <SecretPocketContent isUnlocked={isUnlocked} setIsUnlocked={setIsUnlocked} setCurrentSubPage={setCurrentSubPage} showAlert={showAlert} spCategories={getSpCategories()} openSpCategory={openSpCategory} setOpenSpCategory={setOpenSpCategory} secretPocketItems={secretPocketItems} />;
     }
     return renderMain();
   };
@@ -2508,6 +2629,16 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         newAnalysisLab={newAnalysisLab} setNewAnalysisLab={setNewAnalysisLab}
         newAnalysisNotes={newAnalysisNotes} setNewAnalysisNotes={setNewAnalysisNotes}
         confirmAddAnalysis={confirmAddAnalysis}
+        showAlert={showAlert}
+        startCompaction={startCompaction}
+      />
+      <AlertSheet
+        visible={alertConfig.visible}
+        onClose={hideAlert}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        icon={alertConfig.icon}
+        buttons={alertConfig.buttons}
       />
     </View>
   );

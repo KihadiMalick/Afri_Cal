@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  Image, Platform, Animated, Dimensions, StatusBar, Pressable, Alert, ActivityIndicator,
+  Image, Platform, Animated, Dimensions, StatusBar, Pressable, ActivityIndicator,
 } from 'react-native';
 import Svg, {
   Defs, Rect, Path, Circle, Ellipse, Line,
@@ -210,6 +210,8 @@ export const MediBookContent = (props) => {
     showAddAnalysisSheet, setShowAddAnalysisSheet,
     // Animation
     mbGenerateScale,
+    // AlertSheet
+    showAlert,
   } = props;
 
   const captureCarnetPage = (index) => {
@@ -463,7 +465,7 @@ export const MediBookContent = (props) => {
         {/* Bouton retour */}
         <Pressable
           onPress={() => {
-            Alert.alert(
+            showAlert(
               'Quitter l\'analyse ?',
               'Les données extraites seront perdues.',
               [
@@ -473,7 +475,8 @@ export const MediBookContent = (props) => {
                   setScanSteps([]);
                 }},
                 { text: 'Continuer', style: 'cancel' },
-              ]
+              ],
+              'warning'
             );
           }}
           style={{
@@ -763,9 +766,11 @@ export const MediBookContent = (props) => {
                 setScanSteps([]);
                 setUploadState('idle');
 
-                Alert.alert(
-                  'Données intégrées ✓',
+                showAlert(
+                  'Données intégrées',
                   'Les informations ont été ajoutées à votre MediBook. Consultez Mes Stats pour voir les résultats.',
+                  [{ text: 'OK', style: 'cancel' }],
+                  'success'
                 );
 
                 // Recharger les données médicales
@@ -774,7 +779,7 @@ export const MediBookContent = (props) => {
               } catch (error) {
                 console.error('Erreur intégration:', error);
                 setUploadState('idle');
-                Alert.alert('Erreur', 'L\'intégration a échoué. Réessayez.');
+                showAlert('Erreur', 'L\'intégration a échoué. Réessayez.', [{ text: 'OK', style: 'cancel' }], 'error');
               }
             }}>
             <LinearGradient colors={['#00D984', '#00B871']}
@@ -1162,7 +1167,7 @@ export const MediBookContent = (props) => {
                 <Pressable
                   key={index}
                   onPress={() => {
-                    Alert.alert(
+                    showAlert(
                       'Page ' + (index + 1),
                       'Supprimer cette photo ?',
                       [
@@ -1174,7 +1179,8 @@ export const MediBookContent = (props) => {
                           });
                         }},
                         { text: 'Annuler', style: 'cancel' },
-                      ]
+                      ],
+                      'trash'
                     );
                   }}
                   style={{
@@ -2225,21 +2231,21 @@ export const MediBookContent = (props) => {
             subtitle={allergiesCount > 0 ? 'Profil allergique enregistré' : 'Aucune allergie enregistrée'}
             count={allergiesCount} color="#FF8C42"
             icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#FF8C42" strokeWidth="1.5" /></Svg>}
-            onPress={() => Alert.alert('Allergies', 'Détail allergies — prochaine mise à jour.')}
+            onPress={() => showAlert('Allergies', 'Détail allergies — prochaine mise à jour.', [{ text: 'OK', style: 'cancel' }], 'info')}
           />
 
           <SectionCard title="Carnet vaccinal"
             subtitle={vaccCount > 0 ? vaccCount + ' vaccin' + (vaccCount > 1 ? 's' : '') + ' enregistré' + (vaccCount > 1 ? 's' : '') : 'Aucun vaccin enregistré'}
             count={vaccCount} color="#9B6DFF"
             icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M18 2l4 4-9.5 9.5-4-4L18 2z" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><Path d="M8.5 11.5L2 18v4h4l6.5-6.5" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
-            onPress={() => Alert.alert('Vaccins', 'Détail vaccins — prochaine mise à jour.')}
+            onPress={() => showAlert('Vaccins', 'Détail vaccins — prochaine mise à jour.', [{ text: 'OK', style: 'cancel' }], 'info')}
           />
 
           <SectionCard title="Diagnostics à surveiller"
             subtitle={diagCount > 0 ? diagCount + ' diagnostic' + (diagCount > 1 ? 's' : '') : 'Aucun diagnostic enregistré'}
             count={diagCount} color="#FF6B6B"
             icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke="#FF6B6B" strokeWidth="1.5" /><Path d="M3 12h4l3-6 4 12 3-6h4" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
-            onPress={() => Alert.alert('Diagnostics', 'Détail diagnostics — prochaine mise à jour.')}
+            onPress={() => showAlert('Diagnostics', 'Détail diagnostics — prochaine mise à jour.', [{ text: 'OK', style: 'cancel' }], 'info')}
           />
 
           <Pressable delayPressIn={120} onPress={() => setReportSection('pdf-preview')} style={{ marginTop: wp(12), marginBottom: wp(16) }}>
@@ -2364,7 +2370,7 @@ export const MediBookContent = (props) => {
         ))}
 
         <Pressable delayPressIn={120}
-          onPress={() => Alert.alert('MediBook', 'La génération PDF sera disponible prochainement !')}
+          onPress={() => showAlert('MediBook', 'La génération PDF sera disponible prochainement !', [{ text: 'OK', style: 'cancel' }], 'info')}
           onPressIn={() => Animated.timing(mbGenerateScale, { toValue: 0.95, duration: 120, useNativeDriver: true }).start()}
           onPressOut={() => Animated.spring(mbGenerateScale, { toValue: 1, useNativeDriver: true }).start()}>
           <Animated.View style={{ transform: [{ scale: mbGenerateScale }], marginTop: wp(24), marginBottom: wp(32) }}>

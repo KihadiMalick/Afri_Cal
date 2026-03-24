@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View, Text, ScrollView, Platform, StatusBar, Pressable, Alert,
+  View, Text, ScrollView, Modal, Platform, StatusBar, Pressable,
 } from 'react-native';
 import Svg, {
   Rect, Path, Circle, Line,
@@ -44,7 +44,7 @@ export const renderCategoryIcon = (iconName, color, size = wp(20)) => {
   }
 };
 
-export const SecretPocketContent = ({ isUnlocked, setIsUnlocked, setCurrentSubPage }) => {
+export const SecretPocketContent = ({ isUnlocked, setIsUnlocked, setCurrentSubPage, showAlert, spCategories, openSpCategory, setOpenSpCategory, secretPocketItems }) => {
 
   const renderSecretPocketLocked = () => (
     <LinearGradient colors={['#1A1D22', '#252A30', '#1A1D22']} style={{ flex: 1 }}>
@@ -147,13 +147,14 @@ export const SecretPocketContent = ({ isUnlocked, setIsUnlocked, setCurrentSubPa
         </View>
         <Pressable delayPressIn={120}
           onPress={() => {
-            Alert.alert(
+            showAlert(
               'Verrouiller',
               'Votre Secret Pocket sera verrouillé.',
               [
                 { text: 'Verrouiller', onPress: () => { setIsUnlocked(false); setCurrentSubPage('main'); } },
                 { text: 'Annuler', style: 'cancel' },
-              ]
+              ],
+              'lock'
             );
           }}
           style={({ pressed }) => ({
@@ -187,12 +188,7 @@ export const SecretPocketContent = ({ isUnlocked, setIsUnlocked, setCurrentSubPa
         {/* Categories — MetalCard gradient */}
         {spCategories.map((cat) => (
           <Pressable key={cat.id} delayPressIn={120}
-            onPress={() => {
-              Alert.alert(
-                cat.title,
-                'Les données transférées depuis MediBook apparaîtront ici.\n\nPour ajouter des données, utilisez le bouton + dans MediBook puis transférez-les ici.',
-              );
-            }}
+            onPress={() => setOpenSpCategory(cat.id)}
             style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }], marginBottom: wp(10) })}>
             <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
               style={{
@@ -249,6 +245,88 @@ export const SecretPocketContent = ({ isUnlocked, setIsUnlocked, setCurrentSubPa
     </LinearGradient>
   );
 
+  const openCat = spCategories ? spCategories.find(c => c.id === openSpCategory) : null;
+  const catItems = secretPocketItems ? secretPocketItems.filter(i => i.category === openSpCategory) : [];
+
   if (!isUnlocked) return renderSecretPocketLocked();
-  return renderSecretPocketUnlocked();
+  return (
+    <>
+      {renderSecretPocketUnlocked()}
+      {/* Category detail Modal */}
+      <Modal visible={!!openSpCategory} transparent animationType="slide" onRequestClose={() => setOpenSpCategory(null)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          onPress={() => setOpenSpCategory(null)}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient
+              colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{
+                borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24),
+                paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34),
+                minHeight: wp(200),
+              }}
+            >
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(20) }} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(16) }}>
+                {openCat && (
+                  <View style={{
+                    width: wp(40), height: wp(40), borderRadius: wp(20),
+                    backgroundColor: (openCat.color || '#D4AF37') + '1F',
+                    justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                  }}>
+                    {renderCategoryIcon(openCat.icon, openCat.color)}
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF' }}>{openCat ? openCat.title : ''}</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>
+                    {catItems.length} élément{catItems.length > 1 ? 's' : ''}
+                  </Text>
+                </View>
+              </View>
+
+              {catItems.length === 0 ? (
+                <View style={{ paddingVertical: wp(30), alignItems: 'center' }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: fp(13), textAlign: 'center' }}>
+                    Aucun élément dans cette catégorie.{'\n'}Transférez des données depuis MediBook.
+                  </Text>
+                </View>
+              ) : (
+                <ScrollView style={{ maxHeight: wp(250) }}>
+                  {catItems.map((item, idx) => (
+                    <View key={item.id || idx} style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      borderRadius: wp(12), padding: wp(12), marginBottom: wp(8),
+                      borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                    }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#FFF', fontSize: fp(13), fontWeight: '600' }}>{item.name}</Text>
+                        <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: fp(10), marginTop: wp(2) }}>
+                          Transféré le {new Date(item.transferredAt).toLocaleDateString('fr-FR')}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+
+              <Pressable
+                delayPressIn={120}
+                onPress={() => setOpenSpCategory(null)}
+                style={({ pressed }) => ({
+                  marginTop: wp(16), paddingVertical: wp(14), borderRadius: wp(14),
+                  alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                })}
+              >
+                <Text style={{ fontSize: fp(15), fontWeight: '500', color: 'rgba(255,255,255,0.4)' }}>Fermer</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
 };

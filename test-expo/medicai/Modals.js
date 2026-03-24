@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View, Text, TextInput, ScrollView, Pressable, Alert, Modal, ActivityIndicator,
+  View, Text, TextInput, ScrollView, Pressable, Modal, ActivityIndicator,
 } from 'react-native';
 import Svg, {
   Rect, Path, Circle, Line,
@@ -61,6 +61,10 @@ export const AllModals = (props) => {
     newAnalysisLab, setNewAnalysisLab,
     newAnalysisNotes, setNewAnalysisNotes,
     confirmAddAnalysis,
+    // AlertSheet
+    showAlert,
+    // Compaction
+    startCompaction,
   } = props;
 
   return (
@@ -322,13 +326,14 @@ export const AllModals = (props) => {
                 onPress={() => {
                   setShowDocumentSheet(false);
                   setTimeout(() => {
-                    Alert.alert(
+                    showAlert(
                       'Partager ma localisation',
                       'ALIXEN utilisera ta position une seule fois pour te recommander des supermarchés, restaurants et salles de sport à proximité.\n\nTa localisation sera automatiquement effacée après utilisation.',
                       [
                         { text: 'Partager', onPress: () => console.log('share location') },
                         { text: 'Non merci', style: 'cancel' },
-                      ]
+                      ],
+                      'info'
                     );
                   }, 300);
                 }}
@@ -368,13 +373,14 @@ export const AllModals = (props) => {
                 onPress={() => {
                   setShowDocumentSheet(false);
                   setTimeout(() => {
-                    Alert.alert(
+                    showAlert(
                       'Importer une conversation',
                       'Sélectionnez une conversation compactée depuis votre Secret Pocket pour la réimporter dans cette session.',
                       [
                         { text: 'Ouvrir Secret Pocket', onPress: () => setCurrentSubPage('secretpocket') },
                         { text: 'Annuler', style: 'cancel' },
-                      ]
+                      ],
+                      'lock'
                     );
                   }, 300);
                 }}
@@ -655,7 +661,7 @@ export const AllModals = (props) => {
               delayPressIn={120}
               onPress={() => {
                 setShowCompactConfirm(false);
-                console.log('Discussion compactée vers Secret Pocket');
+                if (startCompaction) startCompaction();
               }}
               style={{ width: '100%', marginBottom: wp(10) }}
             >
@@ -1222,7 +1228,7 @@ export const AllModals = (props) => {
               delayPressIn={120}
               onPress={() => {
                 if (newChildName.trim().length === 0) {
-                  Alert.alert('Nom requis', 'Veuillez entrer le prénom de l\'enfant.');
+                  showAlert('Nom requis', 'Veuillez entrer le prénom de l\'enfant.', [{ text: 'OK', style: 'cancel' }], 'warning');
                   return;
                 }
                 if (editingChildId) {
