@@ -297,8 +297,7 @@ const ScrollArrow = () => {
 
 // Parse ALIXEN_DATA du texte brut (filet de sécurité côté app)
 const parseAlixenResponse = (rawText) => {
-  if (!rawText) return { cleanText: '', visual: null, pendingAction: null };
-  let visual = null;
+  if (!rawText) return { cleanText: '', pendingAction: null };
   let pendingAction = null;
   let cleanText = rawText;
   const dataMatch = rawText.match(/\[ALIXEN_DATA\]([\s\S]*?)\[\/ALIXEN_DATA\]/);
@@ -307,13 +306,12 @@ const parseAlixenResponse = (rawText) => {
     try {
       let rawJson = dataMatch[1].trim().replace(/\n/g, '').replace(/\r/g, '').replace(/\t/g, '');
       const parsed = JSON.parse(rawJson);
-      visual = parsed.visual || null;
       pendingAction = parsed.pending_action || null;
     } catch (e) {
       console.log('ALIXEN_DATA parse error:', e.message);
     }
   }
-  return { cleanText, visual, pendingAction };
+  return { cleanText, pendingAction };
 };
 
 // Parse les [CHOIX:X:texte] dans le texte
@@ -392,22 +390,166 @@ const QuickReplyButtons = ({ choices, onPress, onPreciser }) => {
 const FormattedResponseText = ({ text, style }) => {
   if (!text) return null;
 
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  const elements = [];
+  let remaining = text;
+  let key = 0;
 
-  return (
-    <Text style={style}>
-      {parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return (
-            <Text key={i} style={{ fontWeight: 'bold' }}>
-              {part.slice(2, -2)}
-            </Text>
-          );
+  while (remaining.length > 0) {
+    // TITRE emerald
+    const titreMatch = remaining.match(/^\[TITRE\]([\s\S]*?)\[\/TITRE\]/);
+    if (titreMatch && remaining.indexOf(titreMatch[0]) === 0) {
+      elements.push(
+        <View key={key++} style={{ marginBottom: wp(10), marginTop: wp(4) }}>
+          <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#00D984', letterSpacing: 0.3 }}>
+            {titreMatch[1].trim()}
+          </Text>
+          <View style={{ height: 2, backgroundColor: 'rgba(0,217,132,0.2)', borderRadius: 1, marginTop: wp(4), width: '40%' }} />
+        </View>
+      );
+      remaining = remaining.substring(titreMatch[0].length);
+      continue;
+    }
+
+    // SECTION avec emoji et titre
+    const sectionMatch = remaining.match(/^\[SECTION:(.*?)\]([\s\S]*?)\[\/SECTION\]/);
+    if (sectionMatch && remaining.indexOf(sectionMatch[0]) === 0) {
+      elements.push(
+        <View key={key++} style={{
+          marginBottom: wp(8), backgroundColor: 'rgba(0,0,0,0.02)',
+          borderRadius: wp(10), padding: wp(10),
+          borderLeftWidth: wp(3), borderLeftColor: '#00D984',
+        }}>
+          <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(4) }}>
+            {sectionMatch[1].trim()}
+          </Text>
+          {sectionMatch[2].trim().split('\n').filter(l => l.trim()).map((line, li) => {
+            const parts = line.split(/(\*\*[^*]+\*\*)/g);
+            return (
+              <Text key={li} style={{ fontSize: fp(12), color: '#3A4550', lineHeight: fp(18), marginBottom: wp(2) }}>
+                {parts.map((p, pi) => {
+                  if (p.startsWith('**') && p.endsWith('**')) {
+                    return <Text key={pi} style={{ fontWeight: 'bold', color: '#1A2030' }}>{p.slice(2, -2)}</Text>;
+                  }
+                  return <Text key={pi}>{p}</Text>;
+                })}
+              </Text>
+            );
+          })}
+        </View>
+      );
+      remaining = remaining.substring(sectionMatch[0].length);
+      continue;
+    }
+
+    // ALERTE rouge
+    const alerteMatch = remaining.match(/^\[ALERTE\]([\s\S]*?)\[\/ALERTE\]/);
+    if (alerteMatch && remaining.indexOf(alerteMatch[0]) === 0) {
+      elements.push(
+        <View key={key++} style={{
+          marginBottom: wp(8), backgroundColor: 'rgba(255,107,107,0.08)',
+          borderRadius: wp(10), padding: wp(10),
+          borderLeftWidth: wp(3), borderLeftColor: '#FF6B6B',
+          flexDirection: 'row', alignItems: 'flex-start',
+        }}>
+          <Text style={{ fontSize: fp(14), marginRight: wp(6), marginTop: wp(-1) }}>⚠️</Text>
+          <Text style={{ fontSize: fp(12), color: '#D63031', lineHeight: fp(18), flex: 1, fontWeight: '500' }}>
+            {alerteMatch[1].trim()}
+          </Text>
+        </View>
+      );
+      remaining = remaining.substring(alerteMatch[0].length);
+      continue;
+    }
+
+    // INFO bleu
+    const infoMatch = remaining.match(/^\[INFO\]([\s\S]*?)\[\/INFO\]/);
+    if (infoMatch && remaining.indexOf(infoMatch[0]) === 0) {
+      elements.push(
+        <View key={key++} style={{
+          marginBottom: wp(8), backgroundColor: 'rgba(77,166,255,0.08)',
+          borderRadius: wp(10), padding: wp(10),
+          borderLeftWidth: wp(3), borderLeftColor: '#4DA6FF',
+          flexDirection: 'row', alignItems: 'flex-start',
+        }}>
+          <Text style={{ fontSize: fp(14), marginRight: wp(6), marginTop: wp(-1) }}>💡</Text>
+          <Text style={{ fontSize: fp(12), color: '#2980B9', lineHeight: fp(18), flex: 1 }}>
+            {infoMatch[1].trim()}
+          </Text>
+        </View>
+      );
+      remaining = remaining.substring(infoMatch[0].length);
+      continue;
+    }
+
+    // SUCCESS vert
+    const successMatch = remaining.match(/^\[SUCCESS\]([\s\S]*?)\[\/SUCCESS\]/);
+    if (successMatch && remaining.indexOf(successMatch[0]) === 0) {
+      elements.push(
+        <View key={key++} style={{
+          marginBottom: wp(8), backgroundColor: 'rgba(0,217,132,0.08)',
+          borderRadius: wp(10), padding: wp(10),
+          borderLeftWidth: wp(3), borderLeftColor: '#00D984',
+          flexDirection: 'row', alignItems: 'flex-start',
+        }}>
+          <Text style={{ fontSize: fp(14), marginRight: wp(6), marginTop: wp(-1) }}>✅</Text>
+          <Text style={{ fontSize: fp(12), color: '#00A878', lineHeight: fp(18), flex: 1, fontWeight: '500' }}>
+            {successMatch[1].trim()}
+          </Text>
+        </View>
+      );
+      remaining = remaining.substring(successMatch[0].length);
+      continue;
+    }
+
+    // PRIX gold
+    const prixMatch = remaining.match(/^\[PRIX\]([\s\S]*?)\[\/PRIX\]/);
+    if (prixMatch && remaining.indexOf(prixMatch[0]) === 0) {
+      elements.push(
+        <View key={key++} style={{
+          marginBottom: wp(8), backgroundColor: 'rgba(212,175,55,0.08)',
+          borderRadius: wp(10), padding: wp(10),
+          borderLeftWidth: wp(3), borderLeftColor: '#D4AF37',
+          flexDirection: 'row', alignItems: 'center',
+        }}>
+          <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>💰</Text>
+          <Text style={{ fontSize: fp(13), color: '#B8860B', lineHeight: fp(18), flex: 1, fontWeight: '600' }}>
+            {prixMatch[1].trim()}
+          </Text>
+        </View>
+      );
+      remaining = remaining.substring(prixMatch[0].length);
+      continue;
+    }
+
+    // Texte normal jusqu'à la prochaine balise ou fin
+    const nextTag = remaining.search(/\[(TITRE|SECTION:|ALERTE|INFO|SUCCESS|PRIX)\]/);
+    const chunk = nextTag === -1 ? remaining : remaining.substring(0, nextTag);
+
+    if (chunk.length > 0) {
+      const lines = chunk.split('\n');
+      lines.forEach((line, li) => {
+        if (line.trim() === '') {
+          elements.push(<View key={key++} style={{ height: 6 }} />);
+          return;
         }
-        return <Text key={i}>{part}</Text>;
-      })}
-    </Text>
-  );
+        const parts = line.split(/(\*\*[^*]+\*\*)/g);
+        elements.push(
+          <Text key={key++} style={[style, { marginBottom: 2 }]}>
+            {parts.map((p, pi) => {
+              if (p.startsWith('**') && p.endsWith('**')) {
+                return <Text key={pi} style={{ fontWeight: 'bold', color: '#1A2030' }}>{p.slice(2, -2)}</Text>;
+              }
+              return <Text key={pi}>{p}</Text>;
+            })}
+          </Text>
+        );
+      });
+    }
+
+    remaining = nextTag === -1 ? '' : remaining.substring(nextTag);
+  }
+
+  return <View>{elements}</View>;
 };
 
 // ============================================
@@ -597,181 +739,6 @@ const FileQueuePreview = ({ files, onRemove }) => {
       </ScrollView>
     </View>
   );
-};
-
-const AlixenVisual = ({ visual }) => {
-  if (!visual) return null;
-
-  if (visual.type === 'meal_plan' && visual.data && visual.data.days) {
-    const dayOrder = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
-    const dayLabels = { lundi: 'Lun', mardi: 'Mar', mercredi: 'Mer', jeudi: 'Jeu', vendredi: 'Ven', samedi: 'Sam', dimanche: 'Dim' };
-    const sortedDays = visual.data.days.sort((a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day));
-
-    return (
-      <View style={{
-        marginHorizontal: 10, marginBottom: 8,
-        borderRadius: wp(16), overflow: 'hidden',
-        borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
-        backgroundColor: '#FAFBFC',
-      }}>
-        <LinearGradient
-          colors={['#3A3F46', '#252A30']}
-          style={{
-            paddingVertical: wp(10), paddingHorizontal: wp(14),
-            flexDirection: 'row', alignItems: 'center', gap: wp(8),
-          }}
-        >
-          <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
-            <Path d="M3 2v8c0 1.1.9 2 2 2h2a2 2 0 002-2V2" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" />
-            <Line x1="6" y1="2" x2="6" y2="22" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" />
-          </Svg>
-          <Text style={{ color: '#FFF', fontSize: fp(13), fontWeight: '700', flex: 1 }}>
-            {visual.title || 'Menu de la semaine'}
-          </Text>
-          <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: fp(10) }}>ALIXEN</Text>
-        </LinearGradient>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingVertical: wp(8) }}>
-          <View style={{ flexDirection: 'row', paddingHorizontal: wp(8), gap: wp(6) }}>
-            {sortedDays.map((day, i) => {
-              const totalKcal = (day.breakfast?.kcal || 0) + (day.lunch?.kcal || 0) + (day.dinner?.kcal || 0) + (day.snack?.kcal || 0);
-              return (
-                <View key={i} style={{
-                  width: wp(110), backgroundColor: 'rgba(0,0,0,0.02)',
-                  borderRadius: wp(12), padding: wp(10),
-                  borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
-                }}>
-                  <View style={{
-                    backgroundColor: '#00D984', borderRadius: wp(8),
-                    paddingVertical: wp(4), alignItems: 'center', marginBottom: wp(8),
-                  }}>
-                    <Text style={{ color: '#FFF', fontSize: fp(12), fontWeight: '800' }}>
-                      {dayLabels[day.day] || day.day}
-                    </Text>
-                  </View>
-                  {[
-                    { label: 'Petit-déj', meal: day.breakfast, emoji: '🌅' },
-                    { label: 'Déjeuner', meal: day.lunch, emoji: '☀️' },
-                    { label: 'Dîner', meal: day.dinner, emoji: '🌙' },
-                  ].map((slot, si) => (
-                    <View key={si} style={{ marginBottom: wp(6) }}>
-                      <Text style={{ fontSize: fp(9), color: 'rgba(0,0,0,0.35)', fontWeight: '600' }}>
-                        {slot.emoji} {slot.label}
-                      </Text>
-                      <Text style={{ fontSize: fp(11), color: '#2D3436', fontWeight: '500', marginTop: wp(1) }} numberOfLines={2}>
-                        {slot.meal?.name || '—'}
-                      </Text>
-                      {slot.meal?.kcal > 0 && (
-                        <Text style={{ fontSize: fp(9), color: '#00D984', fontWeight: '700', marginTop: wp(1) }}>
-                          {slot.meal.kcal} kcal
-                        </Text>
-                      )}
-                    </View>
-                  ))}
-                  {day.snack?.name ? (
-                    <View>
-                      <Text style={{ fontSize: fp(9), color: 'rgba(0,0,0,0.35)', fontWeight: '600' }}>🍎 Collation</Text>
-                      <Text style={{ fontSize: fp(11), color: '#2D3436', marginTop: wp(1) }}>{day.snack.name}</Text>
-                    </View>
-                  ) : null}
-                  <View style={{
-                    marginTop: wp(6), paddingTop: wp(6),
-                    borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)',
-                    alignItems: 'center',
-                  }}>
-                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: totalKcal > 0 ? '#00D984' : 'rgba(0,0,0,0.2)' }}>
-                      {totalKcal > 0 ? totalKcal + ' kcal' : '—'}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        </ScrollView>
-      </View>
-    );
-  }
-
-  if (visual.type === 'bar_chart' && visual.data) {
-    const { labels, values, unit, color } = visual.data;
-    const maxVal = Math.max(...values, 1);
-    return (
-      <View style={{
-        marginHorizontal: 10, marginBottom: 8,
-        borderRadius: wp(16), padding: wp(14),
-        backgroundColor: '#FAFBFC',
-        borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)',
-      }}>
-        <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(12) }}>
-          {visual.title || 'Graphique'}
-        </Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: wp(80) }}>
-          {values.map((val, i) => {
-            const h = Math.max(wp(4), (val / maxVal) * wp(65));
-            return (
-              <View key={i} style={{ alignItems: 'center', flex: 1 }}>
-                <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>{val}</Text>
-                <View style={{ width: wp(16), height: h, backgroundColor: color || '#00D984', borderRadius: wp(4) }} />
-                <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>{labels[i] || ''}</Text>
-              </View>
-            );
-          })}
-        </View>
-        {unit && <Text style={{ fontSize: fp(9), color: 'rgba(0,0,0,0.25)', textAlign: 'right', marginTop: wp(4) }}>en {unit}</Text>}
-      </View>
-    );
-  }
-
-  if (visual.type === 'pie_chart' && visual.data && visual.data.segments) {
-    const total = visual.data.segments.reduce((s, seg) => s + seg.value, 0) || 1;
-    return (
-      <View style={{
-        marginHorizontal: 10, marginBottom: 8,
-        borderRadius: wp(16), padding: wp(14),
-        backgroundColor: '#FAFBFC',
-        borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)',
-      }}>
-        <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(10) }}>
-          {visual.title || 'Répartition'}
-        </Text>
-        {visual.data.segments.map((seg, i) => {
-          const pct = Math.round((seg.value / total) * 100);
-          return (
-            <View key={i} style={{ marginBottom: wp(8) }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(3) }}>
-                <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#2D3436' }}>{seg.label}</Text>
-                <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)' }}>{seg.value}g — {pct}%</Text>
-              </View>
-              <View style={{ height: wp(6), backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(3) }}>
-                <View style={{ width: pct + '%', height: '100%', backgroundColor: seg.color || '#00D984', borderRadius: wp(3) }} />
-              </View>
-            </View>
-          );
-        })}
-      </View>
-    );
-  }
-
-  if (visual.type === 'info_card' && visual.data) {
-    const iconColor = visual.data.icon === 'warning' ? '#FF8C42' : visual.data.icon === 'success' ? '#00D984' : '#4DA6FF';
-    const bgColor = visual.data.icon === 'warning' ? 'rgba(255,140,66,0.08)' : visual.data.icon === 'success' ? 'rgba(0,217,132,0.08)' : 'rgba(77,166,255,0.08)';
-    return (
-      <View style={{
-        marginHorizontal: 10, marginBottom: 8,
-        borderRadius: wp(16), padding: wp(14),
-        backgroundColor: bgColor,
-        borderWidth: 1, borderColor: iconColor + '25',
-      }}>
-        <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#2D3436', marginBottom: wp(4) }}>
-          {visual.data.title}
-        </Text>
-        <Text style={{ fontSize: fp(12), color: '#3A4550', lineHeight: fp(18) }}>
-          {visual.data.body}
-        </Text>
-      </View>
-    );
-  }
-
-  return null;
 };
 
 // ============================================
@@ -1575,7 +1542,6 @@ export default function MedicAiPage() {
   const [cardMessage, setCardMessage] = useState(null);
   const [cardIsUser, setCardIsUser] = useState(false);
   const [cardIsLoading, setCardIsLoading] = useState(false);
-  const [pendingVisual, setPendingVisual] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [fileQueue, setFileQueue] = useState([]);
 
@@ -2183,7 +2149,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
         const alixenParsed = parseAlixenResponse(replyText);
         const finalText = alixenParsed.cleanText;
-        if (data.visual || alixenParsed.visual) setPendingVisual(data.visual || alixenParsed.visual);
         if (data.pending_action || alixenParsed.pendingAction) setPendingAction(data.pending_action || alixenParsed.pendingAction);
 
         setCardIsLoading(false);
@@ -2238,7 +2203,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     if (isConfirmation && pendingAction) {
       executeAlixenAction(pendingAction);
       setPendingAction(null);
-      setPendingVisual(null);
     }
 
     if (messages.length >= 30) return;
@@ -2292,7 +2256,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
         const alixenParsed = parseAlixenResponse(replyText);
         const finalText = alixenParsed.cleanText;
-        if (data.visual || alixenParsed.visual) setPendingVisual(data.visual || alixenParsed.visual);
         if (data.pending_action || alixenParsed.pendingAction) setPendingAction(data.pending_action || alixenParsed.pendingAction);
 
         setCardIsLoading(false);
@@ -2575,7 +2538,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
       const alixenParsed = parseAlixenResponse(replyText);
       const finalText = alixenParsed.cleanText;
-      if (data.visual || alixenParsed.visual) setPendingVisual(data.visual || alixenParsed.visual);
       if (data.pending_action || alixenParsed.pendingAction) setPendingAction(data.pending_action || alixenParsed.pendingAction);
 
       // 5. Afficher la réponse IA dans la carte
@@ -5752,9 +5714,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               onNewSession={() => setShowNewSessionSheet(true)}
             />
           </Animated.View>
-
-          {/* Visuel ALIXEN (menu, graphique, etc.) */}
-          {pendingVisual && <AlixenVisual visual={pendingVisual} />}
 
           {/* Carte de réponse */}
           <ResponseCard
