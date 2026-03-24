@@ -504,6 +504,80 @@ const LoadingDots = () => {
 // ============================================
 // ALIXEN VISUAL — Rendu des visuels structurés
 // ============================================
+// ============================================
+// FILE QUEUE PREVIEW — Miniatures fichiers en attente
+// ============================================
+const FileQueuePreview = ({ files, onRemove }) => {
+  if (!files || files.length === 0) return null;
+
+  return (
+    <View style={{
+      flexDirection: 'row', paddingHorizontal: wp(8),
+      paddingTop: wp(8), paddingBottom: wp(4),
+      gap: wp(8),
+    }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={{ flexDirection: 'row', gap: wp(8) }}>
+          {files.map((file) => (
+            <View key={file.id} style={{
+              width: wp(56), height: wp(56), borderRadius: wp(12),
+              overflow: 'hidden', position: 'relative',
+              borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+            }}>
+              {file.type === 'image' && file.uri ? (
+                <Image
+                  source={{ uri: file.uri }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
+                  blurRadius={2}
+                />
+              ) : (
+                <View style={{
+                  width: '100%', height: '100%',
+                  backgroundColor: 'rgba(77,166,255,0.08)',
+                  justifyContent: 'center', alignItems: 'center',
+                }}>
+                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <Path d="M14 2v6h6" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </Svg>
+                  <Text numberOfLines={1} style={{
+                    fontSize: fp(7), color: '#4DA6FF', marginTop: wp(2),
+                    maxWidth: wp(48), textAlign: 'center',
+                  }}>{file.name}</Text>
+                </View>
+              )}
+              {/* Badge type */}
+              <View style={{
+                position: 'absolute', bottom: wp(2), left: wp(2),
+                backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: wp(4),
+                paddingHorizontal: wp(4), paddingVertical: wp(1),
+              }}>
+                <Text style={{ fontSize: fp(7), color: '#FFF', fontWeight: '700' }}>
+                  {file.type === 'image' ? '📷' : '📄'}
+                </Text>
+              </View>
+              {/* Bouton X */}
+              <Pressable
+                onPress={() => onRemove(file.id)}
+                style={{
+                  position: 'absolute', top: wp(-2), right: wp(-2),
+                  width: wp(18), height: wp(18), borderRadius: wp(9),
+                  backgroundColor: 'rgba(255,59,48,0.9)',
+                  justifyContent: 'center', alignItems: 'center',
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+                }}
+              >
+                <Text style={{ color: '#FFF', fontSize: fp(9), fontWeight: '800', lineHeight: fp(10) }}>✕</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
 const AlixenVisual = ({ visual }) => {
   if (!visual) return null;
 
@@ -1482,6 +1556,7 @@ export default function MedicAiPage() {
   const [cardIsLoading, setCardIsLoading] = useState(false);
   const [pendingVisual, setPendingVisual] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
+  const [fileQueue, setFileQueue] = useState([]);
 
   // Clavier
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -2392,7 +2467,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   // ── Envoi de message et appel IA ────────────────────────────────────────
   const sendMessage = async () => {
-    if (!inputText.trim() || isLoading || isLocked) return;
+    const hasFiles = fileQueue.length > 0;
+    const hasText = inputText.trim().length > 0;
+    if ((!hasText && !hasFiles) || isLoading || isLocked) return;
 
     // Limite 30 bulles par session
     if (messages.length >= 30) {
@@ -2407,7 +2484,10 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       return;
     }
 
-    const userText = inputText.trim();
+    const filesToSend = [...fileQueue];
+    setFileQueue([]);
+
+    const userText = hasText ? inputText.trim() : (filesToSend.length > 0 ? filesToSend.length + ' fichier' + (filesToSend.length > 1 ? 's' : '') + ' envoyé' + (filesToSend.length > 1 ? 's' : '') : '');
     setInputText('');
     setIsLoading(true);
 
@@ -2424,6 +2504,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       timestamp: new Date(),
       _isNew: true,
       _status: 'read',
+      _hasAttachment: filesToSend.length > 0,
     };
     setMessages(prev => {
       if (prev.length >= 30) return prev;
@@ -2454,7 +2535,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
             'apikey': SUPABASE_ANON_KEY,
           },
-          body: JSON.stringify({ messages: messagesToSend, userId: TEST_USER_ID, userContext: context }),
+          body: JSON.stringify({
+              messages: messagesToSend,
+              userId: TEST_USER_ID,
+              userContext: context,
+              imageBase64: filesToSend.length > 0 ? filesToSend[0].base64 : undefined,
+              mimeType: filesToSend.length > 0 ? filesToSend[0].mimeType : undefined,
+            }),
         }
       );
 
@@ -2607,7 +2694,14 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       if (!result.canceled && result.assets[0]) {
         const photo = result.assets[0];
         if (context === 'chat') {
-          sendImageToAlixen(photo.base64, 'Photo importée', 'image/jpeg');
+          setFileQueue(prev => [...prev, {
+            id: Date.now().toString(),
+            type: 'image',
+            uri: photo.uri,
+            base64: photo.base64,
+            name: 'Photo',
+            mimeType: 'image/jpeg',
+          }]);
         } else if (context === 'medibook' || context === 'carnet') {
           startMedicalScan(photo.base64, 'Photo importée', context);
         }
@@ -2632,7 +2726,14 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       if (!result.canceled && result.assets[0]) {
         const photo = result.assets[0];
         if (context === 'chat') {
-          sendImageToAlixen(photo.base64, 'Photo capturée', 'image/jpeg');
+          setFileQueue(prev => [...prev, {
+            id: Date.now().toString(),
+            type: 'image',
+            uri: photo.uri,
+            base64: photo.base64,
+            name: 'Photo',
+            mimeType: 'image/jpeg',
+          }]);
         } else if (context === 'medibook' || context === 'carnet') {
           startMedicalScan(photo.base64, 'Photo capturée', context);
         }
@@ -5729,6 +5830,12 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               borderBottomLeftRadius: wp(28),
             }}/>
 
+            {/* Fichiers en attente */}
+            <FileQueuePreview
+              files={fileQueue}
+              onRemove={(id) => setFileQueue(prev => prev.filter(f => f.id !== id))}
+            />
+
             <View style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -5851,8 +5958,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 </Pressable>
               ) : (
                 <TouchableOpacity
-                  onPress={() => { if (inputText.trim()) sendMessage(); }}
-                  disabled={!inputText.trim()}
+                  onPress={() => { if (inputText.trim() || fileQueue.length > 0) sendMessage(); }}
+                  disabled={!inputText.trim() && fileQueue.length === 0}
                   style={{
                     width: 38, height: 38, borderRadius: 19,
                     backgroundColor: '#FFFFFF',
@@ -5864,7 +5971,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                   }}
                 >
                   <Text style={{
-                    color: inputText.trim() ? '#00D984' : 'rgba(0,0,0,0.12)',
+                    color: (inputText.trim() || fileQueue.length > 0) ? '#00D984' : 'rgba(0,0,0,0.12)',
                     fontSize: 15, fontWeight: 'bold',
                   }}>{'➤'}</Text>
                 </TouchableOpacity>
