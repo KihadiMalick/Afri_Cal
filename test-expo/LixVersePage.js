@@ -205,6 +205,10 @@ export default function LixVersePage() {
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [floatingHearts, setFloatingHearts] = useState([]);
   const [shakingSticker, setShakingSticker] = useState(null);
+  const [comboCount, setComboCount] = useState({});
+  const [comboTimer, setComboTimer] = useState({});
+  const [strikeActive, setStrikeActive] = useState({});
+  const stickerShakeAnims = useRef({}).current;
   const [stickerCatalog, setStickerCatalog] = useState([]);
   const [myCertification, setMyCertification] = useState(null);
   const [showCertificationModal, setShowCertificationModal] = useState(false);
@@ -247,21 +251,16 @@ export default function LixVersePage() {
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
   useEffect(() => { loadAll(); }, []);
-  // Fake realtime — animation aléatoire toutes les 10-20s
+  // Fake realtime — simuler des likes externes toutes les 12-27s
   useEffect(() => {
     if (wallStickers.length === 0) return;
     const interval = setInterval(() => {
       const randomIdx = Math.floor(Math.random() * wallStickers.length);
       const randomSticker = wallStickers[randomIdx];
       if (randomSticker) {
-        setShakingSticker(randomSticker.id);
-        // Ajouter un cœur flottant
-        const heartId = Date.now() + Math.random();
-        setFloatingHearts(prev => [...prev, { id: heartId, stickerId: randomSticker.id, x: Math.random() * wp(30) - wp(15) }]);
-        setTimeout(() => setShakingSticker(null), 600);
-        setTimeout(() => setFloatingHearts(prev => prev.filter(h => h.id !== heartId)), 1500);
+        handleStickerTap(randomSticker);
       }
-    }, 10000 + Math.random() * 10000);
+    }, 12000 + Math.random() * 15000);
     return () => clearInterval(interval);
   }, [wallStickers]);
 
@@ -492,6 +491,51 @@ export default function LixVersePage() {
     });
   };
 
+  const handleStickerTap = (sticker) => {
+    const id = sticker.id;
+    // Incrémenter le like
+    setWallStickers(prev => prev.map(s => s.id === id ? { ...s, like_count: (s.like_count || 0) + 1 } : s));
+    // Envoyer le like à Supabase (fire and forget)
+    fetch(SUPABASE_URL + '/rest/v1/rpc/like_wall_sticker', {
+      method: 'POST',
+      headers: { ...hdrs, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_sticker_id: id, p_user_id: TEST_USER_ID }),
+    }).catch(() => {});
+    // Cœur flottant
+    const heartId = Date.now() + Math.random();
+    const heartEmojis = ['🩶', '🤍', '💛', '⭐', '✨'];
+    const emoji = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+    setFloatingHearts(prev => [...prev, { id: heartId, stickerId: id, x: Math.random() * wp(40) - wp(20), emoji }]);
+    setTimeout(() => setFloatingHearts(prev => prev.filter(h => h.id !== heartId)), 1200);
+    // Combo system
+    const prevCount = comboCount[id] || 0;
+    const newCount = prevCount + 1;
+    setComboCount(prev => ({ ...prev, [id]: newCount }));
+    // Reset combo timer
+    if (comboTimer[id]) clearTimeout(comboTimer[id]);
+    const timer = setTimeout(() => {
+      setComboCount(prev => ({ ...prev, [id]: 0 }));
+      setStrikeActive(prev => ({ ...prev, [id]: false }));
+    }, 2000);
+    setComboTimer(prev => ({ ...prev, [id]: timer }));
+    // Shake animation — intensité augmente avec le combo
+    if (!stickerShakeAnims[id]) {
+      stickerShakeAnims[id] = new Animated.Value(0);
+    }
+    const shakeIntensity = Math.min(newCount * 1.5, 12);
+    Animated.sequence([
+      Animated.timing(stickerShakeAnims[id], { toValue: shakeIntensity, duration: 50, useNativeDriver: true }),
+      Animated.timing(stickerShakeAnims[id], { toValue: -shakeIntensity, duration: 50, useNativeDriver: true }),
+      Animated.timing(stickerShakeAnims[id], { toValue: shakeIntensity * 0.6, duration: 50, useNativeDriver: true }),
+      Animated.timing(stickerShakeAnims[id], { toValue: -shakeIntensity * 0.6, duration: 50, useNativeDriver: true }),
+      Animated.timing(stickerShakeAnims[id], { toValue: 0, duration: 80, useNativeDriver: true }),
+    ]).start();
+    // Strike mode à 5+ combos
+    if (newCount >= 5) {
+      setStrikeActive(prev => ({ ...prev, [id]: true }));
+    }
+  };
+
   const loadAll = async () => {
     setLoading(true);
     try {
@@ -616,77 +660,120 @@ export default function LixVersePage() {
             ) : (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: wp(10), paddingBottom: wp(8) }}>
                 {wallStickers.slice(0, 12).map((sticker, i) => {
-                  const isShaking = shakingSticker === sticker.id;
-                  const hearts = floatingHearts.filter(h => h.stickerId === sticker.id);
+                  const id = sticker.id;
+                  const hearts = floatingHearts.filter(h => h.stickerId === id);
+                  const combo = comboCount[id] || 0;
+                  const isStrike = strikeActive[id] || false;
+                  const shakeAnim = stickerShakeAnims[id];
+                  const cardBg = isStrike
+                    ? 'rgba(212,175,55,0.25)'
+                    : combo >= 3
+                      ? 'rgba(0,217,132,0.15)'
+                      : 'rgba(255,255,255,0.12)';
+                  const cardBorder = isStrike
+                    ? 'rgba(212,175,55,0.6)'
+                    : combo >= 3
+                      ? 'rgba(0,217,132,0.3)'
+                      : 'rgba(255,255,255,0.15)';
+                  const glowColor = isStrike ? '#D4AF37' : '#00D984';
                   return (
-                    <View key={sticker.id || i} style={{
+                    <Animated.View key={id || i} style={{
                       width: wp(75), alignItems: 'center', padding: wp(6),
                       transform: [
                         { rotate: (sticker.rotation || (i % 2 === 0 ? -5 : 5)) + 'deg' },
-                        { translateX: isShaking ? (Math.random() > 0.5 ? wp(2) : -wp(2)) : 0 },
+                        { translateX: shakeAnim || 0 },
                       ],
                     }}>
                       {/* Cœurs flottants */}
                       {hearts.map(h => (
                         <Text key={h.id} style={{
-                          position: 'absolute', top: -wp(10), left: wp(30) + (h.x || 0),
-                          fontSize: fp(14), zIndex: 20, opacity: 0.8,
-                        }}>🩶</Text>
+                          position: 'absolute', top: -wp(12), left: wp(30) + (h.x || 0),
+                          fontSize: fp(combo >= 5 ? 18 : 14), zIndex: 20, opacity: 0.9,
+                        }}>{h.emoji || '🩶'}</Text>
                       ))}
+                      {/* Badge combo */}
+                      {combo >= 3 && (
+                        <View style={{
+                          position: 'absolute', top: -wp(6), right: wp(2), zIndex: 30,
+                          backgroundColor: isStrike ? '#D4AF37' : '#00D984',
+                          borderRadius: wp(8), paddingHorizontal: wp(5), paddingVertical: wp(1),
+                        }}>
+                          <Text style={{ fontSize: fp(8), fontWeight: '800', color: isStrike ? '#1A1D22' : '#FFF' }}>
+                            x{combo}
+                          </Text>
+                        </View>
+                      )}
                       {/* Aimant */}
                       <View style={{
-                        width: wp(18), height: wp(6), borderRadius: wp(3),
-                        backgroundColor: 'rgba(255,255,255,0.15)', marginBottom: wp(-3), zIndex: 2,
+                        width: wp(20), height: wp(7), borderRadius: wp(3.5),
+                        backgroundColor: isStrike ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.2)',
+                        marginBottom: wp(-3), zIndex: 2,
                       }} />
-                      {/* Sticker card */}
-                      <View style={{
-                        backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(10),
-                        padding: wp(6), alignItems: 'center', width: '100%',
-                        borderWidth: 1, borderColor: isShaking ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)',
-                      }}>
-                        <Text style={{ fontSize: fp(22) }}>{sticker.sticker_emoji}</Text>
-                        <Text style={{ fontSize: fp(7), fontWeight: '600', color: '#FFF', marginTop: wp(3) }} numberOfLines={1}>
+                      {/* Carte sticker — zone tappable complète */}
+                      <Pressable
+                        onPress={() => handleStickerTap(sticker)}
+                        delayPressIn={0}
+                        style={({ pressed }) => ({
+                          backgroundColor: cardBg,
+                          borderRadius: wp(12),
+                          padding: wp(8), alignItems: 'center', width: '100%',
+                          borderWidth: 1.5, borderColor: cardBorder,
+                          transform: [{ scale: pressed ? 0.92 : 1 }],
+                          ...(isStrike ? {
+                            shadowColor: glowColor,
+                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: 0.6,
+                            shadowRadius: wp(8),
+                            elevation: 8,
+                          } : {}),
+                        })}
+                      >
+                        <Text style={{ fontSize: fp(24) }}>{sticker.sticker_emoji}</Text>
+                        <Text style={{
+                          fontSize: fp(8), fontWeight: '700',
+                          color: isStrike ? '#D4AF37' : '#FFF',
+                          marginTop: wp(3),
+                        }} numberOfLines={1}>
                           {sticker.display_name}
                         </Text>
-                        <Text style={{ fontSize: fp(6), color: 'rgba(255,255,255,0.35)', marginTop: wp(1), fontStyle: 'italic' }} numberOfLines={1}>
+                        <Text style={{
+                          fontSize: fp(6),
+                          color: isStrike ? 'rgba(212,175,55,0.6)' : 'rgba(255,255,255,0.4)',
+                          marginTop: wp(1), fontStyle: 'italic',
+                        }} numberOfLines={1}>
                           {sticker.message}
                         </Text>
-                        {/* Like + Gift — directement sur le sticker */}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginTop: wp(3) }}>
-                          {/* Bouton Like — tap = cœur s'envole + shake */}
-                          <Pressable
-                            onPress={() => {
-                              setWallStickers(prev => prev.map(s => s.id === sticker.id ? { ...s, like_count: (s.like_count || 0) + 1 } : s));
-                              setShakingSticker(sticker.id);
-                              const hId = Date.now() + Math.random();
-                              setFloatingHearts(prev => [...prev, { id: hId, stickerId: sticker.id, x: Math.random() * wp(20) - wp(10) }]);
-                              setTimeout(() => setShakingSticker(null), 400);
-                              setTimeout(() => setFloatingHearts(prev => prev.filter(h => h.id !== hId)), 1200);
-                              fetch(SUPABASE_URL + '/rest/v1/rpc/like_wall_sticker', { method: 'POST', headers: { ...hdrs, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_sticker_id: sticker.id, p_user_id: TEST_USER_ID }) }).catch(() => {});
-                            }}
-                            style={({ pressed }) => ({
-                              flexDirection: 'row', alignItems: 'center', gap: wp(2),
-                              transform: [{ scale: pressed ? 1.4 : 1 }],
-                            })}
-                          >
-                            <Text style={{ fontSize: fp(9) }}>🩶</Text>
-                            <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.3)' }}>
-                              {(sticker.like_count || 0) >= 1000 ? ((sticker.like_count || 0) / 1000).toFixed(1) + 'K' : (sticker.like_count || 0)}
+                        {/* Compteur likes + bouton cadeau */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), marginTop: wp(4) }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(2) }}>
+                            <Text style={{ fontSize: fp(10) }}>{isStrike ? '💛' : '🩶'}</Text>
+                            <Text style={{
+                              fontSize: fp(8), fontWeight: isStrike ? '700' : '400',
+                              color: isStrike ? '#D4AF37' : 'rgba(255,255,255,0.4)',
+                            }}>
+                              {(sticker.like_count || 0) >= 1000
+                                ? ((sticker.like_count || 0) / 1000).toFixed(1) + 'K'
+                                : (sticker.like_count || 0)}
                             </Text>
-                          </Pressable>
-                          {/* Bouton Cadeau — ouvre le modal gift */}
+                          </View>
+                          {/* Bouton Cadeau — empêche la propagation du tap */}
                           <Pressable
-                            onPress={() => { setSelectedSticker(sticker); setShowGiftModal(true); }}
+                            onPress={(e) => {
+                              e.stopPropagation && e.stopPropagation();
+                              setSelectedSticker(sticker);
+                              setShowGiftModal(true);
+                            }}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                             style={({ pressed }) => ({ transform: [{ scale: pressed ? 1.3 : 1 }] })}
                           >
-                            <Text style={{ fontSize: fp(9) }}>🎁</Text>
+                            <Text style={{ fontSize: fp(10) }}>🎁</Text>
                           </Pressable>
                           {sticker.lix_received > 0 && (
-                            <Text style={{ fontSize: fp(6), color: 'rgba(212,175,55,0.4)' }}>{sticker.lix_received}L</Text>
+                            <Text style={{ fontSize: fp(6), color: 'rgba(212,175,55,0.5)' }}>{sticker.lix_received}L</Text>
                           )}
                         </View>
-                      </View>
-                    </View>
+                      </Pressable>
+                    </Animated.View>
                   );
                 })}
               </View>
