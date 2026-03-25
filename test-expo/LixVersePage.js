@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image } from 'react-native';
-import Svg, { Defs, Rect, Path, Circle, Line, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import { View, Text, ScrollView, Pressable, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
+import Svg, { Defs, Rect, Path, Circle, Line, G, Polygon, Text as SvgText, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const W = SCREEN_WIDTH;
@@ -197,6 +198,44 @@ const SPIN_RESULTS = [
   { label: 'Rien...', weight: 8.2, type: 'nothing', value: 0, color: '#666' },
 ];
 
+const NORMAL_SEGMENTS = [
+  { label: '20 ⚡', chance: 50, color: '#00D984', reward: { type: 'energy', amount: 20 } },
+  { label: '50 ⚡', chance: 19, color: '#4DA6FF', reward: { type: 'energy', amount: 50 } },
+  { label: '20 Lix', chance: 15, color: '#FF8C42', reward: { type: 'lix', amount: 20 } },
+  { label: '300 Lix', chance: 5, color: '#D4AF37', reward: { type: 'lix', amount: 300 } },
+  { label: '1 Frag Rare', chance: 10, color: '#9B59B6', reward: { type: 'fragment', tier: 'rare', amount: 1 } },
+  { label: '1 Carte Elite', chance: 1, color: '#E74C3C', reward: { type: 'card', tier: 'elite', amount: 1 } },
+];
+
+const SUPER_SEGMENTS = [
+  { label: '30 ⚡', chance: 35, color: '#00D984', reward: { type: 'energy', amount: 30 } },
+  { label: '80 ⚡', chance: 20, color: '#4DA6FF', reward: { type: 'energy', amount: 80 } },
+  { label: '50 Lix', chance: 15, color: '#FF8C42', reward: { type: 'lix', amount: 50 } },
+  { label: '500 Lix', chance: 10, color: '#D4AF37', reward: { type: 'lix', amount: 500 } },
+  { label: '1 Frag Rare', chance: 15, color: '#9B59B6', reward: { type: 'fragment', tier: 'rare', amount: 1 } },
+  { label: '1 Frag Elite', chance: 5, color: '#E74C3C', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
+];
+
+const MEGA_SEGMENTS = [
+  { label: '50 ⚡', chance: 25, color: '#00D984', reward: { type: 'energy', amount: 50 } },
+  { label: '120 ⚡', chance: 20, color: '#4DA6FF', reward: { type: 'energy', amount: 120 } },
+  { label: '100 Lix', chance: 15, color: '#FF8C42', reward: { type: 'lix', amount: 100 } },
+  { label: '1000 Lix', chance: 10, color: '#D4AF37', reward: { type: 'lix', amount: 1000 } },
+  { label: '2 Frags Rare', chance: 15, color: '#9B59B6', reward: { type: 'fragment', tier: 'rare', amount: 2 } },
+  { label: '1 Frag Elite', chance: 10, color: '#E74C3C', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
+  { label: '1 Frag Mythique', chance: 5, color: '#FF1493', reward: { type: 'fragment', tier: 'mythique', amount: 1 } },
+];
+
+const pickReward = (segments) => {
+  const total = segments.reduce((sum, s) => sum + s.chance, 0);
+  let roll = Math.random() * total;
+  for (const seg of segments) {
+    roll -= seg.chance;
+    if (roll <= 0) return seg;
+  }
+  return segments[0];
+};
+
 const LIX_PACKS = [
   { name: 'Micro', price: '$0.99', lix: 990, bonus: '', color: '#00D984' },
   { name: 'Basic', price: '$4.99', lix: 5240, bonus: '+5%', color: '#4DA6FF' },
@@ -232,6 +271,11 @@ export default function LixVersePage() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinResult, setSpinResult] = useState(null);
   const [freeSpinUsed, setFreeSpinUsed] = useState(false);
+  const [spinTier, setSpinTier] = useState('normal');
+  const [timeToFree, setTimeToFree] = useState('');
+  const [showSpinResultModal, setShowSpinResultModal] = useState(false);
+  const [spinWinnerSeg, setSpinWinnerSeg] = useState(null);
+  const spinResultPulse = useRef(new Animated.Value(1)).current;
   const [wallStickers, setWallStickers] = useState([]);
   const [selectedSticker, setSelectedSticker] = useState(null);
   const [showGiftModal, setShowGiftModal] = useState(false);
@@ -347,6 +391,27 @@ export default function LixVersePage() {
       showLixAlert('Rechargé', '+' + char.uses_max + ' utilisations restaurées !\n+' + bonusXp + ' XP bonus', [{ text: 'Super', color: '#00D984' }], '⚡');
     });
   };
+
+  const getSegments = () => {
+    if (spinTier === 'super') return SUPER_SEGMENTS;
+    if (spinTier === 'mega') return MEGA_SEGMENTS;
+    return NORMAL_SEGMENTS;
+  };
+
+  useEffect(() => {
+    if (!freeSpinUsed) { setTimeToFree(''); return; }
+    const timer = setInterval(() => {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+      const diff = midnight - now;
+      const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+      const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+      const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+      setTimeToFree(h + ':' + m + ':' + s);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [freeSpinUsed]);
 
   useEffect(() => { loadAll(); }, []);
   // Fake realtime — simuler des likes externes toutes les 12-27s
@@ -1231,48 +1296,306 @@ export default function LixVersePage() {
   );
   const doSpin = () => {
     if (isSpinning) return;
-    const cost = freeSpinUsed ? 50 : 0;
-    if (cost > 0 && lixBalance < cost) { showLixAlert('Lix insuffisants', 'Il faut 50 Lix pour tourner.\n\nTon solde : ' + lixBalance + ' Lix', [{ text: 'Acheter des Lix', color: '#D4AF37', onPress: () => {} }, { text: 'Fermer', style: 'cancel' }], '💰'); return; }
-    setIsSpinning(true); setSpinResult(null);
+    const segments = getSegments();
+    let cost = 0;
+    if (spinTier === 'normal') cost = freeSpinUsed ? 50 : 0;
+    else if (spinTier === 'super') cost = 150;
+    else cost = 500;
+
+    if (cost > 0 && lixBalance < cost) {
+      showLixAlert('Lix insuffisants', 'Il faut ' + cost + ' Lix pour ce spin.\n\nTon solde : ' + lixBalance + ' Lix', [{ text: 'Acheter des Lix', color: '#D4AF37', onPress: () => {} }, { text: 'Fermer', style: 'cancel' }], '💰');
+      return;
+    }
+
+    setIsSpinning(true); setSpinResult(null); setShowSpinResultModal(false); setSpinWinnerSeg(null);
     if (cost > 0) setLixBalance(p => p - cost);
-    if (!freeSpinUsed) setFreeSpinUsed(true);
-    const tw = SPIN_RESULTS.reduce((s, r) => s + r.weight, 0);
-    let rn = Math.random() * tw; let res = SPIN_RESULTS[0];
-    for (const r of SPIN_RESULTS) { rn -= r.weight; if (rn <= 0) { res = r; break; } }
+    if (spinTier === 'normal' && !freeSpinUsed) setFreeSpinUsed(true);
+
+    const winner = pickReward(segments);
+    const winnerIndex = segments.indexOf(winner);
+    const segmentAngle = 360 / segments.length;
+    const targetAngle = 360 - (winnerIndex * segmentAngle + segmentAngle / 2);
+    const totalRotation = 360 * 5 + targetAngle;
+
+    const duration = spinTier === 'mega' ? 6000 : spinTier === 'super' ? 5000 : 4000;
+
+    // Haptic feedback during spin
+    let hapticInterval = null;
+    let hapticCount = 0;
+    const totalSegmentTicks = segments.length * 5;
+    hapticInterval = setInterval(() => {
+      hapticCount++;
+      if (hapticCount > totalSegmentTicks - 2 * segments.length) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      } else {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      }
+      if (hapticCount >= totalSegmentTicks) clearInterval(hapticInterval);
+    }, Math.round(duration / totalSegmentTicks));
+
     spinAnim.setValue(0);
-    Animated.timing(spinAnim, { toValue: (5 + Math.random() * 3) * 360, duration: 3000 + Math.random() * 1500, useNativeDriver: true }).start(() => {
-      setIsSpinning(false); setSpinResult(res);
-      if (res.type === 'lix') setLixBalance(p => p + res.value);
-      fetch(SUPABASE_URL + '/rest/v1/lixverse_spin_history', { method: 'POST', headers: { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }, body: JSON.stringify({ user_id: TEST_USER_ID, result_type: res.type, result_value: String(res.value), lix_spent: cost, was_free: cost === 0 }) }).catch(() => {});
+    Animated.timing(spinAnim, {
+      toValue: totalRotation,
+      duration: duration,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start(() => {
+      if (hapticInterval) clearInterval(hapticInterval);
+      setIsSpinning(false);
+      setSpinWinnerSeg(winner);
+
+      // Apply rewards
+      if (winner.reward.type === 'lix') setLixBalance(p => p + winner.reward.amount);
+
+      // Haptic based on reward type
+      if (winner.reward.type === 'card') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+      } else if (winner.reward.type === 'fragment') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      }
+
+      // Show result modal
+      setShowSpinResultModal(true);
+      if (winner.reward.type === 'fragment' || winner.reward.type === 'card') {
+        spinResultPulse.setValue(1);
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(spinResultPulse, { toValue: 1.15, duration: 600, useNativeDriver: true }),
+            Animated.timing(spinResultPulse, { toValue: 1, duration: 600, useNativeDriver: true }),
+          ])
+        ).start();
+      }
+
+      fetch(SUPABASE_URL + '/rest/v1/lixverse_spin_history', {
+        method: 'POST', headers: { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ user_id: TEST_USER_ID, result_type: winner.reward.type, result_value: String(winner.reward.amount), lix_spent: cost, was_free: cost === 0 }),
+      }).catch(() => {});
     });
   };
 
+  const renderSpinResultModal = () => {
+    if (!showSpinResultModal || !spinWinnerSeg) return null;
+    const rw = spinWinnerSeg.reward;
+    let emoji = '⚡'; let title = ''; let titleColor = '#00D984'; let btnText = 'Récupérer'; let btnColor = '#00D984';
+    let borderColor = 'transparent';
+
+    if (rw.type === 'energy') {
+      emoji = '⚡'; title = '+' + rw.amount + ' Énergie'; titleColor = '#00D984'; btnColor = '#00D984';
+    } else if (rw.type === 'lix') {
+      emoji = '💰'; title = '+' + rw.amount + ' Lix'; titleColor = '#D4AF37'; btnColor = '#D4AF37';
+    } else if (rw.type === 'fragment') {
+      const tierEmoji = rw.tier === 'mythique' ? '👑' : rw.tier === 'elite' ? '🏆' : '🔮';
+      const tierColor = rw.tier === 'mythique' ? '#FF1493' : rw.tier === 'elite' ? '#E74C3C' : '#9B59B6';
+      emoji = tierEmoji; title = 'Fragment ' + rw.tier.charAt(0).toUpperCase() + rw.tier.slice(1) + ' obtenu !';
+      titleColor = tierColor; btnColor = tierColor; borderColor = tierColor;
+    } else if (rw.type === 'card') {
+      emoji = '🏆'; title = 'CARTE ELITE COMPLÈTE !'; titleColor = '#E74C3C'; btnText = 'Incroyable !'; btnColor = '#E74C3C'; borderColor = '#E74C3C';
+    }
+
+    return (
+      <Modal visible={showSpinResultModal} transparent animationType="fade" onRequestClose={() => { setShowSpinResultModal(false); spinResultPulse.stopAnimation(); }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+            style={{
+              borderRadius: wp(20), padding: wp(24), width: '100%', alignItems: 'center',
+              borderWidth: borderColor !== 'transparent' ? 2 : 0, borderColor: borderColor,
+            }}>
+            <Animated.Text style={{
+              fontSize: fp(40), marginBottom: wp(12),
+              transform: [{ scale: (rw.type === 'fragment' || rw.type === 'card') ? spinResultPulse : 1 }],
+            }}>{emoji}</Animated.Text>
+            <Text style={{ fontSize: rw.type === 'card' ? fp(24) : fp(22), fontWeight: '800', color: titleColor, textAlign: 'center', marginBottom: wp(8) }}>{title}</Text>
+            {rw.type === 'fragment' && (
+              <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(8) }}>x{rw.amount} fragment{rw.amount > 1 ? 's' : ''}</Text>
+            )}
+            <Pressable delayPressIn={120}
+              onPress={() => { setShowSpinResultModal(false); spinResultPulse.stopAnimation(); }}
+              style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], marginTop: wp(12), width: '100%' })}>
+              <LinearGradient colors={[btnColor, btnColor + 'CC']}
+                style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{btnText}</Text>
+              </LinearGradient>
+            </Pressable>
+          </LinearGradient>
+        </View>
+      </Modal>
+    );
+  };
+
   const renderLixSpinTab = () => {
-    const spinCost = freeSpinUsed ? 50 : 0;
+    const segments = getSegments();
+    const segCount = segments.length;
+    const segAngle = 360 / segCount;
+    const wheelR = wp(120);
+    const innerR = wp(114);
+    const cx = wp(130);
+    const cy = wp(130);
     const rot = spinAnim.interpolate({ inputRange: [0, 360], outputRange: ['0deg', '360deg'] });
+
+    let spinCost = 0;
+    if (spinTier === 'normal') spinCost = freeSpinUsed ? 50 : 0;
+    else if (spinTier === 'super') spinCost = 150;
+    else spinCost = 500;
+
+    const spinBtnLabel = isSpinning ? '...'
+      : spinTier === 'normal' ? (spinCost === 0 ? 'SPIN GRATUIT ⚡' : 'SPIN — 50 Lix')
+      : spinTier === 'super' ? 'SUPERSPIN — 150 Lix 🔥'
+      : 'MEGASPIN — 500 Lix 💎';
+
+    const spinBtnColors = spinTier === 'normal' && spinCost === 0 ? ['#00D984', '#00B871']
+      : ['#3A3F46', '#252A30'];
+    const spinBtnBorder = spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : '#00D984';
+
+    // Build SVG segments
+    const buildSegmentPath = (index) => {
+      const startA = (index * segAngle - 90) * Math.PI / 180;
+      const endA = ((index + 1) * segAngle - 90) * Math.PI / 180;
+      const x1 = cx + innerR * Math.cos(startA);
+      const y1 = cy + innerR * Math.sin(startA);
+      const x2 = cx + innerR * Math.cos(endA);
+      const y2 = cy + innerR * Math.sin(endA);
+      const large = segAngle > 180 ? 1 : 0;
+      return 'M' + cx + ',' + cy + ' L' + x1 + ',' + y1 + ' A' + innerR + ',' + innerR + ' 0 ' + large + ',1 ' + x2 + ',' + y2 + ' Z';
+    };
+
+    // Build label positions
+    const labelPos = (index) => {
+      const midA = ((index + 0.5) * segAngle - 90) * Math.PI / 180;
+      const labelR = innerR * 0.65;
+      return { x: cx + labelR * Math.cos(midA), y: cy + labelR * Math.sin(midA), angle: (index + 0.5) * segAngle };
+    };
+
+    const tierButtons = [
+      { key: 'normal', label: 'Spin ⚡', sub: !freeSpinUsed ? 'Gratuit' : '50 Lix' },
+      { key: 'super', label: 'SuperSpin 🔥', sub: '150 Lix' },
+      { key: 'mega', label: 'MegaSpin 💎', sub: '500 Lix' },
+    ];
+
     return (
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100) }}>
-        <View style={{ alignItems: 'center', paddingTop: wp(16), marginBottom: wp(20) }}>
+        {/* Solde */}
+        <View style={{ alignItems: 'center', paddingTop: wp(16), marginBottom: wp(16) }}>
           <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', letterSpacing: 2, marginBottom: wp(4) }}>MON SOLDE</Text>
           <Text style={{ fontSize: fp(32), fontWeight: '800', color: '#D4AF37' }}>{lixBalance.toLocaleString('fr-FR')}</Text>
           <Text style={{ fontSize: fp(12), color: 'rgba(212,175,55,0.5)' }}>Lix</Text>
         </View>
-        <View style={{ alignItems: 'center', marginBottom: wp(24) }}>
-          <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(14) }}>Spin Wheel</Text>
-          {!freeSpinUsed && <View style={{ backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(10), paddingHorizontal: wp(14), paddingVertical: wp(6), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)' }}><Text style={{ fontSize: fp(12), fontWeight: '600', color: '#00D984' }}>1 tour gratuit !</Text></View>}
-          <View style={{ width: wp(200), height: wp(200), marginBottom: wp(16) }}>
-            <Animated.View style={{ width: wp(200), height: wp(200), borderRadius: wp(100), borderWidth: wp(4), borderColor: '#D4AF37', justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(212,175,55,0.04)', transform: [{ rotate: rot }] }}>
-              {[0,1,2,3,4,5,6,7,8,9,10,11].map(i => (<View key={i} style={{ position: 'absolute', width: wp(2), height: wp(80), backgroundColor: ['#00D984','#4DA6FF','#FF8C42','#9B6DFF','#D4AF37','#FF6B6B','#00D984','#4DA6FF','#FF8C42','#9B6DFF','#D4AF37','#FF6B6B'][i] + '30', top: wp(20), left: wp(99), transform: [{ rotate: (i*30)+'deg' }], transformOrigin: 'bottom center' }} />))}
-              <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), backgroundColor: '#D4AF37', justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: fp(10), fontWeight: '800', color: '#FFF' }}>LIX</Text></View>
-            </Animated.View>
+
+        {/* Tier Selector */}
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: wp(8), marginBottom: wp(20), paddingHorizontal: wp(12) }}>
+          {tierButtons.map(tb => {
+            const active = spinTier === tb.key;
+            return (
+              <Pressable key={tb.key} delayPressIn={120}
+                onPress={() => { if (!isSpinning) setSpinTier(tb.key); }}
+                style={({ pressed }) => ({
+                  flex: 1, height: wp(50), borderRadius: wp(12),
+                  overflow: 'hidden',
+                  borderWidth: active ? 1.5 : 1,
+                  borderColor: active ? '#D4AF37' : '#4A4F55',
+                  transform: [{ scale: pressed ? 0.95 : 1 }],
+                })}>
+                {active ? (
+                  <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                    style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(4) }}>
+                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FFF' }}>{tb.label}</Text>
+                    <Text style={{ fontSize: fp(10), color: '#D4AF37', marginTop: wp(2) }}>{tb.sub}</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(30,35,42,0.6)', paddingHorizontal: wp(4) }}>
+                    <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>{tb.label}</Text>
+                    <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)', marginTop: wp(2) }}>{tb.sub}</Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Wheel */}
+        <View style={{ alignItems: 'center', marginBottom: wp(20) }}>
+          {/* Arrow indicator */}
+          <View style={{ marginBottom: -wp(6), zIndex: 10 }}>
+            <Svg width={wp(24)} height={wp(18)} viewBox="0 0 24 18">
+              <Polygon points="12,18 2,0 22,0" fill="#D4AF37" stroke="#8B7A2E" strokeWidth="1" />
+            </Svg>
           </View>
-          <Pressable delayPressIn={120} onPress={doSpin} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], opacity: isSpinning ? 0.5 : 1 })}>
-            <LinearGradient colors={spinCost === 0 ? ['#00D984','#00B871'] : ['#D4AF37','#B8941F']} style={{ paddingHorizontal: wp(36), paddingVertical: wp(14), borderRadius: wp(24) }}>
-              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>{isSpinning ? '...' : spinCost === 0 ? 'Tourner GRATUIT' : 'Tourner — 50 Lix'}</Text>
+
+          <View style={{ width: cx * 2, height: cy * 2 }}>
+            <Animated.View style={{ width: cx * 2, height: cy * 2, transform: [{ rotate: rot }] }}>
+              <Svg width={cx * 2} height={cy * 2} viewBox={'0 0 ' + (cx * 2) + ' ' + (cy * 2)}>
+                {/* Colored segments */}
+                {segments.map((seg, i) => (
+                  <Path key={i} d={buildSegmentPath(i)} fill={seg.color + 'CC'} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
+                ))}
+                {/* Segment labels */}
+                {segments.map((seg, i) => {
+                  const pos = labelPos(i);
+                  return (
+                    <SvgText key={'t' + i} x={pos.x} y={pos.y} fill="#FFF" fontSize={fp(9)} fontWeight="700"
+                      textAnchor="middle" alignmentBaseline="central">
+                      {seg.label}
+                    </SvgText>
+                  );
+                })}
+                {/* Inner gold border */}
+                <Circle cx={cx} cy={cy} r={innerR} fill="none" stroke="#D4AF37" strokeWidth={wp(2)} />
+                {/* Outer metallic ring */}
+                <Circle cx={cx} cy={cy} r={wheelR} fill="none" stroke="#4A4F55" strokeWidth={wp(6)} />
+                {/* Gold rivets */}
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const a = (i * 30 - 90) * Math.PI / 180;
+                  const rx = cx + wheelR * Math.cos(a);
+                  const ry = cy + wheelR * Math.sin(a);
+                  return <Circle key={'r' + i} cx={rx} cy={ry} r={wp(3)} fill="#D4AF37" stroke="#8B7A2E" strokeWidth="0.5" />;
+                })}
+                {/* Hub center */}
+                <Circle cx={cx} cy={cy} r={wp(25)} fill="#3A3F46" stroke="#D4AF37" strokeWidth={wp(1.5)} />
+              </Svg>
+            </Animated.View>
+            {/* Hub icon (non-rotating) */}
+            <View style={{
+              position: 'absolute', top: cy - wp(25), left: cx - wp(25),
+              width: wp(50), height: wp(50), borderRadius: wp(25),
+              justifyContent: 'center', alignItems: 'center',
+            }}>
+              <Text style={{ fontSize: fp(20) }}>{spinTier === 'mega' ? '💎' : spinTier === 'super' ? '🔥' : '⚡'}</Text>
+              <Text style={{ fontSize: fp(8), fontWeight: '700', color: 'rgba(255,255,255,0.6)', marginTop: -wp(2) }}>
+                {spinTier === 'mega' ? 'MEGA' : spinTier === 'super' ? 'SUPER' : 'SPIN'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Spin button */}
+          <Pressable delayPressIn={120} onPress={doSpin}
+            style={({ pressed }) => ({
+              transform: [{ scale: pressed ? 0.96 : 1 }], opacity: isSpinning ? 0.5 : 1,
+              marginTop: wp(16), width: wp(220),
+            })}>
+            <LinearGradient colors={spinBtnColors}
+              style={{
+                paddingVertical: wp(14), borderRadius: wp(24), alignItems: 'center',
+                borderWidth: spinCost === 0 && spinTier === 'normal' ? 0 : 1.5,
+                borderColor: spinBtnBorder,
+                shadowColor: spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : 'transparent',
+                shadowOpacity: spinTier !== 'normal' ? 0.4 : 0,
+                shadowRadius: wp(8), elevation: spinTier !== 'normal' ? 4 : 0,
+              }}>
+              <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{spinBtnLabel}</Text>
             </LinearGradient>
           </Pressable>
-          {spinResult && <View style={{ marginTop: wp(16), paddingVertical: wp(14), paddingHorizontal: wp(24), borderRadius: wp(14), alignItems: 'center', backgroundColor: spinResult.color + '15', borderWidth: 1, borderColor: spinResult.color + '30' }}><Text style={{ fontSize: fp(18), fontWeight: '700', color: spinResult.type === 'nothing' ? 'rgba(255,255,255,0.3)' : spinResult.color }}>{spinResult.type === 'nothing' ? '😔 Rien' : '🎉 ' + spinResult.label}</Text></View>}
+
+          {/* Free spin counter */}
+          <View style={{ marginTop: wp(10), alignItems: 'center' }}>
+            {!freeSpinUsed ? (
+              <Text style={{ fontSize: fp(11), color: '#00D984' }}>🎁 1 spin gratuit disponible</Text>
+            ) : (
+              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)' }}>
+                Prochain spin gratuit dans {timeToFree || '--:--:--'}
+              </Text>
+            )}
+          </View>
         </View>
+
         <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginHorizontal: wp(16), marginBottom: wp(20) }} />
         <View style={{ paddingHorizontal: wp(16) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Acheter des Lix</Text>
@@ -1295,6 +1618,9 @@ export default function LixVersePage() {
             </Pressable>
           ))}
         </View>
+
+        {/* Spin Result Modal */}
+        {renderSpinResultModal()}
       </ScrollView>
     );
   };
