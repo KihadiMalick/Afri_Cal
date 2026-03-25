@@ -209,6 +209,11 @@ export default function LixVersePage() {
   const [comboTimer, setComboTimer] = useState({});
   const [strikeActive, setStrikeActive] = useState({});
   const stickerShakeAnims = useRef({}).current;
+  const [lixAlert, setLixAlert] = useState({ visible: false, title: '', message: '', emoji: '', buttons: [] });
+  const showLixAlert = (title, message, buttons = [], emoji = '') => {
+    setLixAlert({ visible: true, title, message, emoji, buttons });
+  };
+  const hideLixAlert = () => setLixAlert(prev => ({ ...prev, visible: false }));
   const [stickerCatalog, setStickerCatalog] = useState([]);
   const [myCertification, setMyCertification] = useState(null);
   const [showCertificationModal, setShowCertificationModal] = useState(false);
@@ -579,10 +584,10 @@ export default function LixVersePage() {
       const g = await res.json();
       if (g && g[0]) {
         await fetch(SUPABASE_URL + '/rest/v1/lixverse_group_members', { method: 'POST', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ group_id: g[0].id, user_id: TEST_USER_ID, lixtag: 'LXM-2K7F4A', country: 'Burundi' }) });
-        Alert.alert('Groupe créé ✓', '"' + newGroupName.trim() + '"\n\nCode : ' + code);
+        showLixAlert('Groupe créé', '"' + newGroupName.trim() + '"\n\nCode : ' + code, [{ text: 'Parfait', color: '#00D984' }], '✅');
         setShowCreateGroup(false); setNewGroupName(''); loadAll();
       }
-    } catch (e) { Alert.alert('Erreur', 'Création échouée.'); }
+    } catch (e) { showLixAlert('Erreur', 'Création échouée. Vérifiez votre connexion.', [{ text: 'OK', style: 'cancel' }], '❌'); }
   };
 
   const joinGroup = async () => {
@@ -591,12 +596,12 @@ export default function LixVersePage() {
       const h = { ...hdrs, 'Content-Type': 'application/json' };
       const res = await fetch(SUPABASE_URL + '/rest/v1/lixverse_groups?invite_code=eq.' + joinCode.trim().toUpperCase() + '&select=*', { headers: hdrs });
       const gs = await res.json();
-      if (!gs || gs.length === 0) { Alert.alert('Code invalide'); return; }
+      if (!gs || gs.length === 0) { showLixAlert('Code invalide', 'Aucun groupe trouvé avec ce code. Vérifiez l\'orthographe.', [{ text: 'Réessayer', style: 'cancel' }], '🔍'); return; }
       const g = gs[0];
       await fetch(SUPABASE_URL + '/rest/v1/lixverse_group_members', { method: 'POST', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ group_id: g.id, user_id: TEST_USER_ID, lixtag: 'LXM-2K7F4A', country: 'Burundi' }) });
       await fetch(SUPABASE_URL + '/rest/v1/lixverse_groups?id=eq.' + g.id, { method: 'PATCH', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ member_count: g.member_count + 1 }) });
-      Alert.alert('Rejoint ✓', '"' + g.name + '"'); setShowJoinGroup(false); setJoinCode(''); loadAll();
-    } catch (e) { Alert.alert('Erreur', 'Impossible de rejoindre.'); }
+      showLixAlert('Rejoint', 'Tu fais maintenant partie de "' + g.name + '" !', [{ text: 'Super', color: '#00D984' }], '🤝'); setShowJoinGroup(false); setJoinCode(''); loadAll();
+    } catch (e) { showLixAlert('Erreur', 'Impossible de rejoindre ce groupe.', [{ text: 'OK', style: 'cancel' }], '❌'); }
   };
 
   const renderDefiTab = () => (
@@ -624,36 +629,36 @@ export default function LixVersePage() {
         {/* Le mur gris métallique */}
         <View style={{
           marginHorizontal: wp(8), borderRadius: wp(16), overflow: 'hidden',
-          borderWidth: 2, borderColor: 'rgba(212,175,55,0.25)',
+          borderWidth: 2, borderColor: '#8B7A2E',
           shadowColor: '#D4AF37',
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 12,
-          elevation: 6,
+          shadowOpacity: 0.25,
+          shadowRadius: 14,
+          elevation: 8,
         }}>
           <LinearGradient colors={['#3A3F46', '#2D3238', '#3A3F46', '#333840']}
             style={{ minHeight: wp(280), padding: wp(12), position: 'relative' }}>
             {/* Coins dorés élégants */}
             {[
-              { top: wp(6), left: wp(6), borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: wp(4) },
-              { top: wp(6), right: wp(6), borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: wp(4) },
-              { bottom: wp(6), left: wp(6), borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: wp(4) },
-              { bottom: wp(6), right: wp(6), borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: wp(4) },
+              { top: wp(6), left: wp(6), borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: wp(4) },
+              { top: wp(6), right: wp(6), borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: wp(4) },
+              { bottom: wp(6), left: wp(6), borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: wp(4) },
+              { bottom: wp(6), right: wp(6), borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: wp(4) },
             ].map((cornerStyle, i) => (
               <View key={i} style={{
                 position: 'absolute', zIndex: 10,
-                width: wp(16), height: wp(16),
-                borderColor: 'rgba(212,175,55,0.35)',
+                width: wp(20), height: wp(20),
+                borderColor: '#8B7A2E',
                 ...cornerStyle,
               }} />
             ))}
             {/* Titre doré — image agrandie */}
-            <View style={{ alignItems: 'center', marginBottom: wp(8), paddingTop: wp(4) }}>
+            <View style={{ alignItems: 'center', marginBottom: wp(4), paddingTop: wp(0) }}>
               <Image
                 source={require('./assets/wall-of-health-title.webp')}
                 style={{
-                  width: wp(295),
-                  height: wp(52),
+                  width: wp(300),
+                  height: wp(60),
                 }}
                 resizeMode="contain"
               />
@@ -983,7 +988,7 @@ export default function LixVersePage() {
     </ScrollView>
   );
   const openCrate = (crate) => {
-    if (lixBalance < crate.cost) { Alert.alert('Lix insuffisants', 'Il faut ' + crate.cost + ' Lix.\nTon solde: ' + lixBalance); return; }
+    if (lixBalance < crate.cost) { showLixAlert('Lix insuffisants', 'Il faut ' + crate.cost + ' Lix pour cette caisse.\n\nTon solde : ' + lixBalance + ' Lix', [{ text: 'Acheter des Lix', color: '#D4AF37', onPress: () => setActiveTab('lixspin') }, { text: 'Fermer', style: 'cancel' }], '💰'); return; }
     setLixBalance(p => p - crate.cost);
     const r = crate.rewards;
     const lixWon = Math.floor(r.lix_min + Math.random() * (r.lix_max - r.lix_min));
@@ -1017,7 +1022,7 @@ export default function LixVersePage() {
     } else {
       msg += '\n\nPas de carte cette fois...';
     }
-    Alert.alert(crate.emoji + ' ' + crate.name, msg);
+    showLixAlert(crate.name, msg, [{ text: 'Super !', color: '#D4AF37' }], crate.emoji);
     const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
     if (cardWon && !cardDup) {
       fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters', { method: 'POST', headers: h, body: JSON.stringify({ user_id: TEST_USER_ID, character_id: cardWon.id, tier: cardWon.tier, obtained_via: 'crate' }) }).catch(() => {});
@@ -1096,7 +1101,7 @@ export default function LixVersePage() {
   const doSpin = () => {
     if (isSpinning) return;
     const cost = freeSpinUsed ? 50 : 0;
-    if (cost > 0 && lixBalance < cost) { Alert.alert('Lix insuffisants', 'Il faut 50 Lix.\nSolde: ' + lixBalance); return; }
+    if (cost > 0 && lixBalance < cost) { showLixAlert('Lix insuffisants', 'Il faut 50 Lix pour tourner.\n\nTon solde : ' + lixBalance + ' Lix', [{ text: 'Acheter des Lix', color: '#D4AF37', onPress: () => {} }, { text: 'Fermer', style: 'cancel' }], '💰'); return; }
     setIsSpinning(true); setSpinResult(null);
     if (cost > 0) setLixBalance(p => p - cost);
     if (!freeSpinUsed) setFreeSpinUsed(true);
@@ -1141,7 +1146,7 @@ export default function LixVersePage() {
         <View style={{ paddingHorizontal: wp(16) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Acheter des Lix</Text>
           {[{ n: 'Micro', p: '$0.99', l: 990, b: '', c: '#00D984' }, { n: 'Basic', p: '$4.99', l: 5240, b: '+5%', c: '#4DA6FF' }, { n: 'Standard', p: '$9.99', l: 10990, b: '+10%', c: '#9B6DFF' }, { n: 'Mega', p: '$29.99', l: 35990, b: '+20%', c: '#D4AF37' }, { n: 'Ultra', p: '$99.99', l: 129990, b: '+30%', c: '#D4AF37' }].map((pk, i) => (
-            <Pressable key={i} delayPressIn={120} onPress={() => Alert.alert('Achat', pk.n + ' : ' + pk.p + ' → ' + pk.l.toLocaleString('fr-FR') + ' Lix\n\nBientôt disponible.')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: pk.c + '25', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <Pressable key={i} delayPressIn={120} onPress={() => showLixAlert('Achat ' + pk.n, pk.p + ' → ' + pk.l.toLocaleString('fr-FR') + ' Lix\n\nBientôt disponible.', [{ text: 'OK', style: 'cancel' }], '💎')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: pk.c + '25', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
               <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: pk.c + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}><Text style={{ fontSize: fp(16), fontWeight: '800', color: pk.c }}>L</Text></View>
               <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{pk.n}</Text>{pk.b ? <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37' }}>{pk.b}</Text></View> : null}</View><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{pk.l.toLocaleString('fr-FR')} Lix</Text></View>
               <View style={{ backgroundColor: pk.c + '20', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}><Text style={{ fontSize: fp(13), fontWeight: '700', color: pk.c }}>{pk.p}</Text></View>
@@ -1152,7 +1157,7 @@ export default function LixVersePage() {
         <View style={{ paddingHorizontal: wp(16), marginTop: wp(24) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Recharger énergie</Text>
           {[{ n: 'Mini', e: 30, l: 300, d: '~3 chats' }, { n: 'Standard', e: 80, l: 700, d: '~8 chats' }, { n: 'XL', e: 200, l: 1500, d: '~20 chats' }].map((pk, i) => (
-            <Pressable key={i} delayPressIn={120} onPress={() => { if (lixBalance < pk.l) { Alert.alert('Insuffisant', pk.l + ' Lix requis'); return; } setLixBalance(p => p - pk.l); Alert.alert('✓', '+' + pk.e + ' énergie !'); }} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(12), borderRadius: wp(12), marginBottom: wp(6), backgroundColor: 'rgba(0,217,132,0.05)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <Pressable key={i} delayPressIn={120} onPress={() => { if (lixBalance < pk.l) { showLixAlert('Lix insuffisants', 'Il faut ' + pk.l + ' Lix pour cette recharge.', [{ text: 'Fermer', style: 'cancel' }], '⚡'); return; } setLixBalance(p => p - pk.l); showLixAlert('Rechargé', '+' + pk.e + ' énergie ajoutée !', [{ text: 'Super', color: '#00D984' }], '⚡'); }} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(12), borderRadius: wp(12), marginBottom: wp(6), backgroundColor: 'rgba(0,217,132,0.05)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
               <Text style={{ fontSize: fp(14), marginRight: wp(10) }}>⚡</Text>
               <View style={{ flex: 1 }}><Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>+{pk.e} énergie</Text><Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{pk.d}</Text></View>
               <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#00D984' }}>{pk.l} Lix</Text>
@@ -2000,12 +2005,12 @@ export default function LixVersePage() {
               {[10, 50, 100, 500].map(amount => (
                 <Pressable key={amount} delayPressIn={120}
                   onPress={() => {
-                    if (lixBalance < amount) { Alert.alert('Lix insuffisants'); return; }
+                    if (lixBalance < amount) { showLixAlert('Lix insuffisants', 'Tu n\'as pas assez de Lix pour ce cadeau.', [{ text: 'Fermer', style: 'cancel' }], '💰'); return; }
                     setLixBalance(p => p - amount);
                     setSelectedSticker(s => ({ ...s, lix_received: (s.lix_received || 0) + amount }));
                     setWallStickers(prev => prev.map(s => s.id === selectedSticker.id ? { ...s, lix_received: (s.lix_received || 0) + amount } : s));
                     fetch(SUPABASE_URL + '/rest/v1/rpc/gift_lix_to_sticker', { method: 'POST', headers: { ...hdrs, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_sticker_id: selectedSticker.id, p_from_user_id: TEST_USER_ID, p_amount: amount }) }).catch(() => {});
-                    Alert.alert('Merci 🎁', amount + ' Lix offerts à ' + selectedSticker.display_name + ' !');
+                    showLixAlert('Merci', amount + ' Lix offerts à ' + selectedSticker.display_name + ' !', [{ text: 'De rien', color: '#D4AF37' }], '🎁');
                     setShowGiftModal(false);
                   }}
                   style={({ pressed }) => ({
@@ -2160,10 +2165,10 @@ export default function LixVersePage() {
               {/* Bouton Coller */}
               <Pressable delayPressIn={120}
                 onPress={() => {
-                  if (!selectedStickerChoice) { Alert.alert('Choisis un sticker'); return; }
-                  if (!stickerMessage.trim()) { Alert.alert('Écris ton message'); return; }
+                  if (!selectedStickerChoice) { showLixAlert('Sticker manquant', 'Choisis un sticker avant de le coller.', [{ text: 'OK', style: 'cancel' }], '🎨'); return; }
+                  if (!stickerMessage.trim()) { showLixAlert('Message manquant', 'Écris ton message avant de coller le sticker.', [{ text: 'OK', style: 'cancel' }], '✏️'); return; }
                   const cost = selectedStickerChoice.cost_lix || 0;
-                  if (cost > 0 && lixBalance < cost) { Alert.alert('Lix insuffisants', 'Il te faut ' + cost + ' Lix pour ce sticker.'); return; }
+                  if (cost > 0 && lixBalance < cost) { showLixAlert('Lix insuffisants', 'Il te faut ' + cost + ' Lix pour ce sticker.', [{ text: 'Fermer', style: 'cancel' }], '💰'); return; }
                   if (cost > 0) setLixBalance(p => p - cost);
                   const newSticker = {
                     id: Date.now().toString(),
@@ -2214,7 +2219,7 @@ export default function LixVersePage() {
                   setShowStickerCreation(false);
                   setSelectedStickerChoice(null);
                   setStickerMessage('');
-                  Alert.alert('🎉 Sticker collé !', 'Ton sticker est maintenant visible sur le Wall of Health. Les membres peuvent te liker et t\'offrir des Lix !');
+                  showLixAlert('Sticker collé', 'Ton sticker est maintenant visible sur le Wall of Health !\n\nLes membres peuvent te liker et t\'offrir des Lix.', [{ text: 'Voir le mur', color: '#D4AF37', onPress: () => setActiveTab('defi') }], '🎉');
                 }}
                 style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], opacity: (!selectedStickerChoice || !stickerMessage.trim()) ? 0.4 : 1 })}>
                 <LinearGradient colors={['#D4AF37', '#B8941F']} style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center' }}>
@@ -2313,6 +2318,39 @@ export default function LixVersePage() {
           </View>
         </Modal>
       )}
+      {/* Modal Alert LIXUM — remplace Alert.alert natif */}
+      <Modal visible={lixAlert.visible} transparent animationType="fade" onRequestClose={hideLixAlert}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
+          <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']} style={{ borderRadius: wp(20), paddingHorizontal: wp(24), paddingVertical: wp(28), width: '100%', alignItems: 'center' }}>
+            {lixAlert.emoji ? <Text style={{ fontSize: fp(36), marginBottom: wp(12) }}>{lixAlert.emoji}</Text> : null}
+            <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', textAlign: 'center', marginBottom: wp(8) }}>{lixAlert.title}</Text>
+            <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: fp(19), marginBottom: wp(20) }}>{lixAlert.message}</Text>
+            {lixAlert.buttons.map((btn, i) => {
+              const isCancel = btn.style === 'cancel';
+              const isDestructive = btn.style === 'destructive';
+              const btnColor = btn.color || (isDestructive ? '#FF6B6B' : '#D4AF37');
+              return (
+                <Pressable key={i} delayPressIn={120}
+                  onPress={() => { hideLixAlert(); if (btn.onPress) btn.onPress(); }}
+                  style={({ pressed }) => ({
+                    width: '100%', paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center', marginBottom: wp(6),
+                    backgroundColor: isCancel ? 'transparent' : btnColor + '20',
+                    borderWidth: isCancel ? 1 : 0,
+                    borderColor: isCancel ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    transform: [{ scale: pressed ? 0.97 : 1 }],
+                  })}>
+                  <Text style={{ fontSize: fp(15), fontWeight: isCancel ? '500' : '700', color: isCancel ? 'rgba(255,255,255,0.4)' : btnColor }}>{btn.text}</Text>
+                </Pressable>
+              );
+            })}
+            {lixAlert.buttons.length === 0 && (
+              <Pressable onPress={hideLixAlert} style={{ paddingVertical: wp(14), width: '100%', alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '500', color: 'rgba(255,255,255,0.4)' }}>OK</Text>
+              </Pressable>
+            )}
+          </LinearGradient>
+        </View>
+      </Modal>
     </View>
   );
 }
