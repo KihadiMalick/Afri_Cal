@@ -619,7 +619,7 @@ export default function LixVersePage() {
               <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37' }}>BADGE</Text>
             </Pressable>
           )}
-          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>{wallStickers.length} stickers</Text>
+          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>{Math.min(wallStickers.length, 9)}/9</Text>
         </View>
         {/* Le mur gris métallique */}
         <View style={{
@@ -652,35 +652,56 @@ export default function LixVersePage() {
               <Image
                 source={require('./assets/wall-of-health-title.webp')}
                 style={{
-                  width: wp(270),
-                  height: wp(45),
+                  width: wp(295),
+                  height: wp(52),
                 }}
                 resizeMode="contain"
               />
             </View>
+            {/* Indicateur mois + places */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: wp(8), marginBottom: wp(8) }}>
+              <View style={{
+                backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(8),
+                paddingHorizontal: wp(10), paddingVertical: wp(3),
+                borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)',
+              }}>
+                <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37', letterSpacing: 1 }}>
+                  {new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).toUpperCase()}
+                </Text>
+              </View>
+              <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)' }}>
+                {Math.max(0, 9 - wallStickers.length)}/9 places restantes
+              </Text>
+            </View>
             {/* Stickers disposés organiquement */}
             {wallStickers.length === 0 ? (
-              <View style={{ alignItems: 'center', paddingVertical: wp(40) }}>
-                <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.2)' }}>Le mur attend ses premiers héros...</Text>
+              <View style={{ alignItems: 'center', paddingVertical: wp(30) }}>
+                <Text style={{ fontSize: fp(32), marginBottom: wp(8) }}>🏆</Text>
+                <Text style={{ fontSize: fp(14), fontWeight: '600', color: 'rgba(255,255,255,0.25)', marginBottom: wp(4) }}>
+                  Le mur attend ses héros du mois
+                </Text>
+                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.15)', textAlign: 'center', paddingHorizontal: wp(20) }}>
+                  9 places — seuls les profils certifiés par l'algorithme anti-triche peuvent être affichés
+                </Text>
               </View>
             ) : (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: wp(6), paddingBottom: wp(8), paddingHorizontal: wp(4) }}>
-                {wallStickers.slice(0, 12).map((sticker, i) => {
+                {wallStickers.slice(0, 9).map((sticker, i) => {
                   const id = sticker.id;
                   const hearts = floatingHearts.filter(h => h.stickerId === id);
                   const combo = comboCount[id] || 0;
                   const isStrike = strikeActive[id] || false;
                   const shakeAnim = stickerShakeAnims[id];
                   const cardBg = isStrike
-                    ? 'rgba(212,175,55,0.25)'
+                    ? 'rgba(212,175,55,0.35)'
                     : combo >= 3
-                      ? 'rgba(0,217,132,0.15)'
-                      : 'rgba(255,255,255,0.12)';
+                      ? 'rgba(0,217,132,0.22)'
+                      : 'rgba(45,50,56,0.85)';
                   const cardBorder = isStrike
-                    ? 'rgba(212,175,55,0.6)'
+                    ? 'rgba(212,175,55,0.7)'
                     : combo >= 3
-                      ? 'rgba(0,217,132,0.3)'
-                      : 'rgba(255,255,255,0.15)';
+                      ? 'rgba(0,217,132,0.4)'
+                      : 'rgba(255,255,255,0.2)';
                   const glowColor = isStrike ? '#D4AF37' : '#00D984';
                   return (
                     <Animated.View key={id || i} style={{
@@ -798,6 +819,13 @@ export default function LixVersePage() {
                     </Animated.View>
                   );
                 })}
+                {wallStickers.length >= 9 && (
+                  <View style={{ width: '100%', alignItems: 'center', paddingTop: wp(8) }}>
+                    <Text style={{ fontSize: fp(9), color: 'rgba(212,175,55,0.35)', fontStyle: 'italic' }}>
+                      Mur complet — prochain renouvellement le 1er du mois
+                    </Text>
+                  </View>
+                )}
               </View>
             )}
           </LinearGradient>
@@ -825,16 +853,59 @@ export default function LixVersePage() {
       <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
         <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Défis du mois</Text>
         {loading ? <ActivityIndicator color="#D4AF37" style={{ padding: wp(20) }} /> : challenges.map(ch => {
-          const dl = new Date(ch.registration_deadline); const hLeft = Math.max(0, Math.ceil((dl - new Date()) / 3600000));
+          const dl = new Date(ch.registration_deadline);
+          const hLeft = Math.max(0, Math.ceil((dl - new Date()) / 3600000));
+          const dLeft = Math.floor(hLeft / 24);
+          const isOpen = hLeft > 0;
+          const isUrgent = hLeft > 0 && hLeft <= 24;
           return (
-            <Pressable key={ch.id} delayPressIn={120} onPress={() => setSelectedChallenge(selectedChallenge?.id === ch.id ? null : ch)} style={({ pressed }) => ({ borderRadius: wp(16), marginBottom: wp(10), borderWidth: 1.5, borderColor: ch.color + '40', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-              <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ padding: wp(16) }}>
+            <View key={ch.id} style={{ borderRadius: wp(16), marginBottom: wp(10), borderWidth: 1.5, borderColor: ch.color + '40', overflow: 'hidden' }}>
+              <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ padding: wp(16), borderRadius: wp(14) }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
                   <Text style={{ fontSize: fp(24), marginRight: wp(10) }}>{ch.icon}</Text>
                   <View style={{ flex: 1 }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{ch.title}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{ch.duration_days}j | Max {ch.max_group_size}/équipe</Text></View>
-                  <View style={{ backgroundColor: 'rgba(255,107,107,0.15)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3) }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FF6B6B' }}>{hLeft}h</Text></View>
+                  <View style={{
+                    backgroundColor: isOpen
+                      ? (isUrgent ? 'rgba(255,107,107,0.15)' : 'rgba(0,217,132,0.12)')
+                      : 'rgba(255,255,255,0.06)',
+                    borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3),
+                    borderWidth: 1,
+                    borderColor: isOpen
+                      ? (isUrgent ? 'rgba(255,107,107,0.25)' : 'rgba(0,217,132,0.2)')
+                      : 'rgba(255,255,255,0.08)',
+                  }}>
+                    <Text style={{
+                      fontSize: fp(9), fontWeight: '700',
+                      color: isOpen
+                        ? (isUrgent ? '#FF6B6B' : '#00D984')
+                        : 'rgba(255,255,255,0.3)',
+                    }}>
+                      {isOpen
+                        ? (isUrgent ? hLeft + 'h restantes' : dLeft + 'j restants')
+                        : 'Terminé'}
+                    </Text>
+                  </View>
                 </View>
                 <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', marginBottom: wp(8) }}>{ch.description}</Text>
+                {/* Barre de progression */}
+                <View style={{ marginBottom: wp(10), marginTop: wp(4) }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
+                    <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>
+                      Jour {Math.min(Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000), ch.duration_days || 30)}/{ch.duration_days || 30}
+                    </Text>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: ch.color || '#00D984' }}>
+                      {Math.min(100, Math.round((Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000) / (ch.duration_days || 30)) * 100))}%
+                    </Text>
+                  </View>
+                  <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
+                    <View style={{
+                      height: '100%', borderRadius: wp(2),
+                      backgroundColor: ch.color || '#00D984',
+                      width: Math.min(100, Math.round((Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000) / (ch.duration_days || 30)) * 100)) + '%',
+                      opacity: 0.7,
+                    }} />
+                  </View>
+                </View>
                 <View style={{ flexDirection: 'row', gap: wp(6) }}>
                   {[{ e: '🥇', v: ch.reward_lix_first }, { e: '🥈', v: ch.reward_lix_second }, { e: '🥉', v: ch.reward_lix_third }].map((r, j) => (
                     <View key={j} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: j === 0 ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.05)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), gap: wp(4) }}>
@@ -842,14 +913,34 @@ export default function LixVersePage() {
                     </View>
                   ))}
                 </View>
-                {selectedChallenge?.id === ch.id && (
-                  <View style={{ marginTop: wp(10), flexDirection: 'row', gap: wp(8) }}>
-                    <Pressable onPress={() => setShowCreateGroup(true)} style={{ flex: 1, paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', backgroundColor: ch.color + '20', borderWidth: 1, borderColor: ch.color + '40' }}><Text style={{ fontSize: fp(12), fontWeight: '700', color: ch.color }}>Créer un groupe</Text></Pressable>
-                    <Pressable onPress={() => setShowJoinGroup(true)} style={{ flex: 1, paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}><Text style={{ fontSize: fp(12), fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>Rejoindre</Text></Pressable>
-                  </View>
-                )}
+                <View style={{ marginTop: wp(10), flexDirection: 'row', gap: wp(8) }}>
+                  <Pressable
+                    onPress={() => { setSelectedChallenge(ch); setShowCreateGroup(true); }}
+                    delayPressIn={120}
+                    style={({ pressed }) => ({
+                      flex: 1, paddingVertical: wp(11), borderRadius: wp(12), alignItems: 'center',
+                      backgroundColor: (ch.color || '#D4AF37') + '20',
+                      borderWidth: 1.5, borderColor: (ch.color || '#D4AF37') + '50',
+                      transform: [{ scale: pressed ? 0.95 : 1 }],
+                    })}
+                  >
+                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: ch.color || '#D4AF37' }}>Créer une équipe</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => { setSelectedChallenge(ch); setShowJoinGroup(true); }}
+                    delayPressIn={120}
+                    style={({ pressed }) => ({
+                      flex: 1, paddingVertical: wp(11), borderRadius: wp(12), alignItems: 'center',
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+                      transform: [{ scale: pressed ? 0.95 : 1 }],
+                    })}
+                  >
+                    <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>Rejoindre</Text>
+                  </Pressable>
+                </View>
               </LinearGradient>
-            </Pressable>
+            </View>
           );
         })}
       </View>
