@@ -624,21 +624,27 @@ export default function LixVersePage() {
         {/* Le mur gris métallique */}
         <View style={{
           marginHorizontal: wp(8), borderRadius: wp(16), overflow: 'hidden',
-          borderWidth: 2, borderColor: 'rgba(74,79,85,0.6)',
+          borderWidth: 2, borderColor: 'rgba(212,175,55,0.25)',
+          shadowColor: '#D4AF37',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 12,
+          elevation: 6,
         }}>
           <LinearGradient colors={['#3A3F46', '#2D3238', '#3A3F46', '#333840']}
             style={{ minHeight: wp(280), padding: wp(12), position: 'relative' }}>
-            {/* Vis métalliques aux coins */}
-            {[[wp(8), wp(8)], [wp(8), null, null, wp(8)], [null, null, wp(8), wp(8)], [null, wp(8), wp(8)]].map((pos, i) => (
+            {/* Coins dorés élégants */}
+            {[
+              { top: wp(6), left: wp(6), borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: wp(4) },
+              { top: wp(6), right: wp(6), borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: wp(4) },
+              { bottom: wp(6), left: wp(6), borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: wp(4) },
+              { bottom: wp(6), right: wp(6), borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: wp(4) },
+            ].map((cornerStyle, i) => (
               <View key={i} style={{
                 position: 'absolute', zIndex: 10,
-                top: pos[0] != null ? pos[0] : undefined,
-                right: pos[1] != null ? pos[1] : undefined,
-                bottom: pos[2] != null ? pos[2] : undefined,
-                left: pos[3] != null ? pos[3] : undefined,
-                width: wp(10), height: wp(10), borderRadius: wp(5),
-                backgroundColor: 'rgba(74,79,85,0.8)',
-                borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                width: wp(16), height: wp(16),
+                borderColor: 'rgba(212,175,55,0.35)',
+                ...cornerStyle,
               }} />
             ))}
             {/* Titre doré — image agrandie */}
@@ -658,7 +664,7 @@ export default function LixVersePage() {
                 <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.2)' }}>Le mur attend ses premiers héros...</Text>
               </View>
             ) : (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: wp(10), paddingBottom: wp(8) }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: wp(6), paddingBottom: wp(8), paddingHorizontal: wp(4) }}>
                 {wallStickers.slice(0, 12).map((sticker, i) => {
                   const id = sticker.id;
                   const hearts = floatingHearts.filter(h => h.stickerId === id);
@@ -678,7 +684,7 @@ export default function LixVersePage() {
                   const glowColor = isStrike ? '#D4AF37' : '#00D984';
                   return (
                     <Animated.View key={id || i} style={{
-                      width: wp(75), alignItems: 'center', padding: wp(6),
+                      width: wp(85), alignItems: 'center', padding: wp(6),
                       transform: [
                         { rotate: (sticker.rotation || (i % 2 === 0 ? -5 : 5)) + 'deg' },
                         { translateX: shakeAnim || 0 },
@@ -703,12 +709,27 @@ export default function LixVersePage() {
                           </Text>
                         </View>
                       )}
-                      {/* Aimant */}
+                      {/* Clip doré métallique */}
                       <View style={{
-                        width: wp(20), height: wp(7), borderRadius: wp(3.5),
-                        backgroundColor: isStrike ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.2)',
-                        marginBottom: wp(-3), zIndex: 2,
-                      }} />
+                        width: wp(24), height: wp(10), borderTopLeftRadius: wp(5), borderTopRightRadius: wp(5),
+                        borderBottomLeftRadius: wp(2), borderBottomRightRadius: wp(2),
+                        marginBottom: wp(-4), zIndex: 2,
+                        borderWidth: 1.5,
+                        borderColor: isStrike ? '#D4AF37' : 'rgba(212,175,55,0.5)',
+                        backgroundColor: isStrike ? 'rgba(212,175,55,0.35)' : 'rgba(212,175,55,0.15)',
+                        shadowColor: '#D4AF37',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: isStrike ? 0.5 : 0.2,
+                        shadowRadius: 3,
+                        elevation: 2,
+                      }}>
+                        {/* Reflet sur le clip */}
+                        <View style={{
+                          position: 'absolute', top: wp(1.5), left: wp(4), right: wp(4),
+                          height: wp(2), borderRadius: wp(1),
+                          backgroundColor: 'rgba(255,255,255,0.2)',
+                        }} />
+                      </View>
                       {/* Carte sticker — zone tappable complète */}
                       <Pressable
                         onPress={() => handleStickerTap(sticker)}
@@ -744,12 +765,13 @@ export default function LixVersePage() {
                           {sticker.message}
                         </Text>
                         {/* Compteur likes + bouton cadeau */}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), marginTop: wp(4) }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(6), marginTop: wp(4), width: '100%' }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(2) }}>
                             <Text style={{ fontSize: fp(10) }}>{isStrike ? '💛' : '🩶'}</Text>
-                            <Text style={{
+                            <Text numberOfLines={1} style={{
                               fontSize: fp(8), fontWeight: isStrike ? '700' : '400',
                               color: isStrike ? '#D4AF37' : 'rgba(255,255,255,0.4)',
+                              maxWidth: wp(28),
                             }}>
                               {(sticker.like_count || 0) >= 1000
                                 ? ((sticker.like_count || 0) / 1000).toFixed(1) + 'K'
@@ -769,7 +791,7 @@ export default function LixVersePage() {
                             <Text style={{ fontSize: fp(10) }}>🎁</Text>
                           </Pressable>
                           {sticker.lix_received > 0 && (
-                            <Text style={{ fontSize: fp(6), color: 'rgba(212,175,55,0.5)' }}>{sticker.lix_received}L</Text>
+                            <Text numberOfLines={1} style={{ fontSize: fp(6), color: 'rgba(212,175,55,0.5)', maxWidth: wp(22) }}>{sticker.lix_received}L</Text>
                           )}
                         </View>
                       </Pressable>
