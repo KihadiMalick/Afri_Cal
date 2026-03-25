@@ -100,21 +100,43 @@ const LIXSIGNS = {
 };
 
 const WORLD_DOTS = [
-  { x: 160, y: 150, color: '#00D984' },
-  { x: 240, y: 280, color: '#4DA6FF' },
-  { x: 390, y: 90, color: '#9B6DFF' },
-  { x: 400, y: 160, color: '#D4AF37' },
-  { x: 420, y: 220, color: '#FF8C42' },
-  { x: 410, y: 280, color: '#00D984' },
-  { x: 500, y: 80, color: '#4DA6FF' },
-  { x: 580, y: 100, color: '#FF6B81' },
-  { x: 620, y: 140, color: '#00D984' },
-  { x: 660, y: 290, color: '#D4AF37' },
-  { x: 430, y: 190, color: '#FF8C42' },
-  { x: 370, y: 200, color: '#9B6DFF' },
-  { x: 200, y: 100, color: '#4DA6FF' },
-  { x: 540, y: 60, color: '#00D984' },
-  { x: 450, y: 120, color: '#FF6B81' },
+  // Amérique du Nord
+  { x: 130, y: 120, size: 'large' },
+  { x: 175, y: 140, size: 'medium' },
+  { x: 200, y: 100, size: 'small' },
+  // Amérique du Sud
+  { x: 220, y: 260, size: 'medium' },
+  { x: 240, y: 290, size: 'small' },
+  { x: 230, y: 320, size: 'small' },
+  // Europe
+  { x: 380, y: 80, size: 'medium' },
+  { x: 400, y: 95, size: 'small' },
+  { x: 370, y: 100, size: 'small' },
+  // Afrique — plus de points (notre base)
+  { x: 390, y: 150, size: 'large' },
+  { x: 410, y: 180, size: 'large' },
+  { x: 420, y: 210, size: 'medium' },
+  { x: 400, y: 240, size: 'medium' },
+  { x: 380, y: 190, size: 'small' },
+  { x: 430, y: 195, size: 'small' },
+  { x: 370, y: 220, size: 'small' },
+  { x: 415, y: 260, size: 'small' },
+  { x: 440, y: 170, size: 'small' },
+  // Moyen Orient
+  { x: 460, y: 130, size: 'medium' },
+  { x: 475, y: 145, size: 'small' },
+  // Asie
+  { x: 520, y: 90, size: 'medium' },
+  { x: 570, y: 100, size: 'large' },
+  { x: 600, y: 120, size: 'medium' },
+  { x: 550, y: 140, size: 'small' },
+  { x: 630, y: 135, size: 'small' },
+  // Asie du Sud-Est
+  { x: 620, y: 180, size: 'medium' },
+  { x: 640, y: 200, size: 'small' },
+  // Australie
+  { x: 660, y: 290, size: 'medium' },
+  { x: 680, y: 310, size: 'small' },
 ];
 
 const FAKE_MATCH = {
@@ -252,7 +274,8 @@ export default function LixVersePage() {
   const coordsFlicker = useRef(new Animated.Value(1)).current;
   const compatAnim = useRef(new Animated.Value(0)).current;
   const pendingPulse = useRef(new Animated.Value(0.6)).current;
-  const dotPulseAnims = useRef(Array.from({ length: 15 }, () => new Animated.Value(0.3))).current;
+  const dotPulseAnims = useRef(Array.from({ length: 30 }, () => new Animated.Value(0.2))).current;
+  const dotGlowAnims = useRef(Array.from({ length: 30 }, () => new Animated.Value(0))).current;
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
   useEffect(() => { loadAll(); }, []);
@@ -274,14 +297,25 @@ export default function LixVersePage() {
     Animated.loop(Animated.timing(notifScrollX, { toValue: -(notifications.length * wp(280)), duration: notifications.length * 5000, useNativeDriver: true })).start();
   }, [notifications]);
 
-  // Binôme — dot pulse animations
+  // Binôme — star dot pulse animations
   useEffect(() => {
     dotPulseAnims.forEach((anim, i) => {
-      const delay = i * 200 + Math.random() * 800;
+      const delay = Math.random() * 3000;
+      const duration = 1500 + Math.random() * 2500;
       setTimeout(() => {
         Animated.loop(Animated.sequence([
-          Animated.timing(anim, { toValue: 1, duration: 1200 + Math.random() * 800, useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0.3, duration: 1200 + Math.random() * 800, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0.9 + Math.random() * 0.1, duration: duration, useNativeDriver: false }),
+          Animated.timing(anim, { toValue: 0.15 + Math.random() * 0.15, duration: duration * 0.8, useNativeDriver: false }),
+        ])).start();
+      }, delay);
+    });
+    dotGlowAnims.forEach((anim, i) => {
+      const delay = Math.random() * 4000;
+      const duration = 2000 + Math.random() * 3000;
+      setTimeout(() => {
+        Animated.loop(Animated.sequence([
+          Animated.timing(anim, { toValue: 1, duration: duration, useNativeDriver: false }),
+          Animated.timing(anim, { toValue: 0, duration: duration, useNativeDriver: false }),
         ])).start();
       }, delay);
     });
@@ -1344,80 +1378,108 @@ export default function LixVersePage() {
           <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(16) }}>Trouve ton partenaire santé</Text>
         </View>
 
-        {/* Carte du monde avec Image de fond (fallback SVG si image absente) */}
+        {/* Carte du monde avec points lumineux étoiles */}
         {(binomeStatus === 'none' || binomeStatus === 'searching') && (
           <View style={{
             marginHorizontal: wp(16), borderRadius: wp(16), overflow: 'hidden',
-            borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-            height: wp(180), position: 'relative', backgroundColor: '#1A1D22',
+            borderWidth: 1.5, borderColor: 'rgba(77,166,255,0.12)',
+            height: wp(180), position: 'relative',
+            backgroundColor: '#0D1117',
           }}>
-            {/* TODO: Remplacer par <Image source={require('./assets/world-map-dark.webp')} .../> quand l'image est prête */}
-            <Svg width="100%" height="100%" viewBox="0 0 800 400" style={{ position: 'absolute' }}>
-              <Rect width="800" height="400" fill="transparent" />
-              <Path d="M120,120 C130,80 180,60 200,80 C220,60 260,70 270,100 C280,130 260,180 240,200 C220,220 180,240 160,220 C140,200 110,160 120,120Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
-              <Path d="M370,130 C380,100 420,90 440,110 C460,130 470,180 460,230 C450,270 430,300 410,310 C390,300 370,270 365,230 C360,190 360,160 370,130Z" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" fill="rgba(255,255,255,0.03)" />
-              <Path d="M360,60 C370,40 410,30 430,50 C440,60 445,80 440,100 C430,110 400,115 380,105 C370,95 355,80 360,60Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
-              <Path d="M450,50 C480,30 560,20 620,40 C660,55 680,90 670,130 C660,160 620,170 580,160 C540,150 500,130 480,110 C460,90 440,70 450,50Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
-              <Path d="M220,230 C240,210 260,220 270,250 C275,280 265,320 250,340 C235,350 220,340 215,310 C210,280 210,250 220,230Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
-              <Path d="M620,270 C640,255 680,260 690,280 C695,300 680,320 660,325 C640,320 615,300 620,270Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
-            </Svg>
-            {/* Points lumineux pulsants par-dessus */}
-            {WORLD_DOTS.map((dot, i) => (
-              <Animated.View key={i} style={{
-                position: 'absolute',
-                left: (dot.x / 800) * (SCREEN_WIDTH - wp(32)),
-                top: (dot.y / 400) * wp(180),
-                width: wp(8), height: wp(8), borderRadius: wp(4),
-                backgroundColor: dot.color,
-                opacity: dotPulseAnims[i] || 0.5,
-                shadowColor: dot.color,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.8,
-                shadowRadius: wp(4),
-                elevation: 3,
-              }} />
-            ))}
-
+            {/* Image de fond — carte du monde sombre */}
+            <Image
+              source={require('./assets/world-map-dark.webp')}
+              style={{
+                width: '100%', height: '100%', position: 'absolute',
+                opacity: 0.75,
+              }}
+              resizeMode="cover"
+            />
+            {/* Points lumineux étoiles */}
+            {WORLD_DOTS.map((dot, i) => {
+              const dotSize = dot.size === 'large' ? wp(7) : dot.size === 'medium' ? wp(5) : wp(3.5);
+              const glowSize = dot.size === 'large' ? wp(22) : dot.size === 'medium' ? wp(16) : wp(11);
+              const pulseAnim = dotPulseAnims[i];
+              const glowAnim = dotGlowAnims[i];
+              return (
+                <View key={i} style={{
+                  position: 'absolute',
+                  left: (dot.x / 800) * (SCREEN_WIDTH - wp(32)) - glowSize / 2,
+                  top: (dot.y / 400) * wp(180) - glowSize / 2,
+                  width: glowSize, height: glowSize,
+                  justifyContent: 'center', alignItems: 'center',
+                }}>
+                  {/* Halo glow externe */}
+                  <Animated.View style={{
+                    position: 'absolute',
+                    width: glowSize, height: glowSize, borderRadius: glowSize / 2,
+                    backgroundColor: 'rgba(120,180,255,0.08)',
+                    opacity: glowAnim,
+                    transform: [{ scale: glowAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.6, 1.3],
+                    }) }],
+                  }} />
+                  {/* Halo glow moyen */}
+                  <Animated.View style={{
+                    position: 'absolute',
+                    width: glowSize * 0.6, height: glowSize * 0.6, borderRadius: glowSize * 0.3,
+                    backgroundColor: 'rgba(140,200,255,0.15)',
+                    opacity: pulseAnim,
+                  }} />
+                  {/* Point central lumineux */}
+                  <Animated.View style={{
+                    width: dotSize, height: dotSize, borderRadius: dotSize / 2,
+                    backgroundColor: '#DDEEFF',
+                    opacity: pulseAnim,
+                    shadowColor: '#88CCFF',
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.9,
+                    shadowRadius: dot.size === 'large' ? wp(6) : dot.size === 'medium' ? wp(4) : wp(2.5),
+                    elevation: dot.size === 'large' ? 6 : dot.size === 'medium' ? 4 : 2,
+                  }} />
+                </View>
+              );
+            })}
             {/* OVERLAY RADAR — seulement pendant searching */}
             {binomeStatus === 'searching' && (
               <View style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                 justifyContent: 'center', alignItems: 'center',
               }}>
-                {/* Cercles concentriques qui se propagent */}
                 {[pulseRing1, pulseRing2, pulseRing3].map((anim, i) => (
                   <Animated.View key={i} style={{
                     position: 'absolute',
-                    width: wp(200), height: wp(200),
-                    borderRadius: wp(100),
+                    width: wp(160), height: wp(160),
+                    borderRadius: wp(80),
                     borderWidth: 1, borderColor: '#D4AF37',
-                    opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 0] }),
-                    transform: [{ scale: anim }],
+                    opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] }),
+                    transform: [{ scale: anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.2, 1.2],
+                    }) }],
                   }} />
                 ))}
-                {/* Ligne de balayage radar rotative */}
                 <Animated.View style={{
                   position: 'absolute',
-                  width: wp(2), height: wp(80),
+                  width: wp(2), height: wp(70),
                   backgroundColor: '#D4AF37',
-                  opacity: 0.6,
-                  transform: [{ rotate: radarRotate }, { translateY: -wp(40) }],
+                  opacity: 0.5,
+                  transform: [{ rotate: radarRotate }],
                 }} />
-                {/* Point central utilisateur */}
                 <View style={{
-                  width: wp(12), height: wp(12), borderRadius: wp(6),
+                  width: wp(14), height: wp(14), borderRadius: wp(7),
                   backgroundColor: '#D4AF37',
-                  borderWidth: 2, borderColor: '#FFF',
-                  shadowColor: '#D4AF37', shadowOpacity: 1, shadowRadius: wp(8),
-                  elevation: 5,
+                  borderWidth: 2.5, borderColor: '#FFF',
+                  shadowColor: '#D4AF37', shadowOpacity: 1, shadowRadius: wp(10),
+                  elevation: 8,
                 }} />
-                {/* Lignes de connexion entre les points */}
                 {scanLines.map((line, i) => (
                   <View key={line.id || i} style={{
                     position: 'absolute',
                     left: line.x1, top: line.y1,
                     width: line.length, height: 1,
-                    backgroundColor: 'rgba(212,175,55,0.15)',
+                    backgroundColor: 'rgba(212,175,55,0.12)',
                     transform: [{ rotate: line.angle + 'deg' }],
                   }} />
                 ))}
