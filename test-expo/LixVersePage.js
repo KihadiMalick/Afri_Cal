@@ -31,6 +31,120 @@ const ALL_CHARACTERS = [
   { id: 'tardigrum', name: 'TARDIGRUM', tier: 'ultimate', color: '#DFE6E9', emoji: '🔱', desc: 'TOUT 365 jours — Le Graal', bonus_abonne: '+50% énergie 365 jours', bonus_non_abonne: 'TOUT 365j (8msg/j, 3scan/j)', uses: 0, unlock_hours: 8760 },
 ];
 
+const LIXSIGNS = {
+  sport: {
+    label: 'Sport & Effort',
+    color: '#FF8C42',
+    signs: [
+      { id: 'sport_moved', text: "J'ai bougé", svgPath: 'M13 4a2 2 0 110 4 2 2 0 010-4zm-1 8l-4 4 1.4 1.4L12 14.8V22h2v-7.2l2.6 2.6L18 16l-4-4h-2z', viewBox: '0 0 24 24' },
+      { id: 'sport_hard', text: "C'était dur", svgPath: 'M7 2v11h3v9l7-12h-4l3-8H7z', viewBox: '0 0 24 24' },
+      { id: 'sport_record', text: "Record battu !", svgPath: 'M12 2l2.4 7.4h7.6l-6 4.6 2.3 7L12 16.4 5.7 21l2.3-7L2 9.4h7.6z', viewBox: '0 0 24 24' },
+      { id: 'sport_rest', text: "Repos mérité", svgPath: 'M12 3a9 9 0 109 9c0-5-4-9-9-9zm0 16a7 7 0 110-14 7 7 0 010 14zm1-10h-2v3H8v2h3v3h2v-3h3v-2h-3V9z', viewBox: '0 0 24 24' },
+      { id: 'sport_again', text: "On y retourne", svgPath: 'M17.65 6.35A7.96 7.96 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z', viewBox: '0 0 24 24' },
+    ],
+  },
+  nutrition: {
+    label: 'Nutrition',
+    color: '#00D984',
+    signs: [
+      { id: 'nutri_good', text: "Bien mangé", svgPath: 'M8.1 13.34l2.83-2.83L3.91 3.5a4 4 0 000 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L4 19.75 5.41 21.17 12 14.58l6.59 6.59L20 19.75l-5.12-5.12z', viewBox: '0 0 24 24' },
+      { id: 'nutri_scanned', text: "Repas scanné", svgPath: 'M9.5 6.5v3h-3v-3h3M11 5H5v6h6V5zm-1.5 9.5v3h-3v-3h3M11 13H5v6h6v-6zm6.5-6.5v3h-3v-3h3M19 5h-6v6h6V5zm-6 8h1.5v1.5H13V13zm1.5 1.5H16V16h-1.5v-1.5zM16 13h1.5v1.5H16V13z', viewBox: '0 0 24 24' },
+      { id: 'nutri_cheat', text: "J'ai craqué", svgPath: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31A7.902 7.902 0 0112 20zm6.31-3.1L7.1 5.69A7.902 7.902 0 0112 4c4.42 0 8 3.58 8 8 0 1.85-.63 3.55-1.69 4.9z', viewBox: '0 0 24 24' },
+      { id: 'nutri_water', text: "Hydraté !", svgPath: 'M12 2c-5.33 4.55-8 8.48-8 11.8 0 4.98 3.8 8.2 8 8.2s8-3.22 8-8.2C20 10.48 17.33 6.55 12 2z', viewBox: '0 0 24 24' },
+      { id: 'nutri_homemade', text: "Cuisine maison", svgPath: 'M8.1 13.34l2.83-2.83-7.02-7.01a4 4 0 000 5.66l4.19 4.18zm14.28-4.03c-1.91-1.91-4.65-2.28-6.12-.81l-1.38 1.38c-1.59 1.59-2.09 3.74-1.38 5.27L4 24.75 5.41 26.17 21 10.58z', viewBox: '0 0 24 24' },
+    ],
+  },
+  encouragement: {
+    label: 'Encouragement',
+    color: '#D4AF37',
+    signs: [
+      { id: 'enc_bravo', text: "Bravo !", svgPath: 'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z', viewBox: '0 0 24 24' },
+      { id: 'enc_continue', text: "Continue !", svgPath: 'M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z', viewBox: '0 0 24 24' },
+      { id: 'enc_proud', text: "Fier de toi", svgPath: 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z', viewBox: '0 0 24 24' },
+      { id: 'enc_inspire', text: "Tu m'inspires", svgPath: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z', viewBox: '0 0 24 24' },
+      { id: 'enc_noquit', text: "On lâche rien", svgPath: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z', viewBox: '0 0 24 24' },
+    ],
+  },
+  mood: {
+    label: 'Humeur & État',
+    color: '#9B6DFF',
+    signs: [
+      { id: 'mood_great', text: "En forme !", svgPath: 'M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z', viewBox: '0 0 24 24' },
+      { id: 'mood_tired', text: "Fatigué", svgPath: 'M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v9.33C7 15.4 7.6 16 8.33 16h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4zM13 12.5h-2v-2h2v2zM13 9h-2V5.5h2V9zM10 17l2 3 2-3h-4z', viewBox: '0 0 24 24' },
+      { id: 'mood_motivated', text: "Motivé !", svgPath: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z', viewBox: '0 0 24 24' },
+      { id: 'mood_stressed', text: "Stressé", svgPath: 'M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z', viewBox: '0 0 24 24' },
+      { id: 'mood_zen', text: "Zen", svgPath: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z', viewBox: '0 0 24 24' },
+    ],
+  },
+  social: {
+    label: 'Social',
+    color: '#4DA6FF',
+    signs: [
+      { id: 'soc_hello', text: "Coucou !", svgPath: 'M7 24h2v-2H7v2zm4 0h2v-2h-2v2zm4 0h2v-2h-2v2zM16 .01L8 0C6.9 0 6 .9 6 2v16c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V2c0-1.1-.9-1.99-2-1.99z', viewBox: '0 0 24 24' },
+      { id: 'soc_thanks', text: "Merci !", svgPath: 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z', viewBox: '0 0 24 24' },
+      { id: 'soc_challenge', text: "Défi accepté !", svgPath: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z', viewBox: '0 0 24 24' },
+      { id: 'soc_miss', text: "Tu me manques", svgPath: 'M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z', viewBox: '0 0 24 24' },
+      { id: 'soc_check', text: "Check !", svgPath: 'M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z', viewBox: '0 0 24 24' },
+    ],
+  },
+  celebration: {
+    label: 'Célébration',
+    color: '#FF6B81',
+    signs: [
+      { id: 'cel_goal', text: "Objectif atteint !", svgPath: 'M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2z', viewBox: '0 0 24 24' },
+      { id: 'cel_streak', text: "Streak !", svgPath: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z', viewBox: '0 0 24 24' },
+      { id: 'cel_bonus', text: "Bonus Lix !", svgPath: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.94s4.18 1.36 4.18 3.87c0 1.87-1.38 2.84-3.12 3.17z', viewBox: '0 0 24 24' },
+      { id: 'cel_duo_record', text: "Record duo !", svgPath: 'M12 7.13l.97 2.29.47 1.11 1.2.1 2.47.21-1.88 1.63-.91.79.27 1.18.56 2.41-2.12-1.28-1.03-.64-1.03.62-2.12 1.28.56-2.41.27-1.18-.91-.79-1.88-1.63 2.47-.21 1.2-.1.47-1.11z', viewBox: '0 0 24 24' },
+    ],
+  },
+};
+
+const WORLD_DOTS = [
+  { x: 160, y: 150, color: '#00D984' },
+  { x: 240, y: 280, color: '#4DA6FF' },
+  { x: 390, y: 90, color: '#9B6DFF' },
+  { x: 400, y: 160, color: '#D4AF37' },
+  { x: 420, y: 220, color: '#FF8C42' },
+  { x: 410, y: 280, color: '#00D984' },
+  { x: 500, y: 80, color: '#4DA6FF' },
+  { x: 580, y: 100, color: '#FF6B81' },
+  { x: 620, y: 140, color: '#00D984' },
+  { x: 660, y: 290, color: '#D4AF37' },
+  { x: 430, y: 190, color: '#FF8C42' },
+  { x: 370, y: 200, color: '#9B6DFF' },
+  { x: 200, y: 100, color: '#4DA6FF' },
+  { x: 540, y: 60, color: '#00D984' },
+  { x: 450, y: 120, color: '#FF6B81' },
+];
+
+const FAKE_MATCH = {
+  lixtag: 'LXM-8F2K9B',
+  display_name: 'Aminata D.',
+  country: 'Sénégal',
+  country_flag: '🇸🇳',
+  vitality_score: 78,
+  goal: 'Perte de poids',
+  distance_km: 4200,
+  common_points: [
+    { icon: 'target', text: 'Même objectif : Perte de poids' },
+    { icon: 'food', text: 'Régime similaire : Équilibré' },
+    { icon: 'water', text: 'Hydratation régulière' },
+  ],
+  today_calories_eaten: 1450,
+  today_calories_burned: 320,
+  today_mood: '😊',
+  today_weather: '☀️',
+  streak_days: 12,
+};
+
+const BINOME_LEADERBOARD = [
+  { rank: 1, names: 'Aminata & Malick', flags: '🇸🇳🇧🇮', flames: 42, pts: 520 },
+  { rank: 2, names: 'Kofi & Fatou', flags: '🇬🇭🇲🇱', flames: 38, pts: 480 },
+  { rank: 3, names: 'Grace & Samuel', flags: '🇰🇪🇰🇪', flames: 35, pts: 440 },
+  { rank: 4, names: 'Aïcha & Omar', flags: '🇹🇳🇩🇿', flames: 30, pts: 390 },
+  { rank: 5, names: 'Blessing & Emeka', flags: '🇳🇬🇳🇬', flames: 27, pts: 350 },
+];
+
 const TIER_CONFIG = {
   standard: { label: 'Standard', color: '#00D984', bg: 'rgba(0,217,132,0.1)', border: 'rgba(0,217,132,0.3)' },
   rare: { label: 'Rare', color: '#4DA6FF', bg: 'rgba(77,166,255,0.1)', border: 'rgba(77,166,255,0.3)' },
@@ -99,6 +213,21 @@ export default function LixVersePage() {
   const [stickerMessage, setStickerMessage] = useState('');
   const notifScrollX = useRef(new Animated.Value(0)).current;
   const spinAnim = useRef(new Animated.Value(0)).current;
+  // Binôme states
+  const [binomeStatus, setBinomeStatus] = useState('none');
+  const [binomePartner, setBinomePartner] = useState(null);
+  const [binomeCommonPoints, setBinomeCommonPoints] = useState([]);
+  const [binomeDistance, setBinomeDistance] = useState(null);
+  const [binomePokes, setBinomePokes] = useState([]);
+  const [showLixSignPicker, setShowLixSignPicker] = useState(false);
+  const [lixSignCategory, setLixSignCategory] = useState('encouragement');
+  const [binomeMessages, setBinomeMessages] = useState([]);
+  const [showBinomeAlert, setShowBinomeAlert] = useState({ visible: false, title: '', message: '', icon: null, buttons: [] });
+  const [searchProgress, setSearchProgress] = useState(0);
+  const [tooltipSign, setTooltipSign] = useState(null);
+  const radarAnim = useRef(new Animated.Value(0)).current;
+  const radarPulse = useRef(new Animated.Value(0.3)).current;
+  const dotPulseAnims = useRef(Array.from({ length: 15 }, () => new Animated.Value(0.3))).current;
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
   useEffect(() => { loadAll(); }, []);
@@ -124,6 +253,101 @@ export default function LixVersePage() {
     if (notifications.length === 0) return;
     Animated.loop(Animated.timing(notifScrollX, { toValue: -(notifications.length * wp(280)), duration: notifications.length * 5000, useNativeDriver: true })).start();
   }, [notifications]);
+
+  // Binôme — dot pulse animations
+  useEffect(() => {
+    dotPulseAnims.forEach((anim, i) => {
+      const delay = i * 200 + Math.random() * 800;
+      setTimeout(() => {
+        Animated.loop(Animated.sequence([
+          Animated.timing(anim, { toValue: 1, duration: 1200 + Math.random() * 800, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0.3, duration: 1200 + Math.random() * 800, useNativeDriver: true }),
+        ])).start();
+      }, delay);
+    });
+  }, []);
+
+  // Binôme — simulate incoming pokes when matched
+  useEffect(() => {
+    if (binomeStatus !== 'matched') return;
+    const interval = setInterval(() => {
+      if (Math.random() > 0.5) return;
+      const allSigns = Object.values(LIXSIGNS).flatMap(cat => cat.signs);
+      const randomSign = allSigns[Math.floor(Math.random() * allSigns.length)];
+      setBinomeMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        sign_id: randomSign.id,
+        from: 'partner',
+        timestamp: new Date().toISOString(),
+        showText: false,
+      }]);
+    }, 30000 + Math.random() * 30000);
+    return () => clearInterval(interval);
+  }, [binomeStatus]);
+
+  const startBinomeSearch = () => {
+    setBinomeStatus('searching');
+    setSearchProgress(0);
+    // Radar rotation animation
+    radarAnim.setValue(0);
+    Animated.loop(Animated.timing(radarAnim, { toValue: 360, duration: 2000, useNativeDriver: true })).start();
+    // Radar pulse
+    Animated.loop(Animated.sequence([
+      Animated.timing(radarPulse, { toValue: 1, duration: 1500, useNativeDriver: true }),
+      Animated.timing(radarPulse, { toValue: 0.3, duration: 1500, useNativeDriver: true }),
+    ])).start();
+    // Progress steps
+    const steps = [
+      { pct: 20, delay: 1500 },
+      { pct: 50, delay: 3000 },
+      { pct: 75, delay: 4500 },
+      { pct: 100, delay: 6000 },
+    ];
+    steps.forEach(s => {
+      setTimeout(() => setSearchProgress(s.pct), s.delay);
+    });
+    // After 6s, match found
+    setTimeout(() => {
+      radarAnim.stopAnimation();
+      radarPulse.stopAnimation();
+      setBinomePartner(FAKE_MATCH);
+      setBinomeCommonPoints(FAKE_MATCH.common_points);
+      setBinomeDistance(FAKE_MATCH.distance_km);
+      setBinomeStatus('matched');
+    }, 6500);
+  };
+
+  const sendLixSign = (sign) => {
+    setBinomeMessages(prev => [...prev, {
+      id: Date.now().toString(),
+      sign_id: sign.id,
+      from: 'me',
+      timestamp: new Date().toISOString(),
+      showText: false,
+    }]);
+    setShowLixSignPicker(false);
+  };
+
+  const breakBinome = () => {
+    setShowBinomeAlert({
+      visible: true,
+      title: 'Rompre le Binôme ?',
+      message: 'Tu perdras ta connexion avec ' + (binomePartner?.display_name || 'ton binôme') + ' et ton streak.',
+      icon: '💔',
+      buttons: [
+        { text: 'Annuler', style: 'cancel', onPress: () => setShowBinomeAlert({ visible: false, title: '', message: '', icon: null, buttons: [] }) },
+        { text: 'Rompre', style: 'destructive', onPress: () => {
+          setBinomeStatus('none');
+          setBinomePartner(null);
+          setBinomeMessages([]);
+          setBinomeCommonPoints([]);
+          setBinomeDistance(null);
+          setSearchProgress(0);
+          setShowBinomeAlert({ visible: false, title: '', message: '', icon: null, buttons: [] });
+        }},
+      ],
+    });
+  };
 
   const loadAll = async () => {
     setLoading(true);
@@ -373,22 +597,37 @@ export default function LixVersePage() {
       <View style={{ paddingHorizontal: wp(16) }}>
         <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Classements</Text>
         <View style={{ flexDirection: 'row', gap: wp(6), marginBottom: wp(12) }}>
-          {['Groupes', 'Personnel', 'Pays', 'Mondial'].map((t, i) => (
-            <Pressable key={t} onPress={() => setLeaderboardTab(['groups', 'personal', 'country', 'global'][i])} style={{ flex: 1, paddingVertical: wp(8), borderRadius: wp(10), alignItems: 'center', backgroundColor: leaderboardTab === ['groups', 'personal', 'country', 'global'][i] ? '#D4AF37' : 'rgba(255,255,255,0.05)' }}>
-              <Text style={{ fontSize: fp(10), fontWeight: '600', color: leaderboardTab === ['groups', 'personal', 'country', 'global'][i] ? '#1A1D22' : 'rgba(255,255,255,0.4)' }}>{t}</Text>
+          {['Groupes', 'Personnel', 'Binôme', 'Pays', 'Mondial'].map((t, i) => (
+            <Pressable key={t} onPress={() => setLeaderboardTab(['groups', 'personal', 'binome', 'country', 'global'][i])} style={{ flex: 1, paddingVertical: wp(8), borderRadius: wp(10), alignItems: 'center', backgroundColor: leaderboardTab === ['groups', 'personal', 'binome', 'country', 'global'][i] ? '#D4AF37' : 'rgba(255,255,255,0.05)' }}>
+              <Text style={{ fontSize: fp(9), fontWeight: '600', color: leaderboardTab === ['groups', 'personal', 'binome', 'country', 'global'][i] ? '#1A1D22' : 'rgba(255,255,255,0.4)' }}>{t}</Text>
             </Pressable>
           ))}
         </View>
         <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(14), padding: wp(16), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
-          {[1, 2, 3, 4, 5].map(r => (
-            <View key={r} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), borderBottomWidth: r < 5 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
-              <View style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: r <= 3 ? (r === 1 ? 'rgba(212,175,55,0.2)' : r === 2 ? 'rgba(192,192,192,0.2)' : 'rgba(205,127,50,0.2)') : 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10) }}>
-                <Text style={{ fontSize: fp(12), fontWeight: '700', color: r === 1 ? '#D4AF37' : r === 2 ? '#C0C0C0' : r === 3 ? '#CD7F32' : 'rgba(255,255,255,0.3)' }}>{r}</Text>
+          {leaderboardTab === 'binome' ? (
+            BINOME_LEADERBOARD.map(b => (
+              <View key={b.rank} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), borderBottomWidth: b.rank < 5 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
+                <View style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: b.rank <= 3 ? (b.rank === 1 ? 'rgba(212,175,55,0.2)' : b.rank === 2 ? 'rgba(192,192,192,0.2)' : 'rgba(205,127,50,0.2)') : 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10) }}>
+                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: b.rank === 1 ? '#D4AF37' : b.rank === 2 ? '#C0C0C0' : b.rank === 3 ? '#CD7F32' : 'rgba(255,255,255,0.3)' }}>{b.rank}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(12), fontWeight: '600', color: b.rank <= 3 ? '#FFF' : 'rgba(255,255,255,0.5)' }}>{b.names} {b.flags}</Text>
+                  <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>🔥 {b.flames} flammes</Text>
+                </View>
+                <Text style={{ fontSize: fp(14), fontWeight: '700', color: b.rank <= 3 ? '#D4AF37' : 'rgba(255,255,255,0.3)' }}>{b.pts} pts</Text>
               </View>
-              <View style={{ flex: 1 }}><Text style={{ fontSize: fp(13), fontWeight: '600', color: r <= 3 ? '#FFF' : 'rgba(255,255,255,0.5)' }}>{['Team Burundi', 'Les Champions', 'Dakar Fit', 'Équipe 4', 'Équipe 5'][r - 1]}</Text></View>
-              <Text style={{ fontSize: fp(14), fontWeight: '700', color: r <= 3 ? '#D4AF37' : 'rgba(255,255,255,0.3)' }}>{600 - r * 80} pts</Text>
-            </View>
-          ))}
+            ))
+          ) : (
+            [1, 2, 3, 4, 5].map(r => (
+              <View key={r} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), borderBottomWidth: r < 5 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
+                <View style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: r <= 3 ? (r === 1 ? 'rgba(212,175,55,0.2)' : r === 2 ? 'rgba(192,192,192,0.2)' : 'rgba(205,127,50,0.2)') : 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10) }}>
+                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: r === 1 ? '#D4AF37' : r === 2 ? '#C0C0C0' : r === 3 ? '#CD7F32' : 'rgba(255,255,255,0.3)' }}>{r}</Text>
+                </View>
+                <View style={{ flex: 1 }}><Text style={{ fontSize: fp(13), fontWeight: '600', color: r <= 3 ? '#FFF' : 'rgba(255,255,255,0.5)' }}>{['Team Burundi', 'Les Champions', 'Dakar Fit', 'Équipe 4', 'Équipe 5'][r - 1]}</Text></View>
+                <Text style={{ fontSize: fp(14), fontWeight: '700', color: r <= 3 ? '#D4AF37' : 'rgba(255,255,255,0.3)' }}>{600 - r * 80} pts</Text>
+              </View>
+            ))
+          )}
         </View>
       </View>
     </ScrollView>
@@ -574,6 +813,242 @@ export default function LixVersePage() {
     );
   };
 
+  const LixSignBubble = ({ sign, isOwn, showText, onPress }) => {
+    const category = Object.values(LIXSIGNS).find(cat => cat.signs.some(s => s.id === sign.sign_id));
+    const signData = category?.signs.find(s => s.id === sign.sign_id);
+    if (!signData || !category) return null;
+    return (
+      <Pressable onPress={onPress} delayPressIn={120}
+        style={({ pressed }) => ({
+          flexDirection: isOwn ? 'row-reverse' : 'row',
+          alignItems: 'center', gap: wp(8),
+          marginBottom: wp(6), alignSelf: isOwn ? 'flex-end' : 'flex-start',
+          transform: [{ scale: pressed ? 0.92 : 1 }],
+        })}>
+        <View style={{
+          width: wp(48), height: wp(48), borderRadius: wp(24),
+          backgroundColor: isOwn ? 'rgba(0,217,132,0.12)' : 'rgba(77,166,255,0.12)',
+          borderWidth: 1.5, borderColor: isOwn ? 'rgba(0,217,132,0.25)' : 'rgba(77,166,255,0.25)',
+          justifyContent: 'center', alignItems: 'center',
+        }}>
+          <Svg width={wp(24)} height={wp(24)} viewBox={signData.viewBox} fill={category.color}>
+            <Path d={signData.svgPath} />
+          </Svg>
+        </View>
+        {showText && (
+          <View style={{
+            backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(10),
+            paddingHorizontal: wp(10), paddingVertical: wp(6),
+            maxWidth: wp(150),
+          }}>
+            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.6)' }}>{signData.text}</Text>
+          </View>
+        )}
+        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)' }}>
+          {new Date(sign.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+        </Text>
+      </Pressable>
+    );
+  };
+
+  const renderBinomeTab = () => {
+    const radarRotate = radarAnim.interpolate({ inputRange: [0, 360], outputRange: ['0deg', '360deg'] });
+    const searchTexts = ['Analyse de votre profil...', 'Recherche de profils compatibles...', 'Calcul des points communs...', 'Binôme trouvé !'];
+    const searchTextIdx = searchProgress < 20 ? 0 : searchProgress < 50 ? 1 : searchProgress < 75 ? 2 : 3;
+
+    if (binomeStatus === 'matched' && binomePartner) {
+      const myCalories = 1200;
+      const myBurned = 280;
+      const myMood = '💪';
+      const myWeather = '🌤️';
+      return (
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingHorizontal: wp(16), paddingTop: wp(12) }}>
+          {/* Header duo */}
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(16), padding: wp(16), marginBottom: wp(16), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ alignItems: 'center', flex: 1 }}>
+                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FFF' }}>Vous</Text>
+                <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.4)' }}>LXM-2K7F4A</Text>
+                <Text style={{ fontSize: fp(16) }}>🇧🇮</Text>
+                <View style={{ backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), marginTop: wp(4) }}>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984' }}>Score 72</Text>
+                </View>
+              </View>
+              <View style={{ alignItems: 'center', paddingHorizontal: wp(10) }}>
+                <Svg width={wp(28)} height={wp(28)} viewBox="0 0 24 24" fill="#D4AF37">
+                  <Path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" />
+                </Svg>
+              </View>
+              <View style={{ alignItems: 'center', flex: 1 }}>
+                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FFF' }}>{binomePartner.display_name}</Text>
+                <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.4)' }}>{binomePartner.lixtag}</Text>
+                <Text style={{ fontSize: fp(16) }}>{binomePartner.country_flag}</Text>
+                <View style={{ backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), marginTop: wp(4) }}>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984' }}>Score {binomePartner.vitality_score}</Text>
+                </View>
+              </View>
+            </View>
+            <View style={{ alignItems: 'center', marginTop: wp(10), gap: wp(4) }}>
+              <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{binomePartner.distance_km?.toLocaleString('fr-FR')} km vous séparent</Text>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FF8C42' }}>🔥 {binomePartner.streak_days} jours de streak commun</Text>
+            </View>
+          </View>
+
+          {/* Aujourd'hui — 2 colonnes */}
+          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(8) }}>Aujourd'hui</Text>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(16), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+            <View style={{ flexDirection: 'row', marginBottom: wp(4) }}>
+              <Text style={{ flex: 1, fontSize: fp(10), fontWeight: '600', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>Vous</Text>
+              <Text style={{ width: wp(80), fontSize: fp(10), fontWeight: '600', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}></Text>
+              <Text style={{ flex: 1, fontSize: fp(10), fontWeight: '600', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>{binomePartner.display_name.split(' ')[0]}</Text>
+            </View>
+            {[
+              { label: 'Calories mangées', mine: myCalories, theirs: binomePartner.today_calories_eaten, icon: '🍽️' },
+              { label: 'Calories brûlées', mine: myBurned, theirs: binomePartner.today_calories_burned, icon: '🔥' },
+              { label: 'Humeur', mine: myMood, theirs: binomePartner.today_mood, icon: '😊' },
+              { label: 'Météo', mine: myWeather, theirs: binomePartner.today_weather, icon: '🌤️' },
+            ].map((row, i) => (
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6), borderTopWidth: i > 0 ? 1 : 0, borderTopColor: 'rgba(255,255,255,0.04)' }}>
+                <Text style={{ flex: 1, fontSize: fp(13), fontWeight: '600', color: '#FFF', textAlign: 'center' }}>{row.mine}</Text>
+                <Text style={{ width: wp(80), fontSize: fp(10), color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>{row.icon} {row.label.split(' ').pop()}</Text>
+                <Text style={{ flex: 1, fontSize: fp(13), fontWeight: '600', color: '#FFF', textAlign: 'center' }}>{row.theirs}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Objectif du jour */}
+          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(8) }}>Objectif du jour</Text>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(16), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(8) }}>
+              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Progression commune</Text>
+              <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>68%</Text>
+            </View>
+            <View style={{ height: wp(8), borderRadius: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+              <View style={{ height: '100%', width: '68%', borderRadius: wp(4), backgroundColor: '#00D984' }} />
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: wp(10), gap: wp(6) }}>
+              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>🔥 {binomePartner.streak_days} jours consécutifs réussis</Text>
+            </View>
+          </View>
+
+          {/* Bouton Poke */}
+          <Pressable delayPressIn={120} onPress={() => setShowLixSignPicker(true)} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], marginBottom: wp(16) })}>
+            <LinearGradient colors={['#D4AF37', '#B8941F']} style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: wp(8) }}>
+              <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="#FFF">
+                <Path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+              </Svg>
+              <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>Envoyer un LixSign</Text>
+            </LinearGradient>
+          </Pressable>
+
+          {/* Messages récents */}
+          {binomeMessages.length > 0 && (
+            <View>
+              <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(8) }}>Messages récents</Text>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(14), padding: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+                {binomeMessages.slice(-10).reverse().map(msg => (
+                  <LixSignBubble
+                    key={msg.id}
+                    sign={msg}
+                    isOwn={msg.from === 'me'}
+                    showText={msg.showText || tooltipSign === msg.id}
+                    onPress={() => {
+                      if (msg.from === 'partner') {
+                        setTooltipSign(msg.id);
+                        setTimeout(() => setTooltipSign(null), 3000);
+                      }
+                    }}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Rompre */}
+          <Pressable onPress={breakBinome} style={{ paddingVertical: wp(20), alignItems: 'center' }}>
+            <Text style={{ fontSize: fp(12), color: 'rgba(255,75,75,0.4)' }}>Rompre le Binôme</Text>
+          </Pressable>
+        </ScrollView>
+      );
+    }
+
+    // État searching ou none
+    return (
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingHorizontal: wp(16), paddingTop: wp(16), alignItems: 'center' }}>
+        <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#D4AF37', letterSpacing: 2, marginBottom: wp(4) }}>BINÔME</Text>
+        <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(16) }}>Trouve ton partenaire santé</Text>
+
+        {/* Carte du monde */}
+        <View style={{ backgroundColor: '#1A1D22', borderRadius: wp(16), overflow: 'hidden', padding: wp(8), marginBottom: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', position: 'relative' }}>
+          <Svg width={SCREEN_WIDTH - wp(48)} height={wp(160)} viewBox="0 0 800 400">
+            <Rect width="800" height="400" fill="transparent" />
+            <Path d="M120,120 C130,80 180,60 200,80 C220,60 260,70 270,100 C280,130 260,180 240,200 C220,220 180,240 160,220 C140,200 110,160 120,120Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
+            <Path d="M370,130 C380,100 420,90 440,110 C460,130 470,180 460,230 C450,270 430,300 410,310 C390,300 370,270 365,230 C360,190 360,160 370,130Z" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" fill="rgba(255,255,255,0.03)" />
+            <Path d="M360,60 C370,40 410,30 430,50 C440,60 445,80 440,100 C430,110 400,115 380,105 C370,95 355,80 360,60Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
+            <Path d="M450,50 C480,30 560,20 620,40 C660,55 680,90 670,130 C660,160 620,170 580,160 C540,150 500,130 480,110 C460,90 440,70 450,50Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
+            <Path d="M220,230 C240,210 260,220 270,250 C275,280 265,320 250,340 C235,350 220,340 215,310 C210,280 210,250 220,230Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
+            <Path d="M620,270 C640,255 680,260 690,280 C695,300 680,320 660,325 C640,320 615,300 620,270Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
+            {WORLD_DOTS.map((dot, i) => (
+              <Circle key={i} cx={dot.x} cy={dot.y} r={4} fill={dot.color} opacity={0.7} />
+            ))}
+          </Svg>
+          {/* Animated dot overlays */}
+          {WORLD_DOTS.map((dot, i) => {
+            const mapW = SCREEN_WIDTH - wp(48);
+            const dotX = (dot.x / 800) * mapW + wp(8);
+            const dotY = (dot.y / 400) * wp(160) + wp(8);
+            return (
+              <Animated.View key={'pulse' + i} style={{
+                position: 'absolute', left: dotX - wp(4), top: dotY - wp(4),
+                width: wp(8), height: wp(8), borderRadius: wp(4),
+                backgroundColor: dot.color,
+                opacity: dotPulseAnims[i],
+              }} />
+            );
+          })}
+          {/* Radar overlay when searching */}
+          {binomeStatus === 'searching' && (
+            <Animated.View style={{
+              position: 'absolute', top: wp(8) + wp(80) - wp(60),
+              left: (SCREEN_WIDTH - wp(48)) / 2 + wp(8) - wp(60),
+              width: wp(120), height: wp(120), borderRadius: wp(60),
+              borderWidth: 2, borderColor: 'rgba(212,175,55,0.4)',
+              opacity: radarPulse,
+              transform: [{ rotate: radarRotate }],
+            }}>
+              <View style={{ position: 'absolute', top: 0, left: wp(59), width: wp(2), height: wp(60), backgroundColor: 'rgba(212,175,55,0.5)' }} />
+            </Animated.View>
+          )}
+        </View>
+
+        <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginBottom: wp(20) }}>4 832 membres actifs</Text>
+
+        {binomeStatus === 'searching' ? (
+          <View style={{ width: '100%', alignItems: 'center' }}>
+            {/* Progress bar */}
+            <View style={{ width: '100%', height: wp(6), borderRadius: wp(3), backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: wp(10) }}>
+              <View style={{ height: '100%', width: searchProgress + '%', borderRadius: wp(3), backgroundColor: '#D4AF37' }} />
+            </View>
+            <Text style={{ fontSize: fp(12), color: searchProgress >= 75 ? '#00D984' : '#D4AF37', fontWeight: '600' }}>
+              {searchTexts[searchTextIdx]}
+            </Text>
+          </View>
+        ) : (
+          <View style={{ width: '100%', alignItems: 'center' }}>
+            <Pressable delayPressIn={120} onPress={startBinomeSearch} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], width: '100%' })}>
+              <LinearGradient colors={['#D4AF37', '#B8941F']} style={{ paddingVertical: wp(16), borderRadius: wp(16), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Appeler mon Binôme</Text>
+              </LinearGradient>
+            </Pressable>
+            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)', marginTop: wp(12), textAlign: 'center' }}>
+              Matching basé sur : objectifs, régime, activités
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    );
+  };
+
   return (
     <View style={{flex:1}}>
       <LinearGradient colors={['#1A1D22','#252A30','#1E2328']} style={{flex:1}}>
@@ -590,9 +1065,10 @@ export default function LixVersePage() {
         </View>
         {notifications.length>0&&(<View style={{height:wp(28),backgroundColor:'rgba(212,175,55,0.06)',borderBottomWidth:1,borderBottomColor:'rgba(212,175,55,0.1)',overflow:'hidden',justifyContent:'center'}}><Animated.View style={{flexDirection:'row',transform:[{translateX:notifScrollX}]}}>{[...notifications,...notifications].map((n,i)=>(<View key={i} style={{width:wp(280),flexDirection:'row',alignItems:'center',paddingHorizontal:wp(10),gap:wp(6)}}><View style={{width:wp(6),height:wp(6),borderRadius:wp(3),backgroundColor:n.color||'#D4AF37'}}/><Text style={{fontSize:fp(10),color:'rgba(255,255,255,0.5)',flex:1}} numberOfLines={1}>{n.message}</Text></View>))}</Animated.View></View>)}
         <View style={{flexDirection:'row',marginHorizontal:wp(16),marginVertical:wp(10),gap:wp(6)}}>
-          {[{key:'defi',label:'Défi',icon:'🏆'},{key:'characters',label:'Caractères',icon:'🃏'},{key:'lixspin',label:'Lix & Spin',icon:'💎'}].map(tab=>(<Pressable key={tab.key} onPress={()=>setActiveTab(tab.key)} style={{flex:1,paddingVertical:wp(10),borderRadius:wp(12),alignItems:'center',backgroundColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.05)',borderWidth:1,borderColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.08)'}}><Text style={{fontSize:fp(14)}}>{tab.icon}</Text><Text style={{fontSize:fp(10),fontWeight:'600',marginTop:wp(2),color:activeTab===tab.key?'#1A1D22':'rgba(255,255,255,0.4)'}}>{tab.label}</Text></Pressable>))}
+          {[{key:'defi',label:'Défi',icon:'🏆'},{key:'binome',label:'Binôme',icon:'🤝'},{key:'characters',label:'Caractères',icon:'🃏'},{key:'lixspin',label:'Lix & Spin',icon:'💎'}].map(tab=>(<Pressable key={tab.key} onPress={()=>setActiveTab(tab.key)} style={{flex:1,paddingVertical:wp(10),borderRadius:wp(12),alignItems:'center',backgroundColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.05)',borderWidth:1,borderColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.08)'}}><Text style={{fontSize:fp(14)}}>{tab.icon}</Text><Text style={{fontSize:fp(10),fontWeight:'600',marginTop:wp(2),color:activeTab===tab.key?'#1A1D22':'rgba(255,255,255,0.4)'}}>{tab.label}</Text></Pressable>))}
         </View>
         {activeTab==='defi'&&renderDefiTab()}
+        {activeTab==='binome'&&renderBinomeTab()}
         {activeTab==='characters'&&renderCharactersTab()}
         {activeTab==='lixspin'&&renderLixSpinTab()}
       </LinearGradient>
@@ -1022,6 +1498,88 @@ export default function LixVersePage() {
                 <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>Annuler</Text>
               </Pressable>
             </ScrollView>
+          </View>
+        </Modal>
+      )}
+      {/* Modal Binôme Alert */}
+      {showBinomeAlert.visible && (
+        <Modal visible={true} transparent animationType="fade" onRequestClose={() => setShowBinomeAlert({ visible: false, title: '', message: '', icon: null, buttons: [] })}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end' }}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), padding: wp(24), alignItems: 'center' }}>
+              {showBinomeAlert.icon && <Text style={{ fontSize: fp(40), marginBottom: wp(10) }}>{showBinomeAlert.icon}</Text>}
+              <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', marginBottom: wp(8) }}>{showBinomeAlert.title}</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: wp(20), lineHeight: fp(19) }}>{showBinomeAlert.message}</Text>
+              <View style={{ width: '100%', gap: wp(8) }}>
+                {showBinomeAlert.buttons.map((btn, i) => (
+                  <Pressable key={i} delayPressIn={120} onPress={btn.onPress}
+                    style={({ pressed }) => ({
+                      paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center',
+                      backgroundColor: btn.style === 'destructive' ? 'rgba(255,75,75,0.15)' : btn.style === 'cancel' ? 'rgba(255,255,255,0.05)' : 'rgba(212,175,55,0.15)',
+                      borderWidth: 1,
+                      borderColor: btn.style === 'destructive' ? 'rgba(255,75,75,0.3)' : btn.style === 'cancel' ? 'rgba(255,255,255,0.1)' : 'rgba(212,175,55,0.3)',
+                      transform: [{ scale: pressed ? 0.96 : 1 }],
+                    })}>
+                    <Text style={{ fontSize: fp(14), fontWeight: '600', color: btn.style === 'destructive' ? '#FF4B4B' : btn.style === 'cancel' ? 'rgba(255,255,255,0.4)' : '#D4AF37' }}>{btn.text}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </LinearGradient>
+          </View>
+        </Modal>
+      )}
+      {/* Modal LixSign Picker */}
+      {showLixSignPicker && (
+        <Modal visible={true} transparent animationType="slide" onRequestClose={() => setShowLixSignPicker(false)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), maxHeight: '70%' }}>
+              <View style={{ padding: wp(16), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(12) }}>
+                  <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF' }}>Envoyer un LixSign</Text>
+                  <Pressable onPress={() => setShowLixSignPicker(false)}>
+                    <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>✕</Text>
+                  </Pressable>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View style={{ flexDirection: 'row', gap: wp(6) }}>
+                    {Object.entries(LIXSIGNS).map(([key, cat]) => (
+                      <Pressable key={key} onPress={() => setLixSignCategory(key)}
+                        style={{
+                          paddingHorizontal: wp(12), paddingVertical: wp(6), borderRadius: wp(10),
+                          backgroundColor: lixSignCategory === key ? cat.color + '25' : 'rgba(255,255,255,0.05)',
+                          borderWidth: 1, borderColor: lixSignCategory === key ? cat.color + '50' : 'rgba(255,255,255,0.08)',
+                        }}>
+                        <Text style={{ fontSize: fp(10), fontWeight: '600', color: lixSignCategory === key ? cat.color : 'rgba(255,255,255,0.4)' }}>{cat.label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
+              <ScrollView contentContainerStyle={{ padding: wp(16) }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(10), justifyContent: 'center' }}>
+                  {LIXSIGNS[lixSignCategory]?.signs.map(sign => (
+                    <Pressable key={sign.id} delayPressIn={120} onPress={() => sendLixSign(sign)}
+                      style={({ pressed }) => ({
+                        width: (SCREEN_WIDTH - wp(74)) / 3, alignItems: 'center', paddingVertical: wp(12),
+                        borderRadius: wp(14), backgroundColor: 'rgba(255,255,255,0.04)',
+                        borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                        transform: [{ scale: pressed ? 0.9 : 1 }],
+                      })}>
+                      <View style={{
+                        width: wp(48), height: wp(48), borderRadius: wp(24),
+                        backgroundColor: LIXSIGNS[lixSignCategory].color + '15',
+                        borderWidth: 1, borderColor: LIXSIGNS[lixSignCategory].color + '30',
+                        justifyContent: 'center', alignItems: 'center', marginBottom: wp(6),
+                      }}>
+                        <Svg width={wp(24)} height={wp(24)} viewBox={sign.viewBox} fill={LIXSIGNS[lixSignCategory].color}>
+                          <Path d={sign.svgPath} />
+                        </Svg>
+                      </View>
+                      <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.5)', textAlign: 'center' }} numberOfLines={1}>{sign.text}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
+            </LinearGradient>
           </View>
         </Modal>
       )}
