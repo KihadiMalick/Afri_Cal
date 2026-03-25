@@ -584,7 +584,7 @@ export default function LixVersePage() {
         }}>
           <View style={{ minHeight: wp(280), padding: wp(12), position: 'relative' }}>
             <Image
-              source={require('./assets/wall-of-health.webp')}
+              source={require('./assets/wall-of-health-bg.webp')}
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                 borderRadius: wp(14),
@@ -604,8 +604,17 @@ export default function LixVersePage() {
                 borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
               }} />
             ))}
-            {/* Spacer pour laisser le titre gravé dans l'image visible */}
-            <View style={{ height: wp(45) }} />
+            {/* Titre doré — image */}
+            <View style={{ alignItems: 'center', marginBottom: wp(10), paddingTop: wp(6) }}>
+              <Image
+                source={require('./assets/wall-of-health-title.webp')}
+                style={{
+                  width: wp(200),
+                  height: wp(28),
+                }}
+                resizeMode="contain"
+              />
+            </View>
             {/* Stickers disposés organiquement */}
             {wallStickers.length === 0 ? (
               <View style={{ alignItems: 'center', paddingVertical: wp(40) }}>
