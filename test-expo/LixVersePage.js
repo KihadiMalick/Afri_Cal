@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image } from 'react-native';
 import Svg, { Defs, Rect, Path, Circle, Line, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const W = SCREEN_WIDTH;
@@ -204,8 +205,17 @@ const LIX_PACKS = [
   { name: 'Ultra', price: '$99.99', lix: 129990, bonus: '+30%', color: '#D4AF37' },
 ];
 
+const NAV_TABS = [
+  { key: 'home', label: 'Accueil', iconDefault: 'home-outline', iconActive: 'home' },
+  { key: 'meals', label: 'Repas', iconDefault: 'restaurant-outline', iconActive: 'restaurant' },
+  { key: 'lixverse', label: 'LixVerse', isSpecial: true },
+  { key: 'activity', label: 'Activité', iconDefault: 'fitness-outline', iconActive: 'fitness' },
+  { key: 'medicai', label: 'MedicAi', isMedicAi: true },
+];
+
 export default function LixVersePage() {
   const [activeTab, setActiveTab] = useState('defi');
+  const [activeNavTab, setActiveNavTab] = useState('lixverse');
   const [lixBalance, setLixBalance] = useState(500);
   const [ownedCharacters, setOwnedCharacters] = useState([]);
   const [challenges, setChallenges] = useState([]);
@@ -1855,8 +1865,82 @@ export default function LixVersePage() {
     );
   };
 
+  const renderNavBar = () => (
+    <View style={{
+      flexDirection: 'row',
+      backgroundColor: '#141A22',
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(74,79,85,0.5)',
+      paddingTop: wp(10),
+      paddingBottom: Platform.OS === 'android' ? 50 : 34,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 20,
+    }}>
+      {NAV_TABS.map((tab) => {
+        const active = activeNavTab === tab.key;
+        return (
+          <Pressable
+            key={tab.key}
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: wp(4) }}
+            onPress={() => setActiveNavTab(tab.key)}
+          >
+            <View style={{ position: 'relative' }}>
+              {tab.isSpecial ? (
+                <View style={{
+                  width: wp(28), height: wp(28), borderRadius: wp(14),
+                  backgroundColor: active ? 'rgba(212,175,55,0.2)' : 'transparent',
+                  justifyContent: 'center', alignItems: 'center',
+                  marginBottom: wp(-2),
+                }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Defs>
+                      <SvgLinearGradient id="lixverseNavGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+                        <Stop offset="0%" stopColor={active ? '#D4AF37' : '#6B7B8D'} />
+                        <Stop offset="100%" stopColor={active ? '#B8941F' : '#4A5568'} />
+                      </SvgLinearGradient>
+                    </Defs>
+                    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#lixverseNavGrad)" />
+                  </Svg>
+                </View>
+              ) : tab.isMedicAi ? (
+                <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                  <Defs>
+                    <SvgLinearGradient id="medicNavGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+                      <Stop offset="0%" stopColor="#FF6B8A" />
+                      <Stop offset="100%" stopColor="#FF3B5C" />
+                    </SvgLinearGradient>
+                  </Defs>
+                  <Rect x="8" y="2" width="8" height="20" rx="2" fill="url(#medicNavGrad)" opacity={active ? 1 : 0.5} />
+                  <Rect x="2" y="8" width="20" height="8" rx="2" fill="url(#medicNavGrad)" opacity={active ? 1 : 0.5} />
+                  <Path d="M12 11.5c.5-.8 1.5-1 2-.5s.5 1.5 0 2.5l-2 2-2-2c-.5-1-.5-2 0-2.5s1.5-.3 2 .5z" fill="white" opacity={0.7} />
+                </Svg>
+              ) : (
+                <Ionicons
+                  name={active ? tab.iconActive : tab.iconDefault}
+                  size={wp(22)}
+                  color={active ? '#00D984' : '#6B7B8D'}
+                />
+              )}
+            </View>
+            <Text style={{
+              fontSize: fp(9), fontWeight: '600', letterSpacing: wp(0.3), marginTop: -2,
+              color: tab.isSpecial
+                ? (active ? '#D4AF37' : '#6B7B8D')
+                : tab.isMedicAi
+                  ? (active ? '#FF3B5C' : '#8892A0')
+                  : (active ? '#00D984' : '#6B7B8D'),
+            }}>{tab.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
   return (
-    <View style={{flex:1}}>
+    <View style={{ flex: 1, backgroundColor: '#141A22' }}>
       <LinearGradient colors={['#1A1D22','#252A30','#1E2328']} style={{flex:1}}>
         <StatusBar barStyle="light-content"/>
         <View style={{ paddingTop: Platform.OS === 'android' ? 35 : 50, paddingBottom: wp(6), paddingHorizontal: wp(16), flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1907,6 +1991,7 @@ export default function LixVersePage() {
         {activeTab==='characters'&&renderCharactersTab()}
         {activeTab==='lixspin'&&renderLixSpinTab()}
       </LinearGradient>
+      {renderNavBar()}
       <Modal visible={showCreateGroup} transparent animationType="fade" onRequestClose={() => setShowCreateGroup(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
           <LinearGradient colors={['#2A2F36','#1E2328','#252A30']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%' }}>
