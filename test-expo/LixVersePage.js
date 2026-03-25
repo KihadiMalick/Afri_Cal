@@ -141,7 +141,7 @@ const WORLD_DOTS = [
 
 const FAKE_MATCH = {
   lixtag: 'LXM-8F2K9B',
-  display_name: 'Aminata D.',
+  display_name: 'LXM-8F2K9B',
   country: 'Sénégal',
   country_flag: '🇸🇳',
   vitality_score: 78,
@@ -160,11 +160,11 @@ const FAKE_MATCH = {
 };
 
 const BINOME_LEADERBOARD = [
-  { rank: 1, names: 'Aminata & Malick', flags: '🇸🇳🇧🇮', flames: 42, pts: 520 },
-  { rank: 2, names: 'Kofi & Fatou', flags: '🇬🇭🇲🇱', flames: 38, pts: 480 },
-  { rank: 3, names: 'Grace & Samuel', flags: '🇰🇪🇰🇪', flames: 35, pts: 440 },
-  { rank: 4, names: 'Aïcha & Omar', flags: '🇹🇳🇩🇿', flames: 30, pts: 390 },
-  { rank: 5, names: 'Blessing & Emeka', flags: '🇳🇬🇳🇬', flames: 27, pts: 350 },
+  { rank: 1, names: 'LXM-8F2K9B & LXM-2K7F4A', flags: '🇸🇳🇧🇮', flames: 42, pts: 520 },
+  { rank: 2, names: 'LXM-3G5H7J & LXM-9R4T2M', flags: '🇬🇭🇲🇱', flames: 38, pts: 480 },
+  { rank: 3, names: 'LXM-6N8P1Q & LXM-4D7F3S', flags: '🇰🇪🇰🇪', flames: 35, pts: 440 },
+  { rank: 4, names: 'LXM-2W5X8Y & LXM-7B3C6E', flags: '🇲🇱🇧🇫', flames: 28, pts: 360 },
+  { rank: 5, names: 'LXM-5K9L2N & LXM-1H4J7M', flags: '🇨🇲🇨🇩', flames: 22, pts: 280 },
 ];
 
 const TIER_CONFIG = {
@@ -236,6 +236,15 @@ export default function LixVersePage() {
     setLixAlert({ visible: true, title, message, emoji, buttons });
   };
   const hideLixAlert = () => setLixAlert(prev => ({ ...prev, visible: false }));
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const [notifList, setNotifList] = useState([
+    { id: '1', type: 'binome_request', title: 'Demande de Binôme', message: 'LXM-4D7F3S souhaite devenir votre Binôme', time: 'Il y a 2h', read: false, color: '#D4AF37', emoji: '🤝' },
+    { id: '2', type: 'health_alert', title: 'Alerte Santé — LIXUM × MinSanté', message: 'Canicule prévue cette semaine. Hydratez-vous davantage.', time: 'Il y a 5h', read: false, color: '#FF6B6B', emoji: '🔴' },
+    { id: '3', type: 'gift', title: 'Cadeau reçu !', message: 'LXM-3G5H7J vous a offert 50 Lix sur le Wall of Health', time: 'Hier', read: true, color: '#D4AF37', emoji: '🎁' },
+    { id: '4', type: 'update', title: 'Nouveauté LIXUM', message: 'La section Binôme est maintenant disponible ! Trouvez votre partenaire santé.', time: 'Il y a 2j', read: true, color: '#4DA6FF', emoji: '✨' },
+    { id: '5', type: 'challenge', title: 'Défi terminé', message: 'La Mission Hydratation est terminée. Votre équipe est 3ème !', time: 'Il y a 3j', read: true, color: '#00D984', emoji: '🏆' },
+  ]);
+  const unreadCount = notifList.filter(n => !n.read).length;
   const [stickerCatalog, setStickerCatalog] = useState([]);
   const [myCertification, setMyCertification] = useState(null);
   const [showCertificationModal, setShowCertificationModal] = useState(false);
@@ -1632,7 +1641,7 @@ export default function LixVersePage() {
                 style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center', marginBottom: wp(8) }}>
                 <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Envoyer la demande</Text>
                 <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.6)', marginTop: wp(2) }}>
-                  {binomePartner.display_name} recevra votre invitation
+                  Une invitation sera envoyée à {binomePartner.display_name}
                 </Text>
               </LinearGradient>
             </Pressable>
@@ -1691,7 +1700,7 @@ export default function LixVersePage() {
                 Demande déclinée
               </Text>
               <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', textAlign: 'center', lineHeight: fp(18) }}>
-                {binomePartner?.display_name || 'L\'utilisateur'} a décliné votre invitation.{'\n'}Ce n'est pas grave — il y a d'autres partenaires compatibles !
+                {binomePartner?.display_name || 'L\'utilisateur'} a décliné l'invitation.{'\n'}Votre identité reste confidentielle.
               </Text>
             </View>
             <Pressable delayPressIn={120}
@@ -1850,14 +1859,43 @@ export default function LixVersePage() {
     <View style={{flex:1}}>
       <LinearGradient colors={['#1A1D22','#252A30','#1E2328']} style={{flex:1}}>
         <StatusBar barStyle="light-content"/>
-        <View style={{paddingTop:Platform.OS==='android'?35:50,paddingBottom:wp(6),paddingHorizontal:wp(16),flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+        <View style={{ paddingTop: Platform.OS === 'android' ? 35 : 50, paddingBottom: wp(6), paddingHorizontal: wp(16), flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <View>
-            <Text style={{fontSize:fp(24),fontWeight:'800',color:'#D4AF37',letterSpacing:1}}>LixVerse</Text>
-            <Text style={{fontSize:fp(9),color:'rgba(255,255,255,0.3)',letterSpacing:2.5}}>UNIVERS LIXUM</Text>
+            <Text style={{ fontSize: fp(24), fontWeight: '800', color: '#D4AF37', letterSpacing: 1 }}>LixVerse</Text>
+            <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', letterSpacing: 2.5 }}>UNIVERS LIXUM</Text>
           </View>
-          <View style={{flexDirection:'row',alignItems:'center',gap:wp(6),backgroundColor:'rgba(212,175,55,0.12)',borderRadius:wp(12),paddingHorizontal:wp(12),paddingVertical:wp(6),borderWidth:1,borderColor:'rgba(212,175,55,0.25)'}}>
-            <View style={{width:wp(10),height:wp(10),borderRadius:wp(5),backgroundColor:'#D4AF37'}}/>
-            <Text style={{fontSize:fp(14),fontWeight:'700',color:'#D4AF37'}}>{lixBalance} Lix</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(10) }}>
+            {/* Cloche notifications */}
+            <Pressable delayPressIn={120} onPress={() => setShowNotifPanel(true)}
+              style={({ pressed }) => ({
+                width: wp(36), height: wp(36), borderRadius: wp(18),
+                backgroundColor: 'rgba(255,255,255,0.06)',
+                borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                justifyContent: 'center', alignItems: 'center',
+                transform: [{ scale: pressed ? 0.9 : 1 }],
+              })}>
+              <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                <Path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <Path d="M13.73 21a2 2 0 01-3.46 0" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round"/>
+              </Svg>
+              {unreadCount > 0 && (
+                <View style={{
+                  position: 'absolute', top: wp(-2), right: wp(-2),
+                  minWidth: wp(16), height: wp(16), borderRadius: wp(8),
+                  backgroundColor: '#FF3B5C',
+                  justifyContent: 'center', alignItems: 'center',
+                  paddingHorizontal: wp(4),
+                  borderWidth: 1.5, borderColor: '#1A1D22',
+                }}>
+                  <Text style={{ fontSize: fp(8), fontWeight: '800', color: '#FFF' }}>{unreadCount}</Text>
+                </View>
+              )}
+            </Pressable>
+            {/* Badge Lix */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), backgroundColor: 'rgba(212,175,55,0.12)', borderRadius: wp(12), paddingHorizontal: wp(12), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)' }}>
+              <View style={{ width: wp(10), height: wp(10), borderRadius: wp(5), backgroundColor: '#D4AF37' }} />
+              <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#D4AF37' }}>{lixBalance} Lix</Text>
+            </View>
           </View>
         </View>
         {notifications.length>0&&(<View style={{height:wp(28),backgroundColor:'rgba(212,175,55,0.06)',borderBottomWidth:1,borderBottomColor:'rgba(212,175,55,0.1)',overflow:'hidden',justifyContent:'center'}}><Animated.View style={{flexDirection:'row',transform:[{translateX:notifScrollX}]}}>{[...notifications,...notifications].map((n,i)=>(<View key={i} style={{width:wp(280),flexDirection:'row',alignItems:'center',paddingHorizontal:wp(10),gap:wp(6)}}><View style={{width:wp(6),height:wp(6),borderRadius:wp(3),backgroundColor:n.color||'#D4AF37'}}/><Text style={{fontSize:fp(10),color:'rgba(255,255,255,0.5)',flex:1}} numberOfLines={1}>{n.message}</Text></View>))}</Animated.View></View>)}
@@ -2336,6 +2374,20 @@ export default function LixVersePage() {
                     <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>✕</Text>
                   </Pressable>
                 </View>
+                {/* Message confidentialité */}
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center', gap: wp(8),
+                  backgroundColor: 'rgba(0,217,132,0.06)', borderRadius: wp(10),
+                  padding: wp(10), marginBottom: wp(12),
+                  borderWidth: 1, borderColor: 'rgba(0,217,132,0.1)',
+                }}>
+                  <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#00D984" strokeWidth="1.5" strokeLinejoin="round"/>
+                  </Svg>
+                  <Text style={{ fontSize: fp(9), color: 'rgba(0,217,132,0.6)', flex: 1, lineHeight: fp(13) }}>
+                    Chez LIXUM, la communication se fait par signes pour protéger votre santé mentale et prévenir tout harcèlement.
+                  </Text>
+                </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   <View style={{ flexDirection: 'row', gap: wp(6) }}>
                     {Object.entries(LIXSIGNS).map(([key, cat]) => (
@@ -2380,6 +2432,103 @@ export default function LixVersePage() {
           </View>
         </Modal>
       )}
+      {/* Panel Notifications */}
+      <Modal visible={showNotifPanel} transparent animationType="slide" onRequestClose={() => setShowNotifPanel(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }} onPress={() => setShowNotifPanel(false)}>
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{
+                borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24),
+                paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34),
+                maxHeight: SCREEN_WIDTH * 1.4,
+              }}>
+              {/* Poignée */}
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
+              {/* Header */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(16) }}>
+                <View>
+                  <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Notifications</Text>
+                  {unreadCount > 0 && (
+                    <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginTop: wp(2) }}>
+                      {unreadCount} non lue{unreadCount > 1 ? 's' : ''}
+                    </Text>
+                  )}
+                </View>
+                {unreadCount > 0 && (
+                  <Pressable delayPressIn={120}
+                    onPress={() => setNotifList(prev => prev.map(n => ({ ...n, read: true })))}
+                    style={({ pressed }) => ({
+                      paddingHorizontal: wp(12), paddingVertical: wp(6),
+                      borderRadius: wp(8), backgroundColor: 'rgba(0,217,132,0.1)',
+                      borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                      transform: [{ scale: pressed ? 0.95 : 1 }],
+                    })}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: '#00D984' }}>Tout marquer lu</Text>
+                  </Pressable>
+                )}
+              </View>
+              {/* Liste notifications */}
+              <ScrollView style={{ maxHeight: SCREEN_WIDTH * 1.0 }} showsVerticalScrollIndicator={false}>
+                {notifList.length === 0 ? (
+                  <View style={{ padding: wp(30), alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(28), marginBottom: wp(8) }}>🔔</Text>
+                    <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.25)' }}>Aucune notification</Text>
+                  </View>
+                ) : (
+                  notifList.map((notif) => (
+                    <Pressable key={notif.id} delayPressIn={120}
+                      onPress={() => {
+                        setNotifList(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+                        if (notif.type === 'binome_request') {
+                          setShowNotifPanel(false);
+                          setActiveTab('binome');
+                        }
+                      }}
+                      style={({ pressed }) => ({
+                        flexDirection: 'row', alignItems: 'flex-start', gap: wp(12),
+                        padding: wp(14), borderRadius: wp(14), marginBottom: wp(6),
+                        backgroundColor: notif.read ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.06)',
+                        borderWidth: 1,
+                        borderColor: notif.read ? 'rgba(255,255,255,0.04)' : notif.color + '25',
+                        borderLeftWidth: notif.read ? 1 : wp(3),
+                        borderLeftColor: notif.read ? 'rgba(255,255,255,0.04)' : notif.color,
+                        transform: [{ scale: pressed ? 0.98 : 1 }],
+                      })}>
+                      <View style={{
+                        width: wp(36), height: wp(36), borderRadius: wp(12),
+                        backgroundColor: notif.color + '15',
+                        justifyContent: 'center', alignItems: 'center',
+                        marginTop: wp(2),
+                      }}>
+                        <Text style={{ fontSize: fp(16) }}>{notif.emoji}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(2) }}>
+                          <Text style={{ fontSize: fp(13), fontWeight: notif.read ? '500' : '700', color: notif.read ? 'rgba(255,255,255,0.5)' : '#FFF', flex: 1 }} numberOfLines={1}>
+                            {notif.title}
+                          </Text>
+                          {!notif.read && (
+                            <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: notif.color, marginLeft: wp(6) }} />
+                          )}
+                        </View>
+                        <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', lineHeight: fp(16), marginBottom: wp(4) }} numberOfLines={2}>
+                          {notif.message}
+                        </Text>
+                        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)' }}>{notif.time}</Text>
+                      </View>
+                    </Pressable>
+                  ))
+                )}
+              </ScrollView>
+              {/* Fermer */}
+              <Pressable onPress={() => setShowNotifPanel(false)}
+                style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginTop: wp(12) }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Fermer</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
       {/* Modal Alert LIXUM — remplace Alert.alert natif */}
       <Modal visible={lixAlert.visible} transparent animationType="fade" onRequestClose={hideLixAlert}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
