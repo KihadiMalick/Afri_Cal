@@ -213,8 +213,9 @@ export default function LixVersePage() {
   const [stickerMessage, setStickerMessage] = useState('');
   const notifScrollX = useRef(new Animated.Value(0)).current;
   const spinAnim = useRef(new Animated.Value(0)).current;
-  // Binôme states
+  // Binôme states — flow complet 6 états
   const [binomeStatus, setBinomeStatus] = useState('none');
+  // 'none' | 'searching' | 'proposed' | 'pending_sent' | 'pending_received' | 'declined' | 'matched'
   const [binomePartner, setBinomePartner] = useState(null);
   const [binomeCommonPoints, setBinomeCommonPoints] = useState([]);
   const [binomeDistance, setBinomeDistance] = useState(null);
@@ -223,10 +224,25 @@ export default function LixVersePage() {
   const [lixSignCategory, setLixSignCategory] = useState('encouragement');
   const [binomeMessages, setBinomeMessages] = useState([]);
   const [showBinomeAlert, setShowBinomeAlert] = useState({ visible: false, title: '', message: '', icon: null, buttons: [] });
-  const [searchProgress, setSearchProgress] = useState(0);
+  const [showBreakConfirm, setShowBreakConfirm] = useState(false);
   const [tooltipSign, setTooltipSign] = useState(null);
+  // Animation states — recherche tech
+  const [searchProgress, setSearchProgress] = useState(0);
+  const [searchStep, setSearchStep] = useState(0);
+  const [searchCoords, setSearchCoords] = useState({ lat: '—', lng: '—' });
+  const [compatibilityScore, setCompatibilityScore] = useState(0);
+  const [scanLines, setScanLines] = useState([]);
+  const [retryAfterTime, setRetryAfterTime] = useState(null);
+  const [retryCountdown, setRetryCountdown] = useState('');
   const radarAnim = useRef(new Animated.Value(0)).current;
-  const radarPulse = useRef(new Animated.Value(0.3)).current;
+  const radarScale = useRef(new Animated.Value(0.2)).current;
+  const radarOpacity = useRef(new Animated.Value(0.8)).current;
+  const pulseRing1 = useRef(new Animated.Value(0)).current;
+  const pulseRing2 = useRef(new Animated.Value(0)).current;
+  const pulseRing3 = useRef(new Animated.Value(0)).current;
+  const coordsFlicker = useRef(new Animated.Value(1)).current;
+  const compatAnim = useRef(new Animated.Value(0)).current;
+  const pendingPulse = useRef(new Animated.Value(0.6)).current;
   const dotPulseAnims = useRef(Array.from({ length: 15 }, () => new Animated.Value(0.3))).current;
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
@@ -285,36 +301,156 @@ export default function LixVersePage() {
     return () => clearInterval(interval);
   }, [binomeStatus]);
 
+  // Binôme — compte à rebours 24h retry
+  useEffect(() => {
+    if (!retryAfterTime) return;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const diff = retryAfterTime - now;
+      if (diff <= 0) {
+        setRetryAfterTime(null);
+        setRetryCountdown('');
+        clearInterval(interval);
+        return;
+      }
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      setRetryCountdown(
+        (hours > 0 ? hours + 'h ' : '') +
+        (minutes > 0 ? minutes + 'min ' : '') +
+        seconds + 's'
+      );
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [retryAfterTime]);
+
   const startBinomeSearch = () => {
     setBinomeStatus('searching');
     setSearchProgress(0);
-    // Radar rotation animation
+    setSearchStep(0);
+    setCompatibilityScore(0);
+    setScanLines([]);
+
+    // 1. Rotation radar continue
     radarAnim.setValue(0);
-    Animated.loop(Animated.timing(radarAnim, { toValue: 360, duration: 2000, useNativeDriver: true })).start();
-    // Radar pulse
-    Animated.loop(Animated.sequence([
-      Animated.timing(radarPulse, { toValue: 1, duration: 1500, useNativeDriver: true }),
-      Animated.timing(radarPulse, { toValue: 0.3, duration: 1500, useNativeDriver: true }),
-    ])).start();
-    // Progress steps
-    const steps = [
-      { pct: 20, delay: 1500 },
-      { pct: 50, delay: 3000 },
-      { pct: 75, delay: 4500 },
-      { pct: 100, delay: 6000 },
+    Animated.loop(
+      Animated.timing(radarAnim, { toValue: 1, duration: 2000, useNativeDriver: true })
+    ).start();
+
+    // 2. Cercles concentriques en cascade
+    const startPulseRing = (anim, delay) => {
+      setTimeout(() => {
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(anim, { toValue: 1, duration: 2000, useNativeDriver: false }),
+            Animated.timing(anim, { toValue: 0, duration: 0, useNativeDriver: false }),
+          ])
+        ).start();
+      }, delay);
+    };
+    pulseRing1.setValue(0);
+    pulseRing2.setValue(0);
+    pulseRing3.setValue(0);
+    startPulseRing(pulseRing1, 0);
+    startPulseRing(pulseRing2, 700);
+    startPulseRing(pulseRing3, 1400);
+
+    // 3. Coordonnées GPS qui défilent
+    const coordsInterval = setInterval(() => {
+      setSearchCoords({
+        lat: (Math.random() * 60 - 30).toFixed(4) + '°',
+        lng: (Math.random() * 120 - 60).toFixed(4) + '°',
+      });
+    }, 150);
+
+    // 4. Lignes de connexion progressives
+    const linesInterval = setInterval(() => {
+      const centerX = (SCREEN_WIDTH - wp(32)) / 2;
+      const centerY = wp(90);
+      const dotIdx = Math.floor(Math.random() * WORLD_DOTS.length);
+      const dot = WORLD_DOTS[dotIdx];
+      const dotX = (dot.x / 800) * (SCREEN_WIDTH - wp(32));
+      const dotY = (dot.y / 400) * wp(180);
+      const dx = dotX - centerX;
+      const dy = dotY - centerY;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+      setScanLines(prev => {
+        const newLines = [...prev, { x1: centerX, y1: centerY, length, angle, id: Date.now() }];
+        return newLines.slice(-8);
+      });
+    }, 800);
+
+    // 5. Étapes progressives tech
+    const SEARCH_STEPS = [
+      { text: 'Analyse morphologique du profil...', duration: 1500 },
+      { text: 'Extraction des paramètres nutritionnels...', duration: 1800 },
+      { text: 'Corrélation des objectifs de santé...', duration: 2000 },
+      { text: 'Triangulation géographique...', duration: 1500 },
+      { text: 'Scan des profils compatibles...', duration: 2500 },
+      { text: 'Calcul de l\'indice de compatibilité...', duration: 2000 },
+      { text: 'Vérification anti-triche...', duration: 1200 },
+      { text: 'Binôme identifié !', duration: 800 },
     ];
-    steps.forEach(s => {
-      setTimeout(() => setSearchProgress(s.pct), s.delay);
-    });
-    // After 6s, match found
-    setTimeout(() => {
-      radarAnim.stopAnimation();
-      radarPulse.stopAnimation();
-      setBinomePartner(FAKE_MATCH);
-      setBinomeCommonPoints(FAKE_MATCH.common_points);
-      setBinomeDistance(FAKE_MATCH.distance_km);
-      setBinomeStatus('matched');
-    }, 6500);
+
+    let stepIdx = 0;
+    let elapsed = 0;
+    const totalDuration = SEARCH_STEPS.reduce((s, step) => s + step.duration, 0);
+
+    const stepTimer = () => {
+      if (stepIdx >= SEARCH_STEPS.length) return;
+      setSearchStep(stepIdx);
+      const progress = Math.min(100, Math.round((elapsed / totalDuration) * 100));
+      setSearchProgress(progress);
+
+      if (stepIdx >= 4) {
+        const targetCompat = 87;
+        const compatProgress = Math.min(targetCompat, Math.round(((stepIdx - 4) / (SEARCH_STEPS.length - 4)) * targetCompat));
+        setCompatibilityScore(compatProgress);
+      }
+
+      elapsed += SEARCH_STEPS[stepIdx].duration;
+      stepIdx++;
+
+      if (stepIdx < SEARCH_STEPS.length) {
+        setTimeout(stepTimer, SEARCH_STEPS[stepIdx - 1].duration);
+      } else {
+        setTimeout(() => {
+          clearInterval(coordsInterval);
+          clearInterval(linesInterval);
+          radarAnim.stopAnimation();
+          pulseRing1.stopAnimation();
+          pulseRing2.stopAnimation();
+          pulseRing3.stopAnimation();
+
+          // Appel RPC Supabase (quand ready) :
+          // fetch(SUPABASE_URL + '/rest/v1/rpc/find_binome_match', {
+          //   method: 'POST',
+          //   headers: { ...hdrs, 'Content-Type': 'application/json' },
+          //   body: JSON.stringify({ p_user_id: TEST_USER_ID }),
+          // }).then(r => r.json()).then(data => { ... })
+
+          // Pour l'instant : simuler avec 15% de chance de "pas trouvé"
+          const noMatch = Math.random() < 0.15;
+
+          if (noMatch) {
+            setSearchProgress(100);
+            setCompatibilityScore(0);
+            setBinomeStatus('no_match');
+            setRetryAfterTime(Date.now() + 24 * 60 * 60 * 1000);
+          } else {
+            setCompatibilityScore(87);
+            setSearchProgress(100);
+            setBinomePartner(FAKE_MATCH);
+            setBinomeCommonPoints(FAKE_MATCH.common_points);
+            setBinomeDistance(FAKE_MATCH.distance_km);
+            setBinomeStatus('proposed');
+          }
+        }, SEARCH_STEPS[SEARCH_STEPS.length - 1].duration);
+      }
+    };
+    stepTimer();
   };
 
   const sendLixSign = (sign) => {
@@ -328,6 +464,18 @@ export default function LixVersePage() {
     setShowLixSignPicker(false);
   };
 
+  const resetBinomeState = () => {
+    setBinomeStatus('none');
+    setBinomePartner(null);
+    setBinomeMessages([]);
+    setBinomeCommonPoints([]);
+    setBinomeDistance(null);
+    setSearchProgress(0);
+    setSearchStep(0);
+    setCompatibilityScore(0);
+    setScanLines([]);
+  };
+
   const breakBinome = () => {
     setShowBinomeAlert({
       visible: true,
@@ -337,12 +485,7 @@ export default function LixVersePage() {
       buttons: [
         { text: 'Annuler', style: 'cancel', onPress: () => setShowBinomeAlert({ visible: false, title: '', message: '', icon: null, buttons: [] }) },
         { text: 'Rompre', style: 'destructive', onPress: () => {
-          setBinomeStatus('none');
-          setBinomePartner(null);
-          setBinomeMessages([]);
-          setBinomeCommonPoints([]);
-          setBinomeDistance(null);
-          setSearchProgress(0);
+          resetBinomeState();
           setShowBinomeAlert({ visible: false, title: '', message: '', icon: null, buttons: [] });
         }},
       ],
@@ -852,9 +995,17 @@ export default function LixVersePage() {
   };
 
   const renderBinomeTab = () => {
-    const radarRotate = radarAnim.interpolate({ inputRange: [0, 360], outputRange: ['0deg', '360deg'] });
-    const searchTexts = ['Analyse de votre profil...', 'Recherche de profils compatibles...', 'Calcul des points communs...', 'Binôme trouvé !'];
-    const searchTextIdx = searchProgress < 20 ? 0 : searchProgress < 50 ? 1 : searchProgress < 75 ? 2 : 3;
+    const radarRotate = radarAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+    const SEARCH_STEP_TEXTS = [
+      'Analyse morphologique du profil...',
+      'Extraction des paramètres nutritionnels...',
+      'Corrélation des objectifs de santé...',
+      'Triangulation géographique...',
+      'Scan des profils compatibles...',
+      'Calcul de l\'indice de compatibilité...',
+      'Vérification anti-triche...',
+      'Binôme identifié !',
+    ];
 
     if (binomeStatus === 'matched' && binomePartner) {
       const myCalories = 1200;
@@ -972,74 +1123,446 @@ export default function LixVersePage() {
       );
     }
 
-    // État searching ou none
+    // États none / searching / proposed / pending_sent / declined
     return (
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingHorizontal: wp(16), paddingTop: wp(16), alignItems: 'center' }}>
-        <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#D4AF37', letterSpacing: 2, marginBottom: wp(4) }}>BINÔME</Text>
-        <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(16) }}>Trouve ton partenaire santé</Text>
-
-        {/* Carte du monde */}
-        <View style={{ backgroundColor: '#1A1D22', borderRadius: wp(16), overflow: 'hidden', padding: wp(8), marginBottom: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', position: 'relative' }}>
-          <Svg width={SCREEN_WIDTH - wp(48)} height={wp(160)} viewBox="0 0 800 400">
-            <Rect width="800" height="400" fill="transparent" />
-            <Path d="M120,120 C130,80 180,60 200,80 C220,60 260,70 270,100 C280,130 260,180 240,200 C220,220 180,240 160,220 C140,200 110,160 120,120Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
-            <Path d="M370,130 C380,100 420,90 440,110 C460,130 470,180 460,230 C450,270 430,300 410,310 C390,300 370,270 365,230 C360,190 360,160 370,130Z" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" fill="rgba(255,255,255,0.03)" />
-            <Path d="M360,60 C370,40 410,30 430,50 C440,60 445,80 440,100 C430,110 400,115 380,105 C370,95 355,80 360,60Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
-            <Path d="M450,50 C480,30 560,20 620,40 C660,55 680,90 670,130 C660,160 620,170 580,160 C540,150 500,130 480,110 C460,90 440,70 450,50Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
-            <Path d="M220,230 C240,210 260,220 270,250 C275,280 265,320 250,340 C235,350 220,340 215,310 C210,280 210,250 220,230Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
-            <Path d="M620,270 C640,255 680,260 690,280 C695,300 680,320 660,325 C640,320 615,300 620,270Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
-            {WORLD_DOTS.map((dot, i) => (
-              <Circle key={i} cx={dot.x} cy={dot.y} r={4} fill={dot.color} opacity={0.7} />
-            ))}
-          </Svg>
-          {/* Animated dot overlays */}
-          {WORLD_DOTS.map((dot, i) => {
-            const mapW = SCREEN_WIDTH - wp(48);
-            const dotX = (dot.x / 800) * mapW + wp(8);
-            const dotY = (dot.y / 400) * wp(160) + wp(8);
-            return (
-              <Animated.View key={'pulse' + i} style={{
-                position: 'absolute', left: dotX - wp(4), top: dotY - wp(4),
-                width: wp(8), height: wp(8), borderRadius: wp(4),
-                backgroundColor: dot.color,
-                opacity: dotPulseAnims[i],
-              }} />
-            );
-          })}
-          {/* Radar overlay when searching */}
-          {binomeStatus === 'searching' && (
-            <Animated.View style={{
-              position: 'absolute', top: wp(8) + wp(80) - wp(60),
-              left: (SCREEN_WIDTH - wp(48)) / 2 + wp(8) - wp(60),
-              width: wp(120), height: wp(120), borderRadius: wp(60),
-              borderWidth: 2, borderColor: 'rgba(212,175,55,0.4)',
-              opacity: radarPulse,
-              transform: [{ rotate: radarRotate }],
-            }}>
-              <View style={{ position: 'absolute', top: 0, left: wp(59), width: wp(2), height: wp(60), backgroundColor: 'rgba(212,175,55,0.5)' }} />
-            </Animated.View>
-          )}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingTop: wp(16) }}>
+        {/* Header */}
+        <View style={{ alignItems: 'center', paddingHorizontal: wp(16) }}>
+          <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#D4AF37', letterSpacing: 2, marginBottom: wp(4) }}>BINÔME</Text>
+          <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(16) }}>Trouve ton partenaire santé</Text>
         </View>
 
-        <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginBottom: wp(20) }}>4 832 membres actifs</Text>
+        {/* Carte du monde avec Image de fond (fallback SVG si image absente) */}
+        {(binomeStatus === 'none' || binomeStatus === 'searching') && (
+          <View style={{
+            marginHorizontal: wp(16), borderRadius: wp(16), overflow: 'hidden',
+            borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+            height: wp(180), position: 'relative', backgroundColor: '#1A1D22',
+          }}>
+            {/* TODO: Remplacer par <Image source={require('./assets/world-map-dark.webp')} .../> quand l'image est prête */}
+            <Svg width="100%" height="100%" viewBox="0 0 800 400" style={{ position: 'absolute' }}>
+              <Rect width="800" height="400" fill="transparent" />
+              <Path d="M120,120 C130,80 180,60 200,80 C220,60 260,70 270,100 C280,130 260,180 240,200 C220,220 180,240 160,220 C140,200 110,160 120,120Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
+              <Path d="M370,130 C380,100 420,90 440,110 C460,130 470,180 460,230 C450,270 430,300 410,310 C390,300 370,270 365,230 C360,190 360,160 370,130Z" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" fill="rgba(255,255,255,0.03)" />
+              <Path d="M360,60 C370,40 410,30 430,50 C440,60 445,80 440,100 C430,110 400,115 380,105 C370,95 355,80 360,60Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
+              <Path d="M450,50 C480,30 560,20 620,40 C660,55 680,90 670,130 C660,160 620,170 580,160 C540,150 500,130 480,110 C460,90 440,70 450,50Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
+              <Path d="M220,230 C240,210 260,220 270,250 C275,280 265,320 250,340 C235,350 220,340 215,310 C210,280 210,250 220,230Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
+              <Path d="M620,270 C640,255 680,260 690,280 C695,300 680,320 660,325 C640,320 615,300 620,270Z" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="rgba(255,255,255,0.02)" />
+            </Svg>
+            {/* Points lumineux pulsants par-dessus */}
+            {WORLD_DOTS.map((dot, i) => (
+              <Animated.View key={i} style={{
+                position: 'absolute',
+                left: (dot.x / 800) * (SCREEN_WIDTH - wp(32)),
+                top: (dot.y / 400) * wp(180),
+                width: wp(8), height: wp(8), borderRadius: wp(4),
+                backgroundColor: dot.color,
+                opacity: dotPulseAnims[i] || 0.5,
+                shadowColor: dot.color,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.8,
+                shadowRadius: wp(4),
+                elevation: 3,
+              }} />
+            ))}
 
-        {binomeStatus === 'searching' ? (
-          <View style={{ width: '100%', alignItems: 'center' }}>
-            {/* Progress bar */}
-            <View style={{ width: '100%', height: wp(6), borderRadius: wp(3), backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: wp(10) }}>
-              <View style={{ height: '100%', width: searchProgress + '%', borderRadius: wp(3), backgroundColor: '#D4AF37' }} />
-            </View>
-            <Text style={{ fontSize: fp(12), color: searchProgress >= 75 ? '#00D984' : '#D4AF37', fontWeight: '600' }}>
-              {searchTexts[searchTextIdx]}
-            </Text>
+            {/* OVERLAY RADAR — seulement pendant searching */}
+            {binomeStatus === 'searching' && (
+              <View style={{
+                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                justifyContent: 'center', alignItems: 'center',
+              }}>
+                {/* Cercles concentriques qui se propagent */}
+                {[pulseRing1, pulseRing2, pulseRing3].map((anim, i) => (
+                  <Animated.View key={i} style={{
+                    position: 'absolute',
+                    width: wp(200), height: wp(200),
+                    borderRadius: wp(100),
+                    borderWidth: 1, borderColor: '#D4AF37',
+                    opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 0] }),
+                    transform: [{ scale: anim }],
+                  }} />
+                ))}
+                {/* Ligne de balayage radar rotative */}
+                <Animated.View style={{
+                  position: 'absolute',
+                  width: wp(2), height: wp(80),
+                  backgroundColor: '#D4AF37',
+                  opacity: 0.6,
+                  transform: [{ rotate: radarRotate }, { translateY: -wp(40) }],
+                }} />
+                {/* Point central utilisateur */}
+                <View style={{
+                  width: wp(12), height: wp(12), borderRadius: wp(6),
+                  backgroundColor: '#D4AF37',
+                  borderWidth: 2, borderColor: '#FFF',
+                  shadowColor: '#D4AF37', shadowOpacity: 1, shadowRadius: wp(8),
+                  elevation: 5,
+                }} />
+                {/* Lignes de connexion entre les points */}
+                {scanLines.map((line, i) => (
+                  <View key={line.id || i} style={{
+                    position: 'absolute',
+                    left: line.x1, top: line.y1,
+                    width: line.length, height: 1,
+                    backgroundColor: 'rgba(212,175,55,0.15)',
+                    transform: [{ rotate: line.angle + 'deg' }],
+                  }} />
+                ))}
+              </View>
+            )}
           </View>
-        ) : (
-          <View style={{ width: '100%', alignItems: 'center' }}>
-            <Pressable delayPressIn={120} onPress={startBinomeSearch} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], width: '100%' })}>
-              <LinearGradient colors={['#D4AF37', '#B8941F']} style={{ paddingVertical: wp(16), borderRadius: wp(16), alignItems: 'center' }}>
-                <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Appeler mon Binôme</Text>
+        )}
+
+        {(binomeStatus === 'none' || binomeStatus === 'searching') && (
+          <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: wp(8), marginBottom: wp(12) }}>4 832 membres actifs</Text>
+        )}
+
+        {/* Console tech pendant searching */}
+        {binomeStatus === 'searching' && (
+          <View style={{ marginHorizontal: wp(16), marginTop: wp(4) }}>
+            <View style={{
+              backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: wp(12),
+              padding: wp(12), borderWidth: 1,
+              borderColor: 'rgba(0,217,132,0.15)',
+            }}>
+              {/* Coordonnées GPS monospace */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(8) }}>
+                <Text style={{ fontSize: fp(9), fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', color: 'rgba(0,217,132,0.5)' }}>
+                  LAT {searchCoords.lat}
+                </Text>
+                <Text style={{ fontSize: fp(9), fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', color: 'rgba(0,217,132,0.5)' }}>
+                  LNG {searchCoords.lng}
+                </Text>
+                <Text style={{ fontSize: fp(9), fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', color: 'rgba(212,175,55,0.5)' }}>
+                  {searchProgress}%
+                </Text>
+              </View>
+              {/* Barre de progression dégradé */}
+              <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), marginBottom: wp(8), overflow: 'hidden' }}>
+                <LinearGradient
+                  colors={['#00D984', '#D4AF37']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ height: '100%', width: searchProgress + '%', borderRadius: wp(2) }}
+                />
+              </View>
+              {/* Étape courante */}
+              <Text style={{
+                fontSize: fp(11), color: '#D4AF37',
+                fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                marginBottom: wp(4),
+              }}>
+                {'> '}{SEARCH_STEP_TEXTS[searchStep] || '...'}
+              </Text>
+              {/* Score de compatibilité progressif */}
+              {compatibilityScore > 0 && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), marginTop: wp(4) }}>
+                  <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+                    COMPATIBILITÉ
+                  </Text>
+                  <View style={{ flex: 1, height: wp(3), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(1.5), overflow: 'hidden' }}>
+                    <View style={{ height: '100%', width: compatibilityScore + '%', backgroundColor: compatibilityScore > 70 ? '#00D984' : '#FF8C42', borderRadius: wp(1.5) }} />
+                  </View>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: compatibilityScore > 70 ? '#00D984' : '#FF8C42', fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+                    {compatibilityScore}%
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* État proposed — profil trouvé, comparaison */}
+        {binomeStatus === 'proposed' && binomePartner && (
+          <View style={{ paddingHorizontal: wp(16) }}>
+            {/* Badge compatibilité */}
+            <View style={{ alignItems: 'center', marginBottom: wp(12) }}>
+              <View style={{
+                backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(20),
+                paddingHorizontal: wp(16), paddingVertical: wp(6),
+                borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)',
+                flexDirection: 'row', alignItems: 'center', gap: wp(6),
+              }}>
+                <Text style={{ fontSize: fp(11), color: 'rgba(0,217,132,0.6)' }}>Compatibilité</Text>
+                <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#00D984' }}>{compatibilityScore}%</Text>
+              </View>
+            </View>
+            {/* Carte comparaison */}
+            <View style={{
+              backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(16),
+              padding: wp(16), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+              marginBottom: wp(12),
+            }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(12) }}>
+                <View style={{ alignItems: 'center', flex: 1 }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>Vous</Text>
+                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>LXM-2K7F4A</Text>
+                  <Text style={{ fontSize: fp(20), marginTop: wp(4) }}>🇧🇮</Text>
+                  <View style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), marginTop: wp(4) }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: '#00D984' }}>Score 72</Text>
+                  </View>
+                </View>
+                <View style={{ alignItems: 'center', paddingHorizontal: wp(10) }}>
+                  <Text style={{ fontSize: fp(24), color: 'rgba(212,175,55,0.5)' }}>⇄</Text>
+                </View>
+                <View style={{ alignItems: 'center', flex: 1 }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>{binomePartner.display_name}</Text>
+                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{binomePartner.lixtag}</Text>
+                  <Text style={{ fontSize: fp(20), marginTop: wp(4) }}>{binomePartner.country_flag}</Text>
+                  <View style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), marginTop: wp(4) }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: '#00D984' }}>Score {binomePartner.vitality_score}</Text>
+                  </View>
+                </View>
+              </View>
+              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginBottom: wp(8) }}>
+                {binomeDistance ? binomeDistance.toLocaleString('fr-FR') + ' km vous séparent' : ''}
+              </Text>
+              <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#D4AF37', marginBottom: wp(8) }}>Points en commun</Text>
+              {binomeCommonPoints.map((point, i) => (
+                <View key={i} style={{
+                  flexDirection: 'row', alignItems: 'center', gap: wp(8),
+                  paddingVertical: wp(6), borderBottomWidth: i < binomeCommonPoints.length - 1 ? 1 : 0,
+                  borderBottomColor: 'rgba(255,255,255,0.04)',
+                }}>
+                  <View style={{
+                    width: wp(24), height: wp(24), borderRadius: wp(12),
+                    backgroundColor: 'rgba(0,217,132,0.12)',
+                    justifyContent: 'center', alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(11), color: '#00D984' }}>✓</Text>
+                  </View>
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', flex: 1 }}>{point.text}</Text>
+                </View>
+              ))}
+            </View>
+            {/* Bouton Envoyer la demande */}
+            <Pressable delayPressIn={120}
+              onPress={() => {
+                setBinomeStatus('pending_sent');
+                Animated.loop(
+                  Animated.sequence([
+                    Animated.timing(pendingPulse, { toValue: 1, duration: 1000, useNativeDriver: false }),
+                    Animated.timing(pendingPulse, { toValue: 0.6, duration: 1000, useNativeDriver: false }),
+                  ])
+                ).start();
+                // Simuler réponse après 8-15s (démo)
+                const delay = 8000 + Math.random() * 7000;
+                setTimeout(() => {
+                  const accepted = Math.random() > 0.3;
+                  pendingPulse.stopAnimation();
+                  setBinomeStatus(accepted ? 'matched' : 'declined');
+                }, delay);
+              }}
+              style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+              <LinearGradient colors={['#D4AF37', '#B8941F']}
+                style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center', marginBottom: wp(8) }}>
+                <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Envoyer la demande</Text>
+                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.6)', marginTop: wp(2) }}>
+                  {binomePartner.display_name} recevra votre invitation
+                </Text>
               </LinearGradient>
             </Pressable>
+            <Pressable onPress={() => { resetBinomeState(); }}
+              style={{ paddingVertical: wp(12), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.25)' }}>Chercher quelqu'un d'autre</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* État pending_sent — en attente de confirmation */}
+        {binomeStatus === 'pending_sent' && binomePartner && (
+          <View style={{ paddingHorizontal: wp(16), alignItems: 'center' }}>
+            <View style={{
+              backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(16),
+              padding: wp(20), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)',
+              alignItems: 'center', width: '100%', marginBottom: wp(16),
+            }}>
+              <Text style={{ fontSize: fp(28), marginBottom: wp(8) }}>{binomePartner.country_flag}</Text>
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>{binomePartner.display_name}</Text>
+              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginBottom: wp(16) }}>{binomePartner.lixtag}</Text>
+              {/* Bouton pulsant désactivé */}
+              <Animated.View style={{ width: '100%', opacity: pendingPulse }}>
+                <View style={{
+                  paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center',
+                  backgroundColor: 'rgba(212,175,55,0.15)',
+                  borderWidth: 1.5, borderColor: 'rgba(212,175,55,0.3)',
+                }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#D4AF37' }}>En attente de confirmation...</Text>
+                </View>
+              </Animated.View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), marginTop: wp(12) }}>
+                <ActivityIndicator size="small" color="#D4AF37" />
+                <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)' }}>
+                  Notification envoyée à {binomePartner.display_name}
+                </Text>
+              </View>
+            </View>
+            <Pressable onPress={() => { pendingPulse.stopAnimation(); resetBinomeState(); }}
+              style={{ paddingVertical: wp(12) }}>
+              <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.25)' }}>Annuler la demande</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* État declined — demande refusée */}
+        {binomeStatus === 'declined' && (
+          <View style={{ paddingHorizontal: wp(16), alignItems: 'center' }}>
+            <View style={{
+              backgroundColor: 'rgba(255,107,107,0.06)', borderRadius: wp(16),
+              padding: wp(24), borderWidth: 1, borderColor: 'rgba(255,107,107,0.12)',
+              alignItems: 'center', width: '100%', marginBottom: wp(16),
+            }}>
+              <Text style={{ fontSize: fp(36), marginBottom: wp(12) }}>😔</Text>
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>
+                Demande déclinée
+              </Text>
+              <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', textAlign: 'center', lineHeight: fp(18) }}>
+                {binomePartner?.display_name || 'L\'utilisateur'} a décliné votre invitation.{'\n'}Ce n'est pas grave — il y a d'autres partenaires compatibles !
+              </Text>
+            </View>
+            <Pressable delayPressIn={120}
+              onPress={() => { resetBinomeState(); }}
+              style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], width: '100%' })}>
+              <LinearGradient colors={['#D4AF37', '#B8941F']}
+                style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Relancer la recherche</Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
+        )}
+
+        {/* État no_match — aucun binôme trouvé, countdown 24h */}
+        {binomeStatus === 'no_match' && (
+          <View style={{ paddingHorizontal: wp(16), alignItems: 'center' }}>
+            <View style={{
+              backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(16),
+              padding: wp(24), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+              alignItems: 'center', width: '100%', marginBottom: wp(16),
+            }}>
+              {/* Icône globe avec loupe */}
+              <View style={{
+                width: wp(70), height: wp(70), borderRadius: wp(35),
+                backgroundColor: 'rgba(77,166,255,0.1)',
+                borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)',
+                justifyContent: 'center', alignItems: 'center',
+                marginBottom: wp(16),
+              }}>
+                <Svg width={wp(32)} height={wp(32)} viewBox="0 0 24 24" fill="none">
+                  <Circle cx="11" cy="11" r="7" stroke="#4DA6FF" strokeWidth="1.5" />
+                  <Line x1="16.5" y1="16.5" x2="21" y2="21" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" />
+                  <Path d="M11 8a3 3 0 00-3 3" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" />
+                </Svg>
+              </View>
+              <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', marginBottom: wp(6), textAlign: 'center' }}>
+                Aucun binôme disponible
+              </Text>
+              <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', textAlign: 'center', lineHeight: fp(18), marginBottom: wp(16) }}>
+                Tous les profils compatibles ont déjà un binôme actif. De nouveaux membres rejoignent LIXUM chaque jour !
+              </Text>
+              {/* Compte à rebours */}
+              {retryAfterTime && (
+                <View style={{
+                  backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: wp(14),
+                  padding: wp(16), width: '100%', alignItems: 'center',
+                  borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)',
+                }}>
+                  <Text style={{ fontSize: fp(10), color: 'rgba(212,175,55,0.5)', letterSpacing: 1, marginBottom: wp(6) }}>
+                    PROCHAINE TENTATIVE DANS
+                  </Text>
+                  <Text style={{
+                    fontSize: fp(24), fontWeight: '800', color: '#D4AF37',
+                    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                  }}>
+                    {retryCountdown || '—'}
+                  </Text>
+                </View>
+              )}
+              {/* Bouton désactivé ou actif selon le timer */}
+              {!retryAfterTime ? (
+                <Pressable delayPressIn={120}
+                  onPress={() => { resetBinomeState(); }}
+                  style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], width: '100%', marginTop: wp(16) })}>
+                  <LinearGradient colors={['#D4AF37', '#B8941F']}
+                    style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Relancer la recherche</Text>
+                  </LinearGradient>
+                </Pressable>
+              ) : (
+                <View style={{
+                  width: '100%', marginTop: wp(16),
+                  paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center',
+                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '600', color: 'rgba(255,255,255,0.2)' }}>
+                    Recherche verrouillée
+                  </Text>
+                </View>
+              )}
+            </View>
+            {/* Info encourageante */}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center', gap: wp(8),
+              backgroundColor: 'rgba(0,217,132,0.06)', borderRadius: wp(12),
+              padding: wp(12), width: '100%',
+              borderWidth: 1, borderColor: 'rgba(0,217,132,0.1)',
+            }}>
+              <Text style={{ fontSize: fp(16) }}>💡</Text>
+              <Text style={{ fontSize: fp(11), color: 'rgba(0,217,132,0.6)', flex: 1, lineHeight: fp(16) }}>
+                En attendant, continue tes défis et améliore ton Score Vitalité pour augmenter tes chances de match !
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* TODO: Activer quand notifications push en place
+        {binomeStatus === 'pending_received' && binomePartner && (
+          <View style={{ paddingHorizontal: wp(16) }}>
+            <View style={{
+              backgroundColor: 'rgba(212,175,55,0.06)', borderRadius: wp(16),
+              padding: wp(16), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)',
+              marginBottom: wp(16),
+            }}>
+              <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#D4AF37', textAlign: 'center', marginBottom: wp(12) }}>
+                Demande de Binôme reçue !
+              </Text>
+            </View>
+            <Pressable delayPressIn={120} onPress={() => setBinomeStatus('matched')}
+              style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+              <LinearGradient colors={['#00D984', '#00B871']}
+                style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center', marginBottom: wp(8) }}>
+                <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>C'est mon Binôme !</Text>
+              </LinearGradient>
+            </Pressable>
+            <Pressable onPress={() => { resetBinomeState(); }}
+              style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,107,107,0.15)' }}>
+              <Text style={{ fontSize: fp(14), color: 'rgba(255,107,107,0.5)' }}>Je décline</Text>
+            </Pressable>
+          </View>
+        )}
+        */}
+
+        {/* Bouton principal — état none */}
+        {binomeStatus === 'none' && (
+          <View style={{ width: '100%', alignItems: 'center', paddingHorizontal: wp(16) }}>
+            {retryAfterTime ? (
+              <View style={{
+                width: '100%',
+                paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center',
+                backgroundColor: 'rgba(255,255,255,0.04)',
+                borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+              }}>
+                <Text style={{ fontSize: fp(14), fontWeight: '600', color: 'rgba(255,255,255,0.2)' }}>
+                  Recherche disponible dans {retryCountdown || '—'}
+                </Text>
+              </View>
+            ) : (
+              <Pressable delayPressIn={120} onPress={startBinomeSearch} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], width: '100%' })}>
+                <LinearGradient colors={['#D4AF37', '#B8941F']} style={{ paddingVertical: wp(16), borderRadius: wp(16), alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Appeler mon Binôme</Text>
+                </LinearGradient>
+              </Pressable>
+            )}
             <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)', marginTop: wp(12), textAlign: 'center' }}>
               Matching basé sur : objectifs, régime, activités
             </Text>
