@@ -582,8 +582,15 @@ export default function LixVersePage() {
           marginHorizontal: wp(8), borderRadius: wp(16), overflow: 'hidden',
           borderWidth: 2, borderColor: 'rgba(74,79,85,0.6)',
         }}>
-          <LinearGradient colors={['#3A3F46', '#2D3238', '#3A3F46', '#333840']}
-            style={{ minHeight: wp(280), padding: wp(12), position: 'relative' }}>
+          <View style={{ minHeight: wp(280), padding: wp(12), position: 'relative' }}>
+            <Image
+              source={require('./assets/wall-of-health.webp')}
+              style={{
+                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                borderRadius: wp(14),
+              }}
+              resizeMode="cover"
+            />
             {/* Vis métalliques aux coins */}
             {[[wp(8), wp(8)], [wp(8), null, null, wp(8)], [null, null, wp(8), wp(8)], [null, wp(8), wp(8)]].map((pos, i) => (
               <View key={i} style={{
@@ -597,10 +604,8 @@ export default function LixVersePage() {
                 borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
               }} />
             ))}
-            {/* Titre gravé */}
-            <View style={{ alignItems: 'center', marginBottom: wp(12), paddingTop: wp(8) }}>
-              <Text style={{ fontSize: fp(8), fontWeight: '700', color: 'rgba(212,175,55,0.4)', letterSpacing: 3 }}>✦ LIXUM WALL OF HEALTH ✦</Text>
-            </View>
+            {/* Spacer pour laisser le titre gravé dans l'image visible */}
+            <View style={{ height: wp(45) }} />
             {/* Stickers disposés organiquement */}
             {wallStickers.length === 0 ? (
               <View style={{ alignItems: 'center', paddingVertical: wp(40) }}>
@@ -684,7 +689,7 @@ export default function LixVersePage() {
                 })}
               </View>
             )}
-          </LinearGradient>
+          </View>
         </View>
       </View>
       {myGroups.length > 0 && (
