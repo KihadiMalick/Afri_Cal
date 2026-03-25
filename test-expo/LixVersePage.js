@@ -582,15 +582,8 @@ export default function LixVersePage() {
           marginHorizontal: wp(8), borderRadius: wp(16), overflow: 'hidden',
           borderWidth: 2, borderColor: 'rgba(74,79,85,0.6)',
         }}>
-          <View style={{ minHeight: wp(280), padding: wp(12), position: 'relative' }}>
-            <Image
-              source={require('./assets/wall-of-health-bg.webp')}
-              style={{
-                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                borderRadius: wp(14),
-              }}
-              resizeMode="cover"
-            />
+          <LinearGradient colors={['#3A3F46', '#2D3238', '#3A3F46', '#333840']}
+            style={{ minHeight: wp(280), padding: wp(12), position: 'relative' }}>
             {/* Vis métalliques aux coins */}
             {[[wp(8), wp(8)], [wp(8), null, null, wp(8)], [null, null, wp(8), wp(8)], [null, wp(8), wp(8)]].map((pos, i) => (
               <View key={i} style={{
@@ -604,13 +597,13 @@ export default function LixVersePage() {
                 borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
               }} />
             ))}
-            {/* Titre doré — image */}
-            <View style={{ alignItems: 'center', marginBottom: wp(10), paddingTop: wp(6) }}>
+            {/* Titre doré — image agrandie */}
+            <View style={{ alignItems: 'center', marginBottom: wp(8), paddingTop: wp(4) }}>
               <Image
                 source={require('./assets/wall-of-health-title.webp')}
                 style={{
-                  width: wp(200),
-                  height: wp(28),
+                  width: wp(270),
+                  height: wp(45),
                 }}
                 resizeMode="contain"
               />
@@ -698,7 +691,7 @@ export default function LixVersePage() {
                 })}
               </View>
             )}
-          </View>
+          </LinearGradient>
         </View>
       </View>
       {myGroups.length > 0 && (
