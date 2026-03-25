@@ -232,6 +232,8 @@ export default function LixVersePage() {
   const [searchCoords, setSearchCoords] = useState({ lat: '—', lng: '—' });
   const [compatibilityScore, setCompatibilityScore] = useState(0);
   const [scanLines, setScanLines] = useState([]);
+  const [retryAfterTime, setRetryAfterTime] = useState(null);
+  const [retryCountdown, setRetryCountdown] = useState('');
   const radarAnim = useRef(new Animated.Value(0)).current;
   const radarScale = useRef(new Animated.Value(0.2)).current;
   const radarOpacity = useRef(new Animated.Value(0.8)).current;
@@ -298,6 +300,30 @@ export default function LixVersePage() {
     }, 30000 + Math.random() * 30000);
     return () => clearInterval(interval);
   }, [binomeStatus]);
+
+  // Binôme — compte à rebours 24h retry
+  useEffect(() => {
+    if (!retryAfterTime) return;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const diff = retryAfterTime - now;
+      if (diff <= 0) {
+        setRetryAfterTime(null);
+        setRetryCountdown('');
+        clearInterval(interval);
+        return;
+      }
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      setRetryCountdown(
+        (hours > 0 ? hours + 'h ' : '') +
+        (minutes > 0 ? minutes + 'min ' : '') +
+        seconds + 's'
+      );
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [retryAfterTime]);
 
   const startBinomeSearch = () => {
     setBinomeStatus('searching');
@@ -398,12 +424,29 @@ export default function LixVersePage() {
           pulseRing2.stopAnimation();
           pulseRing3.stopAnimation();
 
-          setCompatibilityScore(87);
-          setSearchProgress(100);
-          setBinomePartner(FAKE_MATCH);
-          setBinomeCommonPoints(FAKE_MATCH.common_points);
-          setBinomeDistance(FAKE_MATCH.distance_km);
-          setBinomeStatus('proposed');
+          // Appel RPC Supabase (quand ready) :
+          // fetch(SUPABASE_URL + '/rest/v1/rpc/find_binome_match', {
+          //   method: 'POST',
+          //   headers: { ...hdrs, 'Content-Type': 'application/json' },
+          //   body: JSON.stringify({ p_user_id: TEST_USER_ID }),
+          // }).then(r => r.json()).then(data => { ... })
+
+          // Pour l'instant : simuler avec 15% de chance de "pas trouvé"
+          const noMatch = Math.random() < 0.15;
+
+          if (noMatch) {
+            setSearchProgress(100);
+            setCompatibilityScore(0);
+            setBinomeStatus('no_match');
+            setRetryAfterTime(Date.now() + 24 * 60 * 60 * 1000);
+          } else {
+            setCompatibilityScore(87);
+            setSearchProgress(100);
+            setBinomePartner(FAKE_MATCH);
+            setBinomeCommonPoints(FAKE_MATCH.common_points);
+            setBinomeDistance(FAKE_MATCH.distance_km);
+            setBinomeStatus('proposed');
+          }
         }, SEARCH_STEPS[SEARCH_STEPS.length - 1].duration);
       }
     };
@@ -1388,6 +1431,90 @@ export default function LixVersePage() {
           </View>
         )}
 
+        {/* État no_match — aucun binôme trouvé, countdown 24h */}
+        {binomeStatus === 'no_match' && (
+          <View style={{ paddingHorizontal: wp(16), alignItems: 'center' }}>
+            <View style={{
+              backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(16),
+              padding: wp(24), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+              alignItems: 'center', width: '100%', marginBottom: wp(16),
+            }}>
+              {/* Icône globe avec loupe */}
+              <View style={{
+                width: wp(70), height: wp(70), borderRadius: wp(35),
+                backgroundColor: 'rgba(77,166,255,0.1)',
+                borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)',
+                justifyContent: 'center', alignItems: 'center',
+                marginBottom: wp(16),
+              }}>
+                <Svg width={wp(32)} height={wp(32)} viewBox="0 0 24 24" fill="none">
+                  <Circle cx="11" cy="11" r="7" stroke="#4DA6FF" strokeWidth="1.5" />
+                  <Line x1="16.5" y1="16.5" x2="21" y2="21" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" />
+                  <Path d="M11 8a3 3 0 00-3 3" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" />
+                </Svg>
+              </View>
+              <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', marginBottom: wp(6), textAlign: 'center' }}>
+                Aucun binôme disponible
+              </Text>
+              <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', textAlign: 'center', lineHeight: fp(18), marginBottom: wp(16) }}>
+                Tous les profils compatibles ont déjà un binôme actif. De nouveaux membres rejoignent LIXUM chaque jour !
+              </Text>
+              {/* Compte à rebours */}
+              {retryAfterTime && (
+                <View style={{
+                  backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: wp(14),
+                  padding: wp(16), width: '100%', alignItems: 'center',
+                  borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)',
+                }}>
+                  <Text style={{ fontSize: fp(10), color: 'rgba(212,175,55,0.5)', letterSpacing: 1, marginBottom: wp(6) }}>
+                    PROCHAINE TENTATIVE DANS
+                  </Text>
+                  <Text style={{
+                    fontSize: fp(24), fontWeight: '800', color: '#D4AF37',
+                    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                  }}>
+                    {retryCountdown || '—'}
+                  </Text>
+                </View>
+              )}
+              {/* Bouton désactivé ou actif selon le timer */}
+              {!retryAfterTime ? (
+                <Pressable delayPressIn={120}
+                  onPress={() => { resetBinomeState(); }}
+                  style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], width: '100%', marginTop: wp(16) })}>
+                  <LinearGradient colors={['#D4AF37', '#B8941F']}
+                    style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Relancer la recherche</Text>
+                  </LinearGradient>
+                </Pressable>
+              ) : (
+                <View style={{
+                  width: '100%', marginTop: wp(16),
+                  paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center',
+                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '600', color: 'rgba(255,255,255,0.2)' }}>
+                    Recherche verrouillée
+                  </Text>
+                </View>
+              )}
+            </View>
+            {/* Info encourageante */}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center', gap: wp(8),
+              backgroundColor: 'rgba(0,217,132,0.06)', borderRadius: wp(12),
+              padding: wp(12), width: '100%',
+              borderWidth: 1, borderColor: 'rgba(0,217,132,0.1)',
+            }}>
+              <Text style={{ fontSize: fp(16) }}>💡</Text>
+              <Text style={{ fontSize: fp(11), color: 'rgba(0,217,132,0.6)', flex: 1, lineHeight: fp(16) }}>
+                En attendant, continue tes défis et améliore ton Score Vitalité pour augmenter tes chances de match !
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* TODO: Activer quand notifications push en place
         {binomeStatus === 'pending_received' && binomePartner && (
           <View style={{ paddingHorizontal: wp(16) }}>
@@ -1418,11 +1545,24 @@ export default function LixVersePage() {
         {/* Bouton principal — état none */}
         {binomeStatus === 'none' && (
           <View style={{ width: '100%', alignItems: 'center', paddingHorizontal: wp(16) }}>
-            <Pressable delayPressIn={120} onPress={startBinomeSearch} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], width: '100%' })}>
-              <LinearGradient colors={['#D4AF37', '#B8941F']} style={{ paddingVertical: wp(16), borderRadius: wp(16), alignItems: 'center' }}>
-                <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Appeler mon Binôme</Text>
-              </LinearGradient>
-            </Pressable>
+            {retryAfterTime ? (
+              <View style={{
+                width: '100%',
+                paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center',
+                backgroundColor: 'rgba(255,255,255,0.04)',
+                borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+              }}>
+                <Text style={{ fontSize: fp(14), fontWeight: '600', color: 'rgba(255,255,255,0.2)' }}>
+                  Recherche disponible dans {retryCountdown || '—'}
+                </Text>
+              </View>
+            ) : (
+              <Pressable delayPressIn={120} onPress={startBinomeSearch} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], width: '100%' })}>
+                <LinearGradient colors={['#D4AF37', '#B8941F']} style={{ paddingVertical: wp(16), borderRadius: wp(16), alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Appeler mon Binôme</Text>
+                </LinearGradient>
+              </Pressable>
+            )}
             <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)', marginTop: wp(12), textAlign: 'center' }}>
               Matching basé sur : objectifs, régime, activités
             </Text>
