@@ -199,33 +199,33 @@ const SPIN_RESULTS = [
 ];
 
 const NORMAL_SEGMENTS = [
-  { label: '3', icon: '⚡', chance: 30, color: '#FFB800', reward: { type: 'energy', amount: 3 } },
-  { label: '30', icon: '💰', chance: 20, color: '#00D984', reward: { type: 'lix', amount: 30 } },
-  { label: '1', icon: '🧩', chance: 15, color: '#9B59B6', subLabel: 'Frag Std', reward: { type: 'fragment', tier: 'standard', amount: 1 } },
-  { label: '1', icon: '📸', chance: 15, color: '#FF8C42', subLabel: 'scan', reward: { type: 'scan', amount: 1 } },
-  { label: '1', icon: '🎁', chance: 10, color: '#E74C3C', subLabel: 'spin', reward: { type: 'free_spin', amount: 1 } },
-  { label: '1', icon: '🧩', chance: 8, color: '#3498DB', subLabel: 'Frag Rare', reward: { type: 'fragment', tier: 'rare', amount: 1 } },
-  { label: '10', icon: '⚡⚡', chance: 2, color: '#FFD700', subLabel: 'énergie', reward: { type: 'energy', amount: 10 } },
+  { label: '3', icon: '⚡', chance: 30, color: '#2A4A3A', reward: { type: 'energy', amount: 3 } },
+  { label: '30', icon: '💰', chance: 20, color: '#3A4A2A', reward: { type: 'lix', amount: 30 } },
+  { label: '1', icon: '🧩', chance: 15, color: '#3A2A4A', subLabel: 'Frag Std', reward: { type: 'fragment', tier: 'standard', amount: 1 } },
+  { label: '1', icon: '📸', chance: 15, color: '#4A3A2A', subLabel: 'scan', reward: { type: 'scan', amount: 1 } },
+  { label: '1', icon: '🎁', chance: 10, color: '#4A2A2A', subLabel: 'spin', reward: { type: 'free_spin', amount: 1 } },
+  { label: '1', icon: '🧩', chance: 8, color: '#2A3A4A', subLabel: 'Frag Rare', reward: { type: 'fragment', tier: 'rare', amount: 1 } },
+  { label: '10', icon: '⚡⚡', chance: 2, color: '#4A4A2A', subLabel: 'énergie', reward: { type: 'energy', amount: 10 } },
 ];
 
 const SUPER_SEGMENTS = [
-  { label: '5', icon: '⚡', chance: 27, color: '#FFB800', reward: { type: 'energy', amount: 5 } },
-  { label: '50', icon: '💰', chance: 20, color: '#00D984', reward: { type: 'lix', amount: 50 } },
-  { label: '1', icon: '🃏', chance: 15, color: '#9B59B6', subLabel: 'carte Std', reward: { type: 'card', tier: 'standard', amount: 1 } },
-  { label: '2', icon: '📸', chance: 13, color: '#FF8C42', subLabel: 'scans', reward: { type: 'scan', amount: 2 } },
-  { label: '1', icon: '🎁', chance: 10, color: '#E74C3C', subLabel: 'super', reward: { type: 'free_spin', amount: 1 } },
-  { label: '1', icon: '🧩', chance: 8, color: '#3498DB', subLabel: 'Frag Elite', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
-  { label: '25', icon: '⚡⚡', chance: 7, color: '#FFD700', subLabel: 'énergie', reward: { type: 'energy', amount: 25 } },
+  { label: '5', icon: '⚡', chance: 27, color: '#2A4A3A', reward: { type: 'energy', amount: 5 } },
+  { label: '50', icon: '💰', chance: 20, color: '#3A4A2A', reward: { type: 'lix', amount: 50 } },
+  { label: '1', icon: '🃏', chance: 15, color: '#3A2A4A', subLabel: 'carte Std', reward: { type: 'card', tier: 'standard', amount: 1 } },
+  { label: '2', icon: '📸', chance: 13, color: '#4A3A2A', subLabel: 'scans', reward: { type: 'scan', amount: 2 } },
+  { label: '1', icon: '🎁', chance: 10, color: '#4A2A2A', subLabel: 'super', reward: { type: 'free_spin', amount: 1 } },
+  { label: '1', icon: '🧩', chance: 8, color: '#2A3A4A', subLabel: 'Frag Elite', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
+  { label: '25', icon: '⚡⚡', chance: 7, color: '#4A4A2A', subLabel: 'énergie', reward: { type: 'energy', amount: 25 } },
 ];
 
 const MEGA_SEGMENTS = [
-  { label: '10', icon: '⚡', chance: 25, color: '#FFB800', reward: { type: 'energy', amount: 10 } },
-  { label: '100', icon: '💰', chance: 20, color: '#00D984', reward: { type: 'lix', amount: 100 } },
-  { label: '2', icon: '🧩', chance: 15, color: '#9B59B6', subLabel: 'Frag Rare', reward: { type: 'fragment', tier: 'rare', amount: 2 } },
-  { label: '1', icon: '🧩', chance: 13, color: '#FF8C42', subLabel: 'Frag Elite', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
-  { label: '1', icon: '🃏', chance: 10, color: '#E74C3C', subLabel: 'carte Rare', reward: { type: 'card', tier: 'rare', amount: 1 } },
-  { label: '1', icon: '🧩', chance: 7, color: '#3498DB', subLabel: 'Frag Myth', reward: { type: 'fragment', tier: 'mythique', amount: 1 } },
-  { label: '50', icon: '⚡⚡', chance: 10, color: '#FFD700', subLabel: 'énergie', reward: { type: 'energy', amount: 50 } },
+  { label: '10', icon: '⚡', chance: 25, color: '#2A4A3A', reward: { type: 'energy', amount: 10 } },
+  { label: '100', icon: '💰', chance: 20, color: '#3A4A2A', reward: { type: 'lix', amount: 100 } },
+  { label: '2', icon: '🧩', chance: 15, color: '#3A2A4A', subLabel: 'Frag Rare', reward: { type: 'fragment', tier: 'rare', amount: 2 } },
+  { label: '1', icon: '🧩', chance: 13, color: '#4A3A2A', subLabel: 'Frag Elite', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
+  { label: '1', icon: '🃏', chance: 10, color: '#4A2A2A', subLabel: 'carte Rare', reward: { type: 'card', tier: 'rare', amount: 1 } },
+  { label: '1', icon: '🧩', chance: 7, color: '#2A3A4A', subLabel: 'Frag Myth', reward: { type: 'fragment', tier: 'mythique', amount: 1 } },
+  { label: '50', icon: '⚡⚡', chance: 10, color: '#4A4A2A', subLabel: 'énergie', reward: { type: 'energy', amount: 50 } },
 ];
 
 // === SLUGS PAR TIER — pour distribution aléatoire de fragments ===
@@ -281,13 +281,13 @@ const pickReward = (segments) => {
 };
 
 const SEGMENT_GRADIENTS = {
-  '#00D984': { inner: '#33FFB0', outer: '#00B870' },
-  '#4DA6FF': { inner: '#80C4FF', outer: '#2B8DE6' },
-  '#FF8C42': { inner: '#FFB380', outer: '#E67020' },
-  '#D4AF37': { inner: '#F0D060', outer: '#B8952E' },
-  '#9B59B6': { inner: '#C090D0', outer: '#7D3F99' },
-  '#E74C3C': { inner: '#FF7070', outer: '#C0392B' },
-  '#FF1493': { inner: '#FF60B8', outer: '#D4007A' },
+  '#2A4A3A': { inner: '#3A5A4A', outer: '#1A3A2A' },
+  '#3A4A2A': { inner: '#4A5A3A', outer: '#2A3A1A' },
+  '#3A2A4A': { inner: '#4A3A5A', outer: '#2A1A3A' },
+  '#4A3A2A': { inner: '#5A4A3A', outer: '#3A2A1A' },
+  '#4A2A2A': { inner: '#5A3A3A', outer: '#3A1A1A' },
+  '#2A3A4A': { inner: '#3A4A5A', outer: '#1A2A3A' },
+  '#4A4A2A': { inner: '#5A5A3A', outer: '#3A3A1A' },
 };
 
 // SVG segment icons (rendered inside <Svg> as <G> groups)
@@ -410,6 +410,7 @@ export default function LixVersePage() {
   const glowOpacity = useRef(new Animated.Value(0)).current;
   const arrowBounce = useRef(new Animated.Value(0)).current;
   const spinBtnScale = useRef(new Animated.Value(1)).current;
+  const freeBtnPulse = useRef(new Animated.Value(1)).current;
   const [wallStickers, setWallStickers] = useState([]);
   const [selectedSticker, setSelectedSticker] = useState(null);
   const [showGiftModal, setShowGiftModal] = useState(false);
@@ -688,8 +689,14 @@ export default function LixVersePage() {
   const checkFreeSpin = async () => {
     try {
       const data = await supaRpc('check_free_spin_available', { p_user_id: TEST_USER_ID });
-      if (data) setFreeSpinAvailable(data.free_available !== false);
-    } catch (e) {}
+      if (data && typeof data === 'object') {
+        setFreeSpinAvailable(data.free_available !== false);
+      } else {
+        setFreeSpinAvailable(true);
+      }
+    } catch (e) {
+      setFreeSpinAvailable(true);
+    }
   };
 
   // === CALLBACK APRÈS ANIMATION SPIN ===
@@ -790,6 +797,13 @@ export default function LixVersePage() {
         if (d && d[0]) setUserNameAvatar(d[0].full_name || '');
       } catch (e) {}
     })();
+    // Pulse animation pour SPIN GRATUIT
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(freeBtnPulse, { toValue: 1.04, duration: 1200, useNativeDriver: true }),
+        Animated.timing(freeBtnPulse, { toValue: 1, duration: 1200, useNativeDriver: true }),
+      ])
+    ).start();
   }, []);
   useEffect(() => { if (activeTab === 'characters') loadCharacterData(); }, [activeTab]);
   // Fake realtime — simuler des likes externes toutes les 12-27s
@@ -1655,12 +1669,31 @@ export default function LixVersePage() {
                     setSelectedChar(ch); setCharFlipped(false); flipAnim.setValue(0);
                     loadCharPowers(ch.slug || ch.id);
                   } else {
-                    showLixAlert('🔒 Personnage verrouillé', 'Collecte des fragments pour débloquer ce personnage.', [{ text: 'Compris', style: 'cancel' }], '🔒');
+                    const charData = ALL_CHARACTERS.find(a => a.id === (ch.slug || ch.id));
+                    const emoji = CHAR_EMOJIS[ch.slug || ch.id] || charData?.emoji || '🃏';
+                    const name = CHAR_NAMES[ch.slug || ch.id] || ch.name || ch.slug;
+                    const tier = ch.tier || 'standard';
+                    const frags = ch.fragments || ch.duplicates_count || 0;
+                    const fragsReq = ch.fragments_required || FRAGS_NIV1[tier] || 3;
+                    showLixAlert(
+                      name,
+                      emoji + '\n\n'
+                        + '— ' + tier.charAt(0).toUpperCase() + tier.slice(1) + ' —\n\n'
+                        + '🧩 ' + frags + '/' + fragsReq + ' fragments\n'
+                        + (frags > 0
+                          ? 'Continue les spins et les caisses !'
+                          : 'Collecte des fragments pour débloquer.'),
+                      [
+                        { text: 'Spin Wheel', color: '#D4AF37', onPress: () => setActiveTab('lixspin') },
+                        { text: 'Fermer', style: 'cancel' },
+                      ],
+                      '🔒'
+                    );
                   }
                 }}
                 style={({ pressed }) => ({
                   width: cardW, borderRadius: wp(14), overflow: 'hidden',
-                  opacity: own ? 1 : 0.35,
+                  opacity: own ? 1 : 0.5,
                   borderWidth: isActive ? 2 : 1,
                   borderColor: isActive ? '#00D984' : own ? '#4A4F55' : 'rgba(255,255,255,0.08)',
                   transform: [{ scale: pressed ? 0.93 : 1 }],
@@ -1676,7 +1709,20 @@ export default function LixVersePage() {
                       <Text style={{ fontSize: fp(7), fontWeight: '700', color: '#FFF' }}>{badge.text}</Text>
                     </View>
                   ) : (
-                    <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.25)', marginTop: wp(3) }}>{ch.fragments || 0}/{ch.fragments_required || 3} frags</Text>
+                    <View style={{ width: '80%', marginTop: wp(3), alignItems: 'center' }}>
+                      <View style={{ width: '100%', height: wp(3), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(1.5), overflow: 'hidden', marginBottom: wp(2) }}>
+                        <View style={{
+                          height: '100%', borderRadius: wp(1.5),
+                          backgroundColor: (ch.tier === 'mythique' || ch.tier === 'hyper') ? '#D4AF37'
+                            : ch.tier === 'elite' ? '#B388FF'
+                            : ch.tier === 'rare' ? '#4DA6FF' : '#00D984',
+                          width: Math.min(100, Math.round(((ch.fragments || ch.duplicates_count || 0) / (ch.fragments_required || FRAGS_NIV1[ch.tier] || 3)) * 100)) + '%',
+                        }} />
+                      </View>
+                      <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.25)' }}>
+                        {ch.fragments || ch.duplicates_count || 0}/{ch.fragments_required || FRAGS_NIV1[ch.tier] || 3} frags
+                      </Text>
+                    </View>
                   )}
                   {own && (
                     <View style={{ width: '80%', marginTop: wp(4) }}>
@@ -1741,10 +1787,14 @@ export default function LixVersePage() {
 
     try {
       // ═══ APPEL SERVEUR — le résultat est décidé ici ═══
-      const data = await supaRpc('execute_spin', {
+      const spinPromise = supaRpc('execute_spin', {
         p_user_id: TEST_USER_ID,
         p_spin_tier: spinTier,
       });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Connexion lente — réessaie')), 15000)
+      );
+      const data = await Promise.race([spinPromise, timeoutPromise]);
 
       if (!data?.success) {
         const errMsg = data?.error || data?.message || JSON.stringify(data);
@@ -2098,45 +2148,16 @@ export default function LixVersePage() {
                 {/* Segment labels — SVG icon + value + type */}
                 {angledSegs.map((seg, i) => {
                   const midAngle = seg.startAngle + seg.sweepAngle / 2;
-                  // Corriger l'orientation du texte pour qu'il soit toujours lisible
-                  const textAngle = (midAngle > 90 && midAngle < 270) ? midAngle + 180 : midAngle;
                   const midRad = (midAngle - 90) * Math.PI / 180;
-                  const isSmall = seg.sweepAngle < 30;
                   const rType = getSegmentRewardType(seg);
-
-                  if (isSmall) {
-                    const r = innerR * 0.6;
-                    const ex = cx + r * Math.cos(midRad);
-                    const ey = cy + r * Math.sin(midRad);
-                    return (
-                      <G key={'lbl' + i}>
-                        {renderSegmentIcon(rType, seg.reward.tier, ex, ey, wp(12), midAngle)}
-                      </G>
-                    );
-                  }
-
-                  const emojiR = innerR * 0.55;
-                  const valR = innerR * 0.72;
-                  const typeR = innerR * 0.42;
-                  const emojiX = cx + emojiR * Math.cos(midRad);
-                  const emojiY = cy + emojiR * Math.sin(midRad);
-                  const valX = cx + valR * Math.cos(midRad);
-                  const valY = cy + valR * Math.sin(midRad);
-                  const typeX = cx + typeR * Math.cos(midRad);
-                  const typeY = cy + typeR * Math.sin(midRad);
+                  const isSmall = seg.sweepAngle < 20;
+                  const iconR = innerR * 0.72;
+                  const iconSize = isSmall ? wp(14) : wp(22);
+                  const iconX = cx + iconR * Math.cos(midRad);
+                  const iconY = cy + iconR * Math.sin(midRad);
                   return (
                     <G key={'lbl' + i}>
-                      {renderSegmentIcon(rType, seg.reward.tier, emojiX, emojiY, wp(16), midAngle)}
-                      <SvgText x={valX} y={valY} fill="#FFF" fontSize={fp(12)} fontWeight="700"
-                        textAnchor="middle" alignmentBaseline="central"
-                        rotation={textAngle} origin={valX + ',' + valY}>
-                        {String(seg.reward.amount)}
-                      </SvgText>
-                      <SvgText x={typeX} y={typeY} fill="rgba(255,255,255,0.7)" fontSize={fp(8)}
-                        textAnchor="middle" alignmentBaseline="central"
-                        rotation={textAngle} origin={typeX + ',' + typeY}>
-                        {getSegmentTypeLabel(seg)}
-                      </SvgText>
+                      {renderSegmentIcon(rType, seg.reward.tier, iconX, iconY, iconSize, midAngle)}
                     </G>
                   );
                 })}
@@ -2184,7 +2205,11 @@ export default function LixVersePage() {
           </View>
 
           {/* Spin button with spring press */}
-          <Animated.View style={{ transform: [{ scale: spinBtnScale }], marginTop: wp(16), width: wp(220), opacity: (isSpinning || spinLoading) ? 0.5 : 1 }}>
+          <Animated.View style={{
+            transform: [{ scale: (spinCost === 0 && spinTier === 'normal' && !isSpinning) ? Animated.multiply(spinBtnScale, freeBtnPulse) : spinBtnScale }],
+            marginTop: wp(16), width: wp(220),
+            opacity: (isSpinning || spinLoading) ? 0.5 : 1,
+          }}>
             <Pressable delayPressIn={120} onPress={doSpin} disabled={isSpinning || spinLoading}
               onPressIn={onBtnPressIn} onPressOut={onBtnPressOut}
               style={{ width: '100%' }}>
@@ -2303,11 +2328,19 @@ export default function LixVersePage() {
                       Animated.timing(fragmentSlideAnim, {
                         toValue: 1, duration: 400, useNativeDriver: true,
                         easing: Easing.inOut(Easing.ease),
-                      }).start(() => {
+                      }).start(async () => {
                         setShowFragmentModal(false);
                         setFragmentResult(null);
                         fragmentSlideAnim.setValue(0);
-                        loadCharacterData();
+                        await loadCharacterData();
+                        try {
+                          const res = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID + '&select=lix_balance,energy', { headers: HEADERS });
+                          const d = await res.json();
+                          if (d && d[0]) {
+                            if (d[0].lix_balance != null) setLixBalance(d[0].lix_balance);
+                            if (d[0].energy != null) setUserEnergy(d[0].energy);
+                          }
+                        } catch (e) {}
                       });
                     }}
                     style={({ pressed }) => ({
