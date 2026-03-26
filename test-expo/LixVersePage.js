@@ -493,6 +493,7 @@ export default function LixVersePage() {
   const [loadingPowers, setLoadingPowers] = useState(false);
   const [onboardingSelected, setOnboardingSelected] = useState(null);
   const [inlinePowerModal, setInlinePowerModal] = useState(null);
+  const [humanTab, setHumanTab] = useState('binome');
   const [userNameAvatar, setUserNameAvatar] = useState('');
   const flipAnim = useRef(new Animated.Value(0)).current;
 
@@ -2309,7 +2310,131 @@ export default function LixVersePage() {
     );
   };
 
-  const renderBinomeTab = () => {
+  const SuiviHumainTeaser = () => {
+    const [notifyPressed, setNotifyPressed] = useState(false);
+    return (
+      <View style={{ paddingHorizontal: wp(16), alignItems: 'center' }}>
+        <View style={{ backgroundColor: 'rgba(212,175,55,0.12)', borderRadius: wp(20), paddingHorizontal: wp(16), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)', marginBottom: wp(16) }}>
+          <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#D4AF37', letterSpacing: 2 }}>BIENTÔT DISPONIBLE</Text>
+        </View>
+        <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#EAEEF3', textAlign: 'center', marginBottom: wp(8) }}>Suivi Humain</Text>
+        <Text style={{ fontSize: fp(12), color: '#8892A0', textAlign: 'center', lineHeight: fp(18), marginBottom: wp(20), paddingHorizontal: wp(10) }}>
+          Un vrai nutritionniste te suit chaque semaine.{'\n'}Tes données santé lui sont envoyées automatiquement.{'\n'}Communication 100% confidentielle via LixTag.
+        </Text>
+        <View style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(16), padding: wp(16), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', marginBottom: wp(20) }}>
+          {[
+            { step: '1', icon: '🔍', title: 'Trouve ton nutritionniste', desc: 'Recherche parmi des professionnels certifiés. Vois leur expérience dans l\'app.', color: '#4DA6FF' },
+            { step: '2', icon: '🔒', title: 'Connexion anonyme', desc: 'Toi et le nutritionniste ne voyez que vos LixTags. LIXUM protège ton identité.', color: '#00D984' },
+            { step: '3', icon: '📋', title: 'Rapport hebdomadaire', desc: 'Chaque semaine, le nutritionniste analyse tes données et envoie des recommandations personnalisées.', color: '#D4AF37' },
+          ].map((item, idx) => (
+            <View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: idx < 2 ? wp(16) : 0 }}>
+              <View style={{ alignItems: 'center', marginRight: wp(12), width: wp(30) }}>
+                <View style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: item.color + '15', borderWidth: 1.5, borderColor: item.color + '40', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(14) }}>{item.icon}</Text>
+                </View>
+                {idx < 2 && <View style={{ width: 1.5, height: wp(16), backgroundColor: 'rgba(255,255,255,0.08)', marginTop: wp(4) }} />}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fp(13), fontWeight: '700', color: item.color, marginBottom: wp(3) }}>{item.title}</Text>
+                <Text style={{ fontSize: fp(10), color: '#8892A0', lineHeight: fp(15) }}>{item.desc}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+        <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.06)', borderRadius: wp(12), padding: wp(12), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)', marginBottom: wp(16) }}>
+          <Text style={{ fontSize: fp(20), marginRight: wp(10) }}>🛡️</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>100% confidentiel</Text>
+            <Text style={{ fontSize: fp(9), color: '#8892A0', marginTop: wp(2) }}>Tu communiques par Lixsigns uniquement. Le nutritionniste ne voit jamais ton nom.</Text>
+          </View>
+        </View>
+        <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,140,66,0.06)', borderRadius: wp(12), padding: wp(12), borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)', marginBottom: wp(20) }}>
+          <Text style={{ fontSize: fp(20), marginRight: wp(10) }}>⚠️</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FF8C42' }}>Coaching nutritionnel</Text>
+            <Text style={{ fontSize: fp(9), color: '#8892A0', marginTop: wp(2) }}>Ce service propose du coaching nutritionnel, pas des consultations médicales. En cas de pathologie, consulte un médecin.</Text>
+          </View>
+        </View>
+        <Pressable
+          onPress={() => {
+            setNotifyPressed(true);
+            showLixAlert('🔔 Notification activée', 'Tu seras prévenu dès le lancement du Suivi Humain !', [{ text: 'Super', color: '#D4AF37' }], '🔔');
+          }}
+          disabled={notifyPressed}
+          style={({ pressed }) => ({
+            width: '100%', paddingVertical: wp(14), borderRadius: wp(14),
+            backgroundColor: notifyPressed ? 'rgba(212,175,55,0.08)' : pressed ? '#B8952E' : '#D4AF37',
+            borderWidth: notifyPressed ? 1 : 0, borderColor: 'rgba(212,175,55,0.3)',
+            alignItems: 'center', transform: [{ scale: pressed && !notifyPressed ? 0.97 : 1 }],
+          })}
+        >
+          <Text style={{ fontSize: fp(14), fontWeight: '700', color: notifyPressed ? '#D4AF37' : '#1A1D22' }}>
+            {notifyPressed ? '🔔 Tu seras notifié' : '🔔 Me notifier au lancement'}
+          </Text>
+        </Pressable>
+        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: wp(10), marginBottom: wp(20) }}>
+          Coût estimé : à partir de 200 Lix/semaine
+        </Text>
+      </View>
+    );
+  };
+
+  const renderHumanTab = () => {
+    if (humanTab === 'suivi') {
+      return (
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: wp(8), paddingBottom: wp(100) }}>
+          {/* ══════ ONGLETS INTERNES HUMAN ══════ */}
+          <View style={{
+            flexDirection: 'row', marginHorizontal: wp(16), marginBottom: wp(16),
+            backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12), padding: wp(3),
+            borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+          }}>
+            <Pressable onPress={() => setHumanTab('binome')} style={{
+              flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
+              backgroundColor: 'transparent', alignItems: 'center',
+            }}>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#6B7B8D' }}>🤝 Binôme</Text>
+            </Pressable>
+            <Pressable onPress={() => setHumanTab('suivi')} style={{
+              flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
+              backgroundColor: 'rgba(212,175,55,0.12)',
+              borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)', alignItems: 'center',
+            }}>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#D4AF37' }}>👨‍⚕️ Suivi Humain</Text>
+            </Pressable>
+          </View>
+          <SuiviHumainTeaser />
+        </ScrollView>
+      );
+    }
+
+    // humanTab === 'binome' → render internal tabs + binome content (which has its own ScrollView)
+    return renderBinomeContent();
+  };
+
+  const HumanTabSelector = () => (
+    <View style={{
+      flexDirection: 'row', marginHorizontal: wp(16), marginBottom: wp(12),
+      backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12), padding: wp(3),
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    }}>
+      <Pressable onPress={() => setHumanTab('binome')} style={{
+        flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
+        backgroundColor: 'rgba(0,217,132,0.12)',
+        borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', alignItems: 'center',
+      }}>
+        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#00D984' }}>🤝 Binôme</Text>
+      </Pressable>
+      <Pressable onPress={() => setHumanTab('suivi')} style={{
+        flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
+        backgroundColor: 'transparent', alignItems: 'center',
+      }}>
+        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#6B7B8D' }}>👨‍⚕️ Suivi Humain</Text>
+      </Pressable>
+    </View>
+  );
+
+  const renderBinomeContent = () => {
     const radarRotate = radarAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
     const SEARCH_STEP_TEXTS = [
       'Analyse morphologique du profil...',
@@ -2328,7 +2453,8 @@ export default function LixVersePage() {
       const myMood = '💪';
       const myWeather = '🌤️';
       return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingHorizontal: wp(16), paddingTop: wp(12) }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingHorizontal: wp(16), paddingTop: wp(8) }}>
+          <View style={{ marginHorizontal: wp(-16) }}><HumanTabSelector /></View>
           {/* Header duo */}
           <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(16), padding: wp(16), marginBottom: wp(16), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -2440,7 +2566,8 @@ export default function LixVersePage() {
 
     // États none / searching / proposed / pending_sent / declined
     return (
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingTop: wp(16) }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingTop: wp(8) }}>
+        <HumanTabSelector />
         {/* Header */}
         <View style={{ alignItems: 'center', paddingHorizontal: wp(16) }}>
           <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#D4AF37', letterSpacing: 2, marginBottom: wp(4) }}>BINÔME</Text>
@@ -3055,10 +3182,10 @@ export default function LixVersePage() {
         </View>
         {notifications.length>0&&(<View style={{height:wp(28),backgroundColor:'rgba(212,175,55,0.06)',borderBottomWidth:1,borderBottomColor:'rgba(212,175,55,0.1)',overflow:'hidden',justifyContent:'center'}}><Animated.View style={{flexDirection:'row',transform:[{translateX:notifScrollX}]}}>{[...notifications,...notifications].map((n,i)=>(<View key={i} style={{width:wp(280),flexDirection:'row',alignItems:'center',paddingHorizontal:wp(10),gap:wp(6)}}><View style={{width:wp(6),height:wp(6),borderRadius:wp(3),backgroundColor:n.color||'#D4AF37'}}/><Text style={{fontSize:fp(10),color:'rgba(255,255,255,0.5)',flex:1}} numberOfLines={1}>{n.message}</Text></View>))}</Animated.View></View>)}
         <View style={{flexDirection:'row',marginHorizontal:wp(16),marginVertical:wp(10),gap:wp(6)}}>
-          {[{key:'defi',label:'Défi',icon:'🏆'},{key:'binome',label:'Binôme',icon:'🤝'},{key:'characters',label:'Caractères',icon:'🃏'},{key:'lixspin',label:'Lix & Spin',icon:'💎'}].map(tab=>(<Pressable key={tab.key} onPress={()=>setActiveTab(tab.key)} style={{flex:1,paddingVertical:wp(10),borderRadius:wp(12),alignItems:'center',backgroundColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.05)',borderWidth:1,borderColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.08)'}}><Text style={{fontSize:fp(14)}}>{tab.icon}</Text><Text style={{fontSize:fp(10),fontWeight:'600',marginTop:wp(2),color:activeTab===tab.key?'#1A1D22':'rgba(255,255,255,0.4)'}}>{tab.label}</Text></Pressable>))}
+          {[{key:'defi',label:'Défi',icon:'🏆'},{key:'human',label:'Human',icon:'🤝'},{key:'characters',label:'Caractères',icon:'🃏'},{key:'lixspin',label:'Lix & Spin',icon:'💎'}].map(tab=>(<Pressable key={tab.key} onPress={()=>setActiveTab(tab.key)} style={{flex:1,paddingVertical:wp(10),borderRadius:wp(12),alignItems:'center',backgroundColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.05)',borderWidth:1,borderColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.08)'}}><Text style={{fontSize:fp(14)}}>{tab.icon}</Text><Text style={{fontSize:fp(10),fontWeight:'600',marginTop:wp(2),color:activeTab===tab.key?'#1A1D22':'rgba(255,255,255,0.4)'}}>{tab.label}</Text></Pressable>))}
         </View>
         {activeTab==='defi'&&renderDefiTab()}
-        {activeTab==='binome'&&renderBinomeTab()}
+        {activeTab==='human'&&renderHumanTab()}
         {activeTab==='characters'&&renderCharactersTab()}
         {activeTab==='lixspin'&&renderLixSpinTab()}
       </LinearGradient>
