@@ -39,9 +39,9 @@ export const ENERGY_CONFIG = {
 export const TABS = [
   { key: 'home', label: 'Accueil', iconActive: 'home', iconInactive: 'home-outline' },
   { key: 'meals', label: 'Repas', iconActive: 'restaurant', iconInactive: 'restaurant-outline' },
+  { key: 'lixverse', label: 'LixVerse', iconActive: 'planet', iconInactive: 'planet-outline' },
   { key: 'activity', label: 'Activité', iconActive: 'fitness', iconInactive: 'fitness-outline' },
-  { key: 'medicai', label: 'MedicAi', iconActive: 'medkit', iconInactive: 'medkit-outline', locked: false, isMedicAi: true },
-  { key: 'profile', label: 'Profil', iconActive: 'person', iconInactive: 'person-outline' },
+  { key: 'medicai', label: 'MedicAi', iconActive: 'medkit', iconInactive: 'medkit-outline', isMedicAi: true },
 ];
 
 // ============================================
