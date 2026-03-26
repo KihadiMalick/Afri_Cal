@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
-import Svg, { Defs, Rect, Path, Circle, Line, G, Polygon, Text as SvgText, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import Svg, { Defs, Rect, Path, Circle, Line, G, Polygon, Text as SvgText, LinearGradient as SvgLinearGradient, RadialGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -236,6 +236,71 @@ const pickReward = (segments) => {
   return segments[0];
 };
 
+const SEGMENT_GRADIENTS = {
+  '#00D984': { inner: '#33FFB0', outer: '#00B870' },
+  '#4DA6FF': { inner: '#80C4FF', outer: '#2B8DE6' },
+  '#FF8C42': { inner: '#FFB380', outer: '#E67020' },
+  '#D4AF37': { inner: '#F0D060', outer: '#B8952E' },
+  '#9B59B6': { inner: '#C090D0', outer: '#7D3F99' },
+  '#E74C3C': { inner: '#FF7070', outer: '#C0392B' },
+  '#FF1493': { inner: '#FF60B8', outer: '#D4007A' },
+};
+
+const SEGMENT_EMOJIS = {
+  energy: '⚡',
+  lix: '💰',
+  fragment_rare: '🔮',
+  fragment_elite: '🏆',
+  fragment_mythique: '👑',
+  card: '🃏',
+};
+
+const getSegmentEmoji = (seg) => {
+  if (seg.reward.type === 'energy') return '⚡';
+  if (seg.reward.type === 'lix') return '💰';
+  if (seg.reward.type === 'card') return '🃏';
+  if (seg.reward.type === 'fragment') {
+    if (seg.reward.tier === 'mythique') return '👑';
+    if (seg.reward.tier === 'elite') return '🏆';
+    return '🔮';
+  }
+  return '⚡';
+};
+
+const getSegmentTypeLabel = (seg) => {
+  if (seg.reward.type === 'energy') return 'énergie';
+  if (seg.reward.type === 'lix') return 'Lix';
+  if (seg.reward.type === 'card') return 'Carte Elite';
+  if (seg.reward.type === 'fragment') {
+    if (seg.reward.tier === 'mythique') return 'Frag Myth.';
+    if (seg.reward.tier === 'elite') return 'Frag Elite';
+    return 'Frag Rare';
+  }
+  return '';
+};
+
+const getSegmentAngles = (segments) => {
+  const total = segments.reduce((sum, s) => sum + s.chance, 0);
+  let currentAngle = 0;
+  return segments.map(seg => {
+    const sweepAngle = (seg.chance / total) * 360;
+    const startAngle = currentAngle;
+    currentAngle += sweepAngle;
+    return { ...seg, startAngle, sweepAngle };
+  });
+};
+
+const describeArc = (cx, cy, radius, startAngle, endAngle) => {
+  const startRad = (startAngle - 90) * Math.PI / 180;
+  const endRad = (endAngle - 90) * Math.PI / 180;
+  const x1 = cx + radius * Math.cos(startRad);
+  const y1 = cy + radius * Math.sin(startRad);
+  const x2 = cx + radius * Math.cos(endRad);
+  const y2 = cy + radius * Math.sin(endRad);
+  const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
+  return 'M ' + cx + ' ' + cy + ' L ' + x1 + ' ' + y1 + ' A ' + radius + ' ' + radius + ' 0 ' + largeArc + ' 1 ' + x2 + ' ' + y2 + ' Z';
+};
+
 const LIX_PACKS = [
   { name: 'Micro', price: '$0.99', lix: 990, bonus: '', color: '#00D984' },
   { name: 'Basic', price: '$4.99', lix: 5240, bonus: '+5%', color: '#4DA6FF' },
@@ -276,6 +341,10 @@ export default function LixVersePage() {
   const [showSpinResultModal, setShowSpinResultModal] = useState(false);
   const [spinWinnerSeg, setSpinWinnerSeg] = useState(null);
   const spinResultPulse = useRef(new Animated.Value(1)).current;
+  const [winnerGlowIdx, setWinnerGlowIdx] = useState(null);
+  const glowOpacity = useRef(new Animated.Value(0)).current;
+  const arrowBounce = useRef(new Animated.Value(0)).current;
+  const spinBtnScale = useRef(new Animated.Value(1)).current;
   const [wallStickers, setWallStickers] = useState([]);
   const [selectedSticker, setSelectedSticker] = useState(null);
   const [showGiftModal, setShowGiftModal] = useState(false);
@@ -1294,6 +1363,16 @@ export default function LixVersePage() {
       ))}
     </ScrollView>
   );
+  const triggerArrowBounce = (strong) => {
+    arrowBounce.setValue(strong ? 1.6 : 1);
+    Animated.spring(arrowBounce, {
+      toValue: 0,
+      friction: 6,
+      tension: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
   const doSpin = () => {
     if (isSpinning) return;
     const segments = getSegments();
@@ -1308,30 +1387,41 @@ export default function LixVersePage() {
     }
 
     setIsSpinning(true); setSpinResult(null); setShowSpinResultModal(false); setSpinWinnerSeg(null);
+    setWinnerGlowIdx(null); glowOpacity.setValue(0);
     if (cost > 0) setLixBalance(p => p - cost);
     if (spinTier === 'normal' && !freeSpinUsed) setFreeSpinUsed(true);
 
     const winner = pickReward(segments);
     const winnerIndex = segments.indexOf(winner);
-    const segmentAngle = 360 / segments.length;
-    const targetAngle = 360 - (winnerIndex * segmentAngle + segmentAngle / 2);
+
+    // Proportional angle calculation
+    const angledSegs = getSegmentAngles(segments);
+    const winSeg = angledSegs[winnerIndex];
+    const winMidAngle = winSeg.startAngle + winSeg.sweepAngle / 2;
+    const targetAngle = 360 - winMidAngle;
     const totalRotation = 360 * 5 + targetAngle;
 
     const duration = spinTier === 'mega' ? 6000 : spinTier === 'super' ? 5000 : 4000;
 
-    // Haptic feedback during spin
-    let hapticInterval = null;
-    let hapticCount = 0;
-    const totalSegmentTicks = segments.length * 5;
-    hapticInterval = setInterval(() => {
-      hapticCount++;
-      if (hapticCount > totalSegmentTicks - 2 * segments.length) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-      } else {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    // Arrow tick listener — bounce on rivet crossings
+    let lastTickIndex = -1;
+    const totalTicks = 12;
+    const listenerId = spinAnim.addListener(({ value }) => {
+      const normalizedAngle = value % 360;
+      const tickIndex = Math.floor(normalizedAngle / (360 / totalTicks));
+      if (tickIndex !== lastTickIndex) {
+        lastTickIndex = tickIndex;
+        // Estimate progress to detect slowdown
+        const progress = value / totalRotation;
+        const isSlowdown = progress > 0.85;
+        triggerArrowBounce(isSlowdown);
+        if (isSlowdown) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        } else {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        }
       }
-      if (hapticCount >= totalSegmentTicks) clearInterval(hapticInterval);
-    }, Math.round(duration / totalSegmentTicks));
+    });
 
     spinAnim.setValue(0);
     Animated.timing(spinAnim, {
@@ -1340,9 +1430,18 @@ export default function LixVersePage() {
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start(() => {
-      if (hapticInterval) clearInterval(hapticInterval);
+      spinAnim.removeListener(listenerId);
       setIsSpinning(false);
       setSpinWinnerSeg(winner);
+      setWinnerGlowIdx(winnerIndex);
+
+      // Glow pulse on winner segment
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(glowOpacity, { toValue: 0.6, duration: 500, useNativeDriver: true }),
+          Animated.timing(glowOpacity, { toValue: 0.1, duration: 500, useNativeDriver: true }),
+        ])
+      ).start();
 
       // Apply rewards
       if (winner.reward.type === 'lix') setLixBalance(p => p + winner.reward.amount);
@@ -1354,17 +1453,21 @@ export default function LixVersePage() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       }
 
-      // Show result modal
-      setShowSpinResultModal(true);
-      if (winner.reward.type === 'fragment' || winner.reward.type === 'card') {
-        spinResultPulse.setValue(1);
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(spinResultPulse, { toValue: 1.15, duration: 600, useNativeDriver: true }),
-            Animated.timing(spinResultPulse, { toValue: 1, duration: 600, useNativeDriver: true }),
-          ])
-        ).start();
-      }
+      // Show result modal after 2s glow
+      setTimeout(() => {
+        glowOpacity.stopAnimation();
+        glowOpacity.setValue(0);
+        setShowSpinResultModal(true);
+        if (winner.reward.type === 'fragment' || winner.reward.type === 'card') {
+          spinResultPulse.setValue(1);
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(spinResultPulse, { toValue: 1.15, duration: 600, useNativeDriver: true }),
+              Animated.timing(spinResultPulse, { toValue: 1, duration: 600, useNativeDriver: true }),
+            ])
+          ).start();
+        }
+      }, 2000);
 
       fetch(SUPABASE_URL + '/rest/v1/lixverse_spin_history', {
         method: 'POST', headers: { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
@@ -1424,13 +1527,14 @@ export default function LixVersePage() {
 
   const renderLixSpinTab = () => {
     const segments = getSegments();
-    const segCount = segments.length;
-    const segAngle = 360 / segCount;
+    const angledSegs = getSegmentAngles(segments);
     const wheelR = wp(120);
-    const innerR = wp(114);
+    const innerR = wp(112);
     const cx = wp(130);
     const cy = wp(130);
+    const svgSize = cx * 2;
     const rot = spinAnim.interpolate({ inputRange: [0, 360], outputRange: ['0deg', '360deg'] });
+    const arrowRotation = arrowBounce.interpolate({ inputRange: [0, 1, 1.6], outputRange: ['0deg', '15deg', '25deg'] });
 
     let spinCost = 0;
     if (spinTier === 'normal') spinCost = freeSpinUsed ? 50 : 0;
@@ -1446,30 +1550,21 @@ export default function LixVersePage() {
       : ['#3A3F46', '#252A30'];
     const spinBtnBorder = spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : '#00D984';
 
-    // Build SVG segments
-    const buildSegmentPath = (index) => {
-      const startA = (index * segAngle - 90) * Math.PI / 180;
-      const endA = ((index + 1) * segAngle - 90) * Math.PI / 180;
-      const x1 = cx + innerR * Math.cos(startA);
-      const y1 = cy + innerR * Math.sin(startA);
-      const x2 = cx + innerR * Math.cos(endA);
-      const y2 = cy + innerR * Math.sin(endA);
-      const large = segAngle > 180 ? 1 : 0;
-      return 'M' + cx + ',' + cy + ' L' + x1 + ',' + y1 + ' A' + innerR + ',' + innerR + ' 0 ' + large + ',1 ' + x2 + ',' + y2 + ' Z';
-    };
-
-    // Build label positions
-    const labelPos = (index) => {
-      const midA = ((index + 0.5) * segAngle - 90) * Math.PI / 180;
-      const labelR = innerR * 0.65;
-      return { x: cx + labelR * Math.cos(midA), y: cy + labelR * Math.sin(midA), angle: (index + 0.5) * segAngle };
-    };
-
     const tierButtons = [
       { key: 'normal', label: 'Spin ⚡', sub: !freeSpinUsed ? 'Gratuit' : '50 Lix' },
       { key: 'super', label: 'SuperSpin 🔥', sub: '150 Lix' },
       { key: 'mega', label: 'MegaSpin 💎', sub: '500 Lix' },
     ];
+
+    const onBtnPressIn = () => {
+      Animated.spring(spinBtnScale, { toValue: 0.94, friction: 8, tension: 200, useNativeDriver: true }).start();
+    };
+    const onBtnPressOut = () => {
+      Animated.spring(spinBtnScale, { toValue: 1, friction: 5, tension: 300, useNativeDriver: true }).start();
+    };
+
+    // Unique gradient colors used by current segments
+    const usedColors = [...new Set(angledSegs.map(s => s.color))];
 
     return (
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100) }}>
@@ -1486,7 +1581,7 @@ export default function LixVersePage() {
             const active = spinTier === tb.key;
             return (
               <Pressable key={tb.key} delayPressIn={120}
-                onPress={() => { if (!isSpinning) setSpinTier(tb.key); }}
+                onPress={() => { if (!isSpinning) { setSpinTier(tb.key); setWinnerGlowIdx(null); } }}
                 style={({ pressed }) => ({
                   flex: 1, height: wp(50), borderRadius: wp(12),
                   overflow: 'hidden',
@@ -1513,76 +1608,181 @@ export default function LixVersePage() {
 
         {/* Wheel */}
         <View style={{ alignItems: 'center', marginBottom: wp(20) }}>
-          {/* Arrow indicator */}
-          <View style={{ marginBottom: -wp(6), zIndex: 10 }}>
-            <Svg width={wp(24)} height={wp(18)} viewBox="0 0 24 18">
-              <Polygon points="12,18 2,0 22,0" fill="#D4AF37" stroke="#8B7A2E" strokeWidth="1" />
+          {/* Arrow indicator — reactive bounce */}
+          <Animated.View style={{
+            marginBottom: -wp(8), zIndex: 10,
+            transform: [{ rotate: arrowRotation }],
+            shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: wp(4), shadowOffset: { width: 0, height: wp(2) }, elevation: 6,
+          }}>
+            <Svg width={wp(20)} height={wp(28)} viewBox="0 0 20 28">
+              <Defs>
+                <SvgLinearGradient id="arrowGrad" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor="#D4AF37" />
+                  <Stop offset="1" stopColor="#B8952E" />
+                </SvgLinearGradient>
+              </Defs>
+              <Polygon points="10,28 0,4 3,0 17,0 20,4" fill="url(#arrowGrad)" stroke="#8B7A2E" strokeWidth="1.5" strokeLinejoin="round" />
             </Svg>
-          </View>
+          </Animated.View>
 
-          <View style={{ width: cx * 2, height: cy * 2 }}>
-            <Animated.View style={{ width: cx * 2, height: cy * 2, transform: [{ rotate: rot }] }}>
-              <Svg width={cx * 2} height={cy * 2} viewBox={'0 0 ' + (cx * 2) + ' ' + (cy * 2)}>
-                {/* Colored segments */}
-                {segments.map((seg, i) => (
-                  <Path key={i} d={buildSegmentPath(i)} fill={seg.color + 'CC'} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
+          <View style={{ width: svgSize, height: svgSize }}>
+            <Animated.View style={{ width: svgSize, height: svgSize, transform: [{ rotate: rot }] }}>
+              <Svg width={svgSize} height={svgSize} viewBox={'0 0 ' + svgSize + ' ' + svgSize}>
+                <Defs>
+                  {/* Radial gradients for each segment color */}
+                  {usedColors.map(color => {
+                    const grad = SEGMENT_GRADIENTS[color] || { inner: color, outer: color };
+                    return (
+                      <RadialGradient key={'grad_' + color} id={'sg_' + color.replace('#', '')} cx="50%" cy="50%" r="50%">
+                        <Stop offset="0%" stopColor={grad.inner} stopOpacity="0.95" />
+                        <Stop offset="100%" stopColor={grad.outer} stopOpacity="1" />
+                      </RadialGradient>
+                    );
+                  })}
+                  {/* Hub radial gradient */}
+                  <RadialGradient id="hubGrad" cx="50%" cy="40%" r="60%">
+                    <Stop offset="0%" stopColor="#4A5060" />
+                    <Stop offset="100%" stopColor="#1A1D22" />
+                  </RadialGradient>
+                </Defs>
+
+                {/* Proportional colored segments with radial gradients */}
+                {angledSegs.map((seg, i) => (
+                  <Path key={'seg' + i}
+                    d={describeArc(cx, cy, innerR, seg.startAngle, seg.startAngle + seg.sweepAngle)}
+                    fill={'url(#sg_' + seg.color.replace('#', '') + ')'}
+                  />
                 ))}
-                {/* Segment labels */}
-                {segments.map((seg, i) => {
-                  const pos = labelPos(i);
+
+                {/* Segment separators */}
+                {angledSegs.map((seg, i) => {
+                  const rad = (seg.startAngle - 90) * Math.PI / 180;
+                  const lx = cx + innerR * Math.cos(rad);
+                  const ly = cy + innerR * Math.sin(rad);
+                  return <Line key={'sep' + i} x1={cx} y1={cy} x2={lx} y2={ly} stroke="#1A1D22" strokeWidth={wp(1.5)} />;
+                })}
+
+                {/* Winner glow overlay */}
+                {winnerGlowIdx !== null && angledSegs[winnerGlowIdx] && (
+                  <Path
+                    d={describeArc(cx, cy, innerR, angledSegs[winnerGlowIdx].startAngle, angledSegs[winnerGlowIdx].startAngle + angledSegs[winnerGlowIdx].sweepAngle)}
+                    fill="rgba(255,255,255,0.35)"
+                    opacity={0.5}
+                  />
+                )}
+
+                {/* Segment labels — emoji + value + type */}
+                {angledSegs.map((seg, i) => {
+                  const midAngle = seg.startAngle + seg.sweepAngle / 2;
+                  const midRad = (midAngle - 90) * Math.PI / 180;
+                  const isSmall = seg.sweepAngle < 30;
+                  const emoji = getSegmentEmoji(seg);
+
+                  if (isSmall) {
+                    // Only emoji for small segments
+                    const r = innerR * 0.6;
+                    const ex = cx + r * Math.cos(midRad);
+                    const ey = cy + r * Math.sin(midRad);
+                    return (
+                      <SvgText key={'lbl' + i} x={ex} y={ey} fill="#FFF" fontSize={fp(12)}
+                        textAnchor="middle" alignmentBaseline="central" rotation={midAngle} origin={ex + ',' + ey}>
+                        {emoji}
+                      </SvgText>
+                    );
+                  }
+
+                  // Full label: emoji, value, type
+                  const emojiR = innerR * 0.55;
+                  const valR = innerR * 0.72;
+                  const typeR = innerR * 0.42;
+                  const emojiX = cx + emojiR * Math.cos(midRad);
+                  const emojiY = cy + emojiR * Math.sin(midRad);
+                  const valX = cx + valR * Math.cos(midRad);
+                  const valY = cy + valR * Math.sin(midRad);
+                  const typeX = cx + typeR * Math.cos(midRad);
+                  const typeY = cy + typeR * Math.sin(midRad);
                   return (
-                    <SvgText key={'t' + i} x={pos.x} y={pos.y} fill="#FFF" fontSize={fp(9)} fontWeight="700"
-                      textAnchor="middle" alignmentBaseline="central">
-                      {seg.label}
-                    </SvgText>
+                    <G key={'lbl' + i}>
+                      <SvgText x={emojiX} y={emojiY} fill="#FFF" fontSize={fp(16)}
+                        textAnchor="middle" alignmentBaseline="central"
+                        rotation={midAngle} origin={emojiX + ',' + emojiY}>
+                        {emoji}
+                      </SvgText>
+                      <SvgText x={valX} y={valY} fill="#FFF" fontSize={fp(12)} fontWeight="700"
+                        textAnchor="middle" alignmentBaseline="central"
+                        rotation={midAngle} origin={valX + ',' + valY}>
+                        {String(seg.reward.amount)}
+                      </SvgText>
+                      <SvgText x={typeX} y={typeY} fill="rgba(255,255,255,0.7)" fontSize={fp(8)}
+                        textAnchor="middle" alignmentBaseline="central"
+                        rotation={midAngle} origin={typeX + ',' + typeY}>
+                        {getSegmentTypeLabel(seg)}
+                      </SvgText>
+                    </G>
                   );
                 })}
+
                 {/* Inner gold border */}
-                <Circle cx={cx} cy={cy} r={innerR} fill="none" stroke="#D4AF37" strokeWidth={wp(2)} />
+                <Circle cx={cx} cy={cy} r={innerR} fill="none" stroke="#D4AF37" strokeWidth={wp(1.5)} />
+
                 {/* Outer metallic ring */}
-                <Circle cx={cx} cy={cy} r={wheelR} fill="none" stroke="#4A4F55" strokeWidth={wp(6)} />
-                {/* Gold rivets */}
+                <Circle cx={cx} cy={cy} r={wheelR} fill="none" stroke="#3A3F46" strokeWidth={wp(8)} />
+                {/* Gold inner edge of ring */}
+                <Circle cx={cx} cy={cy} r={wheelR - wp(4)} fill="none" stroke="#D4AF37" strokeWidth={wp(1.5)} />
+
+                {/* 3D Gold rivets */}
                 {Array.from({ length: 12 }).map((_, i) => {
                   const a = (i * 30 - 90) * Math.PI / 180;
                   const rx = cx + wheelR * Math.cos(a);
                   const ry = cy + wheelR * Math.sin(a);
-                  return <Circle key={'r' + i} cx={rx} cy={ry} r={wp(3)} fill="#D4AF37" stroke="#8B7A2E" strokeWidth="0.5" />;
+                  return (
+                    <G key={'rv' + i}>
+                      <Circle cx={rx} cy={ry} r={wp(5)} fill="rgba(212,175,55,0.3)" />
+                      <Circle cx={rx} cy={ry} r={wp(3.5)} fill="#D4AF37" />
+                      <Circle cx={rx - wp(0.8)} cy={ry - wp(0.8)} r={wp(1.5)} fill="#F0E070" />
+                    </G>
+                  );
                 })}
+
+                {/* Hub shadow */}
+                <Circle cx={cx} cy={cy} r={wp(30)} fill="rgba(0,0,0,0.25)" />
                 {/* Hub center */}
-                <Circle cx={cx} cy={cy} r={wp(25)} fill="#3A3F46" stroke="#D4AF37" strokeWidth={wp(1.5)} />
+                <Circle cx={cx} cy={cy} r={wp(28)} fill="url(#hubGrad)" stroke="#D4AF37" strokeWidth={wp(2)} />
               </Svg>
             </Animated.View>
+
             {/* Hub icon (non-rotating) */}
             <View style={{
-              position: 'absolute', top: cy - wp(25), left: cx - wp(25),
-              width: wp(50), height: wp(50), borderRadius: wp(25),
+              position: 'absolute', top: cy - wp(28), left: cx - wp(28),
+              width: wp(56), height: wp(56), borderRadius: wp(28),
               justifyContent: 'center', alignItems: 'center',
             }}>
-              <Text style={{ fontSize: fp(20) }}>{spinTier === 'mega' ? '💎' : spinTier === 'super' ? '🔥' : '⚡'}</Text>
-              <Text style={{ fontSize: fp(8), fontWeight: '700', color: 'rgba(255,255,255,0.6)', marginTop: -wp(2) }}>
+              <Text style={{ fontSize: fp(22) }}>{spinTier === 'mega' ? '💎' : spinTier === 'super' ? '🔥' : '⚡'}</Text>
+              <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37', marginTop: -wp(2) }}>
                 {spinTier === 'mega' ? 'MEGA' : spinTier === 'super' ? 'SUPER' : 'SPIN'}
               </Text>
             </View>
           </View>
 
-          {/* Spin button */}
-          <Pressable delayPressIn={120} onPress={doSpin}
-            style={({ pressed }) => ({
-              transform: [{ scale: pressed ? 0.96 : 1 }], opacity: isSpinning ? 0.5 : 1,
-              marginTop: wp(16), width: wp(220),
-            })}>
-            <LinearGradient colors={spinBtnColors}
-              style={{
-                paddingVertical: wp(14), borderRadius: wp(24), alignItems: 'center',
-                borderWidth: spinCost === 0 && spinTier === 'normal' ? 0 : 1.5,
-                borderColor: spinBtnBorder,
-                shadowColor: spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : 'transparent',
-                shadowOpacity: spinTier !== 'normal' ? 0.4 : 0,
-                shadowRadius: wp(8), elevation: spinTier !== 'normal' ? 4 : 0,
-              }}>
-              <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{spinBtnLabel}</Text>
-            </LinearGradient>
-          </Pressable>
+          {/* Spin button with spring press */}
+          <Animated.View style={{ transform: [{ scale: spinBtnScale }], marginTop: wp(16), width: wp(220), opacity: isSpinning ? 0.5 : 1 }}>
+            <Pressable delayPressIn={120} onPress={doSpin}
+              onPressIn={onBtnPressIn} onPressOut={onBtnPressOut}
+              style={{ width: '100%' }}>
+              <LinearGradient colors={spinBtnColors}
+                style={{
+                  paddingVertical: wp(14), borderRadius: wp(24), alignItems: 'center', height: wp(48), justifyContent: 'center',
+                  borderWidth: spinCost === 0 && spinTier === 'normal' ? 0 : 2,
+                  borderColor: spinBtnBorder,
+                  shadowColor: spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : 'transparent',
+                  shadowOpacity: spinTier !== 'normal' ? 0.4 : 0,
+                  shadowRadius: spinTier === 'mega' ? wp(12) : wp(8),
+                  elevation: spinTier !== 'normal' ? 4 : 0,
+                }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{spinBtnLabel}</Text>
+              </LinearGradient>
+            </Pressable>
+          </Animated.View>
 
           {/* Free spin counter */}
           <View style={{ marginTop: wp(10), alignItems: 'center' }}>
