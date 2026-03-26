@@ -694,20 +694,23 @@ export default function LixVersePage() {
 
   // === CALLBACK APRÈS ANIMATION SPIN ===
   const onSpinComplete = (spinData) => {
-    const rv = spinData.reward_value;
+    const rv = spinData.reward_value || {};
+    const rType = spinData.reward_type;
 
-    if (rv && (rv.type === 'fragment' || rv.type === 'card_complete')) {
+    if (rType === 'fragment' || rType === 'full_card') {
+      const fragTier = rv.tier || spinData.character_tier || 'standard';
+      const fragSlug = spinData.character_name ? Object.entries(CHAR_NAMES).find(([k,v]) => v === spinData.character_name)?.[0] : randomSlugFromTier(fragTier);
       setFragmentResult({
-        slug: rv.slug,
-        name: CHAR_NAMES[rv.slug] || rv.slug,
-        emoji: CHAR_EMOJIS[rv.slug] || '🎭',
-        tier: rv.tier,
-        amount: rv.amount,
-        isComplete: rv.type === 'card_complete',
-        levelUp: rv.frag_result?.level_up || false,
-        newLevel: rv.frag_result?.new_level || 0,
-        totalFrags: rv.frag_result?.fragments || rv.amount,
-        fragsNeeded: FRAGS_NIV1[rv.tier] || 3,
+        slug: fragSlug || 'unknown',
+        name: spinData.character_name || CHAR_NAMES[fragSlug] || fragSlug || 'Inconnu',
+        emoji: spinData.character_emoji || CHAR_EMOJIS[fragSlug] || '🎭',
+        tier: fragTier,
+        amount: rv.fragment || 1,
+        isComplete: rType === 'full_card',
+        levelUp: false,
+        newLevel: 0,
+        totalFrags: rv.fragment || 1,
+        fragsNeeded: FRAGS_NIV1[fragTier] || 3,
       });
       setShowFragmentModal(true);
       fragmentSlideAnim.setValue(0);
@@ -1759,13 +1762,38 @@ export default function LixVersePage() {
 
       // Mettre à jour le solde Lix localement
       if (data.new_lix_balance !== undefined) setLixBalance(data.new_lix_balance);
+      if (data.new_energy !== undefined) setUserEnergy(data.new_energy);
       if (data.was_free) setFreeSpinUsed(true);
 
       setSpinLoading(false);
 
       // ═══ ANIMER LA ROUE VERS LE SEGMENT SERVEUR ═══
-      const winnerIndex = data.segment_index;
-      const winner = segments[winnerIndex] || segments[0];
+      // Mapper le résultat serveur au segment local
+      const findWinnerIndex = (segs, srvData) => {
+        const sType = srvData.reward_type;
+        const sVal = srvData.reward_value || {};
+        // Map server types → local types
+        const typeMap = { 'xscan': 'scan', 'full_card': 'card' };
+        const localType = typeMap[sType] || sType;
+
+        for (let i = 0; i < segs.length; i++) {
+          const r = segs[i].reward;
+          if (r.type !== localType) continue;
+          // Pour energy/lix : matcher le montant exact
+          if (localType === 'energy' && r.amount === (sVal.energy || 0)) return i;
+          if (localType === 'lix' && r.amount === (sVal.lix || 0)) return i;
+          // Pour fragment : matcher le tier
+          if (localType === 'fragment' && r.tier === (sVal.tier || srvData.character_tier)) return i;
+          // Pour scan : matcher le nombre
+          if (localType === 'scan' && r.amount === (sVal.scans || 0)) return i;
+          // Pour free_spin, card : premier match suffit
+          if (localType === 'free_spin' || localType === 'card') return i;
+        }
+        return 0; // fallback premier segment
+      };
+
+      const winnerIndex = findWinnerIndex(segments, data);
+      const winner = segments[winnerIndex];
 
       setIsSpinning(true); setSpinResult(null); setShowSpinResultModal(false); setSpinWinnerSeg(null);
       setWinnerGlowIdx(null); glowOpacity.setValue(0);
@@ -1848,6 +1876,8 @@ export default function LixVersePage() {
       console.error('Spin error:', e);
       showLixAlert('Erreur', e?.message || e?.details || JSON.stringify(e), [{ text: 'OK', style: 'cancel' }], '⚠️');
       setSpinLoading(false);
+      setIsSpinning(false);
+      setWinnerGlowIdx(null);
     }
   };
 
@@ -2068,6 +2098,8 @@ export default function LixVersePage() {
                 {/* Segment labels — SVG icon + value + type */}
                 {angledSegs.map((seg, i) => {
                   const midAngle = seg.startAngle + seg.sweepAngle / 2;
+                  // Corriger l'orientation du texte pour qu'il soit toujours lisible
+                  const textAngle = (midAngle > 90 && midAngle < 270) ? midAngle + 180 : midAngle;
                   const midRad = (midAngle - 90) * Math.PI / 180;
                   const isSmall = seg.sweepAngle < 30;
                   const rType = getSegmentRewardType(seg);
@@ -2097,12 +2129,12 @@ export default function LixVersePage() {
                       {renderSegmentIcon(rType, seg.reward.tier, emojiX, emojiY, wp(16), midAngle)}
                       <SvgText x={valX} y={valY} fill="#FFF" fontSize={fp(12)} fontWeight="700"
                         textAnchor="middle" alignmentBaseline="central"
-                        rotation={midAngle} origin={valX + ',' + valY}>
+                        rotation={textAngle} origin={valX + ',' + valY}>
                         {String(seg.reward.amount)}
                       </SvgText>
                       <SvgText x={typeX} y={typeY} fill="rgba(255,255,255,0.7)" fontSize={fp(8)}
                         textAnchor="middle" alignmentBaseline="central"
-                        rotation={midAngle} origin={typeX + ',' + typeY}>
+                        rotation={textAngle} origin={typeX + ',' + typeY}>
                         {getSegmentTypeLabel(seg)}
                       </SvgText>
                     </G>
