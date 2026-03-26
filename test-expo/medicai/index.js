@@ -75,6 +75,8 @@ export default function MedicAiPage() {
   const [energyLimit, setEnergyLimit] = useState(ENERGY_CONFIG.FREE_DAILY_ENERGY);
   const [userNameAvatar, setUserNameAvatar] = useState('');
   const [activeCharAvatar, setActiveCharAvatar] = useState(null);
+  const [lixBalance, setLixBalance] = useState(0);
+  const [userEnergy, setUserEnergy] = useState(20);
   const [lastResetTime, setLastResetTime] = useState(Date.now());
 
   // Plats disponibles + modal recette
@@ -258,9 +260,12 @@ export default function MedicAiPage() {
     // Avatar profil
     (async () => {
       try {
-        const pRes = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID + '&select=full_name', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
+        const pRes = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID + '&select=full_name,lix_balance', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
         const pD = await pRes.json();
-        if (pD && pD[0]) setUserNameAvatar(pD[0].full_name || '');
+        if (pD && pD[0]) {
+          setUserNameAvatar(pD[0].full_name || '');
+          setLixBalance(pD[0].lix_balance || 0);
+        }
         const cRes = await fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters?user_id=eq.' + TEST_USER_ID + '&is_active=eq.true&select=character_slug', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
         const cD = await cRes.json();
         if (cD && cD[0]) setActiveCharAvatar({ slug: cD[0].character_slug });
@@ -1859,6 +1864,18 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           </View>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {/* Badge fusionné Lix + Énergie */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0,180,130,0.2)', overflow: 'hidden' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(6), paddingVertical: wp(4) }}>
+              <View style={{ width: wp(7), height: wp(7), backgroundColor: '#00A878', borderRadius: wp(2), transform: [{ rotate: '45deg' }], marginRight: wp(4) }} />
+              <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00A878' }}>{lixBalance}</Text>
+            </View>
+            <View style={{ width: 1, height: wp(14), backgroundColor: 'rgba(0,0,0,0.1)' }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(6), paddingVertical: wp(4) }}>
+              <Text style={{ fontSize: fp(10), marginRight: wp(2) }}>⚡</Text>
+              <Text style={{ fontSize: fp(10), fontWeight: '700', color: userEnergy > 5 ? '#CC8800' : '#E74C3C' }}>{userEnergy}</Text>
+            </View>
+          </View>
           <Pressable onPress={() => setActiveTab('profile')} style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: activeCharAvatar?.slug ? 'rgba(0,217,132,0.15)' : 'rgba(77,166,255,0.15)', borderWidth: 1.5, borderColor: activeCharAvatar?.slug ? 'rgba(0,217,132,0.5)' : 'rgba(77,166,255,0.5)', justifyContent: 'center', alignItems: 'center' }}>
             {activeCharAvatar?.slug ? (
               <Text style={{ fontSize: fp(14) }}>{({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[activeCharAvatar.slug] || '🎭'}</Text>

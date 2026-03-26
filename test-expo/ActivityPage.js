@@ -921,6 +921,8 @@ const ActivityPage = ({ onNavigate }) => {
   const [pagePowers, setPagePowers] = useState([]);
   const [hookResults, setHookResults] = useState({});
   const [userNameAvatar, setUserNameAvatar] = useState('');
+  const [lixBalance, setLixBalance] = useState(0);
+  const [userEnergy, setUserEnergy] = useState(20);
 
   // Shoe animation
   const shoeAnim = useRef(new Animated.Value(0)).current;
@@ -1070,11 +1072,14 @@ const ActivityPage = ({ onNavigate }) => {
     fetchSmartData();
     fetchWeeklyMinutes();
     loadPagePowers();
-    // Avatar profil
+    // Avatar profil + Lix balance
     (async () => {
       try {
-        const { data: profile } = await supabase.from('users_profile').select('full_name').eq('user_id', TEST_USER_ID).maybeSingle();
-        if (profile) setUserNameAvatar(profile.full_name || '');
+        const { data: profile } = await supabase.from('users_profile').select('full_name, lix_balance').eq('user_id', TEST_USER_ID).maybeSingle();
+        if (profile) {
+          setUserNameAvatar(profile.full_name || '');
+          setLixBalance(profile.lix_balance || 0);
+        }
       } catch (e) {}
     })();
   }, []);
@@ -1551,6 +1556,18 @@ const ActivityPage = ({ onNavigate }) => {
                 <Text style={{ color: '#8892A0', fontSize: fp(11), marginLeft: 6 }}>
                   {todayDateStr}
                 </Text>
+              </View>
+              {/* Badge fusionné Lix + Énergie */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(30,35,42,0.9)', borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', overflow: 'hidden' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(6), paddingVertical: wp(4) }}>
+                  <View style={{ width: wp(7), height: wp(7), backgroundColor: '#00D984', borderRadius: wp(2), transform: [{ rotate: '45deg' }], marginRight: wp(4), borderWidth: 0.5, borderColor: 'rgba(0,255,150,0.4)' }} />
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984' }}>{lixBalance}</Text>
+                </View>
+                <View style={{ width: 1, height: wp(14), backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(6), paddingVertical: wp(4) }}>
+                  <Text style={{ fontSize: fp(10), marginRight: wp(2) }}>⚡</Text>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: userEnergy > 5 ? '#FFB800' : '#FF6B6B' }}>{userEnergy}</Text>
+                </View>
               </View>
               <AvatarButton activeChar={activeChar} userName={userNameAvatar} onPress={() => { if (onNavigate) onNavigate('profile'); }} size={wp(28)} />
             </View>
