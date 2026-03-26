@@ -5,6 +5,29 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
+// ═══ DROP GEM — Icône Lix officielle LIXUM ═══
+const LixGem = ({ size = 14 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M12 1C16 7 20 12 20 16C20 20.4 16.4 23 12 23C7.6 23 4 20.4 4 16C4 12 8 7 12 1Z" fill="#007A50" stroke="#00D984" strokeWidth={1.2} />
+    <Path d="M12 5C14.5 9 17 12.5 17 15.5C17 18.5 14.8 20.5 12 20.5C9.2 20.5 7 18.5 7 15.5C7 12.5 9.5 9 12 5Z" fill="#009960" stroke="#33E8A0" strokeWidth={0.5} />
+    <Ellipse cx={9.5} cy={11} rx={2.5} ry={4} fill="#5DFFB4" opacity={0.3} transform="rotate(-20, 9.5, 11)" />
+    <Circle cx={9} cy={8} r={1.5} fill="#FFF" opacity={0.55} />
+  </Svg>
+);
+
+// ═══ DROP GEM pour segments SVG (rendu inline dans <Svg>) ═══
+const renderLixGemSegment = (x, y, s) => {
+  const sc = s / 24;
+  const t = 'translate(' + (x - s/2) + ', ' + (y - s/2) + ') scale(' + sc + ')';
+  return (
+    <G transform={t}>
+      <Path d="M12 1C16 7 20 12 20 16C20 20.4 16.4 23 12 23C7.6 23 4 20.4 4 16C4 12 8 7 12 1Z" fill="#007A50" stroke="#00D984" strokeWidth={1.2} />
+      <Path d="M12 5C14.5 9 17 12.5 17 15.5C17 18.5 14.8 20.5 12 20.5C9.2 20.5 7 18.5 7 15.5C7 12.5 9.5 9 12 5Z" fill="#009960" />
+      <Circle cx={9} cy={8} r={1.5} fill="#FFF" opacity={0.5} />
+    </G>
+  );
+};
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const W = SCREEN_WIDTH;
 const BASE_WIDTH = 320;
@@ -199,13 +222,13 @@ const SPIN_RESULTS = [
 ];
 
 const NORMAL_SEGMENTS = [
-  { label: '3', icon: '⚡', chance: 30, color: '#2A4A3A', reward: { type: 'energy', amount: 3 } },
+  { label: '3', icon: '⚡', chance: 29, color: '#2A4A3A', reward: { type: 'energy', amount: 3 } },
   { label: '30', icon: '💰', chance: 20, color: '#3A4A2A', reward: { type: 'lix', amount: 30 } },
   { label: '1', icon: '🧩', chance: 15, color: '#3A2A4A', subLabel: 'Frag Std', reward: { type: 'fragment', tier: 'standard', amount: 1 } },
   { label: '1', icon: '📸', chance: 15, color: '#4A3A2A', subLabel: 'scan', reward: { type: 'scan', amount: 1 } },
   { label: '1', icon: '🎁', chance: 10, color: '#4A2A2A', subLabel: 'spin', reward: { type: 'free_spin', amount: 1 } },
   { label: '1', icon: '🧩', chance: 8, color: '#2A3A4A', subLabel: 'Frag Rare', reward: { type: 'fragment', tier: 'rare', amount: 1 } },
-  { label: '10', icon: '⚡⚡', chance: 2, color: '#4A4A2A', subLabel: 'énergie', reward: { type: 'energy', amount: 10 } },
+  { label: '10', icon: '⚡⚡', chance: 3, color: '#4A4A2A', subLabel: 'énergie', reward: { type: 'energy', amount: 10 } },
 ];
 
 const SUPER_SEGMENTS = [
@@ -295,26 +318,24 @@ const renderSegmentIcon = (type, tier, x, y, s, angle) => {
   const sc = s / 24;
   const t = `translate(${x - s / 2}, ${y - s / 2}) scale(${sc})`;
   if (type === 'energy') return (
-    <G transform={t}><Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill="#FFF" /></G>
+    <G transform={t}><Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill="#B0B8C4" /></G>
   );
-  if (type === 'lix') return (
-    <G transform={t}><Path d="M12 2L2 9l10 13L22 9z" fill="#FFF" /><Path d="M12 2L2 9h20z" fill="#FFF" opacity={0.5} /></G>
-  );
+  if (type === 'lix') return renderLixGemSegment(x, y, s);
   if (type === 'fragment') return (
-    <G transform={t}><Path d="M20 6h-3.17c.11-.31.17-.65.17-1a3 3 0 00-6 0c0 .35.06.69.17 1H8a2 2 0 00-2 2v3.17c-.31-.11-.65-.17-1-.17a3 3 0 000 6c.35 0 .69-.06 1-.17V20a2 2 0 002 2h3.17c-.11-.31-.17-.65-.17-1a3 3 0 016 0c0 .35-.06.69-.17 1H20a2 2 0 002-2v-3.17c.31.11.65.17 1 .17a3 3 0 000-6c-.35 0-.69.06-1 .17V8a2 2 0 00-2-2z" fill="#FFF" /></G>
+    <G transform={t}><Path d="M20 6h-3.17c.11-.31.17-.65.17-1a3 3 0 00-6 0c0 .35.06.69.17 1H8a2 2 0 00-2 2v3.17c-.31-.11-.65-.17-1-.17a3 3 0 000 6c.35 0 .69-.06 1-.17V20a2 2 0 002 2h3.17c-.11-.31-.17-.65-.17-1a3 3 0 016 0c0 .35-.06.69-.17 1H20a2 2 0 002-2v-3.17c.31.11.65.17 1 .17a3 3 0 000-6c-.35 0-.69.06-1 .17V8a2 2 0 00-2-2z" fill="#B0B8C4" /></G>
   );
   if (type === 'scan') return (
-    <G transform={t}><Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" fill="none" stroke="#FFF" strokeWidth={2} /><Circle cx={12} cy={13} r={4} fill="none" stroke="#FFF" strokeWidth={2} /></G>
+    <G transform={t}><Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" fill="none" stroke="#B0B8C4" strokeWidth={2} /><Circle cx={12} cy={13} r={4} fill="none" stroke="#B0B8C4" strokeWidth={2} /></G>
   );
   if (type === 'free_spin') return (
-    <G transform={t}><Path d="M20 12v10H4V12" fill="none" stroke="#FFF" strokeWidth={2} /><Path d="M2 7h20v5H2z" fill="none" stroke="#FFF" strokeWidth={2} /><Path d="M12 22V7" stroke="#FFF" strokeWidth={2} /><Path d="M12 7c-1.5-2-4-3-4-3s1 3 4 3z" fill="#FFF" /><Path d="M12 7c1.5-2 4-3 4-3s-1 3-4 3z" fill="#FFF" /></G>
+    <G transform={t}><Path d="M20 12v10H4V12" fill="none" stroke="#B0B8C4" strokeWidth={2} /><Path d="M2 7h20v5H2z" fill="none" stroke="#B0B8C4" strokeWidth={2} /><Path d="M12 22V7" stroke="#B0B8C4" strokeWidth={2} /><Path d="M12 7c-1.5-2-4-3-4-3s1 3 4 3z" fill="#B0B8C4" /><Path d="M12 7c1.5-2 4-3 4-3s-1 3-4 3z" fill="#B0B8C4" /></G>
   );
   if (type === 'card') return (
-    <G transform={t}><Rect x={3} y={2} width={18} height={20} rx={3} fill="none" stroke="#FFF" strokeWidth={2} /><Path d="M12 8l2 4-2 1-2-1z" fill="#FFF" /><Circle cx={12} cy={16} r={1.5} fill="#FFF" /></G>
+    <G transform={t}><Rect x={3} y={2} width={18} height={20} rx={3} fill="none" stroke="#B0B8C4" strokeWidth={2} /><Path d="M12 8l2 4-2 1-2-1z" fill="#B0B8C4" /><Circle cx={12} cy={16} r={1.5} fill="#B0B8C4" /></G>
   );
   // Default: energy
   return (
-    <G transform={t}><Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill="#FFF" /></G>
+    <G transform={t}><Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill="#B0B8C4" /></G>
   );
 };
 
@@ -1798,8 +1819,18 @@ export default function LixVersePage() {
 
       if (!data?.success) {
         const errMsg = data?.error || data?.message || JSON.stringify(data);
-        if (errMsg === 'Insufficient Lix') {
-          showLixAlert('Lix insuffisants', 'Tu as ' + (data?.current_lix || 0) + ' Lix. Il en faut ' + (data?.cost || 0) + ' pour ce spin.', [{ text: 'Fermer', style: 'cancel' }], '💰');
+        if (errMsg === 'Lix insuffisants' || errMsg === 'Insufficient Lix') {
+          const required = data?.required || data?.cost || (spinTier === 'normal' ? 50 : spinTier === 'super' ? 150 : 500);
+          const current = data?.current || data?.current_lix || lixBalance;
+          showLixAlert(
+            '💰 Lix insuffisants',
+            'Il te faut ' + required + ' Lix pour ce spin.\n\nTon solde actuel : ' + current + ' Lix\nIl te manque ' + (required - current) + ' Lix.',
+            [
+              { text: 'Recharger en Lix', color: '#D4AF37', onPress: () => { setActiveTab('lixspin'); }},
+              { text: 'Fermer', style: 'cancel' },
+            ],
+            '💰'
+          );
         } else {
           showLixAlert('Erreur', errMsg, [{ text: 'OK', style: 'cancel' }], '⚠️');
         }
@@ -2150,9 +2181,8 @@ export default function LixVersePage() {
                   const midAngle = seg.startAngle + seg.sweepAngle / 2;
                   const midRad = (midAngle - 90) * Math.PI / 180;
                   const rType = getSegmentRewardType(seg);
-                  const isSmall = seg.sweepAngle < 20;
                   const iconR = innerR * 0.72;
-                  const iconSize = isSmall ? wp(14) : wp(22);
+                  const iconSize = wp(20);
                   const iconX = cx + iconR * Math.cos(midRad);
                   const iconY = cy + iconR * Math.sin(midRad);
                   return (
@@ -3260,10 +3290,7 @@ export default function LixVersePage() {
               borderWidth: 1, borderColor: '#4A4F55',
               borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
             }}>
-              <Svg width={14} height={14} viewBox="0 0 24 24">
-                <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
-                <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
-              </Svg>
+              <LixGem size={14} />
               <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(14), marginLeft: 4 }}>{lixBalance}</Text>
               <Text style={{ color: '#888', fontSize: fp(10), marginLeft: 4 }}>▾</Text>
             </TouchableOpacity>
@@ -3281,10 +3308,7 @@ export default function LixVersePage() {
               transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
             }}>
               <TouchableOpacity onPress={() => { toggleDropdown(); setActiveTab('lixspin'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-                <Svg width={14} height={14} viewBox="0 0 24 24">
-                  <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
-                  <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
-                </Svg>
+                <LixGem size={14} />
                 <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixBalance}</Text>
                 <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
               </TouchableOpacity>
