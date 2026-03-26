@@ -363,6 +363,7 @@ export default function LixVersePage() {
   const [activeTab, setActiveTab] = useState('defi');
   const [activeNavTab, setActiveNavTab] = useState('lixverse');
   const [lixBalance, setLixBalance] = useState(500);
+  const [userEnergy, setUserEnergy] = useState(20);
   const [ownedCharacters, setOwnedCharacters] = useState([]);
   const [challenges, setChallenges] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -3165,10 +3166,17 @@ export default function LixVersePage() {
                 </View>
               )}
             </Pressable>
-            {/* Badge Lix */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), backgroundColor: 'rgba(212,175,55,0.12)', borderRadius: wp(12), paddingHorizontal: wp(12), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)' }}>
-              <View style={{ width: wp(10), height: wp(10), borderRadius: wp(5), backgroundColor: '#D4AF37' }} />
-              <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#D4AF37' }}>{lixBalance} Lix</Text>
+            {/* Badge fusionné Lix + Énergie */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(30,35,42,0.9)', borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', overflow: 'hidden' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(8), paddingVertical: wp(5) }}>
+                <View style={{ width: wp(8), height: wp(8), backgroundColor: '#00D984', borderRadius: wp(2), transform: [{ rotate: '45deg' }], marginRight: wp(5), borderWidth: 0.5, borderColor: 'rgba(0,255,150,0.4)' }} />
+                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>{lixBalance}</Text>
+              </View>
+              <View style={{ width: 1, height: wp(16), backgroundColor: 'rgba(255,255,255,0.1)' }} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(8), paddingVertical: wp(5) }}>
+                <Text style={{ fontSize: fp(11), marginRight: wp(3) }}>⚡</Text>
+                <Text style={{ fontSize: fp(11), fontWeight: '700', color: userEnergy > 5 ? '#FFB800' : '#FF6B6B' }}>{userEnergy}</Text>
+              </View>
             </View>
             {/* Avatar Profil */}
             <Pressable onPress={() => setActiveNavTab('profile')} style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: activeCharSlug ? 'rgba(0,217,132,0.15)' : 'rgba(77,166,255,0.15)', borderWidth: 1.5, borderColor: activeCharSlug ? 'rgba(0,217,132,0.5)' : 'rgba(77,166,255,0.5)', justifyContent: 'center', alignItems: 'center' }}>
