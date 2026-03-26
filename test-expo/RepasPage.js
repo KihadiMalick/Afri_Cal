@@ -547,6 +547,15 @@ const RepasPage = ({ onNavigate }) => {
   const [frequentMeals, setFrequentMeals] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
+  // === CARACTÈRE ACTIF ===
+  const [activeChar, setActiveChar] = useState(null);
+  const [activePowers, setActivePowers] = useState([]);
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const [showSuggestionModal, setShowSuggestionModal] = useState(false);
+  const [suggestionMeal, setSuggestionMeal] = useState(null);
+  const [loadingSuggestion, setLoadingSuggestion] = useState(false);
+  const [todaySubstitutions, setTodaySubstitutions] = useState(0);
+
   // === MOOD × MÉTÉO ===
   const [userMood, setUserMood] = useState(null);
   const [userWeather, setUserWeather] = useState(null);
@@ -680,8 +689,62 @@ const RepasPage = ({ onNavigate }) => {
     setIsLoadingData(false);
   };
 
+  const loadActiveCharacter = async () => {
+    try {
+      const userId = TEST_USER_ID;
+      const { data: collection } = await supabase.rpc('get_user_collection', { p_user_id: userId });
+      if (collection) {
+        const active = collection.find(c => c.is_active && c.owned);
+        setActiveChar(active || null);
+        if (active) {
+          const { data: powers } = await supabase.rpc('get_character_powers', {
+            p_user_id: userId, p_slug: active.slug,
+          });
+          setActivePowers(powers || []);
+        }
+      }
+    } catch (e) {
+      console.error('Active char load error:', e);
+    }
+  };
+
+  const consumeCharacterUse = async (powerKey) => {
+    try {
+      const userId = TEST_USER_ID;
+      const { data } = await supabase.rpc('use_character_power', {
+        p_user_id: userId,
+        p_power_key: powerKey,
+      });
+
+      if (data?.success) {
+        setActiveChar(prev => prev ? { ...prev, uses_remaining: data.uses_remaining } : null);
+        return true;
+      } else if (data?.error === 'No uses remaining') {
+        Alert.alert(
+          '⚡ Utilisations épuisées',
+          'Recharge ton ' + (activeChar?.name || 'personnage') + ' avec ' + (activeChar?.recharge_energy || 10) + ' énergie dans l\'onglet Caractères.',
+          [{ text: 'OK' }]
+        );
+        return false;
+      } else if (data?.error === 'Power not unlocked') {
+        const lixCost = data?.lix_cost || 30;
+        Alert.alert(
+          '🔒 Pouvoir verrouillé',
+          'Débloque avec la carte au bon niveau ou dépense ' + lixCost + ' Lix pour un accès ponctuel.',
+          [{ text: 'OK' }]
+        );
+        return false;
+      }
+      return false;
+    } catch (e) {
+      console.error('Use power error:', e);
+      return false;
+    }
+  };
+
   useEffect(() => {
     loadDashboardData();
+    loadActiveCharacter();
   }, []);
 
   // === FETCH MOOD × MÉTÉO ===
@@ -2629,6 +2692,46 @@ const RepasPage = ({ onNavigate }) => {
             </View>
           </View>
 
+          {/* ======== BANDEAU PERSONNAGE ACTIF ======== */}
+          {activeChar && (
+            <View style={{
+              marginHorizontal: wp(16), marginTop: wp(8),
+              flexDirection: 'row', alignItems: 'center',
+              backgroundColor: 'rgba(0,217,132,0.04)',
+              borderRadius: wp(12), padding: wp(10),
+              borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)',
+            }}>
+              <View style={{
+                width: wp(32), height: wp(32), borderRadius: wp(16),
+                backgroundColor: 'rgba(0,217,132,0.1)',
+                justifyContent: 'center', alignItems: 'center',
+                marginRight: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+              }}>
+                <Text style={{ fontSize: fp(16) }}>
+                  {activeChar.slug === 'emerald_owl' ? '🦉' :
+                   activeChar.slug === 'hawk_eye' ? '🦅' :
+                   activeChar.slug === 'ruby_tiger' ? '🐯' :
+                   activeChar.slug === 'amber_fox' ? '🦊' :
+                   activeChar.slug === 'gipsy' ? '🕷️' : '🎭'}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700' }}>
+                  {activeChar.name} • Niv{activeChar.level}
+                </Text>
+                <Text style={{ color: '#5A6070', fontSize: fp(8) }}>
+                  {activeChar.uses_remaining}/{activeChar.max_uses_per_cycle || 10} utilisations
+                </Text>
+              </View>
+              <View style={{
+                backgroundColor: 'rgba(0,217,132,0.08)',
+                paddingHorizontal: wp(8), paddingVertical: wp(3), borderRadius: wp(6),
+              }}>
+                <Text style={{ color: '#00D984', fontSize: fp(8), fontWeight: '700' }}>ACTIF</Text>
+              </View>
+            </View>
+          )}
+
           {/* ======== 3. CARTE XSCAN — MetalCard NON cliquable ======== */}
           <View style={{ marginHorizontal: wp(16), marginTop: wp(10) }}>
             <View style={{
@@ -3075,6 +3178,144 @@ const RepasPage = ({ onNavigate }) => {
             </ScrollView>
           </View>
 
+          {/* ======== RÉSUMÉ NUTRITIONNEL — Emerald Owl Niv1 ======== */}
+          <View style={{ marginTop: wp(12) }}>
+            <SectionTitle title="Résumé nutritionnel" />
+
+            {(() => {
+              const owlPower = activePowers.find(p => p.power_key === 'owl_resume_macros');
+              const isUnlocked = owlPower?.unlocked && activeChar?.slug === 'emerald_owl';
+
+              if (isUnlocked) {
+                const target = userProfile.daily_calorie_target || 2330;
+                const protTarget = Math.round(target * 0.25 / 4);
+                const carbTarget = Math.round(target * 0.50 / 4);
+                const fatTarget = Math.round(target * 0.25 / 9);
+                const protPercent = Math.min(Math.round((dailySummary.total_protein / protTarget) * 100), 100);
+                const carbPercent = Math.min(Math.round((dailySummary.total_carbs / carbTarget) * 100), 100);
+                const fatPercent = Math.min(Math.round((dailySummary.total_fat / fatTarget) * 100), 100);
+
+                const getStatusColor = (pct) => pct >= 80 ? '#00D984' : pct >= 50 ? '#FF8C42' : '#FF6B6B';
+                const getStatusText = (pct) => pct >= 80 ? 'Bon ✅' : pct >= 50 ? 'En cours ⚠️' : 'Insuffisant ❌';
+
+                return (
+                  <View style={{ marginHorizontal: wp(16), borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
+                    <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15, padding: wp(14) }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
+                        <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>🦉</Text>
+                        <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '700' }}>Emerald Owl • Résumé du jour</Text>
+                      </View>
+
+                      {[
+                        { label: 'Protéines', current: dailySummary.total_protein, target: protTarget, pct: protPercent, color: '#FF6B6B' },
+                        { label: 'Glucides', current: dailySummary.total_carbs, target: carbTarget, pct: carbPercent, color: '#FFD93D' },
+                        { label: 'Lipides', current: dailySummary.total_fat, target: fatTarget, pct: fatPercent, color: '#4DA6FF' },
+                      ].map((macro, i) => (
+                        <View key={i} style={{ marginBottom: i < 2 ? wp(10) : 0 }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
+                            <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '600' }}>{macro.label}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                              <Text style={{ color: '#8892A0', fontSize: fp(10) }}>{macro.current}g / {macro.target}g</Text>
+                              <Text style={{ color: getStatusColor(macro.pct), fontSize: fp(9), marginLeft: wp(6), fontWeight: '700' }}>{getStatusText(macro.pct)}</Text>
+                            </View>
+                          </View>
+                          <View style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 3, overflow: 'hidden' }}>
+                            <View style={{ height: '100%', width: macro.pct + '%', backgroundColor: getStatusColor(macro.pct), borderRadius: 3 }} />
+                          </View>
+                        </View>
+                      ))}
+                    </LinearGradient>
+                  </View>
+                );
+              } else {
+                return (
+                  <Pressable
+                    onPress={() => {
+                      Alert.alert('🔒 Résumé Nutritionnel', 'Débloque cette fonctionnalité avec Emerald Owl Niv1 ou dépense 30 Lix pour un accès ponctuel.', [{ text: 'OK' }]);
+                    }}
+                    style={{ marginHorizontal: wp(16), borderRadius: 16, padding: wp(14), backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', opacity: 0.5 }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>🔒</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#8892A0', fontSize: fp(12), fontWeight: '600' }}>Résumé Nutritionnel</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>Débloque avec Emerald Owl Niv1 ou 30 Lix</Text>
+                      </View>
+                      <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>🦉</Text>
+                    </View>
+                  </Pressable>
+                );
+              }
+            })()}
+          </View>
+
+          {/* ======== SUGGESTION REPAS — Emerald Owl MAX ======== */}
+          {(() => {
+            const owlSuggestion = activePowers.find(p => p.power_key === 'owl_suggestion_repas');
+            const isUnlocked = owlSuggestion?.unlocked && activeChar?.slug === 'emerald_owl';
+
+            if (!isUnlocked) return null;
+
+            return (
+              <View style={{ marginTop: wp(12) }}>
+                <View style={{ marginHorizontal: wp(16), borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
+                  <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15, padding: wp(14) }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
+                      <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>🦉</Text>
+                      <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '700' }}>SUPERPOWER</Text>
+                      <View style={{ marginLeft: wp(6), backgroundColor: 'rgba(212,175,55,0.1)', paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4) }}>
+                        <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '800' }}>MAX</Text>
+                      </View>
+                    </View>
+
+                    {suggestionMeal ? (
+                      <View>
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '700', marginBottom: wp(4) }}>💡 {suggestionMeal.name}</Text>
+                        <Text style={{ color: '#FF8C42', fontSize: fp(12), fontWeight: '700' }}>{Math.round(suggestionMeal.kcal_per_100g * 3)} kcal</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: wp(4) }}>Ce plat complète parfaitement vos macros du jour</Text>
+                      </View>
+                    ) : (
+                      <Pressable
+                        onPress={async () => {
+                          const canUse = await consumeCharacterUse('owl_suggestion_repas');
+                          if (!canUse) return;
+
+                          setLoadingSuggestion(true);
+                          try {
+                            const protTarget = Math.round((userProfile.daily_calorie_target * 0.25) / 4);
+                            const protMissing = Math.max(0, protTarget - dailySummary.total_protein);
+                            const { data: meals } = await supabase
+                              .from('meals_master')
+                              .select('*')
+                              .gte('protein_per_100g', protMissing / 3)
+                              .order('protein_per_100g', { ascending: false })
+                              .limit(5);
+                            if (meals && meals.length > 0) {
+                              const random = meals[Math.floor(Math.random() * meals.length)];
+                              setSuggestionMeal(random);
+                            }
+                          } catch (e) {
+                            console.error('Suggestion error:', e);
+                          }
+                          setLoadingSuggestion(false);
+                        }}
+                        style={({ pressed }) => ({
+                          paddingVertical: wp(12), borderRadius: 12,
+                          backgroundColor: pressed ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.08)',
+                          borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)', alignItems: 'center',
+                        })}
+                      >
+                        <Text style={{ color: '#D4AF37', fontSize: fp(13), fontWeight: '700' }}>
+                          {loadingSuggestion ? '⏳ Calcul...' : '🍽️ Suggérer un repas pour ce soir'}
+                        </Text>
+                      </Pressable>
+                    )}
+                  </LinearGradient>
+                </View>
+              </View>
+            );
+          })()}
+
           {/* ======== 6. SECTION RECETTES (FIX 3+5+7) ======== */}
           <View style={{ marginTop: wp(12) }}>
             <SectionTitle
@@ -3262,7 +3503,7 @@ const RepasPage = ({ onNavigate }) => {
           }}/>
 
           {/* ======== 7. SECTION PLATS FRÉQUENTS (FIX 3+6+7) ======== */}
-          <View style={{ marginTop: wp(12), marginBottom: wp(16) }}>
+          <View style={{ marginTop: wp(12), marginBottom: wp(8) }}>
             <SectionTitle title={lang === 'fr' ? 'Plats fréquents' : 'Frequent meals'} />
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false}
@@ -3327,6 +3568,84 @@ const RepasPage = ({ onNavigate }) => {
                 </Pressable>
               ))}
             </ScrollView>
+          </View>
+
+          {/* ======== HISTORIQUE SCANS — Hawk Eye MAX ======== */}
+          <View style={{ marginTop: wp(12), marginBottom: wp(8) }}>
+            {(() => {
+              const hawkHistory = activePowers.find(p => p.power_key === 'hawk_historique');
+              const isUnlocked = hawkHistory?.unlocked && activeChar?.slug === 'hawk_eye';
+
+              return (
+                <Pressable
+                  onPress={async () => {
+                    if (!isUnlocked) {
+                      Alert.alert('🔒 Historique Scanner', 'Débloque cette fonctionnalité avec Hawk Eye Niveau MAX ou dépense 50 Lix.', [{ text: 'OK' }]);
+                    } else {
+                      const canUse = await consumeCharacterUse('hawk_historique');
+                      if (!canUse) return;
+                      Alert.alert('📈 Historique', 'Fonctionnalité en construction. Bientôt disponible !');
+                    }
+                  }}
+                  style={{
+                    marginHorizontal: wp(16), borderRadius: 16, padding: wp(14),
+                    backgroundColor: isUnlocked ? 'rgba(77,166,255,0.04)' : 'rgba(255,255,255,0.02)',
+                    borderWidth: 1, borderColor: isUnlocked ? 'rgba(77,166,255,0.15)' : 'rgba(255,255,255,0.06)',
+                    opacity: isUnlocked ? 1 : 0.5,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>{isUnlocked ? '📈' : '🔒'}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: isUnlocked ? '#4DA6FF' : '#8892A0', fontSize: fp(12), fontWeight: '600' }}>Historique Scanner</Text>
+                      <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>
+                        {isUnlocked ? '30 derniers scans avec tendances nutritionnelles' : 'Débloque avec Hawk Eye MAX ou 50 Lix'}
+                      </Text>
+                    </View>
+                    <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>🦅</Text>
+                  </View>
+                </Pressable>
+              );
+            })()}
+          </View>
+
+          {/* ======== TOILE DE SANTÉ — Gipsy MAX ======== */}
+          <View style={{ marginBottom: wp(16) }}>
+            {(() => {
+              const gipsyToile = activePowers.find(p => p.power_key === 'gipsy_toile_sante');
+              const isUnlocked = gipsyToile?.unlocked && activeChar?.slug === 'gipsy';
+
+              return (
+                <Pressable
+                  onPress={async () => {
+                    if (!isUnlocked) {
+                      Alert.alert('🔒 Toile de Santé', 'Débloque cette fonctionnalité avec Gipsy Niveau MAX ou dépense 80 Lix.', [{ text: 'OK' }]);
+                    } else {
+                      const canUse = await consumeCharacterUse('gipsy_toile_sante');
+                      if (!canUse) return;
+                      Alert.alert('🕷️ Toile de Santé', 'Rapport mensuel en construction. Bientôt disponible !');
+                    }
+                  }}
+                  style={{
+                    marginHorizontal: wp(16), borderRadius: 16, padding: wp(14),
+                    backgroundColor: isUnlocked ? 'rgba(155,89,182,0.04)' : 'rgba(255,255,255,0.02)',
+                    borderWidth: 1, borderColor: isUnlocked ? 'rgba(155,89,182,0.15)' : 'rgba(255,255,255,0.06)',
+                    opacity: isUnlocked ? 1 : 0.5,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>{isUnlocked ? '🕷️' : '🔒'}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: isUnlocked ? '#9B59B6' : '#8892A0', fontSize: fp(12), fontWeight: '600' }}>Toile de Santé</Text>
+                      <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>
+                        {isUnlocked ? 'Rapport mensuel croisé nutrition+humeur+hydratation+activité' : 'Débloque avec Gipsy MAX ou 80 Lix'}
+                      </Text>
+                    </View>
+                    <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>🕷️</Text>
+                  </View>
+                </Pressable>
+              );
+            })()}
           </View>
         </ScrollView>
 
@@ -7184,6 +7503,55 @@ const RepasPage = ({ onNavigate }) => {
                   })}
                 </View>
               </View>
+
+              {/* ======== SUBSTITUTION — Amber Fox ======== */}
+              {(() => {
+                const foxPower = activePowers.find(p =>
+                  p.power_key === 'fox_sub_1' || p.power_key === 'fox_sub_2' || p.power_key === 'fox_regime'
+                );
+                const isUnlocked = foxPower?.unlocked && activeChar?.slug === 'amber_fox';
+                const maxSubs = activeChar?.level >= 3 ? 3 : activeChar?.level >= 2 ? 2 : 1;
+
+                if (!isUnlocked) return null;
+
+                return (
+                  <View style={{ marginHorizontal: wp(16), marginBottom: wp(16) }}>
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      backgroundColor: 'rgba(255,140,66,0.06)',
+                      borderRadius: 14, padding: wp(12),
+                      borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)',
+                    }}>
+                      <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>🦊</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#FF8C42', fontSize: fp(11), fontWeight: '700' }}>Amber Fox — Substitution</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>
+                          {todaySubstitutions}/{maxSubs} utilisée{todaySubstitutions > 1 ? 's' : ''} aujourd'hui
+                        </Text>
+                      </View>
+                      <Pressable
+                        onPress={async () => {
+                          if (todaySubstitutions >= maxSubs) {
+                            Alert.alert('Limite atteinte', maxSubs + ' substitution' + (maxSubs > 1 ? 's' : '') + ' max par jour');
+                            return;
+                          }
+                          const canUse = await consumeCharacterUse('fox_sub_1');
+                          if (!canUse) return;
+                          setTodaySubstitutions(prev => prev + 1);
+                          Alert.alert('🦊 Substitution', 'Tap sur un ingrédient dans la liste ci-dessus pour voir des alternatives plus saines.', [{ text: 'Compris !' }]);
+                        }}
+                        style={({ pressed }) => ({
+                          backgroundColor: pressed ? 'rgba(255,140,66,0.2)' : 'rgba(255,140,66,0.1)',
+                          paddingHorizontal: wp(12), paddingVertical: wp(6), borderRadius: wp(8),
+                          borderWidth: 1, borderColor: 'rgba(255,140,66,0.3)',
+                        })}
+                      >
+                        <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700' }}>Substituer</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                );
+              })()}
 
               {/* Boutons Corriger + Confirmer */}
               <View style={{
