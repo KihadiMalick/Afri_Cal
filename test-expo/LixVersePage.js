@@ -2034,7 +2034,7 @@ export default function LixVersePage() {
 
     const spinBtnColors = spinTier === 'normal' && spinCost === 0 ? ['#00D984', '#00B871']
       : ['#3A3F46', '#252A30'];
-    const spinBtnBorder = spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : '#00D984';
+    const spinBtnBorder = spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : (spinCost === 0 ? '#00D984' : '#4A4F55');
 
     const tierButtons = [
       { key: 'normal', label: 'Spin ⚡', sub: !freeSpinUsed ? 'Gratuit' : '50 Lix' },
@@ -2305,21 +2305,25 @@ export default function LixVersePage() {
         <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginHorizontal: wp(16), marginBottom: wp(20) }} />
         <View style={{ paddingHorizontal: wp(16) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Acheter des Lix</Text>
-          {[{ n: 'Micro', p: '$0.99', l: 990, b: '', c: '#00D984' }, { n: 'Basic', p: '$4.99', l: 5240, b: '+5%', c: '#4DA6FF' }, { n: 'Standard', p: '$9.99', l: 10990, b: '+10%', c: '#9B6DFF' }, { n: 'Mega', p: '$29.99', l: 35990, b: '+20%', c: '#D4AF37' }, { n: 'Ultra', p: '$99.99', l: 129990, b: '+30%', c: '#D4AF37' }].map((pk, i) => (
-            <Pressable key={i} delayPressIn={120} onPress={() => showLixAlert('Achat ' + pk.n, pk.p + ' → ' + pk.l.toLocaleString('fr-FR') + ' Lix\n\nBientôt disponible.', [{ text: 'OK', style: 'cancel' }], '💎')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: pk.c + '25', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+          {[{ n: 'Micro', p: '$0.99', l: 990, b: '', c: '#00D984' }, { n: 'Basic', p: '$4.99', l: 5240, b: '+5%', c: '#4DA6FF' }, { n: 'Standard', p: '$9.99', l: 10990, b: '+10%', c: '#9B6DFF', best: true }, { n: 'Mega', p: '$29.99', l: 35990, b: '+20%', c: '#D4AF37' }, { n: 'Ultra', p: '$99.99', l: 129990, b: '+30%', c: '#D4AF37', ultra: true }].map((pk, i) => (
+            <Pressable key={i} delayPressIn={120} onPress={() => showLixAlert('Achat ' + pk.n, pk.p + ' → ' + pk.l.toLocaleString('fr-FR') + ' Lix\n\nBientôt disponible.', [{ text: 'OK', style: 'cancel' }], '💎')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: pk.ultra ? 2 : pk.best ? 1.5 : 1, borderColor: pk.ultra ? '#D4AF37' : pk.best ? pk.c + '50' : pk.c + '25', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
               <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: pk.c + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}><LixGem size={wp(22)} /></View>
-              <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{pk.n}</Text>{pk.b ? <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37' }}>{pk.b}</Text></View> : null}</View><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{pk.l.toLocaleString('fr-FR')} Lix</Text></View>
+              <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{pk.n}</Text>{pk.b ? <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37' }}>{pk.b}</Text></View> : null}
+{pk.best ? <View style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(7), fontWeight: '800', color: '#00D984' }}>MEILLEUR RAPPORT</Text></View> : null}</View><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{pk.l.toLocaleString('fr-FR')} Lix</Text></View>
               <View style={{ backgroundColor: pk.c + '20', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}><Text style={{ fontSize: fp(13), fontWeight: '700', color: pk.c }}>{pk.p}</Text></View>
             </Pressable>
           ))}
         </View>
         <View style={{ paddingHorizontal: wp(16), marginTop: wp(24) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Recharger énergie</Text>
-          {[{ n: 'Mini', e: 30, l: 300, d: '~3 chats' }, { n: 'Standard', e: 80, l: 700, d: '~8 chats' }, { n: 'XL', e: 200, l: 1500, d: '~20 chats' }].map((pk, i) => (
-            <Pressable key={i} delayPressIn={120} onPress={() => { if (lixBalance < pk.l) { showLixAlert('Lix insuffisants', 'Il faut ' + pk.l + ' Lix pour cette recharge.', [{ text: 'Fermer', style: 'cancel' }], '⚡'); return; } setLixBalance(p => p - pk.l); showLixAlert('Rechargé', '+' + pk.e + ' énergie ajoutée !', [{ text: 'Super', color: '#00D984' }], '⚡'); }} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(12), borderRadius: wp(12), marginBottom: wp(6), backgroundColor: 'rgba(0,217,132,0.05)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-              <Text style={{ fontSize: fp(14), marginRight: wp(10) }}>⚡</Text>
-              <View style={{ flex: 1 }}><Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>+{pk.e} énergie</Text><Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{pk.d}</Text></View>
-              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#00D984' }}>{pk.l} Lix</Text>
+          {[{ n: 'Mini', e: 30, l: 300, d: '~3 chats ALIXEN', emoji: '⚡', c: '#FFB800' }, { n: 'Standard', e: 80, l: 700, d: '~8 chats ALIXEN', emoji: '⚡⚡', c: '#FF8C42', best: true }, { n: 'XL', e: 200, l: 1500, d: '~20 chats ALIXEN', emoji: '⚡⚡⚡', c: '#FF6B6B' }].map((pk, i) => (
+            <Pressable key={i} delayPressIn={120} onPress={() => { if (lixBalance < pk.l) { showLixAlert('Lix insuffisants', 'Il faut ' + pk.l + ' Lix pour cette recharge.', [{ text: 'Fermer', style: 'cancel' }], '⚡'); return; } setLixBalance(p => p - pk.l); showLixAlert('Rechargé', '+' + pk.e + ' énergie ajoutée !', [{ text: 'Super', color: '#00D984' }], '⚡'); }} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(12), borderRadius: wp(12), marginBottom: wp(6), backgroundColor: pk.best ? 'rgba(255,140,66,0.08)' : 'rgba(255,255,255,0.03)', borderWidth: pk.best ? 1.5 : 1, borderColor: pk.best ? (pk.c || '#00D984') + '40' : 'rgba(255,255,255,0.08)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+              <Text style={{ fontSize: fp(14), marginRight: wp(10) }}>{pk.emoji || '⚡'}</Text>
+              <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+  <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>+{pk.e} énergie</Text>
+  {pk.best && <View style={{ backgroundColor: 'rgba(255,140,66,0.15)', borderRadius: wp(4), paddingHorizontal: wp(5), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(7), fontWeight: '800', color: '#FF8C42' }}>POPULAIRE</Text></View>}
+</View><Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{pk.d}</Text></View>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: pk.c || '#00D984' }}>{pk.l} Lix</Text>
             </Pressable>
           ))}
         </View>
@@ -3332,9 +3336,14 @@ export default function LixVersePage() {
           <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}>
             <Animated.View style={{
               position: 'absolute', top: Platform.OS === 'android' ? 85 : 100, right: wp(16),
-              backgroundColor: 'rgba(30, 37, 48, 0.95)',
+              backgroundColor: 'rgba(16, 20, 28, 0.97)',
               borderWidth: 1, borderColor: '#4A4F55',
               borderRadius: 16, padding: 16, zIndex: 999,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.4,
+              shadowRadius: 12,
+              elevation: 10,
               opacity: dropdownAnim,
               transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
             }}>
