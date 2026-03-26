@@ -199,31 +199,33 @@ const SPIN_RESULTS = [
 ];
 
 const NORMAL_SEGMENTS = [
-  { label: '20 ⚡', chance: 50, color: '#00D984', reward: { type: 'energy', amount: 20 } },
-  { label: '50 ⚡', chance: 19, color: '#4DA6FF', reward: { type: 'energy', amount: 50 } },
-  { label: '20 Lix', chance: 15, color: '#FF8C42', reward: { type: 'lix', amount: 20 } },
-  { label: '300 Lix', chance: 5, color: '#D4AF37', reward: { type: 'lix', amount: 300 } },
-  { label: '1 Frag Rare', chance: 10, color: '#9B59B6', reward: { type: 'fragment', tier: 'rare', amount: 1 } },
-  { label: '1 Carte Elite', chance: 1, color: '#E74C3C', reward: { type: 'card', tier: 'elite', amount: 1 } },
+  { label: '3', icon: '⚡', chance: 30, color: '#FFB800', reward: { type: 'energy', amount: 3 } },
+  { label: '30', icon: '💰', chance: 20, color: '#00D984', reward: { type: 'lix', amount: 30 } },
+  { label: '1', icon: '🧩', chance: 15, color: '#9B59B6', subLabel: 'Frag Std', reward: { type: 'fragment', tier: 'standard', amount: 1 } },
+  { label: '1', icon: '📸', chance: 15, color: '#FF8C42', subLabel: 'scan', reward: { type: 'scan', amount: 1 } },
+  { label: '1', icon: '🎁', chance: 10, color: '#E74C3C', subLabel: 'spin', reward: { type: 'free_spin', amount: 1 } },
+  { label: '1', icon: '🧩', chance: 8, color: '#3498DB', subLabel: 'Frag Rare', reward: { type: 'fragment', tier: 'rare', amount: 1 } },
+  { label: '10', icon: '⚡⚡', chance: 2, color: '#FFD700', subLabel: 'énergie', reward: { type: 'energy', amount: 10 } },
 ];
 
 const SUPER_SEGMENTS = [
-  { label: '30 ⚡', chance: 35, color: '#00D984', reward: { type: 'energy', amount: 30 } },
-  { label: '80 ⚡', chance: 20, color: '#4DA6FF', reward: { type: 'energy', amount: 80 } },
-  { label: '50 Lix', chance: 15, color: '#FF8C42', reward: { type: 'lix', amount: 50 } },
-  { label: '500 Lix', chance: 10, color: '#D4AF37', reward: { type: 'lix', amount: 500 } },
-  { label: '1 Frag Rare', chance: 15, color: '#9B59B6', reward: { type: 'fragment', tier: 'rare', amount: 1 } },
-  { label: '1 Frag Elite', chance: 5, color: '#E74C3C', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
+  { label: '5', icon: '⚡', chance: 27, color: '#FFB800', reward: { type: 'energy', amount: 5 } },
+  { label: '50', icon: '💰', chance: 20, color: '#00D984', reward: { type: 'lix', amount: 50 } },
+  { label: '1', icon: '🃏', chance: 15, color: '#9B59B6', subLabel: 'carte Std', reward: { type: 'card', tier: 'standard', amount: 1 } },
+  { label: '2', icon: '📸', chance: 13, color: '#FF8C42', subLabel: 'scans', reward: { type: 'scan', amount: 2 } },
+  { label: '1', icon: '🎁', chance: 10, color: '#E74C3C', subLabel: 'super', reward: { type: 'free_spin', amount: 1 } },
+  { label: '1', icon: '🧩', chance: 8, color: '#3498DB', subLabel: 'Frag Elite', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
+  { label: '25', icon: '⚡⚡', chance: 7, color: '#FFD700', subLabel: 'énergie', reward: { type: 'energy', amount: 25 } },
 ];
 
 const MEGA_SEGMENTS = [
-  { label: '50 ⚡', chance: 25, color: '#00D984', reward: { type: 'energy', amount: 50 } },
-  { label: '120 ⚡', chance: 20, color: '#4DA6FF', reward: { type: 'energy', amount: 120 } },
-  { label: '100 Lix', chance: 15, color: '#FF8C42', reward: { type: 'lix', amount: 100 } },
-  { label: '1000 Lix', chance: 10, color: '#D4AF37', reward: { type: 'lix', amount: 1000 } },
-  { label: '2 Frags Rare', chance: 15, color: '#9B59B6', reward: { type: 'fragment', tier: 'rare', amount: 2 } },
-  { label: '1 Frag Elite', chance: 10, color: '#E74C3C', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
-  { label: '1 Frag Mythique', chance: 5, color: '#FF1493', reward: { type: 'fragment', tier: 'mythique', amount: 1 } },
+  { label: '10', icon: '⚡', chance: 25, color: '#FFB800', reward: { type: 'energy', amount: 10 } },
+  { label: '100', icon: '💰', chance: 20, color: '#00D984', reward: { type: 'lix', amount: 100 } },
+  { label: '2', icon: '🧩', chance: 15, color: '#9B59B6', subLabel: 'Frag Rare', reward: { type: 'fragment', tier: 'rare', amount: 2 } },
+  { label: '1', icon: '🧩', chance: 13, color: '#FF8C42', subLabel: 'Frag Elite', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
+  { label: '1', icon: '🃏', chance: 10, color: '#E74C3C', subLabel: 'carte Rare', reward: { type: 'card', tier: 'rare', amount: 1 } },
+  { label: '1', icon: '🧩', chance: 7, color: '#3498DB', subLabel: 'Frag Myth', reward: { type: 'fragment', tier: 'mythique', amount: 1 } },
+  { label: '50', icon: '⚡⚡', chance: 10, color: '#FFD700', subLabel: 'énergie', reward: { type: 'energy', amount: 50 } },
 ];
 
 // === SLUGS PAR TIER — pour distribution aléatoire de fragments ===
@@ -298,24 +300,32 @@ const SEGMENT_EMOJIS = {
 };
 
 const getSegmentEmoji = (seg) => {
+  if (seg.icon) return seg.icon;
   if (seg.reward.type === 'energy') return '⚡';
   if (seg.reward.type === 'lix') return '💰';
   if (seg.reward.type === 'card') return '🃏';
+  if (seg.reward.type === 'scan') return '📸';
+  if (seg.reward.type === 'free_spin') return '🎁';
   if (seg.reward.type === 'fragment') {
     if (seg.reward.tier === 'mythique') return '👑';
     if (seg.reward.tier === 'elite') return '🏆';
+    if (seg.reward.tier === 'standard') return '🧩';
     return '🔮';
   }
   return '⚡';
 };
 
 const getSegmentTypeLabel = (seg) => {
+  if (seg.subLabel) return seg.subLabel;
   if (seg.reward.type === 'energy') return 'énergie';
   if (seg.reward.type === 'lix') return 'Lix';
-  if (seg.reward.type === 'card') return 'Carte Elite';
+  if (seg.reward.type === 'card') return 'Carte';
+  if (seg.reward.type === 'scan') return 'scan';
+  if (seg.reward.type === 'free_spin') return 'spin';
   if (seg.reward.type === 'fragment') {
-    if (seg.reward.tier === 'mythique') return 'Frag Myth.';
+    if (seg.reward.tier === 'mythique') return 'Frag Myth';
     if (seg.reward.tier === 'elite') return 'Frag Elite';
+    if (seg.reward.tier === 'standard') return 'Frag Std';
     return 'Frag Rare';
   }
   return '';
@@ -1720,7 +1730,7 @@ export default function LixVersePage() {
       });
 
       if (!data?.success) {
-        const errMsg = data?.error || 'Erreur inconnue';
+        const errMsg = data?.error || data?.message || JSON.stringify(data);
         if (errMsg === 'Insufficient Lix') {
           showLixAlert('Lix insuffisants', 'Tu as ' + (data?.current_lix || 0) + ' Lix. Il en faut ' + (data?.cost || 0) + ' pour ce spin.', [{ text: 'Fermer', style: 'cancel' }], '💰');
         } else {
@@ -1822,7 +1832,7 @@ export default function LixVersePage() {
 
     } catch (e) {
       console.error('Spin error:', e);
-      showLixAlert('Erreur réseau', 'Vérifie ta connexion et réessaie.', [{ text: 'OK', style: 'cancel' }], '📡');
+      showLixAlert('Erreur', e?.message || e?.details || JSON.stringify(e), [{ text: 'OK', style: 'cancel' }], '⚠️');
       setSpinLoading(false);
     }
   };
@@ -1838,13 +1848,16 @@ export default function LixVersePage() {
     } else if (rw.type === 'lix') {
       emoji = '💰'; title = '+' + rw.amount + ' Lix'; titleColor = '#D4AF37'; btnColor = '#D4AF37';
     } else if (rw.type === 'fragment') {
-      const tierColor = rw.tier === 'mythique' ? '#FF1493' : rw.tier === 'elite' ? '#E74C3C' : '#9B59B6';
-      emoji = fragmentResult ? fragmentResult.emoji : (rw.tier === 'mythique' ? '👑' : rw.tier === 'elite' ? '🏆' : '🔮');
-      title = fragmentResult
-        ? fragmentResult.name + ' +' + rw.amount + ' frag'
+      const charName = serverResult?.character_name || (fragmentResult ? fragmentResult.name : null);
+      const charEmoji = serverResult?.character_emoji || (fragmentResult ? fragmentResult.emoji : null);
+      const charTier = serverResult?.character_tier || rw.tier;
+      const tierColor = charTier === 'mythique' ? '#D4AF37' : charTier === 'elite' ? '#9B59B6' : charTier === 'rare' ? '#4DA6FF' : '#00D984';
+      emoji = charEmoji || (rw.tier === 'mythique' ? '👑' : rw.tier === 'elite' ? '🏆' : '🔮');
+      title = charName
+        ? charName + '\n+' + rw.amount + ' Fragment obtenu !'
         : 'Fragment ' + rw.tier.charAt(0).toUpperCase() + rw.tier.slice(1) + ' !';
       titleColor = tierColor; btnColor = tierColor; borderColor = tierColor;
-      btnText = 'Voir →';
+      btnText = 'INTÉGRER ←';
     } else if (rw.type === 'card') {
       const cardTier = rw.tier || 'elite';
       const cardColor = cardTier === 'mythique' ? '#FF1493' : '#E74C3C';
@@ -1862,12 +1875,15 @@ export default function LixVersePage() {
               borderWidth: borderColor !== 'transparent' ? 2 : 0, borderColor: borderColor,
             }}>
             <Animated.Text style={{
-              fontSize: fp(40), marginBottom: wp(12),
+              fontSize: rw.type === 'fragment' ? fp(60) : fp(40), marginBottom: wp(12),
               transform: [{ scale: (rw.type === 'fragment' || rw.type === 'card') ? spinResultPulse : 1 }],
             }}>{emoji}</Animated.Text>
             <Text style={{ fontSize: rw.type === 'card' ? fp(24) : fp(22), fontWeight: '800', color: titleColor, textAlign: 'center', marginBottom: wp(8) }}>{title}</Text>
             {rw.type === 'fragment' && (
+              <>
+              <Text style={{ fontSize: fp(12), color: '#D4AF37', marginBottom: wp(4) }}>— {(serverResult?.character_tier || rw.tier || '').charAt(0).toUpperCase() + (serverResult?.character_tier || rw.tier || '').slice(1)} —</Text>
               <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(8) }}>x{rw.amount} fragment{rw.amount > 1 ? 's' : ''}</Text>
+              </>
             )}
             <Pressable delayPressIn={120}
               onPress={() => {
@@ -1906,8 +1922,7 @@ export default function LixVersePage() {
     else if (spinTier === 'super') spinCost = 150;
     else spinCost = 500;
 
-    const spinBtnLabel = (isSpinning || spinLoading) ? '⏳ La roue tourne...'
-      : spinTier === 'normal' ? (spinCost === 0 ? '🎁 SPIN GRATUIT' : 'SPIN — 50 Lix')
+    const spinBtnLabel = spinTier === 'normal' ? (spinCost === 0 ? '🎁 SPIN GRATUIT' : 'SPIN — 50 Lix')
       : spinTier === 'super' ? 'SUPERSPIN — 150 Lix 🔥'
       : 'MEGASPIN — 500 Lix 💎';
 
