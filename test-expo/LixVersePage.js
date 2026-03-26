@@ -433,6 +433,19 @@ export default function LixVersePage() {
     },
   });
 
+  // === CARACTÈRES ===
+  const [charOnboarded, setCharOnboarded] = useState(null);
+  const [userCollection, setUserCollection] = useState([]);
+  const [activeCharSlug, setActiveCharSlug] = useState(null);
+  const [showCharOnboarding, setShowCharOnboarding] = useState(false);
+  const [selectedChar, setSelectedChar] = useState(null);
+  const [charFlipped, setCharFlipped] = useState(false);
+  const [charPowers, setCharPowers] = useState([]);
+  const [loadingPowers, setLoadingPowers] = useState(false);
+  const [onboardingSelected, setOnboardingSelected] = useState(null);
+  const [inlinePowerModal, setInlinePowerModal] = useState(null);
+  const flipAnim = useRef(new Animated.Value(0)).current;
+
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
   const handleCharRecharge = (charId) => {
@@ -461,6 +474,126 @@ export default function LixVersePage() {
     });
   };
 
+  // === CARACTÈRES — Fonctions Supabase ===
+  const supaRpc = async (fnName, params = {}) => {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fnName, {
+      method: 'POST', headers: POST_HEADERS, body: JSON.stringify(params),
+    });
+    return res.json();
+  };
+
+  const loadCharacterData = async () => {
+    try {
+      const userId = TEST_USER_ID;
+      const onb = await supaRpc('check_character_onboarding', { p_user_id: userId });
+      const isOnboarded = onb?.first_character_chosen || false;
+      setCharOnboarded(isOnboarded);
+
+      if (!isOnboarded) {
+        setShowCharOnboarding(true);
+        const charsRes = await fetch(SUPABASE_URL + '/rest/v1/lixverse_characters?tier=eq.standard&order=sort_order.asc', { headers: HEADERS });
+        const chars = await charsRes.json();
+        setUserCollection((chars || []).map(c => ({ ...c, owned: false, level: 0, fragments: 0 })));
+        return;
+      }
+
+      const collection = await supaRpc('get_user_collection', { p_user_id: userId });
+      if (collection && Array.isArray(collection)) {
+        setUserCollection(collection);
+        const active = collection.find(c => c.is_active);
+        if (active) setActiveCharSlug(active.slug);
+      }
+    } catch (e) {
+      console.error('Character load error:', e);
+    }
+  };
+
+  const chooseFirstCharacter = async (slug) => {
+    try {
+      const data = await supaRpc('choose_first_character', { p_user_id: TEST_USER_ID, p_slug: slug });
+      if (data?.success) {
+        setCharOnboarded(true);
+        setShowCharOnboarding(false);
+        setActiveCharSlug(slug);
+        loadCharacterData();
+      }
+    } catch (e) {
+      console.error('Choose character error:', e);
+    }
+  };
+
+  const switchActiveCharacter = async (slug) => {
+    try {
+      const data = await supaRpc('set_active_character', { p_user_id: TEST_USER_ID, p_slug: slug });
+      if (data?.success) {
+        setActiveCharSlug(slug);
+        setUserCollection(prev => prev.map(c => ({ ...c, is_active: c.slug === slug })));
+      }
+    } catch (e) {
+      console.error('Switch character error:', e);
+    }
+  };
+
+  const loadCharPowers = async (slug) => {
+    setLoadingPowers(true);
+    try {
+      const data = await supaRpc('get_character_powers', { p_user_id: TEST_USER_ID, p_slug: slug });
+      setCharPowers(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Powers load error:', e);
+    }
+    setLoadingPowers(false);
+  };
+
+  const useCharPower = async (powerKey) => {
+    try {
+      const data = await supaRpc('use_character_power', { p_user_id: TEST_USER_ID, p_power_key: powerKey });
+      if (data?.success) {
+        setUserCollection(prev => prev.map(c =>
+          c.slug === selectedChar?.slug
+            ? { ...c, uses_remaining: data.uses_remaining }
+            : c
+        ));
+        return true;
+      } else if (data?.error === 'No uses remaining') {
+        showLixAlert('⚡ Utilisations épuisées',
+          'Recharge ton ' + (selectedChar?.name || '') + ' avec ' + (selectedChar?.recharge_energy || 10) + ' énergie.',
+          [{ text: 'Recharger', color: '#00D984', onPress: () => rechargeActiveChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
+        return false;
+      }
+      return false;
+    } catch (e) {
+      console.error('Use power error:', e);
+      return false;
+    }
+  };
+
+  const rechargeActiveChar = async () => {
+    if (!selectedChar) return;
+    try {
+      const data = await supaRpc('recharge_character', { p_user_id: TEST_USER_ID, p_slug: selectedChar.slug });
+      if (data?.success) {
+        setUserCollection(prev => prev.map(c =>
+          c.slug === selectedChar.slug
+            ? { ...c, uses_remaining: data.uses_restored }
+            : c
+        ));
+      }
+    } catch (e) {
+      console.error('Recharge error:', e);
+    }
+  };
+
+  // Flip animation
+  const flipCard = () => {
+    const toVal = charFlipped ? 0 : 1;
+    Animated.timing(flipAnim, {
+      toValue: toVal, duration: 400, useNativeDriver: true,
+    }).start(() => setCharFlipped(!charFlipped));
+  };
+  const frontInterpolate = flipAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', '90deg', '90deg'] });
+  const backInterpolate = flipAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['90deg', '90deg', '0deg'] });
+
   const getSegments = () => {
     if (spinTier === 'super') return SUPER_SEGMENTS;
     if (spinTier === 'mega') return MEGA_SEGMENTS;
@@ -483,6 +616,7 @@ export default function LixVersePage() {
   }, [freeSpinUsed]);
 
   useEffect(() => { loadAll(); }, []);
+  useEffect(() => { if (activeTab === 'characters') loadCharacterData(); }, [activeTab]);
   // Fake realtime — simuler des likes externes toutes les 12-27s
   useEffect(() => {
     if (wallStickers.length === 0) return;
@@ -1269,100 +1403,151 @@ export default function LixVersePage() {
     fetch(SUPABASE_URL + '/rest/v1/lixverse_crate_history', { method: 'POST', headers: h, body: JSON.stringify({ user_id: TEST_USER_ID, crate_type: crate.id, lix_spent: crate.cost, character_won: cardWon ? cardWon.id : 'none', was_doublon: cardDup, lix_refunded: cardRef }) }).catch(() => {});
   };
 
-  const renderCharactersTab = () => (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(100) }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(16) }}>
-        <View><Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Ma collection</Text><Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{ownedCharacters.length}/13</Text></View>
-        <View style={{ backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)' }}><Text style={{ fontSize: fp(11), fontWeight: '700', color: '#D4AF37' }}>{Math.round((ownedCharacters.length / 13) * 100)}%</Text></View>
-      </View>
-      {['standard', 'rare', 'elite', 'hyper', 'ultimate'].map(tier => {
-        const cfg = TIER_CONFIG[tier]; const chars = ALL_CHARACTERS.filter(c => c.tier === tier);
-        return (
-          <View key={tier} style={{ marginBottom: wp(20) }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), marginBottom: wp(10) }}><View style={{ backgroundColor: cfg.bg, borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4) }}><Text style={{ fontSize: fp(11), fontWeight: '700', color: cfg.color }}>{cfg.label}</Text></View><Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>{chars.filter(c => ownedCharacters.includes(c.id)).length}/{chars.length}</Text></View>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8) }}>
-              {chars.map(ch => {
-                const own = ownedCharacters.includes(ch.id);
-                return (
-                  <Pressable key={ch.id} delayPressIn={120} onPress={() => {
-                      const charData = ownedChars[ch.id];
-                      if (charData) {
-                        setSelectedCharacter(charData);
-                        setShowCharDetail(true);
-                      } else {
-                        setShowCharacterDetail(ch);
-                      }
-                    }}
-                    style={({ pressed }) => ({
-                      width: (SCREEN_WIDTH - wp(48)) / 3,
-                      borderRadius: wp(14), overflow: 'hidden',
-                      backgroundColor: own ? cfg.bg : 'rgba(255,255,255,0.03)',
-                      borderWidth: own ? 1.5 : 1,
-                      borderColor: own ? cfg.border : 'rgba(255,255,255,0.08)',
-                      transform: [{ scale: pressed ? 0.93 : 1 }],
-                    })}>
-                    {/* Image miniature */}
-                    <View style={{ width: '100%', height: wp(80), justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.15)' }}>
-                      {ch.image ? (
-                        <Image source={ch.image} style={{ width: '100%', height: wp(80), resizeMode: 'cover', opacity: own ? 1 : 0.25 }} />
-                      ) : (
-                        <Text style={{ fontSize: fp(32), opacity: own ? 1 : 0.25 }}>{ch.emoji}</Text>
-                      )}
-                      {!own && (
-                        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center' }}>
-                          <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
-                            <Rect x="3" y="11" width="18" height="11" rx="2" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"/>
-                            <Path d="M7 11V7a5 5 0 0110 0v4" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
-                          </Svg>
-                        </View>
-                      )}
-                    </View>
-                    <View style={{ padding: wp(6), alignItems: 'center' }}>
-                      <Text style={{ fontSize: fp(8), fontWeight: '700', textAlign: 'center', color: own ? cfg.color : 'rgba(255,255,255,0.4)' }}>{ch.name}</Text>
-                      {own ? (
-                        <View style={{ backgroundColor: cfg.color, borderRadius: wp(4), paddingHorizontal: wp(5), paddingVertical: wp(1), marginTop: wp(3) }}>
-                          <Text style={{ fontSize: fp(6), fontWeight: '700', color: '#FFF' }}>POSSÉDÉ</Text>
-                        </View>
-                      ) : (
-                        <Text style={{ fontSize: fp(6), color: 'rgba(255,255,255,0.2)', marginTop: wp(3) }}>Non possédé</Text>
-                      )}
-                      {ownedChars[ch.id] && (
-                        <View style={{ width: '100%', marginTop: wp(4) }}>
-                          <View style={{ height: wp(3), backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(1.5), overflow: 'hidden', marginBottom: wp(3) }}>
-                            <View style={{
-                              height: '100%', borderRadius: wp(1.5),
-                              backgroundColor: '#00D984',
-                              width: Math.min(100, Math.round((ownedChars[ch.id].xp / ownedChars[ch.id].xp_next) * 100)) + '%',
-                            }} />
-                          </View>
-                          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <Text style={{ fontSize: fp(7), color: 'rgba(0,217,132,0.6)', fontWeight: '700' }}>
-                              Niv. {ownedChars[ch.id].level}
-                            </Text>
-                            <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.3)' }}>
-                              ⚡ {ownedChars[ch.id].uses_remaining}/{ownedChars[ch.id].uses_max}
-                            </Text>
-                          </View>
-                        </View>
-                      )}
-                    </View>
-                  </Pressable>
-                );
-              })}
+  const CHAR_CRATES = [
+    { key: 'free', name: 'Gratuite', price: 0, priceLabel: '8h', color: '#6B7B8D', borderColor: '#4A4F55', rewards: '3-5 énergie + 5-15 Lix + 20% frag Std' },
+    { key: 'bronze', name: 'Bronze', price: 500, priceLabel: '500 Lix', color: '#CD7F32', borderColor: '#CD7F32', rewards: '5-10 énergie + 10-30 Lix + 40% frag Std + 3% frag Rare' },
+    { key: 'silver', name: 'Argent', price: 1500, priceLabel: '1 500 Lix', color: '#C0C0C0', borderColor: '#C0C0C0', rewards: '15-25 énergie + 30-80 Lix + 1 frag Std GARANTI + 15% frag Rare' },
+    { key: 'gold', name: 'Or', price: 4000, priceLabel: '4 000 Lix', color: '#D4AF37', borderColor: '#D4AF37', rewards: '25-40 énergie + 1 CARTE STD + 15% frag Rare + 3% frag Elite' },
+  ];
+
+  const cardW = (SCREEN_WIDTH - wp(48)) / 3;
+
+  const renderCharactersTab = () => {
+    const activeChar = userCollection.find(c => c.slug === activeCharSlug && c.owned !== false);
+    const emojiMap = { emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy_spider: '🕷️' };
+    const getEmoji = (c) => emojiMap[c.slug] || ALL_CHARACTERS.find(a => a.id === c.slug)?.emoji || '🃏';
+    const getLevelBadge = (c) => {
+      const lv = c.level || 0;
+      if (lv >= 6) return { text: 'MAX', color: '#FF4757' };
+      if (lv >= 3) return { text: 'Niv' + lv, color: '#D4AF37' };
+      return { text: 'Niv' + lv, color: '#00D984' };
+    };
+
+    return (
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(100) }}>
+        {/* Personnage actif en haut */}
+        {activeChar ? (
+          <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ borderRadius: wp(16), padding: wp(14), marginBottom: wp(16), borderWidth: 1, borderColor: '#4A4F55' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ width: wp(60), height: wp(60), borderRadius: wp(30), backgroundColor: 'rgba(0,217,132,0.12)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#00D984', marginRight: wp(12) }}>
+                <Text style={{ fontSize: fp(28) }}>{getEmoji(activeChar)}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginBottom: wp(4) }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>{activeChar.name || activeChar.slug}</Text>
+                  <Text style={{ fontSize: fp(10), color: '#00D984', fontWeight: '700' }}>ACTIF ✅</Text>
+                </View>
+                <View style={{ height: wp(5), backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(2.5), overflow: 'hidden', marginBottom: wp(4) }}>
+                  <View style={{ height: '100%', borderRadius: wp(2.5), backgroundColor: '#00D984', width: Math.min(100, Math.round(((activeChar.xp || 0) / (activeChar.xp_next || 1000)) * 100)) + '%' }} />
+                </View>
+                <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.4)' }}>{activeChar.xp || 0}/{activeChar.xp_next || 1000} XP</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4), marginTop: wp(2) }}>
+                  <View style={{ height: wp(3), flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(1.5), overflow: 'hidden' }}>
+                    <View style={{ height: '100%', borderRadius: wp(1.5), backgroundColor: '#FF8C42', width: Math.min(100, Math.round(((activeChar.uses_remaining || 0) / (activeChar.uses_max || 10)) * 100)) + '%' }} />
+                  </View>
+                  <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.35)' }}>{activeChar.uses_remaining || 0}/{activeChar.uses_max || 10} utilisations</Text>
+                </View>
+              </View>
+              <Pressable delayPressIn={120} onPress={() => { setSelectedChar(activeChar); setCharFlipped(false); flipAnim.setValue(0); loadCharPowers(activeChar.slug); }} style={({ pressed }) => ({ backgroundColor: '#00D984', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(8), transform: [{ scale: pressed ? 0.93 : 1 }] })}>
+                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#1A1D22' }}>Utiliser</Text>
+              </Pressable>
             </View>
+          </LinearGradient>
+        ) : (
+          <View style={{ padding: wp(16), alignItems: 'center', marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.35)' }}>Aucun compagnon actif</Text>
           </View>
-        );
-      })}
-      <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12), marginTop: wp(8) }}>Ouvrir une caisse</Text>
-      {CRATES.map(cr => (
-        <Pressable key={cr.id} delayPressIn={120} onPress={() => openCrate(cr)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), borderWidth: 1.5, borderColor: cr.color + '40', backgroundColor: cr.color + '08', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-          <Text style={{ fontSize: fp(28), marginRight: wp(12) }}>{cr.emoji}</Text>
-          <View style={{ flex: 1 }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{cr.name}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>{cr.desc}</Text></View>
-          <View style={{ backgroundColor: cr.color + '25', borderRadius: wp(10), paddingHorizontal: wp(10), paddingVertical: wp(5) }}><Text style={{ fontSize: fp(12), fontWeight: '700', color: cr.color }}>{cr.cost}</Text></View>
-        </Pressable>
-      ))}
-    </ScrollView>
-  );
+        )}
+
+        {/* Titre collection */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(12) }}>
+          <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Ma collection</Text>
+          <View style={{ backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)' }}>
+            <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#D4AF37' }}>{userCollection.filter(c => c.owned !== false).length}/{userCollection.length || 13}</Text>
+          </View>
+        </View>
+
+        {/* Grille 3 colonnes */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8), marginBottom: wp(20) }}>
+          {(userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: ownedChars[c.id]?.level || 0, xp: ownedChars[c.id]?.xp || 0, xp_next: ownedChars[c.id]?.xp_next || 1000, uses_remaining: ownedChars[c.id]?.uses_remaining || 0, uses_max: ownedChars[c.id]?.uses_max || 10, fragments: 0, fragments_required: 3, is_active: false }))).map(ch => {
+            const own = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(ch.slug || ch.id);
+            const isActive = (ch.slug || ch.id) === activeCharSlug;
+            const badge = getLevelBadge(ch);
+            return (
+              <Pressable key={ch.slug || ch.id} delayPressIn={120}
+                onPress={() => {
+                  if (own) {
+                    setSelectedChar(ch); setCharFlipped(false); flipAnim.setValue(0);
+                    loadCharPowers(ch.slug || ch.id);
+                  } else {
+                    showLixAlert('🔒 Personnage verrouillé', 'Collecte des fragments pour débloquer ce personnage.', [{ text: 'Compris', style: 'cancel' }], '🔒');
+                  }
+                }}
+                style={({ pressed }) => ({
+                  width: cardW, borderRadius: wp(14), overflow: 'hidden',
+                  opacity: own ? 1 : 0.35,
+                  borderWidth: isActive ? 2 : 1,
+                  borderColor: isActive ? '#00D984' : own ? '#4A4F55' : 'rgba(255,255,255,0.08)',
+                  transform: [{ scale: pressed ? 0.93 : 1 }],
+                })}>
+                <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ alignItems: 'center', paddingVertical: wp(8) }}>
+                  <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center', marginBottom: wp(4) }}>
+                    <Text style={{ fontSize: fp(24) }}>{getEmoji(ch)}</Text>
+                    {!own && <View style={{ position: 'absolute', justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: fp(20) }}>🔒</Text></View>}
+                  </View>
+                  <Text style={{ fontSize: fp(9), fontWeight: '700', color: own ? '#FFF' : 'rgba(255,255,255,0.4)', textAlign: 'center' }} numberOfLines={1}>{ch.name || ch.slug}</Text>
+                  {own ? (
+                    <View style={{ backgroundColor: badge.color, borderRadius: wp(4), paddingHorizontal: wp(5), paddingVertical: wp(1), marginTop: wp(3) }}>
+                      <Text style={{ fontSize: fp(7), fontWeight: '700', color: '#FFF' }}>{badge.text}</Text>
+                    </View>
+                  ) : (
+                    <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.25)', marginTop: wp(3) }}>{ch.fragments || 0}/{ch.fragments_required || 3} frags</Text>
+                  )}
+                  {own && (
+                    <View style={{ width: '80%', marginTop: wp(4) }}>
+                      <View style={{ height: wp(3), backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(1.5), overflow: 'hidden' }}>
+                        <View style={{ height: '100%', borderRadius: wp(1.5), backgroundColor: '#00D984', width: Math.min(100, Math.round(((ch.xp || 0) / (ch.xp_next || 1000)) * 100)) + '%' }} />
+                      </View>
+                    </View>
+                  )}
+                </LinearGradient>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Section CAISSES */}
+        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', marginBottom: wp(12), marginTop: wp(8) }}>CAISSES</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(10), paddingRight: wp(16) }}>
+          {CHAR_CRATES.map(cr => (
+            <Pressable key={cr.key} delayPressIn={120} onPress={() => {
+              if (cr.price === 0) {
+                showLixAlert('📦 Caisse Gratuite', 'Prochaine disponible dans 04:32:10', [{ text: 'OK', style: 'cancel' }], '⏱️');
+              } else if (lixBalance < cr.price) {
+                showLixAlert('Lix insuffisants', 'Il faut ' + cr.priceLabel + ' pour cette caisse.', [{ text: 'Fermer', style: 'cancel' }], '💰');
+              } else {
+                showLixAlert('📦 ' + cr.name, 'Ouverture en cours...', [{ text: 'OK', color: cr.color }], '📦');
+              }
+            }} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+              <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ width: wp(150), height: wp(180), borderRadius: wp(14), padding: wp(12), borderWidth: 2, borderColor: cr.borderColor, justifyContent: 'space-between' }}>
+                <View>
+                  <Text style={{ fontSize: fp(30), textAlign: 'center', marginBottom: wp(6) }}>📦</Text>
+                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF', textAlign: 'center' }}>{cr.name}</Text>
+                  <Text style={{ fontSize: fp(11), color: cr.color, textAlign: 'center', fontWeight: '600', marginTop: wp(2) }}>{cr.priceLabel}</Text>
+                </View>
+                <View>
+                  <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginBottom: wp(6) }}>{cr.rewards}</Text>
+                  <View style={{ backgroundColor: cr.color + '25', borderRadius: wp(8), paddingVertical: wp(6), alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: cr.color }}>{cr.price === 0 ? 'Ouvrir' : 'Ouvrir'}</Text>
+                  </View>
+                </View>
+              </LinearGradient>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </ScrollView>
+    );
+  };
   const triggerArrowBounce = (strong) => {
     arrowBounce.setValue(strong ? 1.6 : 1);
     Animated.spring(arrowBounce, {
@@ -3252,7 +3437,254 @@ export default function LixVersePage() {
         </View>
       </Modal>
 
-      {/* Modal Détail Personnage */}
+      {/* Modal Onboarding Caractères */}
+      <Modal visible={showCharOnboarding} transparent animationType="fade" onRequestClose={() => {}}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }}>
+          <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ width: '92%', maxHeight: '90%', borderRadius: wp(20), padding: wp(20), borderWidth: 1, borderColor: '#4A4F55' }}>
+            <Text style={{ fontSize: fp(22), fontWeight: '700', color: '#D4AF37', textAlign: 'center', marginBottom: wp(6) }}>Bienvenue dans le LixVerse !</Text>
+            <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: wp(20) }}>Choisis ton premier compagnon de santé</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(12), paddingHorizontal: wp(4) }}>
+              {userCollection.map(ch => {
+                const emojiMap = { emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy_spider: '🕷️' };
+                const em = emojiMap[ch.slug] || ALL_CHARACTERS.find(a => a.id === ch.slug)?.emoji || '🃏';
+                const isSel = onboardingSelected === ch.slug;
+                return (
+                  <Pressable key={ch.slug || ch.id} delayPressIn={120} onPress={() => setOnboardingSelected(ch.slug)}
+                    style={({ pressed }) => ({ width: wp(160), height: wp(220), borderRadius: wp(14), overflow: 'hidden', borderWidth: isSel ? 2.5 : 1, borderColor: isSel ? '#D4AF37' : '#4A4F55', transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                    <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: wp(10) }}>
+                      <View style={{ width: wp(80), height: wp(80), borderRadius: wp(40), backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center', marginBottom: wp(8) }}>
+                        <Text style={{ fontSize: fp(50) }}>{em}</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', textAlign: 'center' }}>{ch.name || ch.slug}</Text>
+                      <Text style={{ fontSize: fp(10), color: '#00D984', textAlign: 'center', marginTop: wp(2) }}>{ch.specialty || ch.tier || 'Standard'}</Text>
+                      <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: wp(4) }} numberOfLines={2}>{ch.description || ch.desc || ALL_CHARACTERS.find(a => a.id === ch.slug)?.desc || ''}</Text>
+                    </LinearGradient>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            <Pressable delayPressIn={120} disabled={!onboardingSelected} onPress={() => onboardingSelected && chooseFirstCharacter(onboardingSelected)}
+              style={({ pressed }) => ({ marginTop: wp(20), opacity: onboardingSelected ? 1 : 0.4, transform: [{ scale: pressed && onboardingSelected ? 0.95 : 1 }] })}>
+              <LinearGradient colors={onboardingSelected ? ['#00D984','#00B871'] : ['#333A42','#2A2F36']} style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>Choisir ce compagnon</Text>
+              </LinearGradient>
+            </Pressable>
+          </LinearGradient>
+        </View>
+      </Modal>
+
+      {/* Modal Détail Personnage avec Flip */}
+      {selectedChar && (
+        <Modal visible={true} transparent animationType="slide" onRequestClose={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }}>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }}>
+            <Pressable onPress={(e) => e.stopPropagation()}>
+              <View style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), overflow: 'hidden', maxHeight: SCREEN_WIDTH * 1.8 }}>
+                {/* FACE */}
+                <Animated.View style={{ transform: [{ rotateY: frontInterpolate }], backfaceVisibility: 'hidden', position: charFlipped ? 'absolute' : 'relative', width: '100%' }}>
+                  <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
+                    <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                      <View style={{ alignItems: 'center', marginBottom: wp(16) }}>
+                        {(() => {
+                          const emojiMap = { emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy_spider: '🕷️' };
+                          const em = emojiMap[selectedChar.slug] || ALL_CHARACTERS.find(a => a.id === (selectedChar.slug || selectedChar.id))?.emoji || '🃏';
+                          return (
+                            <View style={{ width: wp(120), height: wp(160), borderRadius: wp(20), backgroundColor: 'rgba(0,217,132,0.08)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'rgba(0,217,132,0.3)', marginBottom: wp(10) }}>
+                              <Text style={{ fontSize: fp(60) }}>{em}</Text>
+                            </View>
+                          );
+                        })()}
+                        <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#D4AF37' }}>{selectedChar.name || selectedChar.slug}</Text>
+                        <View style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(6), paddingHorizontal: wp(10), paddingVertical: wp(3), marginTop: wp(6) }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984' }}>STANDARD</Text>
+                        </View>
+                        {(selectedChar.slug || selectedChar.id) === activeCharSlug && (
+                          <Text style={{ fontSize: fp(11), color: '#00D984', fontWeight: '700', marginTop: wp(6) }}>ACTIF ✅</Text>
+                        )}
+                      </View>
+
+                      {/* Barre XP */}
+                      <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(6) }}>
+                          <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#FFF' }}>Expérience</Text>
+                          <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>{selectedChar.xp || 0}/{selectedChar.xp_next || 1000} XP</Text>
+                        </View>
+                        <View style={{ height: wp(8), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(4), overflow: 'hidden' }}>
+                          <LinearGradient colors={['#00D984','#00B871']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ height: '100%', borderRadius: wp(4), width: Math.min(100, Math.round(((selectedChar.xp || 0) / (selectedChar.xp_next || 1000)) * 100)) + '%' }} />
+                        </View>
+                      </View>
+
+                      {/* Utilisations */}
+                      <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(6) }}>
+                          <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#FFF' }}>Utilisations</Text>
+                          <Text style={{ fontSize: fp(16), fontWeight: '800', color: (selectedChar.uses_remaining || 0) > 0 ? '#00D984' : '#FF6B6B' }}>{selectedChar.uses_remaining || 0}/{selectedChar.uses_max || 10}</Text>
+                        </View>
+                        <View style={{ height: wp(6), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(3), overflow: 'hidden' }}>
+                          <View style={{ height: '100%', borderRadius: wp(3), backgroundColor: (selectedChar.uses_remaining || 0) > 2 ? '#00D984' : '#FF8C42', width: Math.min(100, Math.round(((selectedChar.uses_remaining || 0) / (selectedChar.uses_max || 10)) * 100)) + '%' }} />
+                        </View>
+                      </View>
+
+                      {/* Bouton Équiper si pas actif */}
+                      {(selectedChar.slug || selectedChar.id) !== activeCharSlug && (selectedChar.owned !== false) && (
+                        <Pressable delayPressIn={120} onPress={() => switchActiveCharacter(selectedChar.slug || selectedChar.id)} style={({ pressed }) => ({ marginBottom: wp(8), transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                          <LinearGradient colors={['#D4AF37','#B8941F']} style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}>
+                            <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>Équiper</Text>
+                          </LinearGradient>
+                        </Pressable>
+                      )}
+
+                      {/* Bouton Utiliser — flip vers dos */}
+                      <Pressable delayPressIn={120}
+                        onPress={() => {
+                          if ((selectedChar.uses_remaining || 0) === 0) {
+                            showLixAlert('⚡ Recharge nécessaire', 'Recharge ton ' + (selectedChar.name || '') + ' avec ' + (selectedChar.recharge_energy || 10) + ' énergie.', [{ text: 'Recharger', color: '#00D984', onPress: () => rechargeActiveChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
+                          } else {
+                            flipCard();
+                            if (charPowers.length === 0) loadCharPowers(selectedChar.slug || selectedChar.id);
+                          }
+                        }}
+                        style={({ pressed }) => ({ marginBottom: wp(8), opacity: (selectedChar.uses_remaining || 0) === 0 ? 0.5 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                        <LinearGradient colors={(selectedChar.uses_remaining || 0) === 0 ? ['#333A42','#2A2F36'] : ['#00D984','#00B871']} style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}>
+                          <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{(selectedChar.uses_remaining || 0) === 0 ? 'Recharger (' + (selectedChar.recharge_energy || 10) + ' énergie)' : 'Utiliser'}</Text>
+                        </LinearGradient>
+                      </Pressable>
+
+                      <Pressable onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }} style={{ paddingVertical: wp(12), alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Fermer</Text>
+                      </Pressable>
+                    </ScrollView>
+                  </LinearGradient>
+                </Animated.View>
+
+                {/* DOS — Pouvoirs */}
+                <Animated.View style={{ transform: [{ rotateY: backInterpolate }], backfaceVisibility: 'hidden', position: !charFlipped ? 'absolute' : 'relative', width: '100%' }}>
+                  <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
+                    <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                      <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', textAlign: 'center', marginBottom: wp(16) }}>POUVOIRS</Text>
+
+                      {loadingPowers ? (
+                        <ActivityIndicator color="#D4AF37" size="large" style={{ marginVertical: wp(30) }} />
+                      ) : charPowers.length > 0 ? charPowers.map((pw, i) => (
+                        <View key={pw.power_key || i} style={{
+                          backgroundColor: pw.unlocked ? 'rgba(0,217,132,0.06)' : 'rgba(255,255,255,0.02)',
+                          borderRadius: wp(14), padding: wp(14), marginBottom: wp(10),
+                          borderWidth: 1, borderColor: pw.unlocked ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)',
+                        }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: wp(4) }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), flex: 1 }}>
+                              <Text style={{ fontSize: fp(16) }}>{pw.icon || '⚡'}</Text>
+                              <Text style={{ fontSize: fp(13), fontWeight: '700', color: pw.unlocked ? '#FFF' : 'rgba(255,255,255,0.3)', flex: 1 }}>{pw.name || pw.power_key}</Text>
+                            </View>
+                            <Text style={{ fontSize: fp(10), fontWeight: '700', color: pw.unlocked ? '#00D984' : '#FF6B6B' }}>Niv {pw.required_level || 0}</Text>
+                          </View>
+                          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', marginBottom: pw.unlocked ? wp(8) : 0 }}>{pw.description || ''}</Text>
+                          {pw.is_superpower && (
+                            <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2), alignSelf: 'flex-start', marginBottom: wp(6) }}>
+                              <Text style={{ fontSize: fp(8), fontWeight: '800', color: '#D4AF37' }}>SUPERPOWER</Text>
+                            </View>
+                          )}
+                          {pw.unlocked ? (
+                            <Pressable delayPressIn={120} onPress={async () => {
+                              if (pw.action_type === 'toggle') {
+                                showLixAlert('Toggle', (pw.name || pw.power_key) + ' activé/désactivé.', [{ text: 'OK', color: '#00D984' }], '🔄');
+                                return;
+                              }
+                              const ok = await useCharPower(pw.power_key);
+                              if (!ok) return;
+                              if (pw.action_type === 'redirect') {
+                                setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null);
+                                // Navigation vers la page cible serait ici
+                                showLixAlert('Pouvoir activé', (pw.name || pw.power_key) + ' — Redirection...', [{ text: 'OK', color: '#00D984' }], '✨');
+                              } else if (pw.action_type === 'redirect_with_boost') {
+                                setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null);
+                                showLixAlert('Boost activé !', 'Le boost sera appliqué à ta prochaine activité.', [{ text: 'Super', color: '#D4AF37' }], '🐯');
+                              } else if (pw.action_type === 'modal_inline') {
+                                setInlinePowerModal(pw.power_key);
+                              } else {
+                                showLixAlert('Pouvoir utilisé', (pw.name || pw.power_key) + ' activé !', [{ text: 'OK', color: '#00D984' }], '✨');
+                              }
+                            }} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                              <View style={{ backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(10), paddingVertical: wp(8), alignItems: 'center', borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)' }}>
+                                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>
+                                  {pw.action_type === 'redirect' ? 'Ouvrir →' : pw.action_type === 'redirect_with_boost' ? 'Activer le Boost →' : pw.action_type === 'toggle' ? 'Activer' : 'Activer'}
+                                </Text>
+                              </View>
+                            </Pressable>
+                          ) : (
+                            <View style={{ backgroundColor: 'rgba(255,60,60,0.08)', borderRadius: wp(8), paddingVertical: wp(6), alignItems: 'center', marginTop: wp(4) }}>
+                              <Text style={{ fontSize: fp(10), fontWeight: '600', color: '#FF6B6B' }}>🔒 Niveau {pw.required_level || 0} requis</Text>
+                            </View>
+                          )}
+                        </View>
+                      )) : (
+                        <View style={{ alignItems: 'center', paddingVertical: wp(30) }}>
+                          <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Aucun pouvoir chargé</Text>
+                        </View>
+                      )}
+
+                      {/* Sous-modals inline */}
+                      {inlinePowerModal === 'hawk_micronutriments' && (
+                        <View style={{ backgroundColor: 'rgba(77,166,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>🔬 Micronutriments</Text>
+                          <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(12) }}>Disponible après votre prochain scan Xscan</Text>
+                          <Pressable delayPressIn={120} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                            <LinearGradient colors={['#4DA6FF','#2E86DE']} style={{ paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center' }}>
+                              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>Scanner maintenant →</Text>
+                            </LinearGradient>
+                          </Pressable>
+                        </View>
+                      )}
+                      {inlinePowerModal === 'fox_sub_1' && (
+                        <View style={{ backgroundColor: 'rgba(255,140,66,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,140,66,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>🔄 Substitution d'ingrédient</Text>
+                          <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(12) }}>Scannez un repas puis choisissez un ingrédient à substituer</Text>
+                          <Pressable delayPressIn={120} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                            <LinearGradient colors={['#FF8C42','#E67E22']} style={{ paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center' }}>
+                              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>Aller au scan →</Text>
+                            </LinearGradient>
+                          </Pressable>
+                        </View>
+                      )}
+                      {inlinePowerModal === 'gipsy_mood_nutrition' && (
+                        <View style={{ backgroundColor: 'rgba(155,109,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(155,109,255,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🕸️ Humeur ↔ Nutrition</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: wp(60), marginBottom: wp(10) }}>
+                            {['L','M','Me','J','V','S','D'].map((d, i) => {
+                              const h = [30, 55, 40, 70, 45, 60, 50][i];
+                              return (
+                                <View key={d} style={{ alignItems: 'center' }}>
+                                  <View style={{ width: wp(16), height: wp(h * 0.8), borderRadius: wp(4), backgroundColor: 'rgba(155,109,255,0.4)' }} />
+                                  <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.3)', marginTop: wp(2) }}>{d}</Text>
+                                </View>
+                              );
+                            })}
+                          </View>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>Données simulées — corrélations réelles bientôt disponibles</Text>
+                        </View>
+                      )}
+
+                      {/* Bouton Retourner */}
+                      <Pressable delayPressIn={120} onPress={() => { flipCard(); setInlinePowerModal(null); }} style={({ pressed }) => ({ marginTop: wp(16), transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                        <View style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(14), paddingVertical: wp(14), alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>↩ Retourner</Text>
+                        </View>
+                      </Pressable>
+
+                      <Pressable onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }} style={{ paddingVertical: wp(12), alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Fermer</Text>
+                      </Pressable>
+                    </ScrollView>
+                  </LinearGradient>
+                </Animated.View>
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      )}
+
+      {/* Modal Détail Personnage (ancien — conservé pour compatibilité) */}
       <Modal visible={showCharDetail} transparent animationType="slide" onRequestClose={() => setShowCharDetail(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }} onPress={() => setShowCharDetail(false)}>
           <Pressable onPress={(e) => e.stopPropagation()}>
@@ -3262,13 +3694,10 @@ export default function LixVersePage() {
                 paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34),
                 maxHeight: SCREEN_WIDTH * 1.6,
               }}>
-              {/* Poignée */}
               <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
-
               <ScrollView showsVerticalScrollIndicator={false}>
                 {selectedCharacter && (
                   <View>
-                    {/* Header : image + nom + tier */}
                     <View style={{ alignItems: 'center', marginBottom: wp(16) }}>
                       <View style={{
                         width: wp(100), height: wp(100), borderRadius: wp(16),
@@ -3282,203 +3711,18 @@ export default function LixVersePage() {
                         marginBottom: wp(8), overflow: 'hidden',
                       }}>
                         {ALL_CHARACTERS.find(c => c.id === selectedCharacter.id)?.image ? (
-                          <Image
-                            source={ALL_CHARACTERS.find(c => c.id === selectedCharacter.id).image}
-                            style={{ width: wp(85), height: wp(85), borderRadius: wp(12) }}
-                            resizeMode="cover"
-                          />
+                          <Image source={ALL_CHARACTERS.find(c => c.id === selectedCharacter.id).image} style={{ width: wp(85), height: wp(85), borderRadius: wp(12) }} resizeMode="cover" />
                         ) : (
                           <Text style={{ fontSize: fp(40) }}>{ALL_CHARACTERS.find(c => c.id === selectedCharacter.id)?.emoji || '🦉'}</Text>
                         )}
-                        {/* Badge niveau */}
-                        <View style={{
-                          position: 'absolute', bottom: -wp(6), right: -wp(6),
-                          backgroundColor: selectedCharacter.level >= 5 ? '#D4AF37' : '#00D984',
-                          borderRadius: wp(10), paddingHorizontal: wp(8), paddingVertical: wp(3),
-                          borderWidth: 2, borderColor: '#1E2328',
-                        }}>
-                          <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#FFF' }}>
-                            {selectedCharacter.level >= 6 ? 'MAX' : 'Niv.' + selectedCharacter.level}
-                          </Text>
+                        <View style={{ position: 'absolute', bottom: -wp(6), right: -wp(6), backgroundColor: selectedCharacter.level >= 5 ? '#D4AF37' : '#00D984', borderRadius: wp(10), paddingHorizontal: wp(8), paddingVertical: wp(3), borderWidth: 2, borderColor: '#1E2328' }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#FFF' }}>{selectedCharacter.level >= 6 ? 'MAX' : 'Niv.' + selectedCharacter.level}</Text>
                         </View>
                       </View>
-
                       <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#FFF' }}>{selectedCharacter.name}</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginTop: wp(4) }}>
-                        <View style={{
-                          backgroundColor: selectedCharacter.tier === 'standard' ? 'rgba(0,217,132,0.15)' : 'rgba(77,166,255,0.15)',
-                          borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2),
-                        }}>
-                          <Text style={{ fontSize: fp(10), fontWeight: '700', color: selectedCharacter.tier === 'standard' ? '#00D984' : '#4DA6FF', textTransform: 'capitalize' }}>
-                            {selectedCharacter.tier}
-                          </Text>
-                        </View>
-                        <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>{selectedCharacter.specialty}</Text>
-                      </View>
-                      <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#00D984', marginTop: wp(6) }}>
-                        -{selectedCharacter.reduction_percent}% énergie IA
-                      </Text>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(4) }}>{selectedCharacter.specialty}</Text>
                     </View>
-
-                    {/* Barre XP vers prochain niveau */}
-                    <View style={{
-                      backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14),
-                      padding: wp(14), marginBottom: wp(12),
-                      borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-                    }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(6) }}>
-                        <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#FFF' }}>Expérience</Text>
-                        <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>
-                          {selectedCharacter.xp} / {selectedCharacter.xp_next} XP
-                        </Text>
-                      </View>
-                      <View style={{ height: wp(8), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(4), overflow: 'hidden' }}>
-                        <LinearGradient
-                          colors={['#00D984', '#00B871']}
-                          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                          style={{
-                            height: '100%', borderRadius: wp(4),
-                            width: Math.min(100, Math.round((selectedCharacter.xp / selectedCharacter.xp_next) * 100)) + '%',
-                          }}
-                        />
-                      </View>
-                      <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)', marginTop: wp(4) }}>
-                        {selectedCharacter.xp_next - selectedCharacter.xp} XP restants pour le niveau {selectedCharacter.level + 1}
-                      </Text>
-                    </View>
-
-                    {/* Utilisations restantes + Recharge */}
-                    <View style={{
-                      backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14),
-                      padding: wp(14), marginBottom: wp(12),
-                      borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-                    }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(10) }}>
-                        <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#FFF' }}>Utilisations</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
-                          <Text style={{
-                            fontSize: fp(20), fontWeight: '800',
-                            color: selectedCharacter.uses_remaining > 0 ? '#00D984' : '#FF6B6B',
-                          }}>
-                            {selectedCharacter.uses_remaining === 999 ? '∞' : selectedCharacter.uses_remaining}
-                          </Text>
-                          {selectedCharacter.uses_max !== 999 && (
-                            <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)' }}>/ {selectedCharacter.uses_max}</Text>
-                          )}
-                        </View>
-                      </View>
-
-                      {/* Barre d'utilisations */}
-                      {selectedCharacter.uses_max !== 999 && (
-                        <View style={{ height: wp(6), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(3), overflow: 'hidden', marginBottom: wp(10) }}>
-                          <View style={{
-                            height: '100%', borderRadius: wp(3),
-                            backgroundColor: selectedCharacter.uses_remaining > 2 ? '#00D984' : selectedCharacter.uses_remaining > 0 ? '#FF8C42' : '#FF6B6B',
-                            width: Math.round((selectedCharacter.uses_remaining / selectedCharacter.uses_max) * 100) + '%',
-                          }} />
-                        </View>
-                      )}
-
-                      {/* Bouton Recharger */}
-                      {selectedCharacter.uses_max !== 999 && (
-                        <Pressable
-                          delayPressIn={120}
-                          disabled={charRecharging || selectedCharacter.uses_remaining === selectedCharacter.uses_max}
-                          onPress={() => handleCharRecharge(selectedCharacter.id)}
-                          style={({ pressed }) => ({
-                            opacity: (charRecharging || selectedCharacter.uses_remaining === selectedCharacter.uses_max) ? 0.4 : 1,
-                            transform: [{ scale: pressed ? 0.95 : 1 }],
-                          })}
-                        >
-                          <View style={{
-                            borderRadius: wp(12), overflow: 'hidden',
-                            borderWidth: 1.5, borderColor: 'rgba(77,166,255,0.3)',
-                          }}>
-                            <Animated.View style={{
-                              position: 'absolute', left: 0, top: 0, bottom: 0,
-                              backgroundColor: 'rgba(77,166,255,0.15)',
-                              width: rechargeProgress.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: ['0%', '100%'],
-                              }),
-                            }} />
-                            <View style={{ paddingVertical: wp(12), alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: wp(8) }}>
-                              <Text style={{ fontSize: fp(16) }}>⚡</Text>
-                              <View>
-                                <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#4DA6FF' }}>
-                                  {charRecharging ? 'Recharge en cours...' : selectedCharacter.uses_remaining === selectedCharacter.uses_max ? 'Plein' : 'Recharger'}
-                                </Text>
-                                <Text style={{ fontSize: fp(9), color: 'rgba(77,166,255,0.5)' }}>
-                                  {selectedCharacter.recharge_energy_cost} énergie ({selectedCharacter.recharge_energy_cost * 10} Lix)
-                                </Text>
-                              </View>
-                            </View>
-                          </View>
-                        </Pressable>
-                      )}
-                    </View>
-
-                    {/* Pouvoirs par niveau */}
-                    <View style={{
-                      backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14),
-                      padding: wp(14), marginBottom: wp(16),
-                      borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-                    }}>
-                      <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#D4AF37', marginBottom: wp(10) }}>Pouvoirs</Text>
-                      {selectedCharacter.powers.map((power, i) => (
-                        <View key={i} style={{
-                          flexDirection: 'row', alignItems: 'center', gap: wp(10),
-                          paddingVertical: wp(8),
-                          borderBottomWidth: i < selectedCharacter.powers.length - 1 ? 1 : 0,
-                          borderBottomColor: 'rgba(255,255,255,0.04)',
-                          opacity: power.unlocked ? 1 : 0.4,
-                        }}>
-                          <View style={{
-                            width: wp(28), height: wp(28), borderRadius: wp(14),
-                            backgroundColor: power.unlocked ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)',
-                            justifyContent: 'center', alignItems: 'center',
-                            borderWidth: 1,
-                            borderColor: power.unlocked ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.08)',
-                          }}>
-                            <Text style={{ fontSize: fp(10), color: power.unlocked ? '#00D984' : 'rgba(255,255,255,0.2)' }}>
-                              {power.unlocked ? '✓' : '🔒'}
-                            </Text>
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)', marginBottom: wp(1) }}>
-                              Niveau {power.level}
-                            </Text>
-                            <Text style={{ fontSize: fp(12), color: power.unlocked ? '#FFF' : 'rgba(255,255,255,0.3)', fontWeight: power.unlocked ? '600' : '400' }}>
-                              {power.text}
-                            </Text>
-                          </View>
-                        </View>
-                      ))}
-                    </View>
-
-                    {/* Boutons d'action */}
-                    <Pressable delayPressIn={120}
-                      onPress={() => {
-                        setOwnedChars(prev => {
-                          const updated = {};
-                          Object.keys(prev).forEach(k => { updated[k] = { ...prev[k], is_avatar: k === selectedCharacter.id }; });
-                          return updated;
-                        });
-                        setShowCharDetail(false);
-                        showLixAlert('Avatar défini', selectedCharacter.name + ' est maintenant votre avatar !', [{ text: 'Super', color: '#00D984' }], '🦉');
-                      }}
-                      style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], marginBottom: wp(8) })}>
-                      <LinearGradient colors={selectedCharacter.is_avatar ? ['#333A42', '#2A2F36'] : ['#D4AF37', '#B8941F']}
-                        style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}>
-                        <Text style={{ fontSize: fp(15), fontWeight: '700', color: selectedCharacter.is_avatar ? 'rgba(255,255,255,0.3)' : '#FFF' }}>
-                          {selectedCharacter.is_avatar ? 'Avatar actuel ✓' : 'Définir comme avatar'}
-                        </Text>
-                      </LinearGradient>
-                    </Pressable>
-
-                    {/* Fermer */}
-                    <Pressable onPress={() => setShowCharDetail(false)}
-                      style={{ paddingVertical: wp(12), alignItems: 'center' }}>
+                    <Pressable onPress={() => setShowCharDetail(false)} style={{ paddingVertical: wp(12), alignItems: 'center' }}>
                       <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Fermer</Text>
                     </Pressable>
                   </View>
