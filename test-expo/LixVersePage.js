@@ -290,30 +290,35 @@ const SEGMENT_GRADIENTS = {
   '#FF1493': { inner: '#FF60B8', outer: '#D4007A' },
 };
 
-const SEGMENT_EMOJIS = {
-  energy: '⚡',
-  lix: '💰',
-  fragment_rare: '🔮',
-  fragment_elite: '🏆',
-  fragment_mythique: '👑',
-  card: '🃏',
+// SVG segment icons (rendered inside <Svg> as <G> groups)
+const renderSegmentIcon = (type, tier, x, y, s, angle) => {
+  const sc = s / 24;
+  const t = `translate(${x - s / 2}, ${y - s / 2}) scale(${sc})`;
+  if (type === 'energy') return (
+    <G transform={t}><Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill="#FFF" /></G>
+  );
+  if (type === 'lix') return (
+    <G transform={t}><Path d="M12 2L2 9l10 13L22 9z" fill="#FFF" /><Path d="M12 2L2 9h20z" fill="#FFF" opacity={0.5} /></G>
+  );
+  if (type === 'fragment') return (
+    <G transform={t}><Path d="M20 6h-3.17c.11-.31.17-.65.17-1a3 3 0 00-6 0c0 .35.06.69.17 1H8a2 2 0 00-2 2v3.17c-.31-.11-.65-.17-1-.17a3 3 0 000 6c.35 0 .69-.06 1-.17V20a2 2 0 002 2h3.17c-.11-.31-.17-.65-.17-1a3 3 0 016 0c0 .35-.06.69-.17 1H20a2 2 0 002-2v-3.17c.31.11.65.17 1 .17a3 3 0 000-6c-.35 0-.69.06-1 .17V8a2 2 0 00-2-2z" fill="#FFF" /></G>
+  );
+  if (type === 'scan') return (
+    <G transform={t}><Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" fill="none" stroke="#FFF" strokeWidth={2} /><Circle cx={12} cy={13} r={4} fill="none" stroke="#FFF" strokeWidth={2} /></G>
+  );
+  if (type === 'free_spin') return (
+    <G transform={t}><Path d="M20 12v10H4V12" fill="none" stroke="#FFF" strokeWidth={2} /><Path d="M2 7h20v5H2z" fill="none" stroke="#FFF" strokeWidth={2} /><Path d="M12 22V7" stroke="#FFF" strokeWidth={2} /><Path d="M12 7c-1.5-2-4-3-4-3s1 3 4 3z" fill="#FFF" /><Path d="M12 7c1.5-2 4-3 4-3s-1 3-4 3z" fill="#FFF" /></G>
+  );
+  if (type === 'card') return (
+    <G transform={t}><Rect x={3} y={2} width={18} height={20} rx={3} fill="none" stroke="#FFF" strokeWidth={2} /><Path d="M12 8l2 4-2 1-2-1z" fill="#FFF" /><Circle cx={12} cy={16} r={1.5} fill="#FFF" /></G>
+  );
+  // Default: energy
+  return (
+    <G transform={t}><Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill="#FFF" /></G>
+  );
 };
 
-const getSegmentEmoji = (seg) => {
-  if (seg.icon) return seg.icon;
-  if (seg.reward.type === 'energy') return '⚡';
-  if (seg.reward.type === 'lix') return '💰';
-  if (seg.reward.type === 'card') return '🃏';
-  if (seg.reward.type === 'scan') return '📸';
-  if (seg.reward.type === 'free_spin') return '🎁';
-  if (seg.reward.type === 'fragment') {
-    if (seg.reward.tier === 'mythique') return '👑';
-    if (seg.reward.tier === 'elite') return '🏆';
-    if (seg.reward.tier === 'standard') return '🧩';
-    return '🔮';
-  }
-  return '⚡';
-};
+const getSegmentRewardType = (seg) => seg.reward.type || 'energy';
 
 const getSegmentTypeLabel = (seg) => {
   if (seg.subLabel) return seg.subLabel;
@@ -2060,27 +2065,24 @@ export default function LixVersePage() {
                   />
                 )}
 
-                {/* Segment labels — emoji + value + type */}
+                {/* Segment labels — SVG icon + value + type */}
                 {angledSegs.map((seg, i) => {
                   const midAngle = seg.startAngle + seg.sweepAngle / 2;
                   const midRad = (midAngle - 90) * Math.PI / 180;
                   const isSmall = seg.sweepAngle < 30;
-                  const emoji = getSegmentEmoji(seg);
+                  const rType = getSegmentRewardType(seg);
 
                   if (isSmall) {
-                    // Only emoji for small segments
                     const r = innerR * 0.6;
                     const ex = cx + r * Math.cos(midRad);
                     const ey = cy + r * Math.sin(midRad);
                     return (
-                      <SvgText key={'lbl' + i} x={ex} y={ey} fill="#FFF" fontSize={fp(12)}
-                        textAnchor="middle" alignmentBaseline="central" rotation={midAngle} origin={ex + ',' + ey}>
-                        {emoji}
-                      </SvgText>
+                      <G key={'lbl' + i}>
+                        {renderSegmentIcon(rType, seg.reward.tier, ex, ey, wp(12), midAngle)}
+                      </G>
                     );
                   }
 
-                  // Full label: emoji, value, type
                   const emojiR = innerR * 0.55;
                   const valR = innerR * 0.72;
                   const typeR = innerR * 0.42;
@@ -2092,11 +2094,7 @@ export default function LixVersePage() {
                   const typeY = cy + typeR * Math.sin(midRad);
                   return (
                     <G key={'lbl' + i}>
-                      <SvgText x={emojiX} y={emojiY} fill="#FFF" fontSize={fp(16)}
-                        textAnchor="middle" alignmentBaseline="central"
-                        rotation={midAngle} origin={emojiX + ',' + emojiY}>
-                        {emoji}
-                      </SvgText>
+                      {renderSegmentIcon(rType, seg.reward.tier, emojiX, emojiY, wp(16), midAngle)}
                       <SvgText x={valX} y={valY} fill="#FFF" fontSize={fp(12)} fontWeight="700"
                         textAnchor="middle" alignmentBaseline="central"
                         rotation={midAngle} origin={valX + ',' + valY}>
