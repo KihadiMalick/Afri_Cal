@@ -83,6 +83,10 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [lixBalance, setLixBalance] = useState(0);
   const [ownedCharacters, setOwnedCharacters] = useState(0);
+  const [userXP, setUserXP] = useState({ user_xp: 0, user_level: 1, xp_progress: 0, xp_needed: 80, xp_percent: 0 });
+  const [activeCharSlug, setActiveCharSlug] = useState(null);
+  const [activeCharName, setActiveCharName] = useState(null);
+  const [userEnergy, setUserEnergy] = useState(20);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
@@ -167,11 +171,41 @@ export default function ProfilePage() {
     try {
       const [pRes, cRes] = await Promise.all([
         fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID + '&select=*', { headers: hdrs }),
-        fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters?user_id=eq.' + TEST_USER_ID + '&select=character_id', { headers: hdrs }),
+        fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters?user_id=eq.' + TEST_USER_ID + '&select=character_slug,is_active,level', { headers: hdrs }),
       ]);
       const [pD, cD] = await Promise.all([pRes.json(), cRes.json()]);
       if (pD && pD[0]) { setProfile(pD[0]); setLixBalance(pD[0].lix_balance || 0); setEditName(pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); }
-      if (Array.isArray(cD)) setOwnedCharacters(cD.length);
+      if (Array.isArray(cD)) {
+        setOwnedCharacters(cD.length);
+        const activeC = cD.find(c => c.is_active);
+        if (activeC) {
+          setActiveCharSlug(activeC.character_slug);
+        }
+      }
+
+      // Charger XP utilisateur
+      try {
+        const xpRes = await fetch(
+          SUPABASE_URL + '/rest/v1/rpc/get_user_xp',
+          {
+            method: 'POST',
+            headers: { ...hdrs, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ p_user_id: TEST_USER_ID }),
+          }
+        );
+        const xpData = await xpRes.json();
+        if (xpData) setUserXP(xpData);
+      } catch (e) { console.warn('XP load error:', e); }
+
+      // Charger le nom du personnage actif
+      try {
+        const charRes = await fetch(
+          SUPABASE_URL + '/rest/v1/lixverse_characters?select=slug,name&slug=eq.' + (activeCharSlug || 'none'),
+          { headers: hdrs }
+        );
+        const charData = await charRes.json();
+        if (charData && charData[0]) setActiveCharName(charData[0].name);
+      } catch (e) {}
     } catch (e) { console.error('Profile:', e); }
   };
 
@@ -215,6 +249,20 @@ export default function ProfilePage() {
   const imcColor = imc < 18.5 ? '#FF8C42' : imc < 25 ? '#00D984' : imc < 30 ? '#FF8C42' : '#FF6B6B';
   const subTier = profile?.is_premium ? 'Gold' : 'Gratuit';
   const subColor = profile?.is_premium ? '#D4AF37' : 'rgba(255,255,255,0.3)';
+
+  const getCharEmoji = (slug) => {
+    const map = {
+      'emerald_owl': '🦉', 'hawk_eye': '🦅', 'ruby_tiger': '🐯',
+      'amber_fox': '🦊', 'gipsy': '🕷️',
+      'jade_phoenix': '🔥', 'silver_wolf': '🐺', 'boukki': '🦴',
+      'iron_rhino': '🦏', 'coral_dolphin': '🐬',
+    };
+    return map[slug] || null;
+  };
+
+  const avatarEmoji = getCharEmoji(activeCharSlug);
+  const avatarInitial = (profile?.full_name || 'U').charAt(0).toUpperCase();
+  const avatarColor = activeCharSlug ? '#00D984' : '#4DA6FF';
 
   const ACTIVITY_LEVELS = [
     { label: 'Sédentaire', desc: 'Peu ou pas d\'exercice', emoji: '🛋️' },
@@ -393,7 +441,8 @@ export default function ProfilePage() {
               { t: 'IMC', d: 'Indice de Masse Corporelle. Poids / Taille². Normal : 18.5-24.9.' },
               { t: 'Score Vitalité', d: 'Score LIXUM 0-100 basé sur nutrition, hydratation, activité, mood et suivi médical.' },
               { t: 'Lix', d: 'Monnaie virtuelle LIXUM. 1$ = 1000 Lix. Recharge énergie, ouvre caisses.' },
-              { t: 'Énergie', d: 'Carburant pour ALIXEN et scans. Reset chaque jour à minuit.' },
+              { t: 'XP Utilisateur', d: 'Points d\'expérience gagnés via scans (+10), activités (+calories), humeur (+5), hydratation (+3), ALIXEN (+5). Niv 1→100 avec récompenses aux paliers 10, 25, 50, 75, 100.' },
+              { t: 'Énergie', d: '20 gratuite/jour pour tous. Alimente ALIXEN, scans, caractères. Rechargeable avec Lix (100 Lix = 10 énergie).' },
               { t: 'Xscan', d: 'Scanner un plat avec la caméra pour calories et macros via IA.' },
             ].map((g, i) => (
               <View key={i} style={{ marginBottom: wp(14), backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12), padding: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
@@ -421,7 +470,7 @@ export default function ProfilePage() {
               { i: '🔒', n: 'Secret Pocket', d: 'Coffre-fort sécurisé pour documents santé.' },
               { i: '🏆', n: 'LixVerse', d: 'Défis, groupes, Wall of Health, caractères, Spin Wheel.' },
               { i: '🎰', n: 'Spin Wheel', d: 'Tourne la roue pour Lix, énergie ou caisses.' },
-              { i: '🃏', n: 'Caractères', d: '13 cartes à collectionner avec bonus et réductions.' },
+              { i: '🃏', n: 'Caractères', d: '16 cartes à collectionner (5 Standard, 5 Rare, 3 Elite, 2 Mythique, 1 Ultimate) avec pouvoirs et bonus.' },
             ].map((f, i) => (
               <View key={i} style={{ flexDirection: 'row', marginBottom: wp(12), backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12), padding: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
                 <Text style={{ fontSize: fp(28), marginRight: wp(12) }}>{f.i}</Text>
@@ -443,14 +492,32 @@ export default function ProfilePage() {
               <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)' }}>Plan actuel</Text>
               <Text style={{ fontSize: fp(28), fontWeight: '800', color: subColor, marginTop: wp(4) }}>{subTier}</Text>
             </View>
+            {/* Énergie gratuite pour tous */}
+            <View style={{
+              backgroundColor: 'rgba(255,184,0,0.08)', borderRadius: wp(12),
+              padding: wp(14), marginBottom: wp(16),
+              borderWidth: 1, borderColor: 'rgba(255,184,0,0.2)',
+              flexDirection: 'row', alignItems: 'center',
+            }}>
+              <Text style={{ fontSize: fp(22), marginRight: wp(10) }}>⚡</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFB800' }}>20 énergie gratuite / jour</Text>
+                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>
+                  Pour tous les utilisateurs. Au-delà → recharge avec des Lix.
+                </Text>
+              </View>
+            </View>
             {[
-              { name: 'Silver', price: '$4.99/mois', lix: '6 000 Lix', energy: '60/jour', color: '#A4B0BE', features: 'ALIXEN + Recettes + 3 Xscans/jour' },
-              { name: 'Gold', price: '$9.99/mois', lix: '12 000 Lix', energy: '150/jour', color: '#D4AF37', features: 'Silver + MediBook + Secret Pocket + Scan médical' },
-              { name: 'Platinum', price: '$14.99/mois', lix: '20 000 Lix', energy: '300/jour', color: '#00CEC9', features: 'TOUT débloqué + Famille + Priorité' },
+              { name: 'Silver', price: '$4.99/mois', lix: '5 000 Lix', energy: '50 bonus', frags: '2 frags Standard', color: '#A4B0BE', features: 'Lix mensuels + énergie bonus + fragments' },
+              { name: 'Gold', price: '$9.99/mois', lix: '10 000 Lix', energy: '100 bonus', frags: '3 frags Rare', color: '#D4AF37', features: 'Silver + plus de Lix et fragments rares' },
+              { name: 'Platinum', price: '$14.99/mois', lix: '18 000 Lix', energy: '200 bonus', frags: '2 frags Elite', color: '#00CEC9', features: 'Gold + fragments élite + énergie maximale' },
             ].map((p, i) => (
               <Pressable key={i} delayPressIn={120} onPress={() => showToast('💳 ' + p.name + ' — disponible au lancement', p.color)} style={({ pressed }) => ({ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(16), marginBottom: wp(8), borderWidth: 1, borderColor: p.color + '30', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(6) }}><Text style={{ fontSize: fp(16), fontWeight: '700', color: p.color }}>{p.name}</Text><Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>{p.price}</Text></View>
-                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>{p.lix} | Énergie {p.energy}</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(6) }}>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: p.color }}>{p.name}</Text>
+                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>{p.price}</Text>
+                </View>
+                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>{p.lix} + {p.energy} énergie + {p.frags}</Text>
                 <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)', marginTop: wp(4) }}>{p.features}</Text>
               </Pressable>
             ))}
@@ -524,17 +591,79 @@ export default function ProfilePage() {
                 <Text style={{ fontSize: fp(14) }}>🇬🇧</Text>
               </Pressable>
             </View>
+
             <View style={{ alignItems: 'center' }}>
-            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>{profile?.full_name || '...'}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginTop: wp(4) }}>
-              <View style={{ backgroundColor: subColor + '20', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2), borderWidth: 1, borderColor: subColor + '40' }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: subColor }}>{subTier}</Text></View>
-              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)' }}>{profile?.lixtag || 'LXM-2K7F4A'}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', gap: wp(16), marginTop: wp(16) }}>
-              {[{ v: lixBalance, l: 'Lix', c: '#D4AF37' }, { v: ownedCharacters + '/13', l: 'Cartes', c: '#4DA6FF' }, { v: profile?.discipline_streak || 0, l: 'Streak', c: '#00D984' }].map((s, i) => (
-                <View key={i} style={{ alignItems: 'center' }}><Text style={{ fontSize: fp(18), fontWeight: '800', color: s.c }}>{s.v}</Text><Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{s.l}</Text></View>
-              ))}
-            </View>
+              {/* Avatar — Personnage actif ou Initiale */}
+              <View style={{
+                width: wp(72), height: wp(72), borderRadius: wp(36),
+                backgroundColor: avatarColor + '15',
+                borderWidth: 2.5, borderColor: avatarColor + '50',
+                justifyContent: 'center', alignItems: 'center',
+                marginBottom: wp(10),
+                shadowColor: avatarColor, shadowOpacity: 0.3,
+                shadowRadius: 12, shadowOffset: { width: 0, height: 0 }, elevation: 8,
+              }}>
+                {avatarEmoji ? (
+                  <Text style={{ fontSize: fp(32) }}>{avatarEmoji}</Text>
+                ) : (
+                  <Text style={{ fontSize: fp(28), fontWeight: '900', color: avatarColor }}>{avatarInitial}</Text>
+                )}
+              </View>
+
+              {/* Nom + Tag */}
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>{profile?.full_name || '...'}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginTop: wp(4) }}>
+                <View style={{ backgroundColor: subColor + '20', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2), borderWidth: 1, borderColor: subColor + '40' }}>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: subColor }}>{subTier}</Text>
+                </View>
+                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)' }}>{profile?.lixtag || 'LXM-2K7F4A'}</Text>
+              </View>
+
+              {/* Personnage actif (si possédé) */}
+              {activeCharSlug && activeCharName && (
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  marginTop: wp(8),
+                  backgroundColor: 'rgba(0,217,132,0.06)',
+                  borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4),
+                  borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+                }}>
+                  <Text style={{ fontSize: fp(12), marginRight: wp(4) }}>{avatarEmoji}</Text>
+                  <Text style={{ fontSize: fp(10), color: '#00D984', fontWeight: '600' }}>{activeCharName}</Text>
+                  <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginLeft: wp(4) }}>ACTIF</Text>
+                </View>
+              )}
+
+              {/* ══════ BARRE XP UTILISATEUR ══════ */}
+              <View style={{ width: '100%', paddingHorizontal: wp(32), marginTop: wp(14) }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(6) }}>
+                  <View style={{ backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)' }}>
+                    <Text style={{ fontSize: fp(11), fontWeight: '800', color: '#00D984', letterSpacing: 1 }}>NIV {userXP.user_level}</Text>
+                  </View>
+                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{userXP.xp_progress} / {userXP.xp_needed} XP</Text>
+                </View>
+                <View style={{ height: wp(8), borderRadius: wp(4), backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                  <LinearGradient colors={['#00D984', '#00B871']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: Math.min(userXP.xp_percent || 0, 100) + '%', height: '100%', borderRadius: wp(4) }} />
+                </View>
+                <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: wp(4) }}>
+                  {userXP.user_xp?.toLocaleString('fr-FR') || 0} XP total
+                </Text>
+              </View>
+
+              {/* Stats rapides — 4 colonnes */}
+              <View style={{ flexDirection: 'row', gap: wp(12), marginTop: wp(16) }}>
+                {[
+                  { v: lixBalance, l: 'Lix', c: '#D4AF37' },
+                  { v: userEnergy, l: 'Énergie', c: '#FFB800' },
+                  { v: ownedCharacters + '/16', l: 'Cartes', c: '#4DA6FF' },
+                  { v: profile?.discipline_streak || 0, l: 'Streak', c: '#00D984' },
+                ].map((s, i) => (
+                  <View key={i} style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(16), fontWeight: '800', color: s.c }}>{s.v}</Text>
+                    <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)' }}>{s.l}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
           </View>
 
