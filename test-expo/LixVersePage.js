@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
+import { View, Text, ScrollView, Pressable, TouchableOpacity, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
 import Svg, { Defs, Rect, Path, Circle, Line, Ellipse, G, Polygon, Text as SvgText, LinearGradient as SvgLinearGradient, RadialGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -506,6 +506,15 @@ export default function LixVersePage() {
   const [inlinePowerModal, setInlinePowerModal] = useState(null);
   const [humanTab, setHumanTab] = useState('binome');
   const [userNameAvatar, setUserNameAvatar] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownAnim = useRef(new Animated.Value(0)).current;
+
+  const toggleDropdown = () => {
+    const toValue = dropdownOpen ? 0 : 1;
+    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: false }).start();
+    setDropdownOpen(!dropdownOpen);
+  };
+
   const flipAnim = useRef(new Animated.Value(0)).current;
 
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
@@ -3181,28 +3190,57 @@ export default function LixVersePage() {
                 </View>
               )}
             </Pressable>
-            {/* Badge fusionné Lix + Énergie */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(30,35,42,0.9)', borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', overflow: 'hidden' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(8), paddingVertical: wp(5) }}>
-                <View style={{ width: wp(8), height: wp(8), backgroundColor: '#00D984', borderRadius: wp(2), transform: [{ rotate: '45deg' }], marginRight: wp(5), borderWidth: 0.5, borderColor: 'rgba(0,255,150,0.4)' }} />
-                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>{lixBalance}</Text>
-              </View>
-              <View style={{ width: 1, height: wp(16), backgroundColor: 'rgba(255,255,255,0.1)' }} />
-              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(8), paddingVertical: wp(5) }}>
-                <Text style={{ fontSize: fp(11), marginRight: wp(3) }}>⚡</Text>
-                <Text style={{ fontSize: fp(11), fontWeight: '700', color: userEnergy > 5 ? '#FFB800' : '#FF6B6B' }}>{userEnergy}</Text>
-              </View>
-            </View>
-            {/* Avatar Profil */}
-            <Pressable onPress={() => setActiveNavTab('profile')} style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: activeCharSlug ? 'rgba(0,217,132,0.15)' : 'rgba(77,166,255,0.15)', borderWidth: 1.5, borderColor: activeCharSlug ? 'rgba(0,217,132,0.5)' : 'rgba(77,166,255,0.5)', justifyContent: 'center', alignItems: 'center' }}>
-              {activeCharSlug ? (
-                <Text style={{ fontSize: fp(14) }}>{({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[activeCharSlug] || '🎭'}</Text>
-              ) : (
-                <Text style={{ fontSize: fp(12), fontWeight: '800', color: '#4DA6FF' }}>{(userNameAvatar || 'U').charAt(0).toUpperCase()}</Text>
-              )}
-            </Pressable>
+            {/* Badge compact Lix + dropdown */}
+            <TouchableOpacity onPress={toggleDropdown} style={{
+              flexDirection: 'row', alignItems: 'center',
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              borderWidth: 1, borderColor: '#4A4F55',
+              borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
+            }}>
+              <Svg width={14} height={14} viewBox="0 0 24 24">
+                <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
+                <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
+              </Svg>
+              <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(14), marginLeft: 4 }}>{lixBalance}</Text>
+              <Text style={{ color: '#888', fontSize: fp(10), marginLeft: 4 }}>▾</Text>
+            </TouchableOpacity>
           </View>
         </View>
+        {/* Dropdown Lix/Énergie/Profil */}
+        {dropdownOpen && (
+          <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}>
+            <Animated.View style={{
+              position: 'absolute', top: Platform.OS === 'android' ? 85 : 100, right: wp(16),
+              backgroundColor: 'rgba(30, 37, 48, 0.95)',
+              borderWidth: 1, borderColor: '#4A4F55',
+              borderRadius: 16, padding: 16, zIndex: 999,
+              opacity: dropdownAnim,
+              transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
+            }}>
+              <TouchableOpacity onPress={() => { toggleDropdown(); setActiveTab('lixspin'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+                <Svg width={14} height={14} viewBox="0 0 24 24">
+                  <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
+                  <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
+                </Svg>
+                <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixBalance}</Text>
+                <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { toggleDropdown(); setActiveTab('lixspin'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+                <Svg width={14} height={14} viewBox="0 0 24 24">
+                  <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
+                </Svg>
+                <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{userEnergy}</Text>
+                <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>énergie</Text>
+              </TouchableOpacity>
+              <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
+              <TouchableOpacity onPress={() => { toggleDropdown(); setActiveNavTab('profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+                <Text style={{ fontSize: 18 }}>{activeCharSlug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[activeCharSlug] || '👤' : '👤'}</Text>
+                <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>Mon Profil</Text>
+                <Text style={{ color: '#888', fontSize: 14 }}>→</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </TouchableOpacity>
+        )}
         {notifications.length>0&&(<View style={{height:wp(28),backgroundColor:'rgba(212,175,55,0.06)',borderBottomWidth:1,borderBottomColor:'rgba(212,175,55,0.1)',overflow:'hidden',justifyContent:'center'}}><Animated.View style={{flexDirection:'row',transform:[{translateX:notifScrollX}]}}>{[...notifications,...notifications].map((n,i)=>(<View key={i} style={{width:wp(280),flexDirection:'row',alignItems:'center',paddingHorizontal:wp(10),gap:wp(6)}}><View style={{width:wp(6),height:wp(6),borderRadius:wp(3),backgroundColor:n.color||'#D4AF37'}}/><Text style={{fontSize:fp(10),color:'rgba(255,255,255,0.5)',flex:1}} numberOfLines={1}>{n.message}</Text></View>))}</Animated.View></View>)}
         <View style={{flexDirection:'row',marginHorizontal:wp(16),marginVertical:wp(10),gap:wp(6)}}>
           {[{key:'defi',label:'Défi',icon:'🏆'},{key:'human',label:'Human',icon:'🤝'},{key:'characters',label:'Caractères',icon:'🃏'},{key:'lixspin',label:'Lix & Spin',icon:'💎'}].map(tab=>(<Pressable key={tab.key} onPress={()=>setActiveTab(tab.key)} style={{flex:1,paddingVertical:wp(10),borderRadius:wp(12),alignItems:'center',backgroundColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.05)',borderWidth:1,borderColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.08)'}}><Text style={{fontSize:fp(14)}}>{tab.icon}</Text><Text style={{fontSize:fp(10),fontWeight:'600',marginTop:wp(2),color:activeTab===tab.key?'#1A1D22':'rgba(255,255,255,0.4)'}}>{tab.label}</Text></Pressable>))}

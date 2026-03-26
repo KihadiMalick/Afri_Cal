@@ -507,6 +507,15 @@ const MoodIcon = ({ tier, size = 42, active = false }) => {
 // COMPOSANT — Header Global (Mood + LIXUM + Lix)
 // ============================================================
 const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress, onLixPress, highlightMood, userEnergy = 20 }) => {
+  // Dropdown badge
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownAnim = useRef(new RNAnimated.Value(0)).current;
+  const toggleDropdown = () => {
+    const toValue = dropdownOpen ? 0 : 1;
+    RNAnimated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: false }).start();
+    setDropdownOpen(!dropdownOpen);
+  };
+
   // Animation shake pour le mood non rempli
   const shakeAnim = useRef(new RNAnimated.Value(0)).current;
 
@@ -626,24 +635,51 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
           )}
         </TouchableOpacity>
 
-        {/* Badge fusionné Lix + Énergie */}
-        <TouchableOpacity onPress={onLixPress} activeOpacity={0.7} style={{
+        {/* Badge compact Lix + dropdown */}
+        <TouchableOpacity onPress={toggleDropdown} style={{
           flexDirection: 'row', alignItems: 'center',
-          backgroundColor: 'rgba(30,35,42,0.9)',
-          borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)',
-          overflow: 'hidden',
+          backgroundColor: 'rgba(0,0,0,0.4)',
+          borderWidth: 1, borderColor: '#4A4F55',
+          borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
         }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(8), paddingVertical: wp(5) }}>
-            <View style={{ width: wp(8), height: wp(8), backgroundColor: '#00D984', borderRadius: wp(2), transform: [{ rotate: '45deg' }], marginRight: wp(5), borderWidth: 0.5, borderColor: 'rgba(0,255,150,0.4)' }} />
-            <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>{lixCount.toLocaleString('fr-FR')}</Text>
-          </View>
-          <View style={{ width: 1, height: wp(16), backgroundColor: 'rgba(255,255,255,0.1)' }} />
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(8), paddingVertical: wp(5) }}>
-            <Text style={{ fontSize: fp(11), marginRight: wp(3) }}>⚡</Text>
-            <Text style={{ fontSize: fp(11), fontWeight: '700', color: userEnergy > 5 ? '#FFB800' : '#FF6B6B' }}>{userEnergy}</Text>
-          </View>
+          <Svg width={14} height={14} viewBox="0 0 24 24">
+            <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
+            <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
+          </Svg>
+          <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(14), marginLeft: 4 }}>{lixCount}</Text>
+          <Text style={{ color: '#888', fontSize: fp(10), marginLeft: 4 }}>▾</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Dropdown Lix/Énergie (pas de Profil — avatar déjà visible) */}
+      {dropdownOpen && (
+        <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: -500, zIndex: 998 }}>
+          <RNAnimated.View style={{
+            position: 'absolute', top: 60, right: 14,
+            backgroundColor: 'rgba(30, 37, 48, 0.95)',
+            borderWidth: 1, borderColor: '#4A4F55',
+            borderRadius: 16, padding: 16, zIndex: 999,
+            opacity: dropdownAnim,
+            transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
+          }}>
+            <TouchableOpacity onPress={() => { toggleDropdown(); onLixPress && onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+              <Svg width={14} height={14} viewBox="0 0 24 24">
+                <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
+                <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
+              </Svg>
+              <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixCount}</Text>
+              <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { toggleDropdown(); onLixPress && onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+              <Svg width={14} height={14} viewBox="0 0 24 24">
+                <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
+              </Svg>
+              <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{userEnergy}</Text>
+              <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>énergie</Text>
+            </TouchableOpacity>
+          </RNAnimated.View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

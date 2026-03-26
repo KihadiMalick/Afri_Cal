@@ -77,6 +77,15 @@ export default function MedicAiPage() {
   const [activeCharAvatar, setActiveCharAvatar] = useState(null);
   const [lixBalance, setLixBalance] = useState(0);
   const [userEnergy, setUserEnergy] = useState(20);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownAnim = useRef(new Animated.Value(0)).current;
+
+  const toggleDropdown = () => {
+    const toValue = dropdownOpen ? 0 : 1;
+    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: false }).start();
+    setDropdownOpen(!dropdownOpen);
+  };
+
   const [lastResetTime, setLastResetTime] = useState(Date.now());
 
   // Plats disponibles + modal recette
@@ -1864,25 +1873,20 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           </View>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {/* Badge fusionné Lix + Énergie */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0,180,130,0.2)', overflow: 'hidden' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(6), paddingVertical: wp(4) }}>
-              <View style={{ width: wp(7), height: wp(7), backgroundColor: '#00A878', borderRadius: wp(2), transform: [{ rotate: '45deg' }], marginRight: wp(4) }} />
-              <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00A878' }}>{lixBalance}</Text>
-            </View>
-            <View style={{ width: 1, height: wp(14), backgroundColor: 'rgba(0,0,0,0.1)' }} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(6), paddingVertical: wp(4) }}>
-              <Text style={{ fontSize: fp(10), marginRight: wp(2) }}>⚡</Text>
-              <Text style={{ fontSize: fp(10), fontWeight: '700', color: userEnergy > 5 ? '#CC8800' : '#E74C3C' }}>{userEnergy}</Text>
-            </View>
-          </View>
-          <Pressable onPress={() => setActiveTab('profile')} style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: activeCharAvatar?.slug ? 'rgba(0,217,132,0.15)' : 'rgba(77,166,255,0.15)', borderWidth: 1.5, borderColor: activeCharAvatar?.slug ? 'rgba(0,217,132,0.5)' : 'rgba(77,166,255,0.5)', justifyContent: 'center', alignItems: 'center' }}>
-            {activeCharAvatar?.slug ? (
-              <Text style={{ fontSize: fp(14) }}>{({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[activeCharAvatar.slug] || '🎭'}</Text>
-            ) : (
-              <Text style={{ fontSize: fp(12), fontWeight: '800', color: '#4DA6FF' }}>{(userNameAvatar || 'U').charAt(0).toUpperCase()}</Text>
-            )}
-          </Pressable>
+          {/* Badge compact Lix + dropdown */}
+          <TouchableOpacity onPress={toggleDropdown} style={{
+            flexDirection: 'row', alignItems: 'center',
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            borderWidth: 1, borderColor: '#4A4F55',
+            borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
+          }}>
+            <Svg width={14} height={14} viewBox="0 0 24 24">
+              <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
+              <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
+            </Svg>
+            <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(14), marginLeft: 4 }}>{lixBalance}</Text>
+            <Text style={{ color: '#888', fontSize: fp(10), marginLeft: 4 }}>▾</Text>
+          </TouchableOpacity>
           <View style={{ alignItems: 'flex-end' }}>
           {energyLeft > 0 ? (
             <View style={{
@@ -1935,6 +1939,42 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           </View>
         </View>
       </View>
+
+      {/* Dropdown Lix/Énergie/Profil */}
+      {dropdownOpen && (
+        <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}>
+          <Animated.View style={{
+            position: 'absolute', top: Platform.OS === 'android' ? 85 : 100, right: wp(16),
+            backgroundColor: 'rgba(30, 37, 48, 0.95)',
+            borderWidth: 1, borderColor: '#4A4F55',
+            borderRadius: 16, padding: 16, zIndex: 999,
+            opacity: dropdownAnim,
+            transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
+          }}>
+            <TouchableOpacity onPress={() => { toggleDropdown(); setActiveTab('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+              <Svg width={14} height={14} viewBox="0 0 24 24">
+                <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
+                <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
+              </Svg>
+              <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixBalance}</Text>
+              <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { toggleDropdown(); setActiveTab('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+              <Svg width={14} height={14} viewBox="0 0 24 24">
+                <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
+              </Svg>
+              <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{userEnergy}</Text>
+              <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>énergie</Text>
+            </TouchableOpacity>
+            <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
+            <TouchableOpacity onPress={() => { toggleDropdown(); setActiveTab('profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+              <Text style={{ fontSize: 18 }}>{activeCharAvatar?.slug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[activeCharAvatar.slug] || '👤' : '👤'}</Text>
+              <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>Mon Profil</Text>
+              <Text style={{ color: '#888', fontSize: 14 }}>→</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </TouchableOpacity>
+      )}
 
       {/* ===== ZONE DE CONTENU ===== */}
       <KeyboardAvoidingView
