@@ -506,7 +506,7 @@ const MoodIcon = ({ tier, size = 42, active = false }) => {
 // ============================================================
 // COMPOSANT — Header Global (Mood + LIXUM + Lix)
 // ============================================================
-const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress, onLixPress, highlightMood }) => {
+const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress, onLixPress, highlightMood, userEnergy = 20 }) => {
   // Animation shake pour le mood non rempli
   const shakeAnim = useRef(new RNAnimated.Value(0)).current;
 
@@ -626,39 +626,22 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
           )}
         </TouchableOpacity>
 
-        {/* Lix Coin + compteur */}
+        {/* Badge fusionné Lix + Énergie */}
         <TouchableOpacity onPress={onLixPress} activeOpacity={0.7} style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: 'rgba(21, 27, 35, 0.8)',
-          borderWidth: 1,
-          borderColor: 'rgba(62, 72, 85, 0.5)',
-          borderRadius: 20,
-          paddingHorizontal: 10,
-          paddingVertical: 6,
+          flexDirection: 'row', alignItems: 'center',
+          backgroundColor: 'rgba(30,35,42,0.9)',
+          borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)',
+          overflow: 'hidden',
         }}>
-          <View style={{ position: 'relative', marginRight: 5 }}>
-            <LixCoinIcon size={16} />
-            {notifCount > 0 && (
-              <View style={{
-                position: 'absolute',
-                top: -4,
-                right: -6,
-                backgroundColor: '#FF3B30',
-                borderRadius: 6,
-                width: 13,
-                height: 13,
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderWidth: 1.5,
-                borderColor: '#1E2530',
-              }}>
-                <Text style={{ color: 'white', fontSize: 7, fontWeight: '800' }}>{notifCount}</Text>
-              </View>
-            )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(8), paddingVertical: wp(5) }}>
+            <View style={{ width: wp(8), height: wp(8), backgroundColor: '#00D984', borderRadius: wp(2), transform: [{ rotate: '45deg' }], marginRight: wp(5), borderWidth: 0.5, borderColor: 'rgba(0,255,150,0.4)' }} />
+            <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>{lixCount.toLocaleString('fr-FR')}</Text>
           </View>
-          <Text style={{ color: '#EAEEF3', fontSize: 15, fontWeight: '700' }}>{lixCount.toLocaleString('fr-FR')}</Text>
-          <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '500', marginLeft: 3 }}>Lix</Text>
+          <View style={{ width: 1, height: wp(16), backgroundColor: 'rgba(255,255,255,0.1)' }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(8), paddingVertical: wp(5) }}>
+            <Text style={{ fontSize: fp(11), marginRight: wp(3) }}>⚡</Text>
+            <Text style={{ fontSize: fp(11), fontWeight: '700', color: userEnergy > 5 ? '#FFB800' : '#FF6B6B' }}>{userEnergy}</Text>
+          </View>
         </TouchableOpacity>
       </View>
     </View>
@@ -3222,6 +3205,7 @@ export default function App() {
   const [pagePowers, setPagePowers] = useState([]);
   const [toggleStates, setToggleStates] = useState({});
   const [userName, setUserName] = useState('');
+  const [userEnergy, setUserEnergy] = useState(20);
 
   // Mock sport activities done today
   const [activities, setActivities] = useState([
@@ -4250,6 +4234,7 @@ export default function App() {
             onMoodPress={() => setShowMoodModal(true)}
             onLixPress={() => setActiveTab('profile')}
             highlightMood={tooltipStep === 1}
+            userEnergy={userEnergy}
           />
           {renderPage()}
         </SafeAreaView>

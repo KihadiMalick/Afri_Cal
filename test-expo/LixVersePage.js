@@ -257,6 +257,11 @@ const CHAR_NAMES = {
 
 const FRAGS_NIV1 = { standard: 3, rare: 4, elite: 5, mythique: 8, ultimate: 15 };
 
+const TIER_COLORS = {
+  standard: '#00D984', rare: '#4DA6FF', elite: '#B388FF',
+  mythique: '#D4AF37', ultimate: '#FF6B8A',
+};
+
 const randomSlugFromTier = (tier) => {
   const slugs = SLUGS_BY_TIER[tier];
   if (!slugs || slugs.length === 0) return null;
@@ -358,6 +363,7 @@ export default function LixVersePage() {
   const [activeTab, setActiveTab] = useState('defi');
   const [activeNavTab, setActiveNavTab] = useState('lixverse');
   const [lixBalance, setLixBalance] = useState(500);
+  const [userEnergy, setUserEnergy] = useState(20);
   const [ownedCharacters, setOwnedCharacters] = useState([]);
   const [challenges, setChallenges] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -381,6 +387,9 @@ export default function LixVersePage() {
   const [fragmentResult, setFragmentResult] = useState(null);
   const [showFragmentModal, setShowFragmentModal] = useState(false);
   const [fragmentSaving, setFragmentSaving] = useState(false);
+  const [spinLoading, setSpinLoading] = useState(false);
+  const [serverResult, setServerResult] = useState(null);
+  const [freeSpinAvailable, setFreeSpinAvailable] = useState(true);
   const fragmentSlideAnim = useRef(new Animated.Value(0)).current;
   const [winnerGlowIdx, setWinnerGlowIdx] = useState(null);
   const glowOpacity = useRef(new Animated.Value(0)).current;
@@ -485,6 +494,7 @@ export default function LixVersePage() {
   const [loadingPowers, setLoadingPowers] = useState(false);
   const [onboardingSelected, setOnboardingSelected] = useState(null);
   const [inlinePowerModal, setInlinePowerModal] = useState(null);
+  const [humanTab, setHumanTab] = useState('binome');
   const [userNameAvatar, setUserNameAvatar] = useState('');
   const flipAnim = useRef(new Animated.Value(0)).current;
 
@@ -650,7 +660,40 @@ export default function LixVersePage() {
   const frontInterpolate = flipAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', '90deg', '90deg'] });
   const backInterpolate = flipAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['90deg', '90deg', '0deg'] });
 
-  // === DISTRIBUER UN FRAGMENT APRÈS SPIN ===
+  // === VÉRIFIER SPIN GRATUIT ===
+  const checkFreeSpin = async () => {
+    try {
+      const data = await supaRpc('check_free_spin_available', { p_user_id: TEST_USER_ID });
+      if (data) setFreeSpinAvailable(data.free_available !== false);
+    } catch (e) {}
+  };
+
+  // === CALLBACK APRÈS ANIMATION SPIN ===
+  const onSpinComplete = (spinData) => {
+    const rv = spinData.reward_value;
+
+    if (rv && (rv.type === 'fragment' || rv.type === 'card_complete')) {
+      setFragmentResult({
+        slug: rv.slug,
+        name: CHAR_NAMES[rv.slug] || rv.slug,
+        emoji: CHAR_EMOJIS[rv.slug] || '🎭',
+        tier: rv.tier,
+        amount: rv.amount,
+        isComplete: rv.type === 'card_complete',
+        levelUp: rv.frag_result?.level_up || false,
+        newLevel: rv.frag_result?.new_level || 0,
+        totalFrags: rv.frag_result?.fragments || rv.amount,
+        fragsNeeded: FRAGS_NIV1[rv.tier] || 3,
+      });
+      setShowFragmentModal(true);
+      fragmentSlideAnim.setValue(0);
+    }
+
+    // Rafraîchir spin gratuit
+    checkFreeSpin();
+  };
+
+  // === DISTRIBUER UN FRAGMENT APRÈS SPIN (fallback client) ===
   const distributeFragment = async (tier, amount) => {
     const slug = randomSlugFromTier(tier);
     if (!slug) return null;
@@ -711,6 +754,7 @@ export default function LixVersePage() {
 
   useEffect(() => {
     loadAll();
+    checkFreeSpin();
     // Avatar profil
     (async () => {
       try {
@@ -1662,115 +1706,125 @@ export default function LixVersePage() {
     }).start();
   };
 
-  const doSpin = () => {
-    if (isSpinning) return;
+  const doSpin = async () => {
+    if (isSpinning || spinLoading) return;
     const segments = getSegments();
-    let cost = 0;
-    if (spinTier === 'normal') cost = freeSpinUsed ? 50 : 0;
-    else if (spinTier === 'super') cost = 150;
-    else cost = 500;
 
-    if (cost > 0 && lixBalance < cost) {
-      showLixAlert('Lix insuffisants', 'Il faut ' + cost + ' Lix pour ce spin.\n\nTon solde : ' + lixBalance + ' Lix', [{ text: 'Acheter des Lix', color: '#D4AF37', onPress: () => {} }, { text: 'Fermer', style: 'cancel' }], '💰');
-      return;
-    }
+    setSpinLoading(true);
 
-    setIsSpinning(true); setSpinResult(null); setShowSpinResultModal(false); setSpinWinnerSeg(null);
-    setWinnerGlowIdx(null); glowOpacity.setValue(0);
-    if (cost > 0) setLixBalance(p => p - cost);
-    if (spinTier === 'normal' && !freeSpinUsed) setFreeSpinUsed(true);
+    try {
+      // ═══ APPEL SERVEUR — le résultat est décidé ici ═══
+      const data = await supaRpc('execute_spin', {
+        p_user_id: TEST_USER_ID,
+        p_spin_tier: spinTier,
+      });
 
-    const winner = pickReward(segments);
-    const winnerIndex = segments.indexOf(winner);
-
-    // Proportional angle calculation
-    const angledSegs = getSegmentAngles(segments);
-    const winSeg = angledSegs[winnerIndex];
-    const winMidAngle = winSeg.startAngle + winSeg.sweepAngle / 2;
-    const targetAngle = 360 - winMidAngle;
-    const totalRotation = 360 * 5 + targetAngle;
-
-    const duration = spinTier === 'mega' ? 6000 : spinTier === 'super' ? 5000 : 4000;
-
-    // Arrow tick listener — bounce on rivet crossings
-    let lastTickIndex = -1;
-    const totalTicks = 12;
-    const listenerId = spinAnim.addListener(({ value }) => {
-      const normalizedAngle = value % 360;
-      const tickIndex = Math.floor(normalizedAngle / (360 / totalTicks));
-      if (tickIndex !== lastTickIndex) {
-        lastTickIndex = tickIndex;
-        // Estimate progress to detect slowdown
-        const progress = value / totalRotation;
-        const isSlowdown = progress > 0.85;
-        triggerArrowBounce(isSlowdown);
-        if (isSlowdown) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      if (!data?.success) {
+        const errMsg = data?.error || 'Erreur inconnue';
+        if (errMsg === 'Insufficient Lix') {
+          showLixAlert('Lix insuffisants', 'Tu as ' + (data?.current_lix || 0) + ' Lix. Il en faut ' + (data?.cost || 0) + ' pour ce spin.', [{ text: 'Fermer', style: 'cancel' }], '💰');
         } else {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+          showLixAlert('Erreur', errMsg, [{ text: 'OK', style: 'cancel' }], '⚠️');
         }
-      }
-    });
-
-    spinAnim.setValue(0);
-    Animated.timing(spinAnim, {
-      toValue: totalRotation,
-      duration: duration,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start(() => {
-      spinAnim.removeListener(listenerId);
-      setIsSpinning(false);
-      setSpinWinnerSeg(winner);
-      setWinnerGlowIdx(winnerIndex);
-
-      // Glow pulse on winner segment
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(glowOpacity, { toValue: 0.6, duration: 500, useNativeDriver: true }),
-          Animated.timing(glowOpacity, { toValue: 0.1, duration: 500, useNativeDriver: true }),
-        ])
-      ).start();
-
-      // Apply rewards
-      if (winner.reward.type === 'lix') setLixBalance(p => p + winner.reward.amount);
-
-      // Distribute fragments to a random character of the tier
-      if (winner.reward.type === 'fragment') {
-        distributeFragment(winner.reward.tier, winner.reward.amount);
-      } else if (winner.reward.type === 'card') {
-        const cardTier = winner.reward.tier || 'elite';
-        distributeFragment(cardTier, FRAGS_NIV1[cardTier] || 5);
+        setSpinLoading(false);
+        return;
       }
 
-      // Haptic based on reward type
-      if (winner.reward.type === 'card') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
-      } else if (winner.reward.type === 'fragment') {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-      }
+      // ═══ RÉSULTAT REÇU DU SERVEUR ═══
+      setServerResult(data);
 
-      // Show result modal after 2s glow
-      setTimeout(() => {
-        glowOpacity.stopAnimation();
-        glowOpacity.setValue(0);
-        setShowSpinResultModal(true);
-        if (winner.reward.type === 'fragment' || winner.reward.type === 'card') {
-          spinResultPulse.setValue(1);
-          Animated.loop(
-            Animated.sequence([
-              Animated.timing(spinResultPulse, { toValue: 1.15, duration: 600, useNativeDriver: true }),
-              Animated.timing(spinResultPulse, { toValue: 1, duration: 600, useNativeDriver: true }),
-            ])
-          ).start();
+      // Mettre à jour le solde Lix localement
+      if (data.new_lix_balance !== undefined) setLixBalance(data.new_lix_balance);
+      if (data.was_free) setFreeSpinUsed(true);
+
+      setSpinLoading(false);
+
+      // ═══ ANIMER LA ROUE VERS LE SEGMENT SERVEUR ═══
+      const winnerIndex = data.segment_index;
+      const winner = segments[winnerIndex] || segments[0];
+
+      setIsSpinning(true); setSpinResult(null); setShowSpinResultModal(false); setSpinWinnerSeg(null);
+      setWinnerGlowIdx(null); glowOpacity.setValue(0);
+
+      const angledSegs = getSegmentAngles(segments);
+      const winSeg = angledSegs[winnerIndex];
+      const winMidAngle = winSeg.startAngle + winSeg.sweepAngle / 2;
+      const targetAngle = 360 - winMidAngle;
+      const totalRotation = 360 * 5 + targetAngle;
+
+      const duration = spinTier === 'mega' ? 6000 : spinTier === 'super' ? 5000 : 4000;
+
+      // Arrow tick listener — bounce on rivet crossings
+      let lastTickIndex = -1;
+      const totalTicks = 12;
+      const listenerId = spinAnim.addListener(({ value }) => {
+        const normalizedAngle = value % 360;
+        const tickIndex = Math.floor(normalizedAngle / (360 / totalTicks));
+        if (tickIndex !== lastTickIndex) {
+          lastTickIndex = tickIndex;
+          const progress = value / totalRotation;
+          const isSlowdown = progress > 0.85;
+          triggerArrowBounce(isSlowdown);
+          if (isSlowdown) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+          } else {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+          }
         }
-      }, 2000);
+      });
 
-      fetch(SUPABASE_URL + '/rest/v1/lixverse_spin_history', {
-        method: 'POST', headers: { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ user_id: TEST_USER_ID, result_type: winner.reward.type, result_value: String(winner.reward.amount), lix_spent: cost, was_free: cost === 0 }),
-      }).catch(() => {});
-    });
+      spinAnim.setValue(0);
+      Animated.timing(spinAnim, {
+        toValue: totalRotation,
+        duration: duration,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start(() => {
+        spinAnim.removeListener(listenerId);
+        setIsSpinning(false);
+        setSpinWinnerSeg(winner);
+        setWinnerGlowIdx(winnerIndex);
+
+        // Glow pulse on winner segment
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(glowOpacity, { toValue: 0.6, duration: 500, useNativeDriver: true }),
+            Animated.timing(glowOpacity, { toValue: 0.1, duration: 500, useNativeDriver: true }),
+          ])
+        ).start();
+
+        // Haptic based on reward type
+        const rType = data.reward_value?.type || winner.reward.type;
+        if (rType === 'card_complete' || rType === 'card') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+        } else if (rType === 'fragment') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        }
+
+        // Show result modal after 2s glow
+        setTimeout(() => {
+          glowOpacity.stopAnimation();
+          glowOpacity.setValue(0);
+          setShowSpinResultModal(true);
+          if (rType === 'fragment' || rType === 'card_complete' || rType === 'card') {
+            spinResultPulse.setValue(1);
+            Animated.loop(
+              Animated.sequence([
+                Animated.timing(spinResultPulse, { toValue: 1.15, duration: 600, useNativeDriver: true }),
+                Animated.timing(spinResultPulse, { toValue: 1, duration: 600, useNativeDriver: true }),
+              ])
+            ).start();
+          }
+          // Process server-side reward results
+          onSpinComplete(data);
+        }, 2000);
+      });
+
+    } catch (e) {
+      console.error('Spin error:', e);
+      showLixAlert('Erreur réseau', 'Vérifie ta connexion et réessaie.', [{ text: 'OK', style: 'cancel' }], '📡');
+      setSpinLoading(false);
+    }
   };
 
   const renderSpinResultModal = () => {
@@ -1848,12 +1902,12 @@ export default function LixVersePage() {
     const arrowRotation = arrowBounce.interpolate({ inputRange: [0, 1, 1.6], outputRange: ['0deg', '15deg', '25deg'] });
 
     let spinCost = 0;
-    if (spinTier === 'normal') spinCost = freeSpinUsed ? 50 : 0;
+    if (spinTier === 'normal') spinCost = (freeSpinAvailable && !freeSpinUsed) ? 0 : 50;
     else if (spinTier === 'super') spinCost = 150;
     else spinCost = 500;
 
-    const spinBtnLabel = isSpinning ? '...'
-      : spinTier === 'normal' ? (spinCost === 0 ? 'SPIN GRATUIT ⚡' : 'SPIN — 50 Lix')
+    const spinBtnLabel = (isSpinning || spinLoading) ? '⏳ La roue tourne...'
+      : spinTier === 'normal' ? (spinCost === 0 ? '🎁 SPIN GRATUIT' : 'SPIN — 50 Lix')
       : spinTier === 'super' ? 'SUPERSPIN — 150 Lix 🔥'
       : 'MEGASPIN — 500 Lix 💎';
 
@@ -2076,8 +2130,8 @@ export default function LixVersePage() {
           </View>
 
           {/* Spin button with spring press */}
-          <Animated.View style={{ transform: [{ scale: spinBtnScale }], marginTop: wp(16), width: wp(220), opacity: isSpinning ? 0.5 : 1 }}>
-            <Pressable delayPressIn={120} onPress={doSpin}
+          <Animated.View style={{ transform: [{ scale: spinBtnScale }], marginTop: wp(16), width: wp(220), opacity: (isSpinning || spinLoading) ? 0.5 : 1 }}>
+            <Pressable delayPressIn={120} onPress={doSpin} disabled={isSpinning || spinLoading}
               onPressIn={onBtnPressIn} onPressOut={onBtnPressOut}
               style={{ width: '100%' }}>
               <LinearGradient colors={spinBtnColors}
@@ -2097,7 +2151,7 @@ export default function LixVersePage() {
 
           {/* Free spin counter */}
           <View style={{ marginTop: wp(10), alignItems: 'center' }}>
-            {!freeSpinUsed ? (
+            {freeSpinAvailable && !freeSpinUsed ? (
               <Text style={{ fontSize: fp(11), color: '#00D984' }}>🎁 1 spin gratuit disponible</Text>
             ) : (
               <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)' }}>
@@ -2257,7 +2311,131 @@ export default function LixVersePage() {
     );
   };
 
-  const renderBinomeTab = () => {
+  const SuiviHumainTeaser = () => {
+    const [notifyPressed, setNotifyPressed] = useState(false);
+    return (
+      <View style={{ paddingHorizontal: wp(16), alignItems: 'center' }}>
+        <View style={{ backgroundColor: 'rgba(212,175,55,0.12)', borderRadius: wp(20), paddingHorizontal: wp(16), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)', marginBottom: wp(16) }}>
+          <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#D4AF37', letterSpacing: 2 }}>BIENTÔT DISPONIBLE</Text>
+        </View>
+        <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#EAEEF3', textAlign: 'center', marginBottom: wp(8) }}>Suivi Humain</Text>
+        <Text style={{ fontSize: fp(12), color: '#8892A0', textAlign: 'center', lineHeight: fp(18), marginBottom: wp(20), paddingHorizontal: wp(10) }}>
+          Un vrai nutritionniste te suit chaque semaine.{'\n'}Tes données santé lui sont envoyées automatiquement.{'\n'}Communication 100% confidentielle via LixTag.
+        </Text>
+        <View style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(16), padding: wp(16), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', marginBottom: wp(20) }}>
+          {[
+            { step: '1', icon: '🔍', title: 'Trouve ton nutritionniste', desc: 'Recherche parmi des professionnels certifiés. Vois leur expérience dans l\'app.', color: '#4DA6FF' },
+            { step: '2', icon: '🔒', title: 'Connexion anonyme', desc: 'Toi et le nutritionniste ne voyez que vos LixTags. LIXUM protège ton identité.', color: '#00D984' },
+            { step: '3', icon: '📋', title: 'Rapport hebdomadaire', desc: 'Chaque semaine, le nutritionniste analyse tes données et envoie des recommandations personnalisées.', color: '#D4AF37' },
+          ].map((item, idx) => (
+            <View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: idx < 2 ? wp(16) : 0 }}>
+              <View style={{ alignItems: 'center', marginRight: wp(12), width: wp(30) }}>
+                <View style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: item.color + '15', borderWidth: 1.5, borderColor: item.color + '40', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(14) }}>{item.icon}</Text>
+                </View>
+                {idx < 2 && <View style={{ width: 1.5, height: wp(16), backgroundColor: 'rgba(255,255,255,0.08)', marginTop: wp(4) }} />}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fp(13), fontWeight: '700', color: item.color, marginBottom: wp(3) }}>{item.title}</Text>
+                <Text style={{ fontSize: fp(10), color: '#8892A0', lineHeight: fp(15) }}>{item.desc}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+        <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.06)', borderRadius: wp(12), padding: wp(12), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)', marginBottom: wp(16) }}>
+          <Text style={{ fontSize: fp(20), marginRight: wp(10) }}>🛡️</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>100% confidentiel</Text>
+            <Text style={{ fontSize: fp(9), color: '#8892A0', marginTop: wp(2) }}>Tu communiques par Lixsigns uniquement. Le nutritionniste ne voit jamais ton nom.</Text>
+          </View>
+        </View>
+        <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,140,66,0.06)', borderRadius: wp(12), padding: wp(12), borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)', marginBottom: wp(20) }}>
+          <Text style={{ fontSize: fp(20), marginRight: wp(10) }}>⚠️</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FF8C42' }}>Coaching nutritionnel</Text>
+            <Text style={{ fontSize: fp(9), color: '#8892A0', marginTop: wp(2) }}>Ce service propose du coaching nutritionnel, pas des consultations médicales. En cas de pathologie, consulte un médecin.</Text>
+          </View>
+        </View>
+        <Pressable
+          onPress={() => {
+            setNotifyPressed(true);
+            showLixAlert('🔔 Notification activée', 'Tu seras prévenu dès le lancement du Suivi Humain !', [{ text: 'Super', color: '#D4AF37' }], '🔔');
+          }}
+          disabled={notifyPressed}
+          style={({ pressed }) => ({
+            width: '100%', paddingVertical: wp(14), borderRadius: wp(14),
+            backgroundColor: notifyPressed ? 'rgba(212,175,55,0.08)' : pressed ? '#B8952E' : '#D4AF37',
+            borderWidth: notifyPressed ? 1 : 0, borderColor: 'rgba(212,175,55,0.3)',
+            alignItems: 'center', transform: [{ scale: pressed && !notifyPressed ? 0.97 : 1 }],
+          })}
+        >
+          <Text style={{ fontSize: fp(14), fontWeight: '700', color: notifyPressed ? '#D4AF37' : '#1A1D22' }}>
+            {notifyPressed ? '🔔 Tu seras notifié' : '🔔 Me notifier au lancement'}
+          </Text>
+        </Pressable>
+        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: wp(10), marginBottom: wp(20) }}>
+          Coût estimé : à partir de 200 Lix/semaine
+        </Text>
+      </View>
+    );
+  };
+
+  const renderHumanTab = () => {
+    if (humanTab === 'suivi') {
+      return (
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: wp(8), paddingBottom: wp(100) }}>
+          {/* ══════ ONGLETS INTERNES HUMAN ══════ */}
+          <View style={{
+            flexDirection: 'row', marginHorizontal: wp(16), marginBottom: wp(16),
+            backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12), padding: wp(3),
+            borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+          }}>
+            <Pressable onPress={() => setHumanTab('binome')} style={{
+              flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
+              backgroundColor: 'transparent', alignItems: 'center',
+            }}>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#6B7B8D' }}>🤝 Binôme</Text>
+            </Pressable>
+            <Pressable onPress={() => setHumanTab('suivi')} style={{
+              flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
+              backgroundColor: 'rgba(212,175,55,0.12)',
+              borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)', alignItems: 'center',
+            }}>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#D4AF37' }}>👨‍⚕️ Suivi Humain</Text>
+            </Pressable>
+          </View>
+          <SuiviHumainTeaser />
+        </ScrollView>
+      );
+    }
+
+    // humanTab === 'binome' → render internal tabs + binome content (which has its own ScrollView)
+    return renderBinomeContent();
+  };
+
+  const HumanTabSelector = () => (
+    <View style={{
+      flexDirection: 'row', marginHorizontal: wp(16), marginBottom: wp(12),
+      backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12), padding: wp(3),
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    }}>
+      <Pressable onPress={() => setHumanTab('binome')} style={{
+        flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
+        backgroundColor: 'rgba(0,217,132,0.12)',
+        borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', alignItems: 'center',
+      }}>
+        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#00D984' }}>🤝 Binôme</Text>
+      </Pressable>
+      <Pressable onPress={() => setHumanTab('suivi')} style={{
+        flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
+        backgroundColor: 'transparent', alignItems: 'center',
+      }}>
+        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#6B7B8D' }}>👨‍⚕️ Suivi Humain</Text>
+      </Pressable>
+    </View>
+  );
+
+  const renderBinomeContent = () => {
     const radarRotate = radarAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
     const SEARCH_STEP_TEXTS = [
       'Analyse morphologique du profil...',
@@ -2276,7 +2454,8 @@ export default function LixVersePage() {
       const myMood = '💪';
       const myWeather = '🌤️';
       return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingHorizontal: wp(16), paddingTop: wp(12) }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingHorizontal: wp(16), paddingTop: wp(8) }}>
+          <View style={{ marginHorizontal: wp(-16) }}><HumanTabSelector /></View>
           {/* Header duo */}
           <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(16), padding: wp(16), marginBottom: wp(16), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -2388,7 +2567,8 @@ export default function LixVersePage() {
 
     // États none / searching / proposed / pending_sent / declined
     return (
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingTop: wp(16) }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingTop: wp(8) }}>
+        <HumanTabSelector />
         {/* Header */}
         <View style={{ alignItems: 'center', paddingHorizontal: wp(16) }}>
           <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#D4AF37', letterSpacing: 2, marginBottom: wp(4) }}>BINÔME</Text>
@@ -2986,10 +3166,17 @@ export default function LixVersePage() {
                 </View>
               )}
             </Pressable>
-            {/* Badge Lix */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), backgroundColor: 'rgba(212,175,55,0.12)', borderRadius: wp(12), paddingHorizontal: wp(12), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)' }}>
-              <View style={{ width: wp(10), height: wp(10), borderRadius: wp(5), backgroundColor: '#D4AF37' }} />
-              <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#D4AF37' }}>{lixBalance} Lix</Text>
+            {/* Badge fusionné Lix + Énergie */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(30,35,42,0.9)', borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', overflow: 'hidden' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(8), paddingVertical: wp(5) }}>
+                <View style={{ width: wp(8), height: wp(8), backgroundColor: '#00D984', borderRadius: wp(2), transform: [{ rotate: '45deg' }], marginRight: wp(5), borderWidth: 0.5, borderColor: 'rgba(0,255,150,0.4)' }} />
+                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>{lixBalance}</Text>
+              </View>
+              <View style={{ width: 1, height: wp(16), backgroundColor: 'rgba(255,255,255,0.1)' }} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(8), paddingVertical: wp(5) }}>
+                <Text style={{ fontSize: fp(11), marginRight: wp(3) }}>⚡</Text>
+                <Text style={{ fontSize: fp(11), fontWeight: '700', color: userEnergy > 5 ? '#FFB800' : '#FF6B6B' }}>{userEnergy}</Text>
+              </View>
             </View>
             {/* Avatar Profil */}
             <Pressable onPress={() => setActiveNavTab('profile')} style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: activeCharSlug ? 'rgba(0,217,132,0.15)' : 'rgba(77,166,255,0.15)', borderWidth: 1.5, borderColor: activeCharSlug ? 'rgba(0,217,132,0.5)' : 'rgba(77,166,255,0.5)', justifyContent: 'center', alignItems: 'center' }}>
@@ -3003,10 +3190,10 @@ export default function LixVersePage() {
         </View>
         {notifications.length>0&&(<View style={{height:wp(28),backgroundColor:'rgba(212,175,55,0.06)',borderBottomWidth:1,borderBottomColor:'rgba(212,175,55,0.1)',overflow:'hidden',justifyContent:'center'}}><Animated.View style={{flexDirection:'row',transform:[{translateX:notifScrollX}]}}>{[...notifications,...notifications].map((n,i)=>(<View key={i} style={{width:wp(280),flexDirection:'row',alignItems:'center',paddingHorizontal:wp(10),gap:wp(6)}}><View style={{width:wp(6),height:wp(6),borderRadius:wp(3),backgroundColor:n.color||'#D4AF37'}}/><Text style={{fontSize:fp(10),color:'rgba(255,255,255,0.5)',flex:1}} numberOfLines={1}>{n.message}</Text></View>))}</Animated.View></View>)}
         <View style={{flexDirection:'row',marginHorizontal:wp(16),marginVertical:wp(10),gap:wp(6)}}>
-          {[{key:'defi',label:'Défi',icon:'🏆'},{key:'binome',label:'Binôme',icon:'🤝'},{key:'characters',label:'Caractères',icon:'🃏'},{key:'lixspin',label:'Lix & Spin',icon:'💎'}].map(tab=>(<Pressable key={tab.key} onPress={()=>setActiveTab(tab.key)} style={{flex:1,paddingVertical:wp(10),borderRadius:wp(12),alignItems:'center',backgroundColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.05)',borderWidth:1,borderColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.08)'}}><Text style={{fontSize:fp(14)}}>{tab.icon}</Text><Text style={{fontSize:fp(10),fontWeight:'600',marginTop:wp(2),color:activeTab===tab.key?'#1A1D22':'rgba(255,255,255,0.4)'}}>{tab.label}</Text></Pressable>))}
+          {[{key:'defi',label:'Défi',icon:'🏆'},{key:'human',label:'Human',icon:'🤝'},{key:'characters',label:'Caractères',icon:'🃏'},{key:'lixspin',label:'Lix & Spin',icon:'💎'}].map(tab=>(<Pressable key={tab.key} onPress={()=>setActiveTab(tab.key)} style={{flex:1,paddingVertical:wp(10),borderRadius:wp(12),alignItems:'center',backgroundColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.05)',borderWidth:1,borderColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.08)'}}><Text style={{fontSize:fp(14)}}>{tab.icon}</Text><Text style={{fontSize:fp(10),fontWeight:'600',marginTop:wp(2),color:activeTab===tab.key?'#1A1D22':'rgba(255,255,255,0.4)'}}>{tab.label}</Text></Pressable>))}
         </View>
         {activeTab==='defi'&&renderDefiTab()}
-        {activeTab==='binome'&&renderBinomeTab()}
+        {activeTab==='human'&&renderHumanTab()}
         {activeTab==='characters'&&renderCharactersTab()}
         {activeTab==='lixspin'&&renderLixSpinTab()}
       </LinearGradient>

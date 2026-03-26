@@ -603,6 +603,8 @@ const RepasPage = ({ onNavigate }) => {
   const [todaySubstitutions, setTodaySubstitutions] = useState(0);
   const [userNameAvatar, setUserNameAvatar] = useState('');
   const [activeCharAvatar, setActiveCharAvatar] = useState(null);
+  const [lixBalance, setLixBalance] = useState(0);
+  const [userEnergy, setUserEnergy] = useState(20);
 
   // === MOOD × MÉTÉO ===
   const [userMood, setUserMood] = useState(null);
@@ -670,12 +672,13 @@ const RepasPage = ({ onNavigate }) => {
       // 1. Charger le profil utilisateur (calorie_target)
       const { data: profile } = await supabase
         .from('users_profile')
-        .select('daily_calorie_target')
+        .select('daily_calorie_target, lix_balance')
         .eq('user_id', TEST_USER_ID)
         .single();
 
       if (profile) {
         setUserProfile({ daily_calorie_target: profile.daily_calorie_target || 2330 });
+        setLixBalance(profile.lix_balance || 0);
       }
 
       // 2. Charger le résumé quotidien
@@ -2749,6 +2752,18 @@ const RepasPage = ({ onNavigate }) => {
                 <Text style={{ color: '#8892A0', fontSize: fp(11), marginLeft: 6 }}>
                   {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
                 </Text>
+              </View>
+              {/* Badge fusionné Lix + Énergie */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(30,35,42,0.9)', borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', overflow: 'hidden' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(6), paddingVertical: wp(4) }}>
+                  <View style={{ width: wp(7), height: wp(7), backgroundColor: '#00D984', borderRadius: wp(2), transform: [{ rotate: '45deg' }], marginRight: wp(4), borderWidth: 0.5, borderColor: 'rgba(0,255,150,0.4)' }} />
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984' }}>{lixBalance}</Text>
+                </View>
+                <View style={{ width: 1, height: wp(14), backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(6), paddingVertical: wp(4) }}>
+                  <Text style={{ fontSize: fp(10), marginRight: wp(2) }}>⚡</Text>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: userEnergy > 5 ? '#FFB800' : '#FF6B6B' }}>{userEnergy}</Text>
+                </View>
               </View>
               <AvatarButton activeChar={activeCharAvatar || activeChar} userName={userNameAvatar} onPress={() => { if (onNavigate) onNavigate('profile'); }} size={wp(28)} />
             </View>
