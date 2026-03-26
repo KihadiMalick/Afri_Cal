@@ -2312,7 +2312,6 @@ export default function LixVersePage() {
               <View style={{ backgroundColor: pk.c + '20', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}><Text style={{ fontSize: fp(13), fontWeight: '700', color: pk.c }}>{pk.p}</Text></View>
             </Pressable>
           ))}
-          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: wp(12) }}>Les Lix ne débloquent pas le premium. Abonnez-vous pour MedicAi et plus.</Text>
         </View>
         <View style={{ paddingHorizontal: wp(16), marginTop: wp(24) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Recharger énergie</Text>
