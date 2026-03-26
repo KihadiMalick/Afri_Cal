@@ -1930,7 +1930,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 // ============================================================
 // COMPOSANT — Dashboard Content (page Accueil)
 // ============================================================
-const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef, dailyTarget, lastMeal, tooltipStep, vitalityScore }) => {
+const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef, dailyTarget, lastMeal, tooltipStep, vitalityScore, activeChar, pagePowers, toggleStates, setToggleStates, consumePower }) => {
   const OBJECTIVE = dailyTarget || DAILY_OBJECTIVE;
   const streakDays = 12;
   const streakColor = streakDays >= 14 ? '#D4AF37'
@@ -2187,6 +2187,171 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           </RNAnimated.View>
         </View>
       </MetalCard>
+
+      {/* ══════ SECTIONS POUVOIRS CARACTÈRES ══════ */}
+      {pagePowers && pagePowers.length > 0 && activeChar && tooltipStep === 0 && (
+        <View style={{ marginBottom: wp(4) }}>
+          {pagePowers.map(power => {
+            const isUnlocked = power.unlocked;
+
+            switch (power.action_type) {
+
+              // ══════ STREAK TRACKER (Silver Wolf Niv1) ══════
+              case 'streak_tracker': {
+                if (!isUnlocked) return null;
+                return (
+                  <MetalCard key={power.power_key} style={{ marginHorizontal: 0, marginBottom: wp(8) }}>
+                    <Pressable delayPressIn={120} onPress={async () => {
+                      const r = await consumePower(power.power_key);
+                      if (!r.success) return;
+                      Alert.alert('📊 Streaks', 'Tracker de streaks détaillé — bientôt disponible');
+                    }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                        <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>{power.icon || '📊'}</Text>
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '700', letterSpacing: wp(1) }}>{power.name_fr || power.power_key}</Text>
+                        <View style={{ marginLeft: 'auto', backgroundColor: 'rgba(0,217,132,0.08)', paddingHorizontal: wp(8), paddingVertical: wp(3), borderRadius: wp(8) }}>
+                          <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '700' }}>{activeChar.name}</Text>
+                        </View>
+                      </View>
+
+                      <Text style={{ color: '#8892A0', fontSize: fp(10), marginBottom: wp(8) }}>{power.description_fr || ''}</Text>
+
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                        {[
+                          { label: 'Scan', icon: '📸', days: 0 },
+                          { label: 'Activité', icon: '🏃', days: 0 },
+                          { label: 'Humeur', icon: '😊', days: 0 },
+                          { label: 'Hydra', icon: '💧', days: 0 },
+                        ].map((cat, i) => (
+                          <View key={i} style={{ alignItems: 'center' }}>
+                            <Text style={{ fontSize: fp(16) }}>{cat.icon}</Text>
+                            <Text style={{ color: cat.days > 0 ? '#00D984' : '#555E6C', fontSize: fp(12), fontWeight: '800', marginTop: wp(2) }}>{cat.days}j</Text>
+                            <Text style={{ color: '#6B7280', fontSize: fp(8) }}>{cat.label}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </Pressable>
+                  </MetalCard>
+                );
+              }
+
+              // ══════ TOGGLE (Silver Wolf Niv2 — Bonus Streak) ══════
+              case 'toggle': {
+                if (!isUnlocked) return null;
+                const isOn = toggleStates[power.power_key] || false;
+                return (
+                  <View key={power.power_key} style={{
+                    marginHorizontal: 0, marginBottom: wp(8),
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: 'rgba(0,217,132,0.04)',
+                    borderRadius: wp(12), padding: wp(10),
+                    borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)',
+                  }}>
+                    <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>{power.icon || '💰'}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '700' }}>{power.name_fr || power.power_key}</Text>
+                      <Text style={{ color: '#8892A0', fontSize: fp(8), marginTop: wp(1) }}>{power.description_fr || ''}</Text>
+                    </View>
+                    <Pressable
+                      onPress={() => { setToggleStates(prev => ({ ...prev, [power.power_key]: !prev[power.power_key] })); }}
+                      style={{ width: wp(40), height: wp(22), borderRadius: wp(11), backgroundColor: isOn ? '#00D984' : 'rgba(255,255,255,0.1)', padding: wp(2), justifyContent: 'center' }}
+                    >
+                      <View style={{ width: wp(18), height: wp(18), borderRadius: wp(9), backgroundColor: '#FFFFFF', alignSelf: isOn ? 'flex-end' : 'flex-start' }} />
+                    </Pressable>
+                  </View>
+                );
+              }
+
+              // ══════ HYDRATION REMINDER (Coral Dolphin Niv1) ══════
+              case 'hydration_reminder': {
+                if (!isUnlocked) return null;
+                const glassesLeft = Math.max(0, Math.ceil((hydrationGoal - hydrationMl) / 250));
+                if (glassesLeft === 0) return null;
+                return (
+                  <View key={power.power_key} style={{
+                    marginHorizontal: 0, marginBottom: wp(8),
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: 'rgba(77,166,255,0.06)',
+                    borderRadius: wp(12), padding: wp(10),
+                    borderWidth: 1, borderColor: 'rgba(77,166,255,0.15)',
+                  }}>
+                    <Text style={{ fontSize: fp(18), marginRight: wp(8) }}>{power.icon || '💧'}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#4DA6FF', fontSize: fp(11), fontWeight: '700' }}>{power.name_fr || power.power_key}</Text>
+                      <Text style={{ color: '#8892A0', fontSize: fp(9), marginTop: wp(2) }}>
+                        Bois 250ml maintenant — encore {glassesLeft} verre{glassesLeft > 1 ? 's' : ''} pour ton objectif
+                      </Text>
+                    </View>
+                    <Pressable
+                      onPress={onHydrationPress}
+                      style={{ backgroundColor: 'rgba(77,166,255,0.12)', paddingHorizontal: wp(10), paddingVertical: wp(6), borderRadius: wp(8), borderWidth: 1, borderColor: 'rgba(77,166,255,0.25)' }}
+                    >
+                      <Text style={{ color: '#4DA6FF', fontSize: fp(9), fontWeight: '700' }}>+250ml</Text>
+                    </Pressable>
+                  </View>
+                );
+              }
+
+              // ══════ MODAL INLINE (Coral Dolphin Niv2 — Tracker visuel) ══════
+              case 'modal_inline': {
+                if (!isUnlocked) return null;
+                return (
+                  <MetalCard key={power.power_key} style={{ marginHorizontal: 0, marginBottom: wp(8) }}>
+                    <Pressable delayPressIn={120} onPress={async () => {
+                      const r = await consumePower(power.power_key);
+                      if (!r.success) return;
+                      Alert.alert((power.icon || '🌊') + ' ' + (power.name_fr || power.power_key), 'Tracker hydratation avancé avec historique BHI — bientôt disponible');
+                    }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>{power.icon || '🌊'}</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{power.name_fr || power.power_key}</Text>
+                          <Text style={{ color: '#8892A0', fontSize: fp(9), marginTop: wp(2) }}>{power.description_fr || ''}</Text>
+                        </View>
+                        {power.is_superpower && (
+                          <View style={{ backgroundColor: 'rgba(212,175,55,0.1)', paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4) }}>
+                            <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '800' }}>SUPERPOWER</Text>
+                          </View>
+                        )}
+                      </View>
+                    </Pressable>
+                  </MetalCard>
+                );
+              }
+
+              // ══════ REDIRECT (Coral Dolphin MAX — Vague Bleue) ══════
+              case 'redirect': {
+                if (!isUnlocked) return null;
+                return (
+                  <MetalCard key={power.power_key} style={{ marginHorizontal: 0, marginBottom: wp(8) }}>
+                    <Pressable delayPressIn={120} onPress={async () => {
+                      const r = await consumePower(power.power_key);
+                      if (!r.success) return;
+                      Alert.alert((power.icon || '🔮') + ' ' + (power.name_fr || power.power_key), (power.description_fr || '') + '\n\nFonctionnalité complète bientôt disponible.');
+                    }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>{power.icon || '🔮'}</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: '#D4AF37', fontSize: fp(12), fontWeight: '700' }}>{power.name_fr || power.power_key}</Text>
+                          <Text style={{ color: '#8892A0', fontSize: fp(9), marginTop: wp(2) }}>{power.description_fr || ''}</Text>
+                        </View>
+                        {power.is_superpower && (
+                          <View style={{ backgroundColor: 'rgba(212,175,55,0.1)', paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4) }}>
+                            <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '800' }}>SUPERPOWER</Text>
+                          </View>
+                        )}
+                      </View>
+                    </Pressable>
+                  </MetalCard>
+                );
+              }
+
+              default:
+                return null;
+            }
+          })}
+        </View>
+      )}
 
       {/* ====== CARTE HYDRATATION COMPACTE ====== */}
       <HydrationCardCompact
@@ -2863,8 +3028,54 @@ export default function App() {
     setIsLoadingDashboard(false);
   };
 
+  // ══════════════════════════════════════════════════════════════
+  // SYSTÈME GÉNÉRIQUE DE POUVOIRS — PAGE ACCUEIL (DASHBOARD)
+  // ══════════════════════════════════════════════════════════════
+  const DASHBOARD_PAGE = 'accueil';
+
+  const loadPagePowers = async () => {
+    try {
+      const { data: collection } = await supabase
+        .rpc('get_user_collection', { p_user_id: TEST_USER_ID });
+      const active = (collection || []).find(c => c.is_active);
+      if (!active) { setActiveChar(null); setPagePowers([]); return; }
+      setActiveChar(active);
+
+      const { data: powers } = await supabase
+        .rpc('get_character_powers', {
+          p_user_id: TEST_USER_ID,
+          p_slug: active.slug,
+        });
+      setPagePowers((powers || []).filter(p => p.redirect_page === DASHBOARD_PAGE));
+    } catch (e) {
+      console.warn('Dashboard powers load error:', e);
+    }
+  };
+
+  const consumePower = async (powerKey) => {
+    try {
+      const { data } = await supabase.rpc('use_character_power', {
+        p_user_id: TEST_USER_ID,
+        p_power_key: powerKey,
+      });
+      if (data?.success) {
+        setActiveChar(prev => prev ? { ...prev, uses_remaining: data.uses_remaining } : null);
+        return { success: true, uses_remaining: data.uses_remaining };
+      }
+      if (data?.error === 'No uses remaining') {
+        Alert.alert('⚡ Utilisations épuisées',
+          'Recharge ton ' + (activeChar?.name || 'personnage') + ' dans l\'onglet Caractères.');
+      }
+      return { success: false, error: data?.error };
+    } catch (e) {
+      console.error('Consume power error:', e);
+      return { success: false, error: 'network' };
+    }
+  };
+
   useEffect(() => {
     loadDashboardFromSupabase();
+    loadPagePowers();
     fetchDailyHydration().then((data) => {
       setHydrationData(data);
       // Synchroniser le state local avec les vraies données Supabase
@@ -2878,6 +3089,7 @@ export default function App() {
   useEffect(() => {
     if (activeTab === 'home') {
       loadDashboardFromSupabase();
+      loadPagePowers();
       fetchDailyHydration().then((data) => {
         setHydrationData(data);
         if (data.totalEffective > 0) {
@@ -2915,6 +3127,11 @@ export default function App() {
   const [showHistoryLock, setShowHistoryLock] = useState(false);
   const [surplusAlertVisible, setSurplusAlertVisible] = useState(false);
   const [hydroLogs, setHydroLogs] = useState([]);
+
+  // === SYSTÈME POUVOIRS CARACTÈRES — DASHBOARD ===
+  const [activeChar, setActiveChar] = useState(null);
+  const [pagePowers, setPagePowers] = useState([]);
+  const [toggleStates, setToggleStates] = useState({});
 
   // Mock sport activities done today
   const [activities, setActivities] = useState([
@@ -3902,6 +4119,11 @@ export default function App() {
             lastMeal={lastMeal}
             tooltipStep={tooltipStep}
             vitalityScore={vitalityScore}
+            activeChar={activeChar}
+            pagePowers={pagePowers}
+            toggleStates={toggleStates}
+            setToggleStates={setToggleStates}
+            consumePower={consumePower}
           />
         );
       case 'meals':
