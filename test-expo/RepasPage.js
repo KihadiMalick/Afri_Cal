@@ -547,9 +547,12 @@ const RepasPage = ({ onNavigate }) => {
   const [frequentMeals, setFrequentMeals] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // === CARACTÈRE ACTIF ===
+  // === SYSTÈME POUVOIRS CARACTÈRES ===
   const [activeChar, setActiveChar] = useState(null);
-  const [activePowers, setActivePowers] = useState([]);
+  const [pagePowers, setPagePowers] = useState([]);
+  const [toggleStates, setToggleStates] = useState({});
+
+  // States pour les fonctionnalités spécifiques (alimentés par les hooks)
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [showSuggestionModal, setShowSuggestionModal] = useState(false);
   const [suggestionMeal, setSuggestionMeal] = useState(null);
@@ -689,62 +692,139 @@ const RepasPage = ({ onNavigate }) => {
     setIsLoadingData(false);
   };
 
-  const loadActiveCharacter = async () => {
+  // ══════════════════════════════════════════════════════════════
+  // SYSTÈME GÉNÉRIQUE DE POUVOIRS — PAGE REPAS
+  // ══════════════════════════════════════════════════════════════
+  const REPAS_PAGE = 'repas';
+
+  const loadPagePowers = async () => {
     try {
-      const userId = TEST_USER_ID;
-      const { data: collection } = await supabase.rpc('get_user_collection', { p_user_id: userId });
-      if (collection) {
-        const active = collection.find(c => c.is_active && c.owned);
-        setActiveChar(active || null);
-        if (active) {
-          const { data: powers } = await supabase.rpc('get_character_powers', {
-            p_user_id: userId, p_slug: active.slug,
-          });
-          setActivePowers(powers || []);
-        }
-      }
+      const { data: collection } = await supabase
+        .rpc('get_user_collection', { p_user_id: TEST_USER_ID });
+      const active = (collection || []).find(c => c.is_active);
+      if (!active) { setActiveChar(null); setPagePowers([]); return; }
+      setActiveChar(active);
+
+      const { data: powers } = await supabase
+        .rpc('get_character_powers', {
+          p_user_id: TEST_USER_ID,
+          p_slug: active.slug,
+        });
+      setPagePowers((powers || []).filter(p => p.redirect_page === REPAS_PAGE));
     } catch (e) {
-      console.error('Active char load error:', e);
+      console.warn('Repas powers load error:', e);
     }
   };
 
-  const consumeCharacterUse = async (powerKey) => {
+  const consumePower = async (powerKey) => {
     try {
-      const userId = TEST_USER_ID;
       const { data } = await supabase.rpc('use_character_power', {
-        p_user_id: userId,
+        p_user_id: TEST_USER_ID,
         p_power_key: powerKey,
       });
-
       if (data?.success) {
         setActiveChar(prev => prev ? { ...prev, uses_remaining: data.uses_remaining } : null);
-        return true;
-      } else if (data?.error === 'No uses remaining') {
-        Alert.alert(
-          '⚡ Utilisations épuisées',
-          'Recharge ton ' + (activeChar?.name || 'personnage') + ' avec ' + (activeChar?.recharge_energy || 10) + ' énergie dans l\'onglet Caractères.',
-          [{ text: 'OK' }]
-        );
-        return false;
-      } else if (data?.error === 'Power not unlocked') {
-        const lixCost = data?.lix_cost || 30;
-        Alert.alert(
-          '🔒 Pouvoir verrouillé',
-          'Débloque avec la carte au bon niveau ou dépense ' + lixCost + ' Lix pour un accès ponctuel.',
-          [{ text: 'OK' }]
-        );
-        return false;
+        return { success: true, uses_remaining: data.uses_remaining };
       }
-      return false;
+      if (data?.error === 'No uses remaining') {
+        Alert.alert('⚡ Utilisations épuisées',
+          'Recharge ton ' + (activeChar?.name || 'personnage') + ' dans l\'onglet Caractères.');
+      }
+      return { success: false, error: data?.error };
     } catch (e) {
-      console.error('Use power error:', e);
-      return false;
+      console.error('Consume power error:', e);
+      return { success: false, error: 'network' };
     }
+  };
+
+  const isPowerAvailable = (powerKey) => {
+    const power = pagePowers.find(p => p.power_key === powerKey);
+    return power?.unlocked === true;
+  };
+
+  const powerConsumesUse = (powerKey) => {
+    const FREE_POWERS = [
+      'owl_resume_macros',
+      'owl_alerte_macros',
+      'fox_mode_regime',
+    ];
+    return !FREE_POWERS.includes(powerKey);
+  };
+
+  // ── Handlers pour modal_inline powers ────────────────────────
+  const handleInlinePower = (power) => {
+    switch (power.power_key) {
+      case 'owl_resume_macros':
+        setShowResumeModal(true);
+        break;
+      case 'hawk_micronutriments':
+        Alert.alert('🔬 Micronutriments', 'Disponible après votre prochain scan Xscan.');
+        break;
+      case 'fox_sub_1':
+      case 'fox_sub_2':
+      case 'fox_sub_3':
+        setTodaySubstitutions(prev => prev + 1);
+        Alert.alert('🦊 Substitution', 'Tap sur un ingrédient pour voir des alternatives.');
+        break;
+      case 'gipsy_correlation_1':
+      case 'gipsy_correlation_2':
+        Alert.alert('🕷️ Corrélation', 'Graphique corrélation humeur-nutrition en cours de développement.');
+        break;
+      default:
+        Alert.alert(power.name_fr || power.power_key, power.description_fr || '');
+    }
+  };
+
+  // ── Handlers pour redirect powers ────────────────────────────
+  const handleRedirectPower = (power) => {
+    switch (power.power_key) {
+      case 'owl_suggestion_repas':
+        handleSuggestionRepas();
+        break;
+      case 'hawk_comparateur':
+        Alert.alert('⚖️ Comparateur', 'Sélectionnez 2 scans à comparer. (À venir)');
+        break;
+      case 'hawk_historique':
+        Alert.alert('📈 Historique', 'Historique de vos 30 derniers scans. (À venir)');
+        break;
+      case 'gipsy_toile_sante':
+        Alert.alert('🕸️ Toile de Santé', 'Rapport mensuel croisé en cours de développement.');
+        break;
+      default:
+        Alert.alert(power.name_fr || power.power_key, power.description_fr || '');
+    }
+  };
+
+  // ── Suggestion repas (Emerald Owl MAX) ───────────────────────
+  const handleSuggestionRepas = async () => {
+    setLoadingSuggestion(true);
+    try {
+      const protTarget = Math.round((userProfile.daily_calorie_target * 0.25) / 4);
+      const protMissing = Math.max(0, protTarget - dailySummary.total_protein);
+
+      const { data: meals } = await supabase
+        .from('meals_master')
+        .select('*')
+        .gte('protein_per_100g', protMissing / 3)
+        .order('protein_per_100g', { ascending: false })
+        .limit(5);
+
+      if (meals && meals.length > 0) {
+        const random = meals[Math.floor(Math.random() * meals.length)];
+        setSuggestionMeal(random);
+        setShowSuggestionModal(true);
+      } else {
+        Alert.alert('🍽️ Suggestion', 'Aucun plat trouvé pour compléter vos macros.');
+      }
+    } catch (e) {
+      console.error('Suggestion error:', e);
+    }
+    setLoadingSuggestion(false);
   };
 
   useEffect(() => {
     loadDashboardData();
-    loadActiveCharacter();
+    loadPagePowers();
   }, []);
 
   // === FETCH MOOD × MÉTÉO ===
@@ -2692,7 +2772,7 @@ const RepasPage = ({ onNavigate }) => {
             </View>
           </View>
 
-          {/* ======== BANDEAU PERSONNAGE ACTIF ======== */}
+          {/* ══════ BANDEAU PERSONNAGE ACTIF ══════ */}
           {activeChar && (
             <View style={{
               marginHorizontal: wp(16), marginTop: wp(8),
@@ -2717,18 +2797,13 @@ const RepasPage = ({ onNavigate }) => {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700' }}>
-                  {activeChar.name} • Niv{activeChar.level}
+                  {activeChar.name}
                 </Text>
                 <Text style={{ color: '#5A6070', fontSize: fp(8) }}>
                   {activeChar.uses_remaining}/{activeChar.max_uses_per_cycle || 10} utilisations
                 </Text>
               </View>
-              <View style={{
-                backgroundColor: 'rgba(0,217,132,0.08)',
-                paddingHorizontal: wp(8), paddingVertical: wp(3), borderRadius: wp(6),
-              }}>
-                <Text style={{ color: '#00D984', fontSize: fp(8), fontWeight: '700' }}>ACTIF</Text>
-              </View>
+              <Text style={{ color: '#00D984', fontSize: fp(9) }}>ACTIF ✅</Text>
             </View>
           )}
 
@@ -3178,143 +3253,253 @@ const RepasPage = ({ onNavigate }) => {
             </ScrollView>
           </View>
 
-          {/* ======== RÉSUMÉ NUTRITIONNEL — Emerald Owl Niv1 ======== */}
-          <View style={{ marginTop: wp(12) }}>
-            <SectionTitle title="Résumé nutritionnel" />
+          {/* ══════ SECTIONS POUVOIRS CARACTÈRES ══════ */}
+          {pagePowers.map(power => {
+            const isUnlocked = power.unlocked;
 
-            {(() => {
-              const owlPower = activePowers.find(p => p.power_key === 'owl_resume_macros');
-              const isUnlocked = owlPower?.unlocked && activeChar?.slug === 'emerald_owl';
+            switch (power.action_type) {
 
-              if (isUnlocked) {
-                const target = userProfile.daily_calorie_target || 2330;
-                const protTarget = Math.round(target * 0.25 / 4);
-                const carbTarget = Math.round(target * 0.50 / 4);
-                const fatTarget = Math.round(target * 0.25 / 9);
-                const protPercent = Math.min(Math.round((dailySummary.total_protein / protTarget) * 100), 100);
-                const carbPercent = Math.min(Math.round((dailySummary.total_carbs / carbTarget) * 100), 100);
-                const fatPercent = Math.min(Math.round((dailySummary.total_fat / fatTarget) * 100), 100);
-
-                const getStatusColor = (pct) => pct >= 80 ? '#00D984' : pct >= 50 ? '#FF8C42' : '#FF6B6B';
-                const getStatusText = (pct) => pct >= 80 ? 'Bon ✅' : pct >= 50 ? 'En cours ⚠️' : 'Insuffisant ❌';
-
+              // ══════ MODAL INLINE ══════
+              case 'modal_inline': {
                 return (
-                  <View style={{ marginHorizontal: wp(16), borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
-                    <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15, padding: wp(14) }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
-                        <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>🦉</Text>
-                        <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '700' }}>Emerald Owl • Résumé du jour</Text>
-                      </View>
-
-                      {[
-                        { label: 'Protéines', current: dailySummary.total_protein, target: protTarget, pct: protPercent, color: '#FF6B6B' },
-                        { label: 'Glucides', current: dailySummary.total_carbs, target: carbTarget, pct: carbPercent, color: '#FFD93D' },
-                        { label: 'Lipides', current: dailySummary.total_fat, target: fatTarget, pct: fatPercent, color: '#4DA6FF' },
-                      ].map((macro, i) => (
-                        <View key={i} style={{ marginBottom: i < 2 ? wp(10) : 0 }}>
-                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
-                            <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '600' }}>{macro.label}</Text>
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                              <Text style={{ color: '#8892A0', fontSize: fp(10) }}>{macro.current}g / {macro.target}g</Text>
-                              <Text style={{ color: getStatusColor(macro.pct), fontSize: fp(9), marginLeft: wp(6), fontWeight: '700' }}>{getStatusText(macro.pct)}</Text>
-                            </View>
-                          </View>
-                          <View style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 3, overflow: 'hidden' }}>
-                            <View style={{ height: '100%', width: macro.pct + '%', backgroundColor: getStatusColor(macro.pct), borderRadius: 3 }} />
-                          </View>
+                  <View key={power.power_key} style={{ marginTop: wp(8) }}>
+                    <View style={{
+                      marginHorizontal: wp(16), borderRadius: 16, padding: 1,
+                      backgroundColor: isUnlocked ? '#4A4F55' : 'rgba(74,79,85,0.3)',
+                    }}>
+                      <LinearGradient
+                        colors={isUnlocked
+                          ? ['#3A3F46', '#252A30', '#333A42', '#1A1D22']
+                          : ['#2A2F36', '#1E2228', '#2A2F36', '#1A1D22']}
+                        style={{ borderRadius: 15, padding: wp(14) }}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                          <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>
+                            {power.icon || '🔮'}
+                          </Text>
+                          <Text style={{
+                            color: isUnlocked ? '#D4AF37' : '#555E6C',
+                            fontSize: fp(11), fontWeight: '700', flex: 1,
+                          }}>
+                            {power.name_fr || power.power_key}
+                          </Text>
+                          {!isUnlocked && (
+                            <Text style={{ color: '#FF6B6B', fontSize: fp(8), fontWeight: '600' }}>
+                              🔒 Niv{power.level_required}
+                            </Text>
+                          )}
                         </View>
-                      ))}
-                    </LinearGradient>
+
+                        <Text style={{
+                          color: isUnlocked ? '#8892A0' : '#444B55',
+                          fontSize: fp(9), marginBottom: wp(8),
+                        }}>
+                          {power.description_fr || ''}
+                        </Text>
+
+                        {isUnlocked ? (
+                          <Pressable
+                            onPress={async () => {
+                              if (powerConsumesUse(power.power_key)) {
+                                const result = await consumePower(power.power_key);
+                                if (!result.success) return;
+                              }
+                              handleInlinePower(power);
+                            }}
+                            style={({ pressed }) => ({
+                              paddingVertical: wp(8), borderRadius: wp(8),
+                              backgroundColor: pressed ? 'rgba(0,217,132,0.15)' : 'rgba(0,217,132,0.08)',
+                              borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                              alignItems: 'center',
+                            })}
+                          >
+                            <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>
+                              Activer
+                            </Text>
+                          </Pressable>
+                        ) : (
+                          <View style={{
+                            paddingVertical: wp(8), borderRadius: wp(8),
+                            backgroundColor: 'rgba(255,255,255,0.03)',
+                            borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
+                            alignItems: 'center',
+                          }}>
+                            <Text style={{ color: '#555E6C', fontSize: fp(9) }}>
+                              🔒 Débloque avec {activeChar?.name || 'personnage'} Niv{power.level_required}
+                              {power.lix_cost_non_owner > 0 ? ' ou ' + power.lix_cost_non_owner + ' Lix' : ''}
+                            </Text>
+                          </View>
+                        )}
+                      </LinearGradient>
+                    </View>
                   </View>
                 );
-              } else {
+              }
+
+              // ══════ REDIRECT ══════
+              case 'redirect': {
+                const isSuperpower = power.is_superpower;
                 return (
-                  <Pressable
-                    onPress={() => {
-                      Alert.alert('🔒 Résumé Nutritionnel', 'Débloque cette fonctionnalité avec Emerald Owl Niv1 ou dépense 30 Lix pour un accès ponctuel.', [{ text: 'OK' }]);
-                    }}
-                    style={{ marginHorizontal: wp(16), borderRadius: 16, padding: wp(14), backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', opacity: 0.5 }}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>🔒</Text>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: '#8892A0', fontSize: fp(12), fontWeight: '600' }}>Résumé Nutritionnel</Text>
-                        <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>Débloque avec Emerald Owl Niv1 ou 30 Lix</Text>
-                      </View>
-                      <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>🦉</Text>
+                  <View key={power.power_key} style={{ marginTop: wp(8) }}>
+                    <View style={{
+                      marginHorizontal: wp(16), borderRadius: 16, padding: 1,
+                      backgroundColor: isUnlocked ? '#4A4F55' : 'rgba(74,79,85,0.3)',
+                    }}>
+                      <LinearGradient
+                        colors={isUnlocked
+                          ? ['#3A3F46', '#252A30', '#333A42', '#1A1D22']
+                          : ['#2A2F36', '#1E2228', '#2A2F36', '#1A1D22']}
+                        style={{ borderRadius: 15, padding: wp(14) }}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                          <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>
+                            {power.icon || '🔮'}
+                          </Text>
+                          <Text style={{
+                            color: isUnlocked ? '#D4AF37' : '#555E6C',
+                            fontSize: fp(11), fontWeight: '700', flex: 1,
+                          }}>
+                            {power.name_fr || power.power_key}
+                          </Text>
+                          {isSuperpower && isUnlocked && (
+                            <View style={{
+                              backgroundColor: 'rgba(212,175,55,0.1)',
+                              paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4),
+                            }}>
+                              <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '800' }}>
+                                SUPERPOWER
+                              </Text>
+                            </View>
+                          )}
+                          {!isUnlocked && (
+                            <Text style={{ color: '#FF6B6B', fontSize: fp(8), fontWeight: '600' }}>
+                              🔒 Niv{power.level_required}
+                            </Text>
+                          )}
+                        </View>
+
+                        <Text style={{
+                          color: isUnlocked ? '#8892A0' : '#444B55',
+                          fontSize: fp(9), marginBottom: wp(8),
+                        }}>
+                          {power.description_fr || ''}
+                        </Text>
+
+                        {isUnlocked ? (
+                          <Pressable
+                            onPress={async () => {
+                              if (powerConsumesUse(power.power_key)) {
+                                const result = await consumePower(power.power_key);
+                                if (!result.success) return;
+                              }
+                              handleRedirectPower(power);
+                            }}
+                            style={({ pressed }) => ({
+                              paddingVertical: wp(8), borderRadius: wp(8),
+                              backgroundColor: pressed
+                                ? (isSuperpower ? 'rgba(212,175,55,0.15)' : 'rgba(0,217,132,0.15)')
+                                : (isSuperpower ? 'rgba(212,175,55,0.08)' : 'rgba(0,217,132,0.08)'),
+                              borderWidth: 1,
+                              borderColor: isSuperpower ? 'rgba(212,175,55,0.2)' : 'rgba(0,217,132,0.2)',
+                              alignItems: 'center',
+                            })}
+                          >
+                            <Text style={{
+                              color: isSuperpower ? '#D4AF37' : '#00D984',
+                              fontSize: fp(10), fontWeight: '700',
+                            }}>
+                              {isSuperpower ? '⭐ Activer' : 'Ouvrir →'}
+                            </Text>
+                          </Pressable>
+                        ) : (
+                          <View style={{
+                            paddingVertical: wp(8), borderRadius: wp(8),
+                            backgroundColor: 'rgba(255,255,255,0.03)',
+                            borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
+                            alignItems: 'center',
+                          }}>
+                            <Text style={{ color: '#555E6C', fontSize: fp(9) }}>
+                              🔒 Débloque avec {activeChar?.name || 'personnage'} Niv{power.level_required}
+                              {power.lix_cost_non_owner > 0 ? ' ou ' + power.lix_cost_non_owner + ' Lix' : ''}
+                            </Text>
+                          </View>
+                        )}
+                      </LinearGradient>
                     </View>
-                  </Pressable>
+                  </View>
                 );
               }
-            })()}
-          </View>
 
-          {/* ======== SUGGESTION REPAS — Emerald Owl MAX ======== */}
-          {(() => {
-            const owlSuggestion = activePowers.find(p => p.power_key === 'owl_suggestion_repas');
-            const isUnlocked = owlSuggestion?.unlocked && activeChar?.slug === 'emerald_owl';
-
-            if (!isUnlocked) return null;
-
-            return (
-              <View style={{ marginTop: wp(12) }}>
-                <View style={{ marginHorizontal: wp(16), borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
-                  <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15, padding: wp(14) }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
-                      <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>🦉</Text>
-                      <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '700' }}>SUPERPOWER</Text>
-                      <View style={{ marginLeft: wp(6), backgroundColor: 'rgba(212,175,55,0.1)', paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4) }}>
-                        <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '800' }}>MAX</Text>
-                      </View>
-                    </View>
-
-                    {suggestionMeal ? (
-                      <View>
-                        <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '700', marginBottom: wp(4) }}>💡 {suggestionMeal.name}</Text>
-                        <Text style={{ color: '#FF8C42', fontSize: fp(12), fontWeight: '700' }}>{Math.round(suggestionMeal.kcal_per_100g * 3)} kcal</Text>
-                        <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: wp(4) }}>Ce plat complète parfaitement vos macros du jour</Text>
-                      </View>
-                    ) : (
-                      <Pressable
-                        onPress={async () => {
-                          const canUse = await consumeCharacterUse('owl_suggestion_repas');
-                          if (!canUse) return;
-
-                          setLoadingSuggestion(true);
-                          try {
-                            const protTarget = Math.round((userProfile.daily_calorie_target * 0.25) / 4);
-                            const protMissing = Math.max(0, protTarget - dailySummary.total_protein);
-                            const { data: meals } = await supabase
-                              .from('meals_master')
-                              .select('*')
-                              .gte('protein_per_100g', protMissing / 3)
-                              .order('protein_per_100g', { ascending: false })
-                              .limit(5);
-                            if (meals && meals.length > 0) {
-                              const random = meals[Math.floor(Math.random() * meals.length)];
-                              setSuggestionMeal(random);
-                            }
-                          } catch (e) {
-                            console.error('Suggestion error:', e);
-                          }
-                          setLoadingSuggestion(false);
-                        }}
-                        style={({ pressed }) => ({
-                          paddingVertical: wp(12), borderRadius: 12,
-                          backgroundColor: pressed ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.08)',
-                          borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)', alignItems: 'center',
-                        })}
+              // ══════ TOGGLE ══════
+              case 'toggle': {
+                const isOn = toggleStates[power.power_key] || false;
+                return (
+                  <View key={power.power_key} style={{ marginTop: wp(8) }}>
+                    <View style={{
+                      marginHorizontal: wp(16), borderRadius: 16, padding: 1,
+                      backgroundColor: isUnlocked ? '#4A4F55' : 'rgba(74,79,85,0.3)',
+                    }}>
+                      <LinearGradient
+                        colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                        style={{ borderRadius: 15, padding: wp(14) }}
                       >
-                        <Text style={{ color: '#D4AF37', fontSize: fp(13), fontWeight: '700' }}>
-                          {loadingSuggestion ? '⏳ Calcul...' : '🍽️ Suggérer un repas pour ce soir'}
-                        </Text>
-                      </Pressable>
-                    )}
-                  </LinearGradient>
-                </View>
-              </View>
-            );
-          })()}
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>
+                            {power.icon || '🔔'}
+                          </Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{
+                              color: isUnlocked ? '#EAEEF3' : '#555E6C',
+                              fontSize: fp(11), fontWeight: '700',
+                            }}>
+                              {power.name_fr || power.power_key}
+                            </Text>
+                            <Text style={{
+                              color: '#8892A0', fontSize: fp(8), marginTop: wp(2),
+                            }}>
+                              {power.description_fr || ''}
+                            </Text>
+                          </View>
+                          {isUnlocked ? (
+                            <Pressable
+                              onPress={() => {
+                                setToggleStates(prev => ({
+                                  ...prev,
+                                  [power.power_key]: !prev[power.power_key],
+                                }));
+                              }}
+                              style={{
+                                width: wp(40), height: wp(22), borderRadius: wp(11),
+                                backgroundColor: isOn ? '#00D984' : 'rgba(255,255,255,0.1)',
+                                padding: wp(2), justifyContent: 'center',
+                              }}
+                            >
+                              <View style={{
+                                width: wp(18), height: wp(18), borderRadius: wp(9),
+                                backgroundColor: '#FFFFFF',
+                                alignSelf: isOn ? 'flex-end' : 'flex-start',
+                              }} />
+                            </Pressable>
+                          ) : (
+                            <Text style={{ color: '#FF6B6B', fontSize: fp(8) }}>
+                              🔒 Niv{power.level_required}
+                            </Text>
+                          )}
+                        </View>
+                      </LinearGradient>
+                    </View>
+                  </View>
+                );
+              }
+
+              // ══════ FUTUR : CALORIE PLANNER (Boukki) ══════
+              // case 'calorie_planner':
+              //   return <CaloriePlannerSection key={power.power_key} power={power} />;
+
+              default:
+                return null;
+            }
+          })}
 
           {/* ======== 6. SECTION RECETTES (FIX 3+5+7) ======== */}
           <View style={{ marginTop: wp(12) }}>
@@ -3570,83 +3755,8 @@ const RepasPage = ({ onNavigate }) => {
             </ScrollView>
           </View>
 
-          {/* ======== HISTORIQUE SCANS — Hawk Eye MAX ======== */}
-          <View style={{ marginTop: wp(12), marginBottom: wp(8) }}>
-            {(() => {
-              const hawkHistory = activePowers.find(p => p.power_key === 'hawk_historique');
-              const isUnlocked = hawkHistory?.unlocked && activeChar?.slug === 'hawk_eye';
-
-              return (
-                <Pressable
-                  onPress={async () => {
-                    if (!isUnlocked) {
-                      Alert.alert('🔒 Historique Scanner', 'Débloque cette fonctionnalité avec Hawk Eye Niveau MAX ou dépense 50 Lix.', [{ text: 'OK' }]);
-                    } else {
-                      const canUse = await consumeCharacterUse('hawk_historique');
-                      if (!canUse) return;
-                      Alert.alert('📈 Historique', 'Fonctionnalité en construction. Bientôt disponible !');
-                    }
-                  }}
-                  style={{
-                    marginHorizontal: wp(16), borderRadius: 16, padding: wp(14),
-                    backgroundColor: isUnlocked ? 'rgba(77,166,255,0.04)' : 'rgba(255,255,255,0.02)',
-                    borderWidth: 1, borderColor: isUnlocked ? 'rgba(77,166,255,0.15)' : 'rgba(255,255,255,0.06)',
-                    opacity: isUnlocked ? 1 : 0.5,
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>{isUnlocked ? '📈' : '🔒'}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: isUnlocked ? '#4DA6FF' : '#8892A0', fontSize: fp(12), fontWeight: '600' }}>Historique Scanner</Text>
-                      <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>
-                        {isUnlocked ? '30 derniers scans avec tendances nutritionnelles' : 'Débloque avec Hawk Eye MAX ou 50 Lix'}
-                      </Text>
-                    </View>
-                    <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>🦅</Text>
-                  </View>
-                </Pressable>
-              );
-            })()}
-          </View>
-
-          {/* ======== TOILE DE SANTÉ — Gipsy MAX ======== */}
-          <View style={{ marginBottom: wp(16) }}>
-            {(() => {
-              const gipsyToile = activePowers.find(p => p.power_key === 'gipsy_toile_sante');
-              const isUnlocked = gipsyToile?.unlocked && activeChar?.slug === 'gipsy';
-
-              return (
-                <Pressable
-                  onPress={async () => {
-                    if (!isUnlocked) {
-                      Alert.alert('🔒 Toile de Santé', 'Débloque cette fonctionnalité avec Gipsy Niveau MAX ou dépense 80 Lix.', [{ text: 'OK' }]);
-                    } else {
-                      const canUse = await consumeCharacterUse('gipsy_toile_sante');
-                      if (!canUse) return;
-                      Alert.alert('🕷️ Toile de Santé', 'Rapport mensuel en construction. Bientôt disponible !');
-                    }
-                  }}
-                  style={{
-                    marginHorizontal: wp(16), borderRadius: 16, padding: wp(14),
-                    backgroundColor: isUnlocked ? 'rgba(155,89,182,0.04)' : 'rgba(255,255,255,0.02)',
-                    borderWidth: 1, borderColor: isUnlocked ? 'rgba(155,89,182,0.15)' : 'rgba(255,255,255,0.06)',
-                    opacity: isUnlocked ? 1 : 0.5,
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>{isUnlocked ? '🕷️' : '🔒'}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: isUnlocked ? '#9B59B6' : '#8892A0', fontSize: fp(12), fontWeight: '600' }}>Toile de Santé</Text>
-                      <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>
-                        {isUnlocked ? 'Rapport mensuel croisé nutrition+humeur+hydratation+activité' : 'Débloque avec Gipsy MAX ou 80 Lix'}
-                      </Text>
-                    </View>
-                    <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>🕷️</Text>
-                  </View>
-                </Pressable>
-              );
-            })()}
-          </View>
+          {/* Spacing before ScrollView close */}
+          <View style={{ marginBottom: wp(16) }} />
         </ScrollView>
 
         {/* ÉCRAN SAISIE MANUELLE */}
@@ -7504,15 +7614,14 @@ const RepasPage = ({ onNavigate }) => {
                 </View>
               </View>
 
-              {/* ======== SUBSTITUTION — Amber Fox ======== */}
+              {/* ══════ SUBSTITUTION — Amber Fox (via pagePowers) ══════ */}
               {(() => {
-                const foxPower = activePowers.find(p =>
-                  p.power_key === 'fox_sub_1' || p.power_key === 'fox_sub_2' || p.power_key === 'fox_regime'
+                const foxPower = pagePowers.find(p =>
+                  (p.power_key === 'fox_sub_1' || p.power_key === 'fox_sub_2' || p.power_key === 'fox_sub_3') && p.unlocked
                 );
-                const isUnlocked = foxPower?.unlocked && activeChar?.slug === 'amber_fox';
-                const maxSubs = activeChar?.level >= 3 ? 3 : activeChar?.level >= 2 ? 2 : 1;
+                if (!foxPower) return null;
 
-                if (!isUnlocked) return null;
+                const maxSubs = activeChar?.level >= 3 ? 3 : activeChar?.level >= 2 ? 2 : 1;
 
                 return (
                   <View style={{ marginHorizontal: wp(16), marginBottom: wp(16) }}>
@@ -7522,9 +7631,9 @@ const RepasPage = ({ onNavigate }) => {
                       borderRadius: 14, padding: wp(12),
                       borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)',
                     }}>
-                      <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>🦊</Text>
+                      <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>{foxPower.icon || '🦊'}</Text>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ color: '#FF8C42', fontSize: fp(11), fontWeight: '700' }}>Amber Fox — Substitution</Text>
+                        <Text style={{ color: '#FF8C42', fontSize: fp(11), fontWeight: '700' }}>{foxPower.name_fr || 'Substitution'}</Text>
                         <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>
                           {todaySubstitutions}/{maxSubs} utilisée{todaySubstitutions > 1 ? 's' : ''} aujourd'hui
                         </Text>
@@ -7535,8 +7644,8 @@ const RepasPage = ({ onNavigate }) => {
                             Alert.alert('Limite atteinte', maxSubs + ' substitution' + (maxSubs > 1 ? 's' : '') + ' max par jour');
                             return;
                           }
-                          const canUse = await consumeCharacterUse('fox_sub_1');
-                          if (!canUse) return;
+                          const result = await consumePower(foxPower.power_key);
+                          if (!result.success) return;
                           setTodaySubstitutions(prev => prev + 1);
                           Alert.alert('🦊 Substitution', 'Tap sur un ingrédient dans la liste ci-dessus pour voir des alternatives plus saines.', [{ text: 'Compris !' }]);
                         }}
