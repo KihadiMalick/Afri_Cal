@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
-import Svg, { Defs, Rect, Path, Circle, Line, G, Polygon, Text as SvgText, LinearGradient as SvgLinearGradient, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Defs, Rect, Path, Circle, Line, Ellipse, G, Polygon, Text as SvgText, LinearGradient as SvgLinearGradient, RadialGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -312,9 +312,9 @@ const LIX_PACKS = [
 const NAV_TABS = [
   { key: 'home', label: 'Accueil', iconDefault: 'home-outline', iconActive: 'home' },
   { key: 'meals', label: 'Repas', iconDefault: 'restaurant-outline', iconActive: 'restaurant' },
-  { key: 'lixverse', label: 'LixVerse', isSpecial: true },
-  { key: 'activity', label: 'Activité', iconDefault: 'fitness-outline', iconActive: 'fitness' },
   { key: 'medicai', label: 'MedicAi', isMedicAi: true },
+  { key: 'activity', label: 'Activité', iconDefault: 'fitness-outline', iconActive: 'fitness' },
+  { key: 'lixverse', label: 'LixVerse', isSpecial: true, isLixVerse: true },
 ];
 
 export default function LixVersePage() {
@@ -2692,22 +2692,35 @@ export default function LixVersePage() {
           >
             <View style={{ position: 'relative' }}>
               {tab.isSpecial ? (
-                <View style={{
-                  width: wp(28), height: wp(28), borderRadius: wp(14),
-                  backgroundColor: active ? 'rgba(212,175,55,0.2)' : 'transparent',
-                  justifyContent: 'center', alignItems: 'center',
-                  marginBottom: wp(-2),
-                }}>
-                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
-                    <Defs>
-                      <SvgLinearGradient id="lixverseNavGrad" x1="0.5" y1="0" x2="0.5" y2="1">
-                        <Stop offset="0%" stopColor={active ? '#D4AF37' : '#6B7B8D'} />
-                        <Stop offset="100%" stopColor={active ? '#B8941F' : '#4A5568'} />
-                      </SvgLinearGradient>
-                    </Defs>
-                    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#lixverseNavGrad)" />
-                  </Svg>
-                </View>
+                <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24">
+                  <Circle cx="12" cy="12" r="10" fill="none" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={1.2} opacity={active ? 0.9 : 0.5} />
+                  <Ellipse cx="12" cy="12" rx="4" ry="10" fill="none" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.8} opacity={active ? 0.6 : 0.3} />
+                  <Ellipse cx="12" cy="12" rx="7.5" ry="10" fill="none" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.6} opacity={active ? 0.4 : 0.2} />
+                  <Ellipse cx="12" cy="8" rx="9" ry="2.5" fill="none" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.7} opacity={active ? 0.5 : 0.25} />
+                  <Line x1="2" y1="12" x2="22" y2="12" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.8} opacity={active ? 0.5 : 0.3} />
+                  <Ellipse cx="12" cy="16" rx="9" ry="2.5" fill="none" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.7} opacity={active ? 0.5 : 0.25} />
+                  <Circle cx="12" cy="2.5" r={1.3} fill={active ? "#5DFFB4" : "#6B7B8D"} opacity={active ? 1 : 0.5} />
+                  <Circle cx="5" cy="5.5" r={1.1} fill={active ? "#00D984" : "#6B7B8D"} opacity={active ? 0.9 : 0.4} />
+                  <Circle cx="19" cy="5.5" r={1.1} fill={active ? "#00D984" : "#6B7B8D"} opacity={active ? 0.9 : 0.4} />
+                  <Circle cx="3" cy="12" r={1.2} fill={active ? "#5DFFB4" : "#6B7B8D"} opacity={active ? 1 : 0.5} />
+                  <Circle cx="21" cy="12" r={1.2} fill={active ? "#5DFFB4" : "#6B7B8D"} opacity={active ? 1 : 0.5} />
+                  <Circle cx="8" cy="8" r={1} fill={active ? "#FFFFFF" : "#8892A0"} opacity={active ? 0.8 : 0.3} />
+                  <Circle cx="16" cy="8" r={1} fill={active ? "#FFFFFF" : "#8892A0"} opacity={active ? 0.8 : 0.3} />
+                  <Circle cx="12" cy="12" r={1.3} fill={active ? "#FFFFFF" : "#8892A0"} opacity={active ? 0.9 : 0.4} />
+                  <Circle cx="7" cy="15.5" r={1} fill={active ? "#00D984" : "#6B7B8D"} opacity={active ? 0.8 : 0.35} />
+                  <Circle cx="17" cy="15.5" r={1} fill={active ? "#00D984" : "#6B7B8D"} opacity={active ? 0.8 : 0.35} />
+                  <Circle cx="5.5" cy="18.5" r={1.1} fill={active ? "#00D984" : "#6B7B8D"} opacity={active ? 0.9 : 0.4} />
+                  <Circle cx="18.5" cy="18.5" r={1.1} fill={active ? "#00D984" : "#6B7B8D"} opacity={active ? 0.9 : 0.4} />
+                  <Circle cx="12" cy="21.5" r={1.3} fill={active ? "#5DFFB4" : "#6B7B8D"} opacity={active ? 1 : 0.5} />
+                  <Line x1="12" y1="2.5" x2="8" y2="8" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.5} opacity={active ? 0.5 : 0.2} />
+                  <Line x1="12" y1="2.5" x2="16" y2="8" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.5} opacity={active ? 0.5 : 0.2} />
+                  <Line x1="8" y1="8" x2="12" y2="12" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.5} opacity={active ? 0.4 : 0.2} />
+                  <Line x1="16" y1="8" x2="12" y2="12" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.5} opacity={active ? 0.4 : 0.2} />
+                  <Line x1="12" y1="12" x2="7" y2="15.5" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.5} opacity={active ? 0.4 : 0.2} />
+                  <Line x1="12" y1="12" x2="17" y2="15.5" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.5} opacity={active ? 0.4 : 0.2} />
+                  <Line x1="7" y1="15.5" x2="12" y2="21.5" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.5} opacity={active ? 0.4 : 0.2} />
+                  <Line x1="17" y1="15.5" x2="12" y2="21.5" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.5} opacity={active ? 0.4 : 0.2} />
+                </Svg>
               ) : tab.isMedicAi ? (
                 <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
                   <Defs>
@@ -2731,7 +2744,7 @@ export default function LixVersePage() {
             <Text style={{
               fontSize: fp(9), fontWeight: '600', letterSpacing: wp(0.3), marginTop: -2,
               color: tab.isSpecial
-                ? (active ? '#D4AF37' : '#6B7B8D')
+                ? (active ? '#00D984' : '#6B7B8D')
                 : tab.isMedicAi
                   ? (active ? '#FF3B5C' : '#8892A0')
                   : (active ? '#00D984' : '#6B7B8D'),
