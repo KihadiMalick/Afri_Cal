@@ -873,10 +873,10 @@ const ActivityPage = ({ onNavigate }) => {
   const [walkGlow, setWalkGlow] = useState(false);
   const [runGlow, setRunGlow] = useState(false);
 
-  // === CARACTÈRE ACTIF — POUVOIRS ACTIVITÉ ===
+  // === SYSTÈME POUVOIRS CARACTÈRES ===
   const [activeChar, setActiveChar] = useState(null);
-  const [activityPowers, setActivityPowers] = useState([]);
-  const [boostApplied, setBoostApplied] = useState(null);
+  const [pagePowers, setPagePowers] = useState([]);
+  const [hookResults, setHookResults] = useState({});
 
   // Shoe animation
   const shoeAnim = useRef(new Animated.Value(0)).current;
@@ -1025,7 +1025,7 @@ const ActivityPage = ({ onNavigate }) => {
     checkLixReward();
     fetchSmartData();
     fetchWeeklyMinutes();
-    loadActivityPowers();
+    loadPagePowers();
   }, []);
 
   const fetchWeeklyMinutes = async () => {
@@ -1051,18 +1051,17 @@ const ActivityPage = ({ onNavigate }) => {
     }
   };
 
-  // === LOAD CHARACTER POWERS FOR THIS PAGE ===
-  const loadActivityPowers = async () => {
-    try {
-      const { data: userChar } = await supabase
-        .rpc('get_user_collection', { p_user_id: TEST_USER_ID });
+  // ══════════════════════════════════════════════════════════════
+  // SYSTÈME GÉNÉRIQUE DE POUVOIRS — PAGE ACTIVITÉ
+  // ══════════════════════════════════════════════════════════════
+  const ACTIVITY_PAGE = 'activite';
 
-      const active = (userChar || []).find(c => c.is_active);
-      if (!active) {
-        setActiveChar(null);
-        setActivityPowers([]);
-        return;
-      }
+  const loadPagePowers = async () => {
+    try {
+      const { data: collection } = await supabase
+        .rpc('get_user_collection', { p_user_id: TEST_USER_ID });
+      const active = (collection || []).find(c => c.is_active);
+      if (!active) { setActiveChar(null); setPagePowers([]); return; }
       setActiveChar(active);
 
       const { data: powers } = await supabase
@@ -1070,69 +1069,122 @@ const ActivityPage = ({ onNavigate }) => {
           p_user_id: TEST_USER_ID,
           p_slug: active.slug,
         });
-
-      const pagePowers = (powers || []).filter(p =>
-        p.redirect_page === 'activite' && p.unlocked
+      const filtered = (powers || []).filter(p =>
+        p.redirect_page === ACTIVITY_PAGE && p.unlocked
       );
-      setActivityPowers(pagePowers);
+      setPagePowers(filtered);
     } catch (e) {
-      console.warn('Activity powers load error:', e);
+      console.warn('Page powers load error:', e);
     }
   };
 
-  const consumeActivityPower = async (powerKey) => {
+  const consumePower = async (powerKey) => {
     try {
       const { data } = await supabase.rpc('use_character_power', {
         p_user_id: TEST_USER_ID,
         p_power_key: powerKey,
       });
-
       if (data?.success) {
         setActiveChar(prev => prev ? { ...prev, uses_remaining: data.uses_remaining } : null);
-        return true;
-      } else if (data?.error === 'No uses remaining') {
-        Alert.alert(
-          '⚡ Utilisations épuisées',
-          'Recharge ton ' + (activeChar?.name || 'personnage') + ' dans l\'onglet Caractères.',
-          [{ text: 'OK' }]
-        );
-        return false;
+        return { success: true, uses_remaining: data.uses_remaining };
       }
-      return false;
+      if (data?.error === 'No uses remaining') {
+        Alert.alert('⚡ Utilisations épuisées',
+          'Recharge ton ' + (activeChar?.name || 'personnage') + ' dans l\'onglet Caractères.');
+      }
+      return { success: false, error: data?.error };
     } catch (e) {
-      console.error('Activity power use error:', e);
-      return false;
+      console.error('Consume power error:', e);
+      return { success: false, error: 'network' };
     }
   };
 
-  // Détermine le boost XP actif (prend le plus haut niveau débloqué)
-  const getActiveBoost = () => {
-    if (!activeChar || activityPowers.length === 0) return null;
+  // ── Helpers par action_type ──────────────────────────────────
 
-    const boostPowers = activityPowers
-      .filter(p => p.action_type === 'redirect_with_boost')
-      .sort((a, b) => (b.level_required || 0) - (a.level_required || 0));
+  const getPowerByType = (actionType) => {
+    return pagePowers
+      .filter(p => p.action_type === actionType)
+      .sort((a, b) => (b.level_required || 0) - (a.level_required || 0))[0] || null;
+  };
 
-    if (boostPowers.length === 0) return null;
+  const extractMultiplier = (power) => {
+    if (!power?.redirect_filter) return 1.0;
+    if (power.redirect_filter.includes('30')) return 1.30;
+    if (power.redirect_filter.includes('20')) return 1.20;
+    if (power.redirect_filter.includes('10')) return 1.10;
+    return 1.0;
+  };
 
-    const best = boostPowers[0];
+  // ══════════════════════════════════════════════════════════════
+  // POST-SAVE HOOKS — exécutés après chaque activité sauvegardée
+  // Pour ajouter un nouveau hook : ajouter 1 case, c'est tout.
+  // ══════════════════════════════════════════════════════════════
+  const runPostSaveHooks = async (activityType, caloriesBurned, durationMin) => {
+    const results = {};
 
-    let multiplier = 1.0;
-    if (best.redirect_filter?.includes('30')) multiplier = 1.30;
-    else if (best.redirect_filter?.includes('20')) multiplier = 1.20;
-    else if (best.redirect_filter?.includes('10')) multiplier = 1.10;
-    else multiplier = 1.10;
+    for (const power of pagePowers) {
+      switch (power.action_type) {
 
-    return {
-      power_key: best.power_key,
-      name: best.name_fr || best.name_en || best.name,
-      multiplier,
-      percentage: Math.round((multiplier - 1) * 100),
-      icon: best.icon || '🐯',
-      is_superpower: best.is_superpower,
-      uses_remaining: activeChar.uses_remaining,
-      max_uses: activeChar.max_uses_per_cycle || 10,
-    };
+        // ── BOOST XP (Ruby Tiger) ──────────────────────────────
+        case 'redirect_with_boost': {
+          if (activeChar?.uses_remaining > 0) {
+            const consumed = await consumePower(power.power_key);
+            if (consumed.success) {
+              const multiplier = extractMultiplier(power);
+              const baseXP = Math.round(caloriesBurned);
+              const bonusXP = Math.round(baseXP * (multiplier - 1));
+              results.xp_boost = {
+                type: 'xp_boost',
+                icon: power.icon || '🐯',
+                char_name: activeChar?.name,
+                multiplier,
+                percentage: Math.round((multiplier - 1) * 100),
+                base_xp: baseXP,
+                bonus_xp: bonusXP,
+                total_xp: baseXP + bonusXP,
+                uses_remaining: consumed.uses_remaining,
+              };
+            }
+          }
+          break;
+        }
+
+        // ── STREAK TRACKER (Silver Wolf — futur) ───────────────
+        // case 'streak_tracker': {
+        //   const streakResult = await supabase.rpc('update_activity_streak', {
+        //     p_user_id: TEST_USER_ID,
+        //     p_activity_type: activityType,
+        //   });
+        //   results.streak = {
+        //     type: 'streak',
+        //     icon: power.icon,
+        //     char_name: activeChar?.name,
+        //     current_streak: streakResult.data?.streak || 0,
+        //     is_new_record: streakResult.data?.is_record || false,
+        //   };
+        //   break;
+        // }
+
+        // ── RECOVERY DETECT (Jade Phoenix — futur) ─────────────
+        // case 'recovery_detect': {
+        //   results.recovery = {
+        //     type: 'recovery',
+        //     icon: power.icon,
+        //     suggestion: caloriesBurned > 500
+        //       ? 'Activité intense — pensez à une journée repos demain'
+        //       : null,
+        //   };
+        //   break;
+        // }
+
+        default:
+          break;
+      }
+    }
+
+    setHookResults(results);
+    loadPagePowers();
+    return results;
   };
 
   // ── Tab handler ─────────────────────────────────────────────────────────
@@ -1176,27 +1228,11 @@ const ActivityPage = ({ onNavigate }) => {
         return false;
       }
 
-      // === BOOST XP — Consommer un use et appliquer le multiplicateur ===
-      const boost = getActiveBoost();
-      if (boost && boost.uses_remaining > 0) {
-        const consumed = await consumeActivityPower(boost.power_key);
-        if (consumed) {
-          const baseXP = Math.round(caloriesBurned);
-          const bonusXP = Math.round(baseXP * (boost.multiplier - 1));
-          setBoostApplied({
-            power_key: boost.power_key,
-            multiplier: boost.multiplier,
-            percentage: boost.percentage,
-            base_xp: baseXP,
-            bonus_xp: bonusXP,
-            total_xp: baseXP + bonusXP,
-            icon: boost.icon,
-            char_name: activeChar?.name,
-          });
-          loadActivityPowers();
-        }
+      // === HOOKS POST-SAVE — exécute tous les pouvoirs actifs ===
+      if (pagePowers.length > 0) {
+        await runPostSaveHooks(activityType, caloriesBurned, durationMin);
       } else {
-        setBoostApplied(null);
+        setHookResults({});
       }
 
       await loadTodayActivities();
@@ -1466,45 +1502,85 @@ const ActivityPage = ({ onNavigate }) => {
             </View>
           </View>
 
-          {/* ======== BANDEAU BOOST PERSONNAGE ======== */}
-          {(() => {
-            const boost = getActiveBoost();
-            if (!boost) return null;
+          {/* ══════ BANNIÈRES POUVOIRS ACTIFS ══════ */}
+          {pagePowers.length > 0 && activeChar && (
+            <View style={{ marginHorizontal: wp(16), marginBottom: wp(4), gap: wp(4) }}>
+              {pagePowers.map(power => {
+                switch (power.action_type) {
 
-            return (
-              <View style={{
-                marginHorizontal: wp(16), marginBottom: wp(4),
-                flexDirection: 'row', alignItems: 'center',
-                backgroundColor: 'rgba(212,175,55,0.06)',
-                borderRadius: wp(12), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)',
-                padding: wp(8),
-              }}>
-                <View style={{
-                  width: wp(32), height: wp(32), borderRadius: wp(16),
-                  backgroundColor: 'rgba(212,175,55,0.1)',
-                  justifyContent: 'center', alignItems: 'center',
-                  marginRight: wp(8), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
-                }}>
-                  <Text style={{ fontSize: fp(16) }}>{boost.icon}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>{activeChar?.name}</Text>
-                    {boost.is_superpower && (
-                      <View style={{ marginLeft: wp(6), backgroundColor: 'rgba(212,175,55,0.1)', paddingHorizontal: wp(4), paddingVertical: wp(1), borderRadius: wp(4) }}>
-                        <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '800' }}>SUPERPOWER</Text>
+                  // ── BOOST XP BANNER ──
+                  case 'redirect_with_boost': {
+                    const multiplier = extractMultiplier(power);
+                    const pct = Math.round((multiplier - 1) * 100);
+                    return (
+                      <View key={power.power_key} style={{
+                        flexDirection: 'row', alignItems: 'center',
+                        backgroundColor: 'rgba(212,175,55,0.06)',
+                        borderRadius: wp(12), borderWidth: 1,
+                        borderColor: 'rgba(212,175,55,0.15)',
+                        padding: wp(8),
+                      }}>
+                        <View style={{
+                          width: wp(32), height: wp(32), borderRadius: wp(16),
+                          backgroundColor: 'rgba(212,175,55,0.1)',
+                          justifyContent: 'center', alignItems: 'center',
+                          marginRight: wp(8), borderWidth: 1,
+                          borderColor: 'rgba(212,175,55,0.2)',
+                        }}>
+                          <Text style={{ fontSize: fp(16) }}>{power.icon || '🐯'}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>
+                              {activeChar.name}
+                            </Text>
+                            {power.is_superpower && (
+                              <View style={{
+                                marginLeft: wp(6), backgroundColor: 'rgba(212,175,55,0.1)',
+                                paddingHorizontal: wp(4), paddingVertical: wp(1), borderRadius: wp(4),
+                              }}>
+                                <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '800' }}>
+                                  SUPERPOWER
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text style={{ color: '#8892A0', fontSize: fp(8), marginTop: wp(1) }}>
+                            +{pct}% XP par activité enregistrée
+                          </Text>
+                        </View>
+                        <View style={{ alignItems: 'flex-end' }}>
+                          <Text style={{ color: '#D4AF37', fontSize: fp(12), fontWeight: '800' }}>
+                            {activeChar.uses_remaining}/{activeChar.max_uses_per_cycle || 10}
+                          </Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(7) }}>uses</Text>
+                        </View>
                       </View>
-                    )}
-                  </View>
-                  <Text style={{ color: '#8892A0', fontSize: fp(8), marginTop: wp(1) }}>+{boost.percentage}% XP par activité</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ color: '#D4AF37', fontSize: fp(12), fontWeight: '800' }}>{boost.uses_remaining}/{boost.max_uses}</Text>
-                  <Text style={{ color: '#5A6070', fontSize: fp(7) }}>uses</Text>
-                </View>
-              </View>
-            );
-          })()}
+                    );
+                  }
+
+                  // ── REALTIME OVERLAY BANNER (Iron Rhino — futur) ──
+                  // case 'realtime_overlay':
+                  //   return (
+                  //     <View key={power.power_key} style={{...}}>
+                  //       <Text>🦏 Calories en temps réel actif</Text>
+                  //     </View>
+                  //   );
+
+                  // ── STREAK BANNER (Silver Wolf — futur) ──
+                  // case 'streak_tracker':
+                  //   return (
+                  //     <View key={power.power_key} style={{...}}>
+                  //       <Text>🐺 Streak : 5 jours consécutifs</Text>
+                  //     </View>
+                  //   );
+
+                  default:
+                    return null;
+                }
+              })}
+            </View>
+          )}
 
           {/* DAY SUMMARY — Premium 2-line layout */}
           <View style={{
@@ -2836,28 +2912,67 @@ const ActivityPage = ({ onNavigate }) => {
                  `Session de ${lastActivity.name}`} terminée
               </Text>
 
-              {/* Bonus XP si boost actif */}
-              {boostApplied && (
-                <View style={{
-                  flexDirection: 'row', alignItems: 'center',
-                  backgroundColor: 'rgba(212,175,55,0.08)',
-                  borderRadius: wp(10), borderWidth: 1,
-                  borderColor: 'rgba(212,175,55,0.2)',
-                  paddingHorizontal: wp(12), paddingVertical: wp(8),
-                  marginBottom: wp(12), width: '100%',
-                }}>
-                  <Text style={{ fontSize: fp(18), marginRight: wp(8) }}>{boostApplied.icon}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>
-                      {boostApplied.char_name} • +{boostApplied.percentage}% XP
-                    </Text>
-                    <Text style={{ color: '#8892A0', fontSize: fp(9), marginTop: wp(2) }}>
-                      {boostApplied.base_xp} XP + {boostApplied.bonus_xp} bonus = {boostApplied.total_xp} XP total
-                    </Text>
-                  </View>
-                  <Text style={{ color: '#D4AF37', fontSize: fp(14), fontWeight: '900' }}>
-                    +{boostApplied.bonus_xp}
-                  </Text>
+              {/* ══════ RÉSULTATS HOOKS POUVOIRS ══════ */}
+              {Object.keys(hookResults).length > 0 && (
+                <View style={{ width: '100%', marginBottom: wp(8), gap: wp(6) }}>
+                  {Object.values(hookResults).map((result, idx) => {
+                    switch (result.type) {
+
+                      // ── XP BOOST RESULT ──
+                      case 'xp_boost':
+                        return (
+                          <View key={idx} style={{
+                            flexDirection: 'row', alignItems: 'center',
+                            backgroundColor: 'rgba(212,175,55,0.08)',
+                            borderRadius: wp(10), borderWidth: 1,
+                            borderColor: 'rgba(212,175,55,0.2)',
+                            paddingHorizontal: wp(12), paddingVertical: wp(8),
+                          }}>
+                            <Text style={{ fontSize: fp(18), marginRight: wp(8) }}>
+                              {result.icon}
+                            </Text>
+                            <View style={{ flex: 1 }}>
+                              <Text style={{
+                                color: '#D4AF37', fontSize: fp(10), fontWeight: '700',
+                              }}>
+                                {result.char_name} • +{result.percentage}% XP
+                              </Text>
+                              <Text style={{
+                                color: '#8892A0', fontSize: fp(9), marginTop: wp(2),
+                              }}>
+                                {result.base_xp} XP + {result.bonus_xp} bonus = {result.total_xp} XP
+                              </Text>
+                            </View>
+                            <Text style={{
+                              color: '#D4AF37', fontSize: fp(14), fontWeight: '900',
+                            }}>
+                              +{result.bonus_xp}
+                            </Text>
+                          </View>
+                        );
+
+                      // ── STREAK RESULT (futur) ──
+                      // case 'streak':
+                      //   return (
+                      //     <View key={idx} style={{...}}>
+                      //       <Text>🐺 Streak : {result.current_streak} jours</Text>
+                      //       {result.is_new_record && <Text>🏆 Nouveau record !</Text>}
+                      //     </View>
+                      //   );
+
+                      // ── RECOVERY RESULT (futur) ──
+                      // case 'recovery':
+                      //   if (!result.suggestion) return null;
+                      //   return (
+                      //     <View key={idx} style={{...}}>
+                      //       <Text>🔥 {result.suggestion}</Text>
+                      //     </View>
+                      //   );
+
+                      default:
+                        return null;
+                    }
+                  })}
                 </View>
               )}
 
@@ -2954,7 +3069,7 @@ const ActivityPage = ({ onNavigate }) => {
               <TouchableOpacity
                 onPress={() => {
                   setShowPostReport(false);
-                  setBoostApplied(null);
+                  setHookResults({});
                 }}
                 style={{
                   paddingVertical: wp(12), paddingHorizontal: wp(40),
