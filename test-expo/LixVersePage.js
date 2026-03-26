@@ -444,6 +444,7 @@ export default function LixVersePage() {
   const [loadingPowers, setLoadingPowers] = useState(false);
   const [onboardingSelected, setOnboardingSelected] = useState(null);
   const [inlinePowerModal, setInlinePowerModal] = useState(null);
+  const [userNameAvatar, setUserNameAvatar] = useState('');
   const flipAnim = useRef(new Animated.Value(0)).current;
 
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
@@ -629,7 +630,17 @@ export default function LixVersePage() {
     return () => clearInterval(timer);
   }, [freeSpinUsed]);
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => {
+    loadAll();
+    // Avatar profil
+    (async () => {
+      try {
+        const res = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID + '&select=full_name', { headers: HEADERS });
+        const d = await res.json();
+        if (d && d[0]) setUserNameAvatar(d[0].full_name || '');
+      } catch (e) {}
+    })();
+  }, []);
   useEffect(() => { if (activeTab === 'characters') loadCharacterData(); }, [activeTab]);
   // Fake realtime — simuler des likes externes toutes les 12-27s
   useEffect(() => {
@@ -2796,6 +2807,14 @@ export default function LixVersePage() {
               <View style={{ width: wp(10), height: wp(10), borderRadius: wp(5), backgroundColor: '#D4AF37' }} />
               <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#D4AF37' }}>{lixBalance} Lix</Text>
             </View>
+            {/* Avatar Profil */}
+            <Pressable onPress={() => setActiveNavTab('profile')} style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: activeCharSlug ? 'rgba(0,217,132,0.15)' : 'rgba(77,166,255,0.15)', borderWidth: 1.5, borderColor: activeCharSlug ? 'rgba(0,217,132,0.5)' : 'rgba(77,166,255,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+              {activeCharSlug ? (
+                <Text style={{ fontSize: fp(14) }}>{({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[activeCharSlug] || '🎭'}</Text>
+              ) : (
+                <Text style={{ fontSize: fp(12), fontWeight: '800', color: '#4DA6FF' }}>{(userNameAvatar || 'U').charAt(0).toUpperCase()}</Text>
+              )}
+            </Pressable>
           </View>
         </View>
         {notifications.length>0&&(<View style={{height:wp(28),backgroundColor:'rgba(212,175,55,0.06)',borderBottomWidth:1,borderBottomColor:'rgba(212,175,55,0.1)',overflow:'hidden',justifyContent:'center'}}><Animated.View style={{flexDirection:'row',transform:[{translateX:notifScrollX}]}}>{[...notifications,...notifications].map((n,i)=>(<View key={i} style={{width:wp(280),flexDirection:'row',alignItems:'center',paddingHorizontal:wp(10),gap:wp(6)}}><View style={{width:wp(6),height:wp(6),borderRadius:wp(3),backgroundColor:n.color||'#D4AF37'}}/><Text style={{fontSize:fp(10),color:'rgba(255,255,255,0.5)',flex:1}} numberOfLines={1}>{n.message}</Text></View>))}</Animated.View></View>)}

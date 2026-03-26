@@ -1930,7 +1930,34 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 // ============================================================
 // COMPOSANT — Dashboard Content (page Accueil)
 // ============================================================
-const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef, dailyTarget, lastMeal, tooltipStep, vitalityScore, activeChar, pagePowers, toggleStates, setToggleStates, consumePower }) => {
+const AvatarButton = ({ activeChar, userName, onPress, size = 30 }) => {
+  const charEmojis = {
+    'emerald_owl': '🦉', 'hawk_eye': '🦅', 'ruby_tiger': '🐯',
+    'amber_fox': '🦊', 'gipsy': '🕷️',
+    'jade_phoenix': '🔥', 'silver_wolf': '🐺', 'boukki': '🦴',
+    'iron_rhino': '🦏', 'coral_dolphin': '🐬',
+  };
+  const emoji = activeChar?.slug ? charEmojis[activeChar.slug] : null;
+  const initial = (userName || 'U').charAt(0).toUpperCase();
+  const borderColor = emoji ? '#00D984' : '#4DA6FF';
+
+  return (
+    <Pressable onPress={onPress} style={{
+      width: size, height: size, borderRadius: size / 2,
+      backgroundColor: borderColor + '15',
+      borderWidth: 1.5, borderColor: borderColor + '50',
+      justifyContent: 'center', alignItems: 'center',
+    }}>
+      {emoji ? (
+        <Text style={{ fontSize: size * 0.55 }}>{emoji}</Text>
+      ) : (
+        <Text style={{ fontSize: size * 0.45, fontWeight: '800', color: borderColor }}>{initial}</Text>
+      )}
+    </Pressable>
+  );
+};
+
+const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef, dailyTarget, lastMeal, tooltipStep, vitalityScore, activeChar, pagePowers, toggleStates, setToggleStates, consumePower, userName, onAvatarPress }) => {
   const OBJECTIVE = dailyTarget || DAILY_OBJECTIVE;
   const streakDays = 12;
   const streakColor = streakDays >= 14 ? '#D4AF37'
@@ -1975,6 +2002,36 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(15), paddingTop: wp(8) }}
       showsVerticalScrollIndicator={false}
     >
+      {/* ══════ MINI-BANDEAU AVATAR PROFIL ══════ */}
+      <Pressable
+        onPress={onAvatarPress}
+        style={({ pressed }) => ({
+          flexDirection: 'row', alignItems: 'center',
+          marginBottom: wp(8),
+          paddingVertical: wp(6), paddingHorizontal: wp(10),
+          backgroundColor: pressed ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
+          borderRadius: wp(12),
+          borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.06)',
+          opacity: tooltipStep > 0 ? 0.05 : 1,
+        })}
+      >
+        <AvatarButton
+          activeChar={activeChar}
+          userName={userName}
+          onPress={onAvatarPress}
+          size={wp(28)}
+        />
+        <View style={{ flex: 1, marginLeft: wp(8) }}>
+          <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>
+            {userName || 'Mon Profil'}
+          </Text>
+          <Text style={{ color: '#555E6C', fontSize: fp(9) }}>
+            Tap pour voir ton profil et niveau
+          </Text>
+        </View>
+        <Text style={{ color: '#555E6C', fontSize: fp(12) }}>›</Text>
+      </Pressable>
+
       {/* ====== SALUT PERSONNALISÉ ====== */}
       <View style={{ marginBottom: wp(6), opacity: tooltipStep > 0 ? 0.05 : 1 }}>
         <Text style={{
@@ -3009,6 +3066,7 @@ export default function App() {
         .single();
 
       if (profile) {
+        setUserName(profile.full_name || '');
         setRealDailyTarget(profile.daily_calorie_target || 2330);
         setRealLixBalance(profile.lix_balance || 0);
         setRealGender(profile.gender === 'female' || profile.gender === 'femme' ? 'femme' : 'homme');
@@ -3163,6 +3221,7 @@ export default function App() {
   const [activeChar, setActiveChar] = useState(null);
   const [pagePowers, setPagePowers] = useState([]);
   const [toggleStates, setToggleStates] = useState({});
+  const [userName, setUserName] = useState('');
 
   // Mock sport activities done today
   const [activities, setActivities] = useState([
@@ -4155,6 +4214,8 @@ export default function App() {
             toggleStates={toggleStates}
             setToggleStates={setToggleStates}
             consumePower={consumePower}
+            userName={userName}
+            onAvatarPress={() => setActiveTab('profile')}
           />
         );
       case 'meals':

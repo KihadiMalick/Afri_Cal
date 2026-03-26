@@ -73,6 +73,8 @@ export default function MedicAiPage() {
   const [todayMeals, setTodayMeals] = useState([]);
   const [energyUsed, setEnergyUsed] = useState(0);
   const [energyLimit, setEnergyLimit] = useState(ENERGY_CONFIG.FREE_DAILY_ENERGY);
+  const [userNameAvatar, setUserNameAvatar] = useState('');
+  const [activeCharAvatar, setActiveCharAvatar] = useState(null);
   const [lastResetTime, setLastResetTime] = useState(Date.now());
 
   // Plats disponibles + modal recette
@@ -253,6 +255,17 @@ export default function MedicAiPage() {
     loadTokenQuota();
     loadAvailableMeals();
     loadMedicalData();
+    // Avatar profil
+    (async () => {
+      try {
+        const pRes = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID + '&select=full_name', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
+        const pD = await pRes.json();
+        if (pD && pD[0]) setUserNameAvatar(pD[0].full_name || '');
+        const cRes = await fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters?user_id=eq.' + TEST_USER_ID + '&is_active=eq.true&select=character_slug', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
+        const cD = await cRes.json();
+        if (cD && cD[0]) setActiveCharAvatar({ slug: cD[0].character_slug });
+      } catch (e) {}
+    })();
 
     Animated.stagger(200, [
       Animated.spring(contentEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
@@ -1839,11 +1852,21 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(0,0,0,0.05)',
       }}>
-        <View>
-          <Text style={{ color: '#1A2030', fontSize: 22, fontWeight: 'bold' }}>MedicAi</Text>
-          <Text style={{ color: 'rgba(0,150,120,0.45)', fontSize: 7, letterSpacing: 2 }}>ESPACE SANTÉ INTELLIGENT</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View>
+            <Text style={{ color: '#1A2030', fontSize: 22, fontWeight: 'bold' }}>MedicAi</Text>
+            <Text style={{ color: 'rgba(0,150,120,0.45)', fontSize: 7, letterSpacing: 2 }}>ESPACE SANTÉ INTELLIGENT</Text>
+          </View>
         </View>
-        <View style={{ alignItems: 'flex-end' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Pressable onPress={() => setActiveTab('profile')} style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: activeCharAvatar?.slug ? 'rgba(0,217,132,0.15)' : 'rgba(77,166,255,0.15)', borderWidth: 1.5, borderColor: activeCharAvatar?.slug ? 'rgba(0,217,132,0.5)' : 'rgba(77,166,255,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+            {activeCharAvatar?.slug ? (
+              <Text style={{ fontSize: fp(14) }}>{({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[activeCharAvatar.slug] || '🎭'}</Text>
+            ) : (
+              <Text style={{ fontSize: fp(12), fontWeight: '800', color: '#4DA6FF' }}>{(userNameAvatar || 'U').charAt(0).toUpperCase()}</Text>
+            )}
+          </Pressable>
+          <View style={{ alignItems: 'flex-end' }}>
           {energyLeft > 0 ? (
             <View style={{
               backgroundColor: 'rgba(0,180,130,0.08)',
@@ -1892,6 +1915,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             letterSpacing: 1.5,
             marginTop: wp(3),
           }}>LXM-2K7F4A</Text>
+          </View>
         </View>
       </View>
 

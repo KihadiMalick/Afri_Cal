@@ -128,6 +128,18 @@ const TABS = [
   { key: 'lixverse', label: 'LixVerse', iconActive: 'planet', iconInactive: 'planet-outline', isLixVerse: true },
 ];
 
+const AvatarButton = ({ activeChar, userName, onPress, size = 30 }) => {
+  const charEmojis = { 'emerald_owl': '🦉', 'hawk_eye': '🦅', 'ruby_tiger': '🐯', 'amber_fox': '🦊', 'gipsy': '🕷️', 'jade_phoenix': '🔥', 'silver_wolf': '🐺', 'boukki': '🦴', 'iron_rhino': '🦏', 'coral_dolphin': '🐬' };
+  const emoji = activeChar?.slug ? charEmojis[activeChar.slug] : null;
+  const initial = (userName || 'U').charAt(0).toUpperCase();
+  const borderColor = emoji ? '#00D984' : '#4DA6FF';
+  return (
+    <Pressable onPress={onPress} style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: borderColor + '15', borderWidth: 1.5, borderColor: borderColor + '50', justifyContent: 'center', alignItems: 'center' }}>
+      {emoji ? <Text style={{ fontSize: size * 0.55 }}>{emoji}</Text> : <Text style={{ fontSize: size * 0.45, fontWeight: '800', color: borderColor }}>{initial}</Text>}
+    </Pressable>
+  );
+};
+
 const BottomTabs = ({ activeTab, onTabPress }) => (
   <View
     style={{
@@ -589,6 +601,8 @@ const RepasPage = ({ onNavigate }) => {
   const [suggestionMeal, setSuggestionMeal] = useState(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
   const [todaySubstitutions, setTodaySubstitutions] = useState(0);
+  const [userNameAvatar, setUserNameAvatar] = useState('');
+  const [activeCharAvatar, setActiveCharAvatar] = useState(null);
 
   // === MOOD × MÉTÉO ===
   const [userMood, setUserMood] = useState(null);
@@ -856,6 +870,15 @@ const RepasPage = ({ onNavigate }) => {
   useEffect(() => {
     loadDashboardData();
     loadPagePowers();
+    // Avatar profil
+    (async () => {
+      try {
+        const { data: profile } = await supabase.from('users_profile').select('full_name').eq('user_id', TEST_USER_ID).maybeSingle();
+        if (profile) setUserNameAvatar(profile.full_name || '');
+        const { data: chars } = await supabase.from('lixverse_user_characters').select('character_slug').eq('user_id', TEST_USER_ID).eq('is_active', true).maybeSingle();
+        if (chars) setActiveCharAvatar({ slug: chars.character_slug });
+      } catch (e) {}
+    })();
   }, []);
 
   // === FETCH MOOD × MÉTÉO ===
@@ -2708,23 +2731,26 @@ const RepasPage = ({ onNavigate }) => {
               MES REPAS
             </Text>
 
-            {/* Badge date */}
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: 'rgba(0,217,132,0.08)',
-              paddingHorizontal: wp(12),
-              paddingVertical: wp(6),
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: 'rgba(0,217,132,0.15)',
-            }}>
-              <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '600' }}>
-                {lang === 'fr' ? "Aujourd'hui" : 'Today'}
-              </Text>
-              <Text style={{ color: '#8892A0', fontSize: fp(11), marginLeft: 6 }}>
-                {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
-              </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+              {/* Badge date */}
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'rgba(0,217,132,0.08)',
+                paddingHorizontal: wp(12),
+                paddingVertical: wp(6),
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: 'rgba(0,217,132,0.15)',
+              }}>
+                <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '600' }}>
+                  {lang === 'fr' ? "Aujourd'hui" : 'Today'}
+                </Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(11), marginLeft: 6 }}>
+                  {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
+                </Text>
+              </View>
+              <AvatarButton activeChar={activeCharAvatar || activeChar} userName={userNameAvatar} onPress={() => { if (onNavigate) onNavigate('profile'); }} size={wp(28)} />
             </View>
           </View>
 
