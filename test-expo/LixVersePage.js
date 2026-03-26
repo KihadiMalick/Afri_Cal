@@ -226,6 +226,43 @@ const MEGA_SEGMENTS = [
   { label: '1 Frag Mythique', chance: 5, color: '#FF1493', reward: { type: 'fragment', tier: 'mythique', amount: 1 } },
 ];
 
+// === SLUGS PAR TIER — pour distribution aléatoire de fragments ===
+const SLUGS_BY_TIER = {
+  standard: ['emerald_owl', 'hawk_eye', 'ruby_tiger', 'amber_fox', 'gipsy'],
+  rare: ['jade_phoenix', 'silver_wolf', 'boukki', 'iron_rhino', 'coral_dolphin'],
+  elite: ['licornium', 'jaane_snake', 'mosquito'],
+  mythique: ['diamond_simba', 'al_buraq'],
+  ultimate: ['tardigrum'],
+};
+
+const CHAR_EMOJIS = {
+  'emerald_owl': '🦉', 'hawk_eye': '🦅', 'ruby_tiger': '🐯',
+  'amber_fox': '🦊', 'gipsy': '🕷️',
+  'jade_phoenix': '🔥', 'silver_wolf': '🐺', 'boukki': '🦴',
+  'iron_rhino': '🦏', 'coral_dolphin': '🐬',
+  'licornium': '🦄', 'jaane_snake': '🐍', 'mosquito': '🦟',
+  'diamond_simba': '🦁', 'al_buraq': '🐴',
+  'tardigrum': '🧬',
+};
+
+const CHAR_NAMES = {
+  'emerald_owl': 'Emerald Owl', 'hawk_eye': 'Hawk Eye', 'ruby_tiger': 'Ruby Tiger',
+  'amber_fox': 'Amber Fox', 'gipsy': 'Gipsy',
+  'jade_phoenix': 'Jade Phoenix', 'silver_wolf': 'Silver Wolf', 'boukki': 'Boukki',
+  'iron_rhino': 'Iron Rhino', 'coral_dolphin': 'Coral Dolphin',
+  'licornium': 'LICORNIUM', 'jaane_snake': 'Jaane Snake', 'mosquito': 'MOSQUITO',
+  'diamond_simba': 'Diamond Simba', 'al_buraq': 'Al Buraq',
+  'tardigrum': 'TARDIGRUM',
+};
+
+const FRAGS_NIV1 = { standard: 3, rare: 4, elite: 5, mythique: 8, ultimate: 15 };
+
+const randomSlugFromTier = (tier) => {
+  const slugs = SLUGS_BY_TIER[tier];
+  if (!slugs || slugs.length === 0) return null;
+  return slugs[Math.floor(Math.random() * slugs.length)];
+};
+
 const pickReward = (segments) => {
   const total = segments.reduce((sum, s) => sum + s.chance, 0);
   let roll = Math.random() * total;
@@ -341,6 +378,10 @@ export default function LixVersePage() {
   const [showSpinResultModal, setShowSpinResultModal] = useState(false);
   const [spinWinnerSeg, setSpinWinnerSeg] = useState(null);
   const spinResultPulse = useRef(new Animated.Value(1)).current;
+  const [fragmentResult, setFragmentResult] = useState(null);
+  const [showFragmentModal, setShowFragmentModal] = useState(false);
+  const [fragmentSaving, setFragmentSaving] = useState(false);
+  const fragmentSlideAnim = useRef(new Animated.Value(0)).current;
   const [winnerGlowIdx, setWinnerGlowIdx] = useState(null);
   const glowOpacity = useRef(new Animated.Value(0)).current;
   const arrowBounce = useRef(new Animated.Value(0)).current;
@@ -608,6 +649,44 @@ export default function LixVersePage() {
   };
   const frontInterpolate = flipAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', '90deg', '90deg'] });
   const backInterpolate = flipAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['90deg', '90deg', '0deg'] });
+
+  // === DISTRIBUER UN FRAGMENT APRÈS SPIN ===
+  const distributeFragment = async (tier, amount) => {
+    const slug = randomSlugFromTier(tier);
+    if (!slug) return null;
+
+    setFragmentSaving(true);
+    try {
+      const data = await supaRpc('add_character_fragment', {
+        p_user_id: TEST_USER_ID,
+        p_slug: slug,
+        p_amount: amount,
+      });
+
+      const result = {
+        slug,
+        name: CHAR_NAMES[slug] || slug,
+        emoji: CHAR_EMOJIS[slug] || '🎭',
+        tier,
+        amount,
+        isComplete: amount >= FRAGS_NIV1[tier],
+        levelUp: data?.level_up || false,
+        newLevel: data?.new_level || 0,
+        totalFrags: data?.fragments || amount,
+        fragsNeeded: FRAGS_NIV1[tier],
+      };
+
+      setFragmentResult(result);
+      setShowFragmentModal(true);
+      fragmentSlideAnim.setValue(0);
+      return result;
+    } catch (e) {
+      console.error('Fragment distribution error:', e);
+      return null;
+    } finally {
+      setFragmentSaving(false);
+    }
+  };
 
   const getSegments = () => {
     if (spinTier === 'super') return SUPER_SEGMENTS;
@@ -1656,6 +1735,14 @@ export default function LixVersePage() {
       // Apply rewards
       if (winner.reward.type === 'lix') setLixBalance(p => p + winner.reward.amount);
 
+      // Distribute fragments to a random character of the tier
+      if (winner.reward.type === 'fragment') {
+        distributeFragment(winner.reward.tier, winner.reward.amount);
+      } else if (winner.reward.type === 'card') {
+        const cardTier = winner.reward.tier || 'elite';
+        distributeFragment(cardTier, FRAGS_NIV1[cardTier] || 5);
+      }
+
       // Haptic based on reward type
       if (winner.reward.type === 'card') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
@@ -1697,12 +1784,19 @@ export default function LixVersePage() {
     } else if (rw.type === 'lix') {
       emoji = '💰'; title = '+' + rw.amount + ' Lix'; titleColor = '#D4AF37'; btnColor = '#D4AF37';
     } else if (rw.type === 'fragment') {
-      const tierEmoji = rw.tier === 'mythique' ? '👑' : rw.tier === 'elite' ? '🏆' : '🔮';
       const tierColor = rw.tier === 'mythique' ? '#FF1493' : rw.tier === 'elite' ? '#E74C3C' : '#9B59B6';
-      emoji = tierEmoji; title = 'Fragment ' + rw.tier.charAt(0).toUpperCase() + rw.tier.slice(1) + ' obtenu !';
+      emoji = fragmentResult ? fragmentResult.emoji : (rw.tier === 'mythique' ? '👑' : rw.tier === 'elite' ? '🏆' : '🔮');
+      title = fragmentResult
+        ? fragmentResult.name + ' +' + rw.amount + ' frag'
+        : 'Fragment ' + rw.tier.charAt(0).toUpperCase() + rw.tier.slice(1) + ' !';
       titleColor = tierColor; btnColor = tierColor; borderColor = tierColor;
+      btnText = 'Voir →';
     } else if (rw.type === 'card') {
-      emoji = '🏆'; title = 'CARTE ELITE COMPLÈTE !'; titleColor = '#E74C3C'; btnText = 'Incroyable !'; btnColor = '#E74C3C'; borderColor = '#E74C3C';
+      const cardTier = rw.tier || 'elite';
+      const cardColor = cardTier === 'mythique' ? '#FF1493' : '#E74C3C';
+      emoji = fragmentResult ? fragmentResult.emoji : '🏆';
+      title = fragmentResult ? fragmentResult.name + ' COMPLÈTE !' : 'CARTE COMPLÈTE !';
+      titleColor = cardColor; btnText = 'Voir →'; btnColor = cardColor; borderColor = cardColor;
     }
 
     return (
@@ -1722,7 +1816,14 @@ export default function LixVersePage() {
               <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(8) }}>x{rw.amount} fragment{rw.amount > 1 ? 's' : ''}</Text>
             )}
             <Pressable delayPressIn={120}
-              onPress={() => { setShowSpinResultModal(false); spinResultPulse.stopAnimation(); }}
+              onPress={() => {
+                setShowSpinResultModal(false);
+                spinResultPulse.stopAnimation();
+                // Si fragment/carte → montrer le modal d'intégration
+                if ((rw.type === 'fragment' || rw.type === 'card') && fragmentResult) {
+                  setShowFragmentModal(true);
+                }
+              }}
               style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], marginTop: wp(12), width: '100%' })}>
               <LinearGradient colors={[btnColor, btnColor + 'CC']}
                 style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}>
@@ -2031,6 +2132,89 @@ export default function LixVersePage() {
 
         {/* Spin Result Modal */}
         {renderSpinResultModal()}
+
+        {/* ══════ MODAL FRAGMENT GAGNÉ ══════ */}
+        <Modal visible={showFragmentModal} transparent animationType="fade">
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
+            {fragmentResult && (
+              <Animated.View style={{
+                transform: [{ translateX: fragmentSlideAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -W] }) }],
+                opacity: fragmentSlideAnim.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 0.5, 0] }),
+              }}>
+                <View style={{
+                  backgroundColor: '#1E2530', borderRadius: wp(20),
+                  borderWidth: 1.5,
+                  borderColor: fragmentResult.isComplete ? '#D4AF37'
+                    : fragmentResult.tier === 'mythique' ? 'rgba(212,175,55,0.4)'
+                    : fragmentResult.tier === 'elite' ? 'rgba(138,43,226,0.4)'
+                    : fragmentResult.tier === 'rare' ? 'rgba(77,166,255,0.4)'
+                    : 'rgba(0,217,132,0.3)',
+                  padding: wp(24), alignItems: 'center', width: W - wp(40),
+                }}>
+                  <Text style={{ fontSize: fp(50), marginBottom: wp(10) }}>{fragmentResult.emoji}</Text>
+                  <Text style={{ fontSize: fp(18), fontWeight: '800', color: '#EAEEF3', marginBottom: wp(4) }}>{fragmentResult.name}</Text>
+                  <Text style={{
+                    fontSize: fp(10), fontWeight: '700', letterSpacing: 2,
+                    color: fragmentResult.tier === 'mythique' ? '#D4AF37'
+                      : fragmentResult.tier === 'elite' ? '#B388FF'
+                      : fragmentResult.tier === 'rare' ? '#4DA6FF'
+                      : '#00D984',
+                    textTransform: 'uppercase', marginBottom: wp(14),
+                  }}>{fragmentResult.tier}</Text>
+
+                  {fragmentResult.isComplete ? (
+                    <View style={{ alignItems: 'center', marginBottom: wp(14) }}>
+                      <Text style={{ fontSize: fp(22), marginBottom: wp(6) }}>🎉</Text>
+                      <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#D4AF37', textAlign: 'center' }}>CARTE COMPLÈTE !</Text>
+                      <Text style={{ fontSize: fp(11), color: '#8892A0', textAlign: 'center', marginTop: wp(4) }}>{fragmentResult.name} est maintenant Niveau 1 !</Text>
+                    </View>
+                  ) : (
+                    <View style={{ alignItems: 'center', marginBottom: wp(14) }}>
+                      <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#00D984' }}>+{fragmentResult.amount} fragment{fragmentResult.amount > 1 ? 's' : ''} 🧩</Text>
+                      <Text style={{ fontSize: fp(11), color: '#8892A0', marginTop: wp(4) }}>{fragmentResult.totalFrags} / {fragmentResult.fragsNeeded} pour Niv 1</Text>
+                      <View style={{ width: '80%', height: wp(8), borderRadius: wp(4), backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginTop: wp(8) }}>
+                        <View style={{
+                          width: Math.min((fragmentResult.totalFrags / fragmentResult.fragsNeeded) * 100, 100) + '%',
+                          height: '100%', borderRadius: wp(4),
+                          backgroundColor: fragmentResult.tier === 'mythique' ? '#D4AF37'
+                            : fragmentResult.tier === 'elite' ? '#B388FF'
+                            : fragmentResult.tier === 'rare' ? '#4DA6FF' : '#00D984',
+                        }} />
+                      </View>
+                    </View>
+                  )}
+
+                  {fragmentResult.levelUp && (
+                    <View style={{ backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)', paddingHorizontal: wp(14), paddingVertical: wp(8), marginBottom: wp(14), width: '100%' }}>
+                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#D4AF37', textAlign: 'center' }}>⬆️ Niveau {fragmentResult.newLevel} atteint !</Text>
+                    </View>
+                  )}
+
+                  <Pressable
+                    onPress={() => {
+                      Animated.timing(fragmentSlideAnim, {
+                        toValue: 1, duration: 400, useNativeDriver: true,
+                        easing: Easing.inOut(Easing.ease),
+                      }).start(() => {
+                        setShowFragmentModal(false);
+                        setFragmentResult(null);
+                        fragmentSlideAnim.setValue(0);
+                        loadCharacterData();
+                      });
+                    }}
+                    style={({ pressed }) => ({
+                      backgroundColor: pressed ? '#00B572' : '#00D984',
+                      borderRadius: wp(14), paddingVertical: wp(14), paddingHorizontal: wp(40),
+                      transform: [{ scale: pressed ? 0.97 : 1 }],
+                    })}
+                  >
+                    <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#1A1D22', letterSpacing: 1 }}>INTÉGRER ←</Text>
+                  </Pressable>
+                </View>
+              </Animated.View>
+            )}
+          </View>
+        </Modal>
       </ScrollView>
     );
   };
