@@ -545,7 +545,20 @@ export default function LixVersePage() {
     setLoadingPowers(false);
   };
 
-  const useCharPower = async (powerKey) => {
+  // ══════════════════════════════════════════════════════════════
+  // POUVOIRS — CONSOMMATION + RECHARGE
+  // ══════════════════════════════════════════════════════════════
+
+  const FREE_POWER_TYPES = ['toggle'];
+  const FREE_POWER_KEYS = ['owl_resume_macros', 'owl_alerte_macros', 'fox_mode_regime'];
+
+  const shouldConsumePower = (power) => {
+    if (FREE_POWER_TYPES.includes(power.action_type)) return false;
+    if (FREE_POWER_KEYS.includes(power.power_key)) return false;
+    return true;
+  };
+
+  const consumePower = async (powerKey) => {
     try {
       const data = await supaRpc('use_character_power', { p_user_id: TEST_USER_ID, p_power_key: powerKey });
       if (data?.success) {
@@ -554,21 +567,22 @@ export default function LixVersePage() {
             ? { ...c, uses_remaining: data.uses_remaining }
             : c
         ));
-        return true;
-      } else if (data?.error === 'No uses remaining') {
-        showLixAlert('⚡ Utilisations épuisées',
-          'Recharge ton ' + (selectedChar?.name || '') + ' avec ' + (selectedChar?.recharge_energy || 10) + ' énergie.',
-          [{ text: 'Recharger', color: '#00D984', onPress: () => rechargeActiveChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
-        return false;
+        return { success: true, uses_remaining: data.uses_remaining };
       }
-      return false;
+      if (data?.error === 'No uses remaining') {
+        showLixAlert('⚡ Utilisations épuisées',
+          'Recharge ton ' + (selectedChar?.name || '') + ' dans l\'onglet Caractères.',
+          [{ text: 'Recharger', color: '#00D984', onPress: () => rechargeChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
+        return { success: false, error: 'no_uses' };
+      }
+      return { success: false, error: data?.error };
     } catch (e) {
-      console.error('Use power error:', e);
-      return false;
+      console.error('Consume power error:', e);
+      return { success: false, error: 'network' };
     }
   };
 
-  const rechargeActiveChar = async () => {
+  const rechargeChar = async () => {
     if (!selectedChar) return;
     try {
       const data = await supaRpc('recharge_character', { p_user_id: TEST_USER_ID, p_slug: selectedChar.slug });
@@ -3538,7 +3552,7 @@ export default function LixVersePage() {
                       <Pressable delayPressIn={120}
                         onPress={() => {
                           if ((selectedChar.uses_remaining || 0) === 0) {
-                            showLixAlert('⚡ Recharge nécessaire', 'Recharge ton ' + (selectedChar.name || '') + ' avec ' + (selectedChar.recharge_energy || 10) + ' énergie.', [{ text: 'Recharger', color: '#00D984', onPress: () => rechargeActiveChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
+                            showLixAlert('⚡ Recharge nécessaire', 'Recharge ton ' + (selectedChar.name || '') + ' avec ' + (selectedChar.recharge_energy || 10) + ' énergie.', [{ text: 'Recharger', color: '#00D984', onPress: () => rechargeChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
                           } else {
                             flipCard();
                             if (charPowers.length === 0) loadCharPowers(selectedChar.slug || selectedChar.id);
@@ -3566,59 +3580,169 @@ export default function LixVersePage() {
 
                       {loadingPowers ? (
                         <ActivityIndicator color="#D4AF37" size="large" style={{ marginVertical: wp(30) }} />
-                      ) : charPowers.length > 0 ? charPowers.map((pw, i) => (
-                        <View key={pw.power_key || i} style={{
-                          backgroundColor: pw.unlocked ? 'rgba(0,217,132,0.06)' : 'rgba(255,255,255,0.02)',
-                          borderRadius: wp(14), padding: wp(14), marginBottom: wp(10),
-                          borderWidth: 1, borderColor: pw.unlocked ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)',
-                        }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: wp(4) }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), flex: 1 }}>
-                              <Text style={{ fontSize: fp(16) }}>{pw.icon || '⚡'}</Text>
-                              <Text style={{ fontSize: fp(13), fontWeight: '700', color: pw.unlocked ? '#FFF' : 'rgba(255,255,255,0.3)', flex: 1 }}>{pw.name || pw.power_key}</Text>
+                      ) : charPowers.length > 0 ? charPowers.map((power, idx) => {
+                        const isUnlocked = power.unlocked;
+
+                        return (
+                          <View key={power.power_key || idx} style={{
+                            marginBottom: wp(8),
+                            backgroundColor: isUnlocked ? 'rgba(0,217,132,0.06)' : 'rgba(255,255,255,0.02)',
+                            borderRadius: wp(10), padding: wp(10),
+                            borderWidth: 1,
+                            borderColor: isUnlocked ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)',
+                          }}>
+                            {/* Header du pouvoir */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+                              <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>
+                                {power.icon || '🔮'}
+                              </Text>
+                              <Text style={{
+                                color: isUnlocked ? '#EAEEF3' : '#555E6C',
+                                fontSize: fp(10), fontWeight: '700', flex: 1,
+                              }}>
+                                {power.name_fr || power.name || power.power_key}
+                              </Text>
+                              {power.is_superpower && isUnlocked && (
+                                <View style={{
+                                  backgroundColor: 'rgba(212,175,55,0.1)',
+                                  paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4),
+                                }}>
+                                  <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '800' }}>
+                                    SUPERPOWER
+                                  </Text>
+                                </View>
+                              )}
+                              {!isUnlocked && (
+                                <Text style={{ color: '#FF6B6B', fontSize: fp(8), fontWeight: '600' }}>
+                                  🔒 Niv{power.level_required || power.required_level || 0}
+                                </Text>
+                              )}
                             </View>
-                            <Text style={{ fontSize: fp(10), fontWeight: '700', color: pw.unlocked ? '#00D984' : '#FF6B6B' }}>Niv {pw.required_level || 0}</Text>
-                          </View>
-                          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', marginBottom: pw.unlocked ? wp(8) : 0 }}>{pw.description || ''}</Text>
-                          {pw.is_superpower && (
-                            <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2), alignSelf: 'flex-start', marginBottom: wp(6) }}>
-                              <Text style={{ fontSize: fp(8), fontWeight: '800', color: '#D4AF37' }}>SUPERPOWER</Text>
-                            </View>
-                          )}
-                          {pw.unlocked ? (
-                            <Pressable delayPressIn={120} onPress={async () => {
-                              if (pw.action_type === 'toggle') {
-                                showLixAlert('Toggle', (pw.name || pw.power_key) + ' activé/désactivé.', [{ text: 'OK', color: '#00D984' }], '🔄');
-                                return;
-                              }
-                              const ok = await useCharPower(pw.power_key);
-                              if (!ok) return;
-                              if (pw.action_type === 'redirect') {
-                                setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null);
-                                // Navigation vers la page cible serait ici
-                                showLixAlert('Pouvoir activé', (pw.name || pw.power_key) + ' — Redirection...', [{ text: 'OK', color: '#00D984' }], '✨');
-                              } else if (pw.action_type === 'redirect_with_boost') {
-                                setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null);
-                                showLixAlert('Boost activé !', 'Le boost sera appliqué à ta prochaine activité.', [{ text: 'Super', color: '#D4AF37' }], '🐯');
-                              } else if (pw.action_type === 'modal_inline') {
-                                setInlinePowerModal(pw.power_key);
-                              } else {
-                                showLixAlert('Pouvoir utilisé', (pw.name || pw.power_key) + ' activé !', [{ text: 'OK', color: '#00D984' }], '✨');
-                              }
-                            }} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-                              <View style={{ backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(10), paddingVertical: wp(8), alignItems: 'center', borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)' }}>
-                                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>
-                                  {pw.action_type === 'redirect' ? 'Ouvrir →' : pw.action_type === 'redirect_with_boost' ? 'Activer le Boost →' : pw.action_type === 'toggle' ? 'Activer' : 'Activer'}
+
+                            {/* Description */}
+                            <Text style={{
+                              color: isUnlocked ? '#8892A0' : '#444B55',
+                              fontSize: fp(8), marginBottom: wp(8),
+                            }}>
+                              {power.description_fr || power.description || ''}
+                            </Text>
+
+                            {/* Bouton d'action — DISPATCH par action_type */}
+                            {isUnlocked ? (
+                              (() => {
+                                switch (power.action_type) {
+
+                                  case 'redirect':
+                                    return (
+                                      <Pressable delayPressIn={120}
+                                        onPress={async () => {
+                                          if (shouldConsumePower(power)) {
+                                            const r = await consumePower(power.power_key);
+                                            if (!r.success) return;
+                                          }
+                                          setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null);
+                                          showLixAlert('Pouvoir activé', (power.name_fr || power.name || power.power_key) + ' — Redirection...', [{ text: 'OK', color: '#00D984' }], '✨');
+                                        }}
+                                        style={({ pressed }) => ({
+                                          paddingVertical: wp(7), borderRadius: wp(8),
+                                          backgroundColor: pressed ? 'rgba(0,217,132,0.15)' : 'rgba(0,217,132,0.08)',
+                                          borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                                          alignItems: 'center',
+                                        })}
+                                      >
+                                        <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '700' }}>
+                                          Ouvrir →
+                                        </Text>
+                                      </Pressable>
+                                    );
+
+                                  case 'redirect_with_boost':
+                                    return (
+                                      <Pressable delayPressIn={120}
+                                        onPress={async () => {
+                                          const r = await consumePower(power.power_key);
+                                          if (!r.success) return;
+                                          setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null);
+                                          showLixAlert('Boost activé !', 'Le boost sera appliqué à ta prochaine activité.', [{ text: 'Super', color: '#D4AF37' }], '🐯');
+                                        }}
+                                        style={({ pressed }) => ({
+                                          paddingVertical: wp(7), borderRadius: wp(8),
+                                          backgroundColor: pressed ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.08)',
+                                          borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+                                          alignItems: 'center',
+                                        })}
+                                      >
+                                        <Text style={{ color: '#D4AF37', fontSize: fp(9), fontWeight: '700' }}>
+                                          Activer le Boost →
+                                        </Text>
+                                      </Pressable>
+                                    );
+
+                                  case 'modal_inline':
+                                    return (
+                                      <Pressable delayPressIn={120}
+                                        onPress={async () => {
+                                          if (shouldConsumePower(power)) {
+                                            const r = await consumePower(power.power_key);
+                                            if (!r.success) return;
+                                          }
+                                          setInlinePowerModal(power.power_key);
+                                        }}
+                                        style={({ pressed }) => ({
+                                          paddingVertical: wp(7), borderRadius: wp(8),
+                                          backgroundColor: pressed ? 'rgba(0,217,132,0.15)' : 'rgba(0,217,132,0.08)',
+                                          borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                                          alignItems: 'center',
+                                        })}
+                                      >
+                                        <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '700' }}>
+                                          Activer
+                                        </Text>
+                                      </Pressable>
+                                    );
+
+                                  case 'toggle':
+                                    return (
+                                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Text style={{ color: '#8892A0', fontSize: fp(9), marginRight: wp(8) }}>
+                                          Préférence active
+                                        </Text>
+                                        <View style={{
+                                          width: wp(36), height: wp(20), borderRadius: wp(10),
+                                          backgroundColor: 'rgba(0,217,132,0.3)', padding: wp(2),
+                                          justifyContent: 'center',
+                                        }}>
+                                          <View style={{
+                                            width: wp(16), height: wp(16), borderRadius: wp(8),
+                                            backgroundColor: '#00D984', alignSelf: 'flex-end',
+                                          }} />
+                                        </View>
+                                      </View>
+                                    );
+
+                                  default:
+                                    return (
+                                      <Text style={{ color: '#555E6C', fontSize: fp(8), textAlign: 'center' }}>
+                                        Type non supporté
+                                      </Text>
+                                    );
+                                }
+                              })()
+                            ) : (
+                              <View style={{
+                                paddingVertical: wp(7), borderRadius: wp(8),
+                                backgroundColor: 'rgba(255,255,255,0.03)',
+                                borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
+                                alignItems: 'center',
+                              }}>
+                                <Text style={{ color: '#555E6C', fontSize: fp(8) }}>
+                                  🔒 Débloque au Niveau {power.level_required || power.required_level || 0}
                                 </Text>
                               </View>
-                            </Pressable>
-                          ) : (
-                            <View style={{ backgroundColor: 'rgba(255,60,60,0.08)', borderRadius: wp(8), paddingVertical: wp(6), alignItems: 'center', marginTop: wp(4) }}>
-                              <Text style={{ fontSize: fp(10), fontWeight: '600', color: '#FF6B6B' }}>🔒 Niveau {pw.required_level || 0} requis</Text>
-                            </View>
-                          )}
-                        </View>
-                      )) : (
+                            )}
+                          </View>
+                        );
+                      }) : (
                         <View style={{ alignItems: 'center', paddingVertical: wp(30) }}>
                           <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Aucun pouvoir chargé</Text>
                         </View>
