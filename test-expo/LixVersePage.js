@@ -222,13 +222,13 @@ const SPIN_RESULTS = [
 ];
 
 const NORMAL_SEGMENTS = [
-  { label: '3', icon: '⚡', chance: 29, color: '#2A4A3A', reward: { type: 'energy', amount: 3 } },
+  { label: '3', icon: '⚡', chance: 27, color: '#2A4A3A', reward: { type: 'energy', amount: 3 } },
   { label: '30', icon: '💰', chance: 20, color: '#3A4A2A', reward: { type: 'lix', amount: 30 } },
   { label: '1', icon: '🧩', chance: 15, color: '#3A2A4A', subLabel: 'Frag Std', reward: { type: 'fragment', tier: 'standard', amount: 1 } },
   { label: '1', icon: '📸', chance: 15, color: '#4A3A2A', subLabel: 'scan', reward: { type: 'scan', amount: 1 } },
   { label: '1', icon: '🎁', chance: 10, color: '#4A2A2A', subLabel: 'spin', reward: { type: 'free_spin', amount: 1 } },
   { label: '1', icon: '🧩', chance: 8, color: '#2A3A4A', subLabel: 'Frag Rare', reward: { type: 'fragment', tier: 'rare', amount: 1 } },
-  { label: '10', icon: '⚡⚡', chance: 3, color: '#4A4A2A', subLabel: 'énergie', reward: { type: 'energy', amount: 10 } },
+  { label: '10', icon: '⚡⚡', chance: 5, color: '#4A4A2A', subLabel: 'énergie', reward: { type: 'energy', amount: 10 } },
 ];
 
 const SUPER_SEGMENTS = [
@@ -331,7 +331,13 @@ const renderSegmentIcon = (type, tier, x, y, s, angle) => {
     <G transform={t}><Path d="M20 12v10H4V12" fill="none" stroke="#B0B8C4" strokeWidth={2} /><Path d="M2 7h20v5H2z" fill="none" stroke="#B0B8C4" strokeWidth={2} /><Path d="M12 22V7" stroke="#B0B8C4" strokeWidth={2} /><Path d="M12 7c-1.5-2-4-3-4-3s1 3 4 3z" fill="#B0B8C4" /><Path d="M12 7c1.5-2 4-3 4-3s-1 3-4 3z" fill="#B0B8C4" /></G>
   );
   if (type === 'card') return (
-    <G transform={t}><Rect x={3} y={2} width={18} height={20} rx={3} fill="none" stroke="#B0B8C4" strokeWidth={2} /><Path d="M12 8l2 4-2 1-2-1z" fill="#B0B8C4" /><Circle cx={12} cy={16} r={1.5} fill="#B0B8C4" /></G>
+    <G transform={t}>
+      <Rect x={4} y={2} width={16} height={20} rx={2.5} fill="#B0B8C4" opacity={0.3} />
+      <Rect x={3} y={1} width={16} height={20} rx={2.5} fill="none" stroke="#B0B8C4" strokeWidth={1.5} />
+      <Path d="M11 7l1.5 3 1.5-3" fill="none" stroke="#D4AF37" strokeWidth={1.2} strokeLinecap="round" />
+      <Circle cx={11} cy={13} r={2} fill="#D4AF37" />
+      <Path d="M8 17h6" stroke="#B0B8C4" strokeWidth={0.8} opacity={0.5} />
+    </G>
   );
   // Default: energy
   return (
@@ -711,12 +717,22 @@ export default function LixVersePage() {
     try {
       const data = await supaRpc('check_free_spin_available', { p_user_id: TEST_USER_ID });
       if (data && typeof data === 'object') {
-        setFreeSpinAvailable(data.free_available !== false);
-      } else {
-        setFreeSpinAvailable(true);
+        const available = data.free_available !== false;
+        setFreeSpinAvailable(available);
+        setFreeSpinUsed(!available);
       }
     } catch (e) {
-      setFreeSpinAvailable(true);
+      // Si erreur, vérifier manuellement via spin_history
+      try {
+        const res = await fetch(SUPABASE_URL + '/rest/v1/spin_history?user_id=eq.' + TEST_USER_ID + '&spin_tier=eq.normal&lix_cost=eq.0&created_at=gte.' + new Date().toISOString().slice(0, 10) + '&limit=1', { headers: HEADERS });
+        const d = await res.json();
+        const used = Array.isArray(d) && d.length > 0;
+        setFreeSpinAvailable(!used);
+        setFreeSpinUsed(used);
+      } catch (e2) {
+        setFreeSpinAvailable(true);
+        setFreeSpinUsed(false);
+      }
     }
   };
 
@@ -1613,12 +1629,6 @@ export default function LixVersePage() {
     fetch(SUPABASE_URL + '/rest/v1/lixverse_crate_history', { method: 'POST', headers: h, body: JSON.stringify({ user_id: TEST_USER_ID, crate_type: crate.id, lix_spent: crate.cost, character_won: cardWon ? cardWon.id : 'none', was_doublon: cardDup, lix_refunded: cardRef }) }).catch(() => {});
   };
 
-  const CHAR_CRATES = [
-    { key: 'free', name: 'Gratuite', price: 0, priceLabel: '8h', color: '#6B7B8D', borderColor: '#4A4F55', rewards: '3-5 énergie + 5-15 Lix + 20% frag Std' },
-    { key: 'bronze', name: 'Bronze', price: 500, priceLabel: '500 Lix', color: '#CD7F32', borderColor: '#CD7F32', rewards: '5-10 énergie + 10-30 Lix + 40% frag Std + 3% frag Rare' },
-    { key: 'silver', name: 'Argent', price: 1500, priceLabel: '1 500 Lix', color: '#C0C0C0', borderColor: '#C0C0C0', rewards: '15-25 énergie + 30-80 Lix + 1 frag Std GARANTI + 15% frag Rare' },
-    { key: 'gold', name: 'Or', price: 4000, priceLabel: '4 000 Lix', color: '#D4AF37', borderColor: '#D4AF37', rewards: '25-40 énergie + 1 CARTE STD + 15% frag Rare + 3% frag Elite' },
-  ];
 
   const cardW = (SCREEN_WIDTH - wp(48)) / 3;
 
@@ -1758,35 +1768,6 @@ export default function LixVersePage() {
           })}
         </View>
 
-        {/* Section CAISSES */}
-        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', marginBottom: wp(12), marginTop: wp(8) }}>CAISSES</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(10), paddingRight: wp(16) }}>
-          {CHAR_CRATES.map(cr => (
-            <Pressable key={cr.key} delayPressIn={120} onPress={() => {
-              if (cr.price === 0) {
-                showLixAlert('📦 Caisse Gratuite', 'Prochaine disponible dans 04:32:10', [{ text: 'OK', style: 'cancel' }], '⏱️');
-              } else if (lixBalance < cr.price) {
-                showLixAlert('Lix insuffisants', 'Il faut ' + cr.priceLabel + ' pour cette caisse.', [{ text: 'Fermer', style: 'cancel' }], '💰');
-              } else {
-                showLixAlert('📦 ' + cr.name, 'Ouverture en cours...', [{ text: 'OK', color: cr.color }], '📦');
-              }
-            }} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-              <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ width: wp(150), height: wp(180), borderRadius: wp(14), padding: wp(12), borderWidth: 2, borderColor: cr.borderColor, justifyContent: 'space-between' }}>
-                <View>
-                  <Text style={{ fontSize: fp(30), textAlign: 'center', marginBottom: wp(6) }}>📦</Text>
-                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF', textAlign: 'center' }}>{cr.name}</Text>
-                  <Text style={{ fontSize: fp(11), color: cr.color, textAlign: 'center', fontWeight: '600', marginTop: wp(2) }}>{cr.priceLabel}</Text>
-                </View>
-                <View>
-                  <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginBottom: wp(6) }}>{cr.rewards}</Text>
-                  <View style={{ backgroundColor: cr.color + '25', borderRadius: wp(8), paddingVertical: wp(6), alignItems: 'center' }}>
-                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: cr.color }}>{cr.price === 0 ? 'Ouvrir' : 'Ouvrir'}</Text>
-                  </View>
-                </View>
-              </LinearGradient>
-            </Pressable>
-          ))}
-        </ScrollView>
       </ScrollView>
     );
   };
@@ -1844,7 +1825,7 @@ export default function LixVersePage() {
       // Mettre à jour le solde Lix localement
       if (data.new_lix_balance !== undefined) setLixBalance(data.new_lix_balance);
       if (data.new_energy !== undefined) setUserEnergy(data.new_energy);
-      if (data.was_free) setFreeSpinUsed(true);
+      if (data.is_free) setFreeSpinUsed(true);
 
       setSpinLoading(false);
 
@@ -2182,7 +2163,7 @@ export default function LixVersePage() {
                   const midRad = (midAngle - 90) * Math.PI / 180;
                   const rType = getSegmentRewardType(seg);
                   const iconR = innerR * 0.72;
-                  const iconSize = wp(20);
+                  const iconSize = (rType === 'card' || rType === 'full_card') ? wp(28) : wp(20);
                   const iconX = cx + iconR * Math.cos(midRad);
                   const iconY = cy + iconR * Math.sin(midRad);
                   return (
@@ -2271,11 +2252,62 @@ export default function LixVersePage() {
         </View>
 
         <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginHorizontal: wp(16), marginBottom: wp(20) }} />
+
+        {/* ═══ ABONNEMENTS ═══ */}
+        <View style={{ paddingHorizontal: wp(16), marginBottom: wp(24) }}>
+          <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', marginBottom: wp(4) }}>Abonnements</Text>
+          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)', marginBottom: wp(12) }}>Débloque l'accès complet à LIXUM</Text>
+
+          {/* Gold */}
+          <Pressable delayPressIn={120} onPress={() => showLixAlert('Gold', 'Bientôt disponible.\n\n10 000 Lix/mois + 150 énergie/6h + fragments bonus', [{ text: 'Me notifier', color: '#D4AF37' }, { text: 'Fermer', style: 'cancel' }], '⭐')}
+            style={({ pressed }) => ({ marginBottom: wp(8), transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <LinearGradient colors={['#3A3F46', '#252A30', '#333A42']}
+              style={{ borderRadius: wp(14), padding: wp(16), borderWidth: 1.5, borderColor: 'rgba(212,175,55,0.3)', flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(212,175,55,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)' }}>
+                <Text style={{ fontSize: fp(20) }}>⭐</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#D4AF37' }}>Gold</Text>
+                  <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(1) }}>
+                    <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#D4AF37' }}>POPULAIRE</Text>
+                  </View>
+                </View>
+                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>10K Lix + 150 énergie/6h + fragments</Text>
+              </View>
+              <View style={{ backgroundColor: 'rgba(212,175,55,0.2)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}>
+                <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#D4AF37' }}>$9.99</Text>
+                <Text style={{ fontSize: fp(8), color: 'rgba(212,175,55,0.6)', textAlign: 'center' }}>/mois</Text>
+              </View>
+            </LinearGradient>
+          </Pressable>
+
+          {/* Platinum */}
+          <Pressable delayPressIn={120} onPress={() => showLixAlert('Platinum', 'Bientôt disponible.\n\n18 000 Lix/mois + 350 énergie/6h + fragments Elite', [{ text: 'Me notifier', color: '#00CEC9' }, { text: 'Fermer', style: 'cancel' }], '💎')}
+            style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <LinearGradient colors={['#3A3F46', '#252A30', '#333A42']}
+              style={{ borderRadius: wp(14), padding: wp(16), borderWidth: 1.5, borderColor: 'rgba(0,206,201,0.3)', flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(0,206,201,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(0,206,201,0.25)' }}>
+                <Text style={{ fontSize: fp(20) }}>💎</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#00CEC9' }}>Platinum</Text>
+                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>18K Lix + 350 énergie/6h + fragments Elite</Text>
+              </View>
+              <View style={{ backgroundColor: 'rgba(0,206,201,0.2)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}>
+                <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#00CEC9' }}>$14.99</Text>
+                <Text style={{ fontSize: fp(8), color: 'rgba(0,206,201,0.6)', textAlign: 'center' }}>/mois</Text>
+              </View>
+            </LinearGradient>
+          </Pressable>
+        </View>
+
+        <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginHorizontal: wp(16), marginBottom: wp(20) }} />
         <View style={{ paddingHorizontal: wp(16) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Acheter des Lix</Text>
           {[{ n: 'Micro', p: '$0.99', l: 990, b: '', c: '#00D984' }, { n: 'Basic', p: '$4.99', l: 5240, b: '+5%', c: '#4DA6FF' }, { n: 'Standard', p: '$9.99', l: 10990, b: '+10%', c: '#9B6DFF' }, { n: 'Mega', p: '$29.99', l: 35990, b: '+20%', c: '#D4AF37' }, { n: 'Ultra', p: '$99.99', l: 129990, b: '+30%', c: '#D4AF37' }].map((pk, i) => (
             <Pressable key={i} delayPressIn={120} onPress={() => showLixAlert('Achat ' + pk.n, pk.p + ' → ' + pk.l.toLocaleString('fr-FR') + ' Lix\n\nBientôt disponible.', [{ text: 'OK', style: 'cancel' }], '💎')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: pk.c + '25', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-              <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: pk.c + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}><Text style={{ fontSize: fp(16), fontWeight: '800', color: pk.c }}>L</Text></View>
+              <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: pk.c + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}><LixGem size={wp(22)} /></View>
               <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{pk.n}</Text>{pk.b ? <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37' }}>{pk.b}</Text></View> : null}</View><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{pk.l.toLocaleString('fr-FR')} Lix</Text></View>
               <View style={{ backgroundColor: pk.c + '20', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}><Text style={{ fontSize: fp(13), fontWeight: '700', color: pk.c }}>{pk.p}</Text></View>
             </Pressable>
