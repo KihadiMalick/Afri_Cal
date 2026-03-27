@@ -41,19 +41,27 @@ const HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPA
 const POST_HEADERS = { ...HEADERS, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
 const ALL_CHARACTERS = [
-  { id: 'emerald_owl', name: 'EMERALD OWL', tier: 'standard', color: '#00D984', emoji: '🦉', image: require('./assets/emerald_owl.webp'), desc: '3 recettes perso gratuites', bonus_abonne: 'Recettes 5→3 Lix', bonus_non_abonne: '3 recettes gratuites', uses: 3, unlock_hours: 0 },
-  { id: 'hawk_eye', name: 'HAWK EYE', tier: 'standard', color: '#4DA6FF', emoji: '🦅', desc: '2 Xscans gratuits', bonus_abonne: 'Xscan 20→15 Lix', bonus_non_abonne: '2 Xscans gratuits', uses: 2, unlock_hours: 0 },
-  { id: 'ruby_tiger', name: 'RUBY TIGER', tier: 'standard', color: '#FF4757', emoji: '🐯', desc: '1 programme sport gratuit', bonus_abonne: 'Programme 40→30 Lix', bonus_non_abonne: '1 programme sport', uses: 1, unlock_hours: 0 },
-  { id: 'jade_phoenix', name: 'JADE PHOENIX', tier: 'rare', color: '#2ED573', emoji: '🔥', desc: '5 messages ALIXEN gratuits', bonus_abonne: 'Énergie ALIXEN -2/message', bonus_non_abonne: '5 messages ALIXEN', uses: 5, unlock_hours: 0 },
-  { id: 'silver_wolf', name: 'SILVER WOLF', tier: 'rare', color: '#A4B0BE', emoji: '🐺', desc: 'MediBook 48h consultation', bonus_abonne: 'Recherche médicament 50→35 Lix', bonus_non_abonne: 'MediBook 48h', uses: 0, unlock_hours: 48 },
-  { id: 'amber_fox', name: 'AMBER FOX', tier: 'rare', color: '#FF8C42', emoji: '🦊', desc: '2 recommandations locales', bonus_abonne: 'Localisation 15→10 Lix', bonus_non_abonne: '2 recommandations locales', uses: 2, unlock_hours: 0 },
-  { id: 'iron_rhino', name: 'IRON RHINO', tier: 'rare', color: '#747D8C', emoji: '🦏', desc: 'Secret Pocket 48h lecture', bonus_abonne: 'MediBook PDF 500→400 Lix', bonus_non_abonne: 'Secret Pocket 48h', uses: 0, unlock_hours: 48 },
-  { id: 'coral_dolphin', name: 'CORAL DOLPHIN', tier: 'rare', color: '#FF6B81', emoji: '🐬', desc: '1 profil enfant 48h', bonus_abonne: 'Ajout enfant 5000→4000 Lix', bonus_non_abonne: '1 profil enfant 48h', uses: 1, unlock_hours: 48 },
-  { id: 'obsidian_dragon', name: 'OBSIDIAN DRAGON', tier: 'elite', color: '#5352ED', emoji: '🐉', desc: '10 messages ALIXEN premium', bonus_abonne: 'Énergie complexe -5', bonus_non_abonne: '10 messages ALIXEN premium', uses: 10, unlock_hours: 0 },
-  { id: 'gold_chicken', name: 'GOLD CHICKEN', tier: 'elite', color: '#D4AF37', emoji: '🐔', desc: '3 Spins + 5 recherches prix', bonus_abonne: '+1 Spin gratuit/jour', bonus_non_abonne: '3 Spins + 5 recherches', uses: 8, unlock_hours: 0 },
-  { id: 'licornium', name: 'LICORNIUM', tier: 'elite', color: '#00D984', emoji: '🦄', desc: '2 scans médicaux', bonus_abonne: 'Scan médical 30→20 Lix', bonus_non_abonne: '2 scans médicaux', uses: 2, unlock_hours: 0 },
-  { id: 'diamond_lion', name: 'DIAMOND LION', tier: 'hyper', color: '#00CEC9', emoji: '🦁', desc: 'TOUT 7 jours (5 msgs/j, 2 scans/j)', bonus_abonne: '+25% énergie 30 jours', bonus_non_abonne: 'TOUT 7 jours limité', uses: 0, unlock_hours: 168 },
-  { id: 'tardigrum', name: 'TARDIGRUM', tier: 'ultimate', color: '#DFE6E9', emoji: '🔱', desc: 'TOUT 365 jours — Le Graal', bonus_abonne: '+50% énergie 365 jours', bonus_non_abonne: 'TOUT 365j (8msg/j, 3scan/j)', uses: 0, unlock_hours: 8760 },
+  // ═══ STANDARD (5) ═══
+  { id: 'emerald_owl', name: 'EMERALD OWL', tier: 'standard', color: '#00D984', emoji: '🦉', image: require('./assets/emerald_owl.webp'), desc: '3 recettes perso gratuites', uses: 3, unlock_hours: 0 },
+  { id: 'hawk_eye', name: 'HAWK EYE', tier: 'standard', color: '#4DA6FF', emoji: '🦅', desc: '2 Xscans gratuits', uses: 2, unlock_hours: 0 },
+  { id: 'ruby_tiger', name: 'RUBY TIGER', tier: 'standard', color: '#FF4757', emoji: '🐯', desc: '1 programme sport gratuit', uses: 1, unlock_hours: 0 },
+  { id: 'amber_fox', name: 'AMBER FOX', tier: 'standard', color: '#FF8C42', emoji: '🦊', desc: '2 substitutions ingrédients', uses: 2, unlock_hours: 0 },
+  { id: 'gipsy', name: 'GIPSY', tier: 'standard', color: '#9B6DFF', emoji: '🕷️', desc: 'Corrélations santé', uses: 2, unlock_hours: 0 },
+  // ═══ RARE (5) ═══
+  { id: 'jade_phoenix', name: 'JADE PHOENIX', tier: 'rare', color: '#2ED573', emoji: '🔥', desc: '5 messages ALIXEN gratuits', uses: 5, unlock_hours: 0 },
+  { id: 'silver_wolf', name: 'SILVER WOLF', tier: 'rare', color: '#A4B0BE', emoji: '🐺', desc: 'MediBook 48h consultation', uses: 0, unlock_hours: 48 },
+  { id: 'boukki', name: 'BOUKKI', tier: 'rare', color: '#CD7F32', emoji: '🦴', desc: '3 indices de défi gratuits', uses: 3, unlock_hours: 0 },
+  { id: 'iron_rhino', name: 'IRON RHINO', tier: 'rare', color: '#747D8C', emoji: '🦏', desc: 'Secret Pocket 48h lecture', uses: 0, unlock_hours: 48 },
+  { id: 'coral_dolphin', name: 'CORAL DOLPHIN', tier: 'rare', color: '#FF6B81', emoji: '🐬', desc: '1 profil enfant 48h', uses: 1, unlock_hours: 48 },
+  // ═══ ELITE (3) ═══
+  { id: 'licornium', name: 'LICORNIUM', tier: 'elite', color: '#B388FF', emoji: '🦄', desc: 'Spécialiste Repas complet', uses: 2, unlock_hours: 0 },
+  { id: 'jaane_snake', name: 'JAANE SNAKE', tier: 'elite', color: '#FF6348', emoji: '🐍', desc: 'Spécialiste Activité complet', uses: 3, unlock_hours: 0 },
+  { id: 'mosquito', name: 'MOSQUITO', tier: 'elite', color: '#7BED9F', emoji: '🦟', desc: 'Joker toutes pages (Essaim)', uses: 2, unlock_hours: 0 },
+  // ═══ MYTHIQUE (2) ═══
+  { id: 'diamond_simba', name: 'DIAMOND SIMBA', tier: 'mythique', color: '#00CEC9', emoji: '🦁', desc: 'XP +50% + rapport PDF 7j', uses: 0, unlock_hours: 168 },
+  { id: 'alburax', name: 'ALBURAX', tier: 'mythique', color: '#D4AF37', emoji: '🐴', desc: 'Double Lix + streak shield 7j', uses: 0, unlock_hours: 168 },
+  // ═══ ULTIMATE (1) ═══
+  { id: 'tardigrum', name: 'TARDIGRUM', tier: 'ultimate', color: '#DFE6E9', emoji: '🧬', desc: 'TOUT 365 jours — Le Graal', uses: 0, unlock_hours: 8760 },
 ];
 
 const LIXSIGNS = {
@@ -195,8 +203,8 @@ const BINOME_LEADERBOARD = [
 const TIER_CONFIG = {
   standard: { label: 'Standard', color: '#00D984', bg: 'rgba(0,217,132,0.1)', border: 'rgba(0,217,132,0.3)' },
   rare: { label: 'Rare', color: '#4DA6FF', bg: 'rgba(77,166,255,0.1)', border: 'rgba(77,166,255,0.3)' },
-  elite: { label: 'Elite', color: '#D4AF37', bg: 'rgba(212,175,55,0.1)', border: 'rgba(212,175,55,0.3)' },
-  hyper: { label: 'Hyper Rare', color: '#00CEC9', bg: 'rgba(0,206,201,0.1)', border: 'rgba(0,206,201,0.3)' },
+  elite: { label: 'Elite', color: '#B388FF', bg: 'rgba(179,136,255,0.1)', border: 'rgba(179,136,255,0.3)' },
+  mythique: { label: 'Mythique', color: '#D4AF37', bg: 'rgba(212,175,55,0.1)', border: 'rgba(212,175,55,0.3)' },
   ultimate: { label: 'Ultime', color: '#DFE6E9', bg: 'rgba(223,230,233,0.08)', border: 'rgba(223,230,233,0.25)' },
 };
 
@@ -204,7 +212,7 @@ const CRATES = [
   { id: 'bronze', name: 'Caisse Bronze', cost: 300, color: '#CD7F32', emoji: '📦', desc: 'Lix + Énergie + chance carte Standard', rewards: { lix_min: 50, lix_max: 100, energy_min: 10, energy_max: 20, card_chance: 0.30, card_tiers: ['standard'] } },
   { id: 'silver', name: 'Caisse Argent', cost: 800, color: '#A4B0BE', emoji: '🎁', desc: 'Lix + Énergie + chance carte Rare', rewards: { lix_min: 100, lix_max: 250, energy_min: 20, energy_max: 40, card_chance: 0.25, card_tiers: ['standard', 'rare'] } },
   { id: 'gold', name: 'Caisse Or', cost: 2000, color: '#D4AF37', emoji: '💎', desc: 'Lix + Énergie + chance carte Elite', rewards: { lix_min: 250, lix_max: 500, energy_min: 30, energy_max: 60, card_chance: 0.20, card_tiers: ['rare', 'elite'] } },
-  { id: 'platinum', name: 'Caisse Platine', cost: 5000, color: '#00CEC9', emoji: '👑', desc: 'Lix + Énergie + chance Hyper/Ultime', rewards: { lix_min: 500, lix_max: 1000, energy_min: 50, energy_max: 100, card_chance: 0.15, card_tiers: ['elite', 'hyper', 'ultimate'] } },
+  { id: 'platinum', name: 'Caisse Platine', cost: 5000, color: '#00CEC9', emoji: '👑', desc: 'Lix + Énergie + chance Mythique/Ultime', rewards: { lix_min: 500, lix_max: 1000, energy_min: 50, energy_max: 100, card_chance: 0.15, card_tiers: ['elite', 'mythique', 'ultimate'] } },
 ];
 
 const SPIN_RESULTS = [
@@ -217,7 +225,7 @@ const SPIN_RESULTS = [
   { label: 'Caisse Standard', weight: 10, type: 'crate', value: 'standard', color: '#00D984' },
   { label: 'Caisse Rare', weight: 5, type: 'crate', value: 'rare', color: '#4DA6FF' },
   { label: 'Caisse Elite', weight: 1.5, type: 'crate', value: 'elite', color: '#D4AF37' },
-  { label: 'Caisse Hyper', weight: 0.3, type: 'crate', value: 'hyper', color: '#00CEC9' },
+  { label: 'Caisse Mythique', weight: 0.3, type: 'crate', value: 'mythique', color: '#D4AF37' },
   { label: 'Rien...', weight: 8.2, type: 'nothing', value: 0, color: '#666' },
 ];
 
@@ -1801,7 +1809,7 @@ export default function LixVersePage() {
                       <View style={{ width: '100%', height: wp(3), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(1.5), overflow: 'hidden', marginBottom: wp(2) }}>
                         <View style={{
                           height: '100%', borderRadius: wp(1.5),
-                          backgroundColor: (ch.tier === 'mythique' || ch.tier === 'hyper') ? '#D4AF37'
+                          backgroundColor: ch.tier === 'mythique' ? '#D4AF37'
                             : ch.tier === 'elite' ? '#B388FF'
                             : ch.tier === 'rare' ? '#4DA6FF' : '#00D984',
                           width: Math.min(100, Math.round(((ch.fragments || ch.duplicates_count || 0) / (ch.fragments_required || FRAGS_NIV1[ch.tier] || 3)) * 100)) + '%',
@@ -3503,7 +3511,7 @@ export default function LixVersePage() {
               <View style={{
                 width: wp(260), borderRadius: wp(16), overflow: 'hidden',
                 borderWidth: wp(3),
-                borderColor: showCharacterDetail.tier === 'ultimate' ? '#DFE6E9' : showCharacterDetail.tier === 'hyper' ? '#00CEC9' : showCharacterDetail.tier === 'elite' ? '#D4AF37' : showCharacterDetail.tier === 'rare' ? '#A4B0BE' : '#CD7F32',
+                borderColor: showCharacterDetail.tier === 'ultimate' ? '#DFE6E9' : showCharacterDetail.tier === 'mythique' ? '#D4AF37' : showCharacterDetail.tier === 'elite' ? '#B388FF' : showCharacterDetail.tier === 'rare' ? '#A4B0BE' : '#CD7F32',
               }}>
                 {/* --- HEADER BADGES --- */}
                 <View style={{
@@ -3594,7 +3602,7 @@ export default function LixVersePage() {
                   backgroundColor: 'rgba(0,0,0,0.75)',
                   paddingVertical: wp(12), paddingHorizontal: wp(14),
                   borderTopWidth: 2,
-                  borderTopColor: showCharacterDetail.tier === 'ultimate' ? '#DFE6E9' : showCharacterDetail.tier === 'hyper' ? '#00CEC9' : showCharacterDetail.tier === 'elite' ? '#D4AF37' : showCharacterDetail.tier === 'rare' ? '#A4B0BE' : '#CD7F32',
+                  borderTopColor: showCharacterDetail.tier === 'ultimate' ? '#DFE6E9' : showCharacterDetail.tier === 'mythique' ? '#D4AF37' : showCharacterDetail.tier === 'elite' ? '#B388FF' : showCharacterDetail.tier === 'rare' ? '#A4B0BE' : '#CD7F32',
                 }}>
                   <Text style={{
                     fontSize: fp(18), fontWeight: '800', color: TIER_CONFIG[showCharacterDetail.tier].color,
@@ -3607,24 +3615,6 @@ export default function LixVersePage() {
                   }}>
                     {showCharacterDetail.desc}
                   </Text>
-                </View>
-              </View>
-
-              {/* === BONUS INFO SOUS LA CARTE === */}
-              <View style={{ width: '100%', marginTop: wp(12), gap: wp(6) }}>
-                <View style={{
-                  backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(10),
-                  padding: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
-                }}>
-                  <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#00D984', marginBottom: wp(2) }}>ABONNÉ</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }}>{showCharacterDetail.bonus_abonne}</Text>
-                </View>
-                <View style={{
-                  backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(10),
-                  padding: wp(10), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
-                }}>
-                  <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37', marginBottom: wp(2) }}>NON ABONNÉ</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }}>{showCharacterDetail.bonus_non_abonne}</Text>
                 </View>
               </View>
 
