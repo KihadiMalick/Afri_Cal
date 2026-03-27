@@ -4246,14 +4246,14 @@ export default function LixVersePage() {
                               )}
 
                               {own && (
-                                <View style={{ position: 'absolute', top: wp(32), right: wp(18), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), borderWidth: 1, borderColor: (ch.level || 0) >= 3 ? 'rgba(212,175,55,0.5)' : 'rgba(0,217,132,0.3)' }}>
+                                <View style={{ position: 'absolute', top: wp(32), right: wp(28), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), borderWidth: 1, borderColor: (ch.level || 0) >= 3 ? 'rgba(212,175,55,0.5)' : 'rgba(0,217,132,0.3)' }}>
                                   <Text style={{ fontSize: fp(9), fontWeight: '800', color: (ch.level || 0) >= 3 ? '#D4AF37' : '#00D984', letterSpacing: 0.5 }}>
                                     {(ch.level || 0) >= 3 ? 'MAX' : 'Niv ' + (ch.level || 0)}
                                   </Text>
                                 </View>
                               )}
                               {own && (
-                                <View style={{ position: 'absolute', top: wp(58), right: wp(18), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
+                                <View style={{ position: 'absolute', top: wp(58), right: wp(28), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
                                   <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.8)' }}>{usesRem}/{usesMax} ⚡</Text>
                                 </View>
                               )}
