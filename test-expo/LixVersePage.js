@@ -4166,10 +4166,10 @@ export default function LixVersePage() {
         <Modal visible={true} transparent animationType="slide" onRequestClose={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }}>
           <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'flex-end' }} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }}>
             <Pressable onPress={(e) => e.stopPropagation()}>
-              <View style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), overflow: 'hidden', maxHeight: SCREEN_WIDTH * 1.8 }}>
+              <View style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), overflow: 'hidden', maxHeight: SCREEN_WIDTH * 2.1 }}>
                 {/* FACE — Swipe Tinder entre cartes */}
                 <Animated.View pointerEvents={charFlipped ? 'none' : 'auto'} style={{ opacity: frontInterpolate, position: charFlipped ? 'absolute' : 'relative', width: '100%' }}>
-                  <View style={{ backgroundColor: 'rgba(0,0,0,0.92)', borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingTop: wp(12), paddingBottom: wp(24) }}>
+                  <View style={{ backgroundColor: 'rgba(0,0,0,0.92)', borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingTop: wp(8), paddingBottom: wp(16) }}>
                     <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: wp(10) }} />
 
                     {/* Carte unique + flèches navigation */}
@@ -4246,14 +4246,14 @@ export default function LixVersePage() {
                               )}
 
                               {own && (
-                                <View style={{ position: 'absolute', top: wp(16), right: wp(12), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), borderWidth: 1, borderColor: (ch.level || 0) >= 3 ? 'rgba(212,175,55,0.5)' : 'rgba(0,217,132,0.3)' }}>
+                                <View style={{ position: 'absolute', top: wp(32), right: wp(18), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), borderWidth: 1, borderColor: (ch.level || 0) >= 3 ? 'rgba(212,175,55,0.5)' : 'rgba(0,217,132,0.3)' }}>
                                   <Text style={{ fontSize: fp(9), fontWeight: '800', color: (ch.level || 0) >= 3 ? '#D4AF37' : '#00D984', letterSpacing: 0.5 }}>
                                     {(ch.level || 0) >= 3 ? 'MAX' : 'Niv ' + (ch.level || 0)}
                                   </Text>
                                 </View>
                               )}
                               {own && (
-                                <View style={{ position: 'absolute', top: wp(44), right: wp(12), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
+                                <View style={{ position: 'absolute', top: wp(58), right: wp(18), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
                                   <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.8)' }}>{usesRem}/{usesMax} ⚡</Text>
                                 </View>
                               )}
@@ -4320,35 +4320,32 @@ export default function LixVersePage() {
 
                           {/* Boutons compacts */}
                           <View style={{ width: wp(280), marginTop: wp(6), gap: wp(4) }}>
-                            {own ? (
-                              <>
-                                {!isActive && (
-                                  <Pressable delayPressIn={120} onPress={() => switchActiveCharacter(acSlug)} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-                                    <LinearGradient colors={['#8B7A2E','#6B5A1E']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
-                                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>Équiper</Text>
-                                    </LinearGradient>
-                                  </Pressable>
-                                )}
-                                <Pressable delayPressIn={120}
-                                  onPress={() => {
-                                    if (usesRem === 0) {
-                                      showLixAlert('⚡ Recharge nécessaire', 'Recharge ton ' + name + ' avec ' + (ch.recharge_energy || 10) + ' énergie.', [{ text: 'Recharger', color: '#00D984', onPress: () => rechargeChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
-                                    } else {
-                                      flipCard();
-                                      if (charPowers.length === 0) loadCharPowers(acSlug);
-                                    }
-                                  }}
-                                  style={({ pressed }) => ({ opacity: usesRem === 0 ? 0.5 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-                                  <LinearGradient colors={usesRem === 0 ? ['#333A42','#2A2F36'] : ['#3A3520','#2A2815']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
-                                    <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#B8A472' }}>{usesRem === 0 ? 'Recharger' : 'Pouvoirs →'}</Text>
-                                  </LinearGradient>
-                                </Pressable>
-                              </>
-                            ) : (
+                            {own && !isActive && (
+                              <Pressable delayPressIn={120} onPress={() => switchActiveCharacter(acSlug)} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                                <LinearGradient colors={['#8B7A2E','#6B5A1E']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
+                                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>Équiper</Text>
+                                </LinearGradient>
+                              </Pressable>
+                            )}
+                            <Pressable delayPressIn={120}
+                              onPress={() => {
+                                if (own && usesRem === 0) {
+                                  showLixAlert('⚡ Recharge nécessaire', 'Recharge ton ' + name + ' avec ' + (ch.recharge_energy || 10) + ' énergie.', [{ text: 'Recharger', color: '#00D984', onPress: () => rechargeChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
+                                } else {
+                                  flipCard();
+                                  if (charPowers.length === 0) loadCharPowers(acSlug);
+                                }
+                              }}
+                              style={({ pressed }) => ({ opacity: (own && usesRem === 0) ? 0.5 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                              <LinearGradient colors={(own && usesRem === 0) ? ['#333A42','#2A2F36'] : ['#3A3520','#2A2815']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
+                                <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#B8A472' }}>{(own && usesRem === 0) ? 'Recharger' : own ? 'Pouvoirs →' : 'Aperçu Pouvoirs →'}</Text>
+                              </LinearGradient>
+                            </Pressable>
+                            {!own && (
                               <Pressable delayPressIn={120} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); }}
                                 style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
                                 <View style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>Obtenir via Spin Wheel</Text>
+                                  <Text style={{ fontSize: fp(11), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>Obtenir via Spin ou Défis</Text>
                                 </View>
                               </Pressable>
                             )}
@@ -4388,6 +4385,22 @@ export default function LixVersePage() {
                     <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
                     <ScrollView showsVerticalScrollIndicator={false}>
                       <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', textAlign: 'center', marginBottom: wp(16) }}>POUVOIRS</Text>
+
+                      {(() => {
+                        const currentChar = ALL_CHARACTERS[cardViewIndexRef.current];
+                        const currentSlug = currentChar?.id;
+                        const isOwned = userCollection.some(c => (c.slug || c.id) === currentSlug && c.owned !== false) || ownedCharacters.includes(currentSlug);
+                        if (isOwned) return null;
+                        return (
+                          <View style={{ backgroundColor: 'rgba(255,140,66,0.1)', borderRadius: wp(10), padding: wp(10), marginBottom: wp(12), borderWidth: 1, borderColor: 'rgba(255,140,66,0.2)', flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+                            <Text style={{ fontSize: fp(16) }}>🔒</Text>
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FF8C42' }}>Aperçu uniquement</Text>
+                              <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.35)' }}>Obtiens cette carte pour activer ses pouvoirs</Text>
+                            </View>
+                          </View>
+                        );
+                      })()}
 
                       {loadingPowers ? (
                         <ActivityIndicator color="#D4AF37" size="large" style={{ marginVertical: wp(30) }} />
@@ -4447,6 +4460,9 @@ export default function LixVersePage() {
                                     return (
                                       <Pressable delayPressIn={120}
                                         onPress={async () => {
+                                          const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
+                                          const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
+                                          if (!isOwnedCheck) { showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.\n\nSpin Wheel ou Défis !', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); } }, { text: 'Fermer', style: 'cancel' }], '🔒'); return; }
                                           if (shouldConsumePower(power)) {
                                             const r = await consumePower(power.power_key);
                                             if (!r.success) return;
@@ -4471,6 +4487,9 @@ export default function LixVersePage() {
                                     return (
                                       <Pressable delayPressIn={120}
                                         onPress={async () => {
+                                          const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
+                                          const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
+                                          if (!isOwnedCheck) { showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.\n\nSpin Wheel ou Défis !', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); } }, { text: 'Fermer', style: 'cancel' }], '🔒'); return; }
                                           const r = await consumePower(power.power_key);
                                           if (!r.success) return;
                                           setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null);
@@ -4493,6 +4512,9 @@ export default function LixVersePage() {
                                     return (
                                       <Pressable delayPressIn={120}
                                         onPress={async () => {
+                                          const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
+                                          const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
+                                          if (!isOwnedCheck) { showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.\n\nSpin Wheel ou Défis !', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); } }, { text: 'Fermer', style: 'cancel' }], '🔒'); return; }
                                           if (shouldConsumePower(power)) {
                                             const r = await consumePower(power.power_key);
                                             if (!r.success) return;
