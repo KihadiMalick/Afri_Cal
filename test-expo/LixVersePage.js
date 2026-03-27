@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, FlatList, Pressable, TouchableOpacity, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
+import { View, Text, ScrollView, FlatList, Pressable, TouchableOpacity, Platform, Animated, PanResponder, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
 import Svg, { Defs, Rect, Path, Circle, Line, Ellipse, G, Polygon, Text as SvgText, LinearGradient as SvgLinearGradient, RadialGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -561,6 +561,7 @@ export default function LixVersePage() {
   const [selectedChar, setSelectedChar] = useState(null);
   const [previewChar, setPreviewChar] = useState(null);
   const [cardSwipeIndex, setCardSwipeIndex] = useState(0);
+  const [cardViewIndex, setCardViewIndex] = useState(0);
   const [charFlipped, setCharFlipped] = useState(false);
   const [charPowers, setCharPowers] = useState([]);
   const [loadingPowers, setLoadingPowers] = useState(false);
@@ -579,6 +580,33 @@ export default function LixVersePage() {
 
   const flipAnim = useRef(new Animated.Value(0)).current;
   const cardScrollRef = useRef(null);
+  const cardSwipeX = useRef(new Animated.Value(0)).current;
+  const cardViewIndexRef = useRef(0);
+  const cardPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dx) > 10,
+      onPanResponderMove: (_, gs) => { cardSwipeX.setValue(gs.dx); },
+      onPanResponderRelease: (_, gs) => {
+        const threshold = W * 0.25;
+        if (gs.dx < -threshold && cardViewIndexRef.current < ALL_CHARACTERS.length - 1) {
+          Animated.timing(cardSwipeX, { toValue: -W, duration: 250, useNativeDriver: true }).start(() => {
+            cardViewIndexRef.current += 1;
+            setCardViewIndex(cardViewIndexRef.current);
+            cardSwipeX.setValue(0);
+          });
+        } else if (gs.dx > threshold && cardViewIndexRef.current > 0) {
+          Animated.timing(cardSwipeX, { toValue: W, duration: 250, useNativeDriver: true }).start(() => {
+            cardViewIndexRef.current -= 1;
+            setCardViewIndex(cardViewIndexRef.current);
+            cardSwipeX.setValue(0);
+          });
+        } else {
+          Animated.spring(cardSwipeX, { toValue: 0, friction: 8, useNativeDriver: true }).start();
+        }
+      },
+    })
+  ).current;
 
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
@@ -736,11 +764,25 @@ export default function LixVersePage() {
   const flipCard = () => {
     const toVal = charFlipped ? 0 : 1;
     Animated.timing(flipAnim, {
-      toValue: toVal, duration: 400, useNativeDriver: true,
+      toValue: toVal, duration: 300, useNativeDriver: true,
     }).start(() => setCharFlipped(!charFlipped));
   };
-  const frontInterpolate = flipAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['0deg', '90deg', '90deg'] });
-  const backInterpolate = flipAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['90deg', '90deg', '0deg'] });
+  const frontInterpolate = flipAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
+  const backInterpolate = flipAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+
+  useEffect(() => {
+    if (selectedChar && ALL_CHARACTERS[cardViewIndex]) {
+      const newCharId = ALL_CHARACTERS[cardViewIndex].id;
+      const collectionChar = userCollection.find(c => (c.slug || c.id) === newCharId);
+      if (collectionChar) {
+        setSelectedChar({ ...collectionChar, slug: collectionChar.slug || newCharId });
+      } else {
+        const fallback = ALL_CHARACTERS[cardViewIndex];
+        setSelectedChar({ ...fallback, slug: newCharId, owned: false, level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: fallback.uses || 10, fragments: 0, fragments_required: 3 });
+      }
+      loadCharPowers(newCharId);
+    }
+  }, [cardViewIndex]);
 
   // === VÉRIFIER SPIN GRATUIT ===
   const checkFreeSpin = async () => {
@@ -1734,7 +1776,11 @@ export default function LixVersePage() {
                 onPress={() => {
                   setSelectedChar(ch); setCharFlipped(false); flipAnim.setValue(0);
                   const charIndex = ALL_CHARACTERS.findIndex(c => c.id === (ch.slug || ch.id));
-                  setCardSwipeIndex(charIndex >= 0 ? charIndex : 0);
+                  const idx = charIndex >= 0 ? charIndex : 0;
+                  setCardSwipeIndex(idx);
+                  setCardViewIndex(idx);
+                  cardViewIndexRef.current = idx;
+                  cardSwipeX.setValue(0);
                   loadCharPowers(ch.slug || ch.id);
                 }}
                 style={({ pressed }) => ({
@@ -4131,57 +4177,60 @@ export default function LixVersePage() {
           <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'flex-end' }} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }}>
             <Pressable onPress={(e) => e.stopPropagation()}>
               <View style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), overflow: 'hidden', maxHeight: SCREEN_WIDTH * 1.8 }}>
-                {/* FACE — Swipe horizontal entre cartes */}
-                <Animated.View style={{ transform: [{ rotateY: frontInterpolate }], backfaceVisibility: 'hidden', position: charFlipped ? 'absolute' : 'relative', width: '100%' }}>
+                {/* FACE — Swipe Tinder entre cartes */}
+                <Animated.View style={{ opacity: frontInterpolate, position: charFlipped ? 'absolute' : 'relative', width: '100%' }}>
                   <View style={{ backgroundColor: 'rgba(0,0,0,0.92)', borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingTop: wp(12), paddingBottom: wp(24) }}>
                     <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: wp(10) }} />
 
-                    <FlatList
-                      ref={cardScrollRef}
-                      horizontal
-                      pagingEnabled
-                      showsHorizontalScrollIndicator={false}
-                      snapToInterval={SCREEN_WIDTH}
-                      decelerationRate="fast"
-                      data={ALL_CHARACTERS}
-                      keyExtractor={(item) => item.id}
-                      initialScrollIndex={cardSwipeIndex}
-                      getItemLayout={(data, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
-                      onMomentumScrollEnd={(e) => {
-                        const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-                        if (idx >= 0 && idx < ALL_CHARACTERS.length && idx !== cardSwipeIndex) {
-                          setCardSwipeIndex(idx);
-                          const newChar = ALL_CHARACTERS[idx];
-                          const userData = userCollection.find(c => (c.slug || c.id) === newChar.id) || { ...newChar, slug: newChar.id, owned: false, level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: 10, fragments: 0 };
-                          setSelectedChar(userData);
-                          setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null);
-                          loadCharPowers(newChar.id);
-                        }
-                      }}
-                      renderItem={({ item: ac }) => {
+                    {/* Cartes empilées — Tinder style */}
+                    <View style={{ alignItems: 'center', height: wp(370) }}>
+                      {/* Carte DERRIÈRE visible */}
+                      {cardViewIndex < ALL_CHARACTERS.length - 1 && (() => {
+                        const behindChar = ALL_CHARACTERS[cardViewIndex + 1];
+                        const behindImg = getCharImage(behindChar.id);
+                        return (
+                          <View style={{ position: 'absolute', alignSelf: 'center', transform: [{ scale: 0.92 }, { translateY: 12 }], opacity: 0.4 }}>
+                            <View style={{ width: wp(280), height: wp(370), borderRadius: wp(4), overflow: 'hidden', backgroundColor: '#000' }}>
+                              {behindImg.img ? (
+                                <Image source={behindImg.img} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                              ) : (
+                                <View style={{ width: '100%', height: '100%', backgroundColor: '#1E2530', justifyContent: 'center', alignItems: 'center' }}>
+                                  <Text style={{ fontSize: fp(60) }}>{behindImg.emoji}</Text>
+                                </View>
+                              )}
+                            </View>
+                          </View>
+                        );
+                      })()}
+
+                      {/* Carte ACTIVE avec swipe */}
+                      {(() => {
+                        const ac = ALL_CHARACTERS[cardViewIndex];
+                        if (!ac) return null;
                         const acSlug = ac.id;
                         const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: ownedChars[c.id]?.level || 0, xp: ownedChars[c.id]?.xp || 0, xp_next: ownedChars[c.id]?.xp_next || 1000, uses_remaining: ownedChars[c.id]?.uses_remaining || 0, uses_max: ownedChars[c.id]?.uses_max || 10, fragments: 0, fragments_required: 3, is_active: false }));
                         const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...ac, slug: acSlug, owned: false };
                         const charImg = getCharImage(acSlug);
                         const own = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(acSlug);
-                        const isActive = acSlug === activeCharSlug;
-                        const tier = ch.tier || ac.tier || 'standard';
-                        const name = CHAR_NAMES[acSlug] || ch.name || ac.name || acSlug;
                         const usesRem = ch.uses_remaining || 0;
                         const usesMax = ch.uses_max || ac.uses || 10;
-                        const xp = ch.xp || 0;
-                        const xpNext = ch.xp_next || 1000;
-                        const frags = ch.fragments || ch.duplicates_count || 0;
-                        const fragsReq = ch.fragments_required || FRAGS_NIV1[tier] || 3;
+                        const name = CHAR_NAMES[acSlug] || ch.name || ac.name || acSlug;
 
                         return (
-                          <View style={{ width: SCREEN_WIDTH, alignItems: 'center', paddingHorizontal: (SCREEN_WIDTH - wp(280)) / 2 }}>
-                            {/* Carte image — pas de bordure code */}
-                            <View style={{ width: wp(280), height: wp(373), borderRadius: wp(12), overflow: 'hidden', backgroundColor: '#000' }}>
+                          <Animated.View
+                            {...cardPanResponder.panHandlers}
+                            style={{
+                              transform: [
+                                { translateX: cardSwipeX },
+                                { rotate: cardSwipeX.interpolate({ inputRange: [-W, 0, W], outputRange: ['-8deg', '0deg', '8deg'] }) }
+                              ],
+                            }}
+                          >
+                            <View style={{ width: wp(280), height: wp(370), borderRadius: wp(4), overflow: 'hidden', backgroundColor: '#000' }}>
                               {charImg.img ? (
-                                <Image source={charImg.img} style={{ width: wp(280), height: wp(373) }} resizeMode="cover" />
+                                <Image source={charImg.img} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                               ) : (
-                                <View style={{ width: wp(280), height: wp(373), justifyContent: 'center', alignItems: 'center', backgroundColor: '#1E2530' }}>
+                                <View style={{ width: '100%', height: '100%', backgroundColor: '#1E2530', justifyContent: 'center', alignItems: 'center' }}>
                                   <Text style={{ fontSize: fp(80) }}>{charImg.emoji}</Text>
                                   <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.4)', marginTop: wp(8) }}>{name}</Text>
                                 </View>
@@ -4189,7 +4238,7 @@ export default function LixVersePage() {
 
                               {/* Badge utilisations en haut à droite */}
                               {own && (
-                                <View style={{ position: 'absolute', top: wp(16), right: wp(12), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
+                                <View style={{ position: 'absolute', top: wp(16), right: wp(16), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
                                   <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.8)' }}>{usesRem}/{usesMax} ⚡</Text>
                                 </View>
                               )}
@@ -4201,85 +4250,115 @@ export default function LixVersePage() {
                                 </View>
                               )}
                             </View>
+                          </Animated.View>
+                        );
+                      })()}
+                    </View>
 
-                            {/* Infos SOUS la carte — pas de nom (déjà dans l'image) */}
-                            <View style={{ width: wp(280), marginTop: wp(8), alignItems: 'center' }}>
-                              {/* Barre XP si possédé */}
-                              {own && (
-                                <View style={{ width: '100%', marginTop: wp(4) }}>
-                                  <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
-                                    <View style={{ height: '100%', borderRadius: wp(2), backgroundColor: '#7BAF6E', width: Math.min(100, Math.round((xp / xpNext) * 100)) + '%' }} />
-                                  </View>
-                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: wp(3) }}>{xp}/{xpNext} XP</Text>
+                    {/* Infos SOUS la carte */}
+                    {(() => {
+                      const ac = ALL_CHARACTERS[cardViewIndex];
+                      if (!ac) return null;
+                      const acSlug = ac.id;
+                      const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: ownedChars[c.id]?.level || 0, xp: ownedChars[c.id]?.xp || 0, xp_next: ownedChars[c.id]?.xp_next || 1000, uses_remaining: ownedChars[c.id]?.uses_remaining || 0, uses_max: ownedChars[c.id]?.uses_max || 10, fragments: 0, fragments_required: 3, is_active: false }));
+                      const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...ac, slug: acSlug, owned: false };
+                      const own = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(acSlug);
+                      const isActive = acSlug === activeCharSlug;
+                      const tier = ch.tier || ac.tier || 'standard';
+                      const name = CHAR_NAMES[acSlug] || ch.name || ac.name || acSlug;
+                      const usesRem = ch.uses_remaining || 0;
+                      const usesMax = ch.uses_max || ac.uses || 10;
+                      const xp = ch.xp || 0;
+                      const xpNext = ch.xp_next || 1000;
+                      const frags = ch.fragments || ch.duplicates_count || 0;
+                      const fragsReq = ch.fragments_required || FRAGS_NIV1[tier] || 3;
+
+                      return (
+                        <View style={{ paddingHorizontal: (SCREEN_WIDTH - wp(280)) / 2 }}>
+                          <View style={{ width: wp(280), marginTop: wp(8), alignItems: 'center' }}>
+                            {/* Barre XP si possédé */}
+                            {own && (
+                              <View style={{ width: '100%', marginTop: wp(4) }}>
+                                <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
+                                  <View style={{ height: '100%', borderRadius: wp(2), backgroundColor: '#5A4A2E', width: Math.min(100, Math.round((xp / xpNext) * 100)) + '%' }} />
                                 </View>
-                              )}
+                                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: wp(3) }}>{xp}/{xpNext} XP</Text>
+                              </View>
+                            )}
 
-                              {/* Barre fragments si non possédé */}
-                              {!own && (
-                                <View style={{ width: '100%', marginTop: wp(4) }}>
-                                  <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
-                                    <View style={{ height: '100%', borderRadius: wp(2), backgroundColor: '#B8A068', width: Math.min(100, Math.round((frags / fragsReq) * 100)) + '%' }} />
-                                  </View>
-                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: wp(3) }}>🧩 {frags}/{fragsReq} fragments</Text>
+                            {/* Barre fragments si non possédé */}
+                            {!own && (
+                              <View style={{ width: '100%', marginTop: wp(4) }}>
+                                <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
+                                  <View style={{ height: '100%', borderRadius: wp(2), backgroundColor: '#5A4A2E', width: Math.min(100, Math.round((frags / fragsReq) * 100)) + '%' }} />
                                 </View>
-                              )}
+                                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: wp(3) }}>🧩 {frags}/{fragsReq} fragments</Text>
+                              </View>
+                            )}
 
-                              {/* Badge ACTIF */}
-                              {own && isActive && (
-                                <View style={{ backgroundColor: 'rgba(123,175,110,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2), marginTop: wp(6) }}>
-                                  <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#7BAF6E' }}>ACTIF ✓</Text>
-                                </View>
-                              )}
-                            </View>
+                            {/* Badge ACTIF */}
+                            {own && isActive && (
+                              <View style={{ backgroundColor: 'rgba(139,122,46,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2), marginTop: wp(6) }}>
+                                <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#8B7A3E' }}>ACTIF ✓</Text>
+                              </View>
+                            )}
+                          </View>
 
-                            {/* Boutons compacts */}
-                            <View style={{ width: wp(280), marginTop: wp(6), gap: wp(4) }}>
-                              {own ? (
-                                <>
-                                  {!isActive && (
-                                    <Pressable delayPressIn={120} onPress={() => switchActiveCharacter(acSlug)} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-                                      <LinearGradient colors={['#8B7A2E','#6B5A1E']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
-                                        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>Équiper</Text>
-                                      </LinearGradient>
-                                    </Pressable>
-                                  )}
-                                  <Pressable delayPressIn={120}
-                                    onPress={() => {
-                                      if (usesRem === 0) {
-                                        showLixAlert('⚡ Recharge nécessaire', 'Recharge ton ' + name + ' avec ' + (ch.recharge_energy || 10) + ' énergie.', [{ text: 'Recharger', color: '#00D984', onPress: () => rechargeChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
-                                      } else {
-                                        flipCard();
-                                        if (charPowers.length === 0) loadCharPowers(acSlug);
-                                      }
-                                    }}
-                                    style={({ pressed }) => ({ opacity: usesRem === 0 ? 0.5 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-                                    <LinearGradient colors={usesRem === 0 ? ['#333A42','#2A2F36'] : ['#4A6A4A','#3A5A3A']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
-                                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{usesRem === 0 ? 'Recharger' : 'Pouvoirs →'}</Text>
+                          {/* Boutons compacts */}
+                          <View style={{ width: wp(280), marginTop: wp(6), gap: wp(4) }}>
+                            {own ? (
+                              <>
+                                {!isActive && (
+                                  <Pressable delayPressIn={120} onPress={() => switchActiveCharacter(acSlug)} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                                    <LinearGradient colors={['#8B7A2E','#6B5A1E']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
+                                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>Équiper</Text>
                                     </LinearGradient>
                                   </Pressable>
-                                </>
-                              ) : (
-                                <Pressable delayPressIn={120} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); }}
-                                  style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-                                  <View style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                                    <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>Obtenir via Spin Wheel</Text>
-                                  </View>
+                                )}
+                                <Pressable delayPressIn={120}
+                                  onPress={() => {
+                                    if (usesRem === 0) {
+                                      showLixAlert('⚡ Recharge nécessaire', 'Recharge ton ' + name + ' avec ' + (ch.recharge_energy || 10) + ' énergie.', [{ text: 'Recharger', color: '#00D984', onPress: () => rechargeChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
+                                    } else {
+                                      flipCard();
+                                      if (charPowers.length === 0) loadCharPowers(acSlug);
+                                    }
+                                  }}
+                                  style={({ pressed }) => ({ opacity: usesRem === 0 ? 0.5 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                                  <LinearGradient colors={usesRem === 0 ? ['#333A42','#2A2F36'] : ['#3A3520','#2A2815']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
+                                    <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#B8A472' }}>{usesRem === 0 ? 'Recharger' : 'Pouvoirs →'}</Text>
+                                  </LinearGradient>
                                 </Pressable>
-                              )}
-                              <Pressable onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }} style={{ paddingVertical: wp(8), alignItems: 'center' }}>
-                                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.25)' }}>Fermer</Text>
+                              </>
+                            ) : (
+                              <Pressable delayPressIn={120} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); }}
+                                style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                                <View style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>Obtenir via Spin Wheel</Text>
+                                </View>
                               </Pressable>
-                            </View>
+                            )}
+                            <Pressable onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }} style={{ paddingVertical: wp(8), alignItems: 'center' }}>
+                              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.25)' }}>Fermer</Text>
+                            </Pressable>
                           </View>
-                        );
-                      }}
-                    />
+                        </View>
+                      );
+                    })()}
 
-                    {/* Indicateur de pagination — dots */}
+                    {/* Indicateur de pagination — dots (max 7 visibles) */}
                     <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: wp(12), gap: wp(4) }}>
-                      {ALL_CHARACTERS.map((_, i) => (
-                        <View key={i} style={{ width: i === cardSwipeIndex ? wp(8) : wp(5), height: i === cardSwipeIndex ? wp(8) : wp(5), borderRadius: wp(4), backgroundColor: i === cardSwipeIndex ? '#B8A068' : 'rgba(255,255,255,0.15)' }} />
-                      ))}
+                      {(() => {
+                        const total = ALL_CHARACTERS.length;
+                        const maxDots = 7;
+                        let start = Math.max(0, cardViewIndex - Math.floor(maxDots / 2));
+                        let end = start + maxDots;
+                        if (end > total) { end = total; start = Math.max(0, end - maxDots); }
+                        return ALL_CHARACTERS.slice(start, end).map((_, i) => {
+                          const realIdx = start + i;
+                          return <View key={realIdx} style={{ width: realIdx === cardViewIndex ? wp(8) : wp(5), height: realIdx === cardViewIndex ? wp(8) : wp(5), borderRadius: wp(4), backgroundColor: realIdx === cardViewIndex ? '#B8A472' : 'rgba(255,255,255,0.15)' }} />;
+                        });
+                      })()}
                     </View>
 
                     {/* Indication swipe */}
@@ -4290,8 +4369,8 @@ export default function LixVersePage() {
                 </Animated.View>
 
                 {/* DOS — Pouvoirs */}
-                <Animated.View style={{ transform: [{ rotateY: backInterpolate }], backfaceVisibility: 'hidden', position: !charFlipped ? 'absolute' : 'relative', width: '100%' }}>
-                  <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
+                <Animated.View style={{ opacity: backInterpolate, position: !charFlipped ? 'absolute' : 'relative', width: '100%' }}>
+                  <LinearGradient colors={['#0D0D0D','#111111','#0A0A0A','#080808']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
                     <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
                     <ScrollView showsVerticalScrollIndicator={false}>
                       <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', textAlign: 'center', marginBottom: wp(16) }}>POUVOIRS</Text>
