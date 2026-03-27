@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, FlatList, Pressable, TouchableOpacity, Platform, Animated, PanResponder, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
+import { View, Text, ScrollView, FlatList, Pressable, TouchableOpacity, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
 import Svg, { Defs, Rect, Path, Circle, Line, Ellipse, G, Polygon, Text as SvgText, LinearGradient as SvgLinearGradient, RadialGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -560,7 +560,6 @@ export default function LixVersePage() {
   const [showCharOnboarding, setShowCharOnboarding] = useState(false);
   const [selectedChar, setSelectedChar] = useState(null);
   const [previewChar, setPreviewChar] = useState(null);
-  const [cardSwipeIndex, setCardSwipeIndex] = useState(0);
   const [cardViewIndex, setCardViewIndex] = useState(0);
   const [charFlipped, setCharFlipped] = useState(false);
   const [charPowers, setCharPowers] = useState([]);
@@ -579,45 +578,26 @@ export default function LixVersePage() {
   };
 
   const flipAnim = useRef(new Animated.Value(0)).current;
-  const cardScrollRef = useRef(null);
-  const cardSwipeX = useRef(new Animated.Value(0)).current;
   const cardViewIndexRef = useRef(0);
-  const cardPanResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onStartShouldSetPanResponderCapture: () => false,
-      onMoveShouldSetPanResponder: (_, gs) => {
-        return Math.abs(gs.dx) > 20 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5;
-      },
-      onMoveShouldSetPanResponderCapture: () => false,
-      onPanResponderGrant: () => {},
-      onPanResponderMove: (_, gs) => {
-        cardSwipeX.setValue(gs.dx);
-      },
-      onPanResponderRelease: (_, gs) => {
-        const threshold = W * 0.15;
-        const currentIdx = cardViewIndexRef.current;
-        if (gs.dx < -threshold && currentIdx < ALL_CHARACTERS.length - 1) {
-          Animated.timing(cardSwipeX, { toValue: -W, duration: 200, useNativeDriver: true }).start(() => {
-            const newIdx = currentIdx + 1;
-            cardViewIndexRef.current = newIdx;
-            setCardViewIndex(newIdx);
-            cardSwipeX.setValue(0);
-          });
-        } else if (gs.dx > threshold && currentIdx > 0) {
-          Animated.timing(cardSwipeX, { toValue: W, duration: 200, useNativeDriver: true }).start(() => {
-            const newIdx = currentIdx - 1;
-            cardViewIndexRef.current = newIdx;
-            setCardViewIndex(newIdx);
-            cardSwipeX.setValue(0);
-          });
-        } else {
-          Animated.spring(cardSwipeX, { toValue: 0, friction: 6, tension: 80, useNativeDriver: true }).start();
-        }
-      },
-      onPanResponderTerminationRequest: () => true,
-    })
-  ).current;
+  const cardFlatListRef = useRef(null);
+
+  const CARD_WIDTH = wp(280);
+  const CARD_SPACING = wp(12);
+  const CARD_SNAP = CARD_WIDTH + CARD_SPACING;
+
+  const onCardViewableChange = useRef(({ viewableItems }) => {
+    if (viewableItems && viewableItems.length > 0) {
+      const idx = viewableItems[0].index;
+      if (idx !== undefined && idx !== null) {
+        cardViewIndexRef.current = idx;
+        setCardViewIndex(idx);
+      }
+    }
+  }).current;
+
+  const cardViewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 60,
+  }).current;
 
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
@@ -1788,10 +1768,8 @@ export default function LixVersePage() {
                   setSelectedChar(ch); setCharFlipped(false); flipAnim.setValue(0);
                   const charIndex = ALL_CHARACTERS.findIndex(c => c.id === (ch.slug || ch.id));
                   const idx = charIndex >= 0 ? charIndex : 0;
-                  setCardSwipeIndex(idx);
                   setCardViewIndex(idx);
                   cardViewIndexRef.current = idx;
-                  cardSwipeX.setValue(0);
                   loadCharPowers(ch.slug || ch.id);
                 }}
                 style={({ pressed }) => ({
@@ -4193,77 +4171,67 @@ export default function LixVersePage() {
                   <View style={{ backgroundColor: 'rgba(0,0,0,0.92)', borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingTop: wp(12), paddingBottom: wp(24) }}>
                     <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: wp(10) }} />
 
-                    {/* Cartes empilées — Tinder style */}
-                    <View style={{ alignItems: 'center', height: wp(370) }}>
-                      {/* Carte DERRIÈRE visible */}
-                      {cardViewIndex < ALL_CHARACTERS.length - 1 && (() => {
-                        const behindChar = ALL_CHARACTERS[cardViewIndex + 1];
-                        const behindImg = getCharImage(behindChar.id);
-                        return (
-                          <View style={{ position: 'absolute', alignSelf: 'center', transform: [{ scale: 0.92 }, { translateY: 12 }], opacity: 0.4 }}>
-                            <View style={{ width: wp(280), height: wp(370), borderRadius: wp(4), overflow: 'hidden', backgroundColor: '#000' }}>
-                              {behindImg.img ? (
-                                <Image source={behindImg.img} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                              ) : (
-                                <View style={{ width: '100%', height: '100%', backgroundColor: '#1E2530', justifyContent: 'center', alignItems: 'center' }}>
-                                  <Text style={{ fontSize: fp(60) }}>{behindImg.emoji}</Text>
-                                </View>
-                              )}
+                    {/* FlatList horizontale — navigation native */}
+                    <View style={{ height: wp(380), width: W }}>
+                      <FlatList
+                        ref={cardFlatListRef}
+                        data={ALL_CHARACTERS}
+                        horizontal
+                        pagingEnabled={false}
+                        snapToInterval={CARD_SNAP}
+                        snapToAlignment="center"
+                        decelerationRate="fast"
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ paddingHorizontal: (W - CARD_WIDTH) / 2 }}
+                        initialScrollIndex={cardViewIndex}
+                        getItemLayout={(_, index) => ({
+                          length: CARD_SNAP,
+                          offset: CARD_SNAP * index,
+                          index,
+                        })}
+                        onViewableItemsChanged={onCardViewableChange}
+                        viewabilityConfig={cardViewabilityConfig}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item }) => {
+                          const acSlug = item.id;
+                          const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: ownedChars[c.id]?.level || 0, xp: ownedChars[c.id]?.xp || 0, xp_next: ownedChars[c.id]?.xp_next || 1000, uses_remaining: ownedChars[c.id]?.uses_remaining || 0, uses_max: ownedChars[c.id]?.uses_max || 10, fragments: 0, fragments_required: 3, is_active: false }));
+                          const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...item, slug: acSlug, owned: false };
+                          const charImg = getCharImage(acSlug);
+                          const own = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(acSlug);
+                          const usesRem = ch.uses_remaining || 0;
+                          const usesMax = ch.uses_max || item.uses || 10;
+                          const name = CHAR_NAMES[acSlug] || ch.name || item.name || acSlug;
+
+                          return (
+                            <View style={{ width: CARD_WIDTH, marginRight: CARD_SPACING }}>
+                              <View style={{ width: CARD_WIDTH, height: wp(370), borderRadius: wp(8), overflow: 'hidden', backgroundColor: '#000' }}>
+                                {charImg.img ? (
+                                  <Image source={charImg.img} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                                ) : (
+                                  <View style={{ width: '100%', height: '100%', backgroundColor: '#1E2530', justifyContent: 'center', alignItems: 'center' }}>
+                                    <Text style={{ fontSize: fp(80) }}>{charImg.emoji}</Text>
+                                    <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.4)', marginTop: wp(8) }}>{name}</Text>
+                                  </View>
+                                )}
+
+                                {/* Badge utilisations en haut à droite */}
+                                {own && (
+                                  <View style={{ position: 'absolute', top: wp(12), right: wp(12), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
+                                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.8)' }}>{usesRem}/{usesMax} ⚡</Text>
+                                  </View>
+                                )}
+
+                                {/* Overlay lock si non possédé */}
+                                {!own && (
+                                  <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
+                                    <Text style={{ fontSize: fp(50) }}>🔒</Text>
+                                  </View>
+                                )}
+                              </View>
                             </View>
-                          </View>
-                        );
-                      })()}
-
-                      {/* Carte ACTIVE avec swipe */}
-                      {(() => {
-                        const ac = ALL_CHARACTERS[cardViewIndex];
-                        if (!ac) return null;
-                        const acSlug = ac.id;
-                        const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: ownedChars[c.id]?.level || 0, xp: ownedChars[c.id]?.xp || 0, xp_next: ownedChars[c.id]?.xp_next || 1000, uses_remaining: ownedChars[c.id]?.uses_remaining || 0, uses_max: ownedChars[c.id]?.uses_max || 10, fragments: 0, fragments_required: 3, is_active: false }));
-                        const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...ac, slug: acSlug, owned: false };
-                        const charImg = getCharImage(acSlug);
-                        const own = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(acSlug);
-                        const usesRem = ch.uses_remaining || 0;
-                        const usesMax = ch.uses_max || ac.uses || 10;
-                        const name = CHAR_NAMES[acSlug] || ch.name || ac.name || acSlug;
-
-                        return (
-                          <Animated.View
-                            {...cardPanResponder.panHandlers}
-                            style={{
-                              transform: [
-                                { translateX: cardSwipeX },
-                                { rotate: cardSwipeX.interpolate({ inputRange: [-W, 0, W], outputRange: ['-8deg', '0deg', '8deg'] }) }
-                              ],
-                            }}
-                          >
-                            <View style={{ width: wp(280), height: wp(370), borderRadius: wp(4), overflow: 'hidden', backgroundColor: '#000' }}>
-                              {charImg.img ? (
-                                <Image source={charImg.img} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                              ) : (
-                                <View style={{ width: '100%', height: '100%', backgroundColor: '#1E2530', justifyContent: 'center', alignItems: 'center' }}>
-                                  <Text style={{ fontSize: fp(80) }}>{charImg.emoji}</Text>
-                                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.4)', marginTop: wp(8) }}>{name}</Text>
-                                </View>
-                              )}
-
-                              {/* Badge utilisations en haut à droite */}
-                              {own && (
-                                <View style={{ position: 'absolute', top: wp(16), right: wp(16), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
-                                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.8)' }}>{usesRem}/{usesMax} ⚡</Text>
-                                </View>
-                              )}
-
-                              {/* Overlay lock si non possédé */}
-                              {!own && (
-                                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' }}>
-                                  <Text style={{ fontSize: fp(50) }}>🔒</Text>
-                                </View>
-                              )}
-                            </View>
-                          </Animated.View>
-                        );
-                      })()}
+                          );
+                        }}
+                      />
                     </View>
 
                     {/* Infos SOUS la carte */}
