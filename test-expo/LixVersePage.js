@@ -4167,7 +4167,7 @@ export default function LixVersePage() {
             <Pressable onPress={(e) => e.stopPropagation()}>
               <View style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), overflow: 'hidden', maxHeight: SCREEN_WIDTH * 1.8 }}>
                 {/* FACE — Swipe Tinder entre cartes */}
-                <Animated.View style={{ opacity: frontInterpolate, position: charFlipped ? 'absolute' : 'relative', width: '100%' }}>
+                <Animated.View pointerEvents={charFlipped ? 'none' : 'auto'} style={{ opacity: frontInterpolate, position: charFlipped ? 'absolute' : 'relative', width: '100%' }}>
                   <View style={{ backgroundColor: 'rgba(0,0,0,0.92)', borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingTop: wp(12), paddingBottom: wp(24) }}>
                     <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: wp(10) }} />
 
@@ -4182,6 +4182,7 @@ export default function LixVersePage() {
                         snapToAlignment="center"
                         decelerationRate="fast"
                         showsHorizontalScrollIndicator={false}
+                        nestedScrollEnabled={true}
                         contentContainerStyle={{ paddingHorizontal: (W - CARD_WIDTH) / 2 }}
                         initialScrollIndex={cardViewIndex}
                         getItemLayout={(_, index) => ({
@@ -4348,7 +4349,7 @@ export default function LixVersePage() {
                 </Animated.View>
 
                 {/* DOS — Pouvoirs */}
-                <Animated.View style={{ opacity: backInterpolate, position: !charFlipped ? 'absolute' : 'relative', width: '100%' }}>
+                <Animated.View pointerEvents={!charFlipped ? 'none' : 'auto'} style={{ opacity: backInterpolate, position: !charFlipped ? 'absolute' : 'relative', width: '100%' }}>
                   <LinearGradient colors={['#0D0D0D','#111111','#0A0A0A','#080808']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
                     <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
                     <ScrollView showsVerticalScrollIndicator={false}>
