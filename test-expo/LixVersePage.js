@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, FlatList, Pressable, TouchableOpacity, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
+import { View, Text, ScrollView, Pressable, TouchableOpacity, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
 import Svg, { Defs, Rect, Path, Circle, Line, Ellipse, G, Polygon, Text as SvgText, LinearGradient as SvgLinearGradient, RadialGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -579,25 +579,26 @@ export default function LixVersePage() {
 
   const flipAnim = useRef(new Animated.Value(0)).current;
   const cardViewIndexRef = useRef(0);
-  const cardFlatListRef = useRef(null);
+  const cardSlideAnim = useRef(new Animated.Value(0)).current;
 
-  const CARD_WIDTH = wp(280);
-  const CARD_SPACING = wp(12);
-  const CARD_SNAP = CARD_WIDTH + CARD_SPACING;
-
-  const onCardViewableChange = useRef(({ viewableItems }) => {
-    if (viewableItems && viewableItems.length > 0) {
-      const idx = viewableItems[0].index;
-      if (idx !== undefined && idx !== null) {
-        cardViewIndexRef.current = idx;
-        setCardViewIndex(idx);
-      }
-    }
-  }).current;
-
-  const cardViewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 60,
-  }).current;
+  const navigateCard = (direction) => {
+    const newIdx = cardViewIndex + direction;
+    if (newIdx < 0 || newIdx >= ALL_CHARACTERS.length) return;
+    Animated.timing(cardSlideAnim, {
+      toValue: -direction,
+      duration: 180,
+      useNativeDriver: true,
+      easing: Easing.out(Easing.ease),
+    }).start(() => {
+      cardViewIndexRef.current = newIdx;
+      setCardViewIndex(newIdx);
+      cardSlideAnim.setValue(direction);
+      Animated.spring(cardSlideAnim, {
+        toValue: 0, friction: 9, tension: 120,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
 
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
@@ -4171,68 +4172,94 @@ export default function LixVersePage() {
                   <View style={{ backgroundColor: 'rgba(0,0,0,0.92)', borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingTop: wp(12), paddingBottom: wp(24) }}>
                     <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: wp(10) }} />
 
-                    {/* FlatList horizontale — navigation native */}
-                    <View style={{ height: wp(380), width: W }}>
-                      <FlatList
-                        ref={cardFlatListRef}
-                        data={ALL_CHARACTERS}
-                        horizontal
-                        pagingEnabled={false}
-                        snapToInterval={CARD_SNAP}
-                        snapToAlignment="center"
-                        decelerationRate="fast"
-                        showsHorizontalScrollIndicator={false}
-                        nestedScrollEnabled={true}
-                        contentContainerStyle={{ paddingHorizontal: (W - CARD_WIDTH) / 2 }}
-                        initialScrollIndex={cardViewIndex}
-                        getItemLayout={(_, index) => ({
-                          length: CARD_SNAP,
-                          offset: CARD_SNAP * index,
-                          index,
-                        })}
-                        onViewableItemsChanged={onCardViewableChange}
-                        viewabilityConfig={cardViewabilityConfig}
-                        keyExtractor={(item) => item.id}
-                        renderItem={({ item }) => {
-                          const acSlug = item.id;
+                    {/* Carte unique + flèches navigation */}
+                    <View style={{ alignItems: 'center', height: wp(380), justifyContent: 'center' }}>
+
+                      {/* Flèche GAUCHE */}
+                      {cardViewIndex > 0 ? (
+                        <Pressable
+                          onPress={() => navigateCard(-1)}
+                          style={({ pressed }) => ({
+                            position: 'absolute', left: wp(6), top: wp(370) / 2 - wp(22), zIndex: 20,
+                            width: wp(32), height: wp(44), borderRadius: wp(10),
+                            justifyContent: 'center', alignItems: 'center',
+                            backgroundColor: pressed ? 'rgba(0,217,132,0.25)' : 'rgba(0,0,0,0.5)',
+                            borderWidth: 1.5,
+                            borderColor: pressed ? 'rgba(0,217,132,0.6)' : 'rgba(255,255,255,0.12)',
+                            transform: [{ scale: pressed ? 0.88 : 1 }],
+                          })}
+                        >
+                          <Text style={{ fontSize: fp(20), color: 'rgba(255,255,255,0.7)', fontWeight: '300' }}>‹</Text>
+                        </Pressable>
+                      ) : null}
+
+                      {/* Flèche DROITE */}
+                      {cardViewIndex < ALL_CHARACTERS.length - 1 ? (
+                        <Pressable
+                          onPress={() => navigateCard(1)}
+                          style={({ pressed }) => ({
+                            position: 'absolute', right: wp(6), top: wp(370) / 2 - wp(22), zIndex: 20,
+                            width: wp(32), height: wp(44), borderRadius: wp(10),
+                            justifyContent: 'center', alignItems: 'center',
+                            backgroundColor: pressed ? 'rgba(0,217,132,0.25)' : 'rgba(0,0,0,0.5)',
+                            borderWidth: 1.5,
+                            borderColor: pressed ? 'rgba(0,217,132,0.6)' : 'rgba(255,255,255,0.12)',
+                            transform: [{ scale: pressed ? 0.88 : 1 }],
+                          })}
+                        >
+                          <Text style={{ fontSize: fp(20), color: 'rgba(255,255,255,0.7)', fontWeight: '300' }}>›</Text>
+                        </Pressable>
+                      ) : null}
+
+                      {/* CARTE ACTIVE — animation slide */}
+                      <Animated.View style={{
+                        transform: [{ translateX: cardSlideAnim.interpolate({
+                          inputRange: [-1, 0, 1],
+                          outputRange: [-W * 0.5, 0, W * 0.5],
+                        }) }],
+                        opacity: cardSlideAnim.interpolate({
+                          inputRange: [-1, -0.2, 0, 0.2, 1],
+                          outputRange: [0, 1, 1, 1, 0],
+                        }),
+                      }}>
+                        {(() => {
+                          const ac = ALL_CHARACTERS[cardViewIndex];
+                          if (!ac) return null;
+                          const acSlug = ac.id;
                           const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: ownedChars[c.id]?.level || 0, xp: ownedChars[c.id]?.xp || 0, xp_next: ownedChars[c.id]?.xp_next || 1000, uses_remaining: ownedChars[c.id]?.uses_remaining || 0, uses_max: ownedChars[c.id]?.uses_max || 10, fragments: 0, fragments_required: 3, is_active: false }));
-                          const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...item, slug: acSlug, owned: false };
+                          const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...ac, slug: acSlug, owned: false };
                           const charImg = getCharImage(acSlug);
                           const own = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(acSlug);
                           const usesRem = ch.uses_remaining || 0;
-                          const usesMax = ch.uses_max || item.uses || 10;
-                          const name = CHAR_NAMES[acSlug] || ch.name || item.name || acSlug;
+                          const usesMax = ch.uses_max || ac.uses || 10;
+                          const name = CHAR_NAMES[acSlug] || ch.name || ac.name || acSlug;
 
                           return (
-                            <View style={{ width: CARD_WIDTH, marginRight: CARD_SPACING }}>
-                              <View style={{ width: CARD_WIDTH, height: wp(370), borderRadius: wp(8), overflow: 'hidden', backgroundColor: '#000' }}>
-                                {charImg.img ? (
-                                  <Image source={charImg.img} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                                ) : (
-                                  <View style={{ width: '100%', height: '100%', backgroundColor: '#1E2530', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Text style={{ fontSize: fp(80) }}>{charImg.emoji}</Text>
-                                    <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.4)', marginTop: wp(8) }}>{name}</Text>
-                                  </View>
-                                )}
+                            <View style={{ width: wp(280), height: wp(370), borderRadius: wp(8), overflow: 'hidden', backgroundColor: '#000' }}>
+                              {charImg.img ? (
+                                <Image source={charImg.img} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                              ) : (
+                                <View style={{ width: '100%', height: '100%', backgroundColor: '#1E2530', justifyContent: 'center', alignItems: 'center' }}>
+                                  <Text style={{ fontSize: fp(80) }}>{charImg.emoji}</Text>
+                                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.4)', marginTop: wp(8) }}>{name}</Text>
+                                </View>
+                              )}
 
-                                {/* Badge utilisations en haut à droite */}
-                                {own && (
-                                  <View style={{ position: 'absolute', top: wp(12), right: wp(12), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
-                                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.8)' }}>{usesRem}/{usesMax} ⚡</Text>
-                                  </View>
-                                )}
+                              {own && (
+                                <View style={{ position: 'absolute', top: wp(12), right: wp(12), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
+                                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.8)' }}>{usesRem}/{usesMax} ⚡</Text>
+                                </View>
+                              )}
 
-                                {/* Overlay lock si non possédé */}
-                                {!own && (
-                                  <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Text style={{ fontSize: fp(50) }}>🔒</Text>
-                                  </View>
-                                )}
-                              </View>
+                              {!own && (
+                                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
+                                  <Text style={{ fontSize: fp(50) }}>🔒</Text>
+                                </View>
+                              )}
                             </View>
                           );
-                        }}
-                      />
+                        })()}
+                      </Animated.View>
                     </View>
 
                     {/* Infos SOUS la carte */}
@@ -4343,7 +4370,7 @@ export default function LixVersePage() {
 
                     {/* Indication swipe */}
                     {ALL_CHARACTERS.length > 1 && (
-                      <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: wp(6), marginBottom: wp(4) }}>← Glisse pour voir les autres →</Text>
+                      <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: wp(6), marginBottom: wp(4) }}>{cardViewIndex + 1}/{ALL_CHARACTERS.length}</Text>
                     )}
                   </View>
                 </Animated.View>
