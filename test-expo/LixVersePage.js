@@ -584,21 +584,23 @@ export default function LixVersePage() {
   const cardViewIndexRef = useRef(0);
   const cardPanResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dx) > 10,
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dx) > 15 && Math.abs(gs.dx) > Math.abs(gs.dy),
+      onPanResponderGrant: () => {},
       onPanResponderMove: (_, gs) => { cardSwipeX.setValue(gs.dx); },
       onPanResponderRelease: (_, gs) => {
-        const threshold = W * 0.25;
-        if (gs.dx < -threshold && cardViewIndexRef.current < ALL_CHARACTERS.length - 1) {
-          Animated.timing(cardSwipeX, { toValue: -W, duration: 250, useNativeDriver: true }).start(() => {
-            cardViewIndexRef.current += 1;
-            setCardViewIndex(cardViewIndexRef.current);
+        const threshold = W * 0.2;
+        const currentIdx = cardViewIndexRef.current;
+        if (gs.dx < -threshold && currentIdx < ALL_CHARACTERS.length - 1) {
+          Animated.timing(cardSwipeX, { toValue: -W, duration: 200, useNativeDriver: true }).start(() => {
+            cardViewIndexRef.current = currentIdx + 1;
+            setCardViewIndex(currentIdx + 1);
             cardSwipeX.setValue(0);
           });
-        } else if (gs.dx > threshold && cardViewIndexRef.current > 0) {
-          Animated.timing(cardSwipeX, { toValue: W, duration: 250, useNativeDriver: true }).start(() => {
-            cardViewIndexRef.current -= 1;
-            setCardViewIndex(cardViewIndexRef.current);
+        } else if (gs.dx > threshold && currentIdx > 0) {
+          Animated.timing(cardSwipeX, { toValue: W, duration: 200, useNativeDriver: true }).start(() => {
+            cardViewIndexRef.current = currentIdx - 1;
+            setCardViewIndex(currentIdx - 1);
             cardSwipeX.setValue(0);
           });
         } else {
