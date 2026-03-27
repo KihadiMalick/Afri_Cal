@@ -332,11 +332,15 @@ const renderSegmentIcon = (type, tier, x, y, s, angle) => {
   );
   if (type === 'card') return (
     <G transform={t}>
-      <Rect x={4} y={2} width={16} height={20} rx={2.5} fill="#B0B8C4" opacity={0.3} />
-      <Rect x={3} y={1} width={16} height={20} rx={2.5} fill="none" stroke="#B0B8C4" strokeWidth={1.5} />
-      <Path d="M11 7l1.5 3 1.5-3" fill="none" stroke="#D4AF37" strokeWidth={1.2} strokeLinecap="round" />
-      <Circle cx={11} cy={13} r={2} fill="#D4AF37" />
-      <Path d="M8 17h6" stroke="#B0B8C4" strokeWidth={0.8} opacity={0.5} />
+      {/* Carte sombre */}
+      <Rect x={2} y={0} width={20} height={24} rx={3} fill="#1A1D22" stroke="#4A4F55" strokeWidth={1.2} />
+      {/* Silhouette créature mystère */}
+      <Circle cx={12} cy={8} r={4} fill="#2A2F38" />
+      <Path d="M6,14 Q4,18 7,20 L10,16 L12,22 L14,16 L17,20 Q20,18 18,14 Q15,12 12,13 Q9,12 6,14Z" fill="#2A2F38" />
+      {/* Point d'interrogation doré */}
+      <SvgText x={12} y={16} fill="#D4AF37" fontSize={10} fontWeight="700" textAnchor="middle" alignmentBaseline="central">?</SvgText>
+      {/* Reflet subtil coin haut gauche */}
+      <Rect x={4} y={2} width={6} height={2} rx={1} fill="#4A4F55" opacity={0.3} />
     </G>
   );
   // Default: energy
