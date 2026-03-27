@@ -503,6 +503,16 @@ const MoodIcon = ({ tier, size = 42, active = false }) => {
   );
 };
 
+// ═══ DROP GEM — Icône Lix officielle LIXUM ═══
+const LixGem = ({ size = 14 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M12 1C16 7 20 12 20 16C20 20.4 16.4 23 12 23C7.6 23 4 20.4 4 16C4 12 8 7 12 1Z" fill="#007A50" stroke="#00D984" strokeWidth={1.2} />
+    <Path d="M12 5C14.5 9 17 12.5 17 15.5C17 18.5 14.8 20.5 12 20.5C9.2 20.5 7 18.5 7 15.5C7 12.5 9.5 9 12 5Z" fill="#009960" stroke="#33E8A0" strokeWidth={0.5} />
+    <Ellipse cx={9.5} cy={11} rx={2.5} ry={4} fill="#5DFFB4" opacity={0.3} transform="rotate(-20, 9.5, 11)" />
+    <Circle cx={9} cy={8} r={1.5} fill="#FFF" opacity={0.55} />
+  </Svg>
+);
+
 // ============================================================
 // COMPOSANT — Header Global (Mood + LIXUM + Lix)
 // ============================================================
@@ -642,31 +652,26 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
           borderWidth: 1, borderColor: '#4A4F55',
           borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
         }}>
-          <Svg width={14} height={14} viewBox="0 0 24 24">
-            <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
-            <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
-          </Svg>
+          <LixGem size={14} />
           <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(14), marginLeft: 4 }}>{lixCount}</Text>
           <Text style={{ color: '#888', fontSize: fp(10), marginLeft: 4 }}>▾</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Dropdown Lix/Énergie (pas de Profil — avatar déjà visible) */}
+      {/* Dropdown Lix/Énergie/Profil */}
       {dropdownOpen && (
         <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: -500, zIndex: 998 }}>
           <RNAnimated.View style={{
             position: 'absolute', top: 60, right: 14,
-            backgroundColor: 'rgba(30, 37, 48, 0.95)',
+            backgroundColor: 'rgba(16, 20, 28, 0.97)',
             borderWidth: 1, borderColor: '#4A4F55',
-            borderRadius: 16, padding: 16, zIndex: 999,
+            borderRadius: 16, paddingHorizontal: 18, paddingVertical: 14, zIndex: 999, minWidth: 180,
+            shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 10,
             opacity: dropdownAnim,
             transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
           }}>
             <TouchableOpacity onPress={() => { toggleDropdown(); onLixPress && onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-              <Svg width={14} height={14} viewBox="0 0 24 24">
-                <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
-                <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
-              </Svg>
+              <LixGem size={14} />
               <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixCount}</Text>
               <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
             </TouchableOpacity>
@@ -676,6 +681,14 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
               </Svg>
               <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{userEnergy}</Text>
               <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>énergie</Text>
+            </TouchableOpacity>
+            {/* Séparateur */}
+            <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
+            {/* Ligne Profil */}
+            <TouchableOpacity onPress={() => { toggleDropdown(); onLixPress && onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+              <Text style={{ fontSize: 18 }}>👤</Text>
+              <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>Mon Profil</Text>
+              <Text style={{ color: '#888', fontSize: 14, marginLeft: 8 }}>→</Text>
             </TouchableOpacity>
           </RNAnimated.View>
         </TouchableOpacity>
