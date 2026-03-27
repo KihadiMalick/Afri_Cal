@@ -1798,6 +1798,11 @@ export default function LixVersePage() {
       );
       const data = await Promise.race([spinPromise, timeoutPromise]);
 
+      // S'assurer que reward_value est un objet (pas une string JSON)
+      if (data && typeof data.reward_value === 'string') {
+        try { data.reward_value = JSON.parse(data.reward_value); } catch(e) {}
+      }
+
       if (!data?.success) {
         const errMsg = data?.error || data?.message || JSON.stringify(data);
         if (errMsg === 'Lix insuffisants' || errMsg === 'Insufficient Lix') {
@@ -1834,24 +1839,49 @@ export default function LixVersePage() {
       const findWinnerIndex = (segs, srvData) => {
         const sType = srvData.reward_type;
         const sVal = srvData.reward_value || {};
-        // Map server types → local types
-        const typeMap = { 'xscan': 'scan', 'full_card': 'card' };
+
+        // Map des types serveur → types locaux
+        const typeMap = {
+          'energy': 'energy',
+          'lix': 'lix',
+          'fragment': 'fragment',
+          'xscan': 'scan',
+          'free_spin': 'free_spin',
+          'full_card': 'card',
+        };
         const localType = typeMap[sType] || sType;
 
+        // Extraire la valeur numérique selon le type
+        let targetAmount = null;
+        if (localType === 'energy') targetAmount = sVal.energy;
+        if (localType === 'lix') targetAmount = sVal.lix;
+        if (localType === 'scan') targetAmount = sVal.scans;
+        if (localType === 'fragment') targetAmount = sVal.fragment;
+
+        // PASSE 1 : Match exact (type + montant)
         for (let i = 0; i < segs.length; i++) {
           const r = segs[i].reward;
           if (r.type !== localType) continue;
-          // Pour energy/lix : matcher le montant exact
-          if (localType === 'energy' && r.amount === (sVal.energy || 0)) return i;
-          if (localType === 'lix' && r.amount === (sVal.lix || 0)) return i;
-          // Pour fragment : matcher le tier
-          if (localType === 'fragment' && r.tier === (sVal.tier || srvData.character_tier)) return i;
-          // Pour scan : matcher le nombre
-          if (localType === 'scan' && r.amount === (sVal.scans || 0)) return i;
-          // Pour free_spin, card : premier match suffit
-          if (localType === 'free_spin' || localType === 'card') return i;
+
+          if (localType === 'energy' && targetAmount != null && r.amount === targetAmount) return i;
+          if (localType === 'lix' && targetAmount != null && r.amount === targetAmount) return i;
+          if (localType === 'scan' && targetAmount != null && r.amount === targetAmount) return i;
+          if (localType === 'fragment') {
+            const fragTier = sVal.tier || srvData.character_tier;
+            if (r.tier === fragTier) return i;
+          }
+          if (localType === 'free_spin') return i;
+          if (localType === 'card') return i;
         }
-        return 0; // fallback premier segment
+
+        // PASSE 2 : Match par type seul (fallback si le montant ne correspond pas)
+        for (let i = 0; i < segs.length; i++) {
+          if (segs[i].reward.type === localType) return i;
+        }
+
+        // PASSE 3 : Fallback absolu — premier segment
+        console.warn('findWinnerIndex: no match for', sType, sVal, '→ fallback segment 0');
+        return 0;
       };
 
       const winnerIndex = findWinnerIndex(segments, data);
@@ -1995,9 +2025,13 @@ export default function LixVersePage() {
               onPress={() => {
                 setShowSpinResultModal(false);
                 spinResultPulse.stopAnimation();
-                // Si fragment/carte → montrer le modal d'intégration
-                if ((rw.type === 'fragment' || rw.type === 'card') && fragmentResult) {
-                  setShowFragmentModal(true);
+                if (rw.type === 'fragment' || rw.type === 'card' || rw.type === 'full_card') {
+                  if (fragmentResult) {
+                    setShowFragmentModal(true);
+                  } else {
+                    setActiveTab('characters');
+                    loadCharacterData();
+                  }
                 }
               }}
               style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], marginTop: wp(12), width: '100%' })}>
@@ -2396,6 +2430,7 @@ export default function LixVersePage() {
                         setShowFragmentModal(false);
                         setFragmentResult(null);
                         fragmentSlideAnim.setValue(0);
+                        setActiveTab('characters');
                         await loadCharacterData();
                         try {
                           const res = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID + '&select=lix_balance,energy', { headers: HEADERS });
