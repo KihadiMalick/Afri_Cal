@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, TouchableOpacity, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
+import { View, Text, ScrollView, FlatList, Pressable, TouchableOpacity, Platform, Animated, Dimensions, PixelRatio, StatusBar, Alert, Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
 import Svg, { Defs, Rect, Path, Circle, Line, Ellipse, G, Polygon, Text as SvgText, LinearGradient as SvgLinearGradient, RadialGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -4128,38 +4128,27 @@ export default function LixVersePage() {
       {/* Modal Détail Personnage avec Flip */}
       {selectedChar && (
         <Modal visible={true} transparent animationType="slide" onRequestClose={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }}>
-          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }}>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'flex-end' }} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }}>
             <Pressable onPress={(e) => e.stopPropagation()}>
               <View style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), overflow: 'hidden', maxHeight: SCREEN_WIDTH * 1.8 }}>
                 {/* FACE — Swipe horizontal entre cartes */}
                 <Animated.View style={{ transform: [{ rotateY: frontInterpolate }], backfaceVisibility: 'hidden', position: charFlipped ? 'absolute' : 'relative', width: '100%' }}>
-                  <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingTop: wp(12), paddingBottom: wp(34) }}>
-                    <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(12) }} />
+                  <View style={{ backgroundColor: 'rgba(0,0,0,0.92)', borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingTop: wp(12), paddingBottom: wp(24) }}>
+                    <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: wp(10) }} />
 
-                    {/* Cartes fantômes — effet pile */}
-                    <View style={{ alignItems: 'center' }}>
-                      <View style={{ position: 'absolute', top: wp(12), width: wp(256), height: wp(341), borderRadius: wp(10), backgroundColor: '#1A1D22', opacity: 0.3, transform: [{ scale: 0.9 }] }} />
-                      <View style={{ position: 'absolute', top: wp(6), width: wp(268), height: wp(357), borderRadius: wp(11), backgroundColor: '#252A30', opacity: 0.5, transform: [{ scale: 0.95 }] }} />
-                    </View>
-
-                    {/* ScrollView horizontal — swipe entre toutes les cartes */}
-                    <ScrollView
+                    <FlatList
                       ref={cardScrollRef}
                       horizontal
-                      pagingEnabled={false}
+                      pagingEnabled
                       showsHorizontalScrollIndicator={false}
-                      snapToInterval={wp(280) + wp(12)}
+                      snapToInterval={SCREEN_WIDTH}
                       decelerationRate="fast"
-                      contentContainerStyle={{ paddingHorizontal: (SCREEN_WIDTH - wp(280)) / 2 }}
-                      onLayout={() => {
-                        if (cardScrollRef.current && cardSwipeIndex > 0) {
-                          setTimeout(() => {
-                            cardScrollRef.current.scrollTo({ x: cardSwipeIndex * (wp(280) + wp(12)), animated: false });
-                          }, 100);
-                        }
-                      }}
+                      data={ALL_CHARACTERS}
+                      keyExtractor={(item) => item.id}
+                      initialScrollIndex={cardSwipeIndex}
+                      getItemLayout={(data, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
                       onMomentumScrollEnd={(e) => {
-                        const idx = Math.round(e.nativeEvent.contentOffset.x / (wp(280) + wp(12)));
+                        const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
                         if (idx >= 0 && idx < ALL_CHARACTERS.length && idx !== cardSwipeIndex) {
                           setCardSwipeIndex(idx);
                           const newChar = ALL_CHARACTERS[idx];
@@ -4169,8 +4158,7 @@ export default function LixVersePage() {
                           loadCharPowers(newChar.id);
                         }
                       }}
-                    >
-                      {ALL_CHARACTERS.map((ac, acIdx) => {
+                      renderItem={({ item: ac }) => {
                         const acSlug = ac.id;
                         const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: ownedChars[c.id]?.level || 0, xp: ownedChars[c.id]?.xp || 0, xp_next: ownedChars[c.id]?.xp_next || 1000, uses_remaining: ownedChars[c.id]?.uses_remaining || 0, uses_max: ownedChars[c.id]?.uses_max || 10, fragments: 0, fragments_required: 3, is_active: false }));
                         const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...ac, slug: acSlug, owned: false };
@@ -4187,51 +4175,50 @@ export default function LixVersePage() {
                         const fragsReq = ch.fragments_required || FRAGS_NIV1[tier] || 3;
 
                         return (
-                          <View key={acSlug} style={{ width: wp(280), marginRight: wp(12), alignItems: 'center' }}>
-                            {/* Carte image */}
-                            <View style={{ width: wp(280), height: wp(373), borderRadius: wp(12), overflow: 'hidden', backgroundColor: '#1A1D22', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.6, shadowRadius: 16, elevation: 12 }}>
+                          <View style={{ width: SCREEN_WIDTH, alignItems: 'center', paddingHorizontal: (SCREEN_WIDTH - wp(280)) / 2 }}>
+                            {/* Carte image — pas de bordure code */}
+                            <View style={{ width: wp(280), height: wp(373), borderRadius: wp(12), overflow: 'hidden', backgroundColor: '#000' }}>
                               {charImg.img ? (
                                 <Image source={charImg.img} style={{ width: wp(280), height: wp(373) }} resizeMode="cover" />
                               ) : (
                                 <View style={{ width: wp(280), height: wp(373), justifyContent: 'center', alignItems: 'center', backgroundColor: '#1E2530' }}>
                                   <Text style={{ fontSize: fp(80) }}>{charImg.emoji}</Text>
+                                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.4)', marginTop: wp(8) }}>{name}</Text>
                                 </View>
                               )}
 
                               {/* Badge utilisations en haut à droite */}
                               {own && (
-                                <View style={{ position: 'absolute', top: wp(10), right: wp(10), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
+                                <View style={{ position: 'absolute', top: wp(16), right: wp(12), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
                                   <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.8)' }}>{usesRem}/{usesMax} ⚡</Text>
                                 </View>
                               )}
 
                               {/* Overlay lock si non possédé */}
                               {!own && (
-                                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
+                                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' }}>
                                   <Text style={{ fontSize: fp(50) }}>🔒</Text>
                                 </View>
                               )}
                             </View>
 
-                            {/* Infos SOUS la carte */}
-                            <View style={{ width: wp(280), marginTop: wp(12), alignItems: 'center' }}>
-                              <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#C4A44A', letterSpacing: 2, textAlign: 'center' }}>{name.toUpperCase()}</Text>
-
+                            {/* Infos SOUS la carte — pas de nom (déjà dans l'image) */}
+                            <View style={{ width: wp(280), marginTop: wp(8), alignItems: 'center' }}>
                               {/* Barre XP si possédé */}
                               {own && (
-                                <View style={{ width: '100%', marginTop: wp(8) }}>
+                                <View style={{ width: '100%', marginTop: wp(4) }}>
                                   <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
-                                    <View style={{ height: '100%', borderRadius: wp(2), backgroundColor: '#C4A44A', width: Math.min(100, Math.round((xp / xpNext) * 100)) + '%' }} />
+                                    <View style={{ height: '100%', borderRadius: wp(2), backgroundColor: '#7BAF6E', width: Math.min(100, Math.round((xp / xpNext) * 100)) + '%' }} />
                                   </View>
-                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: wp(3) }}>{xp}/{xpNext} XP</Text>
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: wp(3) }}>{xp}/{xpNext} XP</Text>
                                 </View>
                               )}
 
                               {/* Barre fragments si non possédé */}
                               {!own && (
-                                <View style={{ width: '100%', marginTop: wp(8) }}>
+                                <View style={{ width: '100%', marginTop: wp(4) }}>
                                   <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
-                                    <View style={{ height: '100%', borderRadius: wp(2), backgroundColor: '#C4A44A', width: Math.min(100, Math.round((frags / fragsReq) * 100)) + '%' }} />
+                                    <View style={{ height: '100%', borderRadius: wp(2), backgroundColor: '#B8A068', width: Math.min(100, Math.round((frags / fragsReq) * 100)) + '%' }} />
                                   </View>
                                   <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: wp(3) }}>🧩 {frags}/{fragsReq} fragments</Text>
                                 </View>
@@ -4239,21 +4226,21 @@ export default function LixVersePage() {
 
                               {/* Badge ACTIF */}
                               {own && isActive && (
-                                <View style={{ backgroundColor: 'rgba(196,164,74,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2), marginTop: wp(6) }}>
-                                  <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#C4A44A' }}>ACTIF ✓</Text>
+                                <View style={{ backgroundColor: 'rgba(123,175,110,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2), marginTop: wp(6) }}>
+                                  <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#7BAF6E' }}>ACTIF ✓</Text>
                                 </View>
                               )}
                             </View>
 
-                            {/* Boutons */}
-                            <View style={{ width: wp(280), marginTop: wp(12), gap: wp(6) }}>
+                            {/* Boutons compacts */}
+                            <View style={{ width: wp(280), marginTop: wp(6), gap: wp(4) }}>
                               {own ? (
                                 <>
                                   {!isActive && (
                                     <Pressable delayPressIn={120} onPress={() => switchActiveCharacter(acSlug)} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-                                      <View style={{ paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', backgroundColor: '#2A2F36', borderWidth: 1.5, borderColor: '#C4A44A' }}>
-                                        <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#C4A44A' }}>Équiper</Text>
-                                      </View>
+                                      <LinearGradient colors={['#8B7A2E','#6B5A1E']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
+                                        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>Équiper</Text>
+                                      </LinearGradient>
                                     </Pressable>
                                   )}
                                   <Pressable delayPressIn={120}
@@ -4266,32 +4253,32 @@ export default function LixVersePage() {
                                       }
                                     }}
                                     style={({ pressed }) => ({ opacity: usesRem === 0 ? 0.5 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-                                    <LinearGradient colors={usesRem === 0 ? ['#333A42','#2A2F36'] : ['#C4A44A','#A08930']} style={{ paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center' }}>
-                                      <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>{usesRem === 0 ? 'Recharger' : 'Pouvoirs →'}</Text>
+                                    <LinearGradient colors={usesRem === 0 ? ['#333A42','#2A2F36'] : ['#4A6A4A','#3A5A3A']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
+                                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{usesRem === 0 ? 'Recharger' : 'Pouvoirs →'}</Text>
                                     </LinearGradient>
                                   </Pressable>
                                 </>
                               ) : (
                                 <Pressable delayPressIn={120} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); }}
                                   style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-                                  <View style={{ paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                                    <Text style={{ fontSize: fp(14), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>Obtenir via Spin Wheel</Text>
+                                  <View style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                                    <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>Obtenir via Spin Wheel</Text>
                                   </View>
                                 </Pressable>
                               )}
-                              <Pressable onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }} style={{ paddingVertical: wp(10), alignItems: 'center' }}>
-                                <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.25)' }}>Fermer</Text>
+                              <Pressable onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }} style={{ paddingVertical: wp(8), alignItems: 'center' }}>
+                                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.25)' }}>Fermer</Text>
                               </Pressable>
                             </View>
                           </View>
                         );
-                      })}
-                    </ScrollView>
+                      }}
+                    />
 
                     {/* Indicateur de pagination — dots */}
                     <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: wp(12), gap: wp(4) }}>
                       {ALL_CHARACTERS.map((_, i) => (
-                        <View key={i} style={{ width: i === cardSwipeIndex ? wp(8) : wp(5), height: i === cardSwipeIndex ? wp(8) : wp(5), borderRadius: wp(4), backgroundColor: i === cardSwipeIndex ? '#C4A44A' : 'rgba(255,255,255,0.15)' }} />
+                        <View key={i} style={{ width: i === cardSwipeIndex ? wp(8) : wp(5), height: i === cardSwipeIndex ? wp(8) : wp(5), borderRadius: wp(4), backgroundColor: i === cardSwipeIndex ? '#B8A068' : 'rgba(255,255,255,0.15)' }} />
                       ))}
                     </View>
 
@@ -4299,7 +4286,7 @@ export default function LixVersePage() {
                     {ALL_CHARACTERS.length > 1 && (
                       <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: wp(6), marginBottom: wp(4) }}>← Glisse pour voir les autres →</Text>
                     )}
-                  </LinearGradient>
+                  </View>
                 </Animated.View>
 
                 {/* DOS — Pouvoirs */}
