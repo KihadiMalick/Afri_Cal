@@ -232,9 +232,9 @@ const NORMAL_SEGMENTS = [
 ];
 
 const SUPER_SEGMENTS = [
-  { label: '5', icon: '⚡', chance: 32, color: '#2A4A3A', reward: { type: 'energy', amount: 5 } },
+  { label: '5', icon: '⚡', chance: 30, color: '#2A4A3A', reward: { type: 'energy', amount: 5 } },
   { label: '50', icon: '💰', chance: 20, color: '#3A4A2A', reward: { type: 'lix', amount: 50 } },
-  { label: '1', icon: '🃏', chance: 5, color: '#3A2A4A', subLabel: 'carte Std', reward: { type: 'card', tier: 'standard', amount: 1 } },
+  { label: '1', icon: '🃏', chance: 7, color: '#3A2A4A', subLabel: 'carte Std', reward: { type: 'card', tier: 'standard', amount: 1 } },
   { label: '2', icon: '📸', chance: 18, color: '#4A3A2A', subLabel: 'scans', reward: { type: 'scan', amount: 2 } },
   { label: '1', icon: '🎁', chance: 10, color: '#4A2A2A', subLabel: 'super', reward: { type: 'free_spin', amount: 1 } },
   { label: '1', icon: '🧩', chance: 8, color: '#2A3A4A', subLabel: 'Frag Elite', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
@@ -256,7 +256,7 @@ const SLUGS_BY_TIER = {
   standard: ['emerald_owl', 'hawk_eye', 'ruby_tiger', 'amber_fox', 'gipsy'],
   rare: ['jade_phoenix', 'silver_wolf', 'boukki', 'iron_rhino', 'coral_dolphin'],
   elite: ['licornium', 'jaane_snake', 'mosquito'],
-  mythique: ['diamond_simba', 'al_buraq'],
+  mythique: ['diamond_simba', 'alburax'],
   ultimate: ['tardigrum'],
 };
 
@@ -266,7 +266,7 @@ const CHAR_EMOJIS = {
   'jade_phoenix': '🔥', 'silver_wolf': '🐺', 'boukki': '🦴',
   'iron_rhino': '🦏', 'coral_dolphin': '🐬',
   'licornium': '🦄', 'jaane_snake': '🐍', 'mosquito': '🦟',
-  'diamond_simba': '🦁', 'al_buraq': '🐴',
+  'diamond_simba': '🦁', 'alburax': '🐴',
   'tardigrum': '🧬',
 };
 
@@ -276,7 +276,7 @@ const CHAR_NAMES = {
   'jade_phoenix': 'Jade Phoenix', 'silver_wolf': 'Silver Wolf', 'boukki': 'Boukki',
   'iron_rhino': 'Iron Rhino', 'coral_dolphin': 'Coral Dolphin',
   'licornium': 'LICORNIUM', 'jaane_snake': 'Jaane Snake', 'mosquito': 'MOSQUITO',
-  'diamond_simba': 'Diamond Simba', 'al_buraq': 'Al Buraq',
+  'diamond_simba': 'Diamond Simba', 'alburax': 'Alburax',
   'tardigrum': 'TARDIGRUM',
 };
 
@@ -286,6 +286,29 @@ const TIER_COLORS = {
   standard: '#00D984', rare: '#4DA6FF', elite: '#B388FF',
   mythique: '#D4AF37', ultimate: '#FF6B8A',
 };
+
+// ═══ IMAGES PERSONNAGES — fallback emoji si fichier absent ═══
+const CHARACTER_IMAGES = {
+  'emerald_owl': { img: null, emoji: '🦉' },
+  'hawk_eye': { img: null, emoji: '🦅' },
+  'ruby_tiger': { img: null, emoji: '🐯' },
+  'amber_fox': { img: null, emoji: '🦊' },
+  'gipsy': { img: null, emoji: '🕷️' },
+  'jade_phoenix': { img: null, emoji: '🔥' },
+  'silver_wolf': { img: null, emoji: '🐺' },
+  'boukki': { img: null, emoji: '🦴' },
+  'iron_rhino': { img: null, emoji: '🦏' },
+  'coral_dolphin': { img: null, emoji: '🐬' },
+  'licornium': { img: null, emoji: '🦄' },
+  'jaane_snake': { img: null, emoji: '🐍' },
+  'mosquito': { img: null, emoji: '🦟' },
+  'diamond_simba': { img: null, emoji: '🦁' },
+  'alburax': { img: null, emoji: '🐴' },
+  'tardigrum': { img: null, emoji: '🧬' },
+};
+
+// Helper : récupérer image ou emoji
+const getCharImage = (slug) => CHARACTER_IMAGES[slug] || { img: null, emoji: '🃏' };
 
 const randomSlugFromTier = (tier) => {
   const slugs = SLUGS_BY_TIER[tier];
@@ -536,6 +559,7 @@ export default function LixVersePage() {
   const [activeCharSlug, setActiveCharSlug] = useState(null);
   const [showCharOnboarding, setShowCharOnboarding] = useState(false);
   const [selectedChar, setSelectedChar] = useState(null);
+  const [previewChar, setPreviewChar] = useState(null);
   const [charFlipped, setCharFlipped] = useState(false);
   const [charPowers, setCharPowers] = useState([]);
   const [loadingPowers, setLoadingPowers] = useState(false);
@@ -1654,7 +1678,13 @@ export default function LixVersePage() {
           <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ borderRadius: wp(16), padding: wp(14), marginBottom: wp(16), borderWidth: 1, borderColor: '#4A4F55' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={{ width: wp(60), height: wp(60), borderRadius: wp(30), backgroundColor: 'rgba(0,217,132,0.12)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#00D984', marginRight: wp(12) }}>
-                <Text style={{ fontSize: fp(28) }}>{getEmoji(activeChar)}</Text>
+                {(() => {
+                  const charImg = getCharImage(activeChar.slug || activeChar.id);
+                  if (charImg.img) {
+                    return <Image source={charImg.img} style={{ width: wp(54), height: wp(54), borderRadius: wp(27) }} resizeMode="cover" />;
+                  }
+                  return <Text style={{ fontSize: fp(28) }}>{charImg.emoji}</Text>;
+                })()}
               </View>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginBottom: wp(4) }}>
@@ -1700,42 +1730,24 @@ export default function LixVersePage() {
             return (
               <Pressable key={ch.slug || ch.id} delayPressIn={120}
                 onPress={() => {
-                  if (own) {
-                    setSelectedChar(ch); setCharFlipped(false); flipAnim.setValue(0);
-                    loadCharPowers(ch.slug || ch.id);
-                  } else {
-                    const charData = ALL_CHARACTERS.find(a => a.id === (ch.slug || ch.id));
-                    const emoji = CHAR_EMOJIS[ch.slug || ch.id] || charData?.emoji || '🃏';
-                    const name = CHAR_NAMES[ch.slug || ch.id] || ch.name || ch.slug;
-                    const tier = ch.tier || 'standard';
-                    const frags = ch.fragments || ch.duplicates_count || 0;
-                    const fragsReq = ch.fragments_required || FRAGS_NIV1[tier] || 3;
-                    showLixAlert(
-                      name,
-                      emoji + '\n\n'
-                        + '— ' + tier.charAt(0).toUpperCase() + tier.slice(1) + ' —\n\n'
-                        + '🧩 ' + frags + '/' + fragsReq + ' fragments\n'
-                        + (frags > 0
-                          ? 'Continue les spins et les caisses !'
-                          : 'Collecte des fragments pour débloquer.'),
-                      [
-                        { text: 'Spin Wheel', color: '#D4AF37', onPress: () => setActiveTab('lixspin') },
-                        { text: 'Fermer', style: 'cancel' },
-                      ],
-                      '🔒'
-                    );
-                  }
+                  setPreviewChar(ch);
                 }}
                 style={({ pressed }) => ({
                   width: cardW, borderRadius: wp(14), overflow: 'hidden',
-                  opacity: own ? 1 : 0.5,
+                  opacity: 1,
                   borderWidth: isActive ? 2 : 1,
                   borderColor: isActive ? '#00D984' : own ? '#4A4F55' : 'rgba(255,255,255,0.08)',
                   transform: [{ scale: pressed ? 0.93 : 1 }],
                 })}>
                 <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ alignItems: 'center', paddingVertical: wp(8) }}>
                   <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center', marginBottom: wp(4) }}>
-                    <Text style={{ fontSize: fp(24) }}>{getEmoji(ch)}</Text>
+                    {(() => {
+                      const charImg = getCharImage(ch.slug || ch.id);
+                      if (charImg.img) {
+                        return <Image source={charImg.img} style={{ width: wp(46), height: wp(46), borderRadius: wp(23) }} resizeMode="cover" />;
+                      }
+                      return <Text style={{ fontSize: fp(24) }}>{charImg.emoji}</Text>;
+                    })()}
                     {!own && <View style={{ position: 'absolute', justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: fp(20) }}>🔒</Text></View>}
                   </View>
                   <Text style={{ fontSize: fp(9), fontWeight: '700', color: own ? '#FFF' : 'rgba(255,255,255,0.4)', textAlign: 'center' }} numberOfLines={1}>{ch.name || ch.slug}</Text>
@@ -4477,6 +4489,136 @@ export default function LixVersePage() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* ═══ MODAL FICHE CARACTÈRE PREMIUM ═══ */}
+      {previewChar && (
+        <Modal visible={true} transparent animationType="fade" onRequestClose={() => setPreviewChar(null)}>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' }} onPress={() => setPreviewChar(null)}>
+            <Pressable onPress={(e) => e.stopPropagation()} style={{ width: wp(260), alignItems: 'center' }}>
+              {(() => {
+                const slug = previewChar.slug || previewChar.id;
+                const charImg = getCharImage(slug);
+                const own = previewChar.owned !== false && previewChar.owned !== undefined;
+                const tier = previewChar.tier || 'standard';
+                const tierColor = TIER_COLORS[tier] || '#00D984';
+                const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
+                const name = CHAR_NAMES[slug] || previewChar.name || slug;
+                const frags = previewChar.fragments || previewChar.duplicates_count || 0;
+                const fragsReq = previewChar.fragments_required || FRAGS_NIV1[tier] || 3;
+                const level = previewChar.level || 0;
+                const xp = previewChar.xp || 0;
+                const xpNext = previewChar.xp_next || 1000;
+                const usesRem = previewChar.uses_remaining || 0;
+                const usesMax = previewChar.uses_max || 10;
+                const isActive = slug === activeCharSlug;
+
+                return (
+                  <View style={{ width: wp(260), borderRadius: wp(16), overflow: 'hidden', borderWidth: 2.5, borderColor: tierColor }}>
+                    {/* Image ou emoji plein cadre */}
+                    <View style={{ width: wp(255), height: wp(320), backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center' }}>
+                      {charImg.img ? (
+                        <Image source={charImg.img} style={{ width: wp(255), height: wp(320) }} resizeMode="cover" />
+                      ) : (
+                        <View style={{ width: wp(255), height: wp(320), justifyContent: 'center', alignItems: 'center', backgroundColor: '#1E2530' }}>
+                          <Text style={{ fontSize: fp(80) }}>{charImg.emoji}</Text>
+                        </View>
+                      )}
+
+                      {/* Badges superposés sur l'image */}
+                      <View style={{ position: 'absolute', top: wp(8), left: wp(8), right: wp(8), flexDirection: 'row', justifyContent: 'space-between' }}>
+                        {/* Badge tier */}
+                        <View style={{ backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3), borderWidth: 1, borderColor: tierColor + '50' }}>
+                          <Text style={{ fontSize: fp(9), fontWeight: '800', color: tierColor, letterSpacing: 1 }}>{tierLabel.toUpperCase()}</Text>
+                        </View>
+                        {/* Badge niveau ou lock */}
+                        {own ? (
+                          <View style={{ backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3), borderWidth: 1, borderColor: tierColor + '50' }}>
+                            <Text style={{ fontSize: fp(9), fontWeight: '800', color: '#FFF' }}>Niv {level}</Text>
+                          </View>
+                        ) : (
+                          <View style={{ backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                            <Text style={{ fontSize: fp(12) }}>🔒</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      {/* Barre XP superposée en bas de l'image (si owned) */}
+                      {own && (
+                        <View style={{ position: 'absolute', bottom: wp(8), left: wp(10), right: wp(10) }}>
+                          <View style={{ height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+                            <View style={{ height: '100%', borderRadius: wp(2), backgroundColor: tierColor, width: Math.min(100, Math.round((xp / xpNext) * 100)) + '%' }} />
+                          </View>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(2) }}>
+                            <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.6)' }}>{usesRem}/{usesMax} utilisations</Text>
+                            <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.6)' }}>{xp}/{xpNext} XP</Text>
+                          </View>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Plaque nom en bas */}
+                    <View style={{ backgroundColor: 'rgba(0,0,0,0.85)', paddingVertical: wp(12), paddingHorizontal: wp(14), borderTopWidth: 2, borderTopColor: tierColor }}>
+                      <Text style={{ fontSize: fp(18), fontWeight: '800', color: tierColor, textAlign: 'center', letterSpacing: 2 }}>{name.toUpperCase()}</Text>
+
+                      {/* Barre fragments (si locked) */}
+                      {!own && (
+                        <View style={{ marginTop: wp(8), alignItems: 'center' }}>
+                          <View style={{ width: '80%', height: wp(6), borderRadius: wp(3), backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                            <View style={{ height: '100%', borderRadius: wp(3), backgroundColor: tierColor, width: Math.min(100, Math.round((frags / fragsReq) * 100)) + '%' }} />
+                          </View>
+                          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', marginTop: wp(4) }}>🧩 {frags}/{fragsReq} fragments</Text>
+                        </View>
+                      )}
+
+                      {/* Statut actif */}
+                      {own && isActive && (
+                        <Text style={{ fontSize: fp(10), color: '#00D984', fontWeight: '700', textAlign: 'center', marginTop: wp(4) }}>ACTIF ✅</Text>
+                      )}
+                    </View>
+                  </View>
+                );
+              })()}
+
+              {/* Boutons sous la carte */}
+              <View style={{ width: '100%', marginTop: wp(12), gap: wp(6) }}>
+                {(previewChar.owned !== false && previewChar.owned !== undefined) ? (
+                  <>
+                    {(previewChar.slug || previewChar.id) !== activeCharSlug && (
+                      <Pressable delayPressIn={120} onPress={() => { switchActiveCharacter(previewChar.slug || previewChar.id); setPreviewChar(null); }}
+                        style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                        <LinearGradient colors={['#D4AF37', '#B8941F']} style={{ paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>Équiper</Text>
+                        </LinearGradient>
+                      </Pressable>
+                    )}
+                    <Pressable delayPressIn={120} onPress={() => {
+                      setPreviewChar(null);
+                      setSelectedChar(previewChar); setCharFlipped(false); flipAnim.setValue(0);
+                      loadCharPowers(previewChar.slug || previewChar.id);
+                    }} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                      <LinearGradient colors={['#00D984', '#00B871']} style={{ paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>Utiliser</Text>
+                      </LinearGradient>
+                    </Pressable>
+                  </>
+                ) : (
+                  <Pressable delayPressIn={120} onPress={() => { setPreviewChar(null); setActiveTab('lixspin'); }}
+                    style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                    <LinearGradient colors={['#D4AF37', '#B8941F']} style={{ paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>Obtenir via Spin Wheel</Text>
+                    </LinearGradient>
+                  </Pressable>
+                )}
+              </View>
+
+              {/* Fermer */}
+              <Pressable onPress={() => setPreviewChar(null)} style={{ paddingVertical: wp(14) }}>
+                <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Fermer</Text>
+              </Pressable>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      )}
 
     </View>
   );
