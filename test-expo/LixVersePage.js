@@ -1719,7 +1719,7 @@ export default function LixVersePage() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(100) }}>
         {/* Personnage actif en haut */}
         {activeChar ? (
-          <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ borderRadius: wp(16), padding: wp(14), marginBottom: wp(16), borderWidth: 1, borderColor: '#4A4F55' }}>
+          <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ borderRadius: wp(16), padding: wp(14), marginBottom: wp(16), borderWidth: 1, borderColor: '#4A4F55', shadowColor: '#00D984', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 3 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={{ width: wp(60), height: wp(60), borderRadius: wp(30), backgroundColor: 'rgba(0,217,132,0.12)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#00D984', marginRight: wp(12) }}>
                 {(() => {
@@ -1761,7 +1761,7 @@ export default function LixVersePage() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(12) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Ma collection</Text>
           <View style={{ backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)' }}>
-            <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#D4AF37' }}>{userCollection.filter(c => c.owned !== false).length}/{userCollection.length || 13}</Text>
+            <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#D4AF37' }}>🃏 {userCollection.filter(c => c.owned !== false).length}/{userCollection.length || 16}</Text>
           </View>
         </View>
 
@@ -1786,9 +1786,10 @@ export default function LixVersePage() {
                   opacity: 1,
                   borderWidth: isActive ? 2 : 1,
                   borderColor: isActive ? '#00D984' : own ? '#4A4F55' : 'rgba(255,255,255,0.08)',
+                  ...(isActive ? { shadowColor: '#00D984', shadowOpacity: 0.25, shadowRadius: 6, elevation: 4 } : {}),
                   transform: [{ scale: pressed ? 0.93 : 1 }],
                 })}>
-                <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ alignItems: 'center', paddingVertical: wp(8) }}>
+                <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ alignItems: 'center', paddingVertical: wp(8), opacity: own ? 1 : 0.55 }}>
                   <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center', marginBottom: wp(4) }}>
                     {(() => {
                       const charImg = getCharImage(ch.slug || ch.id);
@@ -2155,9 +2156,11 @@ export default function LixVersePage() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100) }}>
         {/* Solde */}
         <View style={{ alignItems: 'center', paddingTop: wp(16), marginBottom: wp(16) }}>
+          <View style={{ backgroundColor: 'rgba(212,175,55,0.06)', borderRadius: wp(16), paddingVertical: wp(14), paddingHorizontal: wp(32), borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)', alignItems: 'center' }}>
           <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', letterSpacing: 2, marginBottom: wp(4) }}>MON SOLDE</Text>
           <Text style={{ fontSize: fp(32), fontWeight: '800', color: '#D4AF37' }}>{lixBalance.toLocaleString('fr-FR')}</Text>
           <Text style={{ fontSize: fp(12), color: 'rgba(212,175,55,0.5)' }}>Lix</Text>
+          </View>
         </View>
 
         {/* Tier Selector */}
@@ -2172,6 +2175,9 @@ export default function LixVersePage() {
                   overflow: 'hidden',
                   borderWidth: active ? 1.5 : 1,
                   borderColor: active ? '#D4AF37' : '#4A4F55',
+                  ...(active && tb.key === 'normal' ? { shadowColor: '#00D984', shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 } : {}),
+                  ...(active && tb.key === 'super' ? { shadowColor: '#FF8C42', shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 } : {}),
+                  ...(active && tb.key === 'mega' ? { shadowColor: '#D4AF37', shadowOpacity: 0.4, shadowRadius: 10, elevation: 6 } : {}),
                   transform: [{ scale: pressed ? 0.95 : 1 }],
                 })}>
                 {active ? (
@@ -2333,7 +2339,7 @@ export default function LixVersePage() {
                   shadowRadius: spinTier === 'mega' ? wp(12) : wp(8),
                   elevation: spinTier !== 'normal' ? 4 : 0,
                 }}>
-                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{spinBtnLabel}</Text>
+                <Text style={{ fontSize: spinCost === 0 ? fp(17) : fp(15), fontWeight: '700', color: '#FFF' }}>{spinBtnLabel}</Text>
               </LinearGradient>
             </Pressable>
           </Animated.View>
@@ -2350,7 +2356,10 @@ export default function LixVersePage() {
           </View>
         </View>
 
-        <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginHorizontal: wp(16), marginBottom: wp(20) }} />
+        <View style={{ alignItems: 'center', marginVertical: wp(20) }}>
+          <View style={{ width: wp(120), height: 1, backgroundColor: 'rgba(212,175,55,0.15)' }} />
+          <Text style={{ fontSize: fp(8), color: 'rgba(212,175,55,0.25)', letterSpacing: 3, marginTop: wp(6) }}>✦ ✦ ✦</Text>
+        </View>
 
         {/* ═══ ABONNEMENTS ═══ */}
         <View style={{ paddingHorizontal: wp(16), marginBottom: wp(24) }}>
@@ -2361,7 +2370,7 @@ export default function LixVersePage() {
           <Pressable delayPressIn={120} onPress={() => showLixAlert('Gold', 'Bientôt disponible.\n\n10 000 Lix/mois + 150 énergie/6h + fragments bonus', [{ text: 'Me notifier', color: '#D4AF37' }, { text: 'Fermer', style: 'cancel' }], '⭐')}
             style={({ pressed }) => ({ marginBottom: wp(8), transform: [{ scale: pressed ? 0.97 : 1 }] })}>
             <LinearGradient colors={['#3A3F46', '#252A30', '#333A42']}
-              style={{ borderRadius: wp(14), padding: wp(16), borderWidth: 1.5, borderColor: 'rgba(212,175,55,0.3)', flexDirection: 'row', alignItems: 'center' }}>
+              style={{ borderRadius: wp(14), padding: wp(16), borderWidth: 1.5, borderColor: 'rgba(212,175,55,0.3)', flexDirection: 'row', alignItems: 'center', shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 3 }}>
               <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(212,175,55,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)' }}>
                 <Text style={{ fontSize: fp(20) }}>⭐</Text>
               </View>
@@ -2385,7 +2394,7 @@ export default function LixVersePage() {
           <Pressable delayPressIn={120} onPress={() => showLixAlert('Platinum', 'Bientôt disponible.\n\n18 000 Lix/mois + 350 énergie/6h + fragments Elite', [{ text: 'Me notifier', color: '#00CEC9' }, { text: 'Fermer', style: 'cancel' }], '💎')}
             style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }] })}>
             <LinearGradient colors={['#3A3F46', '#252A30', '#333A42']}
-              style={{ borderRadius: wp(14), padding: wp(16), borderWidth: 1.5, borderColor: 'rgba(0,206,201,0.3)', flexDirection: 'row', alignItems: 'center' }}>
+              style={{ borderRadius: wp(14), padding: wp(16), borderWidth: 1.5, borderColor: 'rgba(0,206,201,0.3)', flexDirection: 'row', alignItems: 'center', shadowColor: '#00CEC9', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 3 }}>
               <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(0,206,201,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(0,206,201,0.25)' }}>
                 <Text style={{ fontSize: fp(20) }}>💎</Text>
               </View>
@@ -2401,7 +2410,10 @@ export default function LixVersePage() {
           </Pressable>
         </View>
 
-        <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginHorizontal: wp(16), marginBottom: wp(20) }} />
+        <View style={{ alignItems: 'center', marginVertical: wp(20) }}>
+          <View style={{ width: wp(120), height: 1, backgroundColor: 'rgba(212,175,55,0.15)' }} />
+          <Text style={{ fontSize: fp(8), color: 'rgba(212,175,55,0.25)', letterSpacing: 3, marginTop: wp(6) }}>✦ ✦ ✦</Text>
+        </View>
         <View style={{ paddingHorizontal: wp(16) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Acheter des Lix</Text>
           {[{ n: 'Micro', p: '$0.99', l: 990, b: '', c: '#00D984' }, { n: 'Basic', p: '$4.99', l: 5240, b: '+5%', c: '#4DA6FF' }, { n: 'Standard', p: '$9.99', l: 10990, b: '+10%', c: '#9B6DFF', best: true }, { n: 'Mega', p: '$29.99', l: 35990, b: '+20%', c: '#D4AF37' }, { n: 'Ultra', p: '$99.99', l: 129990, b: '+30%', c: '#D4AF37', ultra: true }].map((pk, i) => (
@@ -2414,7 +2426,7 @@ export default function LixVersePage() {
         </View>
         <View style={{ paddingHorizontal: wp(16), marginTop: wp(24) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Recharger énergie</Text>
-          {[{ n: 'Mini', e: 30, l: 300, d: 'Recharge légère', emoji: '⚡', c: '#FFB800' }, { n: 'Standard', e: 80, l: 700, d: 'Recharge quotidienne', emoji: '⚡⚡', c: '#FF8C42', best: true }, { n: 'XL', e: 200, l: 1500, d: 'Recharge complète', emoji: '⚡⚡⚡', c: '#FF6B6B' }].map((pk, i) => (
+          {[{ n: 'Mini', e: 30, l: 300, d: 'Recharge légère', emoji: '⚡', c: '#FFB800' }, { n: 'Standard', e: 80, l: 700, d: 'Recharge quotidienne', emoji: '⚡', c: '#FF8C42', best: true }, { n: 'XL', e: 200, l: 1500, d: 'Recharge complète', emoji: '🔋', c: '#FF6B6B' }].map((pk, i) => (
             <Pressable key={i} delayPressIn={120} onPress={() => { if (lixBalance < pk.l) { showLixAlert('Lix insuffisants', 'Il faut ' + pk.l + ' Lix pour cette recharge.', [{ text: 'Fermer', style: 'cancel' }], '⚡'); return; } setLixBalance(p => p - pk.l); showLixAlert('Rechargé', '+' + pk.e + ' énergie ajoutée !', [{ text: 'Super', color: '#00D984' }], '⚡'); }} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(12), borderRadius: wp(12), marginBottom: wp(6), backgroundColor: pk.best ? 'rgba(255,140,66,0.08)' : 'rgba(255,255,255,0.03)', borderWidth: pk.best ? 1.5 : 1, borderColor: pk.best ? (pk.c || '#00D984') + '40' : 'rgba(255,255,255,0.08)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
               <Text style={{ fontSize: fp(14), marginRight: wp(10) }}>{pk.emoji || '⚡'}</Text>
               <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
