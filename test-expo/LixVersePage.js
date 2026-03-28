@@ -694,6 +694,27 @@ export default function LixVersePage() {
   const FREE_POWER_TYPES = ['toggle'];
   const FREE_POWER_KEYS = ['owl_resume_macros', 'owl_alerte_macros', 'fox_mode_regime'];
 
+  // ═══ NAVIGATION MAP — power_key → onglet cible ═══
+  const POWER_NAV_TARGET = {
+    // Owl
+    owl_suggestion_repas: 'meals',
+    // Hawk
+    hawk_comparateur: 'meals',
+    hawk_historique: 'meals',
+    // Tiger
+    tiger_xp_boost: 'activity',
+    tiger_xp_boost_niv2: 'activity',
+    tiger_xp_boost_max: 'activity',
+    // Fox (redirect vers scan)
+    fox_sub_redirect: 'meals',
+    // Gipsy (superpower → dashboard)
+    gipsy_toile_sante: 'home',
+  };
+
+  // ═══ STATE pour données inline des pouvoirs ═══
+  const [inlinePowerData, setInlinePowerData] = useState(null);
+  const [inlinePowerLoading, setInlinePowerLoading] = useState(false);
+
   const shouldConsumePower = (power) => {
     if (FREE_POWER_TYPES.includes(power.action_type)) return false;
     if (FREE_POWER_KEYS.includes(power.power_key)) return false;
@@ -4615,13 +4636,21 @@ export default function LixVersePage() {
                                         onPress={async () => {
                                           const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
                                           const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
-                                          if (!isOwnedCheck) { showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.\n\nSpin Wheel ou Défis !', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); } }, { text: 'Fermer', style: 'cancel' }], '🔒'); return; }
+                                          if (!isOwnedCheck) {
+                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
+                                            return;
+                                          }
                                           if (shouldConsumePower(power)) {
                                             const r = await consumePower(power.power_key);
                                             if (!r.success) return;
                                           }
+                                          // Fermer le modal caractère
                                           setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null);
-                                          showLixAlert('Pouvoir activé', (power.name_fr || power.name || power.power_key) + ' — Redirection...', [{ text: 'OK', color: '#00D984' }], '✨');
+                                          // Naviguer vers la page cible
+                                          const targetNav = POWER_NAV_TARGET[power.power_key];
+                                          if (targetNav) {
+                                            setActiveNavTab(targetNav);
+                                          }
                                         }}
                                         style={({ pressed }) => ({
                                           paddingVertical: wp(7), borderRadius: wp(8),
@@ -4642,11 +4671,33 @@ export default function LixVersePage() {
                                         onPress={async () => {
                                           const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
                                           const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
-                                          if (!isOwnedCheck) { showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.\n\nSpin Wheel ou Défis !', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); } }, { text: 'Fermer', style: 'cancel' }], '🔒'); return; }
+                                          if (!isOwnedCheck) {
+                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
+                                            return;
+                                          }
                                           const r = await consumePower(power.power_key);
                                           if (!r.success) return;
+
+                                          // Sauvegarder le boost XP dans users_profile
+                                          const boostMap = {
+                                            tiger_xp_boost: 1.10,
+                                            tiger_xp_boost_niv2: 1.20,
+                                            tiger_xp_boost_max: 1.30,
+                                          };
+                                          const boostMultiplier = boostMap[power.power_key] || 1.10;
+                                          // Sauvegarder le boost actif (expire dans 24h)
+                                          const boostExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+                                          fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, {
+                                            method: 'PATCH',
+                                            headers: POST_HEADERS,
+                                            body: JSON.stringify({
+                                              active_boost: JSON.stringify({ type: 'xp_activity', multiplier: boostMultiplier, expires_at: boostExpiry, source: power.power_key }),
+                                            }),
+                                          }).catch(() => {});
+
                                           setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null);
-                                          showLixAlert('Boost activé !', 'Le boost sera appliqué à ta prochaine activité.', [{ text: 'Super', color: '#D4AF37' }], '🐯');
+                                          const pctBoost = Math.round((boostMultiplier - 1) * 100);
+                                          showLixAlert('🐯 Boost XP activé !', '+' + pctBoost + '% XP sur ta prochaine activité.\nExpire dans 24h.', [{ text: 'Aller aux Activités', color: '#FF4757', onPress: () => setActiveNavTab('activity') }, { text: 'OK', style: 'cancel' }], '🐯');
                                         }}
                                         style={({ pressed }) => ({
                                           paddingVertical: wp(7), borderRadius: wp(8),
@@ -4667,12 +4718,65 @@ export default function LixVersePage() {
                                         onPress={async () => {
                                           const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
                                           const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
-                                          if (!isOwnedCheck) { showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.\n\nSpin Wheel ou Défis !', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); } }, { text: 'Fermer', style: 'cancel' }], '🔒'); return; }
+                                          if (!isOwnedCheck) {
+                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
+                                            return;
+                                          }
                                           if (shouldConsumePower(power)) {
                                             const r = await consumePower(power.power_key);
                                             if (!r.success) return;
                                           }
+                                          // Charger les données réelles AVANT d'afficher le modal inline
+                                          setInlinePowerLoading(true);
+                                          setInlinePowerData(null);
                                           setInlinePowerModal(power.power_key);
+
+                                          const today = new Date().toISOString().slice(0, 10);
+                                          try {
+                                            if (power.power_key === 'owl_resume_macros') {
+                                              // Résumé macros du jour depuis daily_summary
+                                              const res = await fetch(SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + TEST_USER_ID + '&date=eq.' + today + '&select=total_calories,calorie_target,total_protein,total_carbs,total_fat,total_fiber,meals_count', { headers: HEADERS });
+                                              const d = await res.json();
+                                              setInlinePowerData(d && d[0] ? d[0] : null);
+
+                                            } else if (power.power_key === 'hawk_micronutriments') {
+                                              // Dernier scan Xscan/Galerie
+                                              const res = await fetch(SUPABASE_URL + '/rest/v1/meals?user_id=eq.' + TEST_USER_ID + '&source=in.(xscan_4,gallery,xscan)&order=created_at.desc&limit=1&select=food_name,calories,protein_g,carbs_g,fat_g,fiber_g,ingredients_detail,portion_g,created_at', { headers: HEADERS });
+                                              const d = await res.json();
+                                              setInlinePowerData(d && d[0] ? d[0] : null);
+
+                                            } else if (power.power_key === 'fox_sub_1' || power.power_key === 'fox_sub_2' || power.power_key === 'fox_sub_3') {
+                                              // Dernier scan pour proposer une substitution
+                                              const res = await fetch(SUPABASE_URL + '/rest/v1/meals?user_id=eq.' + TEST_USER_ID + '&source=in.(xscan_4,gallery,xscan)&order=created_at.desc&limit=1&select=food_name,ingredients_detail,calories,protein_g,carbs_g,fat_g', { headers: HEADERS });
+                                              const d = await res.json();
+                                              setInlinePowerData(d && d[0] ? d[0] : null);
+
+                                            } else if (power.power_key === 'gipsy_mood_nutrition') {
+                                              // 7 derniers jours : moods + daily_summary
+                                              const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                                              const [moodsRes, summRes] = await Promise.all([
+                                                fetch(SUPABASE_URL + '/rest/v1/moods?user_id=eq.' + TEST_USER_ID + '&created_at=gte.' + weekAgo + 'T00:00:00&order=created_at.asc&select=mood_level,created_at', { headers: HEADERS }),
+                                                fetch(SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + TEST_USER_ID + '&date=gte.' + weekAgo + '&order=date.asc&select=date,total_calories,calorie_target,calorie_balance', { headers: HEADERS }),
+                                              ]);
+                                              const moods = await moodsRes.json();
+                                              const summs = await summRes.json();
+                                              setInlinePowerData({ moods: moods || [], summaries: summs || [] });
+
+                                            } else if (power.power_key === 'gipsy_hydra_energy') {
+                                              // 7 derniers jours : hydration + activités
+                                              const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                                              const [hydRes, actRes] = await Promise.all([
+                                                fetch(SUPABASE_URL + '/rest/v1/hydration_logs?user_id=eq.' + TEST_USER_ID + '&logged_at=gte.' + weekAgo + 'T00:00:00&order=logged_at.asc&select=effective_ml,logged_at', { headers: HEADERS }),
+                                                fetch(SUPABASE_URL + '/rest/v1/activities?user_id=eq.' + TEST_USER_ID + '&date=gte.' + weekAgo + '&order=date.asc&select=date,duration_minutes,calories_burned', { headers: HEADERS }),
+                                              ]);
+                                              const hyd = await hydRes.json();
+                                              const act = await actRes.json();
+                                              setInlinePowerData({ hydration: hyd || [], activities: act || [] });
+                                            }
+                                          } catch (e) {
+                                            console.warn('Power data fetch error:', e);
+                                          }
+                                          setInlinePowerLoading(false);
                                         }}
                                         style={({ pressed }) => ({
                                           paddingVertical: wp(7), borderRadius: wp(8),
@@ -4689,21 +4793,33 @@ export default function LixVersePage() {
 
                                   case 'toggle':
                                     return (
-                                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Text style={{ color: '#8892A0', fontSize: fp(9), marginRight: wp(8) }}>
-                                          Préférence active
+                                      <Pressable delayPressIn={120}
+                                        onPress={async () => {
+                                          const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
+                                          const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
+                                          if (!isOwnedCheck) {
+                                            showLixAlert('🔒 Carte requise', 'Obtiens cette carte pour activer cette préférence.', [{ text: 'Fermer', style: 'cancel' }], '🔒');
+                                            return;
+                                          }
+                                          // Toggle la préférence et sauvegarder silencieusement
+                                          showLixAlert('✅ Préférence activée', (power.name_fr || power.name || '') + ' est maintenant actif.\nTu recevras des notifications en conséquence.', [{ text: 'Super', color: '#00D984' }], '🔔');
+                                          // Sauvegarde silencieuse dans users_profile
+                                          fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, {
+                                            method: 'PATCH', headers: POST_HEADERS,
+                                            body: JSON.stringify({ ['pref_' + power.power_key]: true }),
+                                          }).catch(() => {});
+                                        }}
+                                        style={({ pressed }) => ({
+                                          flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                                          paddingVertical: wp(7), borderRadius: wp(8),
+                                          backgroundColor: pressed ? 'rgba(0,217,132,0.15)' : 'rgba(0,217,132,0.08)',
+                                          borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                                        })}
+                                      >
+                                        <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '700' }}>
+                                          Activer / Désactiver
                                         </Text>
-                                        <View style={{
-                                          width: wp(36), height: wp(20), borderRadius: wp(10),
-                                          backgroundColor: 'rgba(0,217,132,0.3)', padding: wp(2),
-                                          justifyContent: 'center',
-                                        }}>
-                                          <View style={{
-                                            width: wp(16), height: wp(16), borderRadius: wp(8),
-                                            backgroundColor: '#00D984', alignSelf: 'flex-end',
-                                          }} />
-                                        </View>
-                                      </View>
+                                      </Pressable>
                                     );
 
                                   default:
@@ -4734,44 +4850,215 @@ export default function LixVersePage() {
                         </View>
                       )}
 
-                      {/* Sous-modals inline */}
+                      {/* ═══ OWL — Résumé macros quotidien ═══ */}
+                      {inlinePowerModal === 'owl_resume_macros' && (
+                        <View style={{ backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦉 Résumé Nutritionnel</Text>
+                          {inlinePowerLoading ? (
+                            <ActivityIndicator color="#00D984" style={{ marginVertical: wp(20) }} />
+                          ) : inlinePowerData ? (
+                            <View>
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(12) }}>
+                                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Aujourd'hui — {inlinePowerData.meals_count || 0} repas</Text>
+                                <Text style={{ fontSize: fp(11), fontWeight: '700', color: Math.abs(inlinePowerData.total_calories - inlinePowerData.calorie_target) < inlinePowerData.calorie_target * 0.15 ? '#00D984' : '#FF8C42' }}>
+                                  {inlinePowerData.total_calories || 0} / {inlinePowerData.calorie_target || '—'} kcal
+                                </Text>
+                              </View>
+                              {[
+                                { label: 'Protéines', val: inlinePowerData.total_protein, color: '#FF6B6B', unit: 'g' },
+                                { label: 'Glucides', val: inlinePowerData.total_carbs, color: '#4DA6FF', unit: 'g' },
+                                { label: 'Lipides', val: inlinePowerData.total_fat, color: '#D4AF37', unit: 'g' },
+                                { label: 'Fibres', val: inlinePowerData.total_fiber, color: '#00D984', unit: 'g' },
+                              ].map((m, i) => (
+                                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+                                  <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: m.color, marginRight: wp(8) }} />
+                                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)', flex: 1 }}>{m.label}</Text>
+                                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>{Math.round(m.val || 0)}{m.unit}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          ) : (
+                            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Aucun repas enregistré aujourd'hui</Text>
+                          )}
+                        </View>
+                      )}
+
+                      {/* ═══ HAWK — Micronutriments dernier scan ═══ */}
                       {inlinePowerModal === 'hawk_micronutriments' && (
                         <View style={{ backgroundColor: 'rgba(77,166,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>🔬 Micronutriments</Text>
-                          <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(12) }}>Disponible après votre prochain scan Xscan</Text>
-                          <Pressable delayPressIn={120} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-                            <LinearGradient colors={['#4DA6FF','#2E86DE']} style={{ paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center' }}>
-                              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>Scanner maintenant →</Text>
-                            </LinearGradient>
-                          </Pressable>
+                          {inlinePowerLoading ? (
+                            <ActivityIndicator color="#4DA6FF" style={{ marginVertical: wp(20) }} />
+                          ) : inlinePowerData ? (
+                            <View>
+                              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(10) }}>
+                                Dernier scan : {inlinePowerData.food_name} ({Math.round(inlinePowerData.calories || 0)} kcal)
+                              </Text>
+                              {[
+                                { label: 'Protéines', val: inlinePowerData.protein_g, color: '#FF6B6B' },
+                                { label: 'Glucides', val: inlinePowerData.carbs_g, color: '#4DA6FF' },
+                                { label: 'Lipides', val: inlinePowerData.fat_g, color: '#D4AF37' },
+                                { label: 'Fibres', val: inlinePowerData.fiber_g, color: '#00D984' },
+                              ].map((m, i) => {
+                                const total = (inlinePowerData.protein_g || 0) + (inlinePowerData.carbs_g || 0) + (inlinePowerData.fat_g || 0);
+                                const pct = total > 0 ? Math.round(((m.val || 0) / total) * 100) : 0;
+                                return (
+                                  <View key={i} style={{ marginBottom: wp(8) }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(3) }}>
+                                      <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>{m.label}</Text>
+                                      <Text style={{ fontSize: fp(10), fontWeight: '700', color: m.color }}>{Math.round(m.val || 0)}g ({pct}%)</Text>
+                                    </View>
+                                    <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
+                                      <View style={{ height: '100%', width: pct + '%', backgroundColor: m.color, borderRadius: wp(2) }} />
+                                    </View>
+                                  </View>
+                                );
+                              })}
+                              {inlinePowerData.portion_g > 0 && (
+                                <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)', marginTop: wp(4) }}>Portion estimée : {Math.round(inlinePowerData.portion_g)}g</Text>
+                              )}
+                              {inlinePowerData.ingredients_detail && Array.isArray(inlinePowerData.ingredients_detail) && (
+                                <View style={{ marginTop: wp(10) }}>
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(77,166,255,0.6)', marginBottom: wp(4) }}>Ingrédients détectés :</Text>
+                                  {inlinePowerData.ingredients_detail.slice(0, 6).map((ing, i) => (
+                                    <Text key={i} style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)', marginBottom: wp(2) }}>
+                                      • {ing.name || ing.food_name || '—'} {ing.quantity_g ? '(' + Math.round(ing.quantity_g) + 'g)' : ''}
+                                    </Text>
+                                  ))}
+                                </View>
+                              )}
+                            </View>
+                          ) : (
+                            <View style={{ alignItems: 'center', paddingVertical: wp(16) }}>
+                              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginBottom: wp(10) }}>Aucun scan récent trouvé</Text>
+                              <Pressable delayPressIn={120} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveNavTab('meals'); }}
+                                style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                                <LinearGradient colors={['#4DA6FF','#2E86DE']} style={{ paddingVertical: wp(10), paddingHorizontal: wp(20), borderRadius: wp(10), alignItems: 'center' }}>
+                                  <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FFF' }}>Scanner un repas →</Text>
+                                </LinearGradient>
+                              </Pressable>
+                            </View>
+                          )}
                         </View>
                       )}
-                      {inlinePowerModal === 'fox_sub_1' && (
+
+                      {/* ═══ FOX — Substitution ingrédient ═══ */}
+                      {(inlinePowerModal === 'fox_sub_1' || inlinePowerModal === 'fox_sub_2' || inlinePowerModal === 'fox_sub_3') && (
                         <View style={{ backgroundColor: 'rgba(255,140,66,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,140,66,0.2)' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>🔄 Substitution d'ingrédient</Text>
-                          <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(12) }}>Scannez un repas puis choisissez un ingrédient à substituer</Text>
-                          <Pressable delayPressIn={120} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-                            <LinearGradient colors={['#FF8C42','#E67E22']} style={{ paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center' }}>
-                              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>Aller au scan →</Text>
-                            </LinearGradient>
-                          </Pressable>
+                          {inlinePowerLoading ? (
+                            <ActivityIndicator color="#FF8C42" style={{ marginVertical: wp(20) }} />
+                          ) : inlinePowerData && inlinePowerData.ingredients_detail && Array.isArray(inlinePowerData.ingredients_detail) ? (
+                            <View>
+                              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(10) }}>
+                                Dernier scan : {inlinePowerData.food_name}
+                              </Text>
+                              <Text style={{ fontSize: fp(10), color: '#FF8C42', marginBottom: wp(8) }}>Choisis un ingrédient à remplacer :</Text>
+                              {inlinePowerData.ingredients_detail.slice(0, 5).map((ing, i) => (
+                                <Pressable key={i} delayPressIn={120}
+                                  onPress={() => {
+                                    setInlinePowerModal(null);
+                                    setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0);
+                                    setActiveNavTab('meals');
+                                    showLixAlert('🦊 Substitution demandée', 'Remplacer "' + (ing.name || ing.food_name || '—') + '" par une alternative plus saine.\n\nCette fonctionnalité sera disponible dans la page Repas.', [{ text: 'Compris', color: '#FF8C42' }], '🔄');
+                                  }}
+                                  style={({ pressed }) => ({
+                                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                                    paddingVertical: wp(8), paddingHorizontal: wp(10), marginBottom: wp(4),
+                                    borderRadius: wp(8), backgroundColor: pressed ? 'rgba(255,140,66,0.15)' : 'rgba(255,255,255,0.03)',
+                                    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+                                  })}>
+                                  <Text style={{ fontSize: fp(11), color: '#FFF', flex: 1 }}>{ing.name || ing.food_name || '—'}</Text>
+                                  <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginRight: wp(6) }}>{ing.quantity_g ? Math.round(ing.quantity_g) + 'g' : ''}</Text>
+                                  <Text style={{ fontSize: fp(10), color: '#FF8C42' }}>Remplacer →</Text>
+                                </Pressable>
+                              ))}
+                            </View>
+                          ) : (
+                            <View style={{ alignItems: 'center', paddingVertical: wp(16) }}>
+                              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginBottom: wp(10) }}>Scanne un repas d'abord pour substituer un ingrédient</Text>
+                              <Pressable delayPressIn={120} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveNavTab('meals'); }}
+                                style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                                <LinearGradient colors={['#FF8C42','#E67E22']} style={{ paddingVertical: wp(10), paddingHorizontal: wp(20), borderRadius: wp(10), alignItems: 'center' }}>
+                                  <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FFF' }}>Aller au scan →</Text>
+                                </LinearGradient>
+                              </Pressable>
+                            </View>
+                          )}
                         </View>
                       )}
+
+                      {/* ═══ GIPSY — Corrélation humeur ↔ nutrition (données réelles) ═══ */}
                       {inlinePowerModal === 'gipsy_mood_nutrition' && (
                         <View style={{ backgroundColor: 'rgba(155,109,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(155,109,255,0.2)' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🕸️ Humeur ↔ Nutrition</Text>
-                          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: wp(60), marginBottom: wp(10) }}>
-                            {['L','M','Me','J','V','S','D'].map((d, i) => {
-                              const h = [30, 55, 40, 70, 45, 60, 50][i];
-                              return (
-                                <View key={d} style={{ alignItems: 'center' }}>
-                                  <View style={{ width: wp(16), height: wp(h * 0.8), borderRadius: wp(4), backgroundColor: 'rgba(155,109,255,0.4)' }} />
-                                  <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.3)', marginTop: wp(2) }}>{d}</Text>
+                          {inlinePowerLoading ? (
+                            <ActivityIndicator color="#9B6DFF" style={{ marginVertical: wp(20) }} />
+                          ) : inlinePowerData && inlinePowerData.summaries && inlinePowerData.summaries.length > 0 ? (
+                            <View>
+                              {/* Graphique barres : calories par jour + mood emoji */}
+                              <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: wp(80), marginBottom: wp(10) }}>
+                                {inlinePowerData.summaries.slice(-7).map((s, i) => {
+                                  const maxCal = Math.max(...inlinePowerData.summaries.map(x => x.total_calories || 0), 1);
+                                  const h = Math.max(wp(8), ((s.total_calories || 0) / maxCal) * wp(60));
+                                  const dayLabel = ['D','L','M','Me','J','V','S'][new Date(s.date).getDay()];
+                                  const inBalance = s.calorie_target > 0 && Math.abs(s.calorie_balance) <= s.calorie_target * 0.15;
+                                  // Trouver le mood du même jour
+                                  const dayMood = (inlinePowerData.moods || []).find(m => m.created_at && m.created_at.slice(0, 10) === s.date);
+                                  const moodEmoji = dayMood ? ({'Rayonnant': '😄', 'Bien': '😊', 'Neutre': '😐', 'Bas': '😔', 'Stressé': '😰'}[dayMood.mood_level] || '🔵') : '—';
+                                  return (
+                                    <View key={i} style={{ alignItems: 'center' }}>
+                                      <Text style={{ fontSize: fp(10), marginBottom: wp(2) }}>{moodEmoji}</Text>
+                                      <View style={{ width: wp(20), height: h, borderRadius: wp(4), backgroundColor: inBalance ? 'rgba(0,217,132,0.5)' : 'rgba(155,109,255,0.4)' }} />
+                                      <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.3)', marginTop: wp(2) }}>{dayLabel}</Text>
+                                      <Text style={{ fontSize: fp(6), color: 'rgba(255,255,255,0.2)' }}>{s.total_calories || 0}</Text>
+                                    </View>
+                                  );
+                                })}
+                              </View>
+                              <View style={{ flexDirection: 'row', gap: wp(8), justifyContent: 'center' }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                                  <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: 'rgba(0,217,132,0.5)' }} />
+                                  <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.3)' }}>Équilibré</Text>
                                 </View>
-                              );
-                            })}
-                          </View>
-                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>Données simulées — corrélations réelles bientôt disponibles</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                                  <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: 'rgba(155,109,255,0.4)' }} />
+                                  <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.3)' }}>Hors cible</Text>
+                                </View>
+                              </View>
+                            </View>
+                          ) : (
+                            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Pas assez de données cette semaine. Continue à logger tes repas et ton humeur !</Text>
+                          )}
+                        </View>
+                      )}
+
+                      {/* ═══ GIPSY Niv2 — Corrélation hydratation ↔ activité ═══ */}
+                      {inlinePowerModal === 'gipsy_hydra_energy' && (
+                        <View style={{ backgroundColor: 'rgba(155,109,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(155,109,255,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🕸️ Hydratation ↔ Activité</Text>
+                          {inlinePowerLoading ? (
+                            <ActivityIndicator color="#9B6DFF" style={{ marginVertical: wp(20) }} />
+                          ) : inlinePowerData && (inlinePowerData.hydration?.length > 0 || inlinePowerData.activities?.length > 0) ? (
+                            <View>
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(6) }}>
+                                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)' }}>7 derniers jours</Text>
+                              </View>
+                              {['L','M','Me','J','V','S','D'].slice(0, Math.max(inlinePowerData.hydration?.length || 0, inlinePowerData.activities?.length || 0, 1)).map((d, i) => {
+                                const dayHyd = inlinePowerData.hydration?.[i];
+                                const dayAct = inlinePowerData.activities?.[i];
+                                return (
+                                  <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(4), gap: wp(6) }}>
+                                    <Text style={{ width: wp(20), fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>J{i + 1}</Text>
+                                    <Text style={{ fontSize: fp(9), color: '#4DA6FF', width: wp(55) }}>💧 {dayHyd ? dayHyd.effective_ml + 'ml' : '—'}</Text>
+                                    <Text style={{ fontSize: fp(9), color: '#FF8C42', flex: 1 }}>🔥 {dayAct ? dayAct.duration_minutes + 'min / ' + dayAct.calories_burned + 'kcal' : '—'}</Text>
+                                  </View>
+                                );
+                              })}
+                            </View>
+                          ) : (
+                            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Pas assez de données. Hydrate-toi et bouge cette semaine !</Text>
+                          )}
                         </View>
                       )}
 
