@@ -850,6 +850,10 @@ export default function LixVersePage() {
 
   // === CALLBACK APRÈS ANIMATION SPIN ===
   const onSpinComplete = (spinData) => {
+    // Rafraîchir spin gratuit
+    checkFreeSpin();
+
+    // Stocker le résultat fragment pour l'afficher dans le spinResultModal
     const rv = spinData.reward_value || {};
     const rType = spinData.reward_type;
 
@@ -868,12 +872,8 @@ export default function LixVersePage() {
         totalFrags: rv.fragment || 1,
         fragsNeeded: FRAGS_NIV1[fragTier] || 3,
       });
-      setShowFragmentModal(true);
-      fragmentSlideAnim.setValue(0);
+      // NE PAS ouvrir showFragmentModal ici — le spinResultModal gère tout
     }
-
-    // Rafraîchir spin gratuit
-    checkFreeSpin();
   };
 
   // === DISTRIBUER UN FRAGMENT APRÈS SPIN (fallback client) ===
@@ -2109,7 +2109,13 @@ export default function LixVersePage() {
                   <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.35)' }}>{activeChar.uses_remaining || 0}/{activeChar.uses_max || 10} utilisations</Text>
                 </View>
               </View>
-              <Pressable delayPressIn={120} onPress={() => { setSelectedChar(activeChar); setCharFlipped(false); flipAnim.setValue(0); loadCharPowers(activeChar.slug); }} style={({ pressed }) => ({ backgroundColor: '#00D984', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(8), transform: [{ scale: pressed ? 0.93 : 1 }] })}>
+              <Pressable delayPressIn={120} onPress={() => {
+                if ((activeChar.level || 0) < 1) {
+                  showLixAlert('🧩 Carte incomplète', 'Ce personnage n\'est pas encore débloqué. Rassemble tous les fragments d\'abord.', [{ text: 'OK', style: 'cancel' }], '🧩');
+                  return;
+                }
+                setSelectedChar(activeChar); setCharFlipped(false); flipAnim.setValue(0); loadCharPowers(activeChar.slug);
+              }} style={({ pressed }) => ({ backgroundColor: '#00D984', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(8), transform: [{ scale: pressed ? 0.93 : 1 }] })}>
                 <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#1A1D22' }}>Utiliser</Text>
               </Pressable>
             </View>
@@ -2131,7 +2137,8 @@ export default function LixVersePage() {
         {/* Grille 3 colonnes */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8), marginBottom: wp(20) }}>
           {(userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: ownedChars[c.id]?.level || 0, xp: ownedChars[c.id]?.xp || 0, xp_next: ownedChars[c.id]?.xp_next || 1000, uses_remaining: ownedChars[c.id]?.uses_remaining || 0, uses_max: ownedChars[c.id]?.uses_max || 10, fragments: 0, fragments_required: 3, is_active: false }))).map(ch => {
-            const own = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(ch.slug || ch.id);
+            const hasCard = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(ch.slug || ch.id);
+            const own = hasCard && (ch.level || 0) >= 1; // Possédé = carte complète (Niv1+)
             const isActive = (ch.slug || ch.id) === activeCharSlug;
             const badge = getLevelBadge(ch);
             return (
@@ -2448,7 +2455,7 @@ export default function LixVersePage() {
     }
 
     return (
-      <Modal visible={showSpinResultModal} transparent animationType="fade" onRequestClose={() => { setShowSpinResultModal(false); spinResultPulse.stopAnimation(); }}>
+      <Modal visible={showSpinResultModal} transparent animationType="fade" onRequestClose={() => { setShowSpinResultModal(false); spinResultPulse.stopAnimation(); setSpinWinnerSeg(null); setServerResult(null); setFragmentResult(null); }}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
           <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
             style={{
@@ -2470,13 +2477,13 @@ export default function LixVersePage() {
               onPress={() => {
                 setShowSpinResultModal(false);
                 spinResultPulse.stopAnimation();
+                setSpinWinnerSeg(null);
+                setServerResult(null);
+                setFragmentResult(null);
                 if (rw.type === 'fragment' || rw.type === 'card' || rw.type === 'full_card') {
-                  if (fragmentResult) {
-                    setShowFragmentModal(true);
-                  } else {
-                    setActiveTab('characters');
-                    loadCharacterData();
-                  }
+                  // Aller directement dans Caractères — pas de deuxième modal
+                  setActiveTab('characters');
+                  loadCharacterData();
                 }
               }}
               style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], marginTop: wp(12), width: '100%' })}>
@@ -4950,7 +4957,8 @@ export default function LixVersePage() {
                       const acSlug = ac.id;
                       const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: ownedChars[c.id]?.level || 0, xp: ownedChars[c.id]?.xp || 0, xp_next: ownedChars[c.id]?.xp_next || 1000, uses_remaining: ownedChars[c.id]?.uses_remaining || 0, uses_max: ownedChars[c.id]?.uses_max || 10, fragments: 0, fragments_required: 3, is_active: false }));
                       const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...ac, slug: acSlug, owned: false };
-                      const own = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(acSlug);
+                      const hasCardCheck = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(acSlug);
+                      const own = hasCardCheck && (ch.level || 0) >= 1;
                       const isActive = acSlug === activeCharSlug;
                       const tier = ch.tier || ac.tier || 'standard';
                       const name = CHAR_NAMES[acSlug] || ch.name || ac.name || acSlug;
@@ -5003,6 +5011,12 @@ export default function LixVersePage() {
                             )}
                             <Pressable delayPressIn={120}
                               onPress={() => {
+                                // Guard : personnage incomplet (a des fragments mais pas Niv1)
+                                if (!own && (ch.fragments || ch.duplicates_count || 0) > 0) {
+                                  const remaining = (ch.fragments_required || FRAGS_NIV1[tier] || 3) - (ch.fragments || ch.duplicates_count || 0);
+                                  showLixAlert('🧩 Fragments manquants', 'Il te manque encore ' + remaining + ' fragment' + (remaining > 1 ? 's' : '') + ' pour débloquer ' + name + '.\n\nTourne la roue ou participe aux défis !', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); setActiveTab('lixspin'); } }, { text: 'OK', style: 'cancel' }], '🧩');
+                                  return;
+                                }
                                 if (own && usesRem === 0) {
                                   showLixAlert('⚡ Recharge nécessaire', 'Recharge ton ' + name + ' avec ' + (ch.recharge_energy || 10) + ' énergie.', [{ text: 'Recharger', color: '#00D984', onPress: () => rechargeChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
                                 } else {
@@ -5012,7 +5026,13 @@ export default function LixVersePage() {
                               }}
                               style={({ pressed }) => ({ opacity: (own && usesRem === 0) ? 0.5 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
                               <LinearGradient colors={(own && usesRem === 0) ? ['#333A42','#2A2F36'] : ['#3A3520','#2A2815']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
-                                <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#B8A472' }}>{(own && usesRem === 0) ? 'Recharger' : own ? 'Pouvoirs →' : 'Aperçu Pouvoirs →'}</Text>
+                                <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#B8A472' }}>
+                                  {!own && (ch.fragments || ch.duplicates_count || 0) > 0
+                                    ? 'Fragments : ' + (ch.fragments || ch.duplicates_count || 0) + '/' + (ch.fragments_required || FRAGS_NIV1[tier] || 3)
+                                    : (own && usesRem === 0) ? 'Recharger'
+                                    : own ? 'Pouvoirs →'
+                                    : 'Aperçu Pouvoirs →'}
+                                </Text>
                               </LinearGradient>
                             </Pressable>
                             {!own && (
