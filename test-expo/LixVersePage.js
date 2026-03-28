@@ -431,6 +431,15 @@ export default function LixVersePage() {
   const [joinCode, setJoinCode] = useState('');
   const [leaderboardTab, setLeaderboardTab] = useState('groups');
   const [leaderboardExpanded, setLeaderboardExpanded] = useState(false);
+  // ═══ MODAL ÉQUIPE ═══
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [groupDetail, setGroupDetail] = useState(null);
+  const [groupDetailLoading, setGroupDetailLoading] = useState(false);
+  const [poking, setPoking] = useState(false);
+  // ═══ MODAL PROFIL PUBLIC ═══
+  const [publicProfile, setPublicProfile] = useState(null);
+  const [publicProfileLoading, setPublicProfileLoading] = useState(false);
+  const [showPublicProfile, setShowPublicProfile] = useState(false);
   const [showCharacterDetail, setShowCharacterDetail] = useState(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinResult, setSpinResult] = useState(null);
@@ -1286,6 +1295,114 @@ export default function LixVersePage() {
     setLoading(false);
   };
 
+  // ═══ ÉQUIPE — Charger les détails ═══
+  const openGroupDetail = async (group) => {
+    const groupId = group.lixverse_groups?.id || group.group_id;
+    if (!groupId) return;
+    setSelectedGroup(group);
+    setGroupDetailLoading(true);
+    setGroupDetail(null);
+    try {
+      const data = await supaRpc('get_group_details', { p_group_id: groupId });
+      if (data && !data.error) {
+        setGroupDetail(data);
+      }
+    } catch (e) {
+      console.error('Group detail error:', e);
+    }
+    setGroupDetailLoading(false);
+  };
+
+  // ═══ ÉQUIPE — Poke tous les membres ═══
+  const pokeGroup = async () => {
+    if (poking || !groupDetail?.group?.id) return;
+    setPoking(true);
+    try {
+      const data = await supaRpc('poke_group', { p_user_id: TEST_USER_ID, p_group_id: groupDetail.group.id });
+      if (data?.success) {
+        showLixAlert('📢 Poke envoyé !', data.poked_count + ' membre' + (data.poked_count > 1 ? 's' : '') + ' notifié' + (data.poked_count > 1 ? 's' : '') + ' dans "' + data.group_name + '"', [{ text: 'On se bouge !', color: '#FF8C42' }], '📢');
+      } else {
+        showLixAlert('⏳ Patience', data?.error || 'Réessaie plus tard', [{ text: 'OK', style: 'cancel' }], '⏳');
+      }
+    } catch (e) {
+      console.error('Poke error:', e);
+    }
+    setPoking(false);
+  };
+
+  // ═══ ÉQUIPE — Supprimer (créateur only) ═══
+  const deleteGroup = async () => {
+    if (!groupDetail?.group?.id) return;
+    showLixAlert(
+      '🗑️ Supprimer le groupe ?',
+      'Tous les membres seront retirés et les scores perdus.\n\nCette action est irréversible.',
+      [
+        { text: 'Supprimer', color: '#FF6B6B', onPress: async () => {
+          try {
+            const data = await supaRpc('delete_group', { p_user_id: TEST_USER_ID, p_group_id: groupDetail.group.id });
+            if (data?.success) {
+              setSelectedGroup(null);
+              setGroupDetail(null);
+              loadAll();
+              showLixAlert('Groupe supprimé', '"' + data.deleted_group + '" a été dissous.', [{ text: 'OK', color: '#00D984' }], '✅');
+            } else {
+              showLixAlert('Erreur', data?.error || 'Impossible de supprimer', [{ text: 'OK', style: 'cancel' }], '❌');
+            }
+          } catch (e) {
+            console.error('Delete group error:', e);
+          }
+        }},
+        { text: 'Annuler', style: 'cancel' },
+      ],
+      '🗑️'
+    );
+  };
+
+  // ═══ ÉQUIPE — Quitter (membre non-créateur) ═══
+  const leaveGroup = async () => {
+    if (!groupDetail?.group?.id) return;
+    showLixAlert(
+      'Quitter le groupe ?',
+      'Tu perdras tes points dans "' + groupDetail.group.name + '".',
+      [
+        { text: 'Quitter', color: '#FF6B6B', onPress: async () => {
+          try {
+            const data = await supaRpc('leave_group', { p_user_id: TEST_USER_ID, p_group_id: groupDetail.group.id });
+            if (data?.success) {
+              setSelectedGroup(null);
+              setGroupDetail(null);
+              loadAll();
+              showLixAlert('Groupe quitté', 'Tu as quitté "' + data.left_group + '".', [{ text: 'OK', style: 'cancel' }], '👋');
+            } else {
+              showLixAlert('Erreur', data?.error || 'Impossible de quitter', [{ text: 'OK', style: 'cancel' }], '❌');
+            }
+          } catch (e) {
+            console.error('Leave group error:', e);
+          }
+        }},
+        { text: 'Rester', style: 'cancel' },
+      ],
+      '👋'
+    );
+  };
+
+  // ═══ PROFIL PUBLIC — Charger via LixTag ═══
+  const openPublicProfile = async (lixtag) => {
+    if (!lixtag) return;
+    setPublicProfileLoading(true);
+    setPublicProfile(null);
+    setShowPublicProfile(true);
+    try {
+      const data = await supaRpc('get_public_profile', { p_lixtag: lixtag });
+      if (data && !data.error) {
+        setPublicProfile(data);
+      }
+    } catch (e) {
+      console.error('Public profile error:', e);
+    }
+    setPublicProfileLoading(false);
+  };
+
   const fetchChallengeScores = async () => {
     try {
       const data = await supaRpc('get_user_challenge_scores', { p_user_id: TEST_USER_ID });
@@ -1613,7 +1730,12 @@ export default function LixVersePage() {
             const g = gm.lixverse_groups; if (!g) return null;
             const score = challengeScores.find(s => s.challenge_id === g.challenge_id);
             return (
-              <View key={i} style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(8), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+              <Pressable key={i} onPress={() => openGroupDetail(gm)} delayPressIn={120}
+                style={({ pressed }) => ({
+                  backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(8),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                })}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <View style={{ flex: 1 }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{g.name}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginTop: wp(2) }}>{g.member_count} membres | Score: {score?.group_total || g.total_score}</Text></View>
                   <View style={{ backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}><Text style={{ fontSize: fp(10), fontWeight: '600', color: '#00D984' }}>Mon: {score?.personal_score || gm.personal_score || 0}</Text></View>
@@ -1628,7 +1750,7 @@ export default function LixVersePage() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(8), backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
                   <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)' }}>Code: </Text><Text style={{ fontSize: fp(10), fontWeight: '700', color: '#D4AF37', letterSpacing: 1 }}>{g.invite_code}</Text>
                 </View>
-              </View>
+              </Pressable>
             );
           })}
         </View>
@@ -1642,7 +1764,7 @@ export default function LixVersePage() {
           const isOpen = hLeft > 0;
           const isUrgent = hLeft > 0 && hLeft <= 24;
           const score = challengeScores.find(s => s.challenge_id === ch.id);
-          const progressPct = score ? Math.min(100, ((score.personal_score || 0) / 1680) * 100) : Math.min(100, Math.round((Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000) / (ch.duration_days || 30)) * 100));
+          const progressPct = score ? Math.min(100, ((score.personal_score || 0) / 1680) * 100) : Math.max(0, Math.min(100, Math.round((Math.max(0, Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000)) / (ch.duration_days || 30)) * 100)));
           return (
             <View key={ch.id} style={{ borderRadius: wp(16), marginBottom: wp(10), borderWidth: 1.5, borderColor: ch.color + '40', overflow: 'hidden' }}>
               <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ padding: wp(16), borderRadius: wp(14) }}>
@@ -1676,10 +1798,10 @@ export default function LixVersePage() {
                 <View style={{ marginBottom: wp(10), marginTop: wp(4) }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
                     <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>
-                      {score ? (score.personal_score || 0) + ' pts' : 'Jour ' + Math.min(Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000), ch.duration_days || 30) + '/' + (ch.duration_days || 30)}
+                      {score ? (score.personal_score || 0) + ' pts' : 'Jour ' + Math.max(0, Math.min(Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000), ch.duration_days || 30)) + '/' + (ch.duration_days || 30)}
                     </Text>
                     <Text style={{ fontSize: fp(10), fontWeight: '600', color: ch.color || '#00D984' }}>
-                      {score ? (score.group_rank ? '#' + score.group_rank : '') + (score.today_points ? ' +' + score.today_points + ' auj.' : '') : Math.round(progressPct) + '%'}
+                      {score ? (score.group_rank ? '#' + score.group_rank : '') + (score.today_points ? ' +' + score.today_points + ' auj.' : '') : Math.max(0, Math.round(progressPct)) + '%'}
                     </Text>
                   </View>
                   <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
@@ -1691,59 +1813,37 @@ export default function LixVersePage() {
                     }} />
                   </View>
                 </View>
-                <View style={{ gap: wp(4) }}>
-                  {/* Ligne 1 — Lix + Énergie */}
-                  <View style={{ flexDirection: 'row', gap: wp(4), flexWrap: 'wrap' }}>
-                    {[
-                      { e: '🥇', lix: ch.reward_lix_first, nrj: ch.reward_energy_first },
-                      { e: '🥈', lix: ch.reward_lix_second, nrj: ch.reward_energy_second },
-                      { e: '🥉', lix: ch.reward_lix_third, nrj: ch.reward_energy_third },
-                    ].map((r, j) => (
-                      <View key={j} style={{
-                        flexDirection: 'row', alignItems: 'center',
-                        backgroundColor: j === 0 ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.05)',
-                        borderRadius: wp(8), paddingHorizontal: wp(6), paddingVertical: wp(3), gap: wp(3),
-                      }}>
-                        <Text style={{ fontSize: fp(9) }}>{r.e}</Text>
-                        <Text style={{ fontSize: fp(9), fontWeight: '600', color: j === 0 ? '#D4AF37' : 'rgba(255,255,255,0.4)' }}>{r.lix}</Text>
-                        {r.nrj > 0 && (
-                          <Text style={{ fontSize: fp(8), color: '#FF8C42' }}>+{r.nrj}⚡</Text>
-                        )}
+                {/* Podium compact */}
+                <View style={{ marginTop: wp(10), backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(10), padding: wp(10) }}>
+                  {[
+                    { emoji: '🥇', lix: ch.reward_lix_first || 5000, energy: ch.reward_energy_first || 100, charData: ch.reward_char_first },
+                    { emoji: '🥈', lix: ch.reward_lix_second || 3000, energy: ch.reward_energy_second || 60, charData: ch.reward_char_second },
+                    { emoji: '🥉', lix: ch.reward_lix_third || 1500, energy: ch.reward_energy_third || 40, charData: ch.reward_char_third },
+                  ].map((r, i) => {
+                    const parsed = r.charData ? formatCharRewards(typeof r.charData === 'string' ? JSON.parse(r.charData) : r.charData) : null;
+                    return (
+                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(5), borderBottomWidth: i < 2 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
+                        <Text style={{ fontSize: fp(16), width: wp(28) }}>{r.emoji}</Text>
+                        <View style={{ flex: 1 }}>
+                          {parsed && parsed.length > 0 ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(2) }}>
+                              {parsed.map((p, k) => (
+                                <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: wp(1) }}>
+                                  {k > 0 && <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.15)' }}>+</Text>}
+                                  <Text style={{ fontSize: fp(8) }}>{p.icon}</Text>
+                                  <Text style={{ fontSize: fp(8), fontWeight: '700', color: p.color }}>{p.text}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          ) : (
+                            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>—</Text>
+                          )}
+                        </View>
+                        <Text style={{ fontSize: fp(10), color: '#D4AF37', fontWeight: '700', marginRight: wp(8) }}>◆ {r.lix}</Text>
+                        {r.energy > 0 && <Text style={{ fontSize: fp(10), color: '#7BED9F', fontWeight: '600' }}>⚡{r.energy}</Text>}
                       </View>
-                    ))}
-                  </View>
-                  {/* Ligne 2 — Récompenses caractères (top 3 uniquement) */}
-                  {(ch.reward_char_first || ch.reward_char_second || ch.reward_char_third) && (
-                    <View style={{ flexDirection: 'row', gap: wp(4), flexWrap: 'wrap' }}>
-                      {[
-                        { rank: '🥇', data: ch.reward_char_first },
-                        { rank: '🥈', data: ch.reward_char_second },
-                        { rank: '🥉', data: ch.reward_char_third },
-                      ].map((r, j) => {
-                        const parsed = formatCharRewards(
-                          typeof r.data === 'string' ? JSON.parse(r.data) : r.data
-                        );
-                        if (!parsed || parsed.length === 0) return null;
-                        return (
-                          <View key={j} style={{
-                            flexDirection: 'row', alignItems: 'center',
-                            backgroundColor: 'rgba(255,255,255,0.03)',
-                            borderRadius: wp(6), paddingHorizontal: wp(5), paddingVertical: wp(2), gap: wp(2),
-                            borderWidth: 1, borderColor: parsed[0].color + '20',
-                          }}>
-                            <Text style={{ fontSize: fp(8) }}>{r.rank}</Text>
-                            {parsed.map((p, k) => (
-                              <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: wp(1) }}>
-                                {k > 0 && <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.15)' }}>+</Text>}
-                                <Text style={{ fontSize: fp(8) }}>{p.icon}</Text>
-                                <Text style={{ fontSize: fp(7), fontWeight: '700', color: p.color }}>{p.text}</Text>
-                              </View>
-                            ))}
-                          </View>
-                        );
-                      })}
-                    </View>
-                  )}
+                    );
+                  })}
                 </View>
                 <View style={{ marginTop: wp(10), flexDirection: 'row', gap: wp(8) }}>
                   <Pressable
@@ -4378,6 +4478,293 @@ export default function LixVersePage() {
           </Pressable>
         </Pressable>
       </Modal>
+      {/* ═══ MODAL DÉTAIL ÉQUIPE ═══ */}
+      {selectedGroup && (
+        <Modal visible={true} transparent animationType="slide" onRequestClose={() => { setSelectedGroup(null); setGroupDetail(null); }}>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }} onPress={() => { setSelectedGroup(null); setGroupDetail(null); }}>
+            <Pressable onPress={(e) => e.stopPropagation()}>
+              <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+                style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34), maxHeight: SCREEN_WIDTH * 1.6 }}>
+                {/* Poignée */}
+                <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
+
+                {groupDetailLoading ? (
+                  <View style={{ paddingVertical: wp(40), alignItems: 'center' }}>
+                    <ActivityIndicator color="#D4AF37" size="large" />
+                    <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)', marginTop: wp(12) }}>Chargement...</Text>
+                  </View>
+                ) : groupDetail ? (
+                  <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: SCREEN_WIDTH * 1.2 }}>
+                    {/* Header groupe */}
+                    <View style={{ alignItems: 'center', marginBottom: wp(16) }}>
+                      <Text style={{ fontSize: fp(10) }}>{groupDetail.challenge?.icon || '🏆'}</Text>
+                      <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#FFF', marginTop: wp(4) }}>{groupDetail.group.name}</Text>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginTop: wp(4) }}>{groupDetail.challenge?.title || 'Défi'}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12), marginTop: wp(8) }}>
+                        <View style={{ backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
+                          <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>{groupDetail.group.member_count} membres</Text>
+                        </View>
+                        <View style={{ backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
+                          <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#D4AF37' }}>Score: {groupDetail.group.total_score}</Text>
+                        </View>
+                      </View>
+                      {/* Code d'invitation copiable */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(10), backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(10), paddingHorizontal: wp(14), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                        <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)', marginRight: wp(6) }}>Code :</Text>
+                        <Text style={{ fontSize: fp(13), fontWeight: '800', color: '#D4AF37', letterSpacing: 1.5 }}>{groupDetail.group.invite_code}</Text>
+                      </View>
+                    </View>
+
+                    {/* Boutons action : Poke + Supprimer/Quitter */}
+                    <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16) }}>
+                      {/* Poke */}
+                      <Pressable delayPressIn={120} onPress={pokeGroup} disabled={poking}
+                        style={({ pressed }) => ({
+                          flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(6),
+                          paddingVertical: wp(12), borderRadius: wp(12),
+                          backgroundColor: 'rgba(255,140,66,0.12)',
+                          borderWidth: 1, borderColor: 'rgba(255,140,66,0.25)',
+                          transform: [{ scale: pressed ? 0.95 : 1 }],
+                          opacity: poking ? 0.5 : 1,
+                        })}>
+                        <Text style={{ fontSize: fp(14) }}>📢</Text>
+                        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FF8C42' }}>Poker</Text>
+                      </Pressable>
+
+                      {/* Supprimer (créateur) ou Quitter (membre) */}
+                      {groupDetail.group.created_by === TEST_USER_ID ? (
+                        <Pressable delayPressIn={120} onPress={deleteGroup}
+                          style={({ pressed }) => ({
+                            flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(6),
+                            paddingVertical: wp(12), borderRadius: wp(12),
+                            backgroundColor: 'rgba(255,107,107,0.08)',
+                            borderWidth: 1, borderColor: 'rgba(255,107,107,0.15)',
+                            transform: [{ scale: pressed ? 0.95 : 1 }],
+                          })}>
+                          <Text style={{ fontSize: fp(14) }}>🗑️</Text>
+                          <Text style={{ fontSize: fp(12), fontWeight: '600', color: 'rgba(255,107,107,0.6)' }}>Supprimer</Text>
+                        </Pressable>
+                      ) : (
+                        <Pressable delayPressIn={120} onPress={leaveGroup}
+                          style={({ pressed }) => ({
+                            flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(6),
+                            paddingVertical: wp(12), borderRadius: wp(12),
+                            backgroundColor: 'rgba(255,255,255,0.04)',
+                            borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                            transform: [{ scale: pressed ? 0.95 : 1 }],
+                          })}>
+                          <Text style={{ fontSize: fp(14) }}>👋</Text>
+                          <Text style={{ fontSize: fp(12), fontWeight: '600', color: 'rgba(255,255,255,0.35)' }}>Quitter</Text>
+                        </Pressable>
+                      )}
+                    </View>
+
+                    {/* Liste des membres */}
+                    <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Membres</Text>
+                    {groupDetail.members && Array.isArray(groupDetail.members) ? groupDetail.members.map((member, i) => (
+                      <Pressable key={member.user_id || i} delayPressIn={120}
+                        onPress={() => openPublicProfile(member.lixtag)}
+                        style={({ pressed }) => ({
+                          flexDirection: 'row', alignItems: 'center',
+                          paddingVertical: wp(10), paddingHorizontal: wp(10),
+                          marginBottom: wp(4), borderRadius: wp(10),
+                          backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : (member.is_leader ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)'),
+                          borderWidth: member.is_leader ? 1 : 0,
+                          borderColor: 'rgba(212,175,55,0.15)',
+                          transform: [{ scale: pressed ? 0.97 : 1 }],
+                        })}>
+                        {/* Rang */}
+                        <View style={{
+                          width: wp(26), height: wp(26), borderRadius: wp(13),
+                          backgroundColor: i === 0 ? 'rgba(212,175,55,0.15)' : i === 1 ? 'rgba(192,192,192,0.1)' : i === 2 ? 'rgba(205,127,50,0.1)' : 'rgba(255,255,255,0.05)',
+                          justifyContent: 'center', alignItems: 'center', marginRight: wp(8),
+                        }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '700', color: i === 0 ? '#D4AF37' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : 'rgba(255,255,255,0.3)' }}>
+                            {i < 3 ? ['🥇','🥈','🥉'][i] : '#' + (i + 1)}
+                          </Text>
+                        </View>
+
+                        {/* Personnage actif emoji */}
+                        <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>{member.active_char_emoji || '👤'}</Text>
+
+                        {/* LixTag + leader badge */}
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{member.lixtag}</Text>
+                            {member.is_leader && (
+                              <View style={{ backgroundColor: 'rgba(212,175,55,0.2)', borderRadius: wp(4), paddingHorizontal: wp(5), paddingVertical: wp(1) }}>
+                                <Text style={{ fontSize: fp(7), fontWeight: '800', color: '#D4AF37' }}>👑 LEADER</Text>
+                              </View>
+                            )}
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), marginTop: wp(2) }}>
+                            {member.country && <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)' }}>{member.country}</Text>}
+                            {member.active_character && <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)' }}>{member.active_character}</Text>}
+                          </View>
+                        </View>
+
+                        {/* Score */}
+                        <View style={{
+                          backgroundColor: i === 0 ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.05)',
+                          borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(5),
+                        }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '800', color: i === 0 ? '#D4AF37' : '#FFF' }}>{member.personal_score || 0}</Text>
+                          <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>pts</Text>
+                        </View>
+
+                        {/* Flèche profil */}
+                        <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.15)', marginLeft: wp(6) }}>›</Text>
+                      </Pressable>
+                    )) : (
+                      <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.25)', textAlign: 'center', paddingVertical: wp(20) }}>Aucun membre</Text>
+                    )}
+                  </ScrollView>
+                ) : (
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(30) }}>Erreur de chargement</Text>
+                )}
+
+                {/* Fermer */}
+                <Pressable onPress={() => { setSelectedGroup(null); setGroupDetail(null); }}
+                  style={{ paddingVertical: wp(14), alignItems: 'center', marginTop: wp(8), borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Fermer</Text>
+                </Pressable>
+              </LinearGradient>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      )}
+
+      {/* ═══ MODAL PROFIL PUBLIC ═══ */}
+      {showPublicProfile && (
+        <Modal visible={true} transparent animationType="fade" onRequestClose={() => { setShowPublicProfile(false); setPublicProfile(null); }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{ borderRadius: wp(20), padding: wp(24), width: '100%', alignItems: 'center' }}>
+
+              {publicProfileLoading ? (
+                <View style={{ paddingVertical: wp(30), alignItems: 'center' }}>
+                  <ActivityIndicator color="#D4AF37" size="large" />
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginTop: wp(10) }}>Chargement du profil...</Text>
+                </View>
+              ) : publicProfile ? (
+                <View style={{ width: '100%', alignItems: 'center' }}>
+                  {/* Avatar personnage actif */}
+                  <View style={{
+                    width: wp(70), height: wp(70), borderRadius: wp(35),
+                    backgroundColor: 'rgba(0,217,132,0.1)',
+                    borderWidth: 2, borderColor: publicProfile.active_character ? '#00D984' : 'rgba(255,255,255,0.1)',
+                    justifyContent: 'center', alignItems: 'center', marginBottom: wp(10),
+                  }}>
+                    <Text style={{ fontSize: fp(32) }}>{publicProfile.active_character?.emoji || '👤'}</Text>
+                  </View>
+
+                  {/* LixTag + pays */}
+                  <Text style={{ fontSize: fp(18), fontWeight: '800', color: '#FFF' }}>{publicProfile.lixtag}</Text>
+                  {publicProfile.country && (
+                    <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginTop: wp(2) }}>{publicProfile.country}</Text>
+                  )}
+
+                  {/* Score Vitalité + Niveau */}
+                  <View style={{ flexDirection: 'row', gap: wp(12), marginTop: wp(14), marginBottom: wp(14) }}>
+                    <View style={{ alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(12), paddingHorizontal: wp(16), paddingVertical: wp(10) }}>
+                      <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#00D984' }}>{publicProfile.vitality_score || 0}</Text>
+                      <Text style={{ fontSize: fp(8), color: 'rgba(0,217,132,0.6)' }}>Vitalité</Text>
+                    </View>
+                    <View style={{ alignItems: 'center', backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(12), paddingHorizontal: wp(16), paddingVertical: wp(10) }}>
+                      <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#D4AF37' }}>Niv {publicProfile.level || 1}</Text>
+                      <Text style={{ fontSize: fp(8), color: 'rgba(212,175,55,0.6)' }}>Niveau</Text>
+                    </View>
+                  </View>
+
+                  {/* Objectif */}
+                  {publicProfile.goal && (
+                    <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(10), paddingHorizontal: wp(14), paddingVertical: wp(8), marginBottom: wp(14), width: '100%' }}>
+                      <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>Objectif</Text>
+                      <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF', marginTop: wp(2) }}>{publicProfile.goal}</Text>
+                    </View>
+                  )}
+
+                  {/* Stats 7j */}
+                  {publicProfile.stats_7d && (
+                    <View style={{ flexDirection: 'row', gap: wp(6), marginBottom: wp(14), width: '100%' }}>
+                      {[
+                        { val: publicProfile.stats_7d.active_days, label: 'Jours actifs', color: '#00D984' },
+                        { val: publicProfile.stats_7d.workouts, label: 'Séances', color: '#FF8C42' },
+                        { val: publicProfile.stats_7d.moods_logged, label: 'Humeurs', color: '#9B6DFF' },
+                      ].map((s, i) => (
+                        <View key={i} style={{ flex: 1, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(8), paddingVertical: wp(8) }}>
+                          <Text style={{ fontSize: fp(16), fontWeight: '800', color: s.color }}>{s.val || 0}</Text>
+                          <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.25)', marginTop: wp(1) }}>{s.label}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Personnage actif */}
+                  {publicProfile.active_character && (
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center', gap: wp(10),
+                      backgroundColor: 'rgba(0,217,132,0.06)', borderRadius: wp(12),
+                      paddingHorizontal: wp(14), paddingVertical: wp(10), width: '100%',
+                      borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)', marginBottom: wp(10),
+                    }}>
+                      <Text style={{ fontSize: fp(24) }}>{publicProfile.active_character.emoji}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>{publicProfile.active_character.name}</Text>
+                        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)' }}>
+                          {publicProfile.active_character.tier} · Niv {publicProfile.active_character.level || 0}
+                        </Text>
+                      </View>
+                      <Text style={{ fontSize: fp(9), color: '#00D984', fontWeight: '700' }}>ACTIF</Text>
+                    </View>
+                  )}
+
+                  {/* Collection (grille compacte) */}
+                  {publicProfile.collection && publicProfile.collection.length > 0 && (
+                    <View style={{ width: '100%' }}>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginBottom: wp(6) }}>
+                        Collection ({publicProfile.collection_count}/16)
+                      </Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(6) }}>
+                        {publicProfile.collection.map((c, i) => {
+                          const tierColor = { ultimate: '#DFE6E9', mythique: '#D4AF37', elite: '#B388FF', rare: '#4DA6FF', standard: '#00D984' }[c.tier] || '#00D984';
+                          return (
+                            <View key={i} style={{
+                              flexDirection: 'row', alignItems: 'center', gap: wp(4),
+                              backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(8),
+                              paddingHorizontal: wp(8), paddingVertical: wp(4),
+                              borderWidth: 1, borderColor: tierColor + '20',
+                            }}>
+                              <Text style={{ fontSize: fp(14) }}>{c.emoji}</Text>
+                              <Text style={{ fontSize: fp(8), fontWeight: '700', color: tierColor }}>Niv{c.level}</Text>
+                            </View>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Membre depuis */}
+                  {publicProfile.member_since && (
+                    <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)', marginTop: wp(12) }}>
+                      Membre depuis {new Date(publicProfile.member_since).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                    </Text>
+                  )}
+                </View>
+              ) : (
+                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)', paddingVertical: wp(20) }}>Profil introuvable</Text>
+              )}
+
+              {/* Fermer */}
+              <Pressable onPress={() => { setShowPublicProfile(false); setPublicProfile(null); }}
+                style={{ paddingVertical: wp(14), width: '100%', alignItems: 'center', marginTop: wp(12), borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <Text style={{ fontSize: fp(14), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Fermer</Text>
+              </Pressable>
+            </LinearGradient>
+          </View>
+        </Modal>
+      )}
+
       {/* Modal Alert LIXUM — remplace Alert.alert natif */}
       <Modal visible={lixAlert.visible} transparent animationType="fade" onRequestClose={hideLixAlert}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
@@ -4670,7 +5057,7 @@ export default function LixVersePage() {
                 <Animated.View pointerEvents={!charFlipped ? 'none' : 'auto'} style={{ opacity: backInterpolate, position: !charFlipped ? 'absolute' : 'relative', width: '100%' }}>
                   <LinearGradient colors={['#0D0D0D','#111111','#0A0A0A','#080808']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
                     <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
-                    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+                    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(40) }} showsVerticalScrollIndicator={true} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
                       <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', textAlign: 'center', marginBottom: wp(16) }}>POUVOIRS</Text>
 
                       {(() => {
@@ -5097,7 +5484,7 @@ export default function LixVersePage() {
 
                       {/* ═══ OWL — Résumé macros quotidien ═══ */}
                       {inlinePowerModal === 'owl_resume_macros' && (
-                        <View style={{ backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦉 Résumé Nutritionnel</Text>
                           {inlinePowerLoading ? (
                             <ActivityIndicator color="#00D984" style={{ marginVertical: wp(20) }} />
@@ -5130,7 +5517,7 @@ export default function LixVersePage() {
 
                       {/* ═══ HAWK — Micronutriments dernier scan ═══ */}
                       {inlinePowerModal === 'hawk_micronutriments' && (
-                        <View style={{ backgroundColor: 'rgba(77,166,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(77,166,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>🔬 Micronutriments</Text>
                           {inlinePowerLoading ? (
                             <ActivityIndicator color="#4DA6FF" style={{ marginVertical: wp(20) }} />
@@ -5189,7 +5576,7 @@ export default function LixVersePage() {
 
                       {/* ═══ FOX — Substitution ingrédient ═══ */}
                       {(inlinePowerModal === 'fox_sub_1' || inlinePowerModal === 'fox_sub_2' || inlinePowerModal === 'fox_sub_3') && (
-                        <View style={{ backgroundColor: 'rgba(255,140,66,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,140,66,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(255,140,66,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,140,66,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>🔄 Substitution d'ingrédient</Text>
                           {inlinePowerLoading ? (
                             <ActivityIndicator color="#FF8C42" style={{ marginVertical: wp(20) }} />
@@ -5235,7 +5622,7 @@ export default function LixVersePage() {
 
                       {/* ═══ GIPSY — Corrélation humeur ↔ nutrition (données réelles) ═══ */}
                       {inlinePowerModal === 'gipsy_mood_nutrition' && (
-                        <View style={{ backgroundColor: 'rgba(155,109,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(155,109,255,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(155,109,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(155,109,255,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🕸️ Humeur ↔ Nutrition</Text>
                           {inlinePowerLoading ? (
                             <ActivityIndicator color="#9B6DFF" style={{ marginVertical: wp(20) }} />
@@ -5280,7 +5667,7 @@ export default function LixVersePage() {
 
                       {/* ═══ GIPSY Niv2 — Corrélation hydratation ↔ activité ═══ */}
                       {inlinePowerModal === 'gipsy_hydra_energy' && (
-                        <View style={{ backgroundColor: 'rgba(155,109,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(155,109,255,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(155,109,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(155,109,255,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🕸️ Hydratation ↔ Activité</Text>
                           {inlinePowerLoading ? (
                             <ActivityIndicator color="#9B6DFF" style={{ marginVertical: wp(20) }} />
@@ -5311,7 +5698,7 @@ export default function LixVersePage() {
                       {/* ═══ RARE — JADE PHOENIX 🔥 Bilan récupération ═══ */}
                       {/* ═══════════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'phoenix_recovery_detect' || inlinePowerModal === 'phoenix_recovery_food') && (
-                        <View style={{ backgroundColor: 'rgba(46,213,115,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(46,213,115,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(46,213,115,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(46,213,115,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🔥 Bilan Récupération</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#2ED573" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
                             <View>
@@ -5354,7 +5741,7 @@ export default function LixVersePage() {
                       {/* ═══ RARE — SILVER WOLF 🐺 Streaks ═══ */}
                       {/* ═══════════════════════════════════════════ */}
                       {(inlinePowerModal === 'wolf_streak_tracker') && (
-                        <View style={{ backgroundColor: 'rgba(164,176,190,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(164,176,190,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(164,176,190,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(164,176,190,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🐺 Streaks — 30 derniers jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#A4B0BE" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
                             <View>
@@ -5387,7 +5774,7 @@ export default function LixVersePage() {
                       {/* ═══ RARE — BOUKKI 🦴 Planificateur calories ═══ */}
                       {/* ═══════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'boukki_calorie_remain' || inlinePowerModal === 'boukki_complement') && (
-                        <View style={{ backgroundColor: 'rgba(205,127,50,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(205,127,50,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(205,127,50,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(205,127,50,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦴 Calories — 7 jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#CD7F32" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.weekSummaries && inlinePowerData.weekSummaries.length > 0 ? (
                             <View>
@@ -5419,7 +5806,7 @@ export default function LixVersePage() {
                       {/* ═══ RARE — IRON RHINO 🦏 Stats fitness ═══ */}
                       {/* ════════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'rhino_custom_goal' || inlinePowerModal === 'rhino_enriched_report' || inlinePowerModal === 'rhino_charge') && (
-                        <View style={{ backgroundColor: 'rgba(116,125,140,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(116,125,140,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(116,125,140,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(116,125,140,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>
                             🦏 {inlinePowerModal === 'rhino_charge' ? 'Analyse Défis' : 'Stats Fitness — 7 jours'}
                           </Text>
@@ -5458,7 +5845,7 @@ export default function LixVersePage() {
                       {/* ═══ RARE — CORAL DOLPHIN 🐬 Rapport hydratation ═══ */}
                       {/* ════════════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'dolphin_smart_hydration' || inlinePowerModal === 'dolphin_tracker') && (
-                        <View style={{ backgroundColor: 'rgba(255,107,129,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,107,129,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(255,107,129,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,107,129,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🐬 Hydratation — {inlinePowerData?.rangeDays || 7} jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#FF6B81" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.hydrationLogs && inlinePowerData.hydrationLogs.length > 0 ? (
                             <View>
@@ -5503,7 +5890,7 @@ export default function LixVersePage() {
                       {/* ═══ ELITE — LICORNIUM 🦄 Score nutritionnel ═══ */}
                       {/* ═══════════════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'licornium_analyse') && (
-                        <View style={{ backgroundColor: 'rgba(179,136,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(179,136,255,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(179,136,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(179,136,255,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦄 Score Nutritionnel</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#B388FF" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.weekData && inlinePowerData.weekData.length > 0 ? (
                             <View>
@@ -5548,7 +5935,7 @@ export default function LixVersePage() {
                       {/* ═══ ELITE — JAANE SNAKE 🐍 Analyse activité ═══ */}
                       {/* ══════════════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'jaane_venin') && (
-                        <View style={{ backgroundColor: 'rgba(255,99,72,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,99,72,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(255,99,72,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,99,72,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🐍 Analyse Activité — 30 jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#FF6348" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.monthActivities && inlinePowerData.monthActivities.length > 0 ? (
                             <View>
@@ -5602,7 +5989,7 @@ export default function LixVersePage() {
                       {/* ═══ MYTHIQUE — DIAMOND SIMBA 🦁 Rapport complet 7j ═══ */}
                       {/* ═══════════════════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'simba_rugissement' || inlinePowerModal === 'simba_territoire' || inlinePowerModal === 'simba_roi') && (
-                        <View style={{ backgroundColor: 'rgba(0,206,201,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0,206,201,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(0,206,201,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0,206,201,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦁 Rapport Santé — 7 jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#00CEC9" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
                             <View>
@@ -5631,7 +6018,7 @@ export default function LixVersePage() {
 
                       {/* ═══ MOSQUITO — Piqûre Nutrition ═══ */}
                       {inlinePowerModal === 'mosquito_piqure_nutrition' && (
-                        <View style={{ backgroundColor: 'rgba(123,237,159,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(123,237,159,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(123,237,159,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(123,237,159,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦟 Piqûre Nutrition</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#7BED9F" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
                             <View>
@@ -5653,7 +6040,7 @@ export default function LixVersePage() {
 
                       {/* ═══ MOSQUITO — Piqûre Activité ═══ */}
                       {inlinePowerModal === 'mosquito_piqure_activite' && (
-                        <View style={{ backgroundColor: 'rgba(123,237,159,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(123,237,159,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(123,237,159,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(123,237,159,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦟 Piqûre Activité</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#7BED9F" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.activities && inlinePowerData.activities.length > 0 ? (
                             <View>
