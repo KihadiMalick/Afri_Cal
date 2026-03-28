@@ -1531,6 +1531,14 @@ export default function LixVersePage() {
 
   const createGroup = async () => {
     if (!newGroupName.trim() || !selectedChallenge) return;
+    // Check cooldown 7 jours après suppression
+    try {
+      const cd = await supaRpc('check_create_group_cooldown', { p_user_id: TEST_USER_ID });
+      if (cd && !cd.allowed) {
+        showLixAlert('⏳ Cooldown actif', 'Tu as supprimé un groupe récemment.\nTu pourras en créer un nouveau dans ' + cd.days_left + ' jour' + (cd.days_left > 1 ? 's' : '') + '.', [{ text: 'Compris', style: 'cancel' }], '⏳');
+        return;
+      }
+    } catch (e) {}
     try {
       const code = selectedChallenge.challenge_type.toUpperCase().slice(0, 5) + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
       const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
