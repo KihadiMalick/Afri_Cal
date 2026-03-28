@@ -926,7 +926,7 @@ export default function LixVersePage() {
     if (rType === 'fragment' || rType === 'full_card') {
       const fragTier = rv.tier || spinData.character_tier || 'standard';
       const fragSlug = spinData.character_name ? Object.entries(CHAR_NAMES).find(([k,v]) => v === spinData.character_name)?.[0] : randomSlugFromTier(fragTier);
-      setFragmentResult({
+      const fragData = {
         slug: fragSlug || 'unknown',
         name: spinData.character_name || CHAR_NAMES[fragSlug] || fragSlug || 'Inconnu',
         emoji: spinData.character_emoji || CHAR_EMOJIS[fragSlug] || '🎭',
@@ -937,7 +937,21 @@ export default function LixVersePage() {
         newLevel: 0,
         totalFrags: rv.fragment || 1,
         fragsNeeded: FRAGS_NIV1[fragTier] || 3,
-      });
+      };
+      setFragmentResult(fragData);
+
+      // Si carte complète gagnée, level up en DB
+      if (rType === 'full_card' && fragSlug) {
+        supaRpc('add_character_fragment', {
+          p_user_id: TEST_USER_ID,
+          p_slug: fragSlug,
+          p_amount: FRAGS_NIV1[fragTier] || 3,
+        }).then(result => {
+          if (result?.level_up) {
+            setFragmentResult(prev => prev ? { ...prev, levelUp: true, newLevel: result.new_level } : prev);
+          }
+        }).catch(() => {});
+      }
       // NE PAS ouvrir showFragmentModal ici — le spinResultModal gère tout
     }
   };
@@ -2991,6 +3005,13 @@ export default function LixVersePage() {
           }
           // Process server-side reward results
           onSpinComplete(data);
+
+          // Si le serveur a donné un free_spin, rendre disponible
+          if (data.reward_type === 'free_spin') {
+            setFreeSpinAvailable(true);
+            setFreeSpinUsed(false);
+            setNextFreeAt(null);
+          }
         }, 2000);
       });
 
@@ -3006,76 +3027,163 @@ export default function LixVersePage() {
   const renderSpinResultModal = () => {
     if (!showSpinResultModal || !spinWinnerSeg) return null;
     const rw = spinWinnerSeg.reward;
-    let emoji = '⚡'; let title = ''; let titleColor = '#00D984'; let btnText = 'Récupérer'; let btnColor = '#00D984';
-    let borderColor = 'transparent';
+    const srv = serverResult || {};
+    const rv = srv.reward_value || {};
+
+    // Déterminer le type et les visuels
+    let iconContent = null;
+    let title = '';
+    let subtitle = '';
+    let accentColor = '#00D984';
+    let btnText = 'Récupérer';
+    let hasBorder = false;
 
     if (rw.type === 'energy') {
-      emoji = '⚡'; title = '+' + rw.amount + ' Énergie'; titleColor = '#00D984'; btnColor = '#00D984';
-    } else if (rw.type === 'free_spin') {
-      emoji = '🎁'; title = 'Tour gratuit gagné !'; titleColor = '#D4AF37'; btnColor = '#D4AF37';
-      btnText = 'Super !';
-    } else if (rw.type === 'scan') {
-      emoji = '📸'; title = '+' + rw.amount + ' Scan' + (rw.amount > 1 ? 's' : '') + ' gratuit' + (rw.amount > 1 ? 's' : ''); titleColor = '#4DA6FF'; btnColor = '#4DA6FF';
+      iconContent = (
+        <Svg width={wp(48)} height={wp(48)} viewBox="0 0 24 24">
+          <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill="#FFB800" />
+          <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill="none" stroke="#FFF" strokeWidth={0.5} opacity={0.3} />
+        </Svg>
+      );
+      title = '+' + (rv.energy || rw.amount) + ' Énergie';
+      accentColor = '#00D984';
     } else if (rw.type === 'lix') {
-      emoji = '💰'; title = '+' + rw.amount + ' Lix'; titleColor = '#D4AF37'; btnColor = '#D4AF37';
+      iconContent = <LixGem size={wp(48)} />;
+      title = '+' + (rv.lix || rw.amount) + ' Lix';
+      accentColor = '#D4AF37';
+    } else if (rw.type === 'scan') {
+      iconContent = (
+        <Svg width={wp(48)} height={wp(48)} viewBox="0 0 24 24" fill="none">
+          <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" fill="#4DA6FF" />
+          <Circle cx="12" cy="13" r="4" fill="#1A1D22" stroke="#FFF" strokeWidth="1" />
+          <Circle cx="12" cy="13" r="2" fill="#4DA6FF" opacity={0.5} />
+        </Svg>
+      );
+      title = '+' + (rv.scans || rw.amount) + ' Scan' + ((rv.scans || rw.amount) > 1 ? 's' : '') + ' gratuit' + ((rv.scans || rw.amount) > 1 ? 's' : '');
+      accentColor = '#4DA6FF';
+    } else if (rw.type === 'free_spin') {
+      iconContent = (
+        <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), backgroundColor: 'rgba(212,175,55,0.15)', borderWidth: 2, borderColor: '#D4AF37', justifyContent: 'center', alignItems: 'center' }}>
+          <Svg width={wp(28)} height={wp(28)} viewBox="0 0 24 24" fill="none">
+            <Path d="M20 12v10H4V12" stroke="#D4AF37" strokeWidth={2} />
+            <Path d="M2 7h20v5H2z" stroke="#D4AF37" strokeWidth={2} />
+            <Path d="M12 22V7" stroke="#D4AF37" strokeWidth={2} />
+            <Path d="M12 7c-1.5-2-4-3-4-3s1 3 4 3z" fill="#D4AF37" />
+            <Path d="M12 7c1.5-2 4-3 4-3s-1 3-4 3z" fill="#D4AF37" />
+          </Svg>
+        </View>
+      );
+      title = 'Tour gratuit gagné !';
+      subtitle = 'Utilise-le maintenant';
+      accentColor = '#D4AF37';
+      btnText = 'Spinner !';
     } else if (rw.type === 'fragment') {
-      const charName = serverResult?.character_name || (fragmentResult ? fragmentResult.name : null);
-      const charEmoji = serverResult?.character_emoji || (fragmentResult ? fragmentResult.emoji : null);
-      const charTier = serverResult?.character_tier || rw.tier;
-      const tierColor = charTier === 'mythique' ? '#D4AF37' : charTier === 'elite' ? '#9B59B6' : charTier === 'rare' ? '#4DA6FF' : '#00D984';
-      emoji = charEmoji || (rw.tier === 'mythique' ? '👑' : rw.tier === 'elite' ? '🏆' : '🔮');
-      title = charName
-        ? charName + '\n+' + rw.amount + ' Fragment obtenu !'
-        : 'Fragment ' + rw.tier.charAt(0).toUpperCase() + rw.tier.slice(1) + ' !';
-      titleColor = tierColor; btnColor = tierColor; borderColor = tierColor;
+      const charTier = srv.character_tier || rw.tier;
+      const tierColors = { mythique: '#E040FB', elite: '#B388FF', rare: '#4DA6FF', standard: '#00D984' };
+      accentColor = tierColors[charTier] || '#00D984';
+      hasBorder = true;
+      const charEmoji = srv.character_emoji || (fragmentResult ? fragmentResult.emoji : '🧩');
+      iconContent = <Text style={{ fontSize: fp(56) }}>{charEmoji}</Text>;
+      title = (srv.character_name || (fragmentResult ? fragmentResult.name : 'Fragment')) + '';
+      subtitle = '+' + (rv.fragment || rw.amount) + ' fragment ' + (charTier || '').charAt(0).toUpperCase() + (charTier || '').slice(1);
       btnText = 'INTÉGRER ←';
     } else if (rw.type === 'card') {
-      const cardTier = rw.tier || 'elite';
-      const cardColor = cardTier === 'mythique' ? '#FF1493' : '#E74C3C';
-      emoji = fragmentResult ? fragmentResult.emoji : '🏆';
-      title = fragmentResult ? fragmentResult.name + ' COMPLÈTE !' : 'CARTE COMPLÈTE !';
-      titleColor = cardColor; btnText = 'Voir →'; btnColor = cardColor; borderColor = cardColor;
+      accentColor = '#D4AF37';
+      hasBorder = true;
+      iconContent = <Text style={{ fontSize: fp(56) }}>{fragmentResult ? fragmentResult.emoji : '🏆'}</Text>;
+      title = 'CARTE COMPLÈTE !';
+      subtitle = (fragmentResult ? fragmentResult.name : 'Personnage') + ' débloqué';
+      btnText = 'Voir →';
     }
 
     return (
       <Modal visible={showSpinResultModal} transparent animationType="fade" onRequestClose={() => { setShowSpinResultModal(false); spinResultPulse.stopAnimation(); setSpinWinnerSeg(null); setServerResult(null); setFragmentResult(null); }}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
-          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-            style={{
-              borderRadius: wp(20), padding: wp(24), width: '100%', alignItems: 'center',
-              borderWidth: borderColor !== 'transparent' ? 2 : 0, borderColor: borderColor,
-            }}>
-            <Animated.Text style={{
-              fontSize: rw.type === 'fragment' ? fp(60) : fp(40), marginBottom: wp(12),
-              transform: [{ scale: (rw.type === 'fragment' || rw.type === 'card') ? spinResultPulse : 1 }],
-            }}>{emoji}</Animated.Text>
-            <Text style={{ fontSize: rw.type === 'card' ? fp(24) : fp(22), fontWeight: '800', color: titleColor, textAlign: 'center', marginBottom: wp(8) }}>{title}</Text>
-            {rw.type === 'fragment' && (
-              <>
-              <Text style={{ fontSize: fp(12), color: '#D4AF37', marginBottom: wp(4) }}>— {(serverResult?.character_tier || rw.tier || '').charAt(0).toUpperCase() + (serverResult?.character_tier || rw.tier || '').slice(1)} —</Text>
-              <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginBottom: wp(8) }}>x{rw.amount} fragment{rw.amount > 1 ? 's' : ''}</Text>
-              </>
-            )}
-            <Pressable delayPressIn={120}
-              onPress={() => {
-                setShowSpinResultModal(false);
-                spinResultPulse.stopAnimation();
-                setSpinWinnerSeg(null);
-                setServerResult(null);
-                setFragmentResult(null);
-                if (rw.type === 'fragment' || rw.type === 'card' || rw.type === 'full_card') {
-                  // Aller directement dans Caractères — pas de deuxième modal
-                  setActiveTab('characters');
-                  loadCharacterData();
-                }
-              }}
-              style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], marginTop: wp(12), width: '100%' })}>
-              <LinearGradient colors={[btnColor, btnColor + 'CC']}
-                style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}>
-                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{btnText}</Text>
-              </LinearGradient>
-            </Pressable>
-          </LinearGradient>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
+          <View style={{
+            borderRadius: wp(24), width: '100%', alignItems: 'center', overflow: 'hidden',
+            borderWidth: hasBorder ? 2 : 0, borderColor: accentColor,
+          }}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#1A1D22']}
+              style={{ width: '100%', alignItems: 'center', paddingVertical: wp(32), paddingHorizontal: wp(24) }}>
+
+              {/* Glow derrière l'icône */}
+              <View style={{
+                width: wp(90), height: wp(90), borderRadius: wp(45),
+                backgroundColor: accentColor + '10',
+                justifyContent: 'center', alignItems: 'center',
+                marginBottom: wp(16),
+                shadowColor: accentColor,
+                shadowOpacity: 0.4,
+                shadowRadius: wp(20),
+                elevation: 8,
+              }}>
+                <Animated.View style={{
+                  transform: [{ scale: (rw.type === 'fragment' || rw.type === 'card') ? spinResultPulse : 1 }],
+                }}>
+                  {iconContent}
+                </Animated.View>
+              </View>
+
+              {/* Titre */}
+              <Text style={{
+                fontSize: rw.type === 'card' ? fp(24) : fp(22),
+                fontWeight: '800', color: accentColor,
+                textAlign: 'center', marginBottom: wp(4),
+                letterSpacing: rw.type === 'card' ? 2 : 0,
+              }}>{title}</Text>
+
+              {/* Sous-titre */}
+              {subtitle ? (
+                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: wp(4) }}>{subtitle}</Text>
+              ) : null}
+
+              {/* Level up indicator */}
+              {fragmentResult && fragmentResult.levelUp && (
+                <View style={{
+                  backgroundColor: 'rgba(212,175,55,0.12)', borderRadius: wp(10),
+                  paddingHorizontal: wp(16), paddingVertical: wp(6), marginTop: wp(8),
+                  borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)',
+                }}>
+                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#D4AF37' }}>⬆️ Niveau {fragmentResult.newLevel} atteint !</Text>
+                </View>
+              )}
+
+              {/* Bouton */}
+              <Pressable delayPressIn={120}
+                onPress={() => {
+                  setShowSpinResultModal(false);
+                  spinResultPulse.stopAnimation();
+
+                  if (rw.type === 'free_spin') {
+                    // Rendre le spin gratuit disponible immédiatement
+                    setFreeSpinAvailable(true);
+                    setFreeSpinUsed(false);
+                    setSpinWinnerSeg(null);
+                    setServerResult(null);
+                    setFragmentResult(null);
+                    return;
+                  }
+
+                  setSpinWinnerSeg(null);
+                  setServerResult(null);
+                  setFragmentResult(null);
+
+                  if (rw.type === 'fragment' || rw.type === 'card' || rw.type === 'full_card') {
+                    setActiveTab('characters');
+                    loadCharacterData();
+                  }
+                }}
+                style={({ pressed }) => ({ width: '100%', marginTop: wp(20), transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                <View style={{
+                  paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center',
+                  backgroundColor: accentColor + '20',
+                  borderWidth: 1.5, borderColor: accentColor + '50',
+                }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: accentColor }}>{btnText}</Text>
+                </View>
+              </Pressable>
+            </LinearGradient>
+          </View>
         </View>
       </Modal>
     );
@@ -3101,9 +3209,11 @@ export default function LixVersePage() {
       : spinTier === 'super' ? 'SUPERSPIN — 150 Lix 🔥'
       : 'MEGASPIN — 500 Lix 💎';
 
-    const spinBtnColors = spinTier === 'normal' && spinCost === 0 ? ['#00D984', '#00B871']
+    const spinBtnColors = spinTier === 'normal' && spinCost === 0 ? ['#00D984', '#00B871', '#009960']
+      : spinTier === 'super' ? ['#FF8C42', '#E67E22']
+      : spinTier === 'mega' ? ['#D4AF37', '#B8941F']
       : ['#3A3F46', '#252A30'];
-    const spinBtnBorder = spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : (spinCost === 0 ? '#00D984' : '#4A4F55');
+    const spinBtnBorder = spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : (spinCost === 0 ? '#5DFFB4' : '#4A4F55');
 
     const tierButtons = [
       { key: 'normal', label: 'Spin ⚡', sub: !freeSpinUsed ? 'Gratuit' : '50 Lix' },
@@ -3315,7 +3425,18 @@ export default function LixVersePage() {
                   shadowRadius: spinTier === 'mega' ? wp(12) : wp(8),
                   elevation: spinTier !== 'normal' ? 4 : 0,
                 }}>
-                <Text style={{ fontSize: spinCost === 0 ? fp(17) : fp(15), fontWeight: '700', color: '#FFF' }}>{spinBtnLabel}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+                  {spinCost === 0 && spinTier === 'normal' && (
+                    <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
+                      <Path d="M20 12v10H4V12" stroke="#FFF" strokeWidth={2} />
+                      <Path d="M2 7h20v5H2z" stroke="#FFF" strokeWidth={2} />
+                      <Path d="M12 22V7" stroke="#FFF" strokeWidth={2} />
+                      <Path d="M12 7c-1.5-2-4-3-4-3s1 3 4 3z" fill="#FFF" />
+                      <Path d="M12 7c1.5-2 4-3 4-3s-1 3-4 3z" fill="#FFF" />
+                    </Svg>
+                  )}
+                  <Text style={{ fontSize: spinCost === 0 ? fp(17) : fp(15), fontWeight: '800', color: '#FFF', letterSpacing: spinCost === 0 ? 1 : 0 }}>{spinBtnLabel}</Text>
+                </View>
               </LinearGradient>
             </Pressable>
           </Animated.View>
@@ -5893,9 +6014,9 @@ export default function LixVersePage() {
 
                 {/* DOS — Pouvoirs */}
                 <Animated.View pointerEvents={!charFlipped ? 'none' : 'auto'} style={{ opacity: backInterpolate, position: !charFlipped ? 'absolute' : 'relative', width: '100%' }}>
-                  <LinearGradient colors={['#0D0D0D','#111111','#0A0A0A','#080808']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
+                  <LinearGradient colors={['#0D0D0D','#111111','#0A0A0A','#080808']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34), minHeight: SCREEN_WIDTH * 1.3 }}>
                     <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
-                    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(40) }} showsVerticalScrollIndicator={true} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+                    <ScrollView style={{ flex: 1, maxHeight: SCREEN_WIDTH * 1.1 }} contentContainerStyle={{ paddingBottom: wp(60) }} showsVerticalScrollIndicator={true} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
                       <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', textAlign: 'center', marginBottom: wp(16) }}>POUVOIRS</Text>
 
                       {(() => {
