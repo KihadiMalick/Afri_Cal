@@ -487,13 +487,7 @@ export default function LixVersePage() {
   };
   const hideLixAlert = () => setLixAlert(prev => ({ ...prev, visible: false }));
   const [showNotifPanel, setShowNotifPanel] = useState(false);
-  const [notifList, setNotifList] = useState([
-    { id: '1', type: 'binome_request', title: 'Demande de Binôme', message: 'LXM-4D7F3S souhaite devenir votre Binôme', time: 'Il y a 2h', read: false, color: '#D4AF37', emoji: '🤝' },
-    { id: '2', type: 'health_alert', title: 'Alerte Santé — LIXUM × MinSanté', message: 'Canicule prévue cette semaine. Hydratez-vous davantage.', time: 'Il y a 5h', read: false, color: '#FF6B6B', emoji: '🔴' },
-    { id: '3', type: 'gift', title: 'Cadeau reçu !', message: 'LXM-3G5H7J vous a offert 50 Lix sur le Wall of Health', time: 'Hier', read: true, color: '#D4AF37', emoji: '🎁' },
-    { id: '4', type: 'update', title: 'Nouveauté LIXUM', message: 'La section Binôme est maintenant disponible ! Trouvez votre partenaire santé.', time: 'Il y a 2j', read: true, color: '#4DA6FF', emoji: '✨' },
-    { id: '5', type: 'challenge', title: 'Défi terminé', message: 'La Mission Hydratation est terminée. Votre équipe est 3ème !', time: 'Il y a 3j', read: true, color: '#00D984', emoji: '🏆' },
-  ]);
+  const [notifList, setNotifList] = useState([]);
   const unreadCount = notifList.filter(n => !n.read).length;
   const [stickerCatalog, setStickerCatalog] = useState([]);
   const [myCertification, setMyCertification] = useState(null);
