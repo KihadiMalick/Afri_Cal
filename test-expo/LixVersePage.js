@@ -4453,7 +4453,7 @@ export default function LixVersePage() {
         <Modal visible={true} transparent animationType="slide" onRequestClose={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }}>
           <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'flex-end' }} onPress={() => { setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null); }}>
             <Pressable onPress={(e) => e.stopPropagation()}>
-              <View style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), overflow: 'hidden', maxHeight: SCREEN_WIDTH * 2.1 }}>
+              <View style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), overflow: 'hidden', maxHeight: '95%' }}>
                 {/* FACE — Swipe Tinder entre cartes */}
                 <Animated.View pointerEvents={charFlipped ? 'none' : 'auto'} style={{ opacity: frontInterpolate, position: charFlipped ? 'absolute' : 'relative', width: '100%' }}>
                   <View style={{ backgroundColor: 'rgba(0,0,0,0.92)', borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingTop: wp(8), paddingBottom: wp(16) }}>
@@ -4670,7 +4670,7 @@ export default function LixVersePage() {
                 <Animated.View pointerEvents={!charFlipped ? 'none' : 'auto'} style={{ opacity: backInterpolate, position: !charFlipped ? 'absolute' : 'relative', width: '100%' }}>
                   <LinearGradient colors={['#0D0D0D','#111111','#0A0A0A','#080808']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
                     <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
-                    <ScrollView showsVerticalScrollIndicator={false}>
+                    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
                       <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', textAlign: 'center', marginBottom: wp(16) }}>POUVOIRS</Text>
 
                       {(() => {
