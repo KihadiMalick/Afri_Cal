@@ -1987,7 +1987,7 @@ export default function LixVersePage() {
       </View>
 
       {myGroups.length > 0 && (
-        <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
+        <View style={{ paddingHorizontal: wp(16), marginBottom: wp(8) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Mes équipes</Text>
           {myGroups.map((gm, i) => {
             const g = gm.lixverse_groups; if (!g) return null;
@@ -1997,6 +1997,7 @@ export default function LixVersePage() {
                 style={({ pressed }) => ({
                   backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(8),
                   borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                  borderLeftWidth: wp(3), borderLeftColor: '#D4AF37',
                   transform: [{ scale: pressed ? 0.97 : 1 }],
                 })}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2027,6 +2028,7 @@ export default function LixVersePage() {
         </View>
       )}
       <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
+          <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginBottom: wp(14) }} />
         <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Défis du mois</Text>
         {loading ? <ActivityIndicator color="#D4AF37" style={{ padding: wp(20) }} /> : challenges.map(ch => {
           const dl = new Date(ch.registration_deadline);
@@ -2046,18 +2048,18 @@ export default function LixVersePage() {
                   <View style={{
                     backgroundColor: isOpen
                       ? (isUrgent ? 'rgba(255,107,107,0.15)' : 'rgba(0,217,132,0.12)')
-                      : 'rgba(255,255,255,0.06)',
+                      : 'rgba(255,140,66,0.1)',
                     borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3),
                     borderWidth: 1,
                     borderColor: isOpen
                       ? (isUrgent ? 'rgba(255,107,107,0.25)' : 'rgba(0,217,132,0.2)')
-                      : 'rgba(255,255,255,0.08)',
+                      : 'rgba(255,140,66,0.2)',
                   }}>
                     <Text style={{
                       fontSize: fp(9), fontWeight: '700',
                       color: isOpen
                         ? (isUrgent ? '#FF6B6B' : '#00D984')
-                        : 'rgba(255,255,255,0.3)',
+                        : '#FF8C42',
                     }}>
                       {isOpen
                         ? (isUrgent ? hLeft + 'h restantes' : dLeft + 'j restants')
@@ -2081,7 +2083,12 @@ export default function LixVersePage() {
                       height: '100%', borderRadius: wp(2),
                       backgroundColor: ch.color || '#00D984',
                       width: Math.round(progressPct) + '%',
-                      opacity: 0.7,
+                      opacity: 0.85,
+                      shadowColor: ch.color || '#00D984',
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.5,
+                      shadowRadius: wp(4),
+                      elevation: 2,
                     }} />
                   </View>
                 </View>
@@ -2096,10 +2103,17 @@ export default function LixVersePage() {
                         <MedalIcon rank={pos} size={wp(22)} />
                         <View style={{ flex: 1, marginLeft: wp(8) }}>
                           <Text style={{ fontSize: fp(11), fontWeight: '700', color: posColors[pos] }}>
-                            {leader ? leader.name : '—'}
+                            {leader ? leader.name : ''}
                           </Text>
                           {leader && <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)', marginTop: wp(1) }}>{leader.total_score} pts</Text>}
-                          {!leader && <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.15)' }}>En attente</Text>}
+                          {!leader && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                              <View style={{ width: wp(16), height: wp(16), borderRadius: wp(8), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' }}>
+                                <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.1)' }}>?</Text>
+                              </View>
+                              <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.15)', fontStyle: 'italic' }}>Place à prendre</Text>
+                            </View>
+                          )}
                         </View>
                       </View>
                     );
@@ -2115,11 +2129,11 @@ export default function LixVersePage() {
                       opacity: pressed ? 0.6 : 1,
                     })}
                   >
-                    <TrophyIcon size={wp(14)} color="rgba(212,175,55,0.4)" />
-                    <Text style={{ fontSize: fp(10), color: 'rgba(212,175,55,0.4)', marginLeft: wp(6), marginRight: wp(4) }}>
+                    <TrophyIcon size={wp(14)} color="rgba(212,175,55,0.6)" />
+                    <Text style={{ fontSize: fp(10), color: 'rgba(212,175,55,0.6)', marginLeft: wp(6), marginRight: wp(4) }}>
                       {expandedRewards[ch.id] ? 'Masquer les récompenses' : 'Voir les récompenses'}
                     </Text>
-                    <ChevronDown size={wp(12)} color="rgba(212,175,55,0.4)" rotated={expandedRewards[ch.id]} />
+                    <ChevronDown size={wp(12)} color="rgba(212,175,55,0.6)" rotated={expandedRewards[ch.id]} />
                   </Pressable>
 
                   {expandedRewards[ch.id] && (
@@ -2195,7 +2209,7 @@ export default function LixVersePage() {
                       backgroundColor: isOpen ? (ch.color || '#D4AF37') + '20' : 'rgba(255,255,255,0.03)',
                       borderWidth: 1.5, borderColor: isOpen ? (ch.color || '#D4AF37') + '50' : 'rgba(255,255,255,0.06)',
                       transform: [{ scale: pressed ? 0.95 : 1 }],
-                      opacity: eligibilityChecking ? 0.5 : (isOpen ? 1 : 0.4),
+                      opacity: eligibilityChecking ? 0.5 : (isOpen ? 1 : 0.5),
                     })}
                   >
                     <Text style={{ fontSize: fp(11), fontWeight: '700', color: isOpen ? (ch.color || '#D4AF37') : 'rgba(255,255,255,0.2)' }}>Créer une équipe</Text>
@@ -2215,12 +2229,15 @@ export default function LixVersePage() {
                       backgroundColor: isOpen ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
                       borderWidth: 1, borderColor: isOpen ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
                       transform: [{ scale: pressed ? 0.95 : 1 }],
-                      opacity: eligibilityChecking ? 0.5 : (isOpen ? 1 : 0.4),
+                      opacity: eligibilityChecking ? 0.5 : (isOpen ? 1 : 0.5),
                     })}
                   >
                     <Text style={{ fontSize: fp(11), fontWeight: '600', color: isOpen ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)' }}>Rejoindre</Text>
                   </Pressable>
                 </View>
+                {!isOpen && (
+                  <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.15)', textAlign: 'center', marginTop: wp(4), fontStyle: 'italic' }}>Inscriptions closes — prochain défi le 1er du mois</Text>
+                )}
               </LinearGradient>
             </View>
           );
@@ -2248,8 +2265,12 @@ export default function LixVersePage() {
                 }}
                 style={{
                   paddingHorizontal: wp(14), paddingVertical: wp(8), borderRadius: wp(10),
-                  backgroundColor: leaderboardTab === tab.key ? '#D4AF3720' : 'rgba(255,255,255,0.04)',
-                  borderWidth: 1, borderColor: leaderboardTab === tab.key ? '#D4AF3740' : 'rgba(255,255,255,0.06)',
+                  backgroundColor: leaderboardTab === tab.key ? 'rgba(212,175,55,0.18)' : 'rgba(255,255,255,0.04)',
+                  borderWidth: 1.5, borderColor: leaderboardTab === tab.key ? 'rgba(212,175,55,0.45)' : 'rgba(255,255,255,0.06)',
+                  shadowColor: leaderboardTab === tab.key ? '#D4AF37' : 'transparent',
+                  shadowOpacity: leaderboardTab === tab.key ? 0.15 : 0,
+                  shadowRadius: wp(4),
+                  elevation: leaderboardTab === tab.key ? 2 : 0,
                 }}>
                 <Text style={{ fontSize: fp(11), fontWeight: leaderboardTab === tab.key ? '700' : '500', color: leaderboardTab === tab.key ? '#D4AF37' : 'rgba(255,255,255,0.35)' }}>
                   {tab.label}
@@ -2291,7 +2312,7 @@ export default function LixVersePage() {
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
                           <View style={{ backgroundColor: rankColors[i] + '20', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4), borderWidth: 1, borderColor: rankColors[i] + '30' }}>
-                            <Text style={{ fontSize: fp(12), fontWeight: '800', color: rankColors[i] }}>{entry.total_score}</Text>
+                            <Text style={{ fontSize: fp(12), fontWeight: '800', color: rankColors[i] }}>{entry.total_score} <Text style={{ fontSize: fp(8), fontWeight: '500', opacity: 0.7 }}>pts</Text></Text>
                           </View>
                           <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.15)' }}>›</Text>
                         </View>
@@ -4411,7 +4432,7 @@ export default function LixVersePage() {
             </Animated.View>
           </TouchableOpacity>
         )}
-        {notifications.length>0&&(<View style={{height:wp(28),backgroundColor:'rgba(212,175,55,0.06)',borderBottomWidth:1,borderBottomColor:'rgba(212,175,55,0.1)',overflow:'hidden',justifyContent:'center'}}><Animated.View style={{flexDirection:'row',transform:[{translateX:notifScrollX}]}}>{[...notifications,...notifications].map((n,i)=>(<View key={i} style={{width:wp(280),flexDirection:'row',alignItems:'center',paddingHorizontal:wp(10),gap:wp(6)}}><View style={{width:wp(6),height:wp(6),borderRadius:wp(3),backgroundColor:n.color||'#D4AF37'}}/><Text style={{fontSize:fp(10),color:'rgba(255,255,255,0.5)',flex:1}} numberOfLines={1}>{n.message}</Text></View>))}</Animated.View></View>)}
+        {notifications.length>0&&(<View style={{height:wp(28),backgroundColor:'rgba(212,175,55,0.06)',borderBottomWidth:1,borderBottomColor:'rgba(212,175,55,0.1)',overflow:'hidden',justifyContent:'center'}}><Animated.View style={{flexDirection:'row',transform:[{translateX:notifScrollX}]}}>{[...notifications,...notifications].map((n,i)=>(<View key={i} style={{width:wp(280),flexDirection:'row',alignItems:'center',paddingHorizontal:wp(10),gap:wp(6)}}><View style={{width:wp(6),height:wp(6),borderRadius:wp(3),backgroundColor:n.color||'#D4AF37'}}/><Text style={{fontSize:fp(10),color:'rgba(255,255,255,0.5)',flex:1}} numberOfLines={1}>{n.message}</Text></View>))}</Animated.View><View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: wp(24), backgroundColor: 'transparent' }} pointerEvents="none"><LinearGradient colors={['rgba(26,29,34,1)', 'rgba(26,29,34,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1 }} /></View><View style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: wp(24), backgroundColor: 'transparent' }} pointerEvents="none"><LinearGradient colors={['rgba(26,29,34,0)', 'rgba(26,29,34,1)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1 }} /></View></View>)}
         <View style={{flexDirection:'row',marginHorizontal:wp(16),marginVertical:wp(10),gap:wp(6)}}>
           {[{key:'defi',label:'Défi',icon:'🏆'},{key:'human',label:'Human',icon:'🤝'},{key:'characters',label:'Caractères',icon:'🃏'},{key:'lixspin',label:'Lix & Spin',icon:'💎'}].map(tab=>(<Pressable key={tab.key} onPress={()=>setActiveTab(tab.key)} style={{flex:1,paddingVertical:wp(10),borderRadius:wp(12),alignItems:'center',backgroundColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.05)',borderWidth:1,borderColor:activeTab===tab.key?'#D4AF37':'rgba(255,255,255,0.08)'}}><Text style={{fontSize:fp(14)}}>{tab.icon}</Text><Text style={{fontSize:fp(10),fontWeight:'600',marginTop:wp(2),color:activeTab===tab.key?'#1A1D22':'rgba(255,255,255,0.4)'}}>{tab.label}</Text></Pressable>))}
         </View>
