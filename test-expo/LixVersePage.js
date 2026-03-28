@@ -709,6 +709,23 @@ export default function LixVersePage() {
     fox_sub_redirect: 'meals',
     // Gipsy (superpower → dashboard)
     gipsy_toile_sante: 'home',
+    // Rare
+    phoenix_recovery_plan: 'meals',
+    wolf_streak_history: 'lixverse',
+    boukki_meal_plan: 'meals',
+    rhino_sport_program: 'activity',
+    dolphin_hydra_history: 'home',
+    // Elite
+    licornium_nutri_report: 'meals',
+    licornium_pdf_report: 'meals',
+    snake_sport_program: 'activity',
+    snake_4week_plan: 'activity',
+    mosquito_essaim: 'lixverse',
+    // Mythique
+    simba_pdf_report: 'home',
+    alburax_medibook: 'medicai',
+    // Ultimate
+    tardigrum_all_powers: 'lixverse',
   };
 
   // ═══ STATE pour données inline des pouvoirs ═══
@@ -4680,24 +4697,48 @@ export default function LixVersePage() {
 
                                           // Sauvegarder le boost XP dans users_profile
                                           const boostMap = {
+                                            // Tiger (Standard)
                                             tiger_xp_boost: 1.10,
                                             tiger_xp_boost_niv2: 1.20,
                                             tiger_xp_boost_max: 1.30,
+                                            // Simba (Mythique)
+                                            simba_xp_boost: 1.50,
+                                            // Alburax (Mythique)
+                                            alburax_double_lix: 2.0,
+                                            alburax_streak_shield: 1.0,
+                                            // Tardigrum (Ultimate)
+                                            tardigrum_xp_boost: 1.30,
+                                            tardigrum_energy_half: 0.5,
                                           };
                                           const boostMultiplier = boostMap[power.power_key] || 1.10;
+                                          // Type de boost différent selon le personnage
+                                          const boostType = power.power_key.startsWith('alburax_double') ? 'lix_multiplier'
+                                            : power.power_key.startsWith('alburax_streak') ? 'streak_shield'
+                                            : power.power_key.startsWith('tardigrum_energy') ? 'energy_cost'
+                                            : 'xp_activity';
                                           // Sauvegarder le boost actif (expire dans 24h)
                                           const boostExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
                                           fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, {
                                             method: 'PATCH',
                                             headers: POST_HEADERS,
                                             body: JSON.stringify({
-                                              active_boost: JSON.stringify({ type: 'xp_activity', multiplier: boostMultiplier, expires_at: boostExpiry, source: power.power_key }),
+                                              active_boost: JSON.stringify({ type: boostType, multiplier: boostMultiplier, expires_at: boostExpiry, source: power.power_key }),
                                             }),
                                           }).catch(() => {});
 
                                           setSelectedChar(null); setCharFlipped(false); flipAnim.setValue(0); setInlinePowerModal(null);
                                           const pctBoost = Math.round((boostMultiplier - 1) * 100);
-                                          showLixAlert('🐯 Boost XP activé !', '+' + pctBoost + '% XP sur ta prochaine activité.\nExpire dans 24h.', [{ text: 'Aller aux Activités', color: '#FF4757', onPress: () => setActiveNavTab('activity') }, { text: 'OK', style: 'cancel' }], '🐯');
+                                          const boostMessages = {
+                                            xp_activity: { emoji: '⚡', title: 'Boost XP activé !', msg: '+' + pctBoost + '% XP sur tes activités pendant 24h.', btn: 'Activité', nav: 'activity' },
+                                            lix_multiplier: { emoji: '💰', title: 'Double Lix activé !', msg: 'Toutes tes récompenses Lix sont doublées pendant 24h.', btn: 'LixVerse', nav: 'lixverse' },
+                                            streak_shield: { emoji: '🛡️', title: 'Streak Shield activé !', msg: 'Si tu oublies un jour, ton streak est protégé.', btn: 'OK', nav: null },
+                                            energy_cost: { emoji: '🧬', title: 'Énergie /2 activé !', msg: 'Toutes les actions IA coûtent moitié moins d\'énergie pendant 24h.', btn: 'Super', nav: null },
+                                          };
+                                          const bm = boostMessages[boostType] || boostMessages.xp_activity;
+                                          const buttons = bm.nav
+                                            ? [{ text: bm.btn, color: '#D4AF37', onPress: () => setActiveNavTab(bm.nav) }, { text: 'OK', style: 'cancel' }]
+                                            : [{ text: bm.btn, color: '#00D984' }];
+                                          showLixAlert(bm.emoji + ' ' + bm.title, bm.msg, buttons, bm.emoji);
                                         }}
                                         style={({ pressed }) => ({
                                           paddingVertical: wp(7), borderRadius: wp(8),
@@ -4772,6 +4813,100 @@ export default function LixVersePage() {
                                               const hyd = await hydRes.json();
                                               const act = await actRes.json();
                                               setInlinePowerData({ hydration: hyd || [], activities: act || [] });
+                                            }
+
+                                            // ═══ RARE — Jade Phoenix : Bilan récupération ═══
+                                            else if (power.power_key === 'phoenix_recovery' || power.power_key === 'phoenix_recovery_reco') {
+                                              const [mealsRes, actRes] = await Promise.all([
+                                                fetch(SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + TEST_USER_ID + '&date=eq.' + today + '&select=total_calories,calorie_target,calorie_balance,total_protein,total_carbs,total_fat', { headers: HEADERS }),
+                                                fetch(SUPABASE_URL + '/rest/v1/activities?user_id=eq.' + TEST_USER_ID + '&date=eq.' + today + '&select=name,type,duration_minutes,calories_burned,intensity', { headers: HEADERS }),
+                                              ]);
+                                              const meals = await mealsRes.json();
+                                              const acts = await actRes.json();
+                                              setInlinePowerData({ summary: meals?.[0] || null, activities: acts || [] });
+                                            }
+
+                                            // ═══ RARE — Silver Wolf : Streaks détaillés ═══
+                                            else if (power.power_key === 'wolf_streaks' || power.power_key === 'wolf_streak_details') {
+                                              const thirtyAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                                              const [mealsRes, actsRes, moodsRes, hydRes] = await Promise.all([
+                                                fetch(SUPABASE_URL + '/rest/v1/meals?user_id=eq.' + TEST_USER_ID + '&date=gte.' + thirtyAgo + '&select=date&order=date.asc', { headers: HEADERS }),
+                                                fetch(SUPABASE_URL + '/rest/v1/activities?user_id=eq.' + TEST_USER_ID + '&date=gte.' + thirtyAgo + '&select=date&order=date.asc', { headers: HEADERS }),
+                                                fetch(SUPABASE_URL + '/rest/v1/moods?user_id=eq.' + TEST_USER_ID + '&created_at=gte.' + thirtyAgo + 'T00:00:00&select=created_at&order=created_at.asc', { headers: HEADERS }),
+                                                fetch(SUPABASE_URL + '/rest/v1/hydration_logs?user_id=eq.' + TEST_USER_ID + '&logged_at=gte.' + thirtyAgo + 'T00:00:00&select=logged_at&order=logged_at.asc', { headers: HEADERS }),
+                                              ]);
+                                              const meals = await mealsRes.json();
+                                              const acts = await actsRes.json();
+                                              const moods = await moodsRes.json();
+                                              const hyd = await hydRes.json();
+                                              // Calculer jours uniques par catégorie
+                                              const uniqueDays = (arr, field) => [...new Set((arr || []).map(x => (x[field] || '').slice(0, 10)))];
+                                              setInlinePowerData({
+                                                mealDays: uniqueDays(meals, 'date'),
+                                                actDays: uniqueDays(acts, 'date'),
+                                                moodDays: uniqueDays(moods, 'created_at'),
+                                                hydDays: uniqueDays(hyd, 'logged_at'),
+                                              });
+                                            }
+
+                                            // ═══ RARE — Boukki : Planificateur calories ═══
+                                            else if (power.power_key === 'boukki_calorie_plan' || power.power_key === 'boukki_week_projection') {
+                                              const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                                              const res = await fetch(SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + TEST_USER_ID + '&date=gte.' + weekAgo + '&order=date.asc&select=date,total_calories,calorie_target,calorie_balance,meals_count', { headers: HEADERS });
+                                              const d = await res.json();
+                                              setInlinePowerData({ weekSummaries: d || [] });
+                                            }
+
+                                            // ═══ RARE — Iron Rhino : Stats fitness ═══
+                                            else if (power.power_key === 'rhino_fitness_stats' || power.power_key === 'rhino_challenge_analysis') {
+                                              const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                                              const [actRes, scoresRes] = await Promise.all([
+                                                fetch(SUPABASE_URL + '/rest/v1/activities?user_id=eq.' + TEST_USER_ID + '&date=gte.' + weekAgo + '&order=date.asc&select=name,type,duration_minutes,calories_burned,date,intensity', { headers: HEADERS }),
+                                                supaRpc('get_user_challenge_scores', { p_user_id: TEST_USER_ID }),
+                                              ]);
+                                              const acts = await actRes.json();
+                                              setInlinePowerData({ activities: acts || [], challengeScores: Array.isArray(scoresRes) ? scoresRes : [] });
+                                            }
+
+                                            // ═══ RARE — Coral Dolphin : Rapport hydratation ═══
+                                            else if (power.power_key === 'dolphin_hydra_report' || power.power_key === 'dolphin_hydra_goal' || power.power_key === 'dolphin_hydra_30days') {
+                                              const range = power.power_key === 'dolphin_hydra_30days' ? 30 : 7;
+                                              const startDate = new Date(Date.now() - range * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                                              const res = await fetch(SUPABASE_URL + '/rest/v1/hydration_logs?user_id=eq.' + TEST_USER_ID + '&logged_at=gte.' + startDate + 'T00:00:00&order=logged_at.asc&select=amount_ml,beverage_name,beverage_type,hydration_coeff,effective_ml,logged_at,sugar_g', { headers: HEADERS });
+                                              const d = await res.json();
+                                              setInlinePowerData({ hydrationLogs: d || [], rangeDays: range });
+                                            }
+
+                                            // ═══ ELITE — Licornium : Score nutritionnel ═══
+                                            else if (power.power_key === 'licornium_nutri_score' || power.power_key === 'licornium_desequilibres') {
+                                              const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                                              const res = await fetch(SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + TEST_USER_ID + '&date=gte.' + weekAgo + '&order=date.desc&select=date,total_calories,calorie_target,calorie_balance,total_protein,total_carbs,total_fat,total_fiber,meals_count', { headers: HEADERS });
+                                              const d = await res.json();
+                                              setInlinePowerData({ weekData: d || [] });
+                                            }
+
+                                            // ═══ ELITE — Jaane Snake : Analyse activité ═══
+                                            else if (power.power_key === 'snake_activity_analysis' || power.power_key === 'snake_oms_goal') {
+                                              const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                                              const res = await fetch(SUPABASE_URL + '/rest/v1/activities?user_id=eq.' + TEST_USER_ID + '&date=gte.' + monthAgo + '&order=date.asc&select=name,type,duration_minutes,calories_burned,date,intensity', { headers: HEADERS });
+                                              const d = await res.json();
+                                              setInlinePowerData({ monthActivities: d || [] });
+                                            }
+
+                                            // ═══ MYTHIQUE — Diamond Simba : Résumé complet ═══
+                                            else if (power.power_key === 'simba_xp_boost' || power.power_key === 'simba_full_report') {
+                                              const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                                              const [summRes, actRes, moodRes, hydRes] = await Promise.all([
+                                                fetch(SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + TEST_USER_ID + '&date=gte.' + weekAgo + '&order=date.desc&select=date,total_calories,calorie_target,calorie_balance,total_protein,total_carbs,total_fat,meals_count', { headers: HEADERS }),
+                                                fetch(SUPABASE_URL + '/rest/v1/activities?user_id=eq.' + TEST_USER_ID + '&date=gte.' + weekAgo + '&select=duration_minutes,calories_burned', { headers: HEADERS }),
+                                                fetch(SUPABASE_URL + '/rest/v1/moods?user_id=eq.' + TEST_USER_ID + '&created_at=gte.' + weekAgo + 'T00:00:00&select=mood_level', { headers: HEADERS }),
+                                                fetch(SUPABASE_URL + '/rest/v1/hydration_logs?user_id=eq.' + TEST_USER_ID + '&logged_at=gte.' + weekAgo + 'T00:00:00&select=effective_ml', { headers: HEADERS }),
+                                              ]);
+                                              const summs = await summRes.json();
+                                              const acts = await actRes.json();
+                                              const moods = await moodRes.json();
+                                              const hyds = await hydRes.json();
+                                              setInlinePowerData({ summaries: summs || [], activities: acts || [], moods: moods || [], hydration: hyds || [] });
                                             }
                                           } catch (e) {
                                             console.warn('Power data fetch error:', e);
@@ -5059,6 +5194,328 @@ export default function LixVersePage() {
                           ) : (
                             <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Pas assez de données. Hydrate-toi et bouge cette semaine !</Text>
                           )}
+                        </View>
+                      )}
+
+                      {/* ═══════════════════════════════════════════════════ */}
+                      {/* ═══ RARE — JADE PHOENIX 🔥 Bilan récupération ═══ */}
+                      {/* ═══════════════════════════════════════════════════ */}
+                      {(inlinePowerModal === 'phoenix_recovery' || inlinePowerModal === 'phoenix_recovery_reco') && (
+                        <View style={{ backgroundColor: 'rgba(46,213,115,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(46,213,115,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🔥 Bilan Récupération</Text>
+                          {inlinePowerLoading ? <ActivityIndicator color="#2ED573" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
+                            <View>
+                              {inlinePowerData.activities && inlinePowerData.activities.length > 0 ? (
+                                <View style={{ marginBottom: wp(10) }}>
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', marginBottom: wp(6) }}>Activités aujourd'hui</Text>
+                                  {inlinePowerData.activities.map((a, i) => (
+                                    <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
+                                      <Text style={{ fontSize: fp(11), color: '#FFF' }}>{a.name || a.type}</Text>
+                                      <Text style={{ fontSize: fp(11), color: '#FF8C42' }}>{a.duration_minutes}min · {a.calories_burned} kcal</Text>
+                                    </View>
+                                  ))}
+                                  <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginVertical: wp(8) }} />
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)' }}>Total brûlé : {inlinePowerData.activities.reduce((s, a) => s + (a.calories_burned || 0), 0)} kcal</Text>
+                                </View>
+                              ) : (
+                                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginBottom: wp(8) }}>Aucune activité aujourd'hui</Text>
+                              )}
+                              {inlinePowerData.summary && (
+                                <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(10), padding: wp(10) }}>
+                                  <Text style={{ fontSize: fp(10), color: '#2ED573', fontWeight: '700', marginBottom: wp(4) }}>Récupération recommandée</Text>
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>
+                                    Balance calorique : {inlinePowerData.summary.calorie_balance > 0 ? '+' : ''}{inlinePowerData.summary.calorie_balance || 0} kcal
+                                  </Text>
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)', marginTop: wp(2) }}>
+                                    {(inlinePowerData.summary.calorie_balance || 0) < -200
+                                      ? '⚠️ Déficit important — privilégie protéines + glucides lents'
+                                      : (inlinePowerData.summary.calorie_balance || 0) > 200
+                                        ? '💪 Surplus OK pour récupération musculaire'
+                                        : '✅ Balance équilibrée — bonne récupération'}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                          ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Aucune donnée disponible</Text>}
+                        </View>
+                      )}
+
+                      {/* ═══════════════════════════════════════════ */}
+                      {/* ═══ RARE — SILVER WOLF 🐺 Streaks ═══ */}
+                      {/* ═══════════════════════════════════════════ */}
+                      {(inlinePowerModal === 'wolf_streaks' || inlinePowerModal === 'wolf_streak_details') && (
+                        <View style={{ backgroundColor: 'rgba(164,176,190,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(164,176,190,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🐺 Streaks — 30 derniers jours</Text>
+                          {inlinePowerLoading ? <ActivityIndicator color="#A4B0BE" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
+                            <View>
+                              {[
+                                { label: '🍽️ Repas loggés', days: inlinePowerData.mealDays, color: '#00D984' },
+                                { label: '🏃 Activité', days: inlinePowerData.actDays, color: '#FF8C42' },
+                                { label: '😊 Humeur', days: inlinePowerData.moodDays, color: '#9B6DFF' },
+                                { label: '💧 Hydratation', days: inlinePowerData.hydDays, color: '#4DA6FF' },
+                              ].map((cat, i) => {
+                                const count = (cat.days || []).length;
+                                const pct = Math.min(100, Math.round((count / 30) * 100));
+                                return (
+                                  <View key={i} style={{ marginBottom: wp(10) }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(3) }}>
+                                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }}>{cat.label}</Text>
+                                      <Text style={{ fontSize: fp(11), fontWeight: '700', color: cat.color }}>{count}/30 jours</Text>
+                                    </View>
+                                    <View style={{ height: wp(5), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2.5), overflow: 'hidden' }}>
+                                      <View style={{ height: '100%', width: pct + '%', backgroundColor: cat.color, borderRadius: wp(2.5) }} />
+                                    </View>
+                                  </View>
+                                );
+                              })}
+                            </View>
+                          ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Aucune donnée</Text>}
+                        </View>
+                      )}
+
+                      {/* ═══════════════════════════════════════════════ */}
+                      {/* ═══ RARE — BOUKKI 🦴 Planificateur calories ═══ */}
+                      {/* ═══════════════════════════════════════════════ */}
+                      {(inlinePowerModal === 'boukki_calorie_plan' || inlinePowerModal === 'boukki_week_projection') && (
+                        <View style={{ backgroundColor: 'rgba(205,127,50,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(205,127,50,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦴 Calories — 7 jours</Text>
+                          {inlinePowerLoading ? <ActivityIndicator color="#CD7F32" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.weekSummaries && inlinePowerData.weekSummaries.length > 0 ? (
+                            <View>
+                              {inlinePowerData.weekSummaries.map((s, i) => {
+                                const inRange = s.calorie_target > 0 && Math.abs(s.calorie_balance) <= s.calorie_target * 0.15;
+                                const dayName = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][new Date(s.date).getDay()];
+                                return (
+                                  <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(5), paddingVertical: wp(3), borderBottomWidth: i < inlinePowerData.weekSummaries.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
+                                    <Text style={{ width: wp(30), fontSize: fp(10), color: 'rgba(255,255,255,0.4)' }}>{dayName}</Text>
+                                    <Text style={{ flex: 1, fontSize: fp(11), fontWeight: '600', color: '#FFF' }}>{s.total_calories || 0} kcal</Text>
+                                    <Text style={{ fontSize: fp(10), color: inRange ? '#00D984' : '#FF6B6B', fontWeight: '600' }}>
+                                      {s.calorie_balance > 0 ? '+' : ''}{s.calorie_balance || 0}
+                                    </Text>
+                                    <Text style={{ fontSize: fp(10), marginLeft: wp(6) }}>{inRange ? '✅' : '⚠️'}</Text>
+                                  </View>
+                                );
+                              })}
+                              <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(8), padding: wp(8), marginTop: wp(8) }}>
+                                <Text style={{ fontSize: fp(10), color: '#CD7F32', fontWeight: '700' }}>
+                                  Jours en équilibre : {inlinePowerData.weekSummaries.filter(s => s.calorie_target > 0 && Math.abs(s.calorie_balance) <= s.calorie_target * 0.15).length}/7
+                                </Text>
+                              </View>
+                            </View>
+                          ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Pas assez de données cette semaine</Text>}
+                        </View>
+                      )}
+
+                      {/* ════════════════════════════════════════════════ */}
+                      {/* ═══ RARE — IRON RHINO 🦏 Stats fitness ═══ */}
+                      {/* ════════════════════════════════════════════════ */}
+                      {(inlinePowerModal === 'rhino_fitness_stats' || inlinePowerModal === 'rhino_challenge_analysis') && (
+                        <View style={{ backgroundColor: 'rgba(116,125,140,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(116,125,140,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>
+                            🦏 {inlinePowerModal === 'rhino_challenge_analysis' ? 'Analyse Défis' : 'Stats Fitness — 7 jours'}
+                          </Text>
+                          {inlinePowerLoading ? <ActivityIndicator color="#747D8C" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
+                            <View>
+                              {inlinePowerModal === 'rhino_challenge_analysis' && inlinePowerData.challengeScores && inlinePowerData.challengeScores.length > 0 ? (
+                                inlinePowerData.challengeScores.map((cs, i) => (
+                                  <View key={i} style={{ marginBottom: wp(8), backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(8), padding: wp(8) }}>
+                                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FFF' }}>{cs.challenge_title}</Text>
+                                    <View style={{ flexDirection: 'row', gap: wp(10), marginTop: wp(4) }}>
+                                      <Text style={{ fontSize: fp(10), color: '#D4AF37' }}>#{cs.group_rank || '—'}</Text>
+                                      <Text style={{ fontSize: fp(10), color: '#00D984' }}>{cs.personal_score || 0} pts</Text>
+                                      <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>{cs.days_remaining || 0}j restants</Text>
+                                    </View>
+                                  </View>
+                                ))
+                              ) : null}
+                              {inlinePowerData.activities && inlinePowerData.activities.length > 0 ? (
+                                <View>
+                                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(6) }}>
+                                    <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)' }}>Séances : {inlinePowerData.activities.length}</Text>
+                                    <Text style={{ fontSize: fp(10), color: '#FF8C42', fontWeight: '700' }}>{inlinePowerData.activities.reduce((s, a) => s + (a.calories_burned || 0), 0)} kcal brûlées</Text>
+                                  </View>
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)' }}>Durée totale : {inlinePowerData.activities.reduce((s, a) => s + (a.duration_minutes || 0), 0)} min</Text>
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>
+                                    OMS : {Math.round(inlinePowerData.activities.reduce((s, a) => s + (a.duration_minutes || 0), 0) / 150 * 100)}% de l'objectif hebdo
+                                  </Text>
+                                </View>
+                              ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)' }}>Aucune activité cette semaine</Text>}
+                            </View>
+                          ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Aucune donnée</Text>}
+                        </View>
+                      )}
+
+                      {/* ════════════════════════════════════════════════════ */}
+                      {/* ═══ RARE — CORAL DOLPHIN 🐬 Rapport hydratation ═══ */}
+                      {/* ════════════════════════════════════════════════════ */}
+                      {(inlinePowerModal === 'dolphin_hydra_report' || inlinePowerModal === 'dolphin_hydra_goal' || inlinePowerModal === 'dolphin_hydra_30days') && (
+                        <View style={{ backgroundColor: 'rgba(255,107,129,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,107,129,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🐬 Hydratation — {inlinePowerData?.rangeDays || 7} jours</Text>
+                          {inlinePowerLoading ? <ActivityIndicator color="#FF6B81" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.hydrationLogs && inlinePowerData.hydrationLogs.length > 0 ? (
+                            <View>
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(8) }}>
+                                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)' }}>{inlinePowerData.hydrationLogs.length} entrées</Text>
+                                <Text style={{ fontSize: fp(10), color: '#4DA6FF', fontWeight: '700' }}>
+                                  {inlinePowerData.hydrationLogs.reduce((s, h) => s + (h.effective_ml || 0), 0)} ml effectifs
+                                </Text>
+                              </View>
+                              {/* Top 5 boissons par fréquence */}
+                              {(() => {
+                                const beverages = {};
+                                (inlinePowerData.hydrationLogs || []).forEach(h => {
+                                  const name = h.beverage_name || h.beverage_type || 'Eau';
+                                  if (!beverages[name]) beverages[name] = { count: 0, totalMl: 0, coeff: h.hydration_coeff || 1 };
+                                  beverages[name].count++;
+                                  beverages[name].totalMl += h.effective_ml || 0;
+                                });
+                                return Object.entries(beverages).sort((a, b) => b[1].count - a[1].count).slice(0, 5).map(([name, data], i) => (
+                                  <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(4), paddingVertical: wp(3) }}>
+                                    <Text style={{ fontSize: fp(11), color: '#FFF', flex: 1 }}>{name}</Text>
+                                    <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginRight: wp(8) }}>×{data.count}</Text>
+                                    <Text style={{ fontSize: fp(10), color: data.coeff >= 0.9 ? '#00D984' : data.coeff >= 0.5 ? '#FF8C42' : '#FF6B6B', fontWeight: '600' }}>
+                                      {data.totalMl}ml (×{data.coeff})
+                                    </Text>
+                                  </View>
+                                ));
+                              })()}
+                              {inlinePowerData.hydrationLogs.some(h => (h.sugar_g || 0) > 0) && (
+                                <View style={{ backgroundColor: 'rgba(255,140,66,0.1)', borderRadius: wp(8), padding: wp(8), marginTop: wp(8) }}>
+                                  <Text style={{ fontSize: fp(9), color: '#FF8C42' }}>
+                                    ⚠️ Sucre total boissons : {Math.round(inlinePowerData.hydrationLogs.reduce((s, h) => s + (h.sugar_g || 0), 0))}g
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                          ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Aucune donnée d'hydratation</Text>}
+                        </View>
+                      )}
+
+                      {/* ═══════════════════════════════════════════════════════ */}
+                      {/* ═══ ELITE — LICORNIUM 🦄 Score nutritionnel ═══ */}
+                      {/* ═══════════════════════════════════════════════════════ */}
+                      {(inlinePowerModal === 'licornium_nutri_score' || inlinePowerModal === 'licornium_desequilibres') && (
+                        <View style={{ backgroundColor: 'rgba(179,136,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(179,136,255,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦄 Score Nutritionnel</Text>
+                          {inlinePowerLoading ? <ActivityIndicator color="#B388FF" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.weekData && inlinePowerData.weekData.length > 0 ? (
+                            <View>
+                              {(() => {
+                                const w = inlinePowerData.weekData;
+                                const daysInRange = w.filter(s => s.calorie_target > 0 && Math.abs(s.calorie_balance) <= s.calorie_target * 0.15).length;
+                                const avgProtein = Math.round(w.reduce((s, d) => s + (d.total_protein || 0), 0) / w.length);
+                                const avgCarbs = Math.round(w.reduce((s, d) => s + (d.total_carbs || 0), 0) / w.length);
+                                const avgFat = Math.round(w.reduce((s, d) => s + (d.total_fat || 0), 0) / w.length);
+                                const avgFiber = Math.round(w.reduce((s, d) => s + (d.total_fiber || 0), 0) / w.length);
+                                const score = Math.min(100, Math.round((daysInRange / Math.max(w.length, 1)) * 40 + (avgFiber >= 20 ? 20 : avgFiber) + (avgProtein >= 50 ? 20 : Math.round(avgProtein / 50 * 20)) + 20));
+                                const scoreColor = score >= 75 ? '#00D984' : score >= 50 ? '#FF8C42' : '#FF6B6B';
+                                return (
+                                  <View>
+                                    <View style={{ alignItems: 'center', marginBottom: wp(12) }}>
+                                      <Text style={{ fontSize: fp(36), fontWeight: '800', color: scoreColor }}>{score}</Text>
+                                      <Text style={{ fontSize: fp(10), color: scoreColor }}>/100 — {score >= 75 ? 'Excellent' : score >= 50 ? 'Bon' : 'À améliorer'}</Text>
+                                    </View>
+                                    <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', marginBottom: wp(4) }}>Moyennes quotidiennes (7j)</Text>
+                                    {[
+                                      { label: 'Protéines', val: avgProtein + 'g', ok: avgProtein >= 50, ideal: '≥50g' },
+                                      { label: 'Glucides', val: avgCarbs + 'g', ok: avgCarbs <= 300, ideal: '≤300g' },
+                                      { label: 'Lipides', val: avgFat + 'g', ok: avgFat <= 80, ideal: '≤80g' },
+                                      { label: 'Fibres', val: avgFiber + 'g', ok: avgFiber >= 20, ideal: '≥20g' },
+                                    ].map((m, i) => (
+                                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(4) }}>
+                                        <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)', flex: 1 }}>{m.label}</Text>
+                                        <Text style={{ fontSize: fp(11), fontWeight: '700', color: m.ok ? '#00D984' : '#FF8C42', marginRight: wp(8) }}>{m.val}</Text>
+                                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)' }}>{m.ideal}</Text>
+                                      </View>
+                                    ))}
+                                    <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)', marginTop: wp(6) }}>Jours équilibrés : {daysInRange}/{w.length}</Text>
+                                  </View>
+                                );
+                              })()}
+                            </View>
+                          ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Pas assez de données</Text>}
+                        </View>
+                      )}
+
+                      {/* ══════════════════════════════════════════════════════ */}
+                      {/* ═══ ELITE — JAANE SNAKE 🐍 Analyse activité ═══ */}
+                      {/* ══════════════════════════════════════════════════════ */}
+                      {(inlinePowerModal === 'snake_activity_analysis' || inlinePowerModal === 'snake_oms_goal') && (
+                        <View style={{ backgroundColor: 'rgba(255,99,72,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,99,72,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🐍 Analyse Activité — 30 jours</Text>
+                          {inlinePowerLoading ? <ActivityIndicator color="#FF6348" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.monthActivities && inlinePowerData.monthActivities.length > 0 ? (
+                            <View>
+                              {(() => {
+                                const acts = inlinePowerData.monthActivities;
+                                const totalMin = acts.reduce((s, a) => s + (a.duration_minutes || 0), 0);
+                                const totalKcal = acts.reduce((s, a) => s + (a.calories_burned || 0), 0);
+                                const uniqueDays = [...new Set(acts.map(a => a.date))].length;
+                                const weeklyAvg = Math.round(totalMin / 4);
+                                const omsPct = Math.round((weeklyAvg / 150) * 100);
+                                const types = {};
+                                acts.forEach(a => { const t = a.type || a.name || 'Autre'; types[t] = (types[t] || 0) + 1; });
+                                return (
+                                  <View>
+                                    <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(12) }}>
+                                      <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(8), padding: wp(8), alignItems: 'center' }}>
+                                        <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FF6348' }}>{acts.length}</Text>
+                                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.3)' }}>séances</Text>
+                                      </View>
+                                      <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(8), padding: wp(8), alignItems: 'center' }}>
+                                        <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FF8C42' }}>{totalMin}</Text>
+                                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.3)' }}>minutes</Text>
+                                      </View>
+                                      <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(8), padding: wp(8), alignItems: 'center' }}>
+                                        <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#D4AF37' }}>{totalKcal}</Text>
+                                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.3)' }}>kcal</Text>
+                                      </View>
+                                    </View>
+                                    <View style={{ marginBottom: wp(8) }}>
+                                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(3) }}>
+                                        <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)' }}>OMS hebdo ({weeklyAvg} min/sem)</Text>
+                                        <Text style={{ fontSize: fp(10), fontWeight: '700', color: omsPct >= 100 ? '#00D984' : '#FF8C42' }}>{omsPct}%</Text>
+                                      </View>
+                                      <View style={{ height: wp(5), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2.5), overflow: 'hidden' }}>
+                                        <View style={{ height: '100%', width: Math.min(100, omsPct) + '%', backgroundColor: omsPct >= 100 ? '#00D984' : '#FF8C42', borderRadius: wp(2.5) }} />
+                                      </View>
+                                    </View>
+                                    <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)' }}>
+                                      Types : {Object.entries(types).map(([t, c]) => t + ' (×' + c + ')').join(', ')}
+                                    </Text>
+                                    <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)', marginTop: wp(2) }}>Jours actifs : {uniqueDays}/30</Text>
+                                  </View>
+                                );
+                              })()}
+                            </View>
+                          ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Aucune activité ce mois</Text>}
+                        </View>
+                      )}
+
+                      {/* ═══════════════════════════════════════════════════════════ */}
+                      {/* ═══ MYTHIQUE — DIAMOND SIMBA 🦁 Rapport complet 7j ═══ */}
+                      {/* ═══════════════════════════════════════════════════════════ */}
+                      {(inlinePowerModal === 'simba_xp_boost' || inlinePowerModal === 'simba_full_report') && (
+                        <View style={{ backgroundColor: 'rgba(0,206,201,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0,206,201,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦁 Rapport Santé — 7 jours</Text>
+                          {inlinePowerLoading ? <ActivityIndicator color="#00CEC9" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
+                            <View>
+                              {[
+                                { label: '🍽️ Nutrition', val: (inlinePowerData.summaries || []).length + ' jours loggés', detail: 'Moy. ' + Math.round((inlinePowerData.summaries || []).reduce((s, d) => s + (d.total_calories || 0), 0) / Math.max((inlinePowerData.summaries || []).length, 1)) + ' kcal/j', color: '#00D984' },
+                                { label: '🏃 Activité', val: (inlinePowerData.activities || []).length + ' séances', detail: Math.round((inlinePowerData.activities || []).reduce((s, a) => s + (a.duration_minutes || 0), 0)) + ' min totales', color: '#FF8C42' },
+                                { label: '😊 Humeur', val: (inlinePowerData.moods || []).length + ' entrées', detail: (() => { const m = inlinePowerData.moods || []; const top = {}; m.forEach(x => { top[x.mood_level] = (top[x.mood_level] || 0) + 1; }); const best = Object.entries(top).sort((a,b) => b[1]-a[1])[0]; return best ? 'Dominant : ' + best[0] : '—'; })(), color: '#9B6DFF' },
+                                { label: '💧 Hydratation', val: Math.round((inlinePowerData.hydration || []).reduce((s, h) => s + (h.effective_ml || 0), 0) / 1000 * 10) / 10 + 'L total', detail: 'Moy. ' + Math.round((inlinePowerData.hydration || []).reduce((s, h) => s + (h.effective_ml || 0), 0) / 7) + 'ml/j', color: '#4DA6FF' },
+                              ].map((cat, i) => (
+                                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8), backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(8), padding: wp(8) }}>
+                                  <Text style={{ fontSize: fp(12), marginRight: wp(8) }}>{cat.label.split(' ')[0]}</Text>
+                                  <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FFF' }}>{cat.val}</Text>
+                                    <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)' }}>{cat.detail}</Text>
+                                  </View>
+                                  <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: cat.color }} />
+                                </View>
+                              ))}
+                              <View style={{ backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(8), padding: wp(8), marginTop: wp(4), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)' }}>
+                                <Text style={{ fontSize: fp(9), color: '#D4AF37', textAlign: 'center' }}>📄 Export PDF bientôt disponible</Text>
+                              </View>
+                            </View>
+                          ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Aucune donnée</Text>}
                         </View>
                       )}
 
