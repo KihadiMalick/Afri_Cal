@@ -419,6 +419,7 @@ export default function LixVersePage() {
   const [userEnergy, setUserEnergy] = useState(20);
   const [ownedCharacters, setOwnedCharacters] = useState([]);
   const [challenges, setChallenges] = useState([]);
+  const [challengeScores, setChallengeScores] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [myGroups, setMyGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -909,6 +910,8 @@ export default function LixVersePage() {
         if (d && d[0]) setUserNameAvatar(d[0].full_name || '');
       } catch (e) {}
     })();
+    // Scores défis
+    fetchChallengeScores().then(scores => setChallengeScores(scores));
     // Pulse animation pour SPIN GRATUIT
     Animated.loop(
       Animated.sequence([
@@ -918,6 +921,7 @@ export default function LixVersePage() {
     ).start();
   }, []);
   useEffect(() => { if (activeTab === 'characters') loadCharacterData(); }, [activeTab]);
+  useEffect(() => { if (activeTab === 'defi') fetchChallengeScores().then(scores => setChallengeScores(scores)); }, [activeTab]);
   // Fake realtime — simuler des likes externes toutes les 12-27s
   useEffect(() => {
     if (wallStickers.length === 0) return;
@@ -1179,6 +1183,8 @@ export default function LixVersePage() {
       headers: { ...hdrs, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_sticker_id: id, p_user_id: TEST_USER_ID }),
     }).catch(() => {});
+    // Scoring défi social (silencieux, pas de feedback UI)
+    supaRpc('score_social_action', { p_user_id: TEST_USER_ID }).catch(() => {});
     // Cœur flottant
     const heartId = Date.now() + Math.random();
     const heartEmojis = ['🩶', '🤍', '💛', '⭐', '✨'];
@@ -1246,6 +1252,17 @@ export default function LixVersePage() {
       if (Array.isArray(certData) && certData.length > 0) setMyCertification(certData[0]);
     }catch(err){console.error('Load:',err);}
     setLoading(false);
+  };
+
+  const fetchChallengeScores = async () => {
+    try {
+      const data = await supaRpc('get_user_challenge_scores', { p_user_id: TEST_USER_ID });
+      if (Array.isArray(data)) return data;
+      return [];
+    } catch (err) {
+      console.warn('fetchChallengeScores error:', err.message);
+      return [];
+    }
   };
 
   const checkEligibilityAndProceed = async (challenge, action) => {
@@ -1562,12 +1579,20 @@ export default function LixVersePage() {
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Mes équipes</Text>
           {myGroups.map((gm, i) => {
             const g = gm.lixverse_groups; if (!g) return null;
+            const score = challengeScores.find(s => s.challenge_id === g.challenge_id);
             return (
               <View key={i} style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(8), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flex: 1 }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{g.name}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginTop: wp(2) }}>{g.member_count} membres | Score: {g.total_score}</Text></View>
-                  <View style={{ backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}><Text style={{ fontSize: fp(10), fontWeight: '600', color: '#00D984' }}>Mon: {gm.personal_score || 0}</Text></View>
+                  <View style={{ flex: 1 }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{g.name}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginTop: wp(2) }}>{g.member_count} membres | Score: {score?.group_total || g.total_score}</Text></View>
+                  <View style={{ backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}><Text style={{ fontSize: fp(10), fontWeight: '600', color: '#00D984' }}>Mon: {score?.personal_score || gm.personal_score || 0}</Text></View>
                 </View>
+                {score && (
+                  <View style={{ flexDirection: 'row', gap: wp(8), marginTop: wp(6) }}>
+                    <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>Rang: {score.group_rank || '-'}</Text>
+                    <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>Aujourd'hui: +{score.today_points || 0} pts</Text>
+                    {score.days_remaining > 0 && <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>{score.days_remaining}j restants</Text>}
+                  </View>
+                )}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(8), backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
                   <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)' }}>Code: </Text><Text style={{ fontSize: fp(10), fontWeight: '700', color: '#D4AF37', letterSpacing: 1 }}>{g.invite_code}</Text>
                 </View>
@@ -1584,6 +1609,8 @@ export default function LixVersePage() {
           const dLeft = Math.floor(hLeft / 24);
           const isOpen = hLeft > 0;
           const isUrgent = hLeft > 0 && hLeft <= 24;
+          const score = challengeScores.find(s => s.challenge_id === ch.id);
+          const progressPct = score ? Math.min(100, ((score.personal_score || 0) / 1680) * 100) : Math.min(100, Math.round((Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000) / (ch.duration_days || 30)) * 100));
           return (
             <View key={ch.id} style={{ borderRadius: wp(16), marginBottom: wp(10), borderWidth: 1.5, borderColor: ch.color + '40', overflow: 'hidden' }}>
               <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ padding: wp(16), borderRadius: wp(14) }}>
@@ -1617,17 +1644,17 @@ export default function LixVersePage() {
                 <View style={{ marginBottom: wp(10), marginTop: wp(4) }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
                     <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>
-                      Jour {Math.min(Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000), ch.duration_days || 30)}/{ch.duration_days || 30}
+                      {score ? (score.personal_score || 0) + ' pts' : 'Jour ' + Math.min(Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000), ch.duration_days || 30) + '/' + (ch.duration_days || 30)}
                     </Text>
                     <Text style={{ fontSize: fp(10), fontWeight: '600', color: ch.color || '#00D984' }}>
-                      {Math.min(100, Math.round((Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000) / (ch.duration_days || 30)) * 100))}%
+                      {score ? (score.group_rank ? '#' + score.group_rank : '') + (score.today_points ? ' +' + score.today_points + ' auj.' : '') : Math.round(progressPct) + '%'}
                     </Text>
                   </View>
                   <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
                     <View style={{
                       height: '100%', borderRadius: wp(2),
                       backgroundColor: ch.color || '#00D984',
-                      width: Math.min(100, Math.round((Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000) / (ch.duration_days || 30)) * 100)) + '%',
+                      width: Math.round(progressPct) + '%',
                       opacity: 0.7,
                     }} />
                   </View>
@@ -3792,6 +3819,9 @@ export default function LixVersePage() {
                     setSelectedSticker(s => ({ ...s, lix_received: (s.lix_received || 0) + amount }));
                     setWallStickers(prev => prev.map(s => s.id === selectedSticker.id ? { ...s, lix_received: (s.lix_received || 0) + amount } : s));
                     fetch(SUPABASE_URL + '/rest/v1/rpc/gift_lix_to_sticker', { method: 'POST', headers: { ...hdrs, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_sticker_id: selectedSticker.id, p_from_user_id: TEST_USER_ID, p_amount: amount }) }).catch(() => {});
+                    // Scoring défi social (silencieux, pas de feedback UI)
+                    supaRpc('score_social_action', { p_user_id: TEST_USER_ID }).catch(() => {});
+                    fetchChallengeScores().then(scores => setChallengeScores(scores));
                     showLixAlert('Merci', amount + ' Lix offerts à ' + selectedSticker.display_name + ' !', [{ text: 'De rien', color: '#D4AF37' }], '🎁');
                     setShowGiftModal(false);
                   }}
@@ -3998,6 +4028,9 @@ export default function LixVersePage() {
                     message: 'Malick K. a collé un sticker ' + selectedStickerChoice.emoji + ' sur le Wall of Health !',
                     color: '#D4AF37',
                   }) }).catch(() => {});
+                  // Scoring défi social (silencieux, pas de feedback UI)
+                  supaRpc('score_social_action', { p_user_id: TEST_USER_ID }).catch(() => {});
+                  fetchChallengeScores().then(scores => setChallengeScores(scores));
                   setShowStickerCreation(false);
                   setSelectedStickerChoice(null);
                   setStickerMessage('');
