@@ -215,20 +215,6 @@ const CRATES = [
   { id: 'platinum', name: 'Caisse Platine', cost: 5000, color: '#00CEC9', emoji: '👑', desc: 'Lix + Énergie + chance Mythique/Ultime', rewards: { lix_min: 500, lix_max: 1000, energy_min: 50, energy_max: 100, card_chance: 0.15, card_tiers: ['elite', 'mythique', 'ultimate'] } },
 ];
 
-const SPIN_RESULTS = [
-  { label: '5 Lix', weight: 30, type: 'lix', value: 5, color: '#00D984' },
-  { label: '10 Lix', weight: 18, type: 'lix', value: 10, color: '#00D984' },
-  { label: '25 Lix', weight: 8, type: 'lix', value: 25, color: '#4DA6FF' },
-  { label: '50 Lix', weight: 2, type: 'lix', value: 50, color: '#D4AF37' },
-  { label: '+10 Énergie', weight: 12, type: 'energy', value: 10, color: '#FF8C42' },
-  { label: '+20 Énergie', weight: 5, type: 'energy', value: 20, color: '#FF8C42' },
-  { label: 'Caisse Standard', weight: 10, type: 'crate', value: 'standard', color: '#00D984' },
-  { label: 'Caisse Rare', weight: 5, type: 'crate', value: 'rare', color: '#4DA6FF' },
-  { label: 'Caisse Elite', weight: 1.5, type: 'crate', value: 'elite', color: '#D4AF37' },
-  { label: 'Caisse Mythique', weight: 0.3, type: 'crate', value: 'mythique', color: '#D4AF37' },
-  { label: 'Rien...', weight: 8.2, type: 'nothing', value: 0, color: '#666' },
-];
-
 const NORMAL_SEGMENTS = [
   { label: '3', icon: '⚡', chance: 27, color: '#2A4A3A', reward: { type: 'energy', amount: 3 } },
   { label: '30', icon: '💰', chance: 20, color: '#3A4A2A', reward: { type: 'lix', amount: 30 } },
@@ -322,16 +308,6 @@ const randomSlugFromTier = (tier) => {
   const slugs = SLUGS_BY_TIER[tier];
   if (!slugs || slugs.length === 0) return null;
   return slugs[Math.floor(Math.random() * slugs.length)];
-};
-
-const pickReward = (segments) => {
-  const total = segments.reduce((sum, s) => sum + s.chance, 0);
-  let roll = Math.random() * total;
-  for (const seg of segments) {
-    roll -= seg.chance;
-    if (roll <= 0) return seg;
-  }
-  return segments[0];
 };
 
 const SEGMENT_GRADIENTS = {
