@@ -16,6 +16,61 @@ const LixGem = ({ size = 14 }) => (
   </Svg>
 );
 
+  // ═══ SVG MÉDAILLES PREMIUM ═══
+  const MedalIcon = ({ rank, size = 22 }) => {
+    const colors = {
+      1: { main: '#D4AF37', inner: '#FFD700', shine: '#FFF5CC' },
+      2: { main: '#8E9AAF', inner: '#C0C0C0', shine: '#E8E8E8' },
+      3: { main: '#A0522D', inner: '#CD7F32', shine: '#E8C8A0' },
+    };
+    const c = colors[rank] || colors[3];
+    return (
+      <Svg width={size} height={size} viewBox="0 0 24 24">
+        <Circle cx="12" cy="10" r="9" fill={c.main} opacity={0.3} />
+        <Circle cx="12" cy="10" r="7" fill={c.inner} />
+        <Circle cx="12" cy="10" r="5.5" fill={c.main} />
+        <SvgText x="12" y="14" fontSize="9" fontWeight="800" fill={c.shine} textAnchor="middle">{rank}</SvgText>
+        <Path d="M7 19l2-5h6l2 5-2.5-1.5L12 21l-2.5-2.5L7 19z" fill={c.main} opacity={0.8} />
+      </Svg>
+    );
+  };
+
+  // ═══ SVG TROPHÉE ═══
+  const TrophyIcon = ({ size = 20, color = '#D4AF37' }) => (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M7 4h10v2a5 5 0 01-10 0V4z" fill={color} opacity={0.9} />
+      <Path d="M5 4h2v3a3 3 0 01-3-3h1z" fill={color} opacity={0.5} />
+      <Path d="M17 4h2a3 3 0 01-3 3V4h1z" fill={color} opacity={0.5} />
+      <Rect x="10" y="12" width="4" height="4" rx="1" fill={color} opacity={0.7} />
+      <Rect x="8" y="16" width="8" height="2" rx="1" fill={color} />
+    </Svg>
+  );
+
+  // ═══ SVG MYSTERY CARD ═══
+  const MysteryCardIcon = ({ size = 18, color = '#D4AF37' }) => (
+    <Svg width={size} height={size * 1.3} viewBox="0 0 18 24">
+      <Rect x="1" y="1" width="16" height="22" rx="2.5" fill="rgba(255,255,255,0.06)" stroke={color} strokeWidth="1.2" />
+      <Rect x="3" y="3" width="12" height="18" rx="1.5" fill="rgba(255,255,255,0.03)" />
+      <SvgText x="9" y="16" fontSize="12" fontWeight="800" fill={color} textAnchor="middle" opacity={0.8}>?</SvgText>
+    </Svg>
+  );
+
+  // ═══ SVG FRAGMENT ═══
+  const FragmentIcon = ({ size = 14, color = '#D4AF37' }) => (
+    <Svg width={size} height={size} viewBox="0 0 16 16">
+      <Path d="M8 1l3 5.5L8 15 5 6.5z" fill={color} opacity={0.8} />
+      <Path d="M8 1l3 5.5H5z" fill={color} />
+      <Path d="M5 6.5L8 15l-1-4z" fill={color} opacity={0.5} />
+    </Svg>
+  );
+
+  // ═══ SVG CHEVRON ═══
+  const ChevronDown = ({ size = 14, color = 'rgba(255,255,255,0.3)', rotated = false }) => (
+    <Svg width={size} height={size} viewBox="0 0 16 16" style={rotated ? { transform: [{ rotate: '180deg' }] } : {}}>
+      <Path d="M4 6l4 4 4-4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </Svg>
+  );
+
 // ═══ DROP GEM pour segments SVG (rendu inline dans <Svg>) ═══
 const renderLixGemSegment = (x, y, s) => {
   const sc = s / 24;
@@ -430,11 +485,16 @@ export default function LixVersePage() {
   const [showJoinGroup, setShowJoinGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [joinCode, setJoinCode] = useState('');
-  const [leaderboardTab, setLeaderboardTab] = useState('groups');
+  const [leaderboardTab, setLeaderboardTab] = useState('equipes');
   const [leaderboardExpanded, setLeaderboardExpanded] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState(null);
   const [leaderboardChallengeId, setLeaderboardChallengeId] = useState(null);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [challengeLeaders, setChallengeLeaders] = useState({});
+  const [expandedRewards, setExpandedRewards] = useState({});
+  const [individualLB, setIndividualLB] = useState(null);
+  const [countryLB, setCountryLB] = useState(null);
+  const [lbTabLoading, setLbTabLoading] = useState(false);
   // ═══ MODAL ÉQUIPE ═══
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [groupDetail, setGroupDetail] = useState(null);
@@ -979,6 +1039,7 @@ export default function LixVersePage() {
     } else if (leaderboardChallengeId) {
       fetchLeaderboard(leaderboardChallengeId);
     }
+    fetchChallengeLeaders();
     const interval = setInterval(() => {
       if (leaderboardChallengeId) fetchLeaderboard(leaderboardChallengeId);
     }, 300000);
@@ -1532,6 +1593,40 @@ export default function LixVersePage() {
     setLeaderboardLoading(false);
   };
 
+  // ═══ LEADERS PAR DÉFI (pour cartes) ═══
+  const fetchChallengeLeaders = async () => {
+    try {
+      const data = await supaRpc('get_all_challenges_leaders', {});
+      if (data && Array.isArray(data)) {
+        const map = {};
+        data.forEach(item => { if (item.challenge_id && item.top3) map[item.challenge_id] = item.top3; });
+        setChallengeLeaders(map);
+      }
+    } catch (e) {}
+  };
+
+  // ═══ CLASSEMENT INDIVIDUEL (Personnel + Mondial) ═══
+  const fetchIndividualLB = async (challengeId) => {
+    if (!challengeId) return;
+    setLbTabLoading(true);
+    try {
+      const data = await supaRpc('get_individual_leaderboard', { p_challenge_id: challengeId, p_user_id: TEST_USER_ID });
+      if (data) setIndividualLB(data);
+    } catch (e) {}
+    setLbTabLoading(false);
+  };
+
+  // ═══ CLASSEMENT PAR PAYS ═══
+  const fetchCountryLB = async (challengeId) => {
+    if (!challengeId) return;
+    setLbTabLoading(true);
+    try {
+      const data = await supaRpc('get_country_leaderboard', { p_challenge_id: challengeId, p_user_id: TEST_USER_ID });
+      if (data) setCountryLB(data);
+    } catch (e) {}
+    setLbTabLoading(false);
+  };
+
   const checkEligibilityAndProceed = async (challenge, action) => {
     setEligibilityChecking(true);
     try {
@@ -1990,37 +2085,99 @@ export default function LixVersePage() {
                     }} />
                   </View>
                 </View>
-                {/* Podium compact */}
-                <View style={{ marginTop: wp(10), backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(10), padding: wp(10) }}>
-                  {[
-                    { emoji: '🥇', lix: ch.reward_lix_first || 5000, energy: ch.reward_energy_first || 100, charData: ch.reward_char_first },
-                    { emoji: '🥈', lix: ch.reward_lix_second || 3000, energy: ch.reward_energy_second || 60, charData: ch.reward_char_second },
-                    { emoji: '🥉', lix: ch.reward_lix_third || 1500, energy: ch.reward_energy_third || 40, charData: ch.reward_char_third },
-                  ].map((r, i) => {
-                    const parsed = r.charData ? formatCharRewards(typeof r.charData === 'string' ? JSON.parse(r.charData) : r.charData) : null;
+                {/* ═══ POSITIONS + LEADERS ACTUELS ═══ */}
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12), padding: wp(10), marginTop: wp(10), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+                  {[1, 2, 3].map(pos => {
+                    const leaders = challengeLeaders[ch.id] || [];
+                    const leader = leaders.find(l => l.rank === pos);
+                    const posColors = { 1: '#D4AF37', 2: '#C0C0C0', 3: '#CD7F32' };
                     return (
-                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(5), borderBottomWidth: i < 2 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
-                        <Text style={{ fontSize: fp(16), width: wp(28) }}>{r.emoji}</Text>
-                        <View style={{ flex: 1 }}>
-                          {parsed && parsed.length > 0 ? (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(2) }}>
-                              {parsed.map((p, k) => (
-                                <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: wp(1) }}>
-                                  {k > 0 && <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.15)' }}>+</Text>}
-                                  <Text style={{ fontSize: fp(8) }}>{p.icon}</Text>
-                                  <Text style={{ fontSize: fp(8), fontWeight: '700', color: p.color }}>{p.text}</Text>
-                                </View>
-                              ))}
-                            </View>
-                          ) : (
-                            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>—</Text>
-                          )}
+                      <View key={pos} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6), borderBottomWidth: pos < 3 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
+                        <MedalIcon rank={pos} size={wp(22)} />
+                        <View style={{ flex: 1, marginLeft: wp(8) }}>
+                          <Text style={{ fontSize: fp(11), fontWeight: '700', color: posColors[pos] }}>
+                            {leader ? leader.creator_lixtag : '—'}
+                          </Text>
+                          {leader && <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)', marginTop: wp(1) }}>{leader.name} · {leader.total_score} pts</Text>}
+                          {!leader && <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.15)' }}>En attente</Text>}
                         </View>
-                        <Text style={{ fontSize: fp(10), color: '#D4AF37', fontWeight: '700', marginRight: wp(8) }}>◆ {r.lix}</Text>
-                        {r.energy > 0 && <Text style={{ fontSize: fp(10), color: '#7BED9F', fontWeight: '600' }}>⚡{r.energy}</Text>}
                       </View>
                     );
                   })}
+
+                  {/* ═══ RÉCOMPENSES DROPDOWN ═══ */}
+                  <Pressable
+                    onPress={() => setExpandedRewards(prev => ({ ...prev, [ch.id]: !prev[ch.id] }))}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+                      paddingVertical: wp(8), marginTop: wp(4),
+                      borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)',
+                      opacity: pressed ? 0.6 : 1,
+                    })}
+                  >
+                    <TrophyIcon size={wp(14)} color="rgba(212,175,55,0.4)" />
+                    <Text style={{ fontSize: fp(10), color: 'rgba(212,175,55,0.4)', marginLeft: wp(6), marginRight: wp(4) }}>
+                      {expandedRewards[ch.id] ? 'Masquer les récompenses' : 'Voir les récompenses'}
+                    </Text>
+                    <ChevronDown size={wp(12)} color="rgba(212,175,55,0.4)" rotated={expandedRewards[ch.id]} />
+                  </Pressable>
+
+                  {expandedRewards[ch.id] && (
+                    <View style={{ paddingTop: wp(6) }}>
+                      {/* 1ère place */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6) }}>
+                        <MedalIcon rank={1} size={wp(18)} />
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginLeft: wp(8), gap: wp(6) }}>
+                          <FragmentIcon size={wp(12)} color="#E040FB" />
+                          <Text style={{ fontSize: fp(9), color: '#E040FB' }}>1 Myth</Text>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)' }}>+</Text>
+                          <MysteryCardIcon size={wp(12)} color="#4FC3F7" />
+                          <Text style={{ fontSize: fp(9), color: '#4FC3F7' }}>Rare</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}><LixGem size={wp(10)} /><Text style={{ fontSize: fp(9), color: '#D4AF37', marginLeft: wp(2) }}>5000</Text></View>
+                          <Text style={{ fontSize: fp(9), color: '#00D984' }}>⚡ 100</Text>
+                        </View>
+                      </View>
+                      {/* 2ème place */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
+                        <MedalIcon rank={2} size={wp(18)} />
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginLeft: wp(8), gap: wp(6) }}>
+                          <FragmentIcon size={wp(12)} color="#7C4DFF" />
+                          <Text style={{ fontSize: fp(9), color: '#7C4DFF' }}>1 Elite</Text>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)' }}>+</Text>
+                          <MysteryCardIcon size={wp(12)} color="#66BB6A" />
+                          <Text style={{ fontSize: fp(9), color: '#66BB6A' }}>Std</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}><LixGem size={wp(10)} /><Text style={{ fontSize: fp(9), color: '#D4AF37', marginLeft: wp(2) }}>3000</Text></View>
+                          <Text style={{ fontSize: fp(9), color: '#00D984' }}>⚡ 60</Text>
+                        </View>
+                      </View>
+                      {/* 3ème place */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
+                        <MedalIcon rank={3} size={wp(18)} />
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginLeft: wp(8), gap: wp(6) }}>
+                          <FragmentIcon size={wp(12)} color="#4FC3F7" />
+                          <Text style={{ fontSize: fp(9), color: '#4FC3F7' }}>2 Rare</Text>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)' }}>+</Text>
+                          <MysteryCardIcon size={wp(12)} color="#66BB6A" />
+                          <Text style={{ fontSize: fp(9), color: '#66BB6A' }}>Std</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}><LixGem size={wp(10)} /><Text style={{ fontSize: fp(9), color: '#D4AF37', marginLeft: wp(2) }}>1500</Text></View>
+                          <Text style={{ fontSize: fp(9), color: '#00D984' }}>⚡ 40</Text>
+                        </View>
+                      </View>
+                      {/* Rangs 4-10 */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
+                        <View style={{ width: wp(18), height: wp(18), borderRadius: wp(9), backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
+                          <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.3)' }}>4-10</Text>
+                        </View>
+                        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginLeft: wp(8), flex: 1 }}>Lix + Énergie selon le rang</Text>
+                      </View>
+                    </View>
+                  )}
                 </View>
                 <View style={{ marginTop: wp(10), flexDirection: 'row', gap: wp(8) }}>
                   <Pressable
@@ -2072,18 +2229,23 @@ export default function LixVersePage() {
       <View style={{ paddingHorizontal: wp(16) }}>
         <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Classements</Text>
 
-        {/* Sélecteur de défi pour le classement */}
+        {/* ═══ SÉLECTEUR DE DÉFI ═══ */}
         {challenges.length > 1 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(10) }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(8) }}>
             <View style={{ flexDirection: 'row', gap: wp(6) }}>
               {challenges.map(ch => (
-                <Pressable key={ch.id} onPress={() => { setLeaderboardChallengeId(ch.id); setLeaderboardExpanded(false); fetchLeaderboard(ch.id); }}
+                <Pressable key={ch.id} onPress={() => {
+                  setLeaderboardChallengeId(ch.id);
+                  setLeaderboardTab('equipes');
+                  setLeaderboardExpanded(false);
+                  fetchLeaderboard(ch.id);
+                }}
                   style={{
-                    paddingHorizontal: wp(12), paddingVertical: wp(7), borderRadius: wp(10),
-                    backgroundColor: leaderboardChallengeId === ch.id ? (ch.color || '#D4AF37') + '25' : 'rgba(255,255,255,0.04)',
-                    borderWidth: 1, borderColor: leaderboardChallengeId === ch.id ? (ch.color || '#D4AF37') + '50' : 'rgba(255,255,255,0.06)',
+                    paddingHorizontal: wp(10), paddingVertical: wp(6), borderRadius: wp(8),
+                    backgroundColor: leaderboardChallengeId === ch.id ? (ch.color || '#D4AF37') + '20' : 'rgba(255,255,255,0.03)',
+                    borderWidth: 1, borderColor: leaderboardChallengeId === ch.id ? (ch.color || '#D4AF37') + '40' : 'rgba(255,255,255,0.05)',
                   }}>
-                  <Text style={{ fontSize: fp(10), fontWeight: '600', color: leaderboardChallengeId === ch.id ? (ch.color || '#D4AF37') : 'rgba(255,255,255,0.35)' }}>
+                  <Text style={{ fontSize: fp(9), fontWeight: '600', color: leaderboardChallengeId === ch.id ? (ch.color || '#D4AF37') : 'rgba(255,255,255,0.3)' }}>
                     {ch.icon} {ch.title}
                   </Text>
                 </Pressable>
@@ -2092,142 +2254,327 @@ export default function LixVersePage() {
           </ScrollView>
         )}
 
-        {/* Contenu classement */}
+        {/* ═══ 5 ONGLETS ═══ */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(10) }}>
+          <View style={{ flexDirection: 'row', gap: wp(4) }}>
+            {[
+              { key: 'equipes', label: 'Équipes' },
+              { key: 'personnel', label: 'Personnel' },
+              { key: 'binome', label: 'Binôme' },
+              { key: 'pays', label: 'Pays' },
+              { key: 'mondial', label: 'Mondial' },
+            ].map(tab => (
+              <Pressable key={tab.key}
+                onPress={() => {
+                  setLeaderboardTab(tab.key);
+                  setLeaderboardExpanded(false);
+                  if (tab.key === 'personnel' || tab.key === 'mondial') fetchIndividualLB(leaderboardChallengeId);
+                  if (tab.key === 'pays') fetchCountryLB(leaderboardChallengeId);
+                }}
+                style={{
+                  paddingHorizontal: wp(14), paddingVertical: wp(8), borderRadius: wp(10),
+                  backgroundColor: leaderboardTab === tab.key ? '#D4AF3720' : 'rgba(255,255,255,0.04)',
+                  borderWidth: 1, borderColor: leaderboardTab === tab.key ? '#D4AF3740' : 'rgba(255,255,255,0.06)',
+                }}>
+                <Text style={{ fontSize: fp(11), fontWeight: leaderboardTab === tab.key ? '700' : '500', color: leaderboardTab === tab.key ? '#D4AF37' : 'rgba(255,255,255,0.35)' }}>
+                  {tab.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* ═══ CONTENU CLASSEMENT ═══ */}
         <View style={{
           backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(14),
           padding: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
         }}>
-          {leaderboardLoading && !leaderboardData ? (
-            <ActivityIndicator color="#D4AF37" style={{ paddingVertical: wp(20) }} />
-          ) : leaderboardData && Array.isArray(leaderboardData.top_groups) && leaderboardData.top_groups.length > 0 ? (
+
+          {/* ═══ ONGLET ÉQUIPES ═══ */}
+          {leaderboardTab === 'equipes' && (
             <>
-              {/* Top 3 — toujours visible */}
-              {leaderboardData.top_groups.slice(0, 3).map((entry, i) => {
-                const rankColors = ['#D4AF37', '#C0C0C0', '#CD7F32'];
-                const rankEmojis = ['🥇', '🥈', '🥉'];
-                const rankBg = [
-                  'rgba(212,175,55,0.12)',
-                  'rgba(192,192,192,0.08)',
-                  'rgba(205,127,50,0.08)',
-                ];
-                return (
-                  <View key={entry.id || i} style={{
-                    flexDirection: 'row', alignItems: 'center',
-                    paddingVertical: wp(10), paddingHorizontal: wp(6),
-                    backgroundColor: rankBg[i],
-                    borderRadius: wp(10), marginBottom: i < 2 ? wp(6) : 0,
-                  }}>
-                    <Text style={{ fontSize: fp(18), width: wp(30), textAlign: 'center' }}>{rankEmojis[i]}</Text>
-                    <View style={{ flex: 1, marginLeft: wp(6) }}>
-                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>
-                        {entry.name}
-                      </Text>
-                      <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginTop: wp(1) }}>
-                        {entry.member_count} membres · {entry.creator_lixtag}
-                      </Text>
-                    </View>
-                    <View style={{
-                      backgroundColor: rankColors[i] + '20',
-                      borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4),
-                      borderWidth: 1, borderColor: rankColors[i] + '30',
-                    }}>
-                      <Text style={{ fontSize: fp(12), fontWeight: '800', color: rankColors[i] }}>{entry.total_score} pts</Text>
-                    </View>
-                  </View>
-                );
-              })}
-
-              {/* Flèche expandable → positions 4-10 */}
-              {leaderboardData.top_groups.length > 3 && (
-                <Pressable
-                  onPress={() => setLeaderboardExpanded(prev => !prev)}
-                  style={({ pressed }) => ({
-                    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
-                    paddingVertical: wp(10), marginTop: wp(8),
-                    borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)',
-                    transform: [{ scale: pressed ? 0.97 : 1 }],
+              {leaderboardLoading && !leaderboardData ? (
+                <ActivityIndicator color="#D4AF37" style={{ paddingVertical: wp(20) }} />
+              ) : leaderboardData && Array.isArray(leaderboardData.top_groups) && leaderboardData.top_groups.length > 0 ? (
+                <>
+                  {leaderboardData.top_groups.slice(0, 3).map((entry, i) => {
+                    const rankColors = ['#D4AF37', '#C0C0C0', '#CD7F32'];
+                    return (
+                      <View key={entry.id || i} style={{
+                        flexDirection: 'row', alignItems: 'center',
+                        paddingVertical: wp(10), paddingHorizontal: wp(6),
+                        backgroundColor: i === 0 ? 'rgba(212,175,55,0.12)' : i === 1 ? 'rgba(192,192,192,0.08)' : 'rgba(205,127,50,0.08)',
+                        borderRadius: wp(10), marginBottom: i < 2 ? wp(6) : 0,
+                      }}>
+                        <MedalIcon rank={i + 1} size={wp(24)} />
+                        <View style={{ flex: 1, marginLeft: wp(8) }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>{entry.name}</Text>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginTop: wp(1) }}>{entry.member_count} membres · {entry.creator_lixtag}</Text>
+                        </View>
+                        <View style={{ backgroundColor: rankColors[i] + '20', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4), borderWidth: 1, borderColor: rankColors[i] + '30' }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '800', color: rankColors[i] }}>{entry.total_score} pts</Text>
+                        </View>
+                      </View>
+                    );
                   })}
-                >
-                  <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)', marginRight: wp(6) }}>
-                    {leaderboardExpanded ? 'Masquer' : 'Voir le classement complet'}
-                  </Text>
-                  <Text style={{ fontSize: fp(12), color: 'rgba(212,175,55,0.5)' }}>
-                    {leaderboardExpanded ? '▲' : '▼'}
-                  </Text>
-                </Pressable>
-              )}
-
-              {/* Positions 4-10 */}
-              {leaderboardExpanded && leaderboardData.top_groups.slice(3).map((entry, i) => (
-                <View key={entry.id || (i + 3)} style={{
-                  flexDirection: 'row', alignItems: 'center',
-                  paddingVertical: wp(8), paddingHorizontal: wp(6),
-                  borderBottomWidth: i < leaderboardData.top_groups.length - 4 ? 1 : 0,
-                  borderBottomColor: 'rgba(255,255,255,0.04)',
-                }}>
-                  <View style={{
-                    width: wp(26), height: wp(26), borderRadius: wp(13),
-                    backgroundColor: 'rgba(255,255,255,0.05)',
-                    justifyContent: 'center', alignItems: 'center',
-                  }}>
-                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>{entry.rank}</Text>
-                  </View>
-                  <View style={{ flex: 1, marginLeft: wp(10) }}>
-                    <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }} numberOfLines={1}>{entry.name}</Text>
-                    <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)' }}>{entry.member_count} mbr · {entry.creator_lixtag}</Text>
-                  </View>
-                  <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.3)' }}>{entry.total_score} pts</Text>
-                </View>
-              ))}
-
-              {/* ═══ MON RANG ═══ */}
-              {leaderboardData.my_rank && (
-                <View style={{
-                  marginTop: wp(10), paddingTop: wp(10),
-                  borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)',
-                }}>
-                  <View style={{
-                    flexDirection: 'row', alignItems: 'center',
-                    backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(10),
-                    paddingVertical: wp(10), paddingHorizontal: wp(12),
-                    borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
-                  }}>
-                    <View style={{
-                      width: wp(30), height: wp(30), borderRadius: wp(15),
-                      backgroundColor: leaderboardData.my_rank <= 3 ? 'rgba(212,175,55,0.2)' : 'rgba(0,217,132,0.15)',
-                      justifyContent: 'center', alignItems: 'center', marginRight: wp(10),
+                  {leaderboardData.top_groups.length > 3 && (
+                    <Pressable onPress={() => setLeaderboardExpanded(prev => !prev)}
+                      style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: wp(10), marginTop: wp(8), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)', marginRight: wp(6) }}>
+                        {leaderboardExpanded ? 'Masquer' : 'Voir le classement complet'}
+                      </Text>
+                      <ChevronDown size={wp(14)} color="rgba(212,175,55,0.5)" rotated={leaderboardExpanded} />
+                    </Pressable>
+                  )}
+                  {leaderboardExpanded && leaderboardData.top_groups.slice(3).map((entry, i) => (
+                    <View key={entry.id || (i + 3)} style={{
+                      flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8), paddingHorizontal: wp(6),
+                      borderBottomWidth: i < leaderboardData.top_groups.length - 4 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)',
                     }}>
-                      <Text style={{ fontSize: fp(12), fontWeight: '800', color: leaderboardData.my_rank <= 3 ? '#D4AF37' : '#00D984' }}>
-                        {leaderboardData.my_rank <= 10 ? '#' + leaderboardData.my_rank : leaderboardData.rank_bracket === 'top50' ? 'Top 50' : leaderboardData.rank_bracket === 'top100' ? 'Top 100' : '100+'}
-                      </Text>
+                      <View style={{ width: wp(26), height: wp(26), borderRadius: wp(13), backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>{entry.rank}</Text>
+                      </View>
+                      <View style={{ flex: 1, marginLeft: wp(10) }}>
+                        <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }} numberOfLines={1}>{entry.name}</Text>
+                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)' }}>{entry.member_count} mbr · {entry.creator_lixtag}</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.3)' }}>{entry.total_score} pts</Text>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>
-                        {leaderboardData.my_group_name || 'Mon équipe'}
-                      </Text>
-                      <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)' }}>
-                        {leaderboardData.my_rank <= 10 ? 'Rang #' + leaderboardData.my_rank + ' sur ' + leaderboardData.total_groups + ' équipes' : (leaderboardData.rank_bracket === 'top50' ? 'Dans le Top 50' : leaderboardData.rank_bracket === 'top100' ? 'Dans le Top 100' : 'Rang ' + leaderboardData.my_rank) + ' sur ' + leaderboardData.total_groups}
-                      </Text>
+                  ))}
+                  {leaderboardData.my_rank && (
+                    <View style={{ marginTop: wp(10), paddingTop: wp(10), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <View style={{
+                        flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)',
+                        borderRadius: wp(10), paddingVertical: wp(10), paddingHorizontal: wp(12),
+                        borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+                      }}>
+                        <View style={{ width: wp(30), height: wp(30), borderRadius: wp(15), backgroundColor: leaderboardData.my_rank <= 3 ? 'rgba(212,175,55,0.2)' : 'rgba(0,217,132,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10) }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '800', color: leaderboardData.my_rank <= 3 ? '#D4AF37' : '#00D984' }}>
+                            {leaderboardData.my_rank <= 10 ? '#' + leaderboardData.my_rank : leaderboardData.rank_bracket === 'top50' ? 'Top50' : leaderboardData.rank_bracket === 'top100' ? 'Top100' : '100+'}
+                          </Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{leaderboardData.my_group_name || 'Mon équipe'}</Text>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)' }}>
+                            {leaderboardData.my_rank <= 10 ? 'Rang #' + leaderboardData.my_rank : leaderboardData.rank_bracket === 'top50' ? 'Top 50' : leaderboardData.rank_bracket === 'top100' ? 'Top 100' : 'Rang ' + leaderboardData.my_rank} sur {leaderboardData.total_groups}
+                          </Text>
+                        </View>
+                        <View style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '800', color: '#00D984' }}>{leaderboardData.my_score || 0}</Text>
+                          <Text style={{ fontSize: fp(7), color: 'rgba(0,217,132,0.5)', textAlign: 'center' }}>pts</Text>
+                        </View>
+                      </View>
                     </View>
-                    <View style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
-                      <Text style={{ fontSize: fp(12), fontWeight: '800', color: '#00D984' }}>{leaderboardData.my_score || 0}</Text>
-                      <Text style={{ fontSize: fp(7), color: 'rgba(0,217,132,0.5)', textAlign: 'center' }}>pts</Text>
-                    </View>
-                  </View>
+                  )}
+                  <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.12)', textAlign: 'center', marginTop: wp(8) }}>{leaderboardData.total_groups} équipes · Rafraîchi auto</Text>
+                </>
+              ) : (
+                <View style={{ paddingVertical: wp(20), alignItems: 'center' }}>
+                  <TrophyIcon size={wp(30)} color="rgba(212,175,55,0.3)" />
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)', marginTop: wp(8) }}>Aucune équipe inscrite</Text>
+                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.2)', marginTop: wp(4) }}>Crée la première équipe !</Text>
                 </View>
               )}
-
-              {/* Indicateur refresh */}
-              <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.15)', textAlign: 'center', marginTop: wp(8) }}>
-                {leaderboardData.total_groups} équipes · Rafraîchi toutes les 5 min
-              </Text>
             </>
-          ) : (
-            <View style={{ paddingVertical: wp(20), alignItems: 'center' }}>
-              <Text style={{ fontSize: fp(20), marginBottom: wp(6) }}>🏆</Text>
-              <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)' }}>Aucune équipe inscrite</Text>
-              <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.2)', marginTop: wp(4) }}>Crée la première équipe !</Text>
+          )}
+
+          {/* ═══ ONGLET PERSONNEL ═══ */}
+          {leaderboardTab === 'personnel' && (
+            <>
+              {lbTabLoading ? (
+                <ActivityIndicator color="#D4AF37" style={{ paddingVertical: wp(20) }} />
+              ) : individualLB && Array.isArray(individualLB.top_users) && individualLB.top_users.length > 0 ? (
+                <>
+                  {individualLB.top_users.slice(0, 3).map((u, i) => (
+                    <View key={u.user_id || i} style={{
+                      flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), paddingHorizontal: wp(6),
+                      backgroundColor: i === 0 ? 'rgba(212,175,55,0.12)' : i === 1 ? 'rgba(192,192,192,0.08)' : 'rgba(205,127,50,0.08)',
+                      borderRadius: wp(10), marginBottom: i < 2 ? wp(6) : 0,
+                    }}>
+                      <MedalIcon rank={i + 1} size={wp(24)} />
+                      <View style={{ flex: 1, marginLeft: wp(8) }}>
+                        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{u.lixtag}</Text>
+                        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)' }}>{u.country || '—'}</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(12), fontWeight: '800', color: ['#D4AF37','#C0C0C0','#CD7F32'][i] }}>{u.personal_score} pts</Text>
+                    </View>
+                  ))}
+                  {individualLB.top_users.length > 3 && (
+                    <Pressable onPress={() => setLeaderboardExpanded(prev => !prev)}
+                      style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: wp(10), marginTop: wp(8), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)', marginRight: wp(6) }}>{leaderboardExpanded ? 'Masquer' : 'Voir le top 10'}</Text>
+                      <ChevronDown size={wp(14)} color="rgba(212,175,55,0.5)" rotated={leaderboardExpanded} />
+                    </Pressable>
+                  )}
+                  {leaderboardExpanded && individualLB.top_users.slice(3).map((u, i) => (
+                    <View key={u.user_id || (i + 3)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8), paddingHorizontal: wp(6), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
+                      <View style={{ width: wp(26), height: wp(26), borderRadius: wp(13), backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>{u.rank}</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)', flex: 1, marginLeft: wp(10) }}>{u.lixtag}</Text>
+                      <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.3)' }}>{u.personal_score} pts</Text>
+                    </View>
+                  ))}
+                  {individualLB.my_rank && (
+                    <View style={{ marginTop: wp(10), paddingTop: wp(10), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(10), paddingVertical: wp(10), paddingHorizontal: wp(12), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}>
+                        <View style={{ width: wp(30), height: wp(30), borderRadius: wp(15), backgroundColor: 'rgba(0,217,132,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10) }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#00D984' }}>
+                            {individualLB.my_rank <= 10 ? '#' + individualLB.my_rank : individualLB.rank_bracket === 'top50' ? 'Top50' : individualLB.rank_bracket === 'top100' ? 'Top100' : '100+'}
+                          </Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{individualLB.my_lixtag || 'Moi'}</Text>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)' }}>Mon score personnel</Text>
+                        </View>
+                        <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#00D984' }}>{individualLB.my_score || 0} pts</Text>
+                      </View>
+                    </View>
+                  )}
+                </>
+              ) : (
+                <View style={{ paddingVertical: wp(20), alignItems: 'center' }}>
+                  <TrophyIcon size={wp(30)} color="rgba(212,175,55,0.3)" />
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)', marginTop: wp(8) }}>Aucun participant</Text>
+                </View>
+              )}
+            </>
+          )}
+
+          {/* ═══ ONGLET BINÔME ═══ */}
+          {leaderboardTab === 'binome' && (
+            <View style={{ paddingVertical: wp(30), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(24), marginBottom: wp(8) }}>🤝</Text>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.3)' }}>Bientôt disponible</Text>
+              <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.15)', marginTop: wp(4), textAlign: 'center', paddingHorizontal: wp(20) }}>Le classement Binôme arrivera avec la fonctionnalité de pairage santé.</Text>
             </View>
+          )}
+
+          {/* ═══ ONGLET PAYS ═══ */}
+          {leaderboardTab === 'pays' && (
+            <>
+              {lbTabLoading ? (
+                <ActivityIndicator color="#D4AF37" style={{ paddingVertical: wp(20) }} />
+              ) : countryLB && Array.isArray(countryLB.top_countries) && countryLB.top_countries.length > 0 ? (
+                <>
+                  {countryLB.top_countries.slice(0, 3).map((c, i) => (
+                    <View key={c.country || i} style={{
+                      flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), paddingHorizontal: wp(6),
+                      backgroundColor: i === 0 ? 'rgba(212,175,55,0.12)' : i === 1 ? 'rgba(192,192,192,0.08)' : 'rgba(205,127,50,0.08)',
+                      borderRadius: wp(10), marginBottom: i < 2 ? wp(6) : 0,
+                    }}>
+                      <MedalIcon rank={i + 1} size={wp(24)} />
+                      <View style={{ flex: 1, marginLeft: wp(8) }}>
+                        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{c.country}</Text>
+                        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)' }}>{c.player_count} joueur{c.player_count > 1 ? 's' : ''}</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(12), fontWeight: '800', color: ['#D4AF37','#C0C0C0','#CD7F32'][i] }}>{c.total_score} pts</Text>
+                    </View>
+                  ))}
+                  {countryLB.top_countries.length > 3 && (
+                    <Pressable onPress={() => setLeaderboardExpanded(prev => !prev)}
+                      style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: wp(10), marginTop: wp(8), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)', marginRight: wp(6) }}>{leaderboardExpanded ? 'Masquer' : 'Voir plus'}</Text>
+                      <ChevronDown size={wp(14)} color="rgba(212,175,55,0.5)" rotated={leaderboardExpanded} />
+                    </Pressable>
+                  )}
+                  {leaderboardExpanded && countryLB.top_countries.slice(3).map((c, i) => (
+                    <View key={c.country || (i + 3)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8), paddingHorizontal: wp(6), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
+                      <View style={{ width: wp(26), height: wp(26), borderRadius: wp(13), backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>{c.rank}</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)', flex: 1, marginLeft: wp(10) }}>{c.country}</Text>
+                      <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.3)' }}>{c.total_score} pts</Text>
+                    </View>
+                  ))}
+                  {countryLB.my_country_rank && (
+                    <View style={{ marginTop: wp(10), paddingTop: wp(10), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(10), paddingVertical: wp(10), paddingHorizontal: wp(12), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}>
+                        <View style={{ width: wp(30), height: wp(30), borderRadius: wp(15), backgroundColor: 'rgba(0,217,132,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10) }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#00D984' }}>#{countryLB.my_country_rank}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{countryLB.my_country || '—'}</Text>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)' }}>Rang #{countryLB.my_country_rank} sur {countryLB.total_countries} pays</Text>
+                        </View>
+                        <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#00D984' }}>{countryLB.my_country_score || 0} pts</Text>
+                      </View>
+                    </View>
+                  )}
+                </>
+              ) : (
+                <View style={{ paddingVertical: wp(20), alignItems: 'center' }}>
+                  <TrophyIcon size={wp(30)} color="rgba(212,175,55,0.3)" />
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)', marginTop: wp(8) }}>Aucune donnée pays</Text>
+                </View>
+              )}
+            </>
+          )}
+
+          {/* ═══ ONGLET MONDIAL ═══ */}
+          {leaderboardTab === 'mondial' && (
+            <>
+              {lbTabLoading ? (
+                <ActivityIndicator color="#D4AF37" style={{ paddingVertical: wp(20) }} />
+              ) : individualLB && Array.isArray(individualLB.top_users) && individualLB.top_users.length > 0 ? (
+                <>
+                  {individualLB.top_users.slice(0, 3).map((u, i) => (
+                    <View key={u.user_id || i} style={{
+                      flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), paddingHorizontal: wp(6),
+                      backgroundColor: i === 0 ? 'rgba(212,175,55,0.12)' : i === 1 ? 'rgba(192,192,192,0.08)' : 'rgba(205,127,50,0.08)',
+                      borderRadius: wp(10), marginBottom: i < 2 ? wp(6) : 0,
+                    }}>
+                      <MedalIcon rank={i + 1} size={wp(24)} />
+                      <View style={{ flex: 1, marginLeft: wp(8) }}>
+                        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{u.lixtag}</Text>
+                        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)' }}>{u.country || '🌍'}</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(12), fontWeight: '800', color: ['#D4AF37','#C0C0C0','#CD7F32'][i] }}>{u.personal_score} pts</Text>
+                    </View>
+                  ))}
+                  {individualLB.top_users.length > 3 && (
+                    <Pressable onPress={() => setLeaderboardExpanded(prev => !prev)}
+                      style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: wp(10), marginTop: wp(8), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)', marginRight: wp(6) }}>{leaderboardExpanded ? 'Masquer' : 'Voir le top 10'}</Text>
+                      <ChevronDown size={wp(14)} color="rgba(212,175,55,0.5)" rotated={leaderboardExpanded} />
+                    </Pressable>
+                  )}
+                  {leaderboardExpanded && individualLB.top_users.slice(3).map((u, i) => (
+                    <View key={u.user_id || (i + 3)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8), paddingHorizontal: wp(6), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
+                      <View style={{ width: wp(26), height: wp(26), borderRadius: wp(13), backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>{u.rank}</Text>
+                      </View>
+                      <View style={{ flex: 1, marginLeft: wp(10) }}>
+                        <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }}>{u.lixtag}</Text>
+                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)' }}>{u.country || '—'}</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.3)' }}>{u.personal_score} pts</Text>
+                    </View>
+                  ))}
+                  {individualLB.my_rank && (
+                    <View style={{ marginTop: wp(10), paddingTop: wp(10), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(10), paddingVertical: wp(10), paddingHorizontal: wp(12), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}>
+                        <View style={{ width: wp(30), height: wp(30), borderRadius: wp(15), backgroundColor: 'rgba(0,217,132,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10) }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#00D984' }}>
+                            {individualLB.my_rank <= 10 ? '#' + individualLB.my_rank : individualLB.rank_bracket === 'top50' ? 'Top50' : 'Top100+'}
+                          </Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{individualLB.my_lixtag || 'Moi'}</Text>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)' }}>Classement mondial</Text>
+                        </View>
+                        <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#00D984' }}>{individualLB.my_score || 0} pts</Text>
+                      </View>
+                    </View>
+                  )}
+                </>
+              ) : (
+                <View style={{ paddingVertical: wp(20), alignItems: 'center' }}>
+                  <TrophyIcon size={wp(30)} color="rgba(212,175,55,0.3)" />
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)', marginTop: wp(8) }}>Aucun participant</Text>
+                </View>
+              )}
+            </>
           )}
         </View>
       </View>
