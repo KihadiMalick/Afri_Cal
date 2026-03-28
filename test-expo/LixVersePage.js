@@ -1904,7 +1904,8 @@ export default function LixVersePage() {
           const isOpen = hLeft > 0;
           const isUrgent = hLeft > 0 && hLeft <= 24;
           const score = challengeScores.find(s => s.challenge_id === ch.id);
-          const progressPct = score ? Math.min(100, ((score.personal_score || 0) / 1680) * 100) : Math.max(0, Math.min(100, Math.round((Math.max(0, Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000)) / (ch.duration_days || 30)) * 100)));
+          const daysPassed = Math.max(0, Math.min(Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000), ch.duration_days || 30));
+          const progressPct = Math.max(0, Math.min(100, Math.round((daysPassed / (ch.duration_days || 30)) * 100)));
           return (
             <View key={ch.id} style={{ borderRadius: wp(16), marginBottom: wp(10), borderWidth: 1.5, borderColor: ch.color + '40', overflow: 'hidden' }}>
               <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ padding: wp(16), borderRadius: wp(14) }}>
@@ -1938,10 +1939,10 @@ export default function LixVersePage() {
                 <View style={{ marginBottom: wp(10), marginTop: wp(4) }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
                     <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>
-                      {score ? (score.personal_score || 0) + ' pts' : 'Jour ' + Math.max(0, Math.min(Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000), ch.duration_days || 30)) + '/' + (ch.duration_days || 30)}
+                      Jour {daysPassed}/{ch.duration_days || 30}{score ? '  ·  ' + (score.personal_score || 0) + ' pts' : ''}
                     </Text>
                     <Text style={{ fontSize: fp(10), fontWeight: '600', color: ch.color || '#00D984' }}>
-                      {score ? (score.group_rank ? '#' + score.group_rank : '') + (score.today_points ? ' +' + score.today_points + ' auj.' : '') : Math.max(0, Math.round(progressPct)) + '%'}
+                      {score ? (score.group_rank ? '#' + score.group_rank + '  ' : '') + (score.today_points ? '+' + score.today_points + ' auj.' : '') : progressPct + '%'}
                     </Text>
                   </View>
                   <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
