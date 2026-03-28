@@ -430,6 +430,7 @@ export default function LixVersePage() {
   const [newGroupName, setNewGroupName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [leaderboardTab, setLeaderboardTab] = useState('groups');
+  const [leaderboardExpanded, setLeaderboardExpanded] = useState(false);
   const [showCharacterDetail, setShowCharacterDetail] = useState(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinResult, setSpinResult] = useState(null);
@@ -696,36 +697,29 @@ export default function LixVersePage() {
 
   // ═══ NAVIGATION MAP — power_key → onglet cible ═══
   const POWER_NAV_TARGET = {
-    // Owl
+    // Standard
     owl_suggestion_repas: 'meals',
-    // Hawk
     hawk_comparateur: 'meals',
     hawk_historique: 'meals',
-    // Tiger
-    tiger_xp_boost: 'activity',
-    tiger_xp_boost_niv2: 'activity',
-    tiger_xp_boost_max: 'activity',
-    // Fox (redirect vers scan)
-    fox_sub_redirect: 'meals',
-    // Gipsy (superpower → dashboard)
+    fox_regime: 'meals',
     gipsy_toile_sante: 'home',
     // Rare
-    phoenix_recovery_plan: 'meals',
-    wolf_streak_history: 'lixverse',
-    boukki_meal_plan: 'meals',
-    rhino_sport_program: 'activity',
-    dolphin_hydra_history: 'home',
+    phoenix_renaissance: 'meals',
+    wolf_meute: 'lixverse',
+    boukki_festin: 'meals',
+    dolphin_vague_bleue: 'home',
     // Elite
-    licornium_nutri_report: 'meals',
-    licornium_pdf_report: 'meals',
-    snake_sport_program: 'activity',
-    snake_4week_plan: 'activity',
+    licornium_planner: 'meals',
+    licornium_corne: 'meals',
+    jaane_mue: 'activity',
+    jaane_hypnose: 'activity',
     mosquito_essaim: 'lixverse',
     // Mythique
-    simba_pdf_report: 'home',
+    simba_territoire: 'home',
+    simba_roi: 'home',
     alburax_medibook: 'medicai',
     // Ultimate
-    tardigrum_all_powers: 'lixverse',
+    tardigrum_immortel: 'lixverse',
   };
 
   // ═══ STATE pour données inline des pouvoirs ═══
@@ -1788,37 +1782,139 @@ export default function LixVersePage() {
       </View>
       <View style={{ paddingHorizontal: wp(16) }}>
         <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Classements</Text>
-        <View style={{ flexDirection: 'row', gap: wp(6), marginBottom: wp(12) }}>
-          {['Groupes', 'Personnel', 'Binôme', 'Pays', 'Mondial'].map((t, i) => (
-            <Pressable key={t} onPress={() => setLeaderboardTab(['groups', 'personal', 'binome', 'country', 'global'][i])} style={{ flex: 1, paddingVertical: wp(8), borderRadius: wp(10), alignItems: 'center', backgroundColor: leaderboardTab === ['groups', 'personal', 'binome', 'country', 'global'][i] ? '#D4AF37' : 'rgba(255,255,255,0.05)' }}>
-              <Text style={{ fontSize: fp(9), fontWeight: '600', color: leaderboardTab === ['groups', 'personal', 'binome', 'country', 'global'][i] ? '#1A1D22' : 'rgba(255,255,255,0.4)' }}>{t}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(14), padding: wp(16), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
-          {leaderboardTab === 'binome' ? (
-            BINOME_LEADERBOARD.map(b => (
-              <View key={b.rank} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), borderBottomWidth: b.rank < 5 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
-                <View style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: b.rank <= 3 ? (b.rank === 1 ? 'rgba(212,175,55,0.2)' : b.rank === 2 ? 'rgba(192,192,192,0.2)' : 'rgba(205,127,50,0.2)') : 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10) }}>
-                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: b.rank === 1 ? '#D4AF37' : b.rank === 2 ? '#C0C0C0' : b.rank === 3 ? '#CD7F32' : 'rgba(255,255,255,0.3)' }}>{b.rank}</Text>
+
+        {/* Sélecteur de classement */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(12) }}>
+          <View style={{ flexDirection: 'row', gap: wp(6) }}>
+            {[
+              { key: 'groups', label: 'Groupes' },
+              { key: 'personal', label: 'Personnel' },
+              { key: 'binome', label: 'Binôme' },
+              { key: 'country', label: 'Pays' },
+              { key: 'global', label: 'Mondial' },
+            ].map((t) => (
+              <Pressable key={t.key} onPress={() => setLeaderboardTab(t.key)}
+                style={{
+                  paddingHorizontal: wp(14), paddingVertical: wp(8), borderRadius: wp(10),
+                  backgroundColor: leaderboardTab === t.key ? '#D4AF37' : 'rgba(255,255,255,0.05)',
+                }}>
+                <Text style={{
+                  fontSize: fp(10), fontWeight: '600',
+                  color: leaderboardTab === t.key ? '#1A1D22' : 'rgba(255,255,255,0.4)',
+                }}>{t.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* Podium Top 3 — toujours visible */}
+        <View style={{
+          backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(14),
+          padding: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+        }}>
+          {/* Top 3 compact */}
+          {(leaderboardTab === 'binome' ? BINOME_LEADERBOARD.slice(0, 3) : [
+            { rank: 1, names: 'Team Burundi', pts: 520 },
+            { rank: 2, names: 'Les Champions', pts: 440 },
+            { rank: 3, names: 'Dakar Fit', pts: 360 },
+          ]).map((entry, i) => {
+            const rankColors = ['#D4AF37', '#C0C0C0', '#CD7F32'];
+            const rankEmojis = ['🥇', '🥈', '🥉'];
+            const rankBg = [
+              'rgba(212,175,55,0.12)',
+              'rgba(192,192,192,0.08)',
+              'rgba(205,127,50,0.08)',
+            ];
+            return (
+              <View key={i} style={{
+                flexDirection: 'row', alignItems: 'center',
+                paddingVertical: wp(10), paddingHorizontal: wp(6),
+                backgroundColor: rankBg[i],
+                borderRadius: wp(10), marginBottom: i < 2 ? wp(6) : 0,
+              }}>
+                {/* Médaille */}
+                <Text style={{ fontSize: fp(18), width: wp(30), textAlign: 'center' }}>{rankEmojis[i]}</Text>
+
+                {/* Nom + flags */}
+                <View style={{ flex: 1, marginLeft: wp(6) }}>
+                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>
+                    {entry.names}{entry.flags ? ' ' + entry.flags : ''}
+                  </Text>
+                  {leaderboardTab === 'binome' && entry.flames && (
+                    <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginTop: wp(1) }}>🔥 {entry.flames} flammes</Text>
+                  )}
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(12), fontWeight: '600', color: b.rank <= 3 ? '#FFF' : 'rgba(255,255,255,0.5)' }}>{b.names} {b.flags}</Text>
-                  <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>🔥 {b.flames} flammes</Text>
+
+                {/* Score */}
+                <View style={{
+                  backgroundColor: rankColors[i] + '20',
+                  borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4),
+                  borderWidth: 1, borderColor: rankColors[i] + '30',
+                }}>
+                  <Text style={{ fontSize: fp(12), fontWeight: '800', color: rankColors[i] }}>{entry.pts} pts</Text>
                 </View>
-                <Text style={{ fontSize: fp(14), fontWeight: '700', color: b.rank <= 3 ? '#D4AF37' : 'rgba(255,255,255,0.3)' }}>{b.pts} pts</Text>
               </View>
-            ))
-          ) : (
-            [1, 2, 3, 4, 5].map(r => (
-              <View key={r} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), borderBottomWidth: r < 5 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
-                <View style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: r <= 3 ? (r === 1 ? 'rgba(212,175,55,0.2)' : r === 2 ? 'rgba(192,192,192,0.2)' : 'rgba(205,127,50,0.2)') : 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10) }}>
-                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: r === 1 ? '#D4AF37' : r === 2 ? '#C0C0C0' : r === 3 ? '#CD7F32' : 'rgba(255,255,255,0.3)' }}>{r}</Text>
+            );
+          })}
+
+          {/* Flèche expandable → positions 4-10 */}
+          <Pressable
+            onPress={() => setLeaderboardExpanded(prev => !prev)}
+            style={({ pressed }) => ({
+              flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+              paddingVertical: wp(10), marginTop: wp(8),
+              borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)',
+              transform: [{ scale: pressed ? 0.97 : 1 }],
+            })}
+          >
+            <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)', marginRight: wp(6) }}>
+              {leaderboardExpanded ? 'Masquer' : 'Voir le classement complet'}
+            </Text>
+            <Text style={{ fontSize: fp(12), color: 'rgba(212,175,55,0.5)' }}>
+              {leaderboardExpanded ? '▲' : '▼'}
+            </Text>
+          </Pressable>
+
+          {/* Positions 4-10 — visible uniquement si expanded */}
+          {leaderboardExpanded && (
+            <View style={{ marginTop: wp(4) }}>
+              {(leaderboardTab === 'binome' ? BINOME_LEADERBOARD.slice(3) : [
+                { rank: 4, names: 'Équipe Kinshasa', pts: 280 },
+                { rank: 5, names: 'Abidjan Fit', pts: 240 },
+                { rank: 6, names: 'Team Nairobi', pts: 200 },
+                { rank: 7, names: 'Les Gazelles', pts: 170 },
+                { rank: 8, names: 'Cotonou Health', pts: 140 },
+                { rank: 9, names: 'Team Bamako', pts: 110 },
+                { rank: 10, names: 'Accra Warriors', pts: 80 },
+              ]).map((entry, i) => (
+                <View key={i} style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(8), paddingHorizontal: wp(6),
+                  borderBottomWidth: i < 6 ? 1 : 0,
+                  borderBottomColor: 'rgba(255,255,255,0.04)',
+                }}>
+                  {/* Rang */}
+                  <View style={{
+                    width: wp(26), height: wp(26), borderRadius: wp(13),
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    justifyContent: 'center', alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>{entry.rank}</Text>
+                  </View>
+
+                  {/* Nom */}
+                  <Text style={{
+                    flex: 1, fontSize: fp(11), color: 'rgba(255,255,255,0.5)',
+                    marginLeft: wp(10),
+                  }} numberOfLines={1}>
+                    {entry.names}{entry.flags ? ' ' + entry.flags : ''}
+                  </Text>
+
+                  {/* Score */}
+                  <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.3)' }}>{entry.pts} pts</Text>
                 </View>
-                <View style={{ flex: 1 }}><Text style={{ fontSize: fp(13), fontWeight: '600', color: r <= 3 ? '#FFF' : 'rgba(255,255,255,0.5)' }}>{['Team Burundi', 'Les Champions', 'Dakar Fit', 'Équipe 4', 'Équipe 5'][r - 1]}</Text></View>
-                <Text style={{ fontSize: fp(14), fontWeight: '700', color: r <= 3 ? '#D4AF37' : 'rgba(255,255,255,0.3)' }}>{600 - r * 80} pts</Text>
-              </View>
-            ))
+              ))}
+            </View>
           )}
         </View>
       </View>
@@ -4698,23 +4794,22 @@ export default function LixVersePage() {
                                           // Sauvegarder le boost XP dans users_profile
                                           const boostMap = {
                                             // Tiger (Standard)
-                                            tiger_xp_boost: 1.10,
-                                            tiger_xp_boost_niv2: 1.20,
-                                            tiger_xp_boost_max: 1.30,
+                                            tiger_xp_10: 1.10,
+                                            tiger_xp_20: 1.20,
+                                            tiger_xp_30_badge: 1.30,
                                             // Simba (Mythique)
-                                            simba_xp_boost: 1.50,
+                                            simba_rugissement: 1.50,
                                             // Alburax (Mythique)
-                                            alburax_double_lix: 2.0,
                                             alburax_streak_shield: 1.0,
+                                            alburax_transcendance: 2.0,
                                             // Tardigrum (Ultimate)
-                                            tardigrum_xp_boost: 1.30,
-                                            tardigrum_energy_half: 0.5,
+                                            tardigrum_resistance: 1.30,
                                           };
                                           const boostMultiplier = boostMap[power.power_key] || 1.10;
                                           // Type de boost différent selon le personnage
-                                          const boostType = power.power_key.startsWith('alburax_double') ? 'lix_multiplier'
-                                            : power.power_key.startsWith('alburax_streak') ? 'streak_shield'
-                                            : power.power_key.startsWith('tardigrum_energy') ? 'energy_cost'
+                                          const boostType = power.power_key === 'alburax_transcendance' ? 'lix_multiplier'
+                                            : power.power_key === 'alburax_streak_shield' ? 'streak_shield'
+                                            : power.power_key === 'tardigrum_resistance' ? 'xp_activity'
                                             : 'xp_activity';
                                           // Sauvegarder le boost actif (expire dans 24h)
                                           const boostExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -4816,7 +4911,7 @@ export default function LixVersePage() {
                                             }
 
                                             // ═══ RARE — Jade Phoenix : Bilan récupération ═══
-                                            else if (power.power_key === 'phoenix_recovery' || power.power_key === 'phoenix_recovery_reco') {
+                                            else if (power.power_key === 'phoenix_recovery_detect' || power.power_key === 'phoenix_recovery_food') {
                                               const [mealsRes, actRes] = await Promise.all([
                                                 fetch(SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + TEST_USER_ID + '&date=eq.' + today + '&select=total_calories,calorie_target,calorie_balance,total_protein,total_carbs,total_fat', { headers: HEADERS }),
                                                 fetch(SUPABASE_URL + '/rest/v1/activities?user_id=eq.' + TEST_USER_ID + '&date=eq.' + today + '&select=name,type,duration_minutes,calories_burned,intensity', { headers: HEADERS }),
@@ -4827,7 +4922,7 @@ export default function LixVersePage() {
                                             }
 
                                             // ═══ RARE — Silver Wolf : Streaks détaillés ═══
-                                            else if (power.power_key === 'wolf_streaks' || power.power_key === 'wolf_streak_details') {
+                                            else if (power.power_key === 'wolf_streak_tracker') {
                                               const thirtyAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
                                               const [mealsRes, actsRes, moodsRes, hydRes] = await Promise.all([
                                                 fetch(SUPABASE_URL + '/rest/v1/meals?user_id=eq.' + TEST_USER_ID + '&date=gte.' + thirtyAgo + '&select=date&order=date.asc', { headers: HEADERS }),
@@ -4850,7 +4945,7 @@ export default function LixVersePage() {
                                             }
 
                                             // ═══ RARE — Boukki : Planificateur calories ═══
-                                            else if (power.power_key === 'boukki_calorie_plan' || power.power_key === 'boukki_week_projection') {
+                                            else if (power.power_key === 'boukki_calorie_remain' || power.power_key === 'boukki_complement') {
                                               const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
                                               const res = await fetch(SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + TEST_USER_ID + '&date=gte.' + weekAgo + '&order=date.asc&select=date,total_calories,calorie_target,calorie_balance,meals_count', { headers: HEADERS });
                                               const d = await res.json();
@@ -4858,7 +4953,7 @@ export default function LixVersePage() {
                                             }
 
                                             // ═══ RARE — Iron Rhino : Stats fitness ═══
-                                            else if (power.power_key === 'rhino_fitness_stats' || power.power_key === 'rhino_challenge_analysis') {
+                                            else if (power.power_key === 'rhino_custom_goal' || power.power_key === 'rhino_enriched_report' || power.power_key === 'rhino_charge') {
                                               const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
                                               const [actRes, scoresRes] = await Promise.all([
                                                 fetch(SUPABASE_URL + '/rest/v1/activities?user_id=eq.' + TEST_USER_ID + '&date=gte.' + weekAgo + '&order=date.asc&select=name,type,duration_minutes,calories_burned,date,intensity', { headers: HEADERS }),
@@ -4869,8 +4964,8 @@ export default function LixVersePage() {
                                             }
 
                                             // ═══ RARE — Coral Dolphin : Rapport hydratation ═══
-                                            else if (power.power_key === 'dolphin_hydra_report' || power.power_key === 'dolphin_hydra_goal' || power.power_key === 'dolphin_hydra_30days') {
-                                              const range = power.power_key === 'dolphin_hydra_30days' ? 30 : 7;
+                                            else if (power.power_key === 'dolphin_smart_hydration' || power.power_key === 'dolphin_tracker') {
+                                              const range = power.power_key === 'dolphin_tracker' ? 30 : 7;
                                               const startDate = new Date(Date.now() - range * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
                                               const res = await fetch(SUPABASE_URL + '/rest/v1/hydration_logs?user_id=eq.' + TEST_USER_ID + '&logged_at=gte.' + startDate + 'T00:00:00&order=logged_at.asc&select=amount_ml,beverage_name,beverage_type,hydration_coeff,effective_ml,logged_at,sugar_g', { headers: HEADERS });
                                               const d = await res.json();
@@ -4878,7 +4973,7 @@ export default function LixVersePage() {
                                             }
 
                                             // ═══ ELITE — Licornium : Score nutritionnel ═══
-                                            else if (power.power_key === 'licornium_nutri_score' || power.power_key === 'licornium_desequilibres') {
+                                            else if (power.power_key === 'licornium_analyse') {
                                               const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
                                               const res = await fetch(SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + TEST_USER_ID + '&date=gte.' + weekAgo + '&order=date.desc&select=date,total_calories,calorie_target,calorie_balance,total_protein,total_carbs,total_fat,total_fiber,meals_count', { headers: HEADERS });
                                               const d = await res.json();
@@ -4886,7 +4981,7 @@ export default function LixVersePage() {
                                             }
 
                                             // ═══ ELITE — Jaane Snake : Analyse activité ═══
-                                            else if (power.power_key === 'snake_activity_analysis' || power.power_key === 'snake_oms_goal') {
+                                            else if (power.power_key === 'jaane_venin') {
                                               const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
                                               const res = await fetch(SUPABASE_URL + '/rest/v1/activities?user_id=eq.' + TEST_USER_ID + '&date=gte.' + monthAgo + '&order=date.asc&select=name,type,duration_minutes,calories_burned,date,intensity', { headers: HEADERS });
                                               const d = await res.json();
@@ -4894,7 +4989,7 @@ export default function LixVersePage() {
                                             }
 
                                             // ═══ MYTHIQUE — Diamond Simba : Résumé complet ═══
-                                            else if (power.power_key === 'simba_xp_boost' || power.power_key === 'simba_full_report') {
+                                            else if (power.power_key === 'simba_rugissement' || power.power_key === 'simba_territoire' || power.power_key === 'simba_roi') {
                                               const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
                                               const [summRes, actRes, moodRes, hydRes] = await Promise.all([
                                                 fetch(SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + TEST_USER_ID + '&date=gte.' + weekAgo + '&order=date.desc&select=date,total_calories,calorie_target,calorie_balance,total_protein,total_carbs,total_fat,meals_count', { headers: HEADERS }),
@@ -4907,6 +5002,21 @@ export default function LixVersePage() {
                                               const moods = await moodRes.json();
                                               const hyds = await hydRes.json();
                                               setInlinePowerData({ summaries: summs || [], activities: acts || [], moods: moods || [], hydration: hyds || [] });
+                                            }
+
+                                            // ═══ MOSQUITO — Piqûre Nutrition ═══
+                                            else if (power.power_key === 'mosquito_piqure_nutrition') {
+                                              const res = await fetch(SUPABASE_URL + '/rest/v1/meals?user_id=eq.' + TEST_USER_ID + '&source=in.(xscan_4,gallery,xscan)&order=created_at.desc&limit=1&select=food_name,calories,protein_g,carbs_g,fat_g,fiber_g', { headers: HEADERS });
+                                              const d = await res.json();
+                                              setInlinePowerData(d && d[0] ? d[0] : null);
+                                            }
+
+                                            // ═══ MOSQUITO — Piqûre Activité ═══
+                                            else if (power.power_key === 'mosquito_piqure_activite') {
+                                              const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                                              const res = await fetch(SUPABASE_URL + '/rest/v1/activities?user_id=eq.' + TEST_USER_ID + '&date=gte.' + weekAgo + '&order=date.desc&select=name,type,duration_minutes,calories_burned,date', { headers: HEADERS });
+                                              const d = await res.json();
+                                              setInlinePowerData({ activities: d || [] });
                                             }
                                           } catch (e) {
                                             console.warn('Power data fetch error:', e);
@@ -5200,7 +5310,7 @@ export default function LixVersePage() {
                       {/* ═══════════════════════════════════════════════════ */}
                       {/* ═══ RARE — JADE PHOENIX 🔥 Bilan récupération ═══ */}
                       {/* ═══════════════════════════════════════════════════ */}
-                      {(inlinePowerModal === 'phoenix_recovery' || inlinePowerModal === 'phoenix_recovery_reco') && (
+                      {(inlinePowerModal === 'phoenix_recovery_detect' || inlinePowerModal === 'phoenix_recovery_food') && (
                         <View style={{ backgroundColor: 'rgba(46,213,115,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(46,213,115,0.2)' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🔥 Bilan Récupération</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#2ED573" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
@@ -5243,7 +5353,7 @@ export default function LixVersePage() {
                       {/* ═══════════════════════════════════════════ */}
                       {/* ═══ RARE — SILVER WOLF 🐺 Streaks ═══ */}
                       {/* ═══════════════════════════════════════════ */}
-                      {(inlinePowerModal === 'wolf_streaks' || inlinePowerModal === 'wolf_streak_details') && (
+                      {(inlinePowerModal === 'wolf_streak_tracker') && (
                         <View style={{ backgroundColor: 'rgba(164,176,190,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(164,176,190,0.2)' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🐺 Streaks — 30 derniers jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#A4B0BE" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
@@ -5276,7 +5386,7 @@ export default function LixVersePage() {
                       {/* ═══════════════════════════════════════════════ */}
                       {/* ═══ RARE — BOUKKI 🦴 Planificateur calories ═══ */}
                       {/* ═══════════════════════════════════════════════ */}
-                      {(inlinePowerModal === 'boukki_calorie_plan' || inlinePowerModal === 'boukki_week_projection') && (
+                      {(inlinePowerModal === 'boukki_calorie_remain' || inlinePowerModal === 'boukki_complement') && (
                         <View style={{ backgroundColor: 'rgba(205,127,50,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(205,127,50,0.2)' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦴 Calories — 7 jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#CD7F32" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.weekSummaries && inlinePowerData.weekSummaries.length > 0 ? (
@@ -5308,14 +5418,14 @@ export default function LixVersePage() {
                       {/* ════════════════════════════════════════════════ */}
                       {/* ═══ RARE — IRON RHINO 🦏 Stats fitness ═══ */}
                       {/* ════════════════════════════════════════════════ */}
-                      {(inlinePowerModal === 'rhino_fitness_stats' || inlinePowerModal === 'rhino_challenge_analysis') && (
+                      {(inlinePowerModal === 'rhino_custom_goal' || inlinePowerModal === 'rhino_enriched_report' || inlinePowerModal === 'rhino_charge') && (
                         <View style={{ backgroundColor: 'rgba(116,125,140,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(116,125,140,0.2)' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>
-                            🦏 {inlinePowerModal === 'rhino_challenge_analysis' ? 'Analyse Défis' : 'Stats Fitness — 7 jours'}
+                            🦏 {inlinePowerModal === 'rhino_charge' ? 'Analyse Défis' : 'Stats Fitness — 7 jours'}
                           </Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#747D8C" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
                             <View>
-                              {inlinePowerModal === 'rhino_challenge_analysis' && inlinePowerData.challengeScores && inlinePowerData.challengeScores.length > 0 ? (
+                              {inlinePowerModal === 'rhino_charge' && inlinePowerData.challengeScores && inlinePowerData.challengeScores.length > 0 ? (
                                 inlinePowerData.challengeScores.map((cs, i) => (
                                   <View key={i} style={{ marginBottom: wp(8), backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(8), padding: wp(8) }}>
                                     <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FFF' }}>{cs.challenge_title}</Text>
@@ -5347,7 +5457,7 @@ export default function LixVersePage() {
                       {/* ════════════════════════════════════════════════════ */}
                       {/* ═══ RARE — CORAL DOLPHIN 🐬 Rapport hydratation ═══ */}
                       {/* ════════════════════════════════════════════════════ */}
-                      {(inlinePowerModal === 'dolphin_hydra_report' || inlinePowerModal === 'dolphin_hydra_goal' || inlinePowerModal === 'dolphin_hydra_30days') && (
+                      {(inlinePowerModal === 'dolphin_smart_hydration' || inlinePowerModal === 'dolphin_tracker') && (
                         <View style={{ backgroundColor: 'rgba(255,107,129,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,107,129,0.2)' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🐬 Hydratation — {inlinePowerData?.rangeDays || 7} jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#FF6B81" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.hydrationLogs && inlinePowerData.hydrationLogs.length > 0 ? (
@@ -5392,7 +5502,7 @@ export default function LixVersePage() {
                       {/* ═══════════════════════════════════════════════════════ */}
                       {/* ═══ ELITE — LICORNIUM 🦄 Score nutritionnel ═══ */}
                       {/* ═══════════════════════════════════════════════════════ */}
-                      {(inlinePowerModal === 'licornium_nutri_score' || inlinePowerModal === 'licornium_desequilibres') && (
+                      {(inlinePowerModal === 'licornium_analyse') && (
                         <View style={{ backgroundColor: 'rgba(179,136,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(179,136,255,0.2)' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦄 Score Nutritionnel</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#B388FF" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.weekData && inlinePowerData.weekData.length > 0 ? (
@@ -5437,7 +5547,7 @@ export default function LixVersePage() {
                       {/* ══════════════════════════════════════════════════════ */}
                       {/* ═══ ELITE — JAANE SNAKE 🐍 Analyse activité ═══ */}
                       {/* ══════════════════════════════════════════════════════ */}
-                      {(inlinePowerModal === 'snake_activity_analysis' || inlinePowerModal === 'snake_oms_goal') && (
+                      {(inlinePowerModal === 'jaane_venin') && (
                         <View style={{ backgroundColor: 'rgba(255,99,72,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,99,72,0.2)' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🐍 Analyse Activité — 30 jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#FF6348" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.monthActivities && inlinePowerData.monthActivities.length > 0 ? (
@@ -5491,7 +5601,7 @@ export default function LixVersePage() {
                       {/* ═══════════════════════════════════════════════════════════ */}
                       {/* ═══ MYTHIQUE — DIAMOND SIMBA 🦁 Rapport complet 7j ═══ */}
                       {/* ═══════════════════════════════════════════════════════════ */}
-                      {(inlinePowerModal === 'simba_xp_boost' || inlinePowerModal === 'simba_full_report') && (
+                      {(inlinePowerModal === 'simba_rugissement' || inlinePowerModal === 'simba_territoire' || inlinePowerModal === 'simba_roi') && (
                         <View style={{ backgroundColor: 'rgba(0,206,201,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0,206,201,0.2)' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦁 Rapport Santé — 7 jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#00CEC9" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
@@ -5516,6 +5626,48 @@ export default function LixVersePage() {
                               </View>
                             </View>
                           ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Aucune donnée</Text>}
+                        </View>
+                      )}
+
+                      {/* ═══ MOSQUITO — Piqûre Nutrition ═══ */}
+                      {inlinePowerModal === 'mosquito_piqure_nutrition' && (
+                        <View style={{ backgroundColor: 'rgba(123,237,159,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(123,237,159,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦟 Piqûre Nutrition</Text>
+                          {inlinePowerLoading ? <ActivityIndicator color="#7BED9F" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
+                            <View>
+                              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(6) }}>Dernier scan : {inlinePowerData.food_name}</Text>
+                              {[
+                                { label: 'Protéines', val: inlinePowerData.protein_g, color: '#FF6B6B' },
+                                { label: 'Glucides', val: inlinePowerData.carbs_g, color: '#4DA6FF' },
+                                { label: 'Lipides', val: inlinePowerData.fat_g, color: '#D4AF37' },
+                              ].map((m, i) => (
+                                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
+                                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }}>{m.label}</Text>
+                                  <Text style={{ fontSize: fp(11), fontWeight: '700', color: m.color }}>{Math.round(m.val || 0)}g</Text>
+                                </View>
+                              ))}
+                            </View>
+                          ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Scanne un repas pour utiliser cette piqûre</Text>}
+                        </View>
+                      )}
+
+                      {/* ═══ MOSQUITO — Piqûre Activité ═══ */}
+                      {inlinePowerModal === 'mosquito_piqure_activite' && (
+                        <View style={{ backgroundColor: 'rgba(123,237,159,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(123,237,159,0.2)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦟 Piqûre Activité</Text>
+                          {inlinePowerLoading ? <ActivityIndicator color="#7BED9F" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.activities && inlinePowerData.activities.length > 0 ? (
+                            <View>
+                              {inlinePowerData.activities.slice(0, 5).map((a, i) => (
+                                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
+                                  <Text style={{ fontSize: fp(11), color: '#FFF' }}>{a.name || a.type}</Text>
+                                  <Text style={{ fontSize: fp(10), color: '#FF8C42' }}>{a.duration_minutes}min · {a.calories_burned}kcal</Text>
+                                </View>
+                              ))}
+                              <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)', marginTop: wp(6) }}>
+                                Total : {inlinePowerData.activities.reduce((s, a) => s + (a.duration_minutes || 0), 0)} min · {inlinePowerData.activities.reduce((s, a) => s + (a.calories_burned || 0), 0)} kcal
+                              </Text>
+                            </View>
+                          ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Aucune activité récente</Text>}
                         </View>
                       )}
 
