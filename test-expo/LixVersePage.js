@@ -2096,9 +2096,9 @@ export default function LixVersePage() {
                         <MedalIcon rank={pos} size={wp(22)} />
                         <View style={{ flex: 1, marginLeft: wp(8) }}>
                           <Text style={{ fontSize: fp(11), fontWeight: '700', color: posColors[pos] }}>
-                            {leader ? leader.creator_lixtag : '—'}
+                            {leader ? leader.name : '—'}
                           </Text>
-                          {leader && <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)', marginTop: wp(1) }}>{leader.name} · {leader.total_score} pts</Text>}
+                          {leader && <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)', marginTop: wp(1) }}>{leader.total_score} pts</Text>}
                           {!leader && <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.15)' }}>En attente</Text>}
                         </View>
                       </View>
@@ -2229,31 +2229,6 @@ export default function LixVersePage() {
       <View style={{ paddingHorizontal: wp(16) }}>
         <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Classements</Text>
 
-        {/* ═══ SÉLECTEUR DE DÉFI ═══ */}
-        {challenges.length > 1 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(8) }}>
-            <View style={{ flexDirection: 'row', gap: wp(6) }}>
-              {challenges.map(ch => (
-                <Pressable key={ch.id} onPress={() => {
-                  setLeaderboardChallengeId(ch.id);
-                  setLeaderboardTab('equipes');
-                  setLeaderboardExpanded(false);
-                  fetchLeaderboard(ch.id);
-                }}
-                  style={{
-                    paddingHorizontal: wp(10), paddingVertical: wp(6), borderRadius: wp(8),
-                    backgroundColor: leaderboardChallengeId === ch.id ? (ch.color || '#D4AF37') + '20' : 'rgba(255,255,255,0.03)',
-                    borderWidth: 1, borderColor: leaderboardChallengeId === ch.id ? (ch.color || '#D4AF37') + '40' : 'rgba(255,255,255,0.05)',
-                  }}>
-                  <Text style={{ fontSize: fp(9), fontWeight: '600', color: leaderboardChallengeId === ch.id ? (ch.color || '#D4AF37') : 'rgba(255,255,255,0.3)' }}>
-                    {ch.icon} {ch.title}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </ScrollView>
-        )}
-
         {/* ═══ 5 ONGLETS ═══ */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(10) }}>
           <View style={{ flexDirection: 'row', gap: wp(4) }}>
@@ -2300,21 +2275,27 @@ export default function LixVersePage() {
                   {leaderboardData.top_groups.slice(0, 3).map((entry, i) => {
                     const rankColors = ['#D4AF37', '#C0C0C0', '#CD7F32'];
                     return (
-                      <View key={entry.id || i} style={{
+                      <Pressable key={entry.id || i} delayPressIn={120}
+                        onPress={() => openGroupDetail({ group_id: entry.id, lixverse_groups: { id: entry.id, name: entry.name } })}
+                        style={({ pressed }) => ({
                         flexDirection: 'row', alignItems: 'center',
                         paddingVertical: wp(10), paddingHorizontal: wp(6),
                         backgroundColor: i === 0 ? 'rgba(212,175,55,0.12)' : i === 1 ? 'rgba(192,192,192,0.08)' : 'rgba(205,127,50,0.08)',
                         borderRadius: wp(10), marginBottom: i < 2 ? wp(6) : 0,
-                      }}>
+                        transform: [{ scale: pressed ? 0.97 : 1 }],
+                      })}>
                         <MedalIcon rank={i + 1} size={wp(24)} />
                         <View style={{ flex: 1, marginLeft: wp(8) }}>
                           <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>{entry.name}</Text>
-                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginTop: wp(1) }}>{entry.member_count} membres · {entry.creator_lixtag}</Text>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginTop: wp(1) }}>{entry.member_count} membres · {entry.total_score} pts</Text>
                         </View>
-                        <View style={{ backgroundColor: rankColors[i] + '20', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4), borderWidth: 1, borderColor: rankColors[i] + '30' }}>
-                          <Text style={{ fontSize: fp(12), fontWeight: '800', color: rankColors[i] }}>{entry.total_score} pts</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                          <View style={{ backgroundColor: rankColors[i] + '20', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4), borderWidth: 1, borderColor: rankColors[i] + '30' }}>
+                            <Text style={{ fontSize: fp(12), fontWeight: '800', color: rankColors[i] }}>{entry.total_score}</Text>
+                          </View>
+                          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.15)' }}>›</Text>
                         </View>
-                      </View>
+                      </Pressable>
                     );
                   })}
                   {leaderboardData.top_groups.length > 3 && (
@@ -2327,19 +2308,24 @@ export default function LixVersePage() {
                     </Pressable>
                   )}
                   {leaderboardExpanded && leaderboardData.top_groups.slice(3).map((entry, i) => (
-                    <View key={entry.id || (i + 3)} style={{
-                      flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8), paddingHorizontal: wp(6),
+                    <Pressable key={entry.id || (i + 3)} delayPressIn={120}
+                      onPress={() => openGroupDetail({ group_id: entry.id, lixverse_groups: { id: entry.id, name: entry.name } })}
+                      style={({ pressed }) => ({
+                      flexDirection: 'row', alignItems: 'center',
+                      paddingVertical: wp(8), paddingHorizontal: wp(6),
                       borderBottomWidth: i < leaderboardData.top_groups.length - 4 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)',
-                    }}>
+                      transform: [{ scale: pressed ? 0.97 : 1 }],
+                    })}>
                       <View style={{ width: wp(26), height: wp(26), borderRadius: wp(13), backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
                         <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>{entry.rank}</Text>
                       </View>
                       <View style={{ flex: 1, marginLeft: wp(10) }}>
                         <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }} numberOfLines={1}>{entry.name}</Text>
-                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)' }}>{entry.member_count} mbr · {entry.creator_lixtag}</Text>
+                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)' }}>{entry.member_count} mbr</Text>
                       </View>
-                      <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.3)' }}>{entry.total_score} pts</Text>
-                    </View>
+                      <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.3)', marginRight: wp(4) }}>{entry.total_score} pts</Text>
+                      <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.15)' }}>›</Text>
+                    </Pressable>
                   ))}
                   {leaderboardData.my_rank && (
                     <View style={{ marginTop: wp(10), paddingTop: wp(10), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
