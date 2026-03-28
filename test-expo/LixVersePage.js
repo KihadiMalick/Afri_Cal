@@ -4,6 +4,7 @@ import Svg, { Defs, Rect, Path, Circle, Line, Ellipse, G, Polygon, Text as SvgTe
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
 
 // ═══ DROP GEM — Icône Lix officielle LIXUM ═══
 const LixGem = ({ size = 14 }) => (
@@ -440,6 +441,14 @@ export default function LixVersePage() {
   const [publicProfile, setPublicProfile] = useState(null);
   const [publicProfileLoading, setPublicProfileLoading] = useState(false);
   const [showPublicProfile, setShowPublicProfile] = useState(false);
+  // ═══ RECHERCHE ÉQUIPE + DEMANDES D'INTÉGRATION ═══
+  const [showSearchGroup, setShowSearchGroup] = useState(false);
+  const [searchGroupQuery, setSearchGroupQuery] = useState('');
+  const [searchGroupResults, setSearchGroupResults] = useState([]);
+  const [searchGroupLoading, setSearchGroupLoading] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [showPendingRequests, setShowPendingRequests] = useState(false);
+  const [pendingRequestsLoading, setPendingRequestsLoading] = useState(false);
   const [showCharacterDetail, setShowCharacterDetail] = useState(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [spinResult, setSpinResult] = useState(null);
@@ -478,13 +487,7 @@ export default function LixVersePage() {
   };
   const hideLixAlert = () => setLixAlert(prev => ({ ...prev, visible: false }));
   const [showNotifPanel, setShowNotifPanel] = useState(false);
-  const [notifList, setNotifList] = useState([
-    { id: '1', type: 'binome_request', title: 'Demande de Binôme', message: 'LXM-4D7F3S souhaite devenir votre Binôme', time: 'Il y a 2h', read: false, color: '#D4AF37', emoji: '🤝' },
-    { id: '2', type: 'health_alert', title: 'Alerte Santé — LIXUM × MinSanté', message: 'Canicule prévue cette semaine. Hydratez-vous davantage.', time: 'Il y a 5h', read: false, color: '#FF6B6B', emoji: '🔴' },
-    { id: '3', type: 'gift', title: 'Cadeau reçu !', message: 'LXM-3G5H7J vous a offert 50 Lix sur le Wall of Health', time: 'Hier', read: true, color: '#D4AF37', emoji: '🎁' },
-    { id: '4', type: 'update', title: 'Nouveauté LIXUM', message: 'La section Binôme est maintenant disponible ! Trouvez votre partenaire santé.', time: 'Il y a 2j', read: true, color: '#4DA6FF', emoji: '✨' },
-    { id: '5', type: 'challenge', title: 'Défi terminé', message: 'La Mission Hydratation est terminée. Votre équipe est 3ème !', time: 'Il y a 3j', read: true, color: '#00D984', emoji: '🏆' },
-  ]);
+  const [notifList, setNotifList] = useState([]);
   const unreadCount = notifList.filter(n => !n.read).length;
   const [stickerCatalog, setStickerCatalog] = useState([]);
   const [myCertification, setMyCertification] = useState(null);
@@ -962,7 +965,7 @@ export default function LixVersePage() {
     ).start();
   }, []);
   useEffect(() => { if (activeTab === 'characters') loadCharacterData(); }, [activeTab]);
-  useEffect(() => { if (activeTab === 'defi') fetchChallengeScores().then(scores => setChallengeScores(scores)); }, [activeTab]);
+  useEffect(() => { if (activeTab === 'defi') { fetchChallengeScores().then(scores => setChallengeScores(scores)); loadPendingRequests(); } }, [activeTab]);
   // Fake realtime — simuler des likes externes toutes les 12-27s
   useEffect(() => {
     if (wallStickers.length === 0) return;
@@ -1403,6 +1406,85 @@ export default function LixVersePage() {
     setPublicProfileLoading(false);
   };
 
+  // ═══ COPIER CODE INVITE ═══
+  const copyInviteCode = async (code) => {
+    try {
+      await Clipboard.setStringAsync(code);
+      showLixAlert('📋 Copié !', 'Code ' + code + ' copié dans le presse-papier.\nPartage-le à tes amis !', [{ text: 'Super', color: '#00D984' }], '📋');
+    } catch (e) {
+      showLixAlert('Code', code, [{ text: 'OK', style: 'cancel' }], '📋');
+    }
+  };
+
+  // ═══ RECHERCHER DES ÉQUIPES (fuzzy) ═══
+  const searchGroups = async (query) => {
+    if (!query || query.trim().length < 2) {
+      setSearchGroupResults([]);
+      return;
+    }
+    setSearchGroupLoading(true);
+    try {
+      const data = await supaRpc('search_groups_fuzzy', { p_query: query.trim(), p_limit: 10 });
+      setSearchGroupResults(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Search groups error:', e);
+      setSearchGroupResults([]);
+    }
+    setSearchGroupLoading(false);
+  };
+
+  // ═══ DEMANDER L'INTÉGRATION ═══
+  const requestJoinGroup = async (group) => {
+    try {
+      const data = await supaRpc('request_join_group', { p_user_id: TEST_USER_ID, p_group_id: group.id });
+      if (data?.success) {
+        showLixAlert('✅ Demande envoyée', 'Le leader de "' + data.group_name + '" recevra ta demande.\nTu seras notifié de sa réponse.', [{ text: 'Compris', color: '#D4AF37' }], '📩');
+        setShowSearchGroup(false);
+        setSearchGroupQuery('');
+        setSearchGroupResults([]);
+      } else {
+        showLixAlert('Info', data?.error || 'Impossible d\'envoyer la demande.', [{ text: 'OK', style: 'cancel' }], 'ℹ️');
+      }
+    } catch (e) {
+      console.error('Request join error:', e);
+      showLixAlert('Erreur', 'Problème de connexion.', [{ text: 'OK', style: 'cancel' }], '❌');
+    }
+  };
+
+  // ═══ CHARGER LES DEMANDES EN ATTENTE (pour le leader) ═══
+  const loadPendingRequests = async () => {
+    setPendingRequestsLoading(true);
+    try {
+      const data = await supaRpc('get_pending_requests', { p_user_id: TEST_USER_ID });
+      setPendingRequests(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Pending requests error:', e);
+    }
+    setPendingRequestsLoading(false);
+  };
+
+  // ═══ ACCEPTER / REJETER UNE DEMANDE ═══
+  const handleJoinRequest = async (requestId, accept) => {
+    try {
+      const data = await supaRpc('handle_join_request', {
+        p_leader_id: TEST_USER_ID, p_request_id: requestId, p_accept: accept,
+      });
+      if (data?.success) {
+        const action = accept ? 'acceptée' : 'rejetée';
+        showLixAlert(accept ? '✅ Accepté' : '❌ Rejeté',
+          'Demande de ' + data.requester_lixtag + ' ' + action + '.',
+          [{ text: 'OK', color: accept ? '#00D984' : '#FF6B6B' }],
+          accept ? '🤝' : '👋');
+        loadPendingRequests();
+        loadAll();
+      } else {
+        showLixAlert('Erreur', data?.error || 'Action impossible.', [{ text: 'OK', style: 'cancel' }], '❌');
+      }
+    } catch (e) {
+      console.error('Handle request error:', e);
+    }
+  };
+
   const fetchChallengeScores = async () => {
     try {
       const data = await supaRpc('get_user_challenge_scores', { p_user_id: TEST_USER_ID });
@@ -1449,6 +1531,14 @@ export default function LixVersePage() {
 
   const createGroup = async () => {
     if (!newGroupName.trim() || !selectedChallenge) return;
+    // Check cooldown 7 jours après suppression
+    try {
+      const cd = await supaRpc('check_create_group_cooldown', { p_user_id: TEST_USER_ID });
+      if (cd && !cd.allowed) {
+        showLixAlert('⏳ Cooldown actif', 'Tu as supprimé un groupe récemment.\nTu pourras en créer un nouveau dans ' + cd.days_left + ' jour' + (cd.days_left > 1 ? 's' : '') + '.', [{ text: 'Compris', style: 'cancel' }], '⏳');
+        return;
+      }
+    } catch (e) {}
     try {
       const code = selectedChallenge.challenge_type.toUpperCase().slice(0, 5) + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
       const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
@@ -1723,6 +1813,48 @@ export default function LixVersePage() {
           </LinearGradient>
         </View>
       </View>
+      {/* ═══ BARRE RECHERCHE + DEMANDES PENDANTES ═══ */}
+      <View style={{ paddingHorizontal: wp(16), marginBottom: wp(12) }}>
+        <View style={{ flexDirection: 'row', gap: wp(8) }}>
+          {/* Barre recherche */}
+          <Pressable onPress={() => setShowSearchGroup(true)} delayPressIn={120}
+            style={({ pressed }) => ({
+              flex: 1, flexDirection: 'row', alignItems: 'center', gap: wp(8),
+              backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12),
+              paddingHorizontal: wp(12), paddingVertical: wp(10),
+              borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+              transform: [{ scale: pressed ? 0.97 : 1 }],
+            })}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
+              <Line x1="16.5" y1="16.5" x2="21" y2="21" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+            </Svg>
+            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.25)' }}>Rechercher une équipe...</Text>
+          </Pressable>
+
+          {/* Badge demandes pendantes (leader only) */}
+          {pendingRequests.length > 0 && (
+            <Pressable onPress={() => { setShowPendingRequests(true); loadPendingRequests(); }} delayPressIn={120}
+              style={({ pressed }) => ({
+                width: wp(44), height: wp(44), borderRadius: wp(12),
+                backgroundColor: 'rgba(212,175,55,0.12)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)',
+                justifyContent: 'center', alignItems: 'center',
+                transform: [{ scale: pressed ? 0.9 : 1 }],
+              })}>
+              <Text style={{ fontSize: fp(16) }}>📩</Text>
+              <View style={{
+                position: 'absolute', top: -wp(4), right: -wp(4),
+                minWidth: wp(16), height: wp(16), borderRadius: wp(8),
+                backgroundColor: '#FF3B5C', justifyContent: 'center', alignItems: 'center',
+                paddingHorizontal: wp(3), borderWidth: 1.5, borderColor: '#1A1D22',
+              }}>
+                <Text style={{ fontSize: fp(8), fontWeight: '800', color: '#FFF' }}>{pendingRequests.length}</Text>
+              </View>
+            </Pressable>
+          )}
+        </View>
+      </View>
+
       {myGroups.length > 0 && (
         <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Mes équipes</Text>
@@ -1748,7 +1880,15 @@ export default function LixVersePage() {
                   </View>
                 )}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(8), backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
-                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)' }}>Code: </Text><Text style={{ fontSize: fp(10), fontWeight: '700', color: '#D4AF37', letterSpacing: 1 }}>{g.invite_code}</Text>
+                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)' }}>Code: </Text>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#D4AF37', letterSpacing: 1, flex: 1 }}>{g.invite_code}</Text>
+                  <Pressable onPress={() => copyInviteCode(g.invite_code)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.85 : 1 }], padding: wp(4) })}>
+                    <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                      <Rect x="9" y="9" width="13" height="13" rx="2" stroke="rgba(212,175,55,0.6)" strokeWidth="1.5" />
+                      <Path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="rgba(212,175,55,0.6)" strokeWidth="1.5" />
+                    </Svg>
+                  </Pressable>
                 </View>
               </Pressable>
             );
@@ -1847,32 +1987,44 @@ export default function LixVersePage() {
                 </View>
                 <View style={{ marginTop: wp(10), flexDirection: 'row', gap: wp(8) }}>
                   <Pressable
-                    onPress={() => checkEligibilityAndProceed(ch, 'create')}
+                    onPress={() => {
+                      if (!isOpen) {
+                        showLixAlert('⏳ Défi terminé', 'Ce défi est terminé. Les inscriptions sont closes.\nRendez-vous le mois prochain !', [{ text: 'OK', style: 'cancel' }], '⏳');
+                        return;
+                      }
+                      checkEligibilityAndProceed(ch, 'create');
+                    }}
                     disabled={eligibilityChecking}
                     delayPressIn={120}
                     style={({ pressed }) => ({
                       flex: 1, paddingVertical: wp(11), borderRadius: wp(12), alignItems: 'center',
-                      backgroundColor: (ch.color || '#D4AF37') + '20',
-                      borderWidth: 1.5, borderColor: (ch.color || '#D4AF37') + '50',
+                      backgroundColor: isOpen ? (ch.color || '#D4AF37') + '20' : 'rgba(255,255,255,0.03)',
+                      borderWidth: 1.5, borderColor: isOpen ? (ch.color || '#D4AF37') + '50' : 'rgba(255,255,255,0.06)',
                       transform: [{ scale: pressed ? 0.95 : 1 }],
-                      opacity: eligibilityChecking ? 0.5 : 1,
+                      opacity: eligibilityChecking ? 0.5 : (isOpen ? 1 : 0.4),
                     })}
                   >
-                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: ch.color || '#D4AF37' }}>Créer une équipe</Text>
+                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: isOpen ? (ch.color || '#D4AF37') : 'rgba(255,255,255,0.2)' }}>Créer une équipe</Text>
                   </Pressable>
                   <Pressable
-                    onPress={() => checkEligibilityAndProceed(ch, 'join')}
+                    onPress={() => {
+                      if (!isOpen) {
+                        showLixAlert('⏳ Défi terminé', 'Ce défi est terminé. Les inscriptions sont closes.\nRendez-vous le mois prochain !', [{ text: 'OK', style: 'cancel' }], '⏳');
+                        return;
+                      }
+                      checkEligibilityAndProceed(ch, 'join');
+                    }}
                     disabled={eligibilityChecking}
                     delayPressIn={120}
                     style={({ pressed }) => ({
                       flex: 1, paddingVertical: wp(11), borderRadius: wp(12), alignItems: 'center',
-                      backgroundColor: 'rgba(255,255,255,0.05)',
-                      borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+                      backgroundColor: isOpen ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+                      borderWidth: 1, borderColor: isOpen ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
                       transform: [{ scale: pressed ? 0.95 : 1 }],
-                      opacity: eligibilityChecking ? 0.5 : 1,
+                      opacity: eligibilityChecking ? 0.5 : (isOpen ? 1 : 0.4),
                     })}
                   >
-                    <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>Rejoindre</Text>
+                    <Text style={{ fontSize: fp(11), fontWeight: '600', color: isOpen ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)' }}>Rejoindre</Text>
                   </Pressable>
                 </View>
               </LinearGradient>
@@ -3901,6 +4053,171 @@ export default function LixVersePage() {
           </LinearGradient>
         </View>
       </Modal>
+
+      {/* ═══ MODAL RECHERCHE ÉQUIPE ═══ */}
+      <Modal visible={showSearchGroup} transparent animationType="slide" onRequestClose={() => { setShowSearchGroup(false); setSearchGroupQuery(''); setSearchGroupResults([]); }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }}>
+          <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+            style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34), maxHeight: SCREEN_WIDTH * 1.5 }}>
+            <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
+            <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Rechercher une équipe</Text>
+            {/* Barre de recherche */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: wp(16) }}>
+              <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+                <Circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+                <Line x1="16.5" y1="16.5" x2="21" y2="21" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round" />
+              </Svg>
+              <TextInput
+                style={{ flex: 1, fontSize: fp(14), color: '#FFF', paddingVertical: wp(12), marginLeft: wp(8) }}
+                placeholder="Sénégal, fitness, keto, halal..."
+                placeholderTextColor="rgba(255,255,255,0.25)"
+                value={searchGroupQuery}
+                onChangeText={(t) => { setSearchGroupQuery(t); searchGroups(t); }}
+                autoFocus
+              />
+              {searchGroupQuery.length > 0 && (
+                <Pressable onPress={() => { setSearchGroupQuery(''); setSearchGroupResults([]); }}>
+                  <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>✕</Text>
+                </Pressable>
+              )}
+            </View>
+            {/* Résultats */}
+            <ScrollView style={{ maxHeight: SCREEN_WIDTH * 0.9 }} showsVerticalScrollIndicator={false}>
+              {searchGroupLoading ? (
+                <ActivityIndicator color="#D4AF37" style={{ paddingVertical: wp(30) }} />
+              ) : searchGroupResults.length > 0 ? searchGroupResults.map((g, i) => (
+                <View key={g.id || i} style={{
+                  backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(8),
+                  borderWidth: 1, borderColor: g.is_full ? 'rgba(255,107,107,0.15)' : 'rgba(255,255,255,0.08)',
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+                    <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>{g.challenge_icon || '🏆'}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>{g.name}</Text>
+                      <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', marginTop: wp(2) }}>
+                        {g.challenge_title} · {g.member_count}/{g.max_group_size} membres
+                      </Text>
+                    </View>
+                    <View style={{ backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                      <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#D4AF37' }}>{g.total_score} pts</Text>
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginBottom: wp(8) }}>
+                    <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)' }}>Leader: {g.creator_lixtag}</Text>
+                    {!g.challenge_active && <Text style={{ fontSize: fp(8), color: '#FF6B6B', fontWeight: '700' }}>TERMINÉ</Text>}
+                  </View>
+                  {g.is_full ? (
+                    <View style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center', backgroundColor: 'rgba(255,107,107,0.08)', borderWidth: 1, borderColor: 'rgba(255,107,107,0.15)' }}>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,107,107,0.5)' }}>Groupe complet</Text>
+                    </View>
+                  ) : !g.challenge_active ? (
+                    <View style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.2)' }}>Défi terminé</Text>
+                    </View>
+                  ) : (
+                    <Pressable delayPressIn={120} onPress={() => requestJoinGroup(g)}
+                      style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                      <LinearGradient colors={['#D4AF37', '#B8941F']}
+                        style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>Demander l'intégration</Text>
+                      </LinearGradient>
+                    </Pressable>
+                  )}
+                </View>
+              )) : searchGroupQuery.length >= 2 ? (
+                <View style={{ paddingVertical: wp(30), alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(24), marginBottom: wp(8) }}>🔍</Text>
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)' }}>Aucune équipe trouvée</Text>
+                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.2)', marginTop: wp(4) }}>Essaie d'autres mots-clés</Text>
+                </View>
+              ) : (
+                <View style={{ paddingVertical: wp(20), alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.2)' }}>Tape au moins 2 caractères pour chercher</Text>
+                </View>
+              )}
+            </ScrollView>
+            {/* Fermer */}
+            <Pressable onPress={() => { setShowSearchGroup(false); setSearchGroupQuery(''); setSearchGroupResults([]); }}
+              style={{ paddingVertical: wp(14), alignItems: 'center', marginTop: wp(8), borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+              <Text style={{ fontSize: fp(14), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Fermer</Text>
+            </Pressable>
+          </LinearGradient>
+        </View>
+      </Modal>
+
+      {/* ═══ MODAL DEMANDES D'INTÉGRATION (Leader) ═══ */}
+      <Modal visible={showPendingRequests} transparent animationType="slide" onRequestClose={() => setShowPendingRequests(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }}>
+          <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+            style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34), maxHeight: SCREEN_WIDTH * 1.4 }}>
+            <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
+            <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#D4AF37', marginBottom: wp(12) }}>📩 Demandes d'intégration</Text>
+            <ScrollView style={{ maxHeight: SCREEN_WIDTH * 0.9 }} showsVerticalScrollIndicator={false}>
+              {pendingRequestsLoading ? (
+                <ActivityIndicator color="#D4AF37" style={{ paddingVertical: wp(30) }} />
+              ) : pendingRequests.length > 0 ? pendingRequests.map((req, i) => (
+                <View key={req.request_id || i} style={{
+                  backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(8),
+                  borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)',
+                }}>
+                  {/* Profil du demandeur */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                    <Text style={{ fontSize: fp(20), marginRight: wp(10) }}>{req.requester_char_emoji || '👤'}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>{req.requester_lixtag}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), marginTop: wp(2) }}>
+                        {req.requester_country ? <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>{req.requester_country}</Text> : null}
+                        <Text style={{ fontSize: fp(9), color: '#00D984' }}>Vitalité {req.requester_vitality}</Text>
+                        <Text style={{ fontSize: fp(9), color: '#D4AF37' }}>Niv {req.requester_level}</Text>
+                      </View>
+                    </View>
+                  </View>
+                  {/* Groupe concerné */}
+                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', marginBottom: wp(4) }}>
+                    Pour : {req.group_name} ({req.member_count} membres)
+                  </Text>
+                  {req.message ? (
+                    <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', marginBottom: wp(8) }}>"{req.message}"</Text>
+                  ) : null}
+                  {/* Boutons Accept/Reject */}
+                  <View style={{ flexDirection: 'row', gap: wp(8) }}>
+                    <Pressable delayPressIn={120} onPress={() => handleJoinRequest(req.request_id, true)}
+                      style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                      <LinearGradient colors={['#00D984', '#00B871']}
+                        style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>Accepter</Text>
+                      </LinearGradient>
+                    </Pressable>
+                    <Pressable delayPressIn={120} onPress={() => handleJoinRequest(req.request_id, false)}
+                      style={({ pressed }) => ({
+                        flex: 1, paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center',
+                        backgroundColor: 'rgba(255,107,107,0.08)', borderWidth: 1, borderColor: 'rgba(255,107,107,0.15)',
+                        transform: [{ scale: pressed ? 0.95 : 1 }],
+                      })}>
+                      <Text style={{ fontSize: fp(12), fontWeight: '600', color: 'rgba(255,107,107,0.6)' }}>Rejeter</Text>
+                    </Pressable>
+                  </View>
+                  {/* Voir profil */}
+                  <Pressable onPress={() => { setShowPendingRequests(false); openPublicProfile(req.requester_lixtag); }}
+                    style={{ paddingVertical: wp(6), alignItems: 'center', marginTop: wp(4) }}>
+                    <Text style={{ fontSize: fp(10), color: 'rgba(212,175,55,0.5)' }}>Voir le profil →</Text>
+                  </Pressable>
+                </View>
+              )) : (
+                <View style={{ paddingVertical: wp(30), alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(24), marginBottom: wp(8) }}>✅</Text>
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)' }}>Aucune demande en attente</Text>
+                </View>
+              )}
+            </ScrollView>
+            <Pressable onPress={() => setShowPendingRequests(false)}
+              style={{ paddingVertical: wp(14), alignItems: 'center', marginTop: wp(8), borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+              <Text style={{ fontSize: fp(14), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Fermer</Text>
+            </Pressable>
+          </LinearGradient>
+        </View>
+      </Modal>
+
       {showCharacterDetail && (
         <Modal visible={true} transparent animationType="fade" onRequestClose={() => setShowCharacterDetail(null)}>
           <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' }} onPress={() => setShowCharacterDetail(null)}>
@@ -4516,10 +4833,21 @@ export default function LixVersePage() {
                         </View>
                       </View>
                       {/* Code d'invitation copiable */}
-                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(10), backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(10), paddingHorizontal: wp(14), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                      <Pressable onPress={() => copyInviteCode(groupDetail.group.invite_code)}
+                        style={({ pressed }) => ({
+                          flexDirection: 'row', alignItems: 'center', marginTop: wp(10),
+                          backgroundColor: pressed ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.04)',
+                          borderRadius: wp(10), paddingHorizontal: wp(14), paddingVertical: wp(6),
+                          borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                          transform: [{ scale: pressed ? 0.97 : 1 }],
+                        })}>
                         <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)', marginRight: wp(6) }}>Code :</Text>
-                        <Text style={{ fontSize: fp(13), fontWeight: '800', color: '#D4AF37', letterSpacing: 1.5 }}>{groupDetail.group.invite_code}</Text>
-                      </View>
+                        <Text style={{ fontSize: fp(13), fontWeight: '800', color: '#D4AF37', letterSpacing: 1.5, flex: 1 }}>{groupDetail.group.invite_code}</Text>
+                        <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+                          <Rect x="9" y="9" width="13" height="13" rx="2" stroke="#D4AF37" strokeWidth="1.5" />
+                          <Path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="#D4AF37" strokeWidth="1.5" />
+                        </Svg>
+                      </Pressable>
                     </View>
 
                     {/* Boutons action : Poke + Supprimer/Quitter */}
