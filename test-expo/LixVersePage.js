@@ -443,7 +443,9 @@ export default function LixVersePage() {
   const [spinLoading, setSpinLoading] = useState(false);
   const [serverResult, setServerResult] = useState(null);
   const [freeSpinAvailable, setFreeSpinAvailable] = useState(true);
+  const [nextFreeAt, setNextFreeAt] = useState(null);
   const fragmentSlideAnim = useRef(new Animated.Value(0)).current;
+  const lixSpinScrollRef = useRef(null);
   const [winnerGlowIdx, setWinnerGlowIdx] = useState(null);
   const glowOpacity = useRef(new Animated.Value(0)).current;
   const arrowBounce = useRef(new Animated.Value(0)).current;
@@ -768,15 +770,34 @@ export default function LixVersePage() {
         const available = data.free_available !== false;
         setFreeSpinAvailable(available);
         setFreeSpinUsed(!available);
+        if (data.next_free_at) {
+          setNextFreeAt(new Date(data.next_free_at).getTime());
+        } else {
+          setNextFreeAt(null);
+        }
       }
     } catch (e) {
-      // Si erreur, vérifier manuellement via spin_history
       try {
-        const res = await fetch(SUPABASE_URL + '/rest/v1/spin_history?user_id=eq.' + TEST_USER_ID + '&spin_tier=eq.normal&lix_cost=eq.0&created_at=gte.' + new Date().toISOString().slice(0, 10) + '&limit=1', { headers: HEADERS });
+        const res = await fetch(SUPABASE_URL + '/rest/v1/spin_history?user_id=eq.' + TEST_USER_ID + '&spin_tier=eq.normal&lix_cost=eq.0&order=created_at.desc&limit=1', { headers: HEADERS });
         const d = await res.json();
-        const used = Array.isArray(d) && d.length > 0;
-        setFreeSpinAvailable(!used);
-        setFreeSpinUsed(used);
+        if (Array.isArray(d) && d.length > 0) {
+          const lastFree = new Date(d[0].created_at).getTime();
+          const sixHoursMs = 6 * 60 * 60 * 1000;
+          const nextAt = lastFree + sixHoursMs;
+          if (Date.now() >= nextAt) {
+            setFreeSpinAvailable(true);
+            setFreeSpinUsed(false);
+            setNextFreeAt(null);
+          } else {
+            setFreeSpinAvailable(false);
+            setFreeSpinUsed(true);
+            setNextFreeAt(nextAt);
+          }
+        } else {
+          setFreeSpinAvailable(true);
+          setFreeSpinUsed(false);
+          setNextFreeAt(null);
+        }
       } catch (e2) {
         setFreeSpinAvailable(true);
         setFreeSpinUsed(false);
@@ -857,19 +878,24 @@ export default function LixVersePage() {
   };
 
   useEffect(() => {
-    if (!freeSpinUsed) { setTimeToFree(''); return; }
+    if (!freeSpinUsed || !nextFreeAt) { setTimeToFree(''); return; }
     const timer = setInterval(() => {
-      const now = new Date();
-      const midnight = new Date(now);
-      midnight.setHours(24, 0, 0, 0);
-      const diff = midnight - now;
+      const diff = nextFreeAt - Date.now();
+      if (diff <= 0) {
+        setTimeToFree('');
+        setFreeSpinUsed(false);
+        setFreeSpinAvailable(true);
+        setNextFreeAt(null);
+        clearInterval(timer);
+        return;
+      }
       const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
       const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
       const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
       setTimeToFree(h + ':' + m + ':' + s);
     }, 1000);
     return () => clearInterval(timer);
-  }, [freeSpinUsed]);
+  }, [freeSpinUsed, nextFreeAt]);
 
   useEffect(() => {
     loadAll();
@@ -1854,7 +1880,14 @@ export default function LixVersePage() {
             '💰 Lix insuffisants',
             'Il te faut ' + required + ' Lix pour ce spin.\n\nTon solde actuel : ' + current + ' Lix\nIl te manque ' + (required - current) + ' Lix.',
             [
-              { text: 'Recharger en Lix', color: '#D4AF37', onPress: () => { setActiveTab('lixspin'); }},
+              { text: 'Recharger en Lix', color: '#D4AF37', onPress: () => {
+                setActiveTab('lixspin');
+                setTimeout(() => {
+                  if (lixSpinScrollRef.current) {
+                    lixSpinScrollRef.current.scrollTo({ y: 800, animated: true });
+                  }
+                }, 300);
+              }},
               { text: 'Fermer', style: 'cancel' },
             ],
             '💰'
@@ -1872,7 +1905,11 @@ export default function LixVersePage() {
       // Mettre à jour le solde Lix localement
       if (data.new_lix_balance !== undefined) setLixBalance(data.new_lix_balance);
       if (data.new_energy !== undefined) setUserEnergy(data.new_energy);
-      if (data.is_free) setFreeSpinUsed(true);
+      if (data.is_free) {
+        setFreeSpinUsed(true);
+        setFreeSpinAvailable(false);
+        setNextFreeAt(Date.now() + 6 * 60 * 60 * 1000);
+      }
 
       setSpinLoading(false);
 
@@ -2023,6 +2060,11 @@ export default function LixVersePage() {
 
     if (rw.type === 'energy') {
       emoji = '⚡'; title = '+' + rw.amount + ' Énergie'; titleColor = '#00D984'; btnColor = '#00D984';
+    } else if (rw.type === 'free_spin') {
+      emoji = '🎁'; title = 'Tour gratuit gagné !'; titleColor = '#D4AF37'; btnColor = '#D4AF37';
+      btnText = 'Super !';
+    } else if (rw.type === 'scan') {
+      emoji = '📸'; title = '+' + rw.amount + ' Scan' + (rw.amount > 1 ? 's' : '') + ' gratuit' + (rw.amount > 1 ? 's' : ''); titleColor = '#4DA6FF'; btnColor = '#4DA6FF';
     } else if (rw.type === 'lix') {
       emoji = '💰'; title = '+' + rw.amount + ' Lix'; titleColor = '#D4AF37'; btnColor = '#D4AF37';
     } else if (rw.type === 'fragment') {
@@ -2129,7 +2171,7 @@ export default function LixVersePage() {
     const usedColors = [...new Set(angledSegs.map(s => s.color))];
 
     return (
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100) }}>
+      <ScrollView ref={lixSpinScrollRef} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100) }}>
         {/* Solde */}
         <View style={{ alignItems: 'center', paddingTop: wp(16), marginBottom: wp(16) }}>
           <View style={{ backgroundColor: 'rgba(212,175,55,0.06)', borderRadius: wp(16), paddingVertical: wp(14), paddingHorizontal: wp(32), borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)', alignItems: 'center' }}>
@@ -2243,8 +2285,8 @@ export default function LixVersePage() {
                   const midAngle = seg.startAngle + seg.sweepAngle / 2;
                   const midRad = (midAngle - 90) * Math.PI / 180;
                   const rType = getSegmentRewardType(seg);
-                  const iconR = innerR * 0.72;
-                  const iconSize = (rType === 'card' || rType === 'full_card') ? wp(28) : wp(20);
+                  const iconR = (rType === 'card' || rType === 'full_card') ? innerR * 0.65 : innerR * 0.72;
+                  const iconSize = (rType === 'card' || rType === 'full_card') ? wp(16) : wp(20);
                   const iconX = cx + iconR * Math.cos(midRad);
                   const iconY = cy + iconR * Math.sin(midRad);
                   return (
