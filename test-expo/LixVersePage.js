@@ -1642,7 +1642,7 @@ export default function LixVersePage() {
           const isOpen = hLeft > 0;
           const isUrgent = hLeft > 0 && hLeft <= 24;
           const score = challengeScores.find(s => s.challenge_id === ch.id);
-          const progressPct = score ? Math.min(100, ((score.personal_score || 0) / 1680) * 100) : Math.min(100, Math.round((Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000) / (ch.duration_days || 30)) * 100));
+          const progressPct = score ? Math.min(100, ((score.personal_score || 0) / 1680) * 100) : Math.max(0, Math.min(100, Math.round((Math.max(0, Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000)) / (ch.duration_days || 30)) * 100)));
           return (
             <View key={ch.id} style={{ borderRadius: wp(16), marginBottom: wp(10), borderWidth: 1.5, borderColor: ch.color + '40', overflow: 'hidden' }}>
               <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ padding: wp(16), borderRadius: wp(14) }}>
@@ -1676,10 +1676,10 @@ export default function LixVersePage() {
                 <View style={{ marginBottom: wp(10), marginTop: wp(4) }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
                     <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>
-                      {score ? (score.personal_score || 0) + ' pts' : 'Jour ' + Math.min(Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000), ch.duration_days || 30) + '/' + (ch.duration_days || 30)}
+                      {score ? (score.personal_score || 0) + ' pts' : 'Jour ' + Math.max(0, Math.min(Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000), ch.duration_days || 30)) + '/' + (ch.duration_days || 30)}
                     </Text>
                     <Text style={{ fontSize: fp(10), fontWeight: '600', color: ch.color || '#00D984' }}>
-                      {score ? (score.group_rank ? '#' + score.group_rank : '') + (score.today_points ? ' +' + score.today_points + ' auj.' : '') : Math.round(progressPct) + '%'}
+                      {score ? (score.group_rank ? '#' + score.group_rank : '') + (score.today_points ? ' +' + score.today_points + ' auj.' : '') : Math.max(0, Math.round(progressPct)) + '%'}
                     </Text>
                   </View>
                   <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
@@ -1691,59 +1691,37 @@ export default function LixVersePage() {
                     }} />
                   </View>
                 </View>
-                <View style={{ gap: wp(4) }}>
-                  {/* Ligne 1 — Lix + Énergie */}
-                  <View style={{ flexDirection: 'row', gap: wp(4), flexWrap: 'wrap' }}>
-                    {[
-                      { e: '🥇', lix: ch.reward_lix_first, nrj: ch.reward_energy_first },
-                      { e: '🥈', lix: ch.reward_lix_second, nrj: ch.reward_energy_second },
-                      { e: '🥉', lix: ch.reward_lix_third, nrj: ch.reward_energy_third },
-                    ].map((r, j) => (
-                      <View key={j} style={{
-                        flexDirection: 'row', alignItems: 'center',
-                        backgroundColor: j === 0 ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.05)',
-                        borderRadius: wp(8), paddingHorizontal: wp(6), paddingVertical: wp(3), gap: wp(3),
-                      }}>
-                        <Text style={{ fontSize: fp(9) }}>{r.e}</Text>
-                        <Text style={{ fontSize: fp(9), fontWeight: '600', color: j === 0 ? '#D4AF37' : 'rgba(255,255,255,0.4)' }}>{r.lix}</Text>
-                        {r.nrj > 0 && (
-                          <Text style={{ fontSize: fp(8), color: '#FF8C42' }}>+{r.nrj}⚡</Text>
-                        )}
+                {/* Podium compact */}
+                <View style={{ marginTop: wp(10), backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(10), padding: wp(10) }}>
+                  {[
+                    { emoji: '🥇', lix: ch.reward_lix_first || 5000, energy: ch.reward_energy_first || 100, charData: ch.reward_char_first },
+                    { emoji: '🥈', lix: ch.reward_lix_second || 3000, energy: ch.reward_energy_second || 60, charData: ch.reward_char_second },
+                    { emoji: '🥉', lix: ch.reward_lix_third || 1500, energy: ch.reward_energy_third || 40, charData: ch.reward_char_third },
+                  ].map((r, i) => {
+                    const parsed = r.charData ? formatCharRewards(typeof r.charData === 'string' ? JSON.parse(r.charData) : r.charData) : null;
+                    return (
+                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(5), borderBottomWidth: i < 2 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
+                        <Text style={{ fontSize: fp(16), width: wp(28) }}>{r.emoji}</Text>
+                        <View style={{ flex: 1 }}>
+                          {parsed && parsed.length > 0 ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(2) }}>
+                              {parsed.map((p, k) => (
+                                <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: wp(1) }}>
+                                  {k > 0 && <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.15)' }}>+</Text>}
+                                  <Text style={{ fontSize: fp(8) }}>{p.icon}</Text>
+                                  <Text style={{ fontSize: fp(8), fontWeight: '700', color: p.color }}>{p.text}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          ) : (
+                            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>—</Text>
+                          )}
+                        </View>
+                        <Text style={{ fontSize: fp(10), color: '#D4AF37', fontWeight: '700', marginRight: wp(8) }}>◆ {r.lix}</Text>
+                        {r.energy > 0 && <Text style={{ fontSize: fp(10), color: '#7BED9F', fontWeight: '600' }}>⚡{r.energy}</Text>}
                       </View>
-                    ))}
-                  </View>
-                  {/* Ligne 2 — Récompenses caractères (top 3 uniquement) */}
-                  {(ch.reward_char_first || ch.reward_char_second || ch.reward_char_third) && (
-                    <View style={{ flexDirection: 'row', gap: wp(4), flexWrap: 'wrap' }}>
-                      {[
-                        { rank: '🥇', data: ch.reward_char_first },
-                        { rank: '🥈', data: ch.reward_char_second },
-                        { rank: '🥉', data: ch.reward_char_third },
-                      ].map((r, j) => {
-                        const parsed = formatCharRewards(
-                          typeof r.data === 'string' ? JSON.parse(r.data) : r.data
-                        );
-                        if (!parsed || parsed.length === 0) return null;
-                        return (
-                          <View key={j} style={{
-                            flexDirection: 'row', alignItems: 'center',
-                            backgroundColor: 'rgba(255,255,255,0.03)',
-                            borderRadius: wp(6), paddingHorizontal: wp(5), paddingVertical: wp(2), gap: wp(2),
-                            borderWidth: 1, borderColor: parsed[0].color + '20',
-                          }}>
-                            <Text style={{ fontSize: fp(8) }}>{r.rank}</Text>
-                            {parsed.map((p, k) => (
-                              <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: wp(1) }}>
-                                {k > 0 && <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.15)' }}>+</Text>}
-                                <Text style={{ fontSize: fp(8) }}>{p.icon}</Text>
-                                <Text style={{ fontSize: fp(7), fontWeight: '700', color: p.color }}>{p.text}</Text>
-                              </View>
-                            ))}
-                          </View>
-                        );
-                      })}
-                    </View>
-                  )}
+                    );
+                  })}
                 </View>
                 <View style={{ marginTop: wp(10), flexDirection: 'row', gap: wp(8) }}>
                   <Pressable
@@ -4670,7 +4648,7 @@ export default function LixVersePage() {
                 <Animated.View pointerEvents={!charFlipped ? 'none' : 'auto'} style={{ opacity: backInterpolate, position: !charFlipped ? 'absolute' : 'relative', width: '100%' }}>
                   <LinearGradient colors={['#0D0D0D','#111111','#0A0A0A','#080808']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
                     <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
-                    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+                    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(40) }} showsVerticalScrollIndicator={true} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
                       <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', textAlign: 'center', marginBottom: wp(16) }}>POUVOIRS</Text>
 
                       {(() => {
@@ -5097,7 +5075,7 @@ export default function LixVersePage() {
 
                       {/* ═══ OWL — Résumé macros quotidien ═══ */}
                       {inlinePowerModal === 'owl_resume_macros' && (
-                        <View style={{ backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦉 Résumé Nutritionnel</Text>
                           {inlinePowerLoading ? (
                             <ActivityIndicator color="#00D984" style={{ marginVertical: wp(20) }} />
@@ -5130,7 +5108,7 @@ export default function LixVersePage() {
 
                       {/* ═══ HAWK — Micronutriments dernier scan ═══ */}
                       {inlinePowerModal === 'hawk_micronutriments' && (
-                        <View style={{ backgroundColor: 'rgba(77,166,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(77,166,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>🔬 Micronutriments</Text>
                           {inlinePowerLoading ? (
                             <ActivityIndicator color="#4DA6FF" style={{ marginVertical: wp(20) }} />
@@ -5189,7 +5167,7 @@ export default function LixVersePage() {
 
                       {/* ═══ FOX — Substitution ingrédient ═══ */}
                       {(inlinePowerModal === 'fox_sub_1' || inlinePowerModal === 'fox_sub_2' || inlinePowerModal === 'fox_sub_3') && (
-                        <View style={{ backgroundColor: 'rgba(255,140,66,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,140,66,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(255,140,66,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,140,66,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>🔄 Substitution d'ingrédient</Text>
                           {inlinePowerLoading ? (
                             <ActivityIndicator color="#FF8C42" style={{ marginVertical: wp(20) }} />
@@ -5235,7 +5213,7 @@ export default function LixVersePage() {
 
                       {/* ═══ GIPSY — Corrélation humeur ↔ nutrition (données réelles) ═══ */}
                       {inlinePowerModal === 'gipsy_mood_nutrition' && (
-                        <View style={{ backgroundColor: 'rgba(155,109,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(155,109,255,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(155,109,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(155,109,255,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🕸️ Humeur ↔ Nutrition</Text>
                           {inlinePowerLoading ? (
                             <ActivityIndicator color="#9B6DFF" style={{ marginVertical: wp(20) }} />
@@ -5280,7 +5258,7 @@ export default function LixVersePage() {
 
                       {/* ═══ GIPSY Niv2 — Corrélation hydratation ↔ activité ═══ */}
                       {inlinePowerModal === 'gipsy_hydra_energy' && (
-                        <View style={{ backgroundColor: 'rgba(155,109,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(155,109,255,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(155,109,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(155,109,255,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🕸️ Hydratation ↔ Activité</Text>
                           {inlinePowerLoading ? (
                             <ActivityIndicator color="#9B6DFF" style={{ marginVertical: wp(20) }} />
@@ -5311,7 +5289,7 @@ export default function LixVersePage() {
                       {/* ═══ RARE — JADE PHOENIX 🔥 Bilan récupération ═══ */}
                       {/* ═══════════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'phoenix_recovery_detect' || inlinePowerModal === 'phoenix_recovery_food') && (
-                        <View style={{ backgroundColor: 'rgba(46,213,115,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(46,213,115,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(46,213,115,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(46,213,115,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🔥 Bilan Récupération</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#2ED573" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
                             <View>
@@ -5354,7 +5332,7 @@ export default function LixVersePage() {
                       {/* ═══ RARE — SILVER WOLF 🐺 Streaks ═══ */}
                       {/* ═══════════════════════════════════════════ */}
                       {(inlinePowerModal === 'wolf_streak_tracker') && (
-                        <View style={{ backgroundColor: 'rgba(164,176,190,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(164,176,190,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(164,176,190,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(164,176,190,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🐺 Streaks — 30 derniers jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#A4B0BE" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
                             <View>
@@ -5387,7 +5365,7 @@ export default function LixVersePage() {
                       {/* ═══ RARE — BOUKKI 🦴 Planificateur calories ═══ */}
                       {/* ═══════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'boukki_calorie_remain' || inlinePowerModal === 'boukki_complement') && (
-                        <View style={{ backgroundColor: 'rgba(205,127,50,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(205,127,50,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(205,127,50,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(205,127,50,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦴 Calories — 7 jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#CD7F32" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.weekSummaries && inlinePowerData.weekSummaries.length > 0 ? (
                             <View>
@@ -5419,7 +5397,7 @@ export default function LixVersePage() {
                       {/* ═══ RARE — IRON RHINO 🦏 Stats fitness ═══ */}
                       {/* ════════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'rhino_custom_goal' || inlinePowerModal === 'rhino_enriched_report' || inlinePowerModal === 'rhino_charge') && (
-                        <View style={{ backgroundColor: 'rgba(116,125,140,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(116,125,140,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(116,125,140,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(116,125,140,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>
                             🦏 {inlinePowerModal === 'rhino_charge' ? 'Analyse Défis' : 'Stats Fitness — 7 jours'}
                           </Text>
@@ -5458,7 +5436,7 @@ export default function LixVersePage() {
                       {/* ═══ RARE — CORAL DOLPHIN 🐬 Rapport hydratation ═══ */}
                       {/* ════════════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'dolphin_smart_hydration' || inlinePowerModal === 'dolphin_tracker') && (
-                        <View style={{ backgroundColor: 'rgba(255,107,129,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,107,129,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(255,107,129,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,107,129,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🐬 Hydratation — {inlinePowerData?.rangeDays || 7} jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#FF6B81" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.hydrationLogs && inlinePowerData.hydrationLogs.length > 0 ? (
                             <View>
@@ -5503,7 +5481,7 @@ export default function LixVersePage() {
                       {/* ═══ ELITE — LICORNIUM 🦄 Score nutritionnel ═══ */}
                       {/* ═══════════════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'licornium_analyse') && (
-                        <View style={{ backgroundColor: 'rgba(179,136,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(179,136,255,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(179,136,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(179,136,255,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦄 Score Nutritionnel</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#B388FF" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.weekData && inlinePowerData.weekData.length > 0 ? (
                             <View>
@@ -5548,7 +5526,7 @@ export default function LixVersePage() {
                       {/* ═══ ELITE — JAANE SNAKE 🐍 Analyse activité ═══ */}
                       {/* ══════════════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'jaane_venin') && (
-                        <View style={{ backgroundColor: 'rgba(255,99,72,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,99,72,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(255,99,72,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,99,72,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🐍 Analyse Activité — 30 jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#FF6348" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.monthActivities && inlinePowerData.monthActivities.length > 0 ? (
                             <View>
@@ -5602,7 +5580,7 @@ export default function LixVersePage() {
                       {/* ═══ MYTHIQUE — DIAMOND SIMBA 🦁 Rapport complet 7j ═══ */}
                       {/* ═══════════════════════════════════════════════════════════ */}
                       {(inlinePowerModal === 'simba_rugissement' || inlinePowerModal === 'simba_territoire' || inlinePowerModal === 'simba_roi') && (
-                        <View style={{ backgroundColor: 'rgba(0,206,201,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0,206,201,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(0,206,201,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0,206,201,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦁 Rapport Santé — 7 jours</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#00CEC9" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
                             <View>
@@ -5631,7 +5609,7 @@ export default function LixVersePage() {
 
                       {/* ═══ MOSQUITO — Piqûre Nutrition ═══ */}
                       {inlinePowerModal === 'mosquito_piqure_nutrition' && (
-                        <View style={{ backgroundColor: 'rgba(123,237,159,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(123,237,159,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(123,237,159,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(123,237,159,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦟 Piqûre Nutrition</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#7BED9F" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
                             <View>
@@ -5653,7 +5631,7 @@ export default function LixVersePage() {
 
                       {/* ═══ MOSQUITO — Piqûre Activité ═══ */}
                       {inlinePowerModal === 'mosquito_piqure_activite' && (
-                        <View style={{ backgroundColor: 'rgba(123,237,159,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(123,237,159,0.2)' }}>
+                        <View style={{ backgroundColor: 'rgba(123,237,159,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(123,237,159,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦟 Piqûre Activité</Text>
                           {inlinePowerLoading ? <ActivityIndicator color="#7BED9F" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.activities && inlinePowerData.activities.length > 0 ? (
                             <View>
