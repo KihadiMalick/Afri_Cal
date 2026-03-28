@@ -424,6 +424,7 @@ export default function LixVersePage() {
   const [loading, setLoading] = useState(true);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [eligibilityChecking, setEligibilityChecking] = useState(false);
   const [showJoinGroup, setShowJoinGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [joinCode, setJoinCode] = useState('');
@@ -1247,6 +1248,39 @@ export default function LixVersePage() {
     setLoading(false);
   };
 
+  const checkEligibilityAndProceed = async (challenge, action) => {
+    setEligibilityChecking(true);
+    try {
+      const data = await supaRpc('check_challenge_eligibility', { p_user_id: TEST_USER_ID });
+      setEligibilityChecking(false);
+      if (data?.eligible) {
+        setSelectedChallenge(challenge);
+        if (action === 'create') setShowCreateGroup(true);
+        else setShowJoinGroup(true);
+      } else {
+        const daysNeeded = data?.days_needed || 5;
+        const detail = data?.detail || {};
+        showLixAlert(
+          '🔍 Analyse de régularité',
+          'Pour participer aux défis, LIXUM vérifie que tu utilises l\'app régulièrement.\n\n' +
+          'Activité détectée : ' + (data?.active_days || 0) + '/7 jours minimum\n' +
+          '• Repas loggés : ' + (detail.meals || 0) + ' jours\n' +
+          '• Activités : ' + (detail.activities || 0) + ' jours\n' +
+          '• Humeur : ' + (detail.moods || 0) + ' jours\n\n' +
+          'Continue à utiliser LIXUM pendant encore ' + daysNeeded + ' jour' + (daysNeeded > 1 ? 's' : '') + ' pour débloquer les défis.',
+          [{ text: 'Compris', color: '#D4AF37' }],
+          '🛡️'
+        );
+      }
+    } catch (e) {
+      setEligibilityChecking(false);
+      // En cas d'erreur réseau, laisser passer (UX gracieuse)
+      setSelectedChallenge(challenge);
+      if (action === 'create') setShowCreateGroup(true);
+      else setShowJoinGroup(true);
+    }
+  };
+
   const createGroup = async () => {
     if (!newGroupName.trim() || !selectedChallenge) return;
     try {
@@ -1274,6 +1308,21 @@ export default function LixVersePage() {
       await fetch(SUPABASE_URL + '/rest/v1/lixverse_groups?id=eq.' + g.id, { method: 'PATCH', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ member_count: g.member_count + 1 }) });
       showLixAlert('Rejoint', 'Tu fais maintenant partie de "' + g.name + '" !', [{ text: 'Super', color: '#00D984' }], '🤝'); setShowJoinGroup(false); setJoinCode(''); loadAll();
     } catch (e) { showLixAlert('Erreur', 'Impossible de rejoindre ce groupe.', [{ text: 'OK', style: 'cancel' }], '❌'); }
+  };
+
+  // ═══ HELPER — Formater les récompenses caractères d'un défi ═══
+  const formatCharRewards = (charRewardsJson) => {
+    if (!charRewardsJson || !Array.isArray(charRewardsJson)) return null;
+    return charRewardsJson.map(r => {
+      const tierColors = { mythique: '#D4AF37', elite: '#B388FF', rare: '#4DA6FF', standard: '#00D984' };
+      const tierLabels = { mythique: 'Myth', elite: 'Elite', rare: 'Rare', standard: 'Std' };
+      const color = tierColors[r.tier] || '#00D984';
+      const label = tierLabels[r.tier] || r.tier;
+      if (r.complete) {
+        return { icon: '🃏', text: label, color, isCard: true };
+      }
+      return { icon: '🧩', text: (r.amount || 1) + ' ' + label, color, isCard: false };
+    });
   };
 
   const renderDefiTab = () => (
@@ -1583,34 +1632,85 @@ export default function LixVersePage() {
                     }} />
                   </View>
                 </View>
-                <View style={{ flexDirection: 'row', gap: wp(6) }}>
-                  {[{ e: '🥇', v: ch.reward_lix_first }, { e: '🥈', v: ch.reward_lix_second }, { e: '🥉', v: ch.reward_lix_third }].map((r, j) => (
-                    <View key={j} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: j === 0 ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.05)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), gap: wp(4) }}>
-                      <Text style={{ fontSize: fp(10) }}>{r.e}</Text><Text style={{ fontSize: fp(10), fontWeight: '600', color: j === 0 ? '#D4AF37' : 'rgba(255,255,255,0.4)' }}>{r.v} Lix</Text>
+                <View style={{ gap: wp(4) }}>
+                  {/* Ligne 1 — Lix + Énergie */}
+                  <View style={{ flexDirection: 'row', gap: wp(4), flexWrap: 'wrap' }}>
+                    {[
+                      { e: '🥇', lix: ch.reward_lix_first, nrj: ch.reward_energy_first },
+                      { e: '🥈', lix: ch.reward_lix_second, nrj: ch.reward_energy_second },
+                      { e: '🥉', lix: ch.reward_lix_third, nrj: ch.reward_energy_third },
+                    ].map((r, j) => (
+                      <View key={j} style={{
+                        flexDirection: 'row', alignItems: 'center',
+                        backgroundColor: j === 0 ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.05)',
+                        borderRadius: wp(8), paddingHorizontal: wp(6), paddingVertical: wp(3), gap: wp(3),
+                      }}>
+                        <Text style={{ fontSize: fp(9) }}>{r.e}</Text>
+                        <Text style={{ fontSize: fp(9), fontWeight: '600', color: j === 0 ? '#D4AF37' : 'rgba(255,255,255,0.4)' }}>{r.lix}</Text>
+                        {r.nrj > 0 && (
+                          <Text style={{ fontSize: fp(8), color: '#FF8C42' }}>+{r.nrj}⚡</Text>
+                        )}
+                      </View>
+                    ))}
+                  </View>
+                  {/* Ligne 2 — Récompenses caractères (top 3 uniquement) */}
+                  {(ch.reward_char_first || ch.reward_char_second || ch.reward_char_third) && (
+                    <View style={{ flexDirection: 'row', gap: wp(4), flexWrap: 'wrap' }}>
+                      {[
+                        { rank: '🥇', data: ch.reward_char_first },
+                        { rank: '🥈', data: ch.reward_char_second },
+                        { rank: '🥉', data: ch.reward_char_third },
+                      ].map((r, j) => {
+                        const parsed = formatCharRewards(
+                          typeof r.data === 'string' ? JSON.parse(r.data) : r.data
+                        );
+                        if (!parsed || parsed.length === 0) return null;
+                        return (
+                          <View key={j} style={{
+                            flexDirection: 'row', alignItems: 'center',
+                            backgroundColor: 'rgba(255,255,255,0.03)',
+                            borderRadius: wp(6), paddingHorizontal: wp(5), paddingVertical: wp(2), gap: wp(2),
+                            borderWidth: 1, borderColor: parsed[0].color + '20',
+                          }}>
+                            <Text style={{ fontSize: fp(8) }}>{r.rank}</Text>
+                            {parsed.map((p, k) => (
+                              <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: wp(1) }}>
+                                {k > 0 && <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.15)' }}>+</Text>}
+                                <Text style={{ fontSize: fp(8) }}>{p.icon}</Text>
+                                <Text style={{ fontSize: fp(7), fontWeight: '700', color: p.color }}>{p.text}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        );
+                      })}
                     </View>
-                  ))}
+                  )}
                 </View>
                 <View style={{ marginTop: wp(10), flexDirection: 'row', gap: wp(8) }}>
                   <Pressable
-                    onPress={() => { setSelectedChallenge(ch); setShowCreateGroup(true); }}
+                    onPress={() => checkEligibilityAndProceed(ch, 'create')}
+                    disabled={eligibilityChecking}
                     delayPressIn={120}
                     style={({ pressed }) => ({
                       flex: 1, paddingVertical: wp(11), borderRadius: wp(12), alignItems: 'center',
                       backgroundColor: (ch.color || '#D4AF37') + '20',
                       borderWidth: 1.5, borderColor: (ch.color || '#D4AF37') + '50',
                       transform: [{ scale: pressed ? 0.95 : 1 }],
+                      opacity: eligibilityChecking ? 0.5 : 1,
                     })}
                   >
                     <Text style={{ fontSize: fp(11), fontWeight: '700', color: ch.color || '#D4AF37' }}>Créer une équipe</Text>
                   </Pressable>
                   <Pressable
-                    onPress={() => { setSelectedChallenge(ch); setShowJoinGroup(true); }}
+                    onPress={() => checkEligibilityAndProceed(ch, 'join')}
+                    disabled={eligibilityChecking}
                     delayPressIn={120}
                     style={({ pressed }) => ({
                       flex: 1, paddingVertical: wp(11), borderRadius: wp(12), alignItems: 'center',
                       backgroundColor: 'rgba(255,255,255,0.05)',
                       borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
                       transform: [{ scale: pressed ? 0.95 : 1 }],
+                      opacity: eligibilityChecking ? 0.5 : 1,
                     })}
                   >
                     <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>Rejoindre</Text>
