@@ -1347,7 +1347,7 @@ export default function LixVersePage() {
     setLoading(true);
     try {
       const [a,b,c,d,e] = await Promise.all([
-        fetch(SUPABASE_URL+'/rest/v1/users_profile?user_id=eq.'+TEST_USER_ID+'&select=lix_balance',{headers:hdrs}),
+        fetch(SUPABASE_URL+'/rest/v1/users_profile?user_id=eq.'+TEST_USER_ID+'&select=lix_balance,energy',{headers:hdrs}),
         fetch(SUPABASE_URL+'/rest/v1/lixverse_user_characters?user_id=eq.'+TEST_USER_ID+'&select=character_id',{headers:hdrs}),
         fetch(SUPABASE_URL+'/rest/v1/lixverse_challenges?is_active=eq.true&order=start_date.asc',{headers:hdrs}),
         fetch(SUPABASE_URL+'/rest/v1/lixverse_notifications?order=created_at.desc&limit=20',{headers:hdrs}),
@@ -1355,6 +1355,7 @@ export default function LixVersePage() {
       ]);
       const [aD,bD,cD,dD,eD] = await Promise.all([a.json(),b.json(),c.json(),d.json(),e.json()]);
       if(aD[0]?.lix_balance!=null)setLixBalance(aD[0].lix_balance);
+      if(aD[0]?.energy!=null)setUserEnergy(aD[0].energy);
       if(Array.isArray(bD))setOwnedCharacters(bD.map(x=>x.character_id));
       if(Array.isArray(cD))setChallenges(cD);
       if(Array.isArray(dD))setNotifications(dD);
@@ -2137,61 +2138,76 @@ export default function LixVersePage() {
                   </Pressable>
 
                   {expandedRewards[ch.id] && (
-                    <View style={{ paddingTop: wp(6) }}>
-                      {/* 1ère place */}
-                      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6) }}>
-                        <MedalIcon rank={1} size={wp(18)} />
-                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginLeft: wp(8), gap: wp(6) }}>
-                          <FragmentIcon size={wp(12)} color="#E040FB" />
-                          <Text style={{ fontSize: fp(9), color: '#E040FB' }}>1 Myth</Text>
-                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)' }}>+</Text>
-                          <MysteryCardIcon size={wp(12)} color="#4FC3F7" />
-                          <Text style={{ fontSize: fp(9), color: '#4FC3F7' }}>Rare</Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}><LixGem size={wp(10)} /><Text style={{ fontSize: fp(9), color: '#D4AF37', marginLeft: wp(2) }}>5000</Text></View>
-                          <Text style={{ fontSize: fp(9), color: '#00D984' }}>⚡ 100</Text>
-                        </View>
-                      </View>
-                      {/* 2ème place */}
-                      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
-                        <MedalIcon rank={2} size={wp(18)} />
-                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginLeft: wp(8), gap: wp(6) }}>
-                          <FragmentIcon size={wp(12)} color="#7C4DFF" />
-                          <Text style={{ fontSize: fp(9), color: '#7C4DFF' }}>1 Elite</Text>
-                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)' }}>+</Text>
-                          <MysteryCardIcon size={wp(12)} color="#66BB6A" />
-                          <Text style={{ fontSize: fp(9), color: '#66BB6A' }}>Std</Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}><LixGem size={wp(10)} /><Text style={{ fontSize: fp(9), color: '#D4AF37', marginLeft: wp(2) }}>3000</Text></View>
-                          <Text style={{ fontSize: fp(9), color: '#00D984' }}>⚡ 60</Text>
-                        </View>
-                      </View>
-                      {/* 3ème place */}
-                      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
-                        <MedalIcon rank={3} size={wp(18)} />
-                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginLeft: wp(8), gap: wp(6) }}>
-                          <FragmentIcon size={wp(12)} color="#4FC3F7" />
-                          <Text style={{ fontSize: fp(9), color: '#4FC3F7' }}>2 Rare</Text>
-                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)' }}>+</Text>
-                          <MysteryCardIcon size={wp(12)} color="#66BB6A" />
-                          <Text style={{ fontSize: fp(9), color: '#66BB6A' }}>Std</Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}><LixGem size={wp(10)} /><Text style={{ fontSize: fp(9), color: '#D4AF37', marginLeft: wp(2) }}>1500</Text></View>
-                          <Text style={{ fontSize: fp(9), color: '#00D984' }}>⚡ 40</Text>
-                        </View>
-                      </View>
-                      {/* Rangs 4-10 */}
-                      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
-                        <View style={{ width: wp(18), height: wp(18), borderRadius: wp(9), backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
-                          <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.3)' }}>4-10</Text>
-                        </View>
-                        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginLeft: wp(8), flex: 1 }}>Lix + Énergie selon le rang</Text>
-                      </View>
+              <View style={{ paddingTop: wp(6) }}>
+                {/* 1ère place : 1 frag Mythique + 1 carte Rare complète */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(7), paddingHorizontal: wp(4) }}>
+                  <MedalIcon rank={1} size={wp(18)} />
+                  <View style={{ flex: 1, marginLeft: wp(8) }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: wp(4) }}>
+                      <FragmentIcon size={wp(12)} color="#E040FB" />
+                      <Text style={{ fontSize: fp(9), color: '#E040FB', fontWeight: '700' }}>1 frag Mythique</Text>
+                      <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)' }}>+</Text>
+                      <MysteryCardIcon size={wp(11)} color="#4FC3F7" />
+                      <Text style={{ fontSize: fp(9), color: '#4FC3F7', fontWeight: '700' }}>1 carte Rare</Text>
                     </View>
-                  )}
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <LixGem size={wp(10)} />
+                      <Text style={{ fontSize: fp(9), color: '#D4AF37', fontWeight: '700', marginLeft: wp(2) }}>{ch.reward_lix_first || 5000}</Text>
+                    </View>
+                    <Text style={{ fontSize: fp(9), color: '#7BED9F', fontWeight: '600' }}>⚡{ch.reward_energy_first || 100}</Text>
+                  </View>
+                </View>
+                {/* 2ème place : 1 frag Elite + 1 carte Standard complète */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(7), paddingHorizontal: wp(4), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
+                  <MedalIcon rank={2} size={wp(18)} />
+                  <View style={{ flex: 1, marginLeft: wp(8) }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: wp(4) }}>
+                      <FragmentIcon size={wp(12)} color="#B388FF" />
+                      <Text style={{ fontSize: fp(9), color: '#B388FF', fontWeight: '700' }}>1 frag Elite</Text>
+                      <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)' }}>+</Text>
+                      <MysteryCardIcon size={wp(11)} color="#66BB6A" />
+                      <Text style={{ fontSize: fp(9), color: '#66BB6A', fontWeight: '700' }}>1 carte Standard</Text>
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <LixGem size={wp(10)} />
+                      <Text style={{ fontSize: fp(9), color: '#D4AF37', fontWeight: '700', marginLeft: wp(2) }}>{ch.reward_lix_second || 3000}</Text>
+                    </View>
+                    <Text style={{ fontSize: fp(9), color: '#7BED9F', fontWeight: '600' }}>⚡{ch.reward_energy_second || 60}</Text>
+                  </View>
+                </View>
+                {/* 3ème place : 2 frags Rare + 1 carte Standard complète */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(7), paddingHorizontal: wp(4), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
+                  <MedalIcon rank={3} size={wp(18)} />
+                  <View style={{ flex: 1, marginLeft: wp(8) }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: wp(4) }}>
+                      <FragmentIcon size={wp(12)} color="#4FC3F7" />
+                      <Text style={{ fontSize: fp(9), color: '#4FC3F7', fontWeight: '700' }}>2 frags Rare</Text>
+                      <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)' }}>+</Text>
+                      <MysteryCardIcon size={wp(11)} color="#66BB6A" />
+                      <Text style={{ fontSize: fp(9), color: '#66BB6A', fontWeight: '700' }}>1 carte Standard</Text>
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <LixGem size={wp(10)} />
+                      <Text style={{ fontSize: fp(9), color: '#D4AF37', fontWeight: '700', marginLeft: wp(2) }}>{ch.reward_lix_third || 1500}</Text>
+                    </View>
+                    <Text style={{ fontSize: fp(9), color: '#7BED9F', fontWeight: '600' }}>⚡{ch.reward_energy_third || 40}</Text>
+                  </View>
+                </View>
+                {/* Rangs 4-10 */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6), paddingHorizontal: wp(4), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
+                  <View style={{ width: wp(18), height: wp(18), borderRadius: wp(9), backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.25)', fontWeight: '700' }}>4-10</Text>
+                  </View>
+                  <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)', marginLeft: wp(8) }}>Lix + Énergie selon le rang</Text>
+                </View>
+              </View>
+            )}
                 </View>
                 <View style={{ marginTop: wp(10), flexDirection: 'row', gap: wp(8) }}>
                   <Pressable
@@ -2265,8 +2281,8 @@ export default function LixVersePage() {
                 }}
                 style={{
                   paddingHorizontal: wp(14), paddingVertical: wp(8), borderRadius: wp(10),
-                  backgroundColor: leaderboardTab === tab.key ? 'rgba(212,175,55,0.18)' : 'rgba(255,255,255,0.04)',
-                  borderWidth: 1.5, borderColor: leaderboardTab === tab.key ? 'rgba(212,175,55,0.45)' : 'rgba(255,255,255,0.06)',
+                  backgroundColor: leaderboardTab === tab.key ? 'rgba(212,175,55,0.15)' : 'transparent',
+                  borderWidth: 1.5, borderColor: leaderboardTab === tab.key ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.08)',
                   shadowColor: leaderboardTab === tab.key ? '#D4AF37' : 'transparent',
                   shadowOpacity: leaderboardTab === tab.key ? 0.15 : 0,
                   shadowRadius: wp(4),
@@ -3108,16 +3124,16 @@ export default function LixVersePage() {
     return (
       <ScrollView ref={lixSpinScrollRef} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100) }}>
         {/* Solde */}
-        <View style={{ alignItems: 'center', paddingTop: wp(16), marginBottom: wp(16) }}>
-          <View style={{ backgroundColor: 'rgba(212,175,55,0.06)', borderRadius: wp(16), paddingVertical: wp(14), paddingHorizontal: wp(32), borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)', alignItems: 'center' }}>
-          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', letterSpacing: 2, marginBottom: wp(4) }}>MON SOLDE</Text>
-          <Text style={{ fontSize: fp(32), fontWeight: '800', color: '#D4AF37' }}>{lixBalance.toLocaleString('fr-FR')}</Text>
-          <Text style={{ fontSize: fp(12), color: 'rgba(212,175,55,0.5)' }}>Lix</Text>
+        <View style={{ alignItems: 'center', paddingTop: wp(8), marginBottom: wp(10) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(212,175,55,0.06)', borderRadius: wp(12), paddingVertical: wp(8), paddingHorizontal: wp(20), borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)', gap: wp(8) }}>
+            <LixGem size={wp(18)} />
+            <Text style={{ fontSize: fp(24), fontWeight: '800', color: '#D4AF37' }}>{lixBalance.toLocaleString('fr-FR')}</Text>
+            <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)' }}>Lix</Text>
           </View>
         </View>
 
         {/* Tier Selector */}
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: wp(8), marginBottom: wp(20), paddingHorizontal: wp(12) }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: wp(8), marginBottom: wp(12), paddingHorizontal: wp(12) }}>
           {tierButtons.map(tb => {
             const active = spinTier === tb.key;
             return (
@@ -3169,7 +3185,14 @@ export default function LixVersePage() {
             </Svg>
           </Animated.View>
 
-          <View style={{ width: svgSize, height: svgSize }}>
+          <View style={{
+            width: svgSize, height: svgSize,
+            shadowColor: spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : '#00D984',
+            shadowOpacity: isSpinning ? 0.4 : 0.15,
+            shadowRadius: isSpinning ? wp(20) : wp(10),
+            shadowOffset: { width: 0, height: 0 },
+            elevation: isSpinning ? 8 : 3,
+          }}>
             <Animated.View style={{ width: svgSize, height: svgSize, transform: [{ rotate: rot }] }}>
               <Svg width={svgSize} height={svgSize} viewBox={'0 0 ' + svgSize + ' ' + svgSize}>
                 <Defs>
@@ -3276,7 +3299,7 @@ export default function LixVersePage() {
           {/* Spin button with spring press */}
           <Animated.View style={{
             transform: [{ scale: (spinCost === 0 && spinTier === 'normal' && !isSpinning) ? Animated.multiply(spinBtnScale, freeBtnPulse) : spinBtnScale }],
-            marginTop: wp(16), width: wp(220),
+            marginTop: wp(16), width: wp(260),
             opacity: (isSpinning || spinLoading) ? 0.5 : 1,
           }}>
             <Pressable delayPressIn={120} onPress={doSpin} disabled={isSpinning || spinLoading}
@@ -3302,16 +3325,25 @@ export default function LixVersePage() {
             {freeSpinAvailable && !freeSpinUsed ? (
               <Text style={{ fontSize: fp(11), color: '#00D984' }}>🎁 1 spin gratuit disponible</Text>
             ) : (
-              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)' }}>
-                Prochain spin gratuit dans {timeToFree || '--:--:--'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                  <Circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
+                  <Path d="M12 6v6l4 2" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+                </Svg>
+                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.35)', fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+                  {timeToFree || '--:--:--'}
+                </Text>
+              </View>
             )}
           </View>
         </View>
 
-        <View style={{ alignItems: 'center', marginVertical: wp(20) }}>
-          <View style={{ width: wp(120), height: 1, backgroundColor: 'rgba(212,175,55,0.15)' }} />
-          <Text style={{ fontSize: fp(8), color: 'rgba(212,175,55,0.25)', letterSpacing: 3, marginTop: wp(6) }}>✦ ✦ ✦</Text>
+        <View style={{ alignItems: 'center', marginVertical: wp(16) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
+            <View style={{ width: wp(40), height: 1, backgroundColor: 'rgba(212,175,55,0.12)' }} />
+            <LixGem size={wp(12)} />
+            <View style={{ width: wp(40), height: 1, backgroundColor: 'rgba(212,175,55,0.12)' }} />
+          </View>
         </View>
 
         {/* ═══ ABONNEMENTS ═══ */}
@@ -3363,14 +3395,17 @@ export default function LixVersePage() {
           </Pressable>
         </View>
 
-        <View style={{ alignItems: 'center', marginVertical: wp(20) }}>
-          <View style={{ width: wp(120), height: 1, backgroundColor: 'rgba(212,175,55,0.15)' }} />
-          <Text style={{ fontSize: fp(8), color: 'rgba(212,175,55,0.25)', letterSpacing: 3, marginTop: wp(6) }}>✦ ✦ ✦</Text>
+        <View style={{ alignItems: 'center', marginVertical: wp(16) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
+            <View style={{ width: wp(40), height: 1, backgroundColor: 'rgba(212,175,55,0.12)' }} />
+            <LixGem size={wp(12)} />
+            <View style={{ width: wp(40), height: 1, backgroundColor: 'rgba(212,175,55,0.12)' }} />
+          </View>
         </View>
         <View style={{ paddingHorizontal: wp(16) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Acheter des Lix</Text>
           {[{ n: 'Micro', p: '$0.99', l: 990, b: '', c: '#00D984' }, { n: 'Basic', p: '$4.99', l: 5240, b: '+5%', c: '#4DA6FF' }, { n: 'Standard', p: '$9.99', l: 10990, b: '+10%', c: '#9B6DFF', best: true }, { n: 'Mega', p: '$29.99', l: 35990, b: '+20%', c: '#D4AF37' }, { n: 'Ultra', p: '$99.99', l: 129990, b: '+30%', c: '#D4AF37', ultra: true }].map((pk, i) => (
-            <Pressable key={i} delayPressIn={120} onPress={() => showLixAlert('Achat ' + pk.n, pk.p + ' → ' + pk.l.toLocaleString('fr-FR') + ' Lix\n\nBientôt disponible.', [{ text: 'OK', style: 'cancel' }], '💎')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: pk.ultra ? 2 : pk.best ? 1.5 : 1, borderColor: pk.ultra ? '#D4AF37' : pk.best ? pk.c + '50' : pk.c + '25', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <Pressable key={i} delayPressIn={120} onPress={() => showLixAlert('Achat ' + pk.n, pk.p + ' → ' + pk.l.toLocaleString('fr-FR') + ' Lix\n\nBientôt disponible.', [{ text: 'OK', style: 'cancel' }], '💎')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: pk.ultra ? 2 : pk.best ? 1.5 : 1, borderColor: pk.ultra ? '#D4AF37' : pk.best ? pk.c + '50' : pk.c + '25', ...(pk.ultra ? { shadowColor: '#D4AF37', shadowOpacity: 0.3, shadowRadius: wp(8), elevation: 4 } : {}), transform: [{ scale: pressed ? 0.97 : 1 }] })}>
               <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: pk.c + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}><LixGem size={wp(22)} /></View>
               <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), flexWrap: 'wrap' }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{pk.n}</Text>{pk.b ? <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37' }}>{pk.b}</Text></View> : null}</View><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{pk.l.toLocaleString('fr-FR')} Lix</Text>{pk.best ? <View style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(2), marginTop: wp(3), alignSelf: 'flex-start' }}><Text style={{ fontSize: fp(7), fontWeight: '800', color: '#00D984' }}>MEILLEUR RAPPORT</Text></View> : null}</View>
               <View style={{ backgroundColor: pk.c + '20', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}><Text style={{ fontSize: fp(13), fontWeight: '700', color: pk.c }}>{pk.p}</Text></View>
@@ -3380,7 +3415,47 @@ export default function LixVersePage() {
         <View style={{ paddingHorizontal: wp(16), marginTop: wp(24) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Recharger énergie</Text>
           {[{ n: 'Mini', e: 30, l: 300, d: 'Recharge légère', emoji: '⚡', c: '#FFB800' }, { n: 'Standard', e: 80, l: 700, d: 'Recharge quotidienne', emoji: '⚡', c: '#FF8C42', best: true }, { n: 'XL', e: 200, l: 1500, d: 'Recharge complète', emoji: '🔋', c: '#FF6B6B' }].map((pk, i) => (
-            <Pressable key={i} delayPressIn={120} onPress={() => { if (lixBalance < pk.l) { showLixAlert('Lix insuffisants', 'Il faut ' + pk.l + ' Lix pour cette recharge.', [{ text: 'Fermer', style: 'cancel' }], '⚡'); return; } setLixBalance(p => p - pk.l); showLixAlert('Rechargé', '+' + pk.e + ' énergie ajoutée !', [{ text: 'Super', color: '#00D984' }], '⚡'); }} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(12), borderRadius: wp(12), marginBottom: wp(6), backgroundColor: pk.best ? 'rgba(255,140,66,0.08)' : 'rgba(255,255,255,0.03)', borderWidth: pk.best ? 1.5 : 1, borderColor: pk.best ? (pk.c || '#00D984') + '40' : 'rgba(255,255,255,0.08)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <Pressable key={i} delayPressIn={120} onPress={() => {
+              if (lixBalance < pk.l) {
+                showLixAlert('Lix insuffisants', 'Il faut ' + pk.l + ' Lix pour cette recharge.\n\nTon solde : ' + lixBalance + ' Lix', [{ text: 'Fermer', style: 'cancel' }], '⚡');
+                return;
+              }
+              showLixAlert(
+                '⚡ Confirmer la recharge ?',
+                '+' + pk.e + ' énergie pour ' + pk.l + ' Lix\n\nTon solde après : ' + (lixBalance - pk.l).toLocaleString('fr-FR') + ' Lix',
+                [
+                  {
+                    text: 'Confirmer',
+                    color: '#00D984',
+                    onPress: async () => {
+                      setLixBalance(p => p - pk.l);
+                      setUserEnergy(p => p + pk.e);
+                      // Sauvegarder en DB
+                      try {
+                        await fetch(SUPABASE_URL + '/rest/v1/rpc/recharge_energy_with_lix', {
+                          method: 'POST',
+                          headers: POST_HEADERS,
+                          body: JSON.stringify({ p_user_id: TEST_USER_ID, p_lix_cost: pk.l, p_energy_amount: pk.e }),
+                        });
+                      } catch (e) {
+                        // Fallback : update direct
+                        fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, {
+                          method: 'PATCH',
+                          headers: POST_HEADERS,
+                          body: JSON.stringify({
+                            lix_balance: lixBalance - pk.l,
+                            energy: userEnergy + pk.e,
+                          }),
+                        }).catch(() => {});
+                      }
+                      showLixAlert('Rechargé', '+' + pk.e + ' énergie ajoutée !\n\nNouveau solde : ' + (lixBalance - pk.l).toLocaleString('fr-FR') + ' Lix', [{ text: 'Super', color: '#00D984' }], '⚡');
+                    },
+                  },
+                  { text: 'Annuler', style: 'cancel' },
+                ],
+                '⚡'
+              );
+            }} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(12), borderRadius: wp(12), marginBottom: wp(6), backgroundColor: pk.best ? 'rgba(255,140,66,0.08)' : 'rgba(255,255,255,0.03)', borderWidth: pk.best ? 1.5 : 1, borderColor: pk.best ? (pk.c || '#00D984') + '40' : 'rgba(255,255,255,0.08)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
               <Text style={{ fontSize: fp(14), marginRight: wp(10) }}>{pk.emoji || '⚡'}</Text>
               <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
   <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>+{pk.e} énergie</Text>
