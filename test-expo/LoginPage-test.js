@@ -5,19 +5,21 @@
 // Memes dependances que WelcomePage-test.js et RegisterPage-test.js
 
 import React, { useState } from 'react';
+// === POLISH v1 — Alert supprimé, Modal + ActivityIndicator ajoutés ===
 import {
   View,
   Text,
   TextInput,
   Image,
   TouchableOpacity,
-  Alert,
   Dimensions,
   Platform,
   StatusBar,
   KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -46,6 +48,10 @@ var C = {
   error: '#FF4D4D',
 };
 
+// === POLISH v1 — Supabase config ===
+var SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
+
 // ============================================================
 // TRADUCTIONS
 // ============================================================
@@ -66,6 +72,16 @@ var texts = {
     errorEmpty: 'Veuillez remplir email et mot de passe (8 caract\u00e8res min)',
     successTitle: 'Connexion simul\u00e9e',
     successMsg: 'Bienvenue sur LIXUM !',
+    // === POLISH v1 — Traductions ajoutées ===
+    googleRedirect: 'Tu vas \u00eatre redirig\u00e9 vers Google pour te connecter.',
+    loginSuccess: 'Connexion r\u00e9ussie. Redirection...',
+    welcome: 'Bienvenue !',
+    connectionError: 'Probl\u00e8me de connexion. V\u00e9rifie ton internet.',
+    continueBtn: 'Continuer',
+    googleError: 'Erreur Google',
+    invalidLogin: 'Email ou mot de passe incorrect.',
+    emailNotConfirmed: 'V\u00e9rifie ton email pour confirmer ton compte.',
+    tooManyRequests: 'Trop de tentatives. R\u00e9essaie dans quelques minutes.',
   },
   en: {
     title: 'Sign In',
@@ -82,6 +98,16 @@ var texts = {
     errorEmpty: 'Please fill email and password (8 chars min)',
     successTitle: 'Login simulated',
     successMsg: 'Welcome to LIXUM!',
+    // === POLISH v1 — Traductions ajoutées ===
+    googleRedirect: 'You will be redirected to Google to sign in.',
+    loginSuccess: 'Login successful. Redirecting...',
+    welcome: 'Welcome!',
+    connectionError: 'Connection problem. Check your internet.',
+    continueBtn: 'Continue',
+    googleError: 'Google Error',
+    invalidLogin: 'Invalid email or password.',
+    emailNotConfirmed: 'Check your email to confirm your account.',
+    tooManyRequests: 'Too many attempts. Please retry in a few minutes.',
   },
 };
 
@@ -180,27 +206,176 @@ export default function App() {
   var _loading = useState(false);
   var loading = _loading[0]; var setLoading = _loading[1];
 
+  // === POLISH v1 — Custom modal replaces Alert.alert ===
+  var _lixAlert = useState({ visible: false, title: '', message: '', emoji: '', buttons: [] });
+  var lixAlert = _lixAlert[0]; var setLixAlert = _lixAlert[1];
+
+  var showLixAlert = function(title, message, buttons, emoji) {
+    setLixAlert({ visible: true, title: title, message: message, emoji: emoji || '', buttons: buttons || [] });
+  };
+  var hideLixAlert = function() {
+    setLixAlert(function(prev) { return Object.assign({}, prev, { visible: false }); });
+  };
+
   var t = texts[lang];
 
-  var handleLogin = function () {
+  // === POLISH v1 — Login email LIVE via Supabase ===
+  var handleLogin = function() {
     if (!email || password.length < 8) {
-      Alert.alert(t.errorTitle, t.errorEmpty);
+      showLixAlert(t.errorTitle, t.errorEmpty, [{ text: 'OK', style: 'cancel' }], '\u26a0\ufe0f');
       return;
     }
     setLoading(true);
-    setTimeout(function () {
+
+    fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        password: password,
+      }),
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
       setLoading(false);
-      Alert.alert(t.successTitle, t.successMsg);
-    }, 1200);
+      if (data.error) {
+        var errorMsg = data.error_description || data.msg || data.error;
+        // Traduire les erreurs courantes
+        if (lang === 'fr') {
+          if (errorMsg.includes('Invalid login')) errorMsg = t.invalidLogin;
+          else if (errorMsg.includes('Email not confirmed')) errorMsg = t.emailNotConfirmed;
+          else if (errorMsg.includes('too many requests')) errorMsg = t.tooManyRequests;
+        }
+        showLixAlert(
+          t.errorTitle,
+          errorMsg,
+          [{ text: 'OK', style: 'cancel' }],
+          '\u274c'
+        );
+      } else if (data.access_token) {
+        // Succès — stocker le token et naviguer
+        showLixAlert(
+          t.welcome,
+          t.loginSuccess,
+          [{
+            text: t.continueBtn,
+            color: '#00D984',
+            onPress: function() {
+              // TODO: Sauvegarder data.access_token + data.refresh_token
+              // TODO: Naviguer vers Dashboard
+              // AsyncStorage.setItem('supabase_token', data.access_token);
+              console.log('Login success, user:', data.user?.id);
+            }
+          }],
+          '\u2705'
+        );
+      }
+    })
+    .catch(function(err) {
+      setLoading(false);
+      showLixAlert(
+        t.errorTitle,
+        t.connectionError,
+        [{ text: 'OK', style: 'cancel' }],
+        '\ud83d\udce1'
+      );
+    });
   };
 
-  var handleGoogleLogin = function () {
-    Alert.alert(
-      'Google Auth',
-      lang === 'fr'
-        ? 'L\'authentification Google sera connect\u00e9e \u00e0 Supabase.'
-        : 'Google authentication will be connected to Supabase.'
-    );
+  // === POLISH v1 — Google Auth avec fallback Snack ===
+  var handleGoogleLogin = function() {
+    setLoading(true);
+
+    try {
+      // Tenter le flow OAuth complet
+      var WebBrowser = require('expo-web-browser');
+      var AuthSession = require('expo-auth-session');
+
+      var redirectUrl = AuthSession.makeRedirectUri({
+        scheme: 'lixum',
+        path: 'auth/callback',
+      });
+
+      var authUrl = SUPABASE_URL + '/auth/v1/authorize?' +
+        'provider=google' +
+        '&redirect_to=' + encodeURIComponent(redirectUrl);
+
+      WebBrowser.openAuthSessionAsync(authUrl, redirectUrl)
+        .then(function(result) {
+          setLoading(false);
+
+          if (result.type === 'success' && result.url) {
+            // Extraire les tokens de l'URL de retour
+            var url = result.url;
+            var hashPart = url.split('#')[1] || '';
+            var params = {};
+            hashPart.split('&').forEach(function(pair) {
+              var parts = pair.split('=');
+              if (parts[0] && parts[1]) params[parts[0]] = decodeURIComponent(parts[1]);
+            });
+
+            if (params.access_token) {
+              showLixAlert(
+                t.welcome,
+                lang === 'fr' ? 'Connexion Google r\u00e9ussie !' : 'Google login successful!',
+                [{
+                  text: t.continueBtn,
+                  color: '#00D984',
+                  onPress: function() {
+                    // TODO: Sauvegarder params.access_token + params.refresh_token
+                    // TODO: Naviguer vers Dashboard
+                    console.log('Google login success, token:', params.access_token?.slice(0, 20) + '...');
+                  }
+                }],
+                '\u2705'
+              );
+            } else if (params.error_description) {
+              showLixAlert(
+                t.googleError,
+                decodeURIComponent(params.error_description),
+                [{ text: 'OK', style: 'cancel' }],
+                '\u274c'
+              );
+            }
+          } else if (result.type === 'cancel' || result.type === 'dismiss') {
+            // L'utilisateur a fermé le navigateur — pas d'erreur à afficher
+          }
+        })
+        .catch(function(err) {
+          setLoading(false);
+          showLixAlert(
+            t.errorTitle,
+            lang === 'fr'
+              ? 'Impossible d\'ouvrir l\'authentification Google. V\u00e9rifie ta connexion.'
+              : 'Unable to open Google authentication. Check your connection.',
+            [{ text: 'OK', style: 'cancel' }],
+            '\ud83d\udce1'
+          );
+        });
+    } catch (e) {
+      setLoading(false);
+      // Fallback Snack Expo : ouvrir le lien dans le navigateur via Linking
+      var Linking = require('react-native').Linking;
+      var authUrl = SUPABASE_URL + '/auth/v1/authorize?provider=google&redirect_to=' +
+        encodeURIComponent('https://yuhordnzfpcswztujovi.supabase.co');
+
+      showLixAlert(
+        'Google Auth',
+        t.googleRedirect,
+        [
+          {
+            text: lang === 'fr' ? 'Ouvrir Google' : 'Open Google',
+            color: '#4285F4',
+            onPress: function() { Linking.openURL(authUrl); }
+          },
+          { text: lang === 'fr' ? 'Annuler' : 'Cancel', style: 'cancel' }
+        ],
+        '\ud83d\udd10'
+      );
+    }
   };
 
   return (
@@ -358,8 +533,9 @@ export default function App() {
                         backgroundColor: 'rgba(0,217,132,0.03)',
                         borderTopLeftRadius: 12, borderTopRightRadius: 12,
                       }} />
+                      {/* === POLISH v1 — ActivityIndicator remplace "..." === */}
                       {loading ? (
-                        <Text style={{ color: C.emerald, fontSize: 15, fontWeight: '700' }}>...</Text>
+                        <ActivityIndicator size="small" color={C.emerald} />
                       ) : (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Ionicons name="log-in-outline" size={18} color={C.emerald} />
@@ -394,11 +570,14 @@ export default function App() {
               </View>
 
               {/* BOUTON RETOUR */}
+              {/* === POLISH v1 — Bouton Retour showLixAlert === */}
               <TouchableOpacity
                 onPress={function () {
-                  Alert.alert(
-                    'Navigation',
-                    lang === 'fr' ? 'Retour vers la page d\'accueil' : 'Back to welcome page'
+                  showLixAlert(
+                    lang === 'fr' ? 'Navigation' : 'Navigation',
+                    lang === 'fr' ? 'Retour vers la page d\'accueil' : 'Back to welcome page',
+                    [{ text: 'OK', style: 'cancel' }],
+                    '\u21a9\ufe0f'
                   );
                 }}
                 style={{
@@ -412,6 +591,65 @@ export default function App() {
 
             </ScrollView>
           </KeyboardAvoidingView>
+
+          {/* === POLISH v1 — Modal LIXUM Custom (remplace Alert.alert Android) === */}
+          <Modal visible={lixAlert.visible} transparent animationType="fade" onRequestClose={hideLixAlert}>
+            <View style={{
+              flex: 1, backgroundColor: 'rgba(0,0,0,0.7)',
+              justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24,
+            }}>
+              <LinearGradient colors={['#1E2530', '#161C26', '#121820']}
+                style={{ borderRadius: 20, paddingHorizontal: 24, paddingVertical: 28, width: '100%', alignItems: 'center' }}>
+
+                {lixAlert.emoji ? (
+                  <Text style={{ fontSize: 36, marginBottom: 12 }}>{lixAlert.emoji}</Text>
+                ) : null}
+
+                <Text style={{
+                  fontSize: 18, fontWeight: '700', color: '#EAEEF3',
+                  textAlign: 'center', marginBottom: 8,
+                }}>{lixAlert.title}</Text>
+
+                <Text style={{
+                  fontSize: 13, color: 'rgba(255,255,255,0.5)',
+                  textAlign: 'center', lineHeight: 19, marginBottom: 20,
+                }}>{lixAlert.message}</Text>
+
+                {lixAlert.buttons.map(function(btn, i) {
+                  var isCancel = btn.style === 'cancel';
+                  var btnColor = btn.color || (isCancel ? 'rgba(255,255,255,0.4)' : '#00D984');
+                  return (
+                    <TouchableOpacity key={i}
+                      onPress={function() { hideLixAlert(); if (btn.onPress) btn.onPress(); }}
+                      activeOpacity={0.7}
+                      style={{
+                        width: '100%', paddingVertical: 14, borderRadius: 14,
+                        alignItems: 'center', marginBottom: 6,
+                        backgroundColor: isCancel ? 'transparent' : btnColor + '20',
+                        borderWidth: isCancel ? 1 : 0,
+                        borderColor: isCancel ? 'rgba(255,255,255,0.1)' : 'transparent',
+                      }}>
+                      <Text style={{
+                        fontSize: 15,
+                        fontWeight: isCancel ? '500' : '700',
+                        color: btnColor,
+                      }}>{btn.text}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+
+                {lixAlert.buttons.length === 0 ? (
+                  <TouchableOpacity onPress={hideLixAlert}
+                    style={{
+                      paddingVertical: 14, width: '100%', alignItems: 'center',
+                      borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                    }}>
+                    <Text style={{ fontSize: 15, fontWeight: '500', color: 'rgba(255,255,255,0.4)' }}>OK</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </LinearGradient>
+            </View>
+          </Modal>
 
         </SafeAreaView>
       </View>
