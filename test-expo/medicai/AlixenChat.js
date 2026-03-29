@@ -1,14 +1,196 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, Image, Animated, Pressable,
+  TouchableOpacity, Linking, Platform, Easing,
 } from 'react-native';
 import Svg, {
   Defs, Rect, Path, Circle, Ellipse, Line,
   LinearGradient as SvgLinearGradient, Stop,
+  Polyline as SvgPolyline,
 } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
 import { FormattedText, FormattedResponseText, parseQuickReplies, QuickReplyButtons, ScrollArrow } from './shared';
+
+// === ALIXEN SUPER CONTEXT v1 — Direction Parser ===
+export const parseDirectionBlocks = (text) => {
+  if (!text) return [{ type: 'text', content: text }];
+  const directionRegex = /\[DIRECTION\]\s*(\{[\s\S]*?\})\s*\[\/DIRECTION\]/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = directionRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+    }
+    try {
+      const data = JSON.parse(match[1]);
+      parts.push({ type: 'direction', data });
+    } catch (e) {
+      parts.push({ type: 'text', content: match[0] });
+    }
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  }
+
+  return parts.length > 0 ? parts : [{ type: 'text', content: text }];
+};
+
+// === ALIXEN SUPER CONTEXT v1 — DirectionCard Component ===
+export const DirectionCard = ({ placeName, placeAddress, description, destLat, destLng, userLat, userLng }) => {
+  const animProgress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(animProgress, {
+      toValue: 1,
+      duration: 2000,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, []);
+
+  const cardWidth = 280;
+  const cardHeight = 160;
+  const startX = 30, startY = cardHeight - 30;
+  const endX = cardWidth - 30, endY = 30;
+  const midX = cardWidth / 2, midY = cardHeight / 2 - 20;
+
+  const pathPoints = [];
+  const steps = 20;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const x = (1 - t) * (1 - t) * startX + 2 * (1 - t) * t * midX + t * t * endX;
+    const y = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * midY + t * t * endY;
+    pathPoints.push(`${x},${y}`);
+  }
+
+  const openGoogleMaps = () => {
+    const url = Platform.select({
+      android: `google.navigation:q=${destLat},${destLng}`,
+      ios: `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=walking`,
+      default: `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${destLat},${destLng}&travelmode=walking`,
+    });
+    Linking.openURL(url).catch(() => {
+      Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`);
+    });
+  };
+
+  const [visiblePoints, setVisiblePoints] = useState(1);
+
+  useEffect(() => {
+    const listener = animProgress.addListener(({ value }) => {
+      setVisiblePoints(Math.max(1, Math.floor(value * pathPoints.length)));
+    });
+    return () => animProgress.removeListener(listener);
+  }, []);
+
+  return (
+    <View style={{
+      backgroundColor: '#1a1f2e',
+      borderRadius: 16,
+      padding: 12,
+      marginVertical: 8,
+      width: cardWidth + 24,
+      borderWidth: 1,
+      borderColor: 'rgba(46, 204, 113, 0.3)',
+    }}>
+      {/* Mini carte avec animation du trajet */}
+      <View style={{
+        width: cardWidth,
+        height: cardHeight,
+        backgroundColor: '#0d1117',
+        borderRadius: 12,
+        overflow: 'hidden',
+      }}>
+        <Svg width={cardWidth} height={cardHeight}>
+          {/* Grille de fond style carte */}
+          {[...Array(8)].map((_, i) => (
+            <SvgPolyline
+              key={`grid-h-${i}`}
+              points={`0,${i * 20} ${cardWidth},${i * 20}`}
+              stroke="rgba(46, 204, 113, 0.06)"
+              strokeWidth="0.5"
+            />
+          ))}
+          {[...Array(15)].map((_, i) => (
+            <SvgPolyline
+              key={`grid-v-${i}`}
+              points={`${i * 20},0 ${i * 20},${cardHeight}`}
+              stroke="rgba(46, 204, 113, 0.06)"
+              strokeWidth="0.5"
+            />
+          ))}
+
+          {/* Chemin animé */}
+          <SvgPolyline
+            points={pathPoints.slice(0, visiblePoints).join(' ')}
+            fill="none"
+            stroke="#2ecc71"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {/* Point de départ (bleu) */}
+          <Circle cx={startX} cy={startY} r="6" fill="#3498db" />
+          <Circle cx={startX} cy={startY} r="3" fill="#fff" />
+
+          {/* Point d'arrivée (vert) — visible quand animation terminée */}
+          {visiblePoints >= pathPoints.length && (
+            <>
+              <Circle cx={endX} cy={endY} r="6" fill="#2ecc71" />
+              <Circle cx={endX} cy={endY} r="3" fill="#fff" />
+            </>
+          )}
+        </Svg>
+
+        {/* Labels sur la carte */}
+        <View style={{ position: 'absolute', bottom: 8, left: 8 }}>
+          <Text style={{ color: '#3498db', fontSize: 9, fontWeight: '700' }}>{'📍 Vous'}</Text>
+        </View>
+        {visiblePoints >= pathPoints.length && (
+          <View style={{ position: 'absolute', top: 8, right: 8 }}>
+            <Text style={{ color: '#2ecc71', fontSize: 9, fontWeight: '700' }} numberOfLines={1}>{'🏪 '}{placeName}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Infos du lieu */}
+      <View style={{ marginTop: 10 }}>
+        <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{placeName}</Text>
+        <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginTop: 2 }}>{placeAddress}</Text>
+        {description ? (
+          <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, marginTop: 4, fontStyle: 'italic' }}>
+            {description}
+          </Text>
+        ) : null}
+      </View>
+
+      {/* Bouton ouvrir Google Maps */}
+      <TouchableOpacity
+        onPress={openGoogleMaps}
+        activeOpacity={0.8}
+        style={{
+          marginTop: 10,
+          backgroundColor: '#2ecc71',
+          borderRadius: 10,
+          paddingVertical: 10,
+          alignItems: 'center',
+          flexDirection: 'row',
+          justifyContent: 'center',
+          gap: 6,
+        }}
+      >
+        <Text style={{ fontSize: 16 }}>{'🗺️'}</Text>
+        <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Ouvrir dans Google Maps</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 export const LoadingSteps = ({ steps }) => {
   const [stepIndex, setStepIndex] = useState(0);
@@ -156,7 +338,8 @@ export const FileQueuePreview = ({ files, onRemove }) => {
   );
 };
 
-export const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuickReply, onPreciserPress, loadingSteps }) => {
+// === ALIXEN SUPER CONTEXT v1 — ResponseCard with DirectionCard support ===
+export const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuickReply, onPreciserPress, loadingSteps, userLocation }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [displayedText, setDisplayedText] = useState('');
 
@@ -254,10 +437,46 @@ export const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuick
         return (
           <>
             {isTypingDone && !isUserMessage ? (
-              <FormattedResponseText
-                text={cleanText}
-                style={{ color: '#3A4550', fontSize: 13, lineHeight: fp(22) }}
-              />
+              // === ALIXEN SUPER CONTEXT v1 — Render DirectionCards inline ===
+              (() => {
+                const dirParts = parseDirectionBlocks(cleanText);
+                const hasDirections = dirParts.some(p => p.type === 'direction');
+                if (hasDirections) {
+                  return (
+                    <View>
+                      {dirParts.map((part, pi) => {
+                        if (part.type === 'direction') {
+                          return (
+                            <DirectionCard
+                              key={`dir-${pi}`}
+                              placeName={part.data.place_name}
+                              placeAddress={part.data.place_address}
+                              description={part.data.description}
+                              destLat={part.data.dest_lat}
+                              destLng={part.data.dest_lng}
+                              userLat={userLocation?.lat}
+                              userLng={userLocation?.lng}
+                            />
+                          );
+                        }
+                        return (
+                          <FormattedResponseText
+                            key={`txt-${pi}`}
+                            text={part.content}
+                            style={{ color: '#3A4550', fontSize: 13, lineHeight: fp(22) }}
+                          />
+                        );
+                      })}
+                    </View>
+                  );
+                }
+                return (
+                  <FormattedResponseText
+                    text={cleanText}
+                    style={{ color: '#3A4550', fontSize: 13, lineHeight: fp(22) }}
+                  />
+                );
+              })()
             ) : (
               <Text style={{ color: '#3A4550', fontSize: 13, lineHeight: fp(22) }}>
                 {cleanText}
@@ -627,7 +846,8 @@ export const countOccurrences = (text, term) => {
   return count;
 };
 
-export const ModalScrollContent = ({ selectedMessage, closeModal, handleRecipePress, searchTerm, onQuickReply, onPreciserPress }) => {
+// === ALIXEN SUPER CONTEXT v1 — ModalScrollContent with DirectionCard support ===
+export const ModalScrollContent = ({ selectedMessage, closeModal, handleRecipePress, searchTerm, onQuickReply, onPreciserPress, userLocation }) => {
   const [isScrollable, setIsScrollable] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(false);
   const [currentHighlightIndex, setCurrentHighlightIndex] = useState(0);
@@ -721,11 +941,48 @@ export const ModalScrollContent = ({ selectedMessage, closeModal, handleRecipePr
             onLayoutOccurrence={handleLayoutOccurrence}
           />
         ) : selectedMessage.role === 'assistant' ? (
-          <FormattedText
-            text={selectedMessage.content}
-            style={{ color: '#3A4550', fontSize: 13, lineHeight: 21 }}
-            onRecipePress={(name) => { closeModal(); handleRecipePress(name); }}
-          />
+          // === ALIXEN SUPER CONTEXT v1 — Direction blocks in modal ===
+          (() => {
+            const dirParts = parseDirectionBlocks(selectedMessage.content);
+            const hasDirections = dirParts.some(p => p.type === 'direction');
+            if (hasDirections) {
+              return (
+                <View>
+                  {dirParts.map((part, pi) => {
+                    if (part.type === 'direction') {
+                      return (
+                        <DirectionCard
+                          key={`mdir-${pi}`}
+                          placeName={part.data.place_name}
+                          placeAddress={part.data.place_address}
+                          description={part.data.description}
+                          destLat={part.data.dest_lat}
+                          destLng={part.data.dest_lng}
+                          userLat={userLocation?.lat}
+                          userLng={userLocation?.lng}
+                        />
+                      );
+                    }
+                    return (
+                      <FormattedText
+                        key={`mtxt-${pi}`}
+                        text={part.content}
+                        style={{ color: '#3A4550', fontSize: 13, lineHeight: 21 }}
+                        onRecipePress={(name) => { closeModal(); handleRecipePress(name); }}
+                      />
+                    );
+                  })}
+                </View>
+              );
+            }
+            return (
+              <FormattedText
+                text={selectedMessage.content}
+                style={{ color: '#3A4550', fontSize: 13, lineHeight: 21 }}
+                onRecipePress={(name) => { closeModal(); handleRecipePress(name); }}
+              />
+            );
+          })()
         ) : (
           <FormattedResponseText
             text={selectedMessage.content}
