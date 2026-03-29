@@ -950,8 +950,6 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
 
   const coreSize = size * 0.50;
   const innerRingSize = size * 0.72;
-  const displayValue = Math.round(value).toString();
-
   const svgPad = 8;
   const outerSvgSize = size + svgPad * 2;
   const svgPadInner = 6;
@@ -1008,15 +1006,35 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
           transform: [{ rotate: outerRotation }],
         }}>
           <Svg width={size + 20} height={size + 20} viewBox={`0 0 ${size + 20} ${size + 20}`}>
+            <Defs>
+              <SvgLinearGradient id={`reactor_${label.replace(/\s/g, '_')}_outer`} x1="0.5" y1="0" x2="0.5" y2="1">
+                <Stop offset="0%" stopColor={colorLight} />
+                <Stop offset="100%" stopColor={color} />
+              </SvgLinearGradient>
+              <SvgLinearGradient id={`reactor_${label.replace(/\s/g, '_')}_inner`} x1="0.5" y1="0" x2="0.5" y2="1">
+                <Stop offset="0%" stopColor={colorLight} stopOpacity={0.6} />
+                <Stop offset="100%" stopColor={colorDark} stopOpacity={0.3} />
+              </SvgLinearGradient>
+            </Defs>
+            {/* Cercle externe — gradient, dash large */}
             <Circle cx={(size + 20) / 2} cy={(size + 20) / 2} r={size / 2 - 2}
-              fill="none" stroke={color} strokeWidth={1} strokeOpacity={0.2}
-              strokeDasharray={`${size * 0.1} ${size * 0.05}`}
+              fill="none" stroke={`url(#reactor_${label.replace(/\s/g, '_')}_outer)`}
+              strokeWidth={1.5} strokeOpacity={0.6}
+              strokeDasharray="6 3"
             />
-            {/* Satellite objectif — VERT, réduit */}
-            <Circle cx={(size + 20) / 2} cy={10} r={3} fill="#00D984" />
-            <Circle cx={(size + 20) / 2} cy={10} r={5} fill="#00D984" opacity={0.2} />
-            {/* Satellite secondaire — couleur du réacteur, petit et discret */}
-            <Circle cx={(size + 20) / 2} cy={size + 10} r={1.5} fill={color} opacity={0.3} />
+            {/* Cercle interne — même centre, rayon réduit, dash fin */}
+            <Circle cx={(size + 20) / 2} cy={(size + 20) / 2} r={size / 2 - 9}
+              fill="none" stroke={color}
+              strokeWidth={0.8} strokeOpacity={0.3}
+              strokeDasharray="4 2"
+            />
+            {/* Satellite objectif — VERT avec halo premium */}
+            <Circle cx={(size + 20) / 2} cy={10} r={2.5} fill="#00D984" />
+            <Circle cx={(size + 20) / 2} cy={10} r={5} fill="#00D984" opacity={0.15} />
+            <Circle cx={(size + 20) / 2} cy={10} r={8} fill="#00D984" opacity={0.06} />
+            {/* Satellite secondaire — halo premium */}
+            <Circle cx={(size + 20) / 2} cy={size + 10} r={2} fill={colorLight} opacity={0.6} />
+            <Circle cx={(size + 20) / 2} cy={size + 10} r={4} fill={colorLight} opacity={0.12} />
           </Svg>
         </RNAnimated.View>
 
@@ -1030,11 +1048,21 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
           transform: [{ rotate: innerRotation }],
         }}>
           <Svg width={innerRingSize + 12} height={innerRingSize + 12} viewBox={`0 0 ${innerRingSize + 12} ${innerRingSize + 12}`}>
+            <Defs>
+              <SvgLinearGradient id={`reactor_${label.replace(/\s/g, '_')}_inner_i`} x1="0.5" y1="0" x2="0.5" y2="1">
+                <Stop offset="0%" stopColor={colorLight} stopOpacity={0.6} />
+                <Stop offset="100%" stopColor={colorDark} stopOpacity={0.3} />
+              </SvgLinearGradient>
+            </Defs>
+            {/* Cercle orbit interne — gradient */}
             <Circle cx={(innerRingSize + 12) / 2} cy={(innerRingSize + 12) / 2} r={innerRingSize / 2 - 2}
-              fill="none" stroke={color} strokeWidth={0.8} strokeOpacity={0.15}
-              strokeDasharray={`${innerRingSize * 0.08} ${innerRingSize * 0.04}`}
+              fill="none" stroke={`url(#reactor_${label.replace(/\s/g, '_')}_inner_i)`}
+              strokeWidth={0.8} strokeOpacity={0.4}
+              strokeDasharray="4 2"
             />
-            <Circle cx={(innerRingSize + 12) / 2} cy={6} r={2.5} fill={colorLight} opacity={0.7} />
+            {/* Satellite interne — halo premium */}
+            <Circle cx={(innerRingSize + 12) / 2} cy={6} r={2} fill={colorLight} opacity={0.8} />
+            <Circle cx={(innerRingSize + 12) / 2} cy={6} r={4.5} fill={colorLight} opacity={0.15} />
           </Svg>
         </RNAnimated.View>
 
@@ -1047,19 +1075,30 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
           shadowColor: color, shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.35, shadowRadius: 10, elevation: 5,
         }}>
-          <Text
-            numberOfLines={1}
-            adjustsFontSizeToFit={true}
-            minimumFontScale={0.6}
-            style={{
-              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: coreSize * 0.30, fontWeight: '900', color: '#EAEEF3',
-              textAlign: 'center',
-              textShadowColor: color, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6,
-            }}
-          >
-            {displayValue}
-          </Text>
+          {/* Remplissage central subtil */}
+          <View style={{
+            position: 'absolute',
+            width: coreSize * 0.85,
+            height: coreSize * 0.85,
+            borderRadius: coreSize * 0.425,
+            backgroundColor: color,
+            opacity: 0.08,
+          }} />
+          {/* Icône énergie au centre — petit éclair SVG */}
+          <Svg width={coreSize * 0.45} height={coreSize * 0.55} viewBox="0 0 14 18">
+            <Path
+              d="M8 1L2 10h4.5L5 17l7-10H7.5L8 1z"
+              fill={color}
+              opacity={0.7}
+            />
+            <Path
+              d="M8 1L2 10h4.5L5 17l7-10H7.5L8 1z"
+              fill="none"
+              stroke={colorLight}
+              strokeWidth={0.5}
+              opacity={0.4}
+            />
+          </Svg>
         </View>
 
       </View>
@@ -2202,6 +2241,13 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           }}>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+              fontSize: fp(11),
+              fontWeight: '700',
+              color: '#FF8C42',
+              marginBottom: wp(1),
+            }}>{consumedTotal.toLocaleString('fr-FR')} kcal</Text>
+            <Text style={{
+              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
               fontSize: fp(15),
               fontWeight: '800',
               color: '#FF8C42',
@@ -2251,6 +2297,13 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               ? (tooltipStep === 4 ? pulseOpacity : 1)
               : 0.05,
           }}>
+            <Text style={{
+              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+              fontSize: fp(11),
+              fontWeight: '700',
+              color: '#4DA6FF',
+              marginBottom: wp(1),
+            }}>{remaining.toLocaleString('fr-FR')} kcal</Text>
             <Text style={{
               fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
               fontSize: fp(15),
