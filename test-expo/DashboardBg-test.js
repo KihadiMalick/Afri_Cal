@@ -1951,7 +1951,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                       }}>
                         {/* MODE NORMAL */}
                         {deleteConfirmIdx !== i ? (
-                          <>
+                          <React.Fragment>
                             <Text style={{ fontSize: 18, width: 28 }}>{log.icon || '💧'}</Text>
                             <View style={{ flex: 1, marginLeft: 8 }}>
                               <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '600' }}>{log.type || 'eau'}</Text>
@@ -1970,9 +1970,8 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                             >
                               <Text style={{ color: '#8892A0', fontSize: 10 }}>🗑</Text>
                             </Pressable>
-                          </>
+                          </React.Fragment>
                         ) : (
-                          /* MODE CONFIRMATION */
                           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                             <Text style={{ color: '#FF6B6B', fontSize: 12, fontWeight: '600', flex: 1 }}>
                               Supprimer +{log.amount}ml {log.type || 'eau'} ?
@@ -2187,7 +2186,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                             <Text style={{ color: '#555E6C', fontSize: 13, marginTop: 12 }}>Chargement de l'historique...</Text>
                           </View>
                         ) : (
-                          <>
+                          <React.Fragment>
                             {/* Bandeau accès 24h restant */}
                             {isUnlockedByLix && isUnlockedByLix(historyUnlockedUntil) && !(hasActivePower && hasActivePower('modal_inline')) && (
                               <View style={{ backgroundColor: 'rgba(212,175,55,0.06)', borderRadius: wp(10), padding: wp(8), marginBottom: wp(12), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(6) }}>
@@ -2333,7 +2332,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                                 );
                               })}
                             </View>
-                          </>
+                          </React.Fragment>
                         )}
                       </View>
                     )}
@@ -3129,10 +3128,10 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           fontWeight: '500',
         }}>
           {!lastMeal
-            ? <>Bienvenue ! Scannez votre <Text style={{ color: '#00D984', fontWeight: '700' }}>premier repas</Text> pour activer le suivi.</>
+            ? <Text>Bienvenue ! Scannez votre <Text style={{ color: '#00D984', fontWeight: '700' }}>premier repas</Text> pour activer le suivi.</Text>
             : consumedTotal < OBJECTIVE
-              ? <>Déficit de <Text style={{ color: '#FF8C42', fontWeight: '700' }}>{OBJECTIVE - consumedTotal + burnedTotal} kcal</Text> — bonne stratégie pour la <Text style={{ color: '#00D984', fontWeight: '700' }}>perte de poids</Text> !</>
-              : <>Surplus de <Text style={{ color: '#FF3B30', fontWeight: '700' }}>{consumedTotal - OBJECTIVE} kcal</Text> — pensez à une <Text style={{ color: '#4DA6FF', fontWeight: '700' }}>activité physique</Text> !</>
+              ? <Text>Déficit de <Text style={{ color: '#FF8C42', fontWeight: '700' }}>{OBJECTIVE - consumedTotal + burnedTotal} kcal</Text> — bonne stratégie pour la <Text style={{ color: '#00D984', fontWeight: '700' }}>perte de poids</Text> !</Text>
+              : <Text>Surplus de <Text style={{ color: '#FF3B30', fontWeight: '700' }}>{consumedTotal - OBJECTIVE} kcal</Text> — pensez à une <Text style={{ color: '#4DA6FF', fontWeight: '700' }}>activité physique</Text> !</Text>
           }
         </Text>
 
@@ -3227,25 +3226,25 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
 
       {/* SUGGESTION ACTIVITÉ (dynamique basée sur surplus) */}
       {consumedTotal - burnedExtra > OBJECTIVE && (
-        <>
-          <MetalCard style={{
-            marginHorizontal: 0,
-            marginBottom: 12,
-            ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
-          }}>
-            <Text style={s.sectionTitle}>🏃 SUGGESTION ACTIVITÉ</Text>
-            <Text style={s.surplusText}>Surplus : +{consumedTotal - burnedExtra - OBJECTIVE} kcal</Text>
-            <View style={{ gap: 8, marginTop: 10 }}>
-              {suggestActivities(consumedTotal - burnedExtra - OBJECTIVE).slice(0, 2).map((sug, i) => (
+        <MetalCard style={{
+          marginHorizontal: 0,
+          marginBottom: 12,
+          ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
+        }}>
+          <Text style={s.sectionTitle}>🏃 SUGGESTION ACTIVITÉ</Text>
+          <Text style={s.surplusText}>Surplus : +{consumedTotal - burnedExtra - OBJECTIVE} kcal</Text>
+          <View style={{ gap: 8, marginTop: 10 }}>
+            {suggestActivities(consumedTotal - burnedExtra - OBJECTIVE).slice(0, 2).map(function(sug, i) {
+              return (
                 <View key={i} style={s.activityRow}>
                   <Text style={{ fontSize: 16 }}>{ACTIVITY_ICONS[sug.activity] || '🏃'}</Text>
                   <Text style={s.activityText}>{sug.minutesNeeded} min {ACTIVITY_LABELS[sug.activity]}</Text>
                   <Text style={s.activityKcal}>-{sug.kcalBurned} kcal</Text>
                 </View>
-              ))}
-            </View>
-          </MetalCard>
-        </>
+              );
+            })}
+          </View>
+        </MetalCard>
       )}
 
       {/* STATS AVANCÉES — FLOUTÉES */}
@@ -5152,7 +5151,7 @@ export default function App() {
                     {statsLoading ? (
                       <View style={{ alignItems: 'center', paddingTop: 60 }}><Text style={{ fontSize: 32 }}>📊</Text><Text style={{ color: '#555E6C', fontSize: 13, marginTop: 12 }}>Chargement des stats...</Text></View>
                     ) : weeklyStats ? (
-                      <>
+                      <React.Fragment>
                         {isUnlockedByLix(statsUnlockedUntil) && !hasActivePower('stats_report') && (
                           <View style={{ backgroundColor: 'rgba(212,175,55,0.06)', borderRadius: wp(10), padding: wp(8), marginBottom: wp(12), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(6) }}>
                             <Text style={{ fontSize: fp(12) }}>⏳</Text>
@@ -5198,7 +5197,7 @@ export default function App() {
                           var daysHydroOk = weeklyStats.filter(function(d) { return d.hydrationMl >= hydroGoalRef; }).length;
                           var moods = { sad: 0, chill: 0, happy: 0, excited: 0 };
                           weeklyStats.forEach(function(d) { if (d.mood && moods[d.mood] !== undefined) moods[d.mood]++; });
-                          return (<>
+                          return (<React.Fragment>
                             <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '800', letterSpacing: 2, marginBottom: 12 }}>ACTIVITÉ</Text>
                             <View style={{ backgroundColor: 'rgba(30,37,48,0.3)', borderRadius: 14, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(74,79,85,0.12)', flexDirection: 'row', justifyContent: 'space-around' }}>
                               <View style={{ alignItems: 'center' }}><Text style={{ color: '#00D984', fontSize: 16, fontWeight: '900' }}>{totalActMin}</Text><Text style={{ color: '#6B7280', fontSize: 9 }}>min / 150 OMS</Text></View>
@@ -5220,9 +5219,9 @@ export default function App() {
                               <View style={{ alignItems: 'center' }}><Text style={{ fontSize: 18 }}>😊</Text><Text style={{ color: '#4DA6FF', fontSize: 12, fontWeight: '800' }}>{moods.happy}j</Text></View>
                               <View style={{ alignItems: 'center' }}><Text style={{ fontSize: 18 }}>🤩</Text><Text style={{ color: '#D4AF37', fontSize: 12, fontWeight: '800' }}>{moods.excited}j</Text></View>
                             </View>
-                          </>);
+                          </React.Fragment>);
                         })()}
-                      </>
+                      </React.Fragment>
                     ) : null}
                   </View>
                 )}
@@ -5508,7 +5507,7 @@ export default function App() {
                   </View>
                 </View>
               ) : (
-                <>
+                <React.Fragment>
                   {/* ══════ MODE GRILLE : liste des boissons ══════ */}
                   {beverageLoading ? (
                     <View style={{ alignItems: 'center', marginTop: 60 }}>
@@ -5551,7 +5550,7 @@ export default function App() {
                       })}
                     </View>
                   )}
-                </>
+                </React.Fragment>
               )}
               <View style={{ height: 30 }} />
             </ScrollView>
