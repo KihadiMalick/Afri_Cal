@@ -1744,6 +1744,11 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
   var _deleteConfirm = useState(null);
   var deleteConfirmIdx = _deleteConfirm[0]; var setDeleteConfirmIdx = _deleteConfirm[1];
 
+  // Defensive defaults for optional props
+  var _selectedDayLogs = selectedDayLogs || [];
+  var _fetchDayHydrationLogs = fetchDayHydrationLogs || function() {};
+  var _historyData = historyData || [];
+
   const getTimeStr = () => {
     const now = new Date();
     return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -1951,7 +1956,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                       }}>
                         {/* MODE NORMAL */}
                         {deleteConfirmIdx !== i ? (
-                          <>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                             <Text style={{ fontSize: 18, width: 28 }}>{log.icon || '💧'}</Text>
                             <View style={{ flex: 1, marginLeft: 8 }}>
                               <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '600' }}>{log.type || 'eau'}</Text>
@@ -1970,9 +1975,8 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                             >
                               <Text style={{ color: '#8892A0', fontSize: 10 }}>🗑</Text>
                             </Pressable>
-                          </>
+                          </View>
                         ) : (
-                          /* MODE CONFIRMATION */
                           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                             <Text style={{ color: '#FF6B6B', fontSize: 12, fontWeight: '600', flex: 1 }}>
                               Supprimer +{log.amount}ml {log.type || 'eau'} ?
@@ -2187,7 +2191,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                             <Text style={{ color: '#555E6C', fontSize: 13, marginTop: 12 }}>Chargement de l'historique...</Text>
                           </View>
                         ) : (
-                          <>
+                          <View>
                             {/* Bandeau accès 24h restant */}
                             {isUnlockedByLix && isUnlockedByLix(historyUnlockedUntil) && !(hasActivePower && hasActivePower('modal_inline')) && (
                               <View style={{ backgroundColor: 'rgba(212,175,55,0.06)', borderRadius: wp(10), padding: wp(8), marginBottom: wp(12), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(6) }}>
@@ -2202,7 +2206,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                               borderWidth: 1, borderColor: 'rgba(77,166,255,0.1)',
                             }}>
                               <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: 140 }}>
-                                {historyData.map(function(day, i) {
+                                {_historyData.map(function(day, i) {
                                   var pct = day.goalMl > 0 ? Math.min((day.totalMl / day.goalMl) * 100, 100) : 0;
                                   var barColor = pct >= 100 ? '#00D984' : pct >= 50 ? '#4DA6FF' : '#FF8C42';
                                   var isToday = i === historyData.length - 1;
@@ -2243,10 +2247,10 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 
                             {/* ═══ STATS RÉSUMÉES ═══ */}
                             {(function() {
-                              var totalAll = historyData.reduce(function(s, d) { return s + d.totalMl; }, 0);
-                              var avg = historyData.length > 0 ? totalAll / historyData.length : 0;
-                              var best = historyData.reduce(function(b, d) { return d.totalMl > b.totalMl ? d : b; }, { totalMl: 0, dayName: '' });
-                              var daysReached = historyData.filter(function(d) { return d.totalMl >= d.goalMl; }).length;
+                              var totalAll = _historyData.reduce(function(s, d) { return s + d.totalMl; }, 0);
+                              var avg = _historyData.length > 0 ? totalAll / _historyData.length : 0;
+                              var best = _historyData.reduce(function(b, d) { return d.totalMl > b.totalMl ? d : b; }, { totalMl: 0, dayName: '' });
+                              var daysReached = _historyData.filter(function(d) { return d.totalMl >= d.goalMl; }).length;
                               return (
                                 <View style={{
                                   backgroundColor: 'rgba(30,37,48,0.3)',
@@ -2280,14 +2284,14 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                               borderRadius: 14, overflow: 'hidden',
                               borderWidth: 1, borderColor: 'rgba(74,79,85,0.12)',
                             }}>
-                              {historyData.slice().reverse().map(function(day, i, arr) {
+                              {_historyData.slice().reverse().map(function(day, i, arr) {
                                 var pct = day.goalMl > 0 ? Math.min(Math.round((day.totalMl / day.goalMl) * 100), 100) : 0;
                                 var isToday = i === 0;
                                 var barColor = pct >= 100 ? '#00D984' : pct >= 50 ? '#4DA6FF' : pct > 0 ? '#FF8C42' : '#555E6C';
                                 return (
-                                  <React.Fragment key={i}>
+                                  <View key={i}>
                                     <Pressable onPress={function() {
-                                      if (selectedHistoryDay === i) { setSelectedHistoryDay(null); } else { setSelectedHistoryDay(i); if (fetchDayHydrationLogs) fetchDayHydrationLogs(day.date); }
+                                      if (selectedHistoryDay === i) { setSelectedHistoryDay(null); } else { setSelectedHistoryDay(i); _fetchDayHydrationLogs(day.date); }
                                     }} style={{
                                       flexDirection: 'row', alignItems: 'center',
                                       paddingVertical: 12, paddingHorizontal: 14,
@@ -2310,10 +2314,10 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                                     </Pressable>
                                     {selectedHistoryDay === i && (
                                       <View style={{ backgroundColor: 'rgba(77,166,255,0.04)', paddingHorizontal: 14, paddingVertical: 8, borderBottomWidth: i < arr.length - 1 ? 1 : 0, borderBottomColor: 'rgba(74,79,85,0.1)' }}>
-                                        {(!selectedDayLogs || selectedDayLogs.length === 0) ? (
+                                        {_selectedDayLogs.length === 0 ? (
                                           <Text style={{ color: '#555E6C', fontSize: 11, textAlign: 'center', paddingVertical: 8 }}>Aucune entrée ce jour</Text>
                                         ) : (
-                                          selectedDayLogs.map(function(log, j) {
+                                          _selectedDayLogs.map(function(log, j) {
                                             var time = new Date(log.logged_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
                                             return (
                                               <View key={j} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5 }}>
@@ -2329,11 +2333,11 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                                         )}
                                       </View>
                                     )}
-                                  </React.Fragment>
+                                  </View>
                                 );
                               })}
                             </View>
-                          </>
+                          </View>
                         )}
                       </View>
                     )}
@@ -3129,10 +3133,10 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           fontWeight: '500',
         }}>
           {!lastMeal
-            ? <>Bienvenue ! Scannez votre <Text style={{ color: '#00D984', fontWeight: '700' }}>premier repas</Text> pour activer le suivi.</>
+            ? <Text>Bienvenue ! Scannez votre <Text style={{ color: '#00D984', fontWeight: '700' }}>premier repas</Text> pour activer le suivi.</Text>
             : consumedTotal < OBJECTIVE
-              ? <>Déficit de <Text style={{ color: '#FF8C42', fontWeight: '700' }}>{OBJECTIVE - consumedTotal + burnedTotal} kcal</Text> — bonne stratégie pour la <Text style={{ color: '#00D984', fontWeight: '700' }}>perte de poids</Text> !</>
-              : <>Surplus de <Text style={{ color: '#FF3B30', fontWeight: '700' }}>{consumedTotal - OBJECTIVE} kcal</Text> — pensez à une <Text style={{ color: '#4DA6FF', fontWeight: '700' }}>activité physique</Text> !</>
+              ? <Text>Déficit de <Text style={{ color: '#FF8C42', fontWeight: '700' }}>{OBJECTIVE - consumedTotal + burnedTotal} kcal</Text> — bonne stratégie pour la <Text style={{ color: '#00D984', fontWeight: '700' }}>perte de poids</Text> !</Text>
+              : <Text>Surplus de <Text style={{ color: '#FF3B30', fontWeight: '700' }}>{consumedTotal - OBJECTIVE} kcal</Text> — pensez à une <Text style={{ color: '#4DA6FF', fontWeight: '700' }}>activité physique</Text> !</Text>
           }
         </Text>
 
@@ -3227,25 +3231,25 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
 
       {/* SUGGESTION ACTIVITÉ (dynamique basée sur surplus) */}
       {consumedTotal - burnedExtra > OBJECTIVE && (
-        <>
-          <MetalCard style={{
-            marginHorizontal: 0,
-            marginBottom: 12,
-            ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
-          }}>
-            <Text style={s.sectionTitle}>🏃 SUGGESTION ACTIVITÉ</Text>
-            <Text style={s.surplusText}>Surplus : +{consumedTotal - burnedExtra - OBJECTIVE} kcal</Text>
-            <View style={{ gap: 8, marginTop: 10 }}>
-              {suggestActivities(consumedTotal - burnedExtra - OBJECTIVE).slice(0, 2).map((sug, i) => (
+        <MetalCard style={{
+          marginHorizontal: 0,
+          marginBottom: 12,
+          ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
+        }}>
+          <Text style={s.sectionTitle}>🏃 SUGGESTION ACTIVITÉ</Text>
+          <Text style={s.surplusText}>Surplus : +{consumedTotal - burnedExtra - OBJECTIVE} kcal</Text>
+          <View style={{ gap: 8, marginTop: 10 }}>
+            {suggestActivities(consumedTotal - burnedExtra - OBJECTIVE).slice(0, 2).map(function(sug, i) {
+              return (
                 <View key={i} style={s.activityRow}>
                   <Text style={{ fontSize: 16 }}>{ACTIVITY_ICONS[sug.activity] || '🏃'}</Text>
                   <Text style={s.activityText}>{sug.minutesNeeded} min {ACTIVITY_LABELS[sug.activity]}</Text>
                   <Text style={s.activityKcal}>-{sug.kcalBurned} kcal</Text>
                 </View>
-              ))}
-            </View>
-          </MetalCard>
-        </>
+              );
+            })}
+          </View>
+        </MetalCard>
       )}
 
       {/* STATS AVANCÉES — FLOUTÉES */}
@@ -5152,7 +5156,7 @@ export default function App() {
                     {statsLoading ? (
                       <View style={{ alignItems: 'center', paddingTop: 60 }}><Text style={{ fontSize: 32 }}>📊</Text><Text style={{ color: '#555E6C', fontSize: 13, marginTop: 12 }}>Chargement des stats...</Text></View>
                     ) : weeklyStats ? (
-                      <>
+                      <View>
                         {isUnlockedByLix(statsUnlockedUntil) && !hasActivePower('stats_report') && (
                           <View style={{ backgroundColor: 'rgba(212,175,55,0.06)', borderRadius: wp(10), padding: wp(8), marginBottom: wp(12), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(6) }}>
                             <Text style={{ fontSize: fp(12) }}>⏳</Text>
@@ -5198,7 +5202,7 @@ export default function App() {
                           var daysHydroOk = weeklyStats.filter(function(d) { return d.hydrationMl >= hydroGoalRef; }).length;
                           var moods = { sad: 0, chill: 0, happy: 0, excited: 0 };
                           weeklyStats.forEach(function(d) { if (d.mood && moods[d.mood] !== undefined) moods[d.mood]++; });
-                          return (<>
+                          return (<View>
                             <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '800', letterSpacing: 2, marginBottom: 12 }}>ACTIVITÉ</Text>
                             <View style={{ backgroundColor: 'rgba(30,37,48,0.3)', borderRadius: 14, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(74,79,85,0.12)', flexDirection: 'row', justifyContent: 'space-around' }}>
                               <View style={{ alignItems: 'center' }}><Text style={{ color: '#00D984', fontSize: 16, fontWeight: '900' }}>{totalActMin}</Text><Text style={{ color: '#6B7280', fontSize: 9 }}>min / 150 OMS</Text></View>
@@ -5220,9 +5224,9 @@ export default function App() {
                               <View style={{ alignItems: 'center' }}><Text style={{ fontSize: 18 }}>😊</Text><Text style={{ color: '#4DA6FF', fontSize: 12, fontWeight: '800' }}>{moods.happy}j</Text></View>
                               <View style={{ alignItems: 'center' }}><Text style={{ fontSize: 18 }}>🤩</Text><Text style={{ color: '#D4AF37', fontSize: 12, fontWeight: '800' }}>{moods.excited}j</Text></View>
                             </View>
-                          </>);
+                          </View>);
                         })()}
-                      </>
+                      </View>
                     ) : null}
                   </View>
                 )}
@@ -5508,7 +5512,7 @@ export default function App() {
                   </View>
                 </View>
               ) : (
-                <>
+                <View>
                   {/* ══════ MODE GRILLE : liste des boissons ══════ */}
                   {beverageLoading ? (
                     <View style={{ alignItems: 'center', marginTop: 60 }}>
@@ -5551,7 +5555,7 @@ export default function App() {
                       })}
                     </View>
                   )}
-                </>
+                </View>
               )}
               <View style={{ height: 30 }} />
             </ScrollView>
