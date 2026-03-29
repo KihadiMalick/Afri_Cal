@@ -6,7 +6,7 @@
 
 import React, { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import {
-  View, Dimensions, Text, StyleSheet, StatusBar, Alert, Pressable, Image, TextInput,
+  View, Dimensions, Text, StyleSheet, StatusBar, Pressable, Image, TextInput,
   Animated as RNAnimated, ScrollView, TouchableOpacity, Platform, Modal, Easing,
   PixelRatio,
 } from 'react-native';
@@ -894,32 +894,6 @@ const ACTIVITY_LABELS = {
   football: 'Football', basketball: 'Basketball', danse: 'Danse',
 };
 
-const MOCK_DAILY_DATA = {
-  consumed: [
-    0, 0, 80, 150, 320, 480, 650, 820, 980, 1100,
-    1200, 1300, 1380, 1440, 1500, 1540, 1560, 1575, 1580, 1585
-  ],
-  burned: [
-    0, 0, 0, 0, 50, 120, 200, 350, 500, 580,
-    650, 700, 750, 790, 820, 840, 855, 862, 868, 870
-  ],
-};
-
-const MOCK_GENERAL_DATA = [
-  { week: 1, avgConsumed: 2100, avgBurned: 350 },
-  { week: 2, avgConsumed: 2250, avgBurned: 420 },
-  { week: 3, avgConsumed: 2180, avgBurned: 380 },
-  { week: 4, avgConsumed: 2300, avgBurned: 450 },
-  { week: 5, avgConsumed: 2150, avgBurned: 500 },
-  { week: 6, avgConsumed: 2280, avgBurned: 480 },
-  { week: 7, avgConsumed: 2200, avgBurned: 520 },
-  { week: 8, avgConsumed: 2350, avgBurned: 550 },
-  { week: 9, avgConsumed: 2280, avgBurned: 500 },
-  { week: 10, avgConsumed: 2310, avgBurned: 480 },
-  { week: 11, avgConsumed: 2330, avgBurned: 520 },
-  { week: 12, avgConsumed: 2320, avgBurned: 550 },
-];
-
 // ============================================================
 // HOOKS — Animations pour Reactor Cores
 // ============================================================
@@ -1723,12 +1697,32 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
   };
 
   const addWater = (ml) => {
+    // 1. Mise à jour locale immédiate
     setCurrentMl(prev => prev + ml);
     setHydroLogs(prev => [...prev, { time: getTimeStr(), amount: ml, type: 'eau', icon: '💧' }]);
+
+    // 2. Vibration
     try {
       var Vibration = require('react-native').Vibration;
       Vibration.vibrate(30);
     } catch(e) {}
+
+    // 3. Sauvegarder dans Supabase en arrière-plan
+    supabase.rpc('add_beverage_log', {
+      p_user_id: TEST_USER_ID,
+      p_beverage_name: 'eau',
+      p_amount_ml: ml,
+      p_hydration_coeff: 1.0,
+      p_source: 'manual',
+      p_kcal: 0,
+      p_sugar_g: 0,
+      p_sugar_estimated: false,
+      p_sugar_cubes: 0,
+    }).then(function(res) {
+      if (res.error) console.warn('addWater Supabase error:', res.error.message);
+    }).catch(function(e) {
+      console.warn('addWater save error:', e);
+    });
   };
 
   const removeWater = (ml) => {
@@ -1743,6 +1737,12 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
       var Vibration = require('react-native').Vibration;
       Vibration.vibrate(15);
     } catch(e) {}
+
+    // Refresh totaux depuis Supabase
+    supabase.rpc('get_daily_hydration', {
+      p_user_id: TEST_USER_ID,
+      p_date: new Date().toISOString().split('T')[0],
+    }).then(function() {}).catch(function() {});
   };
 
   const palierLabels = gender === 'homme'
@@ -2335,7 +2335,7 @@ const AvatarButton = ({ activeChar, userName, onPress, size = 30 }) => {
   );
 };
 
-const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef, dailyTarget, lastMeal, tooltipStep, vitalityScore, activeChar, pagePowers, toggleStates, setToggleStates, consumePower, userName, onAvatarPress }) => {
+const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef, dailyTarget, lastMeal, tooltipStep, vitalityScore, activeChar, pagePowers, toggleStates, setToggleStates, consumePower, userName, onAvatarPress, onNavigate, showToast }) => {
   const OBJECTIVE = dailyTarget || DAILY_OBJECTIVE;
   const [showInfoLeft, setShowInfoLeft] = useState(false);
   const [showInfoRight, setShowInfoRight] = useState(false);
@@ -2709,7 +2709,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                     <Pressable delayPressIn={120} onPress={async () => {
                       const r = await consumePower(power.power_key);
                       if (!r.success) return;
-                      Alert.alert('📊 Streaks', 'Tracker de streaks détaillé — bientôt disponible');
+                      showToast('📊 Tracker de streaks — bientôt disponible', '#00D984');
                     }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
                         <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>{power.icon || '📊'}</Text>
@@ -2805,7 +2805,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                     <Pressable delayPressIn={120} onPress={async () => {
                       const r = await consumePower(power.power_key);
                       if (!r.success) return;
-                      Alert.alert((power.icon || '🌊') + ' ' + (power.name_fr || power.power_key), 'Tracker hydratation avancé avec historique BHI — bientôt disponible');
+                      showToast((power.icon || '🌊') + ' Tracker hydratation avancé — bientôt', '#4DA6FF');
                     }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>{power.icon || '🌊'}</Text>
@@ -2832,7 +2832,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                     <Pressable delayPressIn={120} onPress={async () => {
                       const r = await consumePower(power.power_key);
                       if (!r.success) return;
-                      Alert.alert((power.icon || '🔮') + ' ' + (power.name_fr || power.power_key), (power.description_fr || '') + '\n\nFonctionnalité complète bientôt disponible.');
+                      showToast((power.icon || '🔮') + ' ' + (power.name_fr || 'Pouvoir') + ' — bientôt', '#D4AF37');
                     }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>{power.icon || '🔮'}</Text>
@@ -2877,7 +2877,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         marginHorizontal: 0,
         marginBottom: wp(12),
         ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
-      }} onPress={() => Alert.alert('Dernier Repas', 'Détails nutritionnels complets — bientôt disponible')}>
+      }} onPress={function() { onNavigate('meals'); }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
           <ForkKnifeIcon />
           <Text style={{
@@ -2965,7 +2965,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         marginHorizontal: 0,
         marginBottom: wp(12),
         ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
-      }} onPress={() => Alert.alert('Coach ALIXEN', 'Recommandations personnalisées IA — bientôt disponible')}>
+      }} onPress={function() { onNavigate('medicai'); }}>
         {/* Header Coach */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
           {/* Icône Coach ALIXEN — Avatar PNG */}
@@ -3051,13 +3051,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
 
         {/* Lien Voir Recettes */}
         <TouchableOpacity
-          onPress={() => {
-            Alert.alert(
-              'Recettes adaptées',
-              'Retrouvez vos recettes personnalisées dans l\'onglet Repas → Recettes !',
-              [{ text: 'Aller aux Recettes', onPress: () => {} }]
-            );
-          }}
+          onPress={function() { onNavigate('meals'); }}
           activeOpacity={0.7}
         >
           <Text style={{
@@ -3099,14 +3093,9 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         marginHorizontal: 0,
         marginBottom: wp(12),
         ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
-      }} onPress={() => Alert.alert(
-        'Débloquer Mes Stats',
-        'Accédez à vos statistiques sur 7 jours pour 200 Lix.',
-        [
-          { text: 'Plus tard', style: 'cancel' },
-          { text: 'Débloquer 200 Lix', onPress: () => console.log('Navigate to shop') },
-        ]
-      )}>
+      }} onPress={function() {
+        showToast('📊 Stats 7 jours — bientôt disponible', '#4DA6FF');
+      }}>
         {/* Ligne 1 : Titre */}
         <View style={{
           flexDirection: 'row',
@@ -3296,6 +3285,13 @@ export default function App() {
   // 1 à 4 = étape active
   // Au premier lancement : setTooltipStep(1)
   const scrollRef = React.useRef(null);
+
+  // ═══ TOAST SYSTEM ═══
+  const [toastMsg, setToastMsg] = useState(null);
+  const showToast = function(message, color) {
+    setToastMsg({ text: message, color: color || '#00D984' });
+    setTimeout(function() { setToastMsg(null); }, 2500);
+  };
   /*
   // TODO: Activer anti-screenshot après migration vers EAS Build
   // ANTI-SCREENSHOT — Décommenter quand build standalone (pas Snack/Expo Go)
@@ -3305,7 +3301,7 @@ export default function App() {
         try {
           await ScreenCapture.preventScreenCaptureAsync();
         } catch (e) {
-          console.log('Screen capture prevention not available');
+          console.warn('Screen capture prevention not available');
         }
       }
     };
@@ -3407,7 +3403,7 @@ export default function App() {
 
   var unlockHistoryWithLix = async function() {
     if (realLixBalance < 100) {
-      Alert.alert('Lix insuffisants', 'Vous avez besoin de 100 Lix pour débloquer l\'historique.');
+      showToast('💎 Lix insuffisants — il vous faut 100 Lix', '#FF6B6B');
       return;
     }
     try {
@@ -3425,7 +3421,7 @@ export default function App() {
       } catch(e) {}
     } catch(err) {
       console.warn('unlockHistoryWithLix error:', err);
-      Alert.alert('Erreur', 'Impossible de débloquer. Réessayez.');
+      showToast('⚠️ Erreur — réessayez', '#FF6B6B');
     }
   };
 
@@ -3435,7 +3431,7 @@ export default function App() {
       return p.action_type === 'modal_inline' && p.redirect_page === 'accueil';
     });
     if (!hydroPower || !hydroPower.unlocked) {
-      Alert.alert('Pouvoir indisponible', 'Équipez Coral Dolphin Niveau 2 pour utiliser ce pouvoir.');
+      showToast('🐬 Équipez Coral Dolphin Niv 2', '#4DA6FF');
       return;
     }
     var result = await consumePower(hydroPower.power_key);
@@ -3573,13 +3569,13 @@ export default function App() {
       });
       if (error) {
         console.warn('add_beverage_log error:', error.message);
-        Alert.alert('Erreur Supabase', error.message);
+        showToast('⚠️ Sync Supabase échouée', '#FF6B6B');
       }
       // Refresh depuis Supabase
       fetchDailyHydration().then(setHydrationData);
     } catch (err) {
       console.warn('saveBeverage error:', err);
-      Alert.alert('Erreur', 'Boisson ajoutée localement. Sync Supabase échouée.');
+      showToast('⚠️ Boisson ajoutée localement', '#FF8C42');
     }
   };
 
@@ -3642,8 +3638,35 @@ export default function App() {
         setMoodFilled(true);
       }
 
+      // 5. Activités du jour
+      try {
+        var { data: todayActivities } = await supabase
+          .from('user_activities')
+          .select('activity_id, duration_min, calories_burned, water_lost_ml, performed_at')
+          .eq('user_id', TEST_USER_ID)
+          .gte('performed_at', today + 'T00:00:00')
+          .order('performed_at', { ascending: false });
+
+        if (todayActivities && todayActivities.length > 0) {
+          setActivities(todayActivities.map(function(a) {
+            return {
+              name: 'activité',
+              durationMin: a.duration_min || 0,
+              intensity: 'modere',
+              kcalBurned: a.calories_burned || 0,
+              waterLostMl: a.water_lost_ml || 0,
+            };
+          }));
+        } else {
+          setActivities([]);
+        }
+      } catch(e) {
+        console.warn('Load activities error:', e);
+        setActivities([]);
+      }
+
     } catch (err) {
-      console.error('Erreur chargement dashboard:', err);
+      console.warn('Erreur chargement dashboard:', err);
     }
     setIsLoadingDashboard(false);
   };
@@ -3683,8 +3706,7 @@ export default function App() {
         return { success: true, uses_remaining: data.uses_remaining };
       }
       if (data?.error === 'No uses remaining') {
-        Alert.alert('⚡ Utilisations épuisées',
-          'Recharge ton ' + (activeChar?.name || 'personnage') + ' dans l\'onglet Caractères.');
+        showToast('⚡ Utilisations épuisées — recharge dans Caractères', '#FF6B6B');
       }
       return { success: false, error: data?.error };
     } catch (e) {
@@ -3763,10 +3785,8 @@ export default function App() {
   const [userName, setUserName] = useState('');
   const [userEnergy, setUserEnergy] = useState(20);
 
-  // Mock sport activities done today
-  const [activities, setActivities] = useState([
-    { name: 'course', durationMin: 40, intensity: 'intense', kcalBurned: 573 },
-  ]);
+  // Activités du jour — chargées depuis Supabase
+  const [activities, setActivities] = useState([]);
 
   const lixCount = realLixBalance;
   const notifCount = 1;
@@ -4709,10 +4729,7 @@ export default function App() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      onPress={() => Alert.alert(
-                        'Recettes Suggérées',
-                        'Découvrez des recettes adaptées à votre humeur et à la météo du jour !',
-                      )}
+                      onPress={function() { showToast('🍽️ Découvrez vos recettes dans l\'onglet Repas', '#00D984'); }}
                       style={{ marginTop: 12 }}
                     >
                       <Text style={{ color: '#00D984', fontSize: 12, fontWeight: '600' }}>
@@ -4756,6 +4773,8 @@ export default function App() {
             consumePower={consumePower}
             userName={userName}
             onAvatarPress={() => setActiveTab('profile')}
+            onNavigate={function(tab) { setActiveTab(tab); }}
+            showToast={showToast}
           />
         );
       case 'meals':
@@ -5192,6 +5211,29 @@ export default function App() {
                 </Text>
               </View>
               <DropletIcon size={18} />
+            </View>
+          </View>
+        )}
+
+        {/* ═══ TOAST GLOBAL ═══ */}
+        {toastMsg && (
+          <View style={{
+            position: 'absolute',
+            top: Platform.OS === 'android' ? 40 : 55,
+            left: wp(16), right: wp(16),
+            zIndex: 99998,
+          }}>
+            <View style={{
+              backgroundColor: toastMsg.color + '15',
+              borderWidth: 1, borderColor: toastMsg.color + '30',
+              borderRadius: wp(12), paddingVertical: 10, paddingHorizontal: 16,
+              flexDirection: 'row', alignItems: 'center',
+              shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
+            }}>
+              <Text style={{ color: toastMsg.color, fontSize: fp(13), fontWeight: '700', flex: 1 }}>
+                {toastMsg.text}
+              </Text>
             </View>
           </View>
         )}
