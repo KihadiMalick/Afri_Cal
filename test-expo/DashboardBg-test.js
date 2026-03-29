@@ -2399,7 +2399,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           color: '#6B7280',
           marginTop: wp(2),
         }}>
-          {consumedTotal === 0
+          {!lastMeal
             ? 'Commencez par scanner votre premier repas'
             : `${consumedTotal} kcal consommées aujourd'hui`
           }
@@ -2563,6 +2563,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           {/* Vitalité */}
           <RNAnimated.View style={{
             alignItems: 'center', flex: 1,
+            marginTop: wp(-2),
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3
               ? (tooltipStep === 3 ? pulseOpacity : 1)
               : 0.05,
@@ -2930,12 +2931,12 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           )}
           <View style={{ flex: 1 }}>
             <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>
-              {lastMeal ? lastMeal.food_name : 'Aucun repas'}
+              {lastMeal ? lastMeal.food_name : 'Aucun repas scanné'}
             </Text>
             <Text style={{ color: '#8892A0', fontSize: fp(11), marginTop: 2 }}>
               {lastMeal
                 ? `${Math.round(lastMeal.calories)} kcal • `
-                : 'Scannez votre premier repas '}
+                : 'Prenez une photo de votre plat →'}
               <Text style={{ color: '#EAEEF3' }}>
                 {lastMeal
                   ? new Date(lastMeal.meal_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
@@ -3011,7 +3012,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           lineHeight: fp(17),
           fontWeight: '500',
         }}>
-          {consumedTotal === 0
+          {!lastMeal
             ? <>Bienvenue ! Scannez votre <Text style={{ color: '#00D984', fontWeight: '700' }}>premier repas</Text> pour activer le suivi.</>
             : consumedTotal < OBJECTIVE
               ? <>Déficit de <Text style={{ color: '#FF8C42', fontWeight: '700' }}>{OBJECTIVE - consumedTotal + burnedTotal} kcal</Text> — bonne stratégie pour la <Text style={{ color: '#00D984', fontWeight: '700' }}>perte de poids</Text> !</>
@@ -3032,7 +3033,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
             <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
             <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>
-              {consumedTotal === 0 ? 'Scannez un repas pour activer les suggestions' : '25g de protéines au prochain repas'}
+              {!lastMeal ? 'Scannez un repas pour activer les suggestions' : '25g de protéines au prochain repas'}
             </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
@@ -3094,7 +3095,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         marginBottom: wp(12),
         ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }),
       }} onPress={function() {
-        showToast('📊 Stats 7 jours — bientôt disponible', '#4DA6FF');
+        onNavigate('medicai');
       }}>
         {/* Ligne 1 : Titre */}
         <View style={{
@@ -3587,7 +3588,7 @@ export default function App() {
       // 1. Profil utilisateur
       const { data: profile } = await supabase
         .from('users_profile')
-        .select('daily_calorie_target, lix_balance, gender, hydration_history_unlocked')
+        .select('full_name, daily_calorie_target, lix_balance, energy, gender, hydration_history_unlocked')
         .eq('user_id', TEST_USER_ID)
         .single();
 
@@ -3595,6 +3596,7 @@ export default function App() {
         setUserName(profile.full_name || '');
         setRealDailyTarget(profile.daily_calorie_target || 2330);
         setRealLixBalance(profile.lix_balance || 0);
+        setUserEnergy(profile.energy || 20);
         setRealGender(profile.gender === 'female' || profile.gender === 'femme' ? 'femme' : 'homme');
         setHistoryUnlocked(!!profile.hydration_history_unlocked);
       }
