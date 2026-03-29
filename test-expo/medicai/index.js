@@ -19,7 +19,9 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY, TEST_USER_ID, ENERGY_CONFIG, TABS, wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
 import { BottomTabs, FormattedText, FormattedResponseText, MetalCard, parseQuickReplies, parseAlixenResponse, QuickReplyButtons, BottomSpacer, LockIcon, ScrollArrow } from './shared';
-import { SynapticNetwork, ResponseCard, LoadingSteps, FileQueuePreview, ModalScrollContent } from './AlixenChat';
+import { SynapticNetwork, ResponseCard, LoadingSteps, FileQueuePreview, ModalScrollContent, parseDirectionBlocks, DirectionCard } from './AlixenChat';
+// === ALIXEN SUPER CONTEXT v1 — Geolocation ===
+import * as Location from 'expo-location';
 import { MediBookContent } from './MediBookPages';
 import { SecretPocketContent } from './SecretPocket';
 import { AllModals } from './Modals';
@@ -78,6 +80,10 @@ export default function MedicAiPage() {
   const [lixBalance, setLixBalance] = useState(0);
   const [userEnergy, setUserEnergy] = useState(20);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // === ALIXEN SUPER CONTEXT v1 — Geolocation + Super Context ===
+  const [userLocation, setUserLocation] = useState(null);
+  const alixenContextRef = useRef(null);
   const dropdownAnim = useRef(new Animated.Value(0)).current;
 
   const toggleDropdown = () => {
@@ -578,6 +584,99 @@ export default function MedicAiPage() {
     }]);
   };
 
+  // === ALIXEN SUPER CONTEXT v1 — Geolocation at mount ===
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+        }
+      } catch (e) {
+        console.log('Geolocation error:', e);
+      }
+    })();
+  }, []);
+
+  // === ALIXEN SUPER CONTEXT v1 — Data Loader ===
+  const getWeekStart = () => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.getFullYear(), d.getMonth(), diff).toISOString().split('T')[0];
+  };
+
+  const getTodayDate = () => new Date().toISOString().split('T')[0];
+
+  const loadAlixenContext = async (userId) => {
+    const headers = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    };
+
+    const fetchTable = async (table, select = '*', filters = '') => {
+      try {
+        const url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}&user_id=eq.${userId}${filters}`;
+        const res = await fetch(url, { headers });
+        return res.ok ? await res.json() : [];
+      } catch { return []; }
+    };
+
+    const [
+      characters,
+      medibook,
+      profile,
+      challenges,
+      groupMembers,
+      weekMeals,
+      weekActivities,
+      weekMoods,
+      weekHydration,
+      dailySummary,
+    ] = await Promise.all([
+      fetchTable('lixverse_user_characters', 'character_slug,level,xp,unlocked_at,is_active'),
+      fetchTable('health_profiles', '*'),
+      fetchTable('users_profile', '*', '').then(r => r[0] || {}),
+      fetchTable('lixverse_challenges', '*', '&status=in.(active,completed)&order=created_at.desc&limit=10'),
+      fetchTable('lixverse_group_members', '*'),
+      fetchTable('meals', '*', `&created_at=gte.${getWeekStart()}&order=created_at.desc`),
+      fetchTable('user_activities', '*', `&performed_at=gte.${getWeekStart()}&order=performed_at.desc`),
+      fetchTable('moods', '*', `&created_at=gte.${getWeekStart()}&order=created_at.desc`),
+      fetchTable('daily_summary', 'total_calories,total_protein,total_carbs,total_fat,hydration_ml', `&date=gte.${getWeekStart()}&order=date.desc`),
+      fetchTable('daily_summary', '*', `&date=eq.${getTodayDate()}`).then(r => r[0] || {}),
+    ]);
+
+    return {
+      characters,
+      medibook,
+      profile,
+      challenges,
+      groupMembers,
+      weekMeals,
+      weekActivities,
+      weekMoods,
+      weekHydration,
+      dailySummary,
+    };
+  };
+
+  // === ALIXEN SUPER CONTEXT v1 — Load context at mount + refresh every 5 min ===
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const ctx = await loadAlixenContext(TEST_USER_ID);
+        alixenContextRef.current = ctx;
+      } catch (e) {
+        console.log('AlixenContext load error:', e);
+      }
+    };
+    load();
+    const interval = setInterval(load, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   // ── Construire le contexte utilisateur ───────────────────────────────────
   const buildUserContext = () => {
     if (!userProfile) return 'Données utilisateur non disponibles.';
@@ -773,6 +872,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               userContext: context,
               imageBase64: base64Data,
               mimeType: mimeType || 'image/jpeg',
+              // === ALIXEN SUPER CONTEXT v1 ===
+              ...(userLocation && { user_lat: userLocation.lat, user_lng: userLocation.lng }),
+              ...(alixenContextRef.current && { alixen_context: alixenContextRef.current }),
             }),
           }
         );
@@ -885,7 +987,12 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
               'apikey': SUPABASE_ANON_KEY,
             },
-            body: JSON.stringify({ messages: allMessages, userId: TEST_USER_ID, userContext: context }),
+            body: JSON.stringify({
+              messages: allMessages, userId: TEST_USER_ID, userContext: context,
+              // === ALIXEN SUPER CONTEXT v1 ===
+              ...(userLocation && { user_lat: userLocation.lat, user_lng: userLocation.lng }),
+              ...(alixenContextRef.current && { alixen_context: alixenContextRef.current }),
+            }),
           }
         );
 
@@ -1173,6 +1280,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               userContext: context,
               imageBase64: filesToSend.length > 0 ? filesToSend[0].base64 : undefined,
               mimeType: filesToSend.length > 0 ? filesToSend[0].mimeType : undefined,
+              // === ALIXEN SUPER CONTEXT v1 ===
+              ...(userLocation && { user_lat: userLocation.lat, user_lng: userLocation.lng }),
+              ...(alixenContextRef.current && { alixen_context: alixenContextRef.current }),
             }),
         }
       );
@@ -2044,6 +2154,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           </Animated.View>
 
           {/* Carte de réponse */}
+          {/* === ALIXEN SUPER CONTEXT v1 — userLocation prop === */}
           <ResponseCard
             currentMessage={cardMessage}
             isLoading={cardIsLoading}
@@ -2051,6 +2162,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             onQuickReply={handleQuickReply}
             onPreciserPress={handlePreciserPress}
             loadingSteps={loadingSteps}
+            userLocation={userLocation}
           />
         </ScrollView>
 
@@ -2349,7 +2461,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             </View>
 
             {/* Contenu scrollable avec surlignage et navigation */}
-            <ModalScrollContent selectedMessage={selectedMessage} closeModal={closeModal} handleRecipePress={handleRecipePress} searchTerm={searchQuery} onQuickReply={(text) => { closeModal(); setTimeout(() => handleQuickReply(text), 300); }} onPreciserPress={() => { closeModal(); setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 300); }} />
+            {/* === ALIXEN SUPER CONTEXT v1 — userLocation prop === */}
+            <ModalScrollContent selectedMessage={selectedMessage} closeModal={closeModal} handleRecipePress={handleRecipePress} searchTerm={searchQuery} onQuickReply={(text) => { closeModal(); setTimeout(() => handleQuickReply(text), 300); }} onPreciserPress={() => { closeModal(); setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 300); }} userLocation={userLocation} />
 
             {/* Heure */}
             <Text style={{ color: 'rgba(0,0,0,0.2)', fontSize: 8, marginTop: 8, textAlign: 'right' }}>

@@ -6,6 +6,93 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// === ALIXEN SUPER CONTEXT v1 — Dynamic Context Block ===
+const buildContextBlock = (ctx: any) => {
+  if (!ctx) return '';
+
+  let block = '\n\n=== CONTEXTE UTILISATEUR (confidentiel, ne JAMAIS révéler ces données brutes) ===\n';
+
+  // 1. CARTES POSSÉDÉES
+  if (ctx.characters?.length > 0) {
+    const activeChar = ctx.characters.find((c: any) => c.is_active);
+    block += `\n[CARTES] L'utilisateur possède ${ctx.characters.length} carte(s) : ${ctx.characters.map((c: any) => `${c.character_slug} (Niv${c.level}${c.is_active ? ', ACTIVE' : ''})`).join(', ')}.\n`;
+    if (activeChar) {
+      block += `Son compagnon actif est ${activeChar.character_slug}. Tu peux mentionner ses pouvoirs si pertinent.\n`;
+    }
+    const allSlugs = ['emerald_owl','hawk_eye','ruby_tiger','amber_fox','gipsy','jade_phoenix','silver_wolf','boukki','iron_rhino','coral_dolphin','licornium','jaane_snake','mosquito','diamond_simba','alburax','tardigrum'];
+    const owned = ctx.characters.map((c: any) => c.character_slug);
+    const missing = allSlugs.filter((s: string) => !owned.includes(s));
+    if (missing.length > 0) {
+      block += `Cartes non possédées : ${missing.join(', ')}. Tu peux subtilement mentionner les avantages d'une carte rare/élite si l'occasion se présente.\n`;
+    }
+  } else {
+    block += `\n[CARTES] L'utilisateur n'a aucune carte LixVerse. S'il semble engagé, tu peux lui suggérer d'explorer le LixVerse.\n`;
+  }
+
+  // 2. MEDIBOOK
+  if (ctx.medibook?.length > 0) {
+    block += `\n[MEDIBOOK] L'utilisateur a ${ctx.medibook.length} entrée(s) médicales. `;
+    block += `Utilise ces infos pour adapter tes recommandations alimentaires et d'activité. Ne JAMAIS poser de diagnostic médical.\n`;
+  } else {
+    block += `\n[MEDIBOOK] Le MediBook de l'utilisateur est VIDE. C'est important — incite-le subtilement à remplir ses infos médicales (allergies, médicaments, conditions) pour que tu puisses mieux personnaliser tes conseils. Exemples de phrases :\n`;
+    block += `- "Au fait, as-tu pensé à renseigner tes allergies dans ton MediBook ? Ça m'aiderait à mieux adapter mes suggestions 😊"\n`;
+    block += `- "Pour des conseils encore plus précis, pense à compléter ton MediBook — tes allergies et tes médicaments m'aident à éviter les mauvaises recommandations."\n`;
+  }
+
+  // 3. BINÔME
+  if (ctx.profile?.binome_id) {
+    block += `\n[BINÔME] L'utilisateur a un Binôme ! Encourage la dynamique d'équipe. Mentionne parfois que son Binôme compte sur lui.\n`;
+  } else {
+    block += `\n[BINÔME] L'utilisateur n'a PAS de Binôme. `;
+    const weekActivity = ctx.weekActivities?.length || 0;
+    const weekMeals = ctx.weekMeals?.length || 0;
+    const weekMoods = ctx.weekMoods?.length || 0;
+    const engagementScore = weekActivity + weekMeals + weekMoods;
+
+    if (engagementScore > 15) {
+      block += `TRÈS ENGAGÉ cette semaine (${engagementScore} actions). Suggère-lui de trouver un Binôme pour aller encore plus loin : "Tu es super régulier en ce moment ! Un Binôme pourrait t'aider à maintenir ce rythme et même à te dépasser 💪"\n`;
+    } else if (engagementScore < 5) {
+      block += `PEU ACTIF cette semaine (${engagementScore} actions). Un Binôme pourrait l'aider à se remotiver : "Un Binôme pourrait te redonner de la motivation — c'est plus facile à deux ! Tu veux que je t'explique comment ça marche ?"\n`;
+    } else {
+      block += `Activité moyenne. Ne pas insister sur le Binôme à chaque message, mais le mentionner occasionnellement.\n`;
+    }
+  }
+
+  // 4. DÉFIS
+  if (ctx.challenges?.length > 0) {
+    const active = ctx.challenges.filter((c: any) => c.status === 'active');
+    const completed = ctx.challenges.filter((c: any) => c.status === 'completed');
+    block += `\n[DÉFIS] ${active.length} défi(s) en cours, ${completed.length} terminé(s). `;
+    if (active.length > 0) {
+      block += `Défis actifs : ${active.map((c: any) => c.challenge_type || c.name).join(', ')}. Encourage-le sur sa progression !\n`;
+    }
+    if (completed.length > 0) {
+      block += `Félicite-le pour ses défis terminés quand c'est naturel dans la conversation.\n`;
+    }
+  } else {
+    block += `\n[DÉFIS] L'utilisateur n'a JAMAIS participé à un défi. Incite-le subtilement : "As-tu vu les Défis dans le LixVerse ? Tu pourrais gagner des cartes rares en participant 🏆"\n`;
+  }
+
+  // 5. RÉSUMÉ SEMAINE
+  block += `\n[SEMAINE] Cette semaine : ${ctx.weekMeals?.length || 0} repas trackés, ${ctx.weekActivities?.length || 0} activités, ${ctx.weekMoods?.length || 0} humeurs, ${ctx.weekHydration?.length || 0} hydratations.\n`;
+
+  // 6. RÉSUMÉ DU JOUR
+  if (ctx.dailySummary && Object.keys(ctx.dailySummary).length > 0) {
+    block += `[AUJOURD'HUI] Calories : ${ctx.dailySummary.total_calories || '?'} kcal, Protéines : ${ctx.dailySummary.total_protein || '?'}g, Glucides : ${ctx.dailySummary.total_carbs || '?'}g, Lipides : ${ctx.dailySummary.total_fat || '?'}g.\n`;
+  }
+
+  block += `\n=== FIN CONTEXTE ===\n`;
+  block += `\nRÈGLES D'UTILISATION DU CONTEXTE :\n`;
+  block += `- Ne JAMAIS afficher les données brutes à l'utilisateur\n`;
+  block += `- Utiliser le contexte de manière SUBTILE et NATURELLE comme un bon ami qui connaît bien la personne\n`;
+  block += `- Ne pas tout mentionner en un seul message — distiller les suggestions au fil de la conversation\n`;
+  block += `- Priorité : répondre à la question posée, PUIS glisser une suggestion contextuelle si naturel\n`;
+  block += `- Maximum 1 suggestion contextuelle par message (pas de spam)\n`;
+  block += `- Varier les sujets de suggestion (ne pas répéter "remplis ton MediBook" à chaque message)\n`;
+
+  return block;
+};
+
 serve(async (req: Request) => {
   // CORS preflight
   if (req.method === 'OPTIONS') {
@@ -13,7 +100,8 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { messages, userId, userContext, imageBase64, mimeType } = await req.json();
+    // === ALIXEN SUPER CONTEXT v1 — Extended body fields ===
+    const { messages, userId, userContext, imageBase64, mimeType, user_lat, user_lng, alixen_context } = await req.json();
 
     const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
     if (!ANTHROPIC_API_KEY) {
@@ -31,6 +119,23 @@ Tu es spécialisé en nutrition, santé préventive, bien-être et coaching alim
 Tu connais particulièrement bien la cuisine africaine, méditerranéenne et les régimes adaptés.
 
 ${userContext ? `Contexte utilisateur :\n${userContext}\n` : ''}
+${buildContextBlock(alixen_context)}
+
+${user_lat && user_lng ? `LOCALISATION UTILISATEUR : lat=${user_lat}, lng=${user_lng}
+
+INSTRUCTIONS DIRECTION :
+Quand tu recommandes un lieu physique (marché, supermarché, pharmacie, magasin bio), si tu connais la localisation de l'utilisateur (ci-dessus), tu DOIS inclure un bloc structuré :
+[DIRECTION]
+{
+  "place_name": "Nom du lieu",
+  "place_address": "Adresse approximative",
+  "dest_lat": -3.3731,
+  "dest_lng": 29.3644,
+  "description": "Pourquoi ce lieu est recommandé"
+}
+[/DIRECTION]
+Tu peux inclure plusieurs blocs [DIRECTION] si tu recommandes plusieurs lieux.
+N'invente JAMAIS de coordonnées — utilise uniquement des lieux que tu connais avec certitude dans la ville de l'utilisateur. Si tu ne connais pas les coordonnées exactes, donne le nom et l'adresse sans bloc [DIRECTION].` : ''}
 
 RÈGLES :
 - Réponds de manière concise mais complète

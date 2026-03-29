@@ -9,5 +9,8 @@
     "start:web": "cd lixum-mobile && npx expo start --web",
     "lint": "cd lixum-mobile && npm run lint",
     "typecheck": "cd lixum-mobile && npm run typecheck"
+  },
+  "dependencies": {
+    "expo-location": "^55.1.4"
   }
 }
