@@ -396,66 +396,61 @@ const MoodIcon = ({ tier, size = 42, active = false }) => {
       bgColors: ['#2A2E35', '#1E2228'],
       borderColor: '#8892A0',
       glowColor: 'rgba(136,146,160,0.3)',
-      face: (s) => (
-        <>
-          <Path d={`M${s*0.32} ${s*0.42} Q${s*0.37} ${s*0.47} ${s*0.42} ${s*0.42}`}
+      face: function(s) { return (
+        <G>
+          <Path d={'M' + s*0.32 + ' ' + s*0.42 + ' Q' + s*0.37 + ' ' + s*0.47 + ' ' + s*0.42 + ' ' + s*0.42}
                 stroke="#8892A0" strokeWidth={1.8} fill="none" strokeLinecap="round"/>
-          <Path d={`M${s*0.58} ${s*0.42} Q${s*0.63} ${s*0.47} ${s*0.68} ${s*0.42}`}
+          <Path d={'M' + s*0.58 + ' ' + s*0.42 + ' Q' + s*0.63 + ' ' + s*0.47 + ' ' + s*0.68 + ' ' + s*0.42}
                 stroke="#8892A0" strokeWidth={1.8} fill="none" strokeLinecap="round"/>
-          <Path d={`M${s*0.35} ${s*0.65} Q${s*0.5} ${s*0.58} ${s*0.65} ${s*0.65}`}
+          <Path d={'M' + s*0.35 + ' ' + s*0.65 + ' Q' + s*0.5 + ' ' + s*0.58 + ' ' + s*0.65 + ' ' + s*0.65}
                 stroke="#8892A0" strokeWidth={1.8} fill="none" strokeLinecap="round"/>
-        </>
-      ),
+        </G>
+      ); },
     },
     1: { // Chill
       bgColors: ['#1A2E25', '#152820'],
       borderColor: '#00D984',
       glowColor: 'rgba(0,217,132,0.25)',
-      face: (s) => (
-        <>
-          <Path d={`M${s*0.30} ${s*0.42} L${s*0.42} ${s*0.42}`}
+      face: function(s) { return (
+        <G>
+          <Path d={'M' + s*0.30 + ' ' + s*0.42 + ' L' + s*0.42 + ' ' + s*0.42}
                 stroke="#00D984" strokeWidth={2} strokeLinecap="round"/>
-          <Path d={`M${s*0.58} ${s*0.42} L${s*0.70} ${s*0.42}`}
+          <Path d={'M' + s*0.58 + ' ' + s*0.42 + ' L' + s*0.70 + ' ' + s*0.42}
                 stroke="#00D984" strokeWidth={2} strokeLinecap="round"/>
-          <Path d={`M${s*0.35} ${s*0.62} Q${s*0.5} ${s*0.68} ${s*0.65} ${s*0.62}`}
+          <Path d={'M' + s*0.35 + ' ' + s*0.62 + ' Q' + s*0.5 + ' ' + s*0.68 + ' ' + s*0.65 + ' ' + s*0.62}
                 stroke="#00D984" strokeWidth={1.8} fill="none" strokeLinecap="round"/>
-        </>
-      ),
+        </G>
+      ); },
     },
     2: { // Heureux
       bgColors: ['#1A2535', '#152030'],
       borderColor: '#4DA6FF',
       glowColor: 'rgba(77,166,255,0.25)',
-      face: (s) => (
-        <>
+      face: function(s) { return (
+        <G>
           <Circle cx={s*0.37} cy={s*0.40} r={s*0.045} fill="#4DA6FF"/>
           <Circle cx={s*0.63} cy={s*0.40} r={s*0.045} fill="#4DA6FF"/>
-          <Path d={`M${s*0.30} ${s*0.58} Q${s*0.5} ${s*0.75} ${s*0.70} ${s*0.58}`}
+          <Path d={'M' + s*0.30 + ' ' + s*0.58 + ' Q' + s*0.5 + ' ' + s*0.75 + ' ' + s*0.70 + ' ' + s*0.58}
                 stroke="#4DA6FF" strokeWidth={2} fill="none" strokeLinecap="round"/>
-        </>
-      ),
+        </G>
+      ); },
     },
     3: { // Excité
       bgColors: ['#2E2818', '#282215'],
       borderColor: '#D4AF37',
       glowColor: 'rgba(212,175,55,0.35)',
-      face: (s) => (
-        <>
-          {/* Yeux arcs joyeux fermés */}
-          <Path d={`M${s*0.28} ${s*0.40} Q${s*0.36} ${s*0.32} ${s*0.44} ${s*0.40}`}
+      face: function(s) { return (
+        <G>
+          <Path d={'M' + s*0.28 + ' ' + s*0.40 + ' Q' + s*0.36 + ' ' + s*0.32 + ' ' + s*0.44 + ' ' + s*0.40}
                 stroke="#D4AF37" strokeWidth={2.2} fill="none" strokeLinecap="round"/>
-          <Path d={`M${s*0.56} ${s*0.40} Q${s*0.64} ${s*0.32} ${s*0.72} ${s*0.40}`}
+          <Path d={'M' + s*0.56 + ' ' + s*0.40 + ' Q' + s*0.64 + ' ' + s*0.32 + ' ' + s*0.72 + ' ' + s*0.40}
                 stroke="#D4AF37" strokeWidth={2.2} fill="none" strokeLinecap="round"/>
-          {/* Points lumineux au-dessus des yeux */}
           <Circle cx={s*0.36} cy={s*0.33} r={s*0.025} fill="#FFE066"/>
           <Circle cx={s*0.64} cy={s*0.33} r={s*0.025} fill="#FFE066"/>
-          {/* Grand sourire ouvert */}
-          <Path d={`M${s*0.28} ${s*0.56} Q${s*0.50} ${s*0.78} ${s*0.72} ${s*0.56}`}
+          <Path d={'M' + s*0.28 + ' ' + s*0.56 + ' Q' + s*0.50 + ' ' + s*0.78 + ' ' + s*0.72 + ' ' + s*0.56}
                 stroke="#D4AF37" strokeWidth={2.2} fill="none" strokeLinecap="round"/>
-          {/* Remplissage sourire subtil */}
-          <Path d={`M${s*0.32} ${s*0.58} Q${s*0.50} ${s*0.74} ${s*0.68} ${s*0.58}`}
+          <Path d={'M' + s*0.32 + ' ' + s*0.58 + ' Q' + s*0.50 + ' ' + s*0.74 + ' ' + s*0.68 + ' ' + s*0.58}
                 fill="#D4AF37" opacity={0.2}/>
-          {/* Rayons d'énergie autour */}
           <Line x1={s*0.50} y1={s*0.02} x2={s*0.50} y2={s*0.10}
                 stroke="#D4AF37" strokeWidth={1.5} opacity={0.45} strokeLinecap="round"/>
           <Line x1={s*0.82} y1={s*0.12} x2={s*0.76} y2={s*0.18}
@@ -466,8 +461,8 @@ const MoodIcon = ({ tier, size = 42, active = false }) => {
                 stroke="#D4AF37" strokeWidth={1.5} opacity={0.3} strokeLinecap="round"/>
           <Line x1={s*0.08} y1={s*0.38} x2={s*0.15} y2={s*0.40}
                 stroke="#D4AF37" strokeWidth={1.5} opacity={0.3} strokeLinecap="round"/>
-        </>
-      ),
+        </G>
+      ); },
     },
   };
 
@@ -670,12 +665,12 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
             opacity: dropdownAnim,
             transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
           }}>
-            <TouchableOpacity onPress={() => { toggleDropdown(); onLixPress && onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+            <TouchableOpacity onPress={function() { toggleDropdown(); onLixPress && onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
               <LixGem size={14} />
               <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixCount}</Text>
               <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => { toggleDropdown(); onLixPress && onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+            <TouchableOpacity onPress={function() { toggleDropdown(); onLixPress && onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
               <Svg width={14} height={14} viewBox="0 0 24 24">
                 <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
               </Svg>
@@ -685,7 +680,7 @@ const Header = ({ moodFilled, currentMood, lixCount, notifCount = 0, onMoodPress
             {/* Séparateur */}
             <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
             {/* Ligne Profil */}
-            <TouchableOpacity onPress={() => { toggleDropdown(); onLixPress && onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+            <TouchableOpacity onPress={function() { toggleDropdown(); onLixPress && onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
               <Text style={{ fontSize: 18 }}>👤</Text>
               <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>Mon Profil</Text>
               <Text style={{ color: '#888', fontSize: 14, marginLeft: 8 }}>→</Text>
@@ -754,7 +749,7 @@ const MetalCard = ({ children, style, onPress, noPadding = false }) => {
       onPress={onPress}
       delayPressIn={120}
       unstable_pressDelay={120}
-      style={({ pressed }) => [
+      style={function(s) { var pressed = s.pressed; return [
         metalStyles.outerBorder,
         style,
         {
@@ -766,7 +761,7 @@ const MetalCard = ({ children, style, onPress, noPadding = false }) => {
           transform: [{ scale: pressed ? 0.975 : 1 }],
           backgroundColor: pressed ? '#3E434A' : '#4A4F55',
         },
-      ]}
+      ]; }}
     >
       <LinearGradient
         colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
@@ -873,13 +868,13 @@ function calculateWaterLoss(durationMin, intensity) {
 
 function suggestActivities(surplusKcal) {
   return Object.entries(ACTIVITIES_KCAL_PER_HOUR)
-    .map(([activity, kcalPerHour]) => ({
-      activity,
+    .map(function(_item) { var activity = _item[0]; var kcalPerHour = _item[1]; return {
+      activity: activity,
       minutesNeeded: Math.ceil((surplusKcal / kcalPerHour) * 60),
       kcalBurned: surplusKcal,
-    }))
-    .filter(a => a.minutesNeeded <= 120)
-    .sort((a, b) => a.minutesNeeded - b.minutesNeeded)
+    }; })
+    .filter(function(a) { return a.minutesNeeded <= 120; })
+    .sort(function(a, b) { return a.minutesNeeded - b.minutesNeeded; })
     .slice(0, 4);
 }
 
@@ -1218,19 +1213,19 @@ const SurplusAlertModal = ({ visible, onClose, surplus, onAddActivity }) => {
             💡 Pour compenser, essayez :
           </Text>
 
-          {suggestions.map((s, i) => (
+          {suggestions.map(function(s, i) { return (
             <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: i < suggestions.length - 1 ? 1 : 0, borderBottomColor: 'rgba(80,95,115,0.1)' }}>
               <Text style={{ fontSize: 16, width: 28 }}>{ACTIVITY_ICONS[s.activity] || '🏃'}</Text>
               <Text style={{ flex: 1, color: '#C0C8D4', fontSize: 13 }}>{ACTIVITY_LABELS[s.activity]}</Text>
               <Text style={{ color: '#8892A0', fontSize: 12 }}>{s.minutesNeeded} min</Text>
               <Text style={{ color: '#00D984', fontSize: 12, fontWeight: '700', width: 60, textAlign: 'right' }}>-{s.kcalBurned}</Text>
             </View>
-          ))}
+          ); })}
 
           <TouchableOpacity
             style={{ backgroundColor: '#00D984', borderRadius: 12, paddingVertical: 14, marginTop: 18, alignItems: 'center' }}
             activeOpacity={0.7}
-            onPress={() => { onAddActivity && onAddActivity(); onClose(); }}
+            onPress={function() { onAddActivity && onAddActivity(); onClose(); }}
           >
             <Text style={{ color: '#0C1219', fontSize: 14, fontWeight: '800', letterSpacing: 1 }}>AJOUTER UNE ACTIVITÉ</Text>
           </TouchableOpacity>
@@ -1274,8 +1269,8 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubble
   const gradId = `waterGrad_${height}_${gender}`;
 
   // Bubble animations
-  const bubbleAnims = useRef(BUBBLE_CONFIG.map(() => new RNAnimated.Value(0))).current;
-  const [bubblePositions, setBubblePositions] = useState(BUBBLE_CONFIG.map(() => 0));
+  const bubbleAnims = useRef(BUBBLE_CONFIG.map(function() { return new RNAnimated.Value(0); })).current;
+  const [bubblePositions, setBubblePositions] = useState(BUBBLE_CONFIG.map(function() { return 0; }));
 
   useEffect(() => {
     RNAnimated.timing(fillAnim, {
@@ -1286,28 +1281,27 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubble
   useEffect(() => {
     if (!showBubbles || fillPercent < 10) return;
     const timers = [];
-    bubbleAnims.forEach((anim, i) => {
+    bubbleAnims.forEach(function(anim, i) {
       const cfg = BUBBLE_CONFIG[i];
-      const startTimer = setTimeout(() => {
-        const loop = () => {
+      const startTimer = setTimeout(function() {
+        var loop = function() {
           anim.setValue(0);
           RNAnimated.timing(anim, {
             toValue: 1, duration: cfg.duration, useNativeDriver: false,
-          }).start(() => loop());
+          }).start(function() { loop(); });
         };
         loop();
-        // Track position for rendering
-        anim.addListener(({ value }) => {
-          setBubblePositions(prev => {
-            const next = [...prev];
-            next[i] = value;
+        anim.addListener(function(v) {
+          setBubblePositions(function(prev) {
+            var next = prev.slice();
+            next[i] = v.value;
             return next;
           });
         });
       }, cfg.delay);
       timers.push(startTimer);
     });
-    return () => { timers.forEach(t => clearTimeout(t)); bubbleAnims.forEach(a => a.removeAllListeners()); };
+    return function() { timers.forEach(function(t) { clearTimeout(t); }); bubbleAnims.forEach(function(a) { a.removeAllListeners(); }); };
   }, [showBubbles, fillPercent > 10]);
 
   const waterTop = vbH * (1 - fillPercent / 100);
@@ -1335,7 +1329,7 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubble
         <G clipPath={`url(#${clipId})`}>
           <Rect x="0" y={waterTop} width="100" height={waterHeight} fill={`url(#${gradId})`} />
           {/* Animated bubbles inside water */}
-          {showBubbles && fillPercent >= 10 && BUBBLE_CONFIG.map((cfg, i) => {
+          {showBubbles && fillPercent >= 10 && BUBBLE_CONFIG.map(function(cfg, i) {
             const progress = bubblePositions[i] || 0;
             const bubbleY = waterTop + waterHeight - (progress * waterHeight);
             const oscillation = Math.sin(progress * Math.PI * 4) * 3;
@@ -1496,7 +1490,7 @@ const HydrationClock = ({ logs, totalMl, goalMl }) => {
   };
 
   const groupedByHour = {};
-  logs.forEach((log) => {
+  logs.forEach(function(log) {
     const parts = log.time.split(':');
     const h = parseInt(parts[0]);
     const m = parseInt(parts[1] || 0);
@@ -1506,10 +1500,10 @@ const HydrationClock = ({ logs, totalMl, goalMl }) => {
   });
 
   const arcs = [];
-  Object.entries(groupedByHour).forEach(([hourStr, entries]) => {
+  Object.entries(groupedByHour).forEach(function([hourStr, entries]) {
     const h = parseInt(hourStr);
     if (h < 6 || h > 23) return;
-    const totalAmount = entries.reduce((s, e) => s + (e.amount || 0), 0);
+    const totalAmount = entries.reduce(function(s, e) { return s + (e.amount || 0); }, 0);
     const startAngle = hourToAngle(h, 0) + 1;
     const endAngle = hourToAngle(h, 55) - 1;
     const maxBarR = outerR;
@@ -1531,13 +1525,13 @@ const HydrationClock = ({ logs, totalMl, goalMl }) => {
 
   return (
     <View style={{ alignItems: 'center', marginVertical: 8 }}>
-      <Pressable onPress={() => setSelectedArc(null)}>
+      <Pressable onPress={function() { setSelectedArc(null) }}>
         <Svg width={clockSize} height={clockSize} viewBox={`0 0 ${clockSize} ${clockSize}`}>
           <Circle cx={center} cy={center} r={outerR} fill="none" stroke="rgba(74,79,85,0.2)" strokeWidth={1} />
           <Circle cx={center} cy={center} r={innerR} fill="none" stroke="rgba(74,79,85,0.12)" strokeWidth={0.5} />
           <Circle cx={center} cy={center} r={innerR - 2} fill="rgba(13,17,23,0.3)" />
 
-          {hoursRange.map((h) => {
+          {hoursRange.map(function(h) {
             const angle = hourToAngle(h, 30);
             const tickStart = polarToXY(angle, outerR - 2);
             const tickEnd = polarToXY(angle, outerR - 8);
@@ -1565,15 +1559,15 @@ const HydrationClock = ({ logs, totalMl, goalMl }) => {
             );
           })}
 
-          {arcs.map((arc) => (
+          {arcs.map(function(arc) { return (
             <Path
               key={arc.key}
               d={arc.path}
               fill={selectedArc === arc.key ? arc.color : arc.color + 'AA'}
               opacity={arc.opacity}
-              onPress={() => setSelectedArc(selectedArc === arc.key ? null : arc.key)}
+              onPress={function() { setSelectedArc(selectedArc === arc.key ? null : arc.key) }}
             />
-          ))}
+          ); })}
 
           <SvgText
             x={center} y={center - 10}
@@ -1603,7 +1597,7 @@ const HydrationClock = ({ logs, totalMl, goalMl }) => {
           <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>
             {selectedArc}h00
           </Text>
-          {groupedByHour[selectedArc].map((entry, i) => (
+          {groupedByHour[selectedArc].map(function(entry, i) { return (
             <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
               <Text style={{ fontSize: 16, width: 24 }}>{entry.icon || '💧'}</Text>
               <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '600', flex: 1 }}>
@@ -1613,7 +1607,7 @@ const HydrationClock = ({ logs, totalMl, goalMl }) => {
                 +{entry.amount} ml
               </Text>
             </View>
-          ))}
+          ); })}
         </View>
       )}
     </View>
@@ -1640,8 +1634,8 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 
   const addWater = (ml) => {
     // 1. Mise à jour locale immédiate
-    setCurrentMl(prev => prev + ml);
-    setHydroLogs(prev => [...prev, { time: getTimeStr(), amount: ml, type: 'eau', icon: '💧' }]);
+    setCurrentMl(function(prev) { return prev + ml; });
+    setHydroLogs(function(prev) { return [...prev, { time: getTimeStr(), amount: ml, type: 'eau', icon: '💧' }]; });
 
     // 2. Vibration
     try {
@@ -1668,9 +1662,9 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
   };
 
   const removeWater = (ml) => {
-    setCurrentMl(prev => Math.max(0, prev - ml));
-    setHydroLogs(prev => {
-      const idx = [...prev].reverse().findIndex(l => l.amount === ml && l.type === 'eau');
+    setCurrentMl(function(prev) { return Math.max(0, prev - ml); });
+    setHydroLogs(function(prev) {
+      const idx = [...prev].reverse().findIndex(function(l) { return l.amount === ml && l.type === 'eau'; });
       if (idx === -1) return prev;
       const realIdx = prev.length - 1 - idx;
       return [...prev.slice(0, realIdx), ...prev.slice(realIdx + 1)];
@@ -1721,7 +1715,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <SilhouetteFill fillPercent={percent} height={260} gender={gender} showBubbles />
                 <View style={{ marginLeft: 20, height: 260, justifyContent: 'space-between', paddingVertical: 12 }}>
-                  {palierLabels.slice().reverse().map((label, i) => {
+                  {palierLabels.slice().reverse().map(function(label, i) {
                     const palierPct = (4 - i) * 25;
                     const reached = percent >= palierPct;
                     return (
@@ -1760,7 +1754,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
             }}>
               <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '700', letterSpacing: 2, marginBottom: 14 }}>EAU 💧</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                {quantities.map((item) => (
+                {quantities.map(function(item) { return (
                   <View key={item.ml} style={{ alignItems: 'center' }}>
                     <TouchableOpacity
                       style={{
@@ -1770,7 +1764,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                         justifyContent: 'center', alignItems: 'center',
                       }}
                       activeOpacity={0.7}
-                      onPress={() => addWater(item.ml)}
+                      onPress={function() { addWater(item.ml) }}
                     >
                       <Text style={{ fontSize: 18 }}>{item.icon}</Text>
                       <Text style={{ color: '#C0C8D4', fontSize: 10, fontWeight: '700', marginTop: 1 }}>{item.label}</Text>
@@ -1783,12 +1777,12 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                         justifyContent: 'center', alignItems: 'center',
                       }}
                       activeOpacity={0.7}
-                      onPress={() => removeWater(item.ml)}
+                      onPress={function() { removeWater(item.ml) }}
                     >
                       <Text style={{ color: '#FF3B30', fontSize: 16, fontWeight: '700', lineHeight: 18 }}>−</Text>
                     </TouchableOpacity>
                   </View>
-                ))}
+                ); })}
               </View>
             </View>
 
@@ -1938,7 +1932,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 
             {/* ═══ RÉINITIALISER ═══ */}
             <TouchableOpacity
-              onPress={() => setShowResetConfirm(true)}
+              onPress={function() { setShowResetConfirm(true) }}
               style={{ alignSelf: 'center', marginTop: 24, marginBottom: 30 }}
             >
               <Text style={{ color: '#8892A0', fontSize: 11, opacity: 0.5 }}>Réinitialiser les données du jour</Text>
@@ -2241,13 +2235,13 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                   <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>Votre hydratation du jour sera remise à zéro. Cette action est irréversible.</Text>
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <TouchableOpacity
-                      onPress={() => setShowResetConfirm(false)}
+                      onPress={function() { setShowResetConfirm(false) }}
                       style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(136,146,160,0.2)', alignItems: 'center' }}
                     >
                       <Text style={{ color: '#8892A0', fontSize: 14, fontWeight: '600' }}>Annuler</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      onPress={() => { setCurrentMl(0); setHydroLogs([]); setShowResetConfirm(false); }}
+                      onPress={function() { setCurrentMl(0); setHydroLogs([]); setShowResetConfirm(false); }}
                       style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: 'rgba(255,59,48,0.12)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)', alignItems: 'center' }}
                     >
                       <Text style={{ color: '#FF3B30', fontSize: 14, fontWeight: '800' }}>Réinitialiser</Text>
@@ -2665,7 +2659,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       {/* ══════ SECTIONS POUVOIRS CARACTÈRES ══════ */}
       {pagePowers && pagePowers.length > 0 && activeChar && tooltipStep === 0 && (
         <View style={{ marginBottom: wp(4) }}>
-          {pagePowers.map(power => {
+          {pagePowers.map(function(power) {
             const isUnlocked = power.unlocked;
 
             switch (power.action_type) {
@@ -2675,7 +2669,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                 if (!isUnlocked) return null;
                 return (
                   <MetalCard key={power.power_key} style={{ marginHorizontal: 0, marginBottom: wp(8) }}>
-                    <Pressable delayPressIn={120} onPress={async () => {
+                    <Pressable delayPressIn={120} onPress={function() {
                       const r = await consumePower(power.power_key);
                       if (!r.success) return;
                       showToast('📊 Tracker de streaks — bientôt disponible', '#00D984');
@@ -2696,13 +2690,13 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                           { label: 'Activité', icon: '🏃', days: 0 },
                           { label: 'Humeur', icon: '😊', days: 0 },
                           { label: 'Hydra', icon: '💧', days: 0 },
-                        ].map((cat, i) => (
+                        ].map(function(cat, i) { return (
                           <View key={i} style={{ alignItems: 'center' }}>
                             <Text style={{ fontSize: fp(16) }}>{cat.icon}</Text>
                             <Text style={{ color: cat.days > 0 ? '#00D984' : '#555E6C', fontSize: fp(12), fontWeight: '800', marginTop: wp(2) }}>{cat.days}j</Text>
                             <Text style={{ color: '#6B7280', fontSize: fp(8) }}>{cat.label}</Text>
                           </View>
-                        ))}
+                        ); })}
                       </View>
                     </Pressable>
                   </MetalCard>
@@ -2727,7 +2721,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                       <Text style={{ color: '#8892A0', fontSize: fp(8), marginTop: wp(1) }}>{power.description_fr || ''}</Text>
                     </View>
                     <Pressable
-                      onPress={() => { setToggleStates(prev => ({ ...prev, [power.power_key]: !prev[power.power_key] })); }}
+                      onPress={function() { setToggleStates(function(prev) { var o = {}; for (var k in prev) o[k] = prev[k]; o[power.power_key] = !prev[power.power_key]; return o; }); }}
                       style={{ width: wp(40), height: wp(22), borderRadius: wp(11), backgroundColor: isOn ? '#00D984' : 'rgba(255,255,255,0.1)', padding: wp(2), justifyContent: 'center' }}
                     >
                       <View style={{ width: wp(18), height: wp(18), borderRadius: wp(9), backgroundColor: '#FFFFFF', alignSelf: isOn ? 'flex-end' : 'flex-start' }} />
@@ -2771,7 +2765,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                 if (!isUnlocked) return null;
                 return (
                   <MetalCard key={power.power_key} style={{ marginHorizontal: 0, marginBottom: wp(8) }}>
-                    <Pressable delayPressIn={120} onPress={async () => {
+                    <Pressable delayPressIn={120} onPress={function() {
                       const r = await consumePower(power.power_key);
                       if (!r.success) return;
                       showToast((power.icon || '🌊') + ' Tracker hydratation avancé — bientôt', '#4DA6FF');
@@ -2798,7 +2792,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                 if (!isUnlocked) return null;
                 return (
                   <MetalCard key={power.power_key} style={{ marginHorizontal: 0, marginBottom: wp(8) }}>
-                    <Pressable delayPressIn={120} onPress={async () => {
+                    <Pressable delayPressIn={120} onPress={function() {
                       const r = await consumePower(power.power_key);
                       if (!r.success) return;
                       showToast((power.icon || '🔮') + ' ' + (power.name_fr || 'Pouvoir') + ' — bientôt', '#D4AF37');
@@ -3236,13 +3230,13 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
   <View
     style={s.tabBar}
   >
-    {TABS.map((tab) => {
+    {TABS.map(function(tab) {
       const active = activeTab === tab.key;
       return (
         <TouchableOpacity
           key={tab.key}
           style={s.tabItem}
-          onPress={() => onTabPress(tab.key)}
+          onPress={function() { onTabPress(tab.key) }}
           activeOpacity={0.7}
         >
           <View style={{ position: 'relative' }}>
@@ -3629,15 +3623,15 @@ export default function App() {
     const addedEffective = totals.effectiveMl;
 
     // 1. Mise à jour LOCALE immédiate (optimiste)
-    setHydrationMl(prev => prev + addedEffective);
+    setHydrationMl(function(prev) { return prev + addedEffective; });
     const now = new Date();
     const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    setHydroLogs(prev => [...prev, {
+    setHydroLogs(function(prev) { return [...prev, {
       time: timeStr,
       amount: addedEffective,
       type: bevName,
       icon: bevIcon,
-    }]);
+    }]; });
 
     // 1b. Afficher le toast de confirmation
     setBeverageToast({
@@ -3646,7 +3640,7 @@ export default function App() {
       effectiveMl: addedEffective,
       kcal: totals.kcal,
     });
-    setTimeout(() => setBeverageToast(null), 2500);
+    setTimeout(function() { setBeverageToast(null); }, 2500);
 
     // 2. Fermer le modal immédiatement
     setSelectedBeverage(null);
@@ -3786,7 +3780,7 @@ export default function App() {
     try {
       const { data: collection } = await supabase
         .rpc('get_user_collection', { p_user_id: TEST_USER_ID });
-      const active = (collection || []).find(c => c.is_active);
+      const active = (collection || []).find(function(c) { return c.is_active; });
       if (!active) { setActiveChar(null); setPagePowers([]); return; }
       setActiveChar(active);
 
@@ -3795,7 +3789,7 @@ export default function App() {
           p_user_id: TEST_USER_ID,
           p_slug: active.slug,
         });
-      setPagePowers((powers || []).filter(p => p.redirect_page === DASHBOARD_PAGE));
+      setPagePowers((powers || []).filter(function(p) { return p.redirect_page === DASHBOARD_PAGE; }));
     } catch (e) {
       console.warn('Dashboard powers load error:', e);
     }
@@ -3808,7 +3802,7 @@ export default function App() {
         p_power_key: powerKey,
       });
       if (data?.success) {
-        setActiveChar(prev => prev ? { ...prev, uses_remaining: data.uses_remaining } : null);
+        setActiveChar(function(prev) { return prev ? { ...prev, uses_remaining: data.uses_remaining } : null; });
         return { success: true, uses_remaining: data.uses_remaining };
       }
       if (data?.error === 'No uses remaining') {
@@ -3927,14 +3921,14 @@ export default function App() {
 
   // Calorie logic
   const consumedTotal = realConsumed + (hydrationData.totalKcal || 0);
-  const burnedExtra = activities.reduce((sum, a) => sum + a.kcalBurned, 0);
+  const burnedExtra = activities.reduce(function(sum, a) { return sum + a.kcalBurned; }, 0);
   const burnedTotal = burnedExtra; // Calories brûlées par les activités du jour
   const surplus = Math.max(0, consumedTotal - burnedExtra - DAILY_OBJECTIVE);
 
   // Sport → hydration water loss
-  const sportWaterLoss = activities.reduce((sum, a) => sum + calculateWaterLoss(a.durationMin, a.intensity), 0);
+  const sportWaterLoss = activities.reduce(function(sum, a) { return sum + calculateWaterLoss(a.durationMin; }, a.intensity), 0);
   const sportAlert = sportWaterLoss > 0
-    ? `🏃 -${sportWaterLoss}ml (${activities.map(a => ACTIVITY_LABELS[a.name] || a.name).join(', ')})`
+    ? `🏃 -${sportWaterLoss}ml (${activities.map(function(a) { return ACTIVITY_LABELS[a.name] || a.name; }).join(', ')})`
     : null;
 
   // ===== TOOLTIP OVERLAY — Tutoriel guidé 4 étapes =====
@@ -4014,14 +4008,14 @@ export default function App() {
             marginBottom: wp(10),
             gap: wp(5),
           }}>
-            {steps.map((_, i) => (
+            {steps.map(function(_, i) { return (
               <View key={i} style={{
                 width: i + 1 === tooltipStep ? wp(18) : wp(6),
                 height: wp(5),
                 borderRadius: wp(3),
                 backgroundColor: i + 1 === tooltipStep ? currentStep.color : 'rgba(255,255,255,0.15)',
               }} />
-            ))}
+            ); })}
           </View>
 
           {/* Numéro */}
@@ -4055,12 +4049,12 @@ export default function App() {
 
           {/* Boutons */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <TouchableOpacity onPress={() => setTooltipStep(0)}>
+            <TouchableOpacity onPress={function() { setTooltipStep(0) }}>
               <Text style={{ color: '#8892A0', fontSize: fp(12), fontWeight: '500' }}>Passer</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => {
+              onPress={function() {
                 if (isLast) {
                   setTooltipStep(0);
                 } else {
@@ -4155,8 +4149,8 @@ export default function App() {
     useEffect(() => {
       if (!hasStartedTapping || isExcited) return;
 
-      decayTimer.current = setInterval(() => {
-        setMoodLevel(prev => {
+      decayTimer.current = setInterval(function() {
+        setMoodLevel(function(prev) {
           if (prev >= 100) return 100;                        // Verrouillé 100%
           if (prev >= HAPPY_THRESHOLD) return Math.max(prev - 1.5, HAPPY_THRESHOLD);
           if (prev >= CHILL_THRESHOLD) return Math.max(prev - 1.5, CHILL_THRESHOLD);
@@ -4203,7 +4197,7 @@ export default function App() {
     useEffect(() => {
       if (moodResult || !hasStartedTapping) return;
       clearTimeout(inactivityTimer.current);
-      inactivityTimer.current = setTimeout(() => {
+      inactivityTimer.current = setTimeout(function() {
         let result;
         if (isExcited || moodLevel >= 100) result = 'excited';
         else if (moodLevel >= HAPPY_THRESHOLD) result = 'happy';
@@ -4232,7 +4226,7 @@ export default function App() {
           delay: Math.random() * 600,
         }));
         setConfetti(newConfetti);
-        setTimeout(() => setConfetti([]), 3500);
+        setTimeout(function() { setConfetti([]); }, 3500);
 
         // SCREEN SHAKE — tout l'écran tremble
         const shakeSequence = [];
@@ -4262,7 +4256,7 @@ export default function App() {
 
       useEffect(() => {
         const delay = item.delay || 0;
-        const timer = setTimeout(() => {
+        const timer = setTimeout(function() {
           RNAnimated.parallel([
             RNAnimated.timing(fallAnim, {
               toValue: 1, duration: 2000 + Math.random() * 1000,
@@ -4322,7 +4316,7 @@ export default function App() {
         RNAnimated.timing(tierLabelOpacity, { toValue: 1, duration: 80, useNativeDriver: true }),
         RNAnimated.delay(350),
         RNAnimated.timing(tierLabelOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
-      ]).start(() => setTierLabel(''));
+      ]).start(function() { setTierLabel(''; }));
 
       try {
         const { Vibration } = require('react-native');
@@ -4361,9 +4355,9 @@ export default function App() {
         x: x,
         y: y,
       }));
-      setHearts(prev => [...prev, ...batch]);
-      setTimeout(() => {
-        setHearts(prev => prev.filter(h => !batch.find(b => b.id === h.id)));
+      setHearts(function(prev) { return [...prev, ...batch]; });
+      setTimeout(function() {
+        setHearts(function(prev) { return prev.filter(function(h) { return !batch.find(function(b) { return b.id === h.id; }); }); });
       }, 1000);
     };
 
@@ -4374,30 +4368,30 @@ export default function App() {
         y: y,
         emoji: ['⚡', '✦', '🔥'][Math.floor(Math.random() * 3)],
       }));
-      setEnergyParticles(prev => [...prev, ...newParticles]);
-      setTimeout(() => {
-        setEnergyParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)));
+      setEnergyParticles(function(prev) { return [...prev, ...newParticles]; });
+      setTimeout(function() {
+        setEnergyParticles(function(prev) { return prev.filter(function(p) { return !newParticles.find(function(np) { return np.id === p.id; }); }); });
       }, 800);
     };
 
     const handleTap = (touchX, touchY) => {
       if (moodResult) return;
       if (!hasStartedTapping) setHasStartedTapping(true);
-      setTapCount(prev => prev + 1);
+      setTapCount(function(prev) { return prev + 1; });
 
       // Spawner cœurs à la position du doigt
       spawnHeartsAt(touchX, touchY);
 
       // Flash sur le tube
       setTubeFlash(true);
-      setTimeout(() => setTubeFlash(false), 200);
+      setTimeout(function() { setTubeFlash(false); }, 200);
 
       if (isExcited) return;
 
       if (moodLevel >= 100) {
         // Overflow taps after reaching 100%
-        setOverflowTaps(prev => prev + 1);
-        setExcitedBuildUp(prev => {
+        setOverflowTaps(function(prev) { return prev + 1; });
+        setExcitedBuildUp(function(prev) {
           const next = prev + 1;
           if (next >= 5 && !isExcited) {
             setIsExcited(true);
@@ -4412,10 +4406,10 @@ export default function App() {
         spawnEnergyAt(touchX, touchY);
       } else if (tapCount < 3) {
         // First 3 taps: light progression (+1%)
-        setMoodLevel(prev => Math.min(prev + 1, 100));
+        setMoodLevel(function(prev) { return Math.min(prev + 1, 100); });
       } else {
         // Normal taps: +4%
-        setMoodLevel(prev => Math.min(prev + 4, 100));
+        setMoodLevel(function(prev) { return Math.min(prev + 4, 100); });
       }
     };
 
@@ -4460,7 +4454,7 @@ export default function App() {
           style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
         >
           <Pressable
-            onPressIn={(event) => {
+            onPressIn={function(event) {
               const { pageX, pageY } = event.nativeEvent;
               handleTap(pageX, pageY);
             }}
@@ -4481,14 +4475,14 @@ export default function App() {
               ],
             }}>
             {/* Cœurs flottants */}
-            {hearts.map(heart => (
+            {hearts.map(function(heart) { return (
               <FloatingHeart key={heart.id} heart={heart} tubeCenter={tubeLayout} />
-            ))}
+            ); })}
 
             {/* Confettis (Excité) */}
-            {confetti.map(item => (
+            {confetti.map(function(item) { return (
               <Confetto key={item.id} item={item} />
-            ))}
+            ); })}
 
             {/* Titre */}
             {!moodResult && (
@@ -4530,7 +4524,7 @@ export default function App() {
             {/* Barre verticale + Icônes */}
             {!moodResult && (
               <View
-                onLayout={(e) => {
+                onLayout={function(e) {
                   const { x, y, width, height } = e.nativeEvent.layout;
                   setTubeLayout({
                     x: x + width / 2,
@@ -4563,9 +4557,9 @@ export default function App() {
                 )}
 
                 {/* Energy particles */}
-                {energyParticles.map(p => (
+                {energyParticles.map(function(p) { return (
                   <EnergyParticle key={p.id} x={p.x} y={p.y} emoji={p.emoji} />
-                ))}
+                ); })}
 
                 {/* Icônes SVG à gauche */}
                 <View style={{ justifyContent: 'space-between', height: 300, marginRight: 15, paddingVertical: 5, alignItems: 'center' }}>
@@ -4668,7 +4662,7 @@ export default function App() {
               <View style={{ alignItems: 'center', paddingHorizontal: 30 }}>
                 {/* Confettis for Excited result */}
                 {moodResult === 'excited' && confetti.length > 0 &&
-                  confetti.map(item => ( <Confetto key={item.id} item={item} /> ))
+                  confetti.map(function(item) { return ( <Confetto key={item.id} item={item} /> ); })
                 }
                 <View style={{
                   marginBottom: 15,
@@ -4715,7 +4709,7 @@ export default function App() {
                 </View>
 
                 <TouchableOpacity
-                  onPress={() => setShowWeather(true)}
+                  onPress={function() { setShowWeather(true) }}
                   style={{
                     backgroundColor: moodMessages[moodResult].color,
                     borderRadius: 14,
@@ -4727,7 +4721,7 @@ export default function App() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={() => {
+                  onPress={function() {
                     setMoodLevel(0);
                     setLockedAtChill(false);
                     setMoodResult(null);
@@ -4772,7 +4766,7 @@ export default function App() {
                 <View style={{ flexDirection: 'row', gap: 15 }}>
                   {/* Pluvieux */}
                   <TouchableOpacity
-                    onPress={() => setSelectedWeather('rainy')}
+                    onPress={function() { setSelectedWeather('rainy') }}
                     style={{
                       width: 90, height: 100,
                       borderRadius: 18,
@@ -4788,7 +4782,7 @@ export default function App() {
 
                   {/* Nuageux */}
                   <TouchableOpacity
-                    onPress={() => setSelectedWeather('cloudy')}
+                    onPress={function() { setSelectedWeather('cloudy') }}
                     style={{
                       width: 90, height: 100,
                       borderRadius: 18,
@@ -4804,7 +4798,7 @@ export default function App() {
 
                   {/* Ensoleillé */}
                   <TouchableOpacity
-                    onPress={() => setSelectedWeather('sunny')}
+                    onPress={function() { setSelectedWeather('sunny') }}
                     style={{
                       width: 90, height: 100,
                       borderRadius: 18,
@@ -4823,7 +4817,7 @@ export default function App() {
                 {selectedWeather && (
                   <View style={{ marginTop: 25, alignItems: 'center' }}>
                     <TouchableOpacity
-                      onPress={async () => {
+                      onPress={function() {
                         try {
                           // 1. Sauvegarder dans la table moods
                           await supabase.from('moods').insert({
@@ -4885,7 +4879,7 @@ export default function App() {
       case 'home':
         return (
           <DashboardContent
-            onHydrationPress={() => setHydroModalVisible(true)}
+            onHydrationPress={function() { setHydroModalVisible(true) }}
             hydrationMl={hydrationMl}
             hydrationGoal={hydrationGoal}
             gender={gender}
@@ -4904,7 +4898,7 @@ export default function App() {
             setToggleStates={setToggleStates}
             consumePower={consumePower}
             userName={userName}
-            onAvatarPress={() => setActiveTab('profile')}
+            onAvatarPress={function() { setActiveTab('profile'); }}
             onNavigate={function(tab) { setActiveTab(tab); }}
             showToast={showToast}
             onOpenStats={function() {
@@ -4942,8 +4936,8 @@ export default function App() {
             currentMood={currentMood}
             lixCount={lixCount}
             notifCount={notifCount}
-            onMoodPress={() => setShowMoodModal(true)}
-            onLixPress={() => setActiveTab('profile')}
+            onMoodPress={function() { setShowMoodModal(true); }}
+            onLixPress={function() { setActiveTab('profile'); }}
             highlightMood={tooltipStep === 1}
             userEnergy={userEnergy}
           />
@@ -4957,14 +4951,14 @@ export default function App() {
         {/* Modal Hydratation fullscreen */}
         <HydrationModal
           visible={hydroModalVisible}
-          onClose={() => setHydroModalVisible(false)}
+          onClose={function() { setHydroModalVisible(false) }}
           currentMl={hydrationMl}
           setCurrentMl={setHydrationMl}
           goalMl={hydrationGoal}
           gender={gender}
           hydroLogs={hydroLogs}
           setHydroLogs={setHydroLogs}
-          onAddBeverage={() => {
+          onAddBeverage={function() {
             setShowBeverageModal(true);
             setBeverageCategory('all');
             setSelectedBeverage(null);
@@ -5122,9 +5116,9 @@ export default function App() {
         {/* Surplus alert modal */}
         <SurplusAlertModal
           visible={surplusAlertVisible}
-          onClose={() => setSurplusAlertVisible(false)}
+          onClose={function() { setSurplusAlertVisible(false) }}
           surplus={surplus}
-          onAddActivity={() => setActiveTab('activity')}
+          onAddActivity={function() { setActiveTab('activity'); }}
         />
 
         {/* ===== MOOD MODAL — TikTok Tap ===== */}
@@ -5145,7 +5139,7 @@ export default function App() {
               borderBottomWidth: 1, borderBottomColor: 'rgba(0,217,132,0.08)',
             }}>
               <Pressable
-                onPress={() => { setShowBeverageModal(false); setSelectedBeverage(null); }}
+                onPress={function() { setShowBeverageModal(false); setSelectedBeverage(null); }}
                 style={{
                   width: 36, height: 36, borderRadius: 18,
                   backgroundColor: 'rgba(255,255,255,0.06)',
@@ -5173,11 +5167,11 @@ export default function App() {
                 placeholder="Rechercher (bissap, chai, zobo...)"
                 placeholderTextColor="#555E6C"
                 value={beverageSearch}
-                onChangeText={(t) => { setBeverageSearch(t); searchBeverages(t); }}
+                onChangeText={function(t) { setBeverageSearch(t); searchBeverages(t); }}
                 style={{ flex: 1, color: '#EAEEF3', fontSize: fp(13), paddingVertical: 10 }}
               />
               {beverageSearch ? (
-                <Pressable onPress={() => { setBeverageSearch(''); fetchBeveragesByCategory(beverageCategory); }}>
+                <Pressable onPress={function() { setBeverageSearch(''); fetchBeveragesByCategory(beverageCategory); }}>
                   <Ionicons name="close-circle" size={18} color="#555E6C" />
                 </Pressable>
               ) : null}
@@ -5190,12 +5184,12 @@ export default function App() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: wp(14), alignItems: 'center', height: 36 }}
               >
-                {BEVERAGE_CATS.map((cat) => {
+                {BEVERAGE_CATS.map(function(cat) {
                   const active = beverageCategory === cat.id;
                   return (
                     <Pressable
                       key={cat.id}
-                      onPress={() => { setBeverageCategory(cat.id); setBeverageSearch(''); fetchBeveragesByCategory(cat.id); }}
+                      onPress={function() { setBeverageCategory(cat.id); setBeverageSearch(''); fetchBeveragesByCategory(cat.id); }}
                       style={{
                         flexDirection: 'row', alignItems: 'center',
                         height: 30,
@@ -5225,7 +5219,7 @@ export default function App() {
                 <View style={{ paddingTop: 6 }}>
                   {/* Bouton retour */}
                   <Pressable
-                    onPress={() => setSelectedBeverage(null)}
+                    onPress={function() { setSelectedBeverage(null) }}
                     style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
                   >
                     <Ionicons name="arrow-back" size={18} color="#00D984" />
@@ -5272,10 +5266,10 @@ export default function App() {
                       {/* VOLUMES RAPIDES */}
                       <Text style={{ color: '#8892A0', fontSize: fp(10), fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>VOLUME</Text>
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}>
-                        {QUICK_VOLUMES.map((v) => (
+                        {QUICK_VOLUMES.map(function(v) { return (
                           <Pressable
                             key={v}
-                            onPress={() => setBeverageVolume(v)}
+                            onPress={function() { setBeverageVolume(v) }}
                             style={{
                               paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14,
                               marginRight: 6, marginBottom: 5,
@@ -5289,7 +5283,7 @@ export default function App() {
                               fontSize: fp(12), fontWeight: '700',
                             }}>{v} ml</Text>
                           </Pressable>
-                        ))}
+                        ); })}
                         <View style={{
                           flexDirection: 'row', alignItems: 'center',
                           backgroundColor: 'rgba(51,58,66,0.6)', borderRadius: 14,
@@ -5300,7 +5294,7 @@ export default function App() {
                             placeholderTextColor="#555"
                             keyboardType="numeric"
                             value={QUICK_VOLUMES.includes(beverageVolume) ? '' : String(beverageVolume)}
-                            onChangeText={(t) => { const n = parseInt(t); if (n > 0 && n <= 2000) setBeverageVolume(n); }}
+                            onChangeText={function(t) { var n = parseInt(t); if (n > 0 && n <= 2000) setBeverageVolume(n); }}
                             style={{ color: '#EAEEF3', fontSize: fp(12), width: 35, textAlign: 'center' }}
                           />
                           <Text style={{ color: '#555E6C', fontSize: fp(10) }}>ml</Text>
@@ -5312,10 +5306,10 @@ export default function App() {
                         <View style={{ marginBottom: 12 }}>
                           <Text style={{ color: '#8892A0', fontSize: fp(10), fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>SUCRE AJOUTÉ</Text>
                           <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
-                            {[0, 1, 2, 3, 4, 5].map((n) => (
+                            {[0, 1, 2, 3, 4, 5].map(function(n) { return (
                               <Pressable
                                 key={n}
-                                onPress={() => setSugarCubes(n)}
+                                onPress={function() { setSugarCubes(n) }}
                                 style={{
                                   width: 36, height: 36, borderRadius: 10, marginRight: 5, marginBottom: 4,
                                   backgroundColor: n === 0
@@ -5330,7 +5324,7 @@ export default function App() {
                               >
                                 <Text style={{ fontSize: 14 }}>{n === 0 ? '🚫' : '🧊'}</Text>
                               </Pressable>
-                            ))}
+                            ); })}
                           </View>
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
                             <Text style={{ color: '#FFD93D', fontSize: fp(10), fontWeight: '700' }}>
@@ -5344,7 +5338,7 @@ export default function App() {
                       ) : null}
 
                       {/* RÉSUMÉ 3 CHIFFRES */}
-                      {(() => {
+                      {(function() {
                         const t = calcBeverageTotals();
                         return (
                           <View style={{
@@ -5375,7 +5369,7 @@ export default function App() {
                       <Pressable
                         onPress={saveBeverage}
                         disabled={beverageSaving}
-                        style={({ pressed }) => ({
+                        style={function(s) { var pressed = s.pressed; return {
                           backgroundColor: beverageSaving ? '#333A42' : '#00D984',
                           borderRadius: wp(12), paddingVertical: 14, alignItems: 'center',
                           transform: [{ scale: pressed ? 0.97 : 1 }],
@@ -5383,7 +5377,7 @@ export default function App() {
                           shadowOffset: { width: 0, height: 0 },
                           shadowOpacity: beverageSaving ? 0 : 0.3,
                           shadowRadius: 10, elevation: beverageSaving ? 0 : 6,
-                        })}
+                        }; }}
                       >
                         <Text style={{
                           color: beverageSaving ? '#555E6C' : '#0D1117',
@@ -5410,12 +5404,12 @@ export default function App() {
                     </View>
                   ) : (
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', gap: wp(8), paddingTop: 6 }}>
-                      {beverageList.map((bev) => {
+                      {beverageList.map(function(bev) {
                         const coeffColor = getCoeffColor(bev.coeff);
                         return (
                           <Pressable
                             key={bev.beverage_id}
-                            onPress={() => selectBeverage(bev)}
+                            onPress={function() { selectBeverage(bev) }}
                             style={{
                               width: (W - wp(14) * 2 - wp(8) * 2) / 3,
                               paddingVertical: 10, paddingHorizontal: 6, borderRadius: wp(14),
