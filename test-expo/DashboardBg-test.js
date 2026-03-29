@@ -1709,10 +1709,13 @@ const HydrationClock = ({ logs, totalMl, goalMl }) => {
   );
 };
 
-const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gender, hydroLogs, setHydroLogs, onAddBeverage, showResetConfirm, setShowResetConfirm, showHistoryLock, setShowHistoryLock }) => {
+const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gender, hydroLogs, setHydroLogs, onAddBeverage, showResetConfirm, setShowResetConfirm, showHistoryLock, setShowHistoryLock, historyUnlocked, historyData, historyLoading, selectedHistoryDay, setSelectedHistoryDay, unlockHistoryWithLix, unlockHistoryWithPower, fetchWeeklyHydration, pagePowers, activeChar }) => {
   const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
   const glasses = Math.round(currentMl / 250);
   const totalGlasses = Math.round(goalMl / 250);
+
+  var _deleteConfirm = useState(null);
+  var deleteConfirmIdx = _deleteConfirm[0]; var setDeleteConfirmIdx = _deleteConfirm[1];
 
   const getTimeStr = () => {
     const now = new Date();
@@ -1884,29 +1887,95 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                   borderRadius: 14, overflow: 'hidden',
                   borderWidth: 1, borderColor: 'rgba(74,79,85,0.12)',
                 }}>
-                  {hydroLogs.slice().reverse().map((log, i, arr) => (
-                    <View key={i} style={{
-                      flexDirection: 'row', alignItems: 'center',
-                      paddingVertical: 10, paddingHorizontal: 14,
-                      borderBottomWidth: i < arr.length - 1 ? 1 : 0,
-                      borderBottomColor: 'rgba(74,79,85,0.1)',
-                      backgroundColor: i === 0 ? 'rgba(0,217,132,0.04)' : 'transparent',
-                    }}>
-                      <Text style={{ fontSize: 18, width: 28 }}>{log.icon || '💧'}</Text>
-                      <View style={{ flex: 1, marginLeft: 8 }}>
-                        <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '600' }}>{log.type || 'eau'}</Text>
-                        <Text style={{ color: '#555E6C', fontSize: 10, marginTop: 1 }}>{log.time}</Text>
+                  {hydroLogs.slice().reverse().map(function(log, i, arr) {
+                    return (
+                      <View key={i} style={{
+                        flexDirection: 'row', alignItems: 'center',
+                        paddingVertical: 10, paddingHorizontal: 14,
+                        borderBottomWidth: i < arr.length - 1 ? 1 : 0,
+                        borderBottomColor: 'rgba(74,79,85,0.1)',
+                        backgroundColor: i === 0 ? 'rgba(0,217,132,0.04)' : 'transparent',
+                      }}>
+                        {/* MODE NORMAL */}
+                        {deleteConfirmIdx !== i ? (
+                          <>
+                            <Text style={{ fontSize: 18, width: 28 }}>{log.icon || '💧'}</Text>
+                            <View style={{ flex: 1, marginLeft: 8 }}>
+                              <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '600' }}>{log.type || 'eau'}</Text>
+                              <Text style={{ color: '#555E6C', fontSize: 10, marginTop: 1 }}>{log.time}</Text>
+                            </View>
+                            <Text style={{ color: '#4DA6FF', fontSize: 14, fontWeight: '800', marginRight: 10 }}>+{log.amount} ml</Text>
+                            <Pressable
+                              onPress={function() { setDeleteConfirmIdx(i); }}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                              style={{
+                                width: 24, height: 24, borderRadius: 12,
+                                backgroundColor: 'rgba(255,255,255,0.04)',
+                                borderWidth: 1, borderColor: 'rgba(255,59,48,0.15)',
+                                justifyContent: 'center', alignItems: 'center',
+                              }}
+                            >
+                              <Text style={{ color: '#8892A0', fontSize: 10 }}>🗑</Text>
+                            </Pressable>
+                          </>
+                        ) : (
+                          /* MODE CONFIRMATION */
+                          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Text style={{ color: '#FF6B6B', fontSize: 12, fontWeight: '600', flex: 1 }}>
+                              Supprimer +{log.amount}ml {log.type || 'eau'} ?
+                            </Text>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                              <Pressable
+                                onPress={function() { setDeleteConfirmIdx(null); }}
+                                style={{
+                                  paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+                                  backgroundColor: 'rgba(255,255,255,0.06)',
+                                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                                }}
+                              >
+                                <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '600' }}>Non</Text>
+                              </Pressable>
+                              <Pressable
+                                onPress={function() {
+                                  var realIdx = arr.length - 1 - i;
+                                  var removedLog = hydroLogs[realIdx];
+                                  if (!removedLog) { setDeleteConfirmIdx(null); return; }
+                                  setHydroLogs(function(prev) {
+                                    return prev.filter(function(_, idx) { return idx !== realIdx; });
+                                  });
+                                  setCurrentMl(function(prev) { return Math.max(0, prev - removedLog.amount); });
+                                  try {
+                                    var Vibration = require('react-native').Vibration;
+                                    Vibration.vibrate(15);
+                                  } catch(e) {}
+                                  setDeleteConfirmIdx(null);
+                                }}
+                                style={{
+                                  paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+                                  backgroundColor: 'rgba(255,59,48,0.12)',
+                                  borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)',
+                                }}
+                              >
+                                <Text style={{ color: '#FF3B30', fontSize: 11, fontWeight: '700' }}>Oui</Text>
+                              </Pressable>
+                            </View>
+                          </View>
+                        )}
                       </View>
-                      <Text style={{ color: '#4DA6FF', fontSize: 14, fontWeight: '800' }}>+{log.amount} ml</Text>
-                    </View>
-                  ))}
+                    );
+                  })}
                 </View>
               )}
             </View>
 
             {/* ═══ VOIR 7 JOURS ═══ */}
             <TouchableOpacity
-              onPress={() => setShowHistoryLock(true)}
+              onPress={function() {
+                setShowHistoryLock(true);
+                if (historyUnlocked) {
+                  fetchWeeklyHydration();
+                }
+              }}
               style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
                 backgroundColor: 'rgba(255, 255, 255, 0.04)',
@@ -1934,39 +2003,268 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
               <Text style={{ color: '#8892A0', fontSize: 11, opacity: 0.5 }}>Réinitialiser les données du jour</Text>
             </TouchableOpacity>
 
-            {/* Modal historique 7 jours */}
-            <Modal visible={showHistoryLock} animationType="fade" transparent>
-              <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 30 }}>
-                <View style={{
-                  backgroundColor: '#1E2530', borderRadius: 20, padding: 24, width: '100%',
-                  borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
-                }}>
-                  <Text style={{ fontSize: 32, textAlign: 'center', marginBottom: 10 }}>🔒</Text>
-                  <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 8 }}>Historique Complet</Text>
-                  <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
-                    Accédez à votre historique sur 7 jours et suivez votre progression d'hydratation.
-                  </Text>
-                  <View style={{ flexDirection: 'row', gap: 10 }}>
-                    <TouchableOpacity
-                      onPress={() => setShowHistoryLock(false)}
-                      style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(136,146,160,0.2)', alignItems: 'center' }}
-                    >
-                      <Text style={{ color: '#8892A0', fontSize: 14, fontWeight: '600' }}>Plus tard</Text>
+            {/* ═══ MODAL HISTORIQUE 7 JOURS ═══ */}
+            <Modal visible={showHistoryLock} animationType="slide" transparent={false}>
+              <LinearGradient
+                colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']}
+                locations={[0, 0.25, 0.5, 0.75, 1]}
+                style={{ flex: 1 }}
+              >
+                <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+                  {/* Header */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 }}>
+                    <TouchableOpacity onPress={function() { setShowHistoryLock(false); setSelectedHistoryDay(null); }}>
+                      <Ionicons name="chevron-back" size={24} color="#EAEEF3" />
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => { setShowHistoryLock(false); console.log('unlock history'); }}
-                      style={{
-                        flex: 1, paddingVertical: 14, borderRadius: 12,
-                        backgroundColor: 'rgba(0,217,132,0.12)',
-                        borderWidth: 1, borderColor: 'rgba(0,217,132,0.3)', alignItems: 'center',
-                        flexDirection: 'row', justifyContent: 'center', gap: 6,
-                      }}
-                    >
-                      <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '800' }}>100 Lix</Text>
-                    </TouchableOpacity>
+                    <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '800', letterSpacing: 2 }}>HISTORIQUE 7 JOURS</Text>
+                    <Text style={{ fontSize: 20 }}>💧</Text>
                   </View>
-                </View>
-              </View>
+
+                  <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+
+                    {/* ── PAS ENCORE DÉBLOQUÉ ── */}
+                    {!historyUnlocked ? (
+                      <View style={{ alignItems: 'center', paddingTop: 20 }}>
+                        {/* Aperçu flouté — barres grisées fictives */}
+                        <View style={{
+                          width: '100%', height: 160, borderRadius: 16,
+                          backgroundColor: 'rgba(30,37,48,0.4)',
+                          borderWidth: 1, borderColor: 'rgba(74,79,85,0.2)',
+                          padding: 16, marginBottom: 20, overflow: 'hidden',
+                        }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', flex: 1 }}>
+                            {[65, 45, 80, 55, 35, 70, 20].map(function(h, i) {
+                              return (
+                                <View key={i} style={{ alignItems: 'center', flex: 1 }}>
+                                  <View style={{
+                                    width: 16, height: h + '%', borderRadius: 4,
+                                    backgroundColor: 'rgba(77,166,255,0.12)',
+                                  }} />
+                                  <Text style={{ color: '#555E6C', fontSize: 8, marginTop: 4 }}>
+                                    {['L', 'M', 'M', 'J', 'V', 'S', 'D'][i]}
+                                  </Text>
+                                </View>
+                              );
+                            })}
+                          </View>
+                          <View style={{
+                            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                            backgroundColor: 'rgba(30,37,48,0.6)', borderRadius: 16,
+                            justifyContent: 'center', alignItems: 'center',
+                          }}>
+                            <Text style={{ fontSize: 32 }}>🔒</Text>
+                          </View>
+                        </View>
+
+                        <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 8 }}>
+                          Historique Complet
+                        </Text>
+                        <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
+                          Suivez votre hydratation sur 7 jours et identifiez vos habitudes.
+                        </Text>
+
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, width: '100%' }}>
+                          <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(74,79,85,0.2)' }} />
+                          <Text style={{ color: '#555E6C', fontSize: 10, fontWeight: '600', marginHorizontal: 12, letterSpacing: 1 }}>DÉBLOQUER AVEC</Text>
+                          <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(74,79,85,0.2)' }} />
+                        </View>
+
+                        {/* Bouton Lix */}
+                        <TouchableOpacity
+                          onPress={unlockHistoryWithLix}
+                          style={{
+                            width: '100%', paddingVertical: 16, borderRadius: 14,
+                            backgroundColor: 'rgba(0,217,132,0.08)',
+                            borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)',
+                            alignItems: 'center', marginBottom: 12,
+                            flexDirection: 'row', justifyContent: 'center', gap: 8,
+                          }}
+                        >
+                          <LixGem size={16} />
+                          <Text style={{ color: '#00D984', fontSize: 16, fontWeight: '800' }}>100 Lix</Text>
+                          <Text style={{ color: '#8892A0', fontSize: 12 }}>• Accès permanent</Text>
+                        </TouchableOpacity>
+
+                        {/* Bouton Pouvoir */}
+                        {(function() {
+                          var hydroPower = (pagePowers || []).find(function(p) {
+                            return p.action_type === 'modal_inline' && p.redirect_page === 'accueil';
+                          });
+                          var hasPower = hydroPower && hydroPower.unlocked;
+                          return (
+                            <TouchableOpacity
+                              onPress={hasPower ? unlockHistoryWithPower : null}
+                              disabled={!hasPower}
+                              style={{
+                                width: '100%', paddingVertical: 16, borderRadius: 14,
+                                backgroundColor: hasPower ? 'rgba(77,166,255,0.08)' : 'rgba(255,255,255,0.02)',
+                                borderWidth: 1,
+                                borderColor: hasPower ? 'rgba(77,166,255,0.25)' : 'rgba(74,79,85,0.15)',
+                                alignItems: 'center', marginBottom: 12,
+                                flexDirection: 'row', justifyContent: 'center', gap: 8,
+                                opacity: hasPower ? 1 : 0.4,
+                              }}
+                            >
+                              <Text style={{ fontSize: 16 }}>🐬</Text>
+                              <Text style={{
+                                color: hasPower ? '#4DA6FF' : '#555E6C',
+                                fontSize: 14, fontWeight: '700',
+                              }}>
+                                {hasPower ? 'Pouvoir Coral Dolphin' : 'Aucun pouvoir compatible'}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })()}
+
+                        {/* Bouton Plus tard */}
+                        <TouchableOpacity
+                          onPress={function() { setShowHistoryLock(false); }}
+                          style={{ paddingVertical: 14, alignItems: 'center', marginTop: 8 }}
+                        >
+                          <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '600' }}>Plus tard</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                    ) : (
+                      /* ── DÉBLOQUÉ — AFFICHAGE HISTORIQUE ── */
+                      <View style={{ paddingTop: 8 }}>
+                        {historyLoading ? (
+                          <View style={{ alignItems: 'center', paddingTop: 60 }}>
+                            <Text style={{ fontSize: 32 }}>💧</Text>
+                            <Text style={{ color: '#555E6C', fontSize: 13, marginTop: 12 }}>Chargement de l'historique...</Text>
+                          </View>
+                        ) : (
+                          <>
+                            {/* ═══ GRAPHE BARRES 7 JOURS ═══ */}
+                            <View style={{
+                              backgroundColor: 'rgba(30,37,48,0.4)',
+                              borderRadius: 16, padding: 16, marginBottom: 20,
+                              borderWidth: 1, borderColor: 'rgba(77,166,255,0.1)',
+                            }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: 140 }}>
+                                {historyData.map(function(day, i) {
+                                  var pct = day.goalMl > 0 ? Math.min((day.totalMl / day.goalMl) * 100, 100) : 0;
+                                  var barColor = pct >= 100 ? '#00D984' : pct >= 50 ? '#4DA6FF' : '#FF8C42';
+                                  var isToday = i === historyData.length - 1;
+                                  return (
+                                    <Pressable key={i} onPress={function() { setSelectedHistoryDay(selectedHistoryDay === i ? null : i); }}
+                                      style={{ alignItems: 'center', flex: 1 }}
+                                    >
+                                      <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', marginBottom: 4 }}>
+                                        {(day.totalMl / 1000).toFixed(1)}L
+                                      </Text>
+                                      <View style={{
+                                        width: 20, height: Math.max(pct * 1.2, 4), borderRadius: 4,
+                                        backgroundColor: barColor,
+                                        borderWidth: isToday ? 1.5 : 0,
+                                        borderColor: isToday ? '#FFFFFF' : 'transparent',
+                                      }} />
+                                      <Text style={{
+                                        color: isToday ? '#EAEEF3' : '#8892A0',
+                                        fontSize: 9, fontWeight: isToday ? '800' : '600',
+                                        marginTop: 6, textTransform: 'capitalize',
+                                      }}>
+                                        {day.dayName.replace('.', '')}
+                                      </Text>
+                                    </Pressable>
+                                  );
+                                })}
+                              </View>
+
+                              {/* Ligne objectif */}
+                              <View style={{
+                                position: 'absolute', left: 16, right: 16,
+                                top: 16 + (140 - 140) * 0.5,
+                                height: 1, borderTopWidth: 1,
+                                borderTopColor: 'rgba(0,217,132,0.25)',
+                                borderStyle: 'dashed',
+                              }} />
+                            </View>
+
+                            {/* ═══ STATS RÉSUMÉES ═══ */}
+                            {(function() {
+                              var totalAll = historyData.reduce(function(s, d) { return s + d.totalMl; }, 0);
+                              var avg = historyData.length > 0 ? totalAll / historyData.length : 0;
+                              var best = historyData.reduce(function(b, d) { return d.totalMl > b.totalMl ? d : b; }, { totalMl: 0, dayName: '' });
+                              var daysReached = historyData.filter(function(d) { return d.totalMl >= d.goalMl; }).length;
+                              return (
+                                <View style={{
+                                  backgroundColor: 'rgba(30,37,48,0.3)',
+                                  borderRadius: 14, padding: 14, marginBottom: 20,
+                                  borderWidth: 1, borderColor: 'rgba(74,79,85,0.12)',
+                                }}>
+                                  <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                                    <View style={{ alignItems: 'center' }}>
+                                      <Text style={{ color: '#4DA6FF', fontSize: 18, fontWeight: '900' }}>{(avg / 1000).toFixed(1)}L</Text>
+                                      <Text style={{ color: '#6B7280', fontSize: 9, marginTop: 2 }}>Moyenne / jour</Text>
+                                    </View>
+                                    <View style={{ width: 1, backgroundColor: 'rgba(74,79,85,0.3)' }} />
+                                    <View style={{ alignItems: 'center' }}>
+                                      <Text style={{ color: '#00D984', fontSize: 18, fontWeight: '900' }}>{(best.totalMl / 1000).toFixed(1)}L</Text>
+                                      <Text style={{ color: '#6B7280', fontSize: 9, marginTop: 2 }}>Meilleur jour</Text>
+                                    </View>
+                                    <View style={{ width: 1, backgroundColor: 'rgba(74,79,85,0.3)' }} />
+                                    <View style={{ alignItems: 'center' }}>
+                                      <Text style={{ color: daysReached >= 5 ? '#00D984' : '#FF8C42', fontSize: 18, fontWeight: '900' }}>{daysReached}/7</Text>
+                                      <Text style={{ color: '#6B7280', fontSize: 9, marginTop: 2 }}>Objectif atteint</Text>
+                                    </View>
+                                  </View>
+                                </View>
+                              );
+                            })()}
+
+                            {/* ═══ DÉTAIL PAR JOUR ═══ */}
+                            <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '800', letterSpacing: 2, marginBottom: 12 }}>DÉTAIL PAR JOUR</Text>
+                            <View style={{
+                              backgroundColor: 'rgba(30,37,48,0.25)',
+                              borderRadius: 14, overflow: 'hidden',
+                              borderWidth: 1, borderColor: 'rgba(74,79,85,0.12)',
+                            }}>
+                              {historyData.slice().reverse().map(function(day, i, arr) {
+                                var pct = day.goalMl > 0 ? Math.min(Math.round((day.totalMl / day.goalMl) * 100), 100) : 0;
+                                var isToday = i === 0;
+                                var barColor = pct >= 100 ? '#00D984' : pct >= 50 ? '#4DA6FF' : pct > 0 ? '#FF8C42' : '#555E6C';
+                                return (
+                                  <Pressable key={i} onPress={function() {
+                                    setSelectedHistoryDay(selectedHistoryDay === i ? null : i);
+                                  }} style={{
+                                    flexDirection: 'row', alignItems: 'center',
+                                    paddingVertical: 12, paddingHorizontal: 14,
+                                    borderBottomWidth: i < arr.length - 1 ? 1 : 0,
+                                    borderBottomColor: 'rgba(74,79,85,0.1)',
+                                    backgroundColor: selectedHistoryDay === i ? 'rgba(77,166,255,0.04)' : 'transparent',
+                                  }}>
+                                    <Text style={{ fontSize: 16, width: 24 }}>💧</Text>
+                                    <View style={{ flex: 1, marginLeft: 8 }}>
+                                      <Text style={{
+                                        color: isToday ? '#EAEEF3' : '#C0C8D4',
+                                        fontSize: 13, fontWeight: isToday ? '700' : '600',
+                                      }}>
+                                        {isToday ? 'Aujourd\'hui' : day.dayName.charAt(0).toUpperCase() + day.dayName.slice(1).replace('.', '')}
+                                      </Text>
+                                      <Text style={{ color: '#555E6C', fontSize: 10, marginTop: 1 }}>{day.date}</Text>
+                                    </View>
+                                    <Text style={{ color: barColor, fontSize: 14, fontWeight: '800', marginRight: 8 }}>
+                                      {(day.totalMl / 1000).toFixed(1)}L
+                                    </Text>
+                                    <View style={{
+                                      backgroundColor: barColor + '20', borderRadius: 6,
+                                      paddingHorizontal: 6, paddingVertical: 2,
+                                    }}>
+                                      <Text style={{ color: barColor, fontSize: 10, fontWeight: '700' }}>{pct}%</Text>
+                                    </View>
+                                    <Text style={{ color: '#555E6C', fontSize: 14, marginLeft: 8 }}>›</Text>
+                                  </Pressable>
+                                );
+                              })}
+                            </View>
+                          </>
+                        )}
+                      </View>
+                    )}
+                  </ScrollView>
+                </SafeAreaView>
+              </LinearGradient>
             </Modal>
 
             {/* Modal reset */}
@@ -3073,6 +3371,84 @@ export default function App() {
     }
   };
 
+  var fetchWeeklyHydration = async function() {
+    setHistoryLoading(true);
+    try {
+      var days = [];
+      for (var d = 6; d >= 0; d--) {
+        var date = new Date();
+        date.setDate(date.getDate() - d);
+        var dateStr = date.toISOString().split('T')[0];
+        var dayName = date.toLocaleDateString('fr-FR', { weekday: 'short' });
+        days.push({ date: dateStr, dayName: dayName, totalMl: 0, goalMl: hydrationGoal });
+      }
+      for (var i = 0; i < days.length; i++) {
+        try {
+          var result = await supabase.rpc('get_daily_hydration', {
+            p_user_id: TEST_USER_ID,
+            p_date: days[i].date,
+          });
+          if (result.data && result.data.length > 0) {
+            days[i].totalMl = result.data[0].total_effective_ml || 0;
+            days[i].totalVolume = result.data[0].total_volume_ml || 0;
+            days[i].kcal = result.data[0].total_kcal || 0;
+            days[i].entries = result.data[0].entry_count || 0;
+          }
+        } catch(e) {
+          console.warn('Hydration day fetch error:', days[i].date, e);
+        }
+      }
+      setHistoryData(days);
+    } catch(err) {
+      console.warn('fetchWeeklyHydration error:', err);
+    }
+    setHistoryLoading(false);
+  };
+
+  var unlockHistoryWithLix = async function() {
+    if (realLixBalance < 100) {
+      Alert.alert('Lix insuffisants', 'Vous avez besoin de 100 Lix pour débloquer l\'historique.');
+      return;
+    }
+    try {
+      var newBalance = realLixBalance - 100;
+      await supabase.from('users_profile').update({
+        lix_balance: newBalance,
+        hydration_history_unlocked: true,
+      }).eq('user_id', TEST_USER_ID);
+      setRealLixBalance(newBalance);
+      setHistoryUnlocked(true);
+      fetchWeeklyHydration();
+      try {
+        var Vibration = require('react-native').Vibration;
+        Vibration.vibrate([0, 30, 50, 30]);
+      } catch(e) {}
+    } catch(err) {
+      console.warn('unlockHistoryWithLix error:', err);
+      Alert.alert('Erreur', 'Impossible de débloquer. Réessayez.');
+    }
+  };
+
+  var unlockHistoryWithPower = async function() {
+    if (!activeChar) return;
+    var hydroPower = pagePowers.find(function(p) {
+      return p.action_type === 'modal_inline' && p.redirect_page === 'accueil';
+    });
+    if (!hydroPower || !hydroPower.unlocked) {
+      Alert.alert('Pouvoir indisponible', 'Équipez Coral Dolphin Niveau 2 pour utiliser ce pouvoir.');
+      return;
+    }
+    var result = await consumePower(hydroPower.power_key);
+    if (result.success) {
+      setHistoryUnlocked(true);
+      fetchWeeklyHydration();
+      try {
+        var Vibration = require('react-native').Vibration;
+        Vibration.vibrate([0, 30, 50, 30]);
+      } catch(e) {}
+    }
+  };
+
   // === FETCH BOISSONS ===
   const BEVERAGE_CATS = [
     { id: 'all',              label: 'Tout',        icon: '🔍' },
@@ -3215,7 +3591,7 @@ export default function App() {
       // 1. Profil utilisateur
       const { data: profile } = await supabase
         .from('users_profile')
-        .select('daily_calorie_target, lix_balance, gender')
+        .select('daily_calorie_target, lix_balance, gender, hydration_history_unlocked')
         .eq('user_id', TEST_USER_ID)
         .single();
 
@@ -3224,6 +3600,7 @@ export default function App() {
         setRealDailyTarget(profile.daily_calorie_target || 2330);
         setRealLixBalance(profile.lix_balance || 0);
         setRealGender(profile.gender === 'female' || profile.gender === 'femme' ? 'femme' : 'homme');
+        setHistoryUnlocked(!!profile.hydration_history_unlocked);
       }
 
       // 2. Résumé quotidien
@@ -3368,6 +3745,14 @@ export default function App() {
   const [hydroModalVisible, setHydroModalVisible] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showHistoryLock, setShowHistoryLock] = useState(false);
+  var _historyUnlocked = useState(false);
+  var historyUnlocked = _historyUnlocked[0]; var setHistoryUnlocked = _historyUnlocked[1];
+  var _historyData = useState([]);
+  var historyData = _historyData[0]; var setHistoryData = _historyData[1];
+  var _historyLoading = useState(false);
+  var historyLoading = _historyLoading[0]; var setHistoryLoading = _historyLoading[1];
+  var _selectedHistoryDay = useState(null);
+  var selectedHistoryDay = _selectedHistoryDay[0]; var setSelectedHistoryDay = _selectedHistoryDay[1];
   const [surplusAlertVisible, setSurplusAlertVisible] = useState(false);
   const [hydroLogs, setHydroLogs] = useState([]);
 
@@ -4435,6 +4820,16 @@ export default function App() {
           setShowResetConfirm={setShowResetConfirm}
           showHistoryLock={showHistoryLock}
           setShowHistoryLock={setShowHistoryLock}
+          historyUnlocked={historyUnlocked}
+          historyData={historyData}
+          historyLoading={historyLoading}
+          selectedHistoryDay={selectedHistoryDay}
+          setSelectedHistoryDay={setSelectedHistoryDay}
+          unlockHistoryWithLix={unlockHistoryWithLix}
+          unlockHistoryWithPower={unlockHistoryWithPower}
+          fetchWeeklyHydration={fetchWeeklyHydration}
+          pagePowers={pagePowers}
+          activeChar={activeChar}
         />
 
         {/* Surplus alert modal */}
