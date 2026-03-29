@@ -34,7 +34,7 @@ var H = Dimensions.get('window').height;
 // ============================================================
 
 var C = {
-  bgDeep: '#0F1A2B',
+  bgDeep: '#1E2530',
   bgCard: 'rgba(21, 27, 35, 0.85)',
   bgInput: '#0A0E14',
   metalBorder: '#3E4855',
@@ -122,8 +122,8 @@ function GeometricBackground() {
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
       <LinearGradient
-        colors={['#0F1A2B', '#142236', '#0F1A2B', '#0D1520']}
-        locations={[0, 0.35, 0.7, 1]}
+        colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']}
+        locations={[0, 0.25, 0.5, 0.75, 1]}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
       <Svg width={w} height={h} style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
@@ -380,8 +380,8 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: '#0F1A2B' }}>
-        <StatusBar barStyle="light-content" backgroundColor="#0F1A2B" />
+      <View style={{ flex: 1, backgroundColor: '#1E2530' }}>
+        <StatusBar barStyle="light-content" backgroundColor="#1E2530" />
         <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom', 'left', 'right']}>
 
           <GeometricBackground />

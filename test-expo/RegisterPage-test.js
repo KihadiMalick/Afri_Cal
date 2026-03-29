@@ -37,7 +37,7 @@ var SCREEN_WIDTH = Dimensions.get('window').width;
 // ============================================================
 
 var C = {
-  bgDeep: '#0D1117',
+  bgDeep: '#1E2530',
   // === POLISH v1 — bgPrimary + metalShine supprimés (code mort) ===
   bgCard: '#151B23',
   bgInput: '#0A0E14',
@@ -2440,13 +2440,13 @@ export default function App() {
   return (
     <SafeAreaProvider>
       {/* === POLISH v1 — Background unifié avec LoginPage === */}
-      <View style={{ flex: 1, backgroundColor: '#0F1A2B' }}>
-        <StatusBar barStyle="light-content" backgroundColor="#0F1A2B" />
+      <View style={{ flex: 1, backgroundColor: '#1E2530' }}>
+        <StatusBar barStyle="light-content" backgroundColor="#1E2530" />
         <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom', 'left', 'right']}>
           {/* === POLISH v1 — Gradient unifié avec LoginPage === */}
           <LinearGradient
-            colors={['#0F1A2B', '#142236', '#0F1A2B', '#0D1520']}
-            locations={[0, 0.35, 0.7, 1]}
+            colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']}
+            locations={[0, 0.25, 0.5, 0.75, 1]}
             style={{ flex: 1 }}>
 
             <KeyboardAvoidingView
