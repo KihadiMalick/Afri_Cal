@@ -5,6 +5,7 @@
 // Memes dependances que WelcomePage-test.js
 
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+// === POLISH v1 — Alert supprimé, Modal + ActivityIndicator ajoutés ===
 import {
   View,
   Text,
@@ -15,13 +16,14 @@ import {
   TouchableOpacity,
   ScrollView,
   FlatList,
-  Alert,
   Platform,
   StatusBar,
   KeyboardAvoidingView,
   Animated,
   PanResponder,
   Easing,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -36,11 +38,10 @@ var SCREEN_WIDTH = Dimensions.get('window').width;
 
 var C = {
   bgDeep: '#0D1117',
-  bgPrimary: '#1A2030',
+  // === POLISH v1 — bgPrimary + metalShine supprimés (code mort) ===
   bgCard: '#151B23',
   bgInput: '#0A0E14',
   metalBorder: '#3E4855',
-  metalShine: '#6B7B8D',
   emerald: '#00D984',
   emeraldDark: '#00A866',
   turquoise: '#00BFA6',
@@ -50,6 +51,10 @@ var C = {
   textMuted: '#555E6C',
   error: '#FF4D4D',
 };
+
+// === POLISH v1 — Supabase config ===
+var SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
 
 // ============================================================
 // TRADUCTIONS
@@ -387,53 +392,7 @@ function PremiumInput(props) {
   );
 }
 
-// ============================================================
-// GAUGE CIRCLE — jauge circulaire +/-
-// ============================================================
-
-function GaugeCircle(props) {
-  return (
-    <View style={{ alignItems: 'center' }}>
-      <Text style={{ color: C.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 1.5, marginBottom: 8 }}>
-        {props.label}
-      </Text>
-      <View style={{
-        width: props.size || 110, height: props.size || 110, borderRadius: (props.size || 110) / 2,
-        borderWidth: 2, borderColor: (props.color || C.emerald) + '33',
-        backgroundColor: C.bgInput, alignItems: 'center', justifyContent: 'center',
-        shadowColor: props.color || C.emerald, shadowOpacity: 0.08, shadowRadius: 12,
-        shadowOffset: { width: 0, height: 0 },
-      }}>
-        <Text style={{ color: props.color || C.emerald, fontSize: props.fontSize || 30, fontWeight: '800' }}>
-          {props.value || '\u2014'}
-        </Text>
-        <Text style={{ color: C.textMuted, fontSize: props.unitSize || 10 }}>{props.unit}</Text>
-      </View>
-      <View style={{ flexDirection: 'row', gap: props.btnGap || 20, marginTop: 8 }}>
-        <TouchableOpacity onPress={props.onMinus}>
-          <View style={{
-            width: props.btnSize || 34, height: props.btnSize || 34, borderRadius: (props.btnSize || 34) / 2,
-            backgroundColor: (props.color || C.emerald) + '0F',
-            borderWidth: 1, borderColor: (props.color || C.emerald) + '33',
-            alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Ionicons name="remove" size={props.btnIconSize || 16} color={props.color || C.emerald} />
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={props.onPlus}>
-          <View style={{
-            width: props.btnSize || 34, height: props.btnSize || 34, borderRadius: (props.btnSize || 34) / 2,
-            backgroundColor: (props.color || C.emerald) + '0F',
-            borderWidth: 1, borderColor: (props.color || C.emerald) + '33',
-            alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Ionicons name="add" size={props.btnIconSize || 16} color={props.color || C.emerald} />
-          </View>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
+// === POLISH v1 — GaugeCircle supprimé (code mort) ===
 
 // ============================================================
 // SCROLL PICKER — roue verticale avec fondu
@@ -622,23 +581,7 @@ var FoodIconsBackground = function (foodProps) {
   return <>{elements}</>;
 };
 
-// ============================================================
-// CHARACTER IMAGES
-// ============================================================
-
-// IMAGES — chemin depuis la racine Snack Expo (App.js -> ./assets/)
-var ChickenImg = null;
-var TigerImg = null;
-var LicornumImg = null;
-try { ChickenImg = require('./assets/ChickenCharacter.png'); } catch (e) { ChickenImg = null; }
-try { TigerImg = require('./assets/TigerCharacter.png'); } catch (e) { TigerImg = null; }
-try { LicornumImg = require('./assets/LicornumCharacter.png'); } catch (e) { LicornumImg = null; }
-
-var characterImages = {
-  'GOLD CHICKEN': ChickenImg,
-  'RUBY TIGER': TigerImg,
-  'LICORNUM': LicornumImg,
-};
+// === POLISH v1 — characterImages + anciennes images supprimés (code mort) ===
 
 // ============================================================
 // PHASE 1 — IDENTITE (nom complet + email + password)
@@ -835,11 +778,31 @@ function Phase2Morphology(props) {
         flexDirection: 'row', justifyContent: 'space-between',
         marginBottom: 6, paddingLeft: 30, paddingRight: 4,
       }}>
+        {/* === POLISH v1 — Conversion poids au switch === */}
         <View style={{ flex: 1, alignItems: 'center' }}>
-          {renderUnitSwitch({ key: 'kg', label: 'KG' }, { key: 'lb', label: 'LB' }, unitWeight, setUnitWeight)}
+          {renderUnitSwitch({ key: 'kg', label: 'KG' }, { key: 'lb', label: 'LB' }, unitWeight, function(newUnit) {
+            if (newUnit !== unitWeight) {
+              var currentVal = parseFloat(formData.weight) || 70;
+              var converted = newUnit === 'lb'
+                ? Math.round(currentVal * 2.205)
+                : Math.round(currentVal / 2.205);
+              update('weight', String(converted));
+              setUnitWeight(newUnit);
+            }
+          })}
         </View>
+        {/* === POLISH v1 — Conversion taille au switch === */}
         <View style={{ flex: 1, alignItems: 'center' }}>
-          {renderUnitSwitch({ key: 'cm', label: 'CM' }, { key: 'in', label: 'IN' }, unitHeight, setUnitHeight)}
+          {renderUnitSwitch({ key: 'cm', label: 'CM' }, { key: 'in', label: 'IN' }, unitHeight, function(newUnit) {
+            if (newUnit !== unitHeight) {
+              var currentVal = parseFloat(formData.height) || 175;
+              var converted = newUnit === 'in'
+                ? Math.round(currentVal / 2.54)
+                : Math.round(currentVal * 2.54);
+              update('height', String(converted));
+              setUnitHeight(newUnit);
+            }
+          })}
         </View>
         <View style={{ flex: 0.8, alignItems: 'center' }}>
           <View style={{ height: 26 }} />
@@ -2013,32 +1976,51 @@ function Phase10Characters(props) {
   var charIndex = charIndexState[0];
   var setCharIndex = charIndexState[1];
 
+  // === POLISH v1 — Vrai roster LIXUM (5 Standard pour teaser) ===
   var characters = [
     {
-      name: 'GOLD CHICKEN',
-      level: lang === 'fr' ? '\u00c9LITE' : 'ELITE',
-      levelColor: '#D4AF37',
-      borderColors: ['#D4AF37', '#C5A028', '#8B7516'],
-      power: lang === 'fr' ? 'Recettes personnalis\u00e9es \u00b7 1 mois' : 'Custom recipes \u00b7 1 month',
-      image: ChickenImg,
-      fallbackEmoji: '\uD83D\uDC14',
+      name: 'EMERALD OWL',
+      level: 'STANDARD',
+      levelColor: '#00D984',
+      borderColors: ['#00D984', '#00A866', '#006B40'],
+      power: lang === 'fr' ? 'Recettes personnalis\u00e9es' : 'Custom recipes',
+      image: null, // TODO: require('./assets/emerald_owl.webp')
+      fallbackEmoji: '\uD83E\uDD89',
     },
     {
       name: 'RUBY TIGER',
-      level: 'RARE',
-      levelColor: '#00D984',
-      borderColors: ['#00D984', '#00A866', '#006B40'],
-      power: lang === 'fr' ? 'D\u00e9bloque LIXUM SCAN \u00b7 14j' : 'Unlocks LIXUM SCAN \u00b7 14d',
-      image: TigerImg,
+      level: 'STANDARD',
+      levelColor: '#FF4757',
+      borderColors: ['#FF4757', '#CC3945', '#992B34'],
+      power: lang === 'fr' ? 'Programme sport gratuit' : 'Free sport program',
+      image: null, // TODO: require('./assets/ruby_tiger.webp')
       fallbackEmoji: '\uD83D\uDC2F',
     },
     {
-      name: 'LICORNUM',
-      level: lang === 'fr' ? 'MYTHIQUE' : 'MYTHIC',
-      levelColor: '#00BFA6',
-      borderColors: ['#00BFA6', '#00897B', '#005F56'],
-      power: lang === 'fr' ? 'TOUT Premium \u00b7 30j' : 'ALL Premium \u00b7 30d',
-      image: LicornumImg,
+      name: 'HAWK EYE',
+      level: 'STANDARD',
+      levelColor: '#4DA6FF',
+      borderColors: ['#4DA6FF', '#3D85CC', '#2E6499'],
+      power: lang === 'fr' ? 'Xscans gratuits' : 'Free Xscans',
+      image: null, // TODO: require('./assets/hawk_eye.webp')
+      fallbackEmoji: '\uD83E\uDD85',
+    },
+    {
+      name: 'AMBER FOX',
+      level: 'STANDARD',
+      levelColor: '#FF8C42',
+      borderColors: ['#FF8C42', '#CC7035', '#995428'],
+      power: lang === 'fr' ? 'Substitutions ingr\u00e9dients' : 'Ingredient substitutions',
+      image: null, // TODO: require('./assets/amber_fox.webp')
+      fallbackEmoji: '\uD83E\uDD8A',
+    },
+    {
+      name: 'LICORNIUM',
+      level: lang === 'fr' ? '\u00c9LITE' : 'ELITE',
+      levelColor: '#B388FF',
+      borderColors: ['#B388FF', '#8F6DCC', '#6B5299'],
+      power: lang === 'fr' ? 'Sp\u00e9cialiste Repas complet' : 'Full meal specialist',
+      image: null, // TODO: require('./assets/licornium.webp')
       fallbackEmoji: '\uD83E\uDD84',
     },
   ];
@@ -2120,7 +2102,8 @@ function Phase10Characters(props) {
             <Text style={{
               color: '#8892A0', fontSize: 12, textAlign: 'center', marginTop: 6,
             }}>
-              {lang === 'fr' ? '12 caract\u00e8res \u00b7 3 niveaux de raret\u00e9' : '12 characters \u00b7 3 rarity levels'}
+              {/* === POLISH v1 — Vrai roster count === */}
+              {lang === 'fr' ? '16 caract\u00e8res \u00b7 5 niveaux de raret\u00e9' : '16 characters \u00b7 5 rarity levels'}
             </Text>
           </View>
         )}
@@ -2256,8 +2239,8 @@ function NavigationButtons(props) {
 
       <TouchableOpacity
         onPress={function () { step < totalSteps ? setStep(step + 1) : onComplete(); }}
-        disabled={!enabled} activeOpacity={0.7}
-        style={{ flex: 1, borderRadius: 12, overflow: 'hidden', opacity: enabled ? 1 : 0.4 }}>
+        disabled={!enabled || props.loading} activeOpacity={0.7}
+        style={{ flex: 1, borderRadius: 12, overflow: 'hidden', opacity: (enabled && !props.loading) ? 1 : 0.4 }}>
         {step === totalSteps ? (
           <LinearGradient colors={['#D4AF37', '#C5A028', '#A68B1B']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
@@ -2265,10 +2248,17 @@ function NavigationButtons(props) {
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
               gap: 8, paddingVertical: 15, borderRadius: 12,
             }}>
-            <Text style={{ color: C.bgDeep, fontSize: 15, fontWeight: '800', letterSpacing: 1 }}>
-              {t.createAccount}
-            </Text>
-            <Ionicons name="checkmark-done" size={18} color={C.bgDeep} />
+            {/* === POLISH v1 — Loading spinner sur bouton final === */}
+            {props.loading ? (
+              <ActivityIndicator size="small" color={C.bgDeep} />
+            ) : (
+              <>
+                <Text style={{ color: C.bgDeep, fontSize: 15, fontWeight: '800', letterSpacing: 1 }}>
+                  {t.createAccount}
+                </Text>
+                <Ionicons name="checkmark-done" size={18} color={C.bgDeep} />
+              </>
+            )}
           </LinearGradient>
         ) : (
           <View style={{
@@ -2337,29 +2327,126 @@ export default function App() {
   });
   var formData = _formData[0]; var setFormData = _formData[1];
 
+  // === POLISH v1 — Loading state ===
+  var _loading = useState(false);
+  var loading = _loading[0]; var setLoading = _loading[1];
+
+  // === POLISH v1 — Custom modal LIXUM ===
+  var _lixAlert = useState({ visible: false, title: '', message: '', emoji: '', buttons: [] });
+  var lixAlert = _lixAlert[0]; var setLixAlert = _lixAlert[1];
+
+  var showLixAlert = function(title, message, buttons, emoji) {
+    setLixAlert({ visible: true, title: title, message: message, emoji: emoji || '', buttons: buttons || [] });
+  };
+  var hideLixAlert = function() {
+    setLixAlert(function(prev) { return Object.assign({}, prev, { visible: false }); });
+  };
+
   var calculations = useMemo(function () {
     return calculateGoals(formData);
   }, [formData.weight, formData.height, formData.age, formData.gender,
       formData.activityLevel, formData.goal, formData.targetKg,
       formData.paceMode, formData.timelineDays]);
 
-  var handleRegister = function () {
-    var bonusGems = formData.referralCode ? 150 : 50;
-    Alert.alert(
-      lang === 'fr' ? 'Inscription simul\u00e9e' : 'Registration simulated',
-      'BMR: ' + calculations.bmr + ' kcal\nTDEE: ' + calculations.tdee + ' kcal\nObjectif: ' + calculations.dailyTarget + ' kcal/jour\nLX Gems: ' + bonusGems
-    );
+  // === POLISH v1 — Registration LIVE via Supabase ===
+  var handleRegister = function() {
+    setLoading(true);
+
+    fetch(SUPABASE_URL + '/auth/v1/signup', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+        data: {
+          full_name: formData.fullName.trim(),
+          weight: parseFloat(formData.weight) || 70,
+          height: parseFloat(formData.height) || 175,
+          age: parseInt(formData.age) || 25,
+          gender: formData.gender,
+          activity_level: formData.activityLevel,
+          diet: formData.diet,
+          goal: formData.goal,
+          target_kg: formData.targetKg,
+          pace_mode: formData.paceMode,
+          bmr: calculations.bmr,
+          tdee: calculations.tdee,
+          calorie_target: calculations.dailyTarget,
+          macro_protein: calculations.macros.protein,
+          macro_carbs: calculations.macros.carbs,
+          macro_fat: calculations.macros.fat,
+          referral_code: formData.referralCode || null,
+          notif_meals: formData.notifMeals !== false,
+          notif_goals: formData.notifGoals !== false,
+          notif_rewards: formData.notifRewards !== false,
+        },
+      }),
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      setLoading(false);
+      if (data.error) {
+        var errorMsg = data.error_description || data.msg || data.error;
+        if (lang === 'fr') {
+          if (errorMsg.includes('already registered')) errorMsg = 'Cet email est d\u00e9j\u00e0 utilis\u00e9.';
+          else if (errorMsg.includes('valid email')) errorMsg = 'Adresse email invalide.';
+          else if (errorMsg.includes('password')) errorMsg = 'Mot de passe trop faible (8 caract\u00e8res minimum).';
+        }
+        showLixAlert(
+          lang === 'fr' ? 'Erreur' : 'Error',
+          errorMsg,
+          [{ text: 'OK', style: 'cancel' }],
+          '\u274c'
+        );
+      } else {
+        var bonusGems = formData.referralCode ? 150 : 50;
+        showLixAlert(
+          lang === 'fr' ? 'Bienvenue sur LIXUM !' : 'Welcome to LIXUM!',
+          (lang === 'fr'
+            ? 'Ton compte est cr\u00e9\u00e9 !\n\n'
+            + '\uD83C\uDFAF Objectif : ' + calculations.dailyTarget + ' kcal/jour\n'
+            + '\uD83D\uDC8E +' + bonusGems + ' LX Gems de bienvenue\n\n'
+            + 'V\u00e9rifie ton email pour activer ton compte.'
+            : 'Your account is created!\n\n'
+            + '\uD83C\uDFAF Goal: ' + calculations.dailyTarget + ' kcal/day\n'
+            + '\uD83D\uDC8E +' + bonusGems + ' LX Gems welcome bonus\n\n'
+            + 'Check your email to activate your account.'),
+          [{
+            text: lang === 'fr' ? 'Commencer' : 'Get started',
+            color: '#00D984',
+            onPress: function() {
+              // TODO: Naviguer vers Login ou Dashboard
+              console.log('Registration complete, user:', data.user?.id);
+            }
+          }],
+          '\uD83C\uDF89'
+        );
+      }
+    })
+    .catch(function(err) {
+      setLoading(false);
+      showLixAlert(
+        lang === 'fr' ? 'Erreur' : 'Error',
+        lang === 'fr' ? 'Probl\u00e8me de connexion. V\u00e9rifie ton internet.' : 'Connection problem. Check your internet.',
+        [{ text: 'OK', style: 'cancel' }],
+        '\uD83D\uDCE1'
+      );
+    });
   };
 
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: '#1E2A3A' }}>
-        <StatusBar barStyle="light-content" backgroundColor="#1E2A3A" />
+      {/* === POLISH v1 — Background unifié avec LoginPage === */}
+      <View style={{ flex: 1, backgroundColor: '#0F1A2B' }}>
+        <StatusBar barStyle="light-content" backgroundColor="#0F1A2B" />
         <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom', 'left', 'right']}>
+          {/* === POLISH v1 — Gradient unifié avec LoginPage === */}
           <LinearGradient
-            colors={['#1E2A3A', '#1C2535', '#1A2232', '#1C2535', '#1E2A3A']}
-            locations={[0, 0.25, 0.5, 0.75, 1]}
-            start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
+            colors={['#0F1A2B', '#142236', '#0F1A2B', '#0D1520']}
+            locations={[0, 0.35, 0.7, 1]}
             style={{ flex: 1 }}>
 
             <KeyboardAvoidingView
@@ -2444,11 +2531,66 @@ export default function App() {
               </View>
 
               {/* Boutons navigation */}
+              {/* === POLISH v1 — loading passé à NavigationButtons === */}
               <NavigationButtons
                 step={step} setStep={setStep} totalSteps={totalSteps}
-                formData={formData} onComplete={handleRegister} t={t} />
+                formData={formData} onComplete={handleRegister} t={t}
+                loading={loading} />
 
             </KeyboardAvoidingView>
+
+            {/* === POLISH v1 — Modal LIXUM Custom === */}
+            <Modal visible={lixAlert.visible} transparent animationType="fade" onRequestClose={hideLixAlert}>
+              <View style={{
+                flex: 1, backgroundColor: 'rgba(0,0,0,0.7)',
+                justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24,
+              }}>
+                <LinearGradient colors={['#1E2530', '#161C26', '#121820']}
+                  style={{ borderRadius: 20, paddingHorizontal: 24, paddingVertical: 28, width: '100%', alignItems: 'center' }}>
+                  {lixAlert.emoji ? (
+                    <Text style={{ fontSize: 36, marginBottom: 12 }}>{lixAlert.emoji}</Text>
+                  ) : null}
+                  <Text style={{
+                    fontSize: 18, fontWeight: '700', color: '#EAEEF3',
+                    textAlign: 'center', marginBottom: 8,
+                  }}>{lixAlert.title}</Text>
+                  <Text style={{
+                    fontSize: 13, color: 'rgba(255,255,255,0.5)',
+                    textAlign: 'center', lineHeight: 19, marginBottom: 20,
+                  }}>{lixAlert.message}</Text>
+                  {lixAlert.buttons.map(function(btn, i) {
+                    var isCancel = btn.style === 'cancel';
+                    var btnColor = btn.color || (isCancel ? 'rgba(255,255,255,0.4)' : '#00D984');
+                    return (
+                      <TouchableOpacity key={i}
+                        onPress={function() { hideLixAlert(); if (btn.onPress) btn.onPress(); }}
+                        activeOpacity={0.7}
+                        style={{
+                          width: '100%', paddingVertical: 14, borderRadius: 14,
+                          alignItems: 'center', marginBottom: 6,
+                          backgroundColor: isCancel ? 'transparent' : btnColor + '20',
+                          borderWidth: isCancel ? 1 : 0,
+                          borderColor: isCancel ? 'rgba(255,255,255,0.1)' : 'transparent',
+                        }}>
+                        <Text style={{
+                          fontSize: 15, fontWeight: isCancel ? '500' : '700', color: btnColor,
+                        }}>{btn.text}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                  {lixAlert.buttons.length === 0 ? (
+                    <TouchableOpacity onPress={hideLixAlert}
+                      style={{
+                        paddingVertical: 14, width: '100%', alignItems: 'center',
+                        borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                      }}>
+                      <Text style={{ fontSize: 15, fontWeight: '500', color: 'rgba(255,255,255,0.4)' }}>OK</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </LinearGradient>
+              </View>
+            </Modal>
+
           </LinearGradient>
         </SafeAreaView>
       </View>
