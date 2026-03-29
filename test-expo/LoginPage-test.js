@@ -24,7 +24,7 @@ import {
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Polygon, Line, Circle as SvgCircle, Path } from 'react-native-svg';
+import Svg, { Line, Circle } from 'react-native-svg';
 
 var W = Dimensions.get('window').width;
 var H = Dimensions.get('window').height;
@@ -112,54 +112,51 @@ var texts = {
 };
 
 // ============================================================
-// GEOMETRIC BACKGROUND — Polygones tech futuristes
+// TECH BACKGROUND — Grille tech premium (même motif que WelcomePage)
 // ============================================================
 
-function GeometricBackground() {
-  var w = W;
-  var h = H;
+function TechBackground() {
+  var W = Dimensions.get('window').width;
+  var H = Dimensions.get('window').height;
+  var gridSpacing = 50;
+  var lines = [];
+  var dots = [];
+
+  for (var y = 0; y < H; y += gridSpacing) {
+    lines.push(
+      <Line key={'h-' + y} x1="0" y1={y} x2={W} y2={y}
+        stroke="rgba(62, 72, 85, 0.25)" strokeWidth="0.5" />
+    );
+  }
+  for (var x = 0; x < W; x += gridSpacing) {
+    lines.push(
+      <Line key={'v-' + x} x1={x} y1="0" x2={x} y2={H}
+        stroke="rgba(62, 72, 85, 0.25)" strokeWidth="0.5" />
+    );
+  }
+  for (var x2 = 0; x2 < W; x2 += gridSpacing * 2) {
+    for (var y2 = 0; y2 < H; y2 += gridSpacing * 2) {
+      dots.push(
+        <Circle key={'d-' + x2 + '-' + y2} cx={x2} cy={y2} r="1.5"
+          fill="rgba(0, 217, 132, 0.14)" />
+      );
+    }
+  }
 
   return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-      <LinearGradient
-        colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']}
-        locations={[0, 0.25, 0.5, 0.75, 1]}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-      />
-      <Svg width={w} height={h} style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
-        <Polygon points={'0,0 ' + (w * 0.6) + ',0 ' + (w * 0.3) + ',' + (h * 0.35)}
-          fill="rgba(0,217,132,0.02)" stroke="rgba(0,217,132,0.04)" strokeWidth="0.5" />
-        <Polygon points={w + ',0 ' + w + ',' + (h * 0.4) + ' ' + (w * 0.5) + ',' + (h * 0.15)}
-          fill="rgba(0,191,166,0.02)" stroke="rgba(0,191,166,0.03)" strokeWidth="0.5" />
-        <Polygon points={'0,' + (h * 0.6) + ' ' + (w * 0.4) + ',' + (h * 0.45) + ' ' + (w * 0.2) + ',' + h}
-          fill="rgba(0,217,132,0.015)" stroke="rgba(0,217,132,0.03)" strokeWidth="0.5" />
-        <Polygon points={w + ',' + (h * 0.5) + ' ' + (w * 0.6) + ',' + h + ' ' + w + ',' + h}
-          fill="rgba(0,191,166,0.015)" stroke="rgba(0,191,166,0.03)" strokeWidth="0.5" />
-        <Polygon points={(w * 0.1) + ',' + (h * 0.2) + ' ' + (w * 0.35) + ',' + (h * 0.1) + ' ' + (w * 0.25) + ',' + (h * 0.35)}
-          fill="rgba(0,217,132,0.025)" stroke="rgba(0,217,132,0.05)" strokeWidth="0.8" />
-        <Polygon points={(w * 0.65) + ',' + (h * 0.25) + ' ' + (w * 0.9) + ',' + (h * 0.15) + ' ' + (w * 0.8) + ',' + (h * 0.4)}
-          fill="rgba(0,191,166,0.02)" stroke="rgba(0,191,166,0.04)" strokeWidth="0.8" />
-        <Polygon points={(w * 0.3) + ',' + (h * 0.65) + ' ' + (w * 0.55) + ',' + (h * 0.55) + ' ' + (w * 0.45) + ',' + (h * 0.8)}
-          fill="rgba(0,217,132,0.02)" stroke="rgba(0,217,132,0.04)" strokeWidth="0.8" />
-        <Polygon points={(w * 0.7) + ',' + (h * 0.6) + ' ' + (w * 0.95) + ',' + (h * 0.7) + ' ' + (w * 0.85) + ',' + (h * 0.85)}
-          fill="rgba(212,175,55,0.012)" stroke="rgba(212,175,55,0.025)" strokeWidth="0.5" />
-        <Polygon points={(w * 0.5) + ',' + (h * 0.05) + ' ' + (w * 0.55) + ',' + (h * 0.02) + ' ' + (w * 0.53) + ',' + (h * 0.08)}
-          fill="rgba(0,217,132,0.04)" />
-        <Polygon points={(w * 0.15) + ',' + (h * 0.5) + ' ' + (w * 0.2) + ',' + (h * 0.47) + ' ' + (w * 0.18) + ',' + (h * 0.53)}
-          fill="rgba(0,191,166,0.04)" />
-        <Polygon points={(w * 0.85) + ',' + (h * 0.9) + ' ' + (w * 0.9) + ',' + (h * 0.87) + ' ' + (w * 0.88) + ',' + (h * 0.93)}
-          fill="rgba(0,217,132,0.03)" />
-        <Line x1={w * 0.3} y1={h * 0.35} x2={w * 0.5} y2={h * 0.15} stroke="rgba(0,217,132,0.04)" strokeWidth="0.5" />
-        <Line x1={w * 0.8} y1={h * 0.4} x2={w * 0.6} y2={h * 0.55} stroke="rgba(0,191,166,0.03)" strokeWidth="0.5" />
-        <Line x1={w * 0.2} y1={h * 0.7} x2={w * 0.45} y2={h * 0.8} stroke="rgba(0,217,132,0.03)" strokeWidth="0.5" />
-        <SvgCircle cx={w * 0.3} cy={h * 0.35} r="2" fill="rgba(0,217,132,0.08)" />
-        <SvgCircle cx={w * 0.5} cy={h * 0.15} r="2" fill="rgba(0,217,132,0.08)" />
-        <SvgCircle cx={w * 0.8} cy={h * 0.4} r="1.5" fill="rgba(0,191,166,0.06)" />
-        <SvgCircle cx={w * 0.25} cy={h * 0.35} r="1.5" fill="rgba(0,217,132,0.06)" />
-        <SvgCircle cx={w * 0.6} cy={h * 0.55} r="2" fill="rgba(0,191,166,0.07)" />
-        <SvgCircle cx={w * 0.45} cy={h * 0.8} r="1.5" fill="rgba(0,217,132,0.05)" />
-      </Svg>
-    </View>
+    <Svg width={W} height={H}
+      style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
+      {lines}
+      {dots}
+      <Line x1="60" y1={H * 0.35} x2="90" y2={H * 0.35}
+        stroke="rgba(0,217,132,0.15)" strokeWidth="1" strokeDasharray="4 3" />
+      <Line x1={W - 90} y1={H * 0.35} x2={W - 60} y2={H * 0.35}
+        stroke="rgba(0,217,132,0.15)" strokeWidth="1" strokeDasharray="4 3" />
+      <Line x1="60" y1={H * 0.42} x2="80" y2={H * 0.42}
+        stroke="rgba(62,72,85,0.2)" strokeWidth="0.5" />
+      <Line x1={W - 80} y1={H * 0.42} x2={W - 60} y2={H * 0.42}
+        stroke="rgba(62,72,85,0.2)" strokeWidth="0.5" />
+    </Svg>
   );
 }
 
@@ -384,7 +381,7 @@ export default function App() {
         <StatusBar barStyle="light-content" backgroundColor="#1E2530" />
         <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom', 'left', 'right']}>
 
-          <GeometricBackground />
+          <TechBackground />
 
           <KeyboardAvoidingView
             style={{ flex: 1 }}
