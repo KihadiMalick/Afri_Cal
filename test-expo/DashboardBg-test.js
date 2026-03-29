@@ -1404,9 +1404,10 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubble
 
   return (
     <View style={{ width: svgW, height }}>
-      {/* Static empty silhouette */}
+      {/* Static empty silhouette with visible contour */}
       <Svg width={svgW} height={height} viewBox="0 0 100 130" style={{ position: 'absolute' }}>
         <Path d={svgPath} fill="#2A3040" opacity={0.5} />
+        <Path d={svgPath} fill="none" stroke="#4A5568" strokeWidth={1.2} opacity={0.6} />
       </Svg>
       {/* Filled silhouette with clipPath + bubbles */}
       <Svg width={svgW} height={height} viewBox="0 0 100 130" style={{ position: 'absolute' }}>
@@ -1491,8 +1492,8 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, 
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
 
           {/* Silhouette à gauche */}
-          <View style={{ width: 45, alignItems: 'center', marginRight: 12 }}>
-            <SilhouetteFill fillPercent={percent} height={wp(56)} gender={gender} />
+          <View style={{ width: 50, alignItems: 'center', marginRight: 12 }}>
+            <SilhouetteFill fillPercent={percent} height={wp(62)} gender={gender} />
           </View>
 
           {/* Colonne droite : barre + verres + sport */}
@@ -1721,6 +1722,10 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
   const addWater = (ml) => {
     setCurrentMl(prev => prev + ml);
     setHydroLogs(prev => [...prev, { time: getTimeStr(), amount: ml, type: 'eau', icon: '💧' }]);
+    try {
+      var Vibration = require('react-native').Vibration;
+      Vibration.vibrate(30);
+    } catch(e) {}
   };
 
   const removeWater = (ml) => {
@@ -1731,6 +1736,10 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
       const realIdx = prev.length - 1 - idx;
       return [...prev.slice(0, realIdx), ...prev.slice(realIdx + 1)];
     });
+    try {
+      var Vibration = require('react-native').Vibration;
+      Vibration.vibrate(15);
+    } catch(e) {}
   };
 
   const palierLabels = gender === 'homme'
@@ -1763,10 +1772,10 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
           <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
 
             {/* ═══ SILHOUETTE + PALIERS ═══ */}
-            <View style={{ alignItems: 'center', marginTop: 12 }}>
+            <View style={{ alignItems: 'center', marginTop: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <SilhouetteFill fillPercent={percent} height={180} gender={gender} showBubbles />
-                <View style={{ marginLeft: 16, height: 180, justifyContent: 'space-between', paddingVertical: 8 }}>
+                <SilhouetteFill fillPercent={percent} height={260} gender={gender} showBubbles />
+                <View style={{ marginLeft: 20, height: 260, justifyContent: 'space-between', paddingVertical: 12 }}>
                   {palierLabels.slice().reverse().map((label, i) => {
                     const palierPct = (4 - i) * 25;
                     const reached = percent >= palierPct;
@@ -1801,7 +1810,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
             <View style={{
               marginHorizontal: 24, marginBottom: 12,
               backgroundColor: 'rgba(30,37,48,0.4)',
-              borderRadius: 18, padding: 18,
+              borderRadius: 18, padding: 14,
               borderWidth: 1, borderColor: 'rgba(77,166,255,0.08)',
             }}>
               <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '700', letterSpacing: 2, marginBottom: 14 }}>EAU 💧</Text>
@@ -1810,7 +1819,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                   <View key={item.ml} style={{ alignItems: 'center' }}>
                     <TouchableOpacity
                       style={{
-                        width: 64, height: 64, borderRadius: 16,
+                        width: 54, height: 54, borderRadius: 14,
                         backgroundColor: 'rgba(21,27,35,0.8)',
                         borderWidth: 1, borderColor: 'rgba(77,166,255,0.15)',
                         justifyContent: 'center', alignItems: 'center',
@@ -1818,12 +1827,12 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                       activeOpacity={0.7}
                       onPress={() => addWater(item.ml)}
                     >
-                      <Text style={{ fontSize: 22 }}>{item.icon}</Text>
-                      <Text style={{ color: '#C0C8D4', fontSize: 11, fontWeight: '700', marginTop: 2 }}>{item.label}</Text>
+                      <Text style={{ fontSize: 18 }}>{item.icon}</Text>
+                      <Text style={{ color: '#C0C8D4', fontSize: 10, fontWeight: '700', marginTop: 1 }}>{item.label}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={{
-                        marginTop: 6, width: 26, height: 26, borderRadius: 13,
+                        marginTop: 5, width: 22, height: 22, borderRadius: 11,
                         backgroundColor: 'rgba(30,35,45,0.8)',
                         borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)',
                         justifyContent: 'center', alignItems: 'center',
@@ -3168,6 +3177,10 @@ export default function App() {
     setBeverageSearch('');
     setShowBeverageModal(false);
     setBeverageSaving(false);
+    try {
+      var Vibration = require('react-native').Vibration;
+      Vibration.vibrate(30);
+    } catch(e) {}
 
     // 3. Sauvegarder dans Supabase en arrière-plan
     try {
