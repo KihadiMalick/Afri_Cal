@@ -1088,158 +1088,211 @@ const DnaHelix = ({ height = 68, width = 60 }) => {
   const svgH = height;
   const svgW = width;
   const cx = svgW / 2;
-  const amp = svgW * 0.32;
-  const segments = 40;
-  const bridgeCount = 7;
+  const amp = svgW * 0.34;
+  const segments = 50;
+  const bridgeCount = 8;
 
-  // Générer les points des 2 brins
+  // Générer les points des 2 brins (courbes fluides)
   const strand1Points = [];
   const strand2Points = [];
 
   for (let i = 0; i <= segments; i++) {
     const t = i / segments;
     const y = t * svgH;
-    const angle = t * Math.PI * 4;
+    const angle = t * Math.PI * 4.5;
     const x1 = cx + Math.sin(angle) * amp;
     const x2 = cx + Math.sin(angle + Math.PI) * amp;
     strand1Points.push({ x: x1, y });
     strand2Points.push({ x: x2, y });
   }
 
-  // Ponts (barreaux) — espacés régulièrement
+  // Smooth path avec courbes de Bézier
+  function buildSmoothPath(points) {
+    if (points.length < 2) return '';
+    var d = 'M ' + points[0].x.toFixed(1) + ',' + points[0].y.toFixed(1);
+    for (var i = 1; i < points.length; i++) {
+      var prev = points[i - 1];
+      var curr = points[i];
+      var cpx1 = prev.x + (curr.x - prev.x) * 0.4;
+      var cpy1 = prev.y;
+      var cpx2 = curr.x - (curr.x - prev.x) * 0.4;
+      var cpy2 = curr.y;
+      d += ' C ' + cpx1.toFixed(1) + ',' + cpy1.toFixed(1) + ' ' + cpx2.toFixed(1) + ',' + cpy2.toFixed(1) + ' ' + curr.x.toFixed(1) + ',' + curr.y.toFixed(1);
+    }
+    return d;
+  }
+
+  // Ponts — espacés régulièrement
   const bridges = [];
   for (let i = 1; i <= bridgeCount; i++) {
     const idx = Math.floor((i / (bridgeCount + 1)) * segments);
+    const depth = Math.cos((idx / segments) * Math.PI * 4.5);
     bridges.push({
       x1: strand1Points[idx].x,
       y1: strand1Points[idx].y,
       x2: strand2Points[idx].x,
       y2: strand2Points[idx].y,
-      depth: Math.cos((idx / segments) * Math.PI * 4),
+      depth: depth,
+      idx: i,
     });
   }
 
+  // Croisements — là où les brins se croisent (pour les points lumineux)
+  const crossings = [];
+  for (let i = 1; i < segments; i++) {
+    const t = i / segments;
+    const angle = t * Math.PI * 4.5;
+    const prevAngle = ((i - 1) / segments) * Math.PI * 4.5;
+    if (Math.sin(angle) * Math.sin(prevAngle) < 0) {
+      crossings.push({ x: cx, y: t * svgH });
+    }
+  }
+
+  // Construire les paths
+  const path1 = buildSmoothPath(strand1Points);
+  const path2 = buildSmoothPath(strand2Points);
+
   return (
     <View style={{ alignItems: 'center', width: svgW }}>
-      {/* SVG ADN avec badge Score Vitalité au centre */}
       <View style={{ width: svgW, height: svgH }}>
-        <Svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`}>
+        <Svg width={svgW} height={svgH} viewBox={'0 0 ' + svgW + ' ' + svgH}>
           <Defs>
-            <SvgLinearGradient id="dnaGlow" x1="0.5" y1="0" x2="0.5" y2="1">
+            {/* Gradient brin émeraude (principal) */}
+            <SvgLinearGradient id="bioStrand1" x1="0.5" y1="0" x2="0.5" y2="1">
+              <Stop offset="0%" stopColor="#00FFB4" stopOpacity={0.9} />
+              <Stop offset="25%" stopColor="#00D984" stopOpacity={0.7} />
+              <Stop offset="50%" stopColor="#00A866" stopOpacity={0.5} />
+              <Stop offset="75%" stopColor="#00D984" stopOpacity={0.7} />
+              <Stop offset="100%" stopColor="#00FFB4" stopOpacity={0.9} />
+            </SvgLinearGradient>
+
+            {/* Gradient brin bleu (secondaire) */}
+            <SvgLinearGradient id="bioStrand2" x1="0.5" y1="0" x2="0.5" y2="1">
+              <Stop offset="0%" stopColor="#7DD3FC" stopOpacity={0.7} />
+              <Stop offset="25%" stopColor="#4DA6FF" stopOpacity={0.45} />
+              <Stop offset="50%" stopColor="#2B7ACC" stopOpacity={0.3} />
+              <Stop offset="75%" stopColor="#4DA6FF" stopOpacity={0.45} />
+              <Stop offset="100%" stopColor="#7DD3FC" stopOpacity={0.7} />
+            </SvgLinearGradient>
+
+            {/* Glow central ambiant */}
+            <SvgLinearGradient id="bioGlow" x1="0.5" y1="0" x2="0.5" y2="1">
               <Stop offset="0%" stopColor="#00D984" stopOpacity={0.06} />
               <Stop offset="50%" stopColor="#00D984" stopOpacity={0.03} />
               <Stop offset="100%" stopColor="#00D984" stopOpacity={0.06} />
             </SvgLinearGradient>
-            <SvgLinearGradient id="strand1Grad" x1="0.5" y1="0" x2="0.5" y2="1">
-              <Stop offset="0%" stopColor="#5DFFB4" stopOpacity={0.95} />
-              <Stop offset="25%" stopColor="#00D984" stopOpacity={0.8} />
-              <Stop offset="50%" stopColor="#00BFA6" stopOpacity={0.7} />
-              <Stop offset="75%" stopColor="#00D984" stopOpacity={0.8} />
-              <Stop offset="100%" stopColor="#5DFFB4" stopOpacity={0.95} />
-            </SvgLinearGradient>
-            <SvgLinearGradient id="strand2Grad" x1="0.5" y1="0" x2="0.5" y2="1">
-              <Stop offset="0%" stopColor="#00E5A0" stopOpacity={0.8} />
-              <Stop offset="25%" stopColor="#00BFA6" stopOpacity={0.6} />
-              <Stop offset="50%" stopColor="#00D984" stopOpacity={0.5} />
-              <Stop offset="75%" stopColor="#00BFA6" stopOpacity={0.6} />
-              <Stop offset="100%" stopColor="#00E5A0" stopOpacity={0.8} />
-            </SvgLinearGradient>
-            <SvgLinearGradient id="bridgeGrad" x1="0" y1="0.5" x2="1" y2="0.5">
-              <Stop offset="0%" stopColor="#00D984" stopOpacity={0.5} />
-              <Stop offset="50%" stopColor="#5DFFB4" stopOpacity={0.7} />
-              <Stop offset="100%" stopColor="#00D984" stopOpacity={0.5} />
-            </SvgLinearGradient>
-            <SvgLinearGradient id="bridgeGradGold" x1="0" y1="0.5" x2="1" y2="0.5">
-              <Stop offset="0%" stopColor="#D4AF37" stopOpacity={0.4} />
-              <Stop offset="50%" stopColor="#E8D48B" stopOpacity={0.5} />
-              <Stop offset="100%" stopColor="#7DD3FC" stopOpacity={0.4} />
-            </SvgLinearGradient>
           </Defs>
 
-          {/* Glow vertical central */}
-          <Rect x={cx - 6} y={5} width={12} height={svgH - 10} rx={6}
-            fill="url(#dnaGlow)" />
+          {/* ═══ GLOW AMBIANT CENTRAL ═══ */}
+          <Ellipse
+            cx={cx} cy={svgH / 2}
+            rx={svgW * 0.35} ry={svgH / 2}
+            fill="url(#bioGlow)"
+          />
 
-          {/* Brins avec profondeur — segments individuels */}
-          {Array.from({ length: segments - 1 }, (_, i) => {
-            const t = i / segments;
-            const angle = t * Math.PI * 4;
-            const depth = Math.cos(angle);
-            const isFront = depth >= 0;
-            const p1 = strand1Points[i];
-            const p2 = strand1Points[i + 1];
+          {/* ═══ BRIN ARRIÈRE (bleu, plus fin) — segments avec profondeur ═══ */}
+          {Array.from({ length: segments - 1 }, function(_, i) {
+            var t = i / segments;
+            var angle = t * Math.PI * 4.5;
+            var depth = Math.cos(angle);
+            var isBack = depth < 0;
+            var p1 = strand2Points[i];
+            var p2 = strand2Points[i + 1];
             return (
-              <Line key={`s1-${i}`}
+              <Line key={'b2-' + i}
                 x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-                stroke="url(#strand1Grad)"
-                strokeWidth={isFront ? 2.5 : 1.5}
-                strokeOpacity={isFront ? 0.9 : 0.25}
-                strokeLinecap="round"
-              />
-            );
-          })}
-          {Array.from({ length: segments - 1 }, (_, i) => {
-            const t = i / segments;
-            const angle = t * Math.PI * 4;
-            const depth = Math.cos(angle);
-            const isFront = depth < 0;
-            const p1 = strand2Points[i];
-            const p2 = strand2Points[i + 1];
-            return (
-              <Line key={`s2-${i}`}
-                x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-                stroke="url(#strand2Grad)"
-                strokeWidth={isFront ? 2.5 : 1.5}
-                strokeOpacity={isFront ? 0.9 : 0.25}
+                stroke="url(#bioStrand2)"
+                strokeWidth={isBack ? 3.5 : 2}
+                strokeOpacity={isBack ? 0.6 : 0.2}
                 strokeLinecap="round"
               />
             );
           })}
 
-          {/* Ponts (barreaux) avec dots colorés réalistes */}
-          {bridges.map((b, i) => {
-            const isAT = i % 2 === 0;
-            const leftColor = isAT ? '#00D984' : '#D4AF37';
-            const rightColor = isAT ? '#00BFA6' : '#7DD3FC';
-            const leftOpacity = isAT ? 0.9 : 0.55;
-            const rightOpacity = isAT ? 0.9 : 0.55;
+          {/* ═══ PONTS BIOLUMINESCENTS ═══ */}
+          {bridges.map(function(b, i) {
+            var isGreen = i % 2 === 0;
+            var bridgeColor = isGreen ? '#5DFFB4' : '#7DD3FC';
+            var bridgeOpacity = 0.25 + Math.abs(b.depth) * 0.15;
             return (
-              <React.Fragment key={`br-${i}`}>
-                <Line x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2}
-                  stroke={isAT ? 'url(#bridgeGrad)' : 'url(#bridgeGradGold)'}
-                  strokeWidth={Math.abs(b.depth) > 0.3 ? 2.5 : 1.5}
+              <React.Fragment key={'br-' + i}>
+                {/* Ligne pont */}
+                <Line
+                  x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2}
+                  stroke={bridgeColor}
+                  strokeWidth={2}
                   strokeLinecap="round"
-                  opacity={0.5 + Math.abs(b.depth) * 0.3}
+                  opacity={bridgeOpacity}
                 />
-                {/* Node central */}
-                <Circle cx={(b.x1 + b.x2) / 2} cy={b.y1} r={1.5}
-                  fill={isAT ? '#5DFFB4' : '#E8D48B'} opacity={0.5} />
-                {/* Nodes extrémités — colorés selon la paire */}
-                <Circle cx={b.x1} cy={b.y1} r={2.5} fill={leftColor} opacity={leftOpacity} />
-                <Circle cx={b.x1} cy={b.y1} r={5} fill={leftColor} opacity={0.12} />
-                <Circle cx={b.x2} cy={b.y2} r={2.5} fill={rightColor} opacity={rightOpacity} />
-                <Circle cx={b.x2} cy={b.y2} r={5} fill={rightColor} opacity={0.12} />
+                {/* Node gauche — gros, diffus */}
+                <Circle cx={b.x1} cy={b.y1} r={5}
+                  fill={isGreen ? '#00D984' : '#4DA6FF'}
+                  opacity={0.6}
+                />
+                <Circle cx={b.x1} cy={b.y1} r={10}
+                  fill={isGreen ? '#00D984' : '#4DA6FF'}
+                  opacity={0.08}
+                />
+                {/* Node droit — gros, diffus */}
+                <Circle cx={b.x2} cy={b.y2} r={4.5}
+                  fill={isGreen ? '#D4AF37' : '#00D984'}
+                  opacity={0.55}
+                />
+                <Circle cx={b.x2} cy={b.y2} r={9}
+                  fill={isGreen ? '#D4AF37' : '#00D984'}
+                  opacity={0.07}
+                />
               </React.Fragment>
             );
           })}
 
-          {/* Particules colorées le long des brins */}
-          {[0.15, 0.35, 0.55, 0.75, 0.92].map((t, i) => {
-            const idx = Math.floor(t * segments);
-            const p = strand1Points[idx];
-            const pColor = i % 2 === 0 ? '#5DFFB4' : '#E8D48B';
-            return <Circle key={`p1-${i}`} cx={p.x} cy={p.y} r={1.2} fill={pColor} opacity={0.45} />;
+          {/* ═══ BRIN AVANT (émeraude, plus épais) — segments avec profondeur ═══ */}
+          {Array.from({ length: segments - 1 }, function(_, i) {
+            var t = i / segments;
+            var angle = t * Math.PI * 4.5;
+            var depth = Math.cos(angle);
+            var isFront = depth >= 0;
+            var p1 = strand1Points[i];
+            var p2 = strand1Points[i + 1];
+            return (
+              <Line key={'b1-' + i}
+                x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
+                stroke="url(#bioStrand1)"
+                strokeWidth={isFront ? 4.5 : 2.5}
+                strokeOpacity={isFront ? 0.85 : 0.2}
+                strokeLinecap="round"
+              />
+            );
           })}
-          {[0.1, 0.3, 0.5, 0.7, 0.88].map((t, i) => {
-            const idx = Math.floor(t * segments);
-            const p = strand2Points[idx];
-            const pColor = i % 2 === 0 ? '#00BFA6' : '#7DD3FC';
-            return <Circle key={`p2-${i}`} cx={p.x} cy={p.y} r={1.2} fill={pColor} opacity={0.45} />;
+
+          {/* ═══ CROISEMENTS LUMINEUX ═══ */}
+          {crossings.map(function(c, i) {
+            return (
+              <React.Fragment key={'cx-' + i}>
+                <Circle cx={c.x} cy={c.y} r={3.5} fill="#FFFFFF" opacity={0.15} />
+                <Circle cx={c.x} cy={c.y} r={7} fill="#FFFFFF" opacity={0.04} />
+              </React.Fragment>
+            );
+          })}
+
+          {/* ═══ PARTICULES FLOTTANTES ═══ */}
+          {[0.08, 0.22, 0.38, 0.52, 0.68, 0.82, 0.94].map(function(t, i) {
+            var idx = Math.floor(t * segments);
+            var p = i % 2 === 0 ? strand1Points[idx] : strand2Points[idx];
+            var offset = (i % 3 === 0 ? -1 : 1) * (3 + (i * 2));
+            var colors = ['#5DFFB4', '#7DD3FC', '#E8D48B', '#5DFFB4', '#7DD3FC', '#E8D48B', '#5DFFB4'];
+            return (
+              <Circle key={'pt-' + i}
+                cx={p.x + offset}
+                cy={p.y}
+                r={1 + (i % 3) * 0.5}
+                fill={colors[i]}
+                opacity={0.3 + (i % 2) * 0.1}
+              />
+            );
           })}
         </Svg>
-
       </View>
-
     </View>
   );
 };
