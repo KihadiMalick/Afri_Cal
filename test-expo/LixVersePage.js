@@ -228,25 +228,6 @@ const WORLD_DOTS = [
   { x: 680, y: 310, size: 'small' },
 ];
 
-const FAKE_MATCH = {
-  lixtag: 'LXM-8F2K9B',
-  display_name: 'LXM-8F2K9B',
-  country: 'Sénégal',
-  country_flag: '🇸🇳',
-  vitality_score: 78,
-  goal: 'Perte de poids',
-  distance_km: 4200,
-  common_points: [
-    { icon: 'target', text: 'Même objectif : Perte de poids' },
-    { icon: 'food', text: 'Régime similaire : Équilibré' },
-    { icon: 'water', text: 'Hydratation régulière' },
-  ],
-  today_calories_eaten: 1450,
-  today_calories_burned: 320,
-  today_mood: '😊',
-  today_weather: '☀️',
-  streak_days: 12,
-};
 
 const BINOME_LEADERBOARD = [
   { rank: 1, names: 'LXM-8F2K9B & LXM-2K7F4A', flags: '🇸🇳🇧🇮', flames: 42, pts: 520 },
@@ -264,12 +245,6 @@ const TIER_CONFIG = {
   ultimate: { label: 'Ultime', color: '#DFE6E9', bg: 'rgba(223,230,233,0.08)', border: 'rgba(223,230,233,0.25)' },
 };
 
-const CRATES = [
-  { id: 'bronze', name: 'Caisse Bronze', cost: 300, color: '#CD7F32', emoji: '📦', desc: 'Lix + Énergie + chance carte Standard', rewards: { lix_min: 50, lix_max: 100, energy_min: 10, energy_max: 20, card_chance: 0.30, card_tiers: ['standard'] } },
-  { id: 'silver', name: 'Caisse Argent', cost: 800, color: '#A4B0BE', emoji: '🎁', desc: 'Lix + Énergie + chance carte Rare', rewards: { lix_min: 100, lix_max: 250, energy_min: 20, energy_max: 40, card_chance: 0.25, card_tiers: ['standard', 'rare'] } },
-  { id: 'gold', name: 'Caisse Or', cost: 2000, color: '#D4AF37', emoji: '💎', desc: 'Lix + Énergie + chance carte Elite', rewards: { lix_min: 250, lix_max: 500, energy_min: 30, energy_max: 60, card_chance: 0.20, card_tiers: ['rare', 'elite'] } },
-  { id: 'platinum', name: 'Caisse Platine', cost: 5000, color: '#00CEC9', emoji: '👑', desc: 'Lix + Énergie + chance Mythique/Ultime', rewards: { lix_min: 500, lix_max: 1000, energy_min: 50, energy_max: 100, card_chance: 0.15, card_tiers: ['elite', 'mythique', 'ultimate'] } },
-];
 
 const NORMAL_SEGMENTS = [
   { label: '3', icon: '⚡', chance: 27, color: '#2A4A3A', reward: { type: 'energy', amount: 3 } },
@@ -452,13 +427,6 @@ const describeArc = (cx, cy, radius, startAngle, endAngle) => {
   return 'M ' + cx + ' ' + cy + ' L ' + x1 + ' ' + y1 + ' A ' + radius + ' ' + radius + ' 0 ' + largeArc + ' 1 ' + x2 + ' ' + y2 + ' Z';
 };
 
-const LIX_PACKS = [
-  { name: 'Micro', price: '$0.99', lix: 990, bonus: '', color: '#00D984' },
-  { name: 'Basic', price: '$4.99', lix: 5240, bonus: '+5%', color: '#4DA6FF' },
-  { name: 'Standard', price: '$9.99', lix: 10990, bonus: '+10%', color: '#9B6DFF' },
-  { name: 'Mega', price: '$29.99', lix: 35990, bonus: '+20%', color: '#D4AF37' },
-  { name: 'Ultra', price: '$99.99', lix: 129990, bonus: '+30%', color: '#D4AF37' },
-];
 
 const NAV_TABS = [
   { key: 'home', label: 'Accueil', iconDefault: 'home-outline', iconActive: 'home' },
@@ -590,32 +558,11 @@ export default function LixVersePage() {
   const coordsFlicker = useRef(new Animated.Value(1)).current;
   const compatAnim = useRef(new Animated.Value(0)).current;
   const pendingPulse = useRef(new Animated.Value(0.6)).current;
-  const dotPulseAnims = useRef(Array.from({ length: 30 }, () => new Animated.Value(0.2))).current;
-  const dotGlowAnims = useRef(Array.from({ length: 30 }, () => new Animated.Value(0))).current;
+  // === POLISH v1 — dotPulseAnims/dotGlowAnims supprimés ===
 
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [showCharDetail, setShowCharDetail] = useState(false);
-  const [charRecharging, setCharRecharging] = useState(false);
-  const rechargeProgress = useRef(new Animated.Value(0)).current;
-
-  // Données simulées Emerald Owl (sera remplacé par Supabase)
-  const [ownedChars, setOwnedChars] = useState({
-    emerald_owl: {
-      id: 'emerald_owl', name: 'Emerald Owl', tier: 'standard',
-      specialty: 'Recettes personnalisées', reduction_percent: 30,
-      level: 2, xp: 620, xp_next: 1000, uses_remaining: 5, uses_max: 8,
-      is_avatar: true, recharge_energy_cost: 10,
-      powers: [
-        { level: 0, text: '3 recettes gratuites', unlocked: true },
-        { level: 1, text: 'Suggestions améliorées', unlocked: true },
-        { level: 2, text: 'Détails étendus (temps de préparation)', unlocked: true },
-        { level: 3, text: 'Accès recettes Chef', unlocked: false },
-        { level: 4, text: 'Menu hebdo automatique', unlocked: false },
-        { level: 5, text: 'Illimité (1 Lix/recette)', unlocked: false },
-        { level: 6, text: 'MAÎTRE — cadre doré animé', unlocked: false },
-      ],
-    },
-  });
+  // === POLISH v1 — charRecharging/rechargeProgress/ownedChars supprimés (dead code) ===
 
   // === CARACTÈRES ===
   const [charOnboarded, setCharOnboarded] = useState(null);
@@ -666,30 +613,32 @@ export default function LixVersePage() {
 
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
-  const handleCharRecharge = (charId) => {
-    const char = ownedChars[charId];
-    if (!char) return;
-    setCharRecharging(true);
-    rechargeProgress.setValue(0);
-
-    Animated.timing(rechargeProgress, {
-      toValue: 1, duration: 2000, useNativeDriver: false,
-    }).start(() => {
-      setCharRecharging(false);
-      rechargeProgress.setValue(0);
-
-      const bonusXp = char.recharge_energy_cost;
-      setOwnedChars(prev => ({
-        ...prev,
-        [charId]: {
-          ...prev[charId],
-          uses_remaining: prev[charId].uses_max,
-          xp: prev[charId].xp + bonusXp,
-        }
-      }));
-
-      showLixAlert('Rechargé', '+' + char.uses_max + ' utilisations restaurées !\n+' + bonusXp + ' XP bonus', [{ text: 'Super', color: '#00D984' }], '⚡');
-    });
+  // === POLISH v1 — handleCharRecharge utilise userCollection ===
+  const handleCharRecharge = async (charId) => {
+    try {
+      const data = await supaRpc('recharge_character', {
+        p_user_id: TEST_USER_ID,
+        p_slug: charId
+      });
+      if (data?.success) {
+        setUserCollection(prev => prev.map(c =>
+          (c.slug || c.id) === charId
+            ? { ...c, uses_remaining: data.uses_restored || c.uses_max }
+            : c
+        ));
+        showLixAlert(
+          'Rechargé',
+          '+' + (data.uses_restored || '?') + ' utilisations restaurées !',
+          [{ text: 'Super', color: '#00D984' }],
+          '⚡'
+        );
+      } else {
+        showLixAlert('Erreur', data?.error || 'Recharge échouée', [{ text: 'OK', style: 'cancel' }], '⚠️');
+      }
+    } catch (e) {
+      console.error('Recharge error:', e);
+      showLixAlert('Erreur', 'Problème de connexion', [{ text: 'OK', style: 'cancel' }], '⚠️');
+    }
   };
 
   // === CARACTÈRES — Fonctions Supabase ===
@@ -1059,65 +1008,16 @@ export default function LixVersePage() {
     }, 300000);
     return () => clearInterval(interval);
   }, [activeTab, challenges.length, leaderboardChallengeId]);
-  // Fake realtime — simuler des likes externes toutes les 12-27s
-  useEffect(() => {
-    if (wallStickers.length === 0) return;
-    const interval = setInterval(() => {
-      const randomIdx = Math.floor(Math.random() * wallStickers.length);
-      const randomSticker = wallStickers[randomIdx];
-      if (randomSticker) {
-        handleStickerTap(randomSticker);
-      }
-    }, 12000 + Math.random() * 15000);
-    return () => clearInterval(interval);
-  }, [wallStickers]);
+  // === POLISH v1 — Fake likes useEffect supprimé ===
 
   useEffect(() => {
     if (notifications.length === 0) return;
     Animated.loop(Animated.timing(notifScrollX, { toValue: -(notifications.length * wp(280)), duration: notifications.length * 5000, useNativeDriver: true })).start();
   }, [notifications]);
 
-  // Binôme — star dot pulse animations
-  useEffect(() => {
-    dotPulseAnims.forEach((anim, i) => {
-      const delay = Math.random() * 3000;
-      const duration = 1500 + Math.random() * 2500;
-      setTimeout(() => {
-        Animated.loop(Animated.sequence([
-          Animated.timing(anim, { toValue: 0.9 + Math.random() * 0.1, duration: duration, useNativeDriver: false }),
-          Animated.timing(anim, { toValue: 0.15 + Math.random() * 0.15, duration: duration * 0.8, useNativeDriver: false }),
-        ])).start();
-      }, delay);
-    });
-    dotGlowAnims.forEach((anim, i) => {
-      const delay = Math.random() * 4000;
-      const duration = 2000 + Math.random() * 3000;
-      setTimeout(() => {
-        Animated.loop(Animated.sequence([
-          Animated.timing(anim, { toValue: 1, duration: duration, useNativeDriver: false }),
-          Animated.timing(anim, { toValue: 0, duration: duration, useNativeDriver: false }),
-        ])).start();
-      }, delay);
-    });
-  }, []);
+  // === POLISH v1 — dot pulse/glow animations supprimées ===
 
-  // Binôme — simulate incoming pokes when matched
-  useEffect(() => {
-    if (binomeStatus !== 'matched') return;
-    const interval = setInterval(() => {
-      if (Math.random() > 0.5) return;
-      const allSigns = Object.values(LIXSIGNS).flatMap(cat => cat.signs);
-      const randomSign = allSigns[Math.floor(Math.random() * allSigns.length)];
-      setBinomeMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        sign_id: randomSign.id,
-        from: 'partner',
-        timestamp: new Date().toISOString(),
-        showText: false,
-      }]);
-    }, 30000 + Math.random() * 30000);
-    return () => clearInterval(interval);
-  }, [binomeStatus]);
+  // === POLISH v1 — Fake pokes useEffect supprimé ===
 
   // Binôme — compte à rebours 24h retry
   useEffect(() => {
@@ -1234,7 +1134,7 @@ export default function LixVersePage() {
       if (stepIdx < SEARCH_STEPS.length) {
         setTimeout(stepTimer, SEARCH_STEPS[stepIdx - 1].duration);
       } else {
-        setTimeout(() => {
+        setTimeout(async () => {
           clearInterval(coordsInterval);
           clearInterval(linesInterval);
           radarAnim.stopAnimation();
@@ -1242,28 +1142,43 @@ export default function LixVersePage() {
           pulseRing2.stopAnimation();
           pulseRing3.stopAnimation();
 
-          // Appel RPC Supabase (quand ready) :
-          // fetch(SUPABASE_URL + '/rest/v1/rpc/find_binome_match', {
-          //   method: 'POST',
-          //   headers: { ...hdrs, 'Content-Type': 'application/json' },
-          //   body: JSON.stringify({ p_user_id: TEST_USER_ID }),
-          // }).then(r => r.json()).then(data => { ... })
+          // === POLISH v1 — Binôme search LIVE ===
+          try {
+            const matchData = await supaRpc('find_binome_match', { p_user_id: TEST_USER_ID });
 
-          // Pour l'instant : simuler avec 15% de chance de "pas trouvé"
-          const noMatch = Math.random() < 0.15;
-
-          if (noMatch) {
+            if (!matchData || matchData.error || !matchData.match_found) {
+              setSearchProgress(100);
+              setCompatibilityScore(0);
+              setBinomeStatus('no_match');
+              setRetryAfterTime(Date.now() + 24 * 60 * 60 * 1000);
+            } else {
+              setCompatibilityScore(matchData.compatibility_score || 87);
+              setSearchProgress(100);
+              setBinomePartner({
+                lixtag: matchData.partner_lixtag,
+                display_name: matchData.partner_lixtag,
+                country: matchData.partner_country || '',
+                country_flag: matchData.partner_flag || '🌍',
+                vitality_score: matchData.partner_vitality || 0,
+                goal: matchData.partner_goal || '',
+                distance_km: matchData.distance_km || null,
+                common_points: matchData.common_points || [],
+                today_calories_eaten: 0,
+                today_calories_burned: 0,
+                today_mood: '—',
+                today_weather: '—',
+                streak_days: 0,
+              });
+              setBinomeCommonPoints(matchData.common_points || []);
+              setBinomeDistance(matchData.distance_km || null);
+              setBinomeStatus('proposed');
+            }
+          } catch (e) {
+            console.error('Binome search error:', e);
             setSearchProgress(100);
             setCompatibilityScore(0);
             setBinomeStatus('no_match');
             setRetryAfterTime(Date.now() + 24 * 60 * 60 * 1000);
-          } else {
-            setCompatibilityScore(87);
-            setSearchProgress(100);
-            setBinomePartner(FAKE_MATCH);
-            setBinomeCommonPoints(FAKE_MATCH.common_points);
-            setBinomeDistance(FAKE_MATCH.distance_km);
-            setBinomeStatus('proposed');
           }
         }, SEARCH_STEPS[SEARCH_STEPS.length - 1].duration);
       }
@@ -1373,6 +1288,32 @@ export default function LixVersePage() {
       if(Array.isArray(bD))setOwnedCharacters(bD.map(x=>x.character_id));
       if(Array.isArray(cD))setChallenges(cD);
       if(Array.isArray(dD))setNotifications(dD);
+      // === POLISH v1 — Feed notifications panel from DB ===
+      if (Array.isArray(dD) && dD.length > 0) {
+        setNotifList(dD.map(n => ({
+          id: n.id || String(Math.random()),
+          title: n.notification_type === 'character_won' ? 'Carte gagnée !'
+               : n.notification_type === 'wall_sticker' ? 'Wall of Health'
+               : n.notification_type === 'challenge_end' ? 'Défi terminé'
+               : n.notification_type === 'poke' ? 'Poke reçu'
+               : n.notification_type === 'group_join' ? 'Nouveau membre'
+               : n.notification_type === 'binome_request' ? 'Demande Binôme'
+               : 'Notification',
+          message: n.message || '',
+          emoji: n.notification_type === 'character_won' ? '🎉'
+               : n.notification_type === 'wall_sticker' ? '🏆'
+               : n.notification_type === 'poke' ? '📢'
+               : n.notification_type === 'group_join' ? '🤝'
+               : n.notification_type === 'binome_request' ? '💛'
+               : '📬',
+          color: n.color || '#D4AF37',
+          time: n.created_at
+            ? new Date(n.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+            : '',
+          read: n.read || false,
+          type: n.notification_type,
+        })));
+      }
       if(Array.isArray(eD))setMyGroups(eD);
       // Wall of Health stickers
       const wallRes = await fetch(SUPABASE_URL + '/rest/v1/wall_stickers?is_visible=eq.true&order=like_count.desc&limit=30', { headers: hdrs });
@@ -2617,49 +2558,6 @@ export default function LixVersePage() {
       </View>
     </ScrollView>
   );
-  const openCrate = (crate) => {
-    if (lixBalance < crate.cost) { showLixAlert('Lix insuffisants', 'Il faut ' + crate.cost + ' Lix pour cette caisse.\n\nTon solde : ' + lixBalance + ' Lix', [{ text: 'Acheter des Lix', color: '#D4AF37', onPress: () => setActiveTab('lixspin') }, { text: 'Fermer', style: 'cancel' }], '💰'); return; }
-    setLixBalance(p => p - crate.cost);
-    const r = crate.rewards;
-    const lixWon = Math.floor(r.lix_min + Math.random() * (r.lix_max - r.lix_min));
-    setLixBalance(p => p + lixWon);
-    const energyWon = Math.floor(r.energy_min + Math.random() * (r.energy_max - r.energy_min));
-    let cardWon = null;
-    let cardDup = false;
-    let cardRef = 0;
-    if (Math.random() < r.card_chance) {
-      const tierW = { standard: 60, rare: 25, elite: 12, hyper: 2.5, ultimate: 0.5 };
-      const totalW = r.card_tiers.reduce((s, t) => s + (tierW[t] || 1), 0);
-      let rn = Math.random() * totalW;
-      let selTier = r.card_tiers[0];
-      for (const t of r.card_tiers) { rn -= (tierW[t] || 1); if (rn <= 0) { selTier = t; break; } }
-      const tierChars = ALL_CHARACTERS.filter(c => c.tier === selTier);
-      cardWon = tierChars[Math.floor(Math.random() * tierChars.length)];
-      cardDup = ownedCharacters.includes(cardWon.id);
-      const refT = { standard: 100, rare: 250, elite: 700, hyper: 2000, ultimate: 5000 };
-      cardRef = cardDup ? (refT[cardWon.tier] || 100) : 0;
-      if (cardDup) setLixBalance(p => p + cardRef);
-      else setOwnedCharacters(p => [...p, cardWon.id]);
-    }
-    let msg = '💰 +' + lixWon + ' Lix\n⚡ +' + energyWon + ' Énergie';
-    if (cardWon) {
-      const tc = TIER_CONFIG[cardWon.tier];
-      if (cardDup) {
-        msg += '\n\n' + cardWon.emoji + ' ' + cardWon.name + ' (' + tc.label + ') DOUBLON\n+' + cardRef + ' Lix remboursés';
-      } else {
-        msg += '\n\n🎉 CARTE GAGNÉE !\n' + cardWon.emoji + ' ' + cardWon.name + ' (' + tc.label + ')\n' + cardWon.desc;
-      }
-    } else {
-      msg += '\n\nPas de carte cette fois...';
-    }
-    showLixAlert(crate.name, msg, [{ text: 'Super !', color: '#D4AF37' }], crate.emoji);
-    const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
-    if (cardWon && !cardDup) {
-      fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters', { method: 'POST', headers: h, body: JSON.stringify({ user_id: TEST_USER_ID, character_id: cardWon.id, tier: cardWon.tier, obtained_via: 'crate' }) }).catch(() => {});
-      fetch(SUPABASE_URL + '/rest/v1/lixverse_notifications', { method: 'POST', headers: h, body: JSON.stringify({ notification_type: 'character_won', lixtag: 'LXM-2K7F4A', message: 'LXM-2K7F4A a obtenu ' + cardWon.name + ' !', character_id: cardWon.id, color: cardWon.color }) }).catch(() => {});
-    }
-    fetch(SUPABASE_URL + '/rest/v1/lixverse_crate_history', { method: 'POST', headers: h, body: JSON.stringify({ user_id: TEST_USER_ID, crate_type: crate.id, lix_spent: crate.cost, character_won: cardWon ? cardWon.id : 'none', was_doublon: cardDup, lix_refunded: cardRef }) }).catch(() => {});
-  };
 
 
   const cardW = (SCREEN_WIDTH - wp(48)) / 3;
@@ -2733,7 +2631,7 @@ export default function LixVersePage() {
 
         {/* Grille 3 colonnes */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8), marginBottom: wp(20) }}>
-          {(userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: ownedChars[c.id]?.level || 0, xp: ownedChars[c.id]?.xp || 0, xp_next: ownedChars[c.id]?.xp_next || 1000, uses_remaining: ownedChars[c.id]?.uses_remaining || 0, uses_max: ownedChars[c.id]?.uses_max || 10, fragments: 0, fragments_required: 3, is_active: false }))).map(ch => {
+          {(userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: 10, fragments: 0, fragments_required: 3, is_active: false }))).map(ch => {
             const hasCard = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(ch.slug || ch.id);
             const own = hasCard && (ch.level || 0) >= 1; // Possédé = carte complète (Niv1+)
             const isActive = (ch.slug || ch.id) === activeCharSlug;
@@ -3526,7 +3424,7 @@ export default function LixVersePage() {
         <View style={{ paddingHorizontal: wp(16) }}>
           <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Acheter des Lix</Text>
           {[{ n: 'Micro', p: '$0.99', l: 990, b: '', c: '#00D984' }, { n: 'Basic', p: '$4.99', l: 5240, b: '+5%', c: '#4DA6FF' }, { n: 'Standard', p: '$9.99', l: 10990, b: '+10%', c: '#9B6DFF', best: true }, { n: 'Mega', p: '$29.99', l: 35990, b: '+20%', c: '#D4AF37' }, { n: 'Ultra', p: '$99.99', l: 129990, b: '+30%', c: '#D4AF37', ultra: true }].map((pk, i) => (
-            <Pressable key={i} delayPressIn={120} onPress={() => showLixAlert('Achat ' + pk.n, pk.p + ' → ' + pk.l.toLocaleString('fr-FR') + ' Lix\n\nBientôt disponible.', [{ text: 'OK', style: 'cancel' }], '💎')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: pk.ultra ? 2 : pk.best ? 1.5 : 1, borderColor: pk.ultra ? '#D4AF37' : pk.best ? pk.c + '50' : pk.c + '25', ...(pk.ultra ? { shadowColor: '#D4AF37', shadowOpacity: 0.3, shadowRadius: wp(8), elevation: 4 } : {}), transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <Pressable key={i} delayPressIn={120} onPress={() => showLixAlert('Achat ' + pk.n, pk.p + ' → ' + pk.l.toLocaleString('fr-FR') + ' Lix\n\nBientôt disponible.', [{ text: 'OK', style: 'cancel' }], '💎')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), backgroundColor: 'transparent', borderWidth: pk.ultra ? 2 : pk.best ? 1.5 : 1, borderColor: pk.ultra ? '#D4AF37' : pk.best ? pk.c + '50' : pk.c + '25', ...(pk.ultra ? { shadowColor: '#D4AF37', shadowOpacity: 0.3, shadowRadius: wp(8), elevation: 4 } : {}), transform: [{ scale: pressed ? 0.97 : 1 }] })}>
               <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: pk.c + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}><LixGem size={wp(22)} /></View>
               <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), flexWrap: 'wrap' }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{pk.n}</Text>{pk.b ? <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37' }}>{pk.b}</Text></View> : null}</View><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{pk.l.toLocaleString('fr-FR')} Lix</Text>{pk.best ? <View style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(2), marginTop: wp(3), alignSelf: 'flex-start' }}><Text style={{ fontSize: fp(7), fontWeight: '800', color: '#00D984' }}>MEILLEUR RAPPORT</Text></View> : null}</View>
               <View style={{ backgroundColor: pk.c + '20', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}><Text style={{ fontSize: fp(13), fontWeight: '700', color: pk.c }}>{pk.p}</Text></View>
@@ -3576,7 +3474,7 @@ export default function LixVersePage() {
                 ],
                 '⚡'
               );
-            }} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(12), borderRadius: wp(12), marginBottom: wp(6), backgroundColor: pk.best ? 'rgba(255,140,66,0.08)' : 'rgba(255,255,255,0.03)', borderWidth: pk.best ? 1.5 : 1, borderColor: pk.best ? (pk.c || '#00D984') + '40' : 'rgba(255,255,255,0.08)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            }} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(12), borderRadius: wp(12), marginBottom: wp(6), backgroundColor: pk.best ? 'rgba(255,140,66,0.06)' : 'transparent', borderWidth: pk.best ? 1.5 : 1, borderColor: pk.best ? (pk.c || '#00D984') + '40' : 'rgba(255,255,255,0.08)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
               <Text style={{ fontSize: fp(14), marginRight: wp(10) }}>{pk.emoji || '⚡'}</Text>
               <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
   <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>+{pk.e} énergie</Text>
@@ -4005,49 +3903,17 @@ export default function LixVersePage() {
               resizeMode="cover"
             />
             {/* Points lumineux étoiles */}
+            {/* === POLISH v1 — Points carte monde simplifiés === */}
             {WORLD_DOTS.map((dot, i) => {
-              const dotSize = dot.size === 'large' ? wp(7) : dot.size === 'medium' ? wp(5) : wp(3.5);
-              const glowSize = dot.size === 'large' ? wp(22) : dot.size === 'medium' ? wp(16) : wp(11);
-              const pulseAnim = dotPulseAnims[i];
-              const glowAnim = dotGlowAnims[i];
+              const dotSize = dot.size === 'large' ? wp(4) : dot.size === 'medium' ? wp(3) : wp(2);
               return (
                 <View key={i} style={{
                   position: 'absolute',
-                  left: (dot.x / 800) * (SCREEN_WIDTH - wp(32)) - glowSize / 2,
-                  top: (dot.y / 400) * wp(180) - glowSize / 2,
-                  width: glowSize, height: glowSize,
-                  justifyContent: 'center', alignItems: 'center',
-                }}>
-                  {/* Halo glow externe */}
-                  <Animated.View style={{
-                    position: 'absolute',
-                    width: glowSize, height: glowSize, borderRadius: glowSize / 2,
-                    backgroundColor: 'rgba(120,180,255,0.08)',
-                    opacity: glowAnim,
-                    transform: [{ scale: glowAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.6, 1.3],
-                    }) }],
-                  }} />
-                  {/* Halo glow moyen */}
-                  <Animated.View style={{
-                    position: 'absolute',
-                    width: glowSize * 0.6, height: glowSize * 0.6, borderRadius: glowSize * 0.3,
-                    backgroundColor: 'rgba(140,200,255,0.15)',
-                    opacity: pulseAnim,
-                  }} />
-                  {/* Point central lumineux */}
-                  <Animated.View style={{
-                    width: dotSize, height: dotSize, borderRadius: dotSize / 2,
-                    backgroundColor: '#DDEEFF',
-                    opacity: pulseAnim,
-                    shadowColor: '#88CCFF',
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: 0.9,
-                    shadowRadius: dot.size === 'large' ? wp(6) : dot.size === 'medium' ? wp(4) : wp(2.5),
-                    elevation: dot.size === 'large' ? 6 : dot.size === 'medium' ? 4 : 2,
-                  }} />
-                </View>
+                  left: (dot.x / 800) * (SCREEN_WIDTH - wp(32)) - dotSize / 2,
+                  top: (dot.y / 400) * wp(180) - dotSize / 2,
+                  width: dotSize, height: dotSize, borderRadius: dotSize / 2,
+                  backgroundColor: 'rgba(180, 210, 240, 0.3)',
+                }} />
               );
             })}
             {/* OVERLAY RADAR — seulement pendant searching */}
@@ -4218,9 +4084,9 @@ export default function LixVersePage() {
                 </View>
               ))}
             </View>
-            {/* Bouton Envoyer la demande */}
+            {/* === POLISH v1 — Bouton Envoyer la demande LIVE === */}
             <Pressable delayPressIn={120}
-              onPress={() => {
+              onPress={async () => {
                 setBinomeStatus('pending_sent');
                 Animated.loop(
                   Animated.sequence([
@@ -4228,13 +4094,24 @@ export default function LixVersePage() {
                     Animated.timing(pendingPulse, { toValue: 0.6, duration: 1000, useNativeDriver: false }),
                   ])
                 ).start();
-                // Simuler réponse après 8-15s (démo)
-                const delay = 8000 + Math.random() * 7000;
-                setTimeout(() => {
-                  const accepted = Math.random() > 0.3;
+                // === POLISH v1 — Binôme request LIVE ===
+                try {
+                  const reqData = await supaRpc('send_binome_request', {
+                    p_user_id: TEST_USER_ID,
+                    p_partner_lixtag: binomePartner.lixtag,
+                  });
+                  if (!reqData?.success) {
+                    pendingPulse.stopAnimation();
+                    showLixAlert('Erreur', reqData?.error || 'Impossible d\'envoyer', [{ text: 'OK', style: 'cancel' }], '⚠️');
+                    setBinomeStatus('proposed');
+                  }
+                  // Si success : reste en pending_sent, réponse viendra via notification/polling
+                } catch (e) {
+                  console.error('Binome request error:', e);
                   pendingPulse.stopAnimation();
-                  setBinomeStatus(accepted ? 'matched' : 'declined');
-                }, delay);
+                  showLixAlert('Erreur', 'Problème de connexion', [{ text: 'OK', style: 'cancel' }], '⚠️');
+                  setBinomeStatus('proposed');
+                }
               }}
               style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
               <LinearGradient colors={['#D4AF37', '#B8941F']}
@@ -5846,7 +5723,7 @@ export default function LixVersePage() {
                           const ac = ALL_CHARACTERS[cardViewIndex];
                           if (!ac) return null;
                           const acSlug = ac.id;
-                          const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: ownedChars[c.id]?.level || 0, xp: ownedChars[c.id]?.xp || 0, xp_next: ownedChars[c.id]?.xp_next || 1000, uses_remaining: ownedChars[c.id]?.uses_remaining || 0, uses_max: ownedChars[c.id]?.uses_max || 10, fragments: 0, fragments_required: 3, is_active: false }));
+                          const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: 10, fragments: 0, fragments_required: 3, is_active: false }));
                           const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...ac, slug: acSlug, owned: false };
                           const charImg = getCharImage(acSlug);
                           const own = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(acSlug);
@@ -5894,7 +5771,7 @@ export default function LixVersePage() {
                       const ac = ALL_CHARACTERS[cardViewIndex];
                       if (!ac) return null;
                       const acSlug = ac.id;
-                      const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: ownedChars[c.id]?.level || 0, xp: ownedChars[c.id]?.xp || 0, xp_next: ownedChars[c.id]?.xp_next || 1000, uses_remaining: ownedChars[c.id]?.uses_remaining || 0, uses_max: ownedChars[c.id]?.uses_max || 10, fragments: 0, fragments_required: 3, is_active: false }));
+                      const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: 10, fragments: 0, fragments_required: 3, is_active: false }));
                       const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...ac, slug: acSlug, owned: false };
                       const hasCardCheck = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(acSlug);
                       const own = hasCardCheck && (ch.level || 0) >= 1;
