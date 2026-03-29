@@ -2030,6 +2030,8 @@ const AvatarButton = ({ activeChar, userName, onPress, size = 30 }) => {
 
 const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef, dailyTarget, lastMeal, tooltipStep, vitalityScore, activeChar, pagePowers, toggleStates, setToggleStates, consumePower, userName, onAvatarPress }) => {
   const OBJECTIVE = dailyTarget || DAILY_OBJECTIVE;
+  const [showInfoLeft, setShowInfoLeft] = useState(false);
+  const [showInfoRight, setShowInfoRight] = useState(false);
   const streakDays = 12;
   const streakColor = streakDays >= 14 ? '#D4AF37'
     : streakDays >= 7 ? '#00D984'
@@ -2072,37 +2074,8 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
       style={{ flex: 1 }}
       contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(15), paddingTop: wp(8) }}
       showsVerticalScrollIndicator={false}
+      onScrollBeginDrag={function() { setShowInfoLeft(false); setShowInfoRight(false); }}
     >
-      {/* ══════ MINI-BANDEAU AVATAR PROFIL ══════ */}
-      <Pressable
-        onPress={onAvatarPress}
-        style={({ pressed }) => ({
-          flexDirection: 'row', alignItems: 'center',
-          marginBottom: wp(8),
-          paddingVertical: wp(6), paddingHorizontal: wp(10),
-          backgroundColor: pressed ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
-          borderRadius: wp(12),
-          borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.06)',
-          opacity: tooltipStep > 0 ? 0.05 : 1,
-        })}
-      >
-        <AvatarButton
-          activeChar={activeChar}
-          userName={userName}
-          onPress={onAvatarPress}
-          size={wp(28)}
-        />
-        <View style={{ flex: 1, marginLeft: wp(8) }}>
-          <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>
-            {userName || 'Mon Profil'}
-          </Text>
-          <Text style={{ color: '#555E6C', fontSize: fp(9) }}>
-            Tap pour voir ton profil et niveau
-          </Text>
-        </View>
-        <Text style={{ color: '#555E6C', fontSize: fp(12) }}>›</Text>
-      </Pressable>
-
       {/* ====== SALUT PERSONNALISÉ ====== */}
       <View style={{ marginBottom: wp(6), opacity: tooltipStep > 0 ? 0.05 : 1 }}>
         <Text style={{
@@ -2152,14 +2125,23 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           }}>BILAN ÉNERGÉTIQUE</Text>
 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{
-              fontSize: fp(13),
-              fontWeight: '800',
-              color: '#00D984',
-              textShadowColor: 'rgba(0, 217, 132, 0.3)',
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 4,
-            }}>{OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{
+                fontSize: fp(13),
+                fontWeight: '800',
+                color: '#00D984',
+                textShadowColor: 'rgba(0, 217, 132, 0.3)',
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 4,
+              }}>{OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
+              <Text style={{
+                fontSize: fp(7),
+                fontWeight: '600',
+                color: '#6B7280',
+                letterSpacing: 0.5,
+                marginTop: wp(1),
+              }}>Objectif du Jour</Text>
+            </View>
             <View style={{
               width: wp(5), height: wp(5), borderRadius: wp(2.5),
               backgroundColor: '#00D984', marginLeft: wp(4),
@@ -2239,33 +2221,36 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               ? (tooltipStep === 2 ? pulseOpacity : 1)
               : 0.05,
           }}>
-            <Text style={{
-              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: fp(11),
-              fontWeight: '700',
-              color: '#FF8C42',
-              marginBottom: wp(1),
-            }}>{consumedTotal.toLocaleString('fr-FR')} kcal</Text>
-            <Text style={{
-              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: fp(15),
-              fontWeight: '800',
-              color: '#FF8C42',
-              textShadowColor: 'rgba(255, 140, 66, 0.2)',
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 4,
-            }}>{Math.round((consumedTotal / OBJECTIVE) * 100)}%</Text>
+            {/* Ligne kcal + icône info */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{
+                fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+                fontSize: fp(11),
+                fontWeight: '700',
+                color: '#FF8C42',
+              }}>{consumedTotal.toLocaleString('fr-FR')} kcal</Text>
+              <Pressable
+                onPress={function() { setShowInfoLeft(function(v) { return !v; }); setShowInfoRight(false); }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={{
+                  width: wp(16), height: wp(16), borderRadius: wp(8),
+                  backgroundColor: showInfoLeft ? 'rgba(255,140,66,0.15)' : 'rgba(255,255,255,0.06)',
+                  borderWidth: 1,
+                  borderColor: showInfoLeft ? 'rgba(255,140,66,0.3)' : 'rgba(255,255,255,0.1)',
+                  justifyContent: 'center', alignItems: 'center',
+                  marginLeft: wp(4),
+                }}
+              >
+                <Text style={{
+                  color: showInfoLeft ? '#FF8C42' : '#8892A0',
+                  fontSize: fp(8), fontWeight: '700',
+                }}>i</Text>
+              </Pressable>
+            </View>
+            {/* Label */}
             <Text style={{
               fontSize: fp(9), fontWeight: '600', color: '#8892A0', marginTop: 2,
             }}>Consommé</Text>
-            <Text style={{
-              fontSize: fp(8),
-              fontWeight: '700',
-              color: '#FF3B30',
-              marginTop: 3,
-            }}>
-              {burnedExtra > 0 ? `- ${burnedExtra} Kcal/Sport` : ''}
-            </Text>
           </RNAnimated.View>
 
           {/* Vitalité */}
@@ -2297,37 +2282,108 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               ? (tooltipStep === 4 ? pulseOpacity : 1)
               : 0.05,
           }}>
-            <Text style={{
-              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: fp(11),
-              fontWeight: '700',
-              color: '#4DA6FF',
-              marginBottom: wp(1),
-            }}>{remaining.toLocaleString('fr-FR')} kcal</Text>
-            <Text style={{
-              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: fp(15),
-              fontWeight: '800',
-              color: '#4DA6FF',
-              textShadowColor: 'rgba(77, 166, 255, 0.2)',
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 4,
-            }}>{Math.min(Math.round((remaining / OBJECTIVE) * 100), 100)}%</Text>
+            {/* Ligne kcal + icône info */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{
+                fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+                fontSize: fp(11),
+                fontWeight: '700',
+                color: '#4DA6FF',
+              }}>{remaining.toLocaleString('fr-FR')} kcal</Text>
+              <Pressable
+                onPress={function() { setShowInfoRight(function(v) { return !v; }); setShowInfoLeft(false); }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={{
+                  width: wp(16), height: wp(16), borderRadius: wp(8),
+                  backgroundColor: showInfoRight ? 'rgba(77,166,255,0.15)' : 'rgba(255,255,255,0.06)',
+                  borderWidth: 1,
+                  borderColor: showInfoRight ? 'rgba(77,166,255,0.3)' : 'rgba(255,255,255,0.1)',
+                  justifyContent: 'center', alignItems: 'center',
+                  marginLeft: wp(4),
+                }}
+              >
+                <Text style={{
+                  color: showInfoRight ? '#4DA6FF' : '#8892A0',
+                  fontSize: fp(8), fontWeight: '700',
+                }}>i</Text>
+              </Pressable>
+            </View>
+            {/* Label */}
             <Text style={{
               fontSize: fp(9), fontWeight: '600', color: '#8892A0', marginTop: 2,
             }}>Reste</Text>
-            {remaining > OBJECTIVE && (
-              <Text style={{
-                fontSize: fp(8),
-                fontWeight: '700',
-                color: '#00D984',
-                marginTop: 3,
-              }}>
-                + {remaining - OBJECTIVE} bonus sport
-              </Text>
-            )}
           </RNAnimated.View>
         </View>
+
+        {/* ═══ TOOLTIP INFO CONSOMMÉ ═══ */}
+        {showInfoLeft && (
+          <View style={{
+            backgroundColor: 'rgba(255,140,66,0.06)',
+            borderRadius: wp(12),
+            padding: wp(12),
+            marginTop: wp(8),
+            borderWidth: 1,
+            borderColor: 'rgba(255,140,66,0.15)',
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+              <Text style={{
+                fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+                fontSize: fp(14), fontWeight: '800', color: '#FF8C42',
+              }}>{Math.round((consumedTotal / OBJECTIVE) * 100)}%</Text>
+              <Text style={{ color: '#8892A0', fontSize: fp(10), marginLeft: wp(6) }}>du quota journalier</Text>
+            </View>
+            <Text style={{
+              color: '#EAEEF3', fontSize: fp(11), lineHeight: fp(16), marginBottom: wp(8),
+            }}>Votre activité sportive brûle vos calories consommées.</Text>
+            {burnedExtra > 0 && (
+              <View style={{
+                backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: wp(8), padding: wp(8),
+              }}>
+                <Text style={{ color: '#FF3B30', fontSize: fp(10), fontWeight: '700' }}>
+                  - {burnedExtra} kcal brûlées (sport)
+                </Text>
+                <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700', marginTop: wp(2) }}>
+                  = {consumedTotal.toLocaleString('fr-FR')} kcal net consommé
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* ═══ TOOLTIP INFO RESTE ═══ */}
+        {showInfoRight && (
+          <View style={{
+            backgroundColor: 'rgba(77,166,255,0.06)',
+            borderRadius: wp(12),
+            padding: wp(12),
+            marginTop: wp(8),
+            borderWidth: 1,
+            borderColor: 'rgba(77,166,255,0.15)',
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+              <Text style={{
+                fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+                fontSize: fp(14), fontWeight: '800', color: '#4DA6FF',
+              }}>{Math.min(Math.round((remaining / OBJECTIVE) * 100), 100)}%</Text>
+              <Text style={{ color: '#8892A0', fontSize: fp(10), marginLeft: wp(6) }}>de vos calories disponibles</Text>
+            </View>
+            <Text style={{
+              color: '#EAEEF3', fontSize: fp(11), lineHeight: fp(16), marginBottom: wp(8),
+            }}>Si vous faites de l'activité, vos calories consommées diminuent et augmentent votre marge restante.</Text>
+            {burnedExtra > 0 && (
+              <View style={{
+                backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: wp(8), padding: wp(8),
+              }}>
+                <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>
+                  + {burnedExtra} kcal bonus sport
+                </Text>
+                <Text style={{ color: '#4DA6FF', fontSize: fp(10), fontWeight: '700', marginTop: wp(2) }}>
+                  = {remaining.toLocaleString('fr-FR')} kcal disponibles
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </MetalCard>
 
       {/* ══════ SECTIONS POUVOIRS CARACTÈRES ══════ */}
