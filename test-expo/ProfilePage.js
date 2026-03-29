@@ -98,6 +98,7 @@ export default function ProfilePage() {
   var _editLocation = useState(''), editLocation = _editLocation[0], setEditLocation = _editLocation[1];
   var _lang = useState('fr'), lang = _lang[0], setLang = _lang[1];
   var _connectedApps = useState({}), connectedApps = _connectedApps[0], setConnectedApps = _connectedApps[1];
+  var _showMilestones = useState(false), showMilestones = _showMilestones[0], setShowMilestones = _showMilestones[1];
 
   var T = {
     fr: {
@@ -138,6 +139,30 @@ export default function ProfilePage() {
     },
   };
   var t = T[lang] || T.fr;
+
+  var XP_MILESTONES = [
+    { level: 10,  lix: 500,    energy: 20,  reward: '1 carte Rare',       rewardEn: '1 Rare card',        emoji: '🃏', color: '#4DA6FF' },
+    { level: 25,  lix: 1500,   energy: 50,  reward: '1 carte Elite',      rewardEn: '1 Elite card',       emoji: '🎴', color: '#A855F7' },
+    { level: 50,  lix: 5000,   energy: 100, reward: '1 carte Mythique',   rewardEn: '1 Mythic card',      emoji: '🌟', color: '#D4AF37' },
+    { level: 75,  lix: 10000,  energy: 200, reward: '5 frags Mythique',   rewardEn: '5 Mythic frags',     emoji: '💎', color: '#FF6B8A' },
+    { level: 100, lix: 25000,  energy: 500, reward: 'Badge Légendaire',   rewardEn: 'Legendary Badge',    emoji: '👑', color: '#FFD700' },
+  ];
+
+  var getNextMilestone = function(currentLevel) {
+    for (var i = 0; i < XP_MILESTONES.length; i++) {
+      if (XP_MILESTONES[i].level > currentLevel) return XP_MILESTONES[i];
+    }
+    return null;
+  };
+
+  var getXPForLevel = function(level) {
+    var total = 0;
+    for (var n = 1; n < level; n++) {
+      total += Math.round(30 + n * 50);
+    }
+    return total;
+  };
+
   var _toast = useState(null), toast = _toast[0], setToast = _toast[1];
 
   var showToast = function(message, color) {
@@ -434,6 +459,108 @@ export default function ProfilePage() {
             </ScrollView>
           </View>
         </Modal>
+
+        {/* ═══ MODAL TOUS LES PALIERS ═══ */}
+        <Modal visible={showMilestones} transparent animationType="fade" onRequestClose={function() { setShowMilestones(false); }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', padding: wp(20) }}>
+            <View style={{
+              backgroundColor: '#1A1D22', borderRadius: wp(20), padding: wp(20),
+              borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+              maxHeight: '80%',
+            }}>
+              {/* Header */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(16) }}>
+                <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#EAEEF3', letterSpacing: 1 }}>
+                  {lang === 'fr' ? 'PALIERS XP' : 'XP MILESTONES'}
+                </Text>
+                <Pressable onPress={function() { setShowMilestones(false); }}
+                  style={{ width: wp(28), height: wp(28), borderRadius: wp(14), backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ color: '#8892A0', fontSize: fp(14), fontWeight: '600' }}>✕</Text>
+                </Pressable>
+              </View>
+
+              {/* Niveau actuel */}
+              <View style={{
+                backgroundColor: 'rgba(0,217,132,0.06)', borderRadius: wp(12),
+                padding: wp(12), marginBottom: wp(16),
+                borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8),
+              }}>
+                <Text style={{ fontSize: fp(14), fontWeight: '900', color: '#00D984' }}>NIV {userXP.user_level || 1}</Text>
+                <View style={{ width: 1, height: wp(16), backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                <Text style={{ fontSize: fp(12), color: '#8892A0' }}>{(userXP.user_xp || 0).toLocaleString('fr-FR')} XP</Text>
+              </View>
+
+              {/* Liste des paliers */}
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {XP_MILESTONES.map(function(m, i) {
+                  var reached = (userXP.user_level || 1) >= m.level;
+                  var isCurrent = !reached && (i === 0 || (userXP.user_level || 1) >= XP_MILESTONES[i - 1].level);
+                  return (
+                    <View key={m.level} style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      paddingVertical: wp(12), paddingHorizontal: wp(10),
+                      borderBottomWidth: i < XP_MILESTONES.length - 1 ? 1 : 0,
+                      borderBottomColor: 'rgba(255,255,255,0.04)',
+                      backgroundColor: isCurrent ? m.color + '08' : 'transparent',
+                      borderRadius: isCurrent ? wp(10) : 0,
+                    }}>
+                      {/* Icône état */}
+                      <View style={{
+                        width: wp(32), height: wp(32), borderRadius: wp(16),
+                        backgroundColor: reached ? m.color + '20' : 'rgba(255,255,255,0.04)',
+                        borderWidth: 1.5,
+                        borderColor: reached ? m.color : isCurrent ? m.color + '40' : 'rgba(255,255,255,0.08)',
+                        justifyContent: 'center', alignItems: 'center', marginRight: wp(10),
+                      }}>
+                        {reached ? (
+                          <Text style={{ fontSize: fp(14) }}>✓</Text>
+                        ) : (
+                          <Text style={{ fontSize: fp(14) }}>{m.emoji}</Text>
+                        )}
+                      </View>
+
+                      {/* Info palier */}
+                      <View style={{ flex: 1 }}>
+                        <Text style={{
+                          fontSize: fp(12), fontWeight: '800',
+                          color: reached ? m.color : isCurrent ? '#EAEEF3' : '#555E6C',
+                        }}>
+                          NIV {m.level}
+                        </Text>
+                        <Text style={{
+                          fontSize: fp(9),
+                          color: reached ? '#8892A0' : '#555E6C',
+                          marginTop: wp(2),
+                        }}>
+                          {m.lix.toLocaleString('fr-FR')} Lix · {m.energy} {lang === 'fr' ? 'énergie' : 'energy'} · {lang === 'fr' ? m.reward : m.rewardEn}
+                        </Text>
+                      </View>
+
+                      {/* Badge état */}
+                      {reached ? (
+                        <View style={{ backgroundColor: m.color + '15', paddingHorizontal: wp(8), paddingVertical: wp(3), borderRadius: wp(6) }}>
+                          <Text style={{ fontSize: fp(8), fontWeight: '700', color: m.color }}>
+                            {lang === 'fr' ? 'OBTENU' : 'EARNED'}
+                          </Text>
+                        </View>
+                      ) : isCurrent ? (
+                        <View style={{ alignItems: 'flex-end' }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '700', color: m.color }}>
+                            {Math.max(0, getXPForLevel(m.level) - (userXP.user_xp || 0)).toLocaleString('fr-FR')}
+                          </Text>
+                          <Text style={{ fontSize: fp(7), color: '#555E6C' }}>XP restant</Text>
+                        </View>
+                      ) : (
+                        <Text style={{ fontSize: fp(9), color: '#555E6C' }}>🔒</Text>
+                      )}
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </View>
     );
   };
@@ -466,6 +593,59 @@ export default function ProfilePage() {
                 </View>
                 <View style={{ height: wp(8), borderRadius: wp(4), backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}><LinearGradient colors={['#00D984', '#00B871']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: Math.min(userXP.xp_percent || 0, 100) + '%', height: '100%', borderRadius: wp(4) }} /></View>
                 <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: wp(4) }}>{userXP.user_xp || 0} XP total</Text>
+                {/* ═══ PROCHAIN PALIER ═══ */}
+                {(function() {
+                  var next = getNextMilestone(userXP.user_level || 1);
+                  if (!next) {
+                    return (
+                      <View style={{
+                        marginTop: wp(10), paddingVertical: wp(8), paddingHorizontal: wp(12),
+                        backgroundColor: 'rgba(255,215,0,0.06)', borderRadius: wp(10),
+                        borderWidth: 1, borderColor: 'rgba(255,215,0,0.2)',
+                        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(6),
+                      }}>
+                        <Text style={{ fontSize: fp(16) }}>👑</Text>
+                        <Text style={{ fontSize: fp(11), fontWeight: '800', color: '#FFD700', letterSpacing: 0.5 }}>
+                          {lang === 'fr' ? 'NIVEAU MAXIMUM ATTEINT' : 'MAX LEVEL REACHED'}
+                        </Text>
+                      </View>
+                    );
+                  }
+                  var xpToNext = getXPForLevel(next.level) - (userXP.user_xp || 0);
+                  if (xpToNext < 0) xpToNext = 0;
+                  return (
+                    <Pressable
+                      delayPressIn={120}
+                      onPress={function() { setShowMilestones(true); }}
+                      style={function(s) { return {
+                        marginTop: wp(10), paddingVertical: wp(10), paddingHorizontal: wp(14),
+                        backgroundColor: next.color + '08', borderRadius: wp(12),
+                        borderWidth: 1, borderColor: next.color + '20',
+                        transform: [{ scale: s.pressed ? 0.97 : 1 }],
+                      }; }}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(18), marginRight: wp(8) }}>{next.emoji}</Text>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                            <Text style={{ fontSize: fp(10), fontWeight: '800', color: next.color, letterSpacing: 0.5 }}>
+                              {lang === 'fr' ? 'PROCHAIN PALIER' : 'NEXT MILESTONE'} : NIV {next.level}
+                            </Text>
+                          </View>
+                          <Text style={{ fontSize: fp(9), color: '#8892A0', marginTop: wp(2) }}>
+                            {next.lix.toLocaleString('fr-FR')} Lix · {next.energy} {lang === 'fr' ? 'énergie' : 'energy'} · {lang === 'fr' ? next.reward : next.rewardEn}
+                          </Text>
+                        </View>
+                        <View style={{ alignItems: 'flex-end' }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '700', color: next.color }}>
+                            {xpToNext.toLocaleString('fr-FR')}
+                          </Text>
+                          <Text style={{ fontSize: fp(7), color: '#555E6C' }}>XP restant</Text>
+                        </View>
+                      </View>
+                    </Pressable>
+                  );
+                })()}
               </View>
               {/* Stats rapides */}
               <View style={{ flexDirection: 'row', gap: wp(12), marginTop: wp(16) }}>

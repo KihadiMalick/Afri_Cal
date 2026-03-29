@@ -1029,12 +1029,12 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
               strokeDasharray="4 2"
             />
             {/* Satellite objectif — VERT avec halo premium */}
-            <Circle cx={(size + 20) / 2} cy={10} r={2.5} fill="#00D984" />
-            <Circle cx={(size + 20) / 2} cy={10} r={5} fill="#00D984" opacity={0.15} />
-            <Circle cx={(size + 20) / 2} cy={10} r={8} fill="#00D984" opacity={0.06} />
+            <Circle cx={(size + 20) / 2} cy={12} r={2.5} fill="#00D984" />
+            <Circle cx={(size + 20) / 2} cy={12} r={5} fill="#00D984" opacity={0.15} />
+            <Circle cx={(size + 20) / 2} cy={12} r={8} fill="#00D984" opacity={0.06} />
             {/* Satellite secondaire — halo premium */}
-            <Circle cx={(size + 20) / 2} cy={size + 10} r={2} fill={colorLight} opacity={0.6} />
-            <Circle cx={(size + 20) / 2} cy={size + 10} r={4} fill={colorLight} opacity={0.12} />
+            <Circle cx={(size + 20) / 2} cy={size + 8} r={2} fill={colorLight} opacity={0.6} />
+            <Circle cx={(size + 20) / 2} cy={size + 8} r={4} fill={colorLight} opacity={0.12} />
           </Svg>
         </RNAnimated.View>
 
@@ -1061,8 +1061,8 @@ const ReactorCore = ({ size, value, percentage, label, color, colorLight, colorD
               strokeDasharray="4 2"
             />
             {/* Satellite interne — halo premium */}
-            <Circle cx={(innerRingSize + 12) / 2} cy={6} r={2} fill={colorLight} opacity={0.8} />
-            <Circle cx={(innerRingSize + 12) / 2} cy={6} r={4.5} fill={colorLight} opacity={0.15} />
+            <Circle cx={(innerRingSize + 12) / 2} cy={8} r={2} fill={colorLight} opacity={0.8} />
+            <Circle cx={(innerRingSize + 12) / 2} cy={8} r={4.5} fill={colorLight} opacity={0.15} />
           </Svg>
         </RNAnimated.View>
 
