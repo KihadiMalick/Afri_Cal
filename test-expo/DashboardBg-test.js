@@ -2346,7 +2346,7 @@ var EcgPulse = function(props) {
   var ecgPath = 'M0,10 L4,10 L6,4 L8,16 L10,8 L12,12 L14,10 L18,10 L20,6 L22,14 L24,10 L28,10 L30,3 L32,17 L34,9 L36,11 L38,10 L42,10';
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginLeft: wp(6) }}>
       <RNAnimated.View style={{ opacity: pulseAnim, marginRight: wp(3) }}>
         <Svg width={wp(30)} height={wp(14)} viewBox="0 0 42 20">
           <Path d={ecgPath} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
@@ -2532,7 +2532,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
               : 0.05,
             transform: tooltipStep === 3 ? [{ scale: pulseScale }] : [],
           }}>
-            <DnaHelix height={REACTOR_SIZE * 1.25} width={DNA_WIDTH} />
+            <DnaHelix height={REACTOR_SIZE * 1.45} width={DNA_WIDTH} />
           </RNAnimated.View>
 
           {/* RÉACTEUR DROIT — Reste (sens antihoraire) */}
@@ -2560,11 +2560,11 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           flexDirection: 'row',
           justifyContent: 'center',
           alignItems: 'flex-start',
-          marginTop: wp(10),
+          marginTop: wp(4),
         }}>
           {/* Consommé */}
           <RNAnimated.View style={{
-            alignItems: 'center', width: REACTOR_SIZE + 20,
+            alignItems: 'center', width: REACTOR_SIZE + 20, marginTop: wp(-4),
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2
               ? (tooltipStep === 2 ? pulseOpacity : 1)
               : 0.05,
@@ -2605,7 +2605,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           <RNAnimated.View style={{
             alignItems: 'center', width: DNA_WIDTH,
             overflow: 'visible',
-            marginTop: wp(-2),
+            marginTop: wp(8),
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3
               ? (tooltipStep === 3 ? pulseOpacity : 1)
               : 0.05,
@@ -2619,7 +2619,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
 
           {/* Reste */}
           <RNAnimated.View style={{
-            alignItems: 'center', width: REACTOR_SIZE + 20,
+            alignItems: 'center', width: REACTOR_SIZE + 20, marginTop: wp(-4),
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4
               ? (tooltipStep === 4 ? pulseOpacity : 1)
               : 0.05,
@@ -3120,19 +3120,30 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           </View>
         </View>
 
-        {/* Lien Voir Recettes */}
+        {/* CTA Scanner — 1er scan gratuit pour nouveaux utilisateurs */}
         <TouchableOpacity
           onPress={function() { onNavigate('meals'); }}
           activeOpacity={0.7}
+          style={{
+            backgroundColor: 'rgba(0, 217, 132, 0.08)',
+            borderRadius: wp(10),
+            borderWidth: 1,
+            borderColor: 'rgba(0, 217, 132, 0.15)',
+            paddingVertical: wp(8),
+            paddingHorizontal: wp(12),
+            marginTop: wp(8),
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
+          <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>📸</Text>
           <Text style={{
             color: '#00D984',
             fontSize: fp(11),
-            fontWeight: '600',
-            marginTop: wp(8),
-          }}>
-            Voir Recettes  ›
-          </Text>
+            fontWeight: '700',
+          }}>Scanner mon premier plat</Text>
+          <Text style={{ color: '#00D984', fontSize: fp(11), marginLeft: wp(4) }}>→</Text>
         </TouchableOpacity>
 
         {/* ═══ EXPANSION ANALYSE DU JOUR ═══ */}
