@@ -57,6 +57,23 @@ const seededRandom = (seed) => {
   const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
 };
+
+// ============================================
+// HELPERS HERMES — formatage compatible Android
+// ============================================
+var JOURS_COURTS = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
+
+function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+function formatTimeFR(dateObj) {
+  var d = dateObj instanceof Date ? dateObj : new Date(dateObj);
+  return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+
+function formatNumberFR(n) {
+  var s = Math.round(n).toString();
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+}
 // === HELPERS HYDRATATION ===
 const getEffectiveML = (volumeML, coeff) => Math.round(volumeML * coeff);
 
@@ -1209,8 +1226,8 @@ const SurplusAlertModal = ({ visible, onClose, surplus, onAddActivity }) => {
           </Text>
 
           <View style={{ backgroundColor: 'rgba(255,107,74,0.08)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
-            <Text style={{ color: '#C0C8D4', fontSize: 13 }}>Bilan net du jour : <Text style={{ color: '#FF6B4A', fontWeight: '700' }}>{(DAILY_OBJECTIVE + surplus).toLocaleString('fr-FR')} kcal</Text></Text>
-            <Text style={{ color: '#C0C8D4', fontSize: 13, marginTop: 4 }}>Objectif : <Text style={{ fontWeight: '700' }}>{DAILY_OBJECTIVE.toLocaleString('fr-FR')} kcal</Text></Text>
+            <Text style={{ color: '#C0C8D4', fontSize: 13 }}>Bilan net du jour : <Text style={{ color: '#FF6B4A', fontWeight: '700' }}>{formatNumberFR(DAILY_OBJECTIVE + surplus)} kcal</Text></Text>
+            <Text style={{ color: '#C0C8D4', fontSize: 13, marginTop: 4 }}>Objectif : <Text style={{ fontWeight: '700' }}>{formatNumberFR(DAILY_OBJECTIVE)} kcal</Text></Text>
             <Text style={{ color: '#FF6B4A', fontSize: 15, fontWeight: '800', marginTop: 6 }}>Surplus : +{surplus} kcal</Text>
           </View>
 
@@ -1581,14 +1598,14 @@ const HydrationClock = ({ logs, totalMl, goalMl }) => {
             fontSize={22}
             fontWeight="900"
             textAnchor="middle"
-          >{totalMl.toLocaleString('fr-FR')}</SvgText>
+          >{formatNumberFR(totalMl)}</SvgText>
           <SvgText
             x={center} y={center + 10}
             fill="#555E6C"
             fontSize={11}
             fontWeight="600"
             textAnchor="middle"
-          >/ {goalMl.toLocaleString('fr-FR')} ml</SvgText>
+          >/ {formatNumberFR(goalMl)} ml</SvgText>
         </Svg>
       </Pressable>
 
@@ -1635,7 +1652,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
 
   const getTimeStr = () => {
     const now = new Date();
-    return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    return pad2(now.getHours()) + ':' + pad2(now.getMinutes());
   };
 
   const addWater = (ml) => {
@@ -1738,8 +1755,8 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
             {/* ═══ COMPTEUR + BARRE ═══ */}
             <View style={{ alignItems: 'center', marginTop: 12, marginBottom: 16, paddingHorizontal: 32 }}>
               <Text style={{ fontSize: 28, fontWeight: '900' }}>
-                <Text style={{ color: '#4DA6FF' }}>{currentMl.toLocaleString('fr-FR')}</Text>
-                <Text style={{ color: '#555E6C', fontSize: 16 }}> / {goalMl.toLocaleString('fr-FR')} ml</Text>
+                <Text style={{ color: '#4DA6FF' }}>{formatNumberFR(currentMl)}</Text>
+                <Text style={{ color: '#555E6C', fontSize: 16 }}> / {formatNumberFR(goalMl)} ml</Text>
               </Text>
               <View style={{ width: '100%', height: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginTop: 10 }}>
                 <LinearGradient
@@ -2202,7 +2219,7 @@ const HydrationModal = ({ visible, onClose, currentMl, setCurrentMl, goalMl, gen
                                           <Text style={{ color: '#555E6C', fontSize: 11, textAlign: 'center', paddingVertical: 8 }}>Aucune entrée ce jour</Text>
                                         ) : (
                                           _selectedDayLogs.map(function(log, j) {
-                                            var time = new Date(log.logged_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                                            var time = formatTimeFR(log.logged_at);
                                             return (
                                               <View key={j} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5 }}>
                                                 <Text style={{ fontSize: 14, width: 22 }}>💧</Text>
@@ -2408,7 +2425,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                 textShadowColor: 'rgba(0, 217, 132, 0.3)',
                 textShadowOffset: { width: 0, height: 0 },
                 textShadowRadius: 4,
-              }}>{OBJECTIVE.toLocaleString('fr-FR')} kcal</Text>
+              }}>{formatNumberFR(OBJECTIVE)} kcal</Text>
               <Text style={{
                 fontSize: fp(7),
                 fontWeight: '600',
@@ -2503,7 +2520,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                 fontSize: fp(11),
                 fontWeight: '700',
                 color: '#FF8C42',
-              }}>{consumedTotal.toLocaleString('fr-FR')} kcal</Text>
+              }}>{formatNumberFR(consumedTotal)} kcal</Text>
               <Pressable
                 onPress={function() { setShowInfoLeft(function(v) { return !v; }); setShowInfoRight(false); }}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -2565,7 +2582,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                 fontSize: fp(11),
                 fontWeight: '700',
                 color: '#4DA6FF',
-              }}>{remaining.toLocaleString('fr-FR')} kcal</Text>
+              }}>{formatNumberFR(remaining)} kcal</Text>
               <Pressable
                 onPress={function() { setShowInfoRight(function(v) { return !v; }); setShowInfoLeft(false); }}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -2619,7 +2636,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                   - {burnedExtra} kcal brûlées (sport)
                 </Text>
                 <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700', marginTop: wp(2) }}>
-                  = {consumedTotal.toLocaleString('fr-FR')} kcal net consommé
+                  = {formatNumberFR(consumedTotal)} kcal net consommé
                 </Text>
               </View>
             )}
@@ -2654,7 +2671,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                   + {burnedExtra} kcal bonus sport
                 </Text>
                 <Text style={{ color: '#4DA6FF', fontSize: fp(10), fontWeight: '700', marginTop: wp(2) }}>
-                  = {remaining.toLocaleString('fr-FR')} kcal disponibles
+                  = {formatNumberFR(remaining)} kcal disponibles
                 </Text>
               </View>
             )}
@@ -2909,7 +2926,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
                 : 'Prenez une photo de votre plat →'}
               <Text style={{ color: '#EAEEF3' }}>
                 {lastMeal
-                  ? new Date(lastMeal.meal_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+                  ? formatTimeFR(lastMeal.meal_time)
                   : ''}
               </Text>
             </Text>
@@ -3423,7 +3440,7 @@ export default function App() {
         var date = new Date();
         date.setDate(date.getDate() - d);
         var dateStr = date.toISOString().split('T')[0];
-        var dayName = date.toLocaleDateString('fr-FR', { weekday: 'short' });
+        var dayName = JOURS_COURTS[date.getDay()];
         days.push({ date: dateStr, dayName: dayName, totalMl: 0, goalMl: hydrationGoal });
       }
       for (var i = 0; i < days.length; i++) {
@@ -3523,7 +3540,7 @@ export default function App() {
       for (var d = 6; d >= 0; d--) {
         var date = new Date(); date.setDate(date.getDate() - d);
         var dateStr = date.toISOString().split('T')[0];
-        var dayName = date.toLocaleDateString('fr-FR', { weekday: 'short' });
+        var dayName = JOURS_COURTS[date.getDay()];
         days.push({ date: dateStr, dayName: dayName, calories: 0, protein: 0, carbs: 0, fat: 0, activityMin: 0, activityKcal: 0, hydrationMl: 0, mood: null });
       }
       for (var i = 0; i < days.length; i++) {
@@ -3631,7 +3648,7 @@ export default function App() {
     // 1. Mise à jour LOCALE immédiate (optimiste)
     setHydrationMl(prev => prev + addedEffective);
     const now = new Date();
-    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    const timeStr = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
     setHydroLogs(prev => [...prev, {
       time: timeStr,
       amount: addedEffective,
