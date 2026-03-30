@@ -2315,6 +2315,63 @@ const AvatarButton = ({ activeChar, userName, onPress, size = 30 }) => {
   );
 };
 
+// ============================================================
+// COMPOSANT — EcgPulse (mini électrocardiogramme animé)
+// ============================================================
+var EcgPulse = function(props) {
+  var score = props.score || 0;
+  var color = score >= 70 ? '#00D984' : score >= 40 ? '#FFD93D' : '#FF6B6B';
+  var glowColor = score >= 70 ? 'rgba(0,217,132,0.4)' : score >= 40 ? 'rgba(255,217,61,0.4)' : 'rgba(255,107,107,0.4)';
+
+  // Vitesse du pulse selon le score de vitalité
+  var pulseDuration = score > 75 ? 1400
+    : score > 50 ? 1000
+    : score > 25 ? 700
+    : 400;
+
+  var pulseAnim = useRef(new RNAnimated.Value(0.3)).current;
+
+  useEffect(function() {
+    var pulse = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(pulseAnim, { toValue: 1, duration: pulseDuration * 0.3, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        RNAnimated.timing(pulseAnim, { toValue: 0.3, duration: pulseDuration * 0.7, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    pulse.start();
+    return function() { pulse.stop(); };
+  }, [pulseDuration]);
+
+  // ECG wave path — 3 petites vagues heartbeat
+  var ecgPath = 'M0,10 L4,10 L6,4 L8,16 L10,8 L12,12 L14,10 L18,10 L20,6 L22,14 L24,10 L28,10 L30,3 L32,17 L34,9 L36,11 L38,10 L42,10';
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+      <RNAnimated.View style={{ opacity: pulseAnim, marginRight: wp(3) }}>
+        <Svg width={wp(30)} height={wp(14)} viewBox="0 0 42 20">
+          <Path d={ecgPath} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      </RNAnimated.View>
+      <View style={{ width: 1.5, height: wp(12), backgroundColor: color, opacity: 0.4, marginRight: wp(4), borderRadius: 1 }} />
+      <Text style={{
+        fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+        fontSize: fp(15),
+        fontWeight: '900',
+        color: color,
+        textShadowColor: glowColor,
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 6,
+      }}>{score}</Text>
+      <View style={{ width: 1.5, height: wp(12), backgroundColor: color, opacity: 0.4, marginLeft: wp(4), borderRadius: 1 }} />
+      <RNAnimated.View style={{ opacity: pulseAnim, marginLeft: wp(3) }}>
+        <Svg width={wp(30)} height={wp(14)} viewBox="0 0 42 20">
+          <Path d={ecgPath} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      </RNAnimated.View>
+    </View>
+  );
+};
+
 const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender, burnedExtra, sportAlert, consumedTotal, burnedTotal, scrollRef, dailyTarget, lastMeal, tooltipStep, vitalityScore, activeChar, pagePowers, toggleStates, setToggleStates, consumePower, userName, onAvatarPress, onNavigate, showToast, onOpenStats }) => {
   const OBJECTIVE = dailyTarget || DAILY_OBJECTIVE;
   const [showInfoLeft, setShowInfoLeft] = useState(false);
@@ -2501,14 +2558,13 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
         {/* ===== LABELS — version épurée ===== */}
         <View style={{
           flexDirection: 'row',
-          justifyContent: 'space-between',
+          justifyContent: 'center',
           alignItems: 'flex-start',
-          paddingHorizontal: wp(4),
           marginTop: wp(10),
         }}>
           {/* Consommé */}
           <RNAnimated.View style={{
-            alignItems: 'center', flex: 1,
+            alignItems: 'center', width: REACTOR_SIZE + 20,
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2
               ? (tooltipStep === 2 ? pulseOpacity : 1)
               : 0.05,
@@ -2547,21 +2603,14 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
 
           {/* Vitalité */}
           <RNAnimated.View style={{
-            alignItems: 'center', flex: 1,
+            alignItems: 'center', width: DNA_WIDTH,
+            overflow: 'visible',
             marginTop: wp(-2),
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3
               ? (tooltipStep === 3 ? pulseOpacity : 1)
               : 0.05,
           }}>
-            <Text style={{
-              fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-              fontSize: fp(15),
-              fontWeight: '900',
-              color: vitalityScore >= 70 ? '#00D984' : vitalityScore >= 40 ? '#FFD93D' : '#FF6B6B',
-              textShadowColor: vitalityScore >= 70 ? 'rgba(0, 217, 132, 0.4)' : vitalityScore >= 40 ? 'rgba(255, 217, 61, 0.4)' : 'rgba(255, 107, 107, 0.4)',
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 6,
-            }}>{vitalityScore}</Text>
+            <EcgPulse score={vitalityScore} />
             <Text style={{
               fontSize: fp(8), fontWeight: '700', color: '#D4AF37', marginTop: 2,
               letterSpacing: 1.5,
@@ -2570,7 +2619,7 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
 
           {/* Reste */}
           <RNAnimated.View style={{
-            alignItems: 'center', flex: 1,
+            alignItems: 'center', width: REACTOR_SIZE + 20,
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4
               ? (tooltipStep === 4 ? pulseOpacity : 1)
               : 0.05,
@@ -4727,7 +4776,7 @@ export default function App() {
                     textAlign: 'center',
                     fontWeight: '600',
                   }}>
-                    🔗 Votre humeur personnalise vos recettes et activités du jour
+                    ✨ ALIXEN a enregistré votre humeur et adaptera vos recommandations en conséquence
                   </Text>
                 </View>
 
@@ -4877,14 +4926,7 @@ export default function App() {
                       <Text style={{ color: '#0D1117', fontSize: 15, fontWeight: '800' }}>Valider ✓</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                      onPress={function() { showToast('🍽️ Découvrez vos recettes dans l\'onglet Repas', '#00D984'); }}
-                      style={{ marginTop: 12 }}
-                    >
-                      <Text style={{ color: '#00D984', fontSize: 12, fontWeight: '600' }}>
-                        Voir les Recettes Suggérées  ›
-                      </Text>
-                    </TouchableOpacity>
+                    <View style={{ height: 12 }} />
                   </View>
                 )}
               </View>
