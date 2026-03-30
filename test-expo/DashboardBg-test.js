@@ -4776,7 +4776,7 @@ export default function App() {
                     textAlign: 'center',
                     fontWeight: '600',
                   }}>
-                    🔗 Votre humeur personnalise vos recettes et activités du jour
+                    ✨ ALIXEN a enregistré votre humeur et adaptera vos recommandations en conséquence
                   </Text>
                 </View>
 
@@ -4926,14 +4926,7 @@ export default function App() {
                       <Text style={{ color: '#0D1117', fontSize: 15, fontWeight: '800' }}>Valider ✓</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                      onPress={function() { showToast('🍽️ Découvrez vos recettes dans l\'onglet Repas', '#00D984'); }}
-                      style={{ marginTop: 12 }}
-                    >
-                      <Text style={{ color: '#00D984', fontSize: 12, fontWeight: '600' }}>
-                        Voir les Recettes Suggérées  ›
-                      </Text>
-                    </TouchableOpacity>
+                    <View style={{ height: 12 }} />
                   </View>
                 )}
               </View>
