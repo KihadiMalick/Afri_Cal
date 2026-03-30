@@ -2506,26 +2506,64 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
           overflow: 'visible',
           paddingVertical: 4,
         }}>
-          {/* RÉACTEUR GAUCHE — Consommé (sens horaire) */}
-          <RNAnimated.View style={{
-            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2
-              ? (tooltipStep === 2 ? pulseOpacity : 1)
-              : 0.05,
-            transform: tooltipStep === 2 ? [{ scale: pulseScale }] : [],
-          }}>
-            <ReactorCore
-              size={REACTOR_SIZE}
-              value={consumedTotal}
-              percentage={Math.round((consumedTotal / OBJECTIVE) * 100)}
-              label="Consommé"
-              color="#FF8C42"
-              colorLight="#FFB87A"
-              colorDark="#CC6020"
-              clockwise={true}
-            />
-          </RNAnimated.View>
+          {/* COLONNE GAUCHE — Réacteur + Label Consommé */}
+          <View style={{ alignItems: 'center', width: REACTOR_SIZE + 20 }}>
+            <RNAnimated.View style={{
+              opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2
+                ? (tooltipStep === 2 ? pulseOpacity : 1)
+                : 0.05,
+              transform: tooltipStep === 2 ? [{ scale: pulseScale }] : [],
+            }}>
+              <ReactorCore
+                size={REACTOR_SIZE}
+                value={consumedTotal}
+                percentage={Math.round((consumedTotal / OBJECTIVE) * 100)}
+                label="Consommé"
+                color="#FF8C42"
+                colorLight="#FFB87A"
+                colorDark="#CC6020"
+                clockwise={true}
+              />
+            </RNAnimated.View>
+            {/* Label Consommé */}
+            <RNAnimated.View style={{
+              alignItems: 'center', marginTop: 4,
+              opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2
+                ? (tooltipStep === 2 ? pulseOpacity : 1)
+                : 0.05,
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{
+                  fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+                  fontSize: fp(11),
+                  fontWeight: '700',
+                  color: '#FF8C42',
+                }}>{formatNumberFR(consumedTotal)} kcal</Text>
+                <Pressable
+                  onPress={function() { setShowInfoLeft(function(v) { return !v; }); setShowInfoRight(false); }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  style={{
+                    width: wp(16), height: wp(16), borderRadius: wp(8),
+                    backgroundColor: showInfoLeft ? 'rgba(255,140,66,0.15)' : 'rgba(255,255,255,0.06)',
+                    borderWidth: 1,
+                    borderColor: showInfoLeft ? 'rgba(255,140,66,0.3)' : 'rgba(255,255,255,0.1)',
+                    justifyContent: 'center', alignItems: 'center',
+                    marginLeft: wp(4),
+                  }}
+                >
+                  <Text style={{
+                    color: showInfoLeft ? '#FF8C42' : '#8892A0',
+                    fontSize: fp(8), fontWeight: '700',
+                  }}>i</Text>
+                </Pressable>
+              </View>
+              <Text style={{
+                fontSize: fp(9), fontWeight: '600', color: '#8892A0', marginTop: 2,
+              }}>Consommé</Text>
+            </RNAnimated.View>
+          </View>
 
-          {/* ADN CENTRAL — Score Vitalité (125% de REACTOR_SIZE) */}
+          {/* ADN CENTRAL — Score Vitalité (145% de REACTOR_SIZE) */}
           <RNAnimated.View style={{
             opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3
               ? (tooltipStep === 3 ? pulseOpacity : 1)
@@ -2535,127 +2573,78 @@ const DashboardContent = ({ onHydrationPress, hydrationMl, hydrationGoal, gender
             <DnaHelix height={REACTOR_SIZE * 1.45} width={DNA_WIDTH} />
           </RNAnimated.View>
 
-          {/* RÉACTEUR DROIT — Reste (sens antihoraire) */}
-          <RNAnimated.View style={{
-            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4
-              ? (tooltipStep === 4 ? pulseOpacity : 1)
-              : 0.05,
-            transform: tooltipStep === 4 ? [{ scale: pulseScale }] : [],
-          }}>
-            <ReactorCore
-              size={REACTOR_SIZE}
-              value={remaining}
-              percentage={Math.round((remaining / OBJECTIVE) * 100)}
-              label="Reste"
-              color="#4DA6FF"
-              colorLight="#8DCAFF"
-              colorDark="#2B7ACC"
-              clockwise={false}
-            />
-          </RNAnimated.View>
+          {/* COLONNE DROITE — Réacteur + Label Reste */}
+          <View style={{ alignItems: 'center', width: REACTOR_SIZE + 20 }}>
+            <RNAnimated.View style={{
+              opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4
+                ? (tooltipStep === 4 ? pulseOpacity : 1)
+                : 0.05,
+              transform: tooltipStep === 4 ? [{ scale: pulseScale }] : [],
+            }}>
+              <ReactorCore
+                size={REACTOR_SIZE}
+                value={remaining}
+                percentage={Math.round((remaining / OBJECTIVE) * 100)}
+                label="Reste"
+                color="#4DA6FF"
+                colorLight="#8DCAFF"
+                colorDark="#2B7ACC"
+                clockwise={false}
+              />
+            </RNAnimated.View>
+            {/* Label Reste */}
+            <RNAnimated.View style={{
+              alignItems: 'center', marginTop: 4,
+              opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4
+                ? (tooltipStep === 4 ? pulseOpacity : 1)
+                : 0.05,
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{
+                  fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
+                  fontSize: fp(11),
+                  fontWeight: '700',
+                  color: '#4DA6FF',
+                }}>{formatNumberFR(remaining)} kcal</Text>
+                <Pressable
+                  onPress={function() { setShowInfoRight(function(v) { return !v; }); setShowInfoLeft(false); }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  style={{
+                    width: wp(16), height: wp(16), borderRadius: wp(8),
+                    backgroundColor: showInfoRight ? 'rgba(77,166,255,0.15)' : 'rgba(255,255,255,0.06)',
+                    borderWidth: 1,
+                    borderColor: showInfoRight ? 'rgba(77,166,255,0.3)' : 'rgba(255,255,255,0.1)',
+                    justifyContent: 'center', alignItems: 'center',
+                    marginLeft: wp(4),
+                  }}
+                >
+                  <Text style={{
+                    color: showInfoRight ? '#4DA6FF' : '#8892A0',
+                    fontSize: fp(8), fontWeight: '700',
+                  }}>i</Text>
+                </Pressable>
+              </View>
+              <Text style={{
+                fontSize: fp(9), fontWeight: '600', color: '#8892A0', marginTop: 2,
+              }}>Reste</Text>
+            </RNAnimated.View>
+          </View>
         </View>
 
-        {/* ===== LABELS — version épurée ===== */}
-        <View style={{
-          flexDirection: 'row',
-          justifyContent: 'center',
-          alignItems: 'flex-start',
-          marginTop: wp(4),
+        {/* ===== VITALITÉ — en bas de la carte ===== */}
+        <RNAnimated.View style={{
+          alignItems: 'center',
+          marginTop: wp(12),
+          opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3
+            ? (tooltipStep === 3 ? pulseOpacity : 1)
+            : 0.05,
         }}>
-          {/* Consommé */}
-          <RNAnimated.View style={{
-            alignItems: 'center', width: REACTOR_SIZE + 20, marginTop: wp(-4),
-            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2
-              ? (tooltipStep === 2 ? pulseOpacity : 1)
-              : 0.05,
-          }}>
-            {/* Ligne kcal + icône info */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{
-                fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-                fontSize: fp(11),
-                fontWeight: '700',
-                color: '#FF8C42',
-              }}>{formatNumberFR(consumedTotal)} kcal</Text>
-              <Pressable
-                onPress={function() { setShowInfoLeft(function(v) { return !v; }); setShowInfoRight(false); }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={{
-                  width: wp(16), height: wp(16), borderRadius: wp(8),
-                  backgroundColor: showInfoLeft ? 'rgba(255,140,66,0.15)' : 'rgba(255,255,255,0.06)',
-                  borderWidth: 1,
-                  borderColor: showInfoLeft ? 'rgba(255,140,66,0.3)' : 'rgba(255,255,255,0.1)',
-                  justifyContent: 'center', alignItems: 'center',
-                  marginLeft: wp(4),
-                }}
-              >
-                <Text style={{
-                  color: showInfoLeft ? '#FF8C42' : '#8892A0',
-                  fontSize: fp(8), fontWeight: '700',
-                }}>i</Text>
-              </Pressable>
-            </View>
-            {/* Label */}
-            <Text style={{
-              fontSize: fp(9), fontWeight: '600', color: '#8892A0', marginTop: 2,
-            }}>Consommé</Text>
-          </RNAnimated.View>
-
-          {/* Vitalité */}
-          <RNAnimated.View style={{
-            alignItems: 'center', width: DNA_WIDTH,
-            overflow: 'visible',
-            marginTop: wp(8),
-            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3
-              ? (tooltipStep === 3 ? pulseOpacity : 1)
-              : 0.05,
-          }}>
-            <EcgPulse score={vitalityScore} />
-            <Text style={{
-              fontSize: fp(8), fontWeight: '700', color: '#D4AF37', marginTop: 2,
-              letterSpacing: 1.5,
-            }}>VITALITÉ</Text>
-          </RNAnimated.View>
-
-          {/* Reste */}
-          <RNAnimated.View style={{
-            alignItems: 'center', width: REACTOR_SIZE + 20, marginTop: wp(-4),
-            opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 4
-              ? (tooltipStep === 4 ? pulseOpacity : 1)
-              : 0.05,
-          }}>
-            {/* Ligne kcal + icône info */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{
-                fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo',
-                fontSize: fp(11),
-                fontWeight: '700',
-                color: '#4DA6FF',
-              }}>{formatNumberFR(remaining)} kcal</Text>
-              <Pressable
-                onPress={function() { setShowInfoRight(function(v) { return !v; }); setShowInfoLeft(false); }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={{
-                  width: wp(16), height: wp(16), borderRadius: wp(8),
-                  backgroundColor: showInfoRight ? 'rgba(77,166,255,0.15)' : 'rgba(255,255,255,0.06)',
-                  borderWidth: 1,
-                  borderColor: showInfoRight ? 'rgba(77,166,255,0.3)' : 'rgba(255,255,255,0.1)',
-                  justifyContent: 'center', alignItems: 'center',
-                  marginLeft: wp(4),
-                }}
-              >
-                <Text style={{
-                  color: showInfoRight ? '#4DA6FF' : '#8892A0',
-                  fontSize: fp(8), fontWeight: '700',
-                }}>i</Text>
-              </Pressable>
-            </View>
-            {/* Label */}
-            <Text style={{
-              fontSize: fp(9), fontWeight: '600', color: '#8892A0', marginTop: 2,
-            }}>Reste</Text>
-          </RNAnimated.View>
-        </View>
+          <EcgPulse score={vitalityScore} />
+          <Text style={{
+            fontSize: fp(8), fontWeight: '700', color: '#D4AF37', marginTop: 2,
+            letterSpacing: 1.5,
+          }}>VITALITÉ</Text>
+        </RNAnimated.View>
 
         {/* ═══ TOOLTIP INFO CONSOMMÉ ═══ */}
         {showInfoLeft && (
