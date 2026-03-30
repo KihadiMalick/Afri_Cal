@@ -350,7 +350,11 @@ export default function MedicAiPage() {
         { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
       );
       const profileData = await profileRes.json();
-      if (profileData.length > 0) setUserProfile(profileData[0]);
+      if (profileData.length > 0) {
+        setUserProfile(profileData[0]);
+        var daysSinceCreation = Math.floor((Date.now() - new Date(profileData[0].created_at).getTime()) / 86400000);
+        setEnergyLimit(daysSinceCreation <= ENERGY_CONFIG.ONBOARDING_DAYS ? ENERGY_CONFIG.ONBOARDING_DAILY_ENERGY : ENERGY_CONFIG.FREE_DAILY_ENERGY);
+      }
 
       const today = new Date().toISOString().split('T')[0];
       const summaryRes = await fetch(
