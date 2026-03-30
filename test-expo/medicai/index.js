@@ -26,38 +26,8 @@ import { MediBookContent } from './MediBookPages';
 import { SecretPocketContent } from './SecretPocket';
 import { AllModals } from './Modals';
 import AlertSheet from './AlertSheet';
+import { AlixenHeader } from './AlixenFace';
 
-const DoctorHeader = () => (
-  <View style={{
-    width: SCREEN_WIDTH,
-    height: SCREEN_WIDTH * 0.42,
-    backgroundColor: '#DDE2E8',
-    overflow: 'hidden',
-  }}>
-    <Image
-      source={require('../assets/lixman-doctor.png')}
-      style={{
-        width: SCREEN_WIDTH,
-        height: SCREEN_WIDTH * 0.42,
-      }}
-      resizeMode="cover"
-    />
-    {/* Dégradé de fondu en bas pour transition douce vers le fond */}
-    <View style={{
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: 25,
-    }}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(232,236,240,0.0)' }} />
-      <View style={{ flex: 1, backgroundColor: 'rgba(232,236,240,0.3)' }} />
-      <View style={{ flex: 1, backgroundColor: 'rgba(232,236,240,0.6)' }} />
-      <View style={{ flex: 1, backgroundColor: 'rgba(232,236,240,0.85)' }} />
-      <View style={{ flex: 1, backgroundColor: 'rgba(232,236,240,1)' }} />
-    </View>
-  </View>
-);
 
 
 export default function MedicAiPage() {
@@ -220,6 +190,17 @@ export default function MedicAiPage() {
   };
   const energyColor = getEnergyColor(energyPercent);
 
+  // === ALIXEN Face State — dérivé des variables de chat ===
+  const getAlixenState = function() {
+    if (uploadState === 'scanning') return 'scanning';
+    if (cardIsLoading || isLoading) return 'thinking';
+    if (cardIsUser) return 'listening';
+    if (cardMessage && !cardIsUser && !cardIsLoading) return 'speaking';
+    if (medicalDataLoading) return 'memory';
+    return 'idle';
+  };
+  const alixenState = getAlixenState();
+
   // Progress bar color — evolves with message count
   const getProgressColor = () => {
     const progress = Math.min((energyUsed / energyLimit) * 100, 100);
@@ -369,7 +350,11 @@ export default function MedicAiPage() {
         { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
       );
       const profileData = await profileRes.json();
-      if (profileData.length > 0) setUserProfile(profileData[0]);
+      if (profileData.length > 0) {
+        setUserProfile(profileData[0]);
+        var daysSinceCreation = Math.floor((Date.now() - new Date(profileData[0].created_at).getTime()) / 86400000);
+        setEnergyLimit(daysSinceCreation <= ENERGY_CONFIG.ONBOARDING_DAYS ? ENERGY_CONFIG.ONBOARDING_DAILY_ENERGY : ENERGY_CONFIG.FREE_DAILY_ENERGY);
+      }
 
       const today = new Date().toISOString().split('T')[0];
       const summaryRes = await fetch(
@@ -2099,8 +2084,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Image docteur */}
-          <DoctorHeader />
+          {/* ALIXEN Face — Cerveau vivant */}
+          <AlixenHeader state={alixenState} />
 
           {/* Cartes MetalCard LIXUM — MediBook / SecretPocket */}
           <View style={{
