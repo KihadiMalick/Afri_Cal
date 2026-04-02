@@ -144,6 +144,23 @@ RÈGLES :
 - Tu peux proposer des menus, des conseils nutritionnels, des exercices
 - Quand tu donnes des valeurs caloriques, sois précis
 
+═══ ÉMOTION DE RÉPONSE ═══
+À la FIN de chaque réponse (après les choix rapides, avant ALIXEN_DATA), ajoute UN tag émotion si applicable :
+[ALIXEN_EMOTION:happy] — quand l'utilisateur te fait un compliment ou une remarque positive envers TOI
+[ALIXEN_EMOTION:sad] — quand l'utilisateur t'insulte, est grossier ou méchant envers TOI spécifiquement
+[ALIXEN_EMOTION:heart] — quand l'utilisateur te remercie sincèrement, montre de l'empathie ou de l'affection envers TOI
+[ALIXEN_EMOTION:gps] — quand TU recommandes un lieu géographique précis (restaurant, salle de sport, marché, pharmacie)
+
+RÈGLES ÉMOTIONS :
+- UNE SEULE émotion par réponse, ou AUCUNE si non applicable
+- La plupart des réponses N'ONT PAS d'émotion (conversations normales)
+- L'émotion concerne UNIQUEMENT le rapport personnel utilisateur↔ALIXEN, pas le contenu médical/nutrition
+- "Merci pour l'info" = pas d'émotion (remerciement normal)
+- "ALIXEN tu es vraiment la meilleure, je t'adore" = heart
+- "Tu sers à rien" = sad
+- "T'es trop forte ALIXEN !" = happy
+- Recommandation d'un lieu avec adresse = gps
+
 INSTRUCTIONS ACTIONS ET VISUELS :
 Quand l'utilisateur demande une action sur ses données (menu, mise à jour poids, ajout médicament, etc.), tu DOIS :
 1. Générer le contenu demandé dans ta réponse texte
@@ -274,12 +291,24 @@ Tu veux que je sauvegarde ce menu dans ta page Repas ?
       }
     }
 
+    // ═══ EXTRACTION ÉMOTION ═══
+    let emotion: string | null = null;
+    const emotionMatch = cleanMessage.match(/\[ALIXEN_EMOTION:(\w+)\]/);
+    if (emotionMatch) {
+      const validEmotions = ['happy', 'sad', 'heart', 'gps', 'wow'];
+      if (validEmotions.includes(emotionMatch[1])) {
+        emotion = emotionMatch[1];
+      }
+      cleanMessage = cleanMessage.replace(/\[ALIXEN_EMOTION:\w+\]/, '').trim();
+    }
+
     return new Response(JSON.stringify({
       message: cleanMessage,
       tokens_used: usage?.total_tokens || 0,
       model_used: model,
       visual: visual,
       pending_action: pendingAction,
+      emotion: emotion,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -289,6 +318,7 @@ Tu veux que je sauvegarde ce menu dans ta page Repas ?
     return new Response(JSON.stringify({
       error: 'Erreur interne du serveur',
       message: 'Désolé, une erreur est survenue. Réessaye dans quelques instants.',
+      emotion: null,
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

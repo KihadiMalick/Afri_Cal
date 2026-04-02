@@ -96,6 +96,8 @@ export default function MedicAiPage() {
   const [showDocumentSheet, setShowDocumentSheet] = useState(false);
   const [showNewSessionSheet, setShowNewSessionSheet] = useState(false);
   const [keystrokeCount, setKeystrokeCount] = useState(0);
+  const [emotionOverride, setEmotionOverride] = useState(null);
+  const emotionTimerRef = useRef(null);
 
   // AlertSheet state
   const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', icon: 'info', buttons: [] });
@@ -193,6 +195,7 @@ export default function MedicAiPage() {
 
   // === ALIXEN Face State — dérivé des variables de chat ===
   const getAlixenState = function() {
+    if (emotionOverride) return emotionOverride;
     if (uploadState === 'scanning') return 'scanning';
     if (cardIsLoading || isLoading) return 'thinking';
     if (cardIsUser) return 'listening';
@@ -201,6 +204,35 @@ export default function MedicAiPage() {
     return 'idle';
   };
   const alixenState = getAlixenState();
+
+  // Helper: déclencher une émotion temporaire après speaking
+  var triggerEmotion = function(emotion) {
+    if (!emotion) return;
+    if (emotionTimerRef.current) clearTimeout(emotionTimerRef.current);
+    setTimeout(function() {
+      setEmotionOverride(emotion);
+      emotionTimerRef.current = setTimeout(function() {
+        setEmotionOverride(null);
+        emotionTimerRef.current = null;
+      }, 3500);
+    }, 500);
+  };
+
+  // Helper: texte de mention pour chaque état
+  var getAlixenMention = function(state) {
+    switch (state) {
+      case 'thinking': return 'ALIXEN réfléchit...';
+      case 'speaking': return 'ALIXEN répond...';
+      case 'scanning': return 'ALIXEN analyse...';
+      case 'memory': return 'ALIXEN consulte...';
+      case 'happy': return 'ALIXEN est ravie !';
+      case 'sad': return 'ALIXEN est triste...';
+      case 'heart': return 'ALIXEN est touchée';
+      case 'wow': return 'ALIXEN est impressionnée !';
+      case 'gps': return 'ALIXEN localise...';
+      default: return '';
+    }
+  };
   var wm = getWireMode(alixenState);
 
   // Pulse animation for labels
@@ -597,6 +629,55 @@ export default function MedicAiPage() {
     })();
   }, []);
 
+  // === CHECK WOW EVENTS AU MONTAGE ===
+  useEffect(function() {
+    async function checkWowEvents() {
+      try {
+        var headers = {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        };
+        var last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        var yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        var hasWow = false;
+
+        // 1. Défi top 10 terminé récemment
+        var challengeRes = await fetch(
+          SUPABASE_URL + '/rest/v1/lixverse_challenges?user_id=eq.' + TEST_USER_ID + '&status=eq.completed&order=created_at.desc&limit=1',
+          { headers: headers }
+        );
+        var challengeData = await challengeRes.json();
+        if (Array.isArray(challengeData) && challengeData.length > 0) {
+          var completedAt = challengeData[0].completed_at || challengeData[0].updated_at;
+          if (completedAt && completedAt >= last24h) hasWow = true;
+        }
+
+        // 2. Objectif journalier de la veille respecté
+        if (!hasWow) {
+          var dailyRes = await fetch(
+            SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + TEST_USER_ID + '&date=eq.' + yesterday + '&limit=1',
+            { headers: headers }
+          );
+          var dailyData = await dailyRes.json();
+          if (Array.isArray(dailyData) && dailyData.length > 0 && dailyData[0].objective_met) hasWow = true;
+        }
+
+        if (hasWow) {
+          setTimeout(function() {
+            setEmotionOverride('wow');
+            emotionTimerRef.current = setTimeout(function() {
+              setEmotionOverride(null);
+              emotionTimerRef.current = null;
+            }, 4000);
+          }, 2000);
+        }
+      } catch (e) {
+        console.log('Wow check error:', e);
+      }
+    }
+    checkWowEvents();
+  }, []);
+
   // === ALIXEN SUPER CONTEXT v1 — Data Loader ===
   const getWeekStart = () => {
     const d = new Date();
@@ -888,6 +969,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         setCardIsLoading(false);
         setCardMessage(finalText);
         setCardIsUser(false);
+
+        // Déclencher émotion si présente
+        if (data.emotion) triggerEmotion(data.emotion);
 
         setMessages(prev => {
           if (prev.length >= 30) return prev;
@@ -1297,6 +1381,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       setCardIsLoading(false);
       setCardMessage(finalText);
       setCardIsUser(false);
+
+      // 5b. Déclencher émotion si présente
+      if (data.emotion) triggerEmotion(data.emotion);
 
       // 6. Créer la boule IA
       const botMsg = {
@@ -2147,9 +2234,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               <Text style={{ color: wm === 'user' ? '#00D984' : '#8892A0', fontSize: 9, fontWeight: '600' }}>Membre</Text>
             </View>
           </View>
-          {wm === 'alixen' ? (
-            <Text style={{ textAlign: 'center', color: '#4DA6FF', fontSize: 8, fontWeight: '600', opacity: 0.5 + pulse * 0.3, marginBottom: 4 }}>
-              {alixenState === 'thinking' ? 'ALIXEN réfléchit...' : alixenState === 'speaking' ? 'ALIXEN répond...' : alixenState === 'scanning' ? 'ALIXEN analyse...' : alixenState === 'memory' ? 'ALIXEN consulte...' : ''}
+          {alixenState !== 'idle' && alixenState !== 'listening' && getAlixenMention(alixenState) ? (
+            <Text style={{ textAlign: 'center', color: wm === 'alixen' ? '#4DA6FF' : '#00D984', fontSize: 8, fontWeight: '600', opacity: 0.5 + pulse * 0.3, marginBottom: 4 }}>
+              {getAlixenMention(alixenState)}
             </Text>
           ) : null}
 
