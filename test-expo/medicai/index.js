@@ -26,7 +26,7 @@ import { MediBookContent } from './MediBookPages';
 import { SecretPocketContent } from './SecretPocket';
 import { AllModals } from './Modals';
 import AlertSheet from './AlertSheet';
-import { AlixenHeader } from './AlixenFace';
+import { AlixenFace, FunnelBridgeUnified, getWireMode, FRAME_W, FRAME_H, MODULE_H, BRIDGE_TOP } from './alixenzone';
 
 
 
@@ -95,6 +95,7 @@ export default function MedicAiPage() {
   const [showLockModal, setShowLockModal] = useState(false);
   const [showDocumentSheet, setShowDocumentSheet] = useState(false);
   const [showNewSessionSheet, setShowNewSessionSheet] = useState(false);
+  const [keystrokeCount, setKeystrokeCount] = useState(0);
 
   // AlertSheet state
   const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', icon: 'info', buttons: [] });
@@ -200,6 +201,18 @@ export default function MedicAiPage() {
     return 'idle';
   };
   const alixenState = getAlixenState();
+  var wm = getWireMode(alixenState);
+
+  // Pulse animation for labels
+  var pulseRef = useRef(null);
+  var _pulse = useState(0); var pulse = _pulse[0]; var setPulse = _pulse[1];
+  useEffect(function() {
+    var st = Date.now();
+    pulseRef.current = setInterval(function() {
+      setPulse(Math.sin((Date.now() - st) / 1000 * 2) * 0.5 + 0.5);
+    }, 80);
+    return function() { clearInterval(pulseRef.current); };
+  }, []);
 
   // Progress bar color — evolves with message count
   const getProgressColor = () => {
@@ -2084,45 +2097,61 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ALIXEN Face — Cerveau vivant */}
-          <AlixenHeader state={alixenState} />
-
-          {/* Cartes MetalCard LIXUM — MediBook / SecretPocket */}
-          <View style={{
-            flexDirection: 'row',
-            justifyContent: 'center',
-            gap: wp(12),
-            paddingHorizontal: wp(24),
-            marginTop: 8,
-            marginBottom: wp(14),
-          }}>
-            <MetalCard
-              title="MediBook"
-              iconElement={
-                <Svg width={wp(30)} height={wp(30)} viewBox="0 0 24 24" fill="none">
-                  <Rect x="3" y="2" width="14" height="20" rx="2" stroke="#00D984" strokeWidth="1.5" fill="none"/>
-                  <Line x1="7" y1="8" x2="13" y2="8" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
-                  <Line x1="7" y1="12" x2="13" y2="12" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
-                  <Line x1="7" y1="16" x2="11" y2="16" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
-                  <Line x1="21" y1="2" x2="21" y2="6" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
-                  <Line x1="19" y1="4" x2="23" y2="4" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
-                </Svg>
-              }
-              onPress={() => setCurrentSubPage('medibook')}
-            />
-            <MetalCard
-              title="Secret Pocket"
-              titleColor="#D4AF37"
-              iconElement={
-                <Svg width={wp(30)} height={wp(30)} viewBox="0 0 24 24" fill="none">
-                  <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" fill="none"/>
-                  <Rect x="9" y="10" width="6" height="5" rx="1" stroke="#D4AF37" strokeWidth="1.5" fill="none"/>
-                  <Path d="M10 10V8a2 2 0 014 0v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-                </Svg>
-              }
-              onPress={() => setCurrentSubPage('secretpocket')}
-            />
+          {/* ===== ZONE SOMBRE ALIXEN V6 ===== */}
+          <View style={{ backgroundColor: '#1E2530', overflow: 'hidden' }}>
+            <View style={{ width: FRAME_W, height: MODULE_H, alignSelf: 'center' }}>
+              <View style={{ position: 'absolute', top: BRIDGE_TOP, left: 0, width: FRAME_W }}>
+                <FunnelBridgeUnified wireMode={wm} />
+              </View>
+              <AlixenFace state={alixenState} keystrokeCount={keystrokeCount} />
+            </View>
+            <View style={{ alignSelf: 'stretch', flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 6, marginTop: Math.round(FRAME_W * -0.065), gap: 8 }}>
+              <MetalCard
+                title="MediBook"
+                iconElement={
+                  <Svg width={wp(30)} height={wp(30)} viewBox="0 0 24 24" fill="none">
+                    <Rect x="3" y="2" width="14" height="20" rx="2" stroke="#00D984" strokeWidth="1.5" fill="none"/>
+                    <Line x1="7" y1="8" x2="13" y2="8" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                    <Line x1="7" y1="12" x2="13" y2="12" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                  </Svg>
+                }
+                onPress={function() { setCurrentSubPage('medibook'); }}
+              />
+              <MetalCard
+                title="Secret Pocket"
+                titleColor="#D4AF37"
+                iconElement={
+                  <Svg width={wp(30)} height={wp(30)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" fill="none"/>
+                    <Rect x="9" y="10" width="6" height="5" rx="1" stroke="#D4AF37" strokeWidth="1.5" fill="none"/>
+                    <Path d="M10 10V8a2 2 0 014 0v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+                  </Svg>
+                }
+                onPress={function() { setCurrentSubPage('secretpocket'); }}
+              />
+            </View>
           </View>
+
+          {/* Labels ALIXEN / Membre — bulles animées */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8, marginBottom: 4, gap: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ width: wm === 'alixen' ? 12 : 10, height: wm === 'alixen' ? 12 : 10, borderRadius: 6, backgroundColor: '#4DA6FF', marginRight: 5, justifyContent: 'center', alignItems: 'center', opacity: wm === 'alixen' ? (0.8 + pulse * 0.2) : 0.35 }}>
+                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFF', opacity: wm === 'alixen' ? (0.6 + pulse * 0.4) : 0.3 }} />
+              </View>
+              <Text style={{ color: wm === 'alixen' ? '#4DA6FF' : '#8892A0', fontSize: 9, fontWeight: '600' }}>ALIXEN</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ width: wm === 'user' ? 12 : 10, height: wm === 'user' ? 12 : 10, borderRadius: 6, backgroundColor: '#00D984', marginRight: 5, justifyContent: 'center', alignItems: 'center', opacity: wm === 'user' ? (0.8 + pulse * 0.2) : 0.35 }}>
+                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFF', opacity: wm === 'user' ? (0.6 + pulse * 0.4) : 0.3 }} />
+              </View>
+              <Text style={{ color: wm === 'user' ? '#00D984' : '#8892A0', fontSize: 9, fontWeight: '600' }}>Membre</Text>
+            </View>
+          </View>
+          {wm === 'alixen' ? (
+            <Text style={{ textAlign: 'center', color: '#4DA6FF', fontSize: 8, fontWeight: '600', opacity: 0.5 + pulse * 0.3, marginBottom: 4 }}>
+              {alixenState === 'thinking' ? 'ALIXEN réfléchit...' : alixenState === 'speaking' ? 'ALIXEN répond...' : alixenState === 'scanning' ? 'ALIXEN analyse...' : alixenState === 'memory' ? 'ALIXEN consulte...' : ''}
+            </Text>
+          ) : null}
 
           {/* Boules en S */}
           <Animated.View style={{
@@ -2343,7 +2372,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                   placeholderTextColor="rgba(0, 0, 0, 0.3)"
                   selectionColor="#00A878"
                   value={inputText}
-                  onChangeText={setInputText}
+                  onChangeText={function(t) { setInputText(t); setKeystrokeCount(function(c) { return c + 1; }); }}
                   multiline
                   blurOnSubmit={false}
                   editable={!isLocked}
