@@ -997,7 +997,6 @@ const RepasPage = ({ onNavigate }) => {
   const [cartReport, setCartReport] = useState(null);
   const [showCartReport, setShowCartReport] = useState(false);
   // Personnalisé
-  const [userMood, setUserMood] = useState(null); // { mood_level, weather }
   const [moodRecipes, setMoodRecipes] = useState([]);
   const [moodMessage, setMoodMessage] = useState('');
 
