@@ -1001,6 +1001,21 @@ const RepasPage = ({ onNavigate }) => {
   const [moodRecipes, setMoodRecipes] = useState([]);
   const [moodMessage, setMoodMessage] = useState('');
 
+  // === ALIXEN RECETTES INTELLIGENTES ===
+  var _alixenRecipeScreen = useState('welcome'); var alixenRecipeScreen = _alixenRecipeScreen[0]; var setAlixenRecipeScreen = _alixenRecipeScreen[1];
+  // 'welcome' | 'proposals' | 'detail' | 'my_ingredients'
+  var _alixenContext = useState(null); var alixenContext = _alixenContext[0]; var setAlixenContext = _alixenContext[1];
+  var _alixenProposals = useState([]); var alixenProposals = _alixenProposals[0]; var setAlixenProposals = _alixenProposals[1];
+  var _alixenSelectedRecipe = useState(null); var alixenSelectedRecipe = _alixenSelectedRecipe[0]; var setAlixenSelectedRecipe = _alixenSelectedRecipe[1];
+  var _alixenLoading = useState(false); var alixenLoading = _alixenLoading[0]; var setAlixenLoading = _alixenLoading[1];
+  var _alixenCategory = useState(null); var alixenCategory = _alixenCategory[0]; var setAlixenCategory = _alixenCategory[1];
+  var _alixenGreeting = useState(''); var alixenGreeting = _alixenGreeting[0]; var setAlixenGreeting = _alixenGreeting[1];
+  var _alixenMyIngredients = useState([]); var alixenMyIngredients = _alixenMyIngredients[0]; var setAlixenMyIngredients = _alixenMyIngredients[1];
+  var _alixenIngSearch = useState(''); var alixenIngSearch = _alixenIngSearch[0]; var setAlixenIngSearch = _alixenIngSearch[1];
+  var _alixenIngResults = useState([]); var alixenIngResults = _alixenIngResults[0]; var setAlixenIngResults = _alixenIngResults[1];
+  var _alixenIngSearching = useState(false); var alixenIngSearching = _alixenIngSearching[0]; var setAlixenIngSearching = _alixenIngSearching[1];
+  var _alixenAdvice = useState(null); var alixenAdvice = _alixenAdvice[0]; var setAlixenAdvice = _alixenAdvice[1];
+
   const RECIPE_REGIONS = [
     { key: 'all', label: '🌍 Tout', labelEn: '🌍 All' },
     { key: 'Afrique de l\'Ouest', label: '🇸🇳 Afrique Ouest', labelEn: '🇸🇳 West Africa' },
@@ -1024,6 +1039,21 @@ const RepasPage = ({ onNavigate }) => {
     { key: 'Dessert', label: '🍰 Dessert', labelEn: '🍰 Dessert' },
     { key: 'Accompagnement', label: '🥘 Accomp.', labelEn: '🥘 Side' },
     { key: 'Boisson', label: '🥤 Boisson', labelEn: '🥤 Drink' },
+  ];
+
+  var ALIXEN_CATEGORIES = [
+    { key: 'rice', emoji: '🍚', label: 'À base de riz', labelEN: 'Rice-based' },
+    { key: 'protein', emoji: '🥩', label: 'Riche en protéines', labelEN: 'High protein' },
+    { key: 'light', emoji: '🥗', label: 'Léger', labelEN: 'Light' },
+    { key: 'hearty', emoji: '🍲', label: 'Consistant', labelEN: 'Hearty' },
+    { key: 'soup', emoji: '🥣', label: 'Soupe', labelEN: 'Soup' },
+    { key: 'african', emoji: '🌍', label: 'Africain', labelEN: 'African' },
+    { key: 'european', emoji: '🇫🇷', label: 'Européen', labelEN: 'European' },
+    { key: 'asian', emoji: '🇯🇵', label: 'Asiatique', labelEN: 'Asian' },
+    { key: 'milkshake', emoji: '🥤', label: 'Milkshake/Boisson', labelEN: 'Milkshake/Drink' },
+    { key: 'pastry', emoji: '🍰', label: 'Pâtisserie', labelEN: 'Pastry' },
+    { key: 'salad', emoji: '🥙', label: 'Salade', labelEN: 'Salad' },
+    { key: 'snack', emoji: '🍿', label: 'Snack', labelEN: 'Snack' },
   ];
 
   // Matrice Mood × Météo → catégories recommandées
@@ -1131,8 +1161,128 @@ const RepasPage = ({ onNavigate }) => {
     }
   };
 
+  // Charger le contexte complet pour ALIXEN recettes
+  var loadAlixenContext = async function() {
+    try {
+      var today = new Date().toISOString().split('T')[0];
+      var hour = new Date().getHours();
+      var minutes = new Date().getMinutes();
+
+      // 1. Profil utilisateur
+      var profileRes = await supabase
+        .from('users_profile')
+        .select('full_name, daily_calorie_target, weight, gender, activity_level, dietary_regime, current_mood, current_weather, bmr, tdee')
+        .eq('user_id', TEST_USER_ID)
+        .maybeSingle();
+      var profile = profileRes.data || {};
+
+      // 2. Résumé du jour
+      var summaryRes = await supabase
+        .from('daily_summary')
+        .select('total_calories, total_protein, total_carbs, total_fat, meals_count')
+        .eq('user_id', TEST_USER_ID)
+        .eq('date', today)
+        .maybeSingle();
+      var summary = summaryRes.data || { total_calories: 0, total_protein: 0, total_carbs: 0, total_fat: 0, meals_count: 0 };
+
+      // 3. Repas du jour (pour savoir ce qui a été mangé)
+      var mealsRes = await supabase
+        .from('meals')
+        .select('food_name, calories, meal_type, meal_time')
+        .eq('user_id', TEST_USER_ID)
+        .eq('date', today)
+        .order('meal_time', { ascending: true });
+      var todayMealsList = mealsRes.data || [];
+
+      // 4. Activités du jour (calories brûlées)
+      var activitiesRes = await supabase
+        .from('activities')
+        .select('calories_burned')
+        .eq('user_id', TEST_USER_ID)
+        .eq('date', today);
+      var totalBurned = (activitiesRes.data || []).reduce(function(sum, a) { return sum + (a.calories_burned || 0); }, 0);
+
+      // 5. Calculer les macros restantes
+      var target = profile.daily_calorie_target || 2330;
+      var eaten = summary.total_calories || 0;
+      var remaining = target - eaten + totalBurned;
+      var protTarget = Math.round((target * 0.25) / 4);
+      var carbsTarget = Math.round((target * 0.50) / 4);
+      var fatTarget = Math.round((target * 0.25) / 9);
+      var protRemaining = Math.max(0, protTarget - (summary.total_protein || 0));
+      var carbsRemaining = Math.max(0, carbsTarget - (summary.total_carbs || 0));
+      var fatRemaining = Math.max(0, fatTarget - (summary.total_fat || 0));
+
+      // 6. Estimer le nombre de repas restants
+      var mealsRemaining = 0;
+      var hasBreakfast = todayMealsList.some(function(m) { return m.meal_type === 'breakfast'; });
+      var hasLunch = todayMealsList.some(function(m) { return m.meal_type === 'lunch'; });
+      var hasDinner = todayMealsList.some(function(m) { return m.meal_type === 'dinner'; });
+      if (hour < 10 && !hasBreakfast) mealsRemaining++;
+      if (hour < 14 && !hasLunch) mealsRemaining++;
+      if (!hasDinner) mealsRemaining++;
+      mealsRemaining++; // snack toujours possible
+
+      // 7. Déterminer le moment de la journée
+      var timeOfDay = hour < 10 ? 'morning' : hour < 14 ? 'midday' : hour < 17 ? 'afternoon' : hour < 20 ? 'evening' : 'night';
+
+      var ctx = {
+        userName: (profile.full_name || '').split(' ')[0] || 'Membre',
+        hour: hour,
+        minutes: minutes,
+        timeOfDay: timeOfDay,
+        regime: profile.dietary_regime || 'standard',
+        mood: profile.current_mood || null,
+        weather: profile.current_weather || null,
+        weight: profile.weight || 70,
+        gender: profile.gender || 'male',
+        target: target,
+        eaten: eaten,
+        burned: totalBurned,
+        remaining: remaining,
+        protRemaining: protRemaining,
+        carbsRemaining: carbsRemaining,
+        fatRemaining: fatRemaining,
+        mealsToday: todayMealsList,
+        mealsCount: summary.meals_count || 0,
+        mealsRemaining: mealsRemaining,
+        hasBreakfast: hasBreakfast,
+        hasLunch: hasLunch,
+        hasDinner: hasDinner,
+      };
+
+      setAlixenContext(ctx);
+
+      // 8. Générer le message d'accueil contextuel
+      var greeting = '';
+      var name = ctx.userName;
+      var regimeLabel = ctx.regime === 'halal' ? 'halal' : ctx.regime === 'vegan' ? 'vegan' : ctx.regime === 'vegetarian' ? 'végétarien' : ctx.regime === 'keto' ? 'keto' : '';
+      var regimeText = regimeLabel ? 'Avec ton régime ' + regimeLabel + ', ' : '';
+
+      if (ctx.remaining <= 0) {
+        greeting = name + ', tu as déjà atteint ton objectif de ' + ctx.target + ' kcal aujourd\'hui ! Si tu veux quand même manger, je te propose quelque chose de très léger.';
+      } else if (timeOfDay === 'night' && ctx.remaining > 800) {
+        greeting = name + ', il est ' + hour + 'h' + (minutes < 10 ? '0' : '') + minutes + ' et il te reste ' + Math.round(ctx.remaining) + ' kcal. C\'est beaucoup pour un repas nocturne — je vais te proposer des options légères et on rattrapera demain.';
+      } else if (timeOfDay === 'night') {
+        greeting = name + ', il est ' + hour + 'h' + (minutes < 10 ? '0' : '') + minutes + '. ' + regimeText + 'qu\'est-ce qui te ferait plaisir pour ce dernier repas ? Il te reste ' + Math.round(ctx.remaining) + ' kcal.';
+      } else if (timeOfDay === 'morning') {
+        greeting = 'Bonjour ' + name + ' ! ' + regimeText + 'qu\'est-ce qui te ferait plaisir ce matin ? Tu as ' + Math.round(ctx.remaining) + ' kcal pour la journée.';
+      } else if (timeOfDay === 'midday') {
+        greeting = name + ', c\'est l\'heure du déjeuner ! ' + regimeText + 'il te reste ' + Math.round(ctx.remaining) + ' kcal et ' + Math.round(ctx.protRemaining) + 'g de protéines à atteindre.';
+      } else {
+        greeting = name + ', il te reste ' + Math.round(ctx.remaining) + ' kcal pour aujourd\'hui. ' + regimeText + 'qu\'est-ce qui te ferait plaisir ?';
+      }
+
+      setAlixenGreeting(greeting);
+      return ctx;
+    } catch (e) {
+      console.error('loadAlixenContext error:', e);
+      return null;
+    }
+  };
+
   // Ouvrir l'écran Recettes
-  const openRecipes = () => {
+  var openRecipes = function() {
     setShowRecipes(true);
     setRecipesTab('general');
     setRecipesSearch('');
@@ -1141,6 +1291,14 @@ const RepasPage = ({ onNavigate }) => {
     setRecipesPage(0);
     loadRecipes(0);
     loadMoodRecipes();
+    // Charger le contexte ALIXEN pour l'onglet Personnalisé
+    setAlixenRecipeScreen('welcome');
+    setAlixenProposals([]);
+    setAlixenSelectedRecipe(null);
+    setAlixenCategory(null);
+    setAlixenMyIngredients([]);
+    setAlixenAdvice(null);
+    loadAlixenContext();
   };
 
   // Ouvrir la fiche recette détaillée + charger ingrédients
