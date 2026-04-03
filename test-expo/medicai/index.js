@@ -98,6 +98,7 @@ export default function MedicAiPage() {
   const [keystrokeCount, setKeystrokeCount] = useState(0);
   const [emotionOverride, setEmotionOverride] = useState(null);
   const emotionTimerRef = useRef(null);
+  const [userLang, setUserLang] = useState('FR');
 
   // AlertSheet state
   const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', icon: 'info', buttons: [] });
@@ -220,6 +221,20 @@ export default function MedicAiPage() {
 
   // Helper: texte de mention pour chaque état
   var getAlixenMention = function(state) {
+    if (userLang === 'EN') {
+      switch (state) {
+        case 'thinking': return 'ALIXEN is thinking...';
+        case 'speaking': return 'ALIXEN is responding...';
+        case 'scanning': return 'ALIXEN is analyzing...';
+        case 'memory': return 'ALIXEN is consulting...';
+        case 'happy': return 'ALIXEN is delighted!';
+        case 'sad': return 'ALIXEN is sad...';
+        case 'heart': return 'ALIXEN is touched';
+        case 'wow': return 'ALIXEN is impressed!';
+        case 'gps': return 'ALIXEN is locating...';
+        default: return '';
+      }
+    }
     switch (state) {
       case 'thinking': return 'ALIXEN réfléchit...';
       case 'speaking': return 'ALIXEN répond...';
@@ -397,6 +412,7 @@ export default function MedicAiPage() {
       const profileData = await profileRes.json();
       if (profileData.length > 0) {
         setUserProfile(profileData[0]);
+        if (profileData[0].language) setUserLang(profileData[0].language === 'EN' ? 'EN' : 'FR');
         var daysSinceCreation = Math.floor((Date.now() - new Date(profileData[0].created_at).getTime()) / 86400000);
         setEnergyLimit(daysSinceCreation <= ENERGY_CONFIG.ONBOARDING_DAYS ? ENERGY_CONFIG.ONBOARDING_DAILY_ENERGY : ENERGY_CONFIG.FREE_DAILY_ENERGY);
       }
@@ -760,6 +776,7 @@ export default function MedicAiPage() {
   const buildUserContext = () => {
     if (!userProfile) return 'Données utilisateur non disponibles.';
 
+    var langPrefix = 'LANGUE PRÉFÉRÉE : ' + userLang + '\n\n';
     const today = new Date().toLocaleDateString('fr-FR');
     const dayOfMonth = new Date().getDate();
     const hour = new Date().getHours();
@@ -841,8 +858,7 @@ export default function MedicAiPage() {
       }
     }
 
-    return `
-DONNÉES UTILISATEUR (${today}) :
+    return langPrefix + `DONNÉES UTILISATEUR (${today}) :
 - Nom : ${userProfile.full_name || 'N/A'}
 - Âge : ${userProfile.age || 'N/A'} ans | Sexe : ${userProfile.gender || 'N/A'}
 - Poids : ${userProfile.weight || 'N/A'} kg | Taille : ${userProfile.height || 'N/A'} cm
@@ -905,6 +921,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             action: 'loading_steps',
             userMessage: userMessage,
             userContext: buildUserContext(),
+            lang: userLang,
           }),
         }
       );
@@ -970,6 +987,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               messages: textMessages,
               userId: TEST_USER_ID,
               userContext: context,
+              lang: userLang,
               imageBase64: base64Data,
               mimeType: mimeType || 'image/jpeg',
               // === ALIXEN SUPER CONTEXT v1 ===
@@ -1091,7 +1109,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               'apikey': SUPABASE_ANON_KEY,
             },
             body: JSON.stringify({
-              messages: allMessages, userId: TEST_USER_ID, userContext: context,
+              messages: allMessages, userId: TEST_USER_ID, userContext: context, lang: userLang,
               // === ALIXEN SUPER CONTEXT v1 ===
               ...(userLocation && { user_lat: userLocation.lat, user_lng: userLocation.lng }),
               ...(alixenContextRef.current && { alixen_context: alixenContextRef.current }),
@@ -1381,6 +1399,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               messages: messagesToSend,
               userId: TEST_USER_ID,
               userContext: context,
+              lang: userLang,
               imageBase64: filesToSend.length > 0 ? filesToSend[0].base64 : undefined,
               mimeType: filesToSend.length > 0 ? filesToSend[0].mimeType : undefined,
               // === ALIXEN SUPER CONTEXT v1 ===
@@ -2085,7 +2104,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <View>
             <Text style={{ color: '#1A2030', fontSize: 22, fontWeight: 'bold' }}>MedicAi</Text>
-            <Text style={{ color: 'rgba(0,150,120,0.45)', fontSize: 7, letterSpacing: 2 }}>ESPACE SANTÉ INTELLIGENT</Text>
+            <Text style={{ color: 'rgba(0,150,120,0.45)', fontSize: 7, letterSpacing: 2 }}>{userLang === 'EN' ? 'SMART HEALTH SPACE' : 'ESPACE SANTÉ INTELLIGENT'}</Text>
           </View>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -2120,7 +2139,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </Svg>
               <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#00D984' }} />
-              <Text style={{ color: '#00A878', fontSize: 10 }}>En ligne</Text>
+              <Text style={{ color: '#00A878', fontSize: 10 }}>{userLang === 'EN' ? 'Online' : 'En ligne'}</Text>
             </View>
           ) : (
             <View style={{
@@ -2134,7 +2153,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
               </Svg>
               <View style={{ width: wp(6), height: wp(6), borderRadius: wp(3), backgroundColor: '#FF6B6B' }} />
-              <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#FF6B6B' }}>Hors énergie</Text>
+              <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#FF6B6B' }}>{userLang === 'EN' ? 'Out of energy' : 'Hors énergie'}</Text>
             </View>
           )}
           <Text style={{
@@ -2143,7 +2162,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             color: energyPercent <= 15 ? 'rgba(255,107,107,0.6)' : energyPercent <= 40 ? 'rgba(255,140,66,0.5)' : 'rgba(0,217,132,0.4)',
             marginTop: wp(2),
           }}>
-            {energyLeft > 0 ? energyLeft + ' énergie' : 'Énergie épuisée'}
+            {energyLeft > 0 ? energyLeft + (userLang === 'EN' ? ' energy' : ' énergie') : (userLang === 'EN' ? 'Energy depleted' : 'Énergie épuisée')}
           </Text>
           <Text style={{
             fontSize: fp(9),
@@ -2252,7 +2271,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               <View style={{ width: wm === 'user' ? 12 : 10, height: wm === 'user' ? 12 : 10, borderRadius: 6, backgroundColor: '#00D984', marginRight: 5, justifyContent: 'center', alignItems: 'center', opacity: wm === 'user' ? (0.8 + pulse * 0.2) : 0.35 }}>
                 <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFF', opacity: wm === 'user' ? (0.6 + pulse * 0.4) : 0.3 }} />
               </View>
-              <Text style={{ color: wm === 'user' ? '#00D984' : '#8892A0', fontSize: 9, fontWeight: '600' }}>Membre</Text>
+              <Text style={{ color: wm === 'user' ? '#00D984' : '#8892A0', fontSize: 9, fontWeight: '600' }}>{userLang === 'EN' ? 'Member' : 'Membre'}</Text>
             </View>
           </View>
           {alixenState !== 'idle' && alixenState !== 'listening' && getAlixenMention(alixenState) ? (
@@ -2310,7 +2329,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             <TextInput
               autoFocus
               style={{ flex: 1, color: '#00A878', fontSize: 13, paddingVertical: 4 }}
-              placeholder="Rechercher dans les messages..."
+              placeholder={userLang === 'EN' ? 'Search messages...' : 'Rechercher dans les messages...'}
               placeholderTextColor="rgba(0,0,0,0.2)"
               value={searchQuery}
               onChangeText={handleSearch}
@@ -2476,7 +2495,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                     paddingVertical: wp(8),
                     maxHeight: 50,
                   }}
-                  placeholder="Votre message"
+                  placeholder={userLang === 'EN' ? 'Your message' : 'Votre message'}
                   placeholderTextColor="rgba(0, 0, 0, 0.3)"
                   selectionColor="#00A878"
                   value={inputText}
