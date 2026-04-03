@@ -1063,9 +1063,14 @@ const ActivityPage = ({ onNavigate }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownAnim = useRef(new Animated.Value(0)).current;
 
-  const toggleDropdown = () => {
-    const toValue = dropdownOpen ? 0 : 1;
-    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: false }).start();
+  var toggleDropdown = function() {
+    var toValue = dropdownOpen ? 0 : 1;
+    Animated.spring(dropdownAnim, {
+      toValue: toValue,
+      tension: 80,
+      friction: 10,
+      useNativeDriver: false,
+    }).start();
     setDropdownOpen(!dropdownOpen);
   };
 
@@ -1661,81 +1666,114 @@ const ActivityPage = ({ onNavigate }) => {
           {/* HEADER */}
           <View style={{
             flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-            paddingHorizontal: wp(16), paddingBottom: wp(10),
+            paddingHorizontal: wp(12), paddingBottom: wp(8),
           }}>
             <Text style={{
-              color: '#EAEEF3', fontSize: fp(20), fontWeight: '800', letterSpacing: 2,
+              color: '#EAEEF3', fontSize: fp(18), fontWeight: '800', letterSpacing: 1.5,
             }}>
               {T[userLang].activity}
             </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
               <View style={{
                 flexDirection: 'row', alignItems: 'center',
                 backgroundColor: 'rgba(0,217,132,0.08)',
-                paddingHorizontal: wp(12), paddingVertical: wp(6),
-                borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+                paddingHorizontal: wp(8), paddingVertical: wp(4),
+                borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
               }}>
-                <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '600' }}>
+                <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600' }}>
                   {T[userLang].today}
                 </Text>
-                <Text style={{ color: '#8892A0', fontSize: fp(11), marginLeft: 6 }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(9), marginLeft: wp(4) }}>
                   {todayDateStr}
                 </Text>
               </View>
-              <AvatarButton
-                activeChar={activeChar}
-                userName={userNameAvatar}
-                onPress={function() { if (onNavigate) onNavigate('profile'); }}
-                size={wp(28)}
-              />
               {/* Badge compact Lix + dropdown */}
               <TouchableOpacity onPress={toggleDropdown} style={{
                 flexDirection: 'row', alignItems: 'center',
                 backgroundColor: 'rgba(0,0,0,0.4)',
                 borderWidth: 1, borderColor: '#4A4F55',
-                borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
+                borderRadius: wp(20), paddingHorizontal: wp(10), paddingVertical: wp(6),
+                maxWidth: wp(110),
               }}>
-                <Svg width={14} height={14} viewBox="0 0 24 24">
+                <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24">
                   <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
                   <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
                 </Svg>
-                <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(14), marginLeft: 4 }}>{lixBalance}</Text>
-                <Text style={{ color: '#888', fontSize: fp(10), marginLeft: 4 }}>▾</Text>
+                <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(12), marginLeft: wp(4) }} numberOfLines={1}>{lixBalance}</Text>
+                <Text style={{ color: '#888', fontSize: fp(10), marginLeft: wp(4) }}>▾</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Dropdown Lix/Énergie/Profil */}
+          {/* Dropdown Lix/Énergie/Profil — Premium */}
           {dropdownOpen && (
             <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}>
               <Animated.View style={{
                 position: 'absolute', top: Platform.OS === 'android' ? 100 : 110, right: wp(16),
-                backgroundColor: 'rgba(30, 37, 48, 0.95)',
-                borderWidth: 1, borderColor: '#4A4F55',
-                borderRadius: 16, padding: 16, zIndex: 999,
+                backgroundColor: 'rgba(26, 29, 34, 0.97)',
+                borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+                borderRadius: wp(16), padding: wp(14), zIndex: 999,
                 opacity: dropdownAnim,
-                transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
+                transform: [{
+                  scale: dropdownAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.85, 1],
+                  })
+                }],
+                shadowColor: '#00D984',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 12,
+                elevation: 20,
               }}>
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-                  <Svg width={14} height={14} viewBox="0 0 24 24">
-                    <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
-                    <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
-                  </Svg>
-                  <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixBalance}</Text>
-                  <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
+                <View style={{
+                  position: 'absolute', top: 0, left: wp(20), right: wp(20),
+                  height: 1.5, backgroundColor: 'rgba(0,217,132,0.25)', borderRadius: 1,
+                }} />
+                <TouchableOpacity onPress={function() { toggleDropdown(); if (onNavigate) onNavigate('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
+                  <View style={{
+                    width: wp(32), height: wp(32), borderRadius: wp(16),
+                    backgroundColor: 'rgba(0,217,132,0.08)',
+                    justifyContent: 'center', alignItems: 'center',
+                    marginRight: wp(10), borderWidth: 0.5,
+                    borderColor: 'rgba(0,217,132,0.15)',
+                  }}>
+                    <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24">
+                      <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
+                      <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
+                    </Svg>
+                  </View>
+                  <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(16), marginRight: wp(4) }}>{lixBalance}</Text>
+                  <Text style={{ color: '#888', fontSize: fp(12) }}>Lix</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-                  <Svg width={14} height={14} viewBox="0 0 24 24">
-                    <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
-                  </Svg>
-                  <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{userEnergy}</Text>
-                  <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>{T[userLang].energy}</Text>
+                <TouchableOpacity onPress={function() { toggleDropdown(); if (onNavigate) onNavigate('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
+                  <View style={{
+                    width: wp(32), height: wp(32), borderRadius: wp(16),
+                    backgroundColor: userEnergy <= 5 ? 'rgba(255,107,107,0.08)' : 'rgba(255,184,0,0.08)',
+                    justifyContent: 'center', alignItems: 'center',
+                    marginRight: wp(10), borderWidth: 0.5,
+                    borderColor: userEnergy <= 5 ? 'rgba(255,107,107,0.15)' : 'rgba(255,184,0,0.15)',
+                  }}>
+                    <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24">
+                      <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
+                    </Svg>
+                  </View>
+                  <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: fp(16), marginRight: wp(4) }}>{userEnergy}</Text>
+                  <Text style={{ color: '#888', fontSize: fp(12) }}>{T[userLang].energy}</Text>
                 </TouchableOpacity>
-                <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-                  <Text style={{ fontSize: 18 }}>{activeChar?.slug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[activeChar.slug] || '👤' : '👤'}</Text>
-                  <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>{T[userLang].myProfile}</Text>
-                  <Text style={{ color: '#888', fontSize: 14 }}>→</Text>
+                <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(74,79,85,0.4)', marginVertical: wp(4) }} />
+                <TouchableOpacity onPress={function() { toggleDropdown(); if (onNavigate) onNavigate('profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
+                  <View style={{
+                    width: wp(32), height: wp(32), borderRadius: wp(16),
+                    backgroundColor: 'rgba(0,217,132,0.08)',
+                    justifyContent: 'center', alignItems: 'center',
+                    marginRight: wp(10), borderWidth: 0.5,
+                    borderColor: 'rgba(0,217,132,0.15)',
+                  }}>
+                    <Text style={{ fontSize: fp(14) }}>{activeChar?.slug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[activeChar.slug] || '👤' : '👤'}</Text>
+                  </View>
+                  <Text style={{ color: '#FFF', fontSize: fp(12), flex: 1 }}>{T[userLang].myProfile}</Text>
+                  <Text style={{ color: '#555E6C', fontSize: fp(12) }}>{String.fromCodePoint(0x2192)}</Text>
                 </TouchableOpacity>
               </Animated.View>
             </TouchableOpacity>
@@ -2277,7 +2315,7 @@ const ActivityPage = ({ onNavigate }) => {
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              paddingHorizontal: wp(8),
+              paddingHorizontal: wp(6),
               paddingVertical: wp(4),
               marginTop: wp(4),
             }}>
@@ -2297,13 +2335,13 @@ const ActivityPage = ({ onNavigate }) => {
                 </Text>
               </TouchableOpacity>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(12) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8) }}>
                 <Pressable
                   onPressIn={function() { startWalkMoving(-1); }}
                   onPressOut={stopWalkMoving}
                   style={function(state) {
                     return {
-                      width: wp(52), height: wp(52), borderRadius: wp(26),
+                      width: wp(44), height: wp(44), borderRadius: wp(22),
                       backgroundColor: state.pressed ? '#2A303B' : '#1A1D22',
                       borderWidth: 1.5,
                       borderColor: state.pressed ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.12)',
@@ -2314,11 +2352,11 @@ const ActivityPage = ({ onNavigate }) => {
                     };
                   }}
                 >
-                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24">
+                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24">
                     <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
                 </Pressable>
-                <View style={{ alignItems: 'center', justifyContent: 'center', marginHorizontal: wp(4) }}>
+                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: fp(7), color: '#555E6C', fontWeight: '600' }}>
                     {T[userLang].hold}
                   </Text>
@@ -2328,7 +2366,7 @@ const ActivityPage = ({ onNavigate }) => {
                   onPressOut={stopWalkMoving}
                   style={function(state) {
                     return {
-                      width: wp(52), height: wp(52), borderRadius: wp(26),
+                      width: wp(44), height: wp(44), borderRadius: wp(22),
                       backgroundColor: state.pressed ? '#2A303B' : '#1A1D22',
                       borderWidth: 1.5,
                       borderColor: state.pressed ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.12)',
@@ -2339,14 +2377,14 @@ const ActivityPage = ({ onNavigate }) => {
                     };
                   }}
                 >
-                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24">
+                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24">
                     <Path d="M9 5l7 7-7 7" stroke="#00D984" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
                 </Pressable>
               </View>
 
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#00D984' }}>
+              <View style={{ alignItems: 'flex-end', minWidth: wp(50), maxWidth: wp(60) }}>
+                <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#00D984' }} numberOfLines={1}>
                   {walkDurStr}
                 </Text>
                 <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{T[userLang].normalSpeed}</Text>
@@ -2659,7 +2697,7 @@ const ActivityPage = ({ onNavigate }) => {
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              paddingHorizontal: wp(8),
+              paddingHorizontal: wp(6),
               paddingVertical: wp(4),
               marginTop: wp(4),
             }}>
@@ -2679,13 +2717,13 @@ const ActivityPage = ({ onNavigate }) => {
                 </Text>
               </TouchableOpacity>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(12) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8) }}>
                 <Pressable
                   onPressIn={function() { startRunMoving(-1); }}
                   onPressOut={stopRunMoving}
                   style={function(state) {
                     return {
-                      width: wp(52), height: wp(52), borderRadius: wp(26),
+                      width: wp(44), height: wp(44), borderRadius: wp(22),
                       backgroundColor: state.pressed ? '#2A303B' : '#1A1D22',
                       borderWidth: 1.5,
                       borderColor: state.pressed ? 'rgba(255,140,66,0.4)' : 'rgba(255,255,255,0.12)',
@@ -2696,11 +2734,11 @@ const ActivityPage = ({ onNavigate }) => {
                     };
                   }}
                 >
-                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24">
+                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24">
                     <Path d="M15 19l-7-7 7-7" stroke="#FF8C42" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
                 </Pressable>
-                <View style={{ alignItems: 'center', justifyContent: 'center', marginHorizontal: wp(4) }}>
+                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ fontSize: fp(7), color: '#555E6C', fontWeight: '600' }}>
                     {T[userLang].hold}
                   </Text>
@@ -2710,7 +2748,7 @@ const ActivityPage = ({ onNavigate }) => {
                   onPressOut={stopRunMoving}
                   style={function(state) {
                     return {
-                      width: wp(52), height: wp(52), borderRadius: wp(26),
+                      width: wp(44), height: wp(44), borderRadius: wp(22),
                       backgroundColor: state.pressed ? '#2A303B' : '#1A1D22',
                       borderWidth: 1.5,
                       borderColor: state.pressed ? 'rgba(255,140,66,0.4)' : 'rgba(255,255,255,0.12)',
@@ -2721,14 +2759,14 @@ const ActivityPage = ({ onNavigate }) => {
                     };
                   }}
                 >
-                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24">
+                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24">
                     <Path d="M9 5l7 7-7 7" stroke="#FF8C42" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
                 </Pressable>
               </View>
 
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#00D984' }}>
+              <View style={{ alignItems: 'flex-end', minWidth: wp(50), maxWidth: wp(60) }}>
+                <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#00D984' }} numberOfLines={1}>
                   {runDurStr}
                 </Text>
                 <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{T[userLang].normalPace}</Text>
