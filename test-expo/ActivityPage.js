@@ -1571,8 +1571,6 @@ const ActivityPage = ({ onNavigate }) => {
   const [modalVisible, setModalVisible] = useState(false);
 
   // Live GPS placeholder
-  const [showLivePlaceholder, setShowLivePlaceholder] = useState(false);
-
   // ── Live GPS States ──
   var _liveActive = useState(false); var liveActive = _liveActive[0]; var setLiveActive = _liveActive[1];
   var _liveCountdown = useState(0); var liveCountdown = _liveCountdown[0]; var setLiveCountdown = _liveCountdown[1];
@@ -2023,8 +2021,6 @@ const ActivityPage = ({ onNavigate }) => {
 
   // ── Démarrer le Live GPS ──
   var startLiveTracking = function() {
-    setShowLivePlaceholder(false);
-
     // Charger la météo du profil
     (async function() {
       try {
@@ -3930,95 +3926,291 @@ const ActivityPage = ({ onNavigate }) => {
         userWeight={userWeight}
       />
 
-      {/* Live GPS Placeholder Modal */}
-      <Modal
-        visible={showLivePlaceholder}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setShowLivePlaceholder(false)}
-      >
-        <View style={{
-          flex: 1, backgroundColor: 'rgba(0,0,0,0.85)',
-          justifyContent: 'center', paddingHorizontal: wp(20),
-        }}>
+      {/* ══ COUNTDOWN 3-2-1 ══ */}
+      <Modal visible={liveCountdown > 0} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
           <View style={{
-            backgroundColor: '#1A1D22', borderRadius: wp(18),
-            borderWidth: 1, borderColor: '#4A4F55', padding: wp(24),
-            alignItems: 'center',
+            width: wp(120), height: wp(120), borderRadius: wp(60),
+            borderWidth: 3, borderColor: '#00D984',
+            justifyContent: 'center', alignItems: 'center',
+            backgroundColor: 'rgba(0,217,132,0.08)',
           }}>
-            {/* Icône GPS */}
-            <View style={{
-              width: wp(70), height: wp(70), borderRadius: wp(35),
-              backgroundColor: 'rgba(255,107,107,0.1)',
-              borderWidth: 2, borderColor: 'rgba(255,107,107,0.3)',
-              alignItems: 'center', justifyContent: 'center',
-              marginBottom: wp(16),
-            }}>
-              <Text style={{ fontSize: fp(30) }}>📍</Text>
-            </View>
-
-            <Text style={{
-              fontSize: fp(18), fontWeight: '800', color: '#FFFFFF',
-              textAlign: 'center', marginBottom: wp(6),
-            }}>
-              {T[userLang].liveTitle}
+            <Text style={{ fontSize: fp(60), fontWeight: '900', color: '#00D984' }}>
+              {liveCountdown}
             </Text>
-
-            <Text style={{
-              fontSize: fp(11), color: '#9CA3AF', textAlign: 'center',
-              lineHeight: fp(16), marginBottom: wp(16),
-            }}>
-              {T[userLang].liveDesc}
-            </Text>
-
-            {/* Ce qui sera disponible */}
-            <View style={{
-              backgroundColor: '#252A30', borderRadius: wp(12),
-              padding: wp(14), width: '100%', marginBottom: wp(16),
-            }}>
-              <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#D4AF37', marginBottom: wp(8) }}>
-                {T[userLang].liveAvailable}
-              </Text>
-              <Text style={{ fontSize: fp(10), color: '#D1D5DB', lineHeight: fp(16) }}>
-                • Suivi GPS en temps réel du parcours{'\n'}
-                • Calcul de distance par géolocalisation{'\n'}
-                • Tracé du chemin sur carte{'\n'}
-                • Détection automatique de l'intensité par la vitesse :{'\n'}
-                {'    '}Marche lente {'<'} 4 km/h → MET 2.5{'\n'}
-                {'    '}Marche normale 4-5.5 km/h → MET 3.5{'\n'}
-                {'    '}Marche rapide 5.5-7 km/h → MET 4.3{'\n'}
-                {'    '}Course lente 7-9 km/h → MET 7.0{'\n'}
-                {'    '}Course modérée 9-12 km/h → MET 9.0{'\n'}
-                {'    '}Course rapide {'>'} 12 km/h → MET 11.5{'\n'}
-                • Calories = MET × poids × durée (pas de capteur nécessaire){'\n'}
-                • Rapport post-activité avec vitesse moyenne et intensité{'\n'}
-                • Historique des parcours
-              </Text>
-            </View>
-
-            {/* Note technique */}
-            <View style={{
-              backgroundColor: 'rgba(77,166,255,0.06)', borderRadius: wp(10),
-              padding: wp(10), width: '100%', marginBottom: wp(16),
-              borderWidth: 1, borderColor: 'rgba(77,166,255,0.15)',
-            }}>
-              <Text style={{ fontSize: fp(8), color: '#4DA6FF', lineHeight: fp(12) }}>
-                🔧 BUILD EAS : expo-location watchPositionAsync() · Vitesse = distance / temps · L'intensité est déduite automatiquement de la vitesse, zéro capteur cardiaque nécessaire · Eau perdue = durée × 10ml (climat tempéré) ou × 15ml (climat chaud) · Source : Compendium of Physical Activities (Ainsworth 2011)
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              onPress={() => setShowLivePlaceholder(false)}
-              style={{
-                paddingVertical: wp(12), paddingHorizontal: wp(30),
-                borderRadius: wp(12), backgroundColor: '#00D984',
-              }}
-            >
-              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#1A1D22' }}>
-                {T[userLang].liveUnderstood}
-              </Text>
-            </TouchableOpacity>
           </View>
+          <Text style={{ color: '#8892A0', fontSize: fp(14), marginTop: wp(20), fontWeight: '600', letterSpacing: 2 }}>
+            PRÉPAREZ-VOUS
+          </Text>
+        </View>
+      </Modal>
+
+      {/* ══ LIVE TRACKING ══ */}
+      <Modal visible={liveActive} animationType="slide" onRequestClose={function() {}}>
+        <View style={{ flex: 1, backgroundColor: '#0D1117' }}>
+          <LinearGradient colors={['#0D1117', '#141A22', '#0D1117']} style={{ flex: 1 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: wp(30) }}>
+
+              {/* Header : LIVE + timer */}
+              <View style={{
+                flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                paddingTop: Platform.OS === 'android' ? 50 : 60, paddingHorizontal: wp(16), paddingBottom: wp(8),
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+                  <View style={{
+                    width: wp(10), height: wp(10), borderRadius: wp(5),
+                    backgroundColor: livePaused || liveAutoPaused ? '#FFB800' : '#FF1744',
+                  }} />
+                  <Text style={{
+                    color: livePaused || liveAutoPaused ? '#FFB800' : '#FF1744',
+                    fontSize: fp(14), fontWeight: '800', letterSpacing: 2,
+                  }}>
+                    {livePaused ? 'PAUSE' : liveAutoPaused ? 'AUTO-PAUSE' : 'LIVE'}
+                  </Text>
+                </View>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(20), fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+                  {(function() {
+                    var h = Math.floor(liveDuration / 3600);
+                    var m = Math.floor((liveDuration % 3600) / 60);
+                    var s = liveDuration % 60;
+                    return (h > 0 ? h + ':' : '') + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+                  })()}
+                </Text>
+              </View>
+
+              {/* ══ CARACTÈRE COMPAGNON ══ */}
+              {activeChar && (
+                <View style={{
+                  marginHorizontal: wp(16), marginBottom: wp(10),
+                  flexDirection: 'row', alignItems: 'center', gap: wp(10),
+                  backgroundColor: liveZone.color + '08', borderRadius: wp(12),
+                  padding: wp(10), borderWidth: 1, borderColor: liveZone.color + '15',
+                }}>
+                  <View style={{
+                    width: wp(40), height: wp(40), borderRadius: wp(20),
+                    backgroundColor: liveZone.color + '15', borderWidth: 1.5,
+                    borderColor: liveZone.color + '30',
+                    justifyContent: 'center', alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(20) }}>
+                      {(function() {
+                        var charMap = { emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' };
+                        return charMap[activeChar.slug] || '🎭';
+                      })()}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: liveZone.color }}>
+                      {activeChar.name}
+                    </Text>
+                    {liveCharMsg ? (
+                      <Text style={{ fontSize: fp(10), color: '#EAEEF3', marginTop: wp(2), fontStyle: 'italic' }}>
+                        "{liveCharMsg}"
+                      </Text>
+                    ) : (
+                      <Text style={{ fontSize: fp(9), color: '#8892A0', marginTop: wp(2) }}>
+                        {livePaused || liveAutoPaused ? 'En attente...' : 'Court avec toi !'}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              )}
+
+              {/* ══ BARRE D'INTENSITÉ ══ */}
+              <View style={{
+                marginHorizontal: wp(16), marginBottom: wp(12),
+                backgroundColor: liveZone.color + '08', borderRadius: wp(14),
+                padding: wp(14), borderWidth: 1, borderColor: liveZone.color + '20',
+              }}>
+                <View style={{ flexDirection: 'row', height: wp(8), borderRadius: wp(4), overflow: 'hidden', marginBottom: wp(10), gap: 2 }}>
+                  {SPEED_ZONES.slice(1).map(function(z, i) {
+                    var isActive = liveSpeed >= z.minSpeed && liveSpeed < z.maxSpeed;
+                    var isPassed = liveSpeed >= z.maxSpeed;
+                    return (
+                      <View key={i} style={{
+                        flex: 1, borderRadius: wp(4),
+                        backgroundColor: isActive ? z.color : isPassed ? z.color + '60' : 'rgba(255,255,255,0.06)',
+                      }} />
+                    );
+                  })}
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: liveZone.color, fontSize: fp(16), fontWeight: '800' }}>
+                    {liveZone.label}
+                  </Text>
+                  <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '600' }}>
+                    {Math.round(liveSpeed * 10) / 10} km/h
+                  </Text>
+                </View>
+                <Text style={{ color: '#8892A0', fontSize: fp(9), marginTop: wp(4) }}>
+                  MET {liveZone.met} · {liveSpeed >= 7 ? 'Course' : 'Marche'}
+                </Text>
+              </View>
+
+              {/* ══ DISTANCE GÉANTE ══ */}
+              <View style={{ alignItems: 'center', marginBottom: wp(6) }}>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(56), fontWeight: '900', fontVariant: ['tabular-nums'] }}>
+                  {liveDistance < 1000 ? Math.round(liveDistance) : (Math.round(liveDistance / 10) / 100).toFixed(2)}
+                </Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(16), fontWeight: '600', letterSpacing: 3, marginTop: -wp(4) }}>
+                  {liveDistance < 1000 ? 'MÈTRES' : 'KM'}
+                </Text>
+              </View>
+
+              {/* ══ ÉQUIVALENT ALIMENTAIRE EN TEMPS RÉEL ══ */}
+              {liveFoodEquiv && (
+                <View style={{
+                  alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: wp(6),
+                  backgroundColor: 'rgba(255,140,66,0.08)', borderRadius: wp(20),
+                  paddingHorizontal: wp(14), paddingVertical: wp(6),
+                  borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)',
+                  marginBottom: wp(14),
+                }}>
+                  <Text style={{ fontSize: fp(16) }}>{liveFoodEquiv.food.emoji}</Text>
+                  <Text style={{ fontSize: fp(12), color: '#FF8C42', fontWeight: '700' }}>
+                    = {liveFoodEquiv.count} {liveFoodEquiv.food.label}
+                  </Text>
+                </View>
+              )}
+
+              {/* ══ STATS GRID 2×2 ══ */}
+              <View style={{ marginHorizontal: wp(16), marginBottom: wp(14) }}>
+                <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(8) }}>
+                  {/* Calories */}
+                  <View style={{ flex: 1, backgroundColor: 'rgba(255,140,66,0.06)', borderRadius: wp(14), padding: wp(14), borderWidth: 1, borderColor: 'rgba(255,140,66,0.12)' }}>
+                    <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>CALORIES</Text>
+                    <Text style={{ fontSize: fp(26), fontWeight: '900', color: '#FF8C42', fontVariant: ['tabular-nums'] }}>{liveCalories}</Text>
+                    <Text style={{ fontSize: fp(9), color: '#6B7280' }}>kcal</Text>
+                  </View>
+                  {/* Durée */}
+                  <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(14), padding: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+                    <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>DURÉE</Text>
+                    <Text style={{ fontSize: fp(26), fontWeight: '900', color: '#FFFFFF', fontVariant: ['tabular-nums'] }}>
+                      {Math.floor(liveDuration / 60)}:{(liveDuration % 60 < 10 ? '0' : '') + (liveDuration % 60)}
+                    </Text>
+                    <Text style={{ fontSize: fp(9), color: '#6B7280' }}>min:sec</Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', gap: wp(8) }}>
+                  {/* Eau perdue (ajustée climat) */}
+                  <View style={{ flex: 1, backgroundColor: 'rgba(77,166,255,0.06)', borderRadius: wp(14), padding: wp(14), borderWidth: 1, borderColor: 'rgba(77,166,255,0.12)' }}>
+                    <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>EAU PERDUE</Text>
+                    <Text style={{ fontSize: fp(26), fontWeight: '900', color: '#4DA6FF', fontVariant: ['tabular-nums'] }}>{liveWater}</Text>
+                    <Text style={{ fontSize: fp(9), color: '#6B7280' }}>ml {liveWeatherMult > 1.3 ? '(climat chaud)' : ''}</Text>
+                  </View>
+                  {/* Vitesse moy */}
+                  <View style={{ flex: 1, backgroundColor: 'rgba(0,217,132,0.06)', borderRadius: wp(14), padding: wp(14), borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)' }}>
+                    <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>MOYENNE</Text>
+                    <Text style={{ fontSize: fp(26), fontWeight: '900', color: '#00D984', fontVariant: ['tabular-nums'] }}>
+                      {Math.round(liveAvgSpeed * 10) / 10}
+                    </Text>
+                    <Text style={{ fontSize: fp(9), color: '#6B7280' }}>km/h</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* ══ ALLURE / MAX / RÉPARTITION ══ */}
+              <View style={{
+                marginHorizontal: wp(16), marginBottom: wp(14),
+                flexDirection: 'row', justifyContent: 'space-around',
+                backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(12),
+                paddingVertical: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+              }}>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>ALLURE</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#EAEEF3', fontVariant: ['tabular-nums'] }}>
+                    {liveAvgSpeed > 0 ? Math.floor(60 / liveAvgSpeed) + ':' + (Math.round((60 / liveAvgSpeed % 1) * 60) < 10 ? '0' : '') + Math.round((60 / liveAvgSpeed % 1) * 60) : '--:--'}
+                  </Text>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>/km</Text>
+                </View>
+                <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>V. MAX</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', fontVariant: ['tabular-nums'] }}>
+                    {Math.round(liveMaxSpeed * 10) / 10}
+                  </Text>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>km/h</Text>
+                </View>
+                <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>COURSE</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FF8C42', fontVariant: ['tabular-nums'] }}>
+                    {liveWalkTime + liveRunTime > 0 ? Math.round(liveRunTime / (liveWalkTime + liveRunTime) * 100) : 0}%
+                  </Text>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>du temps</Text>
+                </View>
+              </View>
+
+            </ScrollView>
+
+            {/* ══ BOUTONS PAUSE + STOP (fixes en bas) ══ */}
+            <View style={{
+              flexDirection: 'row', gap: wp(12),
+              paddingHorizontal: wp(16), paddingVertical: wp(12),
+              backgroundColor: 'rgba(13,17,23,0.95)',
+              borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)',
+              paddingBottom: Platform.OS === 'android' ? 40 : 34,
+            }}>
+              <TouchableOpacity onPress={toggleLivePause} style={{
+                flex: 1, paddingVertical: wp(16), borderRadius: wp(14),
+                backgroundColor: livePaused || liveAutoPaused ? 'rgba(0,217,132,0.12)' : 'rgba(255,184,0,0.12)',
+                borderWidth: 1.5, borderColor: livePaused || liveAutoPaused ? 'rgba(0,217,132,0.3)' : 'rgba(255,184,0,0.3)',
+                alignItems: 'center',
+              }}>
+                <Ionicons name={livePaused || liveAutoPaused ? 'play' : 'pause'} size={wp(24)} color={livePaused || liveAutoPaused ? '#00D984' : '#FFB800'} />
+                <Text style={{ color: livePaused || liveAutoPaused ? '#00D984' : '#FFB800', fontSize: fp(11), fontWeight: '700', marginTop: wp(4) }}>
+                  {livePaused || liveAutoPaused ? 'REPRENDRE' : 'PAUSE'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={function() {
+                Alert.alert('Arrêter ?', 'Votre activité sera sauvegardée.',
+                  [{ text: 'Continuer', style: 'cancel' }, { text: 'Arrêter', style: 'destructive', onPress: stopLiveTracking }]);
+              }} style={{
+                flex: 1, paddingVertical: wp(16), borderRadius: wp(14),
+                backgroundColor: 'rgba(255,27,68,0.12)', borderWidth: 1.5, borderColor: 'rgba(255,27,68,0.3)',
+                alignItems: 'center',
+              }}>
+                <View style={{ width: wp(24), height: wp(24), borderRadius: wp(6), backgroundColor: '#FF1744' }} />
+                <Text style={{ color: '#FF1744', fontSize: fp(11), fontWeight: '700', marginTop: wp(4) }}>STOP</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* ══ MILESTONE TOAST ══ */}
+            {liveMilestone && (
+              <View style={{
+                position: 'absolute', top: Platform.OS === 'android' ? 110 : 120,
+                left: wp(20), right: wp(20),
+                backgroundColor: '#252A30', borderRadius: wp(14),
+                paddingVertical: wp(14), paddingHorizontal: wp(20),
+                flexDirection: 'row', alignItems: 'center', gap: wp(10),
+                borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.3)',
+                shadowColor: '#00D984', shadowOpacity: 0.3, shadowRadius: 12, elevation: 10, zIndex: 9999,
+              }}>
+                <Text style={{ fontSize: fp(24) }}>{liveMilestone.emoji}</Text>
+                <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#00D984', flex: 1 }}>{liveMilestone.labelFR}</Text>
+              </View>
+            )}
+
+            {/* ══ HYDRATION REMINDER ══ */}
+            {liveHydrationAlert && (
+              <View style={{
+                position: 'absolute', top: Platform.OS === 'android' ? 110 : 120,
+                left: wp(20), right: wp(20),
+                backgroundColor: '#252A30', borderRadius: wp(14),
+                paddingVertical: wp(14), paddingHorizontal: wp(20),
+                flexDirection: 'row', alignItems: 'center', gap: wp(10),
+                borderWidth: 1.5, borderColor: 'rgba(77,166,255,0.3)', zIndex: 9999,
+              }}>
+                <Text style={{ fontSize: fp(20) }}>{String.fromCodePoint(0x1F4A7)}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#4DA6FF' }}>Pensez à boire !</Text>
+                  <Text style={{ fontSize: fp(10), color: '#8892A0' }}>{liveWater} ml d'eau perdus</Text>
+                </View>
+              </View>
+            )}
+
+          </LinearGradient>
         </View>
       </Modal>
 
