@@ -5066,32 +5066,333 @@ const RepasPage = ({ onNavigate }) => {
                   </View>
                 )}
 
-                {/* ═══ ÉCRAN PROPOSALS — sera ajouté en prompt 3/5 ═══ */}
                 {alixenRecipeScreen === 'proposals' && (
-                  <View style={{ paddingHorizontal: wp(16), paddingTop: wp(14), alignItems: 'center' }}>
+                  <View style={{ paddingHorizontal: wp(16), paddingTop: wp(14) }}>
+
+                    {/* Bouton retour */}
+                    <Pressable onPress={function() { setAlixenRecipeScreen('welcome'); setAlixenProposals([]); }}>
+                      <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '600', marginBottom: wp(12) }}>← Changer de catégorie</Text>
+                    </Pressable>
+
+                    {/* Loading */}
                     {alixenLoading && (
                       <View style={{ alignItems: 'center', paddingVertical: wp(40) }}>
                         <ActivityIndicator size="large" color="#00D984" />
-                        <Text style={{ color: '#00D984', fontSize: fp(12), marginTop: wp(12), fontStyle: 'italic' }}>
+                        <Text style={{ color: '#00D984', fontSize: fp(13), marginTop: wp(12), fontWeight: '600' }}>
                           ALIXEN prépare 3 suggestions...
                         </Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: wp(4), textAlign: 'center' }}>
+                          Analyse de ton profil, tes repas du jour et tes macros restantes
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* Les 3 propositions */}
+                    {!alixenLoading && alixenProposals.length > 0 && (
+                      <View>
+                        <Text style={{
+                          color: '#8892A0', fontSize: fp(10), fontWeight: '700',
+                          letterSpacing: 1.5, marginBottom: wp(12),
+                        }}>
+                          ALIXEN TE PROPOSE 3 OPTIONS
+                        </Text>
+
+                        {alixenProposals.map(function(proposal, idx) {
+                          var typeColors = ['#4DA6FF', '#00D984', '#FF8C42'];
+                          var typeLabels = ['LÉGER', 'DÎNER', 'CONSISTANT'];
+                          var typeEmojis = ['🥗', '🍲', '🥩'];
+                          var color = typeColors[idx] || '#00D984';
+                          var label = typeLabels[idx] || '';
+                          var emoji = typeEmojis[idx] || '🍽️';
+
+                          // Avertissement si option > remaining kcal
+                          var isOver = alixenContext && proposal.kcal > alixenContext.remaining;
+
+                          return (
+                            <Pressable
+                              key={idx}
+                              onPress={function() {
+                                setAlixenSelectedRecipe(proposal);
+                                setAlixenRecipeScreen('detail');
+                              }}
+                              style={function(state) {
+                                return {
+                                  borderRadius: wp(14), padding: 1,
+                                  backgroundColor: state.pressed ? color : '#4A4F55',
+                                  marginBottom: wp(10),
+                                };
+                              }}
+                            >
+                              <LinearGradient
+                                colors={['#3A3F46', '#252A30', '#1A1D22']}
+                                style={{ borderRadius: wp(13), padding: wp(14) }}
+                              >
+                                {/* Header option */}
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                                  <Text style={{ fontSize: fp(18), marginRight: wp(8) }}>{emoji}</Text>
+                                  <View style={{ flex: 1 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                                      <View style={{
+                                        backgroundColor: color + '15',
+                                        paddingHorizontal: wp(8), paddingVertical: wp(2), borderRadius: wp(4),
+                                      }}>
+                                        <Text style={{ color: color, fontSize: fp(8), fontWeight: '800' }}>{label}</Text>
+                                      </View>
+                                      {isOver && (
+                                        <View style={{
+                                          backgroundColor: 'rgba(255,140,66,0.1)',
+                                          paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4),
+                                        }}>
+                                          <Text style={{ color: '#FF8C42', fontSize: fp(7), fontWeight: '700' }}>Au-dessus</Text>
+                                        </View>
+                                      )}
+                                    </View>
+                                    <Text style={{
+                                      color: '#EAEEF3', fontSize: fp(14), fontWeight: '700',
+                                      marginTop: wp(4),
+                                    }} numberOfLines={1}>
+                                      {proposal.name || 'Recette'}
+                                    </Text>
+                                  </View>
+                                  <View style={{ alignItems: 'flex-end' }}>
+                                    <Text style={{ color: '#FF8C42', fontSize: fp(16), fontWeight: '800' }}>
+                                      {proposal.kcal || '—'}
+                                    </Text>
+                                    <Text style={{ color: '#5A6070', fontSize: fp(8) }}>kcal</Text>
+                                  </View>
+                                </View>
+
+                                {/* Description courte */}
+                                {proposal.description && (
+                                  <Text style={{
+                                    color: '#8892A0', fontSize: fp(10),
+                                    fontStyle: 'italic', marginBottom: wp(8),
+                                  }} numberOfLines={2}>
+                                    "{proposal.description}"
+                                  </Text>
+                                )}
+
+                                {/* Mini macros */}
+                                <View style={{ flexDirection: 'row', gap: wp(10) }}>
+                                  <Text style={{ color: '#FF6B6B', fontSize: fp(9), fontWeight: '600' }}>
+                                    P: {proposal.protein || 0}g
+                                  </Text>
+                                  <Text style={{ color: '#FFD93D', fontSize: fp(9), fontWeight: '600' }}>
+                                    G: {proposal.carbs || 0}g
+                                  </Text>
+                                  <Text style={{ color: '#4DA6FF', fontSize: fp(9), fontWeight: '600' }}>
+                                    L: {proposal.fat || 0}g
+                                  </Text>
+                                  <Text style={{ color: '#5A6070', fontSize: fp(8) }}>
+                                    • {proposal.time || '20 min'}
+                                  </Text>
+                                </View>
+
+                                {/* Bouton voir recette */}
+                                <View style={{
+                                  marginTop: wp(10), paddingVertical: wp(8), borderRadius: wp(8),
+                                  backgroundColor: color + '12',
+                                  borderWidth: 1, borderColor: color + '25',
+                                  alignItems: 'center',
+                                }}>
+                                  <Text style={{ color: color, fontSize: fp(10), fontWeight: '700' }}>
+                                    Voir la recette →
+                                  </Text>
+                                </View>
+                              </LinearGradient>
+                            </Pressable>
+                          );
+                        })}
+
+                        {/* Bouton "Autres suggestions" */}
+                        <Pressable
+                          onPress={function() {
+                            setAlixenLoading(true);
+                            generateAlixenProposals(alixenCategory);
+                          }}
+                          style={function(state) {
+                            return {
+                              paddingVertical: wp(10), borderRadius: wp(10),
+                              backgroundColor: state.pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+                              borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+                              alignItems: 'center', marginTop: wp(6),
+                            };
+                          }}
+                        >
+                          <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '600' }}>
+                            ↻ Autres suggestions
+                          </Text>
+                        </Pressable>
+
+                        {/* Bouton "Mes ingrédients" */}
+                        <Pressable
+                          onPress={function() {
+                            setAlixenRecipeScreen('my_ingredients');
+                            setAlixenMyIngredients([]);
+                            setAlixenIngSearch('');
+                          }}
+                          style={{ paddingVertical: wp(10), alignItems: 'center', marginTop: wp(4) }}
+                        >
+                          <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '600' }}>
+                            🔍 Je préfère proposer mes ingrédients
+                          </Text>
+                        </Pressable>
                       </View>
                     )}
                   </View>
                 )}
 
-                {/* ═══ ÉCRAN MY_INGREDIENTS — sera ajouté en prompt 3/5 ═══ */}
                 {alixenRecipeScreen === 'my_ingredients' && (
                   <View style={{ paddingHorizontal: wp(16), paddingTop: wp(14) }}>
+
+                    {/* Bouton retour */}
                     <Pressable onPress={function() { setAlixenRecipeScreen('welcome'); }}>
                       <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '600', marginBottom: wp(12) }}>← Retour</Text>
                     </Pressable>
-                    <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800', marginBottom: wp(12) }}>
-                      Mes ingrédients
+
+                    <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800', marginBottom: wp(4) }}>
+                      🔍 Mes ingrédients
                     </Text>
-                    <Text style={{ color: '#5A6070', fontSize: fp(11) }}>
-                      Fonctionnalité en cours d'implémentation...
+                    <Text style={{ color: '#5A6070', fontSize: fp(10), marginBottom: wp(16) }}>
+                      Sélectionne tes ingrédients et ALIXEN créera une recette sur mesure
                     </Text>
+
+                    {/* Ingrédients sélectionnés */}
+                    {alixenMyIngredients.length > 0 && (
+                      <View style={{
+                        flexDirection: 'row', flexWrap: 'wrap', gap: wp(6),
+                        marginBottom: wp(12),
+                      }}>
+                        {alixenMyIngredients.map(function(ing, idx) {
+                          return (
+                            <Pressable
+                              key={idx}
+                              onPress={function() {
+                                setAlixenMyIngredients(function(prev) {
+                                  return prev.filter(function(_, i) { return i !== idx; });
+                                });
+                              }}
+                              style={{
+                                flexDirection: 'row', alignItems: 'center',
+                                backgroundColor: 'rgba(0,217,132,0.08)',
+                                borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(6),
+                                borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                              }}
+                            >
+                              <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600' }}>{ing.name}</Text>
+                              <Text style={{ color: '#FF6B6B', fontSize: fp(12), fontWeight: '700', marginLeft: wp(6) }}>×</Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                    )}
+
+                    {/* Barre de recherche */}
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      backgroundColor: 'rgba(255,255,255,0.03)',
+                      borderRadius: 14, paddingHorizontal: wp(12),
+                      borderWidth: 1, borderColor: alixenIngSearch.length > 0 ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.05)',
+                    }}>
+                      <Text style={{ color: '#5A6070', fontSize: 16, marginRight: 8 }}>🔍</Text>
+                      <TextInput
+                        value={alixenIngSearch}
+                        onChangeText={function(text) {
+                          setAlixenIngSearch(text);
+                          if (text.length >= 2) {
+                            setAlixenIngSearching(true);
+                            supabase.rpc('search_ingredients_fuzzy', {
+                              search_term: text,
+                              max_results: 6,
+                            }).then(function(res) {
+                              setAlixenIngResults(res.data || []);
+                              setAlixenIngSearching(false);
+                            }).catch(function() {
+                              setAlixenIngSearching(false);
+                            });
+                          } else {
+                            setAlixenIngResults([]);
+                          }
+                        }}
+                        placeholder="Rechercher un ingrédient..."
+                        placeholderTextColor="#5A6070"
+                        style={{ flex: 1, color: '#EAEEF3', fontSize: fp(13), paddingVertical: wp(12) }}
+                      />
+                      {alixenIngSearch.length > 0 && (
+                        <Pressable onPress={function() { setAlixenIngSearch(''); setAlixenIngResults([]); }}>
+                          <Text style={{ color: '#8892A0', fontSize: 16 }}>✕</Text>
+                        </Pressable>
+                      )}
+                    </View>
+
+                    {/* Résultats recherche */}
+                    {alixenIngSearching && (
+                      <Text style={{ color: '#D4AF37', fontSize: fp(10), marginTop: wp(6), fontStyle: 'italic' }}>Recherche...</Text>
+                    )}
+                    {alixenIngResults.length > 0 && (
+                      <View style={{
+                        marginTop: wp(8), borderRadius: 14,
+                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                        overflow: 'hidden',
+                      }}>
+                        {alixenIngResults.map(function(result, i) {
+                          var already = alixenMyIngredients.some(function(ing) { return ing.name === result.name; });
+                          return (
+                            <Pressable
+                              key={i}
+                              onPress={function() {
+                                if (!already) {
+                                  setAlixenMyIngredients(function(prev) { return prev.concat([result]); });
+                                  setAlixenIngSearch('');
+                                  setAlixenIngResults([]);
+                                }
+                              }}
+                              style={function(state) {
+                                return {
+                                  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                                  paddingVertical: wp(10), paddingHorizontal: wp(12),
+                                  backgroundColor: state.pressed ? 'rgba(212,175,55,0.08)' : 'transparent',
+                                  borderBottomWidth: i < alixenIngResults.length - 1 ? 0.5 : 0,
+                                  borderBottomColor: 'rgba(255,255,255,0.05)',
+                                  opacity: already ? 0.4 : 1,
+                                };
+                              }}
+                            >
+                              <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600', flex: 1 }}>{result.name}</Text>
+                              <Text style={{ color: already ? '#5A6070' : '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>
+                                {already ? '✓ Ajouté' : '+ Ajouter'}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                    )}
+
+                    {/* Bouton "Fais-moi une recette" */}
+                    {alixenMyIngredients.length >= 2 && (
+                      <Pressable
+                        onPress={function() {
+                          setAlixenRecipeScreen('proposals');
+                          setAlixenLoading(true);
+                          generateAlixenProposals('my_ingredients');
+                        }}
+                        style={function(state) {
+                          return {
+                            marginTop: wp(20), paddingVertical: wp(14), borderRadius: wp(14),
+                            backgroundColor: state.pressed ? '#00B572' : '#00D984',
+                            alignItems: 'center',
+                          };
+                        }}
+                      >
+                        <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
+                          🤖 ALIXEN, fais-moi une recette !
+                        </Text>
+                        <Text style={{ color: 'rgba(0,0,0,0.5)', fontSize: fp(10), marginTop: wp(2) }}>
+                          Avec {alixenMyIngredients.length} ingrédients sélectionnés
+                        </Text>
+                      </Pressable>
+                    )}
                   </View>
                 )}
 
