@@ -48,25 +48,52 @@ const formatDistance = (meters) => {
 };
 
 // ── Activity data ────────────────────────────────────────────────────────────
-const ACTIVITY_DATA = {
-  marche: { kcal_per_hour: 280, icon: '🚶', label: 'Marche', labelEN: 'Walk', color: '#00D984', km_per_hour: 5, water_per_hour_ml: 400 },
-  course: { kcal_per_hour: 700, icon: '🏃', label: 'Course', labelEN: 'Run', color: '#00D984', km_per_hour: 8, water_per_hour_ml: 900 },
-  velo: { kcal_per_hour: 500, icon: '🚴', label: 'Vélo', labelEN: 'Cycling', color: '#4DA6FF', water_per_hour_ml: 600 },
-  natation: { kcal_per_hour: 600, icon: '🏊', label: 'Natation', labelEN: 'Swimming', color: '#00BCD4', water_per_hour_ml: 700 },
-  musculation: { kcal_per_hour: 400, icon: '🏋️', label: 'Musculation', labelEN: 'Weight training', color: '#FF6B6B', water_per_hour_ml: 500 },
-  yoga: { kcal_per_hour: 200, icon: '🧘', label: 'Yoga', labelEN: 'Yoga', color: '#B39DDB', water_per_hour_ml: 300 },
-  corde: { kcal_per_hour: 800, icon: '⏭', label: 'Corde à sauter', labelEN: 'Jump rope', color: '#FFD93D', water_per_hour_ml: 800 },
-  football: { kcal_per_hour: 600, icon: '⚽', label: 'Football', labelEN: 'Football', color: '#66BB6A', water_per_hour_ml: 700 },
-  basketball: { kcal_per_hour: 650, icon: '🏀', label: 'Basketball', labelEN: 'Basketball', color: '#FF7043', water_per_hour_ml: 750 },
-  danse: { kcal_per_hour: 450, icon: '💃', label: 'Danse', labelEN: 'Dance', color: '#EC407A', water_per_hour_ml: 500 },
-  tennis: { kcal_per_hour: 550, icon: '🎾', label: 'Tennis', labelEN: 'Tennis', color: '#CDDC39', water_per_hour_ml: 650 },
-  boxe: { kcal_per_hour: 700, icon: '🥊', label: 'Boxe', labelEN: 'Boxing', color: '#E53935', water_per_hour_ml: 800 },
-  randonnee: { kcal_per_hour: 400, icon: '🥾', label: 'Randonnée', labelEN: 'Hiking', color: '#8D6E63', water_per_hour_ml: 550 },
-  escalade: { kcal_per_hour: 650, icon: '🧗', label: 'Escalade', labelEN: 'Climbing', color: '#78909C', water_per_hour_ml: 600 },
-  spinning: { kcal_per_hour: 700, icon: '🚲', label: 'Spinning', labelEN: 'Spinning', color: '#FF5722', water_per_hour_ml: 750 },
-  hiit: { kcal_per_hour: 750, icon: '🔥', label: 'HIIT', labelEN: 'HIIT', color: '#FF1744', water_per_hour_ml: 850 },
-  pilates: { kcal_per_hour: 250, icon: '🤸', label: 'Pilates', labelEN: 'Pilates', color: '#CE93D8', water_per_hour_ml: 350 },
-  badminton: { kcal_per_hour: 450, icon: '🏸', label: 'Badminton', labelEN: 'Badminton', color: '#26C6DA', water_per_hour_ml: 550 },
+var ACTIVITY_DATA = {
+  // ── Marche & Course ──
+  marche: { met: 3.5, icon: '🚶', label: 'Marche', labelEN: 'Walking', color: '#00D984', km_per_hour: 5, water_per_hour_ml: 400, compendium: '17170' },
+  course: { met: 8.3, icon: '🏃', label: 'Course', labelEN: 'Running', color: '#00D984', km_per_hour: 8, water_per_hour_ml: 900, compendium: '12050' },
+  // ── Sports individuels ──
+  velo: { met: 7.5, icon: '🚴', label: 'Vélo', labelEN: 'Cycling', color: '#4DA6FF', water_per_hour_ml: 600, compendium: '01015' },
+  natation: { met: 7.0, icon: '🏊', label: 'Natation', labelEN: 'Swimming', color: '#00BCD4', water_per_hour_ml: 700, compendium: '18250' },
+  tennis: { met: 7.3, icon: '🎾', label: 'Tennis', labelEN: 'Tennis', color: '#CDDC39', water_per_hour_ml: 650, compendium: '15675' },
+  boxe: { met: 7.8, icon: '🥊', label: 'Boxe', labelEN: 'Boxing', color: '#E53935', water_per_hour_ml: 800, compendium: '15072' },
+  badminton: { met: 5.5, icon: '🏸', label: 'Badminton', labelEN: 'Badminton', color: '#26C6DA', water_per_hour_ml: 550, compendium: '15030' },
+  escalade: { met: 8.0, icon: '🧗', label: 'Escalade', labelEN: 'Climbing', color: '#78909C', water_per_hour_ml: 600, compendium: '17012' },
+  randonnee: { met: 5.3, icon: '🥾', label: 'Randonnée', labelEN: 'Hiking', color: '#8D6E63', water_per_hour_ml: 550, compendium: '17080' },
+  golf: { met: 4.8, icon: '⛳', label: 'Golf', labelEN: 'Golf', color: '#4CAF50', water_per_hour_ml: 400, compendium: '15255' },
+  ski: { met: 7.0, icon: '⛷️', label: 'Ski', labelEN: 'Skiing', color: '#B3E5FC', water_per_hour_ml: 600, compendium: '19050' },
+  surf: { met: 3.0, icon: '🏄', label: 'Surf', labelEN: 'Surfing', color: '#0097A7', water_per_hour_ml: 500, compendium: '18350' },
+  kayak: { met: 5.0, icon: '🛶', label: 'Kayak', labelEN: 'Kayaking', color: '#00838F', water_per_hour_ml: 550, compendium: '18090' },
+  equitation: { met: 5.5, icon: '🐎', label: 'Équitation', labelEN: 'Horse Riding', color: '#795548', water_per_hour_ml: 450, compendium: '15380' },
+  patinage: { met: 7.0, icon: '⛸️', label: 'Patinage', labelEN: 'Skating', color: '#80DEEA', water_per_hour_ml: 550, compendium: '19110' },
+  ping_pong: { met: 4.0, icon: '🏓', label: 'Ping-pong', labelEN: 'Table Tennis', color: '#FF7043', water_per_hour_ml: 350, compendium: '15652' },
+  squash: { met: 7.3, icon: '🎾', label: 'Squash', labelEN: 'Squash', color: '#FDD835', water_per_hour_ml: 700, compendium: '15650' },
+  // ── Sports collectifs ──
+  football: { met: 7.0, icon: '⚽', label: 'Football', labelEN: 'Football', color: '#66BB6A', water_per_hour_ml: 700, compendium: '15610' },
+  basketball: { met: 6.5, icon: '🏀', label: 'Basketball', labelEN: 'Basketball', color: '#FF7043', water_per_hour_ml: 750, compendium: '15055' },
+  volleyball: { met: 4.0, icon: '🏐', label: 'Volleyball', labelEN: 'Volleyball', color: '#FFB300', water_per_hour_ml: 450, compendium: '15710' },
+  handball: { met: 8.0, icon: '🤾', label: 'Handball', labelEN: 'Handball', color: '#5C6BC0', water_per_hour_ml: 750, compendium: '15350' },
+  rugby: { met: 8.3, icon: '🏉', label: 'Rugby', labelEN: 'Rugby', color: '#43A047', water_per_hour_ml: 800, compendium: '15580' },
+  cricket: { met: 4.8, icon: '🏏', label: 'Cricket', labelEN: 'Cricket', color: '#A1887F', water_per_hour_ml: 450, compendium: '15230' },
+  // ── Fitness & bien-être ──
+  musculation: { met: 5.0, icon: '🏋️', label: 'Musculation', labelEN: 'Weight Training', color: '#FF6B6B', water_per_hour_ml: 500, compendium: '02054' },
+  yoga: { met: 3.0, icon: '🧘', label: 'Yoga', labelEN: 'Yoga', color: '#B39DDB', water_per_hour_ml: 300, compendium: '02150' },
+  corde: { met: 11.8, icon: '⏭', label: 'Corde à sauter', labelEN: 'Jump Rope', color: '#FFD93D', water_per_hour_ml: 800, compendium: '15540' },
+  danse: { met: 5.5, icon: '💃', label: 'Danse', labelEN: 'Dance', color: '#EC407A', water_per_hour_ml: 500, compendium: '03015' },
+  spinning: { met: 8.5, icon: '🚲', label: 'Spinning', labelEN: 'Spinning', color: '#FF5722', water_per_hour_ml: 750, compendium: '01040' },
+  hiit: { met: 9.0, icon: '🔥', label: 'HIIT', labelEN: 'HIIT', color: '#FF1744', water_per_hour_ml: 850, compendium: '02072' },
+  pilates: { met: 3.0, icon: '🤸', label: 'Pilates', labelEN: 'Pilates', color: '#CE93D8', water_per_hour_ml: 350, compendium: '02048' },
+  crossfit: { met: 9.5, icon: '💪', label: 'CrossFit', labelEN: 'CrossFit', color: '#D32F2F', water_per_hour_ml: 900, compendium: '02072' },
+  zumba: { met: 6.5, icon: '💃', label: 'Zumba', labelEN: 'Zumba', color: '#F06292', water_per_hour_ml: 600, compendium: '03031' },
+  aquagym: { met: 5.3, icon: '🏊', label: 'Aquagym', labelEN: 'Aqua Aerobics', color: '#4DD0E1', water_per_hour_ml: 500, compendium: '18355' },
+  stretching: { met: 2.3, icon: '🤸', label: 'Étirements', labelEN: 'Stretching', color: '#AED581', water_per_hour_ml: 200, compendium: '02101' },
+  tai_chi: { met: 3.0, icon: '🧘', label: 'Tai Chi', labelEN: 'Tai Chi', color: '#9FA8DA', water_per_hour_ml: 250, compendium: '02135' },
+  // ── Activités quotidiennes & africaines ──
+  menage: { met: 3.3, icon: '🧹', label: 'Ménage', labelEN: 'Housework', color: '#90A4AE', water_per_hour_ml: 300, compendium: '05020' },
+  jardinage: { met: 4.0, icon: '🌱', label: 'Jardinage', labelEN: 'Gardening', color: '#66BB6A', water_per_hour_ml: 400, compendium: '08245' },
+  escalier: { met: 8.8, icon: '🪜', label: 'Monter les escaliers', labelEN: 'Stair Climbing', color: '#8D6E63', water_per_hour_ml: 650, compendium: '17133' },
+  lutte_africaine: { met: 7.8, icon: '🤼', label: 'Lutte africaine', labelEN: 'African Wrestling', color: '#D4AF37', water_per_hour_ml: 800, compendium: '15072' },
+  danse_africaine: { met: 6.5, icon: '🥁', label: 'Danse africaine', labelEN: 'African Dance', color: '#FF8F00', water_per_hour_ml: 600, compendium: '03017' },
 };
 
 // ── Translations FR/EN ──────────────────────────────────────────────────────
@@ -211,6 +238,19 @@ var T = {
   }
 };
 
+// Calcul calories basé sur MET × poids × durée
+// Source : Compendium of Physical Activities (Ainsworth et al., 2011)
+var calcCalories = function(met, weightKg, durationMin, intensity) {
+  var intensityMult = intensity === 'leger' ? 0.75 : intensity === 'intense' ? 1.25 : 1.0;
+  return Math.round(met * intensityMult * weightKg * (durationMin / 60));
+};
+
+// Calcul eau perdue basé sur durée et intensité
+var calcWater = function(waterPerHourMl, durationMin, intensity) {
+  var intensityMult = intensity === 'leger' ? 0.8 : intensity === 'intense' ? 1.3 : 1.0;
+  return Math.round((durationMin / 60) * waterPerHourMl * intensityMult);
+};
+
 const RUN_FLAGS = [
   { distance: 400, label: '400m' },
   { distance: 1000, label: '1 km' },
@@ -222,7 +262,15 @@ const RUN_FLAGS = [
 
 const TIME_STEPS = [5, 10, 15, 20, 30, 45, 60];
 
-const OTHER_SPORTS = ['velo', 'natation', 'musculation', 'yoga', 'corde', 'football', 'basketball', 'danse', 'tennis', 'boxe', 'randonnee', 'escalade', 'spinning', 'hiit', 'pilates', 'badminton'];
+var OTHER_SPORTS = [
+  'velo', 'natation', 'musculation', 'yoga', 'corde', 'football',
+  'basketball', 'danse', 'tennis', 'boxe', 'randonnee', 'escalade',
+  'spinning', 'hiit', 'pilates', 'badminton',
+  'volleyball', 'handball', 'rugby', 'cricket',
+  'golf', 'ski', 'surf', 'kayak', 'equitation', 'patinage', 'ping_pong', 'squash',
+  'crossfit', 'zumba', 'aquagym', 'stretching', 'tai_chi',
+  'menage', 'jardinage', 'escalier', 'lutte_africaine', 'danse_africaine',
+];
 
 // ── Walk Immersive Trail ─────────────────────────────────────────────────────
 const WALK_DISTANCE_MAP = [
@@ -803,8 +851,11 @@ const ModePill = ({ mode, onToggle, accentColor }) => (
 );
 
 // ── Sport Card (for grid) ────────────────────────────────────────────────────
-const SportCard = ({ sportKey, onPress, userLang }) => {
+const SportCard = ({ sportKey, onPress, userLang, userWeight }) => {
   const sport = ACTIVITY_DATA[sportKey];
+  var weightKg = userWeight || 70;
+  var kcalPerHour = Math.round(sport.met * weightKg);
+  var sportLabel = userLang === 'EN' ? (sport.labelEN || sport.label) : sport.label;
   return (
     <MetalCard
       onPress={onPress}
@@ -820,13 +871,13 @@ const SportCard = ({ sportKey, onPress, userLang }) => {
           color: '#EAEEF3', fontSize: fp(10), fontWeight: '700',
           marginTop: wp(4), textAlign: 'center',
         }}>
-          {userLang === 'EN' ? sport.labelEN : sport.label}
+          {sportLabel}
         </Text>
         <Text style={{
           color: sport.color, fontSize: fp(8), fontWeight: '600',
           marginTop: wp(2),
         }}>
-          {sport.kcal_per_hour} kcal/h
+          {kcalPerHour} kcal/h
         </Text>
       </View>
     </MetalCard>
@@ -834,15 +885,15 @@ const SportCard = ({ sportKey, onPress, userLang }) => {
 };
 
 // ── Sport Modal ──────────────────────────────────────────────────────────────
-const SportModal = ({ visible, sportKey, onClose, onSave, userLang }) => {
+const SportModal = ({ visible, sportKey, onClose, onSave, userLang, userWeight }) => {
   const [duration, setDuration] = useState(30);
   const [intensity, setIntensity] = useState('modere');
 
   if (!sportKey) return null;
   const sport = ACTIVITY_DATA[sportKey];
-  const multiplier = intensity === 'leger' ? 0.7 : intensity === 'intense' ? 1.3 : 1.0;
-  const calories = Math.round((duration / 60) * sport.kcal_per_hour * multiplier);
-  const waterLost = Math.round((duration / 60) * sport.water_per_hour_ml * multiplier);
+  var weightKg = userWeight || 70;
+  var calories = calcCalories(sport.met, weightKg, duration, intensity);
+  var waterLost = calcWater(sport.water_per_hour_ml, duration, intensity);
 
   var lang = userLang || 'FR';
   const intensities = [
@@ -967,7 +1018,9 @@ const SportModal = ({ visible, sportKey, onClose, onSave, userLang }) => {
                   fontStyle: 'italic',
                   lineHeight: fp(12),
                 }}>
-                  {T[lang].scienceNote}
+                  {lang === 'EN'
+                    ? 'Estimate: MET ' + sport.met + ' \u00D7 ' + weightKg + 'kg \u00D7 duration. Source: Compendium of Physical Activities (Ainsworth et al., 2011).'
+                    : 'Calcul : MET ' + sport.met + ' \u00D7 ' + weightKg + 'kg \u00D7 dur\u00E9e. Source : Compendium of Physical Activities (Ainsworth et al., 2011).'}
                 </Text>
               </View>
 
@@ -1059,6 +1112,7 @@ const ActivityPage = ({ onNavigate }) => {
   const [userNameAvatar, setUserNameAvatar] = useState('');
   const [lixBalance, setLixBalance] = useState(0);
   const [userEnergy, setUserEnergy] = useState(20);
+  var _weight = useState(70); var userWeight = _weight[0]; var setUserWeight = _weight[1];
   var _lang = useState('FR'); var userLang = _lang[0]; var setUserLang = _lang[1];
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownAnim = useRef(new Animated.Value(0)).current;
@@ -1102,11 +1156,11 @@ const ActivityPage = ({ onNavigate }) => {
       return;
     }
 
-    const walkHours = toBurn / (3.5 * weight);
+    const walkHours = toBurn / (ACTIVITY_DATA.marche.met * weight);
     const walkMin = Math.ceil(walkHours * 60);
     const walkKm = (walkMin * 5 / 60).toFixed(1);
 
-    const runHours = toBurn / (7.0 * weight);
+    const runHours = toBurn / (ACTIVITY_DATA.course.met * weight);
     const runMin = Math.ceil(runHours * 60);
     const runKm = (runMin * 8 / 60).toFixed(1);
 
@@ -1174,6 +1228,7 @@ const ActivityPage = ({ onNavigate }) => {
       const target = profile?.daily_calorie_target || 2000;
       const mood = profile?.current_mood || null;
       const weight = profile?.weight || 70;
+      setUserWeight(weight);
       setDailyTarget(target);
       setUserMood(mood);
 
@@ -1225,11 +1280,12 @@ const ActivityPage = ({ onNavigate }) => {
     // Avatar profil + Lix balance
     (async () => {
       try {
-        const { data: profile } = await supabase.from('users_profile').select('full_name, lix_balance, language').eq('user_id', TEST_USER_ID).maybeSingle();
+        const { data: profile } = await supabase.from('users_profile').select('full_name, lix_balance, language, weight').eq('user_id', TEST_USER_ID).maybeSingle();
         if (profile) {
           setUserNameAvatar(profile.full_name || '');
           setLixBalance(profile.lix_balance || 0);
           if (profile.language) setUserLang(profile.language);
+          if (profile.weight) setUserWeight(profile.weight);
         }
       } catch (e) {}
     })();
@@ -1488,10 +1544,8 @@ const ActivityPage = ({ onNavigate }) => {
   const runDistM = runScrollOffset * RUN_METERS_PER_PIXEL;
   const runMul = runRoundTrip ? 2 : 1;
   const runDistKm = (runDistM * runMul) / 1000;
-  // Calories course ≈ 1.0 kcal/kg/km (userWeight ~70kg default)
-  const userWeight = 70;
-  const runCalories = Math.round(runDistKm * userWeight * 1.0);
-  const runWater = Math.round(runDistKm * 150);
+  var runCalories = calcCalories(ACTIVITY_DATA.course.met, userWeight, runDuration, 'modere');
+  var runWater = calcWater(ACTIVITY_DATA.course.water_per_hour_ml, runDuration, 'modere');
   const runDuration = Math.round((runDistKm / 8) * 60);
   const runDistFinal = runDistM * runMul;
   const runDistStr = runDistFinal < 1000 ? `${Math.round(runDistFinal)} m` : `${Math.round(runDistFinal / 100) / 10} km`;
@@ -1569,8 +1623,8 @@ const ActivityPage = ({ onNavigate }) => {
   const walkDistM = walkProg * WALK_MAX_DIST;
   const walkMul = walkRoundTrip ? 2 : 1;
   const walkDurMin = (walkDistM / 5000) * 60;
-  const walkCal = Math.round((walkDurMin / 60) * 280 * walkMul);
-  const walkWater = Math.round((walkDurMin / 60) * 400 * walkMul);
+  var walkCal = calcCalories(ACTIVITY_DATA.marche.met, userWeight, walkDurMin * walkMul, 'modere');
+  var walkWater = calcWater(ACTIVITY_DATA.marche.water_per_hour_ml, walkDurMin * walkMul, 'modere');
   const walkDistFinal = walkDistM * walkMul;
   const walkDistStr = walkDistFinal < 1000 ? `${Math.round(walkDistFinal)} m` : `${Math.round(walkDistFinal / 100) / 10} km`;
   const walkDurStr = (() => { const m = Math.round(walkDurMin * walkMul); return m < 60 ? `${m} min` : `${Math.round(m / 6) / 10} h`; })();
@@ -2831,6 +2885,7 @@ const ActivityPage = ({ onNavigate }) => {
                     sportKey={key}
                     onPress={function() { setModalSport(key); setModalVisible(true); }}
                     userLang={userLang}
+                    userWeight={userWeight}
                   />
                 </View>
               );
@@ -3068,9 +3123,10 @@ const ActivityPage = ({ onNavigate }) => {
       <SportModal
         visible={modalVisible}
         sportKey={modalSport}
-        onClose={() => setModalVisible(false)}
+        onClose={function() { setModalVisible(false); }}
         onSave={handleSportSave}
         userLang={userLang}
+        userWeight={userWeight}
       />
 
       {/* Live GPS Placeholder Modal */}
