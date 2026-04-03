@@ -16,6 +16,7 @@ import Svg, {
 import { Ionicons } from '@expo/vector-icons';
 import { createClient } from '@supabase/supabase-js';
 import * as Location from 'expo-location';
+import MapView, { Polyline, Marker } from 'react-native-maps';
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
@@ -1604,6 +1605,8 @@ const ActivityPage = ({ onNavigate }) => {
   var liveCaloriesAccRef = useRef(0);
   var liveWaterAccRef = useRef(0);
   var liveCharMsgTimerRef = useRef(null);
+  var _liveRoute = useState([]); var liveRoute = _liveRoute[0]; var setLiveRoute = _liveRoute[1];
+  var _liveStartCoord = useState(null); var liveStartCoord = _liveStartCoord[0]; var setLiveStartCoord = _liveStartCoord[1];
 
   // Anti-triche: +5 Lix une seule fois par jour
   const [lixRewardedToday, setLixRewardedToday] = useState(false);
@@ -2066,6 +2069,7 @@ const ActivityPage = ({ onNavigate }) => {
       liveSpeedSamplesRef.current = []; liveStillCounterRef.current = 0;
       liveHydrationTimerRef.current = 0; liveSuspectCounterRef.current = 0;
       liveCaloriesAccRef.current = 0; liveWaterAccRef.current = 0;
+      setLiveRoute([]); setLiveStartCoord(null);
       setLiveActive(true);
 
       // Timer durée (1s)
@@ -2184,6 +2188,14 @@ const ActivityPage = ({ onNavigate }) => {
 
             liveLastPosRef.current = { lat: lat, lon: lon, timestamp: timestamp };
 
+            // Enregistrer le point sur le tracé
+            setLiveRoute(function(prev) {
+              return prev.concat([{ latitude: lat, longitude: lon }]);
+            });
+            if (!liveStartCoord) {
+              setLiveStartCoord({ latitude: lat, longitude: lon });
+            }
+
             // Milestones
             setLiveDistance(function(currentDist) {
               LIVE_MILESTONES.forEach(function(m) {
@@ -2248,6 +2260,8 @@ const ActivityPage = ({ onNavigate }) => {
           source: 'live_gps',
           weatherMult: liveWeatherMult,
           foodEquiv: liveFoodEquiv,
+          route: liveRoute,
+          startCoord: liveStartCoord,
         });
         setShowPostReport(true);
         fetchWeeklyMinutes();
@@ -4065,6 +4079,77 @@ const ActivityPage = ({ onNavigate }) => {
                 </Text>
               </View>
 
+              {/* ══ MINI-CARTE LIVE ══ */}
+              {liveRoute.length > 1 && (
+                <View style={{
+                  marginHorizontal: wp(16), marginBottom: wp(12),
+                  borderRadius: wp(14), overflow: 'hidden',
+                  borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+                  height: wp(160),
+                }}>
+                  <MapView
+                    style={{ flex: 1 }}
+                    scrollEnabled={false}
+                    zoomEnabled={false}
+                    rotateEnabled={false}
+                    pitchEnabled={false}
+                    customMapStyle={[
+                      { elementType: 'geometry', stylers: [{ color: '#1A1D22' }] },
+                      { elementType: 'labels.text.fill', stylers: [{ color: '#8892A0' }] },
+                      { elementType: 'labels.text.stroke', stylers: [{ color: '#0D1117' }] },
+                      { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2A303B' }] },
+                      { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0e1626' }] },
+                      { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+                    ]}
+                    region={{
+                      latitude: liveRoute[liveRoute.length - 1].latitude,
+                      longitude: liveRoute[liveRoute.length - 1].longitude,
+                      latitudeDelta: 0.008,
+                      longitudeDelta: 0.008,
+                    }}
+                  >
+                    <Polyline
+                      coordinates={liveRoute}
+                      strokeColor="#00D984"
+                      strokeWidth={4}
+                    />
+                    {liveStartCoord && (
+                      <Marker coordinate={liveStartCoord} anchor={{ x: 0.5, y: 0.5 }}>
+                        <View style={{
+                          width: 14, height: 14, borderRadius: 7,
+                          backgroundColor: '#00D984', borderWidth: 2, borderColor: '#FFFFFF',
+                        }} />
+                      </Marker>
+                    )}
+                    <Marker coordinate={liveRoute[liveRoute.length - 1]} anchor={{ x: 0.5, y: 0.5 }}>
+                      <View style={{
+                        width: 16, height: 16, borderRadius: 8,
+                        backgroundColor: '#FF1744', borderWidth: 2, borderColor: '#FFFFFF',
+                        shadowColor: '#FF1744', shadowOpacity: 0.5, shadowRadius: 6, elevation: 4,
+                      }} />
+                    </Marker>
+                  </MapView>
+
+                  {/* Overlay gradient en bas */}
+                  <LinearGradient
+                    colors={['transparent', 'rgba(13,17,23,0.6)']}
+                    style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 30 }}
+                    pointerEvents="none"
+                  />
+
+                  {/* Badge GPS signal */}
+                  <View style={{
+                    position: 'absolute', top: wp(6), right: wp(6),
+                    flexDirection: 'row', alignItems: 'center', gap: 4,
+                    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: wp(6),
+                    paddingHorizontal: wp(6), paddingVertical: wp(3),
+                  }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#00D984' }} />
+                    <Text style={{ fontSize: fp(7), color: '#00D984', fontWeight: '700' }}>GPS</Text>
+                  </View>
+                </View>
+              )}
+
               {/* ══ ÉQUIVALENT ALIMENTAIRE EN TEMPS RÉEL ══ */}
               {liveFoodEquiv && (
                 <View style={{
@@ -4364,11 +4449,103 @@ const ActivityPage = ({ onNavigate }) => {
                   <View style={{ alignItems: 'center', minWidth: '30%' }}>
                     <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{T[userLang].avgSpeed}</Text>
                     <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#D4AF37' }}>
-                      {lastActivity.speed} km/h
+                      {lastActivity.speed}
                     </Text>
                   </View>
                 ) : null}
               </View>
+
+              {/* ══ CARTE DU PARCOURS ══ */}
+              {lastActivity && lastActivity.isGPS && lastActivity.route && lastActivity.route.length > 1 && (
+                <View style={{
+                  width: '100%', borderRadius: wp(14), overflow: 'hidden',
+                  marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+                  height: wp(200),
+                }}>
+                  <MapView
+                    style={{ flex: 1 }}
+                    scrollEnabled={true}
+                    zoomEnabled={true}
+                    rotateEnabled={false}
+                    customMapStyle={[
+                      { elementType: 'geometry', stylers: [{ color: '#1A1D22' }] },
+                      { elementType: 'labels.text.fill', stylers: [{ color: '#8892A0' }] },
+                      { elementType: 'labels.text.stroke', stylers: [{ color: '#0D1117' }] },
+                      { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2A303B' }] },
+                      { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0e1626' }] },
+                      { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+                    ]}
+                    initialRegion={(function() {
+                      var r = lastActivity.route;
+                      var minLat = r[0].latitude, maxLat = r[0].latitude;
+                      var minLng = r[0].longitude, maxLng = r[0].longitude;
+                      for (var i = 1; i < r.length; i++) {
+                        if (r[i].latitude < minLat) minLat = r[i].latitude;
+                        if (r[i].latitude > maxLat) maxLat = r[i].latitude;
+                        if (r[i].longitude < minLng) minLng = r[i].longitude;
+                        if (r[i].longitude > maxLng) maxLng = r[i].longitude;
+                      }
+                      return {
+                        latitude: (minLat + maxLat) / 2,
+                        longitude: (minLng + maxLng) / 2,
+                        latitudeDelta: Math.max(0.005, (maxLat - minLat) * 1.4),
+                        longitudeDelta: Math.max(0.005, (maxLng - minLng) * 1.4),
+                      };
+                    })()}
+                  >
+                    <Polyline
+                      coordinates={lastActivity.route}
+                      strokeColor="#00D984"
+                      strokeWidth={4}
+                    />
+                    {lastActivity.startCoord && (
+                      <Marker coordinate={lastActivity.startCoord} anchor={{ x: 0.5, y: 0.5 }}>
+                        <View style={{ alignItems: 'center' }}>
+                          <View style={{
+                            backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 6,
+                            paddingHorizontal: 6, paddingVertical: 2, marginBottom: 4,
+                          }}>
+                            <Text style={{ color: '#00D984', fontSize: 9, fontWeight: '700' }}>DÉPART</Text>
+                          </View>
+                          <View style={{
+                            width: 14, height: 14, borderRadius: 7,
+                            backgroundColor: '#00D984', borderWidth: 2, borderColor: '#FFF',
+                          }} />
+                        </View>
+                      </Marker>
+                    )}
+                    {lastActivity.route.length > 0 && (
+                      <Marker coordinate={lastActivity.route[lastActivity.route.length - 1]} anchor={{ x: 0.5, y: 0.5 }}>
+                        <View style={{ alignItems: 'center' }}>
+                          <View style={{
+                            backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 6,
+                            paddingHorizontal: 6, paddingVertical: 2, marginBottom: 4,
+                          }}>
+                            <Text style={{ color: '#FF1744', fontSize: 9, fontWeight: '700' }}>ARRIVÉE</Text>
+                          </View>
+                          <View style={{
+                            width: 14, height: 14, borderRadius: 7,
+                            backgroundColor: '#FF1744', borderWidth: 2, borderColor: '#FFF',
+                          }} />
+                        </View>
+                      </Marker>
+                    )}
+                  </MapView>
+
+                  {/* Label distance sur la carte */}
+                  <View style={{
+                    position: 'absolute', bottom: wp(8), left: wp(8),
+                    backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: wp(8),
+                    paddingHorizontal: wp(10), paddingVertical: wp(5),
+                    flexDirection: 'row', alignItems: 'center', gap: wp(6),
+                  }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#00D984' }} />
+                    <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '700' }}>
+                      {lastActivity.distance}
+                    </Text>
+                  </View>
+                </View>
+              )}
 
               {/* ══ STATS GPS ENRICHIES ══ */}
               {lastActivity && lastActivity.isGPS && (
