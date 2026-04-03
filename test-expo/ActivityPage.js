@@ -49,24 +49,166 @@ const formatDistance = (meters) => {
 
 // ── Activity data ────────────────────────────────────────────────────────────
 const ACTIVITY_DATA = {
-  marche: { kcal_per_hour: 280, icon: '🚶', label: 'Marche', color: '#00D984', km_per_hour: 5, water_per_hour_ml: 400 },
-  course: { kcal_per_hour: 700, icon: '🏃', label: 'Course', color: '#00D984', km_per_hour: 8, water_per_hour_ml: 900 },
-  velo: { kcal_per_hour: 500, icon: '🚴', label: 'Vélo', color: '#4DA6FF', water_per_hour_ml: 600 },
-  natation: { kcal_per_hour: 600, icon: '🏊', label: 'Natation', color: '#00BCD4', water_per_hour_ml: 700 },
-  musculation: { kcal_per_hour: 400, icon: '🏋️', label: 'Musculation', color: '#FF6B6B', water_per_hour_ml: 500 },
-  yoga: { kcal_per_hour: 200, icon: '🧘', label: 'Yoga', color: '#B39DDB', water_per_hour_ml: 300 },
-  corde: { kcal_per_hour: 800, icon: '⏭', label: 'Corde à sauter', color: '#FFD93D', water_per_hour_ml: 800 },
-  football: { kcal_per_hour: 600, icon: '⚽', label: 'Football', color: '#66BB6A', water_per_hour_ml: 700 },
-  basketball: { kcal_per_hour: 650, icon: '🏀', label: 'Basketball', color: '#FF7043', water_per_hour_ml: 750 },
-  danse: { kcal_per_hour: 450, icon: '💃', label: 'Danse', color: '#EC407A', water_per_hour_ml: 500 },
-  tennis: { kcal_per_hour: 550, icon: '🎾', label: 'Tennis', color: '#CDDC39', water_per_hour_ml: 650 },
-  boxe: { kcal_per_hour: 700, icon: '🥊', label: 'Boxe', color: '#E53935', water_per_hour_ml: 800 },
-  randonnee: { kcal_per_hour: 400, icon: '🥾', label: 'Randonnée', color: '#8D6E63', water_per_hour_ml: 550 },
-  escalade: { kcal_per_hour: 650, icon: '🧗', label: 'Escalade', color: '#78909C', water_per_hour_ml: 600 },
-  spinning: { kcal_per_hour: 700, icon: '🚲', label: 'Spinning', color: '#FF5722', water_per_hour_ml: 750 },
-  hiit: { kcal_per_hour: 750, icon: '🔥', label: 'HIIT', color: '#FF1744', water_per_hour_ml: 850 },
-  pilates: { kcal_per_hour: 250, icon: '🤸', label: 'Pilates', color: '#CE93D8', water_per_hour_ml: 350 },
-  badminton: { kcal_per_hour: 450, icon: '🏸', label: 'Badminton', color: '#26C6DA', water_per_hour_ml: 550 },
+  marche: { kcal_per_hour: 280, icon: '🚶', label: 'Marche', labelEN: 'Walk', color: '#00D984', km_per_hour: 5, water_per_hour_ml: 400 },
+  course: { kcal_per_hour: 700, icon: '🏃', label: 'Course', labelEN: 'Run', color: '#00D984', km_per_hour: 8, water_per_hour_ml: 900 },
+  velo: { kcal_per_hour: 500, icon: '🚴', label: 'Vélo', labelEN: 'Cycling', color: '#4DA6FF', water_per_hour_ml: 600 },
+  natation: { kcal_per_hour: 600, icon: '🏊', label: 'Natation', labelEN: 'Swimming', color: '#00BCD4', water_per_hour_ml: 700 },
+  musculation: { kcal_per_hour: 400, icon: '🏋️', label: 'Musculation', labelEN: 'Weight training', color: '#FF6B6B', water_per_hour_ml: 500 },
+  yoga: { kcal_per_hour: 200, icon: '🧘', label: 'Yoga', labelEN: 'Yoga', color: '#B39DDB', water_per_hour_ml: 300 },
+  corde: { kcal_per_hour: 800, icon: '⏭', label: 'Corde à sauter', labelEN: 'Jump rope', color: '#FFD93D', water_per_hour_ml: 800 },
+  football: { kcal_per_hour: 600, icon: '⚽', label: 'Football', labelEN: 'Football', color: '#66BB6A', water_per_hour_ml: 700 },
+  basketball: { kcal_per_hour: 650, icon: '🏀', label: 'Basketball', labelEN: 'Basketball', color: '#FF7043', water_per_hour_ml: 750 },
+  danse: { kcal_per_hour: 450, icon: '💃', label: 'Danse', labelEN: 'Dance', color: '#EC407A', water_per_hour_ml: 500 },
+  tennis: { kcal_per_hour: 550, icon: '🎾', label: 'Tennis', labelEN: 'Tennis', color: '#CDDC39', water_per_hour_ml: 650 },
+  boxe: { kcal_per_hour: 700, icon: '🥊', label: 'Boxe', labelEN: 'Boxing', color: '#E53935', water_per_hour_ml: 800 },
+  randonnee: { kcal_per_hour: 400, icon: '🥾', label: 'Randonnée', labelEN: 'Hiking', color: '#8D6E63', water_per_hour_ml: 550 },
+  escalade: { kcal_per_hour: 650, icon: '🧗', label: 'Escalade', labelEN: 'Climbing', color: '#78909C', water_per_hour_ml: 600 },
+  spinning: { kcal_per_hour: 700, icon: '🚲', label: 'Spinning', labelEN: 'Spinning', color: '#FF5722', water_per_hour_ml: 750 },
+  hiit: { kcal_per_hour: 750, icon: '🔥', label: 'HIIT', labelEN: 'HIIT', color: '#FF1744', water_per_hour_ml: 850 },
+  pilates: { kcal_per_hour: 250, icon: '🤸', label: 'Pilates', labelEN: 'Pilates', color: '#CE93D8', water_per_hour_ml: 350 },
+  badminton: { kcal_per_hour: 450, icon: '🏸', label: 'Badminton', labelEN: 'Badminton', color: '#26C6DA', water_per_hour_ml: 550 },
+};
+
+// ── Translations FR/EN ──────────────────────────────────────────────────────
+var T = {
+  FR: {
+    activity: 'ACTIVITÉ',
+    today: "Aujourd'hui",
+    burned: 'BRÛLÉ',
+    toBurn: 'À BRÛLER',
+    time: 'TEMPS',
+    waterLost: 'EAU PERDUE',
+    weeklyObj: 'Objectif activité hebdomadaire · Recommandation OMS',
+    walk: 'Marche',
+    run: 'Course',
+    roundTrip: 'Aller/Retour',
+    roundTripX2: 'Aller/Retour ×2',
+    normalSpeed: 'vitesse norm.',
+    normalPace: 'allure norm.',
+    validate: 'Valider',
+    added: 'AJOUTÉ ! +5 Lix',
+    live: 'LIVE',
+    otherActivities: 'Autres activités',
+    seeMore: 'Voir plus d\'activités',
+    more: 'de plus',
+    reduce: 'Réduire',
+    todayHistory: "Aujourd'hui",
+    noActivity: 'Aucune activité aujourd\'hui — commencez par une marche !',
+    recommendation: 'RECOMMANDATION',
+    inObjective: 'Vous êtes dans votre objectif',
+    walkKeeps: 'Une petite marche de 15 min maintient votre métabolisme actif',
+    toCompensate: 'kcal à compenser',
+    bravo: 'Bravo !',
+    niceWalk: 'Belle marche terminée',
+    niceRun: 'Belle course terminée',
+    sessionOf: 'Session de',
+    finished: 'terminée',
+    distance: 'Distance',
+    duration: 'Durée',
+    calories: 'Calories',
+    waterLostLabel: 'Eau perdue',
+    avgSpeed: 'Vitesse moy.',
+    equivalent: 'Équivalent de',
+    burned2: 'brûlé',
+    weekOms: 'Objectif OMS cette semaine',
+    still: 'encore',
+    continueBtn: 'Continuer',
+    bonusObtained: 'Bonus Lix du jour obtenu !',
+    bonusFirst: '+5 Lix pour votre première activité du jour',
+    delete: 'Supprimer',
+    deleteConfirm: 'Voulez-vous supprimer cette activité ?',
+    cancel: 'Annuler',
+    intensity: 'INTENSITÉ',
+    light: 'Léger',
+    moderate: 'Modéré',
+    intense: 'Intense',
+    estimate: 'Estimation',
+    add: 'Ajouter',
+    scienceNote: 'Estimation basée sur les valeurs MET du Compendium of Physical Activities (Ainsworth et al., 2011) et les recommandations OMS.',
+    liveTitle: 'Mode Live GPS',
+    liveDesc: 'Suivez votre parcours en temps réel avec le GPS de votre téléphone.',
+    liveAvailable: 'DISPONIBLE EN VERSION BUILD :',
+    liveUnderstood: 'Compris, j\'ai hâte !',
+    myProfile: 'Mon Profil',
+    energy: 'énergie',
+    uses: 'uses',
+    perActivity: 'XP par activité enregistrée',
+    hold: 'MAINTENIR',
+    startNow: 'Faire cette activité maintenant',
+    durationLabel: 'DURÉE',
+    activityLabel: 'Activité',
+    durationSmall: 'Durée',
+    distanceSmall: 'Distance',
+  },
+  EN: {
+    activity: 'ACTIVITY',
+    today: 'Today',
+    burned: 'BURNED',
+    toBurn: 'TO BURN',
+    time: 'TIME',
+    waterLost: 'WATER LOST',
+    weeklyObj: 'Weekly activity goal · WHO Recommendation',
+    walk: 'Walk',
+    run: 'Run',
+    roundTrip: 'Round trip',
+    roundTripX2: 'Round trip ×2',
+    normalSpeed: 'normal speed',
+    normalPace: 'normal pace',
+    validate: 'Confirm',
+    added: 'ADDED! +5 Lix',
+    live: 'LIVE',
+    otherActivities: 'Other activities',
+    seeMore: 'See more activities',
+    more: 'more',
+    reduce: 'Collapse',
+    todayHistory: 'Today',
+    noActivity: 'No activity today — start with a walk!',
+    recommendation: 'RECOMMENDATION',
+    inObjective: 'You\'re on track',
+    walkKeeps: 'A 15 min walk keeps your metabolism active',
+    toCompensate: 'kcal to burn',
+    bravo: 'Well done!',
+    niceWalk: 'Great walk completed',
+    niceRun: 'Great run completed',
+    sessionOf: 'Session of',
+    finished: 'completed',
+    distance: 'Distance',
+    duration: 'Duration',
+    calories: 'Calories',
+    waterLostLabel: 'Water lost',
+    avgSpeed: 'Avg speed',
+    equivalent: 'Equivalent of',
+    burned2: 'burned',
+    weekOms: 'WHO weekly goal',
+    still: 'still',
+    continueBtn: 'Continue',
+    bonusObtained: 'Daily Lix bonus earned!',
+    bonusFirst: '+5 Lix for your first activity today',
+    delete: 'Delete',
+    deleteConfirm: 'Delete this activity?',
+    cancel: 'Cancel',
+    intensity: 'INTENSITY',
+    light: 'Light',
+    moderate: 'Moderate',
+    intense: 'Intense',
+    estimate: 'Estimate',
+    add: 'Add',
+    scienceNote: 'Estimate based on MET values from the Compendium of Physical Activities (Ainsworth et al., 2011) and WHO recommendations.',
+    liveTitle: 'Live GPS Mode',
+    liveDesc: 'Track your route in real-time using your phone\'s GPS.',
+    liveAvailable: 'AVAILABLE IN BUILD VERSION:',
+    liveUnderstood: 'Got it, can\'t wait!',
+    myProfile: 'My Profile',
+    energy: 'energy',
+    uses: 'uses',
+    perActivity: 'XP per logged activity',
+    hold: 'HOLD',
+    startNow: 'Start this activity now',
+    durationLabel: 'DURATION',
+    activityLabel: 'Activity',
+    durationSmall: 'Duration',
+    distanceSmall: 'Distance',
+  }
 };
 
 const RUN_FLAGS = [
@@ -661,7 +803,7 @@ const ModePill = ({ mode, onToggle, accentColor }) => (
 );
 
 // ── Sport Card (for grid) ────────────────────────────────────────────────────
-const SportCard = ({ sportKey, onPress }) => {
+const SportCard = ({ sportKey, onPress, userLang }) => {
   const sport = ACTIVITY_DATA[sportKey];
   return (
     <MetalCard
@@ -678,7 +820,7 @@ const SportCard = ({ sportKey, onPress }) => {
           color: '#EAEEF3', fontSize: fp(10), fontWeight: '700',
           marginTop: wp(4), textAlign: 'center',
         }}>
-          {sport.label}
+          {userLang === 'EN' ? sport.labelEN : sport.label}
         </Text>
         <Text style={{
           color: sport.color, fontSize: fp(8), fontWeight: '600',
@@ -692,7 +834,7 @@ const SportCard = ({ sportKey, onPress }) => {
 };
 
 // ── Sport Modal ──────────────────────────────────────────────────────────────
-const SportModal = ({ visible, sportKey, onClose, onSave }) => {
+const SportModal = ({ visible, sportKey, onClose, onSave, userLang }) => {
   const [duration, setDuration] = useState(30);
   const [intensity, setIntensity] = useState('modere');
 
@@ -702,10 +844,11 @@ const SportModal = ({ visible, sportKey, onClose, onSave }) => {
   const calories = Math.round((duration / 60) * sport.kcal_per_hour * multiplier);
   const waterLost = Math.round((duration / 60) * sport.water_per_hour_ml * multiplier);
 
+  var lang = userLang || 'FR';
   const intensities = [
-    { key: 'leger', label: 'Léger', mult: 0.7 },
-    { key: 'modere', label: 'Modéré', mult: 1.0 },
-    { key: 'intense', label: 'Intense', mult: 1.3 },
+    { key: 'leger', label: T[lang].light, mult: 0.7 },
+    { key: 'modere', label: T[lang].moderate, mult: 1.0 },
+    { key: 'intense', label: T[lang].intense, mult: 1.3 },
   ];
 
   return (
@@ -727,7 +870,7 @@ const SportModal = ({ visible, sportKey, onClose, onSave }) => {
                   color: '#EAEEF3', fontSize: fp(16), fontWeight: '800',
                   letterSpacing: 1, textTransform: 'uppercase',
                 }}>
-                  {sport.label}
+                  {lang === 'EN' ? sport.labelEN : sport.label}
                 </Text>
                 <Pressable onPress={onClose} style={{ marginLeft: 'auto' }}>
                   <Ionicons name="close-circle" size={wp(22)} color="#555E6C" />
@@ -736,7 +879,7 @@ const SportModal = ({ visible, sportKey, onClose, onSave }) => {
 
               {/* Duration slider */}
               <Text style={{ color: '#8892A0', fontSize: fp(10), fontWeight: '600', marginBottom: wp(6) }}>
-                DURÉE : {duration} min
+                {T[lang].durationLabel} : {duration} min
               </Text>
               <View style={{
                 flexDirection: 'row', flexWrap: 'wrap', gap: wp(4), marginBottom: wp(12),
@@ -765,7 +908,7 @@ const SportModal = ({ visible, sportKey, onClose, onSave }) => {
 
               {/* Intensity */}
               <Text style={{ color: '#8892A0', fontSize: fp(10), fontWeight: '600', marginBottom: wp(6) }}>
-                INTENSITÉ
+                {T[lang].intensity}
               </Text>
               <View style={{ flexDirection: 'row', gap: wp(6), marginBottom: wp(14) }}>
                 {intensities.map((int) => (
@@ -798,7 +941,7 @@ const SportModal = ({ visible, sportKey, onClose, onSave }) => {
                 backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(10),
               }}>
                 <Text style={{ color: '#8892A0', fontSize: fp(10), fontWeight: '600' }}>
-                  Estimation
+                  {T[lang].estimate}
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
                   <Text style={{ color: '#FF8C42', fontSize: fp(20), fontWeight: '900' }}>
@@ -824,7 +967,7 @@ const SportModal = ({ visible, sportKey, onClose, onSave }) => {
                   fontStyle: 'italic',
                   lineHeight: fp(12),
                 }}>
-                  Estimation basée sur les valeurs MET du Compendium of Physical Activities (Ainsworth et al., 2011) et les recommandations OMS.
+                  {T[lang].scienceNote}
                 </Text>
               </View>
 
@@ -838,7 +981,7 @@ const SportModal = ({ visible, sportKey, onClose, onSave }) => {
                 }}
               >
                 <Text style={{ color: '#000', fontSize: fp(12), fontWeight: '800' }}>
-                  ✓ Ajouter — {calories} kcal
+                  {String.fromCodePoint(0x2713)} {T[lang].add} — {calories} kcal
                 </Text>
               </TouchableOpacity>
             </View>
@@ -866,10 +1009,8 @@ const ActivityPage = ({ onNavigate }) => {
   const [walkRoundTrip, setWalkRoundTrip] = useState(false);
   const [walkSaved, setWalkSaved] = useState(false);
 
-  // Walk knob controls
+  // Walk controls
   const walkIntervalRef = useRef(null);
-  const walkRotateAnimLeft = useRef(new Animated.Value(0)).current;
-  const walkRotateAnimRight = useRef(new Animated.Value(0)).current;
   const walkSpeedRef = useRef(2);
   const walkHoldStartRef = useRef(0);
 
@@ -878,8 +1019,6 @@ const ActivityPage = ({ onNavigate }) => {
   const [runCanvasW, setRunCanvasW] = useState(280);
   const [runRoundTrip, setRunRoundTrip] = useState(false);
   const runIntervalRef = useRef(null);
-  const runRotateAnimLeft = useRef(new Animated.Value(0)).current;
-  const runRotateAnimRight = useRef(new Animated.Value(0)).current;
   const runSpeedRef = useRef(2);
   const runHoldStartRef = useRef(0);
   const isRunMovingRef = useRef(false);
@@ -892,9 +1031,6 @@ const ActivityPage = ({ onNavigate }) => {
   // Sport modal
   const [modalSport, setModalSport] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-
-  // Show all activities toggle
-  const [showAllActivities, setShowAllActivities] = useState(false);
 
   // Live GPS placeholder
   const [showLivePlaceholder, setShowLivePlaceholder] = useState(false);
@@ -923,6 +1059,7 @@ const ActivityPage = ({ onNavigate }) => {
   const [userNameAvatar, setUserNameAvatar] = useState('');
   const [lixBalance, setLixBalance] = useState(0);
   const [userEnergy, setUserEnergy] = useState(20);
+  var _lang = useState('FR'); var userLang = _lang[0]; var setUserLang = _lang[1];
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownAnim = useRef(new Animated.Value(0)).current;
 
@@ -1083,10 +1220,11 @@ const ActivityPage = ({ onNavigate }) => {
     // Avatar profil + Lix balance
     (async () => {
       try {
-        const { data: profile } = await supabase.from('users_profile').select('full_name, lix_balance').eq('user_id', TEST_USER_ID).maybeSingle();
+        const { data: profile } = await supabase.from('users_profile').select('full_name, lix_balance, language').eq('user_id', TEST_USER_ID).maybeSingle();
         if (profile) {
           setUserNameAvatar(profile.full_name || '');
           setLixBalance(profile.lix_balance || 0);
+          if (profile.language) setUserLang(profile.language);
         }
       } catch (e) {}
     })();
@@ -1367,7 +1505,7 @@ const ActivityPage = ({ onNavigate }) => {
       setRunSaved(true);
       setLastActivity({
         type: 'run',
-        name: 'Course',
+        name: T[userLang].run,
         distance: runDistStr,
         duration: runDuration,
         kcal: runCalories,
@@ -1404,11 +1542,11 @@ const ActivityPage = ({ onNavigate }) => {
 
   const handleDeleteActivity = (activity) => {
     Alert.alert(
-      'Supprimer',
-      'Voulez-vous supprimer cette activité ?',
+      T[userLang].delete,
+      T[userLang].deleteConfirm,
       [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Supprimer', style: 'destructive', onPress: () => deleteActivity(activity.id) },
+        { text: T[userLang].cancel, style: 'cancel' },
+        { text: T[userLang].delete, style: 'destructive', onPress: () => deleteActivity(activity.id) },
       ]
     );
   };
@@ -1435,7 +1573,6 @@ const ActivityPage = ({ onNavigate }) => {
   // ── Walk knob interaction ─────────────────────────────────────────────
   const startWalkMoving = (direction) => {
     setWalkGlow(true);
-    const activeRotateAnim = direction === 1 ? walkRotateAnimRight : walkRotateAnimLeft;
     walkHoldStartRef.current = Date.now();
     walkSpeedRef.current = 2;
     walkIntervalRef.current = setInterval(() => {
@@ -1449,7 +1586,6 @@ const ActivityPage = ({ onNavigate }) => {
         const maxS = WALK_SCENE_W - walkCanvasW;
         return Math.max(0, Math.min(prev + direction * walkSpeedRef.current, maxS));
       });
-      activeRotateAnim.setValue((activeRotateAnim.__getValue() || 0) + direction * 10);
     }, 50);
   };
   const stopWalkMoving = () => {
@@ -1467,7 +1603,6 @@ const ActivityPage = ({ onNavigate }) => {
   // ── Run knob interaction ──────────────────────────────────────────────
   const startRunMoving = (direction) => {
     setRunGlow(true);
-    const activeRotateAnim = direction === 1 ? runRotateAnimRight : runRotateAnimLeft;
     runHoldStartRef.current = Date.now();
     runSpeedRef.current = 2;
     isRunMovingRef.current = true;
@@ -1483,7 +1618,6 @@ const ActivityPage = ({ onNavigate }) => {
         const maxS = RUN_SCENE_W - runCanvasW;
         return Math.max(0, Math.min(prev + direction * runSpeedRef.current, maxS));
       });
-      activeRotateAnim.setValue((activeRotateAnim.__getValue() || 0) + direction * 10);
     }, 50);
   };
   const stopRunMoving = () => {
@@ -1514,23 +1648,6 @@ const ActivityPage = ({ onNavigate }) => {
     });
   }, [runScrollOffset]);
 
-  const runKnobRotateLeft = runRotateAnimLeft.interpolate({
-    inputRange: [-3600, 3600],
-    outputRange: ['-3600deg', '3600deg'],
-  });
-  const runKnobRotateRight = runRotateAnimRight.interpolate({
-    inputRange: [-3600, 3600],
-    outputRange: ['-3600deg', '3600deg'],
-  });
-
-  const walkKnobRotateLeft = walkRotateAnimLeft.interpolate({
-    inputRange: [-3600, 3600],
-    outputRange: ['-3600deg', '3600deg'],
-  });
-  const walkKnobRotateRight = walkRotateAnimRight.interpolate({
-    inputRange: [-3600, 3600],
-    outputRange: ['-3600deg', '3600deg'],
-  });
 
   // ── RENDER ─────────────────────────────────────────────────────────────
   return (
@@ -1549,7 +1666,7 @@ const ActivityPage = ({ onNavigate }) => {
             <Text style={{
               color: '#EAEEF3', fontSize: fp(20), fontWeight: '800', letterSpacing: 2,
             }}>
-              ACTIVITÉ
+              {T[userLang].activity}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
               <View style={{
@@ -1559,12 +1676,18 @@ const ActivityPage = ({ onNavigate }) => {
                 borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
               }}>
                 <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '600' }}>
-                  Aujourd'hui
+                  {T[userLang].today}
                 </Text>
                 <Text style={{ color: '#8892A0', fontSize: fp(11), marginLeft: 6 }}>
                   {todayDateStr}
                 </Text>
               </View>
+              <AvatarButton
+                activeChar={activeChar}
+                userName={userNameAvatar}
+                onPress={function() { if (onNavigate) onNavigate('profile'); }}
+                size={wp(28)}
+              />
               {/* Badge compact Lix + dropdown */}
               <TouchableOpacity onPress={toggleDropdown} style={{
                 flexDirection: 'row', alignItems: 'center',
@@ -1606,12 +1729,12 @@ const ActivityPage = ({ onNavigate }) => {
                     <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
                   </Svg>
                   <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{userEnergy}</Text>
-                  <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>énergie</Text>
+                  <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>{T[userLang].energy}</Text>
                 </TouchableOpacity>
                 <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
                 <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
                   <Text style={{ fontSize: 18 }}>{activeChar?.slug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[activeChar.slug] || '👤' : '👤'}</Text>
-                  <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>Mon Profil</Text>
+                  <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>{T[userLang].myProfile}</Text>
                   <Text style={{ color: '#888', fontSize: 14 }}>→</Text>
                 </TouchableOpacity>
               </Animated.View>
@@ -1662,14 +1785,14 @@ const ActivityPage = ({ onNavigate }) => {
                             )}
                           </View>
                           <Text style={{ color: '#8892A0', fontSize: fp(8), marginTop: wp(1) }}>
-                            +{pct}% XP par activité enregistrée
+                            +{pct}% {T[userLang].perActivity}
                           </Text>
                         </View>
                         <View style={{ alignItems: 'flex-end' }}>
                           <Text style={{ color: '#D4AF37', fontSize: fp(12), fontWeight: '800' }}>
                             {activeChar.uses_remaining}/{activeChar.max_uses_per_cycle || 10}
                           </Text>
-                          <Text style={{ color: '#5A6070', fontSize: fp(7) }}>uses</Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(7) }}>{T[userLang].uses}</Text>
                         </View>
                       </View>
                     );
@@ -1717,7 +1840,7 @@ const ActivityPage = ({ onNavigate }) => {
                     <Path d="M12 2C12 2 4 12 4 16C4 20.4183 7.58172 24 12 24C16.4183 24 20 20.4183 20 16C20 12 12 2 12 2Z" fill="#FF8C42" />
                     <Path d="M12 18C10.3431 18 9 16.6569 9 15C9 13 12 9 12 9C12 9 15 13 15 15C15 16.6569 13.6569 18 12 18Z" fill="#FFD93D" />
                   </Svg>
-                  <Text style={{ fontSize: fp(9), color: '#9CA3AF', marginLeft: wp(4), fontWeight: '600' }}>BRÛLÉ</Text>
+                  <Text style={{ fontSize: fp(9), color: '#9CA3AF', marginLeft: wp(4), fontWeight: '600' }}>{T[userLang].burned}</Text>
                 </View>
                 <Text style={{ fontSize: fp(22), fontWeight: '900', color: '#FF8C42' }}>
                   {totalCalories}
@@ -1733,7 +1856,7 @@ const ActivityPage = ({ onNavigate }) => {
                     <Circle cx="12" cy="12" r="10" stroke={caloriesToBurn > 0 ? '#FF6B6B' : '#00D984'} strokeWidth="2" fill="none" />
                     <Path d="M12 6V12L16 14" stroke={caloriesToBurn > 0 ? '#FF6B6B' : '#00D984'} strokeWidth="2" strokeLinecap="round" />
                   </Svg>
-                  <Text style={{ fontSize: fp(9), color: '#9CA3AF', marginLeft: wp(4), fontWeight: '600' }}>À BRÛLER</Text>
+                  <Text style={{ fontSize: fp(9), color: '#9CA3AF', marginLeft: wp(4), fontWeight: '600' }}>{T[userLang].toBurn}</Text>
                 </View>
                 <Text style={{
                   fontSize: fp(22), fontWeight: '900',
@@ -1756,7 +1879,7 @@ const ActivityPage = ({ onNavigate }) => {
                   <Path d="M12 6V12H16" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
                 </Svg>
                 <View style={{ marginLeft: wp(6) }}>
-                  <Text style={{ fontSize: fp(7), color: '#6B7280' }}>TEMPS</Text>
+                  <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{T[userLang].time}</Text>
                   <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFFFFF' }}>
                     {formatDuration(totalDuration)}
                   </Text>
@@ -1768,7 +1891,7 @@ const ActivityPage = ({ onNavigate }) => {
                   <Path d="M12 2L6 12C6 16.4183 8.68629 20 12 20C15.3137 20 18 16.4183 18 12L12 2Z" fill="#4DA6FF" opacity="0.8" />
                 </Svg>
                 <View style={{ marginLeft: wp(6) }}>
-                  <Text style={{ fontSize: fp(7), color: '#6B7280' }}>EAU PERDUE</Text>
+                  <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{T[userLang].waterLost}</Text>
                   <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#4DA6FF' }}>
                     {totalWater} ml
                   </Text>
@@ -1834,7 +1957,7 @@ const ActivityPage = ({ onNavigate }) => {
                 </Text>
               </View>
               <Text style={{ fontSize: fp(8), color: '#6B7280', marginTop: wp(2) }}>
-                Objectif activité hebdomadaire · Recommandation OMS
+                {T[userLang].weeklyObj}
               </Text>
             </View>
 
@@ -1844,7 +1967,7 @@ const ActivityPage = ({ onNavigate }) => {
           </View>
 
           {/* MARCHE — SIDE-SCROLL TAPIS ROULANT */}
-          <SectionTitle title="Marche" style={{ marginTop: wp(4) }} />
+          <SectionTitle title={T[userLang].walk} style={{ marginTop: wp(4) }} />
           <MetalCard style={{
             marginBottom: wp(2),
             borderRadius: wp(14),
@@ -2170,42 +2293,55 @@ const ActivityPage = ({ onNavigate }) => {
                 }}
               >
                 <Text style={{ fontSize: fp(7), color: walkRoundTrip ? '#00D984' : '#6B7280' }}>
-                  {walkRoundTrip ? '↔ Aller/Retour ×2' : '↔ Aller/Retour'}
+                  {walkRoundTrip ? '↔ ' + T[userLang].roundTripX2 : '↔ ' + T[userLang].roundTrip}
                 </Text>
               </TouchableOpacity>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8) }}>
-                <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}>
-                  <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
-                    <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                      <View style={{ position: 'absolute', top: 0, left: wp(8), right: wp(8), height: wp(12), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.06)' }} />
-                      <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateLeft }] }}>
-                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
-                        </View>
-                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                      </Animated.View>
-                      <View style={{ position: 'absolute', bottom: wp(6) }}>
-                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)' }}>◀</Text>
-                      </View>
-                    </View>
-                  </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(12) }}>
+                <Pressable
+                  onPressIn={function() { startWalkMoving(-1); }}
+                  onPressOut={stopWalkMoving}
+                  style={function(state) {
+                    return {
+                      width: wp(52), height: wp(52), borderRadius: wp(26),
+                      backgroundColor: state.pressed ? '#2A303B' : '#1A1D22',
+                      borderWidth: 1.5,
+                      borderColor: state.pressed ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.12)',
+                      alignItems: 'center', justifyContent: 'center',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.5, shadowRadius: 4, elevation: 5,
+                    };
+                  }}
+                >
+                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24">
+                    <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </Svg>
                 </Pressable>
-                <Pressable onPressIn={() => startWalkMoving(1)} onPressOut={stopWalkMoving}>
-                  <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
-                    <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                      <View style={{ position: 'absolute', top: 0, left: wp(8), right: wp(8), height: wp(12), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.06)' }} />
-                      <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: walkKnobRotateRight }] }}>
-                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
-                        </View>
-                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                      </Animated.View>
-                      <View style={{ position: 'absolute', bottom: wp(6) }}>
-                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)' }}>▶</Text>
-                      </View>
-                    </View>
-                  </View>
+                <View style={{ alignItems: 'center', justifyContent: 'center', marginHorizontal: wp(4) }}>
+                  <Text style={{ fontSize: fp(7), color: '#555E6C', fontWeight: '600' }}>
+                    {T[userLang].hold}
+                  </Text>
+                </View>
+                <Pressable
+                  onPressIn={function() { startWalkMoving(1); }}
+                  onPressOut={stopWalkMoving}
+                  style={function(state) {
+                    return {
+                      width: wp(52), height: wp(52), borderRadius: wp(26),
+                      backgroundColor: state.pressed ? '#2A303B' : '#1A1D22',
+                      borderWidth: 1.5,
+                      borderColor: state.pressed ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.12)',
+                      alignItems: 'center', justifyContent: 'center',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.5, shadowRadius: 4, elevation: 5,
+                    };
+                  }}
+                >
+                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24">
+                    <Path d="M9 5l7 7-7 7" stroke="#00D984" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </Svg>
                 </Pressable>
               </View>
 
@@ -2213,59 +2349,61 @@ const ActivityPage = ({ onNavigate }) => {
                 <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#00D984' }}>
                   {walkDurStr}
                 </Text>
-                <Text style={{ fontSize: fp(7), color: '#6B7280' }}>vitesse norm.</Text>
+                <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{T[userLang].normalSpeed}</Text>
               </View>
             </View>
 
             {/* Boutons CONFIRMER + LIVE */}
             <View style={{ flexDirection: 'row', gap: wp(8), marginTop: wp(6) }}>
-              <Pressable
-                onPress={async () => {
-                  if (walkCal === 0) return;
-                  const success = await saveActivity('marche',
-                    Math.round(walkDurMin * walkMul),
-                    walkCal,
-                    'modere',
-                    walkWater
-                  );
-                  if (success) {
-                    setWalkSaved(true);
-                    setLastActivity({
-                      type: 'walk',
-                      name: 'Marche',
-                      distance: walkDistStr,
-                      duration: Math.round(walkDurMin * walkMul),
-                      kcal: walkCal,
-                      water: walkWater,
-                      speed: null,
-                    });
-                    setShowPostReport(true);
-                    fetchWeeklyMinutes();
-                    setTimeout(() => {
-                      setWalkSaved(false);
-                      setWalkScrollOffset(0);
-                    }, 1500);
-                  }
-                }}
-                disabled={walkSaved || walkScrollOffset === 0}
-                style={({ pressed }) => ({
-                  flex: 2,
-                  paddingVertical: wp(9),
-                  borderRadius: wp(10),
-                  backgroundColor: walkSaved ? '#00D984' : walkScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                })}
-              >
-                <Text style={{ color: '#1A1D22', fontSize: fp(11), fontWeight: '700' }}>
-                  {walkSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` Valider — ${walkCal} kcal`}
-                </Text>
-              </Pressable>
+              {walkScrollOffset > 0 && (
+                <Pressable
+                  onPress={async () => {
+                    if (walkCal === 0) return;
+                    const success = await saveActivity('marche',
+                      Math.round(walkDurMin * walkMul),
+                      walkCal,
+                      'modere',
+                      walkWater
+                    );
+                    if (success) {
+                      setWalkSaved(true);
+                      setLastActivity({
+                        type: 'walk',
+                        name: T[userLang].walk,
+                        distance: walkDistStr,
+                        duration: Math.round(walkDurMin * walkMul),
+                        kcal: walkCal,
+                        water: walkWater,
+                        speed: null,
+                      });
+                      setShowPostReport(true);
+                      fetchWeeklyMinutes();
+                      setTimeout(() => {
+                        setWalkSaved(false);
+                        setWalkScrollOffset(0);
+                      }, 1500);
+                    }
+                  }}
+                  disabled={walkSaved}
+                  style={({ pressed }) => ({
+                    flex: 2,
+                    paddingVertical: wp(9),
+                    borderRadius: wp(10),
+                    backgroundColor: walkSaved ? '#00D984' : pressed ? '#00B572' : '#00D984',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  })}
+                >
+                  <Text style={{ color: '#1A1D22', fontSize: fp(11), fontWeight: '700' }}>
+                    {walkSaved ? String.fromCodePoint(0x2713) + ' ' + T[userLang].added : String.fromCodePoint(0x2713) + ' ' + T[userLang].validate + ' — ' + walkCal + ' kcal'}
+                  </Text>
+                </Pressable>
+              )}
 
               <TouchableOpacity
                 onPress={() => setShowLivePlaceholder(true)}
                 style={{
-                  flex: 1,
+                  flex: walkScrollOffset > 0 ? 1 : 1,
                   backgroundColor: 'rgba(255,107,107,0.12)',
                   borderRadius: wp(10),
                   borderWidth: 1.5,
@@ -2282,14 +2420,14 @@ const ActivityPage = ({ onNavigate }) => {
                   backgroundColor: '#FF6B6B',
                 }} />
                 <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FF6B6B' }}>
-                  LIVE
+                  {T[userLang].live}
                 </Text>
               </TouchableOpacity>
             </View>
           </MetalCard>
 
           {/* COURSE — SAVANE AFRICAINE + JAGUAR */}
-          <SectionTitle title="Course" style={{ marginTop: wp(12) }} />
+          <SectionTitle title={T[userLang].run} style={{ marginTop: wp(12) }} />
           <MetalCard style={{
             marginBottom: wp(2),
             borderRadius: wp(14),
@@ -2537,42 +2675,55 @@ const ActivityPage = ({ onNavigate }) => {
                 }}
               >
                 <Text style={{ fontSize: fp(7), color: runRoundTrip ? '#00D984' : '#6B7280' }}>
-                  {runRoundTrip ? '↔ Aller/Retour ×2' : '↔ Aller/Retour'}
+                  {runRoundTrip ? '↔ ' + T[userLang].roundTripX2 : '↔ ' + T[userLang].roundTrip}
                 </Text>
               </TouchableOpacity>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8) }}>
-                <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}>
-                  <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
-                    <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                      <View style={{ position: 'absolute', top: 0, left: wp(8), right: wp(8), height: wp(12), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.06)' }} />
-                      <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateLeft }] }}>
-                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
-                        </View>
-                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                      </Animated.View>
-                      <View style={{ position: 'absolute', bottom: wp(6) }}>
-                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)' }}>◀</Text>
-                      </View>
-                    </View>
-                  </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(12) }}>
+                <Pressable
+                  onPressIn={function() { startRunMoving(-1); }}
+                  onPressOut={stopRunMoving}
+                  style={function(state) {
+                    return {
+                      width: wp(52), height: wp(52), borderRadius: wp(26),
+                      backgroundColor: state.pressed ? '#2A303B' : '#1A1D22',
+                      borderWidth: 1.5,
+                      borderColor: state.pressed ? 'rgba(255,140,66,0.4)' : 'rgba(255,255,255,0.12)',
+                      alignItems: 'center', justifyContent: 'center',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.5, shadowRadius: 4, elevation: 5,
+                    };
+                  }}
+                >
+                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24">
+                    <Path d="M15 19l-7-7 7-7" stroke="#FF8C42" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </Svg>
                 </Pressable>
-                <Pressable onPressIn={() => startRunMoving(1)} onPressOut={stopRunMoving}>
-                  <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), padding: wp(3), backgroundColor: '#1A1D22', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 5 }}>
-                    <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: '#2A2F36', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                      <View style={{ position: 'absolute', top: 0, left: wp(8), right: wp(8), height: wp(12), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.06)' }} />
-                      <Animated.View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#1A1A1A', borderWidth: 1.5, borderColor: '#444', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', transform: [{ rotate: runKnobRotateRight }] }}>
-                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#222', borderWidth: 1, borderTopColor: '#3A3A3A', borderLeftColor: '#333', borderRightColor: '#333', borderBottomColor: '#111', justifyContent: 'center', alignItems: 'center' }}>
-                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2A2A2A' }} />
-                        </View>
-                        <View style={{ position: 'absolute', top: 2, width: 1.5, height: 7, backgroundColor: '#C0C0C0', borderRadius: 1, opacity: 0.8 }} />
-                      </Animated.View>
-                      <View style={{ position: 'absolute', bottom: wp(6) }}>
-                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)' }}>▶</Text>
-                      </View>
-                    </View>
-                  </View>
+                <View style={{ alignItems: 'center', justifyContent: 'center', marginHorizontal: wp(4) }}>
+                  <Text style={{ fontSize: fp(7), color: '#555E6C', fontWeight: '600' }}>
+                    {T[userLang].hold}
+                  </Text>
+                </View>
+                <Pressable
+                  onPressIn={function() { startRunMoving(1); }}
+                  onPressOut={stopRunMoving}
+                  style={function(state) {
+                    return {
+                      width: wp(52), height: wp(52), borderRadius: wp(26),
+                      backgroundColor: state.pressed ? '#2A303B' : '#1A1D22',
+                      borderWidth: 1.5,
+                      borderColor: state.pressed ? 'rgba(255,140,66,0.4)' : 'rgba(255,255,255,0.12)',
+                      alignItems: 'center', justifyContent: 'center',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.5, shadowRadius: 4, elevation: 5,
+                    };
+                  }}
+                >
+                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24">
+                    <Path d="M9 5l7 7-7 7" stroke="#FF8C42" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </Svg>
                 </Pressable>
               </View>
 
@@ -2580,33 +2731,35 @@ const ActivityPage = ({ onNavigate }) => {
                 <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#00D984' }}>
                   {runDurStr}
                 </Text>
-                <Text style={{ fontSize: fp(7), color: '#6B7280' }}>allure norm.</Text>
+                <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{T[userLang].normalPace}</Text>
               </View>
             </View>
 
             {/* Boutons CONFIRMER + LIVE */}
             <View style={{ flexDirection: 'row', gap: wp(8), marginTop: wp(6) }}>
-              <Pressable
-                onPress={handleAddRun}
-                disabled={runSaved || runScrollOffset === 0}
-                style={({ pressed }) => ({
-                  flex: 2,
-                  paddingVertical: wp(9),
-                  borderRadius: wp(10),
-                  backgroundColor: runSaved ? '#00D984' : runScrollOffset === 0 ? 'rgba(0,217,132,0.3)' : pressed ? '#00B572' : '#00D984',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                })}
-              >
-                <Text style={{ color: '#1A1D22', fontSize: fp(11), fontWeight: '700' }}>
-                  {runSaved ? String.fromCodePoint(0x2713) + ' AJOUTÉ ! +5 Lix' : String.fromCodePoint(0x2713) + ` Valider — ${runCalories} kcal`}
-                </Text>
-              </Pressable>
+              {runScrollOffset > 0 && (
+                <Pressable
+                  onPress={handleAddRun}
+                  disabled={runSaved}
+                  style={({ pressed }) => ({
+                    flex: 2,
+                    paddingVertical: wp(9),
+                    borderRadius: wp(10),
+                    backgroundColor: runSaved ? '#00D984' : pressed ? '#00B572' : '#00D984',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  })}
+                >
+                  <Text style={{ color: '#1A1D22', fontSize: fp(11), fontWeight: '700' }}>
+                    {runSaved ? String.fromCodePoint(0x2713) + ' ' + T[userLang].added : String.fromCodePoint(0x2713) + ' ' + T[userLang].validate + ' — ' + runCalories + ' kcal'}
+                  </Text>
+                </Pressable>
+              )}
 
               <TouchableOpacity
                 onPress={() => setShowLivePlaceholder(true)}
                 style={{
-                  flex: 1,
+                  flex: runScrollOffset > 0 ? 1 : 1,
                   backgroundColor: 'rgba(255,107,107,0.12)',
                   borderRadius: wp(10),
                   borderWidth: 1.5,
@@ -2623,78 +2776,39 @@ const ActivityPage = ({ onNavigate }) => {
                   backgroundColor: '#FF6B6B',
                 }} />
                 <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FF6B6B' }}>
-                  LIVE
+                  {T[userLang].live}
                 </Text>
               </TouchableOpacity>
             </View>
           </MetalCard>
 
-          {/* OTHER SPORTS GRID */}
-          <SectionTitle title="Autres activités" />
-          <View style={{
-            flexDirection: 'row', flexWrap: 'wrap',
-            paddingHorizontal: wp(14), gap: wp(8),
-          }}>
-            {(showAllActivities ? OTHER_SPORTS : OTHER_SPORTS.slice(0, 4)).map((key) => (
-              <View key={key} style={{ width: (W - wp(14) * 2 - wp(8)) / 2 }}>
-                <SportCard
-                  sportKey={key}
-                  onPress={() => { setModalSport(key); setModalVisible(true); }}
-                />
-              </View>
-            ))}
-          </View>
-
-          {!showAllActivities && (
-            <TouchableOpacity
-              onPress={() => setShowAllActivities(true)}
-              style={{
-                marginHorizontal: wp(16),
-                marginTop: wp(4),
-                marginBottom: wp(12),
-                paddingVertical: wp(12),
-                borderRadius: wp(12),
-                borderWidth: 1,
-                borderColor: 'rgba(0,217,132,0.2)',
-                backgroundColor: 'rgba(0,217,132,0.06)',
-                alignItems: 'center',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                gap: wp(6),
-              }}
-            >
-              <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#00D984' }}>
-                Voir plus d'activités ({OTHER_SPORTS.length - 4} de plus)
-              </Text>
-              <Text style={{ fontSize: fp(12), color: '#00D984' }}>+</Text>
-            </TouchableOpacity>
-          )}
-
-          {showAllActivities && (
-            <TouchableOpacity
-              onPress={() => setShowAllActivities(false)}
-              style={{
-                marginHorizontal: wp(16),
-                marginTop: wp(4),
-                marginBottom: wp(12),
-                paddingVertical: wp(8),
-                alignItems: 'center',
-              }}
-            >
-              <Text style={{ fontSize: fp(11), color: '#6B7280' }}>Réduire ▲</Text>
-            </TouchableOpacity>
-          )}
+          {/* OTHER SPORTS — Horizontal scroll */}
+          <SectionTitle title={T[userLang].otherActivities} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: wp(14), gap: wp(8) }}>
+            {OTHER_SPORTS.map(function(key) {
+              return (
+                <View key={key} style={{ width: wp(100) }}>
+                  <SportCard
+                    sportKey={key}
+                    onPress={function() { setModalSport(key); setModalVisible(true); }}
+                    userLang={userLang}
+                  />
+                </View>
+              );
+            })}
+          </ScrollView>
 
           {/* TODAY'S HISTORY */}
           <View style={{ marginTop: wp(12) }}>
-            <SectionTitle title="Aujourd'hui" />
+            <SectionTitle title={T[userLang].todayHistory} />
           </View>
 
           {todayActivities.length === 0 ? (
             <MetalCard>
               <View style={{ alignItems: 'center', paddingVertical: wp(10) }}>
                 <Text style={{ color: '#555E6C', fontSize: fp(11), fontWeight: '600', textAlign: 'center' }}>
-                  Aucune activité aujourd'hui — commencez par une marche !
+                  {T[userLang].noActivity}
                 </Text>
               </View>
             </MetalCard>
@@ -2767,7 +2881,7 @@ const ActivityPage = ({ onNavigate }) => {
                 <Text style={{
                   fontSize: fp(16), fontWeight: '900', color: '#FFFFFF', letterSpacing: 1,
                 }}>
-                  RECOMMANDATION
+                  {T[userLang].recommendation}
                 </Text>
               </View>
 
@@ -2806,19 +2920,19 @@ const ActivityPage = ({ onNavigate }) => {
                     padding: wp(10),
                   }}>
                     <View style={{ alignItems: 'center' }}>
-                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Activité</Text>
+                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{T[userLang].activityLabel}</Text>
                       <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFFFFF' }}>
                         {recommendation.activity}
                       </Text>
                     </View>
                     <View style={{ alignItems: 'center' }}>
-                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Durée</Text>
+                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{T[userLang].durationSmall}</Text>
                       <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FF8C42' }}>
                         {recommendation.duration}
                       </Text>
                     </View>
                     <View style={{ alignItems: 'center' }}>
-                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Distance</Text>
+                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{T[userLang].distanceSmall}</Text>
                       <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#4DA6FF' }}>
                         {recommendation.distance}
                       </Text>
@@ -2834,6 +2948,25 @@ const ActivityPage = ({ onNavigate }) => {
                     🧠 {recommendation.moodNote}
                   </Text>
                 )}
+
+                <TouchableOpacity
+                  onPress={function() {
+                    if (recommendation.activity === T[userLang].walk || recommendation.activity === 'Les deux' || recommendation.activity === 'Marche') {
+                      var targetDist = parseFloat(recommendation.distance) * 1000;
+                      var targetOffset = (targetDist / WALK_MAX_DIST) * (WALK_SCENE_W - walkCanvasW);
+                      setWalkScrollOffset(Math.min(targetOffset, WALK_SCENE_W - walkCanvasW));
+                    }
+                  }}
+                  style={{
+                    marginTop: wp(10), paddingVertical: wp(10),
+                    borderRadius: wp(10), backgroundColor: recommendation.color,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: '#000', fontSize: fp(11), fontWeight: '700' }}>
+                    {T[userLang].startNow}
+                  </Text>
+                </TouchableOpacity>
 
                 <Text style={{
                   fontSize: fp(7), color: '#4A4F55', textAlign: 'center',
@@ -2861,7 +2994,7 @@ const ActivityPage = ({ onNavigate }) => {
               gap: wp(6),
             }}>
               <Text style={{ fontSize: fp(11), color: '#00D984', fontWeight: '600' }}>
-                ✅ Bonus Lix du jour obtenu !
+                {String.fromCodePoint(0x2705)} {T[userLang].bonusObtained}
               </Text>
             </View>
           ) : (
@@ -2880,7 +3013,7 @@ const ActivityPage = ({ onNavigate }) => {
             }}>
               <Text style={{ fontSize: fp(14) }}>{String.fromCodePoint(0x1F3C6)}</Text>
               <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#D4AF37' }}>
-                +5 Lix pour votre première activité du jour
+                {T[userLang].bonusFirst}
               </Text>
             </View>
           )}
@@ -2899,6 +3032,7 @@ const ActivityPage = ({ onNavigate }) => {
         sportKey={modalSport}
         onClose={() => setModalVisible(false)}
         onSave={handleSportSave}
+        userLang={userLang}
       />
 
       {/* Live GPS Placeholder Modal */}
@@ -2932,14 +3066,14 @@ const ActivityPage = ({ onNavigate }) => {
               fontSize: fp(18), fontWeight: '800', color: '#FFFFFF',
               textAlign: 'center', marginBottom: wp(6),
             }}>
-              Mode Live GPS
+              {T[userLang].liveTitle}
             </Text>
 
             <Text style={{
               fontSize: fp(11), color: '#9CA3AF', textAlign: 'center',
               lineHeight: fp(16), marginBottom: wp(16),
             }}>
-              Suivez votre parcours en temps réel avec le GPS de votre téléphone. LIXUM trace votre chemin, mesure la distance parcourue et calcule précisément les calories brûlées et l'eau perdue.
+              {T[userLang].liveDesc}
             </Text>
 
             {/* Ce qui sera disponible */}
@@ -2948,7 +3082,7 @@ const ActivityPage = ({ onNavigate }) => {
               padding: wp(14), width: '100%', marginBottom: wp(16),
             }}>
               <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#D4AF37', marginBottom: wp(8) }}>
-                DISPONIBLE EN VERSION BUILD :
+                {T[userLang].liveAvailable}
               </Text>
               <Text style={{ fontSize: fp(10), color: '#D1D5DB', lineHeight: fp(16) }}>
                 • Suivi GPS en temps réel du parcours{'\n'}
@@ -2986,7 +3120,7 @@ const ActivityPage = ({ onNavigate }) => {
               }}
             >
               <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#1A1D22' }}>
-                Compris, j'ai hâte !
+                {T[userLang].liveUnderstood}
               </Text>
             </TouchableOpacity>
           </View>
@@ -3016,16 +3150,16 @@ const ActivityPage = ({ onNavigate }) => {
                 fontSize: fp(18), fontWeight: '800', color: '#00D984',
                 marginBottom: wp(4),
               }}>
-                Bravo !
+                {T[userLang].bravo}
               </Text>
 
               <Text style={{
                 fontSize: fp(11), color: '#9CA3AF', textAlign: 'center',
                 marginBottom: wp(16),
               }}>
-                {lastActivity.type === 'walk' ? 'Belle marche' :
-                 lastActivity.type === 'run' ? 'Belle course' :
-                 `Session de ${lastActivity.name}`} terminée
+                {lastActivity.type === 'walk' ? T[userLang].niceWalk :
+                 lastActivity.type === 'run' ? T[userLang].niceRun :
+                 T[userLang].sessionOf + ' ' + lastActivity.name + ' ' + T[userLang].finished}
               </Text>
 
               {/* ══════ RÉSULTATS HOOKS POUVOIRS ══════ */}
@@ -3101,7 +3235,7 @@ const ActivityPage = ({ onNavigate }) => {
               }}>
                 {lastActivity.distance ? (
                   <View style={{ alignItems: 'center', minWidth: '30%', marginBottom: wp(8) }}>
-                    <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Distance</Text>
+                    <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{T[userLang].distance}</Text>
                     <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFFFFF' }}>
                       {lastActivity.distance}
                     </Text>
@@ -3109,14 +3243,14 @@ const ActivityPage = ({ onNavigate }) => {
                 ) : null}
 
                 <View style={{ alignItems: 'center', minWidth: '30%', marginBottom: wp(8) }}>
-                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Durée</Text>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{T[userLang].duration}</Text>
                   <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFFFFF' }}>
                     {lastActivity.duration} min
                   </Text>
                 </View>
 
                 <View style={{ alignItems: 'center', minWidth: '30%', marginBottom: wp(8) }}>
-                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Calories</Text>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{T[userLang].calories}</Text>
                   <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FF8C42' }}>
                     {lastActivity.kcal} kcal
                   </Text>
@@ -3124,7 +3258,7 @@ const ActivityPage = ({ onNavigate }) => {
 
                 {lastActivity.water ? (
                   <View style={{ alignItems: 'center', minWidth: '30%' }}>
-                    <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Eau perdue</Text>
+                    <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{T[userLang].waterLostLabel}</Text>
                     <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#4DA6FF' }}>
                       {lastActivity.water} ml
                     </Text>
@@ -3133,7 +3267,7 @@ const ActivityPage = ({ onNavigate }) => {
 
                 {lastActivity.speed ? (
                   <View style={{ alignItems: 'center', minWidth: '30%' }}>
-                    <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Vitesse moy.</Text>
+                    <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{T[userLang].avgSpeed}</Text>
                     <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#D4AF37' }}>
                       {lastActivity.speed} km/h
                     </Text>
@@ -3161,14 +3295,14 @@ const ActivityPage = ({ onNavigate }) => {
                    lastActivity.kcal < 500 ? '🍕' : '🎂'}
                 </Text>
                 <Text style={{ fontSize: fp(10), color: '#D1D5DB', flex: 1 }}>
-                  Équivalent de {
+                  {T[userLang].equivalent} {
                     lastActivity.kcal < 50 ? `${(lastActivity.kcal / 52).toFixed(1)} pomme` :
                     lastActivity.kcal < 100 ? `${(lastActivity.kcal / 89).toFixed(1)} banane` :
                     lastActivity.kcal < 200 ? `${(lastActivity.kcal / 120).toFixed(1)} croissant` :
                     lastActivity.kcal < 350 ? `${(lastActivity.kcal / 295).toFixed(1)} burger` :
                     lastActivity.kcal < 500 ? `${(lastActivity.kcal / 266).toFixed(1)} part de pizza` :
                     `${(lastActivity.kcal / 350).toFixed(1)} part de gâteau`
-                  } brûlé{lastActivity.kcal >= 100 ? 'e' : ''}
+                  } {T[userLang].burned2}
                 </Text>
               </View>
 
@@ -3177,8 +3311,8 @@ const ActivityPage = ({ onNavigate }) => {
                 fontSize: fp(9), color: '#6B7280', textAlign: 'center',
                 marginBottom: wp(14),
               }}>
-                Objectif OMS cette semaine : {weeklyMinutes} / 150 min
-                {weeklyMinutes >= 150 ? ' ✅' : ` · encore ${150 - weeklyMinutes} min`}
+                {T[userLang].weekOms} : {weeklyMinutes} / 150 min
+                {weeklyMinutes >= 150 ? ' ' + String.fromCodePoint(0x2705) : ' · ' + T[userLang].still + ' ' + (150 - weeklyMinutes) + ' min'}
               </Text>
 
               {/* Bouton fermer */}
@@ -3193,7 +3327,7 @@ const ActivityPage = ({ onNavigate }) => {
                 }}
               >
                 <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#1A1D22' }}>
-                  Continuer 💪
+                  {T[userLang].continueBtn} {String.fromCodePoint(0x1F4AA)}
                 </Text>
               </TouchableOpacity>
             </View>
