@@ -850,6 +850,396 @@ const ModePill = ({ mode, onToggle, accentColor }) => (
   </View>
 );
 
+// ── SportIcon — Premium SVG line icons ──────────────────────────────────────
+var SportIcon = function(props) {
+  var type = props.type;
+  var size = props.size || wp(24);
+  var color = props.color || '#00D984';
+
+  switch(type) {
+    case 'marche':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M10 9h4l1 4-2 2v5" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M14 13l2 4" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M10 9l-1.5 7-2 4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </Svg>
+      );
+    case 'course':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="14" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M8 11l3-2 3 1 2-3" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M11 10l-2 5-3 3" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M14 12l1 4 3 2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </Svg>
+      );
+    case 'velo':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="6" cy="16" r="3.5" stroke={color} strokeWidth={1.6} fill="none" />
+          <Circle cx="18" cy="16" r="3.5" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M6 16l4-8h4l2 4h2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M14 8l4 8" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Circle cx="14" cy="6" r="1.2" stroke={color} strokeWidth={1.4} fill="none" />
+        </Svg>
+      );
+    case 'natation':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="8" cy="8" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M6 14l2-3 4-1 4 2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M2 17c2-2 4-2 6 0s4 2 6 0 4-2 6 0" stroke={color} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+          <Path d="M2 21c2-2 4-2 6 0s4 2 6 0 4-2 6 0" stroke={color} strokeWidth={1.2} strokeLinecap="round" fill="none" opacity={0.5} />
+        </Svg>
+      );
+    case 'musculation':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M6 7v10M18 7v10" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M3 9v6M21 9v6" stroke={color} strokeWidth={2.5} strokeLinecap="round" fill="none" />
+          <Line x1="6" y1="12" x2="18" y2="12" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+        </Svg>
+      );
+    case 'yoga':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="5" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M12 7v5" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M8 10l4 2 4-2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M7 19l5-7 5 7" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </Svg>
+      );
+    case 'corde':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="6" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M12 8v4M10 12l-2 4M14 12l2 4" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M5 4c0 8 3 14 7 16 4-2 7-8 7-16" stroke={color} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+    case 'football':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M12 3l2.5 5.5H21M12 3L9.5 8.5H3M12 21l2.5-5.5H21M12 21L9.5 15.5H3" stroke={color} strokeWidth={1} fill="none" opacity={0.5} />
+          <Path d="M8.5 8.5l3.5 1 3.5-1M8.5 15.5l3.5-1 3.5 1M8.5 8.5v7M15.5 8.5v7" stroke={color} strokeWidth={1} fill="none" opacity={0.4} />
+        </Svg>
+      );
+    case 'basketball':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M3 12h18" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M12 3v18" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M5.5 5.5c3 2.5 3 8.5 0 13" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M18.5 5.5c-3 2.5-3 8.5 0 13" stroke={color} strokeWidth={1.2} fill="none" />
+        </Svg>
+      );
+    case 'danse':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="14" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M14 6l-2 4-4-1" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M12 10v4l3 5" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M12 14l-3 5" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M16 7l2-2" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+    case 'tennis':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="10" cy="10" r="7" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M4.5 6c3 2 6 6 2 12" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M15.5 4c-2 3-6 6-12 2" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M15 15l5 5" stroke={color} strokeWidth={2.5} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+    case 'boxe':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M5 12c0-3 2-6 5-7h4c3 1 5 4 5 7v3c0 2-2 4-4 4H9c-2 0-4-2-4-4v-3z" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M9 8v3M12 8v3M15 8v3" stroke={color} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+          <Path d="M7 17l-2 3M17 17l2 3" stroke={color} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+    case 'randonnee':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M12 6v6l-3 6" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M12 12l3 6" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M17 3v18" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M17 3l-3 3" stroke={color} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+          <Path d="M17 7l-2 2" stroke={color} strokeWidth={1.2} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+    case 'escalade':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M12 6v4l4-2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M12 10l-3 4 1 6" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M12 10l2 6 3-1" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Rect x="2" y="2" width="3" height="20" rx="1" stroke={color} strokeWidth={1.2} fill="none" opacity={0.3} />
+        </Svg>
+      );
+    case 'spinning':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="6" cy="17" r="3.5" stroke={color} strokeWidth={1.6} fill="none" />
+          <Circle cx="18" cy="17" r="3.5" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M6 17l5-9h3l4 9" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M10 8l-1-3h5" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </Svg>
+      );
+    case 'hiit':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </Svg>
+      );
+    case 'pilates':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="16" cy="6" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M4 16h4l4-5 4 1" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M16 8l-4 3v4l-4 3" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Line x1="2" y1="20" x2="22" y2="20" stroke={color} strokeWidth={1.4} strokeLinecap="round" opacity={0.3} />
+        </Svg>
+      );
+    case 'badminton':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M12 2c-2 3-2 6 0 8s2 5 0 8" stroke={color} strokeWidth={1.4} fill="none" />
+          <Ellipse cx="12" cy="6" rx="3.5" ry="5" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M12 11l-1 9" stroke={color} strokeWidth={2} strokeLinecap="round" fill="none" />
+          <Line x1="9" y1="4" x2="15" y2="4" stroke={color} strokeWidth={1} opacity={0.4} />
+          <Line x1="9" y1="6" x2="15" y2="6" stroke={color} strokeWidth={1} opacity={0.4} />
+          <Line x1="9" y1="8" x2="15" y2="8" stroke={color} strokeWidth={1} opacity={0.4} />
+        </Svg>
+      );
+    case 'volleyball':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M12 3c0 6-4 9-9 9" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M21 12c-6 0-9 4-9 9" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M7 4c2 4 8 6 14 2" stroke={color} strokeWidth={1.2} fill="none" />
+        </Svg>
+      );
+    case 'handball':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="10" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M10 6l2 4 4-2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M12 10l-2 5-3 4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M12 10l2 5 3 1" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Circle cx="18" cy="5" r="1.8" stroke={color} strokeWidth={1.4} fill="none" />
+        </Svg>
+      );
+    case 'rugby':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Ellipse cx="12" cy="12" rx="9" ry="6" transform="rotate(-30 12 12)" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M6 6l12 12" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M8 12l4-4M12 16l4-4" stroke={color} strokeWidth={1} fill="none" opacity={0.5} />
+        </Svg>
+      );
+    case 'cricket':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M5 19L15 5" stroke={color} strokeWidth={2.5} strokeLinecap="round" fill="none" />
+          <Rect x="13" y="2" width="4" height="6" rx="1" stroke={color} strokeWidth={1.4} fill="none" transform="rotate(20 15 5)" />
+          <Circle cx="18" cy="17" r="3" stroke={color} strokeWidth={1.6} fill="none" />
+          <Line x1="16" y1="15" x2="20" y2="19" stroke={color} strokeWidth={1} opacity={0.4} />
+        </Svg>
+      );
+    case 'golf':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M12 3v15" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M12 3l6 4-6 3z" stroke={color} strokeWidth={1.6} strokeLinejoin="round" fill={color} opacity={0.2} />
+          <Path d="M12 3l6 4-6 3z" stroke={color} strokeWidth={1.6} strokeLinejoin="round" fill="none" />
+          <Ellipse cx="12" cy="20" rx="5" ry="1.5" stroke={color} strokeWidth={1.2} fill="none" opacity={0.4} />
+        </Svg>
+      );
+    case 'ski':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M12 6l-3 5 1 5-3 3" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M12 6l3 5-1 5 3 3" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M2 20l20-4" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+    case 'surf':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="5" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M12 7v4l-4 3" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M12 11l3 3" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M3 17c3-3 6-3 9 0s6 3 9 0" stroke={color} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+          <Path d="M6 20c3-2 6-2 9 0" stroke={color} strokeWidth={1.2} strokeLinecap="round" fill="none" opacity={0.4} />
+        </Svg>
+      );
+    case 'kayak':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Ellipse cx="12" cy="16" rx="9" ry="2.5" stroke={color} strokeWidth={1.6} fill="none" />
+          <Circle cx="12" cy="8" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M12 10v4" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M6 6l6 8 6-8" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </Svg>
+      );
+    case 'equitation':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M4 14c2-4 5-6 8-6s4 2 5 4l3-2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M4 14l1 6M12 12l1 8M17 12l1 8" stroke={color} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+          <Circle cx="19" cy="8" r="1.5" stroke={color} strokeWidth={1.4} fill="none" />
+          <Path d="M20 7l2-2" stroke={color} strokeWidth={1.2} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+    case 'patinage':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M6 12l3-6h6l3 6" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M6 12v4c0 1 1 2 2 2h8c1 0 2-1 2-2v-4" stroke={color} strokeWidth={1.6} fill="none" />
+          <Line x1="4" y1="20" x2="20" y2="20" stroke={color} strokeWidth={2} strokeLinecap="round" />
+          <Path d="M8 20v-2M16 20v-2" stroke={color} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+    case 'ping_pong':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="10" cy="10" r="6" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M14 14l5 6" stroke={color} strokeWidth={2.5} strokeLinecap="round" fill="none" />
+          <Circle cx="18" cy="6" r="1.5" stroke={color} strokeWidth={1.4} fill={color} opacity={0.3} />
+        </Svg>
+      );
+    case 'squash':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Rect x="3" y="3" width="18" height="18" rx="1" stroke={color} strokeWidth={1.4} fill="none" opacity={0.3} />
+          <Line x1="3" y1="12" x2="21" y2="12" stroke={color} strokeWidth={1} opacity={0.3} />
+          <Ellipse cx="12" cy="10" rx="3" ry="4" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M12 14l-1 7" stroke={color} strokeWidth={2} strokeLinecap="round" fill="none" />
+          <Circle cx="16" cy="7" r="1.2" stroke={color} strokeWidth={1.4} fill={color} opacity={0.3} />
+        </Svg>
+      );
+    case 'crossfit':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M4 8v8M20 8v8" stroke={color} strokeWidth={2.5} strokeLinecap="round" fill="none" />
+          <Path d="M7 6v12M17 6v12" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Line x1="7" y1="12" x2="17" y2="12" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+          <Path d="M10 3l2 2 2-2" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </Svg>
+      );
+    case 'zumba':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M12 6v5" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M8 8l4 3 4-3" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M9 11l-2 5 2 4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M15 11l2 5-2 4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Circle cx="5" cy="6" r="0.8" fill={color} opacity={0.4} />
+          <Circle cx="19" cy="8" r="0.8" fill={color} opacity={0.4} />
+        </Svg>
+      );
+    case 'aquagym':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="5" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M8 10l4 2 4-2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M12 7v5" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M2 16c2-2 4-2 6 0s4 2 6 0 4-2 6 0" stroke={color} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+          <Path d="M2 20c2-2 4-2 6 0s4 2 6 0 4-2 6 0" stroke={color} strokeWidth={1.2} strokeLinecap="round" fill="none" opacity={0.4} />
+        </Svg>
+      );
+    case 'stretching':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M12 6v6" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M6 8l6 4 6-4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M12 12l-6 6" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M12 12l6 3" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+    case 'tai_chi':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.4} fill="none" />
+          <Path d="M12 3c0 9-5 9-5 9s5 0 5 9" stroke={color} strokeWidth={1.4} fill="none" />
+          <Circle cx="9.5" cy="8" r="1.5" fill={color} opacity={0.3} />
+          <Circle cx="14.5" cy="16" r="1.5" stroke={color} strokeWidth={1.2} fill="none" />
+        </Svg>
+      );
+    case 'menage':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M12 2v14" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M8 16l4 1 4-1" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M7 17l-1 5h12l-1-5" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M9 6l6 2" stroke={color} strokeWidth={1.4} strokeLinecap="round" fill="none" opacity={0.5} />
+        </Svg>
+      );
+    case 'jardinage':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M12 22v-8" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M12 14c-4 0-7-3-7-7 4 0 7 3 7 7z" stroke={color} strokeWidth={1.6} fill={color} opacity={0.1} />
+          <Path d="M12 14c-4 0-7-3-7-7 4 0 7 3 7 7z" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M12 10c3-1 6-4 6-7-4 0-7 3-6 7z" stroke={color} strokeWidth={1.6} fill="none" />
+          <Line x1="10" y1="22" x2="14" y2="22" stroke={color} strokeWidth={1.4} strokeLinecap="round" opacity={0.4} />
+        </Svg>
+      );
+    case 'escalier':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M4 20h4v-4h4v-4h4v-4h4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Circle cx="14" cy="5" r="1.5" stroke={color} strokeWidth={1.4} fill="none" />
+          <Path d="M14 6.5l-1 3 1 2" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </Svg>
+      );
+    case 'lutte_africaine':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="8" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Circle cx="16" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M8 6l2 4 2-1 2 1 2-4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M10 10l-3 5-2 4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M14 10l3 5 2 4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M10 10v4l-2 3" stroke={color} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+          <Path d="M14 10v4l2 3" stroke={color} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+    case 'danse_africaine':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M12 6v4" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M7 8l5 2 5-2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M9 10l-3 5 1 5" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M15 10l3 5-1 5" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Circle cx="4" cy="7" r="1" fill={color} opacity={0.3} />
+          <Circle cx="20" cy="7" r="1" fill={color} opacity={0.3} />
+        </Svg>
+      );
+    default:
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M8 12h8M12 8v8" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+  }
+};
+
 // ── Sport Card (for grid) ────────────────────────────────────────────────────
 const SportCard = ({ sportKey, onPress, userLang, userWeight }) => {
   const sport = ACTIVITY_DATA[sportKey];
@@ -866,7 +1256,7 @@ const SportCard = ({ sportKey, onPress, userLang, userWeight }) => {
       }}
     >
       <View style={{ alignItems: 'center', paddingVertical: wp(4) }}>
-        <Text style={{ fontSize: fp(22) }}>{sport.icon}</Text>
+        <SportIcon type={sportKey} size={wp(24)} color={sport.color} />
         <Text style={{
           color: '#EAEEF3', fontSize: fp(10), fontWeight: '700',
           marginTop: wp(4), textAlign: 'center',
@@ -916,7 +1306,9 @@ const SportModal = ({ visible, sportKey, onClose, onSave, userLang, userWeight }
             <View>
               {/* Header */}
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
-                <Text style={{ fontSize: fp(22), marginRight: wp(8) }}>{sport.icon}</Text>
+                <View style={{ marginRight: wp(8) }}>
+                  <SportIcon type={sportKey} size={wp(24)} color={sport.color} />
+                </View>
                 <Text style={{
                   color: '#EAEEF3', fontSize: fp(16), fontWeight: '800',
                   letterSpacing: 1, textTransform: 'uppercase',
@@ -2908,7 +3300,6 @@ const ActivityPage = ({ onNavigate }) => {
           ) : (
             todayActivities.map((act) => {
               const sportData = ACTIVITY_DATA[act.type] || {};
-              const iconText = sportData.icon || String.fromCodePoint(0x1F3C5);
               const sportColor = sportData.color || '#00D984';
               const createdTime = act.created_at
                 ? new Date(act.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
@@ -2920,7 +3311,9 @@ const ActivityPage = ({ onNavigate }) => {
                     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                   }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                      <Text style={{ fontSize: fp(18), marginRight: wp(8) }}>{iconText}</Text>
+                      <View style={{ marginRight: wp(8) }}>
+                        <SportIcon type={act.type} size={wp(20)} color={sportColor} />
+                      </View>
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>
                           {act.name}
@@ -2990,7 +3383,9 @@ const ActivityPage = ({ onNavigate }) => {
                 padding: wp(14),
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
-                  <Text style={{ fontSize: fp(22), marginRight: wp(8) }}>{recommendation.emoji}</Text>
+                  <View style={{ marginRight: wp(8) }}>
+                    <SportIcon type={recommendation.type === 'maintain' ? 'marche' : recommendation.activity === 'Course' || recommendation.activity === 'Run' ? 'course' : 'marche'} size={wp(24)} color={recommendation.color} />
+                  </View>
                   <Text style={{
                     fontSize: fp(14), fontWeight: '700',
                     color: recommendation.color, flex: 1,

@@ -842,19 +842,40 @@ export default function MedicAiPage() {
       temporalContext += ' Il est ' + hour + 'h et l\'utilisateur n\'a mangé que ' + cal + ' kcal. Tu peux suggérer des idées de dîner.';
     }
 
+    // Activités du jour
+    var todayActivitiesContext = '';
+    if (alixenContextRef.current && alixenContextRef.current.weekActivities) {
+      var todayStr = new Date().toISOString().split('T')[0];
+      var todayActs = alixenContextRef.current.weekActivities.filter(function(a) {
+        return a.performed_at && a.performed_at.startsWith(todayStr);
+      });
+      if (todayActs.length > 0) {
+        todayActivitiesContext = '\nACTIVITÉS AUJOURD\'HUI :\n' + todayActs.map(function(a) {
+          return '- ' + (a.name || a.type || 'Activité') + ' ' + (a.duration_min || '?') + ' min — ' + (a.calories_burned || '?') + ' kcal brûlées';
+        }).join('\n');
+      } else {
+        todayActivitiesContext = '\nACTIVITÉS AUJOURD\'HUI : Aucune activité enregistrée.';
+      }
+    }
+
     return langPrefix + `DONNÉES UTILISATEUR (${today}) :
 - Nom : ${userProfile.full_name || 'N/A'}
 - Âge : ${userProfile.age || 'N/A'} ans | Sexe : ${userProfile.gender || 'N/A'}
 - Poids : ${userProfile.weight || 'N/A'} kg | Taille : ${userProfile.height || 'N/A'} cm
-- Objectif : ${userProfile.goal || 'N/A'}
+- Objectif : ${userProfile.goal || 'N/A'} | Cible : ${userProfile.daily_calorie_target || userProfile.tdee || 'N/A'} kcal/jour
 - BMR : ${userProfile.bmr || 'N/A'} kcal | TDEE : ${userProfile.tdee || 'N/A'} kcal
+- IMC : ${userProfile.weight && userProfile.height ? (userProfile.weight / ((userProfile.height / 100) * (userProfile.height / 100))).toFixed(1) : 'N/A'}
+- Niveau d'activité : ${userProfile.activity_level || 'N/A'}
+- Régime alimentaire : ${userProfile.dietary_regime || 'classique'}
+- Humeur actuelle : ${userProfile.current_mood || 'non renseignée'} | Météo : ${userProfile.current_weather || 'non renseignée'}
 - Score Vitalité : ${vitalityScore}/100
 
 MACROS AUJOURD'HUI :
-- Calories : ${cal} / ${userProfile.tdee || 2000} kcal
+- Calories : ${cal} / ${userProfile.daily_calorie_target || userProfile.tdee || 2000} kcal (objectif ajusté)
 - Protéines : ${protein}g | Glucides : ${carbs}g | Lipides : ${fat}g
 
 ${todayMeals.length > 0 ? '\nREPAS DU JOUR :\n' + todayMeals.map(m => '- ' + (m.meal_type === 'breakfast' ? 'Petit-déjeuner' : m.meal_type === 'lunch' ? 'Déjeuner' : m.meal_type === 'dinner' ? 'Dîner' : m.meal_type === 'snack' ? 'Collation' : (m.meal_type || 'Repas')) + ' : ' + (m.name || '?') + ' (' + (m.calories || '?') + ' kcal, P:' + (m.protein || 0) + 'g G:' + (m.carbs || 0) + 'g L:' + (m.fat || 0) + 'g)').join('\n') : '\nREPAS DU JOUR : Aucun repas enregistré aujourd\'hui.'}
+${todayActivitiesContext}
 
 DONNÉES MÉDICALES :
 - Médicaments en cours : ${activeMeds}
