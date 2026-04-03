@@ -1939,12 +1939,12 @@ const ActivityPage = ({ onNavigate }) => {
   const runProg = runMaxS > 0 ? runScrollOffset / runMaxS : 0;
   const RUN_METERS_PER_PIXEL = RUN_MAX_DIST / RUN_SCENE_W;
   const RUN_PIXELS_PER_METER = RUN_SCENE_W / RUN_MAX_DIST;
-  const runDistM = runScrollOffset * RUN_METERS_PER_PIXEL;
+  var runDistM = (runScrollOffset * RUN_METERS_PER_PIXEL) || 0;
   const runMul = runRoundTrip ? 2 : 1;
-  const runDistKm = (runDistM * runMul) / 1000;
-  var runCalories = calcCalories(ACTIVITY_DATA.course.met, userWeight, runDuration, 'modere');
-  var runWater = calcWater(ACTIVITY_DATA.course.water_per_hour_ml, runDuration, 'modere');
-  const runDuration = Math.round((runDistKm / 8) * 60);
+  var runDistKm = ((runDistM * runMul) / 1000) || 0;
+  var runDuration = Math.round((runDistKm / 8) * 60) || 0;
+  var runCalories = calcCalories(ACTIVITY_DATA.course.met, userWeight || 70, runDuration, 'modere') || 0;
+  var runWater = calcWater(ACTIVITY_DATA.course.water_per_hour_ml || 900, runDuration, 'modere') || 0;
   const runDistFinal = runDistM * runMul;
   const runDistStr = runDistFinal < 1000 ? `${Math.round(runDistFinal)} m` : `${Math.round(runDistFinal / 100) / 10} km`;
   const runDurStr = (() => { const m = Math.round(runDuration); return m < 60 ? `${m} min` : `${Math.round(m / 6) / 10} h`; })();
