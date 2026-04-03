@@ -950,18 +950,21 @@ var SportIcon = function(props) {
     case 'tennis':
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <Circle cx="10" cy="10" r="7" stroke={color} strokeWidth={1.6} fill="none" />
-          <Path d="M4.5 6c3 2 6 6 2 12" stroke={color} strokeWidth={1.2} fill="none" />
-          <Path d="M15.5 4c-2 3-6 6-12 2" stroke={color} strokeWidth={1.2} fill="none" />
-          <Path d="M15 15l5 5" stroke={color} strokeWidth={2.5} strokeLinecap="round" fill="none" />
+          <Ellipse cx="11" cy="9" rx="6" ry="7" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M5.5 6c2.5 1.5 5 5 2.5 10" stroke={color} strokeWidth={1.1} fill="none" />
+          <Path d="M16 4c-2 2.5-5 5.5-10.5 3" stroke={color} strokeWidth={1.1} fill="none" />
+          <Path d="M13 15l4.5 5.5" stroke={color} strokeWidth={2.2} strokeLinecap="round" fill="none" />
+          <Circle cx="19.5" cy="5.5" r="1.8" stroke={color} strokeWidth={1.3} fill={color} opacity={0.25} />
         </Svg>
       );
     case 'boxe':
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <Path d="M5 12c0-3 2-6 5-7h4c3 1 5 4 5 7v3c0 2-2 4-4 4H9c-2 0-4-2-4-4v-3z" stroke={color} strokeWidth={1.6} fill="none" />
-          <Path d="M9 8v3M12 8v3M15 8v3" stroke={color} strokeWidth={1.4} strokeLinecap="round" fill="none" />
-          <Path d="M7 17l-2 3M17 17l2 3" stroke={color} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+          <Path d="M7 8c0-2 1.5-4 4-4h1c2 0 3.5 1.5 3.5 3.5V10c0 0.5 0.5 1 1 1h0.5c1 0 2 1 2 2v1c0 2-1.5 3.5-3.5 3.5H10c-2 0-3.5-1.5-3.5-3.5L7 8z" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M10 7.5h4" stroke={color} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+          <Path d="M10 10h3.5" stroke={color} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+          <Path d="M9 17.5l-1.5 3" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M13 17.5l1 3" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
         </Svg>
       );
     case 'randonnee':
@@ -1024,9 +1027,9 @@ var SportIcon = function(props) {
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
           <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.6} fill="none" />
-          <Path d="M12 3c0 6-4 9-9 9" stroke={color} strokeWidth={1.2} fill="none" />
-          <Path d="M21 12c-6 0-9 4-9 9" stroke={color} strokeWidth={1.2} fill="none" />
-          <Path d="M7 4c2 4 8 6 14 2" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M12 3c-1 4-4 7-8.5 7" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M20.5 10c-4 0-7.5 3-8.5 8" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M6 19.5c2-3 6.5-5 13-3.5" stroke={color} strokeWidth={1.2} fill="none" />
         </Svg>
       );
     case 'handball':
@@ -1087,10 +1090,13 @@ var SportIcon = function(props) {
     case 'kayak':
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <Ellipse cx="12" cy="16" rx="9" ry="2.5" stroke={color} strokeWidth={1.6} fill="none" />
-          <Circle cx="12" cy="8" r="2" stroke={color} strokeWidth={1.8} fill="none" />
-          <Path d="M12 10v4" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
-          <Path d="M6 6l6 8 6-8" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Circle cx="12" cy="7" r="1.8" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M12 8.8v4" stroke={color} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+          <Path d="M9 10l3 2.8 3-2.8" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M7 16l-3-5" stroke={color} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+          <Path d="M17 16l3-5" stroke={color} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+          <Path d="M3 17c0 0 3-2.5 9-2.5s9 2.5 9 2.5" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M5 17.5c0 0 2.5 2 7 2s7-2 7-2" stroke={color} strokeWidth={1.4} strokeLinecap="round" fill="none" opacity={0.5} />
         </Svg>
       );
     case 'equitation':
