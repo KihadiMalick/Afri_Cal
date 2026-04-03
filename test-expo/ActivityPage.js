@@ -3300,7 +3300,6 @@ const ActivityPage = ({ onNavigate }) => {
           ) : (
             todayActivities.map((act) => {
               const sportData = ACTIVITY_DATA[act.type] || {};
-              const iconText = sportData.icon || String.fromCodePoint(0x1F3C5);
               const sportColor = sportData.color || '#00D984';
               const createdTime = act.created_at
                 ? new Date(act.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
@@ -3312,7 +3311,9 @@ const ActivityPage = ({ onNavigate }) => {
                     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                   }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                      <Text style={{ fontSize: fp(18), marginRight: wp(8) }}>{iconText}</Text>
+                      <View style={{ marginRight: wp(8) }}>
+                        <SportIcon type={act.type} size={wp(20)} color={sportColor} />
+                      </View>
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>
                           {act.name}
@@ -3382,7 +3383,9 @@ const ActivityPage = ({ onNavigate }) => {
                 padding: wp(14),
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
-                  <Text style={{ fontSize: fp(22), marginRight: wp(8) }}>{recommendation.emoji}</Text>
+                  <View style={{ marginRight: wp(8) }}>
+                    <SportIcon type={recommendation.type === 'maintain' ? 'marche' : recommendation.activity === 'Course' || recommendation.activity === 'Run' ? 'course' : 'marche'} size={wp(24)} color={recommendation.color} />
+                  </View>
                   <Text style={{
                     fontSize: fp(14), fontWeight: '700',
                     color: recommendation.color, flex: 1,
