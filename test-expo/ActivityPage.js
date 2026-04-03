@@ -273,25 +273,68 @@ function getSpeedZone(speedKmh) {
 }
 
 // ── Équivalents alimentaires en temps réel ──
-var FOOD_EQUIVALENTS = [
-  { kcal: 52,  label: 'pomme',    labelEN: 'apple',      emoji: '🍎' },
-  { kcal: 89,  label: 'banane',   labelEN: 'banana',     emoji: '🍌' },
-  { kcal: 120, label: 'croissant',labelEN: 'croissant',  emoji: '🥐' },
-  { kcal: 210, label: 'beignet',  labelEN: 'doughnut',   emoji: '🍩' },
-  { kcal: 266, label: 'pizza',    labelEN: 'pizza slice', emoji: '🍕' },
-  { kcal: 295, label: 'burger',   labelEN: 'burger',     emoji: '🍔' },
-  { kcal: 350, label: 'gâteau',   labelEN: 'cake slice', emoji: '🎂' },
-  { kcal: 550, label: 'tajine',   labelEN: 'tajine',     emoji: '🍲' },
+var FOOD_ITEMS = [
+  { kcal: 20,  label: 'carré de chocolat', labelEN: 'chocolate square', emoji: '🍫' },
+  { kcal: 35,  label: 'biscuit',           labelEN: 'cookie',           emoji: '🍪' },
+  { kcal: 52,  label: 'pomme',             labelEN: 'apple',            emoji: '🍎' },
+  { kcal: 65,  label: 'oeuf',              labelEN: 'egg',              emoji: '🥚' },
+  { kcal: 89,  label: 'banane',            labelEN: 'banana',           emoji: '🍌' },
+  { kcal: 120, label: 'croissant',         labelEN: 'croissant',        emoji: '🥐' },
+  { kcal: 150, label: 'bol de riz',        labelEN: 'bowl of rice',     emoji: '🍚' },
+  { kcal: 210, label: 'beignet',           labelEN: 'doughnut',         emoji: '🍩' },
+  { kcal: 266, label: 'part de pizza',     labelEN: 'pizza slice',      emoji: '🍕' },
+  { kcal: 295, label: 'burger',            labelEN: 'burger',           emoji: '🍔' },
+  { kcal: 350, label: 'part de gâteau',    labelEN: 'cake slice',       emoji: '🎂' },
+  { kcal: 450, label: 'assiette de frites',labelEN: 'plate of fries',   emoji: '🍟' },
+  { kcal: 550, label: 'tajine',            labelEN: 'tajine',           emoji: '🍲' },
+  { kcal: 700, label: 'plat de ndolé',     labelEN: 'ndolé dish',       emoji: '🥘' },
 ];
 
 function getFoodEquivalent(kcal) {
-  for (var i = FOOD_EQUIVALENTS.length - 1; i >= 0; i--) {
-    if (kcal >= FOOD_EQUIVALENTS[i].kcal) {
-      var count = Math.round((kcal / FOOD_EQUIVALENTS[i].kcal) * 10) / 10;
-      return { count: count, food: FOOD_EQUIVALENTS[i] };
+  if (kcal < 15) return null;
+
+  // Trouver la meilleure combinaison (max 2 aliments)
+  var bestCombo = null;
+  var bestDiff = 9999;
+
+  // D'abord essayer un seul aliment (si c'est proche, count entier ou .5)
+  for (var i = 0; i < FOOD_ITEMS.length; i++) {
+    var count = kcal / FOOD_ITEMS[i].kcal;
+    var rounded = Math.round(count * 2) / 2; // arrondi au 0.5
+    if (rounded >= 0.5 && rounded <= 6) {
+      var diff = Math.abs(kcal - rounded * FOOD_ITEMS[i].kcal);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestCombo = { type: 'single', count: rounded, item: FOOD_ITEMS[i] };
+      }
     }
   }
-  return null;
+
+  // Essayer une combinaison de 2 aliments différents (1 de chaque)
+  for (var a = FOOD_ITEMS.length - 1; a >= 0; a--) {
+    if (FOOD_ITEMS[a].kcal > kcal) continue;
+    var remaining = kcal - FOOD_ITEMS[a].kcal;
+    for (var b = 0; b < FOOD_ITEMS.length; b++) {
+      if (b === a) continue;
+      var diff2 = Math.abs(remaining - FOOD_ITEMS[b].kcal);
+      if (diff2 < bestDiff && remaining > 0) {
+        bestDiff = diff2;
+        bestCombo = { type: 'combo', item1: FOOD_ITEMS[a], item2: FOOD_ITEMS[b] };
+      }
+    }
+  }
+
+  // Si la meilleure combinaison est un seul aliment avec un beau count
+  if (bestCombo && bestCombo.type === 'single') {
+    var c = bestCombo.count;
+    // Vérifier si le count est "beau" (1, 1.5, 2, 2.5, 3...)
+    if (c === Math.floor(c) || c % 1 === 0.5) {
+      return bestCombo;
+    }
+  }
+
+  // Sinon retourner la combo ou le single
+  return bestCombo;
 }
 
 // ── Coefficient eau climat (météo) ──
@@ -4159,10 +4202,23 @@ const ActivityPage = ({ onNavigate }) => {
                   borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)',
                   marginBottom: wp(14),
                 }}>
-                  <Text style={{ fontSize: fp(16) }}>{liveFoodEquiv.food.emoji}</Text>
-                  <Text style={{ fontSize: fp(12), color: '#FF8C42', fontWeight: '700' }}>
-                    = {liveFoodEquiv.count} {liveFoodEquiv.food.label}
-                  </Text>
+                  {liveFoodEquiv.type === 'combo' ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                      <Text style={{ fontSize: fp(14) }}>{liveFoodEquiv.item1.emoji}</Text>
+                      <Text style={{ fontSize: fp(11), color: '#FF8C42', fontWeight: '600' }}>+</Text>
+                      <Text style={{ fontSize: fp(14) }}>{liveFoodEquiv.item2.emoji}</Text>
+                      <Text style={{ fontSize: fp(11), color: '#FF8C42', fontWeight: '700', marginLeft: wp(4) }}>
+                        {'\u2248 1 ' + liveFoodEquiv.item1.label + ' + 1 ' + liveFoodEquiv.item2.label}
+                      </Text>
+                    </View>
+                  ) : liveFoodEquiv.type === 'single' ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                      <Text style={{ fontSize: fp(16) }}>{liveFoodEquiv.item.emoji}</Text>
+                      <Text style={{ fontSize: fp(12), color: '#FF8C42', fontWeight: '700' }}>
+                        = {liveFoodEquiv.count} {liveFoodEquiv.item.label}
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
               )}
 
@@ -4694,7 +4750,11 @@ const ActivityPage = ({ onNavigate }) => {
 
                       // Équivalent alimentaire
                       if (lastActivity.foodEquiv) {
-                        msgs.push('Tu as brûlé l\'équivalent de ' + lastActivity.foodEquiv.count + ' ' + lastActivity.foodEquiv.food.label + ' ' + lastActivity.foodEquiv.food.emoji);
+                        if (lastActivity.foodEquiv.type === 'combo') {
+                          msgs.push('Tu as brûlé \u2248 1 ' + lastActivity.foodEquiv.item1.label + ' ' + lastActivity.foodEquiv.item1.emoji + ' + 1 ' + lastActivity.foodEquiv.item2.label + ' ' + lastActivity.foodEquiv.item2.emoji);
+                        } else if (lastActivity.foodEquiv.type === 'single') {
+                          msgs.push('Tu as brûlé l\'équivalent de ' + lastActivity.foodEquiv.count + ' ' + lastActivity.foodEquiv.item.label + ' ' + lastActivity.foodEquiv.item.emoji);
+                        }
                       }
 
                       return msgs.join('\n\n');
@@ -4714,36 +4774,38 @@ const ActivityPage = ({ onNavigate }) => {
                 </View>
               )}
 
-              {/* Équivalent alimentaire fun */}
-              <View style={{
-                backgroundColor: 'rgba(255,140,66,0.08)',
-                borderRadius: wp(10),
-                borderWidth: 1,
-                borderColor: 'rgba(255,140,66,0.15)',
-                padding: wp(10),
-                width: '100%',
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginBottom: wp(14),
-              }}>
-                <Text style={{ fontSize: fp(22), marginRight: wp(8) }}>
-                  {lastActivity.kcal < 50 ? '🍎' :
-                   lastActivity.kcal < 100 ? '🍌' :
-                   lastActivity.kcal < 200 ? '🥐' :
-                   lastActivity.kcal < 350 ? '🍔' :
-                   lastActivity.kcal < 500 ? '🍕' : '🎂'}
-                </Text>
-                <Text style={{ fontSize: fp(10), color: '#D1D5DB', flex: 1 }}>
-                  {T[userLang].equivalent} {
-                    lastActivity.kcal < 50 ? `${(lastActivity.kcal / 52).toFixed(1)} pomme` :
-                    lastActivity.kcal < 100 ? `${(lastActivity.kcal / 89).toFixed(1)} banane` :
-                    lastActivity.kcal < 200 ? `${(lastActivity.kcal / 120).toFixed(1)} croissant` :
-                    lastActivity.kcal < 350 ? `${(lastActivity.kcal / 295).toFixed(1)} burger` :
-                    lastActivity.kcal < 500 ? `${(lastActivity.kcal / 266).toFixed(1)} part de pizza` :
-                    `${(lastActivity.kcal / 350).toFixed(1)} part de gâteau`
-                  } {T[userLang].burned2}
-                </Text>
-              </View>
+              {/* Équivalent alimentaire */}
+              {(function() {
+                var equiv = lastActivity ? getFoodEquivalent(lastActivity.kcal) : null;
+                if (!equiv) return null;
+                return (
+                  <View style={{
+                    backgroundColor: 'rgba(255,140,66,0.08)', borderRadius: wp(10),
+                    borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)',
+                    padding: wp(10), width: '100%',
+                    flexDirection: 'row', alignItems: 'center',
+                    marginBottom: wp(14),
+                  }}>
+                    {equiv.type === 'combo' ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: wp(6) }}>
+                        <Text style={{ fontSize: fp(22) }}>{equiv.item1.emoji}</Text>
+                        <Text style={{ fontSize: fp(14), color: '#FF8C42', fontWeight: '700' }}>+</Text>
+                        <Text style={{ fontSize: fp(22) }}>{equiv.item2.emoji}</Text>
+                        <Text style={{ fontSize: fp(10), color: '#D1D5DB', flex: 1, marginLeft: wp(6) }}>
+                          {'\u2248 1 ' + equiv.item1.label + ' + 1 ' + equiv.item2.label + ' brûlé'}
+                        </Text>
+                      </View>
+                    ) : equiv.type === 'single' ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: wp(8) }}>
+                        <Text style={{ fontSize: fp(22) }}>{equiv.item.emoji}</Text>
+                        <Text style={{ fontSize: fp(10), color: '#D1D5DB', flex: 1 }}>
+                          {'Équivalent de ' + equiv.count + ' ' + equiv.item.label + ' brûlé'}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })()}
 
               {/* Objectif OMS mis à jour */}
               <Text style={{
