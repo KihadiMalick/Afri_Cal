@@ -1256,7 +1256,7 @@ const SportCard = ({ sportKey, onPress, userLang, userWeight }) => {
       }}
     >
       <View style={{ alignItems: 'center', paddingVertical: wp(4) }}>
-        <Text style={{ fontSize: fp(22) }}>{sport.icon}</Text>
+        <SportIcon type={sportKey} size={wp(24)} color={sport.color} />
         <Text style={{
           color: '#EAEEF3', fontSize: fp(10), fontWeight: '700',
           marginTop: wp(4), textAlign: 'center',
@@ -1306,7 +1306,9 @@ const SportModal = ({ visible, sportKey, onClose, onSave, userLang, userWeight }
             <View>
               {/* Header */}
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
-                <Text style={{ fontSize: fp(22), marginRight: wp(8) }}>{sport.icon}</Text>
+                <View style={{ marginRight: wp(8) }}>
+                  <SportIcon type={sportKey} size={wp(24)} color={sport.color} />
+                </View>
                 <Text style={{
                   color: '#EAEEF3', fontSize: fp(16), fontWeight: '800',
                   letterSpacing: 1, textTransform: 'uppercase',
