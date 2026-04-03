@@ -1284,13 +1284,214 @@ const RepasPage = ({ onNavigate }) => {
   // Placeholder — sera complété en prompt 5/5 avec l'appel API
   var generateAlixenProposals = async function(category) {
     setAlixenLoading(true);
-    // Sera remplacé par l'appel à lixman-chat mode recipe en prompt 5/5
-    setTimeout(function() {
-      setAlixenLoading(false);
-      setAlixenProposals([
-        { name: 'Chargement...', kcal: 0, description: 'En attente de connexion API' },
-      ]);
-    }, 1500);
+    setAlixenProposals([]);
+
+    try {
+      var ctx = alixenContext;
+      if (!ctx) {
+        ctx = await loadAlixenContext();
+      }
+      if (!ctx) {
+        setAlixenLoading(false);
+        Alert.alert('Erreur', 'Impossible de charger le contexte.');
+        return;
+      }
+
+      // Construire la liste des ingrédients si mode "mes ingrédients"
+      var userIngList = '';
+      if (category === 'my_ingredients' && alixenMyIngredients.length > 0) {
+        userIngList = alixenMyIngredients.map(function(ing) { return ing.name; }).join(', ');
+      }
+
+      // Construire les repas du jour en texte
+      var mealsText = ctx.mealsToday.map(function(m) {
+        return m.meal_type + ': ' + m.food_name + ' (' + m.calories + ' kcal)';
+      }).join(', ') || 'Aucun repas aujourd\'hui';
+
+      // Prompt pour ALIXEN
+      var prompt = 'Tu es ALIXEN, chef cuisinier IA personnel dans l\'app LIXUM.\n\n' +
+        'PROFIL DU MEMBRE:\n' +
+        'Prénom: ' + ctx.userName + '\n' +
+        'Régime: ' + ctx.regime + '\n' +
+        'Poids: ' + ctx.weight + 'kg, Sexe: ' + ctx.gender + '\n\n' +
+        'BILAN DU JOUR:\n' +
+        'Objectif: ' + ctx.target + ' kcal\n' +
+        'Déjà mangé: ' + ctx.eaten + ' kcal (' + mealsText + ')\n' +
+        'Brûlé en activité: ' + ctx.burned + ' kcal\n' +
+        'RESTANT: ' + Math.round(ctx.remaining) + ' kcal | ' +
+        Math.round(ctx.protRemaining) + 'g prot | ' +
+        Math.round(ctx.carbsRemaining) + 'g gluc | ' +
+        Math.round(ctx.fatRemaining) + 'g lip\n' +
+        'Repas restants estimés: ' + ctx.mealsRemaining + '\n\n' +
+        'CONTEXTE:\n' +
+        'Heure: ' + ctx.hour + 'h' + (ctx.minutes < 10 ? '0' : '') + ctx.minutes + '\n' +
+        'Moment: ' + ctx.timeOfDay + '\n' +
+        (ctx.mood ? 'Humeur: ' + ctx.mood + '\n' : '') +
+        (ctx.weather ? 'Météo: ' + ctx.weather + '\n' : '') +
+        '\nCATÉGORIE CHOISIE: ' + (category === 'my_ingredients' ? 'Recette avec ingrédients imposés' : category) + '\n' +
+        (userIngList ? 'INGRÉDIENTS IMPOSÉS: ' + userIngList + '\n' : '') +
+        '\nRÈGLES STRICTES:\n' +
+        '1. Propose EXACTEMENT 3 recettes: une légère, une normale (dîner), une consistante\n' +
+        '2. Adapte les grammes pour couvrir les macros RESTANTES\n' +
+        '3. Respecte le régime (' + ctx.regime + ')\n' +
+        '4. NUIT (après 20h): PAS de riz ni plats lourds. Soupes, milkshakes, yaourts, salades\n' +
+        '5. Si > 800 kcal restantes le soir: signale et propose de rattraper demain\n' +
+        '6. Culture africaine: mafé/thiéboudienne = MIDI uniquement\n' +
+        '7. Chaque recette: nom, kcal total, protéines/glucides/lipides, temps de préparation, liste ingrédients avec grammes ET kcal par ingrédient, étapes de préparation\n' +
+        '8. Si météo pluie + humeur triste: privilégie soupes réconfortantes\n' +
+        '9. Description courte et motivante en 1 phrase pour chaque option\n' +
+        '\nRÉPONDS EN JSON STRICTEMENT (pas de markdown, pas de backticks):\n' +
+        '{"proposals":[{"name":"Nom","kcal":520,"protein":45,"carbs":60,"fat":20,"time":"25 min","description":"Phrase motivante courte","ingredients":[{"name":"Poulet","quantity":"180g","kcal":248},{"name":"Riz","quantity":"100g","kcal":130}],"steps":"1. Faire... 2. Ajouter..."}]}\n' +
+        'IMPORTANT: Exactement 3 objets dans proposals. JSON pur, rien d\'autre.';
+
+      var response = await fetch(
+        SUPABASE_URL + '/functions/v1/lixman-chat',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            userId: TEST_USER_ID,
+            message: prompt,
+            mode: 'recipe',
+          }),
+        }
+      );
+
+      var data = await response.json();
+      var rawMessage = data.message || data.reply || '';
+
+      // Parser le JSON
+      try {
+        // Nettoyer le message (enlever backticks markdown si présents)
+        var cleaned = rawMessage.replace(/```json/g, '').replace(/```/g, '').trim();
+        var parsed = JSON.parse(cleaned);
+        var proposals = parsed.proposals || [];
+
+        if (proposals.length > 0) {
+          setAlixenProposals(proposals);
+
+          // Générer un conseil si les calories restantes sont > 800 la nuit
+          if (ctx.timeOfDay === 'night' && ctx.remaining > 800) {
+            setAlixenAdvice(
+              ctx.userName + ', il te reste ' + Math.round(ctx.remaining) + ' kcal mais il est ' + ctx.hour + 'h. ' +
+              'C\'est trop pour un seul repas nocturne. Je te suggère un repas de 400-500 kcal ce soir et on ajuste demain au petit-déjeuner.'
+            );
+          }
+        } else {
+          throw new Error('No proposals');
+        }
+      } catch (parseError) {
+        console.error('Parse error:', parseError, 'Raw:', rawMessage);
+        // Fallback : propositions statiques basées sur le contexte
+        var fallbackProposals = generateFallbackProposals(ctx, category);
+        setAlixenProposals(fallbackProposals);
+      }
+
+    } catch (e) {
+      console.error('generateAlixenProposals error:', e);
+      // Fallback complet
+      var ctx2 = alixenContext || { remaining: 500, protRemaining: 30, timeOfDay: 'evening' };
+      setAlixenProposals(generateFallbackProposals(ctx2, category));
+    }
+
+    setAlixenLoading(false);
+  };
+
+  // Fallback local si l'API échoue
+  var generateFallbackProposals = function(ctx, category) {
+    var remaining = ctx.remaining || 500;
+    var isNight = ctx.timeOfDay === 'night';
+
+    if (isNight) {
+      return [
+        {
+          name: 'Soupe de lentilles',
+          kcal: Math.min(350, Math.round(remaining * 0.5)),
+          protein: 22, carbs: 38, fat: 8, time: '30 min',
+          description: 'Réconfortante et légère pour le soir',
+          ingredients: [
+            { name: 'Lentilles corail', quantity: '80g', kcal: 120 },
+            { name: 'Carotte', quantity: '100g', kcal: 41 },
+            { name: 'Oignon', quantity: '50g', kcal: 20 },
+            { name: 'Tomate', quantity: '100g', kcal: 18 },
+            { name: 'Huile d\'olive', quantity: '10ml', kcal: 90 },
+            { name: 'Cumin, sel, poivre', quantity: 'QS', kcal: 0 },
+          ],
+          steps: '1. Rincer les lentilles.\n2. Faire revenir l\'oignon émincé dans l\'huile.\n3. Ajouter les carottes en dés et les tomates.\n4. Ajouter les lentilles et 500ml d\'eau.\n5. Cuire 20 min à feu doux.\n6. Mixer et assaisonner.',
+        },
+        {
+          name: 'Yaourt aux fruits et miel',
+          kcal: Math.min(250, Math.round(remaining * 0.35)),
+          protein: 12, carbs: 35, fat: 6, time: '5 min',
+          description: 'Léger et nutritif, parfait avant le coucher',
+          ingredients: [
+            { name: 'Yaourt nature', quantity: '200g', kcal: 120 },
+            { name: 'Banane', quantity: '100g', kcal: 89 },
+            { name: 'Miel', quantity: '15g', kcal: 45 },
+          ],
+          steps: '1. Verser le yaourt dans un bol.\n2. Trancher la banane.\n3. Disposer les fruits sur le yaourt.\n4. Arroser de miel.',
+        },
+        {
+          name: 'Milkshake protéiné banane-cacao',
+          kcal: Math.min(400, Math.round(remaining * 0.6)),
+          protein: 25, carbs: 45, fat: 12, time: '5 min',
+          description: 'Calorique mais facile à digérer',
+          ingredients: [
+            { name: 'Lait', quantity: '250ml', kcal: 150 },
+            { name: 'Banane', quantity: '120g', kcal: 107 },
+            { name: 'Cacao en poudre', quantity: '15g', kcal: 52 },
+            { name: 'Beurre de cacahuète', quantity: '15g', kcal: 94 },
+          ],
+          steps: '1. Mettre tous les ingrédients dans un blender.\n2. Mixer 30 secondes.\n3. Servir frais.',
+        },
+      ];
+    }
+
+    return [
+      {
+        name: 'Salade composée',
+        kcal: Math.round(remaining * 0.4),
+        protein: 18, carbs: 20, fat: 12, time: '15 min',
+        description: 'Fraîche et équilibrée',
+        ingredients: [
+          { name: 'Laitue', quantity: '100g', kcal: 15 },
+          { name: 'Tomate', quantity: '100g', kcal: 18 },
+          { name: 'Œuf dur', quantity: '2 pièces', kcal: 140 },
+          { name: 'Vinaigrette', quantity: '15ml', kcal: 75 },
+        ],
+        steps: '1. Laver et couper la laitue.\n2. Couper les tomates en quartiers.\n3. Faire cuire les œufs 10 min.\n4. Assembler et assaisonner.',
+      },
+      {
+        name: 'Poulet grillé + légumes',
+        kcal: Math.round(remaining * 0.65),
+        protein: 42, carbs: 25, fat: 15, time: '30 min',
+        description: 'Classique, protéiné et satisfaisant',
+        ingredients: [
+          { name: 'Blanc de poulet', quantity: '180g', kcal: 248 },
+          { name: 'Brocoli', quantity: '150g', kcal: 51 },
+          { name: 'Patate douce', quantity: '100g', kcal: 86 },
+          { name: 'Huile d\'olive', quantity: '10ml', kcal: 90 },
+        ],
+        steps: '1. Griller le poulet assaisonné 6 min par côté.\n2. Cuire les brocolis à la vapeur 8 min.\n3. Rôtir la patate douce en cubes 20 min au four.\n4. Servir ensemble.',
+      },
+      {
+        name: 'Riz + haricots + avocat',
+        kcal: Math.round(remaining * 0.85),
+        protein: 28, carbs: 65, fat: 22, time: '25 min',
+        description: 'Complet et énergétique',
+        ingredients: [
+          { name: 'Riz', quantity: '150g', kcal: 195 },
+          { name: 'Haricots rouges', quantity: '120g', kcal: 127 },
+          { name: 'Avocat', quantity: '80g', kcal: 128 },
+          { name: 'Oignon', quantity: '30g', kcal: 12 },
+          { name: 'Tomate', quantity: '50g', kcal: 9 },
+        ],
+        steps: '1. Cuire le riz 15 min.\n2. Réchauffer les haricots avec l\'oignon.\n3. Couper l\'avocat en tranches.\n4. Assembler dans un bol.',
+      },
+    ];
   };
 
   // Ouvrir l'écran Recettes
@@ -4631,13 +4832,13 @@ const RepasPage = ({ onNavigate }) => {
                   backgroundColor: recipesTab === 'personalized' ? 'rgba(212,175,55,0.10)' : 'transparent',
                 }}
               >
-                <Text style={{ fontSize: 16, marginBottom: 2 }}>🧠</Text>
+                <Text style={{ fontSize: 16, marginBottom: 2 }}>🤖</Text>
                 <Text style={{
                   color: recipesTab === 'personalized' ? '#D4AF37' : '#8892A0',
                   fontSize: fp(11), fontWeight: recipesTab === 'personalized' ? '800' : '600',
-                }}>{lang === 'fr' ? 'Personnalisé' : 'Personalized'}</Text>
+                }}>ALIXEN Chef</Text>
                 <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '600', marginTop: 1 }}>
-                  {lang === 'fr' ? 'Mood + Météo' : 'Mood + Weather'}
+                  Recettes IA
                 </Text>
               </Pressable>
             </View>
