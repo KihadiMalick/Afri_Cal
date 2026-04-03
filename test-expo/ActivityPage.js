@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { createClient } from '@supabase/supabase-js';
 import * as Location from 'expo-location';
 import MapView, { Polyline, Marker } from 'react-native-maps';
+import * as Speech from 'expo-speech';
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
@@ -381,6 +382,7 @@ var ANTI_CHEAT_DURATION = 10;
 var AUTO_PAUSE_SPEED = 1;
 var AUTO_PAUSE_DELAY = 5;
 var HYDRATION_REMINDER_INTERVAL = 15 * 60;
+var ALIXEN_VOICE_LANG = 'fr-FR';
 
 const RUN_FLAGS = [
   { distance: 400, label: '400m' },
@@ -1650,6 +1652,12 @@ const ActivityPage = ({ onNavigate }) => {
   var liveCharMsgTimerRef = useRef(null);
   var _liveRoute = useState([]); var liveRoute = _liveRoute[0]; var setLiveRoute = _liveRoute[1];
   var _liveStartCoord = useState(null); var liveStartCoord = _liveStartCoord[0]; var setLiveStartCoord = _liveStartCoord[1];
+  var _alixenMuted = useState(false); var alixenMuted = _alixenMuted[0]; var setAlixenMuted = _alixenMuted[1];
+  var _alixenMessages = useState([]); var alixenMessages = _alixenMessages[0]; var setAlixenMessages = _alixenMessages[1];
+  var _alixenSpeaking = useState(false); var alixenSpeaking = _alixenSpeaking[0]; var setAlixenSpeaking = _alixenSpeaking[1];
+  var alixenLastDistRef = useRef(0);
+  var alixenLastTimeRef = useRef(0);
+  var alixenNearGoalRef = useRef(false);
 
   // Anti-triche: +5 Lix une seule fois par jour
   const [lixRewardedToday, setLixRewardedToday] = useState(false);
@@ -2114,6 +2122,7 @@ const ActivityPage = ({ onNavigate }) => {
       liveCaloriesAccRef.current = 0; liveWaterAccRef.current = 0;
       setLiveRoute([]); setLiveStartCoord(null);
       setLiveActive(true);
+      setTimeout(function() { alixenSpeak('start'); }, 2000);
 
       // Timer durée (1s)
       liveTimerRef.current = setInterval(function() {
@@ -2121,10 +2130,19 @@ const ActivityPage = ({ onNavigate }) => {
           setLiveAutoPaused(function(autoPaused) {
             if (!paused && !autoPaused) {
               setLiveDuration(function(d) { return d + 1; });
+              // ALIXEN toutes les 5 min
+              setLiveDuration(function(dur) {
+                if (dur > 0 && dur % 300 === 0 && dur !== alixenLastTimeRef.current) {
+                  alixenLastTimeRef.current = dur;
+                  alixenSpeak('every5min');
+                }
+                return dur;
+              });
               liveHydrationTimerRef.current += 1;
               if (liveHydrationTimerRef.current >= HYDRATION_REMINDER_INTERVAL) {
                 liveHydrationTimerRef.current = 0;
                 setLiveHydrationAlert(true);
+                alixenSpeak('hydration');
                 Vibration.vibrate([0, 200, 100, 200]);
                 setTimeout(function() { setLiveHydrationAlert(false); }, 5000);
               }
@@ -2200,6 +2218,7 @@ const ActivityPage = ({ onNavigate }) => {
                 if (prevZ.zone !== newZone.zone) {
                   vibrateZoneChange(newZone, prevZ);
                   showCharReaction(newZone);
+                  alixenSpeak('zoneChange', { zoneFrom: prevZ.label, zoneTo: newZone.label });
                 }
                 return newZone;
               });
@@ -2216,6 +2235,13 @@ const ActivityPage = ({ onNavigate }) => {
               liveCaloriesAccRef.current += calIncrement;
               var totalCal = Math.round(liveCaloriesAccRef.current);
               setLiveCalories(totalCal);
+
+              // Proche de l'objectif calorique
+              var surplus = (totalEaten || 0) - (totalBurnedActivities || 0) - totalCal - (dailyTarget || 2000);
+              if (surplus <= 50 && surplus > -50 && !alixenNearGoalRef.current) {
+                alixenNearGoalRef.current = true;
+                alixenSpeak('nearGoal');
+              }
 
               // Équivalent alimentaire en temps réel
               setLiveFoodEquiv(getFoodEquivalent(totalCal));
@@ -2244,6 +2270,7 @@ const ActivityPage = ({ onNavigate }) => {
               LIVE_MILESTONES.forEach(function(m) {
                 if (currentDist >= m.distance && !liveMilestonesHitRef.current[m.distance]) {
                   liveMilestonesHitRef.current[m.distance] = true;
+                  alixenSpeak('milestone', { milestone: m.labelFR });
                   setLiveMilestone(m);
                   Vibration.vibrate([0, 150, 80, 150, 80, 150]);
                   setTimeout(function() { setLiveMilestone(null); }, 4000);
@@ -2251,6 +2278,21 @@ const ActivityPage = ({ onNavigate }) => {
               });
               return currentDist;
             });
+
+            // ALIXEN tous les 500m
+            (function() {
+              var last500 = Math.floor(alixenLastDistRef.current / 500);
+              var curr500 = Math.floor((liveDistance + dist) / 500);
+              if (curr500 > last500 && (liveDistance + dist) > 100) {
+                alixenLastDistRef.current = liveDistance + dist;
+                // Ne pas doubler si un milestone est déjà annoncé
+                var isMilestone = false;
+                LIVE_MILESTONES.forEach(function(m) {
+                  if (Math.abs((liveDistance + dist) - m.distance) < 50) isMilestone = true;
+                });
+                if (!isMilestone) alixenSpeak('every500m');
+              }
+            })();
 
             return paused;
           });
@@ -2310,13 +2352,119 @@ const ActivityPage = ({ onNavigate }) => {
         fetchWeeklyMinutes();
       }
     }
+    await alixenSpeak('finish');
+    setAlixenMessages([]);
+    setAlixenSpeaking(false);
+    alixenLastDistRef.current = 0;
+    alixenLastTimeRef.current = 0;
+    alixenNearGoalRef.current = false;
+    Speech.stop();
     setLiveActive(false);
+  };
+
+  var alixenSpeak = async function(phase, extraContext) {
+    try {
+      var ctx = {
+        phase: phase,
+        distance: Math.round(liveDistance),
+        duration: liveDuration,
+        calories: liveCalories,
+        water: liveWater,
+        speed: Math.round(liveSpeed * 10) / 10,
+        avgSpeed: Math.round(liveAvgSpeed * 10) / 10,
+        zone: liveZone.label,
+        walkPercent: liveWalkTime + liveRunTime > 0 ? Math.round(liveWalkTime / (liveWalkTime + liveRunTime) * 100) : 100,
+        runPercent: liveWalkTime + liveRunTime > 0 ? Math.round(liveRunTime / (liveWalkTime + liveRunTime) * 100) : 0,
+        userWeight: userWeight || 70,
+        dailyTarget: dailyTarget || 2000,
+        totalEaten: totalEaten || 0,
+        totalBurnedBefore: totalBurnedActivities || 0,
+        userMood: userMood || null,
+        charName: activeChar ? activeChar.name : 'ALIXEN',
+      };
+      if (extraContext) {
+        Object.keys(extraContext).forEach(function(k) { ctx[k] = extraContext[k]; });
+      }
+
+      var message = '';
+      try {
+        var response = await fetch(SUPABASE_URL + '/functions/v1/alixen-live-coach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+          body: JSON.stringify({ phase: phase, context: ctx }),
+        });
+        var data = await response.json();
+        if (data && data.message) {
+          message = data.message;
+        }
+      } catch (apiErr) {
+        console.warn('ALIXEN API fallback:', apiErr);
+      }
+
+      // Fallbacks locaux si l'API échoue
+      if (!message) {
+        var distStr = ctx.distance < 1000 ? ctx.distance + ' mètres' : (Math.round(ctx.distance / 100) / 10) + ' kilomètres';
+        var durStr = Math.floor(ctx.duration / 60) + ' minutes';
+        var remainCal = Math.max(0, ctx.totalEaten - ctx.totalBurnedBefore - ctx.calories - ctx.dailyTarget);
+
+        switch(phase) {
+          case 'start':
+            message = 'C\'est parti ! Bonne session. Ton objectif aujourd\'hui : ' + ctx.dailyTarget + ' calories.';
+            break;
+          case 'every500m':
+            message = distStr + ' parcourus, ' + ctx.calories + ' calories brûlées.';
+            if (remainCal > 0) message += ' Encore ' + remainCal + ' calories pour atteindre ton objectif.';
+            break;
+          case 'every5min':
+            message = durStr + ' d\'effort, ' + ctx.calories + ' calories. Vitesse moyenne ' + ctx.avgSpeed + ' km/h.';
+            break;
+          case 'zoneChange':
+            message = 'Changement de rythme ! Tu passes en ' + (extraContext ? extraContext.zoneTo : ctx.zone) + '.';
+            break;
+          case 'milestone':
+            message = (extraContext ? extraContext.milestone : 'Nouveau palier') + ' Excellent, continue !';
+            break;
+          case 'hydration':
+            message = 'Tu as perdu environ ' + ctx.water + ' millilitres d\'eau. Pense à t\'hydrater.';
+            break;
+          case 'nearGoal':
+            message = 'Tu approches de ton objectif calorique ! Encore quelques minutes et c\'est parfait.';
+            break;
+          case 'finish':
+            message = 'Session terminée ! ' + ctx.calories + ' calories brûlées en ' + durStr + '. Pense à boire ' + Math.round(ctx.water * 1.3) + ' ml d\'eau.';
+            break;
+          default:
+            message = 'Continue, tu gères bien.';
+        }
+      }
+
+      // Ajouter à la liste visible
+      setAlixenMessages(function(prev) {
+        return [{ text: message, phase: phase, time: liveDuration, id: Date.now() }].concat(prev).slice(0, 20);
+      });
+
+      // Parler à voix haute si pas mute
+      if (!alixenMuted) {
+        setAlixenSpeaking(true);
+        Speech.speak(message, {
+          language: ALIXEN_VOICE_LANG,
+          rate: 0.95,
+          pitch: 1.0,
+          onDone: function() { setAlixenSpeaking(false); },
+          onError: function() { setAlixenSpeaking(false); },
+        });
+      }
+
+    } catch (e) {
+      console.warn('ALIXEN speak error:', e);
+    }
   };
 
   useEffect(function() {
     return function() {
       if (liveLocationSubRef.current) liveLocationSubRef.current.remove();
       if (liveTimerRef.current) clearInterval(liveTimerRef.current);
+      Speech.stop();
     };
   }, []);
 
@@ -4041,6 +4189,14 @@ const ActivityPage = ({ onNavigate }) => {
                     return (h > 0 ? h + ':' : '') + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
                   })()}
                 </Text>
+                <Pressable onPress={function() { setAlixenMuted(function(m) { return !m; }); }} style={{
+                  width: wp(36), height: wp(36), borderRadius: wp(18),
+                  backgroundColor: alixenMuted ? 'rgba(255,107,107,0.12)' : 'rgba(0,217,132,0.12)',
+                  borderWidth: 1, borderColor: alixenMuted ? 'rgba(255,107,107,0.25)' : 'rgba(0,217,132,0.25)',
+                  justifyContent: 'center', alignItems: 'center',
+                }}>
+                  <Ionicons name={alixenMuted ? 'volume-mute' : 'volume-high'} size={wp(16)} color={alixenMuted ? '#FF6B6B' : '#00D984'} />
+                </Pressable>
               </View>
 
               {/* ══ CARACTÈRE COMPAGNON ══ */}
@@ -4289,6 +4445,52 @@ const ActivityPage = ({ onNavigate }) => {
                   <Text style={{ fontSize: fp(8), color: '#6B7280' }}>du temps</Text>
                 </View>
               </View>
+
+              {/* ══ FIL DE MESSAGES ALIXEN ══ */}
+              {alixenMessages.length > 0 && (
+                <View style={{ marginHorizontal: wp(16), marginBottom: wp(14) }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginBottom: wp(8) }}>
+                    <View style={{
+                      width: wp(24), height: wp(24), borderRadius: wp(12),
+                      backgroundColor: 'rgba(0,217,132,0.1)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                      justifyContent: 'center', alignItems: 'center',
+                    }}>
+                      <Text style={{ fontSize: fp(12) }}>{alixenSpeaking ? '\uD83D\uDDE3\uFE0F' : '\uD83E\uDD16'}</Text>
+                    </View>
+                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984', letterSpacing: 1 }}>ALIXEN</Text>
+                    {alixenSpeaking && (
+                      <View style={{ flexDirection: 'row', gap: 2, alignItems: 'center', marginLeft: wp(4) }}>
+                        <View style={{ width: 3, height: 8, borderRadius: 1.5, backgroundColor: '#00D984' }} />
+                        <View style={{ width: 3, height: 14, borderRadius: 1.5, backgroundColor: '#00D984' }} />
+                        <View style={{ width: 3, height: 6, borderRadius: 1.5, backgroundColor: '#00D984' }} />
+                        <View style={{ width: 3, height: 12, borderRadius: 1.5, backgroundColor: '#00D984' }} />
+                        <View style={{ width: 3, height: 5, borderRadius: 1.5, backgroundColor: '#00D984' }} />
+                      </View>
+                    )}
+                  </View>
+                  {alixenMessages.slice(0, 3).map(function(msg, i) {
+                    return (
+                      <View key={msg.id} style={{
+                        backgroundColor: i === 0 ? 'rgba(0,217,132,0.06)' : 'rgba(255,255,255,0.02)',
+                        borderRadius: wp(10), padding: wp(10), marginBottom: wp(4),
+                        borderWidth: i === 0 ? 1 : 0.5,
+                        borderColor: i === 0 ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.04)',
+                        opacity: i === 0 ? 1 : 0.5,
+                      }}>
+                        <Text style={{
+                          fontSize: fp(11), color: i === 0 ? '#EAEEF3' : '#8892A0',
+                          fontStyle: 'italic', lineHeight: fp(16),
+                        }}>
+                          "{msg.text}"
+                        </Text>
+                        <Text style={{ fontSize: fp(7), color: '#555E6C', marginTop: wp(3) }}>
+                          {Math.floor(msg.time / 60)}:{(msg.time % 60 < 10 ? '0' : '') + (msg.time % 60)}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
 
             </ScrollView>
 
