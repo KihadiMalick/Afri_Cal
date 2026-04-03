@@ -1362,6 +1362,19 @@ const RepasPage = ({ onNavigate }) => {
       var data = await response.json();
       var rawMessage = data.message || data.reply || '';
 
+      // L'edge function peut retourner les proposals déjà parsées
+      if (data.proposals && Array.isArray(data.proposals) && data.proposals.length > 0) {
+        setAlixenProposals(data.proposals);
+        setAlixenLoading(false);
+        if (ctx.timeOfDay === 'night' && ctx.remaining > 800) {
+          setAlixenAdvice(
+            ctx.userName + ', il te reste ' + Math.round(ctx.remaining) + ' kcal mais il est ' + ctx.hour + 'h. ' +
+            'C\'est trop pour un seul repas nocturne. Je te suggère un repas de 400-500 kcal ce soir et on ajuste demain au petit-déjeuner.'
+          );
+        }
+        return;
+      }
+
       // Parser le JSON
       try {
         // Nettoyer le message (enlever backticks markdown si présents)
