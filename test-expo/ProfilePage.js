@@ -25,6 +25,52 @@ const CONNECTORS = [
     dataFr: 'Course \u00b7 V\u00e9lo \u00b7 Distance \u00b7 GPS', dataEn: 'Running \u00b7 Cycling \u00b7 Distance \u00b7 GPS' },
 ];
 
+// Mifflin-St Jeor — Source : American Dietetic Association (2005)
+var ACTIVITY_MULTIPLIERS_MAP = {
+  sedentary: 1.2,
+  light: 1.375,
+  moderate: 1.55,
+  active: 1.725,
+  extreme: 1.9,
+};
+
+var ACTIVITY_LEVEL_KEYS = ['sedentary', 'light', 'moderate', 'active', 'extreme'];
+
+function activityLevelToIndex(level) {
+  var idx = ACTIVITY_LEVEL_KEYS.indexOf(level);
+  return idx >= 0 ? idx : 2;
+}
+
+function activityIndexToKey(index) {
+  return ACTIVITY_LEVEL_KEYS[index] || 'moderate';
+}
+
+function calculateBMR(weight, height, age, gender) {
+  if (!weight || !height || !age) return 0;
+  var w = parseFloat(weight) || 70;
+  var h = parseFloat(height) || 175;
+  var a = parseInt(age) || 25;
+  if (gender === 'female') {
+    return Math.round(10 * w + 6.25 * h - 5 * a - 161);
+  }
+  return Math.round(10 * w + 6.25 * h - 5 * a + 5);
+}
+
+function calculateTDEE(bmr, activityLevel) {
+  var mult = ACTIVITY_MULTIPLIERS_MAP[activityLevel] || 1.55;
+  return Math.round(bmr * mult);
+}
+
+function calculateDailyTarget(tdee, goal, targetWeightLoss, targetMonths) {
+  if (goal === 'maintain' || !goal) return tdee;
+  var totalKcal = (targetWeightLoss || 5) * 7700;
+  var days = Math.max(30, (targetMonths || 3) * 30);
+  var dailyDelta = Math.min(1000, Math.round(totalKcal / days));
+  if (goal === 'lose') return tdee - dailyDelta;
+  if (goal === 'gain') return tdee + dailyDelta;
+  return tdee;
+}
+
 // ScrollPicker
 var ProfileScrollPicker = function(pickerProps) {
   var values = pickerProps.values;
@@ -181,7 +227,7 @@ export default function ProfilePage() {
       return Promise.all(responses.map(function(r) { return r.json(); }));
     }).then(function(results) {
       var pD = results[0]; var cD = results[1];
-      if (pD && pD[0]) { setProfile(pD[0]); setLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); }
+      if (pD && pD[0]) { setProfile(pD[0]); setLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); if (pD[0].language === 'EN') setLang('en'); else setLang('fr'); }
       if (Array.isArray(cD)) { setOwnedCharacters(cD.length); var activeC = cD.find(function(c) { return c.is_active; }); if (activeC) setActiveCharSlug(activeC.character_slug); }
       // XP
       fetch(SUPABASE_URL + '/rest/v1/rpc/get_user_xp', { method: 'POST', headers: Object.assign({}, hdrs, { 'Content-Type': 'application/json' }), body: JSON.stringify({ p_user_id: TEST_USER_ID }) })
@@ -191,12 +237,40 @@ export default function ProfilePage() {
 
   var saveProfile = function() {
     var h = Object.assign({}, hdrs, { 'Content-Type': 'application/json', 'Prefer': 'return=representation' });
-    var body = { full_name: editName.trim(), age: parseInt(editAge) || null, weight: parseFloat(editWeight) || null, height: parseFloat(editHeight) || null };
+
+    var currentGender = profile ? profile.gender || 'male' : 'male';
+    var currentActivityLevel = profile ? profile.activity_level : 'moderate';
+    if (typeof currentActivityLevel === 'number') currentActivityLevel = activityIndexToKey(currentActivityLevel);
+    var currentDiet = profile ? (profile.dietary_regime || profile.diet || 'classic') : 'classic';
+    var currentGoal = profile ? profile.goal || 'maintain' : 'maintain';
+
+    var newBMR = calculateBMR(editWeight, editHeight, editAge, currentGender);
+    var newTDEE = calculateTDEE(newBMR, currentActivityLevel);
+    var newTarget = calculateDailyTarget(newTDEE, currentGoal, profile ? profile.target_weight_loss : 0, profile ? profile.target_months : 3);
+
+    var body = {
+      full_name: editName.trim(),
+      age: parseInt(editAge) || null,
+      weight: parseFloat(editWeight) || null,
+      height: parseFloat(editHeight) || null,
+      gender: currentGender,
+      activity_level: currentActivityLevel,
+      dietary_regime: currentDiet,
+      goal: currentGoal,
+      bmr: newBMR,
+      tdee: newTDEE,
+      daily_calorie_target: newTarget,
+      language: lang === 'en' ? 'EN' : 'FR',
+    };
+
     fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, { method: 'PATCH', headers: h, body: JSON.stringify(body) })
       .then(function(r) { return r.json(); }).then(function(data) {
         if (data && data[0]) { setProfile(data[0]); setLixBalance(data[0].lix_balance || 0); }
-        setShowEditProfile(false); showToast('Profil mis \u00e0 jour \u2713', '#00D984');
-      }).catch(function() { showToast('Erreur de sauvegarde', '#FF6B6B'); });
+        setShowEditProfile(false);
+        showToast(lang === 'fr' ? 'Profil mis \u00e0 jour \u2713' : 'Profile updated \u2713', '#00D984');
+      }).catch(function() {
+        showToast(lang === 'fr' ? 'Erreur de sauvegarde' : 'Save error', '#FF6B6B');
+      });
   };
 
   var saveLocation = function(city) { setEditLocation(city); setShowLocationPicker(false); showToast('\uD83D\uDCCD ' + city + ' enregistr\u00e9e', '#FF8C42'); };
@@ -328,8 +402,8 @@ export default function ProfilePage() {
                 ); })}
               </View>
               <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(8) }}>Niveau d'activit\u00e9</Text>
-              {ACTIVITY_LEVELS.map(function(lvl, i) { var sel = (profile ? profile.activity_level : 2) === i; return (
-                <Pressable key={i} onPress={function() { setProfile(function(p) { return p ? Object.assign({}, p, { activity_level: i }) : p; }); }} style={function(s) { return { flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), paddingHorizontal: wp(12), borderRadius: wp(10), marginBottom: wp(6), backgroundColor: sel ? 'rgba(0,217,132,0.08)' : 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: sel ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.06)', transform: [{ scale: s.pressed ? 0.97 : 1 }] }; }}>
+              {ACTIVITY_LEVELS.map(function(lvl, i) { var sel = activityLevelToIndex(profile ? profile.activity_level : 'moderate') === i; return (
+                <Pressable key={i} onPress={function() { setProfile(function(p) { return p ? Object.assign({}, p, { activity_level: activityIndexToKey(i) }) : p; }); }} style={function(s) { return { flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), paddingHorizontal: wp(12), borderRadius: wp(10), marginBottom: wp(6), backgroundColor: sel ? 'rgba(0,217,132,0.08)' : 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: sel ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.06)', transform: [{ scale: s.pressed ? 0.97 : 1 }] }; }}>
                   <Text style={{ fontSize: fp(20), marginRight: wp(10) }}>{lvl.emoji}</Text>
                   <View style={{ flex: 1 }}><Text style={{ fontSize: fp(12), fontWeight: '600', color: sel ? '#00D984' : '#FFF' }}>{lvl.label}</Text><Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>{lvl.desc}</Text></View>
                   {sel ? <Text style={{ fontSize: fp(14), color: '#00D984' }}>{'\u2713'}</Text> : null}
@@ -337,8 +411,8 @@ export default function ProfilePage() {
               ); })}
               <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(8), marginTop: wp(12) }}>R\u00e9gime alimentaire</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(6), marginBottom: wp(16) }}>
-                {DIETS.map(function(d) { var sel = (profile && profile.diet || 'classic') === d.key; return (
-                  <Pressable key={d.key} onPress={function() { setProfile(function(p) { return p ? Object.assign({}, p, { diet: d.key }) : p; }); }} style={{ paddingVertical: wp(8), paddingHorizontal: wp(12), borderRadius: wp(10), backgroundColor: sel ? d.color + '15' : 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: sel ? d.color + '35' : 'rgba(255,255,255,0.06)' }}>
+                {DIETS.map(function(d) { var sel = (profile && (profile.dietary_regime || profile.diet) || 'classic') === d.key; return (
+                  <Pressable key={d.key} onPress={function() { setProfile(function(p) { return p ? Object.assign({}, p, { dietary_regime: d.key }) : p; }); }} style={{ paddingVertical: wp(8), paddingHorizontal: wp(12), borderRadius: wp(10), backgroundColor: sel ? d.color + '15' : 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: sel ? d.color + '35' : 'rgba(255,255,255,0.06)' }}>
                     <Text style={{ fontSize: fp(11), color: sel ? d.color : 'rgba(255,255,255,0.4)' }}>{d.emoji} {d.label}</Text>
                   </Pressable>
                 ); })}
@@ -352,7 +426,36 @@ export default function ProfilePage() {
                   </Pressable>
                 ); })}
               </View>
-              <Pressable delayPressIn={120} onPress={saveProfile} style={{ marginBottom: wp(8) }}><LinearGradient colors={['#00D984', '#00B871']} style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>Enregistrer les modifications</Text></LinearGradient></Pressable>
+              {(function() {
+                var currentActivityLevel = profile ? profile.activity_level : 'moderate';
+                if (typeof currentActivityLevel === 'number') currentActivityLevel = activityIndexToKey(currentActivityLevel);
+                var previewBMR = calculateBMR(editWeight, editHeight, editAge, profile ? profile.gender : 'male');
+                var previewTDEE = calculateTDEE(previewBMR, currentActivityLevel);
+                if (previewBMR > 0) {
+                  return (
+                    <View style={{ backgroundColor: 'rgba(212,175,55,0.06)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)', alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.4)', letterSpacing: 1.5, marginBottom: wp(6) }}>
+                        {lang === 'fr' ? 'CALCUL AUTOMATIQUE' : 'AUTO CALCULATION'}
+                      </Text>
+                      <View style={{ flexDirection: 'row', gap: wp(20) }}>
+                        <View style={{ alignItems: 'center' }}>
+                          <Text style={{ fontSize: fp(18), fontWeight: '800', color: '#D4AF37' }}>{previewBMR}</Text>
+                          <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.3)' }}>BMR kcal</Text>
+                        </View>
+                        <View style={{ alignItems: 'center' }}>
+                          <Text style={{ fontSize: fp(18), fontWeight: '800', color: '#00D984' }}>{previewTDEE}</Text>
+                          <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.3)' }}>TDEE kcal</Text>
+                        </View>
+                      </View>
+                      <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.2)', marginTop: wp(6), textAlign: 'center' }}>
+                        Mifflin-St Jeor (ADA, 2005)
+                      </Text>
+                    </View>
+                  );
+                }
+                return null;
+              })()}
+              <Pressable delayPressIn={120} onPress={saveProfile} style={{ marginBottom: wp(8) }}><LinearGradient colors={['#00D984', '#00B871']} style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center' }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{lang === 'fr' ? 'Enregistrer les modifications' : 'Save changes'}</Text></LinearGradient></Pressable>
               <Pressable onPress={function() { setShowEditProfile(false); }} style={{ paddingVertical: wp(12), alignItems: 'center' }}><Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>Annuler</Text></Pressable>
             </ScrollView>
           </View>
@@ -573,8 +676,8 @@ export default function ProfilePage() {
           {/* Header */}
           <View style={{ paddingTop: Platform.OS === 'android' ? 50 : 60, paddingBottom: wp(20) }}>
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: wp(16), marginBottom: wp(12), gap: wp(6) }}>
-              <Pressable onPress={function() { setLang('fr'); }} style={{ paddingHorizontal: wp(8), paddingVertical: wp(5), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'fr' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'fr' ? 'rgba(0,217,132,0.08)' : 'transparent' }}><Text style={{ fontSize: fp(14) }}>{'\uD83C\uDDEB\uD83C\uDDF7'}</Text></Pressable>
-              <Pressable onPress={function() { setLang('en'); }} style={{ paddingHorizontal: wp(8), paddingVertical: wp(5), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'en' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'en' ? 'rgba(0,217,132,0.08)' : 'transparent' }}><Text style={{ fontSize: fp(14) }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</Text></Pressable>
+              <Pressable onPress={function() { setLang('fr'); fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, { method: 'PATCH', headers: Object.assign({}, hdrs, { 'Content-Type': 'application/json' }), body: JSON.stringify({ language: 'FR' }) }).catch(function() {}); }} style={{ paddingHorizontal: wp(8), paddingVertical: wp(5), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'fr' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'fr' ? 'rgba(0,217,132,0.08)' : 'transparent' }}><Text style={{ fontSize: fp(14) }}>{'\uD83C\uDDEB\uD83C\uDDF7'}</Text></Pressable>
+              <Pressable onPress={function() { setLang('en'); fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, { method: 'PATCH', headers: Object.assign({}, hdrs, { 'Content-Type': 'application/json' }), body: JSON.stringify({ language: 'EN' }) }).catch(function() {}); }} style={{ paddingHorizontal: wp(8), paddingVertical: wp(5), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'en' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'en' ? 'rgba(0,217,132,0.08)' : 'transparent' }}><Text style={{ fontSize: fp(14) }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</Text></Pressable>
             </View>
             <View style={{ alignItems: 'center' }}>
               <View style={{ width: wp(72), height: wp(72), borderRadius: wp(36), backgroundColor: avatarColor + '15', borderWidth: 2.5, borderColor: avatarColor + '50', justifyContent: 'center', alignItems: 'center', marginBottom: wp(10), shadowColor: avatarColor, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 }}>
