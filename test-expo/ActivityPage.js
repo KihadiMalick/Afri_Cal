@@ -5,7 +5,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, Dimensions, ScrollView, Pressable, Platform,
   Animated, PixelRatio, TextInput, Alert, TouchableOpacity,
-  Modal, StyleSheet, Image,
+  Modal, StyleSheet, Image, Vibration,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, {
@@ -15,6 +15,7 @@ import Svg, {
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { createClient } from '@supabase/supabase-js';
+import * as Location from 'expo-location';
 
 // ── Supabase ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
@@ -250,6 +251,92 @@ var calcWater = function(waterPerHourMl, durationMin, intensity) {
   var intensityMult = intensity === 'leger' ? 0.8 : intensity === 'intense' ? 1.3 : 1.0;
   return Math.round((durationMin / 60) * waterPerHourMl * intensityMult);
 };
+
+// ── Live GPS — Zones de vitesse → MET (Ainsworth et al., 2011) ──
+var SPEED_ZONES = [
+  { minSpeed: 0,    maxSpeed: 1,    met: 1.0,  label: 'Immobile',       labelEN: 'Idle',           zone: 'pause',    color: '#555E6C' },
+  { minSpeed: 1,    maxSpeed: 4,    met: 2.5,  label: 'Marche lente',   labelEN: 'Slow walk',      zone: 'recovery', color: '#00D984' },
+  { minSpeed: 4,    maxSpeed: 5.5,  met: 3.5,  label: 'Marche normale', labelEN: 'Normal walk',    zone: 'easy',     color: '#00D984' },
+  { minSpeed: 5.5,  maxSpeed: 7,    met: 4.3,  label: 'Marche rapide',  labelEN: 'Brisk walk',     zone: 'moderate', color: '#FFB800' },
+  { minSpeed: 7,    maxSpeed: 9,    met: 7.0,  label: 'Jogging',        labelEN: 'Jogging',        zone: 'tempo',    color: '#FF8C42' },
+  { minSpeed: 9,    maxSpeed: 12,   met: 9.0,  label: 'Course modérée', labelEN: 'Moderate run',   zone: 'intense',  color: '#FF6B6B' },
+  { minSpeed: 12,   maxSpeed: 15,   met: 11.5, label: 'Course rapide',  labelEN: 'Fast run',       zone: 'sprint',   color: '#FF1744' },
+  { minSpeed: 15,   maxSpeed: 999,  met: 11.5, label: 'Sprint',         labelEN: 'Sprint',         zone: 'sprint',   color: '#FF1744' },
+];
+
+function getSpeedZone(speedKmh) {
+  for (var i = SPEED_ZONES.length - 1; i >= 0; i--) {
+    if (speedKmh >= SPEED_ZONES[i].minSpeed) return SPEED_ZONES[i];
+  }
+  return SPEED_ZONES[0];
+}
+
+// ── Équivalents alimentaires en temps réel ──
+var FOOD_EQUIVALENTS = [
+  { kcal: 52,  label: 'pomme',    labelEN: 'apple',      emoji: '🍎' },
+  { kcal: 89,  label: 'banane',   labelEN: 'banana',     emoji: '🍌' },
+  { kcal: 120, label: 'croissant',labelEN: 'croissant',  emoji: '🥐' },
+  { kcal: 210, label: 'beignet',  labelEN: 'doughnut',   emoji: '🍩' },
+  { kcal: 266, label: 'pizza',    labelEN: 'pizza slice', emoji: '🍕' },
+  { kcal: 295, label: 'burger',   labelEN: 'burger',     emoji: '🍔' },
+  { kcal: 350, label: 'gâteau',   labelEN: 'cake slice', emoji: '🎂' },
+  { kcal: 550, label: 'tajine',   labelEN: 'tajine',     emoji: '🍲' },
+];
+
+function getFoodEquivalent(kcal) {
+  for (var i = FOOD_EQUIVALENTS.length - 1; i >= 0; i--) {
+    if (kcal >= FOOD_EQUIVALENTS[i].kcal) {
+      var count = Math.round((kcal / FOOD_EQUIVALENTS[i].kcal) * 10) / 10;
+      return { count: count, food: FOOD_EQUIVALENTS[i] };
+    }
+  }
+  return null;
+}
+
+// ── Coefficient eau climat (météo) ──
+var WEATHER_WATER_MULTIPLIER = {
+  sunny: 1.4,
+  cloudy: 1.1,
+  rainy: 1.0,
+  windy: 1.2,
+  snowy: 1.0,
+  hot: 1.5,
+  stormy: 1.1,
+};
+
+function getWeatherWaterMult(weather) {
+  if (!weather) return 1.2;
+  var w = weather.toLowerCase();
+  return WEATHER_WATER_MULTIPLIER[w] || 1.2;
+}
+
+// ── Milestones ──
+var LIVE_MILESTONES = [
+  { distance: 500,   labelFR: 'Premier demi-km !',    labelEN: 'First half km!',     emoji: '🎯' },
+  { distance: 1000,  labelFR: '1 km parcouru !',      labelEN: '1 km covered!',      emoji: '🏁' },
+  { distance: 2000,  labelFR: '2 km — beau rythme !', labelEN: '2 km — nice pace!',  emoji: '💪' },
+  { distance: 5000,  labelFR: '5 km — excellent !',   labelEN: '5 km — excellent!',  emoji: '⭐' },
+  { distance: 10000, labelFR: '10 km — machine !',    labelEN: '10 km — beast!',     emoji: '🔥' },
+  { distance: 21000, labelFR: 'Semi-marathon !',       labelEN: 'Half marathon!',     emoji: '🏅' },
+  { distance: 42000, labelFR: 'MARATHON COMPLET !',    labelEN: 'FULL MARATHON!',     emoji: '👑' },
+];
+
+// ── Réactions du caractère selon la zone ──
+var CHAR_REACTIONS = {
+  pause:    { msgFR: 'On fait une pause...',        msgEN: 'Taking a break...',      anim: 'idle' },
+  recovery: { msgFR: 'Bien, on s\'échauffe !',      msgEN: 'Good, warming up!',      anim: 'happy' },
+  easy:     { msgFR: 'Bon rythme, continue !',      msgEN: 'Good rhythm, keep it!',  anim: 'happy' },
+  moderate: { msgFR: 'Tu accélères, j\'aime ça !',  msgEN: 'Picking up speed, love it!', anim: 'wow' },
+  tempo:    { msgFR: 'Mode course activé !',         msgEN: 'Running mode ON!',       anim: 'wow' },
+  intense:  { msgFR: 'Tu es en feu !!!',             msgEN: 'You\'re on fire!!!',     anim: 'heart' },
+  sprint:   { msgFR: 'VITESSE MAXIMALE !!!',         msgEN: 'MAXIMUM SPEED!!!',       anim: 'heart' },
+};
+
+var ANTI_CHEAT_MAX_SPEED = 25;
+var ANTI_CHEAT_DURATION = 10;
+var AUTO_PAUSE_SPEED = 1;
+var AUTO_PAUSE_DELAY = 5;
+var HYDRATION_REMINDER_INTERVAL = 15 * 60;
 
 const RUN_FLAGS = [
   { distance: 400, label: '400m' },
@@ -1486,6 +1573,40 @@ const ActivityPage = ({ onNavigate }) => {
   // Live GPS placeholder
   const [showLivePlaceholder, setShowLivePlaceholder] = useState(false);
 
+  // ── Live GPS States ──
+  var _liveActive = useState(false); var liveActive = _liveActive[0]; var setLiveActive = _liveActive[1];
+  var _liveCountdown = useState(0); var liveCountdown = _liveCountdown[0]; var setLiveCountdown = _liveCountdown[1];
+  var _livePaused = useState(false); var livePaused = _livePaused[0]; var setLivePaused = _livePaused[1];
+  var _liveAutoPaused = useState(false); var liveAutoPaused = _liveAutoPaused[0]; var setLiveAutoPaused = _liveAutoPaused[1];
+  var _liveDistance = useState(0); var liveDistance = _liveDistance[0]; var setLiveDistance = _liveDistance[1];
+  var _liveDuration = useState(0); var liveDuration = _liveDuration[0]; var setLiveDuration = _liveDuration[1];
+  var _liveCalories = useState(0); var liveCalories = _liveCalories[0]; var setLiveCalories = _liveCalories[1];
+  var _liveWater = useState(0); var liveWater = _liveWater[0]; var setLiveWater = _liveWater[1];
+  var _liveSpeed = useState(0); var liveSpeed = _liveSpeed[0]; var setLiveSpeed = _liveSpeed[1];
+  var _liveMaxSpeed = useState(0); var liveMaxSpeed = _liveMaxSpeed[0]; var setLiveMaxSpeed = _liveMaxSpeed[1];
+  var _liveAvgSpeed = useState(0); var liveAvgSpeed = _liveAvgSpeed[0]; var setLiveAvgSpeed = _liveAvgSpeed[1];
+  var _liveZone = useState(SPEED_ZONES[0]); var liveZone = _liveZone[0]; var setLiveZone = _liveZone[1];
+  var _livePrevZone = useState(null); var livePrevZone = _livePrevZone[0]; var setLivePrevZone = _livePrevZone[1];
+  var _liveMilestone = useState(null); var liveMilestone = _liveMilestone[0]; var setLiveMilestone = _liveMilestone[1];
+  var _liveHydrationAlert = useState(false); var liveHydrationAlert = _liveHydrationAlert[0]; var setLiveHydrationAlert = _liveHydrationAlert[1];
+  var _liveWalkTime = useState(0); var liveWalkTime = _liveWalkTime[0]; var setLiveWalkTime = _liveWalkTime[1];
+  var _liveRunTime = useState(0); var liveRunTime = _liveRunTime[0]; var setLiveRunTime = _liveRunTime[1];
+  var _liveCharMsg = useState(''); var liveCharMsg = _liveCharMsg[0]; var setLiveCharMsg = _liveCharMsg[1];
+  var _liveFoodEquiv = useState(null); var liveFoodEquiv = _liveFoodEquiv[0]; var setLiveFoodEquiv = _liveFoodEquiv[1];
+  var _liveWeatherMult = useState(1.2); var liveWeatherMult = _liveWeatherMult[0]; var setLiveWeatherMult = _liveWeatherMult[1];
+
+  var liveLocationSubRef = useRef(null);
+  var liveTimerRef = useRef(null);
+  var liveLastPosRef = useRef(null);
+  var liveMilestonesHitRef = useRef({});
+  var liveSpeedSamplesRef = useRef([]);
+  var liveStillCounterRef = useRef(0);
+  var liveHydrationTimerRef = useRef(0);
+  var liveSuspectCounterRef = useRef(0);
+  var liveCaloriesAccRef = useRef(0);
+  var liveWaterAccRef = useRef(0);
+  var liveCharMsgTimerRef = useRef(null);
+
   // Anti-triche: +5 Lix une seule fois par jour
   const [lixRewardedToday, setLixRewardedToday] = useState(false);
 
@@ -1866,6 +1987,285 @@ const ActivityPage = ({ onNavigate }) => {
       .order('created_at', { ascending: false });
     if (data) setTodayActivities(data);
   };
+
+  // ── Haversine : distance entre 2 coords GPS ──
+  function haversineDistance(lat1, lon1, lat2, lon2) {
+    var R = 6371000;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  // ── Vibration au changement de zone ──
+  function vibrateZoneChange(newZone, prevZone) {
+    if (!prevZone || prevZone.zone === newZone.zone) return;
+    if (newZone.zone === 'pause') return;
+    if (SPEED_ZONES.indexOf(newZone) > SPEED_ZONES.indexOf(prevZone)) {
+      Vibration.vibrate([0, 100, 50, 100]);
+    } else {
+      Vibration.vibrate(80);
+    }
+  }
+
+  // ── Message du caractère selon la zone ──
+  function showCharReaction(zone, lang) {
+    var reaction = CHAR_REACTIONS[zone.zone];
+    if (!reaction) return;
+    var msg = lang === 'EN' ? reaction.msgEN : reaction.msgFR;
+    setLiveCharMsg(msg);
+    if (liveCharMsgTimerRef.current) clearTimeout(liveCharMsgTimerRef.current);
+    liveCharMsgTimerRef.current = setTimeout(function() { setLiveCharMsg(''); }, 4000);
+  }
+
+  // ── Démarrer le Live GPS ──
+  var startLiveTracking = function() {
+    setShowLivePlaceholder(false);
+
+    // Charger la météo du profil
+    (async function() {
+      try {
+        var profileData = await supabase
+          .from('users_profile')
+          .select('current_weather')
+          .eq('user_id', TEST_USER_ID)
+          .maybeSingle();
+        if (profileData.data && profileData.data.current_weather) {
+          setLiveWeatherMult(getWeatherWaterMult(profileData.data.current_weather));
+        }
+      } catch (e) {}
+    })();
+
+    setLiveCountdown(3);
+    var countInterval = setInterval(function() {
+      setLiveCountdown(function(prev) {
+        if (prev <= 1) {
+          clearInterval(countInterval);
+          launchGPS();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  var launchGPS = async function() {
+    try {
+      var perm = await Location.requestForegroundPermissionsAsync();
+      if (perm.status !== 'granted') {
+        Alert.alert('Permission GPS requise', 'LIXUM a besoin du GPS pour le suivi en temps réel.', [{ text: 'OK' }]);
+        return;
+      }
+
+      // Reset
+      setLiveDistance(0); setLiveDuration(0); setLiveCalories(0); setLiveWater(0);
+      setLiveSpeed(0); setLiveMaxSpeed(0); setLiveAvgSpeed(0);
+      setLiveZone(SPEED_ZONES[0]); setLivePrevZone(null);
+      setLiveMilestone(null); setLivePaused(false); setLiveAutoPaused(false);
+      setLiveWalkTime(0); setLiveRunTime(0); setLiveCharMsg(''); setLiveFoodEquiv(null);
+      liveLastPosRef.current = null; liveMilestonesHitRef.current = {};
+      liveSpeedSamplesRef.current = []; liveStillCounterRef.current = 0;
+      liveHydrationTimerRef.current = 0; liveSuspectCounterRef.current = 0;
+      liveCaloriesAccRef.current = 0; liveWaterAccRef.current = 0;
+      setLiveActive(true);
+
+      // Timer durée (1s)
+      liveTimerRef.current = setInterval(function() {
+        setLivePaused(function(paused) {
+          setLiveAutoPaused(function(autoPaused) {
+            if (!paused && !autoPaused) {
+              setLiveDuration(function(d) { return d + 1; });
+              liveHydrationTimerRef.current += 1;
+              if (liveHydrationTimerRef.current >= HYDRATION_REMINDER_INTERVAL) {
+                liveHydrationTimerRef.current = 0;
+                setLiveHydrationAlert(true);
+                Vibration.vibrate([0, 200, 100, 200]);
+                setTimeout(function() { setLiveHydrationAlert(false); }, 5000);
+              }
+            }
+            return autoPaused;
+          });
+          return paused;
+        });
+      }, 1000);
+
+      // Watcher GPS
+      liveLocationSubRef.current = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 2 },
+        function(location) {
+          setLivePaused(function(paused) {
+            if (paused) return paused;
+
+            var lat = location.coords.latitude;
+            var lon = location.coords.longitude;
+            var accuracy = location.coords.accuracy || 999;
+            var timestamp = location.timestamp;
+
+            if (accuracy > 50) return paused;
+
+            if (liveLastPosRef.current) {
+              var dist = haversineDistance(liveLastPosRef.current.lat, liveLastPosRef.current.lon, lat, lon);
+              var timeDelta = (timestamp - liveLastPosRef.current.timestamp) / 1000;
+              if (timeDelta <= 0) timeDelta = 1;
+              var speedMs = dist / timeDelta;
+              var speedKmh = speedMs * 3.6;
+
+              // Anti-triche
+              if (speedKmh > ANTI_CHEAT_MAX_SPEED) {
+                liveSuspectCounterRef.current += timeDelta;
+                if (liveSuspectCounterRef.current > ANTI_CHEAT_DURATION) {
+                  setLiveAutoPaused(true);
+                  Vibration.vibrate([0, 300, 100, 300, 100, 300]);
+                  Alert.alert('Vitesse suspecte', 'Vitesse trop élevée détectée. Tracking en pause.');
+                }
+                liveLastPosRef.current = { lat: lat, lon: lon, timestamp: timestamp };
+                return paused;
+              }
+              liveSuspectCounterRef.current = 0;
+
+              // Auto-pause si immobile
+              if (speedKmh < AUTO_PAUSE_SPEED) {
+                liveStillCounterRef.current += timeDelta;
+                if (liveStillCounterRef.current > AUTO_PAUSE_DELAY) {
+                  setLiveAutoPaused(true);
+                }
+              } else {
+                liveStillCounterRef.current = 0;
+                setLiveAutoPaused(function(was) { return was ? false : was; });
+              }
+
+              // Distance
+              if (dist > 1 && dist < 100) {
+                setLiveDistance(function(d) { return d + dist; });
+              }
+
+              // Vitesse
+              setLiveSpeed(speedKmh);
+              liveSpeedSamplesRef.current.push(speedKmh);
+              if (speedKmh > 0) {
+                setLiveMaxSpeed(function(max) { return Math.max(max, speedKmh); });
+              }
+              var avgS = liveSpeedSamplesRef.current.reduce(function(a, b) { return a + b; }, 0) / liveSpeedSamplesRef.current.length;
+              setLiveAvgSpeed(avgS);
+
+              // Zone MET + vibration + réaction caractère
+              var newZone = getSpeedZone(speedKmh);
+              setLiveZone(function(prevZ) {
+                if (prevZ.zone !== newZone.zone) {
+                  vibrateZoneChange(newZone, prevZ);
+                  showCharReaction(newZone);
+                }
+                return newZone;
+              });
+
+              // Walk vs Run time
+              if (speedKmh >= 7) {
+                setLiveRunTime(function(t) { return t + timeDelta; });
+              } else if (speedKmh >= 1) {
+                setLiveWalkTime(function(t) { return t + timeDelta; });
+              }
+
+              // Calories (MET variable × poids × temps)
+              var calIncrement = (newZone.met * (userWeight || 70) * timeDelta) / 3600;
+              liveCaloriesAccRef.current += calIncrement;
+              var totalCal = Math.round(liveCaloriesAccRef.current);
+              setLiveCalories(totalCal);
+
+              // Équivalent alimentaire en temps réel
+              setLiveFoodEquiv(getFoodEquivalent(totalCal));
+
+              // Eau perdue (ajustée au climat)
+              var baseWaterRate = newZone.met > 7 ? 900 : newZone.met > 4 ? 600 : 400;
+              var weatherMult = 1.2;
+              setLiveWeatherMult(function(wm) { weatherMult = wm; return wm; });
+              var waterIncrement = (baseWaterRate * weatherMult * timeDelta) / 3600;
+              liveWaterAccRef.current += waterIncrement;
+              setLiveWater(Math.round(liveWaterAccRef.current));
+            }
+
+            liveLastPosRef.current = { lat: lat, lon: lon, timestamp: timestamp };
+
+            // Milestones
+            setLiveDistance(function(currentDist) {
+              LIVE_MILESTONES.forEach(function(m) {
+                if (currentDist >= m.distance && !liveMilestonesHitRef.current[m.distance]) {
+                  liveMilestonesHitRef.current[m.distance] = true;
+                  setLiveMilestone(m);
+                  Vibration.vibrate([0, 150, 80, 150, 80, 150]);
+                  setTimeout(function() { setLiveMilestone(null); }, 4000);
+                }
+              });
+              return currentDist;
+            });
+
+            return paused;
+          });
+        }
+      );
+    } catch (e) {
+      console.error('GPS error:', e);
+      Alert.alert('Erreur GPS', 'Impossible de démarrer le suivi GPS.');
+    }
+  };
+
+  var toggleLivePause = function() {
+    setLivePaused(function(p) { return !p; });
+    setLiveAutoPaused(false);
+    liveStillCounterRef.current = 0;
+    Vibration.vibrate(50);
+  };
+
+  var stopLiveTracking = async function() {
+    if (liveLocationSubRef.current) { liveLocationSubRef.current.remove(); liveLocationSubRef.current = null; }
+    if (liveTimerRef.current) { clearInterval(liveTimerRef.current); liveTimerRef.current = null; }
+
+    var dominantType = liveRunTime > liveWalkTime ? 'course' : 'marche';
+    var dominantIntensity = liveAvgSpeed > 9 ? 'intense' : liveAvgSpeed > 5.5 ? 'modere' : 'leger';
+    var durationMin = Math.round(liveDuration / 60);
+
+    if (durationMin > 0 && liveDistance > 10) {
+      var ok = await saveActivity(dominantType, durationMin, liveCalories, dominantIntensity, liveWater);
+      if (ok) {
+        // Patch source GPS + distance
+        try {
+          var today = new Date().toISOString().split('T')[0];
+          await supabase.from('activities')
+            .update({ source: 'live_gps', distance_m: Math.round(liveDistance) })
+            .eq('user_id', TEST_USER_ID).eq('date', today)
+            .order('created_at', { ascending: false }).limit(1);
+        } catch (e) { console.warn('GPS source patch:', e); }
+
+        setLastActivity({
+          type: dominantType === 'course' ? 'run' : 'walk',
+          name: dominantType === 'course' ? 'Course' : 'Marche',
+          distance: liveDistance < 1000 ? Math.round(liveDistance) + ' m' : (Math.round(liveDistance / 100) / 10) + ' km',
+          duration: durationMin, kcal: liveCalories, water: liveWater,
+          speed: (Math.round(liveAvgSpeed * 10) / 10) + ' km/h',
+          isGPS: true,
+          maxSpeed: Math.round(liveMaxSpeed * 10) / 10,
+          walkPercent: liveWalkTime + liveRunTime > 0 ? Math.round(liveWalkTime / (liveWalkTime + liveRunTime) * 100) : 100,
+          runPercent: liveWalkTime + liveRunTime > 0 ? Math.round(liveRunTime / (liveWalkTime + liveRunTime) * 100) : 0,
+          pace: liveAvgSpeed > 0 ? Math.floor(60 / liveAvgSpeed) + ':' + (Math.round((60 / liveAvgSpeed % 1) * 60) < 10 ? '0' : '') + Math.round((60 / liveAvgSpeed % 1) * 60) : '--:--',
+          source: 'live_gps',
+          weatherMult: liveWeatherMult,
+          foodEquiv: liveFoodEquiv,
+        });
+        setShowPostReport(true);
+        fetchWeeklyMinutes();
+      }
+    }
+    setLiveActive(false);
+  };
+
+  useEffect(function() {
+    return function() {
+      if (liveLocationSubRef.current) liveLocationSubRef.current.remove();
+      if (liveTimerRef.current) clearInterval(liveTimerRef.current);
+    };
+  }, []);
 
   // FIX 6: Save via RPC (SECURITY DEFINER)
   const saveActivity = async (activityType, durationMin, caloriesBurned, intensity, waterLost) => {
@@ -2891,7 +3291,7 @@ const ActivityPage = ({ onNavigate }) => {
               )}
 
               <TouchableOpacity
-                onPress={() => setShowLivePlaceholder(true)}
+                onPress={function() { startLiveTracking(); }}
                 style={{
                   flex: walkScrollOffset > 0 ? 1 : 1,
                   backgroundColor: 'rgba(255,107,107,0.12)',
@@ -3247,7 +3647,7 @@ const ActivityPage = ({ onNavigate }) => {
               )}
 
               <TouchableOpacity
-                onPress={() => setShowLivePlaceholder(true)}
+                onPress={function() { startLiveTracking(); }}
                 style={{
                   flex: runScrollOffset > 0 ? 1 : 1,
                   backgroundColor: 'rgba(255,107,107,0.12)',
