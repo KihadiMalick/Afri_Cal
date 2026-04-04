@@ -606,8 +606,228 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved }) {
             </View>
           )}
 
-          {/* === PHASE 9 : Onglet Ingrédients + Save JSX === */}
+          {/* ====== ONGLET INGRÉDIENTS ====== */}
+          {manualTab === 'ingredients' && (
+            <View style={{ paddingHorizontal: wp(16) }}>
+
+              {/* Totaux en temps réel */}
+              {manualIngredients.length > 0 && (
+                <View style={{
+                  borderRadius: 16, padding: 1, backgroundColor: '#4A4F55', marginBottom: wp(16),
+                }}>
+                  <LinearGradient
+                    colors={['#3A3F46', '#252A30', '#1A1D22']}
+                    style={{ borderRadius: 15, padding: wp(14), alignItems: 'center' }}
+                  >
+                    <Text style={{ color: '#FF8C42', fontSize: fp(28), fontWeight: '900' }}>
+                      {getManualIngTotals().calories} kcal
+                    </Text>
+                    <View style={{ flexDirection: 'row', marginTop: wp(8), gap: wp(16) }}>
+                      <View style={{ alignItems: 'center' }}>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF6B6B', marginBottom: 2 }} />
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{getManualIngTotals().protein_g}g</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(8) }}>Protéines</Text>
+                      </View>
+                      <View style={{ alignItems: 'center' }}>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFD93D', marginBottom: 2 }} />
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{getManualIngTotals().carbs_g}g</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(8) }}>Glucides</Text>
+                      </View>
+                      <View style={{ alignItems: 'center' }}>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4DA6FF', marginBottom: 2 }} />
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{getManualIngTotals().fat_g}g</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(8) }}>Lipides</Text>
+                      </View>
+                    </View>
+                  </LinearGradient>
+                </View>
+              )}
+
+              {/* Liste ingrédients ajoutés */}
+              {manualIngredients.map((ing, index) => (
+                <View key={index} style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  backgroundColor: 'rgba(255,255,255,0.03)',
+                  borderRadius: 14, marginBottom: wp(8), padding: wp(12),
+                  borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '600' }}>{ing.name}</Text>
+                    {manualEditingQtyIndex === index ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                        <TextInput
+                          value={manualTempQty}
+                          onChangeText={setManualTempQty}
+                          keyboardType="numeric"
+                          autoFocus
+                          style={{
+                            color: '#00D984', fontSize: fp(12), fontWeight: '700',
+                            backgroundColor: 'rgba(0,217,132,0.08)',
+                            borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
+                            minWidth: 50, borderWidth: 1, borderColor: 'rgba(0,217,132,0.3)',
+                          }}
+                          onSubmitEditing={() => updateManualIngQty(index, manualTempQty)}
+                          onBlur={() => { if (manualTempQty) updateManualIngQty(index, manualTempQty); else { setManualEditingQtyIndex(null); setManualTempQty(''); } }}
+                        />
+                        <Text style={{ color: '#5A6070', fontSize: fp(11), marginLeft: 4 }}>g</Text>
+                      </View>
+                    ) : (
+                      <Pressable onPress={() => { setManualEditingQtyIndex(index); setManualTempQty(String(ing.quantity_g || 100)); }}>
+                        <Text style={{ color: '#00D984', fontSize: fp(11), marginTop: 3, textDecorationLine: 'underline' }}>
+                          {ing.quantity_g || 100}g — modifier
+                        </Text>
+                      </Pressable>
+                    )}
+                  </View>
+                  <Text style={{ color: '#FF8C42', fontSize: fp(13), fontWeight: '700', marginRight: wp(10) }}>{ing.calories} kcal</Text>
+                  <Pressable onPress={() => removeManualIngredient(index)} style={({ pressed }) => ({
+                    width: 28, height: 28, borderRadius: 14,
+                    backgroundColor: pressed ? 'rgba(255,59,48,0.2)' : 'rgba(255,59,48,0.08)',
+                    justifyContent: 'center', alignItems: 'center',
+                    borderWidth: 1, borderColor: 'rgba(255,59,48,0.2)',
+                  })}>
+                    <Text style={{ color: '#FF3B30', fontSize: 14, fontWeight: '700' }}>×</Text>
+                  </Pressable>
+                </View>
+              ))}
+
+              {/* Barre de recherche ingrédients */}
+              <View style={{
+                flexDirection: 'row', alignItems: 'center',
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                borderRadius: 14, paddingHorizontal: wp(12),
+                borderWidth: 1, borderColor: ingSearchQuery.length > 0 ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.05)',
+                marginTop: wp(8),
+              }}>
+                <Text style={{ color: '#5A6070', fontSize: 16, marginRight: 8 }}>🔍</Text>
+                <TextInput
+                  value={ingSearchQuery}
+                  onChangeText={searchManualIngredients}
+                  placeholder="Ajouter un ingrédient..."
+                  placeholderTextColor="#5A6070"
+                  style={{ flex: 1, color: '#EAEEF3', fontSize: fp(13), paddingVertical: wp(12) }}
+                  onFocus={() => {
+                    setTimeout(() => { if (manualScrollRef.current) manualScrollRef.current.scrollToEnd({ animated: true }); }, 300);
+                  }}
+                />
+                {ingSearchQuery.length > 0 && (
+                  <Pressable onPress={() => { setIngSearchQuery(''); setIngSearchResults([]); }}>
+                    <Text style={{ color: '#8892A0', fontSize: 16 }}>✕</Text>
+                  </Pressable>
+                )}
+              </View>
+
+              {isIngSearching && (
+                <Text style={{ color: '#D4AF37', fontSize: fp(10), marginTop: wp(6), fontStyle: 'italic' }}>Recherche...</Text>
+              )}
+
+              {ingSearchResults.length > 0 && (
+                <View style={{
+                  marginTop: wp(8), borderRadius: 14,
+                  backgroundColor: 'rgba(255,255,255,0.03)',
+                  borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                  overflow: 'hidden',
+                }}>
+                  {ingSearchResults.map((result, i) => (
+                    <Pressable key={i} onPress={() => addManualIngredient(result)}
+                      style={({ pressed }) => ({
+                        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                        paddingVertical: wp(10), paddingHorizontal: wp(12),
+                        backgroundColor: pressed ? 'rgba(212,175,55,0.08)' : 'transparent',
+                        borderBottomWidth: i < ingSearchResults.length - 1 ? 0.5 : 0,
+                        borderBottomColor: 'rgba(255,255,255,0.05)',
+                      })}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>{result.name}</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>
+                          {result.kcal_per_100g} kcal/100g
+                        </Text>
+                      </View>
+                      <View style={{
+                        backgroundColor: 'rgba(212,175,55,0.08)',
+                        paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8,
+                        borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+                      }}>
+                        <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>+ Ajouter</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* SÉLECTEUR CRÉNEAU — commun aux 2 onglets */}
+          {((manualTab === 'meals' && selectedMeal) || (manualTab === 'ingredients' && manualIngredients.length > 0)) && (
+            <View style={{ paddingHorizontal: wp(16), marginTop: wp(20) }}>
+              <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '700', letterSpacing: 1.5, marginBottom: wp(8) }}>
+                CRÉNEAU REPAS
+              </Text>
+              <View style={{ flexDirection: 'row', gap: wp(8) }}>
+                {MEAL_SLOTS.map((slot) => {
+                  const isSelected = manualMealType === slot.key;
+                  return (
+                    <Pressable key={slot.key} onPress={() => setManualMealType(slot.key)}
+                      style={({ pressed }) => ({
+                        flex: 1, flexDirection: 'column', alignItems: 'center',
+                        paddingVertical: wp(10), borderRadius: 12,
+                        backgroundColor: isSelected ? 'rgba(0,217,132,0.12)' : pressed ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+                        borderWidth: 1.5, borderColor: isSelected ? 'rgba(0,217,132,0.4)' : '#2A2F36',
+                      })}
+                    >
+                      <Text style={{ fontSize: 16, marginBottom: 3 }}>{slot.icon}</Text>
+                      <Text style={{
+                        color: isSelected ? '#00D984' : '#8892A0',
+                        fontSize: fp(9), fontWeight: isSelected ? '800' : '600',
+                      }}>{lang === 'fr' ? slot.label_fr : slot.label_en}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {/* Récompense Lix */}
+              <View style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                marginTop: wp(16),
+                backgroundColor: 'rgba(212,175,55,0.06)',
+                paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
+              }}>
+                <Text style={{ fontSize: 14, marginRight: 6 }}>🏆</Text>
+                <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '600' }}>
+                  +3 Lix • Saisie manuelle
+                </Text>
+              </View>
+            </View>
+          )}
+
         </ScrollView>
+
+        {/* Bouton CONFIRMER fixe en bas */}
+        {((manualTab === 'meals' && selectedMeal) || (manualTab === 'ingredients' && manualIngredients.length > 0)) && (
+          <View style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            paddingHorizontal: wp(16), paddingBottom: Platform.OS === 'android' ? 55 : 40,
+            paddingTop: wp(10),
+            backgroundColor: '#0D1117',
+            borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.05)',
+          }}>
+            <Pressable
+              onPress={saveManualMeal}
+              disabled={isSavingManual || saveManualSuccess}
+              style={({ pressed }) => ({
+                paddingVertical: wp(14), borderRadius: 14,
+                backgroundColor: saveManualSuccess ? '#00D984' : isSavingManual ? 'rgba(0,217,132,0.5)' : pressed ? '#00B572' : '#00D984',
+                alignItems: 'center',
+                opacity: isSavingManual ? 0.7 : 1,
+              })}
+            >
+              <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
+                {saveManualSuccess ? '✓ SAUVEGARDÉ ! +3 Lix' : isSavingManual ? '⏳ SAUVEGARDE...' : '✓ CONFIRMER LE REPAS'}
+              </Text>
+            </Pressable>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </View>
   );
