@@ -229,4 +229,169 @@ function getSpeedZone(speedKmh) {
   return SPEED_ZONES[0];
 }
 
-// === PHASE 2 : FOOD_ITEMS → exports ===
+var FOOD_ITEMS = [
+  { kcal: 20,  label: 'carré de chocolat', labelEN: 'chocolate square', emoji: '🍫' },
+  { kcal: 35,  label: 'biscuit',           labelEN: 'cookie',           emoji: '🍪' },
+  { kcal: 52,  label: 'pomme',             labelEN: 'apple',            emoji: '🍎' },
+  { kcal: 65,  label: 'oeuf',              labelEN: 'egg',              emoji: '🥚' },
+  { kcal: 89,  label: 'banane',            labelEN: 'banana',           emoji: '🍌' },
+  { kcal: 120, label: 'croissant',         labelEN: 'croissant',        emoji: '🥐' },
+  { kcal: 150, label: 'bol de riz',        labelEN: 'bowl of rice',     emoji: '🍚' },
+  { kcal: 210, label: 'beignet',           labelEN: 'doughnut',         emoji: '🍩' },
+  { kcal: 266, label: 'part de pizza',     labelEN: 'pizza slice',      emoji: '🍕' },
+  { kcal: 295, label: 'burger',            labelEN: 'burger',           emoji: '🍔' },
+  { kcal: 350, label: 'part de gâteau',    labelEN: 'cake slice',       emoji: '🎂' },
+  { kcal: 450, label: 'assiette de frites',labelEN: 'plate of fries',   emoji: '🍟' },
+  { kcal: 550, label: 'tajine',            labelEN: 'tajine',           emoji: '🍲' },
+  { kcal: 700, label: 'plat de ndolé',     labelEN: 'ndolé dish',       emoji: '🥘' },
+];
+
+function getFoodEquivalent(kcal) {
+  if (kcal < 15) return null;
+
+  var bestCombo = null;
+  var bestDiff = 9999;
+
+  for (var i = 0; i < FOOD_ITEMS.length; i++) {
+    var count = kcal / FOOD_ITEMS[i].kcal;
+    var rounded = Math.round(count * 2) / 2;
+    if (rounded >= 0.5 && rounded <= 6) {
+      var diff = Math.abs(kcal - rounded * FOOD_ITEMS[i].kcal);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestCombo = { type: 'single', count: rounded, item: FOOD_ITEMS[i] };
+      }
+    }
+  }
+
+  for (var a = FOOD_ITEMS.length - 1; a >= 0; a--) {
+    if (FOOD_ITEMS[a].kcal > kcal) continue;
+    var remaining = kcal - FOOD_ITEMS[a].kcal;
+    for (var b = 0; b < FOOD_ITEMS.length; b++) {
+      if (b === a) continue;
+      var diff2 = Math.abs(remaining - FOOD_ITEMS[b].kcal);
+      if (diff2 < bestDiff && remaining > 0) {
+        bestDiff = diff2;
+        bestCombo = { type: 'combo', item1: FOOD_ITEMS[a], item2: FOOD_ITEMS[b] };
+      }
+    }
+  }
+
+  if (bestCombo && bestCombo.type === 'single') {
+    var c = bestCombo.count;
+    if (c === Math.floor(c) || c % 1 === 0.5) {
+      return bestCombo;
+    }
+  }
+
+  return bestCombo;
+}
+
+var WEATHER_WATER_MULTIPLIER = {
+  sunny: 1.4,
+  cloudy: 1.1,
+  rainy: 1.0,
+  windy: 1.2,
+  snowy: 1.0,
+  hot: 1.5,
+  stormy: 1.1,
+};
+
+function getWeatherWaterMult(weather) {
+  if (!weather) return 1.2;
+  var w = weather.toLowerCase();
+  return WEATHER_WATER_MULTIPLIER[w] || 1.2;
+}
+
+var LIVE_MILESTONES = [
+  { distance: 500,   labelFR: 'Premier demi-km !',    labelEN: 'First half km!',     emoji: '🎯' },
+  { distance: 1000,  labelFR: '1 km parcouru !',      labelEN: '1 km covered!',      emoji: '🏁' },
+  { distance: 2000,  labelFR: '2 km — beau rythme !', labelEN: '2 km — nice pace!',  emoji: '💪' },
+  { distance: 5000,  labelFR: '5 km — excellent !',   labelEN: '5 km — excellent!',  emoji: '⭐' },
+  { distance: 10000, labelFR: '10 km — machine !',    labelEN: '10 km — beast!',     emoji: '🔥' },
+  { distance: 21000, labelFR: 'Semi-marathon !',       labelEN: 'Half marathon!',     emoji: '🏅' },
+  { distance: 42000, labelFR: 'MARATHON COMPLET !',    labelEN: 'FULL MARATHON!',     emoji: '👑' },
+];
+
+var CHAR_REACTIONS = {
+  pause:    { msgFR: 'On fait une pause...',        msgEN: 'Taking a break...',      anim: 'idle' },
+  recovery: { msgFR: 'Bien, on s\'échauffe !',      msgEN: 'Good, warming up!',      anim: 'happy' },
+  easy:     { msgFR: 'Bon rythme, continue !',      msgEN: 'Good rhythm, keep it!',  anim: 'happy' },
+  moderate: { msgFR: 'Tu accélères, j\'aime ça !',  msgEN: 'Picking up speed, love it!', anim: 'wow' },
+  tempo:    { msgFR: 'Mode course activé !',         msgEN: 'Running mode ON!',       anim: 'wow' },
+  intense:  { msgFR: 'Tu es en feu !!!',             msgEN: 'You\'re on fire!!!',     anim: 'heart' },
+  sprint:   { msgFR: 'VITESSE MAXIMALE !!!',         msgEN: 'MAXIMUM SPEED!!!',       anim: 'heart' },
+};
+
+var ANTI_CHEAT_MAX_SPEED = 25;
+var ANTI_CHEAT_DURATION = 10;
+var AUTO_PAUSE_SPEED = 1;
+var AUTO_PAUSE_DELAY = 5;
+var HYDRATION_REMINDER_INTERVAL = 15 * 60;
+var ALIXEN_VOICE_LANG = 'fr-FR';
+
+const RUN_FLAGS = [
+  { distance: 400, label: '400m' },
+  { distance: 1000, label: '1 km' },
+  { distance: 2000, label: '2 km' },
+  { distance: 5000, label: '5 km' },
+  { distance: 10000, label: '10 km' },
+  { distance: 21000, label: '21 km' },
+];
+
+const TIME_STEPS = [5, 10, 15, 20, 30, 45, 60];
+
+var OTHER_SPORTS = [
+  'velo', 'natation', 'musculation', 'yoga', 'corde', 'football',
+  'basketball', 'danse', 'tennis', 'boxe', 'randonnee', 'escalade',
+  'spinning', 'hiit', 'pilates', 'badminton',
+  'volleyball', 'handball', 'rugby', 'cricket',
+  'golf', 'ski', 'surf', 'kayak', 'equitation', 'patinage', 'ping_pong', 'squash',
+  'crossfit', 'zumba', 'aquagym', 'stretching', 'tai_chi',
+  'menage', 'jardinage', 'escalier', 'lutte_africaine', 'danse_africaine',
+];
+
+const WALK_DISTANCE_MAP = [
+  { pos: 0, meters: 0 },
+  { pos: 0.02, meters: 0 },
+  { pos: 0.22, meters: 500 },
+  { pos: 0.42, meters: 2000 },
+  { pos: 0.65, meters: 5000 },
+  { pos: 0.98, meters: 10000 },
+  { pos: 1.0, meters: 10000 },
+];
+
+const WALK_LANDMARKS = [
+  { type: 'house', position: 0.02, label: 'Départ' },
+  { type: 'tree', position: 0.22, label: '500m' },
+  { type: 'bench', position: 0.42, label: '2 km' },
+  { type: 'birds', position: 0.65, label: '5 km' },
+  { type: 'pond', position: 0.98, label: '10 km' },
+];
+
+const walkSliderToDistance = (value) => {
+  for (let i = 1; i < WALK_DISTANCE_MAP.length; i++) {
+    if (value <= WALK_DISTANCE_MAP[i].pos) {
+      const prev = WALK_DISTANCE_MAP[i - 1];
+      const curr = WALK_DISTANCE_MAP[i];
+      const t = (value - prev.pos) / (curr.pos - prev.pos);
+      return prev.meters + (curr.meters - prev.meters) * t;
+    }
+  }
+  return 10000;
+};
+
+export {
+  formatDuration, formatDistance,
+  ACTIVITY_DATA, T, getLang,
+  calcCalories, calcWater,
+  SPEED_ZONES, getSpeedZone,
+  FOOD_ITEMS, getFoodEquivalent,
+  WEATHER_WATER_MULTIPLIER, getWeatherWaterMult,
+  LIVE_MILESTONES, CHAR_REACTIONS,
+  ANTI_CHEAT_MAX_SPEED, ANTI_CHEAT_DURATION,
+  AUTO_PAUSE_SPEED, AUTO_PAUSE_DELAY,
+  HYDRATION_REMINDER_INTERVAL, ALIXEN_VOICE_LANG,
+  RUN_FLAGS, TIME_STEPS, OTHER_SPORTS,
+  WALK_DISTANCE_MAP, WALK_LANDMARKS, walkSliderToDistance,
+};
