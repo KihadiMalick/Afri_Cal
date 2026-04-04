@@ -423,7 +423,221 @@ export default function RepasPage({ onNavigate }) {
     ? Math.round((dailySummary.total_calories / userProfile.daily_calorie_target) * 100)
     : 0;
 
-  // === JSX (phases suivantes) ===
+  // === JSX ===
 
-  return null;
+  return (
+    <LinearGradient
+      colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']}
+      locations={[0, 0.25, 0.5, 0.75, 1]}
+      style={{ flex: 1 }}
+    >
+      <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 50 : 55 }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: wp(120) }}
+        >
+          {/* ═══ 1. HEADER ═══ */}
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingHorizontal: wp(16),
+            paddingTop: 0,
+            paddingBottom: wp(10),
+            overflow: 'hidden',
+          }}>
+            <Text style={{
+              color: '#EAEEF3',
+              fontSize: fp(16),
+              fontWeight: '800',
+              letterSpacing: 2,
+              flexShrink: 0,
+            }} numberOfLines={1}>
+              MES REPAS
+            </Text>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), flexShrink: 1 }}>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: 'rgba(0,217,132,0.08)',
+                paddingHorizontal: wp(8),
+                paddingVertical: wp(6),
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: 'rgba(0,217,132,0.15)',
+                flexShrink: 1,
+              }}>
+                <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600' }} numberOfLines={1}>
+                  {lang === 'fr' ? "Aujourd'hui" : 'Today'}
+                </Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(10), marginLeft: 4 }} numberOfLines={1}>
+                  {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={toggleDropdown} style={{
+                flexDirection: 'row', alignItems: 'center',
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                borderWidth: 1, borderColor: '#4A4F55',
+                borderRadius: 20, paddingHorizontal: wp(8), paddingVertical: 6,
+                maxWidth: wp(100), flexShrink: 1,
+              }}>
+                <Svg width={12} height={12} viewBox="0 0 24 24">
+                  <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
+                  <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
+                </Svg>
+                <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(10), marginLeft: 3 }} numberOfLines={1}>{lixBalance}</Text>
+                <Text style={{ color: '#888', fontSize: fp(9), marginLeft: 2 }}>▾</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Dropdown Lix/Énergie/Profil */}
+          {dropdownOpen && (
+            <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}>
+              <Animated.View style={{
+                position: 'absolute', top: Platform.OS === 'android' ? 100 : 110, right: wp(16),
+                backgroundColor: 'rgba(30, 37, 48, 0.95)',
+                borderWidth: 1, borderColor: '#4A4F55',
+                borderRadius: 16, padding: 16, zIndex: 999,
+                opacity: dropdownAnim,
+                transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
+              }}>
+                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+                  <Svg width={14} height={14} viewBox="0 0 24 24">
+                    <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
+                    <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
+                  </Svg>
+                  <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixBalance}</Text>
+                  <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+                  <Svg width={14} height={14} viewBox="0 0 24 24">
+                    <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
+                  </Svg>
+                  <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{userEnergy}</Text>
+                  <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>énergie</Text>
+                </TouchableOpacity>
+                <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
+                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+                  <Text style={{ fontSize: 18 }}>{(activeCharAvatar || activeChar)?.slug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[(activeCharAvatar || activeChar).slug] || '👤' : '👤'}</Text>
+                  <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>Mon Profil</Text>
+                  <Text style={{ color: '#888', fontSize: 14 }}>→</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            </TouchableOpacity>
+          )}
+
+          {/* ═══ 2. RÉSUMÉ CALORIES ═══ */}
+          <View style={{ marginHorizontal: wp(16), marginTop: wp(12) }}>
+            <View style={{
+              borderRadius: 16, padding: 1,
+              backgroundColor: '#4A4F55', elevation: 8,
+              shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+              shadowOpacity: 0.25, shadowRadius: 6,
+            }}>
+              <LinearGradient
+                colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                style={{ borderRadius: 15 }}
+              >
+                <View style={{ padding: wp(16) }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                      <Svg width={20} height={20} viewBox="0 0 20 20" style={{ marginRight: 6, top: 2 }}>
+                        <Path d="M10 1C10 1 4 7 4 12C4 15.3 6.7 18 10 18C13.3 18 16 15.3 16 12C16 7 10 1 10 1Z" fill="#FF8C42" opacity={0.85}/>
+                        <Path d="M10 6C10 6 7 9.5 7 12C7 13.7 8.3 15 10 15C11.7 15 13 13.7 13 12C13 9.5 10 6 10 6Z" fill="#FFB74D" opacity={0.7}/>
+                      </Svg>
+                      <Text style={{ color: '#FF8C42', fontSize: fp(26), fontWeight: '900' }}>
+                        {dailySummary.total_calories.toLocaleString('fr-FR')}
+                      </Text>
+                      <Text style={{ color: '#5A6070', fontSize: fp(14), marginLeft: 4 }}>
+                        / {userProfile.daily_calorie_target.toLocaleString('fr-FR')} kcal
+                      </Text>
+                    </View>
+                    <View style={{
+                      backgroundColor: 'rgba(255,140,66,0.12)',
+                      paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
+                    }}>
+                      <Text style={{ color: '#FF8C42', fontSize: fp(12), fontWeight: '800' }}>{calPercent}%</Text>
+                    </View>
+                  </View>
+
+                  <View style={{
+                    height: 7, backgroundColor: 'rgba(255,140,66,0.08)',
+                    borderRadius: 4, marginTop: wp(10), overflow: 'hidden',
+                  }}>
+                    <LinearGradient
+                      colors={['#FF8C42', '#FFB74D']}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                      style={{ height: '100%', width: `${Math.min(calPercent, 100)}%`, borderRadius: 4 }}
+                    />
+                  </View>
+
+                  <View style={{ flexDirection: 'row', marginTop: wp(12), gap: wp(8) }}>
+                    {[
+                      { value: `${dailySummary.total_protein}g`, color: '#FF6B6B', label: lang === 'fr' ? 'Protéines' : 'Protein' },
+                      { value: `${dailySummary.total_carbs}g`, color: '#FFD93D', label: lang === 'fr' ? 'Glucides' : 'Carbs' },
+                      { value: `${dailySummary.total_fat}g`, color: '#4DA6FF', label: lang === 'fr' ? 'Lipides' : 'Fat' },
+                    ].map((m, i) => (
+                      <View key={i} style={{
+                        flex: 1, backgroundColor: 'rgba(255,255,255,0.03)',
+                        borderRadius: 10, paddingVertical: wp(8), alignItems: 'center',
+                        borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                      }}>
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: m.color, marginBottom: 4 }}/>
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '700' }}>{m.value}</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 2 }}>{m.label}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </LinearGradient>
+            </View>
+          </View>
+
+          {/* ═══ BANDEAU PERSONNAGE ACTIF ═══ */}
+          {activeChar && (
+            <View style={{
+              marginHorizontal: wp(16), marginTop: wp(8),
+              flexDirection: 'row', alignItems: 'center',
+              backgroundColor: 'rgba(0,217,132,0.04)',
+              borderRadius: wp(12), padding: wp(10),
+              borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)',
+            }}>
+              <View style={{
+                width: wp(32), height: wp(32), borderRadius: wp(16),
+                backgroundColor: 'rgba(0,217,132,0.1)',
+                justifyContent: 'center', alignItems: 'center',
+                marginRight: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+              }}>
+                <Text style={{ fontSize: fp(16) }}>
+                  {activeChar.slug === 'emerald_owl' ? '🦉' :
+                   activeChar.slug === 'hawk_eye' ? '🦅' :
+                   activeChar.slug === 'ruby_tiger' ? '🐯' :
+                   activeChar.slug === 'amber_fox' ? '🦊' :
+                   activeChar.slug === 'gipsy' ? '🕷️' : '🎭'}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700' }}>
+                  {activeChar.name}
+                </Text>
+                <Text style={{ color: '#5A6070', fontSize: fp(8) }}>
+                  {activeChar.uses_remaining}/{activeChar.max_uses_per_cycle || 10} utilisations
+                </Text>
+              </View>
+              <Text style={{ color: '#00D984', fontSize: fp(9) }}>ACTIF ✅</Text>
+            </View>
+          )}
+
+          {/* === PHASE 8 : Carte Xscan === */}
+          {/* === PHASE 9 : Plats du jour + Pouvoirs + Recettes === */}
+
+        </ScrollView>
+
+        {/* === PHASE 10 : Sous-écrans + BottomTabs === */}
+
+      </View>
+    </LinearGradient>
+  );
 }
