@@ -61,3 +61,56 @@ const ChevronDown = ({ size = 14, color = 'rgba(255,255,255,0.3)', rotated = fal
     <Path d="M4 6l4 4 4-4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
   </Svg>
 );
+
+const renderLixGemSegment = (x, y, s) => {
+  const sc = s / 24;
+  const t = 'translate(' + (x - s/2) + ', ' + (y - s/2) + ') scale(' + sc + ')';
+  return (
+    <G transform={t}>
+      <Path d="M12 1C16 7 20 12 20 16C20 20.4 16.4 23 12 23C7.6 23 4 20.4 4 16C4 12 8 7 12 1Z" fill="#007A50" stroke="#00D984" strokeWidth={1.2} />
+      <Path d="M12 5C14.5 9 17 12.5 17 15.5C17 18.5 14.8 20.5 12 20.5C9.2 20.5 7 18.5 7 15.5C7 12.5 9.5 9 12 5Z" fill="#009960" />
+      <Circle cx={9} cy={8} r={1.5} fill="#FFF" opacity={0.5} />
+    </G>
+  );
+};
+
+const renderSegmentIcon = (type, tier, x, y, s, angle) => {
+  const sc = s / 24;
+  const t = `translate(${x - s / 2}, ${y - s / 2}) scale(${sc})`;
+  if (type === 'energy') return (
+    <G transform={t}><Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill="#B0B8C4" /></G>
+  );
+  if (type === 'lix') return renderLixGemSegment(x, y, s);
+  if (type === 'fragment') return (
+    <G transform={t}><Path d="M20 6h-3.17c.11-.31.17-.65.17-1a3 3 0 00-6 0c0 .35.06.69.17 1H8a2 2 0 00-2 2v3.17c-.31-.11-.65-.17-1-.17a3 3 0 000 6c.35 0 .69-.06 1-.17V20a2 2 0 002 2h3.17c-.11-.31-.17-.65-.17-1a3 3 0 016 0c0 .35-.06.69-.17 1H20a2 2 0 002-2v-3.17c.31.11.65.17 1 .17a3 3 0 000-6c-.35 0-.69.06-1 .17V8a2 2 0 00-2-2z" fill="#B0B8C4" /></G>
+  );
+  if (type === 'scan') return (
+    <G transform={t}><Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" fill="none" stroke="#B0B8C4" strokeWidth={2} /><Circle cx={12} cy={13} r={4} fill="none" stroke="#B0B8C4" strokeWidth={2} /></G>
+  );
+  if (type === 'free_spin') return (
+    <G transform={t}><Path d="M20 12v10H4V12" fill="none" stroke="#B0B8C4" strokeWidth={2} /><Path d="M2 7h20v5H2z" fill="none" stroke="#B0B8C4" strokeWidth={2} /><Path d="M12 22V7" stroke="#B0B8C4" strokeWidth={2} /><Path d="M12 7c-1.5-2-4-3-4-3s1 3 4 3z" fill="#B0B8C4" /><Path d="M12 7c1.5-2 4-3 4-3s-1 3-4 3z" fill="#B0B8C4" /></G>
+  );
+  if (type === 'card') return (
+    <G transform={t}>
+      <Rect x={2} y={0} width={20} height={24} rx={3} fill="#1A1D22" stroke="#4A4F55" strokeWidth={1.2} />
+      <Circle cx={12} cy={8} r={4} fill="#2A2F38" />
+      <Path d="M6,14 Q4,18 7,20 L10,16 L12,22 L14,16 L17,20 Q20,18 18,14 Q15,12 12,13 Q9,12 6,14Z" fill="#2A2F38" />
+      <SvgText x={12} y={16} fill="#D4AF37" fontSize={10} fontWeight="700" textAnchor="middle" alignmentBaseline="central">?</SvgText>
+      <Rect x={4} y={2} width={6} height={2} rx={1} fill="#4A4F55" opacity={0.3} />
+    </G>
+  );
+  return (
+    <G transform={t}><Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill="#B0B8C4" /></G>
+  );
+};
+
+export {
+  LixGem,
+  MedalIcon,
+  TrophyIcon,
+  MysteryCardIcon,
+  FragmentIcon,
+  ChevronDown,
+  renderLixGemSegment,
+  renderSegmentIcon,
+};
