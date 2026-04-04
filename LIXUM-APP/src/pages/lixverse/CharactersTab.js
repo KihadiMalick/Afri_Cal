@@ -291,7 +291,128 @@ export default function CharactersTab({
                         })()}
                       </Animated.View>
                     </View>
+
+                    {(() => {
+                      const ac = ALL_CHARACTERS[cardViewIndex];
+                      if (!ac) return null;
+                      const acSlug = ac.id;
+                      const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: 10, fragments: 0, fragments_required: 3, is_active: false }));
+                      const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...ac, slug: acSlug, owned: false };
+                      const hasCardCheck = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(acSlug);
+                      const own = hasCardCheck && (ch.level || 0) >= 1;
+                      const isActiveChar = acSlug === activeCharSlug;
+                      const tier = ch.tier || ac.tier || 'standard';
+                      const name = CHAR_NAMES[acSlug] || ch.name || ac.name || acSlug;
+                      const usesRem = ch.uses_remaining || 0;
+                      const usesMax = ch.uses_max || ac.uses || 10;
+                      const xp = ch.xp || 0;
+                      const xpNext = ch.xp_next || 1000;
+                      const frags = ch.fragments || ch.duplicates_count || 0;
+                      const fragsReq = ch.fragments_required || FRAGS_NIV1[tier] || 3;
+
+                      return (
+                        <View style={{ paddingHorizontal: (SCREEN_WIDTH - wp(280)) / 2 }}>
+                          <View style={{ width: wp(280), marginTop: wp(8), alignItems: 'center' }}>
+                            {own && (
+                              <View style={{ width: '100%', marginTop: wp(4) }}>
+                                <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
+                                  <View style={{ height: '100%', borderRadius: wp(2), backgroundColor: '#5A4A2E', width: Math.min(100, Math.round((xp / xpNext) * 100)) + '%' }} />
+                                </View>
+                                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: wp(3) }}>{xp}/{xpNext} XP</Text>
+                              </View>
+                            )}
+                            {!own && (
+                              <View style={{ width: '100%', marginTop: wp(4) }}>
+                                <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
+                                  <View style={{ height: '100%', borderRadius: wp(2), backgroundColor: '#5A4A2E', width: Math.min(100, Math.round((frags / fragsReq) * 100)) + '%' }} />
+                                </View>
+                                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: wp(3) }}>🧩 {frags}/{fragsReq} fragments</Text>
+                              </View>
+                            )}
+                            {own && isActiveChar && (
+                              <View style={{ backgroundColor: 'rgba(139,122,46,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2), marginTop: wp(6) }}>
+                                <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#8B7A3E' }}>ACTIF ✓</Text>
+                              </View>
+                            )}
+                          </View>
+
+                          <View style={{ width: wp(280), marginTop: wp(6), gap: wp(4) }}>
+                            {own && !isActiveChar && (
+                              <Pressable delayPressIn={120} onPress={() => onSwitchActiveCharacter(acSlug)} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                                <LinearGradient colors={['#8B7A2E','#6B5A1E']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
+                                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>Équiper</Text>
+                                </LinearGradient>
+                              </Pressable>
+                            )}
+                            <Pressable delayPressIn={120}
+                              onPress={() => {
+                                if (!own && (ch.fragments || ch.duplicates_count || 0) > 0) {
+                                  const remaining = (ch.fragments_required || FRAGS_NIV1[tier] || 3) - (ch.fragments || ch.duplicates_count || 0);
+                                  showLixAlert('🧩 Fragments manquants', 'Il te manque encore ' + remaining + ' fragment' + (remaining > 1 ? 's' : '') + ' pour débloquer ' + name + '.\n\nTourne la roue ou participe aux défis !', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'OK', style: 'cancel' }], '🧩');
+                                  return;
+                                }
+                                if (own && usesRem === 0) {
+                                  showLixAlert('⚡ Recharge nécessaire', 'Recharge ton ' + name + ' avec ' + (ch.recharge_energy || 10) + ' énergie.', [{ text: 'Recharger', color: '#00D984', onPress: () => onRechargeChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
+                                } else {
+                                  onFlipCard();
+                                  if (charPowers.length === 0) onLoadCharPowers(acSlug);
+                                }
+                              }}
+                              style={({ pressed }) => ({ opacity: (own && usesRem === 0) ? 0.5 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                              <LinearGradient colors={(own && usesRem === 0) ? ['#333A42','#2A2F36'] : ['#3A3520','#2A2815']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
+                                <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#B8A472' }}>
+                                  {!own && (ch.fragments || ch.duplicates_count || 0) > 0
+                                    ? 'Fragments : ' + (ch.fragments || ch.duplicates_count || 0) + '/' + (ch.fragments_required || FRAGS_NIV1[tier] || 3)
+                                    : (own && usesRem === 0) ? 'Recharger'
+                                    : own ? 'Pouvoirs →'
+                                    : 'Aperçu Pouvoirs →'}
+                                </Text>
+                              </LinearGradient>
+                            </Pressable>
+                            {!own && (
+                              <Pressable delayPressIn={120} onPress={() => { closeCharModal(); onGoToSpin(); }}
+                                style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                                <View style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                                  <Text style={{ fontSize: fp(11), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>Obtenir via Spin ou Défis</Text>
+                                </View>
+                              </Pressable>
+                            )}
+                            <Pressable onPress={closeCharModal} style={{ paddingVertical: wp(8), alignItems: 'center' }}>
+                              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.25)' }}>Fermer</Text>
+                            </Pressable>
+                          </View>
+                        </View>
+                      );
+                    })()}
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: wp(12), gap: wp(4) }}>
+                      {(() => {
+                        const total = ALL_CHARACTERS.length;
+                        const maxDots = 7;
+                        let start = Math.max(0, cardViewIndex - Math.floor(maxDots / 2));
+                        let end = start + maxDots;
+                        if (end > total) { end = total; start = Math.max(0, end - maxDots); }
+                        return ALL_CHARACTERS.slice(start, end).map((_, i) => {
+                          const realIdx = start + i;
+                          return <View key={realIdx} style={{ width: realIdx === cardViewIndex ? wp(8) : wp(5), height: realIdx === cardViewIndex ? wp(8) : wp(5), borderRadius: wp(4), backgroundColor: realIdx === cardViewIndex ? '#B8A472' : 'rgba(255,255,255,0.15)' }} />;
+                        });
+                      })()}
+                    </View>
+
+                    {ALL_CHARACTERS.length > 1 && (
+                      <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.2)', textAlign: 'center', marginTop: wp(6), marginBottom: wp(4) }}>{cardViewIndex + 1}/{ALL_CHARACTERS.length}</Text>
+                    )}
                   </View>
+                </Animated.View>
+
+                <Animated.View pointerEvents={!charFlipped ? 'none' : 'auto'} style={{ opacity: backInterpolate, position: !charFlipped ? 'absolute' : 'relative', width: '100%' }}>
+                  <LinearGradient colors={['#0D0D0D','#111111','#0A0A0A','#080808']} style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34), minHeight: SCREEN_WIDTH * 1.3 }}>
+                    <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
+                    <ScrollView style={{ flex: 1, maxHeight: SCREEN_WIDTH * 1.1 }} contentContainerStyle={{ paddingBottom: wp(60) }} showsVerticalScrollIndicator={true} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+                      <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', textAlign: 'center', marginBottom: wp(16) }}>POUVOIRS</Text>
+                      <Text style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>Powers content placeholder</Text>
+                    </ScrollView>
+                  </LinearGradient>
                 </Animated.View>
               </View>
             </Pressable>
