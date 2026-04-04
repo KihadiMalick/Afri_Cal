@@ -262,6 +262,248 @@ export default function ActivityPage({ onNavigate }) {
     })();
   }, []);
 
+  // === FONCTIONS POUVOIRS + SAVE ===
+
+  const ACTIVITY_PAGE = 'activite';
+
+  const loadPagePowers = async () => {
+    try {
+      const { data: collection } = await supabase
+        .rpc('get_user_collection', { p_user_id: TEST_USER_ID });
+      const active = (collection || []).find(c => c.is_active);
+      if (!active) { setActiveChar(null); setPagePowers([]); return; }
+      setActiveChar(active);
+      const { data: powers } = await supabase
+        .rpc('get_character_powers', { p_user_id: TEST_USER_ID, p_slug: active.slug });
+      setPagePowers((powers || []).filter(p => p.redirect_page === ACTIVITY_PAGE && p.unlocked));
+    } catch (e) {
+      console.warn('Page powers load error:', e);
+    }
+  };
+
+  const consumePower = async (powerKey) => {
+    try {
+      const { data } = await supabase.rpc('use_character_power', {
+        p_user_id: TEST_USER_ID, p_power_key: powerKey,
+      });
+      if (data?.success) {
+        setActiveChar(prev => prev ? { ...prev, uses_remaining: data.uses_remaining } : null);
+        return { success: true, uses_remaining: data.uses_remaining };
+      }
+      if (data?.error === 'No uses remaining') {
+        Alert.alert('⚡ Utilisations épuisées', 'Recharge ton ' + (activeChar?.name || 'personnage') + ' dans l\'onglet Caractères.');
+      }
+      return { success: false, error: data?.error };
+    } catch (e) {
+      return { success: false, error: 'network' };
+    }
+  };
+
+  const getPowerByType = (actionType) => {
+    return pagePowers.filter(p => p.action_type === actionType).sort((a, b) => (b.level_required || 0) - (a.level_required || 0))[0] || null;
+  };
+
+  const extractMultiplier = (power) => {
+    if (!power?.redirect_filter) return 1.0;
+    if (power.redirect_filter.includes('30')) return 1.30;
+    if (power.redirect_filter.includes('20')) return 1.20;
+    if (power.redirect_filter.includes('10')) return 1.10;
+    return 1.0;
+  };
+
+  const runPostSaveHooks = async (activityType, caloriesBurned, durationMin) => {
+    const results = {};
+    for (const power of pagePowers) {
+      if (power.action_type === 'redirect_with_boost' && activeChar?.uses_remaining > 0) {
+        const consumed = await consumePower(power.power_key);
+        if (consumed.success) {
+          const multiplier = extractMultiplier(power);
+          const baseXP = Math.round(caloriesBurned);
+          const bonusXP = Math.round(baseXP * (multiplier - 1));
+          results.xp_boost = {
+            type: 'xp_boost', icon: power.icon || '🐯', char_name: activeChar?.name,
+            multiplier, percentage: Math.round((multiplier - 1) * 100),
+            base_xp: baseXP, bonus_xp: bonusXP, total_xp: baseXP + bonusXP,
+            uses_remaining: consumed.uses_remaining,
+          };
+        }
+      }
+    }
+    setHookResults(results);
+    loadPagePowers();
+    return results;
+  };
+
+  const saveActivity = async (activityType, durationMin, caloriesBurned, intensity, waterLost) => {
+    const actData = ACTIVITY_DATA[activityType];
+    if (!actData) return false;
+    try {
+      const { error } = await supabase.rpc('add_user_activity', {
+        p_user_id: TEST_USER_ID,
+        p_name: actData.label, p_type: activityType,
+        p_duration_minutes: Math.round(durationMin),
+        p_calories_burned: Math.round(caloriesBurned),
+        p_intensity: intensity || 'modere',
+        p_water_lost_ml: Math.round(waterLost),
+      });
+      if (error) { alert('Erreur : ' + error.message); return false; }
+      if (pagePowers.length > 0) { await runPostSaveHooks(activityType, caloriesBurned, durationMin); } else { setHookResults({}); }
+      await loadTodayActivities();
+      fetchSmartData();
+      if (!lixRewardedToday) setLixRewardedToday(true);
+      return true;
+    } catch (e) {
+      alert('Erreur réseau.');
+      return false;
+    }
+  };
+
+  const deleteActivity = async (activityId) => {
+    try {
+      const { error } = await supabase.rpc('delete_user_activity', {
+        p_activity_id: activityId, p_user_id: TEST_USER_ID,
+      });
+      if (error) { alert('Erreur suppression : ' + error.message); return; }
+      await loadTodayActivities();
+    } catch (e) {
+      console.error('Delete activity error:', e);
+    }
+  };
+
+  // === FONCTIONS UI ===
+
+  var toggleDropdown = function() {
+    var toValue = dropdownOpen ? 0 : 1;
+    Animated.spring(dropdownAnim, { toValue: toValue, tension: 80, friction: 10, useNativeDriver: false }).start();
+    setDropdownOpen(!dropdownOpen);
+  };
+
+  const handleTabPress = (key) => {
+    if (key === 'activity') return;
+    if (onNavigate) onNavigate(key);
+    setActiveTab(key);
+  };
+
+  // Walk computed values
+  const walkMaxS = WALK_SCENE_W - walkCanvasW;
+  const walkProg = walkMaxS > 0 ? walkScrollOffset / walkMaxS : 0;
+  const walkDistM = walkProg * WALK_MAX_DIST;
+  const walkMul = walkRoundTrip ? 2 : 1;
+  const walkDurMin = (walkDistM / 5000) * 60;
+  var walkCal = calcCalories(ACTIVITY_DATA.marche.met, userWeight, walkDurMin * walkMul, 'modere');
+  var walkWater = calcWater(ACTIVITY_DATA.marche.water_per_hour_ml, walkDurMin * walkMul, 'modere');
+  const walkDistFinal = walkDistM * walkMul;
+  const walkDistStr = walkDistFinal < 1000 ? Math.round(walkDistFinal) + ' m' : (Math.round(walkDistFinal / 100) / 10) + ' km';
+  const walkDurStr = (function() { var m = Math.round(walkDurMin * walkMul); return m < 60 ? m + ' min' : (Math.round(m / 6) / 10) + ' h'; })();
+
+  // Run computed values
+  const runMaxS = RUN_SCENE_W - runCanvasW;
+  const runProg = runMaxS > 0 ? runScrollOffset / runMaxS : 0;
+  var runDistM = (runScrollOffset * RUN_METERS_PER_PIXEL) || 0;
+  const runMul = runRoundTrip ? 2 : 1;
+  var runDistKm = ((runDistM * runMul) / 1000) || 0;
+  var runDuration = Math.round((runDistKm / 8) * 60) || 0;
+  var runCalories = calcCalories(ACTIVITY_DATA.course.met, userWeight || 70, runDuration, 'modere') || 0;
+  var runWater = calcWater(ACTIVITY_DATA.course.water_per_hour_ml || 900, runDuration, 'modere') || 0;
+  const runDistFinal = runDistM * runMul;
+  const runDistStr = runDistFinal < 1000 ? Math.round(runDistFinal) + ' m' : (Math.round(runDistFinal / 100) / 10) + ' km';
+  const runDurStr = (function() { var m = Math.round(runDuration); return m < 60 ? m + ' min' : (Math.round(m / 6) / 10) + ' h'; })();
+
+  // Day totals
+  const totalCalories = todayActivities.reduce((s, a) => s + (a.calories_burned || 0), 0);
+  const totalDuration = todayActivities.reduce((s, a) => s + (a.duration_minutes || 0), 0);
+  const totalWater = todayActivities.reduce((s, a) => s + (a.water_lost_ml || 0), 0);
+  const todayDateStr = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'long' });
+
+  // Walk knob
+  const startWalkMoving = (direction) => {
+    setWalkGlow(true);
+    walkHoldStartRef.current = Date.now();
+    walkSpeedRef.current = 2;
+    walkIntervalRef.current = setInterval(() => {
+      const holdDuration = Date.now() - walkHoldStartRef.current;
+      if (holdDuration > 3000) walkSpeedRef.current = 16;
+      else if (holdDuration > 2000) walkSpeedRef.current = 10;
+      else if (holdDuration > 1000) walkSpeedRef.current = 6;
+      else if (holdDuration > 500) walkSpeedRef.current = 4;
+      else walkSpeedRef.current = 2;
+      setWalkScrollOffset(prev => Math.max(0, Math.min(prev + direction * walkSpeedRef.current, WALK_SCENE_W - walkCanvasW)));
+    }, 50);
+  };
+  const stopWalkMoving = () => {
+    setWalkGlow(false);
+    if (walkIntervalRef.current) { clearInterval(walkIntervalRef.current); walkIntervalRef.current = null; }
+  };
+  useEffect(() => { return () => { if (walkIntervalRef.current) clearInterval(walkIntervalRef.current); }; }, []);
+
+  // Run knob
+  const startRunMoving = (direction) => {
+    setRunGlow(true);
+    runHoldStartRef.current = Date.now();
+    runSpeedRef.current = 2;
+    isRunMovingRef.current = true;
+    setIsRunning(true);
+    runIntervalRef.current = setInterval(() => {
+      const holdDuration = Date.now() - runHoldStartRef.current;
+      if (holdDuration > 3000) runSpeedRef.current = 16;
+      else if (holdDuration > 2000) runSpeedRef.current = 10;
+      else if (holdDuration > 1000) runSpeedRef.current = 6;
+      else if (holdDuration > 500) runSpeedRef.current = 4;
+      else runSpeedRef.current = 2;
+      setRunScrollOffset(prev => Math.max(0, Math.min(prev + direction * runSpeedRef.current, RUN_SCENE_W - runCanvasW)));
+    }, 50);
+  };
+  const stopRunMoving = () => {
+    setRunGlow(false);
+    isRunMovingRef.current = false;
+    setIsRunning(false);
+    if (runIntervalRef.current) { clearInterval(runIntervalRef.current); runIntervalRef.current = null; }
+  };
+  useEffect(() => { return () => { if (runIntervalRef.current) clearInterval(runIntervalRef.current); }; }, []);
+
+  // Run milestone detection
+  useEffect(() => {
+    const milestones = [500, 1000, 2000, 5000, 10000, 21000];
+    milestones.forEach(m => {
+      if (runDistM >= m && runDistM < m + 50 && !runMilestoneHitRef.current[m]) {
+        runMilestoneHitRef.current[m] = true;
+        setRunMilestone(m);
+        if (runMilestoneTimerRef.current) clearTimeout(runMilestoneTimerRef.current);
+        runMilestoneTimerRef.current = setTimeout(() => setRunMilestone(null), 3000);
+      }
+    });
+  }, [runScrollOffset]);
+
+  // Handlers
+  const handleAddRun = async () => {
+    if (runCalories === 0) return;
+    const ok = await saveActivity('course', runDuration, runCalories, 'modere', runWater);
+    if (ok) {
+      setRunSaved(true);
+      setLastActivity({ type: 'run', name: t.run, distance: runDistStr, duration: runDuration, kcal: runCalories, water: runWater, speed: null });
+      setShowPostReport(true);
+      fetchWeeklyMinutes();
+      setTimeout(() => { setRunSaved(false); setRunScrollOffset(0); runMilestoneHitRef.current = {}; }, 1500);
+    }
+  };
+
+  const handleSportSave = async (sportKey, duration, calories, intensity, waterLost) => {
+    const ok = await saveActivity(sportKey, duration, calories, intensity, waterLost);
+    if (ok) {
+      setModalVisible(false);
+      setLastActivity({ type: 'other', name: ACTIVITY_DATA[sportKey].label, distance: null, duration: duration, kcal: calories, water: null, speed: null });
+      setShowPostReport(true);
+      fetchWeeklyMinutes();
+    }
+  };
+
+  const handleDeleteActivity = (activity) => {
+    Alert.alert(t.delete, t.deleteConfirm, [
+      { text: t.cancel, style: 'cancel' },
+      { text: t.delete, style: 'destructive', onPress: () => deleteActivity(activity.id) },
+    ]);
+  };
+
   // === JSX (phases suivantes) ===
 
   return null;
