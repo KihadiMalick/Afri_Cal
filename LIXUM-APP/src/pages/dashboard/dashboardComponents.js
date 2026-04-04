@@ -251,6 +251,266 @@ const DnaHelix = ({ height = 68, width = 60 }) => {
   );
 };
 
+const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubbles = false }) => {
+  const fillAnim = useRef(new RNAnimated.Value(fillPercent)).current;
+  const svgPath = gender === 'femme' ? FEMALE_PATH : MALE_PATH;
+  const vbH = 130;
+  const ratio = height / vbH;
+  const svgW = Math.round(100 * ratio);
+  const clipId = `silClip_${height}_${gender}`;
+  const gradId = `waterGrad_${height}_${gender}`;
+  const bubbleAnims = useRef(BUBBLE_CONFIG.map(() => new RNAnimated.Value(0))).current;
+  const [bubblePositions, setBubblePositions] = useState(BUBBLE_CONFIG.map(() => 0));
+
+  useEffect(() => {
+    RNAnimated.timing(fillAnim, { toValue: fillPercent, duration: 400, useNativeDriver: false }).start();
+  }, [fillPercent]);
+
+  useEffect(() => {
+    if (!showBubbles || fillPercent < 10) return;
+    const timers = [];
+    bubbleAnims.forEach((anim, i) => {
+      const cfg = BUBBLE_CONFIG[i];
+      const startTimer = setTimeout(() => {
+        const loop = () => {
+          anim.setValue(0);
+          RNAnimated.timing(anim, { toValue: 1, duration: cfg.duration, useNativeDriver: false }).start(() => loop());
+        };
+        loop();
+        anim.addListener(({ value }) => {
+          setBubblePositions(prev => { const next = [...prev]; next[i] = value; return next; });
+        });
+      }, cfg.delay);
+      timers.push(startTimer);
+    });
+    return () => { timers.forEach(t => clearTimeout(t)); bubbleAnims.forEach(a => a.removeAllListeners()); };
+  }, [showBubbles, fillPercent > 10]);
+
+  const waterTop = vbH * (1 - fillPercent / 100);
+  const waterHeight = vbH * (fillPercent / 100);
+
+  return (
+    <View style={{ width: svgW, height }}>
+      <Svg width={svgW} height={height} viewBox="0 0 100 130" style={{ position: 'absolute' }}>
+        <Path d={svgPath} fill="#2A3040" opacity={0.5} />
+        <Path d={svgPath} fill="none" stroke="#4A5568" strokeWidth={1.2} opacity={0.6} />
+      </Svg>
+      <Svg width={svgW} height={height} viewBox="0 0 100 130" style={{ position: 'absolute' }}>
+        <Defs>
+          <ClipPath id={clipId}>
+            <Path d={svgPath} />
+          </ClipPath>
+          <SvgLinearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
+            <Stop offset="0" stopColor="#006994" stopOpacity="0.9" />
+            <Stop offset="0.5" stopColor="#00BCD4" stopOpacity="0.8" />
+            <Stop offset="1" stopColor="#4DA6FF" stopOpacity="0.7" />
+          </SvgLinearGradient>
+        </Defs>
+        <G clipPath={`url(#${clipId})`}>
+          <Rect x="0" y={waterTop} width="100" height={waterHeight} fill={`url(#${gradId})`} />
+          {showBubbles && fillPercent >= 10 && BUBBLE_CONFIG.map((cfg, i) => {
+            const progress = bubblePositions[i] || 0;
+            const bubbleY = waterTop + waterHeight - (progress * waterHeight);
+            const oscillation = Math.sin(progress * Math.PI * 4) * 3;
+            const opacity = progress < 0.8 ? 0.3 : 0.3 * (1 - (progress - 0.8) / 0.2);
+            return (
+              <Circle key={`bubble-${i}`} cx={cfg.cx + oscillation} cy={bubbleY} r={cfg.size} fill="#FFFFFF" opacity={Math.max(0, opacity)} />
+            );
+          })}
+        </G>
+      </Svg>
+    </View>
+  );
+};
+
+const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, tooltipStep }) => {
+  const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
+  const glasses = Math.round(currentMl / 250);
+  const totalGlasses = Math.round(goalMl / 250);
+  const liters = (currentMl / 1000).toFixed(1);
+  const goalL = (goalMl / 1000).toFixed(1);
+
+  return (
+    <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }) }} onPress={onPress}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, marginRight: 25 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ fontSize: 16, marginRight: 6 }}>💧</Text>
+          <Text style={{ color: '#EAEEF3', fontSize: 14, fontWeight: '700', letterSpacing: 1 }}>HYDRATATION</Text>
+        </View>
+        <Text style={{ color: '#00BFA6', fontSize: 14, fontWeight: '700' }}>{liters} / {goalL}L</Text>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ width: 50, alignItems: 'center', marginRight: 12 }}>
+          <SilhouetteFill fillPercent={percent} height={wp(62)} gender={gender} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <View style={{ height: 8, backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
+            <LinearGradient colors={['#4DA6FF', '#00BCD4']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: percent + '%', height: '100%', borderRadius: 4 }} />
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+            <Text style={{ color: '#8892A0', fontSize: 12 }}>{glasses}/{totalGlasses} verres 🥛</Text>
+            <Text style={{ color: '#FF8C42', fontSize: 12, fontWeight: '700' }}>{percent}%</Text>
+          </View>
+          {sportAlert ? (
+            <Text style={{ color: '#FF8C42', fontSize: 11 }}>{sportAlert}</Text>
+          ) : (
+            <Text style={{ color: '#555E6C', fontSize: 11 }}>Tap pour ajouter →</Text>
+          )}
+          {percent < 30 && percent > 0 && (
+            <Text style={{ color: '#FF3B30', fontSize: 10, fontWeight: '700', marginTop: 2 }}>
+              ⚠️ Pensez à vous réhydrater ! 💧
+            </Text>
+          )}
+        </View>
+      </View>
+    </MetalCard>
+  );
+};
+
+const HydrationClock = ({ logs, totalMl, goalMl }) => {
+  const [selectedArc, setSelectedArc] = useState(null);
+  const clockSize = W - 80;
+  const center = clockSize / 2;
+  const outerR = center - 10;
+  const innerR = outerR - 30;
+  const hoursRange = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
+  const totalHours = hoursRange.length;
+
+  const hourToAngle = (h, m = 0) => {
+    const idx = h - 6 + m / 60;
+    return (idx / totalHours) * 360 - 90;
+  };
+  const polarToXY = (angleDeg, radius) => {
+    const rad = (angleDeg * Math.PI) / 180;
+    return { x: center + radius * Math.cos(rad), y: center + radius * Math.sin(rad) };
+  };
+  const describeArc = (startAngle, endAngle, r1, r2) => {
+    const s1 = polarToXY(startAngle, r1); const e1 = polarToXY(endAngle, r1);
+    const s2 = polarToXY(endAngle, r2); const e2 = polarToXY(startAngle, r2);
+    const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
+    return `M ${s1.x} ${s1.y} A ${r1} ${r1} 0 ${largeArc} 1 ${e1.x} ${e1.y} L ${s2.x} ${s2.y} A ${r2} ${r2} 0 ${largeArc} 0 ${e2.x} ${e2.y} Z`;
+  };
+
+  const groupedByHour = {};
+  logs.forEach((log) => {
+    const parts = log.time.split(':');
+    const h = parseInt(parts[0]);
+    const m = parseInt(parts[1] || 0);
+    if (!groupedByHour[h]) groupedByHour[h] = [];
+    groupedByHour[h].push({ ...log, hour: h, minute: m });
+  });
+
+  const arcs = [];
+  Object.entries(groupedByHour).forEach(([hourStr, entries]) => {
+    const h = parseInt(hourStr);
+    if (h < 6 || h > 23) return;
+    const totalAmount = entries.reduce((s, e) => s + (e.amount || 0), 0);
+    const startAngle = hourToAngle(h, 0) + 1;
+    const endAngle = hourToAngle(h, 55) - 1;
+    const maxBarR = outerR; const minBarR = innerR + 4;
+    const ratio = Math.min(totalAmount / 500, 1);
+    const barR = minBarR + (maxBarR - minBarR) * ratio;
+    const isWater = entries.every((e) => !e.type || e.type === 'eau');
+    arcs.push({ key: h, path: describeArc(startAngle, endAngle, barR, minBarR), color: isWater ? '#4DA6FF' : '#00D984', opacity: 0.7 + ratio * 0.3, totalAmount, entries, midAngle: (startAngle + endAngle) / 2, midR: (barR + minBarR) / 2 });
+  });
+
+  return (
+    <View style={{ alignItems: 'center', marginVertical: 8 }}>
+      <Pressable onPress={() => setSelectedArc(null)}>
+        <Svg width={clockSize} height={clockSize} viewBox={`0 0 ${clockSize} ${clockSize}`}>
+          <Circle cx={center} cy={center} r={outerR} fill="none" stroke="rgba(74,79,85,0.2)" strokeWidth={1} />
+          <Circle cx={center} cy={center} r={innerR} fill="none" stroke="rgba(74,79,85,0.12)" strokeWidth={0.5} />
+          <Circle cx={center} cy={center} r={innerR - 2} fill="rgba(13,17,23,0.3)" />
+          {hoursRange.map((h) => {
+            const angle = hourToAngle(h, 30);
+            const tickStart = polarToXY(angle, outerR - 2);
+            const tickEnd = polarToXY(angle, outerR - 8);
+            const labelPos = polarToXY(angle, outerR + 14);
+            const isMajor = h % 3 === 0;
+            return (
+              <G key={h}>
+                <Line x1={tickStart.x} y1={tickStart.y} x2={tickEnd.x} y2={tickEnd.y} stroke={isMajor ? '#8892A0' : 'rgba(74,79,85,0.4)'} strokeWidth={isMajor ? 1.5 : 0.8} />
+                {isMajor && (
+                  <SvgText x={labelPos.x} y={labelPos.y} fill="#8892A0" fontSize={10} fontWeight="700" textAnchor="middle" alignmentBaseline="central">{h}h</SvgText>
+                )}
+              </G>
+            );
+          })}
+          {arcs.map((arc) => (
+            <Path key={arc.key} d={arc.path} fill={selectedArc === arc.key ? arc.color : arc.color + 'AA'} opacity={arc.opacity} onPress={() => setSelectedArc(selectedArc === arc.key ? null : arc.key)} />
+          ))}
+          <SvgText x={center} y={center - 10} fill="#EAEEF3" fontSize={22} fontWeight="900" textAnchor="middle">{formatNumberFR(totalMl)}</SvgText>
+          <SvgText x={center} y={center + 10} fill="#555E6C" fontSize={11} fontWeight="600" textAnchor="middle">/ {formatNumberFR(goalMl)} ml</SvgText>
+        </Svg>
+      </Pressable>
+      {selectedArc !== null && groupedByHour[selectedArc] && (
+        <View style={{ marginTop: -10, backgroundColor: 'rgba(30,37,48,0.95)', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)', width: W - 80 }}>
+          <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 6 }}>{selectedArc}h00</Text>
+          {groupedByHour[selectedArc].map((entry, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+              <Text style={{ fontSize: 16, width: 24 }}>{entry.icon || '💧'}</Text>
+              <Text style={{ color: '#EAEEF3', fontSize: 12, fontWeight: '600', flex: 1 }}>{entry.type || 'eau'}</Text>
+              <Text style={{ color: '#4DA6FF', fontSize: 13, fontWeight: '800' }}>+{entry.amount} ml</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+};
+
+const SurplusAlertModal = ({ visible, onClose, surplus, onAddActivity }) => {
+  const suggestions = useMemo(() => suggestActivities(surplus), [surplus]);
+  return (
+    <Modal visible={visible} animationType="fade" transparent>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 24 }}>
+        <View style={{ backgroundColor: '#151B23', borderRadius: 20, padding: 24, borderWidth: 1, borderColor: 'rgba(255,107,74,0.3)' }}>
+          <Text style={{ color: '#FF6B4A', fontSize: 16, fontWeight: '800', textAlign: 'center', marginBottom: 16 }}>
+            ⚠️ DÉPASSEMENT D'OBJECTIF
+          </Text>
+          <View style={{ backgroundColor: 'rgba(255,107,74,0.08)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+            <Text style={{ color: '#C0C8D4', fontSize: 13 }}>Bilan net du jour : <Text style={{ color: '#FF6B4A', fontWeight: '700' }}>{formatNumberFR(DAILY_OBJECTIVE + surplus)} kcal</Text></Text>
+            <Text style={{ color: '#C0C8D4', fontSize: 13, marginTop: 4 }}>Objectif : <Text style={{ fontWeight: '700' }}>{formatNumberFR(DAILY_OBJECTIVE)} kcal</Text></Text>
+            <Text style={{ color: '#FF6B4A', fontSize: 15, fontWeight: '800', marginTop: 6 }}>Surplus : +{surplus} kcal</Text>
+          </View>
+          <Text style={{ color: '#8892A0', fontSize: 12, fontWeight: '600', marginBottom: 10 }}>
+            💡 Pour compenser, essayez :
+          </Text>
+          {suggestions.map((sg, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: i < suggestions.length - 1 ? 1 : 0, borderBottomColor: 'rgba(80,95,115,0.1)' }}>
+              <Text style={{ fontSize: 16, width: 28 }}>{ACTIVITY_ICONS[sg.activity] || '🏃'}</Text>
+              <Text style={{ flex: 1, color: '#C0C8D4', fontSize: 13 }}>{ACTIVITY_LABELS[sg.activity]}</Text>
+              <Text style={{ color: '#8892A0', fontSize: 12 }}>{sg.minutesNeeded} min</Text>
+              <Text style={{ color: '#00D984', fontSize: 12, fontWeight: '700', width: 60, textAlign: 'right' }}>-{sg.kcalBurned}</Text>
+            </View>
+          ))}
+          <TouchableOpacity style={{ backgroundColor: '#00D984', borderRadius: 12, paddingVertical: 14, marginTop: 18, alignItems: 'center' }} activeOpacity={0.7} onPress={() => { onAddActivity && onAddActivity(); onClose(); }}>
+            <Text style={{ color: '#0C1219', fontSize: 14, fontWeight: '800', letterSpacing: 1 }}>AJOUTER UNE ACTIVITÉ</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={{ borderRadius: 12, borderWidth: 1, borderColor: 'rgba(80,95,115,0.3)', paddingVertical: 12, marginTop: 10, alignItems: 'center' }} activeOpacity={0.7} onPress={onClose}>
+            <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '600' }}>OK, J'AI COMPRIS</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+export {
+  MetallicBackground,
+  GlassCard,
+  ProgressBar,
+  AvatarButton,
+  useRotation,
+  EcgPulse,
+  ReactorCore,
+  DnaHelix,
+  SilhouetteFill,
+  HydrationClock,
+  HydrationCardCompact,
+  SurplusAlertModal,
+};
+
 const styles = StyleSheet.create({
   glassCard: {
     borderRadius: 16, padding: 16,
