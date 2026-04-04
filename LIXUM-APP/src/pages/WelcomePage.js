@@ -8,7 +8,7 @@
 //         La langue choisie ici s'applique à TOUTES les pages suivantes.
 //         Chaque page lit : AsyncStorage.getItem('lixum_lang')
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -435,5 +435,525 @@ function MiniDashboardPreview(props) {
         <Text style={{ position: 'absolute', left: rightX - 30, width: 60, textAlign: 'center', color: COLORS.blue, fontSize: 7, fontWeight: '700', letterSpacing: 0.6 }}>{labelRight}</Text>
       </View>
     </View>
+  );
+}
+
+// ============================================================
+// CARTE POKEMON PREMIUM
+// ============================================================
+
+function PokemonCard(props) {
+  var slide = props.slide;
+  var index = props.index;
+  var isTopCard = props.isTopCard;
+  var currentIndex = props.currentIndex;
+  var onSwipe = props.onSwipe;
+  var lang = props.lang;
+
+  var translateX = useSharedValue(0);
+  var translateY = useSharedValue(0);
+  var rotateZ = useSharedValue(0);
+
+  var gesture = Gesture.Pan()
+    .enabled(isTopCard)
+    .onUpdate(function (event) {
+      translateX.value = event.translationX;
+      translateY.value = event.translationY * 0.3;
+      rotateZ.value = interpolate(
+        event.translationX, [-SCREEN.width, 0, SCREEN.width], [-12, 0, 12],
+        Extrapolation.CLAMP
+      );
+    })
+    .onEnd(function (event) {
+      if (Math.abs(event.translationX) > SWIPE_THRESHOLD) {
+        var dir = event.translationX > 0 ? 1 : -1;
+        translateX.value = withTiming(dir * SCREEN.width * 1.5, { duration: 300 });
+        rotateZ.value = withTiming(dir * 20, { duration: 300 });
+        runOnJS(onSwipe)(dir);
+      } else {
+        translateX.value = withSpring(0, { damping: 15, stiffness: 150 });
+        translateY.value = withSpring(0, { damping: 15, stiffness: 150 });
+        rotateZ.value = withSpring(0, { damping: 15, stiffness: 150 });
+      }
+    });
+
+  var animStyle = useAnimatedStyle(function () {
+    if (!isTopCard) return {};
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { rotateZ: rotateZ.value + 'deg' },
+      ],
+    };
+  });
+
+  var behindStyle = !isTopCard ? {
+    transform: [{ scale: 0.95 }, { translateY: 10 }],
+    opacity: 0.5,
+  } : {};
+
+  return (
+    <GestureDetector gesture={gesture}>
+      <Animated.View style={[
+        { position: 'absolute', alignSelf: 'center', zIndex: isTopCard ? 10 : 5 },
+        isTopCard ? animStyle : behindStyle,
+      ]}>
+        <View style={{
+          width: CARD_W + 8, height: CARD_H + 8, borderRadius: 24, padding: 4,
+          borderWidth: 2, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+          borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+          backgroundColor: '#2A303B',
+          shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.6, shadowRadius: 16, elevation: 14,
+        }}>
+          <View style={{
+            flex: 1, borderRadius: 20, borderWidth: 1.5,
+            borderColor: 'rgba(0,217,132,0.35)', overflow: 'hidden',
+            shadowColor: COLORS.emerald, shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.1, shadowRadius: 8,
+          }}>
+            <View style={{ flex: 1, backgroundColor: COLORS.surface, borderRadius: 18 }}>
+              <CircuitPattern width={CARD_W} height={CARD_H} color="rgba(0, 217, 132, 0.05)" />
+              <View style={{
+                position: 'absolute', top: 0, left: 0, right: 0, height: 110,
+                borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden',
+              }}>
+                <LinearGradient
+                  colors={['#1E2530', '#1A2028', COLORS.surface]}
+                  start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
+                  style={{ flex: 1 }}
+                />
+              </View>
+              <View style={{
+                position: 'absolute', top: 0, left: 16, right: 16,
+                height: 1, backgroundColor: 'rgba(136,146,160,0.25)',
+              }} />
+
+              <View style={{
+                flex: 1, paddingHorizontal: 22, paddingTop: 24, paddingBottom: 14,
+                justifyContent: 'space-between',
+              }}>
+                <View style={{ alignItems: 'center' }}>
+                  <View style={{ marginBottom: 10 }}>
+                    <SlideIcon type={slide.key} color={slide.color} />
+                  </View>
+                  <Text style={{
+                    color: '#EAEEF3', fontSize: 20, fontWeight: '800',
+                    letterSpacing: 3, textAlign: 'center', marginBottom: 3,
+                  }}>{slide.title}</Text>
+                  <Text style={{
+                    color: '#8892A0', fontSize: 11, fontWeight: '500',
+                    letterSpacing: 1, textAlign: 'center',
+                  }}>{slide.subtitle}</Text>
+                </View>
+
+                <View style={{ gap: 14 }}>
+                  {slide.lines.map(function (line, i) {
+                    return (
+                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <View style={{
+                          width: 36, height: 36, borderRadius: 10,
+                          backgroundColor: 'rgba(0,217,132,0.08)',
+                          borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+                          alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <Ionicons name={line.icon} size={17} color={COLORS.emerald} />
+                        </View>
+                        <Text style={{
+                          color: '#EAEEF3', fontSize: 12.5, fontWeight: '500',
+                          flex: 1, lineHeight: 17,
+                        }}>{line.text}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+
+                <View>
+                  {isTopCard && currentIndex === 0 ? (
+                    <View style={{ alignItems: 'center', marginBottom: 14 }}>
+                      <SwipeHint lang={lang} />
+                    </View>
+                  ) : null}
+                  <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
+                    {slide.badges.map(function (badge, i) {
+                      return (
+                        <View key={i} style={{
+                          paddingHorizontal: 8, paddingVertical: 4, borderRadius: 5,
+                          borderWidth: 1, borderColor: 'rgba(0,217,132,0.22)',
+                          backgroundColor: 'rgba(0,217,132,0.05)',
+                        }}>
+                          <Text style={{ color: COLORS.emerald, fontSize: 8, fontWeight: '700', letterSpacing: 0.8 }}>{badge}</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Animated.View>
+    </GestureDetector>
+  );
+}
+
+// ============================================================
+// SHIMMER BUTTON
+// ============================================================
+
+function ShimmerButton(props) {
+  var onPress = props.onPress;
+  var text = props.text;
+  var shimmerX = useRef(new RNAnimated.Value(-200)).current;
+
+  useEffect(function () {
+    var loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.delay(2000),
+        RNAnimated.timing(shimmerX, {
+          toValue: 400, duration: 1200,
+          easing: Easing.inOut(Easing.ease), useNativeDriver: true,
+        }),
+        RNAnimated.timing(shimmerX, { toValue: -200, duration: 0, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return function () { loop.stop(); };
+  }, []);
+
+  return (
+    <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={{ width: '100%', borderRadius: 14 }}>
+      <View style={{
+        borderRadius: 14, overflow: 'hidden',
+        shadowColor: COLORS.gold, shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25, shadowRadius: 10, elevation: 6,
+      }}>
+        <LinearGradient
+          colors={[COLORS.gold, '#C5A028', '#A68B1B', '#8B7516']}
+          locations={[0, 0.3, 0.7, 1]}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={{ paddingVertical: 16, alignItems: 'center', position: 'relative' }}
+        >
+          <View style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
+            backgroundColor: 'rgba(255,255,255,0.12)',
+            borderTopLeftRadius: 14, borderTopRightRadius: 14,
+          }} />
+          <View style={{
+            position: 'absolute', top: 0, left: 20, right: 20,
+            height: 1, backgroundColor: 'rgba(255, 223, 100, 0.5)',
+          }} />
+          <RNAnimated.View style={{
+            position: 'absolute', top: 0, bottom: 0, width: 60,
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+            transform: [{ translateX: shimmerX }, { skewX: '-20deg' }],
+          }} />
+          <Text style={{ color: COLORS.background, fontSize: 16, fontWeight: '800', letterSpacing: 1.5 }}>{text}</Text>
+        </LinearGradient>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ============================================================
+// PAGE WELCOME
+// ============================================================
+
+export default function App() {
+  var _lang = useState('fr');
+  var lang = _lang[0]; var setLang = _lang[1];
+
+  // === PERSISTANCE LANGUE ===
+  // Charger la langue sauvegardée au démarrage
+  useEffect(function () {
+    AsyncStorage.getItem('lixum_lang').then(function (saved) {
+      if (saved === 'en' || saved === 'fr') setLang(saved);
+    }).catch(function () {});
+  }, []);
+
+  // Changer + sauvegarder la langue (utilisé par les boutons EN/FR)
+  var changeLang = function (newLang) {
+    setLang(newLang);
+    AsyncStorage.setItem('lixum_lang', newLang).catch(function () {});
+  };
+  var _currentIndex = useState(0);
+  var currentIndex = _currentIndex[0]; var setCurrentIndex = _currentIndex[1];
+  var t = texts[lang];
+
+  var slides = [
+    {
+      key: 'scan', title: t.slide1Title, subtitle: t.slide1Subtitle,
+      lines: t.slide1Lines, badges: ['AI-POWERED', 'REAL-TIME', '524 PLATS'], color: COLORS.emerald,
+    },
+    {
+      key: 'nutrition', title: t.slide2Title, subtitle: t.slide2Subtitle,
+      lines: t.slide2Lines, badges: ['USDA', 'FAO', 'ANSES'], color: COLORS.emerald,
+    },
+    {
+      key: 'dashboard', title: t.slide3Title, subtitle: t.slide3Subtitle,
+      lines: t.slide3Lines, badges: ['SCORE 0-100', 'BHI', 'AI COACH'], color: COLORS.emerald,
+    },
+  ];
+
+  var handleSwipe = useCallback(function (direction) {
+    setTimeout(function () {
+      setCurrentIndex(function (prev) { return Math.min(prev + 1, slides.length); });
+    }, 200);
+  }, [slides.length]);
+
+  var handleJoin = function () {
+    // TODO: navigation.navigate('Register')
+    console.log('Navigate to Register');
+  };
+
+  var handleSignIn = function () {
+    // TODO: navigation.navigate('Login')
+    console.log('Navigate to Login');
+  };
+
+  var allSwiped = currentIndex >= slides.length;
+
+  return (
+    <SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#1E2530' }} edges={['top', 'bottom', 'left', 'right']}>
+        <LinearGradient
+          colors={GRADIENTS.background}
+          locations={[0, 0.25, 0.5, 0.75, 1]}
+          style={{ flex: 1 }}
+        >
+          <TechBackground />
+
+          <View style={{
+            flex: 1, paddingHorizontal: 24,
+            paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+            paddingBottom: 8,
+          }}>
+
+            {/* HEADER : Logo + Drapeaux */}
+            <View style={{
+              width: '100%', flexDirection: 'row', alignItems: 'center',
+              justifyContent: 'center', position: 'relative',
+            }}>
+              <TouchableOpacity onPress={function () { changeLang('en'); }} activeOpacity={0.7}
+                style={{ position: 'absolute', left: 0 }}>
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6, borderWidth: 1, gap: 3,
+                  borderColor: lang === 'en' ? 'rgba(0,217,132,0.4)' : 'rgba(62,72,85,0.5)',
+                  backgroundColor: lang === 'en' ? 'rgba(0,217,132,0.08)' : 'rgba(27,31,38,0.6)',
+                }}>
+                  <Text style={{ fontSize: 11 }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</Text>
+                  <Text style={{ color: lang === 'en' ? COLORS.emerald : '#555E6C', fontSize: 8, fontWeight: '700', letterSpacing: 0.5 }}>EN</Text>
+                </View>
+              </TouchableOpacity>
+
+              <View style={{ width: 130, height: 130, borderRadius: 28, overflow: 'hidden' }}>
+                <Image source={logoImage}
+                  style={{ width: 130, height: 130, borderRadius: 28 }} resizeMode="cover" />
+              </View>
+
+              <TouchableOpacity onPress={function () { changeLang('fr'); }} activeOpacity={0.7}
+                style={{ position: 'absolute', right: 0 }}>
+                <View style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6, borderWidth: 1, gap: 3,
+                  borderColor: lang === 'fr' ? 'rgba(0,217,132,0.4)' : 'rgba(62,72,85,0.5)',
+                  backgroundColor: lang === 'fr' ? 'rgba(0,217,132,0.08)' : 'rgba(27,31,38,0.6)',
+                }}>
+                  <Text style={{ fontSize: 11 }}>{'\uD83C\uDDEB\uD83C\uDDF7'}</Text>
+                  <Text style={{ color: lang === 'fr' ? COLORS.emerald : '#555E6C', fontSize: 8, fontWeight: '700', letterSpacing: 0.5 }}>FR</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Tagline émotionnel */}
+            <Text style={{
+              color: '#8892A0', fontSize: 16, fontWeight: '500',
+              letterSpacing: 0.5, textAlign: 'center', marginTop: 2,
+            }}>
+              {t.welcome}
+            </Text>
+            <Text style={{
+              color: '#EAEEF3', fontSize: 17, fontWeight: '700',
+              letterSpacing: 0.5, textAlign: 'center', marginBottom: 2,
+            }}>
+              {t.welcomeLine2}
+            </Text>
+
+            {/* === BANDEAU IDENTITÉ AFRICAINE === */}
+            <View style={{
+              alignItems: 'center', marginTop: 4, marginBottom: 6,
+              position: 'relative', height: 30, justifyContent: 'center',
+            }}>
+              <LinearGradient
+                colors={[
+                  'rgba(0, 217, 132, 0)',
+                  'rgba(0, 217, 132, 0.06)',
+                  'rgba(0, 217, 132, 0.10)',
+                  'rgba(0, 217, 132, 0.06)',
+                  'rgba(0, 217, 132, 0)',
+                ]}
+                start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 4 }}
+              />
+              <View style={{
+                position: 'absolute', top: 0, left: '15%', right: '15%',
+                height: 0.5, backgroundColor: 'rgba(0, 217, 132, 0.15)',
+              }} />
+              <View style={{
+                position: 'absolute', bottom: 0, left: '15%', right: '15%',
+                height: 0.5, backgroundColor: 'rgba(0, 217, 132, 0.15)',
+              }} />
+              <Text style={{
+                color: '#6B7B8D', fontSize: 9, fontWeight: '600',
+                letterSpacing: 4, textAlign: 'center',
+              }}>
+                {t.tagline}
+              </Text>
+            </View>
+
+            {/* ZONE CARTES */}
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              {!allSwiped ? (
+                <View style={{ width: CARD_W + 8, height: CARD_H + 8 }}>
+                  {slides.map(function (slide, index) {
+                    if (index < currentIndex) return null;
+                    if (index > currentIndex + 1) return null;
+                    return (
+                      <PokemonCard
+                        key={slide.key}
+                        slide={slide}
+                        index={index}
+                        isTopCard={index === currentIndex}
+                        currentIndex={currentIndex}
+                        onSwipe={handleSwipe}
+                        lang={lang}
+                      />
+                    );
+                  })}
+                </View>
+              ) : (
+                <Animated.View entering={FadeInDown.duration(600).springify()}>
+                  {/* CARTE FINALE — Cadre doré + Dashboard Preview */}
+                  <View style={{
+                    width: CARD_W + 8, height: CARD_H + 8, borderRadius: 24, padding: 4,
+                    borderWidth: 2, borderTopColor: COLORS.gold, borderLeftColor: '#C5A028',
+                    borderRightColor: '#8B7516', borderBottomColor: '#6B5A10',
+                    backgroundColor: '#5A4C12',
+                    shadowColor: COLORS.gold, shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.2, shadowRadius: 16, elevation: 14, alignSelf: 'center',
+                  }}>
+                    <View style={{
+                      flex: 1, borderRadius: 20, borderWidth: 1.5,
+                      borderColor: 'rgba(212, 175, 55, 0.4)', overflow: 'hidden',
+                    }}>
+                      <View style={{ flex: 1, backgroundColor: COLORS.surface, borderRadius: 18 }}>
+                        <CircuitPattern width={CARD_W} height={CARD_H} color="rgba(212, 175, 55, 0.05)" />
+                        <View style={{
+                          position: 'absolute', top: 0, left: 0, right: 0, height: 120,
+                          borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden',
+                        }}>
+                          <LinearGradient
+                            colors={['rgba(212, 175, 55, 0.08)', 'rgba(212, 175, 55, 0.03)', 'rgba(212, 175, 55, 0)']}
+                            start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
+                            style={{ flex: 1 }}
+                          />
+                        </View>
+                        <View style={{
+                          position: 'absolute', top: 0, left: 16, right: 16,
+                          height: 1, backgroundColor: COLORS.gold, opacity: 0.25,
+                        }} />
+
+                        {/* Points dorés aux coins */}
+                        <View style={{ position: 'absolute', top: 8, left: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.4)' }} />
+                        <View style={{ position: 'absolute', top: 8, right: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.4)' }} />
+                        <View style={{ position: 'absolute', bottom: 8, left: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.3)' }} />
+                        <View style={{ position: 'absolute', bottom: 8, right: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.3)' }} />
+
+                        <View style={{
+                          flex: 1, paddingVertical: 16, paddingHorizontal: 24,
+                          alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          {/* Titre */}
+                          <Text style={{
+                            color: '#EAEEF3', fontSize: 18, fontWeight: '700',
+                            textAlign: 'center', marginBottom: 4,
+                          }}>{t.readyTitle}</Text>
+
+                          <Text style={{
+                            color: '#8892A0', fontSize: 10, fontWeight: '500',
+                            textAlign: 'center', letterSpacing: 1, marginBottom: 14,
+                          }}>{t.readySubtitle}</Text>
+
+                          {/* === MINI DASHBOARD PREVIEW === */}
+                          <MiniDashboardPreview lang={lang} />
+
+                          {/* Badge Conçu avec amour */}
+                          <View style={{
+                            flexDirection: 'row', alignItems: 'center', gap: 5,
+                            backgroundColor: 'rgba(0,217,132,0.06)',
+                            borderRadius: 8, paddingHorizontal: 12, paddingVertical: 5,
+                            borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)',
+                            marginBottom: 14,
+                          }}>
+                            <Text style={{
+                              color: '#8892A0', fontSize: 9, fontWeight: '600', letterSpacing: 1.5,
+                            }}>{lang === 'fr' ? 'Con\u00e7u avec' : 'Made with'}</Text>
+                            <Text style={{ fontSize: 11 }}>{'\u2764\uFE0F'}</Text>
+                          </View>
+
+                          {/* Bouton doré shimmer */}
+                          <ShimmerButton onPress={handleJoin} text={t.joinBtn} />
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </Animated.View>
+              )}
+            </View>
+
+            {/* ZONE BASSE */}
+            <View style={{ paddingTop: 6, paddingBottom: Platform.OS === 'android' ? 12 : 0 }}>
+              {/* Dots */}
+              <View style={{
+                flexDirection: 'row', justifyContent: 'center',
+                alignItems: 'center', gap: 8, marginBottom: 8,
+              }}>
+                {slides.map(function (_, i) {
+                  return (
+                    <View key={i} style={{
+                      height: 8, borderRadius: 4,
+                      backgroundColor: i === currentIndex ? COLORS.emerald : i < currentIndex ? '#00A866' : '#3E4855',
+                      width: i === currentIndex ? 24 : 8,
+                    }} />
+                  );
+                })}
+              </View>
+
+              {/* Se connecter — visible après swipes */}
+              {allSwiped ? (
+                <Animated.View entering={FadeInDown.delay(200).duration(400).springify()}>
+                  <TouchableOpacity onPress={handleSignIn} activeOpacity={0.7}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                      paddingVertical: 10, paddingHorizontal: 20,
+                      borderRadius: 10, borderWidth: 1,
+                      borderColor: 'rgba(62,72,85,0.4)',
+                      backgroundColor: 'rgba(27,31,38,0.4)', gap: 6,
+                    }}>
+                    <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '500' }}>{t.hasAccount}</Text>
+                    <Text style={{ color: COLORS.emerald, fontSize: 13, fontWeight: '700' }}>{t.signIn}</Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              ) : null}
+            </View>
+
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
