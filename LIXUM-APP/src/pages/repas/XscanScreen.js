@@ -524,8 +524,350 @@ const XscanScreen = forwardRef(function XscanScreen({ visible, onClose, onMealSa
   };
 
   // ============================================================
-  // FONCTIONS CORRECTION + SAVE (Phase 3)
+  // FONCTIONS CORRECTION + SAVE
   // ============================================================
+
+  const recalculateIngredient = async (ingredientIndex, newName) => {
+    if (!scanResult || !scanResult.ingredients) return;
+    setRecalculating(true);
+
+    try {
+      const response = await fetch(
+        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC3pUn0',
+          },
+          body: JSON.stringify({
+            action: 'search_ingredients',
+            query: newName,
+            limit: 1,
+          }),
+        }
+      );
+
+      const data = await response.json();
+      const results = data.results || [];
+
+      const updatedIngredients = [...scanResult.ingredients];
+      const oldIngredient = updatedIngredients[ingredientIndex];
+      const quantity = oldIngredient.quantity_g || 100;
+
+      if (results.length > 0) {
+        const dbMatch = results[0];
+        const factor = quantity / 100;
+
+        updatedIngredients[ingredientIndex] = {
+          ...oldIngredient,
+          name: newName,
+          name_en: newName,
+          uncertain: false,
+          alternatives: [],
+          calories: Math.round((dbMatch.kcal_per_100g || 0) * factor),
+          protein_g: Math.round((dbMatch.protein_per_100g || 0) * factor * 10) / 10,
+          carbs_g: Math.round((dbMatch.carbs_per_100g || 0) * factor * 10) / 10,
+          fat_g: Math.round((dbMatch.fat_per_100g || 0) * factor * 10) / 10,
+          fiber_g: Math.round((dbMatch.fiber_per_100g || 0) * factor * 10) / 10,
+          source: 'lixum_db',
+        };
+      } else {
+        updatedIngredients[ingredientIndex] = {
+          ...oldIngredient,
+          name: newName,
+          name_en: newName,
+          uncertain: false,
+          alternatives: [],
+        };
+      }
+
+      const newTotals = updatedIngredients.reduce((acc, ing) => ({
+        calories: acc.calories + (ing.calories || 0),
+        protein_g: Math.round((acc.protein_g + (ing.protein_g || 0)) * 10) / 10,
+        carbs_g: Math.round((acc.carbs_g + (ing.carbs_g || 0)) * 10) / 10,
+        fat_g: Math.round((acc.fat_g + (ing.fat_g || 0)) * 10) / 10,
+        fiber_g: Math.round((acc.fiber_g + (ing.fiber_g || 0)) * 10) / 10,
+      }), { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 });
+
+      setScanResult({
+        ...scanResult,
+        ingredients: updatedIngredients,
+        calories: newTotals.calories,
+        protein_g: newTotals.protein_g,
+        carbs_g: newTotals.carbs_g,
+        fat_g: newTotals.fat_g,
+        fiber_g: newTotals.fiber_g,
+        totals: newTotals,
+      });
+      setRecalculating(false);
+    } catch (error) {
+      console.error('Erreur recalcul ingrédient:', error);
+      const updatedIngredients = [...scanResult.ingredients];
+      updatedIngredients[ingredientIndex] = {
+        ...updatedIngredients[ingredientIndex],
+        name: newName,
+        name_en: newName,
+        uncertain: false,
+        alternatives: [],
+      };
+      setScanResult({ ...scanResult, ingredients: updatedIngredients });
+      setRecalculating(false);
+    }
+  };
+
+  // === FONCTIONS CORRECTION ===
+
+  const removeIngredient = (index) => {
+    const updated = editedIngredients.filter((_, i) => i !== index);
+    setEditedIngredients(updated);
+  };
+
+  const updateQuantity = async (index, newQuantityStr) => {
+    const newQty = parseFloat(newQuantityStr);
+    if (isNaN(newQty) || newQty <= 0) return;
+
+    const updated = [...editedIngredients];
+    const ing = updated[index];
+    const oldQty = ing.quantity_g || 100;
+
+    try {
+      const response = await fetch(
+        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC3pUn0',
+          },
+          body: JSON.stringify({
+            action: 'search_ingredients',
+            query: ing.name,
+            limit: 1,
+          }),
+        }
+      );
+      const data = await response.json();
+      const results = data.results || [];
+
+      if (results.length > 0) {
+        const db = results[0];
+        const factor = newQty / 100;
+        updated[index] = {
+          ...ing,
+          quantity_g: newQty,
+          calories: Math.round((db.kcal_per_100g || 0) * factor),
+          protein_g: Math.round((db.protein_per_100g || 0) * factor * 10) / 10,
+          carbs_g: Math.round((db.carbs_per_100g || 0) * factor * 10) / 10,
+          fat_g: Math.round((db.fat_per_100g || 0) * factor * 10) / 10,
+          fiber_g: Math.round((db.fiber_per_100g || 0) * factor * 10) / 10,
+        };
+      } else {
+        const ratio = newQty / oldQty;
+        updated[index] = {
+          ...ing,
+          quantity_g: newQty,
+          calories: Math.round((ing.calories || 0) * ratio),
+          protein_g: Math.round((ing.protein_g || 0) * ratio * 10) / 10,
+          carbs_g: Math.round((ing.carbs_g || 0) * ratio * 10) / 10,
+          fat_g: Math.round((ing.fat_g || 0) * ratio * 10) / 10,
+          fiber_g: Math.round((ing.fiber_g || 0) * ratio * 10) / 10,
+        };
+      }
+    } catch (e) {
+      const ratio = newQty / oldQty;
+      updated[index] = {
+        ...ing,
+        quantity_g: newQty,
+        calories: Math.round((ing.calories || 0) * ratio),
+        protein_g: Math.round((ing.protein_g || 0) * ratio * 10) / 10,
+        carbs_g: Math.round((ing.carbs_g || 0) * ratio * 10) / 10,
+        fat_g: Math.round((ing.fat_g || 0) * ratio * 10) / 10,
+        fiber_g: Math.round((ing.fiber_g || 0) * ratio * 10) / 10,
+      };
+    }
+
+    setEditedIngredients(updated);
+    setEditingQuantityIndex(null);
+    setTempQuantity('');
+  };
+
+  const searchIngredients = async (query) => {
+    setSearchQuery(query);
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC3pUn0',
+          },
+          body: JSON.stringify({
+            action: 'search_ingredients',
+            query: query,
+            limit: 8,
+          }),
+        }
+      );
+      const data = await response.json();
+      setSearchResults(data.results || []);
+    } catch (e) {
+      console.error('Search error:', e);
+      setSearchResults([]);
+    }
+    setIsSearching(false);
+  };
+
+  const addIngredientFromSearch = (dbIngredient) => {
+    const defaultQty = 100;
+    const factor = defaultQty / 100;
+
+    const newIng = {
+      name: dbIngredient.name,
+      name_en: dbIngredient.name,
+      quantity_g: defaultQty,
+      calories: Math.round((dbIngredient.kcal_per_100g || 0) * factor),
+      protein_g: Math.round((dbIngredient.protein_per_100g || 0) * factor * 10) / 10,
+      carbs_g: Math.round((dbIngredient.carbs_per_100g || 0) * factor * 10) / 10,
+      fat_g: Math.round((dbIngredient.fat_per_100g || 0) * factor * 10) / 10,
+      fiber_g: Math.round((dbIngredient.fiber_per_100g || 0) * factor * 10) / 10,
+      source: 'lixum_db',
+      certainty: 100,
+      uncertain: false,
+      alternatives: [],
+      added_manually: true,
+    };
+
+    setEditedIngredients([...editedIngredients, newIng]);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const getEditedTotals = () => {
+    return editedIngredients.reduce((acc, ing) => ({
+      calories: acc.calories + (ing.calories || 0),
+      protein_g: Math.round((acc.protein_g + (ing.protein_g || 0)) * 10) / 10,
+      carbs_g: Math.round((acc.carbs_g + (ing.carbs_g || 0)) * 10) / 10,
+      fat_g: Math.round((acc.fat_g + (ing.fat_g || 0)) * 10) / 10,
+      fiber_g: Math.round((acc.fiber_g + (ing.fiber_g || 0)) * 10) / 10,
+    }), { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 });
+  };
+
+  const applyCorrection = () => {
+    const totals = getEditedTotals();
+    setScanResult({
+      ...scanResult,
+      ingredients: editedIngredients,
+      calories: totals.calories,
+      protein_g: totals.protein_g,
+      carbs_g: totals.carbs_g,
+      fat_g: totals.fat_g,
+      fiber_g: totals.fiber_g,
+      totals: totals,
+    });
+    setCorrectionMode(false);
+    setEditedIngredients([]);
+    setSearchQuery('');
+    setSearchResults([]);
+    setEditingQuantityIndex(null);
+  };
+
+  const getAutoMealType = () => {
+    const hour = new Date().getHours();
+    if (hour < 10) return 'breakfast';
+    if (hour < 14) return 'lunch';
+    if (hour < 21) return 'dinner';
+    return 'snack';
+  };
+
+  const saveMealToSupabase = async () => {
+    if (isSaving || !scanResult) return;
+    setIsSaving(true);
+
+    try {
+      const totals = scanResult.totals || {
+        calories: scanResult.calories || 0,
+        protein_g: scanResult.protein_g || 0,
+        carbs_g: scanResult.carbs_g || 0,
+        fat_g: scanResult.fat_g || 0,
+        fiber_g: scanResult.fiber_g || 0,
+      };
+
+      const totalWeight = (scanResult.ingredients || []).reduce(
+        (sum, ing) => sum + (ing.quantity_g || 0), 0
+      );
+
+      const source = capturedPhoto?.uri?.startsWith('file') ? 'xscan_4' : 'gallery';
+
+      const { data, error } = await supabase.rpc('add_meal_and_update_summary', {
+        p_user_id: TEST_USER_ID,
+        p_meal_type: selectedMealType || getAutoMealType(),
+        p_food_name: currentDishName || scanResult.name_fr || 'Plat scanné',
+        p_calories: Math.round(totals.calories || 0),
+        p_protein: Math.round((totals.protein_g || 0) * 10) / 10,
+        p_carbs: Math.round((totals.carbs_g || 0) * 10) / 10,
+        p_fat: Math.round((totals.fat_g || 0) * 10) / 10,
+        p_fiber: Math.round((totals.fiber_g || 0) * 10) / 10,
+        p_source: source,
+        p_confidence: scanResult.confidence || null,
+        p_photo_url: null,
+        p_ingredients_detail: scanResult.ingredients || [],
+        p_food_db_id: null,
+        p_volume_ml: null,
+        p_texture: typeof scanResult.texture === 'string' ? scanResult.texture : null,
+        p_portion_g: totalWeight > 0 ? totalWeight : null,
+      });
+
+      if (error) {
+        console.error('Erreur sauvegarde Supabase:', error);
+        alert('Erreur : ' + error.message);
+        setIsSaving(false);
+        return;
+      }
+
+      console.log('Repas sauvegardé ! ID:', data);
+      setSaveSuccess(true);
+
+      setTimeout(() => {
+        onMealSaved();
+        // Reset tous les states
+        setScanScreen('none');
+        onClose();
+        setRecalculating(false);
+        setScanResult(null);
+        setCapturedPhoto(null);
+        setShowAlternatives(false);
+        setAlternativeDishes([]);
+        setCurrentDishName('');
+        setScanMode('none');
+        setScanError(null);
+        setScanSuggestions([]);
+        setSelectedSuggestion(null);
+        setAiVisual(null);
+        alertShakeAnim.setValue(0);
+        setCorrectionMode(false);
+        setEditedIngredients([]);
+        setSearchQuery('');
+        setSearchResults([]);
+        setEditingQuantityIndex(null);
+        setTempQuantity('');
+        setIsSaving(false);
+        setSaveSuccess(false);
+      }, 1500);
+
+    } catch (err) {
+      console.error('Erreur réseau:', err);
+      alert('Erreur réseau. Vérifie ta connexion.');
+      setIsSaving(false);
+    }
+  };
 
   // ============================================================
   // JSX (Phase 4-5)
