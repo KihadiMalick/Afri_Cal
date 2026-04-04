@@ -1161,7 +1161,62 @@ export default function RepasPage({ onNavigate }) {
 
         </ScrollView>
 
-        {/* === PHASE 10 : Sous-écrans + BottomTabs === */}
+        {/* ═══ SOUS-ÉCRANS MONTÉS CONDITIONNELLEMENT ═══ */}
+        <XscanScreen
+          ref={xscanRef}
+          visible={showXscan}
+          onClose={() => setShowXscan(false)}
+          onMealSaved={() => { setShowXscan(false); loadDashboardData(); }}
+          userProfile={userProfile}
+          pagePowers={pagePowers}
+          activeChar={activeChar}
+        />
+        <ManualEntryScreen
+          visible={showManualEntry}
+          onClose={() => setShowManualEntry(false)}
+          onMealSaved={() => { setShowManualEntry(false); loadDashboardData(); }}
+        />
+        <CartScanScreen
+          visible={showCartScan}
+          onClose={() => setShowCartScan(false)}
+        />
+        <RecettesScreen
+          visible={showRecettes}
+          onClose={() => setShowRecettes(false)}
+          onMealSaved={() => loadDashboardData()}
+          userMood={userMood}
+          userWeather={userWeather}
+          lixBalance={lixBalance}
+          setLixBalance={setLixBalance}
+          onNavigate={onNavigate}
+          onOpenCooking={(recipe) => { setCookingRecipe(recipe); setShowCookingMode(true); }}
+        />
+        <CookingModeScreen
+          visible={showCookingMode}
+          recipe={cookingRecipe}
+          onClose={() => setShowCookingMode(false)}
+        />
+        <AddMealModal
+          visible={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onScan={() => { setShowAddModal(false); setShowXscan(true); if (xscanRef.current?.openCamera) xscanRef.current.openCamera(); }}
+          onGallery={() => { setShowAddModal(false); setShowXscan(true); if (xscanRef.current?.openGallery) xscanRef.current.openGallery(); }}
+          onManual={() => { setShowAddModal(false); setShowManualEntry(true); }}
+        />
+
+        {/* Tooltip Xscan */}
+        <XscanTooltip
+          visible={showScanTooltip}
+          xButtonY={xButtonY}
+          onDismiss={() => setShowScanTooltip(false)}
+        />
+
+        {/* ═══ BOTTOM TABS ═══ */}
+        <BottomTabs
+          activeTab={activeTab}
+          onTabPress={handleTabPress}
+          lang={lang}
+        />
 
       </View>
     </LinearGradient>
