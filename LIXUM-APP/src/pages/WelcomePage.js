@@ -42,6 +42,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Line, Rect, Ellipse, G, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import CircuitPattern from '../components/shared/CircuitPattern';
+import TechBackground from '../components/shared/TechBackground';
+import MetalCard from '../components/shared/MetalCard';
 import { supabase } from '../config/supabase';
 import { wp, fp, SCREEN } from '../constants/layout';
 import { COLORS, GRADIENTS } from '../constants/colors';
@@ -135,92 +138,6 @@ var texts = {
     madeIn: 'Built in Burundi',
   },
 };
-
-// ============================================================
-// BACKGROUND TECH — grille + points + crochets HUD
-// ============================================================
-
-function TechBackground() {
-  var W = SCREEN.width;
-  var H = SCREEN.height;
-  var gridSpacing = 50;
-  var lines = [];
-  var dots = [];
-
-  for (var y = 0; y < H; y += gridSpacing) {
-    lines.push(
-      <Line key={'h-' + y} x1="0" y1={y} x2={W} y2={y}
-        stroke="rgba(62, 72, 85, 0.25)" strokeWidth="0.5" />
-    );
-  }
-  for (var x = 0; x < W; x += gridSpacing) {
-    lines.push(
-      <Line key={'v-' + x} x1={x} y1="0" x2={x} y2={H}
-        stroke="rgba(62, 72, 85, 0.25)" strokeWidth="0.5" />
-    );
-  }
-  for (var x2 = 0; x2 < W; x2 += gridSpacing * 2) {
-    for (var y2 = 0; y2 < H; y2 += gridSpacing * 2) {
-      dots.push(
-        <Circle key={'d-' + x2 + '-' + y2} cx={x2} cy={y2} r="1.5"
-          fill="rgba(0, 217, 132, 0.14)" />
-      );
-    }
-  }
-
-  return (
-    <Svg width={W} height={H}
-      style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
-      {lines}
-      {dots}
-      <Line x1="60" y1={H * 0.35} x2="90" y2={H * 0.35}
-        stroke="rgba(0,217,132,0.15)" strokeWidth="1" strokeDasharray="4 3" />
-      <Line x1={W - 90} y1={H * 0.35} x2={W - 60} y2={H * 0.35}
-        stroke="rgba(0,217,132,0.15)" strokeWidth="1" strokeDasharray="4 3" />
-      <Line x1="60" y1={H * 0.42} x2="80" y2={H * 0.42}
-        stroke="rgba(62,72,85,0.2)" strokeWidth="0.5" />
-      <Line x1={W - 80} y1={H * 0.42} x2={W - 60} y2={H * 0.42}
-        stroke="rgba(62,72,85,0.2)" strokeWidth="0.5" />
-    </Svg>
-  );
-}
-
-// ============================================================
-// CIRCUIT PATTERN
-// ============================================================
-
-function CircuitPattern(props) {
-  var width = props.width;
-  var height = props.height;
-  var color = props.color || 'rgba(0, 217, 132, 0.06)';
-  return (
-    <Svg width={width} height={height}
-      style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
-      <Line x1="20" y1={height * 0.15} x2={width * 0.35} y2={height * 0.15} stroke={color} strokeWidth="0.8" />
-      <Circle cx={width * 0.35} cy={height * 0.15} r="2" fill={color} />
-      <Line x1={width * 0.35} y1={height * 0.15} x2={width * 0.35} y2={height * 0.25} stroke={color} strokeWidth="0.8" />
-      <Line x1={width * 0.65} y1={height * 0.12} x2={width - 20} y2={height * 0.12} stroke={color} strokeWidth="0.8" />
-      <Circle cx={width * 0.65} cy={height * 0.12} r="2" fill={color} />
-      <Line x1={width * 0.65} y1={height * 0.12} x2={width * 0.65} y2={height * 0.20} stroke={color} strokeWidth="0.8" />
-      <Line x1={width * 0.65} y1={height * 0.20} x2={width * 0.75} y2={height * 0.20} stroke={color} strokeWidth="0.8" />
-      <Circle cx={width * 0.75} cy={height * 0.20} r="1.5" fill={color} />
-      <Line x1="15" y1={height * 0.50} x2="15" y2={height * 0.60} stroke={color} strokeWidth="0.8" />
-      <Line x1="15" y1={height * 0.60} x2={width * 0.20} y2={height * 0.60} stroke={color} strokeWidth="0.8" />
-      <Rect x={width * 0.20 - 3} y={height * 0.60 - 3} width="6" height="6" rx="1" fill="none" stroke={color} strokeWidth="0.8" />
-      <Line x1={width * 0.70} y1={height * 0.75} x2={width - 15} y2={height * 0.75} stroke={color} strokeWidth="0.8" />
-      <Line x1={width - 15} y1={height * 0.75} x2={width - 15} y2={height * 0.85} stroke={color} strokeWidth="0.8" />
-      <Circle cx={width - 15} cy={height * 0.85} r="2" fill={color} />
-      <Line x1={width * 0.15} y1={height * 0.82} x2={width * 0.30} y2={height * 0.82} stroke={color} strokeWidth="0.8" />
-      <Line x1={width * 0.30} y1={height * 0.82} x2={width * 0.30} y2={height * 0.90} stroke={color} strokeWidth="0.8" />
-      <Rect x={width * 0.30 - 3} y={height * 0.90 - 3} width="6" height="6" rx="1" fill="none" stroke={color} strokeWidth="0.8" />
-      <Line x1={width * 0.30 + 3} y1={height * 0.90} x2={width * 0.45} y2={height * 0.90} stroke={color} strokeWidth="0.8" />
-      <Circle cx={width * 0.45} cy={height * 0.90} r="1.5" fill={color} />
-      <Circle cx={width * 0.50} cy={height * 0.30} r="1" fill={color} />
-      <Circle cx={width * 0.85} cy={height * 0.45} r="1" fill={color} />
-      <Circle cx={width * 0.25} cy={height * 0.70} r="1" fill={color} />
-    </Svg>
-  );
-}
 
 // ============================================================
 // ICONE SVG — SCAN X
