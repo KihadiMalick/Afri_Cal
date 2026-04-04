@@ -261,7 +261,150 @@ const MoodModal = ({ visible, onClose, onMoodSaved }) => {
 
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9998 }}>
-      <Text style={{ color: '#FFF' }}>MoodModal render placeholder</Text>
+      <LinearGradient colors={['#0D1117', '#1A2029', '#0D1117']} style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Pressable onPressIn={(event) => { const { pageX, pageY } = event.nativeEvent; handleTap(pageX, pageY); }}
+          style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}>
+          <RNAnimated.View style={{
+            flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center',
+            transform: [{ translateX: screenShakeAnim }, { translateY: screenShakeAnim.interpolate({ inputRange: [-12, 0, 12], outputRange: [6, 0, -6] }) }],
+          }}>
+            {hearts.map(heart => (<FloatingHeart key={heart.id} heart={heart} tubeCenter={tubeLayout} />))}
+            {confetti.map(item => (<Confetto key={item.id} item={item} />))}
+
+            {!moodResult && (
+              <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '800', letterSpacing: 2, marginBottom: 30 }}>COMMENT ALLEZ-VOUS ?</Text>
+            )}
+
+            {tierLabel !== '' && (
+              <RNAnimated.View style={{ position: 'absolute', alignSelf: 'center', top: '42%', zIndex: 60, opacity: tierLabelOpacity, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 14, borderWidth: 1, borderColor: tierColor }}>
+                <Text style={{ color: tierColor, fontSize: 20, fontWeight: '900', letterSpacing: 2 }}>{tierLabel}</Text>
+              </RNAnimated.View>
+            )}
+
+            {!moodResult && (
+              <View onLayout={(e) => { const { x, y, width, height } = e.nativeEvent.layout; setTubeLayout({ x: x + width / 2, y: y + height / 2 }); }}
+                style={{ flexDirection: 'row', alignItems: 'flex-end', height: 300, position: 'relative' }}>
+                {tapCount < 3 && (
+                  <RNAnimated.View style={{ position: 'absolute', top: '45%', right: wp(30), alignItems: 'center', transform: [{ translateY: handTranslateY }], opacity: handOpacity, zIndex: 10 }}>
+                    <Text style={{ fontSize: 50 }}>👆</Text>
+                    <Text style={{ color: '#8892A0', fontSize: 13, marginTop: 4, textAlign: 'center' }}>Tapotez{'\n'}partout !</Text>
+                  </RNAnimated.View>
+                )}
+                {energyParticles.map(p => (<EnergyParticle key={p.id} x={p.x} y={p.y} emoji={p.emoji} />))}
+                <View style={{ justifyContent: 'space-between', height: 300, marginRight: 15, paddingVertical: 5, alignItems: 'center' }}>
+                  <MoodIcon tier={3} size={42} active={activeTier === 3} />
+                  <MoodIcon tier={2} size={42} active={activeTier === 2} />
+                  <MoodIcon tier={1} size={42} active={activeTier === 1} />
+                  <MoodIcon tier={0} size={42} active={activeTier === 0} />
+                </View>
+                <RNAnimated.View style={{ transform: [{ translateX: tubeShakeAnim }] }}>
+                  <View style={{
+                    width: 50, height: 300, borderRadius: 25, backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                    borderWidth: tubeFlash ? 2 : 1,
+                    borderColor: tubeFlash ? (isExcited ? '#D4AF37' : moodLevel >= 80 ? '#4DA6FF' : moodLevel >= 40 ? '#00D984' : '#8892A0') : 'rgba(255, 255, 255, 0.1)',
+                    shadowColor: tubeFlash ? (isExcited ? '#D4AF37' : moodLevel >= 80 ? '#4DA6FF' : moodLevel >= 40 ? '#00D984' : '#FFFFFF') : 'transparent',
+                    shadowOpacity: tubeFlash ? 0.8 : 0, shadowRadius: tubeFlash ? 15 : 0, shadowOffset: { width: 0, height: 0 },
+                    overflow: 'hidden', justifyContent: 'flex-end',
+                  }}>
+                    <View style={{ position: 'absolute', bottom: 300 * 0.40, left: -4, right: -4, height: 2.5, backgroundColor: '#00D984', borderRadius: 1, zIndex: 5 }} />
+                    <View style={{ position: 'absolute', bottom: 300 * 0.80, left: -4, right: -4, height: 2.5, backgroundColor: '#4DA6FF', borderRadius: 1, zIndex: 5 }} />
+                    <View style={{ position: 'absolute', bottom: 300 * 0.95, left: -4, right: -4, height: 2.5, backgroundColor: '#D4AF37', borderRadius: 1, zIndex: 5 }} />
+                    <LinearGradient
+                      colors={isExcited || (moodLevel >= 100 && overflowTaps > 0) ? ['#D4AF37', '#FFE066'] : moodLevel >= HAPPY_THRESHOLD ? ['#4DA6FF', '#7DD3FC'] : moodLevel >= CHILL_THRESHOLD ? ['#00854F', '#00D984'] : ['#4A4F55', '#8892A0']}
+                      style={{ width: '100%', height: moodLevel + '%', borderRadius: 25 }}
+                    />
+                  </View>
+                </RNAnimated.View>
+                <View style={{ justifyContent: 'space-between', height: 300, marginLeft: 15, paddingVertical: 5 }}>
+                  <Text style={{ color: '#D4AF37', fontSize: 11, fontWeight: '700' }}>EXCITÉ</Text>
+                  <Text style={{ color: '#4DA6FF', fontSize: 11, fontWeight: '700' }}>HEUREUX</Text>
+                  <Text style={{ color: '#00D984', fontSize: 11, fontWeight: '700' }}>CHILL</Text>
+                  <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '700' }}>TRISTE</Text>
+                </View>
+              </View>
+            )}
+
+            {!moodResult && (
+              <Text style={{ color: '#8892A0', fontSize: 12, marginTop: 25, textAlign: 'center' }}>Tapotez l'écran pour exprimer votre humeur !</Text>
+            )}
+
+            {moodResult && !showWeather && (
+              <View style={{ alignItems: 'center', paddingHorizontal: 30 }}>
+                {moodResult === 'excited' && confetti.length > 0 && confetti.map(item => (<Confetto key={item.id} item={item} />))}
+                <View style={{ marginBottom: 15, shadowColor: moodMessages[moodResult].color, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 20, elevation: 10 }}>
+                  <MoodIcon tier={moodMessages[moodResult].tier} size={70} active={true} />
+                </View>
+                <Text style={{ color: moodMessages[moodResult].color, fontSize: 22, fontWeight: '800', marginBottom: 10 }}>{moodMessages[moodResult].title}</Text>
+                <Text style={{ color: '#8892A0', fontSize: 14, lineHeight: 22, textAlign: 'center', marginBottom: 30 }}>{moodMessages[moodResult].message}</Text>
+                <View style={{ backgroundColor: 'rgba(0,217,132,0.06)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)', paddingHorizontal: 16, paddingVertical: 10, marginBottom: 20, marginTop: 10 }}>
+                  <Text style={{ color: '#00D984', fontSize: 12, textAlign: 'center', fontWeight: '600' }}>✨ ALIXEN a enregistré votre humeur et adaptera vos recommandations en conséquence</Text>
+                </View>
+                <TouchableOpacity onPress={() => setShowWeather(true)} style={{ backgroundColor: moodMessages[moodResult].color, borderRadius: 14, paddingHorizontal: 30, paddingVertical: 12 }}>
+                  <Text style={{ color: '#0D1117', fontSize: 15, fontWeight: '800' }}>Continuer →</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => {
+                  setMoodLevel(0); setLockedAtChill(false); setMoodResult(null); setHearts([]); setHasStartedTapping(false);
+                  setTapCount(0); setOverflowTaps(0); setIsExcited(false); setEnergyParticles([]); setExcitedBuildUp(0);
+                  setCurrentTier(0); setTierLabel(''); setTierColor('#FFF'); setConfetti([]);
+                  tubeShakeAnim.setValue(0); tierLabelOpacity.setValue(0);
+                }} style={{ marginTop: 15 }}>
+                  <Text style={{ color: '#8892A0', fontSize: 12 }}>Refaire</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {showWeather && (
+              <View style={{ alignItems: 'center', paddingHorizontal: 20 }}>
+                <Text style={{ color: '#EAEEF3', fontSize: 16, fontWeight: '800', letterSpacing: 2, marginBottom: 8 }}>QUEL TEMPS FAIT-IL ?</Text>
+                <Text style={{ color: '#8892A0', fontSize: 12, marginBottom: 25, textAlign: 'center' }}>Cela nous aide à adapter vos recommandations</Text>
+                <View style={{ flexDirection: 'row', gap: 15 }}>
+                  {[
+                    { key: 'rainy', emoji: '🌧️', label: 'Pluvieux', color: '#4DA6FF' },
+                    { key: 'cloudy', emoji: '☁️', label: 'Nuageux', color: '#8892A0' },
+                    { key: 'sunny', emoji: '☀️', label: 'Ensoleillé', color: '#D4AF37' },
+                  ].map(w => (
+                    <TouchableOpacity key={w.key} onPress={() => setSelectedWeather(w.key)}
+                      style={{
+                        width: 90, height: 100, borderRadius: 18,
+                        backgroundColor: selectedWeather === w.key ? w.color + '25' : 'rgba(255,255,255,0.04)',
+                        borderWidth: 1.5, borderColor: selectedWeather === w.key ? w.color : 'rgba(255,255,255,0.08)',
+                        justifyContent: 'center', alignItems: 'center',
+                      }}>
+                      <Text style={{ fontSize: 35 }}>{w.emoji}</Text>
+                      <Text style={{ color: w.color, fontSize: 11, fontWeight: '700', marginTop: 5 }}>{w.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                {selectedWeather && (
+                  <View style={{ marginTop: 25, alignItems: 'center' }}>
+                    <TouchableOpacity
+                      onPress={async function() {
+                        try {
+                          await supabase.from('moods').insert({
+                            user_id: TEST_USER_ID, mood_level: moodResult,
+                            weather: selectedWeather, tap_count: tapCount,
+                            max_gauge_percent: Math.round(moodLevel),
+                          });
+                          await supabase.from('users_profile').update({
+                            current_mood: moodResult, current_weather: selectedWeather,
+                          }).eq('user_id', TEST_USER_ID);
+                        } catch (e) {
+                          console.warn('Mood save error:', e);
+                        }
+                        if (onMoodSaved) onMoodSaved(moodResult, selectedWeather);
+                        onClose();
+                      }}
+                      style={{ backgroundColor: '#00D984', borderRadius: 14, paddingHorizontal: 30, paddingVertical: 12 }}>
+                      <Text style={{ color: '#0D1117', fontSize: 15, fontWeight: '800' }}>Valider ✓</Text>
+                    </TouchableOpacity>
+                    <View style={{ height: 12 }} />
+                  </View>
+                )}
+              </View>
+            )}
+          </RNAnimated.View>
+        </Pressable>
+      </LinearGradient>
     </View>
   );
 };
