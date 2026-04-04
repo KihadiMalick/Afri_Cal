@@ -80,7 +80,64 @@ export default function LiveTrackingScreen({
   var alixenLastTimeRef = useRef(0);
   var alixenNearGoalRef = useRef(false);
 
-  // === FONCTIONS (phases suivantes) ===
+  // === FONCTIONS ===
+
+  function haversineDistance(lat1, lon1, lat2, lon2) {
+    var R = 6371000;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  function vibrateZoneChange(newZone, prevZone) {
+    if (!prevZone || prevZone.zone === newZone.zone) return;
+    if (newZone.zone === 'pause') return;
+    if (SPEED_ZONES.indexOf(newZone) > SPEED_ZONES.indexOf(prevZone)) {
+      Vibration.vibrate([0, 100, 50, 100]);
+    } else {
+      Vibration.vibrate(80);
+    }
+  }
+
+  function showCharReaction(zone, langCode) {
+    var reaction = CHAR_REACTIONS[zone.zone];
+    if (!reaction) return;
+    var msg = langCode === 'en' ? reaction.msgEN : reaction.msgFR;
+    setLiveCharMsg(msg);
+    if (liveCharMsgTimerRef.current) clearTimeout(liveCharMsgTimerRef.current);
+    liveCharMsgTimerRef.current = setTimeout(function() { setLiveCharMsg(''); }, 4000);
+  }
+
+  var startLiveTracking = function() {
+    (async function() {
+      try {
+        var profileData = await supabase
+          .from('users_profile')
+          .select('current_weather')
+          .eq('user_id', TEST_USER_ID)
+          .maybeSingle();
+        if (profileData.data && profileData.data.current_weather) {
+          setLiveWeatherMult(getWeatherWaterMult(profileData.data.current_weather));
+        }
+      } catch (e) {}
+    })();
+
+    setLiveCountdown(3);
+    var countInterval = setInterval(function() {
+      setLiveCountdown(function(prev) {
+        if (prev <= 1) {
+          clearInterval(countInterval);
+          launchGPS();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   // === JSX (phases suivantes) ===
 
