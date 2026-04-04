@@ -171,6 +171,103 @@ export default function RecettesScreen({
     }
   }, [visible]);
 
+  const openRecipeDetail = async (recipe) => {
+    setSelectedRecipe(recipe);
+    setLoadingIngredients(true);
+    try {
+      const { data, error } = await supabase
+        .from('meal_components_master')
+        .select('component_name, percentage_estimate')
+        .eq('meal_id', recipe.id)
+        .order('percentage_estimate', { ascending: false });
+
+      if (!error && data) {
+        setRecipeIngredients(data);
+      } else {
+        setRecipeIngredients([]);
+      }
+    } catch (e) {
+      setRecipeIngredients([]);
+    }
+    setLoadingIngredients(false);
+  };
+
+  const closeRecipeDetail = () => {
+    setSelectedRecipe(null);
+    setRecipeIngredients([]);
+    setRecipeSteps(null);
+    setDisplayedSteps('');
+    setIsTyping(false);
+    setLoadingSteps(false);
+  };
+
+  const addRecipeToMeals = async () => {
+    if (!selectedRecipe || !selectedSlot || addingMeal) return;
+    setAddingMeal(true);
+
+    try {
+      const userId = TEST_USER_ID;
+      const today = new Date().toISOString().split('T')[0];
+
+      const isSnackOrSide = selectedRecipe.category?.includes('Snack')
+        || selectedRecipe.category?.includes('Accompagnement')
+        || selectedSlot === 'snack';
+      const portionGrams = isSnackOrSide ? 150 : 300;
+      const factor = portionGrams / 100;
+
+      const mealData = {
+        user_id: userId,
+        date: today,
+        meal_type: selectedSlot,
+        meal_name: selectedRecipe.name,
+        food_items: [{
+          name: selectedRecipe.name,
+          quantity_g: portionGrams,
+          kcal: Math.round(selectedRecipe.kcal_per_100g * factor),
+          protein: parseFloat((selectedRecipe.protein_per_100g * factor).toFixed(1)),
+          carbs: parseFloat((selectedRecipe.carbs_per_100g * factor).toFixed(1)),
+          fat: parseFloat((selectedRecipe.fat_per_100g * factor).toFixed(1)),
+        }],
+        total_kcal: Math.round(selectedRecipe.kcal_per_100g * factor),
+        total_protein: parseFloat((selectedRecipe.protein_per_100g * factor).toFixed(1)),
+        total_carbs: parseFloat((selectedRecipe.carbs_per_100g * factor).toFixed(1)),
+        total_fat: parseFloat((selectedRecipe.fat_per_100g * factor).toFixed(1)),
+        source: 'recipe',
+      };
+
+      const { error: mealError } = await supabase
+        .from('meals')
+        .insert(mealData);
+
+      if (mealError) throw mealError;
+
+      const { error: summaryError } = await supabase.rpc(
+        'add_meal_and_update_summary',
+        {
+          p_user_id: userId,
+          p_date: today,
+          p_kcal: Math.round(selectedRecipe.kcal_per_100g * factor),
+          p_protein: parseFloat((selectedRecipe.protein_per_100g * factor).toFixed(1)),
+          p_carbs: parseFloat((selectedRecipe.carbs_per_100g * factor).toFixed(1)),
+          p_fat: parseFloat((selectedRecipe.fat_per_100g * factor).toFixed(1)),
+        }
+      );
+
+      if (summaryError) console.warn('Summary update warning:', summaryError);
+
+      setShowAddConfirm(false);
+      setSelectedSlot(null);
+      setAddingMeal(false);
+      closeRecipeDetail();
+      onMealSaved();
+
+    } catch (e) {
+      console.error('Add recipe error:', e);
+      setAddingMeal(false);
+      Alert.alert('Erreur', 'Impossible d\'ajouter ce plat. Réessayez.');
+    }
+  };
+
   // === JSX (phases suivantes) ===
 
   if (!visible && !selectedRecipe && !showAddConfirm) return null;
