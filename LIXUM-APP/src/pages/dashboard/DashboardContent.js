@@ -267,6 +267,85 @@ const DashboardContent = ({
       )}
 
       <HydrationCardCompact currentMl={hydrationMl} goalMl={hydrationGoal} gender={gender} onPress={onHydrationPress} sportAlert={sportAlert} tooltipStep={tooltipStep} />
+
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }) }} onPress={function() { if (!lastMeal) { onNavigate('meals'); } else { setMealExpanded(function(v) { return !v; }); } }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
+          <ForkKnifeIcon />
+          <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '700', letterSpacing: wp(1), marginLeft: wp(8) }}>DERNIER REPAS</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {lastMeal && lastMeal.image_url ? (
+            <Image source={{ uri: lastMeal.image_url }} style={{ width: wp(52), height: wp(52), borderRadius: wp(12), marginRight: wp(12) }} resizeMode="cover" />
+          ) : (
+            <View style={{ width: wp(52), height: wp(52), borderRadius: wp(12), backgroundColor: 'rgba(30, 37, 48, 0.8)', borderWidth: 1, borderColor: 'rgba(62, 72, 85, 0.3)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
+              <Svg width={wp(28)} height={wp(28)} viewBox="0 0 32 32">
+                <Defs>
+                  <SvgLinearGradient id="plateGrd" x1="0.5" y1="0" x2="0.5" y2="1">
+                    <Stop offset="0%" stopColor="#8892A0" />
+                    <Stop offset="100%" stopColor="#6B7B8D" />
+                  </SvgLinearGradient>
+                </Defs>
+                <Ellipse cx="16" cy="22" rx="13" ry="5" fill="url(#plateGrd)" opacity={0.3} />
+                <Ellipse cx="16" cy="20" rx="12" ry="4.5" fill="none" stroke="#8892A0" strokeWidth={1.2} opacity={0.5} />
+                <Path d="M11 14 Q11 11 13 12 Q15 13 13 10" fill="none" stroke="#8892A0" strokeWidth={1} strokeLinecap="round" opacity={0.4} />
+                <Path d="M16 13 Q16 10 18 11 Q20 12 18 9" fill="none" stroke="#8892A0" strokeWidth={1} strokeLinecap="round" opacity={0.35} />
+              </Svg>
+            </View>
+          )}
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>
+              {lastMeal ? lastMeal.food_name : 'Aucun repas scanné'}
+            </Text>
+            <Text style={{ color: '#8892A0', fontSize: fp(11), marginTop: 2 }}>
+              {lastMeal ? Math.round(lastMeal.calories) + ' kcal • ' : 'Prenez une photo de votre plat →'}
+              <Text style={{ color: '#EAEEF3' }}>{lastMeal ? formatTimeFR(lastMeal.meal_time) : ''}</Text>
+            </Text>
+            <View style={{ flexDirection: 'row', marginTop: 4, gap: wp(10) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ width: wp(7), height: wp(7), borderRadius: wp(3.5), backgroundColor: '#FF6B8A', marginRight: wp(4) }} />
+                <Text style={{ color: '#8892A0', fontSize: fp(10) }}>{lastMeal ? Math.round(lastMeal.protein_g || 0) : 0}g P</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ width: wp(7), height: wp(7), borderRadius: wp(3.5), backgroundColor: '#FFB800', marginRight: wp(4) }} />
+                <Text style={{ color: '#8892A0', fontSize: fp(10) }}>{lastMeal ? Math.round(lastMeal.carbs_g || 0) : 0}g G</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ width: wp(7), height: wp(7), borderRadius: wp(3.5), backgroundColor: '#4DA6FF', marginRight: wp(4) }} />
+                <Text style={{ color: '#8892A0', fontSize: fp(10) }}>{lastMeal ? Math.round(lastMeal.fat_g || 0) : 0}g L</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+        {mealExpanded && lastMeal && (
+          <View style={{ backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: wp(12), padding: wp(12), marginTop: wp(10), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+            <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#8892A0', letterSpacing: 1, marginBottom: wp(8) }}>DÉTAIL NUTRITIONNEL</Text>
+            {[
+              { label: 'Protéines', value: Math.round(lastMeal.protein_g || 0), color: '#FF6B8A', pct: Math.round(((lastMeal.protein_g || 0) * 4 / Math.max(lastMeal.calories, 1)) * 100) },
+              { label: 'Glucides', value: Math.round(lastMeal.carbs_g || 0), color: '#FFB800', pct: Math.round(((lastMeal.carbs_g || 0) * 4 / Math.max(lastMeal.calories, 1)) * 100) },
+              { label: 'Lipides', value: Math.round(lastMeal.fat_g || 0), color: '#4DA6FF', pct: Math.round(((lastMeal.fat_g || 0) * 9 / Math.max(lastMeal.calories, 1)) * 100) },
+            ].map(function(m, i) {
+              return (
+                <View key={i} style={{ marginBottom: wp(6) }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(2) }}>
+                    <Text style={{ fontSize: fp(10), color: '#EAEEF3', fontWeight: '600' }}>{m.label}</Text>
+                    <Text style={{ fontSize: fp(10), color: m.color, fontWeight: '700' }}>{m.value}g · {m.pct}%</Text>
+                  </View>
+                  <View style={{ height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                    <View style={{ width: Math.min(m.pct, 100) + '%', height: '100%', borderRadius: wp(2), backgroundColor: m.color }} />
+                  </View>
+                </View>
+              );
+            })}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: wp(6), paddingTop: wp(6), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)' }}>
+              <Text style={{ fontSize: fp(9), color: '#555E6C' }}>Source : {lastMeal.source === 'scan' ? 'Scan IA' : 'Manuel'}</Text>
+              <Pressable onPress={function() { onNavigate('meals'); }} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(10), color: '#00D984', fontWeight: '600' }}>Voir dans Repas</Text>
+                <Text style={{ fontSize: fp(10), color: '#00D984', marginLeft: wp(3) }}>→</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+      </MetalCard>
     </ScrollView>
   );
 };
