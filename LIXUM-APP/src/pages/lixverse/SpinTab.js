@@ -145,6 +145,121 @@ export default function SpinTab({
           );
         })}
       </View>
+
+      <View style={{ alignItems: 'center', marginBottom: wp(20) }}>
+        <Animated.View style={{
+          marginBottom: -wp(8), zIndex: 10,
+          transform: [{ rotate: arrowRotation }],
+          shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: wp(4), shadowOffset: { width: 0, height: wp(2) }, elevation: 6,
+        }}>
+          <Svg width={wp(20)} height={wp(28)} viewBox="0 0 20 28">
+            <Defs>
+              <SvgLinearGradient id="arrowGrad" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor="#D4AF37" />
+                <Stop offset="1" stopColor="#B8952E" />
+              </SvgLinearGradient>
+            </Defs>
+            <Polygon points="10,28 0,4 3,0 17,0 20,4" fill="url(#arrowGrad)" stroke="#8B7A2E" strokeWidth="1.5" strokeLinejoin="round" />
+          </Svg>
+        </Animated.View>
+
+        <View style={{
+          width: svgSize, height: svgSize,
+          shadowColor: spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : '#00D984',
+          shadowOpacity: isSpinning ? 0.4 : 0.15,
+          shadowRadius: isSpinning ? wp(20) : wp(10),
+          shadowOffset: { width: 0, height: 0 },
+          elevation: isSpinning ? 8 : 3,
+        }}>
+          <Animated.View style={{ width: svgSize, height: svgSize, transform: [{ rotate: rot }] }}>
+            <Svg width={svgSize} height={svgSize} viewBox={'0 0 ' + svgSize + ' ' + svgSize}>
+              <Defs>
+                {usedColors.map(color => {
+                  const grad = SEGMENT_GRADIENTS[color] || { inner: color, outer: color };
+                  return (
+                    <RadialGradient key={'grad_' + color} id={'sg_' + color.replace('#', '')} cx="50%" cy="50%" r="50%">
+                      <Stop offset="0%" stopColor={grad.inner} stopOpacity="0.95" />
+                      <Stop offset="100%" stopColor={grad.outer} stopOpacity="1" />
+                    </RadialGradient>
+                  );
+                })}
+                <RadialGradient id="hubGrad" cx="50%" cy="40%" r="60%">
+                  <Stop offset="0%" stopColor="#4A5060" />
+                  <Stop offset="100%" stopColor="#1A1D22" />
+                </RadialGradient>
+              </Defs>
+
+              {angledSegs.map((seg, i) => (
+                <Path key={'seg' + i}
+                  d={describeArc(cx, cy, innerR, seg.startAngle, seg.startAngle + seg.sweepAngle)}
+                  fill={'url(#sg_' + seg.color.replace('#', '') + ')'}
+                />
+              ))}
+
+              {angledSegs.map((seg, i) => {
+                const rad = (seg.startAngle - 90) * Math.PI / 180;
+                const lx = cx + innerR * Math.cos(rad);
+                const ly = cy + innerR * Math.sin(rad);
+                return <Line key={'sep' + i} x1={cx} y1={cy} x2={lx} y2={ly} stroke="#1A1D22" strokeWidth={wp(1.5)} />;
+              })}
+
+              {winnerGlowIdx !== null && angledSegs[winnerGlowIdx] && (
+                <Path
+                  d={describeArc(cx, cy, innerR, angledSegs[winnerGlowIdx].startAngle, angledSegs[winnerGlowIdx].startAngle + angledSegs[winnerGlowIdx].sweepAngle)}
+                  fill="rgba(255,255,255,0.35)"
+                  opacity={0.5}
+                />
+              )}
+
+              {angledSegs.map((seg, i) => {
+                const midAngle = seg.startAngle + seg.sweepAngle / 2;
+                const midRad = (midAngle - 90) * Math.PI / 180;
+                const rType = getSegmentRewardType(seg);
+                const iconR = (rType === 'card' || rType === 'full_card') ? innerR * 0.65 : innerR * 0.72;
+                const iconSize = (rType === 'card' || rType === 'full_card') ? wp(16) : wp(20);
+                const iconX = cx + iconR * Math.cos(midRad);
+                const iconY = cy + iconR * Math.sin(midRad);
+                return (
+                  <G key={'lbl' + i}>
+                    {renderSegmentIcon(rType, seg.reward.tier, iconX, iconY, iconSize, midAngle)}
+                  </G>
+                );
+              })}
+
+              <Circle cx={cx} cy={cy} r={innerR} fill="none" stroke="#D4AF37" strokeWidth={wp(1.5)} />
+              <Circle cx={cx} cy={cy} r={wheelR} fill="none" stroke="#3A3F46" strokeWidth={wp(8)} />
+              <Circle cx={cx} cy={cy} r={wheelR - wp(4)} fill="none" stroke="#D4AF37" strokeWidth={wp(1.5)} />
+
+              {Array.from({ length: 12 }).map((_, i) => {
+                const a = (i * 30 - 90) * Math.PI / 180;
+                const rx = cx + wheelR * Math.cos(a);
+                const ry = cy + wheelR * Math.sin(a);
+                return (
+                  <G key={'rv' + i}>
+                    <Circle cx={rx} cy={ry} r={wp(5)} fill="rgba(212,175,55,0.3)" />
+                    <Circle cx={rx} cy={ry} r={wp(3.5)} fill="#D4AF37" />
+                    <Circle cx={rx - wp(0.8)} cy={ry - wp(0.8)} r={wp(1.5)} fill="#F0E070" />
+                  </G>
+                );
+              })}
+
+              <Circle cx={cx} cy={cy} r={wp(30)} fill="rgba(0,0,0,0.25)" />
+              <Circle cx={cx} cy={cy} r={wp(28)} fill="url(#hubGrad)" stroke="#D4AF37" strokeWidth={wp(2)} />
+            </Svg>
+          </Animated.View>
+
+          <View style={{
+            position: 'absolute', top: cy - wp(28), left: cx - wp(28),
+            width: wp(56), height: wp(56), borderRadius: wp(28),
+            justifyContent: 'center', alignItems: 'center',
+          }}>
+            <Text style={{ fontSize: fp(22) }}>{spinTier === 'mega' ? '💎' : spinTier === 'super' ? '🔥' : '⚡'}</Text>
+            <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37', marginTop: -wp(2) }}>
+              {spinTier === 'mega' ? 'MEGA' : spinTier === 'super' ? 'SUPER' : 'SPIN'}
+            </Text>
+          </View>
+        </View>
+      </View>
     </ScrollView>
   );
 }
