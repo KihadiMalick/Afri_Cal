@@ -2224,7 +2224,128 @@ export default function RecettesScreen({
         </View>
       </Modal>
 
-      {/* === PHASE 10 : Modal confirmation === */}
+      {/* ══════ MODAL — Confirmation ajout repas ══════ */}
+      <Modal
+        visible={showAddConfirm}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => {
+          setShowAddConfirm(false);
+          setSelectedSlot(null);
+        }}
+      >
+        <View style={{
+          flex: 1, backgroundColor: 'rgba(0,0,0,0.85)',
+          justifyContent: 'center', alignItems: 'center',
+          paddingHorizontal: wp(20),
+        }}>
+          <View style={{
+            width: '100%', backgroundColor: '#1A1D22',
+            borderRadius: wp(18), borderWidth: 1, borderColor: '#4A4F55',
+            padding: wp(20),
+          }}>
+            <Text style={{
+              fontSize: fp(16), fontWeight: '800', color: '#FFFFFF',
+              textAlign: 'center', marginBottom: wp(4),
+            }}>
+              Ajouter à mon journal
+            </Text>
+
+            {selectedRecipe && (
+              <>
+                <View style={{
+                  backgroundColor: '#252A30', borderRadius: wp(12),
+                  padding: wp(14), marginTop: wp(14), marginBottom: wp(16),
+                  borderWidth: 1, borderColor: '#4A4F55',
+                }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFFFFF', marginBottom: wp(4) }}>
+                    {getFlag(selectedRecipe.country_origin)} {selectedRecipe.name}
+                  </Text>
+                  <Text style={{ fontSize: fp(11), color: '#9CA3AF', marginBottom: wp(6) }}>
+                    Portion : {selectedRecipe.category?.includes('Snack') || selectedRecipe.category?.includes('Accompagnement') ? '150g' : '300g'}
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: wp(12) }}>
+                    <Text style={{ fontSize: fp(11), color: '#FF8C42', fontWeight: '700' }}>
+                      🔥 {Math.round(selectedRecipe.kcal_per_100g * (selectedRecipe.category?.includes('Snack') || selectedRecipe.category?.includes('Accompagnement') ? 1.5 : 3))} kcal
+                    </Text>
+                    <Text style={{ fontSize: fp(10), color: '#FF6B6B' }}>
+                      P:{(selectedRecipe.protein_per_100g * (selectedRecipe.category?.includes('Snack') || selectedRecipe.category?.includes('Accompagnement') ? 1.5 : 3)).toFixed(0)}g
+                    </Text>
+                    <Text style={{ fontSize: fp(10), color: '#FFD93D' }}>
+                      G:{(selectedRecipe.carbs_per_100g * (selectedRecipe.category?.includes('Snack') || selectedRecipe.category?.includes('Accompagnement') ? 1.5 : 3)).toFixed(0)}g
+                    </Text>
+                    <Text style={{ fontSize: fp(10), color: '#4DA6FF' }}>
+                      L:{(selectedRecipe.fat_per_100g * (selectedRecipe.category?.includes('Snack') || selectedRecipe.category?.includes('Accompagnement') ? 1.5 : 3)).toFixed(0)}g
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#9CA3AF', marginBottom: wp(10) }}>
+                  Choisir le créneau :
+                </Text>
+
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8), marginBottom: wp(20) }}>
+                  {MEAL_SLOTS.map((slot) => (
+                    <TouchableOpacity
+                      key={slot.key}
+                      onPress={() => setSelectedSlot(slot.key)}
+                      style={{
+                        flex: 1, minWidth: '45%',
+                        paddingVertical: wp(12), paddingHorizontal: wp(10),
+                        borderRadius: wp(10), borderWidth: 1.5,
+                        borderColor: selectedSlot === slot.key ? '#00D984' : '#4A4F55',
+                        backgroundColor: selectedSlot === slot.key ? 'rgba(0,217,132,0.12)' : '#252A30',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{
+                        fontSize: fp(11),
+                        fontWeight: selectedSlot === slot.key ? '700' : '500',
+                        color: selectedSlot === slot.key ? '#00D984' : '#9CA3AF',
+                      }}>
+                        {slot.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <View style={{ flexDirection: 'row', gap: wp(10) }}>
+                  <TouchableOpacity
+                    onPress={() => { setShowAddConfirm(false); setSelectedSlot(null); }}
+                    style={{
+                      flex: 1, paddingVertical: wp(13), borderRadius: wp(12),
+                      borderWidth: 1, borderColor: '#4A4F55', alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ fontSize: fp(13), color: '#9CA3AF', fontWeight: '600' }}>Annuler</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={addRecipeToMeals}
+                    disabled={!selectedSlot || addingMeal}
+                    style={{
+                      flex: 1.5, paddingVertical: wp(13), borderRadius: wp(12),
+                      backgroundColor: selectedSlot ? '#00D984' : 'rgba(0,217,132,0.2)',
+                      alignItems: 'center', opacity: selectedSlot ? 1 : 0.5,
+                    }}
+                  >
+                    {addingMeal ? (
+                      <ActivityIndicator size="small" color="#1A1D22" />
+                    ) : (
+                      <Text style={{
+                        fontSize: fp(13), fontWeight: '700',
+                        color: selectedSlot ? '#1A1D22' : '#6B7280',
+                      }}>
+                        Confirmer ✓
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
