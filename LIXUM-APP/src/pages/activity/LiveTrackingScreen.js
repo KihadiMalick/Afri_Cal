@@ -21,6 +21,8 @@ import {
   HYDRATION_REMINDER_INTERVAL, ALIXEN_VOICE_LANG,
 } from './activityConstants';
 
+const SUPABASE_URL = 'https://yuhordnzfpcswztujozi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
 const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 export default function LiveTrackingScreen({
@@ -338,6 +340,168 @@ export default function LiveTrackingScreen({
       Alert.alert('Erreur GPS', 'Impossible de démarrer le suivi GPS.');
     }
   };
+
+  var toggleLivePause = function() {
+    setLivePaused(function(p) { return !p; });
+    setLiveAutoPaused(false);
+    liveStillCounterRef.current = 0;
+    Vibration.vibrate(50);
+  };
+
+  var stopLiveTracking = async function() {
+    if (liveLocationSubRef.current) { liveLocationSubRef.current.remove(); liveLocationSubRef.current = null; }
+    if (liveTimerRef.current) { clearInterval(liveTimerRef.current); liveTimerRef.current = null; }
+
+    var dominantType = liveRunTime > liveWalkTime ? 'course' : 'marche';
+    var durationMin = Math.round(liveDuration / 60);
+
+    if (durationMin > 0 && liveDistance > 10) {
+      var summary = {
+        type: dominantType === 'course' ? 'run' : 'walk',
+        name: dominantType === 'course' ? 'Course' : 'Marche',
+        distance: liveDistance < 1000 ? Math.round(liveDistance) + ' m' : (Math.round(liveDistance / 100) / 10) + ' km',
+        distanceRaw: Math.round(liveDistance),
+        duration: durationMin,
+        kcal: liveCalories,
+        water: liveWater,
+        speed: (Math.round(liveAvgSpeed * 10) / 10) + ' km/h',
+        isGPS: true,
+        maxSpeed: Math.round(liveMaxSpeed * 10) / 10,
+        walkPercent: liveWalkTime + liveRunTime > 0 ? Math.round(liveWalkTime / (liveWalkTime + liveRunTime) * 100) : 100,
+        runPercent: liveWalkTime + liveRunTime > 0 ? Math.round(liveRunTime / (liveWalkTime + liveRunTime) * 100) : 0,
+        pace: liveAvgSpeed > 0 ? Math.floor(60 / liveAvgSpeed) + ':' + (Math.round((60 / liveAvgSpeed % 1) * 60) < 10 ? '0' : '') + Math.round((60 / liveAvgSpeed % 1) * 60) : '--:--',
+        source: 'live_gps',
+        weatherMult: liveWeatherMult,
+        foodEquiv: liveFoodEquiv,
+        route: liveRoute,
+        startCoord: liveStartCoord,
+        activityType: dominantType,
+        intensity: liveAvgSpeed > 9 ? 'intense' : liveAvgSpeed > 5.5 ? 'modere' : 'leger',
+      };
+      onActivitySaved(summary);
+    }
+
+    await alixenSpeak('finish');
+    setAlixenMessages([]);
+    setAlixenSpeaking(false);
+    alixenLastDistRef.current = 0;
+    alixenLastTimeRef.current = 0;
+    alixenNearGoalRef.current = false;
+    Speech.stop();
+    setLiveActive(false);
+    onClose();
+  };
+
+  var alixenSpeak = async function(phase, extraContext) {
+    try {
+      var ctx = {
+        phase: phase,
+        distance: Math.round(liveDistance),
+        duration: liveDuration,
+        calories: liveCalories,
+        water: liveWater,
+        speed: Math.round(liveSpeed * 10) / 10,
+        avgSpeed: Math.round(liveAvgSpeed * 10) / 10,
+        zone: liveZone.label,
+        walkPercent: liveWalkTime + liveRunTime > 0 ? Math.round(liveWalkTime / (liveWalkTime + liveRunTime) * 100) : 100,
+        runPercent: liveWalkTime + liveRunTime > 0 ? Math.round(liveRunTime / (liveWalkTime + liveRunTime) * 100) : 0,
+        userWeight: userWeight || 70,
+        dailyTarget: dailyTarget || 2000,
+        totalEaten: totalEaten || 0,
+        totalBurnedBefore: totalBurnedBefore || 0,
+        userMood: userMood || null,
+        charName: activeChar ? activeChar.name : 'ALIXEN',
+      };
+      if (extraContext) {
+        Object.keys(extraContext).forEach(function(k) { ctx[k] = extraContext[k]; });
+      }
+
+      var message = '';
+      try {
+        var response = await fetch(SUPABASE_URL + '/functions/v1/alixen-live-coach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+          body: JSON.stringify({ phase: phase, context: ctx }),
+        });
+        var data = await response.json();
+        if (data && data.message) {
+          message = data.message;
+        }
+      } catch (apiErr) {
+        console.warn('ALIXEN API fallback:', apiErr);
+      }
+
+      if (!message) {
+        var distStr = ctx.distance < 1000 ? ctx.distance + ' mètres' : (Math.round(ctx.distance / 100) / 10) + ' kilomètres';
+        var durStr = Math.floor(ctx.duration / 60) + ' minutes';
+        var remainCal = Math.max(0, ctx.totalEaten - ctx.totalBurnedBefore - ctx.calories - ctx.dailyTarget);
+
+        switch(phase) {
+          case 'start':
+            message = 'C\'est parti ! Bonne session. Ton objectif aujourd\'hui : ' + ctx.dailyTarget + ' calories.';
+            break;
+          case 'every500m':
+            message = distStr + ' parcourus, ' + ctx.calories + ' calories brûlées.';
+            if (remainCal > 0) message += ' Encore ' + remainCal + ' calories pour atteindre ton objectif.';
+            break;
+          case 'every5min':
+            message = durStr + ' d\'effort, ' + ctx.calories + ' calories. Vitesse moyenne ' + ctx.avgSpeed + ' km/h.';
+            break;
+          case 'zoneChange':
+            message = 'Changement de rythme ! Tu passes en ' + (extraContext ? extraContext.zoneTo : ctx.zone) + '.';
+            break;
+          case 'milestone':
+            message = (extraContext ? extraContext.milestone : 'Nouveau palier') + ' Excellent, continue !';
+            break;
+          case 'hydration':
+            message = 'Tu as perdu environ ' + ctx.water + ' millilitres d\'eau. Pense à t\'hydrater.';
+            break;
+          case 'nearGoal':
+            message = 'Tu approches de ton objectif calorique ! Encore quelques minutes et c\'est parfait.';
+            break;
+          case 'finish':
+            message = 'Session terminée ! ' + ctx.calories + ' calories brûlées en ' + durStr + '. Pense à boire ' + Math.round(ctx.water * 1.3) + ' ml d\'eau.';
+            break;
+          default:
+            message = 'Continue, tu gères bien.';
+        }
+      }
+
+      setAlixenMessages(function(prev) {
+        return [{ text: message, phase: phase, time: liveDuration, id: Date.now() }].concat(prev).slice(0, 20);
+      });
+
+      if (!alixenMuted) {
+        setAlixenSpeaking(true);
+        Speech.speak(message, {
+          language: ALIXEN_VOICE_LANG,
+          rate: 0.95,
+          pitch: 1.0,
+          onDone: function() { setAlixenSpeaking(false); },
+          onError: function() { setAlixenSpeaking(false); },
+        });
+      }
+
+    } catch (e) {
+      console.warn('ALIXEN speak error:', e);
+    }
+  };
+
+  // Cleanup
+  useEffect(function() {
+    return function() {
+      if (liveLocationSubRef.current) liveLocationSubRef.current.remove();
+      if (liveTimerRef.current) clearInterval(liveTimerRef.current);
+      Speech.stop();
+    };
+  }, []);
+
+  // Start tracking when visible
+  useEffect(function() {
+    if (visible && !liveActive && liveCountdown === 0) {
+      startLiveTracking();
+    }
+  }, [visible]);
 
   // === JSX (phases suivantes) ===
 
