@@ -572,6 +572,147 @@ export default function DefiTab({
           );
         })}
       </View>
+
+      <View style={{ paddingHorizontal: wp(16) }}>
+        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Classements</Text>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(10) }}>
+          <View style={{ flexDirection: 'row', gap: wp(4) }}>
+            {[
+              { key: 'equipes', label: 'Équipes' },
+              { key: 'personnel', label: 'Personnel' },
+              { key: 'binome', label: 'Binôme' },
+              { key: 'pays', label: 'Pays' },
+              { key: 'mondial', label: 'Mondial' },
+            ].map(tab => (
+              <Pressable key={tab.key}
+                onPress={() => {
+                  setLeaderboardTab(tab.key);
+                  setLeaderboardExpanded(false);
+                  if (tab.key === 'personnel' || tab.key === 'mondial') onFetchIndividualLB(leaderboardChallengeId);
+                  if (tab.key === 'pays') onFetchCountryLB(leaderboardChallengeId);
+                }}
+                style={{
+                  paddingHorizontal: wp(14), paddingVertical: wp(8), borderRadius: wp(10),
+                  backgroundColor: leaderboardTab === tab.key ? 'rgba(212,175,55,0.15)' : 'transparent',
+                  borderWidth: 1.5, borderColor: leaderboardTab === tab.key ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.08)',
+                  shadowColor: leaderboardTab === tab.key ? '#D4AF37' : 'transparent',
+                  shadowOpacity: leaderboardTab === tab.key ? 0.15 : 0,
+                  shadowRadius: wp(4),
+                  elevation: leaderboardTab === tab.key ? 2 : 0,
+                }}>
+                <Text style={{ fontSize: fp(11), fontWeight: leaderboardTab === tab.key ? '700' : '500', color: leaderboardTab === tab.key ? '#D4AF37' : 'rgba(255,255,255,0.35)' }}>
+                  {tab.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+
+        <View style={{
+          backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(14),
+          padding: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+        }}>
+
+          {leaderboardTab === 'equipes' && (
+            <View>
+              {leaderboardLoading && !leaderboardData ? (
+                <ActivityIndicator color="#D4AF37" style={{ paddingVertical: wp(20) }} />
+              ) : leaderboardData && Array.isArray(leaderboardData.top_groups) && leaderboardData.top_groups.length > 0 ? (
+                <View>
+                  {leaderboardData.top_groups.slice(0, 3).map((entry, i) => {
+                    const rankColors = ['#D4AF37', '#C0C0C0', '#CD7F32'];
+                    return (
+                      <Pressable key={entry.id || i} delayPressIn={120}
+                        onPress={() => onOpenGroupDetail({ group_id: entry.id, lixverse_groups: { id: entry.id, name: entry.name } })}
+                        style={({ pressed }) => ({
+                        flexDirection: 'row', alignItems: 'center',
+                        paddingVertical: wp(10), paddingHorizontal: wp(6),
+                        backgroundColor: i === 0 ? 'rgba(212,175,55,0.12)' : i === 1 ? 'rgba(192,192,192,0.08)' : 'rgba(205,127,50,0.08)',
+                        borderRadius: wp(10), marginBottom: i < 2 ? wp(6) : 0,
+                        transform: [{ scale: pressed ? 0.97 : 1 }],
+                      })}>
+                        <MedalIcon rank={i + 1} size={wp(24)} />
+                        <View style={{ flex: 1, marginLeft: wp(8) }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>{entry.name}</Text>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginTop: wp(1) }}>{entry.member_count} membres · {entry.total_score} pts</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                          <View style={{ backgroundColor: rankColors[i] + '20', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4), borderWidth: 1, borderColor: rankColors[i] + '30' }}>
+                            <Text style={{ fontSize: fp(12), fontWeight: '800', color: rankColors[i] }}>{entry.total_score} <Text style={{ fontSize: fp(8), fontWeight: '500', opacity: 0.7 }}>pts</Text></Text>
+                          </View>
+                          <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.15)' }}>›</Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                  {leaderboardData.top_groups.length > 3 && (
+                    <Pressable onPress={() => setLeaderboardExpanded(prev => !prev)}
+                      style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: wp(10), marginTop: wp(8), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)', marginRight: wp(6) }}>
+                        {leaderboardExpanded ? 'Masquer' : 'Voir le classement complet'}
+                      </Text>
+                      <ChevronDown size={wp(14)} color="rgba(212,175,55,0.5)" rotated={leaderboardExpanded} />
+                    </Pressable>
+                  )}
+                  {leaderboardExpanded && leaderboardData.top_groups.slice(3).map((entry, i) => (
+                    <Pressable key={entry.id || (i + 3)} delayPressIn={120}
+                      onPress={() => onOpenGroupDetail({ group_id: entry.id, lixverse_groups: { id: entry.id, name: entry.name } })}
+                      style={({ pressed }) => ({
+                      flexDirection: 'row', alignItems: 'center',
+                      paddingVertical: wp(8), paddingHorizontal: wp(6),
+                      borderBottomWidth: i < leaderboardData.top_groups.length - 4 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)',
+                      transform: [{ scale: pressed ? 0.97 : 1 }],
+                    })}>
+                      <View style={{ width: wp(26), height: wp(26), borderRadius: wp(13), backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>{entry.rank}</Text>
+                      </View>
+                      <View style={{ flex: 1, marginLeft: wp(10) }}>
+                        <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }} numberOfLines={1}>{entry.name}</Text>
+                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)' }}>{entry.member_count} mbr</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.3)', marginRight: wp(4) }}>{entry.total_score} pts</Text>
+                      <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.15)' }}>›</Text>
+                    </Pressable>
+                  ))}
+                  {leaderboardData.my_rank && (
+                    <View style={{ marginTop: wp(10), paddingTop: wp(10), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <View style={{
+                        flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)',
+                        borderRadius: wp(10), paddingVertical: wp(10), paddingHorizontal: wp(12),
+                        borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+                      }}>
+                        <View style={{ width: wp(30), height: wp(30), borderRadius: wp(15), backgroundColor: leaderboardData.my_rank <= 3 ? 'rgba(212,175,55,0.2)' : 'rgba(0,217,132,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10) }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '800', color: leaderboardData.my_rank <= 3 ? '#D4AF37' : '#00D984' }}>
+                            {leaderboardData.my_rank <= 10 ? '#' + leaderboardData.my_rank : leaderboardData.rank_bracket === 'top50' ? 'Top50' : leaderboardData.rank_bracket === 'top100' ? 'Top100' : '100+'}
+                          </Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{leaderboardData.my_group_name || 'Mon équipe'}</Text>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)' }}>
+                            {leaderboardData.my_rank <= 10 ? 'Rang #' + leaderboardData.my_rank : leaderboardData.rank_bracket === 'top50' ? 'Top 50' : leaderboardData.rank_bracket === 'top100' ? 'Top 100' : 'Rang ' + leaderboardData.my_rank} sur {leaderboardData.total_groups}
+                          </Text>
+                        </View>
+                        <View style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '800', color: '#00D984' }}>{leaderboardData.my_score || 0}</Text>
+                          <Text style={{ fontSize: fp(7), color: 'rgba(0,217,132,0.5)', textAlign: 'center' }}>pts</Text>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+                  <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.12)', textAlign: 'center', marginTop: wp(8) }}>{leaderboardData.total_groups} équipes · Rafraîchi auto</Text>
+                </View>
+              ) : (
+                <View style={{ paddingVertical: wp(20), alignItems: 'center' }}>
+                  <TrophyIcon size={wp(30)} color="rgba(212,175,55,0.3)" />
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)', marginTop: wp(8) }}>Aucune équipe inscrite</Text>
+                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.2)', marginTop: wp(4) }}>Crée la première équipe !</Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+      </View>
     </ScrollView>
   );
 }
