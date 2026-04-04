@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, Pressable, TouchableOpacity,
-  Animated, Platform, Dimensions, Alert,
+  Animated, Platform, Dimensions, Alert, Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Line, Circle, Rect, Defs, Mask,
+import Svg, { Path, Line, Circle, Rect, Ellipse, Defs, Mask,
   LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../config/supabase';
@@ -31,6 +31,7 @@ import CookingModeScreen from './CookingModeScreen';
 const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 const W = Dimensions.get('window').width;
 const BASE_WIDTH = 320;
+const MEAL_CARD_WIDTH = wp(160);
 
 // SectionTitle — composant local
 const SectionTitle = ({ title, rightAction, rightLabel }) => (
@@ -873,11 +874,349 @@ export default function RepasPage({ onNavigate }) {
             </Text>
           </Pressable>
 
-          {/* === PHASE 9 : Plats du jour + Pouvoirs + Recettes === */}
+          {/* ═══ 5. PLATS DU JOUR ═══ */}
+          <View style={{ marginTop: wp(8) }}>
+            <SectionTitle title={lang === 'fr' ? 'Plat du jour' : 'Meals today'} />
+            <ScrollView
+              horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(10) }}
+              snapToInterval={MEAL_CARD_WIDTH + wp(10)}
+              decelerationRate="fast"
+            >
+              {[
+                { key: 'breakfast', icon: '☀️', label: lang === 'fr' ? 'Petit-déjeuner' : 'Breakfast' },
+                { key: 'lunch', icon: '🌤️', label: lang === 'fr' ? 'Déjeuner' : 'Lunch' },
+                { key: 'dinner', icon: '🌙', label: lang === 'fr' ? 'Dîner' : 'Dinner' },
+                { key: 'snack', icon: '🍿', label: lang === 'fr' ? 'Snack' : 'Snack' },
+              ].map((slot) => {
+                const slotMeals = todayMeals.filter(m => m.meal_type === slot.key);
+                const firstMeal = slotMeals.length > 0 ? slotMeals[0] : null;
+                return (
+                  <MealDayCard
+                    key={slot.key}
+                    slotKey={slot.key}
+                    icon={slot.icon}
+                    label={slot.label}
+                    meals={slotMeals}
+                    meal={firstMeal ? {
+                      name: firstMeal.food_name,
+                      calories: Math.round(firstMeal.calories),
+                      protein: Math.round(firstMeal.protein_g || 0),
+                      carbs: Math.round(firstMeal.carbs_g || 0),
+                      fat: Math.round(firstMeal.fat_g || 0),
+                      time: new Date(firstMeal.meal_time).toLocaleTimeString(lang === 'fr' ? 'fr-FR' : 'en-US', { hour: '2-digit', minute: '2-digit' }),
+                    } : null}
+                    lang={lang}
+                    onAddMeal={(slotKey) => {
+                      setAddModalSlot(slotKey);
+                      setShowAddModal(true);
+                    }}
+                  />
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* ═══ SECTIONS POUVOIRS CARACTÈRES ═══ */}
+          {pagePowers.map(power => {
+            const isUnlocked = power.unlocked;
+            switch (power.action_type) {
+              case 'modal_inline': {
+                return (
+                  <View key={power.power_key} style={{ marginTop: wp(8) }}>
+                    <View style={{ marginHorizontal: wp(16), borderRadius: 16, padding: 1, backgroundColor: isUnlocked ? '#4A4F55' : 'rgba(74,79,85,0.3)' }}>
+                      <LinearGradient
+                        colors={isUnlocked ? ['#3A3F46', '#252A30', '#333A42', '#1A1D22'] : ['#2A2F36', '#1E2228', '#2A2F36', '#1A1D22']}
+                        style={{ borderRadius: 15, padding: wp(14) }}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                          <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>{power.icon || '🔮'}</Text>
+                          <Text style={{ color: isUnlocked ? '#D4AF37' : '#555E6C', fontSize: fp(11), fontWeight: '700', flex: 1 }}>
+                            {power.name_fr || power.power_key}
+                          </Text>
+                          {!isUnlocked && <Text style={{ color: '#FF6B6B', fontSize: fp(8), fontWeight: '600' }}>🔒 Niv{power.level_required}</Text>}
+                        </View>
+                        <Text style={{ color: isUnlocked ? '#8892A0' : '#444B55', fontSize: fp(9), marginBottom: wp(8) }}>{power.description_fr || ''}</Text>
+                        {isUnlocked ? (
+                          <Pressable
+                            onPress={async () => { if (powerConsumesUse(power.power_key)) { const r = await consumePower(power.power_key); if (!r.success) return; } handleInlinePower(power); }}
+                            style={({ pressed }) => ({ paddingVertical: wp(8), borderRadius: wp(8), backgroundColor: pressed ? 'rgba(0,217,132,0.15)' : 'rgba(0,217,132,0.08)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)', alignItems: 'center' })}
+                          >
+                            <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>Activer</Text>
+                          </Pressable>
+                        ) : (
+                          <View style={{ paddingVertical: wp(8), borderRadius: wp(8), backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', alignItems: 'center' }}>
+                            <Text style={{ color: '#555E6C', fontSize: fp(9) }}>🔒 Débloque avec {activeChar?.name || 'personnage'} Niv{power.level_required}{power.lix_cost_non_owner > 0 ? ' ou ' + power.lix_cost_non_owner + ' Lix' : ''}</Text>
+                          </View>
+                        )}
+                      </LinearGradient>
+                    </View>
+                  </View>
+                );
+              }
+              case 'redirect': {
+                const isSuperpower = power.is_superpower;
+                return (
+                  <View key={power.power_key} style={{ marginTop: wp(8) }}>
+                    <View style={{ marginHorizontal: wp(16), borderRadius: 16, padding: 1, backgroundColor: isUnlocked ? '#4A4F55' : 'rgba(74,79,85,0.3)' }}>
+                      <LinearGradient
+                        colors={isUnlocked ? ['#3A3F46', '#252A30', '#333A42', '#1A1D22'] : ['#2A2F36', '#1E2228', '#2A2F36', '#1A1D22']}
+                        style={{ borderRadius: 15, padding: wp(14) }}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                          <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>{power.icon || '🔮'}</Text>
+                          <Text style={{ color: isUnlocked ? '#D4AF37' : '#555E6C', fontSize: fp(11), fontWeight: '700', flex: 1 }}>{power.name_fr || power.power_key}</Text>
+                          {isSuperpower && isUnlocked && (
+                            <View style={{ backgroundColor: 'rgba(212,175,55,0.1)', paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4) }}>
+                              <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '800' }}>SUPERPOWER</Text>
+                            </View>
+                          )}
+                          {!isUnlocked && <Text style={{ color: '#FF6B6B', fontSize: fp(8), fontWeight: '600' }}>🔒 Niv{power.level_required}</Text>}
+                        </View>
+                        <Text style={{ color: isUnlocked ? '#8892A0' : '#444B55', fontSize: fp(9), marginBottom: wp(8) }}>{power.description_fr || ''}</Text>
+                        {isUnlocked ? (
+                          <Pressable
+                            onPress={async () => { if (powerConsumesUse(power.power_key)) { const r = await consumePower(power.power_key); if (!r.success) return; } handleRedirectPower(power); }}
+                            style={({ pressed }) => ({ paddingVertical: wp(8), borderRadius: wp(8), backgroundColor: pressed ? (isSuperpower ? 'rgba(212,175,55,0.15)' : 'rgba(0,217,132,0.15)') : (isSuperpower ? 'rgba(212,175,55,0.08)' : 'rgba(0,217,132,0.08)'), borderWidth: 1, borderColor: isSuperpower ? 'rgba(212,175,55,0.2)' : 'rgba(0,217,132,0.2)', alignItems: 'center' })}
+                          >
+                            <Text style={{ color: isSuperpower ? '#D4AF37' : '#00D984', fontSize: fp(10), fontWeight: '700' }}>{isSuperpower ? '⭐ Activer' : 'Ouvrir →'}</Text>
+                          </Pressable>
+                        ) : (
+                          <View style={{ paddingVertical: wp(8), borderRadius: wp(8), backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', alignItems: 'center' }}>
+                            <Text style={{ color: '#555E6C', fontSize: fp(9) }}>🔒 Débloque avec {activeChar?.name || 'personnage'} Niv{power.level_required}{power.lix_cost_non_owner > 0 ? ' ou ' + power.lix_cost_non_owner + ' Lix' : ''}</Text>
+                          </View>
+                        )}
+                      </LinearGradient>
+                    </View>
+                  </View>
+                );
+              }
+              case 'toggle': {
+                const isOn = toggleStates[power.power_key] || false;
+                return (
+                  <View key={power.power_key} style={{ marginTop: wp(8) }}>
+                    <View style={{ marginHorizontal: wp(16), borderRadius: 16, padding: 1, backgroundColor: isUnlocked ? '#4A4F55' : 'rgba(74,79,85,0.3)' }}>
+                      <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15, padding: wp(14) }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>{power.icon || '🔔'}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: isUnlocked ? '#EAEEF3' : '#555E6C', fontSize: fp(11), fontWeight: '700' }}>{power.name_fr || power.power_key}</Text>
+                            <Text style={{ color: '#8892A0', fontSize: fp(8), marginTop: wp(2) }}>{power.description_fr || ''}</Text>
+                          </View>
+                          {isUnlocked ? (
+                            <Pressable
+                              onPress={() => setToggleStates(prev => ({ ...prev, [power.power_key]: !prev[power.power_key] }))}
+                              style={{ width: wp(40), height: wp(22), borderRadius: wp(11), backgroundColor: isOn ? '#00D984' : 'rgba(255,255,255,0.1)', padding: wp(2), justifyContent: 'center' }}
+                            >
+                              <View style={{ width: wp(18), height: wp(18), borderRadius: wp(9), backgroundColor: '#FFFFFF', alignSelf: isOn ? 'flex-end' : 'flex-start' }} />
+                            </Pressable>
+                          ) : (
+                            <Text style={{ color: '#FF6B6B', fontSize: fp(8) }}>🔒 Niv{power.level_required}</Text>
+                          )}
+                        </View>
+                      </LinearGradient>
+                    </View>
+                  </View>
+                );
+              }
+              default: return null;
+            }
+          })}
+
+          {/* ═══ 6. SECTION RECETTES ═══ */}
+          <View style={{ marginTop: wp(12) }}>
+            <SectionTitle
+              title={lang === 'fr' ? 'Recettes' : 'Recipes'}
+              rightLabel={lang === 'fr' ? 'Voir tout ›' : 'See all ›'}
+              rightAction={() => setShowRecettes(true)}
+            />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(10) }}>
+              {MOCK_RECIPES.map((recipe, index) => (
+                <Pressable key={index} delayPressIn={120}
+                  style={({ pressed }) => ({
+                    width: wp(140), borderRadius: 16, overflow: 'hidden',
+                    transform: [{ scale: pressed ? 0.96 : 1 }],
+                    elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3, shadowRadius: 8, backgroundColor: '#1E2530',
+                  })}
+                >
+                  <View style={{ width: '100%', height: wp(95), backgroundColor: '#1A1D22' }}>
+                    <Image source={{ uri: recipe.image }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.4)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%' }} />
+                    <View style={{ position: 'absolute', top: wp(6), right: wp(6), backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                      <Text style={{ color: '#FF8C42', fontSize: fp(8), fontWeight: '700' }}>{recipe.cal} kcal</Text>
+                    </View>
+                  </View>
+                  <View style={{ backgroundColor: '#1E2530', paddingHorizontal: wp(8), paddingVertical: wp(7) }}>
+                    <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '700' }} numberOfLines={1}>{recipe.name}</Text>
+                    <Text style={{ color: '#6A7080', fontSize: fp(9), marginTop: 2 }}>{recipe.origin}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* ═══ RECETTES POUR VOUS — Mood × Météo ═══ */}
+          {userMood && (
+            <View style={{ marginTop: wp(12), paddingHorizontal: wp(14) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                <View style={{ width: wp(3), height: wp(16), backgroundColor: '#00D984', borderRadius: wp(2), marginRight: wp(8) }} />
+                <Text style={{ fontSize: fp(16), fontWeight: '900', color: '#FFFFFF', letterSpacing: 1 }}>RECETTES POUR VOUS</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10), gap: wp(8) }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
+                  <Text style={{ fontSize: fp(12), marginRight: wp(4) }}>
+                    {userMood === 'excited' ? '🌟' : userMood === 'happy' ? '😊' : userMood === 'chill' ? '😌' : '😔'}
+                  </Text>
+                  <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '600' }}>
+                    {userMood === 'excited' ? 'Excité' : userMood === 'happy' ? 'Heureux' : userMood === 'chill' ? 'Chill' : 'Triste'}
+                  </Text>
+                </View>
+                {userWeather && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(77,166,255,0.08)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
+                    <Text style={{ fontSize: fp(12), marginRight: wp(4) }}>
+                      {userWeather === 'sunny' ? '☀️' : userWeather === 'cloudy' ? '☁️' : '🌧️'}
+                    </Text>
+                    <Text style={{ color: '#4DA6FF', fontSize: fp(10), fontWeight: '600' }}>
+                      {userWeather === 'sunny' ? 'Ensoleillé' : userWeather === 'cloudy' ? 'Nuageux' : 'Pluvieux'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <View style={{ backgroundColor: '#252A30', borderRadius: wp(14), borderWidth: 0.5, borderColor: 'rgba(74,79,85,0.4)', padding: wp(14) }}>
+                <Text style={{ fontSize: fp(12), color: '#EAEEF3', fontWeight: '600', marginBottom: wp(6) }}>
+                  {userMood === 'sad' && userWeather === 'rainy' ? '🍲 Journée cocooning — un bon plat chaud réconfortant'
+                    : userMood === 'sad' && userWeather === 'sunny' ? '🥗 Profitez du soleil avec un repas léger et vitaminé'
+                    : userMood === 'sad' ? '🍲 Un plat réconfortant pour remonter le moral'
+                    : userMood === 'chill' && userWeather === 'rainy' ? '🍜 Temps parfait pour une soupe maison'
+                    : userMood === 'chill' && userWeather === 'sunny' ? '🥙 Repas frais et équilibré pour profiter de la journée'
+                    : userMood === 'chill' ? '🥗 Quelque chose de simple et équilibré'
+                    : userMood === 'happy' && userWeather === 'sunny' ? '🥝 Énergie positive ! Essayez un smoothie bowl vitaminé'
+                    : userMood === 'happy' ? '🍛 Bonne humeur = bon moment pour essayer une nouvelle recette'
+                    : userMood === 'excited' && userWeather === 'sunny' ? '🔥 Énergie maximale ! Un repas protéiné pour performer'
+                    : userMood === 'excited' ? '💪 Plein d\'énergie ! Misez sur les protéines et les glucides complexes'
+                    : '🍽️ Découvrez nos suggestions du jour'}
+                </Text>
+                <Text style={{ fontSize: fp(9), color: '#6B7280', fontStyle: 'italic' }}>
+                  Suggestion basée sur votre humeur et la météo du jour
+                </Text>
+              </View>
+            </View>
+          )}
+
+          <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginHorizontal: wp(16), marginTop: wp(12) }}/>
+
+          {/* ═══ 7. PLATS FRÉQUENTS ═══ */}
+          <View style={{ marginTop: wp(12), marginBottom: wp(8) }}>
+            <SectionTitle title={lang === 'fr' ? 'Plats fréquents' : 'Frequent meals'} />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(8) }}>
+              {(frequentMeals.length > 0 ? frequentMeals : MOCK_FREQUENT).map((item, index) => (
+                <Pressable key={index} delayPressIn={120}
+                  style={({ pressed }) => ({
+                    width: wp(75), backgroundColor: pressed ? '#2A2F36' : '#1E2530',
+                    borderRadius: 12, borderWidth: 1, borderColor: '#2E333A',
+                    padding: wp(8), alignItems: 'center',
+                    transform: [{ scale: pressed ? 0.95 : 1 }],
+                  })}
+                >
+                  <View style={{
+                    width: wp(32), height: wp(32), borderRadius: wp(16),
+                    backgroundColor: '#252A32', justifyContent: 'center', alignItems: 'center',
+                    marginBottom: wp(5),
+                    borderWidth: 1, borderColor: index % 4 === 0 ? 'rgba(255,140,66,0.3)' : index % 4 === 1 ? 'rgba(0,217,132,0.3)' : index % 4 === 2 ? 'rgba(77,166,255,0.3)' : 'rgba(212,175,55,0.3)',
+                  }}>
+                    {index % 4 === 0 && (
+                      <Svg width={16} height={16} viewBox="0 0 20 20">
+                        <Ellipse cx="10" cy="14" rx="8" ry="3.5" fill="none" stroke="#FF8C42" strokeWidth={1}/>
+                        <Path d="M2 14C2 12 5 9.5 10 9.5C15 9.5 18 12 18 14" fill="none" stroke="#FF8C42" strokeWidth={1}/>
+                      </Svg>
+                    )}
+                    {index % 4 === 1 && (
+                      <Svg width={16} height={16} viewBox="0 0 20 20">
+                        <Rect x="4" y="8" width="8" height="6" rx="1" fill="none" stroke="#00D984" strokeWidth={1}/>
+                        <Path d="M12 9C13.5 9 14.5 9.5 14.5 10.5C14.5 11.5 13.5 12 12 12" fill="none" stroke="#00D984" strokeWidth={0.8}/>
+                      </Svg>
+                    )}
+                    {index % 4 === 2 && (
+                      <Svg width={16} height={16} viewBox="0 0 20 20">
+                        <Circle cx="10" cy="11" r="7" fill="none" stroke="#4DA6FF" strokeWidth={1}/>
+                        <Circle cx="10" cy="11" r="4.5" fill="none" stroke="#4DA6FF" strokeWidth={0.6} opacity={0.4}/>
+                      </Svg>
+                    )}
+                    {index % 4 === 3 && (
+                      <Svg width={16} height={16} viewBox="0 0 20 20">
+                        <Path d="M6 5L4 15H16L14 5" fill="none" stroke="#D4AF37" strokeWidth={1} strokeLinecap="round"/>
+                        <Path d="M3 15H17" stroke="#D4AF37" strokeWidth={1} strokeLinecap="round"/>
+                      </Svg>
+                    )}
+                  </View>
+                  <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={1}>{item.name}</Text>
+                  <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 1 }}>{item.cal} kcal</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+
+          <View style={{ marginBottom: wp(16) }} />
 
         </ScrollView>
 
-        {/* === PHASE 10 : Sous-écrans + BottomTabs === */}
+        {/* ═══ SOUS-ÉCRANS MONTÉS CONDITIONNELLEMENT ═══ */}
+        <XscanScreen
+          ref={xscanRef}
+          visible={showXscan}
+          onClose={() => setShowXscan(false)}
+          onMealSaved={() => { setShowXscan(false); loadDashboardData(); }}
+          userProfile={userProfile}
+          pagePowers={pagePowers}
+          activeChar={activeChar}
+        />
+        <ManualEntryScreen
+          visible={showManualEntry}
+          onClose={() => setShowManualEntry(false)}
+          onMealSaved={() => { setShowManualEntry(false); loadDashboardData(); }}
+        />
+        <CartScanScreen
+          visible={showCartScan}
+          onClose={() => setShowCartScan(false)}
+        />
+        <RecettesScreen
+          visible={showRecettes}
+          onClose={() => setShowRecettes(false)}
+          onMealSaved={() => loadDashboardData()}
+          userMood={userMood}
+          userWeather={userWeather}
+          lixBalance={lixBalance}
+          setLixBalance={setLixBalance}
+          onNavigate={onNavigate}
+          onOpenCooking={(recipe) => { setCookingRecipe(recipe); setShowCookingMode(true); }}
+        />
+        <CookingModeScreen
+          visible={showCookingMode}
+          recipe={cookingRecipe}
+          onClose={() => setShowCookingMode(false)}
+        />
+        <AddMealModal
+          visible={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onScan={() => { setShowAddModal(false); setShowXscan(true); if (xscanRef.current?.openCamera) xscanRef.current.openCamera(); }}
+          onGallery={() => { setShowAddModal(false); setShowXscan(true); if (xscanRef.current?.openGallery) xscanRef.current.openGallery(); }}
+          onManual={() => { setShowAddModal(false); setShowManualEntry(true); }}
+        />
+
+        {/* Tooltip Xscan */}
+        <XscanTooltip
+          visible={showScanTooltip}
+          xButtonY={xButtonY}
+          onDismiss={() => setShowScanTooltip(false)}
+        />
+
+        {/* ═══ BOTTOM TABS ═══ */}
+        <BottomTabs
+          activeTab={activeTab}
+          onTabPress={handleTabPress}
+          lang={lang}
+        />
 
       </View>
     </LinearGradient>
