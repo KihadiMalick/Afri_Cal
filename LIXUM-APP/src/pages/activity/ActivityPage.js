@@ -853,7 +853,49 @@ export default function ActivityPage({ onNavigate }) {
 
         </ScrollView>
 
-        {/* === PHASE 7 : Sous-composants + BottomTabs === */}
+        {/* Sous-écrans montés conditionnellement */}
+        <LiveTrackingScreen
+          visible={showLive}
+          onClose={() => setShowLive(false)}
+          onActivitySaved={(summary) => {
+            setLastActivity(summary);
+            setShowPostReport(true);
+            loadTodayActivities();
+            fetchSmartData();
+            fetchWeeklyMinutes();
+            if (!lixRewardedToday) setLixRewardedToday(true);
+          }}
+          activeChar={activeChar}
+          userWeight={userWeight}
+          dailyTarget={dailyTarget}
+          totalEaten={totalEaten}
+          totalBurnedBefore={totalBurnedActivities}
+          userMood={userMood}
+        />
+
+        <PostReportModal
+          visible={showPostReport}
+          onClose={() => { setShowPostReport(false); setHookResults({}); }}
+          lastActivity={lastActivity}
+          hookResults={hookResults}
+          weeklyMinutes={weeklyMinutes}
+        />
+
+        <SportModal
+          visible={modalVisible}
+          sportKey={modalSport}
+          onClose={() => setModalVisible(false)}
+          onSave={handleSportSave}
+          lang={lang}
+          userWeight={userWeight}
+        />
+
+        {/* BottomTabs */}
+        <BottomTabs
+          activeTab={activeTab}
+          onTabPress={handleTabPress}
+          lang={lang}
+        />
 
       </View>
     </LinearGradient>
