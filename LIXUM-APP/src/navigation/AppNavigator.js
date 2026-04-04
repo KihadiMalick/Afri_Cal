@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import WelcomePage from '../pages/WelcomePage';
 import RepasPage from '../pages/repas/RepasPage';
 import ActivityPage from '../pages/activity/ActivityPage';
+import LixVersePage from '../pages/lixverse/LixVersePage';
 
 const Tab = createBottomTabNavigator();
 
@@ -20,7 +21,7 @@ export default function AppNavigator() {
         <Tab.Screen name="Repas" component={RepasPage} />
         <Tab.Screen name="MedicAi" component={PlaceholderScreen} />
         <Tab.Screen name="Activite" component={ActivityPage} />
-        <Tab.Screen name="LixVerse" component={PlaceholderScreen} />
+        <Tab.Screen name="LixVerse" component={LixVersePage} />
       </Tab.Navigator>
     </NavigationContainer>
   );
