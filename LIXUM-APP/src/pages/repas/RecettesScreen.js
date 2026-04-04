@@ -268,6 +268,86 @@ export default function RecettesScreen({
     }
   };
 
+  const typewriterEffect = (fullText, callback) => {
+    setIsTyping(true);
+    setDisplayedSteps('');
+    let index = 0;
+    const speed = 12;
+
+    const interval = setInterval(() => {
+      if (index < fullText.length) {
+        const chunk = fullText.slice(index, Math.min(index + 3, fullText.length));
+        setDisplayedSteps(prev => prev + chunk);
+        index += 3;
+      } else {
+        clearInterval(interval);
+        setIsTyping(false);
+        if (callback) callback();
+      }
+    }, speed);
+
+    return () => clearInterval(interval);
+  };
+
+  const generateRecipeSteps = async () => {
+    if (!selectedRecipe || loadingSteps) return;
+    setLoadingSteps(true);
+
+    try {
+      const { data: cached } = await supabase
+        .from('recipe_steps_cache')
+        .select('steps_text')
+        .eq('meal_id', selectedRecipe.id)
+        .eq('language', 'fr')
+        .maybeSingle();
+
+      if (cached && cached.steps_text) {
+        setRecipeSteps(cached.steps_text);
+        setLoadingSteps(false);
+        typewriterEffect(cached.steps_text);
+        return;
+      }
+
+      const ingredientsList = recipeIngredients
+        .map(ing => `${ing.component_name} (${ing.percentage_estimate}%)`)
+        .join(', ');
+
+      const response = await fetch(
+        SUPABASE_URL + '/functions/v1/generate-recipe',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            meal_name: selectedRecipe.name,
+            country: selectedRecipe.country_origin,
+            region: selectedRecipe.region,
+            category: selectedRecipe.category,
+            ingredients: ingredientsList,
+            description: selectedRecipe.description || '',
+            language: 'fr',
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.steps) {
+        setRecipeSteps(result.steps);
+        setLoadingSteps(false);
+        typewriterEffect(result.steps);
+      } else {
+        throw new Error(result.error || 'Erreur génération');
+      }
+    } catch (e) {
+      console.error('Recipe generation error:', e);
+      setLoadingSteps(false);
+      setRecipeSteps('__ERROR__');
+    }
+  };
+
   // === JSX (phases suivantes) ===
 
   if (!visible && !selectedRecipe && !showAddConfirm) return null;
