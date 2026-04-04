@@ -395,7 +395,217 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved }) {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: wp(200) }}
         >
-          {/* === PHASE 8 : Onglet Plats JSX === */}
+          {/* ====== ONGLET PLATS ====== */}
+          {manualTab === 'meals' && (
+            <View style={{ paddingHorizontal: wp(16) }}>
+
+              {/* Barre de recherche plats */}
+              {!selectedMeal && (
+                <>
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: 'rgba(255,255,255,0.03)',
+                    borderRadius: 14, paddingHorizontal: wp(12),
+                    borderWidth: 1, borderColor: mealSearchQuery.length > 0 ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.05)',
+                  }}>
+                    <Text style={{ color: '#5A6070', fontSize: 16, marginRight: 8 }}>🔍</Text>
+                    <TextInput
+                      value={mealSearchQuery}
+                      onChangeText={searchMeals}
+                      placeholder={lang === 'fr' ? 'Chercher un plat (ex: Thiéboudienne, Pizza...)' : 'Search a meal...'}
+                      placeholderTextColor="#5A6070"
+                      style={{ flex: 1, color: '#EAEEF3', fontSize: fp(13), paddingVertical: wp(12) }}
+                    />
+                    {mealSearchQuery.length > 0 && (
+                      <Pressable onPress={() => { setMealSearchQuery(''); setMealSearchResults([]); }}>
+                        <Text style={{ color: '#8892A0', fontSize: 16 }}>✕</Text>
+                      </Pressable>
+                    )}
+                  </View>
+
+                  {isMealSearching && (
+                    <Text style={{ color: '#00D984', fontSize: fp(10), marginTop: wp(6), fontStyle: 'italic' }}>Recherche...</Text>
+                  )}
+
+                  {/* Résultats */}
+                  {mealSearchResults.length > 0 && (
+                    <View style={{
+                      marginTop: wp(8), borderRadius: 14,
+                      backgroundColor: 'rgba(255,255,255,0.03)',
+                      borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                      overflow: 'hidden',
+                    }}>
+                      {mealSearchResults.map((meal, i) => (
+                        <Pressable
+                          key={meal.id}
+                          onPress={() => selectMeal(meal)}
+                          style={({ pressed }) => ({
+                            paddingVertical: wp(12), paddingHorizontal: wp(12),
+                            backgroundColor: pressed ? 'rgba(0,217,132,0.08)' : 'transparent',
+                            borderBottomWidth: i < mealSearchResults.length - 1 ? 0.5 : 0,
+                            borderBottomColor: 'rgba(255,255,255,0.05)',
+                          })}
+                        >
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <View style={{ flex: 1, marginRight: wp(8) }}>
+                              <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '700' }}>{meal.name}</Text>
+                              <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>
+                                {meal.country_origin || ''} • {meal.category || ''}
+                              </Text>
+                              {meal.description && (
+                                <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 2 }} numberOfLines={1}>{meal.description}</Text>
+                              )}
+                            </View>
+                            <Text style={{ color: '#FF8C42', fontSize: fp(12), fontWeight: '700' }}>
+                              {meal.kcal_per_100g} kcal/100g
+                            </Text>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+
+                  {mealSearchQuery.length >= 2 && !isMealSearching && mealSearchResults.length === 0 && (
+                    <View style={{
+                      marginTop: wp(8), padding: wp(12), borderRadius: 14,
+                      backgroundColor: 'rgba(255,140,66,0.06)',
+                      borderWidth: 0.5, borderColor: 'rgba(255,140,66,0.15)',
+                    }}>
+                      <Text style={{ color: '#FF8C42', fontSize: fp(11), textAlign: 'center' }}>
+                        "{mealSearchQuery}" non trouvé. Essayez l'onglet Ingrédients →
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
+
+              {/* PLAT SÉLECTIONNÉ — fiche détaillée */}
+              {selectedMeal && (
+                <>
+                  {/* Bouton retour */}
+                  <Pressable onPress={deselectMeal} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
+                    <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '600' }}>← Autre plat</Text>
+                  </Pressable>
+
+                  {/* Nom + Pays */}
+                  <Text style={{ color: '#EAEEF3', fontSize: fp(20), fontWeight: '900', marginBottom: wp(4) }}>
+                    {selectedMeal.name}
+                  </Text>
+                  <Text style={{ color: '#5A6070', fontSize: fp(11), marginBottom: wp(12) }}>
+                    {selectedMeal.country_origin} • {selectedMeal.category}
+                  </Text>
+
+                  {/* Totaux macros — MetalCard style */}
+                  <View style={{
+                    borderRadius: 16, padding: 1, backgroundColor: '#4A4F55', marginBottom: wp(16),
+                  }}>
+                    <LinearGradient
+                      colors={['#3A3F46', '#252A30', '#1A1D22']}
+                      style={{ borderRadius: 15, padding: wp(14), alignItems: 'center' }}
+                    >
+                      <Text style={{ color: '#FF8C42', fontSize: fp(28), fontWeight: '900' }}>
+                        {getMealMacros().calories} kcal
+                      </Text>
+                      <View style={{ flexDirection: 'row', marginTop: wp(8), gap: wp(16) }}>
+                        <View style={{ alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF6B6B', marginBottom: 2 }} />
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{getMealMacros().protein_g}g</Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(8) }}>Protéines</Text>
+                        </View>
+                        <View style={{ alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFD93D', marginBottom: 2 }} />
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{getMealMacros().carbs_g}g</Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(8) }}>Glucides</Text>
+                        </View>
+                        <View style={{ alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4DA6FF', marginBottom: 2 }} />
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{getMealMacros().fat_g}g</Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(8) }}>Lipides</Text>
+                        </View>
+                      </View>
+                    </LinearGradient>
+                  </View>
+
+                  {/* Portion modifiable */}
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                    marginBottom: wp(16),
+                  }}>
+                    <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '700', letterSpacing: 1.5 }}>PORTION</Text>
+                    {editingPortion ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <TextInput
+                          value={tempPortion}
+                          onChangeText={setTempPortion}
+                          keyboardType="numeric"
+                          autoFocus
+                          style={{
+                            color: '#00D984', fontSize: fp(14), fontWeight: '700',
+                            backgroundColor: 'rgba(0,217,132,0.08)',
+                            borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4,
+                            minWidth: 60, borderWidth: 1, borderColor: 'rgba(0,217,132,0.3)',
+                            textAlign: 'center',
+                          }}
+                          onSubmitEditing={() => {
+                            const val = parseFloat(tempPortion);
+                            if (!isNaN(val) && val > 0) setManualPortionG(val);
+                            setEditingPortion(false);
+                          }}
+                          onBlur={() => {
+                            const val = parseFloat(tempPortion);
+                            if (!isNaN(val) && val > 0) setManualPortionG(val);
+                            setEditingPortion(false);
+                          }}
+                        />
+                        <Text style={{ color: '#5A6070', fontSize: fp(12), marginLeft: 4 }}>g</Text>
+                      </View>
+                    ) : (
+                      <Pressable onPress={() => { setEditingPortion(true); setTempPortion(String(manualPortionG)); }}>
+                        <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '700', textDecorationLine: 'underline' }}>
+                          {manualPortionG}g — modifier
+                        </Text>
+                      </Pressable>
+                    )}
+                  </View>
+
+                  {/* Composition du plat (informatif) */}
+                  {mealComponents.length > 0 && (
+                    <View style={{ marginBottom: wp(16) }}>
+                      <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '700', letterSpacing: 1.5, marginBottom: wp(8) }}>
+                        COMPOSITION ({mealComponents.length} ingrédients)
+                      </Text>
+                      {mealComponents.map((comp, i) => (
+                        <View key={i} style={{
+                          flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                          paddingVertical: wp(6),
+                          borderBottomWidth: i < mealComponents.length - 1 ? 0.5 : 0,
+                          borderBottomColor: 'rgba(255,255,255,0.05)',
+                        }}>
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(12), flex: 1 }}>{comp.component_name}</Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(10), marginRight: wp(6) }}>
+                            {Math.round((comp.percentage_estimate / 100) * manualPortionG)}g
+                          </Text>
+                          <Text style={{ color: '#8892A0', fontSize: fp(9), marginRight: wp(8) }}>{comp.percentage_estimate}%</Text>
+                          <Pressable
+                            onPress={() => setMealComponents(prev => prev.filter((_, idx) => idx !== i))}
+                            style={({ pressed }) => ({
+                              width: 24, height: 24, borderRadius: 12,
+                              backgroundColor: pressed ? 'rgba(255,59,48,0.2)' : 'rgba(255,59,48,0.08)',
+                              justifyContent: 'center', alignItems: 'center',
+                              borderWidth: 1, borderColor: 'rgba(255,59,48,0.2)',
+                            })}
+                          >
+                            <Text style={{ color: '#FF3B30', fontSize: 12, fontWeight: '700' }}>×</Text>
+                          </Pressable>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </>
+              )}
+            </View>
+          )}
+
           {/* === PHASE 9 : Onglet Ingrédients + Save JSX === */}
         </ScrollView>
       </KeyboardAvoidingView>
