@@ -266,6 +266,87 @@ export default function DefiTab({
           </LinearGradient>
         </View>
       </View>
+
+      <View style={{ paddingHorizontal: wp(16), marginBottom: wp(12) }}>
+        <View style={{ flexDirection: 'row', gap: wp(8) }}>
+          <Pressable onPress={() => onSetShowSearchGroup(true)} delayPressIn={120}
+            style={({ pressed }) => ({
+              flex: 1, flexDirection: 'row', alignItems: 'center', gap: wp(8),
+              backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12),
+              paddingHorizontal: wp(12), paddingVertical: wp(10),
+              borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+              transform: [{ scale: pressed ? 0.97 : 1 }],
+            })}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
+              <Line x1="16.5" y1="16.5" x2="21" y2="21" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+            </Svg>
+            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.25)' }}>Rechercher une équipe...</Text>
+          </Pressable>
+
+          {pendingRequests.length > 0 && (
+            <Pressable onPress={() => onSetShowPendingRequests(true)} delayPressIn={120}
+              style={({ pressed }) => ({
+                width: wp(44), height: wp(44), borderRadius: wp(12),
+                backgroundColor: 'rgba(212,175,55,0.12)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)',
+                justifyContent: 'center', alignItems: 'center',
+                transform: [{ scale: pressed ? 0.9 : 1 }],
+              })}>
+              <Text style={{ fontSize: fp(16) }}>📩</Text>
+              <View style={{
+                position: 'absolute', top: -wp(4), right: -wp(4),
+                minWidth: wp(16), height: wp(16), borderRadius: wp(8),
+                backgroundColor: '#FF3B5C', justifyContent: 'center', alignItems: 'center',
+                paddingHorizontal: wp(3), borderWidth: 1.5, borderColor: '#1A1D22',
+              }}>
+                <Text style={{ fontSize: fp(8), fontWeight: '800', color: '#FFF' }}>{pendingRequests.length}</Text>
+              </View>
+            </Pressable>
+          )}
+        </View>
+      </View>
+
+      {myGroups.length > 0 && (
+        <View style={{ paddingHorizontal: wp(16), marginBottom: wp(8) }}>
+          <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Mes équipes</Text>
+          {myGroups.map((gm, i) => {
+            const g = gm.lixverse_groups; if (!g) return null;
+            const score = challengeScores.find(s => s.challenge_id === g.challenge_id);
+            return (
+              <Pressable key={i} onPress={() => onOpenGroupDetail(gm)} delayPressIn={120}
+                style={({ pressed }) => ({
+                  backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(8),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                  borderLeftWidth: wp(3), borderLeftColor: '#D4AF37',
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                })}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View style={{ flex: 1 }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{g.name}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginTop: wp(2) }}>{g.member_count} membres | Score: {score?.group_total || g.total_score}</Text></View>
+                  <View style={{ backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}><Text style={{ fontSize: fp(10), fontWeight: '600', color: '#00D984' }}>Mon: {score?.personal_score || gm.personal_score || 0}</Text></View>
+                </View>
+                {score && (
+                  <View style={{ flexDirection: 'row', gap: wp(8), marginTop: wp(6) }}>
+                    <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>Rang: {score.group_rank || '-'}</Text>
+                    <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>Aujourd'hui: +{score.today_points || 0} pts</Text>
+                    {score.days_remaining > 0 && <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>{score.days_remaining}j restants</Text>}
+                  </View>
+                )}
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(8), backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
+                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)' }}>Code: </Text>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#D4AF37', letterSpacing: 1, flex: 1 }}>{g.invite_code}</Text>
+                  <Pressable onPress={() => onCopyInviteCode(g.invite_code)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.85 : 1 }], padding: wp(4) })}>
+                    <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                      <Rect x="9" y="9" width="13" height="13" rx="2" stroke="rgba(212,175,55,0.6)" strokeWidth="1.5" />
+                      <Path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="rgba(212,175,55,0.6)" strokeWidth="1.5" />
+                    </Svg>
+                  </Pressable>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
     </ScrollView>
   );
 }
