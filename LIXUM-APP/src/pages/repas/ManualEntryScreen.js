@@ -116,6 +116,24 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved }) {
     }
   };
 
+  const getMealMacros = () => {
+    if (!selectedMeal) return { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 };
+    const factor = manualPortionG / 100;
+    return {
+      calories: Math.round((selectedMeal.kcal_per_100g || 0) * factor),
+      protein_g: Math.round((selectedMeal.protein_per_100g || 0) * factor * 10) / 10,
+      carbs_g: Math.round((selectedMeal.carbs_per_100g || 0) * factor * 10) / 10,
+      fat_g: Math.round((selectedMeal.fat_per_100g || 0) * factor * 10) / 10,
+      fiber_g: Math.round((selectedMeal.fiber_per_100g || 0) * factor * 10) / 10,
+    };
+  };
+
+  const deselectMeal = () => {
+    setSelectedMeal(null);
+    setMealComponents([]);
+    setMealSearchQuery('');
+  };
+
   // === JSX (phases suivantes) ===
 
   if (!visible) return null;
