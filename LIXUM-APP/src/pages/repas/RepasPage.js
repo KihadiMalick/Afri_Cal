@@ -138,7 +138,77 @@ export default function RepasPage({ onNavigate }) {
   // Ref XscanScreen
   const xscanRef = useRef(null);
 
-  // === FONCTIONS (phases suivantes) ===
+  // === FONCTIONS ===
+
+  const loadDashboardData = async () => {
+    setIsLoadingData(true);
+    try {
+      const { data: profile } = await supabase
+        .from('users_profile')
+        .select('daily_calorie_target, lix_balance')
+        .eq('user_id', TEST_USER_ID)
+        .single();
+
+      if (profile) {
+        setUserProfile({ daily_calorie_target: profile.daily_calorie_target || 2330 });
+        setLixBalance(profile.lix_balance || 0);
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const { data: summary } = await supabase
+        .from('daily_summary')
+        .select('*')
+        .eq('user_id', TEST_USER_ID)
+        .eq('date', today)
+        .single();
+
+      if (summary) {
+        setDailySummary({
+          total_calories: summary.total_calories || 0,
+          total_protein: Math.round((summary.total_protein || 0) * 10) / 10,
+          total_carbs: Math.round((summary.total_carbs || 0) * 10) / 10,
+          total_fat: Math.round((summary.total_fat || 0) * 10) / 10,
+          meals_count: summary.meals_count || 0,
+        });
+      }
+
+      const { data: meals } = await supabase
+        .from('meals')
+        .select('*')
+        .eq('user_id', TEST_USER_ID)
+        .eq('date', today)
+        .order('meal_time', { ascending: true });
+
+      if (meals) {
+        setTodayMeals(meals);
+      }
+
+      const { data: frequent } = await supabase
+        .from('meals')
+        .select('food_name, calories')
+        .eq('user_id', TEST_USER_ID)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (frequent && frequent.length > 0) {
+        const countMap = {};
+        frequent.forEach(m => {
+          if (!countMap[m.food_name]) {
+            countMap[m.food_name] = { name: m.food_name, cal: m.calories, count: 0 };
+          }
+          countMap[m.food_name].count++;
+        });
+        const sorted = Object.values(countMap)
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 6);
+        setFrequentMeals(sorted);
+      }
+
+    } catch (err) {
+      console.error('Erreur chargement données:', err);
+    }
+    setIsLoadingData(false);
+  };
 
   // === JSX (phases suivantes) ===
 
