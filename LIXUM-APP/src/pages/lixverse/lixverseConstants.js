@@ -176,3 +176,67 @@ const SLUGS_BY_TIER = {
   mythique: ['diamond_simba', 'alburax'],
   ultimate: ['tardigrum'],
 };
+
+const CHAR_EMOJIS = {
+  'emerald_owl': '🦉', 'hawk_eye': '🦅', 'ruby_tiger': '🐯',
+  'amber_fox': '🦊', 'gipsy': '🕷️',
+  'jade_phoenix': '🔥', 'silver_wolf': '🐺', 'boukki': '🦴',
+  'iron_rhino': '🦏', 'coral_dolphin': '🐬',
+  'licornium': '🦄', 'jaane_snake': '🐍', 'mosquito': '🦟',
+  'diamond_simba': '🦁', 'alburax': '🐴',
+  'tardigrum': '🧬',
+};
+
+const CHAR_NAMES = {
+  'emerald_owl': 'Emerald Owl', 'hawk_eye': 'Hawk Eye', 'ruby_tiger': 'Ruby Tiger',
+  'amber_fox': 'Amber Fox', 'gipsy': 'Gipsy',
+  'jade_phoenix': 'Jade Phoenix', 'silver_wolf': 'Silver Wolf', 'boukki': 'Boukki',
+  'iron_rhino': 'Iron Rhino', 'coral_dolphin': 'Coral Dolphin',
+  'licornium': 'LICORNIUM', 'jaane_snake': 'Jaane Snake', 'mosquito': 'MOSQUITO',
+  'diamond_simba': 'Diamond Simba', 'alburax': 'Alburax',
+  'tardigrum': 'TARDIGRUM',
+};
+
+const FRAGS_NIV1 = { standard: 3, rare: 4, elite: 5, mythique: 8, ultimate: 15 };
+
+const TIER_COLORS = {
+  standard: '#00D984', rare: '#4DA6FF', elite: '#B388FF',
+  mythique: '#D4AF37', ultimate: '#FF6B8A',
+};
+
+const CHARACTER_IMAGES = {
+  'emerald_owl': { img: require('../../assets/emerald_owl.webp'), emoji: '🦉' },
+  'hawk_eye': { img: null, emoji: '🦅' },
+  'ruby_tiger': { img: null, emoji: '🐯' },
+  'amber_fox': { img: null, emoji: '🦊' },
+  'gipsy': { img: null, emoji: '🕷️' },
+  'jade_phoenix': { img: null, emoji: '🔥' },
+  'silver_wolf': { img: null, emoji: '🐺' },
+  'boukki': { img: null, emoji: '🦴' },
+  'iron_rhino': { img: null, emoji: '🦏' },
+  'coral_dolphin': { img: null, emoji: '🐬' },
+  'licornium': { img: null, emoji: '🦄' },
+  'jaane_snake': { img: null, emoji: '🐍' },
+  'mosquito': { img: null, emoji: '🦟' },
+  'diamond_simba': { img: null, emoji: '🦁' },
+  'alburax': { img: null, emoji: '🐴' },
+  'tardigrum': { img: null, emoji: '🧬' },
+};
+
+const SEGMENT_GRADIENTS = {
+  '#2A4A3A': { inner: '#3A5A4A', outer: '#1A3A2A' },
+  '#3A4A2A': { inner: '#4A5A3A', outer: '#2A3A1A' },
+  '#3A2A4A': { inner: '#4A3A5A', outer: '#2A1A3A' },
+  '#4A3A2A': { inner: '#5A4A3A', outer: '#3A2A1A' },
+  '#4A2A2A': { inner: '#5A3A3A', outer: '#3A1A1A' },
+  '#2A3A4A': { inner: '#3A4A5A', outer: '#1A2A3A' },
+  '#4A4A2A': { inner: '#5A5A3A', outer: '#3A3A1A' },
+};
+
+const NAV_TABS = [
+  { key: 'home', label: 'Accueil', iconDefault: 'home-outline', iconActive: 'home' },
+  { key: 'meals', label: 'Repas', iconDefault: 'restaurant-outline', iconActive: 'restaurant' },
+  { key: 'medicai', label: 'MedicAi', isMedicAi: true },
+  { key: 'activity', label: 'Activité', iconDefault: 'fitness-outline', iconActive: 'fitness' },
+  { key: 'lixverse', label: 'LixVerse', isSpecial: true, isLixVerse: true },
+];
