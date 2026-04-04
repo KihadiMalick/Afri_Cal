@@ -1920,7 +1920,310 @@ export default function RecettesScreen({
         </View>
       )}
 
-      {/* === PHASE 9 : Modal fiche recette === */}
+      {/* ══════ MODAL — Fiche Recette Détaillée ══════ */}
+      <Modal
+        visible={selectedRecipe !== null}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={closeRecipeDetail}
+      >
+        <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
+          <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
+
+          <ScrollView
+            style={{ flex: 1 }}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            {selectedRecipe && (
+              <>
+                {/* Image header */}
+                <View style={{ width: '100%', height: wp(280), backgroundColor: '#252A30' }}>
+                  <Image
+                    source={{ uri: selectedRecipe.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800' }}
+                    style={{ width: '100%', height: '100%', opacity: 0.85 }}
+                    resizeMode="cover"
+                  />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(26,29,34,0.6)', '#1A1D22']}
+                    style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: wp(100) }}
+                  />
+                  <TouchableOpacity
+                    onPress={closeRecipeDetail}
+                    style={{
+                      position: 'absolute', top: wp(45), right: wp(16),
+                      width: wp(36), height: wp(36), borderRadius: wp(18),
+                      backgroundColor: 'rgba(37,42,48,0.9)',
+                      borderWidth: 1, borderColor: '#4A4F55',
+                      alignItems: 'center', justifyContent: 'center', zIndex: 10,
+                    }}
+                  >
+                    <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '700' }}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Infos principales */}
+                <View style={{ paddingHorizontal: wp(18), marginTop: -wp(20) }}>
+                  <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#FFFFFF', marginBottom: wp(4) }}>
+                    {getFlag(selectedRecipe.country_origin)} {selectedRecipe.name}
+                  </Text>
+                  <Text style={{ fontSize: fp(12), color: '#9CA3AF', marginBottom: wp(2) }}>
+                    {selectedRecipe.country_origin} · {selectedRecipe.region}
+                  </Text>
+                  <View style={{
+                    alignSelf: 'flex-start', backgroundColor: 'rgba(0,217,132,0.15)',
+                    borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(3),
+                    marginTop: wp(6), marginBottom: wp(16),
+                  }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: '#00D984' }}>
+                      {selectedRecipe.category}
+                    </Text>
+                  </View>
+
+                  {/* Card valeurs nutritionnelles */}
+                  <View style={{
+                    borderRadius: wp(14), borderWidth: 1, borderColor: '#4A4F55',
+                    padding: wp(14), marginBottom: wp(20), backgroundColor: '#252A30',
+                  }}>
+                    <Text style={{
+                      fontSize: fp(11), fontWeight: '700', color: '#D4AF37',
+                      letterSpacing: 1.5, textTransform: 'uppercase',
+                      marginBottom: wp(12), textAlign: 'center',
+                    }}>
+                      Valeurs nutritionnelles · 100g
+                    </Text>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(12) }}>
+                      <View style={{ alignItems: 'center', flex: 1 }}>
+                        <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginBottom: wp(3) }}>🔥 Calories</Text>
+                        <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#FF8C42' }}>
+                          {Math.round(selectedRecipe.kcal_per_100g)}
+                        </Text>
+                        <Text style={{ fontSize: fp(9), color: '#6B7280' }}>kcal</Text>
+                      </View>
+                      <View style={{ alignItems: 'center', flex: 1 }}>
+                        <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginBottom: wp(3) }}>Protéines</Text>
+                        <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#FF6B6B' }}>
+                          {selectedRecipe.protein_per_100g?.toFixed(1) || '0'}
+                        </Text>
+                        <View style={{ width: wp(50), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,107,107,0.15)', marginTop: wp(3) }}>
+                          <View style={{ width: `${Math.min((selectedRecipe.protein_per_100g || 0) / 30 * 100, 100)}%`, height: '100%', borderRadius: wp(2), backgroundColor: '#FF6B6B' }} />
+                        </View>
+                        <Text style={{ fontSize: fp(8), color: '#6B7280', marginTop: wp(2) }}>g</Text>
+                      </View>
+                      <View style={{ alignItems: 'center', flex: 1 }}>
+                        <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginBottom: wp(3) }}>Glucides</Text>
+                        <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#FFD93D' }}>
+                          {selectedRecipe.carbs_per_100g?.toFixed(1) || '0'}
+                        </Text>
+                        <View style={{ width: wp(50), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,217,61,0.15)', marginTop: wp(3) }}>
+                          <View style={{ width: `${Math.min((selectedRecipe.carbs_per_100g || 0) / 60 * 100, 100)}%`, height: '100%', borderRadius: wp(2), backgroundColor: '#FFD93D' }} />
+                        </View>
+                        <Text style={{ fontSize: fp(8), color: '#6B7280', marginTop: wp(2) }}>g</Text>
+                      </View>
+                    </View>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'center', gap: wp(30) }}>
+                      <View style={{ alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginBottom: wp(3) }}>Lipides</Text>
+                        <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#4DA6FF' }}>
+                          {selectedRecipe.fat_per_100g?.toFixed(1) || '0'}
+                        </Text>
+                        <View style={{ width: wp(50), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(77,166,255,0.15)', marginTop: wp(3) }}>
+                          <View style={{ width: `${Math.min((selectedRecipe.fat_per_100g || 0) / 30 * 100, 100)}%`, height: '100%', borderRadius: wp(2), backgroundColor: '#4DA6FF' }} />
+                        </View>
+                        <Text style={{ fontSize: fp(8), color: '#6B7280', marginTop: wp(2) }}>g</Text>
+                      </View>
+                      <View style={{ alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(10), color: '#9CA3AF', marginBottom: wp(3) }}>Fibres</Text>
+                        <Text style={{ fontSize: fp(20), fontWeight: '800', color: '#00D984' }}>
+                          {selectedRecipe.fiber_per_100g?.toFixed(1) || '0'}
+                        </Text>
+                        <View style={{ width: wp(50), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(0,217,132,0.15)', marginTop: wp(3) }}>
+                          <View style={{ width: `${Math.min((selectedRecipe.fiber_per_100g || 0) / 15 * 100, 100)}%`, height: '100%', borderRadius: wp(2), backgroundColor: '#00D984' }} />
+                        </View>
+                        <Text style={{ fontSize: fp(8), color: '#6B7280', marginTop: wp(2) }}>g</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Section ingrédients */}
+                  <View style={{ marginBottom: wp(20) }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
+                      <View style={{ width: wp(3), height: wp(18), backgroundColor: '#D4AF37', borderRadius: wp(2), marginRight: wp(8) }} />
+                      <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFFFFF' }}>Ingrédients</Text>
+                      <Text style={{ fontSize: fp(11), color: '#6B7280', marginLeft: wp(6) }}>({recipeIngredients.length})</Text>
+                    </View>
+
+                    {loadingIngredients ? (
+                      <View style={{ paddingVertical: wp(20), alignItems: 'center' }}>
+                        <ActivityIndicator size="small" color="#D4AF37" />
+                        <Text style={{ fontSize: fp(10), color: '#6B7280', marginTop: wp(6) }}>Chargement des ingrédients...</Text>
+                      </View>
+                    ) : recipeIngredients.length === 0 ? (
+                      <View style={{
+                        paddingVertical: wp(16), paddingHorizontal: wp(12),
+                        backgroundColor: 'rgba(255,140,66,0.08)', borderRadius: wp(10),
+                        borderWidth: 1, borderColor: 'rgba(255,140,66,0.2)',
+                      }}>
+                        <Text style={{ fontSize: fp(11), color: '#FF8C42', textAlign: 'center' }}>
+                          Composition détaillée bientôt disponible
+                        </Text>
+                      </View>
+                    ) : (
+                      <View style={{
+                        backgroundColor: '#252A30', borderRadius: wp(12),
+                        borderWidth: 1, borderColor: '#4A4F55', overflow: 'hidden',
+                      }}>
+                        {recipeIngredients.map((ing, index) => (
+                          <View key={index} style={{
+                            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                            paddingVertical: wp(10), paddingHorizontal: wp(14),
+                            borderBottomWidth: index < recipeIngredients.length - 1 ? 1 : 0,
+                            borderBottomColor: 'rgba(74,79,85,0.4)',
+                          }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                              <View style={{
+                                width: wp(6), height: wp(6), borderRadius: wp(3),
+                                backgroundColor: index < 3 ? '#D4AF37' : index < 6 ? '#FF8C42' : '#4A4F55',
+                                marginRight: wp(10),
+                              }} />
+                              <Text style={{ fontSize: fp(12), color: '#E5E7EB', flex: 1 }} numberOfLines={1}>
+                                {ing.component_name}
+                              </Text>
+                            </View>
+                            <Text style={{
+                              fontSize: fp(11), fontWeight: '700',
+                              color: index < 3 ? '#D4AF37' : '#9CA3AF', marginLeft: wp(8),
+                            }}>
+                              {ing.percentage_estimate}%
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Section description */}
+                  {selectedRecipe.description ? (
+                    <View style={{ marginBottom: wp(20) }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
+                        <View style={{ width: wp(3), height: wp(18), backgroundColor: '#4DA6FF', borderRadius: wp(2), marginRight: wp(8) }} />
+                        <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFFFFF' }}>Description</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(12), color: '#D1D5DB', lineHeight: fp(18), paddingHorizontal: wp(4) }}>
+                        {selectedRecipe.description}
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {/* Section préparation ALIXEN */}
+                  <View style={{ marginBottom: wp(20) }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
+                      <View style={{ width: wp(3), height: wp(18), backgroundColor: '#FF8C42', borderRadius: wp(2), marginRight: wp(8) }} />
+                      <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFFFFF' }}>Préparation</Text>
+                      <Text style={{ fontSize: fp(9), color: '#FF8C42', marginLeft: wp(8), fontStyle: 'italic' }}>par ALIXEN</Text>
+                    </View>
+
+                    {!recipeSteps && !loadingSteps && (
+                      <TouchableOpacity
+                        onPress={generateRecipeSteps}
+                        activeOpacity={0.85}
+                        style={{
+                          borderRadius: wp(14), borderWidth: 1.5, borderColor: '#FF8C42',
+                          paddingVertical: wp(16), paddingHorizontal: wp(16),
+                          alignItems: 'center', backgroundColor: 'rgba(255,140,66,0.08)',
+                        }}
+                      >
+                        <Text style={{ fontSize: fp(22), marginBottom: wp(6) }}>🧑‍🍳</Text>
+                        <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FF8C42', marginBottom: wp(4) }}>
+                          Générer la recette complète
+                        </Text>
+                        <Text style={{ fontSize: fp(10), color: '#6B7280' }}>
+                          15 Lix · Étapes détaillées par ALIXEN IA
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {loadingSteps && (
+                      <View style={{
+                        borderRadius: wp(14), borderWidth: 1, borderColor: '#4A4F55',
+                        paddingVertical: wp(24), paddingHorizontal: wp(16),
+                        alignItems: 'center', backgroundColor: '#252A30',
+                      }}>
+                        <ActivityIndicator size="small" color="#FF8C42" />
+                        <Text style={{ fontSize: fp(11), color: '#FF8C42', marginTop: wp(10), fontStyle: 'italic' }}>
+                          ALIXEN prépare votre recette...
+                        </Text>
+                        <Text style={{ fontSize: fp(9), color: '#6B7280', marginTop: wp(4) }}>
+                          Analyse des ingrédients et traditions culinaires
+                        </Text>
+                      </View>
+                    )}
+
+                    {recipeSteps === '__ERROR__' && (
+                      <View style={{
+                        borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,107,107,0.3)',
+                        paddingVertical: wp(16), paddingHorizontal: wp(16),
+                        backgroundColor: 'rgba(255,107,107,0.08)', alignItems: 'center',
+                      }}>
+                        <Text style={{ fontSize: fp(11), color: '#FF6B6B', textAlign: 'center' }}>
+                          Impossible de générer la recette pour le moment.
+                        </Text>
+                        <TouchableOpacity onPress={() => { setRecipeSteps(null); setDisplayedSteps(''); }} style={{ marginTop: wp(10) }}>
+                          <Text style={{ fontSize: fp(11), color: '#FF8C42', fontWeight: '600' }}>Réessayer</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {recipeSteps && recipeSteps !== '__ERROR__' && (
+                      <View style={{
+                        borderRadius: wp(14), borderWidth: 1, borderColor: '#4A4F55',
+                        padding: wp(16), backgroundColor: '#252A30',
+                      }}>
+                        <Text style={{ fontSize: fp(12), color: '#D1D5DB', lineHeight: fp(20) }}>
+                          {displayedSteps}
+                          {isTyping && (
+                            <Text style={{ color: '#FF8C42', fontWeight: '700' }}>▊</Text>
+                          )}
+                        </Text>
+                        {!isTyping && displayedSteps.length > 0 && (
+                          <View style={{
+                            flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                            marginTop: wp(14), paddingTop: wp(10),
+                            borderTopWidth: 1, borderTopColor: 'rgba(74,79,85,0.4)',
+                          }}>
+                            <Text style={{ fontSize: fp(9), color: '#6B7280', fontStyle: 'italic' }}>
+                              🤖 Recette générée par ALIXEN · basée sur {recipeIngredients.length} ingrédients
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Bouton ajouter */}
+                  <TouchableOpacity
+                    onPress={() => setShowAddConfirm(true)}
+                    activeOpacity={0.85}
+                    style={{
+                      borderRadius: wp(14), borderWidth: 1.5, borderColor: '#00D984',
+                      paddingVertical: wp(14), alignItems: 'center', justifyContent: 'center',
+                      flexDirection: 'row', marginBottom: wp(40),
+                      backgroundColor: 'rgba(0,217,132,0.12)',
+                    }}
+                  >
+                    <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#00D984' }}>
+                      🍽️  Ajouter ce plat
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
+
       {/* === PHASE 10 : Modal confirmation === */}
     </>
   );
