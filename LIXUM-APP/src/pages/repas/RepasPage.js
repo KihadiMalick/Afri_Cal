@@ -368,6 +368,61 @@ export default function RepasPage({ onNavigate }) {
     setLoadingSuggestion(false);
   };
 
+  // === FONCTIONS UI ===
+
+  const toggleDropdown = () => {
+    const toValue = dropdownOpen ? 0 : 1;
+    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: false }).start();
+    setDropdownOpen(!dropdownOpen);
+  };
+
+  const handleTabPress = (key) => {
+    if (key === 'meals') return;
+    if (onNavigate) {
+      onNavigate(key);
+    }
+    setActiveTab(key);
+  };
+
+  const activateScan = () => {
+    setShowRings(true);
+    ring1Anim.setValue(0);
+    ring2Anim.setValue(0);
+    ring3Anim.setValue(0);
+
+    Animated.stagger(200, [
+      Animated.timing(ring1Anim, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(ring2Anim, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(ring3Anim, { toValue: 1, duration: 400, useNativeDriver: true }),
+    ]).start(() => {
+      setShowRings(false);
+      ring1Anim.setValue(0);
+      ring2Anim.setValue(0);
+      ring3Anim.setValue(0);
+      setShowXscan(true);
+      if (xscanRef.current?.openCamera) xscanRef.current.openCamera();
+    });
+  };
+
+  // Animation glow pulsant pour Xscan
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, { toValue: 1, duration: 1500, useNativeDriver: false }),
+        Animated.timing(glowAnim, { toValue: 0, duration: 1500, useNativeDriver: false }),
+      ])
+    ).start();
+  }, []);
+
+  const glowOpacity = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.2, 0.5],
+  });
+
+  const calPercent = userProfile.daily_calorie_target > 0
+    ? Math.round((dailySummary.total_calories / userProfile.daily_calorie_target) * 100)
+    : 0;
+
   // === JSX (phases suivantes) ===
 
   return null;
