@@ -165,6 +165,174 @@ export default function LixVersePage({ navigation }) {
   };
   const hideLixAlert = () => setLixAlert(prev => ({ ...prev, visible: false }));
 
+  const toggleDropdown = () => {
+    const toValue = dropdownOpen ? 0 : 1;
+    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: false }).start();
+    setDropdownOpen(!dropdownOpen);
+  };
+
+  const navigateCard = (direction) => {
+    const newIdx = cardViewIndex + direction;
+    if (newIdx < 0 || newIdx >= ALL_CHARACTERS.length) return;
+    Animated.timing(cardSlideAnim, {
+      toValue: -direction,
+      duration: 180,
+      useNativeDriver: true,
+      easing: Easing.out(Easing.ease),
+    }).start(() => {
+      cardViewIndexRef.current = newIdx;
+      setCardViewIndex(newIdx);
+      cardSlideAnim.setValue(direction);
+      Animated.spring(cardSlideAnim, {
+        toValue: 0, friction: 9, tension: 120,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+
+  const supaRpc = async (fnName, params = {}) => {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fnName, {
+      method: 'POST', headers: POST_HEADERS, body: JSON.stringify(params),
+    });
+    return res.json();
+  };
+
+  const flipCard = () => {
+    const toVal = charFlipped ? 0 : 1;
+    Animated.timing(flipAnim, {
+      toValue: toVal, duration: 300, useNativeDriver: true,
+    }).start(() => setCharFlipped(!charFlipped));
+  };
+
+  const FREE_POWER_TYPES = ['toggle'];
+  const FREE_POWER_KEYS = ['owl_resume_macros', 'owl_alerte_macros', 'fox_mode_regime'];
+
+  const shouldConsumePower = (power) => {
+    if (FREE_POWER_TYPES.includes(power.action_type)) return false;
+    if (FREE_POWER_KEYS.includes(power.power_key)) return false;
+    return true;
+  };
+
+  async function loadCharacterData() {
+    try {
+      const userId = TEST_USER_ID;
+      const onb = await supaRpc('check_character_onboarding', { p_user_id: userId });
+      const isOnboarded = onb?.first_character_chosen || false;
+      setCharOnboarded(isOnboarded);
+      if (!isOnboarded) {
+        setShowCharOnboarding(true);
+        const charsRes = await fetch(SUPABASE_URL + '/rest/v1/lixverse_characters?tier=eq.standard&order=sort_order.asc', { headers: HEADERS });
+        const chars = await charsRes.json();
+        setUserCollection((chars || []).map(c => ({ ...c, owned: false, level: 0, fragments: 0 })));
+        return;
+      }
+      const collection = await supaRpc('get_user_collection', { p_user_id: userId });
+      if (collection && Array.isArray(collection)) {
+        setUserCollection(collection);
+        const active = collection.find(c => c.is_active);
+        if (active) setActiveCharSlug(active.slug);
+      }
+    } catch (e) {
+      console.error('Character load error:', e);
+    }
+  }
+
+  async function chooseFirstCharacter(slug) {
+    try {
+      const data = await supaRpc('choose_first_character', { p_user_id: TEST_USER_ID, p_slug: slug });
+      if (data?.success) {
+        setCharOnboarded(true);
+        setShowCharOnboarding(false);
+        setActiveCharSlug(slug);
+        loadCharacterData();
+      }
+    } catch (e) {
+      console.error('Choose character error:', e);
+    }
+  }
+
+  async function switchActiveCharacter(slug) {
+    try {
+      const data = await supaRpc('set_active_character', { p_user_id: TEST_USER_ID, p_slug: slug });
+      if (data?.success) {
+        setActiveCharSlug(slug);
+        setUserCollection(prev => prev.map(c => ({ ...c, is_active: c.slug === slug })));
+      }
+    } catch (e) {
+      console.error('Switch character error:', e);
+    }
+  }
+
+  async function loadCharPowers(slug) {
+    setLoadingPowers(true);
+    try {
+      const data = await supaRpc('get_character_powers', { p_user_id: TEST_USER_ID, p_slug: slug });
+      setCharPowers(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Powers load error:', e);
+    }
+    setLoadingPowers(false);
+  }
+
+  async function consumePower(powerKey) {
+    try {
+      const data = await supaRpc('use_character_power', { p_user_id: TEST_USER_ID, p_power_key: powerKey });
+      if (data?.success) {
+        setUserCollection(prev => prev.map(c =>
+          c.slug === selectedChar?.slug
+            ? { ...c, uses_remaining: data.uses_remaining }
+            : c
+        ));
+        return { success: true, uses_remaining: data.uses_remaining };
+      }
+      if (data?.error === 'No uses remaining') {
+        showLixAlert('⚡ Utilisations épuisées',
+          'Recharge ton ' + (selectedChar?.name || '') + ' dans l\'onglet Caractères.',
+          [{ text: 'Recharger', color: '#00D984', onPress: () => rechargeChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
+        return { success: false, error: 'no_uses' };
+      }
+      return { success: false, error: data?.error };
+    } catch (e) {
+      console.error('Consume power error:', e);
+      return { success: false, error: 'network' };
+    }
+  }
+
+  async function rechargeChar() {
+    if (!selectedChar) return;
+    try {
+      const data = await supaRpc('recharge_character', { p_user_id: TEST_USER_ID, p_slug: selectedChar.slug });
+      if (data?.success) {
+        setUserCollection(prev => prev.map(c =>
+          c.slug === selectedChar.slug
+            ? { ...c, uses_remaining: data.uses_restored }
+            : c
+        ));
+      }
+    } catch (e) {
+      console.error('Recharge error:', e);
+    }
+  }
+
+  async function handleCharRecharge(charId) {
+    try {
+      const data = await supaRpc('recharge_character', { p_user_id: TEST_USER_ID, p_slug: charId });
+      if (data?.success) {
+        setUserCollection(prev => prev.map(c =>
+          (c.slug || c.id) === charId
+            ? { ...c, uses_remaining: data.uses_restored || c.uses_max }
+            : c
+        ));
+        showLixAlert('Rechargé', '+' + (data.uses_restored || '?') + ' utilisations restaurées !', [{ text: 'Super', color: '#00D984' }], '⚡');
+      } else {
+        showLixAlert('Erreur', data?.error || 'Recharge échouée', [{ text: 'OK', style: 'cancel' }], '⚠️');
+      }
+    } catch (e) {
+      console.error('Recharge error:', e);
+      showLixAlert('Erreur', 'Problème de connexion', [{ text: 'OK', style: 'cancel' }], '⚠️');
+    }
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: '#141A22' }}>
       <Text style={{ color: '#FFF', padding: 20 }}>LixVersePage orchestrator - state loaded</Text>
