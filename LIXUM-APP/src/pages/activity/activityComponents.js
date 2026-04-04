@@ -894,4 +894,10 @@ const SportModal = ({ visible, sportKey, onClose, onSave, lang, userWeight }) =>
   );
 };
 
-// === PHASES SUIVANTES ===
+export {
+  TreeIcon, BenchIcon, BirdsIcon, PondIcon,
+  WalkShoeIcon, RunShoeIcon,
+  WalkShoeAnimated, RunShoeAnimated,
+  sliderToDistance, ActivitySlider, ModePill,
+  SportIcon, SportCard, SportModal,
+};
