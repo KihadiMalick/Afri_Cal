@@ -90,3 +90,51 @@ const LIXSIGNS = {
     ],
   },
 };
+
+const WORLD_DOTS = [
+  { x: 130, y: 120, size: 'large' },
+  { x: 175, y: 140, size: 'medium' },
+  { x: 200, y: 100, size: 'small' },
+  { x: 220, y: 260, size: 'medium' },
+  { x: 240, y: 290, size: 'small' },
+  { x: 230, y: 320, size: 'small' },
+  { x: 380, y: 80, size: 'medium' },
+  { x: 400, y: 95, size: 'small' },
+  { x: 370, y: 100, size: 'small' },
+  { x: 390, y: 150, size: 'large' },
+  { x: 410, y: 180, size: 'large' },
+  { x: 420, y: 210, size: 'medium' },
+  { x: 400, y: 240, size: 'medium' },
+  { x: 380, y: 190, size: 'small' },
+  { x: 430, y: 195, size: 'small' },
+  { x: 370, y: 220, size: 'small' },
+  { x: 415, y: 260, size: 'small' },
+  { x: 440, y: 170, size: 'small' },
+  { x: 460, y: 130, size: 'medium' },
+  { x: 475, y: 145, size: 'small' },
+  { x: 520, y: 90, size: 'medium' },
+  { x: 570, y: 100, size: 'large' },
+  { x: 600, y: 120, size: 'medium' },
+  { x: 550, y: 140, size: 'small' },
+  { x: 630, y: 135, size: 'small' },
+  { x: 620, y: 180, size: 'medium' },
+  { x: 640, y: 200, size: 'small' },
+  { x: 660, y: 290, size: 'medium' },
+  { x: 680, y: 310, size: 'small' },
+];
+
+const BINOME_LEADERBOARD = [
+  { rank: 1, names: 'LXM-8F2K9B & LXM-2K7F4A', flags: '🇸🇳🇧🇮', flames: 42, pts: 520 },
+  { rank: 2, names: 'LXM-3G5H7J & LXM-9R4T2M', flags: '🇬🇭🇲🇱', flames: 38, pts: 480 },
+  { rank: 3, names: 'LXM-6N8P1Q & LXM-4D7F3S', flags: '🇰🇪🇰🇪', flames: 35, pts: 440 },
+  { rank: 4, names: 'LXM-2W5X8Y & LXM-7B3C6E', flags: '🇲🇱🇧🇫', flames: 28, pts: 360 },
+  { rank: 5, names: 'LXM-5K9L2N & LXM-1H4J7M', flags: '🇨🇲🇨🇩', flames: 22, pts: 280 },
+];
+
+const TIER_CONFIG = {
+  standard: { label: 'Standard', color: '#00D984', bg: 'rgba(0,217,132,0.1)', border: 'rgba(0,217,132,0.3)' },
+  rare: { label: 'Rare', color: '#4DA6FF', bg: 'rgba(77,166,255,0.1)', border: 'rgba(77,166,255,0.3)' },
+  elite: { label: 'Elite', color: '#B388FF', bg: 'rgba(179,136,255,0.1)', border: 'rgba(179,136,255,0.3)' },
+  mythique: { label: 'Mythique', color: '#D4AF37', bg: 'rgba(212,175,55,0.1)', border: 'rgba(212,175,55,0.3)' },
+  ultimate: { label: 'Ultime', color: '#DFE6E9', bg: 'rgba(223,230,233,0.08)', border: 'rgba(223,230,233,0.25)' },
+};
