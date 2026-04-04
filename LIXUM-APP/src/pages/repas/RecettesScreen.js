@@ -69,7 +69,107 @@ export default function RecettesScreen({
   var _alixenFreeUsedToday = useState(false); var alixenFreeUsedToday = _alixenFreeUsedToday[0]; var setAlixenFreeUsedToday = _alixenFreeUsedToday[1];
   var _alixenHasOwlPass = useState(false); var alixenHasOwlPass = _alixenHasOwlPass[0]; var setAlixenHasOwlPass = _alixenHasOwlPass[1];
 
-  // === FONCTIONS (phases suivantes) ===
+  // === FONCTIONS ===
+
+  const loadRecipes = async (page = 0, search = '', region = 'all', category = 'all', append = false) => {
+    setRecipesLoading(true);
+    try {
+      let query = supabase
+        .from('meals_master')
+        .select('*')
+        .order('name', { ascending: true })
+        .range(page * 20, (page + 1) * 20 - 1);
+
+      if (search.length >= 2) {
+        query = query.ilike('search_name', '%' + search.toLowerCase() + '%');
+      }
+      if (region !== 'all') {
+        if (region === 'Asie') {
+          query = query.or('region.ilike.%Asie%');
+        } else if (region === 'Amérique') {
+          query = query.or('region.ilike.%Am%rique%');
+        } else {
+          query = query.ilike('region', '%' + region + '%');
+        }
+      }
+      if (category !== 'all') {
+        query = query.ilike('category', '%' + category + '%');
+      }
+
+      const { data, error } = await query;
+      if (error) console.error('Recipes load error:', error);
+      if (data) {
+        setRecipesData(append ? [...recipesData, ...data] : data);
+        setRecipesHasMore(data.length >= 20);
+      }
+    } catch (e) {
+      console.error('Recipes error:', e);
+    }
+    setRecipesLoading(false);
+  };
+
+  const loadMoodRecipes = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data: moodData } = await supabase
+        .from('moods')
+        .select('mood_level, weather')
+        .eq('user_id', TEST_USER_ID)
+        .gte('created_at', today + 'T00:00:00')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      let mood = moodData && moodData[0] ? moodData[0] : null;
+
+      if (!mood) {
+        setMoodMessage(lang === 'fr' ? 'Enregistrez votre humeur sur le Dashboard pour des recommandations personnalisées !' : 'Record your mood on the Dashboard for personalized recommendations!');
+        setMoodRecipes([]);
+        return;
+      }
+
+      const moodMap = { 'happy': 'happy', 'neutral': 'neutral', 'sad': 'sad', 'stressed': 'stressed', 'tired': 'tired', 'joyeux': 'happy', 'neutre': 'neutral', 'triste': 'sad', 'stressé': 'stressed', 'fatigué': 'tired' };
+      const weatherMap = { 'sunny': 'sunny', 'cloudy': 'cloudy', 'rainy': 'rainy', 'ensoleillé': 'sunny', 'nuageux': 'cloudy', 'pluvieux': 'rainy', 'sun': 'sunny', 'cloud': 'cloudy', 'rain': 'rainy' };
+
+      const mKey = moodMap[(mood.mood_level || '').toLowerCase()] || 'neutral';
+      const wKey = weatherMap[(mood.weather || '').toLowerCase()] || 'cloudy';
+      const matrixKey = mKey + '_' + wKey;
+      const matrix = MOOD_MATRIX[matrixKey] || MOOD_MATRIX['neutral_cloudy'];
+
+      setMoodMessage(lang === 'fr' ? matrix.msg_fr : matrix.msg_en);
+
+      const catFilters = matrix.cats.map(c => 'category.ilike.%' + c + '%').join(',');
+      const { data: recs } = await supabase
+        .from('meals_master')
+        .select('*')
+        .or(catFilters)
+        .order('name', { ascending: true })
+        .limit(30);
+
+      if (recs) setMoodRecipes(recs);
+    } catch (e) {
+      console.error('Mood recipes error:', e);
+    }
+  };
+
+  // Initialisation quand visible passe à true
+  useEffect(function() {
+    if (visible) {
+      setRecipesTab('general');
+      setRecipesSearch('');
+      setRecipesRegion('all');
+      setRecipesCategory('all');
+      setRecipesPage(0);
+      loadRecipes(0);
+      loadMoodRecipes();
+      setAlixenRecipeScreen('welcome');
+      setAlixenProposals([]);
+      setAlixenSelectedRecipe(null);
+      setAlixenCategory(null);
+      setAlixenMyIngredients([]);
+      setAlixenAdvice(null);
+      loadAlixenContext();
+    }
+  }, [visible]);
 
   // === JSX (phases suivantes) ===
 
