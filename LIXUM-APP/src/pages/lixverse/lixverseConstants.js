@@ -138,3 +138,41 @@ const TIER_CONFIG = {
   mythique: { label: 'Mythique', color: '#D4AF37', bg: 'rgba(212,175,55,0.1)', border: 'rgba(212,175,55,0.3)' },
   ultimate: { label: 'Ultime', color: '#DFE6E9', bg: 'rgba(223,230,233,0.08)', border: 'rgba(223,230,233,0.25)' },
 };
+
+const NORMAL_SEGMENTS = [
+  { label: '3', icon: '⚡', chance: 27, color: '#2A4A3A', reward: { type: 'energy', amount: 3 } },
+  { label: '30', icon: '💰', chance: 20, color: '#3A4A2A', reward: { type: 'lix', amount: 30 } },
+  { label: '1', icon: '🧩', chance: 15, color: '#3A2A4A', subLabel: 'Frag Std', reward: { type: 'fragment', tier: 'standard', amount: 1 } },
+  { label: '1', icon: '📸', chance: 15, color: '#4A3A2A', subLabel: 'scan', reward: { type: 'scan', amount: 1 } },
+  { label: '1', icon: '🎁', chance: 10, color: '#4A2A2A', subLabel: 'spin', reward: { type: 'free_spin', amount: 1 } },
+  { label: '1', icon: '🧩', chance: 8, color: '#2A3A4A', subLabel: 'Frag Rare', reward: { type: 'fragment', tier: 'rare', amount: 1 } },
+  { label: '10', icon: '⚡⚡', chance: 5, color: '#4A4A2A', subLabel: 'énergie', reward: { type: 'energy', amount: 10 } },
+];
+
+const SUPER_SEGMENTS = [
+  { label: '5', icon: '⚡', chance: 30, color: '#2A4A3A', reward: { type: 'energy', amount: 5 } },
+  { label: '50', icon: '💰', chance: 20, color: '#3A4A2A', reward: { type: 'lix', amount: 50 } },
+  { label: '1', icon: '🃏', chance: 7, color: '#3A2A4A', subLabel: 'carte Std', reward: { type: 'card', tier: 'standard', amount: 1 } },
+  { label: '2', icon: '📸', chance: 18, color: '#4A3A2A', subLabel: 'scans', reward: { type: 'scan', amount: 2 } },
+  { label: '1', icon: '🎁', chance: 10, color: '#4A2A2A', subLabel: 'super', reward: { type: 'free_spin', amount: 1 } },
+  { label: '1', icon: '🧩', chance: 8, color: '#2A3A4A', subLabel: 'Frag Elite', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
+  { label: '25', icon: '⚡⚡', chance: 7, color: '#4A4A2A', subLabel: 'énergie', reward: { type: 'energy', amount: 25 } },
+];
+
+const MEGA_SEGMENTS = [
+  { label: '10', icon: '⚡', chance: 30, color: '#2A4A3A', reward: { type: 'energy', amount: 10 } },
+  { label: '100', icon: '💰', chance: 20, color: '#3A4A2A', reward: { type: 'lix', amount: 100 } },
+  { label: '2', icon: '🧩', chance: 15, color: '#3A2A4A', subLabel: 'Frag Rare', reward: { type: 'fragment', tier: 'rare', amount: 2 } },
+  { label: '1', icon: '🧩', chance: 13, color: '#4A3A2A', subLabel: 'Frag Elite', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
+  { label: '1', icon: '🃏', chance: 5, color: '#4A2A2A', subLabel: 'carte Rare', reward: { type: 'card', tier: 'rare', amount: 1 } },
+  { label: '1', icon: '🧩', chance: 7, color: '#2A3A4A', subLabel: 'Frag Myth', reward: { type: 'fragment', tier: 'mythique', amount: 1 } },
+  { label: '50', icon: '⚡⚡', chance: 10, color: '#4A4A2A', subLabel: 'énergie', reward: { type: 'energy', amount: 50 } },
+];
+
+const SLUGS_BY_TIER = {
+  standard: ['emerald_owl', 'hawk_eye', 'ruby_tiger', 'amber_fox', 'gipsy'],
+  rare: ['jade_phoenix', 'silver_wolf', 'boukki', 'iron_rhino', 'coral_dolphin'],
+  elite: ['licornium', 'jaane_snake', 'mosquito'],
+  mythique: ['diamond_simba', 'alburax'],
+  ultimate: ['tardigrum'],
+};
