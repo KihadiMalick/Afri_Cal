@@ -263,6 +263,111 @@ export default function RepasPage({ onNavigate }) {
     fetchMoodWeather();
   }, []);
 
+  // === FONCTIONS POUVOIRS ===
+
+  const consumePower = async (powerKey) => {
+    try {
+      const { data } = await supabase.rpc('use_character_power', {
+        p_user_id: TEST_USER_ID,
+        p_power_key: powerKey,
+      });
+      if (data?.success) {
+        setActiveChar(prev => prev ? { ...prev, uses_remaining: data.uses_remaining } : null);
+        return { success: true, uses_remaining: data.uses_remaining };
+      }
+      if (data?.error === 'No uses remaining') {
+        Alert.alert('⚡ Utilisations épuisées',
+          'Recharge ton ' + (activeChar?.name || 'personnage') + ' dans l\'onglet Caractères.');
+      }
+      return { success: false, error: data?.error };
+    } catch (e) {
+      console.error('Consume power error:', e);
+      return { success: false, error: 'network' };
+    }
+  };
+
+  const isPowerAvailable = (powerKey) => {
+    const power = pagePowers.find(p => p.power_key === powerKey);
+    return power?.unlocked === true;
+  };
+
+  const powerConsumesUse = (powerKey) => {
+    const FREE_POWERS = [
+      'owl_resume_macros',
+      'owl_alerte_macros',
+      'fox_mode_regime',
+    ];
+    return !FREE_POWERS.includes(powerKey);
+  };
+
+  const handleInlinePower = (power) => {
+    switch (power.power_key) {
+      case 'owl_resume_macros':
+        setShowResumeModal(true);
+        break;
+      case 'hawk_micronutriments':
+        Alert.alert('🔬 Micronutriments', 'Disponible après votre prochain scan Xscan.');
+        break;
+      case 'fox_sub_1':
+      case 'fox_sub_2':
+      case 'fox_sub_3':
+        setTodaySubstitutions(prev => prev + 1);
+        Alert.alert('🦊 Substitution', 'Tap sur un ingrédient pour voir des alternatives.');
+        break;
+      case 'gipsy_correlation_1':
+      case 'gipsy_correlation_2':
+        Alert.alert('🕷️ Corrélation', 'Graphique corrélation humeur-nutrition en cours de développement.');
+        break;
+      default:
+        Alert.alert(power.name_fr || power.power_key, power.description_fr || '');
+    }
+  };
+
+  const handleRedirectPower = (power) => {
+    switch (power.power_key) {
+      case 'owl_suggestion_repas':
+        handleSuggestionRepas();
+        break;
+      case 'hawk_comparateur':
+        Alert.alert('⚖️ Comparateur', 'Sélectionnez 2 scans à comparer. (À venir)');
+        break;
+      case 'hawk_historique':
+        Alert.alert('📈 Historique', 'Historique de vos 30 derniers scans. (À venir)');
+        break;
+      case 'gipsy_toile_sante':
+        Alert.alert('🕸️ Toile de Santé', 'Rapport mensuel croisé en cours de développement.');
+        break;
+      default:
+        Alert.alert(power.name_fr || power.power_key, power.description_fr || '');
+    }
+  };
+
+  const handleSuggestionRepas = async () => {
+    setLoadingSuggestion(true);
+    try {
+      const protTarget = Math.round((userProfile.daily_calorie_target * 0.25) / 4);
+      const protMissing = Math.max(0, protTarget - dailySummary.total_protein);
+
+      const { data: meals } = await supabase
+        .from('meals_master')
+        .select('*')
+        .gte('protein_per_100g', protMissing / 3)
+        .order('protein_per_100g', { ascending: false })
+        .limit(5);
+
+      if (meals && meals.length > 0) {
+        const random = meals[Math.floor(Math.random() * meals.length)];
+        setSuggestionMeal(random);
+        setShowSuggestionModal(true);
+      } else {
+        Alert.alert('🍽️ Suggestion', 'Aucun plat trouvé pour compléter vos macros.');
+      }
+    } catch (e) {
+      console.error('Suggestion error:', e);
+    }
+    setLoadingSuggestion(false);
+  };
+
   // === JSX (phases suivantes) ===
 
   return null;
