@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { wp, fp } from '../../constants/layout';
 import {
   ACTIVITY_DATA, T, getLang, calcCalories, calcWater,
+  TIME_STEPS,
 } from './activityConstants';
 
 // ── Décors SVG du chemin de marche ──
@@ -109,6 +110,160 @@ const RunShoeAnimated = ({ shoeAnim }) => {
     <Animated.View style={{ transform: [{ translateY: bounce }] }}>
       <RunShoeIcon size={wp(28)} />
     </Animated.View>
+  );
+};
+
+// ── Non-linear slider distance interpolation ──
+const sliderToDistance = (sliderValue, flags) => {
+  const maxIdx = flags.length - 1;
+  const pos = sliderValue * maxIdx;
+  const segmentIndex = Math.min(Math.floor(pos), maxIdx - 1);
+  const segmentProgress = pos - segmentIndex;
+  const fromFlag = flags[Math.min(segmentIndex, maxIdx)];
+  const toFlag = flags[Math.min(segmentIndex + 1, maxIdx)];
+  return fromFlag.distance + (toFlag.distance - fromFlag.distance) * segmentProgress;
+};
+
+// ── Custom Slider (Walk / Run) ──
+const ActivitySlider = ({
+  type, mode, value, onChange, shoeAnim,
+  flags, maxDistance, maxTime, accentColor,
+}) => {
+  const barRef = useRef(null);
+  const [barWidth, setBarWidth] = useState(0);
+  const [barX, setBarX] = useState(0);
+
+  const isWalk = type === 'marche';
+  const trackBg = isWalk ? 'rgba(0,217,132,0.08)' : 'rgba(255,140,66,0.08)';
+  const trackLineColor = isWalk ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.12)';
+
+  const handleTouch = (evt) => {
+    const touchX = evt.nativeEvent.pageX - barX;
+    const clamped = Math.max(0, Math.min(1, touchX / barWidth));
+    onChange(clamped);
+  };
+
+  const flagList = mode === 'distance' ? flags : TIME_STEPS;
+
+  return (
+    <View style={{ marginTop: wp(12) }}>
+      <View
+        ref={barRef}
+        onLayout={(e) => {
+          setBarWidth(e.nativeEvent.layout.width);
+          barRef.current?.measureInWindow?.((x) => setBarX(x));
+          if (e.nativeEvent.layout.x !== undefined) {
+            barRef.current?.measure?.((fx, fy, fw, fh, px) => {
+              if (px !== undefined) setBarX(px);
+            });
+          }
+        }}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderMove={handleTouch}
+        onResponderRelease={handleTouch}
+        onResponderStart={handleTouch}
+        style={{
+          height: wp(50),
+          backgroundColor: trackBg,
+          borderRadius: wp(12),
+          overflow: 'hidden',
+          justifyContent: 'center',
+          borderWidth: 1,
+          borderColor: isWalk ? 'rgba(0,217,132,0.12)' : 'rgba(255,140,66,0.12)',
+        }}
+      >
+        {/* Track ruler lines */}
+        {isWalk ? (
+          <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, flexDirection: 'row' }}>
+            {Array.from({ length: 30 }).map((_, i) => (
+              <View key={i} style={{
+                width: 1, height: '100%',
+                backgroundColor: trackLineColor,
+                marginLeft: i === 0 ? 0 : (barWidth || 200) / 30,
+              }} />
+            ))}
+          </View>
+        ) : (
+          <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}>
+            {[0.25, 0.5, 0.75].map((pos, i) => (
+              <View key={i} style={{
+                position: 'absolute', left: 0, right: 0,
+                top: `${pos * 100}%`,
+                height: 1,
+                backgroundColor: trackLineColor,
+              }} />
+            ))}
+          </View>
+        )}
+
+        {/* Flag markers */}
+        {flagList.map((flag, idx) => {
+          const equalPos = flagList.length > 1 ? idx / (flagList.length - 1) : 0;
+          const isNearest = (() => {
+            let minDist = Infinity;
+            let nearestIdx = 0;
+            flagList.forEach((_, fi) => {
+              const fPos = flagList.length > 1 ? fi / (flagList.length - 1) : 0;
+              const d = Math.abs(value - fPos);
+              if (d < minDist) { minDist = d; nearestIdx = fi; }
+            });
+            return nearestIdx === idx;
+          })();
+
+          return (
+            <View key={idx} style={{
+              position: 'absolute',
+              left: `${equalPos * 100}%`,
+              top: wp(2),
+              alignItems: 'center',
+              transform: [{ translateX: -wp(10) }],
+            }}>
+              <Text style={{
+                fontSize: fp(7),
+                color: isNearest ? accentColor : '#555E6C',
+                fontWeight: isNearest ? '700' : '500',
+              }}>
+                {String.fromCodePoint(0x1F3C1)}
+              </Text>
+              <Text style={{
+                fontSize: fp(7),
+                color: isNearest ? accentColor : '#555E6C',
+                fontWeight: isNearest ? '700' : '500',
+                marginTop: wp(1),
+              }}>
+                {mode === 'distance' ? flag.label : `${flag}m`}
+              </Text>
+            </View>
+          );
+        })}
+
+        {/* Filled track */}
+        <View style={{
+          position: 'absolute', left: 0, top: 0, bottom: 0,
+          width: `${value * 100}%`,
+          backgroundColor: isWalk ? 'rgba(0,217,132,0.12)' : 'rgba(255,140,66,0.12)',
+          borderTopLeftRadius: wp(12),
+          borderBottomLeftRadius: wp(12),
+        }} />
+
+        {/* Moving indicator */}
+        <Animated.View style={{
+          position: 'absolute',
+          left: barWidth > 0 ? value * (barWidth - wp(28)) : 0,
+          top: wp(14),
+          width: wp(28),
+          height: wp(28),
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+          {isWalk
+            ? <WalkShoeAnimated shoeAnim={shoeAnim} />
+            : <RunShoeAnimated shoeAnim={shoeAnim} />
+          }
+        </Animated.View>
+      </View>
+    </View>
   );
 };
 
