@@ -372,6 +372,67 @@ export default function SpinTab({
           <View style={{ width: wp(40), height: 1, backgroundColor: 'rgba(212,175,55,0.12)' }} />
         </View>
       </View>
+
+      <View style={{ paddingHorizontal: wp(16) }}>
+        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Acheter des Lix</Text>
+        {[{ n: 'Micro', p: '$0.99', l: 990, b: '', c: '#00D984' }, { n: 'Basic', p: '$4.99', l: 5240, b: '+5%', c: '#4DA6FF' }, { n: 'Standard', p: '$9.99', l: 10990, b: '+10%', c: '#9B6DFF', best: true }, { n: 'Mega', p: '$29.99', l: 35990, b: '+20%', c: '#D4AF37' }, { n: 'Ultra', p: '$99.99', l: 129990, b: '+30%', c: '#D4AF37', ultra: true }].map((pk, i) => (
+          <Pressable key={i} delayPressIn={120} onPress={() => showLixAlert('Achat ' + pk.n, pk.p + ' → ' + pk.l.toLocaleString('fr-FR') + ' Lix\n\nBientôt disponible.', [{ text: 'OK', style: 'cancel' }], '💎')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), backgroundColor: 'transparent', borderWidth: pk.ultra ? 2 : pk.best ? 1.5 : 1, borderColor: pk.ultra ? '#D4AF37' : pk.best ? pk.c + '50' : pk.c + '25', ...(pk.ultra ? { shadowColor: '#D4AF37', shadowOpacity: 0.3, shadowRadius: wp(8), elevation: 4 } : {}), transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: pk.c + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}><LixGem size={wp(22)} /></View>
+            <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), flexWrap: 'wrap' }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{pk.n}</Text>{pk.b ? <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37' }}>{pk.b}</Text></View> : null}</View><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{pk.l.toLocaleString('fr-FR')} Lix</Text>{pk.best ? <View style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(2), marginTop: wp(3), alignSelf: 'flex-start' }}><Text style={{ fontSize: fp(7), fontWeight: '800', color: '#00D984' }}>MEILLEUR RAPPORT</Text></View> : null}</View>
+            <View style={{ backgroundColor: pk.c + '20', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}><Text style={{ fontSize: fp(13), fontWeight: '700', color: pk.c }}>{pk.p}</Text></View>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={{ paddingHorizontal: wp(16), marginTop: wp(24) }}>
+        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Recharger énergie</Text>
+        {[{ n: 'Mini', e: 30, l: 300, d: 'Recharge légère', emoji: '⚡', c: '#FFB800' }, { n: 'Standard', e: 80, l: 700, d: 'Recharge quotidienne', emoji: '⚡', c: '#FF8C42', best: true }, { n: 'XL', e: 200, l: 1500, d: 'Recharge complète', emoji: '🔋', c: '#FF6B6B' }].map((pk, i) => (
+          <Pressable key={i} delayPressIn={120} onPress={() => {
+            if (lixBalance < pk.l) {
+              showLixAlert('Lix insuffisants', 'Il faut ' + pk.l + ' Lix pour cette recharge.\n\nTon solde : ' + lixBalance + ' Lix', [{ text: 'Fermer', style: 'cancel' }], '⚡');
+              return;
+            }
+            showLixAlert(
+              '⚡ Confirmer la recharge ?',
+              '+' + pk.e + ' énergie pour ' + pk.l + ' Lix\n\nTon solde après : ' + (lixBalance - pk.l).toLocaleString('fr-FR') + ' Lix',
+              [
+                {
+                  text: 'Confirmer',
+                  color: '#00D984',
+                  onPress: async () => {
+                    try {
+                      await fetch(SUPABASE_URL + '/rest/v1/rpc/recharge_energy_with_lix', {
+                        method: 'POST',
+                        headers: POST_HEADERS,
+                        body: JSON.stringify({ p_user_id: TEST_USER_ID, p_lix_cost: pk.l, p_energy_amount: pk.e }),
+                      });
+                    } catch (e) {
+                      fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, {
+                        method: 'PATCH',
+                        headers: POST_HEADERS,
+                        body: JSON.stringify({
+                          lix_balance: lixBalance - pk.l,
+                          energy: userEnergy + pk.e,
+                        }),
+                      }).catch(() => {});
+                    }
+                    showLixAlert('Rechargé', '+' + pk.e + ' énergie ajoutée !\n\nNouveau solde : ' + (lixBalance - pk.l).toLocaleString('fr-FR') + ' Lix', [{ text: 'Super', color: '#00D984' }], '⚡');
+                  },
+                },
+                { text: 'Annuler', style: 'cancel' },
+              ],
+              '⚡'
+            );
+          }} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(12), borderRadius: wp(12), marginBottom: wp(6), backgroundColor: pk.best ? 'rgba(255,140,66,0.06)' : 'transparent', borderWidth: pk.best ? 1.5 : 1, borderColor: pk.best ? (pk.c || '#00D984') + '40' : 'rgba(255,255,255,0.08)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <Text style={{ fontSize: fp(14), marginRight: wp(10) }}>{pk.emoji || '⚡'}</Text>
+            <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+  <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>+{pk.e} énergie</Text>
+  {pk.best && <View style={{ backgroundColor: 'rgba(255,140,66,0.15)', borderRadius: wp(4), paddingHorizontal: wp(5), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(7), fontWeight: '800', color: '#FF8C42' }}>POPULAIRE</Text></View>}
+</View><Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{pk.d}</Text></View>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: pk.c || '#00D984' }}>{pk.l} Lix</Text>
+          </Pressable>
+        ))}
+      </View>
     </ScrollView>
   );
 }
