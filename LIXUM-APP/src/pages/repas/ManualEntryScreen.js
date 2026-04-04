@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, ScrollView, Pressable,
   KeyboardAvoidingView, Platform,
@@ -41,7 +41,44 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved }) {
   const [manualTempQty, setManualTempQty] = useState('');
   const manualScrollRef = useRef(null);
 
-  // === FONCTIONS (phases suivantes) ===
+  // === FONCTIONS ===
+
+  const getAutoMealType = () => {
+    const hour = new Date().getHours();
+    if (hour < 10) return 'breakfast';
+    if (hour < 14) return 'lunch';
+    if (hour < 21) return 'dinner';
+    return 'snack';
+  };
+
+  // Initialisation quand visible passe à true
+  useEffect(() => {
+    if (visible) {
+      setManualTab('meals');
+      setManualMealType(getAutoMealType());
+      setManualPortionG(350);
+      setEditingPortion(false);
+      setTempPortion('350');
+      setMealSearchQuery('');
+      setMealSearchResults([]);
+      setSelectedMeal(null);
+      setMealComponents([]);
+      setManualIngredients([]);
+      setIngSearchQuery('');
+      setIngSearchResults([]);
+      setManualEditingQtyIndex(null);
+      setManualTempQty('');
+      setIsSavingManual(false);
+      setSaveManualSuccess(false);
+    }
+  }, [visible]);
+
+  const closeManualEntry = () => {
+    setSelectedMeal(null);
+    setMealComponents([]);
+    setManualIngredients([]);
+    onClose();
+  };
 
   // === JSX (phases suivantes) ===
 
