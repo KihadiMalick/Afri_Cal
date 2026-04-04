@@ -504,7 +504,400 @@ export default function ActivityPage({ onNavigate }) {
     ]);
   };
 
-  // === JSX (phases suivantes) ===
+  // === JSX ===
 
-  return null;
+  return (
+    <LinearGradient
+      colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']}
+      locations={[0, 0.25, 0.5, 0.75, 1]}
+      style={{ flex: 1 }}
+    >
+      <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 50 : 55 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: wp(120) }}>
+
+          {/* Header */}
+          <View style={{
+            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+            paddingHorizontal: wp(12), paddingBottom: wp(8),
+          }}>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(18), fontWeight: '800', letterSpacing: 1.5 }}>
+              {t.activity}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+              <View style={{
+                flexDirection: 'row', alignItems: 'center',
+                backgroundColor: 'rgba(0,217,132,0.08)',
+                paddingHorizontal: wp(8), paddingVertical: wp(4),
+                borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+              }}>
+                <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600' }}>{t.today}</Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(9), marginLeft: wp(4) }}>{todayDateStr}</Text>
+              </View>
+              <TouchableOpacity onPress={toggleDropdown} style={{
+                flexDirection: 'row', alignItems: 'center',
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                borderWidth: 1, borderColor: '#4A4F55',
+                borderRadius: wp(20), paddingHorizontal: wp(10), paddingVertical: wp(6),
+              }}>
+                <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24">
+                  <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
+                  <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
+                </Svg>
+                <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(12), marginLeft: wp(4) }}>{lixBalance}</Text>
+                <Text style={{ color: '#888', fontSize: fp(10), marginLeft: wp(4) }}>▾</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Dropdown */}
+          {dropdownOpen && (
+            <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}>
+              <Animated.View style={{
+                position: 'absolute', top: Platform.OS === 'android' ? 100 : 110, right: wp(16),
+                backgroundColor: 'rgba(26, 29, 34, 0.97)',
+                borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
+                borderRadius: wp(16), padding: wp(14), zIndex: 999,
+                opacity: dropdownAnim,
+                transform: [{ scale: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }],
+              }}>
+                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
+                  <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24">
+                    <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
+                  </Svg>
+                  <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(16), marginLeft: wp(10) }}>{lixBalance}</Text>
+                  <Text style={{ color: '#888', fontSize: fp(12), marginLeft: wp(4) }}>Lix</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
+                  <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24">
+                    <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
+                  </Svg>
+                  <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: fp(16), marginLeft: wp(10) }}>{userEnergy}</Text>
+                  <Text style={{ color: '#888', fontSize: fp(12), marginLeft: wp(4) }}>{t.energy}</Text>
+                </TouchableOpacity>
+                <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(74,79,85,0.4)', marginVertical: wp(4) }} />
+                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
+                  <Text style={{ fontSize: fp(14), marginRight: wp(10) }}>{activeChar?.slug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️' })[activeChar.slug] || '👤' : '👤'}</Text>
+                  <Text style={{ color: '#FFF', fontSize: fp(12), flex: 1 }}>{t.myProfile}</Text>
+                  <Text style={{ color: '#555E6C', fontSize: fp(12) }}>{String.fromCodePoint(0x2192)}</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            </TouchableOpacity>
+          )}
+
+          {/* Power banners */}
+          {pagePowers.length > 0 && activeChar && (
+            <View style={{ marginHorizontal: wp(16), marginBottom: wp(4), gap: wp(4) }}>
+              {pagePowers.map(power => {
+                if (power.action_type === 'redirect_with_boost') {
+                  const pct = Math.round((extractMultiplier(power) - 1) * 100);
+                  return (
+                    <View key={power.power_key} style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      backgroundColor: 'rgba(212,175,55,0.06)', borderRadius: wp(12),
+                      borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)', padding: wp(8),
+                    }}>
+                      <View style={{
+                        width: wp(32), height: wp(32), borderRadius: wp(16),
+                        backgroundColor: 'rgba(212,175,55,0.1)', justifyContent: 'center', alignItems: 'center',
+                        marginRight: wp(8), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+                      }}>
+                        <Text style={{ fontSize: fp(16) }}>{power.icon || '🐯'}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>{activeChar.name}</Text>
+                        <Text style={{ color: '#8892A0', fontSize: fp(8), marginTop: wp(1) }}>+{pct}% {t.perActivity}</Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ color: '#D4AF37', fontSize: fp(12), fontWeight: '800' }}>{activeChar.uses_remaining}/{activeChar.max_uses_per_cycle || 10}</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(7) }}>{t.uses}</Text>
+                      </View>
+                    </View>
+                  );
+                }
+                return null;
+              })}
+            </View>
+          )}
+
+          {/* Day summary */}
+          <View style={{
+            marginHorizontal: wp(16), marginTop: wp(8), marginBottom: wp(4),
+            borderRadius: wp(16), borderWidth: 1, borderColor: '#4A4F55',
+            backgroundColor: '#252A30', padding: wp(10),
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(8) }}>
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>{t.burned}</Text>
+                <Text style={{ fontSize: fp(22), fontWeight: '900', color: '#FF8C42' }}>{totalCalories}</Text>
+                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>kcal</Text>
+              </View>
+              <View style={{ width: 1, backgroundColor: 'rgba(74,79,85,0.4)', marginHorizontal: wp(4) }} />
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>{t.toBurn}</Text>
+                <Text style={{ fontSize: fp(22), fontWeight: '900', color: caloriesToBurn > 0 ? '#FF6B6B' : '#00D984' }}>{caloriesToBurn}</Text>
+                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>kcal</Text>
+              </View>
+            </View>
+            <View style={{ height: 1, backgroundColor: 'rgba(74,79,85,0.3)', marginBottom: wp(6) }} />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ marginLeft: wp(6) }}>
+                  <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{t.time}</Text>
+                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFFFFF' }}>{formatDuration(totalDuration)}</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ marginLeft: wp(6) }}>
+                  <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{t.waterLost}</Text>
+                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#4DA6FF' }}>{totalWater} ml</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* OMS weekly */}
+          <View style={{
+            marginHorizontal: wp(16), marginTop: wp(2), marginBottom: wp(4),
+            flexDirection: 'row', alignItems: 'center',
+            backgroundColor: '#252A30', borderRadius: wp(12),
+            borderWidth: 0.5, borderColor: 'rgba(74,79,85,0.4)', padding: wp(10),
+          }}>
+            <View style={{ width: wp(44), height: wp(44), marginRight: wp(10) }}>
+              <Svg width={wp(44)} height={wp(44)} viewBox="0 0 44 44">
+                <Circle cx="22" cy="22" r="18" stroke="rgba(74,79,85,0.3)" strokeWidth="4" fill="none" />
+                <Circle cx="22" cy="22" r="18"
+                  stroke={weeklyMinutes >= 150 ? '#00D984' : '#FF8C42'} strokeWidth="4" fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 18}`}
+                  strokeDashoffset={`${2 * Math.PI * 18 * (1 - Math.min(weeklyMinutes / 150, 1))}`}
+                  transform="rotate(-90 22 22)"
+                />
+              </Svg>
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: fp(10), fontWeight: '800', color: weeklyMinutes >= 150 ? '#00D984' : '#FFFFFF' }}>
+                  {Math.min(Math.round((weeklyMinutes / 150) * 100), 100)}%
+                </Text>
+              </View>
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                <Text style={{ fontSize: fp(16), fontWeight: '800', color: weeklyMinutes >= 150 ? '#00D984' : '#FFFFFF' }}>{weeklyMinutes}</Text>
+                <Text style={{ fontSize: fp(10), color: '#6B7280', marginLeft: wp(3) }}>/ 150 min</Text>
+              </View>
+              <Text style={{ fontSize: fp(8), color: '#6B7280', marginTop: wp(2) }}>{t.weeklyObj}</Text>
+            </View>
+            {weeklyMinutes >= 150 && <Text style={{ fontSize: fp(18) }}>🏅</Text>}
+          </View>
+
+          {/* TODO: Walk canvas SVG section — will be added in follow-up prompt */}
+          {/* TODO: Run canvas SVG section — will be added in follow-up prompt */}
+
+          {/* Other sports */}
+          <View style={{ marginTop: wp(12) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(16), marginBottom: wp(12) }}>
+              <View style={{ width: 3, height: 18, borderRadius: 1.5, backgroundColor: '#00D984', marginRight: 8 }} />
+              <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.otherActivities}</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: wp(14), gap: wp(8) }}>
+              {OTHER_SPORTS.map(function(key) {
+                return (
+                  <View key={key} style={{ width: wp(100) }}>
+                    <SportCard
+                      sportKey={key}
+                      onPress={function() { setModalSport(key); setModalVisible(true); }}
+                      lang={lang}
+                      userWeight={userWeight}
+                    />
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Today's history */}
+          <View style={{ marginTop: wp(12) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(16), marginBottom: wp(12) }}>
+              <View style={{ width: 3, height: 18, borderRadius: 1.5, backgroundColor: '#00D984', marginRight: 8 }} />
+              <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.todayHistory}</Text>
+            </View>
+          </View>
+
+          {todayActivities.length === 0 ? (
+            <MetalCard>
+              <View style={{ alignItems: 'center', paddingVertical: wp(10) }}>
+                <Text style={{ color: '#555E6C', fontSize: fp(11), fontWeight: '600', textAlign: 'center' }}>
+                  {t.noActivity}
+                </Text>
+              </View>
+            </MetalCard>
+          ) : (
+            todayActivities.map((act) => {
+              const sportData = ACTIVITY_DATA[act.type] || {};
+              const sportColor = sportData.color || '#00D984';
+              const createdTime = act.created_at
+                ? new Date(act.created_at).toLocaleTimeString(lang === 'fr' ? 'fr-FR' : 'en-US', { hour: '2-digit', minute: '2-digit' })
+                : '';
+              return (
+                <MetalCard key={act.id} style={{ borderLeftWidth: wp(3), borderLeftColor: '#00D984' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                      <View style={{ marginRight: wp(8) }}>
+                        <SportIcon type={act.type} size={wp(20)} color={sportColor} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{act.name}</Text>
+                        <View style={{ flexDirection: 'row', marginTop: wp(2), gap: wp(8) }}>
+                          <Text style={{ color: '#8892A0', fontSize: fp(9) }}>{formatDuration(act.duration_minutes)}</Text>
+                          <Text style={{ color: '#FF8C42', fontSize: fp(9), fontWeight: '700' }}>{act.calories_burned} kcal</Text>
+                          {act.water_lost_ml > 0 && (
+                            <Text style={{ color: '#4DA6FF', fontSize: fp(9) }}>{String.fromCodePoint(0x1F4A7)} {act.water_lost_ml} ml</Text>
+                          )}
+                          <Text style={{ color: '#555E6C', fontSize: fp(9) }}>{createdTime}</Text>
+                          {act.source === 'live_gps' && (
+                            <View style={{ backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(4), paddingHorizontal: wp(4), paddingVertical: wp(1) }}>
+                              <Text style={{ fontSize: fp(7), color: '#00D984', fontWeight: '700' }}>GPS</Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                    <Pressable onPress={() => handleDeleteActivity(act)} style={{
+                      width: wp(24), height: wp(24), borderRadius: wp(12),
+                      backgroundColor: 'rgba(255,107,107,0.1)', justifyContent: 'center', alignItems: 'center', marginLeft: wp(8),
+                    }}>
+                      <Ionicons name="close" size={wp(14)} color="#FF6B6B" />
+                    </Pressable>
+                  </View>
+                </MetalCard>
+              );
+            })
+          )}
+
+          {/* Recommendation */}
+          {recommendation && (
+            <View style={{ paddingHorizontal: wp(16), marginTop: wp(12) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                <View style={{ width: wp(3), height: wp(16), backgroundColor: recommendation.color, borderRadius: wp(2), marginRight: wp(8) }} />
+                <Text style={{ fontSize: fp(16), fontWeight: '900', color: '#FFFFFF', letterSpacing: 1 }}>{t.recommendation}</Text>
+              </View>
+              <View style={{
+                borderRadius: wp(14), borderWidth: 1,
+                borderColor: recommendation.type === 'maintain' ? 'rgba(0,217,132,0.2)' : 'rgba(255,140,66,0.2)',
+                backgroundColor: recommendation.type === 'maintain' ? 'rgba(0,217,132,0.06)' : 'rgba(255,140,66,0.06)',
+                padding: wp(14),
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+                  <View style={{ marginRight: wp(8) }}>
+                    <SportIcon type={recommendation.type === 'maintain' ? 'marche' : 'course'} size={wp(24)} color={recommendation.color} />
+                  </View>
+                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: recommendation.color, flex: 1 }}>{recommendation.title}</Text>
+                </View>
+                <Text style={{ fontSize: fp(11), color: '#D1D5DB', lineHeight: fp(16), marginBottom: wp(8) }}>
+                  {recommendation.subtitle}
+                </Text>
+                {recommendation.type === 'burn' && (
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#252A30', borderRadius: wp(10), padding: wp(10) }}>
+                    <View style={{ alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{t.activityLabel}</Text>
+                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFFFFF' }}>{recommendation.activity}</Text>
+                    </View>
+                    <View style={{ alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{t.durationSmall}</Text>
+                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FF8C42' }}>{recommendation.duration}</Text>
+                    </View>
+                    <View style={{ alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{t.distanceSmall}</Text>
+                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#4DA6FF' }}>{recommendation.distance}</Text>
+                    </View>
+                  </View>
+                )}
+                <TouchableOpacity
+                  onPress={function() {
+                    if (recommendation.activity === t.walk || recommendation.activity === t.walk + ' / ' + t.run) {
+                      var targetDist = parseFloat(recommendation.distance) * 1000;
+                      var targetOffset = (targetDist / WALK_MAX_DIST) * (WALK_SCENE_W - walkCanvasW);
+                      setWalkScrollOffset(Math.min(targetOffset, WALK_SCENE_W - walkCanvasW));
+                    }
+                  }}
+                  style={{ marginTop: wp(10), paddingVertical: wp(10), borderRadius: wp(10), backgroundColor: recommendation.color, alignItems: 'center' }}
+                >
+                  <Text style={{ color: '#000', fontSize: fp(11), fontWeight: '700' }}>{t.startNow}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Lix reward badge */}
+          {lixRewardedToday ? (
+            <View style={{
+              alignSelf: 'center', backgroundColor: 'rgba(0,217,132,0.08)',
+              borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)', borderRadius: wp(10),
+              paddingVertical: wp(8), paddingHorizontal: wp(16), marginVertical: wp(12),
+              flexDirection: 'row', alignItems: 'center', gap: wp(6),
+            }}>
+              <Text style={{ fontSize: fp(11), color: '#00D984', fontWeight: '600' }}>
+                {String.fromCodePoint(0x2705)} {t.bonusObtained}
+              </Text>
+            </View>
+          ) : (
+            <View style={{
+              alignSelf: 'center', backgroundColor: 'rgba(212,175,55,0.08)',
+              borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)', borderRadius: wp(10),
+              paddingVertical: wp(8), paddingHorizontal: wp(16), marginVertical: wp(12),
+              flexDirection: 'row', alignItems: 'center', gap: wp(6),
+            }}>
+              <Text style={{ fontSize: fp(14) }}>{String.fromCodePoint(0x1F3C6)}</Text>
+              <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#D4AF37' }}>{t.bonusFirst}</Text>
+            </View>
+          )}
+
+        </ScrollView>
+
+        {/* Sous-écrans montés conditionnellement */}
+        <LiveTrackingScreen
+          visible={showLive}
+          onClose={() => setShowLive(false)}
+          onActivitySaved={(summary) => {
+            setLastActivity(summary);
+            setShowPostReport(true);
+            loadTodayActivities();
+            fetchSmartData();
+            fetchWeeklyMinutes();
+            if (!lixRewardedToday) setLixRewardedToday(true);
+          }}
+          activeChar={activeChar}
+          userWeight={userWeight}
+          dailyTarget={dailyTarget}
+          totalEaten={totalEaten}
+          totalBurnedBefore={totalBurnedActivities}
+          userMood={userMood}
+        />
+
+        <PostReportModal
+          visible={showPostReport}
+          onClose={() => { setShowPostReport(false); setHookResults({}); }}
+          lastActivity={lastActivity}
+          hookResults={hookResults}
+          weeklyMinutes={weeklyMinutes}
+        />
+
+        <SportModal
+          visible={modalVisible}
+          sportKey={modalSport}
+          onClose={() => setModalVisible(false)}
+          onSave={handleSportSave}
+          lang={lang}
+          userWeight={userWeight}
+        />
+
+        {/* BottomTabs */}
+        <BottomTabs
+          activeTab={activeTab}
+          onTabPress={handleTabPress}
+          lang={lang}
+        />
+
+      </View>
+    </LinearGradient>
+  );
 }
