@@ -2199,7 +2199,323 @@ const XscanScreen = forwardRef(function XscanScreen({ visible, onClose, onMealSa
             </View>
           )}
 
-          {/* Phase 5C: Écran correction */}
+          {/* ═══ ÉCRAN CORRECTION ═══ */}
+          {correctionMode && (
+            <View style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              zIndex: 2500,
+              backgroundColor: '#0D1117',
+            }}>
+              <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={0}
+              >
+                {/* Header */}
+                <View style={{
+                  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                  paddingTop: Platform.OS === 'android' ? 50 : 60,
+                  paddingHorizontal: wp(16), paddingBottom: wp(10),
+                  borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.05)',
+                }}>
+                  <Pressable onPress={() => {
+                    setCorrectionMode(false);
+                    setEditedIngredients([]);
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setEditingQuantityIndex(null);
+                  }}>
+                    <Text style={{ color: '#8892A0', fontSize: fp(14) }}>✕ {lang === 'fr' ? 'Annuler' : 'Cancel'}</Text>
+                  </Pressable>
+                  <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800' }}>
+                    {lang === 'fr' ? 'Corriger' : 'Correct'}
+                  </Text>
+                  <Pressable onPress={applyCorrection}>
+                    <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '700' }}>
+                      ✓ {lang === 'fr' ? 'Valider' : 'Apply'}
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <ScrollView
+                  ref={correctionScrollRef}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  contentContainerStyle={{ paddingBottom: wp(250) }}
+                >
+                  {/* Totaux en temps réel */}
+                  <View style={{
+                    marginHorizontal: wp(16), marginTop: wp(12), marginBottom: wp(16),
+                    borderRadius: 16, padding: 1,
+                    backgroundColor: '#4A4F55',
+                  }}>
+                    <LinearGradient
+                      colors={['#3A3F46', '#252A30', '#1A1D22']}
+                      style={{ borderRadius: 15, padding: wp(14), alignItems: 'center' }}
+                    >
+                      <Text style={{ color: '#FF8C42', fontSize: fp(28), fontWeight: '900' }}>
+                        {getEditedTotals().calories} kcal
+                      </Text>
+                      <View style={{ flexDirection: 'row', marginTop: wp(8), gap: wp(16) }}>
+                        <View style={{ alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF6B6B', marginBottom: 2 }} />
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>
+                            {getEditedTotals().protein_g.toFixed(1)}g
+                          </Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(8) }}>{lang === 'fr' ? 'Protéines' : 'Protein'}</Text>
+                        </View>
+                        <View style={{ alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFD93D', marginBottom: 2 }} />
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>
+                            {getEditedTotals().carbs_g.toFixed(1)}g
+                          </Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(8) }}>{lang === 'fr' ? 'Glucides' : 'Carbs'}</Text>
+                        </View>
+                        <View style={{ alignItems: 'center' }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4DA6FF', marginBottom: 2 }} />
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>
+                            {getEditedTotals().fat_g.toFixed(1)}g
+                          </Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(8) }}>{lang === 'fr' ? 'Lipides' : 'Fat'}</Text>
+                        </View>
+                      </View>
+                    </LinearGradient>
+                  </View>
+
+                  {/* Liste des ingrédients éditables */}
+                  <View style={{ paddingHorizontal: wp(16) }}>
+                    <Text style={{
+                      color: '#8892A0', fontSize: fp(11), fontWeight: '700',
+                      letterSpacing: 1.5, marginBottom: wp(10),
+                    }}>
+                      {lang === 'fr' ? 'INGRÉDIENTS' : 'INGREDIENTS'} ({editedIngredients.length})
+                    </Text>
+
+                    {editedIngredients.map((ing, index) => (
+                      <View key={index} style={{
+                        flexDirection: 'row', alignItems: 'center',
+                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        borderRadius: 14, marginBottom: wp(8),
+                        padding: wp(12),
+                        borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                      }}>
+                        {/* Info ingrédient */}
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '600' }}>
+                            {ing.name}
+                            {ing.added_manually && (
+                              <Text style={{ color: '#00D984', fontSize: fp(9) }}> +ajouté</Text>
+                            )}
+                          </Text>
+
+                          {/* Quantité — tap pour éditer */}
+                          {editingQuantityIndex === index ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                              <TextInput
+                                value={tempQuantity}
+                                onChangeText={setTempQuantity}
+                                keyboardType="numeric"
+                                autoFocus={true}
+                                style={{
+                                  color: '#00D984', fontSize: fp(12), fontWeight: '700',
+                                  backgroundColor: 'rgba(0,217,132,0.08)',
+                                  borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
+                                  minWidth: 50, borderWidth: 1, borderColor: 'rgba(0,217,132,0.3)',
+                                }}
+                                onSubmitEditing={() => updateQuantity(index, tempQuantity)}
+                                onBlur={() => {
+                                  if (tempQuantity) updateQuantity(index, tempQuantity);
+                                  else { setEditingQuantityIndex(null); setTempQuantity(''); }
+                                }}
+                              />
+                              <Text style={{ color: '#5A6070', fontSize: fp(11), marginLeft: 4 }}>g</Text>
+                            </View>
+                          ) : (
+                            <Pressable onPress={() => {
+                              setEditingQuantityIndex(index);
+                              setTempQuantity(String(ing.quantity_g || 100));
+                            }}>
+                              <Text style={{ color: '#00D984', fontSize: fp(11), marginTop: 3, textDecorationLine: 'underline' }}>
+                                {ing.quantity_g || 100}g — {lang === 'fr' ? 'modifier' : 'edit'}
+                              </Text>
+                            </Pressable>
+                          )}
+                        </View>
+
+                        {/* Calories */}
+                        <Text style={{ color: '#FF8C42', fontSize: fp(13), fontWeight: '700', marginRight: wp(10) }}>
+                          {ing.calories} kcal
+                        </Text>
+
+                        {/* Bouton supprimer */}
+                        <Pressable
+                          onPress={() => removeIngredient(index)}
+                          style={({ pressed }) => ({
+                            width: 28, height: 28, borderRadius: 14,
+                            backgroundColor: pressed ? 'rgba(255,59,48,0.2)' : 'rgba(255,59,48,0.08)',
+                            justifyContent: 'center', alignItems: 'center',
+                            borderWidth: 1, borderColor: 'rgba(255,59,48,0.2)',
+                          })}
+                        >
+                          <Text style={{ color: '#FF3B30', fontSize: 14, fontWeight: '700' }}>×</Text>
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
+
+                  {/* Barre de recherche — Ajouter un ingrédient */}
+                  <View style={{ paddingHorizontal: wp(16), marginTop: wp(16) }}>
+                    <Text style={{
+                      color: '#8892A0', fontSize: fp(11), fontWeight: '700',
+                      letterSpacing: 1.5, marginBottom: wp(8),
+                    }}>
+                      {lang === 'fr' ? 'AJOUTER UN INGRÉDIENT' : 'ADD INGREDIENT'}
+                    </Text>
+
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      backgroundColor: 'rgba(255,255,255,0.03)',
+                      borderRadius: 14, paddingHorizontal: wp(12),
+                      borderWidth: 1, borderColor: searchQuery.length > 0 ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.05)',
+                    }}>
+                      <Text style={{ color: '#5A6070', fontSize: 16, marginRight: 8 }}>🔍</Text>
+                      <TextInput
+                        value={searchQuery}
+                        onChangeText={searchIngredients}
+                        placeholder={lang === 'fr' ? 'Tapez un ingrédient...' : 'Type an ingredient...'}
+                        placeholderTextColor="#5A6070"
+                        onFocus={() => {
+                          setTimeout(() => {
+                            if (correctionScrollRef.current) {
+                              correctionScrollRef.current.scrollToEnd({ animated: true });
+                            }
+                          }, 300);
+                        }}
+                        style={{
+                          flex: 1, color: '#EAEEF3', fontSize: fp(13),
+                          paddingVertical: wp(12),
+                        }}
+                      />
+                      {searchQuery.length > 0 && (
+                        <Pressable onPress={() => { setSearchQuery(''); setSearchResults([]); }}>
+                          <Text style={{ color: '#8892A0', fontSize: 16 }}>✕</Text>
+                        </Pressable>
+                      )}
+                    </View>
+
+                    {/* Indicateur de recherche */}
+                    {isSearching && (
+                      <Text style={{ color: '#00D984', fontSize: fp(10), marginTop: wp(6), fontStyle: 'italic' }}>
+                        {lang === 'fr' ? 'Recherche...' : 'Searching...'}
+                      </Text>
+                    )}
+
+                    {/* Résultats de recherche */}
+                    {searchResults.length > 0 && (
+                      <View style={{
+                        marginTop: wp(8),
+                        borderRadius: 14,
+                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                        overflow: 'hidden',
+                      }}>
+                        {searchResults.map((result, i) => (
+                          <Pressable
+                            key={i}
+                            onPress={() => addIngredientFromSearch(result)}
+                            style={({ pressed }) => ({
+                              flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                              paddingVertical: wp(10), paddingHorizontal: wp(12),
+                              backgroundColor: pressed ? 'rgba(0,217,132,0.08)' : 'transparent',
+                              borderBottomWidth: i < searchResults.length - 1 ? 0.5 : 0,
+                              borderBottomColor: 'rgba(255,255,255,0.05)',
+                            })}
+                          >
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>
+                                {result.name}
+                              </Text>
+                              <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>
+                                {result.category || ''} • {result.kcal_per_100g} kcal/100g
+                                {result.table === 'preparations_master' ? ' • cuit' : ''}
+                              </Text>
+                            </View>
+                            <View style={{
+                              backgroundColor: 'rgba(0,217,132,0.08)',
+                              paddingHorizontal: 10, paddingVertical: 4,
+                              borderRadius: 8, borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                            }}>
+                              <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>
+                                + {lang === 'fr' ? 'Ajouter' : 'Add'}
+                              </Text>
+                            </View>
+                          </Pressable>
+                        ))}
+                      </View>
+                    )}
+
+                    {/* Message si aucun résultat */}
+                    {searchQuery.length >= 2 && !isSearching && searchResults.length === 0 && (
+                      <View style={{
+                        marginTop: wp(8), padding: wp(12),
+                        borderRadius: 14, backgroundColor: 'rgba(255,140,66,0.06)',
+                        borderWidth: 0.5, borderColor: 'rgba(255,140,66,0.15)',
+                      }}>
+                        <Text style={{ color: '#FF8C42', fontSize: fp(11), textAlign: 'center' }}>
+                          {lang === 'fr'
+                            ? `"${searchQuery}" non trouvé dans notre base`
+                            : `"${searchQuery}" not found in our database`}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Info Lix */}
+                  <View style={{
+                    marginHorizontal: wp(16), marginTop: wp(24),
+                    alignItems: 'center',
+                  }}>
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      backgroundColor: 'rgba(212,175,55,0.06)',
+                      paddingHorizontal: 14, paddingVertical: 8,
+                      borderRadius: 10,
+                    }}>
+                      <Text style={{ fontSize: 14, marginRight: 6 }}>🏆</Text>
+                      <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '600' }}>
+                        +5 Lix • {lang === 'fr' ? 'Correction confirmée' : 'Correction confirmed'}
+                      </Text>
+                    </View>
+                  </View>
+
+                </ScrollView>
+
+                {/* Bouton Valider fixe en bas */}
+                <View style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                  paddingHorizontal: wp(16), paddingBottom: Platform.OS === 'android' ? 55 : 40,
+                  paddingTop: wp(10),
+                  backgroundColor: '#0D1117',
+                  borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.05)',
+                }}>
+                  <Pressable
+                    onPress={applyCorrection}
+                    style={({ pressed }) => ({
+                      paddingVertical: wp(14),
+                      borderRadius: 14,
+                      backgroundColor: pressed ? '#00B572' : '#00D984',
+                      alignItems: 'center',
+                    })}
+                  >
+                    <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
+                      ✓ {lang === 'fr' ? 'APPLIQUER LA CORRECTION' : 'APPLY CORRECTION'}
+                    </Text>
+                  </Pressable>
+                </View>
+              </KeyboardAvoidingView>
+            </View>
+          )}
 
         </View>
       )}
