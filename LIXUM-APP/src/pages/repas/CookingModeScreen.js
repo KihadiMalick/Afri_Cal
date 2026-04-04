@@ -133,7 +133,281 @@ export default function CookingModeScreen({ visible, onClose, recipe }) {
     }
   };
 
-  // === JSX (phases suivantes) ===
+  // === JSX ===
 
-  return null;
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      onRequestClose={handleClose}
+    >
+      <View style={{ flex: 1, backgroundColor: '#0D1117' }}>
+        <StatusBar barStyle="light-content" />
+
+        {/* ═══ HEADER ═══ */}
+        <View style={{
+          flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+          paddingHorizontal: wp(16), paddingTop: wp(50), paddingBottom: wp(12),
+          backgroundColor: '#151B23', borderBottomWidth: 1, borderBottomColor: '#2A303B',
+        }}>
+          <Pressable onPress={handleClose}>
+            <Text style={{ color: '#FF6B6B', fontSize: fp(13), fontWeight: '700' }}>✕ Fermer</Text>
+          </Pressable>
+
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: '#FF8C42', fontSize: fp(12), fontWeight: '800' }}>👨‍🍳 PRÉPARATION</Text>
+            <Text style={{ color: '#5A6070', fontSize: fp(9) }}>
+              Étape {cookingCurrentStep + 1}/{cookingSteps.length}
+            </Text>
+          </View>
+
+          <View style={{ width: wp(60) }} />
+        </View>
+
+        {/* ═══ BARRE MINUTEURS ACTIFS ═══ */}
+        {Object.keys(cookingTimers).length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ maxHeight: wp(50), backgroundColor: '#151B23', borderBottomWidth: 1, borderBottomColor: '#2A303B' }}
+            contentContainerStyle={{ paddingHorizontal: wp(12), paddingVertical: wp(8), gap: wp(8) }}
+          >
+            {Object.keys(cookingTimers).map(function(key) {
+              var timer = cookingTimers[key];
+              var isActive = timer.running && timer.remaining > 0;
+              var isDone = timer.finished;
+              var bgColor = isDone ? 'rgba(255,107,107,0.15)' : isActive ? 'rgba(0,217,132,0.1)' : 'rgba(255,255,255,0.03)';
+              var borderColor = isDone ? 'rgba(255,107,107,0.4)' : isActive ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.05)';
+              var textColor = isDone ? '#FF6B6B' : isActive ? '#00D984' : '#5A6070';
+
+              return (
+                <Pressable
+                  key={key}
+                  onPress={function() { setCookingCurrentStep(parseInt(key)); }}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: bgColor, borderRadius: wp(10),
+                    paddingHorizontal: wp(10), paddingVertical: wp(6),
+                    borderWidth: 1, borderColor: borderColor,
+                  }}
+                >
+                  <Text style={{ fontSize: fp(10), marginRight: wp(4) }}>
+                    {isDone ? '🔔' : isActive ? '🔥' : '⏸'}
+                  </Text>
+                  <Text style={{ color: textColor, fontSize: fp(10), fontWeight: '700', marginRight: wp(6) }}>
+                    {timer.label}
+                  </Text>
+                  <Text style={{ color: textColor, fontSize: fp(12), fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+                    {isDone ? 'PRÊT !' : formatTimer(timer.remaining)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
+
+        {/* ═══ CONTENU ÉTAPE ACTUELLE ═══ */}
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: wp(20), paddingBottom: wp(120) }}
+          showsVerticalScrollIndicator={false}
+        >
+          {cookingSteps.length > 0 && cookingSteps[cookingCurrentStep] && (
+            <View>
+              {/* Numéro d'étape */}
+              <View style={{
+                flexDirection: 'row', alignItems: 'center', marginBottom: wp(16),
+              }}>
+                <View style={{
+                  width: wp(40), height: wp(40), borderRadius: wp(20),
+                  backgroundColor: 'rgba(255,140,66,0.1)',
+                  justifyContent: 'center', alignItems: 'center',
+                  borderWidth: 2, borderColor: '#FF8C42',
+                  marginRight: wp(12),
+                }}>
+                  <Text style={{ color: '#FF8C42', fontSize: fp(16), fontWeight: '900' }}>
+                    {cookingCurrentStep + 1}
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#8892A0', fontSize: fp(10), fontWeight: '600', letterSpacing: 1 }}>
+                    ÉTAPE {cookingCurrentStep + 1} SUR {cookingSteps.length}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Texte de l'étape — gros et lisible */}
+              <Text style={{
+                color: '#EAEEF3', fontSize: fp(18), lineHeight: fp(28),
+                fontWeight: '500', marginBottom: wp(20),
+              }}>
+                {cookingSteps[cookingCurrentStep].text}
+              </Text>
+
+              {/* ═══ MINUTEUR (si l'étape en a un) ═══ */}
+              {cookingSteps[cookingCurrentStep].timer_seconds && (
+                <View style={{
+                  borderRadius: wp(16), padding: 1, backgroundColor: '#4A4F55',
+                  marginBottom: wp(16),
+                }}>
+                  <LinearGradient
+                    colors={['#3A3F46', '#252A30', '#1A1D22']}
+                    style={{ borderRadius: wp(15), padding: wp(20), alignItems: 'center' }}
+                  >
+                    {(function() {
+                      var timer = cookingTimers[cookingCurrentStep];
+                      var isRunning = timer && timer.running;
+                      var isFinished = timer && timer.finished;
+                      var remaining = timer ? timer.remaining : cookingSteps[cookingCurrentStep].timer_seconds;
+                      var total = cookingSteps[cookingCurrentStep].timer_seconds;
+                      var progress = remaining / total;
+
+                      return (
+                        <View style={{ alignItems: 'center' }}>
+                          {/* Label */}
+                          <Text style={{ color: '#FF8C42', fontSize: fp(12), fontWeight: '700', marginBottom: wp(8), letterSpacing: 1 }}>
+                            ⏱ {cookingSteps[cookingCurrentStep].timer_label || 'Minuteur'}
+                          </Text>
+
+                          {/* Gros timer */}
+                          <Text style={{
+                            color: isFinished ? '#FF6B6B' : isRunning ? '#00D984' : '#EAEEF3',
+                            fontSize: fp(42), fontWeight: '900',
+                            fontVariant: ['tabular-nums'],
+                            marginBottom: wp(6),
+                          }}>
+                            {isFinished ? 'TERMINÉ !' : formatTimer(remaining)}
+                          </Text>
+
+                          {/* Barre de progression */}
+                          <View style={{
+                            width: '100%', height: wp(6), borderRadius: wp(3),
+                            backgroundColor: 'rgba(255,255,255,0.05)',
+                            overflow: 'hidden', marginBottom: wp(14),
+                          }}>
+                            <View style={{
+                              height: '100%', borderRadius: wp(3),
+                              backgroundColor: isFinished ? '#FF6B6B' : '#00D984',
+                              width: (progress * 100) + '%',
+                            }} />
+                          </View>
+
+                          {/* Bouton démarrer / en cours / terminé */}
+                          {!isRunning && !isFinished && (
+                            <Pressable
+                              onPress={function() {
+                                startCookingTimer(
+                                  cookingCurrentStep,
+                                  cookingSteps[cookingCurrentStep].timer_seconds,
+                                  cookingSteps[cookingCurrentStep].timer_label || 'Minuteur'
+                                );
+                              }}
+                              style={function(state) {
+                                return {
+                                  paddingVertical: wp(14), paddingHorizontal: wp(40),
+                                  borderRadius: wp(14),
+                                  backgroundColor: state.pressed ? '#00B572' : '#00D984',
+                                };
+                              }}
+                            >
+                              <Text style={{ color: '#0D1117', fontSize: fp(16), fontWeight: '800' }}>
+                                ▶ Démarrer le minuteur
+                              </Text>
+                            </Pressable>
+                          )}
+                          {isRunning && (
+                            <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '600', fontStyle: 'italic' }}>
+                              En cours... tu peux passer à l'étape suivante
+                            </Text>
+                          )}
+                          {isFinished && (
+                            <Pressable
+                              onPress={function() { dismissAlarm(); }}
+                              style={{
+                                paddingVertical: wp(10), paddingHorizontal: wp(30),
+                                borderRadius: wp(10), backgroundColor: 'rgba(255,107,107,0.15)',
+                                borderWidth: 1, borderColor: 'rgba(255,107,107,0.3)',
+                              }}
+                            >
+                              <Text style={{ color: '#FF6B6B', fontSize: fp(12), fontWeight: '700' }}>
+                                ✓ C'est bon, j'ai vérifié
+                              </Text>
+                            </Pressable>
+                          )}
+                        </View>
+                      );
+                    })()}
+                  </LinearGradient>
+                </View>
+              )}
+
+              {/* ═══ TÂCHE PARALLÈLE (si disponible) ═══ */}
+              {cookingSteps[cookingCurrentStep].parallel && cookingSteps[cookingCurrentStep].timer_seconds && (
+                <View style={{
+                  borderRadius: wp(14), padding: wp(16),
+                  backgroundColor: 'rgba(0,217,132,0.04)',
+                  borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.15)',
+                  marginBottom: wp(16),
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
+                    <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>⚡</Text>
+                    <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '800' }}>
+                      PENDANT CE TEMPS
+                    </Text>
+                  </View>
+                  <Text style={{
+                    color: '#D1D5DB', fontSize: fp(15), lineHeight: fp(24),
+                    fontWeight: '400',
+                  }}>
+                    {cookingSteps[cookingCurrentStep].parallel}
+                  </Text>
+                </View>
+              )}
+
+              {/* ═══ ATTENTE PASSIVE (minuteur sans parallèle = four, repos) ═══ */}
+              {!cookingSteps[cookingCurrentStep].parallel && cookingSteps[cookingCurrentStep].timer_seconds && (
+                <View style={{
+                  borderRadius: wp(14), padding: wp(16),
+                  backgroundColor: 'rgba(77,166,255,0.04)',
+                  borderWidth: 1, borderColor: 'rgba(77,166,255,0.15)',
+                  marginBottom: wp(16),
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+                    <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>☕</Text>
+                    <Text style={{ color: '#4DA6FF', fontSize: fp(12), fontWeight: '700' }}>
+                      Temps d'attente
+                    </Text>
+                  </View>
+                  <Text style={{ color: '#8892A0', fontSize: fp(12), lineHeight: fp(18) }}>
+                    Rien à faire pour le moment ! Détends-toi, ALIXEN te préviendra quand ce sera prêt.
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* ═══ DERNIÈRE ÉTAPE : BOUTON TERMINER ═══ */}
+          {cookingCurrentStep === cookingSteps.length - 1 && (
+            <View style={{
+              borderRadius: wp(14), padding: wp(20),
+              backgroundColor: 'rgba(0,217,132,0.06)',
+              borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.2)',
+              alignItems: 'center', marginTop: wp(10),
+            }}>
+              <Text style={{ fontSize: fp(28), marginBottom: wp(8) }}>🎉</Text>
+              <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '800', marginBottom: wp(4) }}>
+                Dernière étape !
+              </Text>
+              <Text style={{ color: '#8892A0', fontSize: fp(10), textAlign: 'center' }}>
+                Ton plat est presque prêt. Bon appétit !
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* === PHASE 3 : Navigation bas + Overlay alarme === */}
+
+      </View>
+    </Modal>
+  );
 }
