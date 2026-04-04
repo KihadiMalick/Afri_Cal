@@ -800,6 +800,169 @@ export default function CharactersTab({
                         </View>
                       )}
 
+                      {inlinePowerModal === 'gipsy_mood_nutrition' && (
+                        <View style={{ backgroundColor: 'rgba(155,109,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(155,109,255,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🕸️ Humeur ↔ Nutrition</Text>
+                          {inlinePowerLoading ? (
+                            <ActivityIndicator color="#9B6DFF" style={{ marginVertical: wp(20) }} />
+                          ) : inlinePowerData && inlinePowerData.summaries && inlinePowerData.summaries.length > 0 ? (
+                            <View>
+                              <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: wp(80), marginBottom: wp(10) }}>
+                                {inlinePowerData.summaries.slice(-7).map((s, i) => {
+                                  const maxCal = Math.max(...inlinePowerData.summaries.map(x => x.total_calories || 0), 1);
+                                  const h = Math.max(wp(8), ((s.total_calories || 0) / maxCal) * wp(60));
+                                  const dayLabel = ['D','L','M','Me','J','V','S'][new Date(s.date).getDay()];
+                                  const inBalance = s.calorie_target > 0 && Math.abs(s.calorie_balance) <= s.calorie_target * 0.15;
+                                  const dayMood = (inlinePowerData.moods || []).find(m => m.created_at && m.created_at.slice(0, 10) === s.date);
+                                  const moodEmoji = dayMood ? ({'Rayonnant': '😄', 'Bien': '😊', 'Neutre': '😐', 'Bas': '😔', 'Stressé': '😰'}[dayMood.mood_level] || '🔵') : '—';
+                                  return (
+                                    <View key={i} style={{ alignItems: 'center' }}>
+                                      <Text style={{ fontSize: fp(10), marginBottom: wp(2) }}>{moodEmoji}</Text>
+                                      <View style={{ width: wp(20), height: h, borderRadius: wp(4), backgroundColor: inBalance ? 'rgba(0,217,132,0.5)' : 'rgba(155,109,255,0.4)' }} />
+                                      <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.3)', marginTop: wp(2) }}>{dayLabel}</Text>
+                                      <Text style={{ fontSize: fp(6), color: 'rgba(255,255,255,0.2)' }}>{s.total_calories || 0}</Text>
+                                    </View>
+                                  );
+                                })}
+                              </View>
+                              <View style={{ flexDirection: 'row', gap: wp(8), justifyContent: 'center' }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                                  <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: 'rgba(0,217,132,0.5)' }} />
+                                  <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.3)' }}>Équilibré</Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                                  <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: 'rgba(155,109,255,0.4)' }} />
+                                  <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.3)' }}>Hors cible</Text>
+                                </View>
+                              </View>
+                            </View>
+                          ) : (
+                            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Pas assez de données cette semaine. Continue à logger tes repas et ton humeur !</Text>
+                          )}
+                        </View>
+                      )}
+
+                      {inlinePowerModal === 'gipsy_hydra_energy' && (
+                        <View style={{ backgroundColor: 'rgba(155,109,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(155,109,255,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🕸️ Hydratation ↔ Activité</Text>
+                          {inlinePowerLoading ? (
+                            <ActivityIndicator color="#9B6DFF" style={{ marginVertical: wp(20) }} />
+                          ) : inlinePowerData && (inlinePowerData.hydration?.length > 0 || inlinePowerData.activities?.length > 0) ? (
+                            <View>
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(6) }}>
+                                <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)' }}>7 derniers jours</Text>
+                              </View>
+                              {['L','M','Me','J','V','S','D'].slice(0, Math.max(inlinePowerData.hydration?.length || 0, inlinePowerData.activities?.length || 0, 1)).map((d, i) => {
+                                const dayHyd = inlinePowerData.hydration?.[i];
+                                const dayAct = inlinePowerData.activities?.[i];
+                                return (
+                                  <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(4), gap: wp(6) }}>
+                                    <Text style={{ width: wp(20), fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>J{i + 1}</Text>
+                                    <Text style={{ fontSize: fp(9), color: '#4DA6FF', width: wp(55) }}>💧 {dayHyd ? dayHyd.effective_ml + 'ml' : '—'}</Text>
+                                    <Text style={{ fontSize: fp(9), color: '#FF8C42', flex: 1 }}>🔥 {dayAct ? dayAct.duration_minutes + 'min / ' + dayAct.calories_burned + 'kcal' : '—'}</Text>
+                                  </View>
+                                );
+                              })}
+                            </View>
+                          ) : (
+                            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Pas assez de données. Hydrate-toi et bouge cette semaine !</Text>
+                          )}
+                        </View>
+                      )}
+
+                      {(inlinePowerModal === 'phoenix_recovery_detect' || inlinePowerModal === 'phoenix_recovery_food') && (
+                        <View style={{ backgroundColor: 'rgba(46,213,115,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(46,213,115,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🔥 Bilan Récupération</Text>
+                          {inlinePowerLoading ? <ActivityIndicator color="#2ED573" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
+                            <View>
+                              {inlinePowerData.activities && inlinePowerData.activities.length > 0 ? (
+                                <View style={{ marginBottom: wp(10) }}>
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', marginBottom: wp(6) }}>Activités aujourd'hui</Text>
+                                  {inlinePowerData.activities.map((a, i) => (
+                                    <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
+                                      <Text style={{ fontSize: fp(11), color: '#FFF' }}>{a.name || a.type}</Text>
+                                      <Text style={{ fontSize: fp(11), color: '#FF8C42' }}>{a.duration_minutes}min · {a.calories_burned} kcal</Text>
+                                    </View>
+                                  ))}
+                                  <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginVertical: wp(8) }} />
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)' }}>Total brûlé : {inlinePowerData.activities.reduce((s, a) => s + (a.calories_burned || 0), 0)} kcal</Text>
+                                </View>
+                              ) : (
+                                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginBottom: wp(8) }}>Aucune activité aujourd'hui</Text>
+                              )}
+                              {inlinePowerData.summary && (
+                                <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(10), padding: wp(10) }}>
+                                  <Text style={{ fontSize: fp(10), color: '#2ED573', fontWeight: '700', marginBottom: wp(4) }}>Récupération recommandée</Text>
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>
+                                    Balance calorique : {inlinePowerData.summary.calorie_balance > 0 ? '+' : ''}{inlinePowerData.summary.calorie_balance || 0} kcal
+                                  </Text>
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)', marginTop: wp(2) }}>
+                                    {(inlinePowerData.summary.calorie_balance || 0) < -200
+                                      ? '⚠️ Déficit important — privilégie protéines + glucides lents'
+                                      : (inlinePowerData.summary.calorie_balance || 0) > 200
+                                        ? '💪 Surplus OK pour récupération musculaire'
+                                        : '✅ Balance équilibrée — bonne récupération'}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                          ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Aucune donnée disponible</Text>}
+                        </View>
+                      )}
+
+                      {inlinePowerModal === 'wolf_streak_tracker' && (
+                        <View style={{ backgroundColor: 'rgba(164,176,190,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(164,176,190,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🐺 Streaks — 30 derniers jours</Text>
+                          {inlinePowerLoading ? <ActivityIndicator color="#A4B0BE" style={{ marginVertical: wp(20) }} /> : inlinePowerData ? (
+                            <View>
+                              {[
+                                { label: '🍽️ Repas loggés', days: inlinePowerData.mealDays, color: '#00D984' },
+                                { label: '🏃 Activité', days: inlinePowerData.actDays, color: '#FF8C42' },
+                                { label: '😊 Humeur', days: inlinePowerData.moodDays, color: '#9B6DFF' },
+                                { label: '💧 Hydratation', days: inlinePowerData.hydDays, color: '#4DA6FF' },
+                              ].map((cat, i) => {
+                                const count = (cat.days || []).length;
+                                const pct = Math.min(100, Math.round((count / 30) * 100));
+                                return (
+                                  <View key={i} style={{ marginBottom: wp(10) }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(3) }}>
+                                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }}>{cat.label}</Text>
+                                      <Text style={{ fontSize: fp(11), fontWeight: '700', color: cat.color }}>{count}/30 jours</Text>
+                                    </View>
+                                    <View style={{ height: wp(5), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2.5), overflow: 'hidden' }}>
+                                      <View style={{ height: '100%', width: pct + '%', backgroundColor: cat.color, borderRadius: wp(2.5) }} />
+                                    </View>
+                                  </View>
+                                );
+                              })}
+                            </View>
+                          ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Aucune donnée</Text>}
+                        </View>
+                      )}
+
+                      {(inlinePowerModal === 'boukki_calorie_remain' || inlinePowerModal === 'boukki_complement') && (
+                        <View style={{ backgroundColor: 'rgba(205,127,50,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(205,127,50,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦴 Calories — 7 jours</Text>
+                          {inlinePowerLoading ? <ActivityIndicator color="#CD7F32" style={{ marginVertical: wp(20) }} /> : inlinePowerData && inlinePowerData.weekSummaries && inlinePowerData.weekSummaries.length > 0 ? (
+                            <View>
+                              {inlinePowerData.weekSummaries.map((s, i) => {
+                                const remain = (s.calorie_target || 0) - (s.total_calories || 0);
+                                const dayLabel = ['D','L','M','Me','J','V','S'][new Date(s.date).getDay()];
+                                return (
+                                  <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6), gap: wp(6) }}>
+                                    <Text style={{ width: wp(20), fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>{dayLabel}</Text>
+                                    <View style={{ flex: 1, height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
+                                      <View style={{ height: '100%', width: Math.min(100, Math.round(((s.total_calories || 0) / (s.calorie_target || 2000)) * 100)) + '%', backgroundColor: remain >= 0 ? '#00D984' : '#FF6B6B', borderRadius: wp(2) }} />
+                                    </View>
+                                    <Text style={{ fontSize: fp(9), color: remain >= 0 ? '#00D984' : '#FF6B6B', width: wp(50), textAlign: 'right' }}>{remain >= 0 ? '+' : ''}{remain} kcal</Text>
+                                  </View>
+                                );
+                              })}
+                            </View>
+                          ) : <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Aucune donnée calorie cette semaine</Text>}
+                        </View>
+                      )}
+
                       <Pressable onPress={onFlipCard} style={{ paddingVertical: wp(16), alignItems: 'center', marginTop: wp(8) }}>
                         <View style={{ paddingVertical: wp(10), paddingHorizontal: wp(30), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
                           <Text style={{ fontSize: fp(14), fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>↩ Retourner</Text>
