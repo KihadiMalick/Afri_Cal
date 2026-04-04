@@ -45,6 +45,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../config/supabase';
 import { wp, fp, SCREEN } from '../constants/layout';
 import { COLORS, GRADIENTS } from '../constants/colors';
+import { useLang } from '../config/LanguageContext';
 
 var CARD_W = SCREEN.width - 56;
 var CARD_H = SCREEN.height * 0.48;
@@ -661,22 +662,7 @@ function ShimmerButton(props) {
 // ============================================================
 
 export default function App() {
-  var _lang = useState('fr');
-  var lang = _lang[0]; var setLang = _lang[1];
-
-  // === PERSISTANCE LANGUE ===
-  // Charger la langue sauvegardée au démarrage
-  useEffect(function () {
-    AsyncStorage.getItem('lixum_lang').then(function (saved) {
-      if (saved === 'en' || saved === 'fr') setLang(saved);
-    }).catch(function () {});
-  }, []);
-
-  // Changer + sauvegarder la langue (utilisé par les boutons EN/FR)
-  var changeLang = function (newLang) {
-    setLang(newLang);
-    AsyncStorage.setItem('lixum_lang', newLang).catch(function () {});
-  };
+  var _langCtx = useLang(); var lang = _langCtx.lang; var changeLang = _langCtx.changeLang;
   var _currentIndex = useState(0);
   var currentIndex = _currentIndex[0]; var setCurrentIndex = _currentIndex[1];
   var t = texts[lang];
