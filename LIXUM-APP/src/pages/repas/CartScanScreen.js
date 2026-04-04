@@ -593,7 +593,271 @@ export default function CartScanScreen({ visible, onClose }) {
         </View>
       </Modal>
 
-      {/* === PHASE 6 : Modals détail produit + saisie magasin === */}
+      {/* ══════ MODAL DÉTAIL PRODUIT ══════ */}
+      <Modal
+        visible={selectedCartProduct !== null}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setSelectedCartProduct(null)}
+      >
+        <View style={{
+          flex: 1, backgroundColor: 'rgba(0,0,0,0.85)',
+          justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(16),
+        }}>
+          <View style={{
+            width: '100%', backgroundColor: '#1A1D22',
+            borderRadius: wp(18), borderWidth: 1, borderColor: '#4A4F55',
+            padding: wp(18), maxHeight: '80%',
+          }}>
+            {selectedCartProduct && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Image + Nom */}
+                <View style={{ flexDirection: 'row', marginBottom: wp(14) }}>
+                  <View style={{
+                    width: wp(65), height: wp(65), borderRadius: wp(10),
+                    backgroundColor: '#333A42', alignItems: 'center', justifyContent: 'center',
+                    marginRight: wp(12), overflow: 'hidden',
+                  }}>
+                    {selectedCartProduct.image_url ? (
+                      <Image source={{ uri: selectedCartProduct.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+                    ) : (
+                      <Text style={{ fontSize: fp(28) }}>📦</Text>
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFFFFF', marginBottom: wp(3) }}>
+                      {selectedCartProduct.product_name}
+                    </Text>
+                    {selectedCartProduct.brand && (
+                      <Text style={{ fontSize: fp(10), color: '#6B7280' }}>
+                        {selectedCartProduct.brand}{selectedCartProduct.quantity ? ` · ${selectedCartProduct.quantity}` : ''}
+                      </Text>
+                    )}
+                    {selectedCartProduct.nutriscore && (
+                      <View style={{
+                        alignSelf: 'flex-start', backgroundColor: getNutriColor(selectedCartProduct.nutriscore),
+                        borderRadius: wp(4), paddingHorizontal: wp(8), paddingVertical: wp(2), marginTop: wp(4),
+                      }}>
+                        <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#1A1D22' }}>
+                          Nutri-Score {selectedCartProduct.nutriscore.toUpperCase()}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {/* Macros */}
+                <View style={{
+                  flexDirection: 'row', justifyContent: 'space-around',
+                  backgroundColor: '#252A30', borderRadius: wp(10), padding: wp(12),
+                  marginBottom: wp(14), borderWidth: 1, borderColor: '#4A4F55',
+                }}>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FF8C42' }}>{Math.round(selectedCartProduct.kcal_per_100g || 0)}</Text>
+                    <Text style={{ fontSize: fp(8), color: '#6B7280' }}>kcal</Text>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FF6B6B' }}>{parseFloat(selectedCartProduct.protein_per_100g || 0).toFixed(1)}</Text>
+                    <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Prot</Text>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFD93D' }}>{parseFloat(selectedCartProduct.carbs_per_100g || 0).toFixed(1)}</Text>
+                    <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Gluc</Text>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#4DA6FF' }}>{parseFloat(selectedCartProduct.fat_per_100g || 0).toFixed(1)}</Text>
+                    <Text style={{ fontSize: fp(8), color: '#6B7280' }}>Lip</Text>
+                  </View>
+                </View>
+
+                {/* Alertes du produit */}
+                {selectedCartProduct.alerts && selectedCartProduct.alerts.length > 0 && (
+                  <View style={{ marginBottom: wp(14) }}>
+                    <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FF6B6B', marginBottom: wp(8) }}>
+                      Alertes ({selectedCartProduct.alerts.length})
+                    </Text>
+                    {selectedCartProduct.alerts.map((alert, idx) => (
+                      <View key={idx} style={{
+                        flexDirection: 'row',
+                        backgroundColor: alert.type === 'danger' ? 'rgba(255,107,107,0.1)' : alert.type === 'warning' ? 'rgba(255,140,66,0.1)' : 'rgba(77,166,255,0.06)',
+                        borderRadius: wp(8), padding: wp(10), marginBottom: wp(5),
+                        borderWidth: 1,
+                        borderColor: alert.type === 'danger' ? 'rgba(255,107,107,0.3)' : alert.type === 'warning' ? 'rgba(255,140,66,0.2)' : 'rgba(77,166,255,0.15)',
+                      }}>
+                        <Text style={{ fontSize: fp(14), marginRight: wp(8) }}>{alert.icon}</Text>
+                        <Text style={{ fontSize: fp(10), color: '#D1D5DB', flex: 1, lineHeight: fp(14) }}>
+                          {alert.message_fr}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {selectedCartProduct.alerts && selectedCartProduct.alerts.length === 0 && (
+                  <View style={{
+                    backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(10),
+                    padding: wp(12), marginBottom: wp(14), alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(11), color: '#00D984', fontWeight: '600' }}>
+                      ✅ Aucune alerte pour ce produit
+                    </Text>
+                  </View>
+                )}
+
+                {/* Boutons */}
+                <View style={{ flexDirection: 'row', gap: wp(10) }}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      removeFromCart(selectedCartProduct.barcode);
+                      setSelectedCartProduct(null);
+                    }}
+                    style={{
+                      flex: 1, paddingVertical: wp(12), borderRadius: wp(10),
+                      borderWidth: 1, borderColor: 'rgba(255,107,107,0.3)',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ fontSize: fp(11), color: '#FF6B6B', fontWeight: '600' }}>Retirer 🗑</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setSelectedCartProduct(null)}
+                    style={{
+                      flex: 1.5, paddingVertical: wp(12), borderRadius: wp(10),
+                      backgroundColor: '#4DA6FF', alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ fontSize: fp(11), color: '#1A1D22', fontWeight: '700' }}>OK ✓</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ══════ MODAL SAISIE MAGASIN ══════ */}
+      <Modal
+        visible={showStoreInput}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowStoreInput(false)}
+      >
+        <View style={{
+          flex: 1, backgroundColor: 'rgba(0,0,0,0.85)',
+          justifyContent: 'flex-end',
+        }}>
+          <View style={{
+            backgroundColor: '#1A1D22',
+            borderTopLeftRadius: wp(20), borderTopRightRadius: wp(20),
+            borderWidth: 1, borderColor: '#4A4F55',
+            padding: wp(20), paddingBottom: wp(35),
+          }}>
+            <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFFFFF', textAlign: 'center', marginBottom: wp(4) }}>
+              📍 Dans quel magasin ?
+            </Text>
+            <Text style={{ fontSize: fp(10), color: '#9CA3AF', textAlign: 'center', marginBottom: wp(16) }}>
+              Le rapport sera associé à ce magasin
+            </Text>
+
+            {/* Champ de saisie */}
+            <TextInput
+              value={storeName}
+              onChangeText={(text) => {
+                setStoreName(text);
+                searchStoresApi(text);
+              }}
+              placeholder="Ex: Carrefour Market, Auchan..."
+              placeholderTextColor="#6B7280"
+              style={{
+                backgroundColor: '#252A30',
+                borderRadius: wp(12), borderWidth: 1, borderColor: '#4A4F55',
+                paddingHorizontal: wp(14), paddingVertical: wp(12),
+                fontSize: fp(13), color: '#FFFFFF',
+                marginBottom: wp(10),
+              }}
+            />
+
+            {/* Suggestions de magasins récents */}
+            {storeName.length === 0 && recentStores.length > 0 && (
+              <View style={{ marginBottom: wp(10) }}>
+                <Text style={{ fontSize: fp(9), color: '#6B7280', marginBottom: wp(6) }}>Récents</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(6) }}>
+                  {recentStores.slice(0, 5).map((store, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      onPress={() => setStoreName(store)}
+                      style={{
+                        backgroundColor: 'rgba(77,166,255,0.08)',
+                        borderRadius: wp(8), borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)',
+                        paddingHorizontal: wp(10), paddingVertical: wp(6),
+                      }}
+                    >
+                      <Text style={{ fontSize: fp(10), color: '#4DA6FF' }}>{store}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Résultats de recherche */}
+            {storeResults.length > 0 && (
+              <View style={{ marginBottom: wp(10), maxHeight: wp(100) }}>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  {storeResults.map((store, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      onPress={() => {
+                        setStoreName(store.name || store);
+                        setStoreResults([]);
+                      }}
+                      style={{
+                        paddingVertical: wp(8), paddingHorizontal: wp(12),
+                        borderBottomWidth: 1, borderBottomColor: '#333A42',
+                      }}
+                    >
+                      <Text style={{ fontSize: fp(11), color: '#FFFFFF' }}>{store.name || store}</Text>
+                      {store.address && (
+                        <Text style={{ fontSize: fp(9), color: '#6B7280' }}>{store.address}</Text>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Boutons */}
+            <View style={{ flexDirection: 'row', gap: wp(10), marginTop: wp(6) }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowStoreInput(false);
+                  setStoreName('');
+                  setStoreResults([]);
+                }}
+                style={{
+                  flex: 1, paddingVertical: wp(13), borderRadius: wp(12),
+                  borderWidth: 1, borderColor: '#4A4F55', alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontSize: fp(12), color: '#9CA3AF', fontWeight: '600' }}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={generateCartReport}
+                disabled={generatingReport}
+                style={{
+                  flex: 2, paddingVertical: wp(13), borderRadius: wp(12),
+                  backgroundColor: generatingReport ? '#333A42' : '#4DA6FF',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#1A1D22' }}>
+                  {generatingReport ? 'Analyse en cours...' : 'Générer 📋'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* === PHASE 7 : Modal rapport === */}
     </>
   );
