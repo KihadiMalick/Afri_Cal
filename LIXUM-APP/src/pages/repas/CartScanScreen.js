@@ -246,6 +246,73 @@ export default function CartScanScreen({ visible, onClose }) {
     setGeneratingReport(false);
   };
 
+  const removeFromCart = (barcode) => {
+    setCartProducts(prev => prev.filter(p => p.barcode !== barcode));
+  };
+
+  const clearCart = () => {
+    setCartProducts([]);
+    setCartPhotoMode(false);
+    setPhotoPromptVisible(false);
+    setFailedBarcode(null);
+    setCartReport(null);
+    setShowCartReport(false);
+    setShowStoreInput(false);
+    setStoreName('');
+    setStoreResults([]);
+    setScanError(null);
+    setLastScannedCode(null);
+    setScanningActive(true);
+    setSelectedCartProduct(null);
+  };
+
+  const closeCartScan = () => {
+    setCartPhotoMode(false);
+    setPhotoPromptVisible(false);
+    setFailedBarcode(null);
+    setCartProducts([]);
+    setSelectedCartProduct(null);
+    setShowStoreInput(false);
+    setStoreName('');
+    setStoreResults([]);
+    setGeneratingReport(false);
+    setCartReport(null);
+    setShowCartReport(false);
+    setScanError(null);
+    setLastScannedCode(null);
+    setScanningActive(true);
+    onClose();
+  };
+
+  const getCartTotals = () => {
+    const totals = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+    cartProducts.forEach(p => {
+      totals.kcal += Math.round(p.kcal_per_100g || 0);
+      totals.protein += parseFloat(p.protein_per_100g || 0);
+      totals.carbs += parseFloat(p.carbs_per_100g || 0);
+      totals.fat += parseFloat(p.fat_per_100g || 0);
+    });
+    return {
+      kcal: Math.round(totals.kcal),
+      protein: totals.protein.toFixed(1),
+      carbs: totals.carbs.toFixed(1),
+      fat: totals.fat.toFixed(1),
+    };
+  };
+
+  const getNutriColor = (score) => {
+    if (!score) return '#6B7280';
+    const colors = { a: '#00D984', b: '#A8E06C', c: '#FFD93D', d: '#FF8C42', e: '#FF6B6B' };
+    return colors[score.toLowerCase()] || '#6B7280';
+  };
+
+  const getAlertBadgeColor = (alerts) => {
+    if (!alerts || alerts.length === 0) return null;
+    if (alerts.some(a => a.type === 'danger')) return '#FF6B6B';
+    if (alerts.some(a => a.type === 'warning')) return '#FF8C42';
+    return '#FFD93D';
+  };
+
   // === JSX (phases suivantes) ===
 
   if (!visible) return null;
