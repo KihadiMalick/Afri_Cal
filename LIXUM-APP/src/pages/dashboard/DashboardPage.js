@@ -279,7 +279,213 @@ export default function DashboardPage({ navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#1E2530' }}>
-      <Text style={{ color: '#FFF', padding: 20 }}>DashboardPage loading...</Text>
+      <StatusBar barStyle="light-content" backgroundColor="#1E2530" />
+      <MetallicBackground />
+
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <DashboardHeader
+          moodFilled={moodFilled} currentMood={currentMood}
+          lixCount={realLixBalance} userEnergy={userEnergy}
+          onMoodPress={function() { setShowMoodModal(true); }}
+          onLixPress={function() { if (navigation) navigation.navigate('LixVerse'); }}
+          highlightMood={tooltipStep === 1}
+        />
+
+        <DashboardContent
+          onHydrationPress={function() { setHydroModalVisible(true); }}
+          hydrationMl={hydrationMl} hydrationGoal={hydrationGoalValue} gender={gender}
+          burnedExtra={burnedExtra} sportAlert={sportAlert}
+          consumedTotal={consumedTotal} burnedTotal={burnedTotal}
+          scrollRef={scrollRef} dailyTarget={realDailyTarget} lastMeal={lastMeal}
+          tooltipStep={tooltipStep} vitalityScore={vitalityScore}
+          activeChar={activeChar} pagePowers={pagePowers}
+          toggleStates={toggleStates} setToggleStates={setToggleStates}
+          consumePower={consumePower} userName={userName}
+          onAvatarPress={function() {}}
+          onNavigate={function(tab) {
+            var routes = { meals: 'Repas', activity: 'Activite', medicai: 'MedicAi', lixverse: 'LixVerse' };
+            if (routes[tab] && navigation) navigation.navigate(routes[tab]);
+          }}
+          showToast={showToast}
+          onOpenStats={function() { setShowStatsModal(true); if (isStatsUnlocked()) fetchWeeklyStats(); }}
+        />
+      </SafeAreaView>
+
+      <HydrationModal
+        visible={hydroModalVisible} onClose={function() { setHydroModalVisible(false); }}
+        currentMl={hydrationMl} setCurrentMl={setHydrationMl}
+        goalMl={hydrationGoalValue} gender={gender}
+        hydroLogs={hydroLogs} setHydroLogs={setHydroLogs}
+        onAddBeverage={function() { setShowBeverageModal(true); }}
+        showResetConfirm={showResetConfirm} setShowResetConfirm={setShowResetConfirm}
+        showHistoryLock={showHistoryLock} setShowHistoryLock={setShowHistoryLock}
+        historyUnlocked={isHydrationHistoryUnlocked()}
+        historyUnlockedUntil={historyUnlockedUntil} isUnlockedByLix={isUnlockedByLix}
+        hasActivePower={hasActivePower} selectedDayLogs={selectedDayLogs}
+        fetchDayHydrationLogs={fetchDayHydrationLogs}
+        historyData={historyData} historyLoading={historyLoading}
+        selectedHistoryDay={selectedHistoryDay} setSelectedHistoryDay={setSelectedHistoryDay}
+        unlockHistoryWithLix={unlockHistoryWithLix} unlockHistoryWithPower={unlockHistoryWithPower}
+        fetchWeeklyHydration={fetchWeeklyHydration} pagePowers={pagePowers} activeChar={activeChar}
+      />
+
+      <BeverageModal
+        visible={showBeverageModal} onClose={function() { setShowBeverageModal(false); }}
+        onBeverageAdded={function(effectiveMl, bevName, bevIcon, kcal) {
+          setHydrationMl(function(prev) { return prev + effectiveMl; });
+          var now = new Date();
+          setHydroLogs(function(prev) { return prev.concat([{ time: pad2(now.getHours()) + ':' + pad2(now.getMinutes()), amount: effectiveMl, type: bevName, icon: bevIcon }]); });
+          setBeverageToast({ name: bevName, icon: bevIcon, effectiveMl: effectiveMl, kcal: kcal });
+          setTimeout(function() { setBeverageToast(null); }, 2500);
+          fetchDailyHydration().then(setHydrationData);
+        }}
+      />
+
+      <SurplusAlertModal
+        visible={surplusAlertVisible} onClose={function() { setSurplusAlertVisible(false); }}
+        surplus={surplus} onAddActivity={function() { if (navigation) navigation.navigate('Activite'); }}
+      />
+
+      <MoodModal
+        visible={showMoodModal} onClose={function() { setShowMoodModal(false); }}
+        onMoodSaved={function(moodResult, selectedWeather) { setCurrentMood(moodResult); setMoodFilled(true); }}
+      />
+
+      {beverageToast && (
+        <View style={{ position: 'absolute', top: Platform.OS === 'android' ? 40 : 55, left: wp(16), right: wp(16), zIndex: 99999 }}>
+          <View style={{ backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(14), padding: wp(12), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, marginRight: wp(8) }}>{beverageToast.icon}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '700' }}>{beverageToast.name} ajouté</Text>
+              <Text style={{ color: '#8892A0', fontSize: fp(10) }}>+{beverageToast.effectiveMl}ml effectifs · {beverageToast.kcal} kcal</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {toastMsg && (
+        <View style={{ position: 'absolute', top: Platform.OS === 'android' ? 40 : 55, left: wp(16), right: wp(16), zIndex: 99998 }}>
+          <View style={{ backgroundColor: (toastMsg.color || '#00D984') + '20', borderRadius: wp(12), padding: wp(10), borderWidth: 1, borderColor: (toastMsg.color || '#00D984') + '40', alignItems: 'center' }}>
+            <Text style={{ color: toastMsg.color || '#00D984', fontSize: fp(12), fontWeight: '600' }}>{toastMsg.message}</Text>
+          </View>
+        </View>
+      )}
+
+      <TooltipOverlay tooltipStep={tooltipStep} setTooltipStep={setTooltipStep} scrollRef={scrollRef} />
+
+      <BottomTabs activeTab="home" onTabPress={function(key) {
+        if (key === 'home') return;
+        var routes = { meals: 'Repas', medicai: 'MedicAi', activity: 'Activite', lixverse: 'LixVerse' };
+        if (routes[key] && navigation) navigation.navigate(routes[key]);
+      }} />
+    </View>
+  );
+}
+
+function DashboardHeader({ moodFilled, currentMood, lixCount, onMoodPress, onLixPress, highlightMood, userEnergy }) {
+  var _dropdown = useState(false);
+  var dropdownOpen = _dropdown[0]; var setDropdownOpen = _dropdown[1];
+  var dropdownAnim = useRef(new RNAnimated.Value(0)).current;
+  var toggleDropdown = function() {
+    var toValue = dropdownOpen ? 0 : 1;
+    RNAnimated.timing(dropdownAnim, { toValue: toValue, duration: 200, useNativeDriver: false }).start();
+    setDropdownOpen(!dropdownOpen);
+  };
+
+  var shakeAnim = useRef(new RNAnimated.Value(0)).current;
+  useEffect(function() {
+    if (moodFilled) return;
+    var shake = function() {
+      RNAnimated.sequence([
+        RNAnimated.timing(shakeAnim, { toValue: 1, duration: 60, useNativeDriver: true }),
+        RNAnimated.timing(shakeAnim, { toValue: -1, duration: 60, useNativeDriver: true }),
+        RNAnimated.timing(shakeAnim, { toValue: 1, duration: 60, useNativeDriver: true }),
+        RNAnimated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+      ]).start();
+    };
+    shake();
+    var interval = setInterval(shake, 3000);
+    return function() { clearInterval(interval); };
+  }, [moodFilled]);
+
+  var rotate = shakeAnim.interpolate({ inputRange: [-1, 0, 1], outputRange: ['-6deg', '0deg', '6deg'] });
+  var moodPulse = useRef(new RNAnimated.Value(0)).current;
+  useEffect(function() {
+    if (highlightMood) {
+      var pulse = RNAnimated.loop(RNAnimated.sequence([
+        RNAnimated.timing(moodPulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        RNAnimated.timing(moodPulse, { toValue: 0, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]));
+      pulse.start();
+      return function() { pulse.stop(); };
+    }
+  }, [highlightMood]);
+
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10, overflow: 'visible' }}>
+      <View style={{ flex: 0 }}>
+        <Text style={{ fontSize: fp(20), fontWeight: '900', color: '#EAEEF3', letterSpacing: 1 }}>LIXUM</Text>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 0, flexShrink: 0 }}>
+        <TouchableOpacity onPress={onMoodPress} activeOpacity={0.7} style={{ position: 'relative', marginRight: 8 }}>
+          <RNAnimated.View style={{
+            transform: [
+              { rotate: highlightMood ? '0deg' : rotate },
+              { scale: highlightMood ? moodPulse.interpolate({ inputRange: [0, 1], outputRange: [1.3, 1.5] }) : 1 },
+            ],
+            opacity: highlightMood ? moodPulse.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }) : 1,
+          }}>
+            <View style={{
+              width: 38, height: 38, borderRadius: 19,
+              borderWidth: highlightMood ? 3 : 2,
+              borderColor: highlightMood ? '#FF8C42' : moodFilled ? '#00D984' : '#FF8C42',
+              backgroundColor: highlightMood ? 'rgba(255,140,66,0.25)' : 'rgba(21,27,35,0.7)',
+              justifyContent: 'center', alignItems: 'center',
+              shadowColor: highlightMood ? '#FF8C42' : moodFilled ? '#00D984' : '#FF8C42',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: highlightMood ? 1 : 0.3,
+              shadowRadius: highlightMood ? 20 : 6,
+              elevation: highlightMood ? 15 : 4,
+            }}>
+              <MoodIcon tier={currentMood === 'excited' ? 3 : currentMood === 'happy' ? 2 : currentMood === 'chill' ? 1 : 0} size={24} active={true} />
+            </View>
+          </RNAnimated.View>
+          {!moodFilled && (
+            <View style={{ position: 'absolute', top: -3, right: -3, width: 14, height: 14, borderRadius: 7, backgroundColor: '#FF8C42', justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: '#1E2530' }}>
+              <Text style={{ color: 'white', fontSize: 8, fontWeight: '800' }}>!</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity onPress={toggleDropdown} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: '#4A4F55', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 }}>
+          <LixGem size={14} />
+          <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(14), marginLeft: 4 }}>{lixCount}</Text>
+          <Text style={{ color: '#888', fontSize: fp(10), marginLeft: 4 }}>▾</Text>
+        </TouchableOpacity>
+      </View>
+      {dropdownOpen && (
+        <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: -500, zIndex: 998 }}>
+          <RNAnimated.View style={{ position: 'absolute', top: 60, right: 14, backgroundColor: 'rgba(16, 20, 28, 0.97)', borderWidth: 1, borderColor: '#4A4F55', borderRadius: 16, paddingHorizontal: 18, paddingVertical: 14, zIndex: 999, minWidth: 180, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 10, opacity: dropdownAnim, transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }] }}>
+            <TouchableOpacity onPress={function() { toggleDropdown(); if (onLixPress) onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+              <LixGem size={14} />
+              <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixCount}</Text>
+              <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={function() { toggleDropdown(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+              <Svg width={14} height={14} viewBox="0 0 24 24">
+                <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
+              </Svg>
+              <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{userEnergy}</Text>
+              <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>énergie</Text>
+            </TouchableOpacity>
+            <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
+            <TouchableOpacity onPress={function() { toggleDropdown(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+              <Text style={{ fontSize: 18 }}>👤</Text>
+              <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>Mon Profil</Text>
+              <Text style={{ color: '#888', fontSize: 14 }}>→</Text>
+            </TouchableOpacity>
+          </RNAnimated.View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
