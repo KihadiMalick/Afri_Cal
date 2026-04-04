@@ -104,7 +104,39 @@ export default function RepasPage({ onNavigate }) {
   const [userMood, setUserMood] = useState(null);
   const [userWeather, setUserWeather] = useState(null);
 
-  // === ÉTATS UI (phases suivantes) ===
+  // === ÉTATS UI ===
+  const [activeTab, setActiveTab] = useState('meals');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownAnim = useRef(new Animated.Value(0)).current;
+
+  // Sous-écrans
+  const [showXscan, setShowXscan] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [showCartScan, setShowCartScan] = useState(false);
+  const [showRecettes, setShowRecettes] = useState(false);
+  const [showCookingMode, setShowCookingMode] = useState(false);
+  const [cookingRecipe, setCookingRecipe] = useState(null);
+
+  // AddMealModal
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addModalSlot, setAddModalSlot] = useState(null);
+  const [selectedMealType, setSelectedMealType] = useState(null);
+
+  // Tooltip Xscan
+  const [showScanTooltip, setShowScanTooltip] = useState(true);
+  const [xButtonY, setXButtonY] = useState(0);
+
+  // Bouton X animations
+  const [isXPressed, setIsXPressed] = useState(false);
+  const glowIntensity = useRef(new Animated.Value(0)).current;
+  const ring1Anim = useRef(new Animated.Value(0)).current;
+  const ring2Anim = useRef(new Animated.Value(0)).current;
+  const ring3Anim = useRef(new Animated.Value(0)).current;
+  const [showRings, setShowRings] = useState(false);
+  const glowAnim = useRef(new Animated.Value(0)).current;
+
+  // Ref XscanScreen
+  const xscanRef = useRef(null);
 
   // === FONCTIONS (phases suivantes) ===
 
