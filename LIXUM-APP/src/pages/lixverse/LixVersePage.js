@@ -14,7 +14,9 @@ import {
   SUPABASE_URL, SUPABASE_ANON_KEY, TEST_USER_ID,
   HEADERS, POST_HEADERS, ALL_CHARACTERS, CHAR_NAMES,
   CHAR_EMOJIS, FRAGS_NIV1, TIER_CONFIG, SLUGS_BY_TIER,
-  randomSlugFromTier, NAV_TABS
+  randomSlugFromTier, NAV_TABS,
+  NORMAL_SEGMENTS, SUPER_SEGMENTS, MEGA_SEGMENTS,
+  getSegmentAngles
 } from './lixverseConstants';
 import { LixGem } from './lixverseComponents';
 import SpinTab from './SpinTab';
@@ -311,6 +313,208 @@ export default function LixVersePage({ navigation }) {
       }
     } catch (e) {
       console.error('Recharge error:', e);
+    }
+  }
+
+  const getSegments = () => {
+    if (spinTier === 'super') return SUPER_SEGMENTS;
+    if (spinTier === 'mega') return MEGA_SEGMENTS;
+    return NORMAL_SEGMENTS;
+  };
+
+  async function checkFreeSpin() {
+    try {
+      const data = await supaRpc('check_free_spin_available', { p_user_id: TEST_USER_ID });
+      if (data && typeof data === 'object') {
+        const available = data.free_available !== false;
+        setFreeSpinAvailable(available);
+        setFreeSpinUsed(!available);
+        if (data.next_free_at) {
+          setNextFreeAt(new Date(data.next_free_at).getTime());
+        } else {
+          setNextFreeAt(null);
+        }
+      }
+    } catch (e) {
+      try {
+        const res = await fetch(SUPABASE_URL + '/rest/v1/spin_history?user_id=eq.' + TEST_USER_ID + '&spin_tier=eq.normal&lix_cost=eq.0&order=created_at.desc&limit=1', { headers: HEADERS });
+        const d = await res.json();
+        if (Array.isArray(d) && d.length > 0) {
+          const lastFree = new Date(d[0].created_at).getTime();
+          const sixHoursMs = 6 * 60 * 60 * 1000;
+          const nextAt = lastFree + sixHoursMs;
+          if (Date.now() >= nextAt) {
+            setFreeSpinAvailable(true); setFreeSpinUsed(false); setNextFreeAt(null);
+          } else {
+            setFreeSpinAvailable(false); setFreeSpinUsed(true); setNextFreeAt(nextAt);
+          }
+        } else {
+          setFreeSpinAvailable(true); setFreeSpinUsed(false); setNextFreeAt(null);
+        }
+      } catch (e2) {
+        setFreeSpinAvailable(true); setFreeSpinUsed(false);
+      }
+    }
+  }
+
+  const triggerArrowBounce = (strong) => {
+    arrowBounce.setValue(strong ? 1.6 : 1);
+    Animated.spring(arrowBounce, { toValue: 0, friction: 6, tension: 300, useNativeDriver: true }).start();
+  };
+
+  const onSpinComplete = (spinData) => {
+    checkFreeSpin();
+    const rv = spinData.reward_value || {};
+    const rType = spinData.reward_type;
+    if (rType === 'fragment' || rType === 'full_card') {
+      const fragTier = rv.tier || spinData.character_tier || 'standard';
+      const fragSlug = spinData.character_name ? Object.entries(CHAR_NAMES).find(([k,v]) => v === spinData.character_name)?.[0] : randomSlugFromTier(fragTier);
+      const fragData = {
+        slug: fragSlug || 'unknown',
+        name: spinData.character_name || CHAR_NAMES[fragSlug] || fragSlug || 'Inconnu',
+        emoji: spinData.character_emoji || CHAR_EMOJIS[fragSlug] || '🎭',
+        tier: fragTier, amount: rv.fragment || 1,
+        isComplete: rType === 'full_card', levelUp: false, newLevel: 0,
+        totalFrags: rv.fragment || 1, fragsNeeded: FRAGS_NIV1[fragTier] || 3,
+      };
+      setFragmentResult(fragData);
+      if (rType === 'full_card' && fragSlug) {
+        supaRpc('add_character_fragment', { p_user_id: TEST_USER_ID, p_slug: fragSlug, p_amount: FRAGS_NIV1[fragTier] || 3 })
+          .then(result => { if (result?.level_up) setFragmentResult(prev => prev ? { ...prev, levelUp: true, newLevel: result.new_level } : prev); })
+          .catch(() => {});
+      }
+    }
+  };
+
+  async function distributeFragment(tier, amount) {
+    const slug = randomSlugFromTier(tier);
+    if (!slug) return null;
+    setFragmentSaving(true);
+    try {
+      const data = await supaRpc('add_character_fragment', { p_user_id: TEST_USER_ID, p_slug: slug, p_amount: amount });
+      const result = {
+        slug, name: CHAR_NAMES[slug] || slug, emoji: CHAR_EMOJIS[slug] || '🎭', tier, amount,
+        isComplete: amount >= FRAGS_NIV1[tier], levelUp: data?.level_up || false, newLevel: data?.new_level || 0,
+        totalFrags: data?.fragments || amount, fragsNeeded: FRAGS_NIV1[tier],
+      };
+      setFragmentResult(result); setShowFragmentModal(true); fragmentSlideAnim.setValue(0);
+      return result;
+    } catch (e) {
+      console.error('Fragment distribution error:', e);
+      return null;
+    } finally {
+      setFragmentSaving(false);
+    }
+  }
+
+  async function doSpin() {
+    if (isSpinning || spinLoading) return;
+    const segments = getSegments();
+    setSpinLoading(true);
+    try {
+      const spinPromise = supaRpc('execute_spin', { p_user_id: TEST_USER_ID, p_spin_tier: spinTier });
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Connexion lente — réessaie')), 15000));
+      const data = await Promise.race([spinPromise, timeoutPromise]);
+      if (data && typeof data.reward_value === 'string') {
+        try { data.reward_value = JSON.parse(data.reward_value); } catch(e) {}
+      }
+      if (!data?.success) {
+        const errMsg = data?.error || data?.message || JSON.stringify(data);
+        if (errMsg === 'Lix insuffisants' || errMsg === 'Insufficient Lix') {
+          const required = data?.required || data?.cost || (spinTier === 'normal' ? 50 : spinTier === 'super' ? 150 : 500);
+          const current = data?.current || data?.current_lix || lixBalance;
+          showLixAlert('💰 Lix insuffisants', 'Il te faut ' + required + ' Lix pour ce spin.\n\nTon solde actuel : ' + current + ' Lix\nIl te manque ' + (required - current) + ' Lix.',
+            [{ text: 'Recharger en Lix', color: '#D4AF37', onPress: () => { setActiveTab('lixspin'); setTimeout(() => { if (lixSpinScrollRef.current) lixSpinScrollRef.current.scrollTo({ y: 800, animated: true }); }, 300); } }, { text: 'Fermer', style: 'cancel' }], '💰');
+        } else {
+          showLixAlert('Erreur', errMsg, [{ text: 'OK', style: 'cancel' }], '⚠️');
+        }
+        setSpinLoading(false);
+        return;
+      }
+      setServerResult(data);
+      if (data.new_lix_balance !== undefined) setLixBalance(data.new_lix_balance);
+      if (data.new_energy !== undefined) setUserEnergy(data.new_energy);
+      if (data.is_free) { setFreeSpinUsed(true); setFreeSpinAvailable(false); setNextFreeAt(Date.now() + 6 * 60 * 60 * 1000); }
+      setSpinLoading(false);
+
+      const findWinnerIndex = (segs, srvData) => {
+        const sType = srvData.reward_type;
+        const sVal = srvData.reward_value || {};
+        const typeMap = { 'energy': 'energy', 'lix': 'lix', 'fragment': 'fragment', 'xscan': 'scan', 'free_spin': 'free_spin', 'full_card': 'card' };
+        const localType = typeMap[sType] || sType;
+        let targetAmount = null;
+        if (localType === 'energy') targetAmount = sVal.energy;
+        if (localType === 'lix') targetAmount = sVal.lix;
+        if (localType === 'scan') targetAmount = sVal.scans;
+        if (localType === 'fragment') targetAmount = sVal.fragment;
+        for (let i = 0; i < segs.length; i++) {
+          const r = segs[i].reward;
+          if (r.type !== localType) continue;
+          if (localType === 'energy' && targetAmount != null && r.amount === targetAmount) return i;
+          if (localType === 'lix' && targetAmount != null && r.amount === targetAmount) return i;
+          if (localType === 'scan' && targetAmount != null && r.amount === targetAmount) return i;
+          if (localType === 'fragment') { if (r.tier === (sVal.tier || srvData.character_tier)) return i; }
+          if (localType === 'free_spin') return i;
+          if (localType === 'card') return i;
+        }
+        for (let i = 0; i < segs.length; i++) { if (segs[i].reward.type === localType) return i; }
+        return 0;
+      };
+
+      const winnerIndex = findWinnerIndex(segments, data);
+      const winner = segments[winnerIndex];
+      setIsSpinning(true); setSpinResult(null); setShowSpinResultModal(false); setSpinWinnerSeg(null);
+      setWinnerGlowIdx(null); glowOpacity.setValue(0);
+
+      const angledSegs = getSegmentAngles(segments);
+      const winSeg = angledSegs[winnerIndex];
+      const winMidAngle = winSeg.startAngle + winSeg.sweepAngle / 2;
+      const targetAngle = 360 - winMidAngle;
+      const totalRotation = 360 * 5 + targetAngle;
+      const duration = spinTier === 'mega' ? 6000 : spinTier === 'super' ? 5000 : 4000;
+
+      let lastTickIndex = -1;
+      const totalTicks = 12;
+      const listenerId = spinAnim.addListener(({ value }) => {
+        const normalizedAngle = value % 360;
+        const tickIndex = Math.floor(normalizedAngle / (360 / totalTicks));
+        if (tickIndex !== lastTickIndex) {
+          lastTickIndex = tickIndex;
+          const progress = value / totalRotation;
+          triggerArrowBounce(progress > 0.85);
+        }
+      });
+
+      spinAnim.setValue(0);
+      Animated.timing(spinAnim, {
+        toValue: totalRotation, duration: duration,
+        easing: Easing.out(Easing.cubic), useNativeDriver: true,
+      }).start(() => {
+        spinAnim.removeListener(listenerId);
+        setIsSpinning(false); setSpinWinnerSeg(winner); setWinnerGlowIdx(winnerIndex);
+        Animated.loop(Animated.sequence([
+          Animated.timing(glowOpacity, { toValue: 0.6, duration: 500, useNativeDriver: true }),
+          Animated.timing(glowOpacity, { toValue: 0.1, duration: 500, useNativeDriver: true }),
+        ])).start();
+        setTimeout(() => {
+          glowOpacity.stopAnimation(); glowOpacity.setValue(0);
+          setShowSpinResultModal(true);
+          const rType = data.reward_value?.type || winner.reward.type;
+          if (rType === 'fragment' || rType === 'card_complete' || rType === 'card') {
+            spinResultPulse.setValue(1);
+            Animated.loop(Animated.sequence([
+              Animated.timing(spinResultPulse, { toValue: 1.15, duration: 600, useNativeDriver: true }),
+              Animated.timing(spinResultPulse, { toValue: 1, duration: 600, useNativeDriver: true }),
+            ])).start();
+          }
+          onSpinComplete(data);
+          if (data.reward_type === 'free_spin') { setFreeSpinAvailable(true); setFreeSpinUsed(false); setNextFreeAt(null); }
+        }, 2000);
+      });
+    } catch (e) {
+      console.error('Spin error:', e);
+      showLixAlert('Erreur', e?.message || e?.details || JSON.stringify(e), [{ text: 'OK', style: 'cancel' }], '⚠️');
+      setSpinLoading(false); setIsSpinning(false); setWinnerGlowIdx(null);
     }
   }
 
