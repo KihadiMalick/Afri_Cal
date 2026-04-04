@@ -224,6 +224,83 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved }) {
     setManualTempQty('');
   };
 
+  const getManualIngTotals = () => {
+    return manualIngredients.reduce((acc, ing) => ({
+      calories: acc.calories + (ing.calories || 0),
+      protein_g: Math.round((acc.protein_g + (ing.protein_g || 0)) * 10) / 10,
+      carbs_g: Math.round((acc.carbs_g + (ing.carbs_g || 0)) * 10) / 10,
+      fat_g: Math.round((acc.fat_g + (ing.fat_g || 0)) * 10) / 10,
+      fiber_g: Math.round((acc.fiber_g + (ing.fiber_g || 0)) * 10) / 10,
+    }), { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 });
+  };
+
+  // --- SAUVEGARDE ---
+
+  const saveManualMeal = async () => {
+    if (isSavingManual) return;
+
+    let totals, mealName, ingredientsDetail, portionG;
+
+    if (manualTab === 'meals' && selectedMeal) {
+      totals = getMealMacros();
+      mealName = selectedMeal.name;
+      portionG = manualPortionG;
+      ingredientsDetail = mealComponents.map(c => ({
+        name: c.component_name,
+        percentage: c.percentage_estimate,
+        quantity_g: Math.round((c.percentage_estimate / 100) * manualPortionG),
+      }));
+    } else if (manualTab === 'ingredients' && manualIngredients.length > 0) {
+      totals = getManualIngTotals();
+      mealName = manualIngredients.map(i => i.name).slice(0, 3).join(' + ');
+      portionG = manualIngredients.reduce((sum, i) => sum + (i.quantity_g || 0), 0);
+      ingredientsDetail = manualIngredients;
+    } else {
+      return;
+    }
+
+    setIsSavingManual(true);
+    try {
+      const { data, error } = await supabase.rpc('add_meal_and_update_summary', {
+        p_user_id: TEST_USER_ID,
+        p_meal_type: manualMealType || getAutoMealType(),
+        p_food_name: mealName,
+        p_calories: Math.round(totals.calories),
+        p_protein: totals.protein_g,
+        p_carbs: totals.carbs_g,
+        p_fat: totals.fat_g,
+        p_fiber: totals.fiber_g,
+        p_source: 'manual',
+        p_confidence: null,
+        p_photo_url: null,
+        p_ingredients_detail: ingredientsDetail,
+        p_food_db_id: null,
+        p_volume_ml: null,
+        p_texture: null,
+        p_portion_g: portionG,
+      });
+
+      if (error) {
+        console.error('Erreur sauvegarde manuelle:', error);
+        alert('Erreur : ' + error.message);
+        setIsSavingManual(false);
+        return;
+      }
+
+      setSaveManualSuccess(true);
+      setTimeout(() => {
+        onMealSaved();
+        closeManualEntry();
+        setIsSavingManual(false);
+        setSaveManualSuccess(false);
+      }, 1500);
+    } catch (err) {
+      console.error('Erreur réseau:', err);
+      alert('Erreur réseau.');
+      setIsSavingManual(false);
+    }
+  };
+
   // === JSX (phases suivantes) ===
 
   if (!visible) return null;
