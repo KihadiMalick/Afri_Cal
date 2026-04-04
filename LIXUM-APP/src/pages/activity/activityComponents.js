@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, Pressable, TouchableOpacity,
-  Animated, Modal, StyleSheet,
+  Animated, Modal, StyleSheet, Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, {
@@ -11,6 +11,8 @@ import Svg, {
 import { Ionicons } from '@expo/vector-icons';
 import { wp, fp } from '../../constants/layout';
 import MetalCard from '../../components/shared/MetalCard';
+
+const W = Dimensions.get('window').width;
 import {
   ACTIVITY_DATA, T, getLang, calcCalories, calcWater,
   TIME_STEPS,
@@ -731,6 +733,164 @@ const SportCard = ({ sportKey, onPress, lang, userWeight }) => {
         </Text>
       </View>
     </MetalCard>
+  );
+};
+
+// ── Sport Modal ──
+const SportModal = ({ visible, sportKey, onClose, onSave, lang, userWeight }) => {
+  const [duration, setDuration] = useState(30);
+  const [intensity, setIntensity] = useState('modere');
+
+  if (!sportKey) return null;
+  const sport = ACTIVITY_DATA[sportKey];
+  var weightKg = userWeight || 70;
+  var calories = calcCalories(sport.met, weightKg, duration, intensity);
+  var waterLost = calcWater(sport.water_per_hour_ml, duration, intensity);
+
+  var t = getLang(lang);
+  const intensities = [
+    { key: 'leger', label: t.light, mult: 0.7 },
+    { key: 'modere', label: t.moderate, mult: 1.0 },
+    { key: 'intense', label: t.intense, mult: 1.3 },
+  ];
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable
+        onPress={onClose}
+        style={{
+          flex: 1, backgroundColor: 'rgba(0,0,0,0.7)',
+          justifyContent: 'center', alignItems: 'center',
+        }}
+      >
+        <Pressable onPress={() => {}} style={{ width: W - wp(40) }}>
+          <MetalCard style={{ marginHorizontal: 0, marginBottom: 0 }}>
+            <View>
+              {/* Header */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
+                <View style={{ marginRight: wp(8) }}>
+                  <SportIcon type={sportKey} size={wp(24)} color={sport.color} />
+                </View>
+                <Text style={{
+                  color: '#EAEEF3', fontSize: fp(16), fontWeight: '800',
+                  letterSpacing: 1, textTransform: 'uppercase',
+                }}>
+                  {lang === 'en' ? sport.labelEN : sport.label}
+                </Text>
+                <Pressable onPress={onClose} style={{ marginLeft: 'auto' }}>
+                  <Ionicons name="close-circle" size={wp(22)} color="#555E6C" />
+                </Pressable>
+              </View>
+
+              {/* Duration */}
+              <Text style={{ color: '#8892A0', fontSize: fp(10), fontWeight: '600', marginBottom: wp(6) }}>
+                {t.durationLabel} : {duration} min
+              </Text>
+              <View style={{
+                flexDirection: 'row', flexWrap: 'wrap', gap: wp(4), marginBottom: wp(12),
+              }}>
+                {[5, 10, 15, 20, 30, 45, 60, 90, 120].map((d) => (
+                  <Pressable
+                    key={d}
+                    onPress={() => setDuration(d)}
+                    style={{
+                      paddingHorizontal: wp(8), paddingVertical: wp(5),
+                      borderRadius: wp(8),
+                      backgroundColor: duration === d ? sport.color : 'rgba(255,255,255,0.05)',
+                      borderWidth: 1,
+                      borderColor: duration === d ? sport.color : 'rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    <Text style={{
+                      fontSize: fp(9), fontWeight: '700',
+                      color: duration === d ? '#000' : '#8892A0',
+                    }}>
+                      {d}m
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* Intensity */}
+              <Text style={{ color: '#8892A0', fontSize: fp(10), fontWeight: '600', marginBottom: wp(6) }}>
+                {t.intensity}
+              </Text>
+              <View style={{ flexDirection: 'row', gap: wp(6), marginBottom: wp(14) }}>
+                {intensities.map((int) => (
+                  <Pressable
+                    key={int.key}
+                    onPress={() => setIntensity(int.key)}
+                    style={{
+                      flex: 1, paddingVertical: wp(8), borderRadius: wp(8),
+                      backgroundColor: intensity === int.key ? sport.color : 'rgba(255,255,255,0.05)',
+                      borderWidth: 1,
+                      borderColor: intensity === int.key ? sport.color : 'rgba(255,255,255,0.08)',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{
+                      fontSize: fp(9), fontWeight: '700',
+                      color: intensity === int.key ? '#000' : '#8892A0',
+                    }}>
+                      {int.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* Calories estimate */}
+              <View style={{
+                flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                marginBottom: wp(14),
+                paddingHorizontal: wp(8), paddingVertical: wp(8),
+                backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(10),
+              }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(10), fontWeight: '600' }}>
+                  {t.estimate}
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                  <Text style={{ color: '#FF8C42', fontSize: fp(20), fontWeight: '900' }}>
+                    {calories}
+                  </Text>
+                  <Text style={{ color: '#8892A0', fontSize: fp(10), marginLeft: wp(3) }}>
+                    kcal
+                  </Text>
+                </View>
+              </View>
+
+              {/* Source scientifique */}
+              <View style={{
+                marginTop: wp(10), paddingTop: wp(8),
+                borderTopWidth: 1, borderTopColor: 'rgba(74,79,85,0.3)',
+              }}>
+                <Text style={{
+                  fontSize: fp(8), color: '#6B7280', textAlign: 'center',
+                  fontStyle: 'italic', lineHeight: fp(12),
+                }}>
+                  {lang === 'en'
+                    ? 'Estimate: MET ' + sport.met + ' \u00D7 ' + weightKg + 'kg \u00D7 duration. Source: Compendium of Physical Activities (Ainsworth et al., 2011).'
+                    : 'Calcul : MET ' + sport.met + ' \u00D7 ' + weightKg + 'kg \u00D7 dur\u00E9e. Source : Compendium of Physical Activities (Ainsworth et al., 2011).'}
+                </Text>
+              </View>
+
+              {/* Save button */}
+              <TouchableOpacity
+                onPress={() => onSave(sportKey, duration, calories, intensity, waterLost)}
+                activeOpacity={0.7}
+                style={{
+                  backgroundColor: sport.color, borderRadius: wp(12),
+                  paddingVertical: wp(12), alignItems: 'center', marginTop: wp(10),
+                }}
+              >
+                <Text style={{ color: '#000', fontSize: fp(12), fontWeight: '800' }}>
+                  {String.fromCodePoint(0x2713)} {t.add} — {calories} kcal
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </MetalCard>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 };
 
