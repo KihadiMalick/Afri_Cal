@@ -80,6 +80,42 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved }) {
     onClose();
   };
 
+  // --- ONGLET PLATS ---
+
+  const searchMeals = async (query) => {
+    setMealSearchQuery(query);
+    if (query.length < 2) { setMealSearchResults([]); return; }
+    setIsMealSearching(true);
+    try {
+      const { data, error } = await supabase.rpc('search_meals_fuzzy', {
+        search_term: query,
+        max_results: 8,
+      });
+      if (error) console.error('Meal RPC error:', error);
+      if (data) setMealSearchResults(data);
+    } catch (e) {
+      console.error('Meal search error:', e);
+    }
+    setIsMealSearching(false);
+  };
+
+  const selectMeal = async (meal) => {
+    setSelectedMeal(meal);
+    setMealSearchQuery('');
+    setMealSearchResults([]);
+    try {
+      const { data } = await supabase
+        .from('meal_components_master')
+        .select('component_name, percentage_estimate')
+        .eq('meal_id', meal.id)
+        .order('percentage_estimate', { ascending: false });
+      if (data) setMealComponents(data);
+    } catch (e) {
+      console.error('Components load error:', e);
+      setMealComponents([]);
+    }
+  };
+
   // === JSX (phases suivantes) ===
 
   if (!visible) return null;
