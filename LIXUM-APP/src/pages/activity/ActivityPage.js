@@ -262,6 +262,114 @@ export default function ActivityPage({ onNavigate }) {
     })();
   }, []);
 
+  // === FONCTIONS POUVOIRS + SAVE ===
+
+  const ACTIVITY_PAGE = 'activite';
+
+  const loadPagePowers = async () => {
+    try {
+      const { data: collection } = await supabase
+        .rpc('get_user_collection', { p_user_id: TEST_USER_ID });
+      const active = (collection || []).find(c => c.is_active);
+      if (!active) { setActiveChar(null); setPagePowers([]); return; }
+      setActiveChar(active);
+      const { data: powers } = await supabase
+        .rpc('get_character_powers', { p_user_id: TEST_USER_ID, p_slug: active.slug });
+      setPagePowers((powers || []).filter(p => p.redirect_page === ACTIVITY_PAGE && p.unlocked));
+    } catch (e) {
+      console.warn('Page powers load error:', e);
+    }
+  };
+
+  const consumePower = async (powerKey) => {
+    try {
+      const { data } = await supabase.rpc('use_character_power', {
+        p_user_id: TEST_USER_ID, p_power_key: powerKey,
+      });
+      if (data?.success) {
+        setActiveChar(prev => prev ? { ...prev, uses_remaining: data.uses_remaining } : null);
+        return { success: true, uses_remaining: data.uses_remaining };
+      }
+      if (data?.error === 'No uses remaining') {
+        Alert.alert('⚡ Utilisations épuisées', 'Recharge ton ' + (activeChar?.name || 'personnage') + ' dans l\'onglet Caractères.');
+      }
+      return { success: false, error: data?.error };
+    } catch (e) {
+      return { success: false, error: 'network' };
+    }
+  };
+
+  const getPowerByType = (actionType) => {
+    return pagePowers.filter(p => p.action_type === actionType).sort((a, b) => (b.level_required || 0) - (a.level_required || 0))[0] || null;
+  };
+
+  const extractMultiplier = (power) => {
+    if (!power?.redirect_filter) return 1.0;
+    if (power.redirect_filter.includes('30')) return 1.30;
+    if (power.redirect_filter.includes('20')) return 1.20;
+    if (power.redirect_filter.includes('10')) return 1.10;
+    return 1.0;
+  };
+
+  const runPostSaveHooks = async (activityType, caloriesBurned, durationMin) => {
+    const results = {};
+    for (const power of pagePowers) {
+      if (power.action_type === 'redirect_with_boost' && activeChar?.uses_remaining > 0) {
+        const consumed = await consumePower(power.power_key);
+        if (consumed.success) {
+          const multiplier = extractMultiplier(power);
+          const baseXP = Math.round(caloriesBurned);
+          const bonusXP = Math.round(baseXP * (multiplier - 1));
+          results.xp_boost = {
+            type: 'xp_boost', icon: power.icon || '🐯', char_name: activeChar?.name,
+            multiplier, percentage: Math.round((multiplier - 1) * 100),
+            base_xp: baseXP, bonus_xp: bonusXP, total_xp: baseXP + bonusXP,
+            uses_remaining: consumed.uses_remaining,
+          };
+        }
+      }
+    }
+    setHookResults(results);
+    loadPagePowers();
+    return results;
+  };
+
+  const saveActivity = async (activityType, durationMin, caloriesBurned, intensity, waterLost) => {
+    const actData = ACTIVITY_DATA[activityType];
+    if (!actData) return false;
+    try {
+      const { error } = await supabase.rpc('add_user_activity', {
+        p_user_id: TEST_USER_ID,
+        p_name: actData.label, p_type: activityType,
+        p_duration_minutes: Math.round(durationMin),
+        p_calories_burned: Math.round(caloriesBurned),
+        p_intensity: intensity || 'modere',
+        p_water_lost_ml: Math.round(waterLost),
+      });
+      if (error) { alert('Erreur : ' + error.message); return false; }
+      if (pagePowers.length > 0) { await runPostSaveHooks(activityType, caloriesBurned, durationMin); } else { setHookResults({}); }
+      await loadTodayActivities();
+      fetchSmartData();
+      if (!lixRewardedToday) setLixRewardedToday(true);
+      return true;
+    } catch (e) {
+      alert('Erreur réseau.');
+      return false;
+    }
+  };
+
+  const deleteActivity = async (activityId) => {
+    try {
+      const { error } = await supabase.rpc('delete_user_activity', {
+        p_activity_id: activityId, p_user_id: TEST_USER_ID,
+      });
+      if (error) { alert('Erreur suppression : ' + error.message); return; }
+      await loadTodayActivities();
+    } catch (e) {
+      console.error('Delete activity error:', e);
+    }
+  };
+
   // === JSX (phases suivantes) ===
 
   return null;
