@@ -1014,6 +1014,17 @@ const RepasPage = ({ onNavigate }) => {
   var _alixenIngResults = useState([]); var alixenIngResults = _alixenIngResults[0]; var setAlixenIngResults = _alixenIngResults[1];
   var _alixenIngSearching = useState(false); var alixenIngSearching = _alixenIngSearching[0]; var setAlixenIngSearching = _alixenIngSearching[1];
   var _alixenAdvice = useState(null); var alixenAdvice = _alixenAdvice[0]; var setAlixenAdvice = _alixenAdvice[1];
+  var _alixenFreeUsedToday = useState(false); var alixenFreeUsedToday = _alixenFreeUsedToday[0]; var setAlixenFreeUsedToday = _alixenFreeUsedToday[1];
+  var _alixenHasOwlPass = useState(false); var alixenHasOwlPass = _alixenHasOwlPass[0]; var setAlixenHasOwlPass = _alixenHasOwlPass[1];
+
+  // === PRÉPARATION ASSISTÉE ===
+  var _showCookingMode = useState(false); var showCookingMode = _showCookingMode[0]; var setShowCookingMode = _showCookingMode[1];
+  var _cookingSteps = useState([]); var cookingSteps = _cookingSteps[0]; var setCookingSteps = _cookingSteps[1];
+  var _cookingCurrentStep = useState(0); var cookingCurrentStep = _cookingCurrentStep[0]; var setCookingCurrentStep = _cookingCurrentStep[1];
+  var _cookingTimers = useState({}); var cookingTimers = _cookingTimers[0]; var setCookingTimers = _cookingTimers[1];
+  // cookingTimers = { stepIndex: { remaining: seconds, total: seconds, label: 'Pâtes', running: true/false, finished: false } }
+  var _cookingAlarm = useState(null); var cookingAlarm = _cookingAlarm[0]; var setCookingAlarm = _cookingAlarm[1];
+  // cookingAlarm = { label: 'Spaghettis', stepIndex: 2 } ou null
 
   const RECIPE_REGIONS = [
     { key: 'all', label: '🌍 Tout', labelEn: '🌍 All' },
@@ -1250,6 +1261,34 @@ const RepasPage = ({ onNavigate }) => {
         hasDinner: hasDinner,
       };
 
+      // Vérifier si l'utilisateur possède Emerald Owl Niv2+
+      try {
+        var owlRes = await supabase
+          .from('lixverse_user_characters')
+          .select('level')
+          .eq('user_id', TEST_USER_ID)
+          .eq('character_slug', 'emerald_owl')
+          .maybeSingle();
+        if (owlRes.data && owlRes.data.level >= 2) {
+          setAlixenHasOwlPass(true);
+        }
+      } catch (e) {}
+
+      // Vérifier si la recette gratuite du jour a été utilisée
+      try {
+        var today2 = new Date().toISOString().split('T')[0];
+        var usageRes = await supabase
+          .from('meals')
+          .select('id')
+          .eq('user_id', TEST_USER_ID)
+          .eq('source', 'alixen_recipe')
+          .gte('created_at', today2 + 'T00:00:00')
+          .limit(1);
+        if (usageRes.data && usageRes.data.length > 0) {
+          setAlixenFreeUsedToday(true);
+        }
+      } catch (e) {}
+
       setAlixenContext(ctx);
 
       // 8. Générer le message d'accueil contextuel
@@ -1277,6 +1316,47 @@ const RepasPage = ({ onNavigate }) => {
     } catch (e) {
       console.error('loadAlixenContext error:', e);
       return null;
+    }
+  };
+
+  var checkAlixenRecipeCost = function() {
+    // Emerald Owl Niv2+ = gratuit illimité
+    if (alixenHasOwlPass) return { allowed: true, cost: 0, reason: 'owl' };
+    // 1 recette gratuite par jour
+    if (!alixenFreeUsedToday) return { allowed: true, cost: 0, reason: 'free' };
+    // Après : 50 Lix
+    if (lixBalance >= 50) return { allowed: true, cost: 50, reason: 'lix' };
+    // Pas assez de Lix
+    return { allowed: false, cost: 50, reason: 'insufficient' };
+  };
+
+  var deductAlixenLix = async function(cost) {
+    if (cost <= 0) return true;
+    try {
+      var res = await supabase.rpc('deduct_lix', {
+        p_user_id: TEST_USER_ID,
+        p_amount: cost,
+        p_reason: 'alixen_recipe',
+      });
+      if (res.error) {
+        // Fallback : update direct
+        var currentRes = await supabase
+          .from('users_profile')
+          .select('lix_balance')
+          .eq('user_id', TEST_USER_ID)
+          .single();
+        var current = (currentRes.data || {}).lix_balance || 0;
+        if (current < cost) return false;
+        await supabase
+          .from('users_profile')
+          .update({ lix_balance: current - cost })
+          .eq('user_id', TEST_USER_ID);
+      }
+      setLixBalance(function(prev) { return prev - cost; });
+      return true;
+    } catch (e) {
+      console.error('Deduct lix error:', e);
+      return false;
     }
   };
 
@@ -3079,6 +3159,107 @@ const RepasPage = ({ onNavigate }) => {
     ).start();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Tick des minuteurs de préparation assistée (chaque seconde)
+  React.useEffect(function() {
+    if (!showCookingMode) return;
+
+    var interval = setInterval(function() {
+      setCookingTimers(function(prev) {
+        var updated = {};
+        var keys = Object.keys(prev);
+        for (var i = 0; i < keys.length; i++) {
+          var key = keys[i];
+          var timer = prev[key];
+          if (timer.running && timer.remaining > 0) {
+            var newRemaining = timer.remaining - 1;
+            if (newRemaining <= 0) {
+              // ALARME !
+              updated[key] = { remaining: 0, total: timer.total, label: timer.label, running: false, finished: true };
+              Vibration.vibrate([0, 500, 200, 500, 200, 500]);
+              setCookingAlarm({ label: timer.label, stepIndex: parseInt(key) });
+            } else {
+              updated[key] = { remaining: newRemaining, total: timer.total, label: timer.label, running: true, finished: false };
+            }
+          } else {
+            updated[key] = timer;
+          }
+        }
+        return updated;
+      });
+    }, 1000);
+
+    return function() { clearInterval(interval); };
+  }, [showCookingMode]);
+
+  // Démarrer un minuteur pour une étape
+  var startCookingTimer = function(stepIndex, seconds, label) {
+    setCookingTimers(function(prev) {
+      var copy = {};
+      var keys = Object.keys(prev);
+      for (var i = 0; i < keys.length; i++) {
+        copy[keys[i]] = prev[keys[i]];
+      }
+      copy[stepIndex] = { remaining: seconds, total: seconds, label: label, running: true, finished: false };
+      return copy;
+    });
+  };
+
+  // Formater secondes → mm:ss
+  var formatTimer = function(seconds) {
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  };
+
+  // Fermer l'alarme
+  var dismissAlarm = function() {
+    Vibration.cancel();
+    setCookingAlarm(null);
+  };
+
+  // Ouvrir le mode préparation
+  var openCookingMode = function(recipe) {
+    // Les recettes IA retournent "detailed_steps", les fallback retournent "steps" en texte
+    var steps = [];
+    if (recipe.detailed_steps && recipe.detailed_steps.length > 0) {
+      steps = recipe.detailed_steps;
+    } else if (recipe.steps && typeof recipe.steps === 'string') {
+      // Convertir le texte brut en étapes structurées
+      var lines = recipe.steps.split('\n').filter(function(l) { return l.trim().length > 0; });
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].replace(/^\d+\.\s*/, '').trim();
+        // Détecter les temps dans le texte (ex: "8 min", "20 minutes", "15 min")
+        var timeMatch = line.match(/(\d+)\s*(min|minutes|mn)/i);
+        var timerSec = timeMatch ? parseInt(timeMatch[1]) * 60 : null;
+        var timerLabel = null;
+        if (timerSec) {
+          // Extraire un label du contexte (premier mot significatif)
+          var words = line.split(' ');
+          for (var j = 0; j < words.length; j++) {
+            var w = words[j].toLowerCase();
+            if (w.length > 3 && w !== 'dans' && w !== 'avec' && w !== 'pendant' && w !== 'cuire' && w !== 'laisser' && w !== 'faire') {
+              timerLabel = words[j].charAt(0).toUpperCase() + words[j].slice(1);
+              break;
+            }
+          }
+          if (!timerLabel) timerLabel = 'Étape ' + (i + 1);
+        }
+        steps.push({
+          text: line,
+          timer_seconds: timerSec,
+          timer_label: timerLabel,
+          parallel: null,
+        });
+      }
+    }
+
+    setCookingSteps(steps);
+    setCookingCurrentStep(0);
+    setCookingTimers({});
+    setCookingAlarm(null);
+    setShowCookingMode(true);
+  };
 
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
@@ -5140,6 +5321,53 @@ const RepasPage = ({ onNavigate }) => {
                       QUE VEUX-TU PRÉPARER ?
                     </Text>
 
+                    {/* Badge coût */}
+                    <View style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      marginBottom: wp(8),
+                    }}>
+                      {alixenHasOwlPass ? (
+                        <View style={{
+                          flexDirection: 'row', alignItems: 'center',
+                          backgroundColor: 'rgba(0,217,132,0.08)',
+                          paddingHorizontal: wp(10), paddingVertical: wp(4),
+                          borderRadius: wp(8), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                        }}>
+                          <Text style={{ fontSize: fp(10), marginRight: wp(4) }}>🦉</Text>
+                          <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '700' }}>
+                            Emerald Owl · Recettes illimitées
+                          </Text>
+                        </View>
+                      ) : !alixenFreeUsedToday ? (
+                        <View style={{
+                          flexDirection: 'row', alignItems: 'center',
+                          backgroundColor: 'rgba(0,217,132,0.08)',
+                          paddingHorizontal: wp(10), paddingVertical: wp(4),
+                          borderRadius: wp(8), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                        }}>
+                          <Text style={{ fontSize: fp(10), marginRight: wp(4) }}>🎁</Text>
+                          <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '700' }}>
+                            1 recette gratuite disponible
+                          </Text>
+                        </View>
+                      ) : (
+                        <View style={{
+                          flexDirection: 'row', alignItems: 'center',
+                          backgroundColor: 'rgba(212,175,55,0.08)',
+                          paddingHorizontal: wp(10), paddingVertical: wp(4),
+                          borderRadius: wp(8), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+                        }}>
+                          <Text style={{ fontSize: fp(10), marginRight: wp(4) }}>💎</Text>
+                          <Text style={{ color: '#D4AF37', fontSize: fp(9), fontWeight: '700' }}>
+                            50 Lix par recette
+                          </Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(8), marginLeft: wp(6) }}>
+                            ou 🦉 Emerald Owl Niv2
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
                     <View style={{
                       flexDirection: 'row', flexWrap: 'wrap',
                       gap: wp(8),
@@ -5154,6 +5382,41 @@ const RepasPage = ({ onNavigate }) => {
                           <Pressable
                             key={cat.key}
                             onPress={function() {
+                              var costCheck = checkAlixenRecipeCost();
+                              if (!costCheck.allowed) {
+                                Alert.alert(
+                                  '💎 Lix insuffisants',
+                                  'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées',
+                                  [
+                                    { text: 'Aller au LixVerse', onPress: function() { if (onNavigate) onNavigate('lixverse'); setShowRecipes(false); } },
+                                    { text: 'OK', style: 'cancel' },
+                                  ]
+                                );
+                                return;
+                              }
+                              if (costCheck.cost > 0) {
+                                Alert.alert(
+                                  '🤖 Recette ALIXEN',
+                                  'Ta recette gratuite du jour a été utilisée.\nCette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix',
+                                  [
+                                    { text: 'Annuler', style: 'cancel' },
+                                    { text: 'Confirmer (50 Lix)', onPress: function() {
+                                      deductAlixenLix(50).then(function(success) {
+                                        if (success) {
+                                          setAlixenCategory(cat.key);
+                                          setAlixenRecipeScreen('proposals');
+                                          setAlixenLoading(true);
+                                          generateAlixenProposals(cat.key);
+                                        } else {
+                                          Alert.alert('Erreur', 'Impossible de débiter les Lix.');
+                                        }
+                                      });
+                                    }},
+                                  ]
+                                );
+                                return;
+                              }
+                              // Gratuit (première du jour ou Owl pass)
                               setAlixenCategory(cat.key);
                               setAlixenRecipeScreen('proposals');
                               setAlixenLoading(true);
@@ -5586,6 +5849,36 @@ const RepasPage = ({ onNavigate }) => {
                     {alixenMyIngredients.length >= 2 && (
                       <Pressable
                         onPress={function() {
+                          var costCheck = checkAlixenRecipeCost();
+                          if (!costCheck.allowed) {
+                            Alert.alert(
+                              '💎 Lix insuffisants',
+                              'Il te faut 50 Lix pour une recette ALIXEN.\n\nReviens demain pour ta recette gratuite ou obtiens des Lix dans le LixVerse.',
+                              [
+                                { text: 'OK', style: 'cancel' },
+                              ]
+                            );
+                            return;
+                          }
+                          if (costCheck.cost > 0) {
+                            Alert.alert(
+                              '🤖 Recette ALIXEN',
+                              'Cette génération coûte 50 Lix.\nSolde : ' + lixBalance + ' Lix',
+                              [
+                                { text: 'Annuler', style: 'cancel' },
+                                { text: 'Confirmer (50 Lix)', onPress: function() {
+                                  deductAlixenLix(50).then(function(success) {
+                                    if (success) {
+                                      setAlixenRecipeScreen('proposals');
+                                      setAlixenLoading(true);
+                                      generateAlixenProposals('my_ingredients');
+                                    }
+                                  });
+                                }},
+                              ]
+                            );
+                            return;
+                          }
                           setAlixenRecipeScreen('proposals');
                           setAlixenLoading(true);
                           generateAlixenProposals('my_ingredients');
@@ -5813,6 +6106,7 @@ const RepasPage = ({ onNavigate }) => {
                                   setShowRecipes(false);
                                 }}]
                               );
+                              setAlixenFreeUsedToday(true);
                             }
                           });
                         }}
@@ -5827,6 +6121,31 @@ const RepasPage = ({ onNavigate }) => {
                         <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
                           ✓ Ajouter à mes repas
                         </Text>
+                      </Pressable>
+
+                      {/* Lancer la préparation assistée */}
+                      <Pressable
+                        onPress={function() {
+                          openCookingMode(alixenSelectedRecipe);
+                        }}
+                        style={function(state) {
+                          return {
+                            paddingVertical: wp(14), borderRadius: wp(14),
+                            backgroundColor: state.pressed ? '#CC7A00' : '#FF8C42',
+                            alignItems: 'center', flexDirection: 'row',
+                            justifyContent: 'center', gap: wp(8),
+                          };
+                        }}
+                      >
+                        <Text style={{ fontSize: fp(18) }}>👨‍🍳</Text>
+                        <View>
+                          <Text style={{ color: '#FFFFFF', fontSize: fp(15), fontWeight: '800' }}>
+                            Préparation Assistée
+                          </Text>
+                          <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: fp(9) }}>
+                            Minuteurs intelligents + étapes guidées
+                          </Text>
+                        </View>
                       </Pressable>
 
                       {/* Modifier les quantités */}
