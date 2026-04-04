@@ -16,7 +16,7 @@ import {
   CHAR_EMOJIS, FRAGS_NIV1, TIER_CONFIG, SLUGS_BY_TIER,
   randomSlugFromTier, NAV_TABS,
   NORMAL_SEGMENTS, SUPER_SEGMENTS, MEGA_SEGMENTS,
-  getSegmentAngles
+  WORLD_DOTS, getSegmentAngles
 } from './lixverseConstants';
 import { LixGem } from './lixverseComponents';
 import SpinTab from './SpinTab';
@@ -858,6 +858,161 @@ export default function LixVersePage({ navigation }) {
       ],
     });
   };
+
+  const startBinomeSearch = () => {
+    setBinomeStatus('searching'); setSearchProgress(0); setSearchStep(0); setCompatibilityScore(0); setScanLines([]);
+    radarAnim.setValue(0);
+    Animated.loop(Animated.timing(radarAnim, { toValue: 1, duration: 2000, useNativeDriver: true })).start();
+    const startPulseRing = (anim, delay) => {
+      setTimeout(() => {
+        Animated.loop(Animated.sequence([
+          Animated.timing(anim, { toValue: 1, duration: 2000, useNativeDriver: false }),
+          Animated.timing(anim, { toValue: 0, duration: 0, useNativeDriver: false }),
+        ])).start();
+      }, delay);
+    };
+    pulseRing1.setValue(0); pulseRing2.setValue(0); pulseRing3.setValue(0);
+    startPulseRing(pulseRing1, 0); startPulseRing(pulseRing2, 700); startPulseRing(pulseRing3, 1400);
+    const coordsInterval = setInterval(() => {
+      setSearchCoords({ lat: (Math.random() * 60 - 30).toFixed(4) + '°', lng: (Math.random() * 120 - 60).toFixed(4) + '°' });
+    }, 150);
+    const linesInterval = setInterval(() => {
+      const centerX = (SCREEN_WIDTH - wp(32)) / 2;
+      const centerY = wp(90);
+      const dotIdx = Math.floor(Math.random() * WORLD_DOTS.length);
+      const dot = WORLD_DOTS[dotIdx];
+      const dotX = (dot.x / 800) * (SCREEN_WIDTH - wp(32));
+      const dotY = (dot.y / 400) * wp(180);
+      const dx = dotX - centerX; const dy = dotY - centerY;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+      setScanLines(prev => [...prev, { x1: centerX, y1: centerY, length, angle, id: Date.now() }].slice(-8));
+    }, 800);
+    const SEARCH_STEPS = [
+      { text: 'Analyse morphologique du profil...', duration: 1500 },
+      { text: 'Extraction des paramètres nutritionnels...', duration: 1800 },
+      { text: 'Corrélation des objectifs de santé...', duration: 2000 },
+      { text: 'Triangulation géographique...', duration: 1500 },
+      { text: 'Scan des profils compatibles...', duration: 2500 },
+      { text: 'Calcul de l\'indice de compatibilité...', duration: 2000 },
+      { text: 'Vérification anti-triche...', duration: 1200 },
+      { text: 'Binôme identifié !', duration: 800 },
+    ];
+    let stepIdx = 0; let elapsed = 0;
+    const totalDuration = SEARCH_STEPS.reduce((s, step) => s + step.duration, 0);
+    const stepTimer = () => {
+      if (stepIdx >= SEARCH_STEPS.length) return;
+      setSearchStep(stepIdx);
+      setSearchProgress(Math.min(100, Math.round((elapsed / totalDuration) * 100)));
+      if (stepIdx >= 4) setCompatibilityScore(Math.min(87, Math.round(((stepIdx - 4) / (SEARCH_STEPS.length - 4)) * 87)));
+      elapsed += SEARCH_STEPS[stepIdx].duration; stepIdx++;
+      if (stepIdx < SEARCH_STEPS.length) {
+        setTimeout(stepTimer, SEARCH_STEPS[stepIdx - 1].duration);
+      } else {
+        setTimeout(async () => {
+          clearInterval(coordsInterval); clearInterval(linesInterval);
+          radarAnim.stopAnimation(); pulseRing1.stopAnimation(); pulseRing2.stopAnimation(); pulseRing3.stopAnimation();
+          try {
+            const matchData = await supaRpc('find_binome_match', { p_user_id: TEST_USER_ID });
+            if (!matchData || matchData.error || !matchData.match_found) {
+              setSearchProgress(100); setCompatibilityScore(0); setBinomeStatus('no_match');
+              setRetryAfterTime(Date.now() + 24 * 60 * 60 * 1000);
+            } else {
+              setCompatibilityScore(matchData.compatibility_score || 87); setSearchProgress(100);
+              setBinomePartner({
+                lixtag: matchData.partner_lixtag, display_name: matchData.partner_lixtag,
+                country: matchData.partner_country || '', country_flag: matchData.partner_flag || '🌍',
+                vitality_score: matchData.partner_vitality || 0, goal: matchData.partner_goal || '',
+                distance_km: matchData.distance_km || null, common_points: matchData.common_points || [],
+                today_calories_eaten: 0, today_calories_burned: 0, today_mood: '—', today_weather: '—', streak_days: 0,
+              });
+              setBinomeCommonPoints(matchData.common_points || []); setBinomeDistance(matchData.distance_km || null);
+              setBinomeStatus('proposed');
+            }
+          } catch (e) {
+            console.error('Binome search error:', e);
+            setSearchProgress(100); setCompatibilityScore(0); setBinomeStatus('no_match');
+            setRetryAfterTime(Date.now() + 24 * 60 * 60 * 1000);
+          }
+        }, SEARCH_STEPS[SEARCH_STEPS.length - 1].duration);
+      }
+    };
+    stepTimer();
+  };
+
+  useEffect(() => {
+    if (selectedChar && ALL_CHARACTERS[cardViewIndex]) {
+      const newCharId = ALL_CHARACTERS[cardViewIndex].id;
+      const collectionChar = userCollection.find(c => (c.slug || c.id) === newCharId);
+      if (collectionChar) {
+        setSelectedChar({ ...collectionChar, slug: collectionChar.slug || newCharId });
+      } else {
+        const fallback = ALL_CHARACTERS[cardViewIndex];
+        setSelectedChar({ ...fallback, slug: newCharId, owned: false, level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: fallback.uses || 10, fragments: 0, fragments_required: 3 });
+      }
+      loadCharPowers(newCharId);
+    }
+  }, [cardViewIndex]);
+
+  useEffect(() => {
+    if (!freeSpinUsed || !nextFreeAt) { setTimeToFree(''); return; }
+    const timer = setInterval(() => {
+      const diff = nextFreeAt - Date.now();
+      if (diff <= 0) { setTimeToFree(''); setFreeSpinUsed(false); setFreeSpinAvailable(true); setNextFreeAt(null); clearInterval(timer); return; }
+      const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+      const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+      const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+      setTimeToFree(h + ':' + m + ':' + s);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [freeSpinUsed, nextFreeAt]);
+
+  useEffect(() => {
+    loadAll(); checkFreeSpin();
+    (async () => {
+      try {
+        const res = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID + '&select=full_name', { headers: HEADERS });
+        const d = await res.json();
+        if (d && d[0]) setUserNameAvatar(d[0].full_name || '');
+      } catch (e) {}
+    })();
+    fetchChallengeScores().then(scores => setChallengeScores(scores));
+    Animated.loop(Animated.sequence([
+      Animated.timing(freeBtnPulse, { toValue: 1.04, duration: 1200, useNativeDriver: true }),
+      Animated.timing(freeBtnPulse, { toValue: 1, duration: 1200, useNativeDriver: true }),
+    ])).start();
+  }, []);
+
+  useEffect(() => { if (activeTab === 'characters') loadCharacterData(); }, [activeTab]);
+  useEffect(() => { if (activeTab === 'defi') { fetchChallengeScores().then(scores => setChallengeScores(scores)); loadPendingRequests(); } }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'defi') return;
+    if (challenges.length > 0 && !leaderboardChallengeId) {
+      setLeaderboardChallengeId(challenges[0].id); fetchLeaderboard(challenges[0].id);
+    } else if (leaderboardChallengeId) { fetchLeaderboard(leaderboardChallengeId); }
+    fetchChallengeLeaders();
+    const interval = setInterval(() => { if (leaderboardChallengeId) fetchLeaderboard(leaderboardChallengeId); }, 300000);
+    return () => clearInterval(interval);
+  }, [activeTab, challenges.length, leaderboardChallengeId]);
+
+  useEffect(() => {
+    if (notifications.length === 0) return;
+    Animated.loop(Animated.timing(notifScrollX, { toValue: -(notifications.length * wp(280)), duration: notifications.length * 5000, useNativeDriver: true })).start();
+  }, [notifications]);
+
+  useEffect(() => {
+    if (!retryAfterTime) return;
+    const interval = setInterval(() => {
+      const diff = retryAfterTime - Date.now();
+      if (diff <= 0) { setRetryAfterTime(null); setRetryCountdown(''); clearInterval(interval); return; }
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      setRetryCountdown((hours > 0 ? hours + 'h ' : '') + (minutes > 0 ? minutes + 'min ' : '') + seconds + 's');
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [retryAfterTime]);
 
   async function sendBinomeRequestLive() {
     setBinomeStatus('pending_sent');
