@@ -689,8 +689,321 @@ export default function ActivityPage({ onNavigate }) {
             {weeklyMinutes >= 150 && <Text style={{ fontSize: fp(18) }}>🏅</Text>}
           </View>
 
-          {/* TODO: Walk canvas SVG section — will be added in follow-up prompt */}
-          {/* TODO: Run canvas SVG section — will be added in follow-up prompt */}
+          {/* ═══ MARCHE — SIDE-SCROLL ═══ */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(16), marginTop: wp(4), marginBottom: wp(12) }}>
+            <View style={{ width: 3, height: 18, borderRadius: 1.5, backgroundColor: '#00D984', marginRight: 8 }} />
+            <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.walk}</Text>
+          </View>
+          <MetalCard style={{
+            marginBottom: wp(2), borderRadius: wp(14), borderWidth: 0.5,
+            borderColor: walkGlow ? 'rgba(0,217,132,0.5)' : 'rgba(74,79,85,0.3)',
+          }}>
+            {/* Stats */}
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: wp(10), paddingVertical: wp(6), gap: wp(10) }}>
+              <Text style={{ fontSize: fp(10), color: '#FF6B6B', fontWeight: '600' }}>📍{walkDistStr}</Text>
+              <Text style={{ fontSize: fp(10), color: '#FF8C42', fontWeight: '600' }}>🔥{walkCal}kcal</Text>
+              <Text style={{ fontSize: fp(10), color: '#4DA6FF', fontWeight: '600' }}>💧{walkWater}ml</Text>
+            </View>
+
+            {/* Canvas SVG */}
+            <View
+              style={{ position: 'relative', height: WALK_CANVAS_H, borderRadius: wp(10), overflow: 'hidden', backgroundColor: 'rgba(0,217,132,0.03)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.08)' }}
+              onLayout={(e) => setWalkCanvasW(e.nativeEvent.layout.width)}
+            >
+              <Svg width={walkCanvasW} height={WALK_CANVAS_H} viewBox={`${walkScrollOffset} 0 ${walkCanvasW} ${WALK_CANVAS_H}`}>
+                <Defs>
+                  <SvgLinearGradient id="wSkyGrad" x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0%" stopColor="#87CEEB" stopOpacity={0.9} />
+                    <Stop offset="40%" stopColor="#B0E0FF" stopOpacity={0.7} />
+                    <Stop offset="100%" stopColor="#E8F5E9" stopOpacity={0.3} />
+                  </SvgLinearGradient>
+                  <SvgLinearGradient id="wGrassGrad" x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0%" stopColor="#4CAF50" stopOpacity={0.4} />
+                    <Stop offset="100%" stopColor="#2E7D32" stopOpacity={0.6} />
+                  </SvgLinearGradient>
+                  <SvgLinearGradient id="wPathGrad" x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0%" stopColor="#D7CCC8" stopOpacity={0.3} />
+                    <Stop offset="100%" stopColor="#A1887F" stopOpacity={0.2} />
+                  </SvgLinearGradient>
+                </Defs>
+                {(function() {
+                  var scW = WALK_SCENE_W;
+                  var scH = WALK_CANVAS_H;
+                  var groundY = scH * 0.60;
+                  var pathY = scH * 0.58;
+                  return (
+                    <G>
+                      <Rect x={0} y={0} width={scW} height={groundY} fill="url(#wSkyGrad)" />
+                      <Rect x={0} y={groundY} width={scW} height={scH - groundY} fill="url(#wGrassGrad)" />
+                      <Path d={`M0 ${pathY + 5} Q500 ${pathY - 2} 1000 ${pathY + 3} Q1500 ${pathY - 1} ${scW} ${pathY + 5}`}
+                        fill="none" stroke="url(#wPathGrad)" strokeWidth={18} strokeLinecap="round" />
+                      <TreeIcon x={440} y={pathY - 15} passed={walkScrollOffset > 300} />
+                      <BenchIcon x={840} y={pathY} />
+                      <BirdsIcon x={1300} y={pathY - 20} passed={walkProg > 0.65} />
+                      <PondIcon x={1850} y={pathY - 5} />
+                    </G>
+                  );
+                })()}
+              </Svg>
+
+              <LinearGradient colors={['#252A30', 'rgba(37,42,48,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 30 }} />
+              <LinearGradient colors={['rgba(37,42,48,0)', '#252A30']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 30 }} />
+            </View>
+
+            {/* Controls */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: wp(6), paddingVertical: wp(4), marginTop: wp(4) }}>
+              <TouchableOpacity onPress={() => setWalkRoundTrip(!walkRoundTrip)} style={{
+                backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
+                borderRadius: wp(6), borderWidth: 0.5,
+                borderColor: walkRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(74,79,85,0.4)',
+                paddingHorizontal: wp(6), paddingVertical: wp(3),
+              }}>
+                <Text style={{ fontSize: fp(7), color: walkRoundTrip ? '#00D984' : '#6B7280' }}>
+                  {walkRoundTrip ? '↔ ' + t.roundTripX2 : '↔ ' + t.roundTrip}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8) }}>
+                <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}
+                  style={({ pressed }) => ({
+                    width: wp(44), height: wp(44), borderRadius: wp(22),
+                    backgroundColor: pressed ? '#2A303B' : '#1A1D22',
+                    borderWidth: 1.5, borderColor: pressed ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.12)',
+                    alignItems: 'center', justifyContent: 'center',
+                  })}
+                >
+                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24">
+                    <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </Svg>
+                </Pressable>
+                <Text style={{ fontSize: fp(7), color: '#555E6C', fontWeight: '600' }}>{t.hold}</Text>
+                <Pressable onPressIn={() => startWalkMoving(1)} onPressOut={stopWalkMoving}
+                  style={({ pressed }) => ({
+                    width: wp(44), height: wp(44), borderRadius: wp(22),
+                    backgroundColor: pressed ? '#2A303B' : '#1A1D22',
+                    borderWidth: 1.5, borderColor: pressed ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.12)',
+                    alignItems: 'center', justifyContent: 'center',
+                  })}
+                >
+                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24">
+                    <Path d="M9 5l7 7-7 7" stroke="#00D984" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </Svg>
+                </Pressable>
+              </View>
+
+              <View style={{ alignItems: 'flex-end', minWidth: wp(50) }}>
+                <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#00D984' }} numberOfLines={1}>{walkDurStr}</Text>
+                <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{t.normalSpeed}</Text>
+              </View>
+            </View>
+
+            {/* Buttons: Confirm + LIVE */}
+            <View style={{ flexDirection: 'row', gap: wp(8), marginTop: wp(6) }}>
+              {walkScrollOffset > 0 && (
+                <Pressable
+                  onPress={async () => {
+                    if (walkCal === 0) return;
+                    const ok = await saveActivity('marche', Math.round(walkDurMin * walkMul), walkCal, 'modere', walkWater);
+                    if (ok) {
+                      setWalkSaved(true);
+                      setLastActivity({ type: 'walk', name: t.walk, distance: walkDistStr, duration: Math.round(walkDurMin * walkMul), kcal: walkCal, water: walkWater, speed: null });
+                      setShowPostReport(true);
+                      fetchWeeklyMinutes();
+                      setTimeout(() => { setWalkSaved(false); setWalkScrollOffset(0); }, 1500);
+                    }
+                  }}
+                  disabled={walkSaved}
+                  style={({ pressed }) => ({
+                    flex: 2, paddingVertical: wp(9), borderRadius: wp(10),
+                    backgroundColor: walkSaved ? '#00D984' : pressed ? '#00B572' : '#00D984',
+                    alignItems: 'center',
+                  })}
+                >
+                  <Text style={{ color: '#1A1D22', fontSize: fp(11), fontWeight: '700' }}>
+                    {walkSaved ? String.fromCodePoint(0x2713) + ' ' + t.added : String.fromCodePoint(0x2713) + ' ' + t.validate + ' — ' + walkCal + ' kcal'}
+                  </Text>
+                </Pressable>
+              )}
+              <TouchableOpacity
+                onPress={() => setShowLive(true)}
+                style={{
+                  flex: 1, backgroundColor: 'rgba(255,107,107,0.12)',
+                  borderRadius: wp(10), borderWidth: 1.5, borderColor: 'rgba(255,107,107,0.4)',
+                  paddingVertical: wp(9), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(4),
+                }}
+              >
+                <View style={{ width: wp(7), height: wp(7), borderRadius: wp(4), backgroundColor: '#FF6B6B' }} />
+                <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FF6B6B' }}>{t.live}</Text>
+              </TouchableOpacity>
+            </View>
+          </MetalCard>
+
+          {/* ═══ COURSE — SAVANE AFRICAINE ═══ */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(16), marginTop: wp(12), marginBottom: wp(12) }}>
+            <View style={{ width: 3, height: 18, borderRadius: 1.5, backgroundColor: '#00D984', marginRight: 8 }} />
+            <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.run}</Text>
+          </View>
+          <MetalCard style={{
+            marginBottom: wp(2), borderRadius: wp(14), borderWidth: 0.5,
+            borderColor: runGlow ? 'rgba(255,140,66,0.5)' : 'rgba(74,79,85,0.3)',
+          }}>
+            {/* Stats */}
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: wp(10), paddingVertical: wp(6), gap: wp(10) }}>
+              <Text style={{ fontSize: fp(10), color: '#FF6B6B', fontWeight: '600' }}>📍{runDistStr}</Text>
+              <Text style={{ fontSize: fp(10), color: '#FF8C42', fontWeight: '600' }}>🔥{runCalories}kcal</Text>
+              <Text style={{ fontSize: fp(10), color: '#4DA6FF', fontWeight: '600' }}>💧{runWater}ml</Text>
+            </View>
+
+            {/* Canvas SVG savane */}
+            <View
+              style={{ position: 'relative', height: RUN_CANVAS_H, borderRadius: wp(10), overflow: 'hidden', backgroundColor: '#D4632A', borderWidth: 1, borderColor: 'rgba(232,148,74,0.3)' }}
+              onLayout={(e) => setRunCanvasW(e.nativeEvent.layout.width)}
+            >
+              <Svg width={runCanvasW} height={RUN_CANVAS_H} viewBox={`0 0 ${runCanvasW} ${RUN_CANVAS_H}`} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+                {(function() {
+                  var cW = runCanvasW;
+                  var cH = RUN_CANVAS_H;
+                  var groundY = cH * 0.45;
+                  var sOff = runScrollOffset;
+                  var trailY = groundY + cH * 0.15;
+                  var trailH = cH * 0.2;
+                  var sunX = cW * 0.8 - sOff * 0.05;
+
+                  var trees = [
+                    { x: 100, type: 'acacia' }, { x: 400, type: 'baobab' },
+                    { x: 750, type: 'acacia' }, { x: 1100, type: 'baobab' },
+                    { x: 1500, type: 'acacia' }, { x: 2000, type: 'baobab' },
+                    { x: 2600, type: 'acacia' }, { x: 3200, type: 'baobab' },
+                  ];
+
+                  return (
+                    <G>
+                      {/* Ciel coucher de soleil */}
+                      <Rect x={0} y={0} width={cW} height={groundY} fill="#D4632A" />
+                      <Rect x={0} y={cH * 0.3} width={cW} height={cH * 0.15} fill="#E8944A" opacity={0.7} />
+
+                      {/* Soleil */}
+                      <Circle cx={sunX} cy={cH * 0.38} r={22} fill="#F5C040" opacity={0.9} />
+                      <Circle cx={sunX} cy={cH * 0.38} r={14} fill="#FADE6A" opacity={0.6} />
+
+                      {/* Silhouettes arbres */}
+                      {trees.map(function(tree, i) {
+                        var tx = tree.x - sOff * 0.3;
+                        if (tx < -40 || tx > cW + 40) return null;
+                        if (tree.type === 'acacia') {
+                          return (
+                            <G key={'t' + i}>
+                              <Rect x={tx - 1} y={groundY - 30} width={3} height={30} fill="#1A0F05" opacity={0.8} />
+                              <Ellipse cx={tx} cy={groundY - 32} rx={22} ry={8} fill="#1A0F05" opacity={0.8} />
+                            </G>
+                          );
+                        }
+                        return (
+                          <G key={'t' + i}>
+                            <Path d={`M${tx - 5} ${groundY} L${tx - 3} ${groundY - 25} L${tx + 3} ${groundY - 25} L${tx + 5} ${groundY} Z`} fill="#1A0F05" opacity={0.8} />
+                            <Ellipse cx={tx} cy={groundY - 28} rx={15} ry={10} fill="#1A0F05" opacity={0.8} />
+                          </G>
+                        );
+                      })}
+
+                      {/* Sol savane + piste */}
+                      <Rect x={0} y={groundY} width={cW} height={cH * 0.55} fill="#5A3E1B" />
+                      <Rect x={0} y={trailY} width={cW} height={trailH} fill="#4A3418" />
+                    </G>
+                  );
+                })()}
+              </Svg>
+
+              {/* Brouillards */}
+              <LinearGradient colors={['#5A3E1B', 'rgba(90,62,27,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 30 }} />
+              <LinearGradient colors={['rgba(90,62,27,0)', '#5A3E1B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 30 }} />
+
+              {/* Poussière */}
+              {isRunning && (
+                <View style={{ position: 'absolute', left: '18%', bottom: 10, flexDirection: 'row' }}>
+                  {[0.35, 0.25, 0.15, 0.08].map(function(op, i) {
+                    return <View key={i} style={{ width: 4 + i * 3, height: 4 + i * 3, borderRadius: 10, backgroundColor: 'rgba(140, 110, 60, ' + op + ')', marginRight: 2 }} />;
+                  })}
+                </View>
+              )}
+            </View>
+
+            {/* Controls */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: wp(6), paddingVertical: wp(4), marginTop: wp(4) }}>
+              <TouchableOpacity onPress={() => setRunRoundTrip(!runRoundTrip)} style={{
+                backgroundColor: runRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
+                borderRadius: wp(6), borderWidth: 0.5,
+                borderColor: runRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(74,79,85,0.4)',
+                paddingHorizontal: wp(6), paddingVertical: wp(3),
+              }}>
+                <Text style={{ fontSize: fp(7), color: runRoundTrip ? '#00D984' : '#6B7280' }}>
+                  {runRoundTrip ? '↔ ' + t.roundTripX2 : '↔ ' + t.roundTrip}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8) }}>
+                <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}
+                  style={({ pressed }) => ({
+                    width: wp(44), height: wp(44), borderRadius: wp(22),
+                    backgroundColor: pressed ? '#2A303B' : '#1A1D22',
+                    borderWidth: 1.5, borderColor: pressed ? 'rgba(255,140,66,0.4)' : 'rgba(255,255,255,0.12)',
+                    alignItems: 'center', justifyContent: 'center',
+                  })}
+                >
+                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24">
+                    <Path d="M15 19l-7-7 7-7" stroke="#FF8C42" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </Svg>
+                </Pressable>
+                <Text style={{ fontSize: fp(7), color: '#555E6C', fontWeight: '600' }}>{t.hold}</Text>
+                <Pressable onPressIn={() => startRunMoving(1)} onPressOut={stopRunMoving}
+                  style={({ pressed }) => ({
+                    width: wp(44), height: wp(44), borderRadius: wp(22),
+                    backgroundColor: pressed ? '#2A303B' : '#1A1D22',
+                    borderWidth: 1.5, borderColor: pressed ? 'rgba(255,140,66,0.4)' : 'rgba(255,255,255,0.12)',
+                    alignItems: 'center', justifyContent: 'center',
+                  })}
+                >
+                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24">
+                    <Path d="M9 5l7 7-7 7" stroke="#FF8C42" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </Svg>
+                </Pressable>
+              </View>
+
+              <View style={{ alignItems: 'flex-end', minWidth: wp(50) }}>
+                <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#00D984' }} numberOfLines={1}>{runDurStr}</Text>
+                <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{t.normalPace}</Text>
+              </View>
+            </View>
+
+            {/* Buttons: Confirm + LIVE */}
+            <View style={{ flexDirection: 'row', gap: wp(8), marginTop: wp(6) }}>
+              {runScrollOffset > 0 && (
+                <Pressable onPress={handleAddRun} disabled={runSaved}
+                  style={({ pressed }) => ({
+                    flex: 2, paddingVertical: wp(9), borderRadius: wp(10),
+                    backgroundColor: runSaved ? '#00D984' : pressed ? '#00B572' : '#00D984',
+                    alignItems: 'center',
+                  })}
+                >
+                  <Text style={{ color: '#1A1D22', fontSize: fp(11), fontWeight: '700' }}>
+                    {runSaved ? String.fromCodePoint(0x2713) + ' ' + t.added : String.fromCodePoint(0x2713) + ' ' + t.validate + ' — ' + runCalories + ' kcal'}
+                  </Text>
+                </Pressable>
+              )}
+              <TouchableOpacity onPress={() => setShowLive(true)} style={{
+                flex: 1, backgroundColor: 'rgba(255,107,107,0.12)',
+                borderRadius: wp(10), borderWidth: 1.5, borderColor: 'rgba(255,107,107,0.4)',
+                paddingVertical: wp(9), flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(4),
+              }}>
+                <View style={{ width: wp(7), height: wp(7), borderRadius: wp(4), backgroundColor: '#FF6B6B' }} />
+                <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FF6B6B' }}>{t.live}</Text>
+              </TouchableOpacity>
+            </View>
+          </MetalCard>
 
           {/* Other sports */}
           <View style={{ marginTop: wp(12) }}>
