@@ -537,9 +537,352 @@ export default function LixVersePage({ navigation }) {
     }
   }
 
+  const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+
+  async function loadAll() {
+    setLoading(true);
+    try {
+      const [a,b,c,d,e] = await Promise.all([
+        fetch(SUPABASE_URL+'/rest/v1/users_profile?user_id=eq.'+TEST_USER_ID+'&select=lix_balance,energy',{headers:hdrs}),
+        fetch(SUPABASE_URL+'/rest/v1/lixverse_user_characters?user_id=eq.'+TEST_USER_ID+'&select=character_id',{headers:hdrs}),
+        fetch(SUPABASE_URL+'/rest/v1/lixverse_challenges?is_active=eq.true&order=start_date.asc',{headers:hdrs}),
+        fetch(SUPABASE_URL+'/rest/v1/lixverse_notifications?order=created_at.desc&limit=20',{headers:hdrs}),
+        fetch(SUPABASE_URL+'/rest/v1/lixverse_group_members?user_id=eq.'+TEST_USER_ID+'&select=group_id,personal_score,lixverse_groups(id,name,member_count,total_score,invite_code,challenge_id)',{headers:hdrs}),
+      ]);
+      const [aD,bD,cD,dD,eD] = await Promise.all([a.json(),b.json(),c.json(),d.json(),e.json()]);
+      if(aD[0]?.lix_balance!=null)setLixBalance(aD[0].lix_balance);
+      if(aD[0]?.energy!=null)setUserEnergy(aD[0].energy);
+      if(Array.isArray(bD))setOwnedCharacters(bD.map(x=>x.character_id));
+      if(Array.isArray(cD))setChallenges(cD);
+      if(Array.isArray(dD))setNotifications(dD);
+      if (Array.isArray(dD) && dD.length > 0) {
+        setNotifList(dD.map(n => ({
+          id: n.id || String(Math.random()),
+          title: n.notification_type === 'character_won' ? 'Carte gagnée !'
+               : n.notification_type === 'wall_sticker' ? 'Wall of Health'
+               : n.notification_type === 'challenge_end' ? 'Défi terminé'
+               : n.notification_type === 'poke' ? 'Poke reçu'
+               : n.notification_type === 'group_join' ? 'Nouveau membre'
+               : n.notification_type === 'binome_request' ? 'Demande Binôme'
+               : 'Notification',
+          message: n.message || '',
+          emoji: n.notification_type === 'character_won' ? '🎉' : n.notification_type === 'wall_sticker' ? '🏆' : n.notification_type === 'poke' ? '📢' : n.notification_type === 'group_join' ? '🤝' : n.notification_type === 'binome_request' ? '💛' : '📬',
+          color: n.color || '#D4AF37',
+          time: n.created_at ? new Date(n.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '',
+          read: n.read || false, type: n.notification_type,
+        })));
+      }
+      if(Array.isArray(eD))setMyGroups(eD);
+      const wallRes = await fetch(SUPABASE_URL + '/rest/v1/wall_stickers?is_visible=eq.true&order=like_count.desc&limit=30', { headers: hdrs });
+      const wallData = await wallRes.json();
+      if (Array.isArray(wallData)) setWallStickers(wallData);
+      const catRes = await fetch(SUPABASE_URL + '/rest/v1/wall_sticker_catalog?is_available=eq.true&order=sort_order.asc', { headers: hdrs });
+      const catData = await catRes.json();
+      if (Array.isArray(catData)) setStickerCatalog(catData);
+      const certMonth = new Date().toISOString().slice(0, 7);
+      const prevMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
+      const certRes = await fetch(SUPABASE_URL + '/rest/v1/wall_certifications?user_id=eq.' + TEST_USER_ID + '&or=(month_year.eq.' + certMonth + ',month_year.eq.' + prevMonth + ')&order=month_year.desc&limit=1', { headers: hdrs });
+      const certData = await certRes.json();
+      if (Array.isArray(certData) && certData.length > 0) setMyCertification(certData[0]);
+    } catch(err) { console.error('Load:', err); }
+    setLoading(false);
+  }
+
+  async function fetchChallengeScores() {
+    try {
+      const data = await supaRpc('get_user_challenge_scores', { p_user_id: TEST_USER_ID });
+      if (Array.isArray(data)) return data;
+      return [];
+    } catch (err) { return []; }
+  }
+
+  async function fetchLeaderboard(challengeId) {
+    if (!challengeId) return;
+    setLeaderboardLoading(true);
+    try {
+      const data = await supaRpc('get_challenge_leaderboard', { p_challenge_id: challengeId, p_user_id: TEST_USER_ID });
+      if (data && data.top_groups) setLeaderboardData(data);
+    } catch (e) { console.error('Leaderboard error:', e); }
+    setLeaderboardLoading(false);
+  }
+
+  async function fetchChallengeLeaders() {
+    try {
+      const data = await supaRpc('get_all_challenges_leaders', {});
+      if (data && Array.isArray(data)) {
+        const map = {};
+        data.forEach(item => { if (item.challenge_id && item.top3) map[item.challenge_id] = item.top3; });
+        setChallengeLeaders(map);
+      }
+    } catch (e) {}
+  }
+
+  async function fetchIndividualLB(challengeId) {
+    if (!challengeId) return;
+    setLbTabLoading(true);
+    try {
+      const data = await supaRpc('get_individual_leaderboard', { p_challenge_id: challengeId, p_user_id: TEST_USER_ID });
+      if (data) setIndividualLB(data);
+    } catch (e) {}
+    setLbTabLoading(false);
+  }
+
+  async function fetchCountryLB(challengeId) {
+    if (!challengeId) return;
+    setLbTabLoading(true);
+    try {
+      const data = await supaRpc('get_country_leaderboard', { p_challenge_id: challengeId, p_user_id: TEST_USER_ID });
+      if (data) setCountryLB(data);
+    } catch (e) {}
+    setLbTabLoading(false);
+  }
+
+  async function checkEligibilityAndProceed(challenge, action) {
+    setEligibilityChecking(true);
+    try {
+      const data = await supaRpc('check_challenge_eligibility', { p_user_id: TEST_USER_ID });
+      setEligibilityChecking(false);
+      if (data?.eligible) {
+        setSelectedChallenge(challenge);
+        if (action === 'create') setShowCreateGroup(true);
+        else setShowJoinGroup(true);
+      } else {
+        const daysNeeded = data?.days_needed || 5;
+        const detail = data?.detail || {};
+        showLixAlert('🔍 Analyse de régularité',
+          'Pour participer aux défis, LIXUM vérifie que tu utilises l\'app régulièrement.\n\nActivité détectée : ' + (data?.active_days || 0) + '/7 jours minimum\n• Repas loggés : ' + (detail.meals || 0) + ' jours\n• Activités : ' + (detail.activities || 0) + ' jours\n• Humeur : ' + (detail.moods || 0) + ' jours\n\nContinue à utiliser LIXUM pendant encore ' + daysNeeded + ' jour' + (daysNeeded > 1 ? 's' : '') + ' pour débloquer les défis.',
+          [{ text: 'Compris', color: '#D4AF37' }], '🛡️');
+      }
+    } catch (e) {
+      setEligibilityChecking(false);
+      setSelectedChallenge(challenge);
+      if (action === 'create') setShowCreateGroup(true);
+      else setShowJoinGroup(true);
+    }
+  }
+
+  async function createGroup() {
+    if (!newGroupName.trim() || !selectedChallenge) return;
+    try {
+      const cd = await supaRpc('check_create_group_cooldown', { p_user_id: TEST_USER_ID });
+      if (cd && !cd.allowed) {
+        showLixAlert('⏳ Cooldown actif', 'Tu as supprimé un groupe récemment.\nTu pourras en créer un nouveau dans ' + cd.days_left + ' jour' + (cd.days_left > 1 ? 's' : '') + '.', [{ text: 'Compris', style: 'cancel' }], '⏳');
+        return;
+      }
+    } catch (e) {}
+    try {
+      const code = selectedChallenge.challenge_type.toUpperCase().slice(0, 5) + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+      const res = await fetch(SUPABASE_URL + '/rest/v1/lixverse_groups', { method: 'POST', headers: h, body: JSON.stringify({ challenge_id: selectedChallenge.id, name: newGroupName.trim(), created_by: TEST_USER_ID, creator_lixtag: 'LXM-2K7F4A', invite_code: code, member_count: 1 }) });
+      const g = await res.json();
+      if (g && g[0]) {
+        await fetch(SUPABASE_URL + '/rest/v1/lixverse_group_members', { method: 'POST', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ group_id: g[0].id, user_id: TEST_USER_ID, lixtag: 'LXM-2K7F4A', country: 'Burundi' }) });
+        showLixAlert('Groupe créé', '"' + newGroupName.trim() + '"\n\nCode : ' + code, [{ text: 'Parfait', color: '#00D984' }], '✅');
+        setShowCreateGroup(false); setNewGroupName(''); loadAll();
+      }
+    } catch (e) { showLixAlert('Erreur', 'Création échouée.', [{ text: 'OK', style: 'cancel' }], '❌'); }
+  }
+
+  async function joinGroup() {
+    if (!joinCode.trim()) return;
+    try {
+      const h = { ...hdrs, 'Content-Type': 'application/json' };
+      const res = await fetch(SUPABASE_URL + '/rest/v1/lixverse_groups?invite_code=eq.' + joinCode.trim().toUpperCase() + '&select=*', { headers: hdrs });
+      const gs = await res.json();
+      if (!gs || gs.length === 0) { showLixAlert('Code invalide', 'Aucun groupe trouvé avec ce code.', [{ text: 'Réessayer', style: 'cancel' }], '🔍'); return; }
+      const g = gs[0];
+      await fetch(SUPABASE_URL + '/rest/v1/lixverse_group_members', { method: 'POST', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ group_id: g.id, user_id: TEST_USER_ID, lixtag: 'LXM-2K7F4A', country: 'Burundi' }) });
+      await fetch(SUPABASE_URL + '/rest/v1/lixverse_groups?id=eq.' + g.id, { method: 'PATCH', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ member_count: g.member_count + 1 }) });
+      showLixAlert('Rejoint', 'Tu fais partie de "' + g.name + '" !', [{ text: 'Super', color: '#00D984' }], '🤝');
+      setShowJoinGroup(false); setJoinCode(''); loadAll();
+    } catch (e) { showLixAlert('Erreur', 'Impossible de rejoindre.', [{ text: 'OK', style: 'cancel' }], '❌'); }
+  }
+
+  async function openGroupDetail(group) {
+    const groupId = group.lixverse_groups?.id || group.group_id;
+    if (!groupId) return;
+    setSelectedGroup(group); setGroupDetailLoading(true); setGroupDetail(null);
+    try {
+      const data = await supaRpc('get_group_details', { p_group_id: groupId });
+      if (data && !data.error) setGroupDetail(data);
+    } catch (e) { console.error('Group detail error:', e); }
+    setGroupDetailLoading(false);
+  }
+
+  async function pokeGroup() {
+    if (poking || !groupDetail?.group?.id) return;
+    setPoking(true);
+    try {
+      const data = await supaRpc('poke_group', { p_user_id: TEST_USER_ID, p_group_id: groupDetail.group.id });
+      if (data?.success) {
+        showLixAlert('📢 Poke envoyé !', data.poked_count + ' membre' + (data.poked_count > 1 ? 's' : '') + ' notifié' + (data.poked_count > 1 ? 's' : ''), [{ text: 'On se bouge !', color: '#FF8C42' }], '📢');
+      } else {
+        showLixAlert('⏳ Patience', data?.error || 'Réessaie plus tard', [{ text: 'OK', style: 'cancel' }], '⏳');
+      }
+    } catch (e) { console.error('Poke error:', e); }
+    setPoking(false);
+  }
+
+  async function deleteGroup() {
+    if (!groupDetail?.group?.id) return;
+    showLixAlert('🗑️ Supprimer le groupe ?', 'Tous les membres seront retirés et les scores perdus.\n\nCette action est irréversible.',
+      [{ text: 'Supprimer', color: '#FF6B6B', onPress: async () => {
+        try {
+          const data = await supaRpc('delete_group', { p_user_id: TEST_USER_ID, p_group_id: groupDetail.group.id });
+          if (data?.success) { setSelectedGroup(null); setGroupDetail(null); loadAll(); showLixAlert('Groupe supprimé', '"' + data.deleted_group + '" a été dissous.', [{ text: 'OK', color: '#00D984' }], '✅'); }
+          else { showLixAlert('Erreur', data?.error || 'Impossible de supprimer', [{ text: 'OK', style: 'cancel' }], '❌'); }
+        } catch (e) { console.error('Delete group error:', e); }
+      }}, { text: 'Annuler', style: 'cancel' }], '🗑️');
+  }
+
+  async function leaveGroup() {
+    if (!groupDetail?.group?.id) return;
+    showLixAlert('Quitter le groupe ?', 'Tu perdras tes points dans "' + groupDetail.group.name + '".',
+      [{ text: 'Quitter', color: '#FF6B6B', onPress: async () => {
+        try {
+          const data = await supaRpc('leave_group', { p_user_id: TEST_USER_ID, p_group_id: groupDetail.group.id });
+          if (data?.success) { setSelectedGroup(null); setGroupDetail(null); loadAll(); showLixAlert('Groupe quitté', 'Tu as quitté "' + data.left_group + '".', [{ text: 'OK', style: 'cancel' }], '👋'); }
+          else { showLixAlert('Erreur', data?.error || 'Impossible', [{ text: 'OK', style: 'cancel' }], '❌'); }
+        } catch (e) { console.error('Leave group error:', e); }
+      }}, { text: 'Rester', style: 'cancel' }], '👋');
+  }
+
+  async function openPublicProfile(lixtag) {
+    if (!lixtag) return;
+    setPublicProfileLoading(true); setPublicProfile(null); setShowPublicProfile(true);
+    try {
+      const data = await supaRpc('get_public_profile', { p_lixtag: lixtag });
+      if (data && !data.error) setPublicProfile(data);
+    } catch (e) { console.error('Public profile error:', e); }
+    setPublicProfileLoading(false);
+  }
+
+  async function copyInviteCode(code) {
+    try {
+      await Clipboard.setStringAsync(code);
+      showLixAlert('📋 Copié !', 'Code ' + code + ' copié dans le presse-papier.', [{ text: 'Super', color: '#00D984' }], '📋');
+    } catch (e) {
+      showLixAlert('Code', code, [{ text: 'OK', style: 'cancel' }], '📋');
+    }
+  }
+
+  async function searchGroups(query) {
+    if (!query || query.trim().length < 2) { setSearchGroupResults([]); return; }
+    setSearchGroupLoading(true);
+    try {
+      const data = await supaRpc('search_groups_fuzzy', { p_query: query.trim(), p_limit: 10 });
+      setSearchGroupResults(Array.isArray(data) ? data : []);
+    } catch (e) { setSearchGroupResults([]); }
+    setSearchGroupLoading(false);
+  }
+
+  async function requestJoinGroup(group) {
+    try {
+      const data = await supaRpc('request_join_group', { p_user_id: TEST_USER_ID, p_group_id: group.id });
+      if (data?.success) {
+        showLixAlert('✅ Demande envoyée', 'Le leader de "' + data.group_name + '" recevra ta demande.', [{ text: 'Compris', color: '#D4AF37' }], '📩');
+        setShowSearchGroup(false); setSearchGroupQuery(''); setSearchGroupResults([]);
+      } else {
+        showLixAlert('Info', data?.error || 'Impossible d\'envoyer.', [{ text: 'OK', style: 'cancel' }], 'ℹ️');
+      }
+    } catch (e) { showLixAlert('Erreur', 'Problème de connexion.', [{ text: 'OK', style: 'cancel' }], '❌'); }
+  }
+
+  async function loadPendingRequests() {
+    setPendingRequestsLoading(true);
+    try {
+      const data = await supaRpc('get_pending_requests', { p_user_id: TEST_USER_ID });
+      setPendingRequests(Array.isArray(data) ? data : []);
+    } catch (e) { console.error('Pending requests error:', e); }
+    setPendingRequestsLoading(false);
+  }
+
+  async function handleJoinRequest(requestId, accept) {
+    try {
+      const data = await supaRpc('handle_join_request', { p_leader_id: TEST_USER_ID, p_request_id: requestId, p_accept: accept });
+      if (data?.success) {
+        const action = accept ? 'acceptée' : 'rejetée';
+        showLixAlert(accept ? '✅ Accepté' : '❌ Rejeté', 'Demande de ' + data.requester_lixtag + ' ' + action + '.', [{ text: 'OK', color: accept ? '#00D984' : '#FF6B6B' }], accept ? '🤝' : '👋');
+        loadPendingRequests(); loadAll();
+      } else { showLixAlert('Erreur', data?.error || 'Action impossible.', [{ text: 'OK', style: 'cancel' }], '❌'); }
+    } catch (e) { console.error('Handle request error:', e); }
+  }
+
+  const handleStickerTap = (sticker) => {
+    const id = sticker.id;
+    setWallStickers(prev => prev.map(s => s.id === id ? { ...s, like_count: (s.like_count || 0) + 1 } : s));
+    fetch(SUPABASE_URL + '/rest/v1/rpc/like_wall_sticker', { method: 'POST', headers: { ...hdrs, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_sticker_id: id, p_user_id: TEST_USER_ID }) }).catch(() => {});
+    supaRpc('score_social_action', { p_user_id: TEST_USER_ID }).catch(() => {});
+    const heartId = Date.now() + Math.random();
+    const heartEmojis = ['🩶', '🤍', '💛', '⭐', '✨'];
+    const emoji = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+    setFloatingHearts(prev => [...prev, { id: heartId, stickerId: id, x: Math.random() * wp(40) - wp(20), emoji }]);
+    setTimeout(() => setFloatingHearts(prev => prev.filter(h => h.id !== heartId)), 1200);
+    const prevCount = comboCount[id] || 0;
+    const newCount = prevCount + 1;
+    setComboCount(prev => ({ ...prev, [id]: newCount }));
+    if (comboTimer[id]) clearTimeout(comboTimer[id]);
+    const timer = setTimeout(() => { setComboCount(prev => ({ ...prev, [id]: 0 })); setStrikeActive(prev => ({ ...prev, [id]: false })); }, 2000);
+    setComboTimer(prev => ({ ...prev, [id]: timer }));
+    if (!stickerShakeAnims[id]) stickerShakeAnims[id] = new Animated.Value(0);
+    const shakeIntensity = Math.min(newCount * 1.5, 12);
+    Animated.sequence([
+      Animated.timing(stickerShakeAnims[id], { toValue: shakeIntensity, duration: 50, useNativeDriver: true }),
+      Animated.timing(stickerShakeAnims[id], { toValue: -shakeIntensity, duration: 50, useNativeDriver: true }),
+      Animated.timing(stickerShakeAnims[id], { toValue: shakeIntensity * 0.6, duration: 50, useNativeDriver: true }),
+      Animated.timing(stickerShakeAnims[id], { toValue: -shakeIntensity * 0.6, duration: 50, useNativeDriver: true }),
+      Animated.timing(stickerShakeAnims[id], { toValue: 0, duration: 80, useNativeDriver: true }),
+    ]).start();
+    if (newCount >= 5) setStrikeActive(prev => ({ ...prev, [id]: true }));
+  };
+
+  const sendLixSign = (sign) => {
+    setBinomeMessages(prev => [...prev, { id: Date.now().toString(), sign_id: sign.id, from: 'me', timestamp: new Date().toISOString(), showText: false }]);
+    setShowLixSignPicker(false);
+  };
+
+  const resetBinomeState = () => {
+    setBinomeStatus('none'); setBinomePartner(null); setBinomeMessages([]);
+    setBinomeCommonPoints([]); setBinomeDistance(null);
+    setSearchProgress(0); setSearchStep(0); setCompatibilityScore(0); setScanLines([]);
+  };
+
+  const breakBinome = () => {
+    setShowBinomeAlert({
+      visible: true, title: 'Rompre le Binôme ?',
+      message: 'Tu perdras ta connexion avec ' + (binomePartner?.display_name || 'ton binôme') + ' et ton streak.',
+      icon: '💔',
+      buttons: [
+        { text: 'Annuler', style: 'cancel', onPress: () => setShowBinomeAlert({ visible: false, title: '', message: '', icon: null, buttons: [] }) },
+        { text: 'Rompre', style: 'destructive', onPress: () => { resetBinomeState(); setShowBinomeAlert({ visible: false, title: '', message: '', icon: null, buttons: [] }); } },
+      ],
+    });
+  };
+
+  async function sendBinomeRequestLive() {
+    setBinomeStatus('pending_sent');
+    Animated.loop(Animated.sequence([
+      Animated.timing(pendingPulse, { toValue: 1, duration: 1000, useNativeDriver: false }),
+      Animated.timing(pendingPulse, { toValue: 0.6, duration: 1000, useNativeDriver: false }),
+    ])).start();
+    try {
+      const reqData = await supaRpc('send_binome_request', { p_user_id: TEST_USER_ID, p_partner_lixtag: binomePartner.lixtag });
+      if (!reqData?.success) {
+        pendingPulse.stopAnimation();
+        showLixAlert('Erreur', reqData?.error || 'Impossible d\'envoyer', [{ text: 'OK', style: 'cancel' }], '⚠️');
+        setBinomeStatus('proposed');
+      }
+    } catch (e) {
+      console.error('Binome request error:', e);
+      pendingPulse.stopAnimation();
+      showLixAlert('Erreur', 'Problème de connexion', [{ text: 'OK', style: 'cancel' }], '⚠️');
+      setBinomeStatus('proposed');
+    }
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: '#141A22' }}>
-      <Text style={{ color: '#FFF', padding: 20 }}>LixVersePage orchestrator - state loaded</Text>
+      <Text style={{ color: '#FFF', padding: 20 }}>LixVersePage orchestrator - functions loaded</Text>
     </View>
   );
 }
