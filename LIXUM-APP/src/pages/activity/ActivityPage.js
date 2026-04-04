@@ -370,6 +370,140 @@ export default function ActivityPage({ onNavigate }) {
     }
   };
 
+  // === FONCTIONS UI ===
+
+  var toggleDropdown = function() {
+    var toValue = dropdownOpen ? 0 : 1;
+    Animated.spring(dropdownAnim, { toValue: toValue, tension: 80, friction: 10, useNativeDriver: false }).start();
+    setDropdownOpen(!dropdownOpen);
+  };
+
+  const handleTabPress = (key) => {
+    if (key === 'activity') return;
+    if (onNavigate) onNavigate(key);
+    setActiveTab(key);
+  };
+
+  // Walk computed values
+  const walkMaxS = WALK_SCENE_W - walkCanvasW;
+  const walkProg = walkMaxS > 0 ? walkScrollOffset / walkMaxS : 0;
+  const walkDistM = walkProg * WALK_MAX_DIST;
+  const walkMul = walkRoundTrip ? 2 : 1;
+  const walkDurMin = (walkDistM / 5000) * 60;
+  var walkCal = calcCalories(ACTIVITY_DATA.marche.met, userWeight, walkDurMin * walkMul, 'modere');
+  var walkWater = calcWater(ACTIVITY_DATA.marche.water_per_hour_ml, walkDurMin * walkMul, 'modere');
+  const walkDistFinal = walkDistM * walkMul;
+  const walkDistStr = walkDistFinal < 1000 ? Math.round(walkDistFinal) + ' m' : (Math.round(walkDistFinal / 100) / 10) + ' km';
+  const walkDurStr = (function() { var m = Math.round(walkDurMin * walkMul); return m < 60 ? m + ' min' : (Math.round(m / 6) / 10) + ' h'; })();
+
+  // Run computed values
+  const runMaxS = RUN_SCENE_W - runCanvasW;
+  const runProg = runMaxS > 0 ? runScrollOffset / runMaxS : 0;
+  var runDistM = (runScrollOffset * RUN_METERS_PER_PIXEL) || 0;
+  const runMul = runRoundTrip ? 2 : 1;
+  var runDistKm = ((runDistM * runMul) / 1000) || 0;
+  var runDuration = Math.round((runDistKm / 8) * 60) || 0;
+  var runCalories = calcCalories(ACTIVITY_DATA.course.met, userWeight || 70, runDuration, 'modere') || 0;
+  var runWater = calcWater(ACTIVITY_DATA.course.water_per_hour_ml || 900, runDuration, 'modere') || 0;
+  const runDistFinal = runDistM * runMul;
+  const runDistStr = runDistFinal < 1000 ? Math.round(runDistFinal) + ' m' : (Math.round(runDistFinal / 100) / 10) + ' km';
+  const runDurStr = (function() { var m = Math.round(runDuration); return m < 60 ? m + ' min' : (Math.round(m / 6) / 10) + ' h'; })();
+
+  // Day totals
+  const totalCalories = todayActivities.reduce((s, a) => s + (a.calories_burned || 0), 0);
+  const totalDuration = todayActivities.reduce((s, a) => s + (a.duration_minutes || 0), 0);
+  const totalWater = todayActivities.reduce((s, a) => s + (a.water_lost_ml || 0), 0);
+  const todayDateStr = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'long' });
+
+  // Walk knob
+  const startWalkMoving = (direction) => {
+    setWalkGlow(true);
+    walkHoldStartRef.current = Date.now();
+    walkSpeedRef.current = 2;
+    walkIntervalRef.current = setInterval(() => {
+      const holdDuration = Date.now() - walkHoldStartRef.current;
+      if (holdDuration > 3000) walkSpeedRef.current = 16;
+      else if (holdDuration > 2000) walkSpeedRef.current = 10;
+      else if (holdDuration > 1000) walkSpeedRef.current = 6;
+      else if (holdDuration > 500) walkSpeedRef.current = 4;
+      else walkSpeedRef.current = 2;
+      setWalkScrollOffset(prev => Math.max(0, Math.min(prev + direction * walkSpeedRef.current, WALK_SCENE_W - walkCanvasW)));
+    }, 50);
+  };
+  const stopWalkMoving = () => {
+    setWalkGlow(false);
+    if (walkIntervalRef.current) { clearInterval(walkIntervalRef.current); walkIntervalRef.current = null; }
+  };
+  useEffect(() => { return () => { if (walkIntervalRef.current) clearInterval(walkIntervalRef.current); }; }, []);
+
+  // Run knob
+  const startRunMoving = (direction) => {
+    setRunGlow(true);
+    runHoldStartRef.current = Date.now();
+    runSpeedRef.current = 2;
+    isRunMovingRef.current = true;
+    setIsRunning(true);
+    runIntervalRef.current = setInterval(() => {
+      const holdDuration = Date.now() - runHoldStartRef.current;
+      if (holdDuration > 3000) runSpeedRef.current = 16;
+      else if (holdDuration > 2000) runSpeedRef.current = 10;
+      else if (holdDuration > 1000) runSpeedRef.current = 6;
+      else if (holdDuration > 500) runSpeedRef.current = 4;
+      else runSpeedRef.current = 2;
+      setRunScrollOffset(prev => Math.max(0, Math.min(prev + direction * runSpeedRef.current, RUN_SCENE_W - runCanvasW)));
+    }, 50);
+  };
+  const stopRunMoving = () => {
+    setRunGlow(false);
+    isRunMovingRef.current = false;
+    setIsRunning(false);
+    if (runIntervalRef.current) { clearInterval(runIntervalRef.current); runIntervalRef.current = null; }
+  };
+  useEffect(() => { return () => { if (runIntervalRef.current) clearInterval(runIntervalRef.current); }; }, []);
+
+  // Run milestone detection
+  useEffect(() => {
+    const milestones = [500, 1000, 2000, 5000, 10000, 21000];
+    milestones.forEach(m => {
+      if (runDistM >= m && runDistM < m + 50 && !runMilestoneHitRef.current[m]) {
+        runMilestoneHitRef.current[m] = true;
+        setRunMilestone(m);
+        if (runMilestoneTimerRef.current) clearTimeout(runMilestoneTimerRef.current);
+        runMilestoneTimerRef.current = setTimeout(() => setRunMilestone(null), 3000);
+      }
+    });
+  }, [runScrollOffset]);
+
+  // Handlers
+  const handleAddRun = async () => {
+    if (runCalories === 0) return;
+    const ok = await saveActivity('course', runDuration, runCalories, 'modere', runWater);
+    if (ok) {
+      setRunSaved(true);
+      setLastActivity({ type: 'run', name: t.run, distance: runDistStr, duration: runDuration, kcal: runCalories, water: runWater, speed: null });
+      setShowPostReport(true);
+      fetchWeeklyMinutes();
+      setTimeout(() => { setRunSaved(false); setRunScrollOffset(0); runMilestoneHitRef.current = {}; }, 1500);
+    }
+  };
+
+  const handleSportSave = async (sportKey, duration, calories, intensity, waterLost) => {
+    const ok = await saveActivity(sportKey, duration, calories, intensity, waterLost);
+    if (ok) {
+      setModalVisible(false);
+      setLastActivity({ type: 'other', name: ACTIVITY_DATA[sportKey].label, distance: null, duration: duration, kcal: calories, water: null, speed: null });
+      setShowPostReport(true);
+      fetchWeeklyMinutes();
+    }
+  };
+
+  const handleDeleteActivity = (activity) => {
+    Alert.alert(t.delete, t.deleteConfirm, [
+      { text: t.cancel, style: 'cancel' },
+      { text: t.delete, style: 'destructive', onPress: () => deleteActivity(activity.id) },
+    ]);
+  };
+
   // === JSX (phases suivantes) ===
 
   return null;
