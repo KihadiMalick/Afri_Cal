@@ -122,6 +122,75 @@ export default function CharactersTab({
             <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#D4AF37' }}>🃏 {userCollection.filter(c => c.owned !== false).length}/{userCollection.length || 16}</Text>
           </View>
         </View>
+
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8), marginBottom: wp(20) }}>
+          {(userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: 10, fragments: 0, fragments_required: 3, is_active: false }))).map(ch => {
+            const hasCard = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(ch.slug || ch.id);
+            const own = hasCard && (ch.level || 0) >= 1;
+            const isActive = (ch.slug || ch.id) === activeCharSlug;
+            const badge = getLevelBadge(ch);
+            return (
+              <Pressable key={ch.slug || ch.id} delayPressIn={120}
+                onPress={() => {
+                  setSelectedChar(ch); setCharFlipped(false); flipAnim.setValue(0);
+                  const charIndex = ALL_CHARACTERS.findIndex(c => c.id === (ch.slug || ch.id));
+                  const idx = charIndex >= 0 ? charIndex : 0;
+                  setCardViewIndex(idx);
+                  cardViewIndexRef.current = idx;
+                  onLoadCharPowers(ch.slug || ch.id);
+                }}
+                style={({ pressed }) => ({
+                  width: cardW, borderRadius: wp(14), overflow: 'hidden',
+                  opacity: 1,
+                  borderWidth: isActive ? 2 : 1,
+                  borderColor: isActive ? '#00D984' : own ? '#4A4F55' : 'rgba(255,255,255,0.08)',
+                  ...(isActive ? { shadowColor: '#00D984', shadowOpacity: 0.25, shadowRadius: 6, elevation: 4 } : {}),
+                  transform: [{ scale: pressed ? 0.93 : 1 }],
+                })}>
+                <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ alignItems: 'center', paddingVertical: wp(8), opacity: own ? 1 : 0.55 }}>
+                  <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center', marginBottom: wp(4) }}>
+                    {(() => {
+                      const charImg = getCharImage(ch.slug || ch.id);
+                      if (charImg.img) {
+                        return <Image source={charImg.img} style={{ width: wp(46), height: wp(46), borderRadius: wp(23) }} resizeMode="cover" />;
+                      }
+                      return <Text style={{ fontSize: fp(24) }}>{charImg.emoji}</Text>;
+                    })()}
+                    {!own && <View style={{ position: 'absolute', justifyContent: 'center', alignItems: 'center' }}><Text style={{ fontSize: fp(20) }}>🔒</Text></View>}
+                  </View>
+                  <Text style={{ fontSize: fp(9), fontWeight: '700', color: own ? '#FFF' : 'rgba(255,255,255,0.4)', textAlign: 'center' }} numberOfLines={1}>{ch.name || ch.slug}</Text>
+                  {own ? (
+                    <View style={{ backgroundColor: badge.color, borderRadius: wp(4), paddingHorizontal: wp(5), paddingVertical: wp(1), marginTop: wp(3) }}>
+                      <Text style={{ fontSize: fp(7), fontWeight: '700', color: '#FFF' }}>{badge.text}</Text>
+                    </View>
+                  ) : (
+                    <View style={{ width: '80%', marginTop: wp(3), alignItems: 'center' }}>
+                      <View style={{ width: '100%', height: wp(3), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(1.5), overflow: 'hidden', marginBottom: wp(2) }}>
+                        <View style={{
+                          height: '100%', borderRadius: wp(1.5),
+                          backgroundColor: ch.tier === 'mythique' ? '#D4AF37'
+                            : ch.tier === 'elite' ? '#B388FF'
+                            : ch.tier === 'rare' ? '#4DA6FF' : '#00D984',
+                          width: Math.min(100, Math.round(((ch.fragments || ch.duplicates_count || 0) / (ch.fragments_required || FRAGS_NIV1[ch.tier] || 3)) * 100)) + '%',
+                        }} />
+                      </View>
+                      <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.25)' }}>
+                        {ch.fragments || ch.duplicates_count || 0}/{ch.fragments_required || FRAGS_NIV1[ch.tier] || 3} frags
+                      </Text>
+                    </View>
+                  )}
+                  {own && (
+                    <View style={{ width: '80%', marginTop: wp(4) }}>
+                      <View style={{ height: wp(3), backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(1.5), overflow: 'hidden' }}>
+                        <View style={{ height: '100%', borderRadius: wp(1.5), backgroundColor: '#00D984', width: Math.min(100, Math.round(((ch.xp || 0) / (ch.xp_next || 1000)) * 100)) + '%' }} />
+                      </View>
+                    </View>
+                  )}
+                </LinearGradient>
+              </Pressable>
+            );
+          })}
+        </View>
       </ScrollView>
     </View>
   );
