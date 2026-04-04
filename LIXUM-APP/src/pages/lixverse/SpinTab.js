@@ -100,7 +100,145 @@ export default function SpinTab({
   const usedColors = [...new Set(angledSegs.map(s => s.color))];
 
   const renderSpinResultModal = () => {
-    return null;
+    if (!showSpinResultModal || !spinWinnerSeg) return null;
+    const rw = spinWinnerSeg.reward;
+    const srv = serverResult || {};
+    const rv = srv.reward_value || {};
+
+    let iconContent = null;
+    let title = '';
+    let subtitle = '';
+    let accentColor = '#00D984';
+    let btnText = 'Récupérer';
+    let hasBorder = false;
+
+    if (rw.type === 'energy') {
+      iconContent = (
+        <Svg width={wp(48)} height={wp(48)} viewBox="0 0 24 24">
+          <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill="#FFB800" />
+          <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill="none" stroke="#FFF" strokeWidth={0.5} opacity={0.3} />
+        </Svg>
+      );
+      title = '+' + (rv.energy || rw.amount) + ' Énergie';
+      accentColor = '#00D984';
+    } else if (rw.type === 'lix') {
+      iconContent = <LixGem size={wp(48)} />;
+      title = '+' + (rv.lix || rw.amount) + ' Lix';
+      accentColor = '#D4AF37';
+    } else if (rw.type === 'scan') {
+      iconContent = (
+        <Svg width={wp(48)} height={wp(48)} viewBox="0 0 24 24" fill="none">
+          <Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" fill="#4DA6FF" />
+          <Circle cx="12" cy="13" r="4" fill="#1A1D22" stroke="#FFF" strokeWidth="1" />
+          <Circle cx="12" cy="13" r="2" fill="#4DA6FF" opacity={0.5} />
+        </Svg>
+      );
+      title = '+' + (rv.scans || rw.amount) + ' Scan' + ((rv.scans || rw.amount) > 1 ? 's' : '') + ' gratuit' + ((rv.scans || rw.amount) > 1 ? 's' : '');
+      accentColor = '#4DA6FF';
+    } else if (rw.type === 'free_spin') {
+      iconContent = (
+        <View style={{ width: wp(56), height: wp(56), borderRadius: wp(28), backgroundColor: 'rgba(212,175,55,0.15)', borderWidth: 2, borderColor: '#D4AF37', justifyContent: 'center', alignItems: 'center' }}>
+          <Svg width={wp(28)} height={wp(28)} viewBox="0 0 24 24" fill="none">
+            <Path d="M20 12v10H4V12" stroke="#D4AF37" strokeWidth={2} />
+            <Path d="M2 7h20v5H2z" stroke="#D4AF37" strokeWidth={2} />
+            <Path d="M12 22V7" stroke="#D4AF37" strokeWidth={2} />
+            <Path d="M12 7c-1.5-2-4-3-4-3s1 3 4 3z" fill="#D4AF37" />
+            <Path d="M12 7c1.5-2 4-3 4-3s-1 3-4 3z" fill="#D4AF37" />
+          </Svg>
+        </View>
+      );
+      title = 'Tour gratuit gagné !';
+      subtitle = 'Utilise-le maintenant';
+      accentColor = '#D4AF37';
+      btnText = 'Spinner !';
+    } else if (rw.type === 'fragment') {
+      const charTier = srv.character_tier || rw.tier;
+      const tierColors = { mythique: '#E040FB', elite: '#B388FF', rare: '#4DA6FF', standard: '#00D984' };
+      accentColor = tierColors[charTier] || '#00D984';
+      hasBorder = true;
+      const charEmoji = srv.character_emoji || (fragmentResult ? fragmentResult.emoji : '🧩');
+      iconContent = <Text style={{ fontSize: fp(56) }}>{charEmoji}</Text>;
+      title = (srv.character_name || (fragmentResult ? fragmentResult.name : 'Fragment')) + '';
+      subtitle = '+' + (rv.fragment || rw.amount) + ' fragment ' + (charTier || '').charAt(0).toUpperCase() + (charTier || '').slice(1);
+      btnText = 'INTÉGRER ←';
+    } else if (rw.type === 'card') {
+      accentColor = '#D4AF37';
+      hasBorder = true;
+      iconContent = <Text style={{ fontSize: fp(56) }}>{fragmentResult ? fragmentResult.emoji : '🏆'}</Text>;
+      title = 'CARTE COMPLÈTE !';
+      subtitle = (fragmentResult ? fragmentResult.name : 'Personnage') + ' débloqué';
+      btnText = 'Voir →';
+    }
+
+    return (
+      <Modal visible={showSpinResultModal} transparent animationType="fade" onRequestClose={onCloseSpinResult}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
+          <View style={{
+            borderRadius: wp(24), width: '100%', alignItems: 'center', overflow: 'hidden',
+            borderWidth: hasBorder ? 2 : 0, borderColor: accentColor,
+          }}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#1A1D22']}
+              style={{ width: '100%', alignItems: 'center', paddingVertical: wp(32), paddingHorizontal: wp(24) }}>
+
+              <View style={{
+                width: wp(90), height: wp(90), borderRadius: wp(45),
+                backgroundColor: accentColor + '10',
+                justifyContent: 'center', alignItems: 'center',
+                marginBottom: wp(16),
+                shadowColor: accentColor,
+                shadowOpacity: 0.4,
+                shadowRadius: wp(20),
+                elevation: 8,
+              }}>
+                <Animated.View style={{
+                  transform: [{ scale: (rw.type === 'fragment' || rw.type === 'card') ? spinResultPulse : 1 }],
+                }}>
+                  {iconContent}
+                </Animated.View>
+              </View>
+
+              <Text style={{
+                fontSize: rw.type === 'card' ? fp(24) : fp(22),
+                fontWeight: '800', color: accentColor,
+                textAlign: 'center', marginBottom: wp(4),
+                letterSpacing: rw.type === 'card' ? 2 : 0,
+              }}>{title}</Text>
+
+              {subtitle ? (
+                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: wp(4) }}>{subtitle}</Text>
+              ) : null}
+
+              {fragmentResult && fragmentResult.levelUp && (
+                <View style={{
+                  backgroundColor: 'rgba(212,175,55,0.12)', borderRadius: wp(10),
+                  paddingHorizontal: wp(16), paddingVertical: wp(6), marginTop: wp(8),
+                  borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)',
+                }}>
+                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#D4AF37' }}>⬆️ Niveau {fragmentResult.newLevel} atteint !</Text>
+                </View>
+              )}
+
+              <Pressable delayPressIn={120}
+                onPress={() => {
+                  onCloseSpinResult();
+                  if (rw.type === 'fragment' || rw.type === 'card' || rw.type === 'full_card') {
+                    onGoToCharacters();
+                  }
+                }}
+                style={({ pressed }) => ({ width: '100%', marginTop: wp(20), transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                <View style={{
+                  paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center',
+                  backgroundColor: accentColor + '20',
+                  borderWidth: 1.5, borderColor: accentColor + '50',
+                }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: accentColor }}>{btnText}</Text>
+                </View>
+              </Pressable>
+            </LinearGradient>
+          </View>
+        </View>
+      </Modal>
+    );
   };
 
   return (
