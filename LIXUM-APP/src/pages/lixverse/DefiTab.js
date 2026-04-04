@@ -781,6 +781,131 @@ export default function DefiTab({
               <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.15)', marginTop: wp(4), textAlign: 'center', paddingHorizontal: wp(20) }}>Le classement Binôme arrivera avec la fonctionnalité de pairage santé.</Text>
             </View>
           )}
+
+          {leaderboardTab === 'pays' && (
+            <View>
+              {lbTabLoading ? (
+                <ActivityIndicator color="#D4AF37" style={{ paddingVertical: wp(20) }} />
+              ) : countryLB && Array.isArray(countryLB.top_countries) && countryLB.top_countries.length > 0 ? (
+                <View>
+                  {countryLB.top_countries.slice(0, 3).map((c, i) => (
+                    <View key={c.country || i} style={{
+                      flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), paddingHorizontal: wp(6),
+                      backgroundColor: i === 0 ? 'rgba(212,175,55,0.12)' : i === 1 ? 'rgba(192,192,192,0.08)' : 'rgba(205,127,50,0.08)',
+                      borderRadius: wp(10), marginBottom: i < 2 ? wp(6) : 0,
+                    }}>
+                      <MedalIcon rank={i + 1} size={wp(24)} />
+                      <View style={{ flex: 1, marginLeft: wp(8) }}>
+                        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{c.country}</Text>
+                        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)' }}>{c.player_count} joueur{c.player_count > 1 ? 's' : ''}</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(12), fontWeight: '800', color: ['#D4AF37','#C0C0C0','#CD7F32'][i] }}>{c.total_score} pts</Text>
+                    </View>
+                  ))}
+                  {countryLB.top_countries.length > 3 && (
+                    <Pressable onPress={() => setLeaderboardExpanded(prev => !prev)}
+                      style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: wp(10), marginTop: wp(8), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)', marginRight: wp(6) }}>{leaderboardExpanded ? 'Masquer' : 'Voir plus'}</Text>
+                      <ChevronDown size={wp(14)} color="rgba(212,175,55,0.5)" rotated={leaderboardExpanded} />
+                    </Pressable>
+                  )}
+                  {leaderboardExpanded && countryLB.top_countries.slice(3).map((c, i) => (
+                    <View key={c.country || (i + 3)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8), paddingHorizontal: wp(6), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
+                      <View style={{ width: wp(26), height: wp(26), borderRadius: wp(13), backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>{c.rank}</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)', flex: 1, marginLeft: wp(10) }}>{c.country}</Text>
+                      <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.3)' }}>{c.total_score} pts</Text>
+                    </View>
+                  ))}
+                  {countryLB.my_country_rank && (
+                    <View style={{ marginTop: wp(10), paddingTop: wp(10), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(10), paddingVertical: wp(10), paddingHorizontal: wp(12), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}>
+                        <View style={{ width: wp(30), height: wp(30), borderRadius: wp(15), backgroundColor: 'rgba(0,217,132,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10) }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#00D984' }}>#{countryLB.my_country_rank}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{countryLB.my_country || '—'}</Text>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)' }}>Rang #{countryLB.my_country_rank} sur {countryLB.total_countries} pays</Text>
+                        </View>
+                        <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#00D984' }}>{countryLB.my_country_score || 0} pts</Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <View style={{ paddingVertical: wp(20), alignItems: 'center' }}>
+                  <TrophyIcon size={wp(30)} color="rgba(212,175,55,0.3)" />
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)', marginTop: wp(8) }}>Aucune donnée pays</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {leaderboardTab === 'mondial' && (
+            <View>
+              {lbTabLoading ? (
+                <ActivityIndicator color="#D4AF37" style={{ paddingVertical: wp(20) }} />
+              ) : individualLB && Array.isArray(individualLB.top_users) && individualLB.top_users.length > 0 ? (
+                <View>
+                  {individualLB.top_users.slice(0, 3).map((u, i) => (
+                    <View key={u.user_id || i} style={{
+                      flexDirection: 'row', alignItems: 'center', paddingVertical: wp(10), paddingHorizontal: wp(6),
+                      backgroundColor: i === 0 ? 'rgba(212,175,55,0.12)' : i === 1 ? 'rgba(192,192,192,0.08)' : 'rgba(205,127,50,0.08)',
+                      borderRadius: wp(10), marginBottom: i < 2 ? wp(6) : 0,
+                    }}>
+                      <MedalIcon rank={i + 1} size={wp(24)} />
+                      <View style={{ flex: 1, marginLeft: wp(8) }}>
+                        <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{u.lixtag}</Text>
+                        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)' }}>{u.country || '🌍'}</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(12), fontWeight: '800', color: ['#D4AF37','#C0C0C0','#CD7F32'][i] }}>{u.personal_score} pts</Text>
+                    </View>
+                  ))}
+                  {individualLB.top_users.length > 3 && (
+                    <Pressable onPress={() => setLeaderboardExpanded(prev => !prev)}
+                      style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: wp(10), marginTop: wp(8), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)', marginRight: wp(6) }}>{leaderboardExpanded ? 'Masquer' : 'Voir le top 10'}</Text>
+                      <ChevronDown size={wp(14)} color="rgba(212,175,55,0.5)" rotated={leaderboardExpanded} />
+                    </Pressable>
+                  )}
+                  {leaderboardExpanded && individualLB.top_users.slice(3).map((u, i) => (
+                    <View key={u.user_id || (i + 3)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8), paddingHorizontal: wp(6), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
+                      <View style={{ width: wp(26), height: wp(26), borderRadius: wp(13), backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>{u.rank}</Text>
+                      </View>
+                      <View style={{ flex: 1, marginLeft: wp(10) }}>
+                        <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)' }}>{u.lixtag}</Text>
+                        <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)' }}>{u.country || '—'}</Text>
+                      </View>
+                      <Text style={{ fontSize: fp(11), fontWeight: '600', color: 'rgba(255,255,255,0.3)' }}>{u.personal_score} pts</Text>
+                    </View>
+                  ))}
+                  {individualLB.my_rank && (
+                    <View style={{ marginTop: wp(10), paddingTop: wp(10), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(10), paddingVertical: wp(10), paddingHorizontal: wp(12), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}>
+                        <View style={{ width: wp(30), height: wp(30), borderRadius: wp(15), backgroundColor: 'rgba(0,217,132,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10) }}>
+                          <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#00D984' }}>
+                            {individualLB.my_rank <= 10 ? '#' + individualLB.my_rank : individualLB.rank_bracket === 'top50' ? 'Top50' : 'Top100+'}
+                          </Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF' }}>{individualLB.my_lixtag || 'Moi'}</Text>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)' }}>Classement mondial</Text>
+                        </View>
+                        <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#00D984' }}>{individualLB.my_score || 0} pts</Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <View style={{ paddingVertical: wp(20), alignItems: 'center' }}>
+                  <TrophyIcon size={wp(30)} color="rgba(212,175,55,0.3)" />
+                  <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.3)', marginTop: wp(8) }}>Aucun participant</Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
       </View>
     </ScrollView>
