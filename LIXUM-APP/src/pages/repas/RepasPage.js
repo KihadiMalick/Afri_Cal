@@ -210,6 +210,59 @@ export default function RepasPage({ onNavigate }) {
     setIsLoadingData(false);
   };
 
+  const REPAS_PAGE = 'repas';
+
+  const loadPagePowers = async () => {
+    try {
+      const { data: collection } = await supabase
+        .rpc('get_user_collection', { p_user_id: TEST_USER_ID });
+      const active = (collection || []).find(c => c.is_active);
+      if (!active) { setActiveChar(null); setPagePowers([]); return; }
+      setActiveChar(active);
+
+      const { data: powers } = await supabase
+        .rpc('get_character_powers', {
+          p_user_id: TEST_USER_ID,
+          p_slug: active.slug,
+        });
+      setPagePowers((powers || []).filter(p => p.redirect_page === REPAS_PAGE));
+    } catch (e) {
+      console.warn('Repas powers load error:', e);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+    loadPagePowers();
+    (async () => {
+      try {
+        const { data: profile } = await supabase.from('users_profile').select('full_name').eq('user_id', TEST_USER_ID).maybeSingle();
+        if (profile) setUserNameAvatar(profile.full_name || '');
+        const { data: chars } = await supabase.from('lixverse_user_characters').select('character_slug').eq('user_id', TEST_USER_ID).eq('is_active', true).maybeSingle();
+        if (chars) setActiveCharAvatar({ slug: chars.character_slug });
+      } catch (e) {}
+    })();
+  }, []);
+
+  useEffect(() => {
+    const fetchMoodWeather = async () => {
+      try {
+        const { data } = await supabase
+          .from('users_profile')
+          .select('current_mood, current_weather')
+          .eq('user_id', TEST_USER_ID)
+          .maybeSingle();
+        if (data) {
+          setUserMood(data.current_mood);
+          setUserWeather(data.current_weather);
+        }
+      } catch (e) {
+        console.warn('Mood fetch error:', e);
+      }
+    };
+    fetchMoodWeather();
+  }, []);
+
   // === JSX (phases suivantes) ===
 
   return null;
