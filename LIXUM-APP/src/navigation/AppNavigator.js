@@ -2,18 +2,24 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 
-// Les pages seront importées au fur et à mesure
+import WelcomePage from '../pages/WelcomePage';
+import RepasPage from '../pages/repas/RepasPage';
+
 const Tab = createBottomTabNavigator();
+
+const PlaceholderScreen = () => null;
 
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Tab.Navigator>
-        <Tab.Screen name="Accueil" component={() => null} />
-        <Tab.Screen name="Repas" component={() => null} />
-        <Tab.Screen name="MedicAi" component={() => null} />
-        <Tab.Screen name="Activite" component={() => null} />
-        <Tab.Screen name="LixVerse" component={() => null} />
+      <Tab.Navigator
+        screenOptions={{ headerShown: false }}
+      >
+        <Tab.Screen name="Accueil" component={WelcomePage} />
+        <Tab.Screen name="Repas" component={RepasPage} />
+        <Tab.Screen name="MedicAi" component={PlaceholderScreen} />
+        <Tab.Screen name="Activite" component={PlaceholderScreen} />
+        <Tab.Screen name="LixVerse" component={PlaceholderScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );
