@@ -139,6 +139,206 @@ export default function LiveTrackingScreen({
     }, 1000);
   };
 
+  var launchGPS = async function() {
+    try {
+      var perm = await Location.requestForegroundPermissionsAsync();
+      if (perm.status !== 'granted') {
+        Alert.alert('Permission GPS requise', 'LIXUM a besoin du GPS pour le suivi en temps réel.', [{ text: 'OK' }]);
+        return;
+      }
+
+      // Reset
+      setLiveDistance(0); setLiveDuration(0); setLiveCalories(0); setLiveWater(0);
+      setLiveSpeed(0); setLiveMaxSpeed(0); setLiveAvgSpeed(0);
+      setLiveZone(SPEED_ZONES[0]); setLivePrevZone(null);
+      setLiveMilestone(null); setLivePaused(false); setLiveAutoPaused(false);
+      setLiveWalkTime(0); setLiveRunTime(0); setLiveCharMsg(''); setLiveFoodEquiv(null);
+      liveLastPosRef.current = null; liveMilestonesHitRef.current = {};
+      liveSpeedSamplesRef.current = []; liveStillCounterRef.current = 0;
+      liveHydrationTimerRef.current = 0; liveSuspectCounterRef.current = 0;
+      liveCaloriesAccRef.current = 0; liveWaterAccRef.current = 0;
+      setLiveRoute([]); setLiveStartCoord(null);
+      setLiveActive(true);
+      setTimeout(function() { alixenSpeak('start'); }, 2000);
+
+      // Timer durée (1s)
+      liveTimerRef.current = setInterval(function() {
+        setLivePaused(function(paused) {
+          setLiveAutoPaused(function(autoPaused) {
+            if (!paused && !autoPaused) {
+              setLiveDuration(function(d) { return d + 1; });
+              setLiveDuration(function(dur) {
+                if (dur > 0 && dur % 300 === 0 && dur !== alixenLastTimeRef.current) {
+                  alixenLastTimeRef.current = dur;
+                  alixenSpeak('every5min');
+                }
+                return dur;
+              });
+              liveHydrationTimerRef.current += 1;
+              if (liveHydrationTimerRef.current >= HYDRATION_REMINDER_INTERVAL) {
+                liveHydrationTimerRef.current = 0;
+                setLiveHydrationAlert(true);
+                alixenSpeak('hydration');
+                Vibration.vibrate([0, 200, 100, 200]);
+                setTimeout(function() { setLiveHydrationAlert(false); }, 5000);
+              }
+            }
+            return autoPaused;
+          });
+          return paused;
+        });
+      }, 1000);
+
+      // Watcher GPS
+      liveLocationSubRef.current = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 2 },
+        function(location) {
+          setLivePaused(function(paused) {
+            if (paused) return paused;
+
+            var lat = location.coords.latitude;
+            var lon = location.coords.longitude;
+            var accuracy = location.coords.accuracy || 999;
+            var timestamp = location.timestamp;
+
+            if (accuracy > 50) return paused;
+
+            if (liveLastPosRef.current) {
+              var dist = haversineDistance(liveLastPosRef.current.lat, liveLastPosRef.current.lon, lat, lon);
+              var timeDelta = (timestamp - liveLastPosRef.current.timestamp) / 1000;
+              if (timeDelta <= 0) timeDelta = 1;
+              var speedMs = dist / timeDelta;
+              var speedKmh = speedMs * 3.6;
+
+              // Anti-triche
+              if (speedKmh > ANTI_CHEAT_MAX_SPEED) {
+                liveSuspectCounterRef.current += timeDelta;
+                if (liveSuspectCounterRef.current > ANTI_CHEAT_DURATION) {
+                  setLiveAutoPaused(true);
+                  Vibration.vibrate([0, 300, 100, 300, 100, 300]);
+                  Alert.alert('Vitesse suspecte', 'Vitesse trop élevée détectée. Tracking en pause.');
+                }
+                liveLastPosRef.current = { lat: lat, lon: lon, timestamp: timestamp };
+                return paused;
+              }
+              liveSuspectCounterRef.current = 0;
+
+              // Auto-pause si immobile
+              if (speedKmh < AUTO_PAUSE_SPEED) {
+                liveStillCounterRef.current += timeDelta;
+                if (liveStillCounterRef.current > AUTO_PAUSE_DELAY) {
+                  setLiveAutoPaused(true);
+                }
+              } else {
+                liveStillCounterRef.current = 0;
+                setLiveAutoPaused(function(was) { return was ? false : was; });
+              }
+
+              // Distance
+              if (dist > 1 && dist < 100) {
+                setLiveDistance(function(d) { return d + dist; });
+              }
+
+              // Vitesse
+              setLiveSpeed(speedKmh);
+              liveSpeedSamplesRef.current.push(speedKmh);
+              if (speedKmh > 0) {
+                setLiveMaxSpeed(function(max) { return Math.max(max, speedKmh); });
+              }
+              var avgS = liveSpeedSamplesRef.current.reduce(function(a, b) { return a + b; }, 0) / liveSpeedSamplesRef.current.length;
+              setLiveAvgSpeed(avgS);
+
+              // Zone MET + vibration + réaction caractère
+              var newZone = getSpeedZone(speedKmh);
+              setLiveZone(function(prevZ) {
+                if (prevZ.zone !== newZone.zone) {
+                  vibrateZoneChange(newZone, prevZ);
+                  showCharReaction(newZone, lang);
+                  alixenSpeak('zoneChange', { zoneFrom: prevZ.label, zoneTo: newZone.label });
+                }
+                return newZone;
+              });
+
+              // Walk vs Run time
+              if (speedKmh >= 7) {
+                setLiveRunTime(function(rt) { return rt + timeDelta; });
+              } else if (speedKmh >= 1) {
+                setLiveWalkTime(function(wt) { return wt + timeDelta; });
+              }
+
+              // Calories (MET variable × poids × temps)
+              var calIncrement = (newZone.met * (userWeight || 70) * timeDelta) / 3600;
+              liveCaloriesAccRef.current += calIncrement;
+              var totalCal = Math.round(liveCaloriesAccRef.current);
+              setLiveCalories(totalCal);
+
+              // Proche de l'objectif calorique
+              var surplus = (totalEaten || 0) - (totalBurnedBefore || 0) - totalCal - (dailyTarget || 2000);
+              if (surplus <= 50 && surplus > -50 && !alixenNearGoalRef.current) {
+                alixenNearGoalRef.current = true;
+                alixenSpeak('nearGoal');
+              }
+
+              // Équivalent alimentaire en temps réel
+              setLiveFoodEquiv(getFoodEquivalent(totalCal));
+
+              // Eau perdue (ajustée au climat)
+              var baseWaterRate = newZone.met > 7 ? 900 : newZone.met > 4 ? 600 : 400;
+              var weatherMult = 1.2;
+              setLiveWeatherMult(function(wm) { weatherMult = wm; return wm; });
+              var waterIncrement = (baseWaterRate * weatherMult * timeDelta) / 3600;
+              liveWaterAccRef.current += waterIncrement;
+              setLiveWater(Math.round(liveWaterAccRef.current));
+            }
+
+            liveLastPosRef.current = { lat: lat, lon: lon, timestamp: timestamp };
+
+            // Enregistrer le point sur le tracé
+            setLiveRoute(function(prev) {
+              return prev.concat([{ latitude: lat, longitude: lon }]);
+            });
+            if (!liveStartCoord) {
+              setLiveStartCoord({ latitude: lat, longitude: lon });
+            }
+
+            // Milestones
+            setLiveDistance(function(currentDist) {
+              LIVE_MILESTONES.forEach(function(m) {
+                if (currentDist >= m.distance && !liveMilestonesHitRef.current[m.distance]) {
+                  liveMilestonesHitRef.current[m.distance] = true;
+                  alixenSpeak('milestone', { milestone: m.labelFR });
+                  setLiveMilestone(m);
+                  Vibration.vibrate([0, 150, 80, 150, 80, 150]);
+                  setTimeout(function() { setLiveMilestone(null); }, 4000);
+                }
+              });
+              return currentDist;
+            });
+
+            // ALIXEN tous les 500m
+            (function() {
+              var last500 = Math.floor(alixenLastDistRef.current / 500);
+              var curr500 = Math.floor((liveDistance + (liveLastPosRef.current ? 0 : 0)) / 500);
+              if (curr500 > last500) {
+                alixenLastDistRef.current = liveDistance;
+                var isMilestone = false;
+                LIVE_MILESTONES.forEach(function(m) {
+                  if (Math.abs(liveDistance - m.distance) < 50) isMilestone = true;
+                });
+                if (!isMilestone) alixenSpeak('every500m');
+              }
+            })();
+
+            return paused;
+          });
+        }
+      );
+    } catch (e) {
+      console.error('GPS error:', e);
+      Alert.alert('Erreur GPS', 'Impossible de démarrer le suivi GPS.');
+    }
+  };
+
   // === JSX (phases suivantes) ===
 
   if (!visible && !liveActive && liveCountdown === 0) return null;
