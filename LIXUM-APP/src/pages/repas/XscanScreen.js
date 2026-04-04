@@ -21,7 +21,10 @@ const SCREEN_HEIGHT = require('react-native').Dimensions.get('window').height;
 // XscanScreen — Caméra + AR + Analyse + Résultat + Correction
 // ============================================================
 
-const XscanScreen = forwardRef(function XscanScreen({ visible, onClose, onMealSaved, userProfile }, ref) {
+const XscanScreen = forwardRef(function XscanScreen({
+  visible, onClose, onMealSaved, userProfile,
+  pagePowers, activeChar, todaySubstitutions, setTodaySubstitutions, consumePower,
+}, ref) {
   var _lc = useLang(); var lang = _lc.lang;
 
   // === PERMISSIONS CAMÉRA ===
@@ -1952,6 +1955,54 @@ const XscanScreen = forwardRef(function XscanScreen({ visible, onClose, onMealSa
               </View>
             </View>
 
+            {/* ══════ SUBSTITUTION — Amber Fox (via pagePowers) ══════ */}
+            {(() => {
+              const foxPower = (pagePowers || []).find(p =>
+                (p.power_key === 'fox_sub_1' || p.power_key === 'fox_sub_2' || p.power_key === 'fox_sub_3') && p.unlocked
+              );
+              if (!foxPower) return null;
+
+              const maxSubs = activeChar?.level >= 3 ? 3 : activeChar?.level >= 2 ? 2 : 1;
+
+              return (
+                <View style={{ marginHorizontal: wp(16), marginBottom: wp(16) }}>
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: 'rgba(255,140,66,0.06)',
+                    borderRadius: 14, padding: wp(12),
+                    borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)',
+                  }}>
+                    <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>{foxPower.icon || '🦊'}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#FF8C42', fontSize: fp(11), fontWeight: '700' }}>{foxPower.name_fr || 'Substitution'}</Text>
+                      <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>
+                        {todaySubstitutions}/{maxSubs} utilisée{todaySubstitutions > 1 ? 's' : ''} aujourd'hui
+                      </Text>
+                    </View>
+                    <Pressable
+                      onPress={async () => {
+                        if (todaySubstitutions >= maxSubs) {
+                          Alert.alert('Limite atteinte', maxSubs + ' substitution' + (maxSubs > 1 ? 's' : '') + ' max par jour');
+                          return;
+                        }
+                        const result = await consumePower(foxPower.power_key);
+                        if (!result.success) return;
+                        setTodaySubstitutions(prev => prev + 1);
+                        Alert.alert('🦊 Substitution', 'Tap sur un ingrédient dans la liste ci-dessus pour voir des alternatives plus saines.', [{ text: 'Compris !' }]);
+                      }}
+                      style={({ pressed }) => ({
+                        backgroundColor: pressed ? 'rgba(255,140,66,0.2)' : 'rgba(255,140,66,0.1)',
+                        paddingHorizontal: wp(12), paddingVertical: wp(6), borderRadius: wp(8),
+                        borderWidth: 1, borderColor: 'rgba(255,140,66,0.3)',
+                      })}
+                    >
+                      <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700' }}>Substituer</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            })()}
+
             {/* Boutons Corriger + Confirmer */}
             <View style={{
               flexDirection: 'row',
@@ -2027,7 +2078,494 @@ const XscanScreen = forwardRef(function XscanScreen({ visible, onClose, onMealSa
 
           </ScrollView>
 
-          {/* Phase 5B: Alternatives modal + Correction screen will be added here */}
+          {/* ══════ POPUP ALTERNATIVES — "Pas ce plat ?" ══════ */}
+          {showAlternatives && (
+            <View style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.8)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 3000,
+              paddingHorizontal: wp(20),
+            }}>
+              <View style={{
+                width: '100%',
+                borderRadius: 20,
+                padding: 1.2,
+                backgroundColor: '#4A4F55',
+              }}>
+                <LinearGradient
+                  colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                  style={{ borderRadius: 19, padding: wp(20) }}
+                >
+                  {/* Ligne émeraude top */}
+                  <View style={{
+                    position: 'absolute', top: 0, left: 20, right: 20,
+                    height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
+                  }} />
+
+                  {/* Titre */}
+                  <Text style={{
+                    color: '#EAEEF3', fontSize: fp(18), fontWeight: '800',
+                    textAlign: 'center', marginBottom: wp(6),
+                  }}>
+                    {lang === 'fr' ? 'Autres plats possibles' : 'Other possible dishes'}
+                  </Text>
+                  <Text style={{
+                    color: '#8892A0', fontSize: fp(11), textAlign: 'center',
+                    marginBottom: wp(16),
+                  }}>
+                    {lang === 'fr'
+                      ? 'Les ingrédients et macros restent identiques'
+                      : 'Ingredients and macros stay the same'}
+                  </Text>
+
+                  {/* Liste des alternatives */}
+                  {alternativeDishes.map((alt, index) => {
+                    const isCurrentDish = (alt.name_fr || alt.name_en) === currentDishName;
+                    const countryFlag =
+                      alt.country === 'SN' ? '🇸🇳' :
+                      alt.country === 'ML' ? '🇲🇱' :
+                      alt.country === 'CM' ? '🇨🇲' :
+                      alt.country === 'BI' ? '🇧🇮' :
+                      alt.country === 'NG' ? '🇳🇬' :
+                      alt.country === 'KE' ? '🇰🇪' :
+                      alt.country === 'CI' ? '🇨🇮' :
+                      alt.country === 'IN' ? '🇮🇳' :
+                      alt.country === 'GN' ? '🇬🇳' :
+                      alt.country === 'BF' ? '🇧🇫' :
+                      alt.country === 'CD' ? '🇨🇩' :
+                      alt.country === 'TG' ? '🇹🇬' :
+                      '🌍';
+
+                    return (
+                      <Pressable
+                        key={index}
+                        onPress={() => {
+                          if (!isCurrentDish) {
+                            const newDishName = lang === 'fr' ? alt.name_fr : alt.name_en;
+                            setCurrentDishName(newDishName);
+
+                            const matchingSuggestion = scanSuggestions.find(
+                              s => s.name_fr === alt.name_fr || s.name_en === alt.name_en
+                            );
+
+                            if (matchingSuggestion && matchingSuggestion.ingredients && matchingSuggestion.ingredients.length > 0) {
+                              setScanResult(matchingSuggestion);
+                            }
+
+                            setShowAlternatives(false);
+                          }
+                        }}
+                        style={({ pressed }) => ({
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          paddingVertical: wp(12),
+                          paddingHorizontal: wp(14),
+                          borderRadius: 14,
+                          marginBottom: wp(8),
+                          backgroundColor: isCurrentDish
+                            ? 'rgba(0,217,132,0.10)'
+                            : pressed ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+                          borderWidth: 1,
+                          borderColor: isCurrentDish
+                            ? 'rgba(0,217,132,0.3)'
+                            : '#2A2F36',
+                        })}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                          <Text style={{ fontSize: 22, marginRight: wp(10) }}>{countryFlag}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{
+                              color: isCurrentDish ? '#00D984' : '#EAEEF3',
+                              fontSize: fp(14), fontWeight: '700',
+                            }} numberOfLines={1}>
+                              {lang === 'fr' ? alt.name_fr : alt.name_en}
+                            </Text>
+                            <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: 2 }}>
+                              {alt.confidence}% {lang === 'fr' ? 'de confiance' : 'confidence'}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {isCurrentDish ? (
+                          <View style={{
+                            width: 22, height: 22, borderRadius: 11,
+                            backgroundColor: '#00D984',
+                            justifyContent: 'center', alignItems: 'center',
+                          }}>
+                            <Text style={{ color: '#0D1117', fontSize: 12, fontWeight: '900' }}>✓</Text>
+                          </View>
+                        ) : (
+                          <View style={{
+                            width: 22, height: 22, borderRadius: 11,
+                            borderWidth: 1.5, borderColor: '#3A3F46',
+                          }} />
+                        )}
+                      </Pressable>
+                    );
+                  })}
+
+                  {/* Fun fact nutritionnel */}
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(212,175,55,0.06)',
+                    paddingHorizontal: wp(12),
+                    paddingVertical: wp(8),
+                    borderRadius: 10,
+                    marginTop: wp(10),
+                  }}>
+                    <Text style={{ fontSize: 14, marginRight: 8 }}>💡</Text>
+                    <Text style={{
+                      color: '#8892A0', fontSize: fp(9), fontStyle: 'italic',
+                      flex: 1, lineHeight: fp(13),
+                    }}>
+                      {lang === 'fr'
+                        ? 'Chaque plat porte une identité culinaire unique. Votre dashboard se base sur les ingrédients détectés.'
+                        : 'Every dish carries a unique culinary identity. Your dashboard is based on detected ingredients.'}
+                    </Text>
+                  </View>
+
+                  {/* Bouton fermer */}
+                  <Pressable
+                    onPress={() => setShowAlternatives(false)}
+                    style={({ pressed }) => ({
+                      marginTop: wp(8),
+                      paddingVertical: wp(12),
+                      borderRadius: 14,
+                      backgroundColor: pressed ? '#00B572' : '#00D984',
+                      alignItems: 'center',
+                    })}
+                  >
+                    <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
+                      {lang === 'fr' ? 'Valider' : 'Confirm'}
+                    </Text>
+                  </Pressable>
+                </LinearGradient>
+              </View>
+            </View>
+          )}
+
+          {/* ══════ ÉCRAN CORRECTION ══════ */}
+          {correctionMode && (
+            <View style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              zIndex: 2500,
+              backgroundColor: '#0D1117',
+            }}>
+              <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={0}
+              >
+              {/* Header */}
+              <View style={{
+                flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                paddingTop: Platform.OS === 'android' ? 50 : 60,
+                paddingHorizontal: wp(16), paddingBottom: wp(10),
+                borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.05)',
+              }}>
+                <Pressable onPress={() => {
+                  setCorrectionMode(false);
+                  setEditedIngredients([]);
+                  setSearchQuery('');
+                  setSearchResults([]);
+                  setEditingQuantityIndex(null);
+                }}>
+                  <Text style={{ color: '#8892A0', fontSize: fp(14) }}>✕ {lang === 'fr' ? 'Annuler' : 'Cancel'}</Text>
+                </Pressable>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800' }}>
+                  {lang === 'fr' ? 'Corriger' : 'Correct'}
+                </Text>
+                <Pressable onPress={applyCorrection}>
+                  <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '700' }}>
+                    ✓ {lang === 'fr' ? 'Valider' : 'Apply'}
+                  </Text>
+                </Pressable>
+              </View>
+
+              <ScrollView
+                ref={correctionScrollRef}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: wp(250) }}
+              >
+                {/* Totaux en temps réel */}
+                <View style={{
+                  marginHorizontal: wp(16), marginTop: wp(12), marginBottom: wp(16),
+                  borderRadius: 16, padding: 1,
+                  backgroundColor: '#4A4F55',
+                }}>
+                  <LinearGradient
+                    colors={['#3A3F46', '#252A30', '#1A1D22']}
+                    style={{ borderRadius: 15, padding: wp(14), alignItems: 'center' }}
+                  >
+                    <Text style={{ color: '#FF8C42', fontSize: fp(28), fontWeight: '900' }}>
+                      {getEditedTotals().calories} kcal
+                    </Text>
+                    <View style={{ flexDirection: 'row', marginTop: wp(8), gap: wp(16) }}>
+                      <View style={{ alignItems: 'center' }}>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF6B6B', marginBottom: 2 }} />
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>
+                          {getEditedTotals().protein_g.toFixed(1)}g
+                        </Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(8) }}>{lang === 'fr' ? 'Protéines' : 'Protein'}</Text>
+                      </View>
+                      <View style={{ alignItems: 'center' }}>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFD93D', marginBottom: 2 }} />
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>
+                          {getEditedTotals().carbs_g.toFixed(1)}g
+                        </Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(8) }}>{lang === 'fr' ? 'Glucides' : 'Carbs'}</Text>
+                      </View>
+                      <View style={{ alignItems: 'center' }}>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4DA6FF', marginBottom: 2 }} />
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>
+                          {getEditedTotals().fat_g.toFixed(1)}g
+                        </Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(8) }}>{lang === 'fr' ? 'Lipides' : 'Fat'}</Text>
+                      </View>
+                    </View>
+                  </LinearGradient>
+                </View>
+
+                {/* Liste des ingrédients éditables */}
+                <View style={{ paddingHorizontal: wp(16) }}>
+                  <Text style={{
+                    color: '#8892A0', fontSize: fp(11), fontWeight: '700',
+                    letterSpacing: 1.5, marginBottom: wp(10),
+                  }}>
+                    {lang === 'fr' ? 'INGRÉDIENTS' : 'INGREDIENTS'} ({editedIngredients.length})
+                  </Text>
+
+                  {editedIngredients.map((ing, index) => (
+                    <View key={index} style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      backgroundColor: 'rgba(255,255,255,0.03)',
+                      borderRadius: 14, marginBottom: wp(8),
+                      padding: wp(12),
+                      borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                    }}>
+                      {/* Info ingrédient */}
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '600' }}>
+                          {ing.name}
+                          {ing.added_manually && (
+                            <Text style={{ color: '#00D984', fontSize: fp(9) }}> +ajouté</Text>
+                          )}
+                        </Text>
+
+                        {/* Quantité — tap pour éditer */}
+                        {editingQuantityIndex === index ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                            <TextInput
+                              value={tempQuantity}
+                              onChangeText={setTempQuantity}
+                              keyboardType="numeric"
+                              autoFocus={true}
+                              style={{
+                                color: '#00D984', fontSize: fp(12), fontWeight: '700',
+                                backgroundColor: 'rgba(0,217,132,0.08)',
+                                borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
+                                minWidth: 50, borderWidth: 1, borderColor: 'rgba(0,217,132,0.3)',
+                              }}
+                              onSubmitEditing={() => updateQuantity(index, tempQuantity)}
+                              onBlur={() => {
+                                if (tempQuantity) updateQuantity(index, tempQuantity);
+                                else { setEditingQuantityIndex(null); setTempQuantity(''); }
+                              }}
+                            />
+                            <Text style={{ color: '#5A6070', fontSize: fp(11), marginLeft: 4 }}>g</Text>
+                          </View>
+                        ) : (
+                          <Pressable onPress={() => {
+                            setEditingQuantityIndex(index);
+                            setTempQuantity(String(ing.quantity_g || 100));
+                          }}>
+                            <Text style={{ color: '#00D984', fontSize: fp(11), marginTop: 3, textDecorationLine: 'underline' }}>
+                              {ing.quantity_g || 100}g — {lang === 'fr' ? 'modifier' : 'edit'}
+                            </Text>
+                          </Pressable>
+                        )}
+                      </View>
+
+                      {/* Calories */}
+                      <Text style={{ color: '#FF8C42', fontSize: fp(13), fontWeight: '700', marginRight: wp(10) }}>
+                        {ing.calories} kcal
+                      </Text>
+
+                      {/* Bouton supprimer */}
+                      <Pressable
+                        onPress={() => removeIngredient(index)}
+                        style={({ pressed }) => ({
+                          width: 28, height: 28, borderRadius: 14,
+                          backgroundColor: pressed ? 'rgba(255,59,48,0.2)' : 'rgba(255,59,48,0.08)',
+                          justifyContent: 'center', alignItems: 'center',
+                          borderWidth: 1, borderColor: 'rgba(255,59,48,0.2)',
+                        })}
+                      >
+                        <Text style={{ color: '#FF3B30', fontSize: 14, fontWeight: '700' }}>×</Text>
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Barre de recherche — Ajouter un ingrédient */}
+                <View style={{ paddingHorizontal: wp(16), marginTop: wp(16) }}>
+                  <Text style={{
+                    color: '#8892A0', fontSize: fp(11), fontWeight: '700',
+                    letterSpacing: 1.5, marginBottom: wp(8),
+                  }}>
+                    {lang === 'fr' ? 'AJOUTER UN INGRÉDIENT' : 'ADD INGREDIENT'}
+                  </Text>
+
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: 'rgba(255,255,255,0.03)',
+                    borderRadius: 14, paddingHorizontal: wp(12),
+                    borderWidth: 1, borderColor: searchQuery.length > 0 ? 'rgba(0,217,132,0.3)' : 'rgba(255,255,255,0.05)',
+                  }}>
+                    <Text style={{ color: '#5A6070', fontSize: 16, marginRight: 8 }}>🔍</Text>
+                    <TextInput
+                      value={searchQuery}
+                      onChangeText={searchIngredients}
+                      placeholder={lang === 'fr' ? 'Tapez un ingrédient...' : 'Type an ingredient...'}
+                      placeholderTextColor="#5A6070"
+                      onFocus={() => {
+                        setTimeout(() => {
+                          if (correctionScrollRef.current) {
+                            correctionScrollRef.current.scrollToEnd({ animated: true });
+                          }
+                        }, 300);
+                      }}
+                      style={{
+                        flex: 1, color: '#EAEEF3', fontSize: fp(13),
+                        paddingVertical: wp(12),
+                      }}
+                    />
+                    {searchQuery.length > 0 && (
+                      <Pressable onPress={() => { setSearchQuery(''); setSearchResults([]); }}>
+                        <Text style={{ color: '#8892A0', fontSize: 16 }}>✕</Text>
+                      </Pressable>
+                    )}
+                  </View>
+
+                  {/* Indicateur de recherche */}
+                  {isSearching && (
+                    <Text style={{ color: '#00D984', fontSize: fp(10), marginTop: wp(6), fontStyle: 'italic' }}>
+                      {lang === 'fr' ? 'Recherche...' : 'Searching...'}
+                    </Text>
+                  )}
+
+                  {/* Résultats de recherche */}
+                  {searchResults.length > 0 && (
+                    <View style={{
+                      marginTop: wp(8),
+                      borderRadius: 14,
+                      backgroundColor: 'rgba(255,255,255,0.03)',
+                      borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                      overflow: 'hidden',
+                    }}>
+                      {searchResults.map((result, i) => (
+                        <Pressable
+                          key={i}
+                          onPress={() => addIngredientFromSearch(result)}
+                          style={({ pressed }) => ({
+                            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                            paddingVertical: wp(10), paddingHorizontal: wp(12),
+                            backgroundColor: pressed ? 'rgba(0,217,132,0.08)' : 'transparent',
+                            borderBottomWidth: i < searchResults.length - 1 ? 0.5 : 0,
+                            borderBottomColor: 'rgba(255,255,255,0.05)',
+                          })}
+                        >
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>
+                              {result.name}
+                            </Text>
+                            <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>
+                              {result.category || ''} • {result.kcal_per_100g} kcal/100g
+                              {result.table === 'preparations_master' ? ' • cuit' : ''}
+                            </Text>
+                          </View>
+                          <View style={{
+                            backgroundColor: 'rgba(0,217,132,0.08)',
+                            paddingHorizontal: 10, paddingVertical: 4,
+                            borderRadius: 8, borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                          }}>
+                            <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>
+                              + {lang === 'fr' ? 'Ajouter' : 'Add'}
+                            </Text>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Message si aucun résultat */}
+                  {searchQuery.length >= 2 && !isSearching && searchResults.length === 0 && (
+                    <View style={{
+                      marginTop: wp(8), padding: wp(12),
+                      borderRadius: 14, backgroundColor: 'rgba(255,140,66,0.06)',
+                      borderWidth: 0.5, borderColor: 'rgba(255,140,66,0.15)',
+                    }}>
+                      <Text style={{ color: '#FF8C42', fontSize: fp(11), textAlign: 'center' }}>
+                        {lang === 'fr'
+                          ? `"${searchQuery}" non trouvé dans notre base`
+                          : `"${searchQuery}" not found in our database`}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Info Lix */}
+                <View style={{
+                  marginHorizontal: wp(16), marginTop: wp(24),
+                  alignItems: 'center',
+                }}>
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: 'rgba(212,175,55,0.06)',
+                    paddingHorizontal: 14, paddingVertical: 8,
+                    borderRadius: 10,
+                  }}>
+                    <Text style={{ fontSize: 14, marginRight: 6 }}>🏆</Text>
+                    <Text style={{ color: '#D4AF37', fontSize: fp(11), fontWeight: '600' }}>
+                      +5 Lix • {lang === 'fr' ? 'Correction confirmée' : 'Correction confirmed'}
+                    </Text>
+                  </View>
+                </View>
+
+              </ScrollView>
+
+              {/* Bouton Valider fixe en bas */}
+              <View style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                paddingHorizontal: wp(16), paddingBottom: Platform.OS === 'android' ? 55 : 40,
+                paddingTop: wp(10),
+                backgroundColor: '#0D1117',
+                borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.05)',
+              }}>
+                <Pressable
+                  onPress={applyCorrection}
+                  style={({ pressed }) => ({
+                    paddingVertical: wp(14),
+                    borderRadius: 14,
+                    backgroundColor: pressed ? '#00B572' : '#00D984',
+                    alignItems: 'center',
+                  })}
+                >
+                  <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
+                    ✓ {lang === 'fr' ? 'APPLIQUER LA CORRECTION' : 'APPLY CORRECTION'}
+                  </Text>
+                </Pressable>
+              </View>
+              </KeyboardAvoidingView>
+            </View>
+          )}
 
         </View>
       )}
