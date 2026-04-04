@@ -115,3 +115,81 @@ const SuiviHumainTeaser = ({ showLixAlert }) => {
     </View>
   );
 };
+
+export default function HumanTab({
+  humanTab,
+  setHumanTab,
+  binomeStatus,
+  binomePartner,
+  binomeCommonPoints,
+  binomeDistance,
+  binomeMessages,
+  searchProgress,
+  searchStep,
+  searchCoords,
+  compatibilityScore,
+  scanLines,
+  retryAfterTime,
+  retryCountdown,
+  showLixSignPicker,
+  setShowLixSignPicker,
+  lixSignCategory,
+  setLixSignCategory,
+  tooltipSign,
+  setTooltipSign,
+  radarAnim,
+  pulseRing1,
+  pulseRing2,
+  pulseRing3,
+  pendingPulse,
+  showLixAlert,
+  onStartBinomeSearch,
+  onResetBinomeState,
+  onBreakBinome,
+  onSendBinomeRequest,
+  onSendLixSign,
+}) {
+  const HumanTabSelector = ({ activeTab }) => (
+    <View style={{
+      flexDirection: 'row', marginHorizontal: wp(16), marginBottom: wp(12),
+      backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12), padding: wp(3),
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    }}>
+      <Pressable onPress={() => setHumanTab('binome')} style={{
+        flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
+        backgroundColor: activeTab === 'binome' ? 'rgba(0,217,132,0.12)' : 'transparent',
+        borderWidth: activeTab === 'binome' ? 1 : 0, borderColor: 'rgba(0,217,132,0.25)', alignItems: 'center',
+      }}>
+        <Text style={{ fontSize: fp(12), fontWeight: '700', color: activeTab === 'binome' ? '#00D984' : '#6B7B8D' }}>🤝 Binôme</Text>
+      </Pressable>
+      <Pressable onPress={() => setHumanTab('suivi')} style={{
+        flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
+        backgroundColor: activeTab === 'suivi' ? 'rgba(212,175,55,0.12)' : 'transparent',
+        borderWidth: activeTab === 'suivi' ? 1 : 0, borderColor: 'rgba(212,175,55,0.25)', alignItems: 'center',
+      }}>
+        <Text style={{ fontSize: fp(12), fontWeight: '700', color: activeTab === 'suivi' ? '#D4AF37' : '#6B7B8D' }}>👨‍⚕️ Suivi Humain</Text>
+      </Pressable>
+    </View>
+  );
+
+  function renderBinomeContent() {
+    return <View><Text style={{ color: '#FFF' }}>Binome placeholder</Text></View>;
+  }
+
+  if (humanTab === 'suivi') {
+    return (
+      <View style={{ flex: 1 }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: wp(8), paddingBottom: wp(100) }}>
+          <HumanTabSelector activeTab="suivi" />
+          <SuiviHumainTeaser showLixAlert={showLixAlert} />
+        </ScrollView>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1 }}>
+      {renderBinomeContent()}
+    </View>
+  );
+}
