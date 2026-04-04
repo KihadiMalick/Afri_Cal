@@ -580,10 +580,68 @@ export default function CharactersTab({
                                       </Pressable>
                                     );
 
+                                  case 'modal_inline':
+                                    return (
+                                      <Pressable delayPressIn={120}
+                                        onPress={async () => {
+                                          const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
+                                          const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
+                                          if (!isOwnedCheck) {
+                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
+                                            return;
+                                          }
+                                          if (onShouldConsumePower(power)) {
+                                            const r = await onConsumePower(power.power_key);
+                                            if (!r.success) return;
+                                          }
+                                          setInlinePowerModal(power.power_key);
+                                        }}
+                                        style={({ pressed }) => ({
+                                          paddingVertical: wp(7), borderRadius: wp(8),
+                                          backgroundColor: pressed ? 'rgba(0,217,132,0.15)' : 'rgba(0,217,132,0.08)',
+                                          borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                                          alignItems: 'center',
+                                        })}
+                                      >
+                                        <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '700' }}>
+                                          Activer
+                                        </Text>
+                                      </Pressable>
+                                    );
+
+                                  case 'toggle':
+                                    return (
+                                      <Pressable delayPressIn={120}
+                                        onPress={async () => {
+                                          const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
+                                          const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
+                                          if (!isOwnedCheck) {
+                                            showLixAlert('🔒 Carte requise', 'Obtiens cette carte pour activer cette préférence.', [{ text: 'Fermer', style: 'cancel' }], '🔒');
+                                            return;
+                                          }
+                                          showLixAlert('✅ Préférence activée', (power.name_fr || power.name || '') + ' est maintenant actif.\nTu recevras des notifications en conséquence.', [{ text: 'Super', color: '#00D984' }], '🔔');
+                                          fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, {
+                                            method: 'PATCH', headers: POST_HEADERS,
+                                            body: JSON.stringify({ ['pref_' + power.power_key]: true }),
+                                          }).catch(() => {});
+                                        }}
+                                        style={({ pressed }) => ({
+                                          flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                                          paddingVertical: wp(7), borderRadius: wp(8),
+                                          backgroundColor: pressed ? 'rgba(0,217,132,0.15)' : 'rgba(0,217,132,0.08)',
+                                          borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                                        })}
+                                      >
+                                        <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '700' }}>
+                                          Activer / Désactiver
+                                        </Text>
+                                      </Pressable>
+                                    );
+
                                   default:
                                     return (
                                       <Text style={{ color: '#555E6C', fontSize: fp(8), textAlign: 'center' }}>
-                                        Action non implémentée
+                                        Type non supporté
                                       </Text>
                                     );
                                 }
