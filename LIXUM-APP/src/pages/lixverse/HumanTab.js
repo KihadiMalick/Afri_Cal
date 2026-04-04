@@ -173,7 +173,130 @@ export default function HumanTab({
   );
 
   function renderBinomeContent() {
-    return <View><Text style={{ color: '#FFF' }}>Binome placeholder</Text></View>;
+    const radarRotate = radarAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+    const SEARCH_STEP_TEXTS = [
+      'Analyse morphologique du profil...',
+      'Extraction des paramètres nutritionnels...',
+      'Corrélation des objectifs de santé...',
+      'Triangulation géographique...',
+      'Scan des profils compatibles...',
+      'Calcul de l\'indice de compatibilité...',
+      'Vérification anti-triche...',
+      'Binôme identifié !',
+    ];
+
+    if (binomeStatus === 'matched' && binomePartner) {
+      const myCalories = 1200;
+      const myBurned = 280;
+      const myMood = '💪';
+      const myWeather = '🌤️';
+      return (
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingHorizontal: wp(16), paddingTop: wp(8) }}>
+          <View style={{ marginHorizontal: wp(-16) }}><HumanTabSelector activeTab="binome" /></View>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(16), padding: wp(16), marginBottom: wp(16), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ alignItems: 'center', flex: 1 }}>
+                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FFF' }}>Vous</Text>
+                <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.4)' }}>LXM-2K7F4A</Text>
+                <Text style={{ fontSize: fp(16) }}>🇧🇮</Text>
+                <View style={{ backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), marginTop: wp(4) }}>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984' }}>Score 72</Text>
+                </View>
+              </View>
+              <View style={{ alignItems: 'center', paddingHorizontal: wp(10) }}>
+                <Svg width={wp(28)} height={wp(28)} viewBox="0 0 24 24" fill="#D4AF37">
+                  <Path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" />
+                </Svg>
+              </View>
+              <View style={{ alignItems: 'center', flex: 1 }}>
+                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FFF' }}>{binomePartner.display_name}</Text>
+                <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.4)' }}>{binomePartner.lixtag}</Text>
+                <Text style={{ fontSize: fp(16) }}>{binomePartner.country_flag}</Text>
+                <View style={{ backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), marginTop: wp(4) }}>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984' }}>Score {binomePartner.vitality_score}</Text>
+                </View>
+              </View>
+            </View>
+            <View style={{ alignItems: 'center', marginTop: wp(10), gap: wp(4) }}>
+              <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{binomePartner.distance_km?.toLocaleString('fr-FR')} km vous séparent</Text>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FF8C42' }}>🔥 {binomePartner.streak_days} jours de streak commun</Text>
+            </View>
+          </View>
+
+          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(8) }}>Aujourd'hui</Text>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(16), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+            <View style={{ flexDirection: 'row', marginBottom: wp(4) }}>
+              <Text style={{ flex: 1, fontSize: fp(10), fontWeight: '600', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>Vous</Text>
+              <Text style={{ width: wp(80), fontSize: fp(10), fontWeight: '600', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}></Text>
+              <Text style={{ flex: 1, fontSize: fp(10), fontWeight: '600', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>{binomePartner.display_name.split(' ')[0]}</Text>
+            </View>
+            {[
+              { label: 'Calories mangées', mine: myCalories, theirs: binomePartner.today_calories_eaten, icon: '🍽️' },
+              { label: 'Calories brûlées', mine: myBurned, theirs: binomePartner.today_calories_burned, icon: '🔥' },
+              { label: 'Humeur', mine: myMood, theirs: binomePartner.today_mood, icon: '😊' },
+              { label: 'Météo', mine: myWeather, theirs: binomePartner.today_weather, icon: '🌤️' },
+            ].map((row, i) => (
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6), borderTopWidth: i > 0 ? 1 : 0, borderTopColor: 'rgba(255,255,255,0.04)' }}>
+                <Text style={{ flex: 1, fontSize: fp(13), fontWeight: '600', color: '#FFF', textAlign: 'center' }}>{row.mine}</Text>
+                <Text style={{ width: wp(80), fontSize: fp(10), color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>{row.icon} {row.label.split(' ').pop()}</Text>
+                <Text style={{ flex: 1, fontSize: fp(13), fontWeight: '600', color: '#FFF', textAlign: 'center' }}>{row.theirs}</Text>
+              </View>
+            ))}
+          </View>
+
+          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(8) }}>Objectif du jour</Text>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(14), padding: wp(14), marginBottom: wp(16), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(8) }}>
+              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Progression commune</Text>
+              <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>68%</Text>
+            </View>
+            <View style={{ height: wp(8), borderRadius: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+              <View style={{ height: '100%', width: '68%', borderRadius: wp(4), backgroundColor: '#00D984' }} />
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: wp(10), gap: wp(6) }}>
+              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>🔥 {binomePartner.streak_days} jours consécutifs réussis</Text>
+            </View>
+          </View>
+
+          <Pressable delayPressIn={120} onPress={() => setShowLixSignPicker(true)} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], marginBottom: wp(16) })}>
+            <LinearGradient colors={['#D4AF37', '#B8941F']} style={{ paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: wp(8) }}>
+              <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="#FFF">
+                <Path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+              </Svg>
+              <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>Envoyer un LixSign</Text>
+            </LinearGradient>
+          </Pressable>
+
+          {binomeMessages.length > 0 && (
+            <View>
+              <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(8) }}>Messages récents</Text>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(14), padding: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+                {binomeMessages.slice(-10).reverse().map(msg => (
+                  <LixSignBubble
+                    key={msg.id}
+                    sign={msg}
+                    isOwn={msg.from === 'me'}
+                    showText={msg.showText || tooltipSign === msg.id}
+                    onPress={() => {
+                      if (msg.from === 'partner') {
+                        setTooltipSign(msg.id);
+                        setTimeout(() => setTooltipSign(null), 3000);
+                      }
+                    }}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+
+          <Pressable onPress={onBreakBinome} style={{ paddingVertical: wp(20), alignItems: 'center' }}>
+            <Text style={{ fontSize: fp(12), color: 'rgba(255,75,75,0.4)' }}>Rompre le Binôme</Text>
+          </Pressable>
+        </ScrollView>
+      );
+    }
+
+    return <View><Text style={{ color: 'rgba(255,255,255,0.3)' }}>Loading binome states...</Text></View>;
   }
 
   if (humanTab === 'suivi') {
