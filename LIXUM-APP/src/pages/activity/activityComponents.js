@@ -61,4 +61,55 @@ const PondIcon = ({ x, y }) => (
   </G>
 );
 
+// ── Chaussures SVG ──
+
+const WalkShoeIcon = ({ size = 32 }) => (
+  <Svg width={size} height={size} viewBox="0 0 40 40">
+    <Path d="M8 28 L8 20 Q8 16 12 15 L22 13 Q26 12 28 14 L32 16 Q36 18 36 22 L36 26 Q36 30 32 30 L12 30 Q8 30 8 28Z"
+      fill="none" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M14 15 L14 10 Q14 8 16 8 L20 8 Q22 8 22 10 L22 13"
+      fill="none" stroke="#00D984" strokeWidth={2} strokeLinecap="round" />
+    <Line x1="16" y1="18" x2="16" y2="14" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.5} />
+    <Line x1="20" y1="17" x2="20" y2="13" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.5} />
+    <Path d="M10 28 L34 28" stroke="#00D984" strokeWidth={2} strokeLinecap="round" opacity={0.7} />
+    <Line x1="2" y1="22" x2="6" y2="22" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.4} />
+    <Line x1="1" y1="25" x2="5" y2="25" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.3} />
+    <Line x1="3" y1="19" x2="6" y2="19" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.3} />
+  </Svg>
+);
+
+const RunShoeIcon = ({ size = 32 }) => (
+  <Svg width={size} height={size} viewBox="0 0 40 40">
+    <Path d="M6 26 L10 17 Q12 13 16 12 L24 10 Q28 9 30 12 L34 16 Q38 19 36 23 L34 27 Q32 30 28 30 L10 30 Q6 30 6 26Z"
+      fill="none" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M16 12 L18 6 Q19 4 21 5 L24 7 Q25 8 24 10"
+      fill="none" stroke="#00D984" strokeWidth={2} strokeLinecap="round" />
+    <Line x1="18" y1="15" x2="17" y2="11" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.5} />
+    <Line x1="22" y1="14" x2="21" y2="10" stroke="#00D984" strokeWidth={1.5} strokeLinecap="round" opacity={0.5} />
+    <Path d="M8 28 L30 28" stroke="#00D984" strokeWidth={2} strokeLinecap="round" opacity={0.7} />
+    <Line x1="0" y1="20" x2="5" y2="20" stroke="#00D984" strokeWidth={2} strokeLinecap="round" opacity={0.5} />
+    <Line x1="-1" y1="23" x2="4" y2="23" stroke="#00D984" strokeWidth={2} strokeLinecap="round" opacity={0.4} />
+    <Line x1="1" y1="17" x2="5" y2="17" stroke="#00D984" strokeWidth={2} strokeLinecap="round" opacity={0.3} />
+    <Line x1="-2" y1="26" x2="3" y2="26" stroke="#00D984" strokeWidth={2} strokeLinecap="round" opacity={0.3} />
+  </Svg>
+);
+
+const WalkShoeAnimated = ({ shoeAnim }) => {
+  const bounce = shoeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -4] });
+  return (
+    <Animated.View style={{ transform: [{ translateY: bounce }] }}>
+      <WalkShoeIcon size={wp(28)} />
+    </Animated.View>
+  );
+};
+
+const RunShoeAnimated = ({ shoeAnim }) => {
+  const bounce = shoeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -3] });
+  return (
+    <Animated.View style={{ transform: [{ translateY: bounce }] }}>
+      <RunShoeIcon size={wp(28)} />
+    </Animated.View>
+  );
+};
+
 // === PHASES SUIVANTES ===
