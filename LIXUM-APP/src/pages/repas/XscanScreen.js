@@ -2028,7 +2028,177 @@ const XscanScreen = forwardRef(function XscanScreen({ visible, onClose, onMealSa
 
           </ScrollView>
 
-          {/* Phase 5B: Popup alternatives */}
+          {/* ═══ POPUP ALTERNATIVES — "Pas ce plat ?" ═══ */}
+          {showAlternatives && (
+            <View style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.8)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 3000,
+              paddingHorizontal: wp(20),
+            }}>
+              <View style={{
+                width: '100%',
+                borderRadius: 20,
+                padding: 1.2,
+                backgroundColor: '#4A4F55',
+              }}>
+                <LinearGradient
+                  colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                  style={{ borderRadius: 19, padding: wp(20) }}
+                >
+                  {/* Ligne émeraude top */}
+                  <View style={{
+                    position: 'absolute', top: 0, left: 20, right: 20,
+                    height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
+                  }} />
+
+                  {/* Titre */}
+                  <Text style={{
+                    color: '#EAEEF3', fontSize: fp(18), fontWeight: '800',
+                    textAlign: 'center', marginBottom: wp(6),
+                  }}>
+                    {lang === 'fr' ? 'Autres plats possibles' : 'Other possible dishes'}
+                  </Text>
+                  <Text style={{
+                    color: '#8892A0', fontSize: fp(11), textAlign: 'center',
+                    marginBottom: wp(16),
+                  }}>
+                    {lang === 'fr'
+                      ? 'Les ingrédients et macros restent identiques'
+                      : 'Ingredients and macros stay the same'}
+                  </Text>
+
+                  {/* Liste des alternatives */}
+                  {alternativeDishes.map((alt, index) => {
+                    const isCurrentDish = (alt.name_fr || alt.name_en) === currentDishName;
+                    const countryFlag =
+                      alt.country === 'SN' ? '🇸🇳' :
+                      alt.country === 'ML' ? '🇲🇱' :
+                      alt.country === 'CM' ? '🇨🇲' :
+                      alt.country === 'BI' ? '🇧🇮' :
+                      alt.country === 'NG' ? '🇳🇬' :
+                      alt.country === 'KE' ? '🇰🇪' :
+                      alt.country === 'CI' ? '🇨🇮' :
+                      alt.country === 'IN' ? '🇮🇳' :
+                      alt.country === 'GN' ? '🇬🇳' :
+                      alt.country === 'BF' ? '🇧🇫' :
+                      alt.country === 'CD' ? '🇨🇩' :
+                      alt.country === 'TG' ? '🇹🇬' :
+                      '🌍';
+
+                    return (
+                      <Pressable
+                        key={index}
+                        onPress={() => {
+                          if (!isCurrentDish) {
+                            const newDishName = lang === 'fr' ? alt.name_fr : alt.name_en;
+                            setCurrentDishName(newDishName);
+
+                            const matchingSuggestion = scanSuggestions.find(
+                              s => s.name_fr === alt.name_fr || s.name_en === alt.name_en
+                            );
+
+                            if (matchingSuggestion && matchingSuggestion.ingredients && matchingSuggestion.ingredients.length > 0) {
+                              setScanResult(matchingSuggestion);
+                            }
+
+                            setShowAlternatives(false);
+                          }
+                        }}
+                        style={({ pressed }) => ({
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          paddingVertical: wp(12),
+                          paddingHorizontal: wp(14),
+                          borderRadius: 14,
+                          marginBottom: wp(8),
+                          backgroundColor: isCurrentDish
+                            ? 'rgba(0,217,132,0.10)'
+                            : pressed ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+                          borderWidth: 1,
+                          borderColor: isCurrentDish
+                            ? 'rgba(0,217,132,0.3)'
+                            : '#2A2F36',
+                        })}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                          <Text style={{ fontSize: 22, marginRight: wp(10) }}>{countryFlag}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{
+                              color: isCurrentDish ? '#00D984' : '#EAEEF3',
+                              fontSize: fp(14), fontWeight: '700',
+                            }} numberOfLines={1}>
+                              {lang === 'fr' ? alt.name_fr : alt.name_en}
+                            </Text>
+                            <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: 2 }}>
+                              {alt.confidence}% {lang === 'fr' ? 'de confiance' : 'confidence'}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {isCurrentDish ? (
+                          <View style={{
+                            width: 22, height: 22, borderRadius: 11,
+                            backgroundColor: '#00D984',
+                            justifyContent: 'center', alignItems: 'center',
+                          }}>
+                            <Text style={{ color: '#0D1117', fontSize: 12, fontWeight: '900' }}>✓</Text>
+                          </View>
+                        ) : (
+                          <View style={{
+                            width: 22, height: 22, borderRadius: 11,
+                            borderWidth: 1.5, borderColor: '#3A3F46',
+                          }} />
+                        )}
+                      </Pressable>
+                    );
+                  })}
+
+                  {/* Fun fact nutritionnel */}
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(212,175,55,0.06)',
+                    paddingHorizontal: wp(12),
+                    paddingVertical: wp(8),
+                    borderRadius: 10,
+                    marginTop: wp(10),
+                  }}>
+                    <Text style={{ fontSize: 14, marginRight: 8 }}>💡</Text>
+                    <Text style={{
+                      color: '#8892A0', fontSize: fp(9), fontStyle: 'italic',
+                      flex: 1, lineHeight: fp(13),
+                    }}>
+                      {lang === 'fr'
+                        ? 'Chaque plat porte une identité culinaire unique. Votre dashboard se base sur les ingrédients détectés.'
+                        : 'Every dish carries a unique culinary identity. Your dashboard is based on detected ingredients.'}
+                    </Text>
+                  </View>
+
+                  {/* Bouton fermer */}
+                  <Pressable
+                    onPress={() => setShowAlternatives(false)}
+                    style={({ pressed }) => ({
+                      marginTop: wp(8),
+                      paddingVertical: wp(12),
+                      borderRadius: 14,
+                      backgroundColor: pressed ? '#00B572' : '#00D984',
+                      alignItems: 'center',
+                    })}
+                  >
+                    <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
+                      {lang === 'fr' ? 'Valider' : 'Confirm'}
+                    </Text>
+                  </Pressable>
+                </LinearGradient>
+              </View>
+            </View>
+          )}
+
           {/* Phase 5C: Écran correction */}
 
         </View>
