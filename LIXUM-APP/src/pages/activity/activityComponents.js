@@ -267,4 +267,38 @@ const ActivitySlider = ({
   );
 };
 
+// ── Toggle Pill (Distance | Temps) ──
+const ModePill = ({ mode, onToggle, accentColor }) => (
+  <View style={{
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: wp(10),
+    padding: wp(2),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  }}>
+    {['distance', 'temps'].map((m) => (
+      <Pressable
+        key={m}
+        onPress={() => onToggle(m)}
+        style={{
+          paddingHorizontal: wp(10),
+          paddingVertical: wp(4),
+          borderRadius: wp(8),
+          backgroundColor: mode === m ? accentColor : 'transparent',
+        }}
+      >
+        <Text style={{
+          fontSize: fp(9),
+          fontWeight: '700',
+          color: mode === m ? '#000' : '#8892A0',
+          textTransform: 'capitalize',
+        }}>
+          {m}
+        </Text>
+      </Pressable>
+    ))}
+  </View>
+);
+
 // === PHASES SUIVANTES ===
