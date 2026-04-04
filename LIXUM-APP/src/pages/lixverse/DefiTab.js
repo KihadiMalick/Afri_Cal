@@ -347,6 +347,231 @@ export default function DefiTab({
           })}
         </View>
       )}
+
+      <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
+        <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginBottom: wp(14) }} />
+        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Défis du mois</Text>
+        {loading ? <ActivityIndicator color="#D4AF37" style={{ padding: wp(20) }} /> : challenges.map(ch => {
+          const dl = new Date(ch.registration_deadline);
+          const hLeft = Math.max(0, Math.ceil((dl - new Date()) / 3600000));
+          const dLeft = Math.floor(hLeft / 24);
+          const isOpen = hLeft > 0;
+          const isUrgent = hLeft > 0 && hLeft <= 24;
+          const score = challengeScores.find(s => s.challenge_id === ch.id);
+          const daysPassed = Math.max(0, Math.min(Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000), ch.duration_days || 30));
+          const progressPct = Math.max(0, Math.min(100, Math.round((daysPassed / (ch.duration_days || 30)) * 100)));
+          return (
+            <View key={ch.id} style={{ borderRadius: wp(16), marginBottom: wp(10), borderWidth: 1.5, borderColor: ch.color + '40', overflow: 'hidden' }}>
+              <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ padding: wp(16), borderRadius: wp(14) }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(24), marginRight: wp(10) }}>{ch.icon}</Text>
+                  <View style={{ flex: 1 }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{ch.title}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{ch.duration_days}j | Max {ch.max_group_size}/équipe</Text></View>
+                  <View style={{
+                    backgroundColor: isOpen
+                      ? (isUrgent ? 'rgba(255,107,107,0.15)' : 'rgba(0,217,132,0.12)')
+                      : 'rgba(255,140,66,0.1)',
+                    borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3),
+                    borderWidth: 1,
+                    borderColor: isOpen
+                      ? (isUrgent ? 'rgba(255,107,107,0.25)' : 'rgba(0,217,132,0.2)')
+                      : 'rgba(255,140,66,0.2)',
+                  }}>
+                    <Text style={{
+                      fontSize: fp(9), fontWeight: '700',
+                      color: isOpen
+                        ? (isUrgent ? '#FF6B6B' : '#00D984')
+                        : '#FF8C42',
+                    }}>
+                      {isOpen
+                        ? (isUrgent ? hLeft + 'h restantes' : dLeft + 'j restants')
+                        : 'Terminé'}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', marginBottom: wp(8) }}>{ch.description}</Text>
+                <View style={{ marginBottom: wp(10), marginTop: wp(4) }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
+                    <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>
+                      Jour {daysPassed}/{ch.duration_days || 30}{score ? '  ·  ' + (score.personal_score || 0) + ' pts' : ''}
+                    </Text>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: ch.color || '#00D984' }}>
+                      {score ? (score.group_rank ? '#' + score.group_rank + '  ' : '') + (score.today_points ? '+' + score.today_points + ' auj.' : '') : progressPct + '%'}
+                    </Text>
+                  </View>
+                  <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
+                    <View style={{
+                      height: '100%', borderRadius: wp(2),
+                      backgroundColor: ch.color || '#00D984',
+                      width: Math.round(progressPct) + '%',
+                      opacity: 0.85,
+                      shadowColor: ch.color || '#00D984',
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.5,
+                      shadowRadius: wp(4),
+                      elevation: 2,
+                    }} />
+                  </View>
+                </View>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12), padding: wp(10), marginTop: wp(10), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+                  {[1, 2, 3].map(pos => {
+                    const leaders = challengeLeaders[ch.id] || [];
+                    const leader = leaders.find(l => l.rank === pos);
+                    const posColors = { 1: '#D4AF37', 2: '#C0C0C0', 3: '#CD7F32' };
+                    return (
+                      <View key={pos} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6), borderBottomWidth: pos < 3 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
+                        <MedalIcon rank={pos} size={wp(22)} />
+                        <View style={{ flex: 1, marginLeft: wp(8) }}>
+                          <Text style={{ fontSize: fp(11), fontWeight: '700', color: posColors[pos] }}>
+                            {leader ? leader.name : ''}
+                          </Text>
+                          {leader && <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.25)', marginTop: wp(1) }}>{leader.total_score} pts</Text>}
+                          {!leader && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                              <View style={{ width: wp(16), height: wp(16), borderRadius: wp(8), borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' }}>
+                                <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.1)' }}>?</Text>
+                              </View>
+                              <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.15)', fontStyle: 'italic' }}>Place à prendre</Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  })}
+
+                  <Pressable
+                    onPress={() => setExpandedRewards(prev => ({ ...prev, [ch.id]: !prev[ch.id] }))}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+                      paddingVertical: wp(8), marginTop: wp(4),
+                      borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)',
+                      opacity: pressed ? 0.6 : 1,
+                    })}
+                  >
+                    <TrophyIcon size={wp(14)} color="rgba(212,175,55,0.6)" />
+                    <Text style={{ fontSize: fp(10), color: 'rgba(212,175,55,0.6)', marginLeft: wp(6), marginRight: wp(4) }}>
+                      {expandedRewards[ch.id] ? 'Masquer les récompenses' : 'Voir les récompenses'}
+                    </Text>
+                    <ChevronDown size={wp(12)} color="rgba(212,175,55,0.6)" rotated={expandedRewards[ch.id]} />
+                  </Pressable>
+
+                  {expandedRewards[ch.id] && (
+                    <View style={{ paddingTop: wp(6) }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(7), paddingHorizontal: wp(4) }}>
+                        <MedalIcon rank={1} size={wp(18)} />
+                        <View style={{ flex: 1, marginLeft: wp(8) }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: wp(4) }}>
+                            <FragmentIcon size={wp(12)} color="#E040FB" />
+                            <Text style={{ fontSize: fp(9), color: '#E040FB', fontWeight: '700' }}>1 frag Mythique</Text>
+                            <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)' }}>+</Text>
+                            <MysteryCardIcon size={wp(11)} color="#4FC3F7" />
+                            <Text style={{ fontSize: fp(9), color: '#4FC3F7', fontWeight: '700' }}>1 carte Rare</Text>
+                          </View>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <LixGem size={wp(10)} />
+                            <Text style={{ fontSize: fp(9), color: '#D4AF37', fontWeight: '700', marginLeft: wp(2) }}>{ch.reward_lix_first || 5000}</Text>
+                          </View>
+                          <Text style={{ fontSize: fp(9), color: '#7BED9F', fontWeight: '600' }}>⚡{ch.reward_energy_first || 100}</Text>
+                        </View>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(7), paddingHorizontal: wp(4), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
+                        <MedalIcon rank={2} size={wp(18)} />
+                        <View style={{ flex: 1, marginLeft: wp(8) }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: wp(4) }}>
+                            <FragmentIcon size={wp(12)} color="#B388FF" />
+                            <Text style={{ fontSize: fp(9), color: '#B388FF', fontWeight: '700' }}>1 frag Elite</Text>
+                            <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)' }}>+</Text>
+                            <MysteryCardIcon size={wp(11)} color="#66BB6A" />
+                            <Text style={{ fontSize: fp(9), color: '#66BB6A', fontWeight: '700' }}>1 carte Standard</Text>
+                          </View>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <LixGem size={wp(10)} />
+                            <Text style={{ fontSize: fp(9), color: '#D4AF37', fontWeight: '700', marginLeft: wp(2) }}>{ch.reward_lix_second || 3000}</Text>
+                          </View>
+                          <Text style={{ fontSize: fp(9), color: '#7BED9F', fontWeight: '600' }}>⚡{ch.reward_energy_second || 60}</Text>
+                        </View>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(7), paddingHorizontal: wp(4), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
+                        <MedalIcon rank={3} size={wp(18)} />
+                        <View style={{ flex: 1, marginLeft: wp(8) }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: wp(4) }}>
+                            <FragmentIcon size={wp(12)} color="#4FC3F7" />
+                            <Text style={{ fontSize: fp(9), color: '#4FC3F7', fontWeight: '700' }}>2 frags Rare</Text>
+                            <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.2)' }}>+</Text>
+                            <MysteryCardIcon size={wp(11)} color="#66BB6A" />
+                            <Text style={{ fontSize: fp(9), color: '#66BB6A', fontWeight: '700' }}>1 carte Standard</Text>
+                          </View>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <LixGem size={wp(10)} />
+                            <Text style={{ fontSize: fp(9), color: '#D4AF37', fontWeight: '700', marginLeft: wp(2) }}>{ch.reward_lix_third || 1500}</Text>
+                          </View>
+                          <Text style={{ fontSize: fp(9), color: '#7BED9F', fontWeight: '600' }}>⚡{ch.reward_energy_third || 40}</Text>
+                        </View>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6), paddingHorizontal: wp(4), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
+                        <View style={{ width: wp(18), height: wp(18), borderRadius: wp(9), backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
+                          <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.25)', fontWeight: '700' }}>4-10</Text>
+                        </View>
+                        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)', marginLeft: wp(8) }}>Lix + Énergie selon le rang</Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
+                <View style={{ marginTop: wp(10), flexDirection: 'row', gap: wp(8) }}>
+                  <Pressable
+                    onPress={() => {
+                      if (!isOpen) {
+                        showLixAlert('⏳ Défi terminé', 'Ce défi est terminé. Les inscriptions sont closes.\nRendez-vous le mois prochain !', [{ text: 'OK', style: 'cancel' }], '⏳');
+                        return;
+                      }
+                      onCheckEligibilityAndProceed(ch, 'create');
+                    }}
+                    disabled={eligibilityChecking}
+                    delayPressIn={120}
+                    style={({ pressed }) => ({
+                      flex: 1, paddingVertical: wp(11), borderRadius: wp(12), alignItems: 'center',
+                      backgroundColor: isOpen ? (ch.color || '#D4AF37') + '20' : 'rgba(255,255,255,0.03)',
+                      borderWidth: 1.5, borderColor: isOpen ? (ch.color || '#D4AF37') + '50' : 'rgba(255,255,255,0.06)',
+                      transform: [{ scale: pressed ? 0.95 : 1 }],
+                      opacity: eligibilityChecking ? 0.5 : (isOpen ? 1 : 0.5),
+                    })}
+                  >
+                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: isOpen ? (ch.color || '#D4AF37') : 'rgba(255,255,255,0.2)' }}>Créer une équipe</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      if (!isOpen) {
+                        showLixAlert('⏳ Défi terminé', 'Ce défi est terminé. Les inscriptions sont closes.\nRendez-vous le mois prochain !', [{ text: 'OK', style: 'cancel' }], '⏳');
+                        return;
+                      }
+                      onCheckEligibilityAndProceed(ch, 'join');
+                    }}
+                    disabled={eligibilityChecking}
+                    delayPressIn={120}
+                    style={({ pressed }) => ({
+                      flex: 1, paddingVertical: wp(11), borderRadius: wp(12), alignItems: 'center',
+                      backgroundColor: isOpen ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+                      borderWidth: 1, borderColor: isOpen ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
+                      transform: [{ scale: pressed ? 0.95 : 1 }],
+                      opacity: eligibilityChecking ? 0.5 : (isOpen ? 1 : 0.5),
+                    })}
+                  >
+                    <Text style={{ fontSize: fp(11), fontWeight: '600', color: isOpen ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)' }}>Rejoindre</Text>
+                  </Pressable>
+                </View>
+                {!isOpen && (
+                  <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.15)', textAlign: 'center', marginTop: wp(4), fontStyle: 'italic' }}>Inscriptions closes — prochain défi le 1er du mois</Text>
+                )}
+              </LinearGradient>
+            </View>
+          );
+        })}
+      </View>
     </ScrollView>
   );
 }
