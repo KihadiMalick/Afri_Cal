@@ -690,11 +690,213 @@ export default function LiveTrackingScreen({
                 </View>
               )}
 
-              {/* === PHASE 6 : suite JSX === */}
+              {/* Équivalent alimentaire en temps réel */}
+              {liveFoodEquiv && (
+                <View style={{
+                  alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: wp(6),
+                  backgroundColor: 'rgba(255,140,66,0.08)', borderRadius: wp(20),
+                  paddingHorizontal: wp(14), paddingVertical: wp(6),
+                  borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)',
+                  marginBottom: wp(14),
+                }}>
+                  {liveFoodEquiv.type === 'combo' ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                      <Text style={{ fontSize: fp(14) }}>{liveFoodEquiv.item1.emoji}</Text>
+                      <Text style={{ fontSize: fp(11), color: '#FF8C42', fontWeight: '600' }}>+</Text>
+                      <Text style={{ fontSize: fp(14) }}>{liveFoodEquiv.item2.emoji}</Text>
+                      <Text style={{ fontSize: fp(11), color: '#FF8C42', fontWeight: '700', marginLeft: wp(4) }}>
+                        {'\u2248 1 ' + liveFoodEquiv.item1.label + ' + 1 ' + liveFoodEquiv.item2.label}
+                      </Text>
+                    </View>
+                  ) : liveFoodEquiv.type === 'single' ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                      <Text style={{ fontSize: fp(16) }}>{liveFoodEquiv.item.emoji}</Text>
+                      <Text style={{ fontSize: fp(12), color: '#FF8C42', fontWeight: '700' }}>
+                        = {liveFoodEquiv.count} {liveFoodEquiv.item.label}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              )}
+
+              {/* Stats grid 2×2 */}
+              <View style={{ marginHorizontal: wp(16), marginBottom: wp(14) }}>
+                <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(8) }}>
+                  <View style={{ flex: 1, backgroundColor: 'rgba(255,140,66,0.06)', borderRadius: wp(14), padding: wp(14), borderWidth: 1, borderColor: 'rgba(255,140,66,0.12)' }}>
+                    <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>CALORIES</Text>
+                    <Text style={{ fontSize: fp(26), fontWeight: '900', color: '#FF8C42', fontVariant: ['tabular-nums'] }}>{liveCalories}</Text>
+                    <Text style={{ fontSize: fp(9), color: '#6B7280' }}>kcal</Text>
+                  </View>
+                  <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(14), padding: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+                    <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>DURÉE</Text>
+                    <Text style={{ fontSize: fp(26), fontWeight: '900', color: '#FFFFFF', fontVariant: ['tabular-nums'] }}>
+                      {Math.floor(liveDuration / 60)}:{(liveDuration % 60 < 10 ? '0' : '') + (liveDuration % 60)}
+                    </Text>
+                    <Text style={{ fontSize: fp(9), color: '#6B7280' }}>min:sec</Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', gap: wp(8) }}>
+                  <View style={{ flex: 1, backgroundColor: 'rgba(77,166,255,0.06)', borderRadius: wp(14), padding: wp(14), borderWidth: 1, borderColor: 'rgba(77,166,255,0.12)' }}>
+                    <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>EAU PERDUE</Text>
+                    <Text style={{ fontSize: fp(26), fontWeight: '900', color: '#4DA6FF', fontVariant: ['tabular-nums'] }}>{liveWater}</Text>
+                    <Text style={{ fontSize: fp(9), color: '#6B7280' }}>ml {liveWeatherMult > 1.3 ? '(climat chaud)' : ''}</Text>
+                  </View>
+                  <View style={{ flex: 1, backgroundColor: 'rgba(0,217,132,0.06)', borderRadius: wp(14), padding: wp(14), borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)' }}>
+                    <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>MOYENNE</Text>
+                    <Text style={{ fontSize: fp(26), fontWeight: '900', color: '#00D984', fontVariant: ['tabular-nums'] }}>
+                      {Math.round(liveAvgSpeed * 10) / 10}
+                    </Text>
+                    <Text style={{ fontSize: fp(9), color: '#6B7280' }}>km/h</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Allure / Max / Répartition */}
+              <View style={{
+                marginHorizontal: wp(16), marginBottom: wp(14),
+                flexDirection: 'row', justifyContent: 'space-around',
+                backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(12),
+                paddingVertical: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+              }}>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>ALLURE</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#EAEEF3', fontVariant: ['tabular-nums'] }}>
+                    {liveAvgSpeed > 0 ? Math.floor(60 / liveAvgSpeed) + ':' + (Math.round((60 / liveAvgSpeed % 1) * 60) < 10 ? '0' : '') + Math.round((60 / liveAvgSpeed % 1) * 60) : '--:--'}
+                  </Text>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>/km</Text>
+                </View>
+                <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>V. MAX</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', fontVariant: ['tabular-nums'] }}>
+                    {Math.round(liveMaxSpeed * 10) / 10}
+                  </Text>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>km/h</Text>
+                </View>
+                <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>COURSE</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FF8C42', fontVariant: ['tabular-nums'] }}>
+                    {liveWalkTime + liveRunTime > 0 ? Math.round(liveRunTime / (liveWalkTime + liveRunTime) * 100) : 0}%
+                  </Text>
+                  <Text style={{ fontSize: fp(8), color: '#6B7280' }}>du temps</Text>
+                </View>
+              </View>
+
+              {/* Fil de messages ALIXEN */}
+              {alixenMessages.length > 0 && (
+                <View style={{ marginHorizontal: wp(16), marginBottom: wp(14) }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginBottom: wp(8) }}>
+                    <View style={{
+                      width: wp(24), height: wp(24), borderRadius: wp(12),
+                      backgroundColor: 'rgba(0,217,132,0.1)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                      justifyContent: 'center', alignItems: 'center',
+                    }}>
+                      <Text style={{ fontSize: fp(12) }}>{alixenSpeaking ? '\uD83D\uDDE3\uFE0F' : '\uD83E\uDD16'}</Text>
+                    </View>
+                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984', letterSpacing: 1 }}>ALIXEN</Text>
+                    {alixenSpeaking && (
+                      <View style={{ flexDirection: 'row', gap: 2, alignItems: 'center', marginLeft: wp(4) }}>
+                        <View style={{ width: 3, height: 8, borderRadius: 1.5, backgroundColor: '#00D984' }} />
+                        <View style={{ width: 3, height: 14, borderRadius: 1.5, backgroundColor: '#00D984' }} />
+                        <View style={{ width: 3, height: 6, borderRadius: 1.5, backgroundColor: '#00D984' }} />
+                        <View style={{ width: 3, height: 12, borderRadius: 1.5, backgroundColor: '#00D984' }} />
+                        <View style={{ width: 3, height: 5, borderRadius: 1.5, backgroundColor: '#00D984' }} />
+                      </View>
+                    )}
+                  </View>
+                  {alixenMessages.slice(0, 3).map(function(msg, i) {
+                    return (
+                      <View key={msg.id} style={{
+                        backgroundColor: i === 0 ? 'rgba(0,217,132,0.06)' : 'rgba(255,255,255,0.02)',
+                        borderRadius: wp(10), padding: wp(10), marginBottom: wp(4),
+                        borderWidth: i === 0 ? 1 : 0.5,
+                        borderColor: i === 0 ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.04)',
+                        opacity: i === 0 ? 1 : 0.5,
+                      }}>
+                        <Text style={{
+                          fontSize: fp(11), color: i === 0 ? '#EAEEF3' : '#8892A0',
+                          fontStyle: 'italic', lineHeight: fp(16),
+                        }}>
+                          "{msg.text}"
+                        </Text>
+                        <Text style={{ fontSize: fp(7), color: '#555E6C', marginTop: wp(3) }}>
+                          {Math.floor(msg.time / 60)}:{(msg.time % 60 < 10 ? '0' : '') + (msg.time % 60)}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
 
             </ScrollView>
 
-            {/* === PHASE 6 : boutons + toasts === */}
+            {/* Boutons Pause + Stop */}
+            <View style={{
+              flexDirection: 'row', gap: wp(12),
+              paddingHorizontal: wp(16), paddingVertical: wp(12),
+              backgroundColor: 'rgba(13,17,23,0.95)',
+              borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)',
+              paddingBottom: Platform.OS === 'android' ? 40 : 34,
+            }}>
+              <TouchableOpacity onPress={toggleLivePause} style={{
+                flex: 1, paddingVertical: wp(16), borderRadius: wp(14),
+                backgroundColor: livePaused || liveAutoPaused ? 'rgba(0,217,132,0.12)' : 'rgba(255,184,0,0.12)',
+                borderWidth: 1.5, borderColor: livePaused || liveAutoPaused ? 'rgba(0,217,132,0.3)' : 'rgba(255,184,0,0.3)',
+                alignItems: 'center',
+              }}>
+                <Ionicons name={livePaused || liveAutoPaused ? 'play' : 'pause'} size={wp(24)} color={livePaused || liveAutoPaused ? '#00D984' : '#FFB800'} />
+                <Text style={{ color: livePaused || liveAutoPaused ? '#00D984' : '#FFB800', fontSize: fp(11), fontWeight: '700', marginTop: wp(4) }}>
+                  {livePaused || liveAutoPaused ? 'REPRENDRE' : 'PAUSE'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={function() {
+                Alert.alert('Arrêter ?', 'Votre activité sera sauvegardée.',
+                  [{ text: 'Continuer', style: 'cancel' }, { text: 'Arrêter', style: 'destructive', onPress: stopLiveTracking }]);
+              }} style={{
+                flex: 1, paddingVertical: wp(16), borderRadius: wp(14),
+                backgroundColor: 'rgba(255,27,68,0.12)', borderWidth: 1.5, borderColor: 'rgba(255,27,68,0.3)',
+                alignItems: 'center',
+              }}>
+                <View style={{ width: wp(24), height: wp(24), borderRadius: wp(6), backgroundColor: '#FF1744' }} />
+                <Text style={{ color: '#FF1744', fontSize: fp(11), fontWeight: '700', marginTop: wp(4) }}>STOP</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Milestone toast */}
+            {liveMilestone && (
+              <View style={{
+                position: 'absolute', top: Platform.OS === 'android' ? 110 : 120,
+                left: wp(20), right: wp(20),
+                backgroundColor: '#252A30', borderRadius: wp(14),
+                paddingVertical: wp(14), paddingHorizontal: wp(20),
+                flexDirection: 'row', alignItems: 'center', gap: wp(10),
+                borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.3)',
+                shadowColor: '#00D984', shadowOpacity: 0.3, shadowRadius: 12, elevation: 10, zIndex: 9999,
+              }}>
+                <Text style={{ fontSize: fp(24) }}>{liveMilestone.emoji}</Text>
+                <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#00D984', flex: 1 }}>{liveMilestone.labelFR}</Text>
+              </View>
+            )}
+
+            {/* Hydration reminder */}
+            {liveHydrationAlert && (
+              <View style={{
+                position: 'absolute', top: Platform.OS === 'android' ? 110 : 120,
+                left: wp(20), right: wp(20),
+                backgroundColor: '#252A30', borderRadius: wp(14),
+                paddingVertical: wp(14), paddingHorizontal: wp(20),
+                flexDirection: 'row', alignItems: 'center', gap: wp(10),
+                borderWidth: 1.5, borderColor: 'rgba(77,166,255,0.3)', zIndex: 9999,
+              }}>
+                <Text style={{ fontSize: fp(20) }}>{String.fromCodePoint(0x1F4A7)}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#4DA6FF' }}>Pensez à boire !</Text>
+                  <Text style={{ fontSize: fp(10), color: '#8892A0' }}>{liveWater} ml d'eau perdus</Text>
+                </View>
+              </View>
+            )}
 
           </LinearGradient>
         </View>
