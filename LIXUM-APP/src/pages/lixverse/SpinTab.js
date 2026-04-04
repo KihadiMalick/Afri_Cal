@@ -318,6 +318,60 @@ export default function SpinTab({
           <View style={{ width: wp(40), height: 1, backgroundColor: 'rgba(212,175,55,0.12)' }} />
         </View>
       </View>
+
+      <View style={{ paddingHorizontal: wp(16), marginBottom: wp(24) }}>
+        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', marginBottom: wp(4) }}>Abonnements</Text>
+        <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)', marginBottom: wp(12) }}>Débloque l'accès complet à LIXUM</Text>
+
+        <Pressable delayPressIn={120} onPress={() => showLixAlert('Gold', 'Bientôt disponible.\n\n10 000 Lix/mois + 150 énergie/6h + fragments bonus', [{ text: 'Me notifier', color: '#D4AF37' }, { text: 'Fermer', style: 'cancel' }], '⭐')}
+          style={({ pressed }) => ({ marginBottom: wp(8), transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42']}
+            style={{ borderRadius: wp(14), padding: wp(16), borderWidth: 1.5, borderColor: 'rgba(212,175,55,0.3)', flexDirection: 'row', alignItems: 'center', shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 3 }}>
+            <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(212,175,55,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)' }}>
+              <Text style={{ fontSize: fp(20) }}>⭐</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#D4AF37' }}>Gold</Text>
+                <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(1) }}>
+                  <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#D4AF37' }}>POPULAIRE</Text>
+                </View>
+              </View>
+              <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>10K Lix + 150 énergie/6h + fragments</Text>
+            </View>
+            <View style={{ backgroundColor: 'rgba(212,175,55,0.2)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#D4AF37' }}>$9.99</Text>
+              <Text style={{ fontSize: fp(8), color: 'rgba(212,175,55,0.6)', textAlign: 'center' }}>/mois</Text>
+            </View>
+          </LinearGradient>
+        </Pressable>
+
+        <Pressable delayPressIn={120} onPress={() => showLixAlert('Platinum', 'Bientôt disponible.\n\n18 000 Lix/mois + 350 énergie/6h + fragments Elite', [{ text: 'Me notifier', color: '#00CEC9' }, { text: 'Fermer', style: 'cancel' }], '💎')}
+          style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42']}
+            style={{ borderRadius: wp(14), padding: wp(16), borderWidth: 1.5, borderColor: 'rgba(0,206,201,0.3)', flexDirection: 'row', alignItems: 'center', shadowColor: '#00CEC9', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 3 }}>
+            <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(0,206,201,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(0,206,201,0.25)' }}>
+              <Text style={{ fontSize: fp(20) }}>💎</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#00CEC9' }}>Platinum</Text>
+              <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>18K Lix + 350 énergie/6h + fragments Elite</Text>
+            </View>
+            <View style={{ backgroundColor: 'rgba(0,206,201,0.2)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#00CEC9' }}>$14.99</Text>
+              <Text style={{ fontSize: fp(8), color: 'rgba(0,206,201,0.6)', textAlign: 'center' }}>/mois</Text>
+            </View>
+          </LinearGradient>
+        </Pressable>
+      </View>
+
+      <View style={{ alignItems: 'center', marginVertical: wp(16) }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
+          <View style={{ width: wp(40), height: 1, backgroundColor: 'rgba(212,175,55,0.12)' }} />
+          <LixGem size={wp(12)} />
+          <View style={{ width: wp(40), height: 1, backgroundColor: 'rgba(212,175,55,0.12)' }} />
+        </View>
+      </View>
     </ScrollView>
   );
 }
