@@ -1017,6 +1017,15 @@ const RepasPage = ({ onNavigate }) => {
   var _alixenFreeUsedToday = useState(false); var alixenFreeUsedToday = _alixenFreeUsedToday[0]; var setAlixenFreeUsedToday = _alixenFreeUsedToday[1];
   var _alixenHasOwlPass = useState(false); var alixenHasOwlPass = _alixenHasOwlPass[0]; var setAlixenHasOwlPass = _alixenHasOwlPass[1];
 
+  // === PRÉPARATION ASSISTÉE ===
+  var _showCookingMode = useState(false); var showCookingMode = _showCookingMode[0]; var setShowCookingMode = _showCookingMode[1];
+  var _cookingSteps = useState([]); var cookingSteps = _cookingSteps[0]; var setCookingSteps = _cookingSteps[1];
+  var _cookingCurrentStep = useState(0); var cookingCurrentStep = _cookingCurrentStep[0]; var setCookingCurrentStep = _cookingCurrentStep[1];
+  var _cookingTimers = useState({}); var cookingTimers = _cookingTimers[0]; var setCookingTimers = _cookingTimers[1];
+  // cookingTimers = { stepIndex: { remaining: seconds, total: seconds, label: 'Pâtes', running: true/false, finished: false } }
+  var _cookingAlarm = useState(null); var cookingAlarm = _cookingAlarm[0]; var setCookingAlarm = _cookingAlarm[1];
+  // cookingAlarm = { label: 'Spaghettis', stepIndex: 2 } ou null
+
   const RECIPE_REGIONS = [
     { key: 'all', label: '🌍 Tout', labelEn: '🌍 All' },
     { key: 'Afrique de l\'Ouest', label: '🇸🇳 Afrique Ouest', labelEn: '🇸🇳 West Africa' },
@@ -3150,6 +3159,107 @@ const RepasPage = ({ onNavigate }) => {
     ).start();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Tick des minuteurs de préparation assistée (chaque seconde)
+  React.useEffect(function() {
+    if (!showCookingMode) return;
+
+    var interval = setInterval(function() {
+      setCookingTimers(function(prev) {
+        var updated = {};
+        var keys = Object.keys(prev);
+        for (var i = 0; i < keys.length; i++) {
+          var key = keys[i];
+          var timer = prev[key];
+          if (timer.running && timer.remaining > 0) {
+            var newRemaining = timer.remaining - 1;
+            if (newRemaining <= 0) {
+              // ALARME !
+              updated[key] = { remaining: 0, total: timer.total, label: timer.label, running: false, finished: true };
+              Vibration.vibrate([0, 500, 200, 500, 200, 500]);
+              setCookingAlarm({ label: timer.label, stepIndex: parseInt(key) });
+            } else {
+              updated[key] = { remaining: newRemaining, total: timer.total, label: timer.label, running: true, finished: false };
+            }
+          } else {
+            updated[key] = timer;
+          }
+        }
+        return updated;
+      });
+    }, 1000);
+
+    return function() { clearInterval(interval); };
+  }, [showCookingMode]);
+
+  // Démarrer un minuteur pour une étape
+  var startCookingTimer = function(stepIndex, seconds, label) {
+    setCookingTimers(function(prev) {
+      var copy = {};
+      var keys = Object.keys(prev);
+      for (var i = 0; i < keys.length; i++) {
+        copy[keys[i]] = prev[keys[i]];
+      }
+      copy[stepIndex] = { remaining: seconds, total: seconds, label: label, running: true, finished: false };
+      return copy;
+    });
+  };
+
+  // Formater secondes → mm:ss
+  var formatTimer = function(seconds) {
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  };
+
+  // Fermer l'alarme
+  var dismissAlarm = function() {
+    Vibration.cancel();
+    setCookingAlarm(null);
+  };
+
+  // Ouvrir le mode préparation
+  var openCookingMode = function(recipe) {
+    // Les recettes IA retournent "detailed_steps", les fallback retournent "steps" en texte
+    var steps = [];
+    if (recipe.detailed_steps && recipe.detailed_steps.length > 0) {
+      steps = recipe.detailed_steps;
+    } else if (recipe.steps && typeof recipe.steps === 'string') {
+      // Convertir le texte brut en étapes structurées
+      var lines = recipe.steps.split('\n').filter(function(l) { return l.trim().length > 0; });
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].replace(/^\d+\.\s*/, '').trim();
+        // Détecter les temps dans le texte (ex: "8 min", "20 minutes", "15 min")
+        var timeMatch = line.match(/(\d+)\s*(min|minutes|mn)/i);
+        var timerSec = timeMatch ? parseInt(timeMatch[1]) * 60 : null;
+        var timerLabel = null;
+        if (timerSec) {
+          // Extraire un label du contexte (premier mot significatif)
+          var words = line.split(' ');
+          for (var j = 0; j < words.length; j++) {
+            var w = words[j].toLowerCase();
+            if (w.length > 3 && w !== 'dans' && w !== 'avec' && w !== 'pendant' && w !== 'cuire' && w !== 'laisser' && w !== 'faire') {
+              timerLabel = words[j].charAt(0).toUpperCase() + words[j].slice(1);
+              break;
+            }
+          }
+          if (!timerLabel) timerLabel = 'Étape ' + (i + 1);
+        }
+        steps.push({
+          text: line,
+          timer_seconds: timerSec,
+          timer_label: timerLabel,
+          parallel: null,
+        });
+      }
+    }
+
+    setCookingSteps(steps);
+    setCookingCurrentStep(0);
+    setCookingTimers({});
+    setCookingAlarm(null);
+    setShowCookingMode(true);
+  };
 
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
@@ -6011,6 +6121,31 @@ const RepasPage = ({ onNavigate }) => {
                         <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
                           ✓ Ajouter à mes repas
                         </Text>
+                      </Pressable>
+
+                      {/* Lancer la préparation assistée */}
+                      <Pressable
+                        onPress={function() {
+                          openCookingMode(alixenSelectedRecipe);
+                        }}
+                        style={function(state) {
+                          return {
+                            paddingVertical: wp(14), borderRadius: wp(14),
+                            backgroundColor: state.pressed ? '#CC7A00' : '#FF8C42',
+                            alignItems: 'center', flexDirection: 'row',
+                            justifyContent: 'center', gap: wp(8),
+                          };
+                        }}
+                      >
+                        <Text style={{ fontSize: fp(18) }}>👨‍🍳</Text>
+                        <View>
+                          <Text style={{ color: '#FFFFFF', fontSize: fp(15), fontWeight: '800' }}>
+                            Préparation Assistée
+                          </Text>
+                          <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: fp(9) }}>
+                            Minuteurs intelligents + étapes guidées
+                          </Text>
+                        </View>
                       </Pressable>
 
                       {/* Modifier les quantités */}
