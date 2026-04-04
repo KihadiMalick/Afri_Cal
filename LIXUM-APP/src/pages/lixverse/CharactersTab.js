@@ -192,6 +192,112 @@ export default function CharactersTab({
           })}
         </View>
       </ScrollView>
+
+      {selectedChar && (
+        <Modal visible={true} transparent animationType="slide" onRequestClose={closeCharModal}>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'flex-end' }} onPress={closeCharModal}>
+            <Pressable onPress={(e) => e.stopPropagation()}>
+              <View style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), overflow: 'hidden', maxHeight: '95%' }}>
+                <Animated.View pointerEvents={charFlipped ? 'none' : 'auto'} style={{ opacity: frontInterpolate, position: charFlipped ? 'absolute' : 'relative', width: '100%' }}>
+                  <View style={{ backgroundColor: 'rgba(0,0,0,0.92)', borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingTop: wp(8), paddingBottom: wp(16) }}>
+                    <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: wp(10) }} />
+
+                    <View style={{ alignItems: 'center', height: wp(380), justifyContent: 'center' }}>
+                      {cardViewIndex > 0 ? (
+                        <Pressable
+                          onPress={() => onNavigateCard(-1)}
+                          style={({ pressed }) => ({
+                            position: 'absolute', left: wp(6), top: wp(370) / 2 - wp(22), zIndex: 20,
+                            width: wp(32), height: wp(44), borderRadius: wp(10),
+                            justifyContent: 'center', alignItems: 'center',
+                            backgroundColor: pressed ? 'rgba(0,217,132,0.25)' : 'rgba(0,0,0,0.5)',
+                            borderWidth: 1.5,
+                            borderColor: pressed ? 'rgba(0,217,132,0.6)' : 'rgba(255,255,255,0.12)',
+                            transform: [{ scale: pressed ? 0.88 : 1 }],
+                          })}
+                        >
+                          <Text style={{ fontSize: fp(20), color: 'rgba(255,255,255,0.7)', fontWeight: '300' }}>‹</Text>
+                        </Pressable>
+                      ) : null}
+
+                      {cardViewIndex < ALL_CHARACTERS.length - 1 ? (
+                        <Pressable
+                          onPress={() => onNavigateCard(1)}
+                          style={({ pressed }) => ({
+                            position: 'absolute', right: wp(6), top: wp(370) / 2 - wp(22), zIndex: 20,
+                            width: wp(32), height: wp(44), borderRadius: wp(10),
+                            justifyContent: 'center', alignItems: 'center',
+                            backgroundColor: pressed ? 'rgba(0,217,132,0.25)' : 'rgba(0,0,0,0.5)',
+                            borderWidth: 1.5,
+                            borderColor: pressed ? 'rgba(0,217,132,0.6)' : 'rgba(255,255,255,0.12)',
+                            transform: [{ scale: pressed ? 0.88 : 1 }],
+                          })}
+                        >
+                          <Text style={{ fontSize: fp(20), color: 'rgba(255,255,255,0.7)', fontWeight: '300' }}>›</Text>
+                        </Pressable>
+                      ) : null}
+
+                      <Animated.View style={{
+                        transform: [{ translateX: cardSlideAnim.interpolate({
+                          inputRange: [-1, 0, 1],
+                          outputRange: [-W * 0.5, 0, W * 0.5],
+                        }) }],
+                        opacity: cardSlideAnim.interpolate({
+                          inputRange: [-1, -0.2, 0, 0.2, 1],
+                          outputRange: [0, 1, 1, 1, 0],
+                        }),
+                      }}>
+                        {(() => {
+                          const ac = ALL_CHARACTERS[cardViewIndex];
+                          if (!ac) return null;
+                          const acSlug = ac.id;
+                          const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: 10, fragments: 0, fragments_required: 3, is_active: false }));
+                          const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...ac, slug: acSlug, owned: false };
+                          const charImg = getCharImage(acSlug);
+                          const own = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(acSlug);
+                          const usesRem = ch.uses_remaining || 0;
+                          const usesMax = ch.uses_max || ac.uses || 10;
+                          const name = CHAR_NAMES[acSlug] || ch.name || ac.name || acSlug;
+
+                          return (
+                            <View style={{ width: wp(280), height: wp(370), borderRadius: wp(8), overflow: 'hidden', backgroundColor: '#000' }}>
+                              {charImg.img ? (
+                                <Image source={charImg.img} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                              ) : (
+                                <View style={{ width: '100%', height: '100%', backgroundColor: '#1E2530', justifyContent: 'center', alignItems: 'center' }}>
+                                  <Text style={{ fontSize: fp(80) }}>{charImg.emoji}</Text>
+                                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: 'rgba(255,255,255,0.4)', marginTop: wp(8) }}>{name}</Text>
+                                </View>
+                              )}
+                              {own && (
+                                <View style={{ position: 'absolute', top: wp(32), right: wp(28), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), borderWidth: 1, borderColor: (ch.level || 0) >= 3 ? 'rgba(212,175,55,0.5)' : 'rgba(0,217,132,0.3)' }}>
+                                  <Text style={{ fontSize: fp(9), fontWeight: '800', color: (ch.level || 0) >= 3 ? '#D4AF37' : '#00D984', letterSpacing: 0.5 }}>
+                                    {(ch.level || 0) >= 3 ? 'MAX' : 'Niv ' + (ch.level || 0)}
+                                  </Text>
+                                </View>
+                              )}
+                              {own && (
+                                <View style={{ position: 'absolute', top: wp(58), right: wp(28), backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
+                                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.8)' }}>{usesRem}/{usesMax} ⚡</Text>
+                                </View>
+                              )}
+                              {!own && (
+                                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
+                                  <Text style={{ fontSize: fp(50) }}>🔒</Text>
+                                </View>
+                              )}
+                            </View>
+                          );
+                        })()}
+                      </Animated.View>
+                    </View>
+                  </View>
+                </Animated.View>
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      )}
     </View>
   );
 }
