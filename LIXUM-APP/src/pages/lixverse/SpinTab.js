@@ -571,6 +571,97 @@ export default function SpinTab({
           </Pressable>
         ))}
       </View>
+
+      {renderSpinResultModal()}
+
+      <Modal visible={showFragmentModal} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
+          {fragmentResult && (
+            <Animated.View style={{
+              transform: [{ translateX: fragmentSlideAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -W] }) }],
+              opacity: fragmentSlideAnim.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 0.5, 0] }),
+            }}>
+              <View style={{
+                backgroundColor: '#1E2530', borderRadius: wp(20),
+                borderWidth: 1.5,
+                borderColor: fragmentResult.isComplete ? '#D4AF37'
+                  : fragmentResult.tier === 'mythique' ? 'rgba(212,175,55,0.4)'
+                  : fragmentResult.tier === 'elite' ? 'rgba(138,43,226,0.4)'
+                  : fragmentResult.tier === 'rare' ? 'rgba(77,166,255,0.4)'
+                  : 'rgba(0,217,132,0.3)',
+                padding: wp(24), alignItems: 'center', width: W - wp(40),
+              }}>
+                <Text style={{ fontSize: fp(50), marginBottom: wp(10) }}>{fragmentResult.emoji}</Text>
+                <Text style={{ fontSize: fp(18), fontWeight: '800', color: '#EAEEF3', marginBottom: wp(4) }}>{fragmentResult.name}</Text>
+                <Text style={{
+                  fontSize: fp(10), fontWeight: '700', letterSpacing: 2,
+                  color: fragmentResult.tier === 'mythique' ? '#D4AF37'
+                    : fragmentResult.tier === 'elite' ? '#B388FF'
+                    : fragmentResult.tier === 'rare' ? '#4DA6FF'
+                    : '#00D984',
+                  textTransform: 'uppercase', marginBottom: wp(14),
+                }}>{fragmentResult.tier}</Text>
+
+                {fragmentResult.isComplete ? (
+                  <View style={{ alignItems: 'center', marginBottom: wp(14) }}>
+                    <Text style={{ fontSize: fp(22), marginBottom: wp(6) }}>🎉</Text>
+                    <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#D4AF37', textAlign: 'center' }}>CARTE COMPLÈTE !</Text>
+                    <Text style={{ fontSize: fp(11), color: '#8892A0', textAlign: 'center', marginTop: wp(4) }}>{fragmentResult.name} est maintenant Niveau 1 !</Text>
+                  </View>
+                ) : (
+                  <View style={{ alignItems: 'center', marginBottom: wp(14) }}>
+                    <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#00D984' }}>+{fragmentResult.amount} fragment{fragmentResult.amount > 1 ? 's' : ''} 🧩</Text>
+                    <Text style={{ fontSize: fp(11), color: '#8892A0', marginTop: wp(4) }}>{fragmentResult.totalFrags} / {fragmentResult.fragsNeeded} pour Niv 1</Text>
+                    <View style={{ width: '80%', height: wp(8), borderRadius: wp(4), backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginTop: wp(8) }}>
+                      <View style={{
+                        width: Math.min((fragmentResult.totalFrags / fragmentResult.fragsNeeded) * 100, 100) + '%',
+                        height: '100%', borderRadius: wp(4),
+                        backgroundColor: fragmentResult.tier === 'mythique' ? '#D4AF37'
+                          : fragmentResult.tier === 'elite' ? '#B388FF'
+                          : fragmentResult.tier === 'rare' ? '#4DA6FF' : '#00D984',
+                      }} />
+                    </View>
+                  </View>
+                )}
+
+                {fragmentResult.levelUp && (
+                  <View style={{ backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)', paddingHorizontal: wp(14), paddingVertical: wp(8), marginBottom: wp(14), width: '100%' }}>
+                    <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#D4AF37', textAlign: 'center' }}>⬆️ Niveau {fragmentResult.newLevel} atteint !</Text>
+                  </View>
+                )}
+
+                <Pressable
+                  onPress={() => {
+                    Animated.timing(fragmentSlideAnim, {
+                      toValue: 1, duration: 400, useNativeDriver: true,
+                      easing: Easing.inOut(Easing.ease),
+                    }).start(async () => {
+                      onCloseFragmentModal();
+                      onGoToCharacters();
+                      try {
+                        const res = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID + '&select=lix_balance,energy', { headers: HEADERS });
+                        const d = await res.json();
+                        if (d && d[0]) {
+                          if (d[0].lix_balance != null || d[0].energy != null) {
+                            onCloseFragmentModal();
+                          }
+                        }
+                      } catch (e) {}
+                    });
+                  }}
+                  style={({ pressed }) => ({
+                    backgroundColor: pressed ? '#00B572' : '#00D984',
+                    borderRadius: wp(14), paddingVertical: wp(14), paddingHorizontal: wp(40),
+                    transform: [{ scale: pressed ? 0.97 : 1 }],
+                  })}
+                >
+                  <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#1A1D22', letterSpacing: 1 }}>INTÉGRER ←</Text>
+                </Pressable>
+              </View>
+            </Animated.View>
+          )}
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
