@@ -1627,7 +1627,412 @@ const XscanScreen = forwardRef(function XscanScreen({ visible, onClose, onMealSa
         </View>
       )}
 
-      {/* Phase 5: JSX result screen will be added here */}
+      {/* ═══════ ÉCRAN RÉSULTAT ═══════ */}
+      {scanScreen === 'result' && scanResult && (
+        <View style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 2000,
+          backgroundColor: '#0D1117',
+        }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: wp(100) }}
+          >
+            {/* Header */}
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingTop: Platform.OS === 'android' ? 50 : 60,
+              paddingHorizontal: wp(16),
+              paddingBottom: wp(12),
+            }}>
+              <Pressable onPress={() => {
+                setScanScreen('none');
+                onClose();
+                setRecalculating(false);
+                setScanResult(null);
+                setCapturedPhoto(null);
+                setShowAlternatives(false);
+                setAlternativeDishes([]);
+                setCurrentDishName('');
+                setScanMode('none');
+                setScanError(null);
+                setScanSuggestions([]);
+                setSelectedSuggestion(null);
+                setAiVisual(null);
+                alertShakeAnim.setValue(0);
+                setCorrectionMode(false);
+                setEditedIngredients([]);
+                setSearchQuery('');
+                setSearchResults([]);
+                setEditingQuantityIndex(null);
+                setTempQuantity('');
+              }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(14) }}>✕ {lang === 'fr' ? 'Fermer' : 'Close'}</Text>
+              </Pressable>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                <Text style={{ color: '#00D984', fontSize: fp(16), fontWeight: '900' }}>X</Text>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '900' }}>SCAN</Text>
+              </View>
+              <View style={{ width: 60 }}/>
+            </View>
+
+            {/* Photo capturée */}
+            {capturedPhoto && (
+              <View style={{
+                marginHorizontal: wp(16),
+                height: wp(200),
+                borderRadius: 18,
+                overflow: 'hidden',
+                marginBottom: wp(16),
+              }}>
+                <Image
+                  source={{ uri: capturedPhoto.uri }}
+                  style={{ width: '100%', height: '100%' }}
+                />
+              </View>
+            )}
+
+            {/* Nom du plat */}
+            <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+                <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '700', marginRight: 8 }}>✅</Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(12) }}>
+                  {lang === 'fr' ? 'Plat identifié' : 'Meal identified'}
+                </Text>
+              </View>
+
+              <Text style={{
+                color: '#EAEEF3', fontSize: fp(22), fontWeight: '900',
+                marginBottom: wp(6),
+              }}>
+                {currentDishName || scanResult.name_fr || scanResult.dish_name_fr || 'Plat non identifié'}
+              </Text>
+
+              {/* Lien "Pas ce plat ?" avec icône shake */}
+              <Pressable
+                onPress={() => setShowAlternatives(true)}
+                style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}
+              >
+                <Animated.View style={{
+                  transform: [{ rotate: alertRotate }],
+                  marginRight: 6,
+                }}>
+                  <View style={{
+                    width: 20, height: 20, borderRadius: 10,
+                    backgroundColor: 'rgba(255,140,66,0.15)',
+                    borderWidth: 1, borderColor: 'rgba(255,140,66,0.4)',
+                    justifyContent: 'center', alignItems: 'center',
+                  }}>
+                    <Text style={{ color: '#FF8C42', fontSize: 12, fontWeight: '900' }}>!</Text>
+                  </View>
+                </Animated.View>
+
+                <Text style={{
+                  color: '#FF8C42',
+                  fontSize: fp(12),
+                  fontWeight: '600',
+                  textDecorationLine: 'underline',
+                }}>
+                  {lang === 'fr' ? 'Pas ce plat ? Clique ici !' : 'Not this dish? Tap here!'}
+                </Text>
+              </Pressable>
+
+              {/* Barre de confiance */}
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(11), marginRight: 8 }}>
+                  {lang === 'fr' ? 'Confiance :' : 'Confidence:'}
+                </Text>
+                <View style={{
+                  flex: 1, height: 5, backgroundColor: 'rgba(0,217,132,0.1)',
+                  borderRadius: 3, overflow: 'hidden', marginRight: 8,
+                }}>
+                  <View style={{
+                    height: '100%',
+                    width: `${scanResult.confidence || 50}%`,
+                    backgroundColor: (scanResult.confidence || 50) > 70 ? '#00D984' : (scanResult.confidence || 50) > 50 ? '#FF8C42' : '#FF3B30',
+                    borderRadius: 3,
+                  }} />
+                </View>
+                <Text style={{
+                  color: (scanResult.confidence || 50) > 70 ? '#00D984' : '#FF8C42',
+                  fontSize: fp(12), fontWeight: '700',
+                }}>
+                  {scanResult.confidence || 50}%
+                </Text>
+              </View>
+            </View>
+
+            {/* MetalCard : liste des ingrédients */}
+            <View style={{ marginHorizontal: wp(16), marginBottom: wp(16) }}>
+              <View style={{
+                borderRadius: 18, padding: 1.2,
+                backgroundColor: '#4A4F55', elevation: 12,
+              }}>
+                <LinearGradient
+                  colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                  style={{ borderRadius: 17, padding: wp(16) }}
+                >
+                  <View style={{
+                    position: 'absolute', top: 0, left: 20, right: 20,
+                    height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
+                  }}/>
+
+                  <Text style={{
+                    color: '#8892A0', fontSize: fp(11), fontWeight: '700',
+                    letterSpacing: 1.5, marginBottom: wp(12),
+                  }}>
+                    {lang === 'fr' ? 'INGRÉDIENTS DÉTECTÉS' : 'DETECTED INGREDIENTS'}
+                  </Text>
+
+                  {(scanResult.ingredients || []).map((ing, index) => (
+                    <View key={index} style={{
+                      paddingVertical: wp(8),
+                      borderBottomWidth: index < (scanResult.ingredients || []).length - 1 ? 0.5 : 0,
+                      borderBottomColor: 'rgba(255,255,255,0.05)',
+                    }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '600' }}>
+                              {ing.name}
+                            </Text>
+                            {ing.uncertain && (
+                              <View style={{
+                                marginLeft: 6, width: 18, height: 18, borderRadius: 9,
+                                backgroundColor: 'rgba(255,140,66,0.15)',
+                                justifyContent: 'center', alignItems: 'center',
+                                borderWidth: 1, borderColor: 'rgba(255,140,66,0.3)',
+                              }}>
+                                <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '800' }}>?</Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: 2 }}>
+                            {ing.quantity_g}g
+                            {ing.source === 'ai_estimate' ? ' • estimation IA' : ''}
+                          </Text>
+                        </View>
+                        <Text style={{ color: '#FF8C42', fontSize: fp(13), fontWeight: '700' }}>
+                          {ing.calories} kcal
+                        </Text>
+                      </View>
+
+                      {/* Alternatives si incertain */}
+                      {ing.uncertain && ing.alternatives && ing.alternatives.length > 0 && (
+                        <View style={{
+                          flexDirection: 'row', flexWrap: 'wrap',
+                          marginTop: wp(6), gap: wp(6),
+                        }}>
+                          <Text style={{ color: '#5A6070', fontSize: fp(9), alignSelf: 'center', marginRight: 4 }}>
+                            {lang === 'fr' ? 'Plutôt :' : 'Rather:'}
+                          </Text>
+                          {ing.alternatives.map((alt, altIndex) => (
+                            <Pressable
+                              key={altIndex}
+                              onPress={() => recalculateIngredient(index, alt)}
+                              style={({ pressed }) => ({
+                                backgroundColor: pressed ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)',
+                                paddingHorizontal: 10, paddingVertical: 4,
+                                borderRadius: 8, borderWidth: 0.5,
+                                borderColor: pressed ? '#00D984' : '#3A3F46',
+                              })}
+                            >
+                              <Text style={{ color: '#EAEEF3', fontSize: fp(10), fontWeight: '600' }}>
+                                {alt}
+                              </Text>
+                            </Pressable>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  ))}
+
+                  <View style={{
+                    height: 1, backgroundColor: 'rgba(0,217,132,0.15)',
+                    marginVertical: wp(12),
+                  }}/>
+
+                  {/* Totaux */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '800' }}>TOTAL</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      {recalculating && (
+                        <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: 8, fontStyle: 'italic' }}>
+                          {lang === 'fr' ? 'recalcul...' : 'recalculating...'}
+                        </Text>
+                      )}
+                      <Text style={{ color: '#FF8C42', fontSize: fp(18), fontWeight: '900' }}>
+                        {scanResult.totals?.calories || scanResult.calories || 0} kcal
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Macros */}
+                  <View style={{ flexDirection: 'row', marginTop: wp(10), gap: wp(8) }}>
+                    {[
+                      { value: `${(scanResult.totals?.protein_g || scanResult.protein_g || 0).toFixed(1)}g`, color: '#FF6B6B', label: lang === 'fr' ? 'Protéines' : 'Protein' },
+                      { value: `${(scanResult.totals?.carbs_g || scanResult.carbs_g || 0).toFixed(1)}g`, color: '#FFD93D', label: lang === 'fr' ? 'Glucides' : 'Carbs' },
+                      { value: `${(scanResult.totals?.fat_g || scanResult.fat_g || 0).toFixed(1)}g`, color: '#4DA6FF', label: lang === 'fr' ? 'Lipides' : 'Fat' },
+                    ].map((m, i) => (
+                      <View key={i} style={{
+                        flex: 1, backgroundColor: 'rgba(255,255,255,0.03)',
+                        borderRadius: 10, paddingVertical: wp(8), alignItems: 'center',
+                        borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
+                      }}>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: m.color, marginBottom: 3 }}/>
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{m.value}</Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 1 }}>{m.label}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </LinearGradient>
+              </View>
+            </View>
+
+            {/* Infos supplémentaires */}
+            <View style={{ paddingHorizontal: wp(16), marginBottom: wp(20) }}>
+              <Text style={{ color: '#5A6070', fontSize: fp(11) }}>
+                ⚖️ {lang === 'fr' ? 'Poids estimé' : 'Estimated weight'} : ~{
+                  (() => {
+                    const totalGrams = (scanResult.ingredients || []).reduce((sum, ing) => sum + (ing.quantity_g || 0), 0);
+                    if (totalGrams >= 1000) {
+                      return (totalGrams / 1000).toFixed(1) + ' kg';
+                    }
+                    return totalGrams + 'g';
+                  })()
+                }
+                {scanResult.texture ? (' • 🍽️ ' + (
+                  typeof scanResult.texture === 'string' ? scanResult.texture : ''
+                )) : ''}
+              </Text>
+            </View>
+
+            {/* Sélecteur de créneau */}
+            <View style={{ paddingHorizontal: wp(16), marginBottom: wp(20) }}>
+              <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '700', letterSpacing: 1.5, marginBottom: wp(8) }}>
+                {lang === 'fr' ? 'CRÉNEAU REPAS' : 'MEAL SLOT'}
+              </Text>
+              <View style={{ flexDirection: 'row', gap: wp(8) }}>
+                {MEAL_SLOTS.map((slot) => {
+                  const isSelected = selectedMealType === slot.key;
+                  return (
+                    <Pressable
+                      key={slot.key}
+                      onPress={() => setSelectedMealType(slot.key)}
+                      style={({ pressed }) => ({
+                        flex: 1,
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        paddingVertical: wp(10),
+                        borderRadius: 12,
+                        backgroundColor: isSelected
+                          ? 'rgba(0,217,132,0.12)'
+                          : pressed
+                            ? 'rgba(255,255,255,0.05)'
+                            : 'rgba(255,255,255,0.02)',
+                        borderWidth: 1.5,
+                        borderColor: isSelected
+                          ? 'rgba(0,217,132,0.4)'
+                          : '#2A2F36',
+                      })}
+                    >
+                      <Text style={{ fontSize: 16, marginBottom: 3 }}>{slot.icon}</Text>
+                      <Text style={{
+                        color: isSelected ? '#00D984' : '#8892A0',
+                        fontSize: fp(9),
+                        fontWeight: isSelected ? '800' : '600',
+                      }}>
+                        {lang === 'fr' ? slot.label_fr : slot.label_en}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Boutons Corriger + Confirmer */}
+            <View style={{
+              flexDirection: 'row',
+              paddingHorizontal: wp(16),
+              gap: wp(12),
+              marginBottom: wp(16),
+            }}>
+              <Pressable
+                onPress={() => {
+                  setEditedIngredients([...(scanResult.ingredients || [])]);
+                  setCorrectionMode(true);
+                  setSearchQuery('');
+                  setSearchResults([]);
+                  setEditingQuantityIndex(null);
+                }}
+                style={({ pressed }) => ({
+                  flex: 1,
+                  paddingVertical: wp(14),
+                  borderRadius: 14,
+                  backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+                  borderWidth: 1, borderColor: '#3A3F46',
+                  alignItems: 'center',
+                })}
+              >
+                <Text style={{ color: '#8892A0', fontSize: fp(14), fontWeight: '700' }}>
+                  {lang === 'fr' ? 'Corriger' : 'Correct'}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={saveMealToSupabase}
+                disabled={isSaving || saveSuccess}
+                style={({ pressed }) => ({
+                  flex: 2,
+                  paddingVertical: wp(14),
+                  borderRadius: 14,
+                  backgroundColor: saveSuccess
+                    ? '#00D984'
+                    : isSaving
+                      ? 'rgba(0,217,132,0.5)'
+                      : pressed ? '#00B572' : '#00D984',
+                  alignItems: 'center',
+                  opacity: isSaving ? 0.7 : 1,
+                })}
+              >
+                <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
+                  {saveSuccess
+                    ? '✓ SAUVEGARDÉ ! +10 Lix'
+                    : isSaving
+                      ? '⏳ SAUVEGARDE...'
+                      : '✓ CONFIRMER'}
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Récompense Lix */}
+            <View style={{
+              alignItems: 'center',
+              paddingBottom: wp(20),
+            }}>
+              <View style={{
+                flexDirection: 'row', alignItems: 'center',
+                backgroundColor: 'rgba(212,175,55,0.08)',
+                paddingHorizontal: 14, paddingVertical: 6,
+                borderRadius: 10,
+              }}>
+                <Text style={{ fontSize: 14, marginRight: 6 }}>🏆</Text>
+                <Text style={{ color: '#D4AF37', fontSize: fp(12), fontWeight: '700' }}>
+                  +10 Lix • XSCAN {lang === 'fr' ? 'réussi' : 'complete'} !
+                </Text>
+              </View>
+            </View>
+
+          </ScrollView>
+
+          {/* Phase 5B: Popup alternatives */}
+          {/* Phase 5C: Écran correction */}
+
+        </View>
+      )}
 
     </View>
   );
