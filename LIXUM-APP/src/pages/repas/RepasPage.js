@@ -630,7 +630,249 @@ export default function RepasPage({ onNavigate }) {
             </View>
           )}
 
-          {/* === PHASE 8 : Carte Xscan === */}
+          {/* ═══ 3. CARTE XSCAN ═══ */}
+          <View style={{ marginHorizontal: wp(16), marginTop: wp(10) }}>
+            <View style={{
+              borderRadius: 18, padding: 1.2,
+              backgroundColor: '#4A4F55', elevation: 12,
+              shadowColor: '#00D984', shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.15, shadowRadius: 12,
+            }}>
+              <LinearGradient
+                colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                style={{ borderRadius: 17, padding: wp(12) }}
+              >
+                <View style={{
+                  position: 'absolute', top: 0, left: 20, right: 20,
+                  height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
+                }}/>
+
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: wp(12) }}>
+                  <Text style={{ color: '#00D984', fontSize: fp(22), fontWeight: '900', letterSpacing: 1 }}>X</Text>
+                  <Text style={{ color: '#EAEEF3', fontSize: fp(22), fontWeight: '900', letterSpacing: 1 }}>SCAN</Text>
+                </View>
+
+                <View style={{ alignItems: 'center', marginBottom: wp(10) }}>
+                  <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                    {showRings && (
+                      <>
+                        <Animated.View style={{
+                          position: 'absolute',
+                          width: wp(58), height: wp(58), borderRadius: wp(29),
+                          borderWidth: 2, borderColor: '#00D984',
+                          opacity: ring1Anim.interpolate({ inputRange: [0, 0.3, 0.7, 1], outputRange: [0, 0.9, 0.5, 0.1] }),
+                          transform: [{ scale: ring1Anim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
+                        }}/>
+                        <Animated.View style={{
+                          position: 'absolute',
+                          width: wp(68), height: wp(68), borderRadius: wp(34),
+                          borderWidth: 1.5, borderColor: '#00D984',
+                          opacity: ring2Anim.interpolate({ inputRange: [0, 0.3, 0.7, 1], outputRange: [0, 0.8, 0.3, 0.05] }),
+                          transform: [{ scale: ring2Anim.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1] }) }],
+                        }}/>
+                        <Animated.View style={{
+                          position: 'absolute',
+                          width: wp(80), height: wp(80), borderRadius: wp(40),
+                          borderWidth: 1, borderColor: '#00D984',
+                          opacity: ring3Anim.interpolate({ inputRange: [0, 0.3, 0.7, 1], outputRange: [0, 0.6, 0.2, 0] }),
+                          transform: [{ scale: ring3Anim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }],
+                        }}/>
+                      </>
+                    )}
+
+                    <View
+                      onLayout={(event) => {
+                        event.target.measureInWindow((x, y, width, height) => {
+                          setXButtonY(y + height / 2 + wp(10));
+                        });
+                      }}
+                      style={{
+                        width: wp(75), height: wp(75), borderRadius: wp(37.5),
+                        backgroundColor: '#22272E',
+                        borderWidth: 1.5, borderColor: '#3A3F46',
+                        justifyContent: 'center', alignItems: 'center',
+                        overflow: 'hidden',
+                        shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+                        shadowOpacity: 0.5, shadowRadius: 6, elevation: 2,
+                      }}
+                    >
+                      <View style={{
+                        width: wp(65), height: wp(65), borderRadius: wp(32.5),
+                        backgroundColor: '#1A1F26',
+                        borderWidth: 1, borderColor: '#2E333A',
+                        justifyContent: 'center', alignItems: 'center',
+                      }}>
+                        <View style={{
+                          width: wp(58), height: wp(58), borderRadius: wp(29),
+                          backgroundColor: 'transparent',
+                          justifyContent: 'center', alignItems: 'center',
+                        }}>
+                          <View style={{
+                            width: wp(52), height: wp(52), borderRadius: wp(26),
+                            backgroundColor: isXPressed ? '#162A1E' : '#14181E',
+                            borderWidth: 1,
+                            borderColor: isXPressed ? 'rgba(0,217,132,0.2)' : '#1E2228',
+                            justifyContent: 'center', alignItems: 'center',
+                            shadowColor: '#00D984',
+                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: isXPressed ? 0.6 : 0,
+                            shadowRadius: isXPressed ? 20 : 0,
+                            elevation: isXPressed ? 8 : 0,
+                          }}>
+                            <Pressable
+                              onPressIn={() => {
+                                setIsXPressed(true);
+                                Animated.timing(glowIntensity, { toValue: 1, duration: 200, useNativeDriver: false }).start();
+                              }}
+                              onPressOut={() => {
+                                setIsXPressed(false);
+                                Animated.timing(glowIntensity, { toValue: 0, duration: 400, useNativeDriver: false }).start();
+                              }}
+                              onPress={activateScan}
+                              style={({ pressed }) => ({
+                                width: wp(44), height: wp(44), borderRadius: wp(22),
+                                backgroundColor: pressed ? '#1E2530' : '#2A2F38',
+                                borderWidth: 1.5, borderColor: '#2A2F36',
+                                justifyContent: 'center', alignItems: 'center',
+                                elevation: pressed ? 2 : 10,
+                                transform: [{ scale: pressed ? 0.94 : 1 }],
+                              })}
+                            >
+                              <Svg width={wp(26)} height={wp(26)} viewBox="0 0 40 40">
+                                <Line x1="7" y1="7" x2="33" y2="33" stroke="#00D984" strokeWidth={3.5} strokeLinecap="round"/>
+                                <Line x1="33" y1="7" x2="7" y2="33" stroke="#00D984" strokeWidth={3.5} strokeLinecap="round"/>
+                                <Circle cx="20" cy="20" r="3" fill="#00D984" opacity={0.3}/>
+                                <Circle cx="20" cy="20" r="1.5" fill="#00D984" opacity={0.7}/>
+                                <Circle cx="7" cy="7" r="3" fill="none" stroke="#00D984" strokeWidth={1.2} opacity={0.3}/>
+                                <Circle cx="33" cy="7" r="3" fill="none" stroke="#00D984" strokeWidth={1.2} opacity={0.3}/>
+                                <Circle cx="7" cy="33" r="3" fill="none" stroke="#00D984" strokeWidth={1.2} opacity={0.3}/>
+                                <Circle cx="33" cy="33" r="3" fill="none" stroke="#00D984" strokeWidth={1.2} opacity={0.3}/>
+                              </Svg>
+                            </Pressable>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                <Text style={{ color: '#8892A0', fontSize: fp(12), textAlign: 'center', marginBottom: wp(12) }}>
+                  {lang === 'fr' ? 'Scanner votre repas' : 'Scan your meal'}
+                </Text>
+
+                <View style={{ alignItems: 'center' }}>
+                  <Pressable
+                    onPress={() => { setShowXscan(true); if (xscanRef.current?.openGallery) xscanRef.current.openGallery(); }}
+                    delayPressIn={120}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row', alignItems: 'center',
+                      backgroundColor: pressed ? 'rgba(0,217,132,0.12)' : 'rgba(0,217,132,0.06)',
+                      paddingHorizontal: wp(12), paddingVertical: wp(8),
+                      borderRadius: 10, borderWidth: 1,
+                      borderColor: pressed ? 'rgba(0,217,132,0.35)' : 'rgba(0,217,132,0.15)',
+                    })}
+                  >
+                    <Svg width={16} height={16} viewBox="0 0 16 16" style={{ marginRight: 6 }}>
+                      <Rect x="1" y="3" width="14" height="10" rx="2" fill="none" stroke="#00D984" strokeWidth={1.2}/>
+                      <Circle cx="8" cy="8.5" r="3" fill="none" stroke="#00D984" strokeWidth={1.2}/>
+                      <Circle cx="8" cy="8.5" r="1" fill="#00D984" opacity={0.5}/>
+                      <Rect x="5.5" y="2" width="5" height="2" rx="1" fill="none" stroke="#00D984" strokeWidth={0.8}/>
+                    </Svg>
+                    <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700' }}>
+                      {lang === 'fr' ? 'Charger Photo' : 'Load Photo'}
+                    </Text>
+                  </Pressable>
+                </View>
+              </LinearGradient>
+            </View>
+          </View>
+
+          <Text style={{ fontSize: fp(9), color: '#6B7280', textAlign: 'center', marginTop: wp(4), fontStyle: 'italic' }}>
+            Scan IA avancé · Reconnaissance multi-angle · Claude Sonnet 4
+          </Text>
+
+          {/* Dots scans */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: wp(4), gap: wp(6) }}>
+            {[0, 1, 2].map((i) => {
+              const totalScans = 1;
+              const isFilled = i < totalScans;
+              return (
+                <View key={i} style={{
+                  width: wp(16), height: wp(16), borderRadius: wp(8),
+                  backgroundColor: isFilled ? '#1A2E25' : '#1E2228',
+                  borderWidth: 1.5, borderColor: isFilled ? '#00D984' : '#3A3F46',
+                  justifyContent: 'center', alignItems: 'center',
+                  shadowColor: isFilled ? '#00D984' : 'transparent',
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: isFilled ? 0.4 : 0, shadowRadius: 6,
+                  elevation: isFilled ? 4 : 0,
+                }}>
+                  {isFilled ? (
+                    <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: '#00D984' }}>
+                      <View style={{ position: 'absolute', top: 1, left: 2, width: 3, height: 2, borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,0.35)' }}/>
+                    </View>
+                  ) : (
+                    <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: '#15191F', borderWidth: 0.5, borderColor: '#2A2F36' }}/>
+                  )}
+                </View>
+              );
+            })}
+            <Text style={{ color: '#8892A0', fontSize: fp(12), fontWeight: '600', marginLeft: wp(8) }}>
+              {lang === 'fr' ? '1 Scan Restant' : '1 Scan Remaining'}
+            </Text>
+            <View style={{ backgroundColor: 'rgba(0,217,132,0.08)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, marginLeft: wp(6) }}>
+              <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '800', letterSpacing: 1 }}>LUCKY</Text>
+            </View>
+          </View>
+
+          {/* CartScan banner */}
+          <TouchableOpacity
+            onPress={() => setShowCartScan(true)}
+            activeOpacity={0.85}
+            style={{
+              marginHorizontal: wp(16), marginTop: wp(8), marginBottom: wp(8),
+              borderRadius: wp(16), borderWidth: 1, borderColor: 'rgba(77,166,255,0.25)',
+              backgroundColor: 'rgba(77,166,255,0.06)', padding: wp(16),
+              flexDirection: 'row', alignItems: 'center',
+            }}
+          >
+            <View style={{
+              width: wp(50), height: wp(50), borderRadius: wp(14),
+              backgroundColor: 'rgba(77,166,255,0.12)', borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)',
+              alignItems: 'center', justifyContent: 'center', marginRight: wp(14),
+            }}>
+              <Text style={{ fontSize: fp(24) }}>🛒</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(15), fontWeight: '800', color: '#4DA6FF', marginBottom: wp(2) }}>CARTSCAN</Text>
+              <Text style={{ fontSize: fp(10), color: '#9CA3AF' }}>
+                Faites vos courses avec LIXUM — scannez vos produits et obtenez un rapport nutritionnel complet
+              </Text>
+            </View>
+            <Text style={{ fontSize: fp(18), color: '#4DA6FF', marginLeft: wp(8) }}>›</Text>
+          </TouchableOpacity>
+
+          {/* Bouton Ajouter Manuellement */}
+          <Pressable
+            onPress={() => setShowManualEntry(true)}
+            style={({ pressed }) => ({
+              marginHorizontal: wp(50), marginTop: wp(8),
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+              paddingVertical: wp(8), borderRadius: 12,
+              backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+              borderWidth: 1, borderColor: pressed ? '#5A6070' : '#3A3F46',
+              opacity: 0.7,
+            })}
+          >
+            <Svg width={14} height={14} viewBox="0 0 16 16" style={{ marginRight: 6 }}>
+              <Path d="M12 1.5L14.5 4L5 13.5L1.5 14.5L2.5 11L12 1.5Z" fill="none" stroke="#8892A0" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round"/>
+              <Path d="M10 3.5L12.5 6" stroke="#8892A0" strokeWidth={1.2} strokeLinecap="round"/>
+            </Svg>
+            <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '600' }}>
+              {lang === 'fr' ? 'Ajouter Manuellement' : 'Add Manually'}
+            </Text>
+          </Pressable>
+
           {/* === PHASE 9 : Plats du jour + Pouvoirs + Recettes === */}
 
         </ScrollView>
