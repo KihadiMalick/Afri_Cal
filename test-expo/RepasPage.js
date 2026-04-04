@@ -3296,32 +3296,35 @@ const RepasPage = ({ onNavigate }) => {
             paddingHorizontal: wp(16),
             paddingTop: 0,
             paddingBottom: wp(10),
+            overflow: 'hidden',
           }}>
             <Text style={{
               color: '#EAEEF3',
-              fontSize: fp(20),
+              fontSize: fp(16),
               fontWeight: '800',
               letterSpacing: 2,
-            }}>
+              flexShrink: 0,
+            }} numberOfLines={1}>
               MES REPAS
             </Text>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), flexShrink: 1 }}>
               {/* Badge date */}
               <View style={{
                 flexDirection: 'row',
                 alignItems: 'center',
                 backgroundColor: 'rgba(0,217,132,0.08)',
-                paddingHorizontal: wp(12),
+                paddingHorizontal: wp(8),
                 paddingVertical: wp(6),
                 borderRadius: 12,
                 borderWidth: 1,
                 borderColor: 'rgba(0,217,132,0.15)',
+                flexShrink: 1,
               }}>
-                <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '600' }}>
+                <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600' }} numberOfLines={1}>
                   {lang === 'fr' ? "Aujourd'hui" : 'Today'}
                 </Text>
-                <Text style={{ color: '#8892A0', fontSize: fp(11), marginLeft: 6 }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(10), marginLeft: 4 }} numberOfLines={1}>
                   {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
                 </Text>
               </View>
@@ -3330,14 +3333,15 @@ const RepasPage = ({ onNavigate }) => {
                 flexDirection: 'row', alignItems: 'center',
                 backgroundColor: 'rgba(0,0,0,0.4)',
                 borderWidth: 1, borderColor: '#4A4F55',
-                borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
+                borderRadius: 20, paddingHorizontal: wp(8), paddingVertical: 6,
+                maxWidth: wp(100), flexShrink: 1,
               }}>
-                <Svg width={14} height={14} viewBox="0 0 24 24">
+                <Svg width={12} height={12} viewBox="0 0 24 24">
                   <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
                   <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
                 </Svg>
-                <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(14), marginLeft: 4 }}>{lixBalance}</Text>
-                <Text style={{ color: '#888', fontSize: fp(10), marginLeft: 4 }}>▾</Text>
+                <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(10), marginLeft: 3 }} numberOfLines={1}>{lixBalance}</Text>
+                <Text style={{ color: '#888', fontSize: fp(9), marginLeft: 2 }}>▾</Text>
               </TouchableOpacity>
             </View>
           </View>
