@@ -1035,9 +1035,233 @@ export default function LixVersePage({ navigation }) {
     }
   }
 
+  const navigateTo = (page) => {
+    if (navigation && navigation.navigate) navigation.navigate(page);
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: '#141A22' }}>
-      <Text style={{ color: '#FFF', padding: 20 }}>LixVersePage orchestrator - functions loaded</Text>
+      <LinearGradient colors={['#1A1D22','#252A30','#1E2328']} style={{ flex: 1 }}>
+        <StatusBar barStyle="light-content"/>
+        <View style={{ paddingTop: Platform.OS === 'android' ? 35 : 50, paddingBottom: wp(6), paddingHorizontal: wp(16), flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View>
+            <Text style={{ fontSize: fp(24), fontWeight: '800', color: '#D4AF37', letterSpacing: 1 }}>LixVerse</Text>
+            <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', letterSpacing: 2.5 }}>UNIVERS LIXUM</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(10) }}>
+            <Pressable delayPressIn={120} onPress={() => setShowNotifPanel(true)}
+              style={({ pressed }) => ({
+                width: wp(36), height: wp(36), borderRadius: wp(18),
+                backgroundColor: 'rgba(255,255,255,0.06)',
+                borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                justifyContent: 'center', alignItems: 'center',
+                transform: [{ scale: pressed ? 0.9 : 1 }],
+              })}>
+              <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                <Path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <Path d="M13.73 21a2 2 0 01-3.46 0" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round"/>
+              </Svg>
+              {unreadCount > 0 && (
+                <View style={{ position: 'absolute', top: wp(-2), right: wp(-2), minWidth: wp(16), height: wp(16), borderRadius: wp(8), backgroundColor: '#FF3B5C', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(4), borderWidth: 1.5, borderColor: '#1A1D22' }}>
+                  <Text style={{ fontSize: fp(8), fontWeight: '800', color: '#FFF' }}>{unreadCount}</Text>
+                </View>
+              )}
+            </Pressable>
+            <TouchableOpacity onPress={toggleDropdown} style={{
+              flexDirection: 'row', alignItems: 'center',
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              borderWidth: 1, borderColor: '#4A4F55',
+              borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
+            }}>
+              <LixGem size={14} />
+              <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(14), marginLeft: 4 }}>{lixBalance}</Text>
+              <Text style={{ color: '#888', fontSize: fp(10), marginLeft: 4 }}>▾</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {dropdownOpen && (
+          <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}>
+            <Animated.View style={{
+              position: 'absolute', top: Platform.OS === 'android' ? 85 : 100, right: wp(16),
+              backgroundColor: 'rgba(16, 20, 28, 0.97)', borderWidth: 1, borderColor: '#4A4F55',
+              borderRadius: 16, padding: 16, zIndex: 999,
+              shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 10,
+              opacity: dropdownAnim, transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
+            }}>
+              <TouchableOpacity onPress={() => { toggleDropdown(); setActiveTab('lixspin'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+                <LixGem size={14} />
+                <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixBalance}</Text>
+                <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { toggleDropdown(); setActiveTab('lixspin'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+                <Svg width={14} height={14} viewBox="0 0 24 24">
+                  <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
+                </Svg>
+                <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{userEnergy}</Text>
+                <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>énergie</Text>
+              </TouchableOpacity>
+              <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
+              <TouchableOpacity onPress={() => { toggleDropdown(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+                <Text style={{ fontSize: 18 }}>{activeCharSlug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[activeCharSlug] || '👤' : '👤'}</Text>
+                <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>Mon Profil</Text>
+                <Text style={{ color: '#888', fontSize: 14 }}>→</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </TouchableOpacity>
+        )}
+
+        {notifications.length > 0 && (
+          <View style={{ height: wp(28), backgroundColor: 'rgba(212,175,55,0.06)', borderBottomWidth: 1, borderBottomColor: 'rgba(212,175,55,0.1)', overflow: 'hidden', justifyContent: 'center' }}>
+            <Animated.View style={{ flexDirection: 'row', transform: [{ translateX: notifScrollX }] }}>
+              {[...notifications, ...notifications].map((n, i) => (
+                <View key={i} style={{ width: wp(280), flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(10), gap: wp(6) }}>
+                  <View style={{ width: wp(6), height: wp(6), borderRadius: wp(3), backgroundColor: n.color || '#D4AF37' }} />
+                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)', flex: 1 }} numberOfLines={1}>{n.message}</Text>
+                </View>
+              ))}
+            </Animated.View>
+          </View>
+        )}
+
+        <View style={{ flexDirection: 'row', marginHorizontal: wp(16), marginVertical: wp(10), gap: wp(6) }}>
+          {[
+            { key: 'defi', label: 'Défi', icon: '🏆' },
+            { key: 'human', label: 'Human', icon: '🤝' },
+            { key: 'characters', label: 'Caractères', icon: '🃏' },
+            { key: 'lixspin', label: 'Lix & Spin', icon: '💎' },
+          ].map(tab => (
+            <Pressable key={tab.key} onPress={() => setActiveTab(tab.key)} style={{
+              flex: 1, paddingVertical: wp(10), borderRadius: wp(12), alignItems: 'center',
+              backgroundColor: activeTab === tab.key ? '#D4AF37' : 'rgba(255,255,255,0.05)',
+              borderWidth: 1, borderColor: activeTab === tab.key ? '#D4AF37' : 'rgba(255,255,255,0.08)',
+            }}>
+              <Text style={{ fontSize: fp(14) }}>{tab.icon}</Text>
+              <Text style={{ fontSize: fp(10), fontWeight: '600', marginTop: wp(2), color: activeTab === tab.key ? '#1A1D22' : 'rgba(255,255,255,0.4)' }}>{tab.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {activeTab === 'defi' && (
+          <DefiTab
+            challenges={challenges} challengeScores={challengeScores} loading={loading}
+            myGroups={myGroups} wallStickers={wallStickers} floatingHearts={floatingHearts}
+            comboCount={comboCount} strikeActive={strikeActive} stickerShakeAnims={stickerShakeAnims}
+            myCertification={myCertification} leaderboardTab={leaderboardTab} setLeaderboardTab={setLeaderboardTab}
+            leaderboardExpanded={leaderboardExpanded} setLeaderboardExpanded={setLeaderboardExpanded}
+            leaderboardData={leaderboardData} leaderboardLoading={leaderboardLoading}
+            individualLB={individualLB} countryLB={countryLB} lbTabLoading={lbTabLoading}
+            challengeLeaders={challengeLeaders} expandedRewards={expandedRewards} setExpandedRewards={setExpandedRewards}
+            eligibilityChecking={eligibilityChecking} pendingRequests={pendingRequests} showLixAlert={showLixAlert}
+            onOpenGroupDetail={openGroupDetail} onCopyInviteCode={copyInviteCode}
+            onSetShowCertificationModal={(v) => setShowCertificationModal(v)}
+            onSetShowSearchGroup={(v) => setShowSearchGroup(v)}
+            onSetShowPendingRequests={(v) => setShowPendingRequests(v)}
+            onCheckEligibilityAndProceed={checkEligibilityAndProceed}
+            onHandleStickerTap={handleStickerTap}
+            onSetSelectedSticker={(s) => setSelectedSticker(s)}
+            onSetShowGiftModal={(v) => setShowGiftModal(v)}
+            onFetchIndividualLB={fetchIndividualLB} onFetchCountryLB={fetchCountryLB}
+            leaderboardChallengeId={leaderboardChallengeId}
+          />
+        )}
+
+        {activeTab === 'human' && (
+          <HumanTab
+            humanTab={humanTab} setHumanTab={setHumanTab}
+            binomeStatus={binomeStatus} binomePartner={binomePartner}
+            binomeCommonPoints={binomeCommonPoints} binomeDistance={binomeDistance}
+            binomeMessages={binomeMessages} searchProgress={searchProgress}
+            searchStep={searchStep} searchCoords={searchCoords}
+            compatibilityScore={compatibilityScore} scanLines={scanLines}
+            retryAfterTime={retryAfterTime} retryCountdown={retryCountdown}
+            showLixSignPicker={showLixSignPicker} setShowLixSignPicker={setShowLixSignPicker}
+            lixSignCategory={lixSignCategory} setLixSignCategory={setLixSignCategory}
+            tooltipSign={tooltipSign} setTooltipSign={setTooltipSign}
+            radarAnim={radarAnim} pulseRing1={pulseRing1} pulseRing2={pulseRing2} pulseRing3={pulseRing3}
+            pendingPulse={pendingPulse} showLixAlert={showLixAlert}
+            onStartBinomeSearch={startBinomeSearch} onResetBinomeState={resetBinomeState}
+            onBreakBinome={breakBinome} onSendBinomeRequest={sendBinomeRequestLive}
+            onSendLixSign={sendLixSign}
+          />
+        )}
+
+        {activeTab === 'characters' && (
+          <CharactersTab
+            userCollection={userCollection} ownedCharacters={ownedCharacters}
+            activeCharSlug={activeCharSlug} selectedChar={selectedChar}
+            setSelectedChar={setSelectedChar} charFlipped={charFlipped}
+            setCharFlipped={setCharFlipped} cardViewIndex={cardViewIndex}
+            setCardViewIndex={setCardViewIndex} cardViewIndexRef={cardViewIndexRef}
+            charPowers={charPowers} loadingPowers={loadingPowers}
+            onboardingSelected={onboardingSelected}
+            inlinePowerModal={inlinePowerModal} setInlinePowerModal={setInlinePowerModal}
+            inlinePowerData={inlinePowerData} inlinePowerLoading={inlinePowerLoading}
+            flipAnim={flipAnim} cardSlideAnim={cardSlideAnim} showLixAlert={showLixAlert}
+            onSwitchActiveCharacter={switchActiveCharacter} onLoadCharPowers={loadCharPowers}
+            onNavigateCard={navigateCard} onFlipCard={flipCard}
+            onRechargeChar={rechargeChar} onShouldConsumePower={shouldConsumePower}
+            onConsumePower={consumePower} onGoToSpin={() => setActiveTab('lixspin')}
+            onNavigateTo={navigateTo}
+          />
+        )}
+
+        {activeTab === 'lixspin' && (
+          <SpinTab
+            lixBalance={lixBalance} userEnergy={userEnergy}
+            spinTier={spinTier} setSpinTier={setSpinTier}
+            freeSpinAvailable={freeSpinAvailable} freeSpinUsed={freeSpinUsed}
+            nextFreeAt={nextFreeAt} timeToFree={timeToFree}
+            isSpinning={isSpinning} spinLoading={spinLoading}
+            winnerGlowIdx={winnerGlowIdx} spinAnim={spinAnim}
+            arrowBounce={arrowBounce} spinBtnScale={spinBtnScale}
+            freeBtnPulse={freeBtnPulse} glowOpacity={glowOpacity}
+            showSpinResultModal={showSpinResultModal} spinWinnerSeg={spinWinnerSeg}
+            serverResult={serverResult} fragmentResult={fragmentResult}
+            showFragmentModal={showFragmentModal} fragmentSlideAnim={fragmentSlideAnim}
+            spinResultPulse={spinResultPulse} showLixAlert={showLixAlert}
+            lixSpinScrollRef={lixSpinScrollRef}
+            onDoSpin={doSpin}
+            onCloseSpinResult={() => {
+              setShowSpinResultModal(false); spinResultPulse.stopAnimation();
+              setSpinWinnerSeg(null); setServerResult(null); setFragmentResult(null);
+            }}
+            onCloseFragmentModal={() => { setShowFragmentModal(false); setFragmentResult(null); }}
+            onGoToCharacters={() => { setActiveTab('characters'); loadCharacterData(); }}
+            onGoToLixSpin={() => setActiveTab('lixspin')}
+          />
+        )}
+      </LinearGradient>
+
+      <BottomTabs
+        activeTab="lixverse"
+        onTabPress={(key) => {
+          if (key === 'lixverse') return;
+          const pageMap = { home: 'Accueil', meals: 'Repas', medicai: 'MedicAi', activity: 'Activite' };
+          if (pageMap[key] && navigation) navigation.navigate(pageMap[key]);
+        }}
+      />
+
+      <Modal visible={lixAlert.visible} transparent animationType="fade" onRequestClose={hideLixAlert}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
+          <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']} style={{ borderRadius: wp(20), padding: wp(24), width: '100%', alignItems: 'center' }}>
+            {lixAlert.emoji ? <Text style={{ fontSize: fp(36), marginBottom: wp(12) }}>{lixAlert.emoji}</Text> : null}
+            <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', textAlign: 'center', marginBottom: wp(8) }}>{lixAlert.title}</Text>
+            <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: fp(18), marginBottom: wp(20) }}>{lixAlert.message}</Text>
+            {lixAlert.buttons.map((btn, i) => (
+              <Pressable key={i} onPress={() => { hideLixAlert(); if (btn.onPress) btn.onPress(); }}
+                style={({ pressed }) => ({
+                  width: '100%', paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', marginBottom: wp(6),
+                  backgroundColor: btn.style === 'cancel' ? 'rgba(255,255,255,0.06)' : (btn.color || '#D4AF37') + '20',
+                  borderWidth: 1, borderColor: btn.style === 'cancel' ? 'rgba(255,255,255,0.1)' : (btn.color || '#D4AF37') + '50',
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                })}>
+                <Text style={{ fontSize: fp(14), fontWeight: '600', color: btn.style === 'cancel' ? 'rgba(255,255,255,0.4)' : (btn.color || '#D4AF37') }}>{btn.text}</Text>
+              </Pressable>
+            ))}
+          </LinearGradient>
+        </View>
+      </Modal>
     </View>
   );
 }
