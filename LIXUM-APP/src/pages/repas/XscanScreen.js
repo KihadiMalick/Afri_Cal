@@ -21,7 +21,10 @@ const SCREEN_HEIGHT = require('react-native').Dimensions.get('window').height;
 // XscanScreen — Caméra + AR + Analyse + Résultat + Correction
 // ============================================================
 
-const XscanScreen = forwardRef(function XscanScreen({ visible, onClose, onMealSaved, userProfile }, ref) {
+const XscanScreen = forwardRef(function XscanScreen({
+  visible, onClose, onMealSaved, userProfile,
+  pagePowers, activeChar, todaySubstitutions, setTodaySubstitutions, consumePower,
+}, ref) {
   var _lc = useLang(); var lang = _lc.lang;
 
   // === PERMISSIONS CAMÉRA ===
@@ -1951,6 +1954,54 @@ const XscanScreen = forwardRef(function XscanScreen({ visible, onClose, onMealSa
                 })}
               </View>
             </View>
+
+            {/* ══════ SUBSTITUTION — Amber Fox (via pagePowers) ══════ */}
+            {(() => {
+              const foxPower = (pagePowers || []).find(p =>
+                (p.power_key === 'fox_sub_1' || p.power_key === 'fox_sub_2' || p.power_key === 'fox_sub_3') && p.unlocked
+              );
+              if (!foxPower) return null;
+
+              const maxSubs = activeChar?.level >= 3 ? 3 : activeChar?.level >= 2 ? 2 : 1;
+
+              return (
+                <View style={{ marginHorizontal: wp(16), marginBottom: wp(16) }}>
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: 'rgba(255,140,66,0.06)',
+                    borderRadius: 14, padding: wp(12),
+                    borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)',
+                  }}>
+                    <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>{foxPower.icon || '🦊'}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#FF8C42', fontSize: fp(11), fontWeight: '700' }}>{foxPower.name_fr || 'Substitution'}</Text>
+                      <Text style={{ color: '#5A6070', fontSize: fp(9), marginTop: 2 }}>
+                        {todaySubstitutions}/{maxSubs} utilisée{todaySubstitutions > 1 ? 's' : ''} aujourd'hui
+                      </Text>
+                    </View>
+                    <Pressable
+                      onPress={async () => {
+                        if (todaySubstitutions >= maxSubs) {
+                          Alert.alert('Limite atteinte', maxSubs + ' substitution' + (maxSubs > 1 ? 's' : '') + ' max par jour');
+                          return;
+                        }
+                        const result = await consumePower(foxPower.power_key);
+                        if (!result.success) return;
+                        setTodaySubstitutions(prev => prev + 1);
+                        Alert.alert('🦊 Substitution', 'Tap sur un ingrédient dans la liste ci-dessus pour voir des alternatives plus saines.', [{ text: 'Compris !' }]);
+                      }}
+                      style={({ pressed }) => ({
+                        backgroundColor: pressed ? 'rgba(255,140,66,0.2)' : 'rgba(255,140,66,0.1)',
+                        paddingHorizontal: wp(12), paddingVertical: wp(6), borderRadius: wp(8),
+                        borderWidth: 1, borderColor: 'rgba(255,140,66,0.3)',
+                      })}
+                    >
+                      <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700' }}>Substituer</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            })()}
 
             {/* Boutons Corriger + Confirmer */}
             <View style={{
