@@ -665,6 +665,150 @@ export default function CharactersTab({
                           <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Aucun pouvoir chargé</Text>
                         </View>
                       )}
+
+                      {inlinePowerModal === 'owl_resume_macros' && (
+                        <View style={{ backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🦉 Résumé Nutritionnel</Text>
+                          {inlinePowerLoading ? (
+                            <ActivityIndicator color="#00D984" style={{ marginVertical: wp(20) }} />
+                          ) : inlinePowerData ? (
+                            <View>
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(12) }}>
+                                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Aujourd'hui — {inlinePowerData.meals_count || 0} repas</Text>
+                                <Text style={{ fontSize: fp(11), fontWeight: '700', color: Math.abs(inlinePowerData.total_calories - inlinePowerData.calorie_target) < inlinePowerData.calorie_target * 0.15 ? '#00D984' : '#FF8C42' }}>
+                                  {inlinePowerData.total_calories || 0} / {inlinePowerData.calorie_target || '—'} kcal
+                                </Text>
+                              </View>
+                              {[
+                                { label: 'Protéines', val: inlinePowerData.total_protein, color: '#FF6B6B', unit: 'g' },
+                                { label: 'Glucides', val: inlinePowerData.total_carbs, color: '#4DA6FF', unit: 'g' },
+                                { label: 'Lipides', val: inlinePowerData.total_fat, color: '#D4AF37', unit: 'g' },
+                                { label: 'Fibres', val: inlinePowerData.total_fiber, color: '#00D984', unit: 'g' },
+                              ].map((m, i) => (
+                                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+                                  <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: m.color, marginRight: wp(8) }} />
+                                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.5)', flex: 1 }}>{m.label}</Text>
+                                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>{Math.round(m.val || 0)}{m.unit}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          ) : (
+                            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingVertical: wp(16) }}>Aucun repas enregistré aujourd'hui</Text>
+                          )}
+                        </View>
+                      )}
+
+                      {inlinePowerModal === 'hawk_micronutriments' && (
+                        <View style={{ backgroundColor: 'rgba(77,166,255,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>🔬 Micronutriments</Text>
+                          {inlinePowerLoading ? (
+                            <ActivityIndicator color="#4DA6FF" style={{ marginVertical: wp(20) }} />
+                          ) : inlinePowerData ? (
+                            <View>
+                              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(10) }}>
+                                Dernier scan : {inlinePowerData.food_name} ({Math.round(inlinePowerData.calories || 0)} kcal)
+                              </Text>
+                              {[
+                                { label: 'Protéines', val: inlinePowerData.protein_g, color: '#FF6B6B' },
+                                { label: 'Glucides', val: inlinePowerData.carbs_g, color: '#4DA6FF' },
+                                { label: 'Lipides', val: inlinePowerData.fat_g, color: '#D4AF37' },
+                                { label: 'Fibres', val: inlinePowerData.fiber_g, color: '#00D984' },
+                              ].map((m, i) => {
+                                const total = (inlinePowerData.protein_g || 0) + (inlinePowerData.carbs_g || 0) + (inlinePowerData.fat_g || 0);
+                                const pct = total > 0 ? Math.round(((m.val || 0) / total) * 100) : 0;
+                                return (
+                                  <View key={i} style={{ marginBottom: wp(8) }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(3) }}>
+                                      <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>{m.label}</Text>
+                                      <Text style={{ fontSize: fp(10), fontWeight: '700', color: m.color }}>{Math.round(m.val || 0)}g ({pct}%)</Text>
+                                    </View>
+                                    <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
+                                      <View style={{ height: '100%', width: pct + '%', backgroundColor: m.color, borderRadius: wp(2) }} />
+                                    </View>
+                                  </View>
+                                );
+                              })}
+                              {inlinePowerData.portion_g > 0 && (
+                                <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)', marginTop: wp(4) }}>Portion estimée : {Math.round(inlinePowerData.portion_g)}g</Text>
+                              )}
+                              {inlinePowerData.ingredients_detail && Array.isArray(inlinePowerData.ingredients_detail) && (
+                                <View style={{ marginTop: wp(10) }}>
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(77,166,255,0.6)', marginBottom: wp(4) }}>Ingrédients détectés :</Text>
+                                  {inlinePowerData.ingredients_detail.slice(0, 6).map((ing, i) => (
+                                    <Text key={i} style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.35)', marginBottom: wp(2) }}>
+                                      • {ing.name || ing.food_name || '—'} {ing.quantity_g ? '(' + Math.round(ing.quantity_g) + 'g)' : ''}
+                                    </Text>
+                                  ))}
+                                </View>
+                              )}
+                            </View>
+                          ) : (
+                            <View style={{ alignItems: 'center', paddingVertical: wp(16) }}>
+                              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginBottom: wp(10) }}>Aucun scan récent trouvé</Text>
+                              <Pressable delayPressIn={120} onPress={() => { closeCharModal(); onNavigateTo('RepasPage'); }}
+                                style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                                <LinearGradient colors={['#4DA6FF','#2E86DE']} style={{ paddingVertical: wp(10), paddingHorizontal: wp(20), borderRadius: wp(10), alignItems: 'center' }}>
+                                  <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FFF' }}>Scanner un repas →</Text>
+                                </LinearGradient>
+                              </Pressable>
+                            </View>
+                          )}
+                        </View>
+                      )}
+
+                      {(inlinePowerModal === 'fox_sub_1' || inlinePowerModal === 'fox_sub_2' || inlinePowerModal === 'fox_sub_3') && (
+                        <View style={{ backgroundColor: 'rgba(255,140,66,0.08)', borderRadius: wp(14), padding: wp(16), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,140,66,0.2)', maxHeight: wp(300), overflow: 'hidden' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(6) }}>🔄 Substitution d'ingrédient</Text>
+                          {inlinePowerLoading ? (
+                            <ActivityIndicator color="#FF8C42" style={{ marginVertical: wp(20) }} />
+                          ) : inlinePowerData && inlinePowerData.ingredients_detail && Array.isArray(inlinePowerData.ingredients_detail) ? (
+                            <View>
+                              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginBottom: wp(10) }}>
+                                Dernier scan : {inlinePowerData.food_name}
+                              </Text>
+                              <Text style={{ fontSize: fp(10), color: '#FF8C42', marginBottom: wp(8) }}>Choisis un ingrédient à remplacer :</Text>
+                              {inlinePowerData.ingredients_detail.slice(0, 5).map((ing, i) => (
+                                <Pressable key={i} delayPressIn={120}
+                                  onPress={() => {
+                                    closeCharModal();
+                                    onNavigateTo('RepasPage');
+                                    showLixAlert('🦊 Substitution demandée', 'Remplacer "' + (ing.name || ing.food_name || '—') + '" par une alternative plus saine.\n\nCette fonctionnalité sera disponible dans la page Repas.', [{ text: 'Compris', color: '#FF8C42' }], '🔄');
+                                  }}
+                                  style={({ pressed }) => ({
+                                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                                    paddingVertical: wp(8), paddingHorizontal: wp(10), marginBottom: wp(4),
+                                    borderRadius: wp(8), backgroundColor: pressed ? 'rgba(255,140,66,0.15)' : 'rgba(255,255,255,0.03)',
+                                    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+                                  })}>
+                                  <Text style={{ fontSize: fp(11), color: '#FFF', flex: 1 }}>{ing.name || ing.food_name || '—'}</Text>
+                                  <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginRight: wp(6) }}>{ing.quantity_g ? Math.round(ing.quantity_g) + 'g' : ''}</Text>
+                                  <Text style={{ fontSize: fp(10), color: '#FF8C42' }}>Remplacer →</Text>
+                                </Pressable>
+                              ))}
+                            </View>
+                          ) : (
+                            <View style={{ alignItems: 'center', paddingVertical: wp(16) }}>
+                              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginBottom: wp(10) }}>Scanne un repas d'abord pour substituer un ingrédient</Text>
+                              <Pressable delayPressIn={120} onPress={() => { closeCharModal(); onNavigateTo('RepasPage'); }}
+                                style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                                <LinearGradient colors={['#FF8C42','#E67E22']} style={{ paddingVertical: wp(10), paddingHorizontal: wp(20), borderRadius: wp(10), alignItems: 'center' }}>
+                                  <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FFF' }}>Aller au scan →</Text>
+                                </LinearGradient>
+                              </Pressable>
+                            </View>
+                          )}
+                        </View>
+                      )}
+
+                      <Pressable onPress={onFlipCard} style={{ paddingVertical: wp(16), alignItems: 'center', marginTop: wp(8) }}>
+                        <View style={{ paddingVertical: wp(10), paddingHorizontal: wp(30), borderRadius: wp(10), backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                          <Text style={{ fontSize: fp(14), fontWeight: '600', color: 'rgba(255,255,255,0.5)' }}>↩ Retourner</Text>
+                        </View>
+                      </Pressable>
+
+                      <Pressable onPress={closeCharModal} style={{ paddingVertical: wp(12), alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Fermer</Text>
+                      </Pressable>
                     </ScrollView>
                   </LinearGradient>
                 </Animated.View>
