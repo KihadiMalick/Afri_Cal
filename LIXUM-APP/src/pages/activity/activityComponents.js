@@ -10,6 +10,7 @@ import Svg, {
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { wp, fp } from '../../constants/layout';
+import MetalCard from '../../components/shared/MetalCard';
 import {
   ACTIVITY_DATA, T, getLang, calcCalories, calcWater,
   TIME_STEPS,
@@ -697,6 +698,40 @@ var SportIcon = function(props) {
         </Svg>
       );
   }
+};
+
+// ── Sport Card (for grid) ──
+const SportCard = ({ sportKey, onPress, lang, userWeight }) => {
+  const sport = ACTIVITY_DATA[sportKey];
+  var weightKg = userWeight || 70;
+  var kcalPerHour = Math.round(sport.met * weightKg);
+  var sportLabel = lang === 'en' ? (sport.labelEN || sport.label) : sport.label;
+  return (
+    <MetalCard
+      onPress={onPress}
+      style={{
+        marginHorizontal: 0,
+        marginBottom: wp(8),
+        flex: 1,
+      }}
+    >
+      <View style={{ alignItems: 'center', paddingVertical: wp(4) }}>
+        <SportIcon type={sportKey} size={wp(24)} color={sport.color} />
+        <Text style={{
+          color: '#EAEEF3', fontSize: fp(10), fontWeight: '700',
+          marginTop: wp(4), textAlign: 'center',
+        }}>
+          {sportLabel}
+        </Text>
+        <Text style={{
+          color: sport.color, fontSize: fp(8), fontWeight: '600',
+          marginTop: wp(2),
+        }}>
+          {kcalPerHour} kcal/h
+        </Text>
+      </View>
+    </MetalCard>
+  );
 };
 
 // === PHASES SUIVANTES ===
