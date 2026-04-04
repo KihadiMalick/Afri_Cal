@@ -8,6 +8,7 @@ import RepasPage from '../pages/repas/RepasPage';
 import ActivityPage from '../pages/activity/ActivityPage';
 import LixVersePage from '../pages/lixverse/LixVersePage';
 import RegisterPage from '../pages/register/RegisterPage';
+import LoginPage from '../pages/login/LoginPage';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -31,6 +32,7 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Register" component={RegisterPage} />
+        <Stack.Screen name="Login" component={LoginPage} />
         <Stack.Screen name="MainTabs" component={MainTabs} />
       </Stack.Navigator>
     </NavigationContainer>
