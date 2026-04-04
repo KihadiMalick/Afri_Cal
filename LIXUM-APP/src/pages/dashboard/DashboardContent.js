@@ -346,6 +346,84 @@ const DashboardContent = ({
           </View>
         )}
       </MetalCard>
+
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }) }} onPress={function() { setCoachExpanded(function(v) { return !v; }); }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+          <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(0,217,132,0.12)', borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.25)', justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ fontSize: 18 }}>🤖</Text>
+          </View>
+          <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '700', letterSpacing: wp(1), marginLeft: wp(8) }}>COACH ALIXEN</Text>
+          <View style={{ backgroundColor: 'rgba(212, 175, 55, 0.12)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(2), marginLeft: wp(8) }}>
+            <Text style={{ fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo', fontSize: fp(7), fontWeight: '800', color: '#D4AF37', letterSpacing: 1 }}>IA</Text>
+          </View>
+        </View>
+        <Text style={{ color: '#EAEEF3', fontSize: fp(12), lineHeight: fp(17), fontWeight: '500' }}>
+          {!lastMeal
+            ? 'Bienvenue ! Scannez votre premier repas pour activer le suivi.'
+            : consumedTotal < OBJECTIVE
+              ? 'Déficit de ' + (OBJECTIVE - consumedTotal + burnedTotal) + ' kcal — bonne stratégie pour la perte de poids !'
+              : 'Surplus de ' + (consumedTotal - OBJECTIVE) + ' kcal — pensez à une activité physique !'}
+        </Text>
+        <View style={{ backgroundColor: 'rgba(0, 217, 132, 0.03)', borderRadius: wp(10), padding: wp(10), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.06)' }}>
+          <Text style={{ color: '#8892A0', fontSize: fp(8), fontWeight: '700', letterSpacing: wp(1), marginBottom: wp(4) }}>SUGGESTIONS</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
+            <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>{!lastMeal ? 'Scannez un repas pour activer les suggestions' : '25g de protéines au prochain repas'}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
+            <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>{Math.max(0, Math.ceil((hydrationGoal - hydrationMl) / 250))} verre{Math.ceil((hydrationGoal - hydrationMl) / 250) > 1 ? 's' : ''} d'eau (hydratation à {Math.round((hydrationMl / hydrationGoal) * 100)}%)</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>{burnedExtra > 0 ? 'Bonne séance ! ' + burnedExtra + ' kcal brûlées' : '15 min de marche pour brûler 85 kcal'}</Text>
+          </View>
+        </View>
+        <TouchableOpacity onPress={function() { onNavigate('meals'); }} activeOpacity={0.7}
+          style={{ backgroundColor: 'rgba(0, 217, 132, 0.08)', borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.15)', paddingVertical: wp(8), paddingHorizontal: wp(12), marginTop: wp(8), flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>📸</Text>
+          <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700' }}>Scanner mon premier plat</Text>
+          <Text style={{ color: '#00D984', fontSize: fp(11), marginLeft: wp(4) }}>→</Text>
+        </TouchableOpacity>
+        {coachExpanded && (
+          <View style={{ backgroundColor: 'rgba(0,217,132,0.04)', borderRadius: wp(12), padding: wp(12), marginTop: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.1)' }}>
+            <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#EAEEF3', marginBottom: wp(10) }}>🧠 Analyse du jour</Text>
+            {(function() {
+              var OBJECTIVE_CALC = dailyTarget || 2100;
+              var hydroGoalCalc = gender === 'femme' ? 2000 : 2500;
+              var nutritionPct = OBJECTIVE_CALC > 0 && consumedTotal > 0 ? Math.max(0, Math.min(100, 100 - Math.round(Math.abs(1 - consumedTotal / OBJECTIVE_CALC) * 330))) : 0;
+              var hydroPct = Math.min(Math.round((hydrationMl / hydroGoalCalc) * 100), 100);
+              var activityPct = 0;
+              var regularityPct = Math.round(((lastMeal ? 50 : 0) + (hydrationMl > 0 ? 30 : 0) + 20) / 100 * 100);
+              return [
+                { label: 'Nutrition', pct: nutritionPct, color: '#FF8C42' },
+                { label: 'Hydratation', pct: hydroPct, color: '#4DA6FF' },
+                { label: 'Activité', pct: activityPct, color: '#00D984' },
+                { label: 'Régularité', pct: regularityPct, color: '#D4AF37' },
+              ].map(function(c, i) {
+                return (
+                  <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+                    <Text style={{ fontSize: fp(10), color: '#8892A0', width: wp(70), fontWeight: '600' }}>{c.label}</Text>
+                    <View style={{ flex: 1, height: wp(5), borderRadius: wp(2.5), backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginRight: wp(8) }}>
+                      <View style={{ width: Math.min(c.pct, 100) + '%', height: '100%', borderRadius: wp(2.5), backgroundColor: c.color }} />
+                    </View>
+                    <Text style={{ fontSize: fp(9), color: c.color, fontWeight: '700', width: wp(28), textAlign: 'right' }}>{c.pct}%</Text>
+                  </View>
+                );
+              });
+            })()}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: wp(8), paddingTop: wp(8), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)', gap: wp(8) }}>
+              <Text style={{ fontSize: fp(10), color: '#8892A0' }}>Score Vitalité actuel :</Text>
+              <Text style={{ fontSize: fp(16), fontWeight: '900', color: vitalityScore >= 70 ? '#00D984' : vitalityScore >= 40 ? '#FFD93D' : '#FF6B6B' }}>{vitalityScore}/100</Text>
+            </View>
+            <Pressable onPress={function() { onNavigate('medicai'); }} style={{ marginTop: wp(10), paddingVertical: wp(10), borderRadius: wp(10), backgroundColor: 'rgba(0,217,132,0.08)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(6) }}>
+              <Text style={{ fontSize: fp(14) }}>💬</Text>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#00D984' }}>Discuter avec ALIXEN</Text>
+              <Text style={{ fontSize: fp(12), color: '#00D984' }}>→</Text>
+            </Pressable>
+          </View>
+        )}
+      </MetalCard>
     </ScrollView>
   );
 };
