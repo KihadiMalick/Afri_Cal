@@ -405,7 +405,144 @@ export default function CookingModeScreen({ visible, onClose, recipe }) {
           )}
         </ScrollView>
 
-        {/* === PHASE 3 : Navigation bas + Overlay alarme === */}
+        {/* ═══ BARRE NAVIGATION BAS ═══ */}
+        <View style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+          paddingHorizontal: wp(20), paddingVertical: wp(16), paddingBottom: wp(30),
+          backgroundColor: '#151B23', borderTopWidth: 1, borderTopColor: '#2A303B',
+        }}>
+          {/* Bouton précédent */}
+          <Pressable
+            onPress={function() {
+              if (cookingCurrentStep > 0) setCookingCurrentStep(cookingCurrentStep - 1);
+            }}
+            style={function(state) {
+              return {
+                width: wp(56), height: wp(56), borderRadius: wp(28),
+                backgroundColor: cookingCurrentStep > 0
+                  ? (state.pressed ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)')
+                  : 'rgba(255,255,255,0.02)',
+                justifyContent: 'center', alignItems: 'center',
+                borderWidth: 1, borderColor: cookingCurrentStep > 0 ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
+                opacity: cookingCurrentStep > 0 ? 1 : 0.3,
+              };
+            }}
+            disabled={cookingCurrentStep === 0}
+          >
+            <Text style={{ color: '#EAEEF3', fontSize: fp(20), fontWeight: '700' }}>←</Text>
+          </Pressable>
+
+          {/* Indicateur progression */}
+          <View style={{ flexDirection: 'row', gap: wp(4), alignItems: 'center' }}>
+            {cookingSteps.map(function(_, idx) {
+              var isCurrent = idx === cookingCurrentStep;
+              var isPast = idx < cookingCurrentStep;
+              var hasTimer = cookingTimers[idx];
+              var timerRunning = hasTimer && hasTimer.running;
+              var timerDone = hasTimer && hasTimer.finished;
+
+              return (
+                <Pressable
+                  key={idx}
+                  onPress={function() { setCookingCurrentStep(idx); }}
+                  style={{
+                    width: isCurrent ? wp(20) : wp(8),
+                    height: wp(8),
+                    borderRadius: wp(4),
+                    backgroundColor: timerDone ? '#FF6B6B'
+                      : timerRunning ? '#00D984'
+                      : isCurrent ? '#FF8C42'
+                      : isPast ? 'rgba(0,217,132,0.4)'
+                      : 'rgba(255,255,255,0.1)',
+                  }}
+                />
+              );
+            })}
+          </View>
+
+          {/* Bouton suivant / Terminer */}
+          {cookingCurrentStep < cookingSteps.length - 1 ? (
+            <Pressable
+              onPress={function() {
+                setCookingCurrentStep(cookingCurrentStep + 1);
+              }}
+              style={function(state) {
+                return {
+                  width: wp(56), height: wp(56), borderRadius: wp(28),
+                  backgroundColor: state.pressed ? '#CC7A00' : '#FF8C42',
+                  justifyContent: 'center', alignItems: 'center',
+                };
+              }}
+            >
+              <Text style={{ color: '#FFFFFF', fontSize: fp(20), fontWeight: '700' }}>→</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={function() {
+                var hasActiveTimer = Object.keys(cookingTimers).some(function(k) { return cookingTimers[k].running; });
+                if (hasActiveTimer) {
+                  Alert.alert('Minuteurs en cours', 'Attends que tous les minuteurs soient terminés.', [
+                    { text: 'OK' },
+                  ]);
+                } else {
+                  setCookingTimers({});
+                  onClose();
+                  Alert.alert('🎉 Bon appétit !', 'Ta préparation est terminée. Régale-toi !');
+                }
+              }}
+              style={function(state) {
+                return {
+                  height: wp(56), borderRadius: wp(28),
+                  backgroundColor: state.pressed ? '#00B572' : '#00D984',
+                  justifyContent: 'center', alignItems: 'center',
+                  paddingHorizontal: wp(20),
+                };
+              }}
+            >
+              <Text style={{ color: '#0D1117', fontSize: fp(13), fontWeight: '800' }}>Terminer ✓</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {/* ═══ OVERLAY ALARME ═══ */}
+        {cookingAlarm && (
+          <View style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            justifyContent: 'center', alignItems: 'center',
+            zIndex: 999,
+          }}>
+            <View style={{
+              backgroundColor: '#1A1D22', borderRadius: wp(24),
+              padding: wp(30), alignItems: 'center',
+              borderWidth: 2, borderColor: '#FF6B6B',
+              width: '80%',
+            }}>
+              <Text style={{ fontSize: fp(50), marginBottom: wp(12) }}>🔔</Text>
+              <Text style={{ color: '#FF6B6B', fontSize: fp(20), fontWeight: '900', marginBottom: wp(8), textAlign: 'center' }}>
+                C'est prêt !
+              </Text>
+              <Text style={{ color: '#EAEEF3', fontSize: fp(15), textAlign: 'center', lineHeight: fp(22), marginBottom: wp(20) }}>
+                Chef, vérifie {cookingAlarm.label ? 'tes ' + cookingAlarm.label.toLowerCase() : 'ta cuisson'} — le temps est écoulé !
+              </Text>
+              <Pressable
+                onPress={function() { dismissAlarm(); }}
+                style={function(state) {
+                  return {
+                    paddingVertical: wp(14), paddingHorizontal: wp(40),
+                    borderRadius: wp(14),
+                    backgroundColor: state.pressed ? '#CC5555' : '#FF6B6B',
+                  };
+                }}
+              >
+                <Text style={{ color: '#FFFFFF', fontSize: fp(15), fontWeight: '800' }}>
+                  ✓ J'ai vérifié !
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
 
       </View>
     </Modal>
