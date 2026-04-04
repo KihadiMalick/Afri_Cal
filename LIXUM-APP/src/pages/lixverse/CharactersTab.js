@@ -410,7 +410,203 @@ export default function CharactersTab({
                     <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }} />
                     <ScrollView style={{ flex: 1, maxHeight: SCREEN_WIDTH * 1.1 }} contentContainerStyle={{ paddingBottom: wp(60) }} showsVerticalScrollIndicator={true} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
                       <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37', textAlign: 'center', marginBottom: wp(16) }}>POUVOIRS</Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>Powers content placeholder</Text>
+
+                      {(() => {
+                        const currentChar = ALL_CHARACTERS[cardViewIndexRef.current];
+                        const currentSlug = currentChar?.id;
+                        const isOwned = userCollection.some(c => (c.slug || c.id) === currentSlug && c.owned !== false) || ownedCharacters.includes(currentSlug);
+                        if (isOwned) return null;
+                        return (
+                          <View style={{ backgroundColor: 'rgba(255,140,66,0.1)', borderRadius: wp(10), padding: wp(10), marginBottom: wp(12), borderWidth: 1, borderColor: 'rgba(255,140,66,0.2)', flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+                            <Text style={{ fontSize: fp(16) }}>🔒</Text>
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FF8C42' }}>Aperçu uniquement</Text>
+                              <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.35)' }}>Obtiens cette carte pour activer ses pouvoirs</Text>
+                            </View>
+                          </View>
+                        );
+                      })()}
+
+                      {loadingPowers ? (
+                        <ActivityIndicator color="#D4AF37" size="large" style={{ marginVertical: wp(30) }} />
+                      ) : charPowers.length > 0 ? charPowers.map((power, idx) => {
+                        const isUnlocked = power.unlocked;
+                        return (
+                          <View key={power.power_key || idx} style={{
+                            marginBottom: wp(8),
+                            backgroundColor: isUnlocked ? 'rgba(0,217,132,0.06)' : 'rgba(255,255,255,0.02)',
+                            borderRadius: wp(10), padding: wp(10),
+                            borderWidth: 1,
+                            borderColor: isUnlocked ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)',
+                          }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+                              <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>
+                                {power.icon || '🔮'}
+                              </Text>
+                              <Text style={{
+                                color: isUnlocked ? '#EAEEF3' : '#555E6C',
+                                fontSize: fp(10), fontWeight: '700', flex: 1,
+                              }}>
+                                {power.name_fr || power.name || power.power_key}
+                              </Text>
+                              {power.is_superpower && isUnlocked && (
+                                <View style={{
+                                  backgroundColor: 'rgba(212,175,55,0.1)',
+                                  paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4),
+                                }}>
+                                  <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '800' }}>
+                                    SUPERPOWER
+                                  </Text>
+                                </View>
+                              )}
+                              {!isUnlocked && (
+                                <Text style={{ color: '#FF6B6B', fontSize: fp(8), fontWeight: '600' }}>
+                                  🔒 Niv{power.level_required || power.required_level || 0}
+                                </Text>
+                              )}
+                            </View>
+
+                            <Text style={{
+                              color: isUnlocked ? '#8892A0' : '#444B55',
+                              fontSize: fp(8), marginBottom: wp(8),
+                            }}>
+                              {power.description_fr || power.description || ''}
+                            </Text>
+
+                            {isUnlocked ? (
+                              (() => {
+                                const POWER_NAV_MAP = {
+                                  owl_suggestion_repas: 'RepasPage', hawk_comparateur: 'RepasPage', hawk_historique: 'RepasPage',
+                                  fox_regime: 'RepasPage', gipsy_toile_sante: 'DashboardPage',
+                                  phoenix_renaissance: 'RepasPage', wolf_meute: null, boukki_festin: 'RepasPage',
+                                  dolphin_vague_bleue: 'DashboardPage',
+                                  licornium_planner: 'RepasPage', licornium_corne: 'RepasPage',
+                                  jaane_mue: 'ActivityPage', jaane_hypnose: 'ActivityPage',
+                                  mosquito_essaim: null,
+                                  simba_territoire: 'DashboardPage', simba_roi: 'DashboardPage',
+                                  alburax_medibook: 'MedicAiPage',
+                                  tardigrum_immortel: null,
+                                };
+
+                                switch (power.action_type) {
+                                  case 'redirect':
+                                    return (
+                                      <Pressable delayPressIn={120}
+                                        onPress={async () => {
+                                          const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
+                                          const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
+                                          if (!isOwnedCheck) {
+                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
+                                            return;
+                                          }
+                                          if (onShouldConsumePower(power)) {
+                                            const r = await onConsumePower(power.power_key);
+                                            if (!r.success) return;
+                                          }
+                                          closeCharModal();
+                                          const targetNav = POWER_NAV_MAP[power.power_key];
+                                          if (targetNav) onNavigateTo(targetNav);
+                                        }}
+                                        style={({ pressed }) => ({
+                                          paddingVertical: wp(7), borderRadius: wp(8),
+                                          backgroundColor: pressed ? 'rgba(0,217,132,0.15)' : 'rgba(0,217,132,0.08)',
+                                          borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                                          alignItems: 'center',
+                                        })}
+                                      >
+                                        <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '700' }}>
+                                          Ouvrir →
+                                        </Text>
+                                      </Pressable>
+                                    );
+
+                                  case 'redirect_with_boost':
+                                    return (
+                                      <Pressable delayPressIn={120}
+                                        onPress={async () => {
+                                          const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
+                                          const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
+                                          if (!isOwnedCheck) {
+                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
+                                            return;
+                                          }
+                                          const r = await onConsumePower(power.power_key);
+                                          if (!r.success) return;
+
+                                          const boostMap = {
+                                            tiger_xp_10: 1.10, tiger_xp_20: 1.20, tiger_xp_30_badge: 1.30,
+                                            simba_rugissement: 1.50,
+                                            alburax_streak_shield: 1.0, alburax_transcendance: 2.0,
+                                            tardigrum_resistance: 1.30,
+                                          };
+                                          const boostMultiplier = boostMap[power.power_key] || 1.10;
+                                          const boostType = power.power_key === 'alburax_transcendance' ? 'lix_multiplier'
+                                            : power.power_key === 'alburax_streak_shield' ? 'streak_shield'
+                                            : power.power_key === 'tardigrum_resistance' ? 'xp_activity'
+                                            : 'xp_activity';
+                                          const boostExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+                                          fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, {
+                                            method: 'PATCH',
+                                            headers: POST_HEADERS,
+                                            body: JSON.stringify({
+                                              active_boost: JSON.stringify({ type: boostType, multiplier: boostMultiplier, expires_at: boostExpiry, source: power.power_key }),
+                                            }),
+                                          }).catch(() => {});
+
+                                          closeCharModal();
+                                          const pctBoost = Math.round((boostMultiplier - 1) * 100);
+                                          const boostMessages = {
+                                            xp_activity: { emoji: '⚡', title: 'Boost XP activé !', msg: '+' + pctBoost + '% XP sur tes activités pendant 24h.', btn: 'Activité', nav: 'ActivityPage' },
+                                            lix_multiplier: { emoji: '💰', title: 'Double Lix activé !', msg: 'Toutes tes récompenses Lix sont doublées pendant 24h.', btn: 'LixVerse', nav: null },
+                                            streak_shield: { emoji: '🛡️', title: 'Streak Shield activé !', msg: 'Si tu oublies un jour, ton streak est protégé.', btn: 'OK', nav: null },
+                                            energy_cost: { emoji: '🧬', title: 'Énergie /2 activé !', msg: 'Toutes les actions IA coûtent moitié moins d\'énergie pendant 24h.', btn: 'Super', nav: null },
+                                          };
+                                          const bm = boostMessages[boostType] || boostMessages.xp_activity;
+                                          const buttons = bm.nav
+                                            ? [{ text: bm.btn, color: '#D4AF37', onPress: () => onNavigateTo(bm.nav) }, { text: 'OK', style: 'cancel' }]
+                                            : [{ text: bm.btn, color: '#00D984' }];
+                                          showLixAlert(bm.emoji + ' ' + bm.title, bm.msg, buttons, bm.emoji);
+                                        }}
+                                        style={({ pressed }) => ({
+                                          paddingVertical: wp(7), borderRadius: wp(8),
+                                          backgroundColor: pressed ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.08)',
+                                          borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+                                          alignItems: 'center',
+                                        })}
+                                      >
+                                        <Text style={{ color: '#D4AF37', fontSize: fp(9), fontWeight: '700' }}>
+                                          Activer le Boost →
+                                        </Text>
+                                      </Pressable>
+                                    );
+
+                                  default:
+                                    return (
+                                      <Text style={{ color: '#555E6C', fontSize: fp(8), textAlign: 'center' }}>
+                                        Action non implémentée
+                                      </Text>
+                                    );
+                                }
+                              })()
+                            ) : (
+                              <View style={{
+                                paddingVertical: wp(7), borderRadius: wp(8),
+                                backgroundColor: 'rgba(255,255,255,0.03)',
+                                borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
+                                alignItems: 'center',
+                              }}>
+                                <Text style={{ color: '#555E6C', fontSize: fp(8) }}>
+                                  🔒 Débloque au Niveau {power.level_required || power.required_level || 0}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        );
+                      }) : (
+                        <View style={{ alignItems: 'center', paddingVertical: wp(30) }}>
+                          <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)' }}>Aucun pouvoir chargé</Text>
+                        </View>
+                      )}
                     </ScrollView>
                   </LinearGradient>
                 </Animated.View>
