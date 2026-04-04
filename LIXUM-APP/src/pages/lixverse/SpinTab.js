@@ -259,6 +259,64 @@ export default function SpinTab({
             </Text>
           </View>
         </View>
+
+        <Animated.View style={{
+          transform: [{ scale: (spinCost === 0 && spinTier === 'normal' && !isSpinning) ? Animated.multiply(spinBtnScale, freeBtnPulse) : spinBtnScale }],
+          marginTop: wp(16), width: wp(260),
+          opacity: (isSpinning || spinLoading) ? 0.5 : 1,
+        }}>
+          <Pressable delayPressIn={120} onPress={onDoSpin} disabled={isSpinning || spinLoading}
+            onPressIn={onBtnPressIn} onPressOut={onBtnPressOut}
+            style={{ width: '100%' }}>
+            <LinearGradient colors={spinBtnColors}
+              style={{
+                paddingVertical: wp(14), borderRadius: wp(24), alignItems: 'center', height: wp(48), justifyContent: 'center',
+                borderWidth: spinCost === 0 && spinTier === 'normal' ? 0 : 2,
+                borderColor: spinBtnBorder,
+                shadowColor: spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : 'transparent',
+                shadowOpacity: spinTier !== 'normal' ? 0.4 : 0,
+                shadowRadius: spinTier === 'mega' ? wp(12) : wp(8),
+                elevation: spinTier !== 'normal' ? 4 : 0,
+              }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+                {spinCost === 0 && spinTier === 'normal' && (
+                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
+                    <Path d="M20 12v10H4V12" stroke="#FFF" strokeWidth={2} />
+                    <Path d="M2 7h20v5H2z" stroke="#FFF" strokeWidth={2} />
+                    <Path d="M12 22V7" stroke="#FFF" strokeWidth={2} />
+                    <Path d="M12 7c-1.5-2-4-3-4-3s1 3 4 3z" fill="#FFF" />
+                    <Path d="M12 7c1.5-2 4-3 4-3s-1 3-4 3z" fill="#FFF" />
+                  </Svg>
+                )}
+                <Text style={{ fontSize: spinCost === 0 ? fp(17) : fp(15), fontWeight: '800', color: '#FFF', letterSpacing: spinCost === 0 ? 1 : 0 }}>{spinBtnLabel}</Text>
+              </View>
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
+
+        <View style={{ marginTop: wp(10), alignItems: 'center' }}>
+          {freeSpinAvailable && !freeSpinUsed ? (
+            <Text style={{ fontSize: fp(11), color: '#00D984' }}>🎁 1 spin gratuit disponible</Text>
+          ) : (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+              <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                <Circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
+                <Path d="M12 6v6l4 2" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+              </Svg>
+              <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.35)', fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+                {timeToFree || '--:--:--'}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      <View style={{ alignItems: 'center', marginVertical: wp(16) }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(12) }}>
+          <View style={{ width: wp(40), height: 1, backgroundColor: 'rgba(212,175,55,0.12)' }} />
+          <LixGem size={wp(12)} />
+          <View style={{ width: wp(40), height: 1, backgroundColor: 'rgba(212,175,55,0.12)' }} />
+        </View>
       </View>
     </ScrollView>
   );
