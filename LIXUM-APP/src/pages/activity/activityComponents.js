@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { wp, fp } from '../../constants/layout';
 import {
   ACTIVITY_DATA, T, getLang, calcCalories, calcWater,
+  TIME_STEPS,
 } from './activityConstants';
 
 // ── Décors SVG du chemin de marche ──
@@ -112,4 +113,310 @@ const RunShoeAnimated = ({ shoeAnim }) => {
   );
 };
 
-// === PHASES SUIVANTES ===
+// ── Non-linear slider distance interpolation ──
+const sliderToDistance = (sliderValue, flags) => {
+  const maxIdx = flags.length - 1;
+  const pos = sliderValue * maxIdx;
+  const segmentIndex = Math.min(Math.floor(pos), maxIdx - 1);
+  const segmentProgress = pos - segmentIndex;
+  const fromFlag = flags[Math.min(segmentIndex, maxIdx)];
+  const toFlag = flags[Math.min(segmentIndex + 1, maxIdx)];
+  return fromFlag.distance + (toFlag.distance - fromFlag.distance) * segmentProgress;
+};
+
+// ── Custom Slider (Walk / Run) ──
+const ActivitySlider = ({
+  type, mode, value, onChange, shoeAnim,
+  flags, maxDistance, maxTime, accentColor,
+}) => {
+  const barRef = useRef(null);
+  const [barWidth, setBarWidth] = useState(0);
+  const [barX, setBarX] = useState(0);
+
+  const isWalk = type === 'marche';
+  const trackBg = isWalk ? 'rgba(0,217,132,0.08)' : 'rgba(255,140,66,0.08)';
+  const trackLineColor = isWalk ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.12)';
+
+  const handleTouch = (evt) => {
+    const touchX = evt.nativeEvent.pageX - barX;
+    const clamped = Math.max(0, Math.min(1, touchX / barWidth));
+    onChange(clamped);
+  };
+
+  const flagList = mode === 'distance' ? flags : TIME_STEPS;
+
+  return (
+    <View style={{ marginTop: wp(12) }}>
+      <View
+        ref={barRef}
+        onLayout={(e) => {
+          setBarWidth(e.nativeEvent.layout.width);
+          barRef.current?.measureInWindow?.((x) => setBarX(x));
+          if (e.nativeEvent.layout.x !== undefined) {
+            barRef.current?.measure?.((fx, fy, fw, fh, px) => {
+              if (px !== undefined) setBarX(px);
+            });
+          }
+        }}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderMove={handleTouch}
+        onResponderRelease={handleTouch}
+        onResponderStart={handleTouch}
+        style={{
+          height: wp(50),
+          backgroundColor: trackBg,
+          borderRadius: wp(12),
+          overflow: 'hidden',
+          justifyContent: 'center',
+          borderWidth: 1,
+          borderColor: isWalk ? 'rgba(0,217,132,0.12)' : 'rgba(255,140,66,0.12)',
+        }}
+      >
+        {/* Track ruler lines */}
+        {isWalk ? (
+          <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, flexDirection: 'row' }}>
+            {Array.from({ length: 30 }).map((_, i) => (
+              <View key={i} style={{
+                width: 1, height: '100%',
+                backgroundColor: trackLineColor,
+                marginLeft: i === 0 ? 0 : (barWidth || 200) / 30,
+              }} />
+            ))}
+          </View>
+        ) : (
+          <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}>
+            {[0.25, 0.5, 0.75].map((pos, i) => (
+              <View key={i} style={{
+                position: 'absolute', left: 0, right: 0,
+                top: `${pos * 100}%`,
+                height: 1,
+                backgroundColor: trackLineColor,
+              }} />
+            ))}
+          </View>
+        )}
+
+        {/* Flag markers */}
+        {flagList.map((flag, idx) => {
+          const equalPos = flagList.length > 1 ? idx / (flagList.length - 1) : 0;
+          const isNearest = (() => {
+            let minDist = Infinity;
+            let nearestIdx = 0;
+            flagList.forEach((_, fi) => {
+              const fPos = flagList.length > 1 ? fi / (flagList.length - 1) : 0;
+              const d = Math.abs(value - fPos);
+              if (d < minDist) { minDist = d; nearestIdx = fi; }
+            });
+            return nearestIdx === idx;
+          })();
+
+          return (
+            <View key={idx} style={{
+              position: 'absolute',
+              left: `${equalPos * 100}%`,
+              top: wp(2),
+              alignItems: 'center',
+              transform: [{ translateX: -wp(10) }],
+            }}>
+              <Text style={{
+                fontSize: fp(7),
+                color: isNearest ? accentColor : '#555E6C',
+                fontWeight: isNearest ? '700' : '500',
+              }}>
+                {String.fromCodePoint(0x1F3C1)}
+              </Text>
+              <Text style={{
+                fontSize: fp(7),
+                color: isNearest ? accentColor : '#555E6C',
+                fontWeight: isNearest ? '700' : '500',
+                marginTop: wp(1),
+              }}>
+                {mode === 'distance' ? flag.label : `${flag}m`}
+              </Text>
+            </View>
+          );
+        })}
+
+        {/* Filled track */}
+        <View style={{
+          position: 'absolute', left: 0, top: 0, bottom: 0,
+          width: `${value * 100}%`,
+          backgroundColor: isWalk ? 'rgba(0,217,132,0.12)' : 'rgba(255,140,66,0.12)',
+          borderTopLeftRadius: wp(12),
+          borderBottomLeftRadius: wp(12),
+        }} />
+
+        {/* Moving indicator */}
+        <Animated.View style={{
+          position: 'absolute',
+          left: barWidth > 0 ? value * (barWidth - wp(28)) : 0,
+          top: wp(14),
+          width: wp(28),
+          height: wp(28),
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+          {isWalk
+            ? <WalkShoeAnimated shoeAnim={shoeAnim} />
+            : <RunShoeAnimated shoeAnim={shoeAnim} />
+          }
+        </Animated.View>
+      </View>
+    </View>
+  );
+};
+
+// ── Toggle Pill (Distance | Temps) ──
+const ModePill = ({ mode, onToggle, accentColor }) => (
+  <View style={{
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: wp(10),
+    padding: wp(2),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  }}>
+    {['distance', 'temps'].map((m) => (
+      <Pressable
+        key={m}
+        onPress={() => onToggle(m)}
+        style={{
+          paddingHorizontal: wp(10),
+          paddingVertical: wp(4),
+          borderRadius: wp(8),
+          backgroundColor: mode === m ? accentColor : 'transparent',
+        }}
+      >
+        <Text style={{
+          fontSize: fp(9),
+          fontWeight: '700',
+          color: mode === m ? '#000' : '#8892A0',
+          textTransform: 'capitalize',
+        }}>
+          {m}
+        </Text>
+      </Pressable>
+    ))}
+  </View>
+);
+
+// ── SportIcon — Premium SVG line icons ──
+var SportIcon = function(props) {
+  var type = props.type;
+  var size = props.size || wp(24);
+  var color = props.color || '#00D984';
+
+  switch(type) {
+    case 'marche':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M10 9h4l1 4-2 2v5" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M14 13l2 4" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M10 9l-1.5 7-2 4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </Svg>
+      );
+    case 'course':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="14" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M8 11l3-2 3 1 2-3" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M11 10l-2 5-3 3" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M14 12l1 4 3 2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </Svg>
+      );
+    case 'velo':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="6" cy="16" r="3.5" stroke={color} strokeWidth={1.6} fill="none" />
+          <Circle cx="18" cy="16" r="3.5" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M6 16l4-8h4l2 4h2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M14 8l4 8" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Circle cx="14" cy="6" r="1.2" stroke={color} strokeWidth={1.4} fill="none" />
+        </Svg>
+      );
+    case 'natation':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="8" cy="8" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M6 14l2-3 4-1 4 2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M2 17c2-2 4-2 6 0s4 2 6 0 4-2 6 0" stroke={color} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+          <Path d="M2 21c2-2 4-2 6 0s4 2 6 0 4-2 6 0" stroke={color} strokeWidth={1.2} strokeLinecap="round" fill="none" opacity={0.5} />
+        </Svg>
+      );
+    case 'musculation':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M6 7v10M18 7v10" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M3 9v6M21 9v6" stroke={color} strokeWidth={2.5} strokeLinecap="round" fill="none" />
+          <Line x1="6" y1="12" x2="18" y2="12" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+        </Svg>
+      );
+    case 'yoga':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="5" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M12 7v5" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M8 10l4 2 4-2" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M7 19l5-7 5 7" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </Svg>
+      );
+    case 'corde':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="6" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M12 8v4M10 12l-2 4M14 12l2 4" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M5 4c0 8 3 14 7 16 4-2 7-8 7-16" stroke={color} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+    case 'football':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M12 3l2.5 5.5H21M12 3L9.5 8.5H3M12 21l2.5-5.5H21M12 21L9.5 15.5H3" stroke={color} strokeWidth={1} fill="none" opacity={0.5} />
+          <Path d="M8.5 8.5l3.5 1 3.5-1M8.5 15.5l3.5-1 3.5 1M8.5 8.5v7M15.5 8.5v7" stroke={color} strokeWidth={1} fill="none" opacity={0.4} />
+        </Svg>
+      );
+    case 'basketball':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M3 12h18" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M12 3v18" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M5.5 5.5c3 2.5 3 8.5 0 13" stroke={color} strokeWidth={1.2} fill="none" />
+          <Path d="M18.5 5.5c-3 2.5-3 8.5 0 13" stroke={color} strokeWidth={1.2} fill="none" />
+        </Svg>
+      );
+    case 'danse':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="14" cy="4" r="2" stroke={color} strokeWidth={1.8} fill="none" />
+          <Path d="M14 6l-2 4-4-1" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M12 10v4l3 5" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M12 14l-3 5" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M16 7l2-2" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+    case 'tennis':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Ellipse cx="11" cy="9" rx="6" ry="7" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M5.5 6c2.5 1.5 5 5 2.5 10" stroke={color} strokeWidth={1.1} fill="none" />
+          <Path d="M16 4c-2 2.5-5 5.5-10.5 3" stroke={color} strokeWidth={1.1} fill="none" />
+          <Path d="M13 15l4.5 5.5" stroke={color} strokeWidth={2.2} strokeLinecap="round" fill="none" />
+          <Circle cx="19.5" cy="5.5" r="1.8" stroke={color} strokeWidth={1.3} fill={color} opacity={0.25} />
+        </Svg>
+      );
+    case 'boxe':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M7 8c0-2 1.5-4 4-4h1c2 0 3.5 1.5 3.5 3.5V10c0 0.5 0.5 1 1 1h0.5c1 0 2 1 2 2v1c0 2-1.5 3.5-3.5 3.5H10c-2 0-3.5-1.5-3.5-3.5L7 8z" stroke={color} strokeWidth={1.6} fill="none" />
+          <Path d="M10 7.5h4" stroke={color} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+          <Path d="M10 10h3.5" stroke={color} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+          <Path d="M9 17.5l-1.5 3" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M13 17.5l1 3" stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+        </Svg>
+      );
+
+    // === PHASE 6 : suite SportIcon ===
