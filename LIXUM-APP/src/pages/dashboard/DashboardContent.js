@@ -424,8 +424,101 @@ const DashboardContent = ({
           </View>
         )}
       </MetalCard>
+
+      {consumedTotal - burnedExtra > OBJECTIVE && (
+        <MetalCard style={{ marginHorizontal: 0, marginBottom: 12, ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }) }}>
+          <Text style={localStyles.sectionTitle}>🏃 SUGGESTION ACTIVITÉ</Text>
+          <Text style={localStyles.surplusText}>Surplus : +{consumedTotal - burnedExtra - OBJECTIVE} kcal</Text>
+          <View style={{ gap: 8, marginTop: 10 }}>
+            {suggestActivities(consumedTotal - burnedExtra - OBJECTIVE).slice(0, 2).map(function(sug, i) {
+              return (
+                <View key={i} style={localStyles.activityRow}>
+                  <Text style={{ fontSize: 16 }}>{ACTIVITY_ICONS[sug.activity] || '🏃'}</Text>
+                  <Text style={localStyles.activityText}>{sug.minutesNeeded} min {ACTIVITY_LABELS[sug.activity]}</Text>
+                  <Text style={localStyles.activityKcal}>-{sug.kcalBurned} kcal</Text>
+                </View>
+              );
+            })}
+          </View>
+        </MetalCard>
+      )}
+
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }) }} onPress={function() { if (onOpenStats) onOpenStats(); }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8), paddingRight: wp(16) }}>
+          <StatsIcon />
+          <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '700', letterSpacing: wp(1), marginLeft: wp(8) }}>MES STATS</Text>
+          <Text style={{ color: '#6B7280', fontSize: fp(10), marginLeft: wp(4) }}>(7 jours)</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8), paddingRight: wp(16) }}>
+          <LockIcon size={wp(14)} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+            <LixCoinIcon size={wp(12)} />
+            <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700', marginLeft: wp(3) }}>200 Lix</Text>
+          </View>
+          <Text style={{ color: '#6B7280', fontSize: fp(10) }}>pour débloquer</Text>
+        </View>
+      </MetalCard>
     </ScrollView>
   );
 };
 
+const TooltipOverlay = ({ tooltipStep, setTooltipStep, scrollRef }) => {
+  if (tooltipStep === 0) return null;
+  const steps = [
+    { title: 'Votre Humeur', description: 'Tapez sur ce visage chaque jour pour enregistrer votre humeur. Cela personnalise vos recettes et vos recommandations d\'activité.', icon: '😊', color: '#FF8C42' },
+    { title: 'Calories Consommées', description: 'Ce réacteur orange montre tout ce que vous avez mangé aujourd\'hui. Plus vous mangez, plus le glow s\'étend. Le satellite vert représente votre objectif.', icon: '🔥', color: '#FF8C42' },
+    { title: 'Score Vitalité', description: 'L\'ADN central calcule votre score de santé sur 100. Il combine nutrition, hydratation, activité physique et régularité. Visez au-dessus de 80 !', icon: '🧬', color: '#00D984' },
+    { title: 'Calories Restantes', description: 'Ce réacteur bleu montre combien vous pouvez encore manger. Le sport augmente ce nombre — c\'est votre bonus activité !', icon: '💪', color: '#4DA6FF' },
+  ];
+  const currentStep = steps[tooltipStep - 1];
+  if (!currentStep) return null;
+  const isLast = tooltipStep === steps.length;
+
+  return (
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)' }} />
+      <View style={{ position: 'absolute', bottom: wp(90), left: wp(16), right: wp(16), backgroundColor: '#1E2530', borderRadius: wp(18), padding: wp(18), borderWidth: 1.5, borderColor: currentStep.color + '40', shadowColor: currentStep.color, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 15, elevation: 10, zIndex: 10000 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: wp(10), gap: wp(5) }}>
+          {steps.map(function(_, i) {
+            return (
+              <View key={i} style={{ width: i + 1 === tooltipStep ? wp(18) : wp(6), height: wp(5), borderRadius: wp(3), backgroundColor: i + 1 === tooltipStep ? currentStep.color : 'rgba(255,255,255,0.15)' }} />
+            );
+          })}
+        </View>
+        <Text style={{ color: currentStep.color, fontSize: fp(9), fontWeight: '700', letterSpacing: 2, textAlign: 'center', marginBottom: wp(5) }}>{tooltipStep} / {steps.length}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: wp(6) }}>
+          <Text style={{ fontSize: fp(20), marginRight: wp(6) }}>{currentStep.icon}</Text>
+          <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800' }}>{currentStep.title}</Text>
+        </View>
+        <Text style={{ color: '#8892A0', fontSize: fp(12), lineHeight: fp(18), textAlign: 'center', marginBottom: wp(14) }}>{currentStep.description}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <TouchableOpacity onPress={function() { setTooltipStep(0); }}>
+            <Text style={{ color: '#8892A0', fontSize: fp(12), fontWeight: '500' }}>Passer</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={function() {
+            if (isLast) { setTooltipStep(0); }
+            else { setTooltipStep(tooltipStep + 1); scrollRef.current?.scrollTo({ y: 0, animated: true }); }
+          }} style={{ backgroundColor: currentStep.color, borderRadius: wp(10), paddingHorizontal: wp(18), paddingVertical: wp(8) }}>
+            <Text style={{ color: '#0D1117', fontSize: fp(13), fontWeight: '800' }}>{isLast ? 'Commencer !' : 'Suivant →'}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const localStyles = StyleSheet.create({
+  sectionTitle: {
+    color: '#EAEEF3', fontSize: 15, fontWeight: '700',
+    letterSpacing: 0.5, marginBottom: 8,
+  },
+  surplusText: { color: '#FF6B4A', fontSize: 14, fontWeight: '700' },
+  activityRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+  },
+  activityText: { flex: 1, color: '#C0C8D4', fontSize: 13 },
+  activityKcal: { color: '#00D984', fontSize: 13, fontWeight: '700' },
+});
+
 export default DashboardContent;
+export { TooltipOverlay };
