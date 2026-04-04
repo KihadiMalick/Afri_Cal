@@ -161,6 +161,91 @@ export default function CartScanScreen({ visible, onClose }) {
     });
   };
 
+  const loadRecentStores = async () => {
+    try {
+      const userId = '00000000-0000-0000-0000-000000000001';
+      const response = await fetch(
+        SUPABASE_URL + '/functions/v1/analyze-cart',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            action: 'search_stores',
+            user_id: userId,
+          }),
+        }
+      );
+      const result = await response.json();
+      setRecentStores(result.recent || []);
+    } catch (e) {
+      console.error('Load stores error:', e);
+    }
+  };
+
+  const searchStoresApi = async (query) => {
+    if (query.length < 2) {
+      setStoreResults([]);
+      return;
+    }
+    try {
+      const userId = '00000000-0000-0000-0000-000000000001';
+      const response = await fetch(
+        SUPABASE_URL + '/functions/v1/analyze-cart',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            action: 'search_stores',
+            user_id: userId,
+            query: query,
+          }),
+        }
+      );
+      const result = await response.json();
+      setStoreResults(result.stores || []);
+    } catch (e) {
+      console.error('Search stores error:', e);
+    }
+  };
+
+  const generateCartReport = async () => {
+    if (cartProducts.length === 0 || generatingReport) return;
+    setGeneratingReport(true);
+
+    try {
+      const userId = '00000000-0000-0000-0000-000000000001';
+      const response = await fetch(
+        SUPABASE_URL + '/functions/v1/analyze-cart',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            action: 'generate_report',
+            user_id: userId,
+            cart_products: cartProducts,
+            store_name: storeName || 'Non spécifié',
+          }),
+        }
+      );
+      const result = await response.json();
+      setCartReport(result);
+      setShowStoreInput(false);
+      setShowCartReport(true);
+    } catch (e) {
+      console.error('Generate report error:', e);
+    }
+    setGeneratingReport(false);
+  };
+
   // === JSX (phases suivantes) ===
 
   if (!visible) return null;
