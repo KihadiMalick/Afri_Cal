@@ -301,8 +301,104 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved }) {
     }
   };
 
-  // === JSX (phases suivantes) ===
+  // === JSX ===
 
   if (!visible) return null;
-  return null;
+  return (
+    <View style={{
+      position: 'absolute',
+      top: 0, left: 0, right: 0, bottom: 0,
+      zIndex: 2000,
+      backgroundColor: '#0D1117',
+    }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
+        {/* Header */}
+        <View style={{
+          flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+          paddingTop: Platform.OS === 'android' ? 50 : 60,
+          paddingHorizontal: wp(16), paddingBottom: wp(10),
+          borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.05)',
+        }}>
+          <Pressable onPress={closeManualEntry}>
+            <Text style={{ color: '#8892A0', fontSize: fp(14) }}>✕ Fermer</Text>
+          </Pressable>
+          <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800' }}>
+            AJOUTER UN REPAS
+          </Text>
+          <View style={{ width: 60 }} />
+        </View>
+
+        {/* ONGLETS — Plats / Ingrédients */}
+        <View style={{
+          flexDirection: 'row',
+          marginHorizontal: wp(16),
+          marginTop: wp(12),
+          marginBottom: wp(12),
+          borderRadius: 14,
+          backgroundColor: 'rgba(255,255,255,0.03)',
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.05)',
+          overflow: 'hidden',
+        }}>
+          {/* Onglet Plats — gratuit */}
+          <Pressable
+            onPress={() => setManualTab('meals')}
+            style={{
+              flex: 1,
+              paddingVertical: wp(12),
+              alignItems: 'center',
+              backgroundColor: manualTab === 'meals' ? 'rgba(0,217,132,0.12)' : 'transparent',
+              borderRightWidth: 0.5,
+              borderRightColor: 'rgba(255,255,255,0.05)',
+            }}
+          >
+            <Text style={{ fontSize: 18, marginBottom: 3 }}>🍽️</Text>
+            <Text style={{
+              color: manualTab === 'meals' ? '#00D984' : '#8892A0',
+              fontSize: fp(11),
+              fontWeight: manualTab === 'meals' ? '800' : '600',
+            }}>Plats</Text>
+            <Text style={{ color: '#00D984', fontSize: fp(7), fontWeight: '600', marginTop: 2 }}>GRATUIT</Text>
+          </Pressable>
+
+          {/* Onglet Ingrédients — verrouillé */}
+          <Pressable
+            onPress={() => setManualTab('ingredients')}
+            style={{
+              flex: 1,
+              paddingVertical: wp(12),
+              alignItems: 'center',
+              backgroundColor: manualTab === 'ingredients' ? 'rgba(212,175,55,0.10)' : 'transparent',
+            }}
+          >
+            <Text style={{ fontSize: 18, marginBottom: 3 }}>🧪</Text>
+            <Text style={{
+              color: manualTab === 'ingredients' ? '#D4AF37' : '#8892A0',
+              fontSize: fp(11),
+              fontWeight: manualTab === 'ingredients' ? '800' : '600',
+            }}>Ingrédients</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+              <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '600' }}>50 Lix</Text>
+              <Text style={{ color: '#5A6070', fontSize: fp(7), marginHorizontal: 3 }}>ou</Text>
+              <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '600' }}>★ PRO</Text>
+            </View>
+          </Pressable>
+        </View>
+
+        <ScrollView
+          ref={manualScrollRef}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: wp(200) }}
+        >
+          {/* === PHASE 8 : Onglet Plats JSX === */}
+          {/* === PHASE 9 : Onglet Ingrédients + Save JSX === */}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
+  );
 }
