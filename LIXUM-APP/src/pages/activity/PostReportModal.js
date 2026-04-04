@@ -345,7 +345,60 @@ export default function PostReportModal({
               </View>
             )}
 
-            {/* === PHASE 4 === */}
+            {/* Équivalent alimentaire */}
+            {(function() {
+              var equiv = getFoodEquivalent(lastActivity.kcal);
+              if (!equiv) return null;
+              return (
+                <View style={{
+                  backgroundColor: 'rgba(255,140,66,0.08)', borderRadius: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)',
+                  padding: wp(10), width: '100%',
+                  flexDirection: 'row', alignItems: 'center',
+                  marginBottom: wp(14),
+                }}>
+                  {equiv.type === 'combo' ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: wp(6) }}>
+                      <Text style={{ fontSize: fp(22) }}>{equiv.item1.emoji}</Text>
+                      <Text style={{ fontSize: fp(14), color: '#FF8C42', fontWeight: '700' }}>+</Text>
+                      <Text style={{ fontSize: fp(22) }}>{equiv.item2.emoji}</Text>
+                      <Text style={{ fontSize: fp(10), color: '#D1D5DB', flex: 1, marginLeft: wp(6) }}>
+                        {'\u2248 1 ' + equiv.item1.label + ' + 1 ' + equiv.item2.label + ' brûlé'}
+                      </Text>
+                    </View>
+                  ) : equiv.type === 'single' ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: wp(8) }}>
+                      <Text style={{ fontSize: fp(22) }}>{equiv.item.emoji}</Text>
+                      <Text style={{ fontSize: fp(10), color: '#D1D5DB', flex: 1 }}>
+                        {'Équivalent de ' + equiv.count + ' ' + equiv.item.label + ' brûlé'}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })()}
+
+            {/* Objectif OMS */}
+            <Text style={{
+              fontSize: fp(9), color: '#6B7280', textAlign: 'center',
+              marginBottom: wp(14),
+            }}>
+              {t.weekOms} : {weeklyMinutes || 0} / 150 min
+              {(weeklyMinutes || 0) >= 150 ? ' ' + String.fromCodePoint(0x2705) : ' · ' + t.still + ' ' + (150 - (weeklyMinutes || 0)) + ' min'}
+            </Text>
+
+            {/* Bouton fermer */}
+            <TouchableOpacity
+              onPress={onClose}
+              style={{
+                paddingVertical: wp(12), paddingHorizontal: wp(40),
+                borderRadius: wp(12), backgroundColor: '#00D984',
+              }}
+            >
+              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#1A1D22' }}>
+                {t.continueBtn} {String.fromCodePoint(0x1F4AA)}
+              </Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </View>
