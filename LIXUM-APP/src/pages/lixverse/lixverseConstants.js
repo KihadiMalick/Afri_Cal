@@ -240,3 +240,81 @@ const NAV_TABS = [
   { key: 'activity', label: 'Activité', iconDefault: 'fitness-outline', iconActive: 'fitness' },
   { key: 'lixverse', label: 'LixVerse', isSpecial: true, isLixVerse: true },
 ];
+
+const getCharImage = (slug) => CHARACTER_IMAGES[slug] || { img: null, emoji: '🃏' };
+
+const randomSlugFromTier = (tier) => {
+  const slugs = SLUGS_BY_TIER[tier];
+  if (!slugs || slugs.length === 0) return null;
+  return slugs[Math.floor(Math.random() * slugs.length)];
+};
+
+const getSegmentAngles = (segments) => {
+  const total = segments.reduce((sum, s) => sum + s.chance, 0);
+  let currentAngle = 0;
+  return segments.map(seg => {
+    const sweepAngle = (seg.chance / total) * 360;
+    const startAngle = currentAngle;
+    currentAngle += sweepAngle;
+    return { ...seg, startAngle, sweepAngle };
+  });
+};
+
+const describeArc = (cx, cy, radius, startAngle, endAngle) => {
+  const startRad = (startAngle - 90) * Math.PI / 180;
+  const endRad = (endAngle - 90) * Math.PI / 180;
+  const x1 = cx + radius * Math.cos(startRad);
+  const y1 = cy + radius * Math.sin(startRad);
+  const x2 = cx + radius * Math.cos(endRad);
+  const y2 = cy + radius * Math.sin(endRad);
+  const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
+  return 'M ' + cx + ' ' + cy + ' L ' + x1 + ' ' + y1 + ' A ' + radius + ' ' + radius + ' 0 ' + largeArc + ' 1 ' + x2 + ' ' + y2 + ' Z';
+};
+
+const getSegmentRewardType = (seg) => seg.reward.type || 'energy';
+
+const getSegmentTypeLabel = (seg) => {
+  if (seg.subLabel) return seg.subLabel;
+  if (seg.reward.type === 'energy') return 'énergie';
+  if (seg.reward.type === 'lix') return 'Lix';
+  if (seg.reward.type === 'card') return 'Carte';
+  if (seg.reward.type === 'scan') return 'scan';
+  if (seg.reward.type === 'free_spin') return 'spin';
+  if (seg.reward.type === 'fragment') {
+    if (seg.reward.tier === 'mythique') return 'Frag Myth';
+    if (seg.reward.tier === 'elite') return 'Frag Elite';
+    if (seg.reward.tier === 'standard') return 'Frag Std';
+    return 'Frag Rare';
+  }
+  return '';
+};
+
+export {
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  TEST_USER_ID,
+  HEADERS,
+  POST_HEADERS,
+  ALL_CHARACTERS,
+  LIXSIGNS,
+  WORLD_DOTS,
+  BINOME_LEADERBOARD,
+  TIER_CONFIG,
+  NORMAL_SEGMENTS,
+  SUPER_SEGMENTS,
+  MEGA_SEGMENTS,
+  SLUGS_BY_TIER,
+  CHAR_EMOJIS,
+  CHAR_NAMES,
+  FRAGS_NIV1,
+  TIER_COLORS,
+  CHARACTER_IMAGES,
+  SEGMENT_GRADIENTS,
+  NAV_TABS,
+  getCharImage,
+  randomSlugFromTier,
+  getSegmentAngles,
+  describeArc,
+  getSegmentRewardType,
+  getSegmentTypeLabel,
+};
