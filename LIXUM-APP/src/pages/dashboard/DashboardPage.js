@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StatusBar, Platform, Modal,
+  View, Text, StatusBar, Platform, Modal, RefreshControl,
   Animated as RNAnimated, TouchableOpacity, Image, Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -81,6 +81,20 @@ export default function DashboardPage({ navigation }) {
   var beverageToastTimerRef = useRef(null);
   var _lixAlert = useState({ visible: false, missing: 0, type: '' });
   var lixAlert = _lixAlert[0]; var setLixAlert = _lixAlert[1];
+  var _refreshing = useState(false);
+  var refreshing = _refreshing[0]; var setRefreshing = _refreshing[1];
+
+  var onRefresh = async function() {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        loadDashboardFromSupabase(),
+        loadPagePowers(),
+        fetchDailyHydration().then(setHydrationData),
+      ]);
+    } catch(err) { console.warn('onRefresh error:', err); }
+    setRefreshing(false);
+  };
   const [activeChar, setActiveChar] = useState(null);
   const [pagePowers, setPagePowers] = useState([]);
   const [toggleStates, setToggleStates] = useState({});
@@ -342,6 +356,7 @@ export default function DashboardPage({ navigation }) {
           activeChar={activeChar} pagePowers={pagePowers}
           toggleStates={toggleStates} setToggleStates={setToggleStates}
           consumePower={consumePower} userName={userName}
+          refreshing={refreshing} onRefresh={onRefresh}
           onAvatarPress={function() {}}
           onNavigate={function(tab) {
             var routes = { meals: 'Repas', activity: 'Activite', medicai: 'MedicAi', lixverse: 'LixVerse' };
@@ -600,7 +615,12 @@ function DashboardHeader({ moodFilled, currentMood, lixCount, onMoodPress, onLix
             </TouchableOpacity>
             <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(74,79,85,0.4)', marginVertical: 4 }} />
             <TouchableOpacity onPress={function() { toggleDropdown(); if (onProfilePress) onProfilePress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
-              <Text style={{ fontSize: 14 }}>👤</Text>
+              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#252A30', borderWidth: 1.5, borderColor: '#00D984', justifyContent: 'center', alignItems: 'center' }}>
+                <Svg width={14} height={14} viewBox="0 0 24 24">
+                  <Path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z" fill="#8892A0" />
+                </Svg>
+                <View style={{ position: 'absolute', bottom: -1, right: -1, width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#00D984', borderWidth: 1.5, borderColor: '#252A30' }} />
+              </View>
               <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '600', marginLeft: 6, flex: 1 }}>Mon Profil</Text>
               <Text style={{ color: '#6B7280', fontSize: 12 }}>→</Text>
             </TouchableOpacity>

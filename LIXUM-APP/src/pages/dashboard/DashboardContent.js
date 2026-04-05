@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, Pressable,
+  View, Text, ScrollView, TouchableOpacity, Pressable, RefreshControl,
   Animated as RNAnimated, Image, Platform, Easing, StyleSheet,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,6 +23,7 @@ const DashboardContent = ({
   vitalityScore, activeChar, pagePowers,
   toggleStates, setToggleStates, consumePower,
   userName, onAvatarPress, onNavigate, showToast, onOpenStats,
+  refreshing, onRefresh,
 }) => {
   const OBJECTIVE = dailyTarget || DAILY_OBJECTIVE;
   const [showInfoLeft, setShowInfoLeft] = useState(false);
@@ -52,7 +53,16 @@ const DashboardContent = ({
     <ScrollView ref={scrollRef} style={{ flex: 1 }}
       contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(15), paddingTop: wp(8) }}
       showsVerticalScrollIndicator={false}
-      onScrollBeginDrag={function() { setShowInfoLeft(false); setShowInfoRight(false); }}>
+      onScrollBeginDrag={function() { setShowInfoLeft(false); setShowInfoRight(false); }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing || false}
+          onRefresh={onRefresh}
+          tintColor="#00D984"
+          colors={['#00D984']}
+          progressBackgroundColor="#1E2530"
+        />
+      }>
 
       <View style={{ marginBottom: wp(6), opacity: tooltipStep > 0 ? 0.05 : 1 }}>
         <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#EAEEF3' }}>
