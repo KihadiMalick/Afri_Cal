@@ -66,7 +66,7 @@ const SectionTitle = ({ title, rightAction, rightLabel }) => (
   </View>
 );
 
-export default function RepasPage({ onNavigate }) {
+export default function RepasPage({ navigation }) {
   var _lc = useLang(); var lang = _lc.lang;
   var auth = useAuth(); var userId = auth.userId;
 
@@ -383,10 +383,8 @@ export default function RepasPage({ onNavigate }) {
 
   const handleTabPress = (key) => {
     if (key === 'meals') return;
-    if (onNavigate) {
-      onNavigate(key);
-    }
-    setActiveTab(key);
+    const routes = { home: 'Accueil', meals: 'Repas', medicai: 'MedicAi', activity: 'Activite', lixverse: 'LixVerse' };
+    if (routes[key] && navigation) navigation.navigate(routes[key]);
   };
 
   const activateScan = () => {
@@ -508,7 +506,7 @@ export default function RepasPage({ onNavigate }) {
                 opacity: dropdownAnim,
                 transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
               }}>
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+                <TouchableOpacity onPress={() => { toggleDropdown(); if (navigation) navigation.navigate('LixVerse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
                   <Svg width={14} height={14} viewBox="0 0 24 24">
                     <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
                     <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
@@ -516,7 +514,7 @@ export default function RepasPage({ onNavigate }) {
                   <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixBalance}</Text>
                   <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+                <TouchableOpacity onPress={() => { toggleDropdown(); if (navigation) navigation.navigate('LixVerse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
                   <Svg width={14} height={14} viewBox="0 0 24 24">
                     <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
                   </Svg>
@@ -524,7 +522,7 @@ export default function RepasPage({ onNavigate }) {
                   <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>énergie</Text>
                 </TouchableOpacity>
                 <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+                <TouchableOpacity onPress={() => { toggleDropdown(); if (navigation) navigation.navigate('Profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
                   <Text style={{ fontSize: 18 }}>{(activeCharAvatar || activeChar)?.slug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[(activeCharAvatar || activeChar).slug] || '👤' : '👤'}</Text>
                   <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>Mon Profil</Text>
                   <Text style={{ color: '#888', fontSize: 14 }}>→</Text>
@@ -1192,7 +1190,7 @@ export default function RepasPage({ onNavigate }) {
           userWeather={userWeather}
           lixBalance={lixBalance}
           setLixBalance={setLixBalance}
-          onNavigate={onNavigate}
+          onNavigate={function(key) { var routes = { home: 'Accueil', meals: 'Repas', medicai: 'MedicAi', activity: 'Activite', lixverse: 'LixVerse', profile: 'Profile' }; if (routes[key] && navigation) navigation.navigate(routes[key]); }}
           onOpenCooking={(recipe) => { setCookingRecipe(recipe); setShowCookingMode(true); }}
         />
         <CookingModeScreen

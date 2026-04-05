@@ -29,11 +29,12 @@ export const BottomTabs = ({ activeTab, onTabPress }) => (
   <View
     style={{
       flexDirection: 'row',
-      backgroundColor: '#141A22',
+      backgroundColor: '#1E2530',
       borderTopWidth: 1,
       borderTopColor: 'rgba(74,79,85,0.5)',
-      paddingTop: wp(10),
-      paddingBottom: Platform.OS === 'android' ? 50 : 34,
+      paddingTop: 8,
+      paddingBottom: Platform.OS === 'android' ? 12 : 28,
+      height: Platform.OS === 'android' ? 62 : 80,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: -4 },
       shadowOpacity: 0.3,
@@ -46,13 +47,13 @@ export const BottomTabs = ({ activeTab, onTabPress }) => (
       return (
         <TouchableOpacity
           key={tab.key}
-          style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: wp(4) }}
+          style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 }}
           onPress={() => onTabPress(tab.key)}
           activeOpacity={0.7}
         >
           <View style={{ position: 'relative' }}>
             {tab.isMedicAi ? (
-              <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24">
+              <Svg width={24} height={24} viewBox="0 0 24 24">
                 <Defs>
                   <SvgLinearGradient id="medicGrad" x1="0.5" y1="0" x2="0.5" y2="1">
                     <Stop offset="0%" stopColor="#FF6B8A" />
@@ -65,7 +66,7 @@ export const BottomTabs = ({ activeTab, onTabPress }) => (
                   fill="white" opacity={0.7} />
               </Svg>
             ) : tab.isLixVerse ? (
-              <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24">
+              <Svg width={24} height={24} viewBox="0 0 24 24">
                 <Circle cx="12" cy="12" r="10" fill="none" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={1.2} opacity={active ? 0.9 : 0.5} />
                 <Ellipse cx="12" cy="12" rx="4" ry="10" fill="none" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.8} opacity={active ? 0.6 : 0.3} />
                 <Ellipse cx="12" cy="12" rx="7.5" ry="10" fill="none" stroke={active ? "#00D984" : "#6B7B8D"} strokeWidth={0.6} opacity={active ? 0.4 : 0.2} />
@@ -97,7 +98,7 @@ export const BottomTabs = ({ activeTab, onTabPress }) => (
             ) : (
               <Ionicons
                 name={active ? tab.iconActive : tab.iconInactive}
-                size={wp(22)}
+                size={24}
                 color={active ? '#00D984' : '#6B7B8D'}
               />
             )}
@@ -112,7 +113,7 @@ export const BottomTabs = ({ activeTab, onTabPress }) => (
             )}
           </View>
           <Text style={[
-            { color: '#6B7B8D', fontSize: fp(9), fontWeight: '600', letterSpacing: wp(0.3), marginTop: -2 },
+            { color: '#6B7B8D', fontSize: 10, fontWeight: '600', letterSpacing: 0.3, marginTop: 2 },
             active && (tab.isMedicAi ? { color: '#FF3B5C' } : { color: '#00D984' }),
             tab.isMedicAi && !active && { color: '#8892A0' },
             tab.isLixVerse && !active && { color: '#6B7B8D' },
