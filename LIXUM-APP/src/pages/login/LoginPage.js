@@ -7,41 +7,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Polygon, Line, Circle as SvgCircle, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../config/supabase';
+import TechBackground from '../../components/shared/TechBackground';
+import { GRADIENTS } from '../../constants/colors';
 import { W, H, C, SUPABASE_URL, SUPABASE_ANON_KEY, texts } from './loginConstants';
 
-function GeometricBackground() {
-  var w = W; var h = H;
-  return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-      <LinearGradient colors={['#1E2530', '#222A35', '#1A2029', '#222A35', '#1E2530']} locations={[0, 0.25, 0.5, 0.75, 1]} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
-      <Svg width={w} height={h} style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
-        <Polygon points={'0,0 ' + (w * 0.6) + ',0 ' + (w * 0.3) + ',' + (h * 0.35)} fill="rgba(0,217,132,0.02)" stroke="rgba(0,217,132,0.04)" strokeWidth="0.5" />
-        <Polygon points={w + ',0 ' + w + ',' + (h * 0.4) + ' ' + (w * 0.5) + ',' + (h * 0.15)} fill="rgba(0,191,166,0.02)" stroke="rgba(0,191,166,0.03)" strokeWidth="0.5" />
-        <Polygon points={'0,' + (h * 0.6) + ' ' + (w * 0.4) + ',' + (h * 0.45) + ' ' + (w * 0.2) + ',' + h} fill="rgba(0,217,132,0.015)" stroke="rgba(0,217,132,0.03)" strokeWidth="0.5" />
-        <Polygon points={w + ',' + (h * 0.5) + ' ' + (w * 0.6) + ',' + h + ' ' + w + ',' + h} fill="rgba(0,191,166,0.015)" stroke="rgba(0,191,166,0.03)" strokeWidth="0.5" />
-        <Polygon points={(w * 0.1) + ',' + (h * 0.2) + ' ' + (w * 0.35) + ',' + (h * 0.1) + ' ' + (w * 0.25) + ',' + (h * 0.35)} fill="rgba(0,217,132,0.025)" stroke="rgba(0,217,132,0.05)" strokeWidth="0.8" />
-        <Polygon points={(w * 0.65) + ',' + (h * 0.25) + ' ' + (w * 0.9) + ',' + (h * 0.15) + ' ' + (w * 0.8) + ',' + (h * 0.4)} fill="rgba(0,191,166,0.02)" stroke="rgba(0,191,166,0.04)" strokeWidth="0.8" />
-        <Polygon points={(w * 0.3) + ',' + (h * 0.65) + ' ' + (w * 0.55) + ',' + (h * 0.55) + ' ' + (w * 0.45) + ',' + (h * 0.8)} fill="rgba(0,217,132,0.02)" stroke="rgba(0,217,132,0.04)" strokeWidth="0.8" />
-        <Polygon points={(w * 0.7) + ',' + (h * 0.6) + ' ' + (w * 0.95) + ',' + (h * 0.7) + ' ' + (w * 0.85) + ',' + (h * 0.85)} fill="rgba(212,175,55,0.012)" stroke="rgba(212,175,55,0.025)" strokeWidth="0.5" />
-        <Polygon points={(w * 0.5) + ',' + (h * 0.05) + ' ' + (w * 0.55) + ',' + (h * 0.02) + ' ' + (w * 0.53) + ',' + (h * 0.08)} fill="rgba(0,217,132,0.04)" />
-        <Polygon points={(w * 0.15) + ',' + (h * 0.5) + ' ' + (w * 0.2) + ',' + (h * 0.47) + ' ' + (w * 0.18) + ',' + (h * 0.53)} fill="rgba(0,191,166,0.04)" />
-        <Polygon points={(w * 0.85) + ',' + (h * 0.9) + ' ' + (w * 0.9) + ',' + (h * 0.87) + ' ' + (w * 0.88) + ',' + (h * 0.93)} fill="rgba(0,217,132,0.03)" />
-        <Line x1={w * 0.3} y1={h * 0.35} x2={w * 0.5} y2={h * 0.15} stroke="rgba(0,217,132,0.04)" strokeWidth="0.5" />
-        <Line x1={w * 0.8} y1={h * 0.4} x2={w * 0.6} y2={h * 0.55} stroke="rgba(0,191,166,0.03)" strokeWidth="0.5" />
-        <Line x1={w * 0.2} y1={h * 0.7} x2={w * 0.45} y2={h * 0.8} stroke="rgba(0,217,132,0.03)" strokeWidth="0.5" />
-        <SvgCircle cx={w * 0.3} cy={h * 0.35} r="2" fill="rgba(0,217,132,0.08)" />
-        <SvgCircle cx={w * 0.5} cy={h * 0.15} r="2" fill="rgba(0,217,132,0.08)" />
-        <SvgCircle cx={w * 0.8} cy={h * 0.4} r="1.5" fill="rgba(0,191,166,0.06)" />
-        <SvgCircle cx={w * 0.25} cy={h * 0.35} r="1.5" fill="rgba(0,217,132,0.06)" />
-        <SvgCircle cx={w * 0.6} cy={h * 0.55} r="2" fill="rgba(0,191,166,0.07)" />
-        <SvgCircle cx={w * 0.45} cy={h * 0.8} r="1.5" fill="rgba(0,217,132,0.05)" />
-      </Svg>
-    </View>
-  );
-}
 
 function GoogleIcon(props) {
   var size = props.size || 18;
@@ -158,7 +130,8 @@ export default function LoginPage({ navigation }) {
     <View style={{ flex: 1, backgroundColor: '#1E2530' }}>
       <StatusBar barStyle="light-content" backgroundColor="#1E2530" />
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom', 'left', 'right']}>
-        <GeometricBackground />
+        <LinearGradient colors={GRADIENTS.background} locations={[0, 0.25, 0.5, 0.75, 1]} style={{ flex: 1 }}>
+        <TechBackground />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, justifyContent: 'center' }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
@@ -257,6 +230,7 @@ export default function LoginPage({ navigation }) {
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
+        </LinearGradient>
 
         <Modal visible={lixAlert.visible} transparent animationType="fade" onRequestClose={hideLixAlert}>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }}>
