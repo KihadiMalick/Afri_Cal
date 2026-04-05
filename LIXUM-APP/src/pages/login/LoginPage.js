@@ -55,7 +55,7 @@ function GoogleIcon(props) {
 }
 
 var LogoImg = null;
-try { LogoImg = require('../../../assets/logo-lx.png'); } catch (e) { LogoImg = null; }
+try { LogoImg = require('../../../assets/images/logo-lx.png'); } catch (e) { LogoImg = null; }
 
 export default function LoginPage({ navigation }) {
   var _lang = useState('fr'), lang = _lang[0], setLang = _lang[1];

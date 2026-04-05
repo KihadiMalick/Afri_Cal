@@ -2585,7 +2585,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {selectedMessage.role === 'assistant' ? (
                   <>
-                    <Image source={require('../../../assets/lixman-avatar.png')}
+                    <Image source={require('../../../assets/images/lixman-avatar.png')}
                       style={{ width: 22, height: 22, borderRadius: 11, marginRight: 8, borderWidth: 1, borderColor: '#D06060' }}
                       resizeMode="cover" />
                     <Text style={{ color: '#D06060', fontSize: 12, fontWeight: 'bold' }}>ALIXEN</Text>
@@ -2748,7 +2748,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             {/* Avatar ALIXEN */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
               <Image
-                source={require('../../../assets/lixman-avatar.png')}
+                source={require('../../../assets/images/lixman-avatar.png')}
                 style={{ width: 30, height: 30, borderRadius: 15, marginRight: 10, borderWidth: 1, borderColor: '#00D984' }}
                 resizeMode="cover"
               />

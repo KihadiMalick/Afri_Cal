@@ -14,11 +14,11 @@ var CHAR_CARD_W = W - 60;
 var CHAR_CARD_H = 420;
 
 var emeraldOwlImg = null;
-try { emeraldOwlImg = require('../../../../assets/emerald_owl.webp'); } catch(e) {}
+try { emeraldOwlImg = require('../../../../assets/images/emerald_owl.webp'); } catch(e) {}
 var mosquitoImg = null;
-try { mosquitoImg = require('../../../../assets/mosquito.webp'); } catch(e) {}
+try { mosquitoImg = require('../../../../assets/images/mosquito.webp'); } catch(e) {}
 var diamondSimbaImg = null;
-try { diamondSimbaImg = require('../../../../assets/diamond_simba.webp'); } catch(e) {}
+try { diamondSimbaImg = require('../../../../assets/images/diamond_simba.webp'); } catch(e) {}
 
 function CharacterCard(props) {
   var char = props.character, isTop = props.isTop, onSwipe = props.onSwipe;
