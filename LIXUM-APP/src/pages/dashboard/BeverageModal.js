@@ -13,8 +13,7 @@ import {
   pad2, formatNumberFR,
 } from './dashboardConstants';
 import { DropletIcon } from './dashboardIcons';
-
-const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
+import { useAuth } from '../../config/AuthContext';
 
 const BeverageModal = ({
   visible,
@@ -22,6 +21,7 @@ const BeverageModal = ({
   onBeverageAdded,
   initialCategory,
 }) => {
+  var auth = useAuth(); var userId = auth.userId;
   const [beverageCategory, setBeverageCategory] = useState(initialCategory || 'all');
   const [beverageList, setBeverageList] = useState([]);
   const [beverageSearch, setBeverageSearch] = useState('');
@@ -113,7 +113,7 @@ const BeverageModal = ({
 
     try {
       const { error } = await supabase.rpc('add_beverage_log', {
-        p_user_id: TEST_USER_ID,
+        p_user_id: userId,
         p_beverage_name: bevName,
         p_amount_ml: beverageVolume,
         p_hydration_coeff: bevCoeff,

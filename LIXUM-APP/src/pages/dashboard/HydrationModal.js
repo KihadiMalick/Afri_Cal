@@ -10,8 +10,7 @@ import { supabase } from '../../config/supabase';
 import { wp, fp, JOURS_COURTS, pad2, formatTimeFR, formatNumberFR } from './dashboardConstants';
 import { LixGem } from './dashboardIcons';
 import { SilhouetteFill, HydrationClock } from './dashboardComponents';
-
-const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
+import { useAuth } from '../../config/AuthContext';
 
 const HydrationModal = ({
   visible, onClose,
@@ -30,6 +29,7 @@ const HydrationModal = ({
   historyUnlockedUntil, isUnlockedByLix, hasActivePower,
   selectedDayLogs, fetchDayHydrationLogs,
 }) => {
+  var auth = useAuth(); var userId = auth.userId;
   const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
   const glasses = Math.round(currentMl / 250);
   const totalGlasses = Math.round(goalMl / 250);
@@ -54,7 +54,7 @@ const HydrationModal = ({
       Vibration.vibrate(30);
     } catch(e) {}
     supabase.rpc('add_beverage_log', {
-      p_user_id: TEST_USER_ID,
+      p_user_id: userId,
       p_beverage_name: 'eau',
       p_amount_ml: ml,
       p_hydration_coeff: 1.0,
@@ -83,7 +83,7 @@ const HydrationModal = ({
       Vibration.vibrate(15);
     } catch(e) {}
     supabase.rpc('get_daily_hydration', {
-      p_user_id: TEST_USER_ID,
+      p_user_id: userId,
       p_date: new Date().toISOString().split('T')[0],
     }).then(function() {}).catch(function() {});
   };

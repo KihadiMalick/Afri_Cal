@@ -8,8 +8,7 @@ import Svg, { Path } from 'react-native-svg';
 import { supabase } from '../../config/supabase';
 import { W, H, wp, fp } from './dashboardConstants';
 import { MoodIcon } from './dashboardIcons';
-
-const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
+import { useAuth } from '../../config/AuthContext';
 
 const FloatingHeart = ({ heart, tubeCenter }) => {
   const anim = useRef(new RNAnimated.Value(0)).current;
@@ -66,6 +65,7 @@ const EnergyParticle = ({ x, y, emoji }) => {
 };
 
 const MoodModal = ({ visible, onClose, onMoodSaved }) => {
+  var auth = useAuth(); var userId = auth.userId;
   const [moodLevel, setMoodLevel] = useState(0);
   const [lockedAtChill, setLockedAtChill] = useState(false);
   const [hearts, setHearts] = useState([]);
@@ -381,13 +381,13 @@ const MoodModal = ({ visible, onClose, onMoodSaved }) => {
                       onPress={async function() {
                         try {
                           await supabase.from('moods').insert({
-                            user_id: TEST_USER_ID, mood_level: moodResult,
+                            user_id: userId, mood_level: moodResult,
                             weather: selectedWeather, tap_count: tapCount,
                             max_gauge_percent: Math.round(moodLevel),
                           });
                           await supabase.from('users_profile').update({
                             current_mood: moodResult, current_weather: selectedWeather,
-                          }).eq('user_id', TEST_USER_ID);
+                          }).eq('user_id', userId);
                         } catch (e) {
                           console.warn('Mood save error:', e);
                         }
