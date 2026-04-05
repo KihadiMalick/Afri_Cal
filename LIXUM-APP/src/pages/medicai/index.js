@@ -69,7 +69,7 @@ export default function MedicAiPage() {
 
   const toggleDropdown = () => {
     const toValue = dropdownOpen ? 0 : 1;
-    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: false }).start();
+    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: true }).start();
     setDropdownOpen(!dropdownOpen);
   };
 
@@ -398,7 +398,7 @@ export default function MedicAiPage() {
           'Session pleine',
           'Vous avez atteint la limite de 30 échanges par session.\n\nCompactez cette conversation pour la ranger dans votre Secret Pocket et démarrer une nouvelle session.',
           [
-            { text: 'Compacter et ranger', onPress: () => console.log('Compactage vers Secret Pocket') },
+            { text: 'Compacter et ranger', onPress: () => {} },
             { text: 'Annuler', style: 'cancel' },
           ]
         );
@@ -652,7 +652,6 @@ export default function MedicAiPage() {
           setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
         }
       } catch (e) {
-        console.log('Geolocation error:', e);
       }
     })();
   }, []);
@@ -700,7 +699,6 @@ export default function MedicAiPage() {
           }, 2000);
         }
       } catch (e) {
-        console.log('Wow check error:', e);
       }
     }
     checkWowEvents();
@@ -777,7 +775,6 @@ export default function MedicAiPage() {
         const ctx = await loadAlixenContext(userId);
         alixenContextRef.current = ctx;
       } catch (e) {
-        console.log('AlixenContext load error:', e);
       }
     };
     load();
@@ -943,7 +940,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         setLoadingSteps(data.steps);
       }
     } catch (e) {
-      console.log('Loading steps fetch error:', e.message);
     }
   };
 
@@ -1346,7 +1342,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         'Session pleine',
         'Vous avez atteint la limite de 30 échanges. Souhaitez-vous compacter cette conversation et la ranger dans votre Secret Pocket ?',
         [
-          { text: 'Compacter et ranger', onPress: () => console.log('Compactage vers Secret Pocket') },
+          { text: 'Compacter et ranger', onPress: () => {} },
           { text: 'Continuer quand même', style: 'cancel' },
         ]
       );
@@ -1455,7 +1451,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       if (data.tokens_used) {
         const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
         setEnergyUsed(prev => prev + energyCost);
-        console.log('[ÉNERGIE] Tokens: ' + data.tokens_used + ' | Coût: ' + energyCost + ' énergie | Modèle: ' + (data.model_used || 'sonnet'));
       }
 
     } catch (error) {
@@ -1590,7 +1585,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         }
       }
     } catch (error) {
-      console.log('Erreur pickImage:', error);
     }
   };
 
@@ -1622,7 +1616,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         }
       }
     } catch (error) {
-      console.log('Erreur takePhoto:', error);
     }
   };
 
@@ -1638,7 +1631,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         ]
       );
     } catch (error) {
-      console.log('Erreur pickDocument:', error);
     }
   };
 
@@ -2026,7 +2018,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               }
 
               if (!itemId) {
-                console.log('Transfert simulé pour:', tableName, rowIndex);
                 Alert.alert('Transféré ✓', '"' + itemName + '" a été déplacé dans votre Secret Pocket.');
                 return;
               }
