@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../config/supabase';
 import BottomTabs from '../../components/shared/NavBar';
 import {
@@ -32,7 +33,17 @@ export default function DashboardPage({ navigation }) {
   const [userName, setUserName] = useState('');
   const [userEnergy, setUserEnergy] = useState(20);
   const [activities, setActivities] = useState([]);
-  const [tooltipStep, setTooltipStep] = useState(1);
+  const [tooltipStep, setTooltipStep] = useState(0);
+  var _rawSetTooltipStep = setTooltipStep;
+  var setTooltipStepPersist = function(val) {
+    _rawSetTooltipStep(val);
+    if (val === 0) AsyncStorage.setItem('dashboard_tooltip_seen', 'true').catch(function() {});
+  };
+  useEffect(function() {
+    AsyncStorage.getItem('dashboard_tooltip_seen').then(function(v) {
+      if (!v) _rawSetTooltipStep(1);
+    }).catch(function() {});
+  }, []);
   const scrollRef = useRef(null);
   const [toastMsg, setToastMsg] = useState(null);
   const [moodFilled, setMoodFilled] = useState(false);
@@ -399,7 +410,7 @@ export default function DashboardPage({ navigation }) {
         </View>
       )}
 
-      <TooltipOverlay tooltipStep={tooltipStep} setTooltipStep={setTooltipStep} scrollRef={scrollRef} />
+      <TooltipOverlay tooltipStep={tooltipStep} setTooltipStep={setTooltipStepPersist} scrollRef={scrollRef} />
 
       <BottomTabs activeTab="home" onTabPress={function(key) {
         if (key === 'home') return;

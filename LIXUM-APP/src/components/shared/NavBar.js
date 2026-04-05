@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Rect, Path, Circle, Ellipse, Line, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { wp, fp } from '../../constants/layout';
@@ -25,7 +26,10 @@ const AvatarButton = ({ activeChar, userName, onPress, size = 30 }) => {
   );
 };
 
-const BottomTabs = ({ activeTab, onTabPress }) => (
+const BottomTabs = ({ activeTab, onTabPress }) => {
+  var insets = useSafeAreaInsets();
+  var bottomPad = Math.max(insets.bottom, 10);
+  return (
   <View
     style={{
       flexDirection: 'row',
@@ -33,8 +37,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
       borderTopWidth: 1,
       borderTopColor: 'rgba(74,79,85,0.5)',
       paddingTop: 8,
-      paddingBottom: Platform.OS === 'android' ? 12 : 28,
-      height: Platform.OS === 'android' ? 62 : 80,
+      paddingBottom: bottomPad,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: -4 },
       shadowOpacity: 0.3,
@@ -122,7 +125,8 @@ const BottomTabs = ({ activeTab, onTabPress }) => (
       );
     })}
   </View>
-);
+  );
+};
 
 export { AvatarButton };
 export default BottomTabs;

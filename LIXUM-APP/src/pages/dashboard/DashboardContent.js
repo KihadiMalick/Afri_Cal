@@ -56,7 +56,14 @@ const DashboardContent = ({
 
       <View style={{ marginBottom: wp(6), opacity: tooltipStep > 0 ? 0.05 : 1 }}>
         <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#EAEEF3' }}>
-          {new Date().getHours() < 12 ? 'Bonjour' : new Date().getHours() < 18 ? 'Bon après-midi' : 'Bonsoir'} 👋
+          {(function() {
+            var h = new Date().getHours();
+            var greeting = h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir';
+            if (!userName) return greeting + ' 👋';
+            var firstName = userName.split(' ')[0];
+            var prefix = gender === 'homme' ? 'Mr ' : gender === 'femme' ? 'Mme ' : '';
+            return greeting + ' ' + prefix + firstName + ' 👋';
+          })()}
         </Text>
         <Text style={{ fontSize: fp(10), color: '#6B7280', marginTop: wp(2) }}>
           {!lastMeal ? 'Commencez par scanner votre premier repas' : consumedTotal + ' kcal consommées aujourd\'hui'}
@@ -347,7 +354,7 @@ const DashboardContent = ({
         )}
       </MetalCard>
 
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }) }} onPress={function() { setCoachExpanded(function(v) { return !v; }); }}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }) }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
           <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(0,217,132,0.12)', borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.25)', justifyContent: 'center', alignItems: 'center' }}>
             <Text style={{ fontSize: 18 }}>🤖</Text>
@@ -384,6 +391,12 @@ const DashboardContent = ({
           <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>📸</Text>
           <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700' }}>Scanner mon premier plat</Text>
           <Text style={{ color: '#00D984', fontSize: fp(11), marginLeft: wp(4) }}>→</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={function() { setCoachExpanded(function(v) { return !v; }); }} activeOpacity={0.7}
+          style={{ alignItems: 'center', marginTop: wp(10), paddingVertical: wp(4) }}>
+          <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '600' }}>
+            {'Analyse du jour ' + (coachExpanded ? '▲' : '▼')}
+          </Text>
         </TouchableOpacity>
         {coachExpanded && (
           <View style={{ backgroundColor: 'rgba(0,217,132,0.04)', borderRadius: wp(12), padding: wp(12), marginTop: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.1)' }}>
