@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StatusBar, Platform, Modal,
+  View, Text, StatusBar, Platform, Modal, RefreshControl,
   Animated as RNAnimated, TouchableOpacity, Image, Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -81,6 +81,20 @@ export default function DashboardPage({ navigation }) {
   var beverageToastTimerRef = useRef(null);
   var _lixAlert = useState({ visible: false, missing: 0, type: '' });
   var lixAlert = _lixAlert[0]; var setLixAlert = _lixAlert[1];
+  var _refreshing = useState(false);
+  var refreshing = _refreshing[0]; var setRefreshing = _refreshing[1];
+
+  var onRefresh = async function() {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        loadDashboardFromSupabase(),
+        loadPagePowers(),
+        fetchDailyHydration().then(setHydrationData),
+      ]);
+    } catch(err) { console.warn('onRefresh error:', err); }
+    setRefreshing(false);
+  };
   const [activeChar, setActiveChar] = useState(null);
   const [pagePowers, setPagePowers] = useState([]);
   const [toggleStates, setToggleStates] = useState({});
@@ -342,6 +356,7 @@ export default function DashboardPage({ navigation }) {
           activeChar={activeChar} pagePowers={pagePowers}
           toggleStates={toggleStates} setToggleStates={setToggleStates}
           consumePower={consumePower} userName={userName}
+          refreshing={refreshing} onRefresh={onRefresh}
           onAvatarPress={function() {}}
           onNavigate={function(tab) {
             var routes = { meals: 'Repas', activity: 'Activite', medicai: 'MedicAi', lixverse: 'LixVerse' };
