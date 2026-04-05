@@ -71,7 +71,7 @@ function Phase1Identity({ formData, setFormData, t, lang }) {
                 {lang === 'fr' ? 'Cette adresse est d\u00e9j\u00e0 utilis\u00e9e' : 'This email is already taken'}
               </Text>
             </View>
-            <TouchableOpacity onPress={function() { console.log('Navigate to Login'); }} style={{ marginTop: 4 }}>
+            <TouchableOpacity onPress={function() {}} style={{ marginTop: 4 }}>
               <Text style={{ color: C.emerald, fontSize: 10, fontWeight: '700' }}>
                 {lang === 'fr' ? 'D\u00e9j\u00e0 un compte ? Se connecter \u2192' : 'Already have an account? Sign in \u2192'}
               </Text>

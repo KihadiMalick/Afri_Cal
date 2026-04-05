@@ -326,7 +326,7 @@ export const AllModals = (props) => {
                       'Partager ma localisation',
                       'ALIXEN utilisera ta position une seule fois pour te recommander des supermarchés, restaurants et salles de sport à proximité.\n\nTa localisation sera automatiquement effacée après utilisation.',
                       [
-                        { text: 'Partager', onPress: () => console.log('share location') },
+                        { text: 'Partager', onPress: () => {} },
                         { text: 'Non merci', style: 'cancel' },
                       ]
                     );
@@ -505,7 +505,7 @@ export const AllModals = (props) => {
               {/* Option 2 : Demarrer a zero */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => { setShowNewSessionSheet(false); console.log('Nouvelle session vierge'); }}
+                onPress={() => { setShowNewSessionSheet(false); }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   paddingVertical: wp(14), paddingHorizontal: wp(12),
@@ -535,7 +535,7 @@ export const AllModals = (props) => {
               {/* Option 3 : Supprimer */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => { setShowNewSessionSheet(false); console.log('Session supprimée'); }}
+                onPress={() => { setShowNewSessionSheet(false); }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   paddingVertical: wp(14), paddingHorizontal: wp(12),
@@ -655,7 +655,6 @@ export const AllModals = (props) => {
               delayPressIn={120}
               onPress={() => {
                 setShowCompactConfirm(false);
-                console.log('Discussion compactée vers Secret Pocket');
               }}
               style={{ width: '100%', marginBottom: wp(10) }}
             >
