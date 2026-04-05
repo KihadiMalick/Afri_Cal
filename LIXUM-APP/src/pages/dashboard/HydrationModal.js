@@ -319,12 +319,12 @@ const HydrationModal = ({
                               <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: 140 }}>
                                 {_historyData.map(function(day, i) {
                                   var pct = day.goalMl > 0 ? Math.min((day.totalMl / day.goalMl) * 100, 100) : 0;
-                                  var barColor = pct >= 100 ? '#00D984' : pct >= 50 ? '#4DA6FF' : '#FF8C42';
+                                  var barColor = pct > 0 ? '#00D984' : '#333A42';
                                   var isToday = i === _historyData.length - 1;
                                   return (
                                     <Pressable key={i} onPress={function() { setSelectedHistoryDay(selectedHistoryDay === i ? null : i); }} style={{ alignItems: 'center', flex: 1 }}>
                                       <Text style={{ color: '#8892A0', fontSize: 9, fontWeight: '700', marginBottom: 4 }}>{(day.totalMl / 1000).toFixed(1)}L</Text>
-                                      <View style={{ width: 20, height: Math.max(pct * 1.2, 4), borderRadius: 4, backgroundColor: barColor, borderWidth: isToday ? 1.5 : 0, borderColor: isToday ? '#FFFFFF' : 'transparent' }} />
+                                      <View style={{ width: 20, height: Math.max(pct * 1.2, 4), borderRadius: 4, backgroundColor: isToday ? '#00FF9D' : barColor, opacity: isToday ? 1 : 0.85, borderWidth: isToday ? 1.5 : 0, borderColor: isToday ? '#FFFFFF' : 'transparent' }} />
                                       <Text style={{ color: isToday ? '#EAEEF3' : '#8892A0', fontSize: 9, fontWeight: isToday ? '800' : '600', marginTop: 6, textTransform: 'capitalize' }}>{day.dayName.replace('.', '')}</Text>
                                     </Pressable>
                                   );
@@ -341,7 +341,7 @@ const HydrationModal = ({
                                 <View style={{ backgroundColor: 'rgba(30,37,48,0.3)', borderRadius: 14, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(74,79,85,0.12)' }}>
                                   <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
                                     <View style={{ alignItems: 'center' }}>
-                                      <Text style={{ color: '#4DA6FF', fontSize: 18, fontWeight: '900' }}>{(avg / 1000).toFixed(1)}L</Text>
+                                      <Text style={{ color: '#00D984', fontSize: 18, fontWeight: '900' }}>{(avg / 1000).toFixed(1)}L</Text>
                                       <Text style={{ color: '#6B7280', fontSize: 9, marginTop: 2 }}>Moyenne / jour</Text>
                                     </View>
                                     <View style={{ width: 1, backgroundColor: 'rgba(74,79,85,0.3)' }} />
@@ -363,7 +363,7 @@ const HydrationModal = ({
                               {_historyData.slice().reverse().map(function(day, i, arr) {
                                 var pct = day.goalMl > 0 ? Math.min(Math.round((day.totalMl / day.goalMl) * 100), 100) : 0;
                                 var isToday = i === 0;
-                                var barColor = pct >= 100 ? '#00D984' : pct >= 50 ? '#4DA6FF' : pct > 0 ? '#FF8C42' : '#555E6C';
+                                var barColor = pct > 0 ? '#00D984' : '#333A42';
                                 return (
                                   <View key={i}>
                                     <Pressable onPress={function() {
