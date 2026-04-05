@@ -72,7 +72,7 @@ export default function RegisterPage({ navigation }) {
       RNAnimated.timing(transPulse, { toValue: 1.15, duration: 800, useNativeDriver: true }),
       RNAnimated.timing(transPulse, { toValue: 1, duration: 800, useNativeDriver: true }),
     ])).start();
-    RNAnimated.timing(transProgress, { toValue: 100, duration: 3200, useNativeDriver: false }).start();
+    RNAnimated.timing(transProgress, { toValue: 100, duration: 3200, useNativeDriver: false, // layout animation - cannot use native driver }).start();
     RNAnimated.timing(transTextOp, { toValue: 1, duration: 600, delay: 300, useNativeDriver: true }).start();
     setTimeout(function() { setTransStep(1); }, 1000);
     setTimeout(function() { setTransStep(2); }, 2200);

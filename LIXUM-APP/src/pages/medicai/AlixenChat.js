@@ -49,7 +49,7 @@ export const DirectionCard = ({ placeName, placeAddress, description, destLat, d
       toValue: 1,
       duration: 2000,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
+      useNativeDriver: false, // layout animation - cannot use native driver
     }).start();
   }, []);
 
@@ -516,8 +516,8 @@ export const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status
   useEffect(() => {
     if (status === 'loading') {
       Animated.loop(Animated.sequence([
-        Animated.timing(loadPulse, { toValue: 0.8, duration: 500, useNativeDriver: false }),
-        Animated.timing(loadPulse, { toValue: 0.3, duration: 500, useNativeDriver: false }),
+        Animated.timing(loadPulse, { toValue: 0.8, duration: 500, useNativeDriver: true }),
+        Animated.timing(loadPulse, { toValue: 0.3, duration: 500, useNativeDriver: true }),
       ])).start();
     }
   }, [status]);
@@ -534,8 +534,8 @@ export const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status
   useEffect(() => {
     if (isSearchHit) {
       Animated.loop(Animated.sequence([
-        Animated.timing(searchGlow, { toValue: 1, duration: 600, useNativeDriver: false }),
-        Animated.timing(searchGlow, { toValue: 0.3, duration: 600, useNativeDriver: false }),
+        Animated.timing(searchGlow, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.timing(searchGlow, { toValue: 0.3, duration: 600, useNativeDriver: true }),
       ])).start();
     } else {
       searchGlow.setValue(0);

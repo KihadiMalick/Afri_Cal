@@ -171,7 +171,7 @@ export default function LixVersePage({ navigation }) {
 
   const toggleDropdown = () => {
     const toValue = dropdownOpen ? 0 : 1;
-    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: false }).start();
+    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: true }).start();
     setDropdownOpen(!dropdownOpen);
   };
 
@@ -869,8 +869,8 @@ export default function LixVersePage({ navigation }) {
     const startPulseRing = (anim, delay) => {
       setTimeout(() => {
         Animated.loop(Animated.sequence([
-          Animated.timing(anim, { toValue: 1, duration: 2000, useNativeDriver: false }),
-          Animated.timing(anim, { toValue: 0, duration: 0, useNativeDriver: false }),
+          Animated.timing(anim, { toValue: 1, duration: 2000, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0, duration: 0, useNativeDriver: true }),
         ])).start();
       }, delay);
     };
@@ -1020,8 +1020,8 @@ export default function LixVersePage({ navigation }) {
   async function sendBinomeRequestLive() {
     setBinomeStatus('pending_sent');
     Animated.loop(Animated.sequence([
-      Animated.timing(pendingPulse, { toValue: 1, duration: 1000, useNativeDriver: false }),
-      Animated.timing(pendingPulse, { toValue: 0.6, duration: 1000, useNativeDriver: false }),
+      Animated.timing(pendingPulse, { toValue: 1, duration: 1000, useNativeDriver: true }),
+      Animated.timing(pendingPulse, { toValue: 0.6, duration: 1000, useNativeDriver: true }),
     ])).start();
     try {
       const reqData = await supaRpc('send_binome_request', { p_user_id: userId, p_partner_lixtag: binomePartner.lixtag });

@@ -240,7 +240,6 @@ const XscanScreen = forwardRef(function XscanScreen({
         updated[arCurrentCorner] = photo;
         setArPhotos(updated);
       } catch (e) {
-        console.log('AR photo capture error:', e);
       }
     }
 
@@ -252,7 +251,7 @@ const XscanScreen = forwardRef(function XscanScreen({
       Animated.timing(ropeProgressAnims[arCurrentCorner], {
         toValue: 1,
         duration: 300,
-        useNativeDriver: false,
+        useNativeDriver: false, // layout animation - cannot use native driver
       }).start();
 
       const allDone = updatedDone.every(d => d);
@@ -302,7 +301,6 @@ const XscanScreen = forwardRef(function XscanScreen({
 
       runAnalysis(photo);
     } catch (error) {
-      console.log('Erreur capture photo:', error);
       alert(lang === 'fr' ? 'Erreur lors de la capture' : 'Capture error');
     }
   };
@@ -835,7 +833,6 @@ const XscanScreen = forwardRef(function XscanScreen({
         return;
       }
 
-      console.log('Repas sauvegardé ! ID:', data);
       setSaveSuccess(true);
 
       setTimeout(() => {

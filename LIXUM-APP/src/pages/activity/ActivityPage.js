@@ -381,7 +381,7 @@ export default function ActivityPage({ onNavigate }) {
 
   var toggleDropdown = function() {
     var toValue = dropdownOpen ? 0 : 1;
-    Animated.spring(dropdownAnim, { toValue: toValue, tension: 80, friction: 10, useNativeDriver: false }).start();
+    Animated.spring(dropdownAnim, { toValue: toValue, tension: 80, friction: 10, useNativeDriver: true }).start();
     setDropdownOpen(!dropdownOpen);
   };
 
