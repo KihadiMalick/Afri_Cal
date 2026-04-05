@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Polygon, Line, Circle as SvgCircle, Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../config/supabase';
 import { W, H, C, SUPABASE_URL, SUPABASE_ANON_KEY, texts } from './loginConstants';
 
 function GeometricBackground() {
@@ -91,16 +92,19 @@ export default function LoginPage({ navigation }) {
         }
         showLixAlert(t.errorTitle, errorMsg, [{ text: 'OK', style: 'cancel' }], '\u274c');
       } else if (data.access_token) {
+        supabase.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+        }).catch(function(err) { console.warn('setSession error:', err); });
         showLixAlert(t.welcome, t.loginSuccess, [{
           text: t.continueBtn, color: '#00D984',
           onPress: function() {
-            AsyncStorage.setItem('lixum_access_token', data.access_token).catch(function() {});
-            AsyncStorage.setItem('lixum_user_id', data.user && data.user.id ? data.user.id : '').catch(function() {});
-            navigation.navigate('MainTabs');
+            // Navigation is handled automatically by AppNavigator when isAuthenticated changes
           },
         }], '\u2705');
       }
-    }).catch(function() {
+    }).catch(function(err) {
+      console.warn('[LIXUM] login fetch error:', err);
       setLoading(false);
       showLixAlert(t.errorTitle, t.connectionError, [{ text: 'OK', style: 'cancel' }], '\ud83d\udce1');
     });
@@ -121,11 +125,14 @@ export default function LoginPage({ navigation }) {
           var params = {};
           hashPart.split('&').forEach(function(pair) { var parts = pair.split('='); if (parts[0] && parts[1]) params[parts[0]] = decodeURIComponent(parts[1]); });
           if (params.access_token) {
+            supabase.auth.setSession({
+              access_token: params.access_token,
+              refresh_token: params.refresh_token || '',
+            }).catch(function(err) { console.warn('setSession error:', err); });
             showLixAlert(t.welcome, lang === 'fr' ? 'Connexion Google r\u00e9ussie !' : 'Google login successful!', [{
               text: t.continueBtn, color: '#00D984',
               onPress: function() {
-                AsyncStorage.setItem('lixum_access_token', params.access_token).catch(function() {});
-                navigation.navigate('MainTabs');
+                // Navigation is handled automatically by AppNavigator when isAuthenticated changes
               },
             }], '\u2705');
           } else if (params.error_description) {

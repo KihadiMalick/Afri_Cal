@@ -85,7 +85,7 @@ const HydrationModal = ({
     supabase.rpc('get_daily_hydration', {
       p_user_id: userId,
       p_date: new Date().toISOString().split('T')[0],
-    }).then(function() {}).catch(function() {});
+    }).then(function() {}).catch(function(err) { console.warn('[LIXUM] hydration refresh error:', err); });
   };
 
   const palierLabels = gender === 'homme'
