@@ -257,6 +257,18 @@ const MoodModal = ({ visible, onClose, onMoodSaved }) => {
 
   const activeTier = isExcited ? 3 : moodLevel >= 80 ? 2 : moodLevel >= 40 ? 1 : 0;
 
+  var resetAllStates = function() {
+    setMoodLevel(0); setLockedAtChill(false); setMoodResult(null); setHearts([]); setShowWeather(false);
+    setSelectedWeather(null); setHasStartedTapping(false); setTapCount(0); setOverflowTaps(0);
+    setIsExcited(false); setEnergyParticles([]); setExcitedBuildUp(0);
+    setCurrentTier(0); setTierLabel(''); setTierColor('#FFF'); setConfetti([]);
+    tubeShakeAnim.setValue(0); tierLabelOpacity.setValue(0); screenShakeAnim.setValue(0);
+  };
+
+  useEffect(function() {
+    if (!visible) resetAllStates();
+  }, [visible]);
+
   if (!visible) return null;
 
   return (
@@ -342,12 +354,7 @@ const MoodModal = ({ visible, onClose, onMoodSaved }) => {
                 <TouchableOpacity onPress={() => setShowWeather(true)} style={{ backgroundColor: moodMessages[moodResult].color, borderRadius: 14, paddingHorizontal: 30, paddingVertical: 12 }}>
                   <Text style={{ color: '#0D1117', fontSize: 15, fontWeight: '800' }}>Continuer →</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => {
-                  setMoodLevel(0); setLockedAtChill(false); setMoodResult(null); setHearts([]); setHasStartedTapping(false);
-                  setTapCount(0); setOverflowTaps(0); setIsExcited(false); setEnergyParticles([]); setExcitedBuildUp(0);
-                  setCurrentTier(0); setTierLabel(''); setTierColor('#FFF'); setConfetti([]);
-                  tubeShakeAnim.setValue(0); tierLabelOpacity.setValue(0);
-                }} style={{ marginTop: 15 }}>
+                <TouchableOpacity onPress={resetAllStates} style={{ marginTop: 15 }}>
                   <Text style={{ color: '#8892A0', fontSize: 12 }}>Refaire</Text>
                 </TouchableOpacity>
               </View>
@@ -379,19 +386,30 @@ const MoodModal = ({ visible, onClose, onMoodSaved }) => {
                   <View style={{ marginTop: 25, alignItems: 'center' }}>
                     <TouchableOpacity
                       onPress={async function() {
+                        if (!userId) return;
                         try {
+                          var today = new Date().toISOString().split('T')[0];
+                          var countRes = await supabase.from('moods').select('id', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', today + 'T00:00:00').lt('created_at', today + 'T23:59:59');
+                          if (countRes.count >= 20) {
+                            if (onMoodSaved) onMoodSaved(moodResult, selectedWeather);
+                            resetAllStates();
+                            onClose();
+                            return;
+                          }
+                          var moodNumeric = moodResult === 'excited' ? 5 : moodResult === 'happy' ? 4 : moodResult === 'chill' ? 3 : moodResult === 'sad' ? 2 : 1;
                           await supabase.from('moods').insert({
-                            user_id: userId, mood_level: moodResult,
+                            user_id: userId, mood_level: moodNumeric,
                             weather: selectedWeather, tap_count: tapCount,
                             max_gauge_percent: Math.round(moodLevel),
                           });
                           await supabase.from('users_profile').update({
-                            current_mood: moodResult, current_weather: selectedWeather,
+                            current_mood: moodNumeric, current_weather: selectedWeather, last_mood_at: new Date().toISOString(),
                           }).eq('user_id', userId);
                         } catch (e) {
                           console.warn('Mood save error:', e);
                         }
                         if (onMoodSaved) onMoodSaved(moodResult, selectedWeather);
+                        resetAllStates();
                         onClose();
                       }}
                       style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: 14, paddingHorizontal: 30, paddingVertical: 12, borderWidth: 1, borderColor: 'rgba(0,217,132,0.4)' }}>

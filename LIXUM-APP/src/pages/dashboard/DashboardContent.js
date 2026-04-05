@@ -466,7 +466,7 @@ const DashboardContent = ({
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8), paddingRight: wp(16) }}>
           <StatsIcon />
           <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '700', letterSpacing: wp(1), marginLeft: wp(8) }}>MES STATS</Text>
-          <Text style={{ color: '#6B7280', fontSize: fp(10), marginLeft: wp(4) }}>(7 jours)</Text>
+          <Text style={{ color: '#6B7280', fontSize: fp(10), marginLeft: wp(4) }}></Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8), paddingRight: wp(16) }}>
           <LockIcon size={wp(14)} />

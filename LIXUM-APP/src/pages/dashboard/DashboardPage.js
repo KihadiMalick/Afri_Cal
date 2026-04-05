@@ -68,10 +68,6 @@ export default function DashboardPage({ navigation }) {
   var _selectedDayLogs = useState([]);
   var selectedDayLogs = _selectedDayLogs[0]; var setSelectedDayLogs = _selectedDayLogs[1];
   const [surplusAlertVisible, setSurplusAlertVisible] = useState(false);
-  var _showStatsModal = useState(false);
-  var showStatsModal = _showStatsModal[0]; var setShowStatsModal = _showStatsModal[1];
-  var _weeklyStats = useState(null);
-  var weeklyStats = _weeklyStats[0]; var setWeeklyStats = _weeklyStats[1];
   var _statsLoading = useState(false);
   var statsLoading = _statsLoading[0]; var setStatsLoading = _statsLoading[1];
   var _statsUnlockedUntil = useState(null);
@@ -90,7 +86,7 @@ export default function DashboardPage({ navigation }) {
       await Promise.all([
         loadDashboardFromSupabase(),
         loadPagePowers(),
-        fetchDailyHydration().then(setHydrationData),
+        fetchDailyHydration().then(function(data) { setHydrationData(data); setHydrationMl(data.totalEffective || 0); }),
       ]);
     } catch(err) { console.warn('onRefresh error:', err); }
     setRefreshing(false);
@@ -322,7 +318,7 @@ export default function DashboardPage({ navigation }) {
       loadPagePowers();
       fetchDailyHydration().then(function(data) {
         setHydrationData(data);
-        if (data.totalEffective > 0) setHydrationMl(data.totalEffective);
+        setHydrationMl(data.totalEffective || 0);
       });
     }
   }, [userId]);
@@ -363,7 +359,14 @@ export default function DashboardPage({ navigation }) {
             if (routes[tab] && navigation) navigation.navigate(routes[tab]);
           }}
           showToast={showToast}
-          onOpenStats={function() { setShowStatsModal(true); if (isStatsUnlocked()) fetchWeeklyStats(); }}
+          onOpenStats={async function() {
+            if (isStatsUnlocked()) {
+              navigation.navigate('MedicAi', { openSection: 'stats' });
+            } else {
+              await unlockStatsWithLix();
+              if (realLixBalance >= 200) navigation.navigate('MedicAi', { openSection: 'stats' });
+            }
+          }}
         />
       </SafeAreaView>
 
@@ -444,65 +447,6 @@ export default function DashboardPage({ navigation }) {
               style={{ width: '100%', paddingVertical: 14, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
               <Text style={{ fontSize: 15, fontWeight: '500', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
             </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={showStatsModal} transparent animationType="fade" onRequestClose={function() { setShowStatsModal(false); }}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
-          <View style={{ backgroundColor: '#1E2530', borderRadius: 20, padding: 22, width: '100%', borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.25)' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ fontSize: 18, marginRight: 8 }}>📊</Text>
-                <Text style={{ color: '#EAEEF3', fontSize: 16, fontWeight: '800' }}>MES STATS (7 jours)</Text>
-              </View>
-              <TouchableOpacity onPress={function() { setShowStatsModal(false); }}>
-                <Text style={{ color: '#8892A0', fontSize: 22 }}>×</Text>
-              </TouchableOpacity>
-            </View>
-            {isStatsUnlocked() ? (
-              weeklyStats ? (
-                <View>
-                  {weeklyStats.map(function(day, i) {
-                    return (
-                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: i < weeklyStats.length - 1 ? 1 : 0, borderBottomColor: 'rgba(74,79,85,0.3)' }}>
-                        <Text style={{ color: '#8892A0', fontSize: 12, width: 40, fontWeight: '600' }}>{day.dayName}</Text>
-                        <View style={{ flex: 1, marginLeft: 8 }}>
-                          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <Text style={{ color: '#FF8C42', fontSize: 11 }}>{day.calories} kcal</Text>
-                            <Text style={{ color: '#4DA6FF', fontSize: 11 }}>{day.hydrationMl} ml</Text>
-                            <Text style={{ color: '#00D984', fontSize: 11 }}>{day.activityMin} min</Text>
-                          </View>
-                        </View>
-                        {day.mood !== null && <Text style={{ fontSize: 14, marginLeft: 6 }}>{['😢','😕','😐','🙂','😄'][day.mood - 1] || '—'}</Text>}
-                      </View>
-                    );
-                  })}
-                </View>
-              ) : (
-                <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                  <Text style={{ color: '#8892A0', fontSize: 13 }}>Chargement...</Text>
-                </View>
-              )
-            ) : (
-              <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-                <View style={{ opacity: 0.15, marginBottom: 16 }}>
-                  {[1,2,3,4,5].map(function(i) {
-                    return (
-                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
-                        <View style={{ width: 40, height: 12, backgroundColor: '#555', borderRadius: 4 }} />
-                        <View style={{ flex: 1, height: 10, backgroundColor: '#555', borderRadius: 4, marginLeft: 8 }} />
-                      </View>
-                    );
-                  })}
-                </View>
-                <TouchableOpacity onPress={unlockStatsWithLix} activeOpacity={0.7}
-                  style={{ backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: 14, paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: 'rgba(0,217,132,0.3)', flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ color: '#D4AF37', fontSize: 14, fontWeight: '800', marginRight: 6 }}>💎 200 Lix</Text>
-                  <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '700' }}>· Accès 24h</Text>
-                </TouchableOpacity>
-              </View>
-            )}
           </View>
         </View>
       </Modal>
