@@ -578,7 +578,7 @@ function ShimmerButton(props) {
 // PAGE WELCOME
 // ============================================================
 
-export default function App() {
+export default function App({ navigation }) {
   var _langCtx = useLang(); var lang = _langCtx.lang; var changeLang = _langCtx.changeLang;
   var _currentIndex = useState(0);
   var currentIndex = _currentIndex[0]; var setCurrentIndex = _currentIndex[1];
@@ -606,11 +606,11 @@ export default function App() {
   }, [slides.length]);
 
   var handleJoin = function () {
-    // TODO: navigation.navigate('Register')
+    navigation.navigate('Register');
   };
 
   var handleSignIn = function () {
-    // TODO: navigation.navigate('Login')
+    navigation.navigate('Login');
   };
 
   var allSwiped = currentIndex >= slides.length;
