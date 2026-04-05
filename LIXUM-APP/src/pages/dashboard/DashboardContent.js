@@ -82,7 +82,7 @@ const DashboardContent = ({
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', overflow: 'visible', paddingVertical: 4 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', overflow: 'visible', paddingVertical: 4, paddingHorizontal: 6 }}>
           <View style={{ alignItems: 'center', width: REACTOR_SIZE + 20 }}>
             <RNAnimated.View style={{ opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2 ? (tooltipStep === 2 ? pulseOpacity : 1) : 0.05, transform: tooltipStep === 2 ? [{ scale: pulseScale }] : [] }}>
               <ReactorCore size={REACTOR_SIZE} value={consumedTotal} percentage={Math.round((consumedTotal / OBJECTIVE) * 100)} label="Consommé" color="#FF8C42" colorLight="#FFB87A" colorDark="#CC6020" clockwise={true} />
@@ -120,7 +120,7 @@ const DashboardContent = ({
           </View>
         </View>
 
-        <RNAnimated.View style={{ alignItems: 'center', marginTop: wp(12), opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3 ? (tooltipStep === 3 ? pulseOpacity : 1) : 0.05 }}>
+        <RNAnimated.View style={{ alignItems: 'center', marginTop: wp(12), marginLeft: -3, opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3 ? (tooltipStep === 3 ? pulseOpacity : 1) : 0.05 }}>
           <EcgPulse score={vitalityScore} />
           <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#D4AF37', marginTop: 2, letterSpacing: 1.5 }}>VITALITÉ</Text>
         </RNAnimated.View>
@@ -132,12 +132,10 @@ const DashboardContent = ({
               <Text style={{ color: '#8892A0', fontSize: fp(10), marginLeft: wp(6) }}>du quota journalier</Text>
             </View>
             <Text style={{ color: '#EAEEF3', fontSize: fp(11), lineHeight: fp(16), marginBottom: wp(8) }}>Votre activité sportive brûle vos calories consommées.</Text>
-            {burnedExtra > 0 && (
               <View style={{ backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: wp(8), padding: wp(8) }}>
-                <Text style={{ color: '#FF3B30', fontSize: fp(10), fontWeight: '700' }}>- {burnedExtra} kcal brûlées (sport)</Text>
+                <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700' }}>- {burnedExtra || 0} kcal / Sport</Text>
                 <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700', marginTop: wp(2) }}>= {formatNumberFR(consumedTotal)} kcal net consommé</Text>
               </View>
-            )}
           </View>
         )}
 
@@ -148,12 +146,10 @@ const DashboardContent = ({
               <Text style={{ color: '#8892A0', fontSize: fp(10), marginLeft: wp(6) }}>de vos calories disponibles</Text>
             </View>
             <Text style={{ color: '#EAEEF3', fontSize: fp(11), lineHeight: fp(16), marginBottom: wp(8) }}>Si vous faites de l'activité, vos calories consommées diminuent et augmentent votre marge restante.</Text>
-            {burnedExtra > 0 && (
               <View style={{ backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: wp(8), padding: wp(8) }}>
-                <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>+ {burnedExtra} kcal bonus sport</Text>
+                <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>+ {burnedExtra || 0} kcal / Sport</Text>
                 <Text style={{ color: '#4DA6FF', fontSize: fp(10), fontWeight: '700', marginTop: wp(2) }}>= {formatNumberFR(remaining)} kcal disponibles</Text>
               </View>
-            )}
           </View>
         )}
       </MetalCard>
