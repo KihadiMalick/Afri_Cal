@@ -42,7 +42,7 @@ const RUN_CANVAS_H = 85;
 const RUN_METERS_PER_PIXEL = RUN_MAX_DIST / RUN_SCENE_W;
 const RUN_PIXELS_PER_METER = RUN_SCENE_W / RUN_MAX_DIST;
 
-export default function ActivityPage({ onNavigate }) {
+export default function ActivityPage({ navigation }) {
   var auth = useAuth(); var userId = auth.userId;
   var _lc = useLang(); var lang = _lc.lang;
   var t = getLang(lang);
@@ -389,8 +389,8 @@ export default function ActivityPage({ onNavigate }) {
 
   const handleTabPress = (key) => {
     if (key === 'activity') return;
-    if (onNavigate) onNavigate(key);
-    setActiveTab(key);
+    const routes = { home: 'Accueil', meals: 'Repas', medicai: 'MedicAi', activity: 'Activite', lixverse: 'LixVerse' };
+    if (routes[key] && navigation) navigation.navigate(routes[key]);
   };
 
   // Walk computed values
@@ -571,14 +571,14 @@ export default function ActivityPage({ onNavigate }) {
                 opacity: dropdownAnim,
                 transform: [{ scale: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }],
               }}>
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
+                <TouchableOpacity onPress={() => { toggleDropdown(); if (navigation) navigation.navigate('LixVerse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
                   <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24">
                     <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
                   </Svg>
                   <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(16), marginLeft: wp(10) }}>{lixBalance}</Text>
                   <Text style={{ color: '#888', fontSize: fp(12), marginLeft: wp(4) }}>Lix</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
+                <TouchableOpacity onPress={() => { toggleDropdown(); if (navigation) navigation.navigate('LixVerse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
                   <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24">
                     <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
                   </Svg>
@@ -586,7 +586,7 @@ export default function ActivityPage({ onNavigate }) {
                   <Text style={{ color: '#888', fontSize: fp(12), marginLeft: wp(4) }}>{t.energy}</Text>
                 </TouchableOpacity>
                 <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(74,79,85,0.4)', marginVertical: wp(4) }} />
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (onNavigate) onNavigate('profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
+                <TouchableOpacity onPress={() => { toggleDropdown(); if (navigation) navigation.navigate('Profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
                   <Text style={{ fontSize: fp(14), marginRight: wp(10) }}>{activeChar?.slug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️' })[activeChar.slug] || '👤' : '👤'}</Text>
                   <Text style={{ color: '#FFF', fontSize: fp(12), flex: 1 }}>{t.myProfile}</Text>
                   <Text style={{ color: '#555E6C', fontSize: fp(12) }}>{String.fromCodePoint(0x2192)}</Text>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import CircuitPattern from './CircuitPattern';
 
@@ -10,9 +10,12 @@ export default function MetalCard(props) {
   var borderColor = props.borderColor || 'rgba(0,217,132,0.35)';
   var circuitColor = props.circuitColor || 'rgba(0,217,132,0.05)';
   var style = props.style || {};
+  var onPress = props.onPress;
+  var Wrapper = onPress ? TouchableOpacity : View;
+  var wrapperProps = onPress ? { onPress: onPress, activeOpacity: 0.7 } : {};
 
   return (
-    <View style={[{
+    <Wrapper {...wrapperProps} style={[{
       borderRadius: 24,
       padding: 4,
       borderWidth: 2,
@@ -57,6 +60,6 @@ export default function MetalCard(props) {
           </View>
         </View>
       </View>
-    </View>
+    </Wrapper>
   );
 }

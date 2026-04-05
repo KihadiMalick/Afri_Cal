@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { useAuth } from '../config/AuthContext';
+import ErrorBoundary from '../components/shared/ErrorBoundary';
 
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import RepasPage from '../pages/repas/RepasPage';
@@ -18,14 +19,20 @@ import ProfilePage from '../pages/profile/ProfilePage';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+function SafeDashboard(props) { return <ErrorBoundary><DashboardPage {...props} /></ErrorBoundary>; }
+function SafeRepas(props) { return <ErrorBoundary><RepasPage {...props} /></ErrorBoundary>; }
+function SafeMedicAi(props) { return <ErrorBoundary><MedicAiPage {...props} /></ErrorBoundary>; }
+function SafeActivity(props) { return <ErrorBoundary><ActivityPage {...props} /></ErrorBoundary>; }
+function SafeLixVerse(props) { return <ErrorBoundary><LixVersePage {...props} /></ErrorBoundary>; }
+
 function MainTabs() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false, tabBarStyle: { display: 'none' } }}>
-      <Tab.Screen name="Accueil" component={DashboardPage} />
-      <Tab.Screen name="Repas" component={RepasPage} />
-      <Tab.Screen name="MedicAi" component={MedicAiPage} />
-      <Tab.Screen name="Activite" component={ActivityPage} />
-      <Tab.Screen name="LixVerse" component={LixVersePage} />
+      <Tab.Screen name="Accueil" component={SafeDashboard} />
+      <Tab.Screen name="Repas" component={SafeRepas} />
+      <Tab.Screen name="MedicAi" component={SafeMedicAi} />
+      <Tab.Screen name="Activite" component={SafeActivity} />
+      <Tab.Screen name="LixVerse" component={SafeLixVerse} />
     </Tab.Navigator>
   );
 }

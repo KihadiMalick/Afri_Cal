@@ -32,7 +32,7 @@ import { AlixenFace, FunnelBridgeUnified, getWireMode, FRAME_W, FRAME_H, MODULE_
 
 
 
-export default function MedicAiPage() {
+export default function MedicAiPage({ navigation }) {
   var auth = useAuth();
   var userId = auth.userId;
 
@@ -2579,7 +2579,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
       {/* ===== BOTTOM TAB BAR ===== */}
       {!keyboardVisible && (
-        <BottomTabs activeTab={activeTab} onTabPress={setActiveTab} />
+        <BottomTabs activeTab="medicai" onTabPress={function(key) {
+          if (key === 'medicai') return;
+          var routes = { home: 'Accueil', meals: 'Repas', medicai: 'MedicAi', activity: 'Activite', lixverse: 'LixVerse' };
+          if (routes[key] && navigation) navigation.navigate(routes[key]);
+        }} />
       )}
 
       {/* === MODAL MESSAGE COMPLET === */}
