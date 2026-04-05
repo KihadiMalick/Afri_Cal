@@ -204,7 +204,7 @@ const TIER_COLORS = {
 };
 
 const CHARACTER_IMAGES = {
-  'emerald_owl': { img: require('../../assets/images/emerald_owl.webp'), emoji: '🦉' },
+  'emerald_owl': { img: null, emoji: '🦉' },
   'hawk_eye': { img: null, emoji: '🦅' },
   'ruby_tiger': { img: null, emoji: '🐯' },
   'amber_fox': { img: null, emoji: '🦊' },
