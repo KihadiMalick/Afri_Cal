@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Line, Path } from 'react-native-svg';
+import Svg, { Line, Path, Rect, Circle, Ellipse } from 'react-native-svg';
 import { wp, fp } from '../../constants/layout';
 
 const MEAL_CARD_WIDTH = wp(160);

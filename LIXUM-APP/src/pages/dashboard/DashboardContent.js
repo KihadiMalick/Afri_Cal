@@ -56,7 +56,14 @@ const DashboardContent = ({
 
       <View style={{ marginBottom: wp(6), opacity: tooltipStep > 0 ? 0.05 : 1 }}>
         <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#EAEEF3' }}>
-          {new Date().getHours() < 12 ? 'Bonjour' : new Date().getHours() < 18 ? 'Bon après-midi' : 'Bonsoir'} 👋
+          {(function() {
+            var h = new Date().getHours();
+            var greeting = h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir';
+            if (!userName) return greeting + ' 👋';
+            var firstName = userName.split(' ')[0];
+            var prefix = gender === 'homme' ? 'Mr ' : gender === 'femme' ? 'Mme ' : '';
+            return greeting + ' ' + prefix + firstName + ' 👋';
+          })()}
         </Text>
         <Text style={{ fontSize: fp(10), color: '#6B7280', marginTop: wp(2) }}>
           {!lastMeal ? 'Commencez par scanner votre premier repas' : consumedTotal + ' kcal consommées aujourd\'hui'}
@@ -75,7 +82,7 @@ const DashboardContent = ({
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', overflow: 'visible', paddingVertical: 4 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', overflow: 'visible', paddingVertical: 4, paddingHorizontal: 6 }}>
           <View style={{ alignItems: 'center', width: REACTOR_SIZE + 20 }}>
             <RNAnimated.View style={{ opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2 ? (tooltipStep === 2 ? pulseOpacity : 1) : 0.05, transform: tooltipStep === 2 ? [{ scale: pulseScale }] : [] }}>
               <ReactorCore size={REACTOR_SIZE} value={consumedTotal} percentage={Math.round((consumedTotal / OBJECTIVE) * 100)} label="Consommé" color="#FF8C42" colorLight="#FFB87A" colorDark="#CC6020" clockwise={true} />
@@ -113,7 +120,7 @@ const DashboardContent = ({
           </View>
         </View>
 
-        <RNAnimated.View style={{ alignItems: 'center', marginTop: wp(12), opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3 ? (tooltipStep === 3 ? pulseOpacity : 1) : 0.05 }}>
+        <RNAnimated.View style={{ alignItems: 'center', marginTop: wp(12), marginLeft: -3, opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3 ? (tooltipStep === 3 ? pulseOpacity : 1) : 0.05 }}>
           <EcgPulse score={vitalityScore} />
           <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#D4AF37', marginTop: 2, letterSpacing: 1.5 }}>VITALITÉ</Text>
         </RNAnimated.View>
@@ -125,12 +132,10 @@ const DashboardContent = ({
               <Text style={{ color: '#8892A0', fontSize: fp(10), marginLeft: wp(6) }}>du quota journalier</Text>
             </View>
             <Text style={{ color: '#EAEEF3', fontSize: fp(11), lineHeight: fp(16), marginBottom: wp(8) }}>Votre activité sportive brûle vos calories consommées.</Text>
-            {burnedExtra > 0 && (
               <View style={{ backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: wp(8), padding: wp(8) }}>
-                <Text style={{ color: '#FF3B30', fontSize: fp(10), fontWeight: '700' }}>- {burnedExtra} kcal brûlées (sport)</Text>
+                <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700' }}>- {burnedExtra || 0} kcal / Sport</Text>
                 <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700', marginTop: wp(2) }}>= {formatNumberFR(consumedTotal)} kcal net consommé</Text>
               </View>
-            )}
           </View>
         )}
 
@@ -141,12 +146,10 @@ const DashboardContent = ({
               <Text style={{ color: '#8892A0', fontSize: fp(10), marginLeft: wp(6) }}>de vos calories disponibles</Text>
             </View>
             <Text style={{ color: '#EAEEF3', fontSize: fp(11), lineHeight: fp(16), marginBottom: wp(8) }}>Si vous faites de l'activité, vos calories consommées diminuent et augmentent votre marge restante.</Text>
-            {burnedExtra > 0 && (
               <View style={{ backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: wp(8), padding: wp(8) }}>
-                <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>+ {burnedExtra} kcal bonus sport</Text>
+                <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>+ {burnedExtra || 0} kcal / Sport</Text>
                 <Text style={{ color: '#4DA6FF', fontSize: fp(10), fontWeight: '700', marginTop: wp(2) }}>= {formatNumberFR(remaining)} kcal disponibles</Text>
               </View>
-            )}
           </View>
         )}
       </MetalCard>
@@ -347,7 +350,7 @@ const DashboardContent = ({
         )}
       </MetalCard>
 
-      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }) }} onPress={function() { setCoachExpanded(function(v) { return !v; }); }}>
+      <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }) }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
           <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(0,217,132,0.12)', borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.25)', justifyContent: 'center', alignItems: 'center' }}>
             <Text style={{ fontSize: 18 }}>🤖</Text>
@@ -384,6 +387,12 @@ const DashboardContent = ({
           <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>📸</Text>
           <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700' }}>Scanner mon premier plat</Text>
           <Text style={{ color: '#00D984', fontSize: fp(11), marginLeft: wp(4) }}>→</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={function() { setCoachExpanded(function(v) { return !v; }); }} activeOpacity={0.7}
+          style={{ alignItems: 'center', marginTop: wp(10), paddingVertical: wp(4) }}>
+          <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '600' }}>
+            {'Analyse du jour ' + (coachExpanded ? '▲' : '▼')}
+          </Text>
         </TouchableOpacity>
         {coachExpanded && (
           <View style={{ backgroundColor: 'rgba(0,217,132,0.04)', borderRadius: wp(12), padding: wp(12), marginTop: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.1)' }}>

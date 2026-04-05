@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, Animated, Platform, Pressable,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, {
   Defs, Rect, Path, Circle, Ellipse, Line,
   LinearGradient as SvgLinearGradient, Stop,
@@ -25,7 +26,10 @@ export const LockIcon = ({ size = 20 }) => (
 // ============================================
 // BOTTOM TABS (identique aux autres pages)
 // ============================================
-export const BottomTabs = ({ activeTab, onTabPress }) => (
+export const BottomTabs = ({ activeTab, onTabPress }) => {
+  var insets = useSafeAreaInsets();
+  var bottomPad = Math.max(insets.bottom, 10);
+  return (
   <View
     style={{
       flexDirection: 'row',
@@ -33,8 +37,7 @@ export const BottomTabs = ({ activeTab, onTabPress }) => (
       borderTopWidth: 1,
       borderTopColor: 'rgba(74,79,85,0.5)',
       paddingTop: 8,
-      paddingBottom: Platform.OS === 'android' ? 12 : 28,
-      height: Platform.OS === 'android' ? 62 : 80,
+      paddingBottom: bottomPad,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: -4 },
       shadowOpacity: 0.3,
@@ -122,7 +125,8 @@ export const BottomTabs = ({ activeTab, onTabPress }) => (
       );
     })}
   </View>
-);
+  );
+};
 
 // ============================================
 // RENDU FORMATÉ — Markdown + Liens Recettes

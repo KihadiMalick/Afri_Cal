@@ -55,7 +55,7 @@ export default function MetalCard(props) {
             position: 'absolute', top: 0, left: 16, right: 16,
             height: 1, backgroundColor: 'rgba(136,146,160,0.25)',
           }} />
-          <View style={{ padding: 16 }}>
+          <View style={{ padding: 14 }}>
             {children}
           </View>
         </View>
