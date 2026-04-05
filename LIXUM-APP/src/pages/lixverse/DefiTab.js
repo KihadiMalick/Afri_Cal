@@ -94,7 +94,7 @@ export default function DefiTab({
             ))}
             <View style={{ alignItems: 'center', marginBottom: wp(4), paddingTop: wp(0) }}>
               <Image
-                source={require('../../assets/images/wall-of-health-title.webp')}
+                source={null}
                 style={{
                   width: wp(300),
                   height: wp(60),
