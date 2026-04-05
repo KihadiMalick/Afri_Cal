@@ -1,7 +1,9 @@
 import React from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
+import { useAuth } from '../config/AuthContext';
 
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import RepasPage from '../pages/repas/RepasPage';
@@ -10,12 +12,11 @@ import MedicAiPage from '../pages/medicai/index';
 import LixVersePage from '../pages/lixverse/LixVersePage';
 import RegisterPage from '../pages/register/RegisterPage';
 import LoginPage from '../pages/login/LoginPage';
+import WelcomePage from '../pages/WelcomePage';
 import ProfilePage from '../pages/profile/ProfilePage';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
-
-const PlaceholderScreen = () => null;
 
 function MainTabs() {
   return (
@@ -30,13 +31,31 @@ function MainTabs() {
 }
 
 export default function AppNavigator() {
+  var auth = useAuth();
+
+  if (auth.isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#1E2530', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#00D984" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Register" component={RegisterPage} />
-        <Stack.Screen name="Login" component={LoginPage} />
-        <Stack.Screen name="Profile" component={ProfilePage} />
-        <Stack.Screen name="MainTabs" component={MainTabs} />
+        {auth.isAuthenticated ? (
+          <>
+            <Stack.Screen name="MainTabs" component={MainTabs} />
+            <Stack.Screen name="Profile" component={ProfilePage} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="Welcome" component={WelcomePage} />
+            <Stack.Screen name="Login" component={LoginPage} />
+            <Stack.Screen name="Register" component={RegisterPage} />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

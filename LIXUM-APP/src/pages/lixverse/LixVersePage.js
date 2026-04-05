@@ -11,13 +11,14 @@ import * as Clipboard from 'expo-clipboard';
 import { wp, fp } from '../../constants/layout';
 import BottomTabs from '../../components/shared/NavBar';
 import {
-  SUPABASE_URL, SUPABASE_ANON_KEY, TEST_USER_ID,
+  SUPABASE_URL, SUPABASE_ANON_KEY,
   HEADERS, POST_HEADERS, ALL_CHARACTERS, CHAR_NAMES,
   CHAR_EMOJIS, FRAGS_NIV1, TIER_CONFIG, SLUGS_BY_TIER,
   randomSlugFromTier, NAV_TABS,
   NORMAL_SEGMENTS, SUPER_SEGMENTS, MEGA_SEGMENTS,
   WORLD_DOTS, getSegmentAngles
 } from './lixverseConstants';
+import { useAuth } from '../../config/AuthContext';
 import { LixGem } from './lixverseComponents';
 import SpinTab from './SpinTab';
 import DefiTab from './DefiTab';
@@ -28,6 +29,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const W = SCREEN_WIDTH;
 
 export default function LixVersePage({ navigation }) {
+  var auth = useAuth(); var userId = auth.userId;
   const [activeTab, setActiveTab] = useState('defi');
   const [lixBalance, setLixBalance] = useState(500);
   const [userEnergy, setUserEnergy] = useState(20);
@@ -217,7 +219,7 @@ export default function LixVersePage({ navigation }) {
 
   async function loadCharacterData() {
     try {
-      const userId = TEST_USER_ID;
+      if (!userId) return;
       const onb = await supaRpc('check_character_onboarding', { p_user_id: userId });
       const isOnboarded = onb?.first_character_chosen || false;
       setCharOnboarded(isOnboarded);
@@ -241,7 +243,7 @@ export default function LixVersePage({ navigation }) {
 
   async function chooseFirstCharacter(slug) {
     try {
-      const data = await supaRpc('choose_first_character', { p_user_id: TEST_USER_ID, p_slug: slug });
+      const data = await supaRpc('choose_first_character', { p_user_id: userId, p_slug: slug });
       if (data?.success) {
         setCharOnboarded(true);
         setShowCharOnboarding(false);
@@ -255,7 +257,7 @@ export default function LixVersePage({ navigation }) {
 
   async function switchActiveCharacter(slug) {
     try {
-      const data = await supaRpc('set_active_character', { p_user_id: TEST_USER_ID, p_slug: slug });
+      const data = await supaRpc('set_active_character', { p_user_id: userId, p_slug: slug });
       if (data?.success) {
         setActiveCharSlug(slug);
         setUserCollection(prev => prev.map(c => ({ ...c, is_active: c.slug === slug })));
@@ -268,7 +270,7 @@ export default function LixVersePage({ navigation }) {
   async function loadCharPowers(slug) {
     setLoadingPowers(true);
     try {
-      const data = await supaRpc('get_character_powers', { p_user_id: TEST_USER_ID, p_slug: slug });
+      const data = await supaRpc('get_character_powers', { p_user_id: userId, p_slug: slug });
       setCharPowers(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error('Powers load error:', e);
@@ -278,7 +280,7 @@ export default function LixVersePage({ navigation }) {
 
   async function consumePower(powerKey) {
     try {
-      const data = await supaRpc('use_character_power', { p_user_id: TEST_USER_ID, p_power_key: powerKey });
+      const data = await supaRpc('use_character_power', { p_user_id: userId, p_power_key: powerKey });
       if (data?.success) {
         setUserCollection(prev => prev.map(c =>
           c.slug === selectedChar?.slug
@@ -303,7 +305,7 @@ export default function LixVersePage({ navigation }) {
   async function rechargeChar() {
     if (!selectedChar) return;
     try {
-      const data = await supaRpc('recharge_character', { p_user_id: TEST_USER_ID, p_slug: selectedChar.slug });
+      const data = await supaRpc('recharge_character', { p_user_id: userId, p_slug: selectedChar.slug });
       if (data?.success) {
         setUserCollection(prev => prev.map(c =>
           c.slug === selectedChar.slug
@@ -324,7 +326,7 @@ export default function LixVersePage({ navigation }) {
 
   async function checkFreeSpin() {
     try {
-      const data = await supaRpc('check_free_spin_available', { p_user_id: TEST_USER_ID });
+      const data = await supaRpc('check_free_spin_available', { p_user_id: userId });
       if (data && typeof data === 'object') {
         const available = data.free_available !== false;
         setFreeSpinAvailable(available);
@@ -337,7 +339,7 @@ export default function LixVersePage({ navigation }) {
       }
     } catch (e) {
       try {
-        const res = await fetch(SUPABASE_URL + '/rest/v1/spin_history?user_id=eq.' + TEST_USER_ID + '&spin_tier=eq.normal&lix_cost=eq.0&order=created_at.desc&limit=1', { headers: HEADERS });
+        const res = await fetch(SUPABASE_URL + '/rest/v1/spin_history?user_id=eq.' + userId + '&spin_tier=eq.normal&lix_cost=eq.0&order=created_at.desc&limit=1', { headers: HEADERS });
         const d = await res.json();
         if (Array.isArray(d) && d.length > 0) {
           const lastFree = new Date(d[0].created_at).getTime();
@@ -379,7 +381,7 @@ export default function LixVersePage({ navigation }) {
       };
       setFragmentResult(fragData);
       if (rType === 'full_card' && fragSlug) {
-        supaRpc('add_character_fragment', { p_user_id: TEST_USER_ID, p_slug: fragSlug, p_amount: FRAGS_NIV1[fragTier] || 3 })
+        supaRpc('add_character_fragment', { p_user_id: userId, p_slug: fragSlug, p_amount: FRAGS_NIV1[fragTier] || 3 })
           .then(result => { if (result?.level_up) setFragmentResult(prev => prev ? { ...prev, levelUp: true, newLevel: result.new_level } : prev); })
           .catch(() => {});
       }
@@ -391,7 +393,7 @@ export default function LixVersePage({ navigation }) {
     if (!slug) return null;
     setFragmentSaving(true);
     try {
-      const data = await supaRpc('add_character_fragment', { p_user_id: TEST_USER_ID, p_slug: slug, p_amount: amount });
+      const data = await supaRpc('add_character_fragment', { p_user_id: userId, p_slug: slug, p_amount: amount });
       const result = {
         slug, name: CHAR_NAMES[slug] || slug, emoji: CHAR_EMOJIS[slug] || '🎭', tier, amount,
         isComplete: amount >= FRAGS_NIV1[tier], levelUp: data?.level_up || false, newLevel: data?.new_level || 0,
@@ -412,7 +414,7 @@ export default function LixVersePage({ navigation }) {
     const segments = getSegments();
     setSpinLoading(true);
     try {
-      const spinPromise = supaRpc('execute_spin', { p_user_id: TEST_USER_ID, p_spin_tier: spinTier });
+      const spinPromise = supaRpc('execute_spin', { p_user_id: userId, p_spin_tier: spinTier });
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Connexion lente — réessaie')), 15000));
       const data = await Promise.race([spinPromise, timeoutPromise]);
       if (data && typeof data.reward_value === 'string') {
@@ -520,7 +522,7 @@ export default function LixVersePage({ navigation }) {
 
   async function handleCharRecharge(charId) {
     try {
-      const data = await supaRpc('recharge_character', { p_user_id: TEST_USER_ID, p_slug: charId });
+      const data = await supaRpc('recharge_character', { p_user_id: userId, p_slug: charId });
       if (data?.success) {
         setUserCollection(prev => prev.map(c =>
           (c.slug || c.id) === charId
@@ -540,14 +542,15 @@ export default function LixVersePage({ navigation }) {
   const hdrs = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 
   async function loadAll() {
+    if (!userId) return;
     setLoading(true);
     try {
       const [a,b,c,d,e] = await Promise.all([
-        fetch(SUPABASE_URL+'/rest/v1/users_profile?user_id=eq.'+TEST_USER_ID+'&select=lix_balance,energy',{headers:hdrs}),
-        fetch(SUPABASE_URL+'/rest/v1/lixverse_user_characters?user_id=eq.'+TEST_USER_ID+'&select=character_id',{headers:hdrs}),
+        fetch(SUPABASE_URL+'/rest/v1/users_profile?user_id=eq.'+userId+'&select=lix_balance,energy',{headers:hdrs}),
+        fetch(SUPABASE_URL+'/rest/v1/lixverse_user_characters?user_id=eq.'+userId+'&select=character_id',{headers:hdrs}),
         fetch(SUPABASE_URL+'/rest/v1/lixverse_challenges?is_active=eq.true&order=start_date.asc',{headers:hdrs}),
         fetch(SUPABASE_URL+'/rest/v1/lixverse_notifications?order=created_at.desc&limit=20',{headers:hdrs}),
-        fetch(SUPABASE_URL+'/rest/v1/lixverse_group_members?user_id=eq.'+TEST_USER_ID+'&select=group_id,personal_score,lixverse_groups(id,name,member_count,total_score,invite_code,challenge_id)',{headers:hdrs}),
+        fetch(SUPABASE_URL+'/rest/v1/lixverse_group_members?user_id=eq.'+userId+'&select=group_id,personal_score,lixverse_groups(id,name,member_count,total_score,invite_code,challenge_id)',{headers:hdrs}),
       ]);
       const [aD,bD,cD,dD,eD] = await Promise.all([a.json(),b.json(),c.json(),d.json(),e.json()]);
       if(aD[0]?.lix_balance!=null)setLixBalance(aD[0].lix_balance);
@@ -581,7 +584,7 @@ export default function LixVersePage({ navigation }) {
       if (Array.isArray(catData)) setStickerCatalog(catData);
       const certMonth = new Date().toISOString().slice(0, 7);
       const prevMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
-      const certRes = await fetch(SUPABASE_URL + '/rest/v1/wall_certifications?user_id=eq.' + TEST_USER_ID + '&or=(month_year.eq.' + certMonth + ',month_year.eq.' + prevMonth + ')&order=month_year.desc&limit=1', { headers: hdrs });
+      const certRes = await fetch(SUPABASE_URL + '/rest/v1/wall_certifications?user_id=eq.' + userId + '&or=(month_year.eq.' + certMonth + ',month_year.eq.' + prevMonth + ')&order=month_year.desc&limit=1', { headers: hdrs });
       const certData = await certRes.json();
       if (Array.isArray(certData) && certData.length > 0) setMyCertification(certData[0]);
     } catch(err) { console.error('Load:', err); }
@@ -590,7 +593,7 @@ export default function LixVersePage({ navigation }) {
 
   async function fetchChallengeScores() {
     try {
-      const data = await supaRpc('get_user_challenge_scores', { p_user_id: TEST_USER_ID });
+      const data = await supaRpc('get_user_challenge_scores', { p_user_id: userId });
       if (Array.isArray(data)) return data;
       return [];
     } catch (err) { return []; }
@@ -600,7 +603,7 @@ export default function LixVersePage({ navigation }) {
     if (!challengeId) return;
     setLeaderboardLoading(true);
     try {
-      const data = await supaRpc('get_challenge_leaderboard', { p_challenge_id: challengeId, p_user_id: TEST_USER_ID });
+      const data = await supaRpc('get_challenge_leaderboard', { p_challenge_id: challengeId, p_user_id: userId });
       if (data && data.top_groups) setLeaderboardData(data);
     } catch (e) { console.error('Leaderboard error:', e); }
     setLeaderboardLoading(false);
@@ -621,7 +624,7 @@ export default function LixVersePage({ navigation }) {
     if (!challengeId) return;
     setLbTabLoading(true);
     try {
-      const data = await supaRpc('get_individual_leaderboard', { p_challenge_id: challengeId, p_user_id: TEST_USER_ID });
+      const data = await supaRpc('get_individual_leaderboard', { p_challenge_id: challengeId, p_user_id: userId });
       if (data) setIndividualLB(data);
     } catch (e) {}
     setLbTabLoading(false);
@@ -631,7 +634,7 @@ export default function LixVersePage({ navigation }) {
     if (!challengeId) return;
     setLbTabLoading(true);
     try {
-      const data = await supaRpc('get_country_leaderboard', { p_challenge_id: challengeId, p_user_id: TEST_USER_ID });
+      const data = await supaRpc('get_country_leaderboard', { p_challenge_id: challengeId, p_user_id: userId });
       if (data) setCountryLB(data);
     } catch (e) {}
     setLbTabLoading(false);
@@ -640,7 +643,7 @@ export default function LixVersePage({ navigation }) {
   async function checkEligibilityAndProceed(challenge, action) {
     setEligibilityChecking(true);
     try {
-      const data = await supaRpc('check_challenge_eligibility', { p_user_id: TEST_USER_ID });
+      const data = await supaRpc('check_challenge_eligibility', { p_user_id: userId });
       setEligibilityChecking(false);
       if (data?.eligible) {
         setSelectedChallenge(challenge);
@@ -664,7 +667,7 @@ export default function LixVersePage({ navigation }) {
   async function createGroup() {
     if (!newGroupName.trim() || !selectedChallenge) return;
     try {
-      const cd = await supaRpc('check_create_group_cooldown', { p_user_id: TEST_USER_ID });
+      const cd = await supaRpc('check_create_group_cooldown', { p_user_id: userId });
       if (cd && !cd.allowed) {
         showLixAlert('⏳ Cooldown actif', 'Tu as supprimé un groupe récemment.\nTu pourras en créer un nouveau dans ' + cd.days_left + ' jour' + (cd.days_left > 1 ? 's' : '') + '.', [{ text: 'Compris', style: 'cancel' }], '⏳');
         return;
@@ -673,10 +676,10 @@ export default function LixVersePage({ navigation }) {
     try {
       const code = selectedChallenge.challenge_type.toUpperCase().slice(0, 5) + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
       const h = { ...hdrs, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
-      const res = await fetch(SUPABASE_URL + '/rest/v1/lixverse_groups', { method: 'POST', headers: h, body: JSON.stringify({ challenge_id: selectedChallenge.id, name: newGroupName.trim(), created_by: TEST_USER_ID, creator_lixtag: 'LXM-2K7F4A', invite_code: code, member_count: 1 }) });
+      const res = await fetch(SUPABASE_URL + '/rest/v1/lixverse_groups', { method: 'POST', headers: h, body: JSON.stringify({ challenge_id: selectedChallenge.id, name: newGroupName.trim(), created_by: userId, creator_lixtag: 'LXM-2K7F4A', invite_code: code, member_count: 1 }) });
       const g = await res.json();
       if (g && g[0]) {
-        await fetch(SUPABASE_URL + '/rest/v1/lixverse_group_members', { method: 'POST', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ group_id: g[0].id, user_id: TEST_USER_ID, lixtag: 'LXM-2K7F4A', country: 'Burundi' }) });
+        await fetch(SUPABASE_URL + '/rest/v1/lixverse_group_members', { method: 'POST', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ group_id: g[0].id, user_id: userId, lixtag: 'LXM-2K7F4A', country: 'Burundi' }) });
         showLixAlert('Groupe créé', '"' + newGroupName.trim() + '"\n\nCode : ' + code, [{ text: 'Parfait', color: '#00D984' }], '✅');
         setShowCreateGroup(false); setNewGroupName(''); loadAll();
       }
@@ -691,7 +694,7 @@ export default function LixVersePage({ navigation }) {
       const gs = await res.json();
       if (!gs || gs.length === 0) { showLixAlert('Code invalide', 'Aucun groupe trouvé avec ce code.', [{ text: 'Réessayer', style: 'cancel' }], '🔍'); return; }
       const g = gs[0];
-      await fetch(SUPABASE_URL + '/rest/v1/lixverse_group_members', { method: 'POST', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ group_id: g.id, user_id: TEST_USER_ID, lixtag: 'LXM-2K7F4A', country: 'Burundi' }) });
+      await fetch(SUPABASE_URL + '/rest/v1/lixverse_group_members', { method: 'POST', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ group_id: g.id, user_id: userId, lixtag: 'LXM-2K7F4A', country: 'Burundi' }) });
       await fetch(SUPABASE_URL + '/rest/v1/lixverse_groups?id=eq.' + g.id, { method: 'PATCH', headers: { ...h, 'Prefer': 'return=minimal' }, body: JSON.stringify({ member_count: g.member_count + 1 }) });
       showLixAlert('Rejoint', 'Tu fais partie de "' + g.name + '" !', [{ text: 'Super', color: '#00D984' }], '🤝');
       setShowJoinGroup(false); setJoinCode(''); loadAll();
@@ -713,7 +716,7 @@ export default function LixVersePage({ navigation }) {
     if (poking || !groupDetail?.group?.id) return;
     setPoking(true);
     try {
-      const data = await supaRpc('poke_group', { p_user_id: TEST_USER_ID, p_group_id: groupDetail.group.id });
+      const data = await supaRpc('poke_group', { p_user_id: userId, p_group_id: groupDetail.group.id });
       if (data?.success) {
         showLixAlert('📢 Poke envoyé !', data.poked_count + ' membre' + (data.poked_count > 1 ? 's' : '') + ' notifié' + (data.poked_count > 1 ? 's' : ''), [{ text: 'On se bouge !', color: '#FF8C42' }], '📢');
       } else {
@@ -728,7 +731,7 @@ export default function LixVersePage({ navigation }) {
     showLixAlert('🗑️ Supprimer le groupe ?', 'Tous les membres seront retirés et les scores perdus.\n\nCette action est irréversible.',
       [{ text: 'Supprimer', color: '#FF6B6B', onPress: async () => {
         try {
-          const data = await supaRpc('delete_group', { p_user_id: TEST_USER_ID, p_group_id: groupDetail.group.id });
+          const data = await supaRpc('delete_group', { p_user_id: userId, p_group_id: groupDetail.group.id });
           if (data?.success) { setSelectedGroup(null); setGroupDetail(null); loadAll(); showLixAlert('Groupe supprimé', '"' + data.deleted_group + '" a été dissous.', [{ text: 'OK', color: '#00D984' }], '✅'); }
           else { showLixAlert('Erreur', data?.error || 'Impossible de supprimer', [{ text: 'OK', style: 'cancel' }], '❌'); }
         } catch (e) { console.error('Delete group error:', e); }
@@ -740,7 +743,7 @@ export default function LixVersePage({ navigation }) {
     showLixAlert('Quitter le groupe ?', 'Tu perdras tes points dans "' + groupDetail.group.name + '".',
       [{ text: 'Quitter', color: '#FF6B6B', onPress: async () => {
         try {
-          const data = await supaRpc('leave_group', { p_user_id: TEST_USER_ID, p_group_id: groupDetail.group.id });
+          const data = await supaRpc('leave_group', { p_user_id: userId, p_group_id: groupDetail.group.id });
           if (data?.success) { setSelectedGroup(null); setGroupDetail(null); loadAll(); showLixAlert('Groupe quitté', 'Tu as quitté "' + data.left_group + '".', [{ text: 'OK', style: 'cancel' }], '👋'); }
           else { showLixAlert('Erreur', data?.error || 'Impossible', [{ text: 'OK', style: 'cancel' }], '❌'); }
         } catch (e) { console.error('Leave group error:', e); }
@@ -778,7 +781,7 @@ export default function LixVersePage({ navigation }) {
 
   async function requestJoinGroup(group) {
     try {
-      const data = await supaRpc('request_join_group', { p_user_id: TEST_USER_ID, p_group_id: group.id });
+      const data = await supaRpc('request_join_group', { p_user_id: userId, p_group_id: group.id });
       if (data?.success) {
         showLixAlert('✅ Demande envoyée', 'Le leader de "' + data.group_name + '" recevra ta demande.', [{ text: 'Compris', color: '#D4AF37' }], '📩');
         setShowSearchGroup(false); setSearchGroupQuery(''); setSearchGroupResults([]);
@@ -791,7 +794,7 @@ export default function LixVersePage({ navigation }) {
   async function loadPendingRequests() {
     setPendingRequestsLoading(true);
     try {
-      const data = await supaRpc('get_pending_requests', { p_user_id: TEST_USER_ID });
+      const data = await supaRpc('get_pending_requests', { p_user_id: userId });
       setPendingRequests(Array.isArray(data) ? data : []);
     } catch (e) { console.error('Pending requests error:', e); }
     setPendingRequestsLoading(false);
@@ -799,7 +802,7 @@ export default function LixVersePage({ navigation }) {
 
   async function handleJoinRequest(requestId, accept) {
     try {
-      const data = await supaRpc('handle_join_request', { p_leader_id: TEST_USER_ID, p_request_id: requestId, p_accept: accept });
+      const data = await supaRpc('handle_join_request', { p_leader_id: userId, p_request_id: requestId, p_accept: accept });
       if (data?.success) {
         const action = accept ? 'acceptée' : 'rejetée';
         showLixAlert(accept ? '✅ Accepté' : '❌ Rejeté', 'Demande de ' + data.requester_lixtag + ' ' + action + '.', [{ text: 'OK', color: accept ? '#00D984' : '#FF6B6B' }], accept ? '🤝' : '👋');
@@ -811,8 +814,8 @@ export default function LixVersePage({ navigation }) {
   const handleStickerTap = (sticker) => {
     const id = sticker.id;
     setWallStickers(prev => prev.map(s => s.id === id ? { ...s, like_count: (s.like_count || 0) + 1 } : s));
-    fetch(SUPABASE_URL + '/rest/v1/rpc/like_wall_sticker', { method: 'POST', headers: { ...hdrs, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_sticker_id: id, p_user_id: TEST_USER_ID }) }).catch(() => {});
-    supaRpc('score_social_action', { p_user_id: TEST_USER_ID }).catch(() => {});
+    fetch(SUPABASE_URL + '/rest/v1/rpc/like_wall_sticker', { method: 'POST', headers: { ...hdrs, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_sticker_id: id, p_user_id: userId }) }).catch(() => {});
+    supaRpc('score_social_action', { p_user_id: userId }).catch(() => {});
     const heartId = Date.now() + Math.random();
     const heartEmojis = ['🩶', '🤍', '💛', '⭐', '✨'];
     const emoji = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
@@ -913,7 +916,7 @@ export default function LixVersePage({ navigation }) {
           clearInterval(coordsInterval); clearInterval(linesInterval);
           radarAnim.stopAnimation(); pulseRing1.stopAnimation(); pulseRing2.stopAnimation(); pulseRing3.stopAnimation();
           try {
-            const matchData = await supaRpc('find_binome_match', { p_user_id: TEST_USER_ID });
+            const matchData = await supaRpc('find_binome_match', { p_user_id: userId });
             if (!matchData || matchData.error || !matchData.match_found) {
               setSearchProgress(100); setCompatibilityScore(0); setBinomeStatus('no_match');
               setRetryAfterTime(Date.now() + 24 * 60 * 60 * 1000);
@@ -971,7 +974,7 @@ export default function LixVersePage({ navigation }) {
     loadAll(); checkFreeSpin();
     (async () => {
       try {
-        const res = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID + '&select=full_name', { headers: HEADERS });
+        const res = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=full_name', { headers: HEADERS });
         const d = await res.json();
         if (d && d[0]) setUserNameAvatar(d[0].full_name || '');
       } catch (e) {}
@@ -981,7 +984,7 @@ export default function LixVersePage({ navigation }) {
       Animated.timing(freeBtnPulse, { toValue: 1.04, duration: 1200, useNativeDriver: true }),
       Animated.timing(freeBtnPulse, { toValue: 1, duration: 1200, useNativeDriver: true }),
     ])).start();
-  }, []);
+  }, [userId]);
 
   useEffect(() => { if (activeTab === 'characters') loadCharacterData(); }, [activeTab]);
   useEffect(() => { if (activeTab === 'defi') { fetchChallengeScores().then(scores => setChallengeScores(scores)); loadPendingRequests(); } }, [activeTab]);
@@ -1021,7 +1024,7 @@ export default function LixVersePage({ navigation }) {
       Animated.timing(pendingPulse, { toValue: 0.6, duration: 1000, useNativeDriver: false }),
     ])).start();
     try {
-      const reqData = await supaRpc('send_binome_request', { p_user_id: TEST_USER_ID, p_partner_lixtag: binomePartner.lixtag });
+      const reqData = await supaRpc('send_binome_request', { p_user_id: userId, p_partner_lixtag: binomePartner.lixtag });
       if (!reqData?.success) {
         pendingPulse.stopAnimation();
         showLixAlert('Erreur', reqData?.error || 'Impossible d\'envoyer', [{ text: 'OK', style: 'cancel' }], '⚠️');

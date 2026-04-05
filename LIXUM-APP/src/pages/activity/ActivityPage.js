@@ -8,6 +8,7 @@ import Svg, { G, Line, Circle, Path, Rect, Ellipse, Defs,
   LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../config/supabase';
+import { useAuth } from '../../config/AuthContext';
 import { useLang } from '../../config/LanguageContext';
 import { wp, fp } from '../../constants/layout';
 
@@ -32,7 +33,6 @@ import {
   RUN_FLAGS, TIME_STEPS, formatDuration, formatDistance,
 } from './activityConstants';
 
-const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 const WALK_SCENE_W = 2000;
 const WALK_MAX_DIST = 10000;
 const WALK_CANVAS_H = 85;
@@ -43,6 +43,7 @@ const RUN_METERS_PER_PIXEL = RUN_MAX_DIST / RUN_SCENE_W;
 const RUN_PIXELS_PER_METER = RUN_SCENE_W / RUN_MAX_DIST;
 
 export default function ActivityPage({ onNavigate }) {
+  var auth = useAuth(); var userId = auth.userId;
   var _lc = useLang(); var lang = _lc.lang;
   var t = getLang(lang);
 
@@ -171,12 +172,13 @@ export default function ActivityPage({ onNavigate }) {
   };
 
   const fetchSmartData = async () => {
+    if (!userId) return;
     try {
       const today = new Date().toISOString().split('T')[0];
       const { data: profile } = await supabase
         .from('users_profile')
         .select('daily_calorie_target, current_mood, weight')
-        .eq('user_id', TEST_USER_ID)
+        .eq('user_id', userId)
         .maybeSingle();
 
       const target = profile?.daily_calorie_target || 2000;
@@ -189,7 +191,7 @@ export default function ActivityPage({ onNavigate }) {
       const { data: summary } = await supabase
         .from('daily_summary')
         .select('total_calories, total_calories_burned')
-        .eq('user_id', TEST_USER_ID)
+        .eq('user_id', userId)
         .eq('date', today)
         .maybeSingle();
 
@@ -208,17 +210,19 @@ export default function ActivityPage({ onNavigate }) {
   };
 
   const loadTodayActivities = async () => {
+    if (!userId) return;
     const today = new Date().toISOString().split('T')[0];
     const { data } = await supabase
       .from('activities')
       .select('*')
-      .eq('user_id', TEST_USER_ID)
+      .eq('user_id', userId)
       .eq('date', today)
       .order('created_at', { ascending: false });
     if (data) setTodayActivities(data);
   };
 
   const fetchWeeklyMinutes = async () => {
+    if (!userId) return;
     try {
       const now = new Date();
       const dayOfWeek = now.getDay();
@@ -228,7 +232,7 @@ export default function ActivityPage({ onNavigate }) {
       const { data } = await supabase
         .from('user_activities')
         .select('duration_min')
-        .eq('user_id', TEST_USER_ID)
+        .eq('user_id', userId)
         .gte('performed_at', monday.toISOString());
       const total = (data || []).reduce((sum, a) => sum + (a.duration_min || 0), 0);
       setWeeklyMinutes(total);
@@ -239,42 +243,45 @@ export default function ActivityPage({ onNavigate }) {
 
   // Init
   useEffect(() => {
-    loadTodayActivities();
-    fetchSmartData();
-    fetchWeeklyMinutes();
-    loadPagePowers();
-    (async () => {
-      try {
-        const { data: profile } = await supabase.from('users_profile').select('full_name, lix_balance, weight').eq('user_id', TEST_USER_ID).maybeSingle();
-        if (profile) {
-          setUserNameAvatar(profile.full_name || '');
-          setLixBalance(profile.lix_balance || 0);
-          if (profile.weight) setUserWeight(profile.weight);
-        }
-      } catch (e) {}
-    })();
-    (async () => {
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        const { data } = await supabase.from('user_activities').select('id').eq('user_id', TEST_USER_ID).gte('created_at', today + 'T00:00:00').limit(1);
-        if (data && data.length > 0) setLixRewardedToday(true);
-      } catch (e) {}
-    })();
-  }, []);
+    if (userId) {
+      loadTodayActivities();
+      fetchSmartData();
+      fetchWeeklyMinutes();
+      loadPagePowers();
+      (async () => {
+        try {
+          const { data: profile } = await supabase.from('users_profile').select('full_name, lix_balance, weight').eq('user_id', userId).maybeSingle();
+          if (profile) {
+            setUserNameAvatar(profile.full_name || '');
+            setLixBalance(profile.lix_balance || 0);
+            if (profile.weight) setUserWeight(profile.weight);
+          }
+        } catch (e) {}
+      })();
+      (async () => {
+        try {
+          const today = new Date().toISOString().split('T')[0];
+          const { data } = await supabase.from('user_activities').select('id').eq('user_id', userId).gte('created_at', today + 'T00:00:00').limit(1);
+          if (data && data.length > 0) setLixRewardedToday(true);
+        } catch (e) {}
+      })();
+    }
+  }, [userId]);
 
   // === FONCTIONS POUVOIRS + SAVE ===
 
   const ACTIVITY_PAGE = 'activite';
 
   const loadPagePowers = async () => {
+    if (!userId) return;
     try {
       const { data: collection } = await supabase
-        .rpc('get_user_collection', { p_user_id: TEST_USER_ID });
+        .rpc('get_user_collection', { p_user_id: userId });
       const active = (collection || []).find(c => c.is_active);
       if (!active) { setActiveChar(null); setPagePowers([]); return; }
       setActiveChar(active);
       const { data: powers } = await supabase
-        .rpc('get_character_powers', { p_user_id: TEST_USER_ID, p_slug: active.slug });
+        .rpc('get_character_powers', { p_user_id: userId, p_slug: active.slug });
       setPagePowers((powers || []).filter(p => p.redirect_page === ACTIVITY_PAGE && p.unlocked));
     } catch (e) {
       console.warn('Page powers load error:', e);
@@ -284,7 +291,7 @@ export default function ActivityPage({ onNavigate }) {
   const consumePower = async (powerKey) => {
     try {
       const { data } = await supabase.rpc('use_character_power', {
-        p_user_id: TEST_USER_ID, p_power_key: powerKey,
+        p_user_id: userId, p_power_key: powerKey,
       });
       if (data?.success) {
         setActiveChar(prev => prev ? { ...prev, uses_remaining: data.uses_remaining } : null);
@@ -339,7 +346,7 @@ export default function ActivityPage({ onNavigate }) {
     if (!actData) return false;
     try {
       const { error } = await supabase.rpc('add_user_activity', {
-        p_user_id: TEST_USER_ID,
+        p_user_id: userId,
         p_name: actData.label, p_type: activityType,
         p_duration_minutes: Math.round(durationMin),
         p_calories_burned: Math.round(caloriesBurned),
@@ -361,7 +368,7 @@ export default function ActivityPage({ onNavigate }) {
   const deleteActivity = async (activityId) => {
     try {
       const { error } = await supabase.rpc('delete_user_activity', {
-        p_activity_id: activityId, p_user_id: TEST_USER_ID,
+        p_activity_id: activityId, p_user_id: userId,
       });
       if (error) { alert('Erreur suppression : ' + error.message); return; }
       await loadTodayActivities();

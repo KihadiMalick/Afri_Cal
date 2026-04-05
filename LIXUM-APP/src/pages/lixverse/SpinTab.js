@@ -14,9 +14,10 @@ import {
   SUPABASE_URL, POST_HEADERS, HEADERS,
   NORMAL_SEGMENTS, SUPER_SEGMENTS, MEGA_SEGMENTS,
   SLUGS_BY_TIER, CHAR_NAMES, CHAR_EMOJIS, FRAGS_NIV1,
-  SEGMENT_GRADIENTS, TEST_USER_ID,
+  SEGMENT_GRADIENTS,
   getSegmentAngles, describeArc, getSegmentRewardType
 } from './lixverseConstants';
+import { useAuth } from '../../config/AuthContext';
 import { wp, fp } from '../../constants/layout';
 
 const W = Dimensions.get('window').width;
@@ -53,6 +54,7 @@ export default function SpinTab({
   showLixAlert,
   lixSpinScrollRef,
 }) {
+  var auth = useAuth(); var userId = auth.userId;
   const getSegments = () => {
     if (spinTier === 'super') return SUPER_SEGMENTS;
     if (spinTier === 'mega') return MEGA_SEGMENTS;
@@ -542,10 +544,10 @@ export default function SpinTab({
                       await fetch(SUPABASE_URL + '/rest/v1/rpc/recharge_energy_with_lix', {
                         method: 'POST',
                         headers: POST_HEADERS,
-                        body: JSON.stringify({ p_user_id: TEST_USER_ID, p_lix_cost: pk.l, p_energy_amount: pk.e }),
+                        body: JSON.stringify({ p_user_id: userId, p_lix_cost: pk.l, p_energy_amount: pk.e }),
                       });
                     } catch (e) {
-                      fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, {
+                      fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId, {
                         method: 'PATCH',
                         headers: POST_HEADERS,
                         body: JSON.stringify({
@@ -639,7 +641,7 @@ export default function SpinTab({
                       onCloseFragmentModal();
                       onGoToCharacters();
                       try {
-                        const res = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID + '&select=lix_balance,energy', { headers: HEADERS });
+                        const res = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=lix_balance,energy', { headers: HEADERS });
                         const d = await res.json();
                         if (d && d[0]) {
                           if (d[0].lix_balance != null || d[0].energy != null) {

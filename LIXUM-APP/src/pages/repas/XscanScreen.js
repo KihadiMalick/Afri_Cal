@@ -12,8 +12,7 @@ import { supabase } from '../../config/supabase';
 import { useLang } from '../../config/LanguageContext';
 import { wp, fp } from '../../constants/layout';
 import { MEAL_SLOTS } from './repasConstants';
-
-const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
+import { useAuth } from '../../config/AuthContext';
 const SCREEN_WIDTH = require('react-native').Dimensions.get('window').width;
 const SCREEN_HEIGHT = require('react-native').Dimensions.get('window').height;
 
@@ -25,6 +24,7 @@ const XscanScreen = forwardRef(function XscanScreen({
   visible, onClose, onMealSaved, userProfile,
   pagePowers, activeChar, todaySubstitutions, setTodaySubstitutions, consumePower,
 }, ref) {
+  var auth = useAuth(); var userId = auth.userId;
   var _lc = useLang(); var lang = _lc.lang;
 
   // === PERMISSIONS CAMÉRA ===
@@ -810,7 +810,7 @@ const XscanScreen = forwardRef(function XscanScreen({
       const source = capturedPhoto?.uri?.startsWith('file') ? 'xscan_4' : 'gallery';
 
       const { data, error } = await supabase.rpc('add_meal_and_update_summary', {
-        p_user_id: TEST_USER_ID,
+        p_user_id: userId,
         p_meal_type: selectedMealType || getAutoMealType(),
         p_food_name: currentDishName || scanResult.name_fr || 'Plat scanné',
         p_calories: Math.round(totals.calories || 0),

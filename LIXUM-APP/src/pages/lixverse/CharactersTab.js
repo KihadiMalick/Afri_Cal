@@ -5,10 +5,11 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   ALL_CHARACTERS, TIER_CONFIG, CHAR_NAMES, FRAGS_NIV1,
-  CHARACTER_IMAGES, TEST_USER_ID, SUPABASE_URL,
+  CHARACTER_IMAGES, SUPABASE_URL,
   HEADERS, POST_HEADERS, getCharImage
 } from './lixverseConstants';
 import { LixGem } from './lixverseComponents';
+import { useAuth } from '../../config/AuthContext';
 import { wp, fp } from '../../constants/layout';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -46,6 +47,7 @@ export default function CharactersTab({
   onGoToSpin,
   onNavigateTo,
 }) {
+  var auth = useAuth(); var userId = auth.userId;
   const frontInterpolate = flipAnim.interpolate({
     inputRange: [0, 1], outputRange: [1, 0]
   });
@@ -545,7 +547,7 @@ export default function CharactersTab({
                                             : power.power_key === 'tardigrum_resistance' ? 'xp_activity'
                                             : 'xp_activity';
                                           const boostExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-                                          fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, {
+                                          fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId, {
                                             method: 'PATCH',
                                             headers: POST_HEADERS,
                                             body: JSON.stringify({
@@ -620,7 +622,7 @@ export default function CharactersTab({
                                             return;
                                           }
                                           showLixAlert('✅ Préférence activée', (power.name_fr || power.name || '') + ' est maintenant actif.\nTu recevras des notifications en conséquence.', [{ text: 'Super', color: '#00D984' }], '🔔');
-                                          fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, {
+                                          fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId, {
                                             method: 'PATCH', headers: POST_HEADERS,
                                             body: JSON.stringify({ ['pref_' + power.power_key]: true }),
                                           }).catch(() => {});

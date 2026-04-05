@@ -10,6 +10,7 @@ import MapView, { Polyline, Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as Speech from 'expo-speech';
 import { supabase } from '../../config/supabase';
+import { useAuth } from '../../config/AuthContext';
 import { useLang } from '../../config/LanguageContext';
 import { wp, fp } from '../../constants/layout';
 import {
@@ -23,8 +24,6 @@ import {
 
 const SUPABASE_URL = 'https://yuhordnzfpcswztujozi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
-const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
-
 export default function LiveTrackingScreen({
   visible,
   onClose,
@@ -36,6 +35,7 @@ export default function LiveTrackingScreen({
   totalBurnedBefore,
   userMood,
 }) {
+  var auth = useAuth(); var userId = auth.userId;
   var _lc = useLang(); var lang = _lc.lang;
   var t = getLang(lang);
 
@@ -120,7 +120,7 @@ export default function LiveTrackingScreen({
         var profileData = await supabase
           .from('users_profile')
           .select('current_weather')
-          .eq('user_id', TEST_USER_ID)
+          .eq('user_id', userId)
           .maybeSingle();
         if (profileData.data && profileData.data.current_weather) {
           setLiveWeatherMult(getWeatherWaterMult(profileData.data.current_weather));

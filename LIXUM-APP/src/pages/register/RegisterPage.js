@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
+import { supabase } from '../../config/supabase';
 import {
   W, H, C,
   SUPABASE_URL, SUPABASE_ANON_KEY,
@@ -32,9 +33,9 @@ export default function RegisterPage({ navigation }) {
   var t = texts[lang];
 
   useEffect(function() {
-    AsyncStorage.getItem('lixum_lang').then(function(s) { if (s === 'en' || s === 'fr') setLang(s); }).catch(function() {});
+    AsyncStorage.getItem('lixum_lang').then(function(s) { if (s === 'en' || s === 'fr') setLang(s); }).catch(function(err) { console.warn('[LIXUM] lang fetch error:', err); });
   }, []);
-  var changeLang = function(nl) { setLang(nl); AsyncStorage.setItem('lixum_lang', nl).catch(function() {}); };
+  var changeLang = function(nl) { setLang(nl); AsyncStorage.setItem('lixum_lang', nl).catch(function(err) { console.warn('[LIXUM] lang save error:', err); }); };
 
   var _fd = useState({
     fullName: '', email: '', emailConfirm: '', password: '', passwordConfirm: '', emailAvailable: null,
@@ -114,6 +115,13 @@ export default function RegisterPage({ navigation }) {
       }
       var userId = (authData.user && authData.user.id) || authData.id;
       var accessToken = authData.access_token || (authData.session && authData.session.access_token);
+      var refreshToken = authData.refresh_token || (authData.session && authData.session.refresh_token);
+      if (accessToken) {
+        supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || '',
+        }).catch(function(err) { console.warn('setSession error:', err); });
+      }
       if (!userId) { setLoading(false); showAlert(lang === 'fr' ? 'Erreur' : 'Error', lang === 'fr' ? 'Impossible de cr\u00e9er le compte.' : 'Unable to create account.', [{ text: 'OK', style: 'cancel' }], 'error'); return; }
 
       fetch(SUPABASE_URL + '/rest/v1/rpc/create_user_profile', {
@@ -132,7 +140,6 @@ export default function RegisterPage({ navigation }) {
         setLoading(false);
         var finalTag = (profileResult && profileResult.lixtag) || clientLixTag;
         if (profileResult && profileResult.success === false) { showAlert(lang === 'fr' ? 'Erreur' : 'Error', profileResult.error || 'Erreur profil', [{ text: 'OK', style: 'cancel' }], 'error'); return; }
-        AsyncStorage.setItem('lixum_user_id', userId).catch(function() {});
         showAlert(
           lang === 'fr' ? 'Bienvenue sur LIXUM !' : 'Welcome to LIXUM!',
           lang === 'fr' ? 'Ton compte est cr\u00e9\u00e9 !\n\nObjectif : ' + calc.dailyTarget + ' kcal/jour\n+50 LX Gems de bienvenue' : 'Account created!\n\nGoal: ' + calc.dailyTarget + ' kcal/day\n+50 LX Gems welcome bonus',
@@ -209,7 +216,7 @@ export default function RegisterPage({ navigation }) {
                   <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 8 }}>{lixAlert.title}</Text>
                   <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 16 }}>{lixAlert.message}</Text>
                   {lixAlert.lixTag ? (
-                    <TouchableOpacity onPress={function() { Clipboard.setStringAsync(lixAlert.lixTag).catch(function() {}); }}
+                    <TouchableOpacity onPress={function() { Clipboard.setStringAsync(lixAlert.lixTag).catch(function(err) { console.warn('[LIXUM] clipboard error:', err); }); }}
                       style={{ backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <Text style={{ color: '#00D984', fontSize: 16, fontWeight: '900', letterSpacing: 2 }}>{lixAlert.lixTag}</Text>
                       <Ionicons name="copy-outline" size={14} color="#00D984" />

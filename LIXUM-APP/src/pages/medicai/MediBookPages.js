@@ -9,7 +9,9 @@ import Svg, {
 } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import { wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT, SUPABASE_URL, SUPABASE_ANON_KEY, TEST_USER_ID } from './constants';
+import { wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT, SUPABASE_URL, SUPABASE_ANON_KEY } from './constants';
+import { useAuth } from '../../config/AuthContext';
+import { supabase } from '../../config/supabase';
 import { BottomSpacer } from './shared';
 
 export const mbDataStatus = [
@@ -211,6 +213,15 @@ export const MediBookContent = (props) => {
     // Animation
     mbGenerateScale,
   } = props;
+
+  var auth = useAuth();
+  var userId = auth.userId;
+
+  var getAuthHeaders = async function() {
+    var result = await supabase.auth.getSession();
+    var token = result.data.session ? result.data.session.access_token : SUPABASE_ANON_KEY;
+    return { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+  };
 
   const captureCarnetPage = (index) => {
     setSelectedCarnetPage(index);
@@ -678,13 +689,9 @@ export const MediBookContent = (props) => {
               setUploadState('integrating');
 
               try {
-                const userId = TEST_USER_ID;
-                const headers = {
-                  'apikey': SUPABASE_ANON_KEY,
-                  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-                  'Content-Type': 'application/json',
-                  'Prefer': 'return=minimal',
-                };
+                if (!userId) { Alert.alert('Erreur', 'Utilisateur non connecté'); setUploadState('idle'); return; }
+                const headers = await getAuthHeaders();
+                headers['Prefer'] = 'return=minimal';
 
                 // Insérer les analyses
                 if (scanResults.data && scanResults.data.length > 0) {
