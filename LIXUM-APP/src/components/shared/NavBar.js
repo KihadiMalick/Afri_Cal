@@ -36,7 +36,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => {
       backgroundColor: '#1E2530',
       borderTopWidth: 1,
       borderTopColor: 'rgba(74,79,85,0.5)',
-      paddingTop: 8,
+      paddingTop: 12,
       paddingBottom: bottomPad,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: -4 },
@@ -54,7 +54,7 @@ const BottomTabs = ({ activeTab, onTabPress }) => {
           onPress={() => onTabPress(tab.key)}
           activeOpacity={0.7}
         >
-          <View style={{ position: 'relative' }}>
+          <View style={{ position: 'relative', overflow: 'visible', minHeight: 26 }}>
             {tab.isMedicAi ? (
               <Svg width={24} height={24} viewBox="0 0 24 24">
                 <Defs>
