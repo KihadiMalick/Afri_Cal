@@ -17,7 +17,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 
-import { SUPABASE_URL, SUPABASE_ANON_KEY, TEST_USER_ID, ENERGY_CONFIG, TABS, wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, ENERGY_CONFIG, TABS, wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
+import { useAuth } from '../../config/AuthContext';
+import { supabase } from '../../config/supabase';
 import { BottomTabs, FormattedText, FormattedResponseText, MetalCard, parseQuickReplies, parseAlixenResponse, QuickReplyButtons, BottomSpacer, LockIcon, ScrollArrow } from './shared';
 import { SynapticNetwork, ResponseCard, LoadingSteps, FileQueuePreview, ModalScrollContent, parseDirectionBlocks, DirectionCard } from './AlixenChat';
 // === ALIXEN SUPER CONTEXT v1 — Geolocation ===
@@ -31,6 +33,15 @@ import { AlixenFace, FunnelBridgeUnified, getWireMode, FRAME_W, FRAME_H, MODULE_
 
 
 export default function MedicAiPage() {
+  var auth = useAuth();
+  var userId = auth.userId;
+
+  var getAuthHeaders = async function() {
+    var result = await supabase.auth.getSession();
+    var token = result.data.session ? result.data.session.access_token : SUPABASE_ANON_KEY;
+    return { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+  };
+
   // Sub-page navigation
   const [currentSubPage, setCurrentSubPage] = useState('main');
 
@@ -309,6 +320,7 @@ export default function MedicAiPage() {
 
   // ── Chargement des données au mount ──────────────────────────────────────
   useEffect(() => {
+    if (!userId) return;
     loadUserData();
     loadTokenQuota();
     loadAvailableMeals();
@@ -316,13 +328,13 @@ export default function MedicAiPage() {
     // Avatar profil
     (async () => {
       try {
-        const pRes = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID + '&select=full_name,lix_balance', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
+        const pRes = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=full_name,lix_balance', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
         const pD = await pRes.json();
         if (pD && pD[0]) {
           setUserNameAvatar(pD[0].full_name || '');
           setLixBalance(pD[0].lix_balance || 0);
         }
-        const cRes = await fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters?user_id=eq.' + TEST_USER_ID + '&is_active=eq.true&select=character_slug', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
+        const cRes = await fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters?user_id=eq.' + userId + '&is_active=eq.true&select=character_slug', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
         const cD = await cRes.json();
         if (cD && cD[0]) setActiveCharAvatar({ slug: cD[0].character_slug });
       } catch (e) {}
@@ -332,7 +344,7 @@ export default function MedicAiPage() {
       Animated.spring(contentEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
       Animated.spring(inputEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [userId]);
 
   // ── Afficher le message de bienvenue dans la carte ──────────────────────
   useEffect(() => {
@@ -406,7 +418,7 @@ export default function MedicAiPage() {
   const loadUserData = async () => {
     try {
       const profileRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/users_profile?user_id=eq.${TEST_USER_ID}&select=*`,
+        `${SUPABASE_URL}/rest/v1/users_profile?user_id=eq.${userId}&select=*`,
         { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
       );
       const profileData = await profileRes.json();
@@ -419,7 +431,7 @@ export default function MedicAiPage() {
 
       const today = new Date().toISOString().split('T')[0];
       const summaryRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/daily_summary?user_id=eq.${TEST_USER_ID}&date=eq.${today}&select=*`,
+        `${SUPABASE_URL}/rest/v1/daily_summary?user_id=eq.${userId}&date=eq.${today}&select=*`,
         { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
       );
       const summaryData = await summaryRes.json();
@@ -428,7 +440,7 @@ export default function MedicAiPage() {
       // Charger les repas du jour
       const todayStr = new Date().toISOString().split('T')[0];
       const mealsRes = await fetch(
-        SUPABASE_URL + '/rest/v1/meals?user_id=eq.' + TEST_USER_ID + '&date=eq.' + todayStr + '&select=name,meal_type,calories,protein,carbs,fat&order=created_at.asc',
+        SUPABASE_URL + '/rest/v1/meals?user_id=eq.' + userId + '&date=eq.' + todayStr + '&select=name,meal_type,calories,protein,carbs,fat&order=created_at.asc',
         { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
       );
       const mealsData = await mealsRes.json();
@@ -445,7 +457,7 @@ export default function MedicAiPage() {
     try {
       const today = new Date().toISOString().split('T')[0];
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/medic_token_quotas?user_id=eq.${TEST_USER_ID}&date=eq.${today}&select=*`,
+        `${SUPABASE_URL}/rest/v1/medic_token_quotas?user_id=eq.${userId}&date=eq.${today}&select=*`,
         { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
       );
       const data = await res.json();
@@ -493,7 +505,7 @@ export default function MedicAiPage() {
   const loadMedicalData = async () => {
     setMedicalDataLoading(true);
     try {
-      const userId = TEST_USER_ID;
+      const userId = userId;
       const headers = {
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
@@ -659,7 +671,7 @@ export default function MedicAiPage() {
 
         // 1. Défi top 10 terminé récemment
         var challengeRes = await fetch(
-          SUPABASE_URL + '/rest/v1/lixverse_challenges?user_id=eq.' + TEST_USER_ID + '&status=eq.completed&order=created_at.desc&limit=1',
+          SUPABASE_URL + '/rest/v1/lixverse_challenges?user_id=eq.' + userId + '&status=eq.completed&order=created_at.desc&limit=1',
           { headers: headers }
         );
         var challengeData = await challengeRes.json();
@@ -671,7 +683,7 @@ export default function MedicAiPage() {
         // 2. Objectif journalier de la veille respecté
         if (!hasWow) {
           var dailyRes = await fetch(
-            SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + TEST_USER_ID + '&date=eq.' + yesterday + '&limit=1',
+            SUPABASE_URL + '/rest/v1/daily_summary?user_id=eq.' + userId + '&date=eq.' + yesterday + '&limit=1',
             { headers: headers }
           );
           var dailyData = await dailyRes.json();
@@ -759,9 +771,10 @@ export default function MedicAiPage() {
 
   // === ALIXEN SUPER CONTEXT v1 — Load context at mount + refresh every 5 min ===
   useEffect(() => {
+    if (!userId) return;
     const load = async () => {
       try {
-        const ctx = await loadAlixenContext(TEST_USER_ID);
+        const ctx = await loadAlixenContext(userId);
         alixenContextRef.current = ctx;
       } catch (e) {
         console.log('AlixenContext load error:', e);
@@ -770,7 +783,7 @@ export default function MedicAiPage() {
     load();
     const interval = setInterval(load, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [userId]);
 
   // ── Construire le contexte utilisateur ───────────────────────────────────
   const buildUserContext = () => {
@@ -985,7 +998,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             },
             body: JSON.stringify({
               messages: textMessages,
-              userId: TEST_USER_ID,
+              userId: userId,
               userContext: context,
               lang: userLang,
               imageBase64: base64Data,
@@ -1109,7 +1122,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               'apikey': SUPABASE_ANON_KEY,
             },
             body: JSON.stringify({
-              messages: allMessages, userId: TEST_USER_ID, userContext: context, lang: userLang,
+              messages: allMessages, userId: userId, userContext: context, lang: userLang,
               // === ALIXEN SUPER CONTEXT v1 ===
               ...(userLocation && { user_lat: userLocation.lat, user_lng: userLocation.lng }),
               ...(alixenContextRef.current && { alixen_context: alixenContextRef.current }),
@@ -1179,7 +1192,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/save_weekly_meal_plan', {
           method: 'POST', headers,
           body: JSON.stringify({
-            p_user_id: TEST_USER_ID,
+            p_user_id: userId,
             p_week_start: action.payload.week_start,
             p_meals: action.payload.meals,
           }),
@@ -1192,7 +1205,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
       if (action.type === 'update_weight') {
         await fetch(
-          SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID,
+          SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId,
           {
             method: 'PATCH', headers: { ...headers, 'Prefer': 'return=minimal' },
             body: JSON.stringify({ weight: action.payload.weight }),
@@ -1209,7 +1222,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         await fetch(SUPABASE_URL + '/rest/v1/medications', {
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
           body: JSON.stringify({
-            user_id: TEST_USER_ID,
+            user_id: userId,
             name: action.payload.name,
             dosage: action.payload.dosage,
             frequency: action.payload.frequency,
@@ -1228,7 +1241,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         await fetch(SUPABASE_URL + '/rest/v1/medical_analyses', {
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
           body: JSON.stringify({
-            user_id: TEST_USER_ID,
+            user_id: userId,
             label: action.payload.label,
             value: 'À effectuer',
             status: 'unknown',
@@ -1397,7 +1410,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           },
           body: JSON.stringify({
               messages: messagesToSend,
-              userId: TEST_USER_ID,
+              userId: userId,
               userContext: context,
               lang: userLang,
               imageBase64: filesToSend.length > 0 ? filesToSend[0].base64 : undefined,
@@ -1807,7 +1820,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           'Prefer': 'return=minimal',
         },
         body: JSON.stringify({
-          user_id: TEST_USER_ID,
+          user_id: userId,
           name: selectedMedFromDb.name,
           dosage: newMedDosageValue + ' ' + newMedDosageUnit,
           frequency: newMedFrequency + 'x/jour',
@@ -1879,7 +1892,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                     },
                     body: JSON.stringify({
                       query: query,
-                      userId: TEST_USER_ID,
+                      userId: userId,
                     }),
                   }
                 );
@@ -1955,7 +1968,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           'Prefer': 'return=minimal',
         },
         body: JSON.stringify({
-          user_id: TEST_USER_ID,
+          user_id: userId,
           label: newAnalysisLabel.trim(),
           value: 'À effectuer',
           status: 'unknown',

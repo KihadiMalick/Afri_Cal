@@ -27,8 +27,7 @@ import ManualEntryScreen from './ManualEntryScreen';
 import CartScanScreen from './CartScanScreen';
 import RecettesScreen from './RecettesScreen';
 import CookingModeScreen from './CookingModeScreen';
-
-const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
+import { useAuth } from '../../config/AuthContext';
 const W = Dimensions.get('window').width;
 const BASE_WIDTH = 320;
 const MEAL_CARD_WIDTH = wp(160);
@@ -69,6 +68,7 @@ const SectionTitle = ({ title, rightAction, rightLabel }) => (
 
 export default function RepasPage({ onNavigate }) {
   var _lc = useLang(); var lang = _lc.lang;
+  var auth = useAuth(); var userId = auth.userId;
 
   // === DONNÉES SUPABASE ===
   const [dailySummary, setDailySummary] = useState({
@@ -142,12 +142,13 @@ export default function RepasPage({ onNavigate }) {
   // === FONCTIONS ===
 
   const loadDashboardData = async () => {
+    if (!userId) return;
     setIsLoadingData(true);
     try {
       const { data: profile } = await supabase
         .from('users_profile')
         .select('daily_calorie_target, lix_balance')
-        .eq('user_id', TEST_USER_ID)
+        .eq('user_id', userId)
         .single();
 
       if (profile) {
@@ -159,7 +160,7 @@ export default function RepasPage({ onNavigate }) {
       const { data: summary } = await supabase
         .from('daily_summary')
         .select('*')
-        .eq('user_id', TEST_USER_ID)
+        .eq('user_id', userId)
         .eq('date', today)
         .single();
 
@@ -176,7 +177,7 @@ export default function RepasPage({ onNavigate }) {
       const { data: meals } = await supabase
         .from('meals')
         .select('*')
-        .eq('user_id', TEST_USER_ID)
+        .eq('user_id', userId)
         .eq('date', today)
         .order('meal_time', { ascending: true });
 
@@ -187,7 +188,7 @@ export default function RepasPage({ onNavigate }) {
       const { data: frequent } = await supabase
         .from('meals')
         .select('food_name, calories')
-        .eq('user_id', TEST_USER_ID)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -214,16 +215,17 @@ export default function RepasPage({ onNavigate }) {
   const REPAS_PAGE = 'repas';
 
   const loadPagePowers = async () => {
+    if (!userId) return;
     try {
       const { data: collection } = await supabase
-        .rpc('get_user_collection', { p_user_id: TEST_USER_ID });
+        .rpc('get_user_collection', { p_user_id: userId });
       const active = (collection || []).find(c => c.is_active);
       if (!active) { setActiveChar(null); setPagePowers([]); return; }
       setActiveChar(active);
 
       const { data: powers } = await supabase
         .rpc('get_character_powers', {
-          p_user_id: TEST_USER_ID,
+          p_user_id: userId,
           p_slug: active.slug,
         });
       setPagePowers((powers || []).filter(p => p.redirect_page === REPAS_PAGE));
@@ -233,17 +235,19 @@ export default function RepasPage({ onNavigate }) {
   };
 
   useEffect(() => {
-    loadDashboardData();
-    loadPagePowers();
-    (async () => {
-      try {
-        const { data: profile } = await supabase.from('users_profile').select('full_name').eq('user_id', TEST_USER_ID).maybeSingle();
-        if (profile) setUserNameAvatar(profile.full_name || '');
-        const { data: chars } = await supabase.from('lixverse_user_characters').select('character_slug').eq('user_id', TEST_USER_ID).eq('is_active', true).maybeSingle();
-        if (chars) setActiveCharAvatar({ slug: chars.character_slug });
-      } catch (e) {}
-    })();
-  }, []);
+    if (userId) {
+      loadDashboardData();
+      loadPagePowers();
+      (async () => {
+        try {
+          const { data: profile } = await supabase.from('users_profile').select('full_name').eq('user_id', userId).maybeSingle();
+          if (profile) setUserNameAvatar(profile.full_name || '');
+          const { data: chars } = await supabase.from('lixverse_user_characters').select('character_slug').eq('user_id', userId).eq('is_active', true).maybeSingle();
+          if (chars) setActiveCharAvatar({ slug: chars.character_slug });
+        } catch (e) {}
+      })();
+    }
+  }, [userId]);
 
   useEffect(() => {
     const fetchMoodWeather = async () => {
@@ -251,7 +255,7 @@ export default function RepasPage({ onNavigate }) {
         const { data } = await supabase
           .from('users_profile')
           .select('current_mood, current_weather')
-          .eq('user_id', TEST_USER_ID)
+          .eq('user_id', userId)
           .maybeSingle();
         if (data) {
           setUserMood(data.current_mood);
@@ -261,15 +265,15 @@ export default function RepasPage({ onNavigate }) {
         console.warn('Mood fetch error:', e);
       }
     };
-    fetchMoodWeather();
-  }, []);
+    if (userId) fetchMoodWeather();
+  }, [userId]);
 
   // === FONCTIONS POUVOIRS ===
 
   const consumePower = async (powerKey) => {
     try {
       const { data } = await supabase.rpc('use_character_power', {
-        p_user_id: TEST_USER_ID,
+        p_user_id: userId,
         p_power_key: powerKey,
       });
       if (data?.success) {

@@ -14,9 +14,10 @@ import {
   MOOD_MATRIX, getFlag, MEAL_SLOTS,
 } from './repasConstants';
 
+import { useAuth } from '../../config/AuthContext';
+
 const SUPABASE_URL = 'https://yuhordnzfpcswztujozi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
-const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 export default function RecettesScreen({
   visible,
@@ -29,6 +30,7 @@ export default function RecettesScreen({
   onNavigate,
   onOpenCooking,
 }) {
+  var auth = useAuth(); var userId = auth.userId;
   var _lc = useLang(); var lang = _lc.lang;
 
   // === ÉTATS RECETTES ===
@@ -109,12 +111,13 @@ export default function RecettesScreen({
   };
 
   const loadMoodRecipes = async () => {
+    if (!userId) return;
     try {
       const today = new Date().toISOString().split('T')[0];
       const { data: moodData } = await supabase
         .from('moods')
         .select('mood_level, weather')
-        .eq('user_id', TEST_USER_ID)
+        .eq('user_id', userId)
         .gte('created_at', today + 'T00:00:00')
         .order('created_at', { ascending: false })
         .limit(1);
@@ -160,16 +163,20 @@ export default function RecettesScreen({
       setRecipesCategory('all');
       setRecipesPage(0);
       loadRecipes(0);
-      loadMoodRecipes();
+      if (userId) {
+        loadMoodRecipes();
+      }
       setAlixenRecipeScreen('welcome');
       setAlixenProposals([]);
       setAlixenSelectedRecipe(null);
       setAlixenCategory(null);
       setAlixenMyIngredients([]);
       setAlixenAdvice(null);
-      loadAlixenContext();
+      if (userId) {
+        loadAlixenContext();
+      }
     }
-  }, [visible]);
+  }, [visible, userId]);
 
   const openRecipeDetail = async (recipe) => {
     setSelectedRecipe(recipe);
@@ -206,7 +213,6 @@ export default function RecettesScreen({
     setAddingMeal(true);
 
     try {
-      const userId = TEST_USER_ID;
       const today = new Date().toISOString().split('T')[0];
 
       const isSnackOrSide = selectedRecipe.category?.includes('Snack')
@@ -349,6 +355,7 @@ export default function RecettesScreen({
   };
 
   var loadAlixenContext = async function() {
+    if (!userId) return null;
     try {
       var today = new Date().toISOString().split('T')[0];
       var hour = new Date().getHours();
@@ -357,14 +364,14 @@ export default function RecettesScreen({
       var profileRes = await supabase
         .from('users_profile')
         .select('full_name, daily_calorie_target, weight, gender, activity_level, dietary_regime, current_mood, current_weather, bmr, tdee')
-        .eq('user_id', TEST_USER_ID)
+        .eq('user_id', userId)
         .maybeSingle();
       var profile = profileRes.data || {};
 
       var summaryRes = await supabase
         .from('daily_summary')
         .select('total_calories, total_protein, total_carbs, total_fat, meals_count')
-        .eq('user_id', TEST_USER_ID)
+        .eq('user_id', userId)
         .eq('date', today)
         .maybeSingle();
       var summary = summaryRes.data || { total_calories: 0, total_protein: 0, total_carbs: 0, total_fat: 0, meals_count: 0 };
@@ -372,7 +379,7 @@ export default function RecettesScreen({
       var mealsRes = await supabase
         .from('meals')
         .select('food_name, calories, meal_type, meal_time')
-        .eq('user_id', TEST_USER_ID)
+        .eq('user_id', userId)
         .eq('date', today)
         .order('meal_time', { ascending: true });
       var todayMealsList = mealsRes.data || [];
@@ -380,7 +387,7 @@ export default function RecettesScreen({
       var activitiesRes = await supabase
         .from('activities')
         .select('calories_burned')
-        .eq('user_id', TEST_USER_ID)
+        .eq('user_id', userId)
         .eq('date', today);
       var totalBurned = (activitiesRes.data || []).reduce(function(sum, a) { return sum + (a.calories_burned || 0); }, 0);
 
@@ -434,7 +441,7 @@ export default function RecettesScreen({
         var owlRes = await supabase
           .from('lixverse_user_characters')
           .select('level')
-          .eq('user_id', TEST_USER_ID)
+          .eq('user_id', userId)
           .eq('character_slug', 'emerald_owl')
           .maybeSingle();
         if (owlRes.data && owlRes.data.level >= 2) {
@@ -447,7 +454,7 @@ export default function RecettesScreen({
         var usageRes = await supabase
           .from('meals')
           .select('id')
-          .eq('user_id', TEST_USER_ID)
+          .eq('user_id', userId)
           .eq('source', 'alixen_recipe')
           .gte('created_at', today2 + 'T00:00:00')
           .limit(1);
@@ -496,7 +503,7 @@ export default function RecettesScreen({
     if (cost <= 0) return true;
     try {
       var res = await supabase.rpc('deduct_lix', {
-        p_user_id: TEST_USER_ID,
+        p_user_id: userId,
         p_amount: cost,
         p_reason: 'alixen_recipe',
       });
@@ -504,14 +511,14 @@ export default function RecettesScreen({
         var currentRes = await supabase
           .from('users_profile')
           .select('lix_balance')
-          .eq('user_id', TEST_USER_ID)
+          .eq('user_id', userId)
           .single();
         var current = (currentRes.data || {}).lix_balance || 0;
         if (current < cost) return false;
         await supabase
           .from('users_profile')
           .update({ lix_balance: current - cost })
-          .eq('user_id', TEST_USER_ID);
+          .eq('user_id', userId);
       }
       setLixBalance(function(prev) { return prev - cost; });
       return true;
@@ -589,7 +596,7 @@ export default function RecettesScreen({
             'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({
-            userId: TEST_USER_ID,
+            userId: userId,
             message: prompt,
             mode: 'recipe',
           }),
@@ -1811,7 +1818,7 @@ export default function RecettesScreen({
 
                         var recipe = alixenSelectedRecipe;
                         supabase.rpc('add_meal_and_update_summary', {
-                          p_user_id: TEST_USER_ID,
+                          p_user_id: userId,
                           p_meal_type: slot,
                           p_food_name: recipe.name,
                           p_calories: Math.round(recipe.kcal || 0),
