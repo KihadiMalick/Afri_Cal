@@ -54,7 +54,7 @@ var CARD_W = SCREEN.width - 56;
 var CARD_H = SCREEN.height * 0.48;
 var SWIPE_THRESHOLD = SCREEN.width * 0.25;
 
-var logoImage = require('../../assets/logo-lx.png');
+var logoImage = require('../../assets/images/logo-lx.png');
 
 // ============================================================
 // TRADUCTIONS

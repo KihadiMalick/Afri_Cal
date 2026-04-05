@@ -312,7 +312,7 @@ export default function HumanTab({
             backgroundColor: '#0D1117',
           }}>
             <Image
-              source={require('../../assets/world-map-dark.webp')}
+              source={require('../../assets/images/world-map-dark.webp')}
               style={{ width: '100%', height: '100%', position: 'absolute', opacity: 0.75 }}
               resizeMode="cover"
             />
