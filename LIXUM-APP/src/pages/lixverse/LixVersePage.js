@@ -161,6 +161,10 @@ export default function LixVersePage({ navigation }) {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const cardViewIndexRef = useRef(0);
   const cardSlideAnim = useRef(new Animated.Value(0)).current;
+  const spinResultTimerRef = useRef(null);
+  const floatingHeartTimersRef = useRef([]);
+  const binomeSearchTimersRef = useRef([]);
+  const binomeSearchIntervalsRef = useRef([]);
   const [inlinePowerData, setInlinePowerData] = useState(null);
   const [inlinePowerLoading, setInlinePowerLoading] = useState(false);
 
@@ -168,6 +172,15 @@ export default function LixVersePage({ navigation }) {
     setLixAlert({ visible: true, title, message, emoji, buttons });
   };
   const hideLixAlert = () => setLixAlert(prev => ({ ...prev, visible: false }));
+
+  useEffect(() => {
+    return () => {
+      if (spinResultTimerRef.current) clearTimeout(spinResultTimerRef.current);
+      floatingHeartTimersRef.current.forEach(t => clearTimeout(t));
+      binomeSearchTimersRef.current.forEach(t => clearTimeout(t));
+      binomeSearchIntervalsRef.current.forEach(t => clearInterval(t));
+    };
+  }, []);
 
   const toggleDropdown = () => {
     const toValue = dropdownOpen ? 0 : 1;
@@ -498,7 +511,7 @@ export default function LixVersePage({ navigation }) {
           Animated.timing(glowOpacity, { toValue: 0.6, duration: 500, useNativeDriver: true }),
           Animated.timing(glowOpacity, { toValue: 0.1, duration: 500, useNativeDriver: true }),
         ])).start();
-        setTimeout(() => {
+        spinResultTimerRef.current = setTimeout(() => {
           glowOpacity.stopAnimation(); glowOpacity.setValue(0);
           setShowSpinResultModal(true);
           const rType = data.reward_value?.type || winner.reward.type;
@@ -820,7 +833,8 @@ export default function LixVersePage({ navigation }) {
     const heartEmojis = ['🩶', '🤍', '💛', '⭐', '✨'];
     const emoji = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
     setFloatingHearts(prev => [...prev, { id: heartId, stickerId: id, x: Math.random() * wp(40) - wp(20), emoji }]);
-    setTimeout(() => setFloatingHearts(prev => prev.filter(h => h.id !== heartId)), 1200);
+    var heartTimer = setTimeout(() => { setFloatingHearts(prev => prev.filter(h => h.id !== heartId)); floatingHeartTimersRef.current = floatingHeartTimersRef.current.filter(t => t !== heartTimer); }, 1200);
+    floatingHeartTimersRef.current.push(heartTimer);
     const prevCount = comboCount[id] || 0;
     const newCount = prevCount + 1;
     setComboCount(prev => ({ ...prev, [id]: newCount }));
@@ -863,22 +877,28 @@ export default function LixVersePage({ navigation }) {
   };
 
   const startBinomeSearch = () => {
+    binomeSearchTimersRef.current.forEach(t => clearTimeout(t));
+    binomeSearchIntervalsRef.current.forEach(t => clearInterval(t));
+    binomeSearchTimersRef.current = [];
+    binomeSearchIntervalsRef.current = [];
     setBinomeStatus('searching'); setSearchProgress(0); setSearchStep(0); setCompatibilityScore(0); setScanLines([]);
     radarAnim.setValue(0);
     Animated.loop(Animated.timing(radarAnim, { toValue: 1, duration: 2000, useNativeDriver: true })).start();
     const startPulseRing = (anim, delay) => {
-      setTimeout(() => {
+      var pulseTimer = setTimeout(() => {
         Animated.loop(Animated.sequence([
           Animated.timing(anim, { toValue: 1, duration: 2000, useNativeDriver: true }),
           Animated.timing(anim, { toValue: 0, duration: 0, useNativeDriver: true }),
         ])).start();
       }, delay);
+      binomeSearchTimersRef.current.push(pulseTimer);
     };
     pulseRing1.setValue(0); pulseRing2.setValue(0); pulseRing3.setValue(0);
     startPulseRing(pulseRing1, 0); startPulseRing(pulseRing2, 700); startPulseRing(pulseRing3, 1400);
     const coordsInterval = setInterval(() => {
       setSearchCoords({ lat: (Math.random() * 60 - 30).toFixed(4) + '°', lng: (Math.random() * 120 - 60).toFixed(4) + '°' });
     }, 150);
+    binomeSearchIntervalsRef.current.push(coordsInterval);
     const linesInterval = setInterval(() => {
       const centerX = (SCREEN_WIDTH - wp(32)) / 2;
       const centerY = wp(90);
@@ -891,6 +911,7 @@ export default function LixVersePage({ navigation }) {
       const angle = Math.atan2(dy, dx) * (180 / Math.PI);
       setScanLines(prev => [...prev, { x1: centerX, y1: centerY, length, angle, id: Date.now() }].slice(-8));
     }, 800);
+    binomeSearchIntervalsRef.current.push(linesInterval);
     const SEARCH_STEPS = [
       { text: 'Analyse morphologique du profil...', duration: 1500 },
       { text: 'Extraction des paramètres nutritionnels...', duration: 1800 },
@@ -910,9 +931,10 @@ export default function LixVersePage({ navigation }) {
       if (stepIdx >= 4) setCompatibilityScore(Math.min(87, Math.round(((stepIdx - 4) / (SEARCH_STEPS.length - 4)) * 87)));
       elapsed += SEARCH_STEPS[stepIdx].duration; stepIdx++;
       if (stepIdx < SEARCH_STEPS.length) {
-        setTimeout(stepTimer, SEARCH_STEPS[stepIdx - 1].duration);
+        var st = setTimeout(stepTimer, SEARCH_STEPS[stepIdx - 1].duration);
+        binomeSearchTimersRef.current.push(st);
       } else {
-        setTimeout(async () => {
+        var ft = setTimeout(async () => {
           clearInterval(coordsInterval); clearInterval(linesInterval);
           radarAnim.stopAnimation(); pulseRing1.stopAnimation(); pulseRing2.stopAnimation(); pulseRing3.stopAnimation();
           try {
@@ -938,6 +960,7 @@ export default function LixVersePage({ navigation }) {
             setRetryAfterTime(Date.now() + 24 * 60 * 60 * 1000);
           }
         }, SEARCH_STEPS[SEARCH_STEPS.length - 1].duration);
+        binomeSearchTimersRef.current.push(ft);
       }
     };
     stepTimer();

@@ -493,7 +493,8 @@ export default function ActivityPage({ onNavigate }) {
       setLastActivity({ type: 'run', name: t.run, distance: runDistStr, duration: runDuration, kcal: runCalories, water: runWater, speed: null });
       setShowPostReport(true);
       fetchWeeklyMinutes();
-      setTimeout(() => { setRunSaved(false); setRunScrollOffset(0); runMilestoneHitRef.current = {}; }, 1500);
+      if (runSaveTimerRef.current) clearTimeout(runSaveTimerRef.current);
+      runSaveTimerRef.current = setTimeout(() => { setRunSaved(false); setRunScrollOffset(0); runMilestoneHitRef.current = {}; }, 1500);
     }
   };
 
@@ -821,7 +822,8 @@ export default function ActivityPage({ onNavigate }) {
                       setLastActivity({ type: 'walk', name: t.walk, distance: walkDistStr, duration: Math.round(walkDurMin * walkMul), kcal: walkCal, water: walkWater, speed: null });
                       setShowPostReport(true);
                       fetchWeeklyMinutes();
-                      setTimeout(() => { setWalkSaved(false); setWalkScrollOffset(0); }, 1500);
+                      if (walkSaveTimerRef.current) clearTimeout(walkSaveTimerRef.current);
+                      walkSaveTimerRef.current = setTimeout(() => { setWalkSaved(false); setWalkScrollOffset(0); }, 1500);
                     }
                   }}
                   disabled={walkSaved}

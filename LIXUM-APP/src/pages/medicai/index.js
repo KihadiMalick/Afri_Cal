@@ -109,6 +109,11 @@ export default function MedicAiPage() {
   const [keystrokeCount, setKeystrokeCount] = useState(0);
   const [emotionOverride, setEmotionOverride] = useState(null);
   const emotionTimerRef = useRef(null);
+  const emotionDelayRef = useRef(null);
+  const wowTimerRef = useRef(null);
+  const wowDelayRef = useRef(null);
+  const chatDelayTimerRef = useRef(null);
+  const preciserTimersRef = useRef([]);
   const [userLang, setUserLang] = useState('FR');
 
   // AlertSheet state
@@ -221,7 +226,8 @@ export default function MedicAiPage() {
   var triggerEmotion = function(emotion) {
     if (!emotion) return;
     if (emotionTimerRef.current) clearTimeout(emotionTimerRef.current);
-    setTimeout(function() {
+    if (emotionDelayRef.current) clearTimeout(emotionDelayRef.current);
+    emotionDelayRef.current = setTimeout(function() {
       setEmotionOverride(emotion);
       emotionTimerRef.current = setTimeout(function() {
         setEmotionOverride(null);
@@ -270,6 +276,16 @@ export default function MedicAiPage() {
       setPulse(Math.sin((Date.now() - st) / 1000 * 2) * 0.5 + 0.5);
     }, 80);
     return function() { clearInterval(pulseRef.current); };
+  }, []);
+  useEffect(function() {
+    return function() {
+      if (emotionTimerRef.current) clearTimeout(emotionTimerRef.current);
+      if (emotionDelayRef.current) clearTimeout(emotionDelayRef.current);
+      if (wowTimerRef.current) clearTimeout(wowTimerRef.current);
+      if (wowDelayRef.current) clearTimeout(wowDelayRef.current);
+      if (chatDelayTimerRef.current) clearTimeout(chatDelayTimerRef.current);
+      preciserTimersRef.current.forEach(function(t) { clearTimeout(t); });
+    };
   }, []);
 
   // Progress bar color — evolves with message count
@@ -690,11 +706,11 @@ export default function MedicAiPage() {
         }
 
         if (hasWow) {
-          setTimeout(function() {
+          wowDelayRef.current = setTimeout(function() {
             setEmotionOverride('wow');
-            emotionTimerRef.current = setTimeout(function() {
+            wowTimerRef.current = setTimeout(function() {
               setEmotionOverride(null);
-              emotionTimerRef.current = null;
+              wowTimerRef.current = null;
             }, 4000);
           }, 2000);
         }
@@ -970,7 +986,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     setLoadingSteps([]);
     fetchLoadingSteps('Analyse d\'image : ' + (fileName || 'photo'));
 
-    setTimeout(async () => {
+    if (chatDelayTimerRef.current) clearTimeout(chatDelayTimerRef.current);
+    chatDelayTimerRef.current = setTimeout(async () => {
       setCardMessage(null);
       setCardIsUser(false);
       setCardIsLoading(true);
@@ -1095,7 +1112,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     setLoadingSteps([]);
     fetchLoadingSteps(text);
 
-    setTimeout(async () => {
+    if (chatDelayTimerRef.current) clearTimeout(chatDelayTimerRef.current);
+    chatDelayTimerRef.current = setTimeout(async () => {
       setCardMessage(null);
       setCardIsUser(false);
       setCardIsLoading(true);
@@ -1266,19 +1284,24 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   const handlePreciserPress = () => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
-    setTimeout(() => {
+    preciserTimersRef.current.forEach(t => clearTimeout(t));
+    preciserTimersRef.current = [];
+    var pt1 = setTimeout(() => {
       if (inputRef.current) {
         inputRef.current.focus();
       }
     }, 150);
-    setTimeout(() => {
+    preciserTimersRef.current.push(pt1);
+    var pt2 = setTimeout(() => {
       Keyboard.dismiss();
-      setTimeout(() => {
+      var pt3 = setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
         }
       }, 100);
+      preciserTimersRef.current.push(pt3);
     }, 300);
+    preciserTimersRef.current.push(pt2);
   };
 
   // ── Gestion clic recette ─────────────────────────────────────────────────
@@ -1381,7 +1404,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     fetchLoadingSteps(userText);
 
     // 4. Après 800ms, passer en mode chargement
-    setTimeout(() => {
+    if (chatDelayTimerRef.current) clearTimeout(chatDelayTimerRef.current);
+    chatDelayTimerRef.current = setTimeout(() => {
       setCardMessage(null);
       setCardIsUser(false);
       setCardIsLoading(true);
