@@ -1,4 +1,5 @@
 import { Dimensions, PixelRatio } from 'react-native';
+export { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 
 export const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -10,13 +11,6 @@ export const fp = (size) => {
   const scaled = (W / BASE_WIDTH) * size;
   return Math.round(PixelRatio.roundToNearestPixel(scaled));
 };
-
-// ============================================
-// CONFIG SUPABASE (même que les autres pages)
-// ============================================
-export const SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
-export const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
 
 // ============================================
 // SYSTÈME ÉNERGIE LIXUM
