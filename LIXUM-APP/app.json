@@ -43,6 +43,10 @@
         "barStyle": "light-content",
         "backgroundColor": "#1E2530"
       },
+      "navigationBar": {
+        "backgroundColor": "#1E2530",
+        "barStyle": "light-content"
+      },
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",

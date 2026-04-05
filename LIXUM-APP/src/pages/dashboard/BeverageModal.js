@@ -178,9 +178,9 @@ const BeverageModal = ({
               const active = beverageCategory === cat.id;
               return (
                 <Pressable key={cat.id} onPress={() => { setBeverageCategory(cat.id); setBeverageSearch(''); fetchBeveragesByCategory(cat.id); }}
-                  style={{ flexDirection: 'row', alignItems: 'center', height: 30, paddingHorizontal: 10, marginRight: 6, borderRadius: 15, backgroundColor: active ? '#00D984' : 'rgba(51,58,66,0.6)', borderWidth: 1, borderColor: active ? '#00D984' : 'rgba(74,79,85,0.4)' }}>
+                  style={{ flexDirection: 'row', alignItems: 'center', height: 30, paddingHorizontal: 10, marginRight: 6, borderRadius: 15, backgroundColor: active ? 'rgba(0,217,132,0.15)' : 'rgba(51,58,66,0.6)', borderWidth: 1, borderColor: active ? 'rgba(0,217,132,0.4)' : 'rgba(74,79,85,0.4)' }}>
                   <Text style={{ fontSize: 11, marginRight: 3 }}>{cat.icon}</Text>
-                  <Text style={{ color: active ? '#1A1D22' : '#AABBCC', fontSize: fp(10), fontWeight: '700' }}>{cat.label}</Text>
+                  <Text style={{ color: active ? '#00D984' : '#AABBCC', fontSize: fp(10), fontWeight: '700' }}>{cat.label}</Text>
                 </Pressable>
               );
             })}
@@ -217,8 +217,8 @@ const BeverageModal = ({
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}>
                     {QUICK_VOLUMES.map((v) => (
                       <Pressable key={v} onPress={() => setBeverageVolume(v)}
-                        style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, marginRight: 6, marginBottom: 5, backgroundColor: beverageVolume === v ? '#00D984' : 'rgba(51,58,66,0.6)', borderWidth: 1, borderColor: beverageVolume === v ? '#00D984' : 'rgba(74,79,85,0.3)' }}>
-                        <Text style={{ color: beverageVolume === v ? '#1A1D22' : '#AABBCC', fontSize: fp(12), fontWeight: '700' }}>{v} ml</Text>
+                        style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, marginRight: 6, marginBottom: 5, backgroundColor: beverageVolume === v ? 'rgba(0,217,132,0.15)' : 'rgba(51,58,66,0.6)', borderWidth: 1, borderColor: beverageVolume === v ? 'rgba(0,217,132,0.4)' : 'rgba(74,79,85,0.3)' }}>
+                        <Text style={{ color: beverageVolume === v ? '#00D984' : '#AABBCC', fontSize: fp(12), fontWeight: '700' }}>{v} ml</Text>
                       </Pressable>
                     ))}
                     <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(51,58,66,0.6)', borderRadius: 14, paddingHorizontal: 8, borderWidth: 1, borderColor: 'rgba(74,79,85,0.3)' }}>

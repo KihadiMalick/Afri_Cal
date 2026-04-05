@@ -337,7 +337,7 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, 
           <Text style={{ fontSize: 16, marginRight: 6 }}>💧</Text>
           <Text style={{ color: '#EAEEF3', fontSize: 14, fontWeight: '700', letterSpacing: 1 }}>HYDRATATION</Text>
         </View>
-        <Text style={{ color: '#00BFA6', fontSize: 14, fontWeight: '700' }}>{liters} / {goalL}L</Text>
+        <Text style={{ color: '#4DA6FF', fontSize: 14, fontWeight: '700' }}>{liters} / {goalL}L</Text>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={{ width: 50, alignItems: 'center', marginRight: 12 }}>
@@ -345,11 +345,11 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, 
         </View>
         <View style={{ flex: 1 }}>
           <View style={{ height: 8, backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
-            <LinearGradient colors={['#4DA6FF', '#00BCD4']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: percent + '%', height: '100%', borderRadius: 4 }} />
+            <LinearGradient colors={['#4DA6FF', '#3B8FE0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: percent + '%', height: '100%', borderRadius: 4 }} />
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
             <Text style={{ color: '#8892A0', fontSize: 12 }}>{glasses}/{totalGlasses} verres 🥛</Text>
-            <Text style={{ color: '#FF8C42', fontSize: 12, fontWeight: '700' }}>{percent}%</Text>
+            <Text style={{ color: '#4DA6FF', fontSize: 12, fontWeight: '700' }}>{percent}%</Text>
           </View>
           {sportAlert ? (
             <Text style={{ color: '#FF8C42', fontSize: 11 }}>{sportAlert}</Text>
