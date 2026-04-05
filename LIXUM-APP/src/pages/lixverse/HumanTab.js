@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, Animated,
   Image, ActivityIndicator, Platform, Modal, Dimensions } from 'react-native';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { LIXSIGNS, WORLD_DOTS, TEST_USER_ID, SUPABASE_URL,
+import { LIXSIGNS, WORLD_DOTS, SUPABASE_URL,
   POST_HEADERS } from './lixverseConstants';
 import { wp, fp } from '../../constants/layout';
 

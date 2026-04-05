@@ -8,7 +8,6 @@ var fp = function(size) { return Math.round(PixelRatio.roundToNearestPixel((W / 
 
 var SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
 var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
-var TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 var CONNECTORS = [
   { id: 'apple_health', name: 'Apple Health', emoji: '\uD83C\uDF4E', color: '#FF3B30',
@@ -157,7 +156,7 @@ function getCharEmoji(slug) {
 
 export {
   W, wp, fp,
-  SUPABASE_URL, SUPABASE_ANON_KEY, TEST_USER_ID,
+  SUPABASE_URL, SUPABASE_ANON_KEY,
   CONNECTORS,
   ACTIVITY_MULTIPLIERS_MAP, ACTIVITY_LEVEL_KEYS,
   activityLevelToIndex, activityIndexToKey,

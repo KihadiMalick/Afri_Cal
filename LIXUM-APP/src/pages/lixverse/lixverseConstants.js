@@ -1,6 +1,5 @@
 const SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
-const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 const HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 const POST_HEADERS = { ...HEADERS, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
@@ -292,7 +291,6 @@ const getSegmentTypeLabel = (seg) => {
 export {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
-  TEST_USER_ID,
   HEADERS,
   POST_HEADERS,
   ALL_CHARACTERS,

@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   W, wp, fp,
-  SUPABASE_URL, SUPABASE_ANON_KEY, TEST_USER_ID,
+  SUPABASE_URL, SUPABASE_ANON_KEY,
   CONNECTORS,
   activityLevelToIndex, activityIndexToKey,
   calculateBMR, calculateTDEE, calculateDailyTarget,
@@ -13,6 +13,8 @@ import {
   T,
   getCharEmoji,
 } from './profileConstants';
+import { useAuth } from '../../config/AuthContext';
+import { supabase } from '../../config/supabase';
 
 var ProfileScrollPicker = function(pickerProps) {
   var values = pickerProps.values, selectedValue = pickerProps.selectedValue, onSelect = pickerProps.onSelect, unit = pickerProps.unit;
@@ -42,6 +44,13 @@ var ProfileScrollPicker = function(pickerProps) {
 };
 
 export default function ProfilePage({ navigation }) {
+  var auth = useAuth();
+  var userId = auth.userId;
+  var getAuthHeaders = async function() {
+    var result = await supabase.auth.getSession();
+    var token = result.data.session ? result.data.session.access_token : SUPABASE_ANON_KEY;
+    return { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+  };
   var _profile = useState(null), profile = _profile[0], setProfile = _profile[1];
   var _lixBalance = useState(0), lixBalance = _lixBalance[0], setLixBalance = _lixBalance[1];
   var _ownedCharacters = useState(0), ownedCharacters = _ownedCharacters[0], setOwnedCharacters = _ownedCharacters[1];
@@ -68,24 +77,27 @@ export default function ProfilePage({ navigation }) {
   var _toast = useState(null), toast = _toast[0], setToast = _toast[1];
   var t = T[lang] || T.fr;
   var showToast = function(message, color) { setToast({ message: message, color: color || '#00D984' }); setTimeout(function() { setToast(null); }, 2500); };
-  useEffect(function() { loadProfile(); }, []);
+  useEffect(function() { if (userId) loadProfile(); }, [userId]);
 
-  var loadProfile = function() {
+  var loadProfile = async function() {
+    if (!userId) return;
+    var hdrs = await getAuthHeaders();
     Promise.all([
-      fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID + '&select=*', { headers: hdrs }),
-      fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters?user_id=eq.' + TEST_USER_ID + '&select=character_slug,is_active,level', { headers: hdrs }),
+      fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=*', { headers: hdrs }),
+      fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters?user_id=eq.' + userId + '&select=character_slug,is_active,level', { headers: hdrs }),
     ]).then(function(responses) { return Promise.all(responses.map(function(r) { return r.json(); })); })
     .then(function(results) {
       var pD = results[0]; var cD = results[1];
       if (pD && pD[0]) { setProfile(pD[0]); setLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); if (pD[0].language === 'EN') setLang('en'); else setLang('fr'); }
       if (Array.isArray(cD)) { setOwnedCharacters(cD.length); var activeC = cD.find(function(c) { return c.is_active; }); if (activeC) setActiveCharSlug(activeC.character_slug); }
-      fetch(SUPABASE_URL + '/rest/v1/rpc/get_user_xp', { method: 'POST', headers: Object.assign({}, hdrs, { 'Content-Type': 'application/json' }), body: JSON.stringify({ p_user_id: TEST_USER_ID }) })
+      fetch(SUPABASE_URL + '/rest/v1/rpc/get_user_xp', { method: 'POST', headers: Object.assign({}, hdrs, { 'Content-Type': 'application/json' }), body: JSON.stringify({ p_user_id: userId }) })
         .then(function(r) { return r.json(); }).then(function(d) { if (d) setUserXP(d); }).catch(function() {});
     }).catch(function(e) { console.error('Profile:', e); });
   };
 
-  var saveProfile = function() {
-    var h = Object.assign({}, hdrs, { 'Content-Type': 'application/json', 'Prefer': 'return=representation' });
+  var saveProfile = async function() {
+    var authHdrs = await getAuthHeaders();
+    var h = Object.assign({}, authHdrs, { 'Prefer': 'return=representation' });
     var currentGender = profile ? profile.gender || 'male' : 'male';
     var currentActivityLevel = profile ? profile.activity_level : 'moderate';
     if (typeof currentActivityLevel === 'number') currentActivityLevel = activityIndexToKey(currentActivityLevel);
@@ -94,15 +106,15 @@ export default function ProfilePage({ navigation }) {
     var currentGoal = profile ? profile.goal || 'maintain' : 'maintain';
     var newTarget = calculateDailyTarget(newTDEE, currentGoal, profile ? profile.target_weight_loss : 0, profile ? profile.target_months : 3);
     var body = { full_name: editName.trim(), age: parseInt(editAge) || null, weight: parseFloat(editWeight) || null, height: parseFloat(editHeight) || null, gender: currentGender, activity_level: currentActivityLevel, dietary_regime: profile ? (profile.dietary_regime || 'classic') : 'classic', goal: currentGoal, bmr: newBMR, tdee: newTDEE, daily_calorie_target: newTarget, language: lang === 'en' ? 'EN' : 'FR' };
-    fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + TEST_USER_ID, { method: 'PATCH', headers: h, body: JSON.stringify(body) })
+    fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId, { method: 'PATCH', headers: h, body: JSON.stringify(body) })
       .then(function(r) { return r.json(); }).then(function(data) { if (data && data[0]) { setProfile(data[0]); setLixBalance(data[0].lix_balance || 0); } setShowEditProfile(false); showToast(lang === 'fr' ? 'Profil mis \u00e0 jour \u2713' : 'Profile updated \u2713', '#00D984'); })
       .catch(function() { showToast(lang === 'fr' ? 'Erreur de sauvegarde' : 'Save error', '#FF6B6B'); });
   };
 
   var saveLocation = function(city) { setEditLocation(city); setShowLocationPicker(false); showToast('\uD83D\uDCCD ' + city, '#FF8C42'); };
   var toggleConnector = function(connId) { setConnectedApps(function(prev) { var n = Object.assign({}, prev); if (n[connId]) { delete n[connId]; showToast(lang === 'fr' ? 'D\u00e9connect\u00e9' : 'Disconnected', '#FF6B6B'); } else { n[connId] = { connectedAt: new Date().toISOString(), lastSync: new Date().toISOString() }; showToast(lang === 'fr' ? 'Connect\u00e9 \u2713' : 'Connected \u2713', '#00D984'); } return n; }); };
-  var handleLogout = function() { AsyncStorage.multiRemove(['lixum_access_token', 'lixum_user_id']).catch(function() {}); setShowLogoutConfirm(false); navigation.navigate('Register'); };
-  var handleDeleteAccount = function() { AsyncStorage.multiRemove(['lixum_access_token', 'lixum_user_id']).catch(function() {}); setShowDeleteConfirm(false); navigation.navigate('Register'); };
+  var handleLogout = function() { auth.signOut(); setShowLogoutConfirm(false); };
+  var handleDeleteAccount = function() { auth.signOut(); setShowDeleteConfirm(false); };
 
   var Section = function(props) {
     return (
