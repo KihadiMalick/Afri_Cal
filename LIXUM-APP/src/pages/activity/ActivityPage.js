@@ -75,6 +75,8 @@ export default function ActivityPage({ onNavigate }) {
   const isRunMovingRef = useRef(false);
   const runMilestoneTimerRef = useRef(null);
   const runMilestoneHitRef = useRef({});
+  const runSaveTimerRef = useRef(null);
+  const walkSaveTimerRef = useRef(null);
 
   // Sport modal
   const [modalSport, setModalSport] = useState(null);
@@ -381,7 +383,7 @@ export default function ActivityPage({ onNavigate }) {
 
   var toggleDropdown = function() {
     var toValue = dropdownOpen ? 0 : 1;
-    Animated.spring(dropdownAnim, { toValue: toValue, tension: 80, friction: 10, useNativeDriver: false }).start();
+    Animated.spring(dropdownAnim, { toValue: toValue, tension: 80, friction: 10, useNativeDriver: true }).start();
     setDropdownOpen(!dropdownOpen);
   };
 
@@ -467,6 +469,7 @@ export default function ActivityPage({ onNavigate }) {
     if (runIntervalRef.current) { clearInterval(runIntervalRef.current); runIntervalRef.current = null; }
   };
   useEffect(() => { return () => { if (runIntervalRef.current) clearInterval(runIntervalRef.current); }; }, []);
+  useEffect(() => { return () => { if (runMilestoneTimerRef.current) clearTimeout(runMilestoneTimerRef.current); if (runSaveTimerRef.current) clearTimeout(runSaveTimerRef.current); if (walkSaveTimerRef.current) clearTimeout(walkSaveTimerRef.current); }; }, []);
 
   // Run milestone detection
   useEffect(() => {
@@ -490,7 +493,8 @@ export default function ActivityPage({ onNavigate }) {
       setLastActivity({ type: 'run', name: t.run, distance: runDistStr, duration: runDuration, kcal: runCalories, water: runWater, speed: null });
       setShowPostReport(true);
       fetchWeeklyMinutes();
-      setTimeout(() => { setRunSaved(false); setRunScrollOffset(0); runMilestoneHitRef.current = {}; }, 1500);
+      if (runSaveTimerRef.current) clearTimeout(runSaveTimerRef.current);
+      runSaveTimerRef.current = setTimeout(() => { setRunSaved(false); setRunScrollOffset(0); runMilestoneHitRef.current = {}; }, 1500);
     }
   };
 
@@ -818,7 +822,8 @@ export default function ActivityPage({ onNavigate }) {
                       setLastActivity({ type: 'walk', name: t.walk, distance: walkDistStr, duration: Math.round(walkDurMin * walkMul), kcal: walkCal, water: walkWater, speed: null });
                       setShowPostReport(true);
                       fetchWeeklyMinutes();
-                      setTimeout(() => { setWalkSaved(false); setWalkScrollOffset(0); }, 1500);
+                      if (walkSaveTimerRef.current) clearTimeout(walkSaveTimerRef.current);
+                      walkSaveTimerRef.current = setTimeout(() => { setWalkSaved(false); setWalkScrollOffset(0); }, 1500);
                     }
                   }}
                   disabled={walkSaved}

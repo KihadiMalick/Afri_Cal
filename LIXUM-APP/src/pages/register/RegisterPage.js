@@ -56,6 +56,13 @@ export default function RegisterPage({ navigation }) {
   var transPulse = useRef(new RNAnimated.Value(1)).current;
   var transProgress = useRef(new RNAnimated.Value(0)).current;
   var transTextOp = useRef(new RNAnimated.Value(0)).current;
+  var transitionTimersRef = useRef([]);
+
+  useEffect(function() {
+    return function() {
+      transitionTimersRef.current.forEach(function(t) { clearTimeout(t); });
+    };
+  }, []);
 
   var calc = useMemo(function() { return calculateGoals(fd); },
     [fd.weight, fd.height, fd.age, fd.gender, fd.activityLevel, fd.goal, fd.targetKg, fd.paceMode, fd.timelineDays]);
@@ -72,19 +79,22 @@ export default function RegisterPage({ navigation }) {
       RNAnimated.timing(transPulse, { toValue: 1.15, duration: 800, useNativeDriver: true }),
       RNAnimated.timing(transPulse, { toValue: 1, duration: 800, useNativeDriver: true }),
     ])).start();
-    RNAnimated.timing(transProgress, { toValue: 100, duration: 3200, useNativeDriver: false }).start();
+    RNAnimated.timing(transProgress, { toValue: 100, duration: 3200, useNativeDriver: false, // layout animation - cannot use native driver }).start();
     RNAnimated.timing(transTextOp, { toValue: 1, duration: 600, delay: 300, useNativeDriver: true }).start();
-    setTimeout(function() { setTransStep(1); }, 1000);
-    setTimeout(function() { setTransStep(2); }, 2200);
-    setTimeout(function() {
+    transitionTimersRef.current.forEach(function(t) { clearTimeout(t); });
+    transitionTimersRef.current = [];
+    transitionTimersRef.current.push(setTimeout(function() { setTransStep(1); }, 1000));
+    transitionTimersRef.current.push(setTimeout(function() { setTransStep(2); }, 2200));
+    transitionTimersRef.current.push(setTimeout(function() {
       setTransStep(3); transPulse.stopAnimation();
-      setTimeout(function() {
+      var inner = setTimeout(function() {
         RNAnimated.timing(transOpacity, { toValue: 0, duration: 500, useNativeDriver: true }).start(function() {
           setShowTransition(false);
           if (navigation) navigation.navigate('Accueil');
         });
       }, 800);
-    }, 3200);
+      transitionTimersRef.current.push(inner);
+    }, 3200));
   };
 
   var handleRegister = function() {

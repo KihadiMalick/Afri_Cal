@@ -1,13 +1,11 @@
 import { Dimensions, PixelRatio } from 'react-native';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 
 var SCREEN_WIDTH = Dimensions.get('window').width;
 var W = SCREEN_WIDTH;
 var BASE_WIDTH = 320;
 var wp = function(size) { return (W / BASE_WIDTH) * size; };
 var fp = function(size) { return Math.round(PixelRatio.roundToNearestPixel((W / BASE_WIDTH) * size)); };
-
-var SUPABASE_URL = 'https://yuhordnzfpcswztujovi.supabase.co';
-var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
 
 var CONNECTORS = [
   { id: 'apple_health', name: 'Apple Health', emoji: '\uD83C\uDF4E', color: '#FF3B30',

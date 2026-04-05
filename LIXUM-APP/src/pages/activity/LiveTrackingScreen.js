@@ -21,9 +21,8 @@ import {
   AUTO_PAUSE_SPEED, AUTO_PAUSE_DELAY,
   HYDRATION_REMINDER_INTERVAL, ALIXEN_VOICE_LANG,
 } from './activityConstants';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 
-const SUPABASE_URL = 'https://yuhordnzfpcswztujozi.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0';
 export default function LiveTrackingScreen({
   visible,
   onClose,

@@ -377,7 +377,7 @@ export default function RepasPage({ onNavigate }) {
 
   const toggleDropdown = () => {
     const toValue = dropdownOpen ? 0 : 1;
-    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: false }).start();
+    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: true }).start();
     setDropdownOpen(!dropdownOpen);
   };
 
@@ -413,8 +413,8 @@ export default function RepasPage({ onNavigate }) {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(glowAnim, { toValue: 1, duration: 1500, useNativeDriver: false }),
-        Animated.timing(glowAnim, { toValue: 0, duration: 1500, useNativeDriver: false }),
+        Animated.timing(glowAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+        Animated.timing(glowAnim, { toValue: 0, duration: 1500, useNativeDriver: true }),
       ])
     ).start();
   }, []);
@@ -727,11 +727,11 @@ export default function RepasPage({ onNavigate }) {
                             <Pressable
                               onPressIn={() => {
                                 setIsXPressed(true);
-                                Animated.timing(glowIntensity, { toValue: 1, duration: 200, useNativeDriver: false }).start();
+                                Animated.timing(glowIntensity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
                               }}
                               onPressOut={() => {
                                 setIsXPressed(false);
-                                Animated.timing(glowIntensity, { toValue: 0, duration: 400, useNativeDriver: false }).start();
+                                Animated.timing(glowIntensity, { toValue: 0, duration: 400, useNativeDriver: true }).start();
                               }}
                               onPress={activateScan}
                               style={({ pressed }) => ({

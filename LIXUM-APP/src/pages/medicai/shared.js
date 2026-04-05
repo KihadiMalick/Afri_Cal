@@ -243,7 +243,6 @@ export const parseAlixenResponse = (rawText) => {
       const parsed = JSON.parse(rawJson);
       pendingAction = parsed.pending_action || null;
     } catch (e) {
-      console.log('ALIXEN_DATA parse error:', e.message);
     }
   }
   return { cleanText, pendingAction };
@@ -416,8 +415,8 @@ export const FormattedResponseText = ({ text, style }) => {
 // ============================================
 export const MetalCard = ({ title, titleColor = '#00D984', iconElement, onPress }) => {
   const pressAnim = useRef(new Animated.Value(0)).current;
-  const handlePressIn = () => Animated.timing(pressAnim, { toValue: 1, duration: 120, useNativeDriver: false }).start();
-  const handlePressOut = () => Animated.timing(pressAnim, { toValue: 0, duration: 180, useNativeDriver: false }).start();
+  const handlePressIn = () => Animated.timing(pressAnim, { toValue: 1, duration: 120, useNativeDriver: true }).start();
+  const handlePressOut = () => Animated.timing(pressAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start();
 
   const scaleVal = pressAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] });
 

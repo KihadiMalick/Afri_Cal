@@ -607,12 +607,10 @@ export default function App() {
 
   var handleJoin = function () {
     // TODO: navigation.navigate('Register')
-    console.log('Navigate to Register');
   };
 
   var handleSignIn = function () {
     // TODO: navigation.navigate('Login')
-    console.log('Navigate to Login');
   };
 
   var allSwiped = currentIndex >= slides.length;

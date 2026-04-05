@@ -67,14 +67,18 @@ export default function DashboardPage({ navigation }) {
   var statsUnlockedUntil = _statsUnlockedUntil[0]; var setStatsUnlockedUntil = _statsUnlockedUntil[1];
   const [showBeverageModal, setShowBeverageModal] = useState(false);
   const [beverageToast, setBeverageToast] = useState(null);
+  var beverageToastTimerRef = useRef(null);
   const [activeChar, setActiveChar] = useState(null);
   const [pagePowers, setPagePowers] = useState([]);
   const [toggleStates, setToggleStates] = useState({});
 
+  var toastTimerRef = useRef(null);
   var showToast = function(message, color) {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToastMsg({ message: message, color: color || '#00D984' });
-    setTimeout(function() { setToastMsg(null); }, 2500);
+    toastTimerRef.current = setTimeout(function() { setToastMsg(null); }, 2500);
   };
+  useEffect(function() { return function() { if (toastTimerRef.current) clearTimeout(toastTimerRef.current); if (beverageToastTimerRef.current) clearTimeout(beverageToastTimerRef.current); }; }, []);
 
   const calcVitalityScore = () => {
     const OBJECTIVE = realDailyTarget || 2100;
@@ -121,9 +125,12 @@ export default function DashboardPage({ navigation }) {
         var dayName = JOURS_COURTS[date.getDay()];
         days.push({ date: dateStr, dayName: dayName, totalMl: 0, goalMl: hydrationGoal });
       }
+      var hydrationResults = await Promise.all(days.map(function(day) {
+        return supabase.rpc('get_daily_hydration', { p_user_id: userId, p_date: day.date });
+      }));
       for (var i = 0; i < days.length; i++) {
         try {
-          var result = await supabase.rpc('get_daily_hydration', { p_user_id: userId, p_date: days[i].date });
+          var result = hydrationResults[i];
           if (result.data && result.data.length > 0) {
             days[i].totalMl = result.data[0].total_effective_ml || 0;
           }
@@ -178,13 +185,20 @@ export default function DashboardPage({ navigation }) {
         var dayName = JOURS_COURTS[date.getDay()];
         days.push({ date: dateStr, dayName: dayName, calories: 0, protein: 0, carbs: 0, fat: 0, activityMin: 0, activityKcal: 0, hydrationMl: 0, mood: null });
       }
-      for (var i = 0; i < days.length; i++) {
-        var dy = days[i];
-        try { var sumRes = await supabase.from('daily_summary').select('total_calories, total_protein, total_carbs, total_fat').eq('user_id', userId).eq('date', dy.date).single(); if (sumRes.data) { dy.calories = Math.round(sumRes.data.total_calories || 0); dy.protein = Math.round(sumRes.data.total_protein || 0); dy.carbs = Math.round(sumRes.data.total_carbs || 0); dy.fat = Math.round(sumRes.data.total_fat || 0); } } catch(e) {}
-        try { var actRes = await supabase.from('user_activities').select('duration_min, calories_burned').eq('user_id', userId).gte('performed_at', dy.date + 'T00:00:00').lt('performed_at', dy.date + 'T23:59:59'); if (actRes.data) { dy.activityMin = actRes.data.reduce(function(s, a) { return s + (a.duration_min || 0); }, 0); dy.activityKcal = actRes.data.reduce(function(s, a) { return s + (a.calories_burned || 0); }, 0); } } catch(e) {}
-        try { var hydRes = await supabase.rpc('get_daily_hydration', { p_user_id: userId, p_date: dy.date }); if (hydRes.data && hydRes.data.length > 0) { dy.hydrationMl = hydRes.data[0].total_effective_ml || 0; } } catch(e) {}
-        try { var moodRes = await supabase.from('moods').select('mood_level').eq('user_id', userId).gte('created_at', dy.date + 'T00:00:00').lt('created_at', dy.date + 'T23:59:59').limit(1); if (moodRes.data && moodRes.data.length > 0) { dy.mood = moodRes.data[0].mood_level; } } catch(e) {}
-      }
+      await Promise.all(days.map(function(dy) {
+        return Promise.all([
+          supabase.from('daily_summary').select('total_calories, total_protein, total_carbs, total_fat').eq('user_id', userId).eq('date', dy.date).single(),
+          supabase.from('user_activities').select('duration_min, calories_burned').eq('user_id', userId).gte('performed_at', dy.date + 'T00:00:00').lt('performed_at', dy.date + 'T23:59:59'),
+          supabase.rpc('get_daily_hydration', { p_user_id: userId, p_date: dy.date }),
+          supabase.from('moods').select('mood_level').eq('user_id', userId).gte('created_at', dy.date + 'T00:00:00').lt('created_at', dy.date + 'T23:59:59').limit(1),
+        ]).then(function(results) {
+          var sumRes = results[0]; var actRes = results[1]; var hydRes = results[2]; var moodRes = results[3];
+          if (sumRes.data) { dy.calories = Math.round(sumRes.data.total_calories || 0); dy.protein = Math.round(sumRes.data.total_protein || 0); dy.carbs = Math.round(sumRes.data.total_carbs || 0); dy.fat = Math.round(sumRes.data.total_fat || 0); }
+          if (actRes.data) { dy.activityMin = actRes.data.reduce(function(s, a) { return s + (a.duration_min || 0); }, 0); dy.activityKcal = actRes.data.reduce(function(s, a) { return s + (a.calories_burned || 0); }, 0); }
+          if (hydRes.data && hydRes.data.length > 0) { dy.hydrationMl = hydRes.data[0].total_effective_ml || 0; }
+          if (moodRes.data && moodRes.data.length > 0) { dy.mood = moodRes.data[0].mood_level; }
+        });
+      }));
       setWeeklyStats(days);
     } catch(err) { console.warn('fetchWeeklyStats error:', err); }
     setStatsLoading(false);
@@ -207,7 +221,15 @@ export default function DashboardPage({ navigation }) {
     setIsLoadingDashboard(true);
     try {
       var today = new Date().toISOString().split('T')[0];
-      var { data: profile } = await supabase.from('users_profile').select('full_name, daily_calorie_target, lix_balance, energy, gender, hydration_history_unlocked_until, stats_unlocked_until').eq('user_id', userId).single();
+      var todayStart = today + 'T00:00:00';
+      var [profileRes, summaryRes, mealsRes, moodRes, activitiesRes] = await Promise.all([
+        supabase.from('users_profile').select('full_name, daily_calorie_target, lix_balance, energy, gender, hydration_history_unlocked_until, stats_unlocked_until').eq('user_id', userId).single(),
+        supabase.from('daily_summary').select('total_calories').eq('user_id', userId).eq('date', today).single(),
+        supabase.from('meals').select('food_name, calories, protein_g, carbs_g, fat_g, meal_time, image_url, source').eq('user_id', userId).order('meal_time', { ascending: false }).limit(1),
+        supabase.from('moods').select('mood_level, weather').eq('user_id', userId).gte('created_at', todayStart).order('created_at', { ascending: false }).limit(1),
+        supabase.from('user_activities').select('activity_id, duration_min, calories_burned, water_lost_ml, performed_at').eq('user_id', userId).gte('performed_at', todayStart).order('performed_at', { ascending: false }),
+      ]);
+      var profile = profileRes.data;
       if (profile) {
         setUserName(profile.full_name || ''); setRealDailyTarget(profile.daily_calorie_target || 2330);
         setRealLixBalance(profile.lix_balance || 0); setUserEnergy(profile.energy || 20);
@@ -215,19 +237,16 @@ export default function DashboardPage({ navigation }) {
         setHistoryUnlockedUntil(profile.hydration_history_unlocked_until || null);
         setStatsUnlockedUntil(profile.stats_unlocked_until || null);
       }
-      var { data: summary } = await supabase.from('daily_summary').select('total_calories').eq('user_id', userId).eq('date', today).single();
+      var summary = summaryRes.data;
       if (summary) setRealConsumed(Math.round(summary.total_calories || 0));
-      var { data: meals } = await supabase.from('meals').select('food_name, calories, protein_g, carbs_g, fat_g, meal_time, image_url, source').eq('user_id', userId).order('meal_time', { ascending: false }).limit(1);
+      var meals = mealsRes.data;
       if (meals && meals.length > 0) setLastMeal(meals[0]);
-      var todayStart = today + 'T00:00:00';
-      var { data: todayMood } = await supabase.from('moods').select('mood_level, weather').eq('user_id', userId).gte('created_at', todayStart).order('created_at', { ascending: false }).limit(1);
+      var todayMood = moodRes.data;
       if (todayMood && todayMood.length > 0) { setCurrentMood(todayMood[0].mood_level); setMoodFilled(true); }
-      try {
-        var { data: todayActivities } = await supabase.from('user_activities').select('activity_id, duration_min, calories_burned, water_lost_ml, performed_at').eq('user_id', userId).gte('performed_at', today + 'T00:00:00').order('performed_at', { ascending: false });
-        if (todayActivities && todayActivities.length > 0) {
-          setActivities(todayActivities.map(function(a) { return { name: 'activité', durationMin: a.duration_min || 0, intensity: 'modere', kcalBurned: a.calories_burned || 0, waterLostMl: a.water_lost_ml || 0 }; }));
-        } else { setActivities([]); }
-      } catch(e) { setActivities([]); }
+      var todayActivities = activitiesRes.data;
+      if (todayActivities && todayActivities.length > 0) {
+        setActivities(todayActivities.map(function(a) { return { name: 'activité', durationMin: a.duration_min || 0, intensity: 'modere', kcalBurned: a.calories_burned || 0, waterLostMl: a.water_lost_ml || 0 }; }));
+      } else { setActivities([]); }
     } catch (err) { console.warn('Erreur chargement dashboard:', err); }
     setIsLoadingDashboard(false);
   };
@@ -344,7 +363,8 @@ export default function DashboardPage({ navigation }) {
           var now = new Date();
           setHydroLogs(function(prev) { return prev.concat([{ time: pad2(now.getHours()) + ':' + pad2(now.getMinutes()), amount: effectiveMl, type: bevName, icon: bevIcon }]); });
           setBeverageToast({ name: bevName, icon: bevIcon, effectiveMl: effectiveMl, kcal: kcal });
-          setTimeout(function() { setBeverageToast(null); }, 2500);
+          if (beverageToastTimerRef.current) clearTimeout(beverageToastTimerRef.current);
+          beverageToastTimerRef.current = setTimeout(function() { setBeverageToast(null); }, 2500);
           fetchDailyHydration().then(setHydrationData);
         }}
       />
@@ -396,7 +416,7 @@ function DashboardHeader({ moodFilled, currentMood, lixCount, onMoodPress, onLix
   var dropdownAnim = useRef(new RNAnimated.Value(0)).current;
   var toggleDropdown = function() {
     var toValue = dropdownOpen ? 0 : 1;
-    RNAnimated.timing(dropdownAnim, { toValue: toValue, duration: 200, useNativeDriver: false }).start();
+    RNAnimated.timing(dropdownAnim, { toValue: toValue, duration: 200, useNativeDriver: true }).start();
     setDropdownOpen(!dropdownOpen);
   };
 
