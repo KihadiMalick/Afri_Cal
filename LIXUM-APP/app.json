@@ -1,24 +1,21 @@
 {
   "expo": {
     "name": "LIXUM",
-    "slug": "lixum",
+    "slug": "LIXUM-APP",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "lixum",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#1E2530"
     },
-
     "assetBundlePatterns": [
       "assets/**/*"
     ],
-
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.lixum.app",
@@ -30,7 +27,6 @@
         "NSFaceIDUsageDescription": "LIXUM utilise Face ID pour securiser votre Secret Pocket."
       }
     },
-
     "android": {
       "package": "com.malick2977.LIXUMAPP",
       "versionCode": 1,
@@ -51,15 +47,23 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.VIBRATE",
         "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.VIBRATE",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.RECORD_AUDIO"
       ]
     },
-
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-
     "plugins": [
       "expo-secure-store",
       [
@@ -82,12 +86,17 @@
         }
       ]
     ],
-
     "extra": {
       "eas": {
         "projectId": "aa185157-efcb-4568-880f-393dac60e425"
       }
     },
-    "owner": "malick2977"
+    "owner": "malick2977",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/aa185157-efcb-4568-880f-393dac60e425"
+    }
   }
 }

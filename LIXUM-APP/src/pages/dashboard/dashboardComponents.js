@@ -263,7 +263,7 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubble
   const [bubblePositions, setBubblePositions] = useState(BUBBLE_CONFIG.map(() => 0));
 
   useEffect(() => {
-    RNAnimated.timing(fillAnim, { toValue: fillPercent, duration: 400, useNativeDriver: false, // layout animation - cannot use native driver }).start();
+    RNAnimated.timing(fillAnim, { toValue: fillPercent, duration: 400, useNativeDriver: false }).start();
   }, [fillPercent]);
 
   useEffect(() => {
@@ -274,7 +274,7 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubble
       const startTimer = setTimeout(() => {
         const loop = () => {
           anim.setValue(0);
-          RNAnimated.timing(anim, { toValue: 1, duration: cfg.duration, useNativeDriver: false, // layout animation - cannot use native driver }).start(() => loop());
+          RNAnimated.timing(anim, { toValue: 1, duration: cfg.duration, useNativeDriver: false }).start(() => loop());
         };
         loop();
         anim.addListener(({ value }) => {
