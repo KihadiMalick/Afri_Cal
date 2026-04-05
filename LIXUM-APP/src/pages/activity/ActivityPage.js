@@ -75,6 +75,8 @@ export default function ActivityPage({ onNavigate }) {
   const isRunMovingRef = useRef(false);
   const runMilestoneTimerRef = useRef(null);
   const runMilestoneHitRef = useRef({});
+  const runSaveTimerRef = useRef(null);
+  const walkSaveTimerRef = useRef(null);
 
   // Sport modal
   const [modalSport, setModalSport] = useState(null);
@@ -467,6 +469,7 @@ export default function ActivityPage({ onNavigate }) {
     if (runIntervalRef.current) { clearInterval(runIntervalRef.current); runIntervalRef.current = null; }
   };
   useEffect(() => { return () => { if (runIntervalRef.current) clearInterval(runIntervalRef.current); }; }, []);
+  useEffect(() => { return () => { if (runMilestoneTimerRef.current) clearTimeout(runMilestoneTimerRef.current); if (runSaveTimerRef.current) clearTimeout(runSaveTimerRef.current); if (walkSaveTimerRef.current) clearTimeout(walkSaveTimerRef.current); }; }, []);
 
   // Run milestone detection
   useEffect(() => {
