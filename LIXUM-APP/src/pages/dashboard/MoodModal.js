@@ -394,8 +394,8 @@ const MoodModal = ({ visible, onClose, onMoodSaved }) => {
                         if (onMoodSaved) onMoodSaved(moodResult, selectedWeather);
                         onClose();
                       }}
-                      style={{ backgroundColor: '#00D984', borderRadius: 14, paddingHorizontal: 30, paddingVertical: 12 }}>
-                      <Text style={{ color: '#0D1117', fontSize: 15, fontWeight: '800' }}>Valider ✓</Text>
+                      style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: 14, paddingHorizontal: 30, paddingVertical: 12, borderWidth: 1, borderColor: 'rgba(0,217,132,0.4)' }}>
+                      <Text style={{ color: '#00D984', fontSize: 15, fontWeight: '800' }}>Valider ✓</Text>
                     </TouchableOpacity>
                     <View style={{ height: 12 }} />
                   </View>

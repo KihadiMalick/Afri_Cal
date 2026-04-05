@@ -286,13 +286,12 @@ const BeverageModal = ({
 
                   <Pressable onPress={saveBeverage} disabled={beverageSaving}
                     style={({ pressed }) => ({
-                      backgroundColor: beverageSaving ? '#333A42' : '#00D984',
+                      backgroundColor: beverageSaving ? '#333A42' : 'rgba(0,217,132,0.15)',
                       borderRadius: wp(12), paddingVertical: 14, alignItems: 'center',
+                      borderWidth: 1, borderColor: beverageSaving ? 'rgba(74,79,85,0.3)' : 'rgba(0,217,132,0.4)',
                       transform: [{ scale: pressed ? 0.97 : 1 }],
-                      shadowColor: '#00D984', shadowOffset: { width: 0, height: 0 },
-                      shadowOpacity: beverageSaving ? 0 : 0.3, shadowRadius: 10, elevation: beverageSaving ? 0 : 6,
                     })}>
-                    <Text style={{ color: beverageSaving ? '#555E6C' : '#0D1117', fontSize: fp(14), fontWeight: '900', letterSpacing: 0.5 }}>
+                    <Text style={{ color: beverageSaving ? '#555E6C' : '#00D984', fontSize: fp(14), fontWeight: '900', letterSpacing: 0.5 }}>
                       {beverageSaving ? 'Enregistrement...' : '✓  AJOUTER ' + beverageVolume + 'ml'}
                     </Text>
                   </Pressable>
