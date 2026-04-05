@@ -1,10 +1,12 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { C, SUPABASE_URL, SUPABASE_ANON_KEY, isValidEmail, isValidFullName, getPasswordStrength } from '../registerConstants';
 import { GlassCard, PremiumInput } from '../registerComponents';
 
 function Phase1Identity({ formData, setFormData, t, lang }) {
+  var navigation = useNavigation();
   var fd = formData;
   var validEmail = fd.email ? isValidEmail(fd.email) : false;
   var emailsMatch = validEmail && fd.email === fd.emailConfirm;
@@ -71,7 +73,7 @@ function Phase1Identity({ formData, setFormData, t, lang }) {
                 {lang === 'fr' ? 'Cette adresse est d\u00e9j\u00e0 utilis\u00e9e' : 'This email is already taken'}
               </Text>
             </View>
-            <TouchableOpacity onPress={function() {}} style={{ marginTop: 4 }}>
+            <TouchableOpacity onPress={function() { navigation.navigate('Login'); }} style={{ marginTop: 4 }}>
               <Text style={{ color: C.emerald, fontSize: 10, fontWeight: '700' }}>
                 {lang === 'fr' ? 'D\u00e9j\u00e0 un compte ? Se connecter \u2192' : 'Already have an account? Sign in \u2192'}
               </Text>
