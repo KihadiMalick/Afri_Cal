@@ -4,7 +4,7 @@ const HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPA
 const POST_HEADERS = { ...HEADERS, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
 const ALL_CHARACTERS = [
-  { id: 'emerald_owl', name: 'EMERALD OWL', tier: 'standard', color: '#00D984', emoji: '🦉', image: require('../../assets/images/emerald_owl.webp'), desc: '3 recettes perso gratuites', uses: 3, unlock_hours: 0 },
+  { id: 'emerald_owl', name: 'EMERALD OWL', tier: 'standard', color: '#00D984', emoji: '🦉', image: null, desc: '3 recettes perso gratuites', uses: 3, unlock_hours: 0 },
   { id: 'hawk_eye', name: 'HAWK EYE', tier: 'standard', color: '#4DA6FF', emoji: '🦅', desc: '2 Xscans gratuits', uses: 2, unlock_hours: 0 },
   { id: 'ruby_tiger', name: 'RUBY TIGER', tier: 'standard', color: '#FF4757', emoji: '🐯', desc: '1 programme sport gratuit', uses: 1, unlock_hours: 0 },
   { id: 'amber_fox', name: 'AMBER FOX', tier: 'standard', color: '#FF8C42', emoji: '🦊', desc: '2 substitutions ingrédients', uses: 2, unlock_hours: 0 },
