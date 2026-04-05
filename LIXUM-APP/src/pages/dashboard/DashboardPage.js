@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StatusBar, Platform,
+  View, Text, StatusBar, Platform, Modal,
   Animated as RNAnimated, TouchableOpacity, Image, Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -79,6 +79,8 @@ export default function DashboardPage({ navigation }) {
   const [showBeverageModal, setShowBeverageModal] = useState(false);
   const [beverageToast, setBeverageToast] = useState(null);
   var beverageToastTimerRef = useRef(null);
+  var _lixAlert = useState({ visible: false, missing: 0, type: '' });
+  var lixAlert = _lixAlert[0]; var setLixAlert = _lixAlert[1];
   const [activeChar, setActiveChar] = useState(null);
   const [pagePowers, setPagePowers] = useState([]);
   const [toggleStates, setToggleStates] = useState({});
@@ -153,7 +155,7 @@ export default function DashboardPage({ navigation }) {
   };
 
   var unlockHistoryWithLix = async function() {
-    if (realLixBalance < 100) { showToast('💎 Lix insuffisants — il vous faut 100 Lix', '#FF6B6B'); return; }
+    if (realLixBalance < 100) { setLixAlert({ visible: true, missing: 100 - realLixBalance, type: 'hydration' }); return; }
     try {
       var newBalance = realLixBalance - 100;
       var unlockUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -175,7 +177,7 @@ export default function DashboardPage({ navigation }) {
   };
 
   var unlockStatsWithLix = async function() {
-    if (realLixBalance < 200) { showToast('💎 Lix insuffisants — il vous faut 200 Lix', '#FF6B6B'); return; }
+    if (realLixBalance < 200) { setLixAlert({ visible: true, missing: 200 - realLixBalance, type: 'stats' }); return; }
     try {
       var newBalance = realLixBalance - 200;
       var unlockUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -326,6 +328,7 @@ export default function DashboardPage({ navigation }) {
           lixCount={realLixBalance} userEnergy={userEnergy}
           onMoodPress={function() { setShowMoodModal(true); }}
           onLixPress={function() { if (navigation) navigation.navigate('LixVerse'); }}
+          onProfilePress={function() { if (navigation) navigation.navigate('Profile'); }}
           highlightMood={tooltipStep === 1}
         />
 
@@ -410,6 +413,85 @@ export default function DashboardPage({ navigation }) {
         </View>
       )}
 
+      <Modal visible={lixAlert.visible} transparent animationType="fade" onRequestClose={function() { setLixAlert({ visible: false, missing: 0, type: '' }); }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 30 }}>
+          <View style={{ backgroundColor: '#1E2530', borderRadius: 20, padding: 24, width: '100%', borderWidth: 1.5, borderColor: 'rgba(255,107,107,0.3)', alignItems: 'center' }}>
+            <Text style={{ fontSize: 36, marginBottom: 12 }}>💎</Text>
+            <Text style={{ color: '#EAEEF3', fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 8 }}>Solde insuffisant</Text>
+            <Text style={{ color: '#8892A0', fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 20 }}>
+              {'Il vous manque ' + lixAlert.missing + ' Lix pour débloquer cette fonctionnalité.'}
+            </Text>
+            <TouchableOpacity onPress={function() { setLixAlert({ visible: false, missing: 0, type: '' }); if (navigation) navigation.navigate('LixVerse'); }} activeOpacity={0.7}
+              style={{ width: '100%', paddingVertical: 14, borderRadius: 14, alignItems: 'center', marginBottom: 8, backgroundColor: 'rgba(0,217,132,0.15)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.3)' }}>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#00D984' }}>Obtenir des Lix</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={function() { setLixAlert({ visible: false, missing: 0, type: '' }); }} activeOpacity={0.7}
+              style={{ width: '100%', paddingVertical: 14, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showStatsModal} transparent animationType="fade" onRequestClose={function() { setShowStatsModal(false); }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
+          <View style={{ backgroundColor: '#1E2530', borderRadius: 20, padding: 22, width: '100%', borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.25)' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ fontSize: 18, marginRight: 8 }}>📊</Text>
+                <Text style={{ color: '#EAEEF3', fontSize: 16, fontWeight: '800' }}>MES STATS (7 jours)</Text>
+              </View>
+              <TouchableOpacity onPress={function() { setShowStatsModal(false); }}>
+                <Text style={{ color: '#8892A0', fontSize: 22 }}>×</Text>
+              </TouchableOpacity>
+            </View>
+            {isStatsUnlocked() ? (
+              weeklyStats ? (
+                <View>
+                  {weeklyStats.map(function(day, i) {
+                    return (
+                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: i < weeklyStats.length - 1 ? 1 : 0, borderBottomColor: 'rgba(74,79,85,0.3)' }}>
+                        <Text style={{ color: '#8892A0', fontSize: 12, width: 40, fontWeight: '600' }}>{day.dayName}</Text>
+                        <View style={{ flex: 1, marginLeft: 8 }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <Text style={{ color: '#FF8C42', fontSize: 11 }}>{day.calories} kcal</Text>
+                            <Text style={{ color: '#4DA6FF', fontSize: 11 }}>{day.hydrationMl} ml</Text>
+                            <Text style={{ color: '#00D984', fontSize: 11 }}>{day.activityMin} min</Text>
+                          </View>
+                        </View>
+                        {day.mood !== null && <Text style={{ fontSize: 14, marginLeft: 6 }}>{['😢','😕','😐','🙂','😄'][day.mood - 1] || '—'}</Text>}
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : (
+                <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+                  <Text style={{ color: '#8892A0', fontSize: 13 }}>Chargement...</Text>
+                </View>
+              )
+            ) : (
+              <View style={{ alignItems: 'center', paddingVertical: 16 }}>
+                <View style={{ opacity: 0.15, marginBottom: 16 }}>
+                  {[1,2,3,4,5].map(function(i) {
+                    return (
+                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
+                        <View style={{ width: 40, height: 12, backgroundColor: '#555', borderRadius: 4 }} />
+                        <View style={{ flex: 1, height: 10, backgroundColor: '#555', borderRadius: 4, marginLeft: 8 }} />
+                      </View>
+                    );
+                  })}
+                </View>
+                <TouchableOpacity onPress={unlockStatsWithLix} activeOpacity={0.7}
+                  style={{ backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: 14, paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: 'rgba(0,217,132,0.3)', flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ color: '#D4AF37', fontSize: 14, fontWeight: '800', marginRight: 6 }}>💎 200 Lix</Text>
+                  <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '700' }}>· Accès 24h</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
       <TooltipOverlay tooltipStep={tooltipStep} setTooltipStep={setTooltipStepPersist} scrollRef={scrollRef} />
 
       <BottomTabs activeTab="home" onTabPress={function(key) {
@@ -421,7 +503,7 @@ export default function DashboardPage({ navigation }) {
   );
 }
 
-function DashboardHeader({ moodFilled, currentMood, lixCount, onMoodPress, onLixPress, highlightMood, userEnergy }) {
+function DashboardHeader({ moodFilled, currentMood, lixCount, onMoodPress, onLixPress, onProfilePress, highlightMood, userEnergy }) {
   var _dropdown = useState(false);
   var dropdownOpen = _dropdown[0]; var setDropdownOpen = _dropdown[1];
   var dropdownAnim = useRef(new RNAnimated.Value(0)).current;
@@ -503,24 +585,24 @@ function DashboardHeader({ moodFilled, currentMood, lixCount, onMoodPress, onLix
       </View>
       {dropdownOpen && (
         <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: -500, zIndex: 998 }}>
-          <RNAnimated.View style={{ position: 'absolute', top: 60, right: 14, backgroundColor: 'rgba(16, 20, 28, 0.97)', borderWidth: 1, borderColor: '#4A4F55', borderRadius: 16, paddingHorizontal: 18, paddingVertical: 14, zIndex: 999, minWidth: 180, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 10, opacity: dropdownAnim, transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }] }}>
-            <TouchableOpacity onPress={function() { toggleDropdown(); if (onLixPress) onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-              <LixGem size={14} />
-              <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixCount}</Text>
-              <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
+          <RNAnimated.View style={{ position: 'absolute', top: 55, right: 14, backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, zIndex: 999, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 10, opacity: dropdownAnim, transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) }] }}>
+            <TouchableOpacity onPress={function() { toggleDropdown(); if (onLixPress) onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
+              <LixGem size={13} />
+              <Text style={{ color: '#D4AF37', fontWeight: '800', fontSize: 16, marginLeft: 6 }}>{lixCount}</Text>
+              <Text style={{ color: '#6B7280', fontSize: 12, marginLeft: 4 }}>Lix</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={function() { toggleDropdown(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-              <Svg width={14} height={14} viewBox="0 0 24 24">
+            <TouchableOpacity onPress={function() { toggleDropdown(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
+              <Svg width={13} height={13} viewBox="0 0 24 24">
                 <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
               </Svg>
-              <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{userEnergy}</Text>
-              <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>énergie</Text>
+              <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#EAEEF3', fontWeight: '800', fontSize: 16, marginLeft: 6 }}>{userEnergy}</Text>
+              <Text style={{ color: '#6B7280', fontSize: 12, marginLeft: 4 }}>énergie</Text>
             </TouchableOpacity>
-            <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
-            <TouchableOpacity onPress={function() { toggleDropdown(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-              <Text style={{ fontSize: 18 }}>👤</Text>
-              <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>Mon Profil</Text>
-              <Text style={{ color: '#888', fontSize: 14 }}>→</Text>
+            <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(74,79,85,0.4)', marginVertical: 4 }} />
+            <TouchableOpacity onPress={function() { toggleDropdown(); if (onProfilePress) onProfilePress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
+              <Text style={{ fontSize: 14 }}>👤</Text>
+              <Text style={{ color: '#EAEEF3', fontSize: 13, fontWeight: '600', marginLeft: 6, flex: 1 }}>Mon Profil</Text>
+              <Text style={{ color: '#6B7280', fontSize: 12 }}>→</Text>
             </TouchableOpacity>
           </RNAnimated.View>
         </TouchableOpacity>
