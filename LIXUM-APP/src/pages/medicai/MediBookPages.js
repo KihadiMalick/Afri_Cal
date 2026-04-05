@@ -804,10 +804,6 @@ export const MediBookContent = (props) => {
   };
 
   // ── CAPTURE CARNET PAGE ──────────────────────────────────────────────────
-  const captureCarnetPage = (index) => {
-    setSelectedCarnetPage(index);
-    setShowCarnetPageSheet(true);
-  };
 
   // ── LIXUM TABLE COMPONENT ───────────────────────────────────────────────
   const renderLixumTable = (title, columns, rows, accentColor = '#00D984', onTransfer = null) => {
