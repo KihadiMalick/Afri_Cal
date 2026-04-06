@@ -16,14 +16,14 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
     return (
       <View style={{ width: MEAL_CARD_WIDTH }}>
         <View style={{
-          borderRadius: 16, padding: 1,
-          backgroundColor: '#4A4F55', elevation: 8,
+          borderRadius: 12, borderWidth: 1, borderColor: '#4A4F55',
+          backgroundColor: '#252A30', elevation: 8,
           shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
           shadowOpacity: 0.25, shadowRadius: 6,
         }}>
           <LinearGradient
             colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-            style={{ borderRadius: 15, overflow: 'hidden', height: MEAL_CARD_HEIGHT }}
+            style={{ borderRadius: 11, overflow: 'hidden', height: MEAL_CARD_HEIGHT }}
           >
             {/* Ligne émeraude */}
             <View style={{
@@ -143,15 +143,15 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
       })}
     >
       <View style={{
-        borderRadius: 16, padding: 1,
-        backgroundColor: '#4A4F55', elevation: 8,
+        borderRadius: 12, borderWidth: 1, borderColor: '#4A4F55',
+        backgroundColor: '#252A30', elevation: 8,
         shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.25, shadowRadius: 6,
       }}>
         <LinearGradient
           colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
           style={{
-            borderRadius: 15, padding: wp(11),
+            borderRadius: 11, padding: wp(11),
             height: MEAL_CARD_HEIGHT,
             justifyContent: 'center', alignItems: 'center',
           }}

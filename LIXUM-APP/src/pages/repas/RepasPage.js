@@ -1085,20 +1085,19 @@ export default function RepasPage({ navigation }) {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(12) }}>
               {MOCK_RECIPES.map((recipe, index) => (
                 <View key={index} style={{
-                  width: wp(140), borderRadius: 16, borderWidth: 1.5,
-                  borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
-                  borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
-                  backgroundColor: '#2A303B', elevation: 10,
+                  width: wp(140), borderRadius: 12, borderWidth: 1,
+                  borderColor: '#4A4F55',
+                  backgroundColor: '#252A30', elevation: 10,
                   shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
                   shadowOpacity: 0.4, shadowRadius: 12,
                 }}>
                   <Pressable delayPressIn={120}
                     style={({ pressed }) => ({
-                      borderRadius: 15, overflow: 'hidden',
+                      borderRadius: 11, overflow: 'hidden',
                       transform: [{ scale: pressed ? 0.96 : 1 }],
                     })}
                   >
-                    <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15, overflow: 'hidden' }}>
+                    <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 11, overflow: 'hidden' }}>
                       <View style={{ width: '100%', height: wp(95), backgroundColor: '#1A1D22' }}>
                         <Image source={{ uri: recipe.image }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
                         <LinearGradient colors={['transparent', 'rgba(0,0,0,0.5)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%' }} />
