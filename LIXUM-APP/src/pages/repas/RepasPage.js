@@ -115,18 +115,6 @@ export default function RepasPage({ navigation }) {
   const [addModalSlot, setAddModalSlot] = useState(null);
   const [selectedMealType, setSelectedMealType] = useState(null);
 
-  // Tooltip XSCAN highlight (show only once)
-  const [showScanTooltip, setShowScanTooltip] = useState(false);
-  useEffect(function() {
-    AsyncStorage.getItem('repas_xscan_tooltip_seen').then(function(v) {
-      if (!v) setShowScanTooltip(true);
-    }).catch(function() {});
-  }, []);
-  var dismissTooltip = function() {
-    setShowScanTooltip(false);
-    AsyncStorage.setItem('repas_xscan_tooltip_seen', 'true').catch(function() {});
-  };
-
   // Animated arrows for XSCAN
   var arrowAnim = useRef(new Animated.Value(0)).current;
   useEffect(function() {
@@ -145,7 +133,7 @@ export default function RepasPage({ navigation }) {
   // Ref XscanScreen
   const xscanRef = useRef(null);
 
-  // (tooltip no longer needs button position measurement)
+
 
   // === FONCTIONS ===
 
@@ -560,7 +548,7 @@ export default function RepasPage({ navigation }) {
           )}
 
           {/* ═══ 3. CARTE XSCAN ═══ */}
-          <View style={{ marginHorizontal: wp(16), marginTop: 16, zIndex: showScanTooltip ? 10000 : 0 }}>
+          <View style={{ marginHorizontal: wp(16), marginTop: 16 }}>
             <View style={{
               borderRadius: 16, borderWidth: 1.5,
               borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
@@ -725,45 +713,45 @@ export default function RepasPage({ navigation }) {
                     </Text>
                   </Pressable>
                 </View>
-              </LinearGradient>
-            </View>
-          </View>
 
-          <Text style={{ fontSize: fp(9), color: '#6B7280', textAlign: 'center', marginTop: wp(4), fontStyle: 'italic' }}>
-            Scan IA avancé · Reconnaissance multi-angle · LIXUM AI
-          </Text>
+                <Text style={{ fontSize: fp(9), color: '#6B7280', textAlign: 'center', marginTop: wp(8), fontStyle: 'italic' }}>
+                  Scan IA avancé · Reconnaissance multi-angle · LIXUM AI
+                </Text>
 
-          {/* Dots scans */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: wp(4), gap: wp(6) }}>
-            {[0, 1, 2].map((i) => {
-              const totalScans = 1;
-              const isFilled = i < totalScans;
-              return (
-                <View key={i} style={{
-                  width: wp(16), height: wp(16), borderRadius: wp(8),
-                  backgroundColor: isFilled ? '#1A2E25' : '#1E2228',
-                  borderWidth: 1.5, borderColor: isFilled ? '#00D984' : '#3A3F46',
-                  justifyContent: 'center', alignItems: 'center',
-                  shadowColor: isFilled ? '#00D984' : 'transparent',
-                  shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: isFilled ? 0.4 : 0, shadowRadius: 6,
-                  elevation: isFilled ? 4 : 0,
-                }}>
-                  {isFilled ? (
-                    <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: '#00D984' }}>
-                      <View style={{ position: 'absolute', top: 1, left: 2, width: 3, height: 2, borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,0.35)' }}/>
-                    </View>
-                  ) : (
-                    <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: '#15191F', borderWidth: 0.5, borderColor: '#2A2F36' }}/>
-                  )}
+                {/* Dots scans */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: wp(6), gap: wp(6) }}>
+                  {[0, 1, 2].map((i) => {
+                    const totalScans = 1;
+                    const isFilled = i < totalScans;
+                    return (
+                      <View key={i} style={{
+                        width: wp(16), height: wp(16), borderRadius: wp(8),
+                        backgroundColor: isFilled ? '#1A2E25' : '#1E2228',
+                        borderWidth: 1.5, borderColor: isFilled ? '#00D984' : '#3A3F46',
+                        justifyContent: 'center', alignItems: 'center',
+                        shadowColor: isFilled ? '#00D984' : 'transparent',
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowOpacity: isFilled ? 0.4 : 0, shadowRadius: 6,
+                        elevation: isFilled ? 4 : 0,
+                      }}>
+                        {isFilled ? (
+                          <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: '#00D984' }}>
+                            <View style={{ position: 'absolute', top: 1, left: 2, width: 3, height: 2, borderRadius: 1.5, backgroundColor: 'rgba(255,255,255,0.35)' }}/>
+                          </View>
+                        ) : (
+                          <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: '#15191F', borderWidth: 0.5, borderColor: '#2A2F36' }}/>
+                        )}
+                      </View>
+                    );
+                  })}
+                  <Text style={{ color: '#8892A0', fontSize: fp(12), fontWeight: '600', marginLeft: wp(8) }}>
+                    {lang === 'fr' ? '1 Scan Restant' : '1 Scan Remaining'}
+                  </Text>
+                  <View style={{ backgroundColor: 'rgba(0,217,132,0.08)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, marginLeft: wp(6) }}>
+                    <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '800', letterSpacing: 1 }}>LUCKY</Text>
+                  </View>
                 </View>
-              );
-            })}
-            <Text style={{ color: '#8892A0', fontSize: fp(12), fontWeight: '600', marginLeft: wp(8) }}>
-              {lang === 'fr' ? '1 Scan Restant' : '1 Scan Remaining'}
-            </Text>
-            <View style={{ backgroundColor: 'rgba(0,217,132,0.08)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, marginLeft: wp(6) }}>
-              <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '800', letterSpacing: 1 }}>LUCKY</Text>
+              </LinearGradient>
             </View>
           </View>
 
@@ -1083,8 +1071,6 @@ export default function RepasPage({ navigation }) {
             </View>
           )}
 
-          <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginHorizontal: wp(16), marginTop: wp(12) }}/>
-
           {/* ═══ 7. PLATS FRÉQUENTS ═══ */}
           <View style={{ marginTop: 28, marginHorizontal: wp(16) }}>
           <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
@@ -1190,32 +1176,6 @@ export default function RepasPage({ navigation }) {
           onGallery={() => { setShowAddModal(false); setShowXscan(true); if (xscanRef.current?.openGallery) xscanRef.current.openGallery(); }}
           onManual={() => { setShowAddModal(false); setShowManualEntry(true); }}
         />
-
-        {/* XSCAN Tooltip — overlay sombre, le bouton XSCAN passe au-dessus via zIndex */}
-        {showScanTooltip && (
-          <Pressable onPress={dismissTooltip} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 140 }}>
-            <View style={{ alignItems: 'center', paddingHorizontal: wp(24) }}>
-              <Text style={{ color: '#00D984', fontSize: fp(18), fontWeight: '800', marginBottom: 10 }}>
-                {lang === 'fr' ? 'Technologie Xscan' : 'Xscan Technology'}
-              </Text>
-              <Text style={{ color: '#EAEEF3', fontSize: fp(13), textAlign: 'center', lineHeight: fp(20), marginBottom: 8 }}>
-                {lang === 'fr' ? 'Scannez votre premier repas !' : 'Scan your first meal!'}
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, marginBottom: 24 }}>
-                <Text style={{ fontSize: 14, marginRight: 6 }}>🎁</Text>
-                <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '700' }}>
-                  {lang === 'fr' ? '1 scan gratuit offert' : '1 free scan included'}
-                </Text>
-              </View>
-              <TouchableOpacity onPress={dismissTooltip} activeOpacity={0.7}
-                style={{ backgroundColor: '#00D984', borderRadius: 14, paddingHorizontal: 30, paddingVertical: 12 }}>
-                <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
-                  {lang === 'fr' ? 'Compris !' : 'Got it!'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        )}
 
         {/* ═══ BOTTOM TABS ═══ */}
         <BottomTabs
