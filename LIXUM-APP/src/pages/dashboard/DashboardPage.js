@@ -167,26 +167,21 @@ export default function DashboardPage({ navigation }) {
   };
 
   var unlockHistoryWithLix = async function() {
-    Alert.alert('DEBUG 1', 'Fonction appelée\nuserId: ' + userId + '\nLix: ' + realLixBalance);
-    if (!userId) { Alert.alert('DEBUG', 'Pas de userId'); return; }
-    if (realLixBalance < 100) { Alert.alert('DEBUG 2', 'Solde insuffisant: ' + realLixBalance + ' Lix'); setLixAlert({ visible: true, missing: 100 - realLixBalance, type: 'hydration' }); return; }
+    if (!userId) { showToast('⚠️ Connectez-vous d\'abord', '#FF6B6B'); return; }
+    if (realLixBalance < 100) { setLixAlert({ visible: true, missing: 100 - realLixBalance, type: 'hydration' }); return; }
     try {
       var newBalance = realLixBalance - 100;
       var unlockUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      Alert.alert('DEBUG 3', 'Avant update Supabase\nnewBalance: ' + newBalance + '\nunlockUntil: ' + unlockUntil);
       var { data, error } = await supabase.from('users_profile').update({ lix_balance: newBalance, hydration_history_unlocked_until: unlockUntil }).eq('user_id', userId).select('lix_balance, hydration_history_unlocked_until').single();
-      if (error) { Alert.alert('DEBUG ERROR', 'Supabase error:\n' + error.message + '\n' + (error.details || '') + '\n' + (error.hint || '')); return; }
-      Alert.alert('DEBUG 4', 'Update OK!\ndata: ' + JSON.stringify(data));
+      if (error) { showToast('⚠️ Erreur Supabase: ' + error.message, '#FF6B6B'); return; }
       if (data) {
         updateLixBalance(data.lix_balance);
         setHistoryUnlockedUntil(data.hydration_history_unlocked_until);
-      } else {
-        Alert.alert('DEBUG 5', 'Pas de data retournée');
       }
       fetchWeeklyHydration();
       showToast('💎 Historique débloqué ! -100 Lix', '#00D984');
       try { var Vibration = require('react-native').Vibration; Vibration.vibrate([0, 30, 50, 30]); } catch(e) {}
-    } catch(err) { Alert.alert('DEBUG CATCH', 'Erreur:\n' + (err.message || JSON.stringify(err))); }
+    } catch(err) { showToast('⚠️ Erreur — réessayez', '#FF6B6B'); }
   };
 
   var unlockHistoryWithPower = async function() {
