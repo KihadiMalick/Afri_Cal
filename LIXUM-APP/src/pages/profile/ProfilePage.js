@@ -15,6 +15,7 @@ import {
 } from './profileConstants';
 import { useAuth } from '../../config/AuthContext';
 import { supabase } from '../../config/supabase';
+import MetalCard from '../../components/shared/MetalCard';
 
 var ProfileScrollPicker = function(pickerProps) {
   var values = pickerProps.values, selectedValue = pickerProps.selectedValue, onSelect = pickerProps.onSelect, unit = pickerProps.unit;
@@ -128,7 +129,10 @@ export default function ProfilePage({ navigation }) {
   };
 
   var imc = profile && profile.weight && profile.height ? (profile.weight / ((profile.height / 100) * (profile.height / 100))).toFixed(1) : '\u2014';
-  var imcColor = imc < 18.5 ? '#FF8C42' : imc < 25 ? '#00D984' : imc < 30 ? '#FF8C42' : '#FF6B6B';
+  var imcNum = parseFloat(imc) || 0;
+  var imcColor = imcNum < 18.5 ? '#4DA6FF' : imcNum < 25 ? '#00D984' : imcNum < 30 ? '#FF8C42' : '#FF4444';
+  var imcLabel = imcNum < 18.5 ? (lang === 'fr' ? 'Insuffisance' : 'Underweight') : imcNum < 25 ? 'Normal' : imcNum < 30 ? (lang === 'fr' ? 'Surpoids' : 'Overweight') : (lang === 'fr' ? 'Obésité' : 'Obesity');
+  var imcBarPos = Math.min(Math.max(((imcNum - 15) / 25) * 100, 0), 100);
   var subTier = profile && profile.is_premium ? 'Gold' : t.free;
   var subColor = profile && profile.is_premium ? '#D4AF37' : 'rgba(255,255,255,0.3)';
   var avatarEmoji = getCharEmoji(activeCharSlug);
@@ -192,6 +196,41 @@ export default function ProfilePage({ navigation }) {
               </View>
             ); })}
           </View>
+          {profile && profile.weight && profile.height && (
+            <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
+              <MetalCard>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '800', letterSpacing: 1.5 }}>IMC</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                    <Text style={{ color: imcColor, fontSize: fp(22), fontWeight: '900' }}>{imc}</Text>
+                    <Text style={{ color: '#6B7280', fontSize: fp(10), marginLeft: 4 }}>kg/m²</Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                  <View style={{ backgroundColor: imcColor + '20', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: imcColor + '40' }}>
+                    <Text style={{ color: imcColor, fontSize: fp(11), fontWeight: '700' }}>{imcLabel}</Text>
+                  </View>
+                </View>
+                <View style={{ height: 8, borderRadius: 4, overflow: 'hidden', flexDirection: 'row', marginBottom: 6 }}>
+                  <View style={{ flex: 18.5, backgroundColor: '#4DA6FF', opacity: 0.3 }} />
+                  <View style={{ flex: 6.4, backgroundColor: '#00D984', opacity: 0.3 }} />
+                  <View style={{ flex: 5, backgroundColor: '#FF8C42', opacity: 0.3 }} />
+                  <View style={{ flex: 10, backgroundColor: '#FF4444', opacity: 0.3 }} />
+                </View>
+                <View style={{ position: 'relative', height: 12, marginBottom: 4 }}>
+                  <View style={{ position: 'absolute', left: imcBarPos + '%', marginLeft: -5, width: 10, height: 10, borderRadius: 5, backgroundColor: imcColor, borderWidth: 2, borderColor: '#1E2530' }} />
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ color: '#6B7280', fontSize: 8 }}>15</Text>
+                  <Text style={{ color: '#6B7280', fontSize: 8 }}>18.5</Text>
+                  <Text style={{ color: '#6B7280', fontSize: 8 }}>25</Text>
+                  <Text style={{ color: '#6B7280', fontSize: 8 }}>30</Text>
+                  <Text style={{ color: '#6B7280', fontSize: 8 }}>40</Text>
+                </View>
+              </MetalCard>
+            </View>
+          )}
+
           <Pressable delayPressIn={120} onPress={function() { setShowEditProfile(true); }} style={{ marginHorizontal: wp(16), marginBottom: wp(20), paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.06)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}><Text style={{ fontSize: fp(13), fontWeight: '600', color: '#00D984' }}>{t.editProfile}</Text></Pressable>
 
           <View style={{ paddingHorizontal: wp(16), marginBottom: wp(4) }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>{t.settings}</Text></View>
