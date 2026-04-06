@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, ScrollView, Pressable, TouchableOpacity,
   Animated, Platform, Dimensions, Alert, Image,
@@ -28,6 +28,7 @@ import CartScanScreen from './CartScanScreen';
 import RecettesScreen from './RecettesScreen';
 import CookingModeScreen from './CookingModeScreen';
 import { useAuth } from '../../config/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 const W = Dimensions.get('window').width;
 const BASE_WIDTH = 320;
@@ -63,6 +64,8 @@ const SectionTitle = ({ title, rightAction, rightLabel }) => (
 export default function RepasPage({ navigation }) {
   var _lc = useLang(); var lang = _lc.lang;
   var auth = useAuth(); var userId = auth.userId;
+  var lixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
+  var userEnergy = auth.energy; var refreshLixFromServer = auth.refreshLixFromServer;
 
   // === DONNÉES SUPABASE ===
   const [dailySummary, setDailySummary] = useState({
@@ -92,9 +95,6 @@ export default function RepasPage({ navigation }) {
   const [todaySubstitutions, setTodaySubstitutions] = useState(0);
   const [userNameAvatar, setUserNameAvatar] = useState('');
   const [activeCharAvatar, setActiveCharAvatar] = useState(null);
-  const [lixBalance, setLixBalance] = useState(0);
-  const [userEnergy, setUserEnergy] = useState(20);
-
   // Mood × Météo
   const [userMood, setUserMood] = useState(null);
   const [userWeather, setUserWeather] = useState(null);
@@ -163,7 +163,7 @@ export default function RepasPage({ navigation }) {
 
       if (profile) {
         setUserProfile({ daily_calorie_target: profile.daily_calorie_target || 2330 });
-        setLixBalance(profile.lix_balance || 0);
+        updateLixBalance(profile.lix_balance || 0);
       }
 
       const today = new Date().toISOString().split('T')[0];
@@ -258,6 +258,11 @@ export default function RepasPage({ navigation }) {
       })();
     }
   }, [userId]);
+
+  // Refresh Lix balance when page gains focus
+  useFocusEffect(useCallback(function() {
+    if (userId) refreshLixFromServer();
+  }, [userId, refreshLixFromServer]));
 
   useEffect(() => {
     const fetchMoodWeather = async () => {
@@ -1168,7 +1173,7 @@ export default function RepasPage({ navigation }) {
           userMood={userMood}
           userWeather={userWeather}
           lixBalance={lixBalance}
-          setLixBalance={setLixBalance}
+          setLixBalance={updateLixBalance}
           onNavigate={function(key) { var routes = { home: 'Accueil', meals: 'Repas', medicai: 'MedicAi', activity: 'Activite', lixverse: 'LixVerse', profile: 'Profile' }; if (routes[key] && navigation) navigation.navigate(routes[key]); }}
           onOpenCooking={(recipe) => { setCookingRecipe(recipe); setShowCookingMode(true); }}
         />

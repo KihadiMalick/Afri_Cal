@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, Pressable, TouchableOpacity,
   Animated, Platform, Image, Alert,
@@ -9,6 +9,7 @@ import Svg, { G, Line, Circle, Path, Rect, Ellipse, Defs,
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../config/supabase';
 import { useAuth } from '../../config/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 import { useLang } from '../../config/LanguageContext';
 import { wp, fp } from '../../constants/layout';
 
@@ -45,6 +46,8 @@ const RUN_PIXELS_PER_METER = RUN_SCENE_W / RUN_MAX_DIST;
 
 export default function ActivityPage({ navigation }) {
   var auth = useAuth(); var userId = auth.userId;
+  var lixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
+  var userEnergy = auth.energy; var refreshLixFromServer = auth.refreshLixFromServer;
   var _lc = useLang(); var lang = _lc.lang;
   var t = getLang(lang);
 
@@ -105,8 +108,7 @@ export default function ActivityPage({ navigation }) {
   const [pagePowers, setPagePowers] = useState([]);
   const [hookResults, setHookResults] = useState({});
   const [userNameAvatar, setUserNameAvatar] = useState('');
-  const [lixBalance, setLixBalance] = useState(0);
-  const [userEnergy, setUserEnergy] = useState(20);
+  // lixBalance and userEnergy from AuthContext
   var _weight = useState(70); var userWeight = _weight[0]; var setUserWeight = _weight[1];
 
   // Shoe animation
@@ -253,7 +255,7 @@ export default function ActivityPage({ navigation }) {
           const { data: profile } = await supabase.from('users_profile').select('full_name, lix_balance, weight').eq('user_id', userId).maybeSingle();
           if (profile) {
             setUserNameAvatar(profile.full_name || '');
-            setLixBalance(profile.lix_balance || 0);
+            updateLixBalance(profile.lix_balance || 0);
             if (profile.weight) setUserWeight(profile.weight);
           }
         } catch (e) {}
@@ -267,6 +269,11 @@ export default function ActivityPage({ navigation }) {
       })();
     }
   }, [userId]);
+
+  // Refresh Lix balance when page gains focus
+  useFocusEffect(useCallback(function() {
+    if (userId) refreshLixFromServer();
+  }, [userId, refreshLixFromServer]));
 
   // === FONCTIONS POUVOIRS + SAVE ===
 

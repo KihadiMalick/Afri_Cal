@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, TouchableOpacity,
   Platform, Animated, Dimensions, PixelRatio, StatusBar,
   Modal, TextInput, ActivityIndicator, Image, Easing } from 'react-native';
@@ -19,6 +19,7 @@ import {
   WORLD_DOTS, getSegmentAngles
 } from './lixverseConstants';
 import { useAuth } from '../../config/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 import { LixGem } from './lixverseComponents';
 import PageHeader from '../../components/shared/PageHeader';
 import SpinTab from './SpinTab';
@@ -31,9 +32,9 @@ const W = SCREEN_WIDTH;
 
 export default function LixVersePage({ navigation }) {
   var auth = useAuth(); var userId = auth.userId;
+  var lixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
+  var userEnergy = auth.energy; var refreshLixFromServer = auth.refreshLixFromServer;
   const [activeTab, setActiveTab] = useState('defi');
-  const [lixBalance, setLixBalance] = useState(0);
-  const [userEnergy, setUserEnergy] = useState(20);
   const [ownedCharacters, setOwnedCharacters] = useState([]);
   const [challenges, setChallenges] = useState([]);
   const [challengeScores, setChallengeScores] = useState([]);
@@ -441,7 +442,7 @@ export default function LixVersePage({ navigation }) {
         return;
       }
       setServerResult(data);
-      if (data.new_lix_balance !== undefined) setLixBalance(data.new_lix_balance);
+      if (data.new_lix_balance !== undefined) updateLixBalance(data.new_lix_balance);
       if (data.new_energy !== undefined) setUserEnergy(data.new_energy);
       if (data.is_free) { setFreeSpinUsed(true); setFreeSpinAvailable(false); setNextFreeAt(Date.now() + 6 * 60 * 60 * 1000); }
       setSpinLoading(false);
@@ -560,7 +561,7 @@ export default function LixVersePage({ navigation }) {
         fetch(SUPABASE_URL+'/rest/v1/lixverse_group_members?user_id=eq.'+userId+'&select=group_id,personal_score,lixverse_groups(id,name,member_count,total_score,invite_code,challenge_id)',{headers:hdrs}),
       ]);
       const [aD,bD,cD,dD,eD] = await Promise.all([a.json(),b.json(),c.json(),d.json(),e.json()]);
-      if(aD[0]?.lix_balance!=null)setLixBalance(aD[0].lix_balance);
+      if(aD[0]?.lix_balance!=null)updateLixBalance(aD[0].lix_balance);
       if(aD[0]?.energy!=null)setUserEnergy(aD[0].energy);
       if(Array.isArray(bD))setOwnedCharacters(bD.map(x=>x.character_id));
       if(Array.isArray(cD))setChallenges(cD);
@@ -1002,6 +1003,11 @@ export default function LixVersePage({ navigation }) {
       Animated.timing(freeBtnPulse, { toValue: 1, duration: 1200, useNativeDriver: true }),
     ])).start();
   }, [userId]);
+
+  // Refresh Lix balance when page gains focus
+  useFocusEffect(useCallback(function() {
+    if (userId) refreshLixFromServer();
+  }, [userId, refreshLixFromServer]));
 
   useEffect(() => { if (activeTab === 'characters') loadCharacterData(); }, [activeTab]);
   useEffect(() => { if (activeTab === 'defi') { fetchChallengeScores().then(scores => setChallengeScores(scores)); loadPendingRequests(); } }, [activeTab]);

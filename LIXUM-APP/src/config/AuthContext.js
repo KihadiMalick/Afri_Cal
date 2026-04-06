@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -13,6 +13,43 @@ export function AuthProvider(props) {
 
   var _isAuthenticated = useState(false);
   var isAuthenticated = _isAuthenticated[0], setIsAuthenticated = _isAuthenticated[1];
+
+  // === SHARED LIX BALANCE & ENERGY ===
+  var _lixBalance = useState(0);
+  var lixBalance = _lixBalance[0], setLixBalance = _lixBalance[1];
+
+  var _energy = useState(20);
+  var energy = _energy[0], setEnergy = _energy[1];
+
+  var updateLixBalance = useCallback(function(newBalance) {
+    setLixBalance(newBalance);
+  }, []);
+
+  var updateEnergy = useCallback(function(newEnergy) {
+    setEnergy(newEnergy);
+  }, []);
+
+  var refreshLixFromServer = useCallback(async function() {
+    if (!userId) return;
+    try {
+      var { data } = await supabase
+        .from('users_profile')
+        .select('lix_balance, energy')
+        .eq('user_id', userId)
+        .single();
+      if (data) {
+        setLixBalance(data.lix_balance || 0);
+        setEnergy(data.energy || 20);
+      }
+    } catch (e) {
+      console.warn('refreshLixFromServer error:', e);
+    }
+  }, [userId]);
+
+  // Load initial balance when userId is set
+  useEffect(function() {
+    if (userId) refreshLixFromServer();
+  }, [userId, refreshLixFromServer]);
 
   useEffect(function() {
     // 1. Verifier la session existante au demarrage
@@ -36,6 +73,8 @@ export function AuthProvider(props) {
       } else {
         setUserId(null);
         setIsAuthenticated(false);
+        setLixBalance(0);
+        setEnergy(20);
       }
     });
 
@@ -52,6 +91,8 @@ export function AuthProvider(props) {
       await AsyncStorage.multiRemove(['lixum_access_token', 'lixum_user_id']);
       setUserId(null);
       setIsAuthenticated(false);
+      setLixBalance(0);
+      setEnergy(20);
     } catch (err) {
       console.warn('signOut error:', err);
     }
@@ -64,6 +105,11 @@ export function AuthProvider(props) {
         isAuthenticated: isAuthenticated,
         isLoading: isLoading,
         signOut: signOut,
+        lixBalance: lixBalance,
+        energy: energy,
+        updateLixBalance: updateLixBalance,
+        updateEnergy: updateEnergy,
+        refreshLixFromServer: refreshLixFromServer,
       }
     }, props.children)
   );

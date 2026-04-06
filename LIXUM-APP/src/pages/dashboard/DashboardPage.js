@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StatusBar, Platform, Modal, RefreshControl,
   Animated as RNAnimated, TouchableOpacity, Image, Easing,
@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../config/supabase';
 import BottomTabs from '../../components/shared/NavBar';
 import {
@@ -24,14 +25,15 @@ import { useAuth } from '../../config/AuthContext';
 
 export default function DashboardPage({ navigation }) {
   var auth = useAuth(); var userId = auth.userId;
+  var realLixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
+  var userEnergy = auth.energy; var updateEnergy = auth.updateEnergy;
+  var refreshLixFromServer = auth.refreshLixFromServer;
   const [realConsumed, setRealConsumed] = useState(0);
   const [realDailyTarget, setRealDailyTarget] = useState(2330);
-  const [realLixBalance, setRealLixBalance] = useState(0);
   const [realGender, setRealGender] = useState('homme');
   const [lastMeal, setLastMeal] = useState(null);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
   const [userName, setUserName] = useState('');
-  const [userEnergy, setUserEnergy] = useState(20);
   const [activities, setActivities] = useState([]);
   const [tooltipStep, setTooltipStep] = useState(0);
   var _rawSetTooltipStep = setTooltipStep;
@@ -176,7 +178,7 @@ export default function DashboardPage({ navigation }) {
       if (error) { console.error('[unlockHistoryWithLix] Supabase error:', error.message, error.details, error.hint); showToast('⚠️ Erreur Supabase: ' + error.message, '#FF6B6B'); return; }
       console.log('[unlockHistoryWithLix] Supabase OK — data:', JSON.stringify(data));
       if (data) {
-        setRealLixBalance(data.lix_balance);
+        updateLixBalance(data.lix_balance);
         setHistoryUnlockedUntil(data.hydration_history_unlocked_until);
         console.log('[unlockHistoryWithLix] State updated — lix:', data.lix_balance, 'unlocked_until:', data.hydration_history_unlocked_until);
       } else {
@@ -206,7 +208,7 @@ export default function DashboardPage({ navigation }) {
       var unlockUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       var { data, error } = await supabase.from('users_profile').update({ lix_balance: newBalance, stats_unlocked_until: unlockUntil }).eq('user_id', userId).select('lix_balance, stats_unlocked_until').single();
       if (error) { console.warn('unlockStats update error:', error); showToast('⚠️ Erreur — réessayez', '#FF6B6B'); return; }
-      if (data) { setRealLixBalance(data.lix_balance); setStatsUnlockedUntil(data.stats_unlocked_until); }
+      if (data) { updateLixBalance(data.lix_balance); setStatsUnlockedUntil(data.stats_unlocked_until); }
       fetchWeeklyStats();
       try { var Vibration = require('react-native').Vibration; Vibration.vibrate([0, 30, 50, 30]); } catch(e) {}
     } catch(err) { console.warn('unlockStatsWithLix error:', err); showToast('⚠️ Erreur — réessayez', '#FF6B6B'); }
@@ -270,7 +272,7 @@ export default function DashboardPage({ navigation }) {
       var profile = profileRes.data;
       if (profile) {
         setUserName(profile.full_name || ''); setRealDailyTarget(profile.daily_calorie_target || 2330);
-        setRealLixBalance(profile.lix_balance || 0); setUserEnergy(profile.energy || 20);
+        updateLixBalance(profile.lix_balance || 0); updateEnergy(profile.energy || 20);
         setRealGender(profile.gender === 'female' || profile.gender === 'femme' ? 'femme' : 'homme');
         setHistoryUnlockedUntil(profile.hydration_history_unlocked_until || null);
         setStatsUnlockedUntil(profile.stats_unlocked_until || null);
@@ -337,6 +339,11 @@ export default function DashboardPage({ navigation }) {
       });
     }
   }, [userId]);
+
+  // Refresh Lix balance when page gains focus
+  useFocusEffect(useCallback(function() {
+    if (userId) refreshLixFromServer();
+  }, [userId, refreshLixFromServer]));
 
   useEffect(function() {
     setVitalityScore(calcVitalityScore());
