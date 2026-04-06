@@ -39,20 +39,7 @@
         "barStyle": "light-content",
         "backgroundColor": "#1E2530"
       },
-      "navigationBar": {
-        "backgroundColor": "#1E2530",
-        "barStyle": "light-content"
-      },
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.VIBRATE",
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT",
-        "android.permission.RECORD_AUDIO",
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
@@ -67,6 +54,11 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
+    },
+    "androidNavigationBar": {
+      "visible": "sticky",
+      "backgroundColor": "#1E2530",
+      "barStyle": "light-content"
     },
     "plugins": [
       "expo-secure-store",
