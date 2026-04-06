@@ -556,7 +556,7 @@ export default function LixVersePage({ navigation }) {
       const [a,b,c,d,e] = await Promise.all([
         fetch(SUPABASE_URL+'/rest/v1/users_profile?user_id=eq.'+userId+'&select=lix_balance,energy',{headers:hdrs}),
         fetch(SUPABASE_URL+'/rest/v1/lixverse_user_characters?user_id=eq.'+userId+'&select=character_id',{headers:hdrs}),
-        fetch(SUPABASE_URL+'/rest/v1/lixverse_challenges?is_active=eq.true&order=start_date.asc',{headers:hdrs}),
+        fetch(SUPABASE_URL+'/rest/v1/lixverse_challenges?is_active=eq.true&order=start_date.asc&select=id,title,description,challenge_type,target_value,target_unit,duration_days,start_date,end_date,registration_deadline,is_active,template_key,color,icon,reward_lix_first,reward_lix_second,reward_lix_third,reward_lix_participation,total_participants,total_groups',{headers:hdrs}),
         fetch(SUPABASE_URL+'/rest/v1/lixverse_notifications?order=created_at.desc&limit=20',{headers:hdrs}),
         fetch(SUPABASE_URL+'/rest/v1/lixverse_group_members?user_id=eq.'+userId+'&select=group_id,personal_score,lixverse_groups(id,name,member_count,total_score,invite_code,challenge_id)',{headers:hdrs}),
       ]);

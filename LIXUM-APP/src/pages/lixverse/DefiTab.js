@@ -351,8 +351,16 @@ export default function DefiTab({
       <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
         <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginBottom: wp(14) }} />
         <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Défis du mois</Text>
-        {loading ? <ActivityIndicator color="#D4AF37" style={{ padding: wp(20) }} /> : challenges.map(ch => {
-          const dl = new Date(ch.registration_deadline);
+        {loading ? <ActivityIndicator color="#D4AF37" style={{ padding: wp(20) }} /> : challenges.length === 0 ? (
+          <View style={{ alignItems: 'center', paddingVertical: wp(30) }}>
+            <Text style={{ fontSize: fp(28), marginBottom: wp(8) }}>🏆</Text>
+            <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.25)' }}>Aucun defi actif pour le moment</Text>
+            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.15)', marginTop: wp(4) }}>Reviens bientot pour de nouveaux defis !</Text>
+          </View>
+        ) : challenges.map(ch => {
+          var chColor = chColor;
+          var chIcon = ch.icon || '🏆';
+          const dl = ch.registration_deadline ? new Date(ch.registration_deadline) : new Date(0);
           const hLeft = Math.max(0, Math.ceil((dl - new Date()) / 3600000));
           const dLeft = Math.floor(hLeft / 24);
           const isOpen = hLeft > 0;
@@ -361,11 +369,11 @@ export default function DefiTab({
           const daysPassed = Math.max(0, Math.min(Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000), ch.duration_days || 30));
           const progressPct = Math.max(0, Math.min(100, Math.round((daysPassed / (ch.duration_days || 30)) * 100)));
           return (
-            <View key={ch.id} style={{ borderRadius: wp(16), marginBottom: wp(10), borderWidth: 1.5, borderColor: ch.color + '40', overflow: 'hidden' }}>
-              <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ padding: wp(16), borderRadius: wp(14) }}>
+            <View key={ch.id} style={{ borderRadius: 16, marginBottom: wp(10), borderWidth: 1, borderColor: '#4A4F55', overflow: 'hidden' }}>
+              <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ padding: wp(16), borderRadius: 16 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-                  <Text style={{ fontSize: fp(24), marginRight: wp(10) }}>{ch.icon}</Text>
-                  <View style={{ flex: 1 }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{ch.title}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{ch.duration_days}j | Max {ch.max_group_size}/équipe</Text></View>
+                  <Text style={{ fontSize: fp(24), marginRight: wp(10) }}>{chIcon}</Text>
+                  <View style={{ flex: 1 }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{ch.title}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{ch.duration_days}j | {(ch.total_participants || 0) + ' participant' + ((ch.total_participants || 0) > 1 ? 's' : '')} | {(ch.total_groups || 0) + ' equipe' + ((ch.total_groups || 0) > 1 ? 's' : '')}</Text></View>
                   <View style={{
                     backgroundColor: isOpen
                       ? (isUrgent ? 'rgba(255,107,107,0.15)' : 'rgba(0,217,132,0.12)')
@@ -388,23 +396,33 @@ export default function DefiTab({
                     </Text>
                   </View>
                 </View>
-                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', marginBottom: wp(8) }}>{ch.description}</Text>
+                <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', marginBottom: wp(6) }}>{ch.description || ''}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8), gap: wp(6) }}>
+                  <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)' }}>
+                    {ch.start_date ? new Date(ch.start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''} - {ch.end_date ? new Date(ch.end_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''}
+                  </Text>
+                  {ch.target_value ? (
+                    <View style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(2) }}>
+                      <Text style={{ fontSize: fp(8), color: 'rgba(255,255,255,0.35)', fontWeight: '600' }}>Objectif : {ch.target_value} {ch.target_unit || ''}</Text>
+                    </View>
+                  ) : null}
+                </View>
                 <View style={{ marginBottom: wp(10), marginTop: wp(4) }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
                     <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>
                       Jour {daysPassed}/{ch.duration_days || 30}{score ? '  ·  ' + (score.personal_score || 0) + ' pts' : ''}
                     </Text>
-                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: ch.color || '#00D984' }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: chColor }}>
                       {score ? (score.group_rank ? '#' + score.group_rank + '  ' : '') + (score.today_points ? '+' + score.today_points + ' auj.' : '') : progressPct + '%'}
                     </Text>
                   </View>
                   <View style={{ height: wp(4), backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: wp(2), overflow: 'hidden' }}>
                     <View style={{
                       height: '100%', borderRadius: wp(2),
-                      backgroundColor: ch.color || '#00D984',
+                      backgroundColor: chColor,
                       width: Math.round(progressPct) + '%',
                       opacity: 0.85,
-                      shadowColor: ch.color || '#00D984',
+                      shadowColor: chColor,
                       shadowOffset: { width: 0, height: 0 },
                       shadowOpacity: 0.5,
                       shadowRadius: wp(4),
@@ -472,7 +490,6 @@ export default function DefiTab({
                             <LixGem size={wp(10)} />
                             <Text style={{ fontSize: fp(9), color: '#D4AF37', fontWeight: '700', marginLeft: wp(2) }}>{ch.reward_lix_first || 5000}</Text>
                           </View>
-                          <Text style={{ fontSize: fp(9), color: '#7BED9F', fontWeight: '600' }}>⚡{ch.reward_energy_first || 100}</Text>
                         </View>
                       </View>
                       <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(7), paddingHorizontal: wp(4), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
@@ -486,12 +503,9 @@ export default function DefiTab({
                             <Text style={{ fontSize: fp(9), color: '#66BB6A', fontWeight: '700' }}>1 carte Standard</Text>
                           </View>
                         </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <LixGem size={wp(10)} />
-                            <Text style={{ fontSize: fp(9), color: '#D4AF37', fontWeight: '700', marginLeft: wp(2) }}>{ch.reward_lix_second || 3000}</Text>
-                          </View>
-                          <Text style={{ fontSize: fp(9), color: '#7BED9F', fontWeight: '600' }}>⚡{ch.reward_energy_second || 60}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <LixGem size={wp(10)} />
+                          <Text style={{ fontSize: fp(9), color: '#D4AF37', fontWeight: '700', marginLeft: wp(2) }}>{ch.reward_lix_second || 3000}</Text>
                         </View>
                       </View>
                       <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(7), paddingHorizontal: wp(4), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
@@ -505,19 +519,22 @@ export default function DefiTab({
                             <Text style={{ fontSize: fp(9), color: '#66BB6A', fontWeight: '700' }}>1 carte Standard</Text>
                           </View>
                         </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <LixGem size={wp(10)} />
-                            <Text style={{ fontSize: fp(9), color: '#D4AF37', fontWeight: '700', marginLeft: wp(2) }}>{ch.reward_lix_third || 1500}</Text>
-                          </View>
-                          <Text style={{ fontSize: fp(9), color: '#7BED9F', fontWeight: '600' }}>⚡{ch.reward_energy_third || 40}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <LixGem size={wp(10)} />
+                          <Text style={{ fontSize: fp(9), color: '#D4AF37', fontWeight: '700', marginLeft: wp(2) }}>{ch.reward_lix_third || 1500}</Text>
                         </View>
                       </View>
                       <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(6), paddingHorizontal: wp(4), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.03)' }}>
                         <View style={{ width: wp(18), height: wp(18), borderRadius: wp(9), backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' }}>
                           <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.25)', fontWeight: '700' }}>4-10</Text>
                         </View>
-                        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)', marginLeft: wp(8) }}>Lix + Énergie selon le rang</Text>
+                        <View style={{ flex: 1, marginLeft: wp(8), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.25)' }}>Participation</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <LixGem size={wp(10)} />
+                            <Text style={{ fontSize: fp(9), color: '#D4AF37', fontWeight: '700', marginLeft: wp(2) }}>{ch.reward_lix_participation || 500}</Text>
+                          </View>
+                        </View>
                       </View>
                     </View>
                   )}
@@ -535,13 +552,13 @@ export default function DefiTab({
                     delayPressIn={120}
                     style={({ pressed }) => ({
                       flex: 1, paddingVertical: wp(11), borderRadius: wp(12), alignItems: 'center',
-                      backgroundColor: isOpen ? (ch.color || '#D4AF37') + '20' : 'rgba(255,255,255,0.03)',
-                      borderWidth: 1.5, borderColor: isOpen ? (ch.color || '#D4AF37') + '50' : 'rgba(255,255,255,0.06)',
+                      backgroundColor: isOpen ? (chColor) + '20' : 'rgba(255,255,255,0.03)',
+                      borderWidth: 1.5, borderColor: isOpen ? (chColor) + '50' : 'rgba(255,255,255,0.06)',
                       transform: [{ scale: pressed ? 0.95 : 1 }],
                       opacity: eligibilityChecking ? 0.5 : (isOpen ? 1 : 0.5),
                     })}
                   >
-                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: isOpen ? (ch.color || '#D4AF37') : 'rgba(255,255,255,0.2)' }}>Créer une équipe</Text>
+                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: isOpen ? (chColor) : 'rgba(255,255,255,0.2)' }}>Créer une équipe</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => {
