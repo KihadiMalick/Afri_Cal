@@ -444,7 +444,7 @@ export default function RepasPage({ navigation }) {
       <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 50 : 55 }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: wp(120) }}
+          contentContainerStyle={{ paddingBottom: 100 }}
         >
           {/* ═══ 1. HEADER ═══ */}
           <PageHeader
@@ -456,7 +456,7 @@ export default function RepasPage({ navigation }) {
           />
 
           {/* ═══ 2. RÉSUMÉ CALORIES ═══ */}
-          <View style={{ marginHorizontal: wp(16), marginTop: wp(12) }}>
+          <View style={{ marginHorizontal: wp(16), marginTop: wp(12), marginBottom: 16 }}>
             <View style={{
               borderRadius: 16, padding: 1,
               backgroundColor: '#4A4F55', elevation: 8,
@@ -558,7 +558,7 @@ export default function RepasPage({ navigation }) {
           )}
 
           {/* ═══ 3. CARTE XSCAN ═══ */}
-          <View style={{ marginHorizontal: wp(16), marginTop: wp(10) }}>
+          <View style={{ marginHorizontal: wp(16), marginBottom: 8 }}>
             <View style={{
               borderRadius: 18, padding: 1.2,
               backgroundColor: '#4A4F55', elevation: 12,
@@ -725,11 +725,11 @@ export default function RepasPage({ navigation }) {
           </View>
 
           <Text style={{ fontSize: fp(9), color: '#6B7280', textAlign: 'center', marginTop: wp(4), fontStyle: 'italic' }}>
-            Scan IA avancé · Reconnaissance multi-angle · Claude Sonnet 4
+            Scan IA avancé · Reconnaissance multi-angle · LIXUM AI
           </Text>
 
           {/* Dots scans */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: wp(4), gap: wp(6) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: wp(4), marginBottom: 20, gap: wp(6) }}>
             {[0, 1, 2].map((i) => {
               const totalScans = 1;
               const isFilled = i < totalScans;
@@ -767,7 +767,7 @@ export default function RepasPage({ navigation }) {
             onPress={() => setShowCartScan(true)}
             activeOpacity={0.85}
             style={{
-              marginHorizontal: wp(16), marginTop: wp(8), marginBottom: wp(8),
+              marginHorizontal: wp(16), marginBottom: 20,
               borderRadius: wp(16), borderWidth: 1, borderColor: 'rgba(77,166,255,0.25)',
               backgroundColor: 'rgba(77,166,255,0.06)', padding: wp(16),
               flexDirection: 'row', alignItems: 'center',
@@ -793,7 +793,7 @@ export default function RepasPage({ navigation }) {
           <Pressable
             onPress={() => setShowManualEntry(true)}
             style={({ pressed }) => ({
-              marginHorizontal: wp(50), marginTop: wp(8),
+              marginHorizontal: wp(50), marginBottom: 28,
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
               paddingVertical: wp(8), borderRadius: 12,
               backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
@@ -811,7 +811,7 @@ export default function RepasPage({ navigation }) {
           </Pressable>
 
           {/* ═══ 5. PLATS DU JOUR ═══ */}
-          <View style={{ marginTop: wp(8) }}>
+          <View style={{ marginBottom: 28 }}>
             <SectionTitle title={lang === 'fr' ? 'Plat du jour' : 'Meals today'} />
             <ScrollView
               horizontal showsHorizontalScrollIndicator={false}
@@ -960,7 +960,7 @@ export default function RepasPage({ navigation }) {
           })}
 
           {/* ═══ 6. SECTION RECETTES ═══ */}
-          <View style={{ marginTop: wp(12) }}>
+          <View style={{ marginBottom: 28 }}>
             <SectionTitle
               title={lang === 'fr' ? 'Recettes' : 'Recipes'}
               rightLabel={lang === 'fr' ? 'Voir tout ›' : 'See all ›'}
@@ -1040,10 +1040,10 @@ export default function RepasPage({ navigation }) {
             </View>
           )}
 
-          <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginHorizontal: wp(16), marginTop: wp(12) }}/>
+          <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginHorizontal: wp(16) }}/>
 
           {/* ═══ 7. PLATS FRÉQUENTS ═══ */}
-          <View style={{ marginTop: wp(12), marginBottom: wp(8) }}>
+          <View style={{ marginBottom: 0 }}>
             <SectionTitle title={lang === 'fr' ? 'Plats fréquents' : 'Frequent meals'} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(8) }}>
               {(frequentMeals.length > 0 ? frequentMeals : MOCK_FREQUENT).map((item, index) => (
@@ -1093,7 +1093,7 @@ export default function RepasPage({ navigation }) {
             </ScrollView>
           </View>
 
-          <View style={{ marginBottom: wp(16) }} />
+          <View style={{ height: 0 }} />
 
         </ScrollView>
 
