@@ -563,11 +563,9 @@ export default function ActivityPage({ navigation }) {
           )}
 
           {/* Day summary */}
-          <View style={{
-            marginHorizontal: wp(16), marginTop: wp(8), marginBottom: wp(4),
-            borderRadius: wp(16), borderWidth: 1, borderColor: '#4A4F55',
-            backgroundColor: '#252A30', padding: wp(10),
-          }}>
+          <View style={{ marginHorizontal: wp(16), marginTop: wp(8), marginBottom: wp(4) }}>
+          <View style={{ borderRadius: 16, padding: 1, backgroundColor: '#4A4F55', elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 }}>
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15, padding: wp(10) }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(8) }}>
               <View style={{ flex: 1, alignItems: 'center' }}>
                 <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>{t.burned}</Text>
@@ -596,14 +594,16 @@ export default function ActivityPage({ navigation }) {
                 </View>
               </View>
             </View>
+          </LinearGradient>
+          </View>
           </View>
 
           {/* OMS weekly */}
-          <View style={{
-            marginHorizontal: wp(16), marginTop: wp(2), marginBottom: wp(4),
+          <View style={{ marginHorizontal: wp(16), marginTop: wp(2), marginBottom: wp(4) }}>
+          <View style={{ borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
+            borderRadius: 15, padding: wp(10),
             flexDirection: 'row', alignItems: 'center',
-            backgroundColor: '#252A30', borderRadius: wp(12),
-            borderWidth: 0.5, borderColor: 'rgba(74,79,85,0.4)', padding: wp(10),
           }}>
             <View style={{ width: wp(44), height: wp(44), marginRight: wp(10) }}>
               <Svg width={wp(44)} height={wp(44)} viewBox="0 0 44 44">
@@ -630,17 +630,19 @@ export default function ActivityPage({ navigation }) {
               <Text style={{ fontSize: fp(8), color: '#6B7280', marginTop: wp(2) }}>{t.weeklyObj}</Text>
             </View>
             {weeklyMinutes >= 150 && <Text style={{ fontSize: fp(18) }}>🏅</Text>}
+          </LinearGradient>
+          </View>
           </View>
 
           {/* ═══ MARCHE — SIDE-SCROLL ═══ */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(16), marginTop: wp(4), marginBottom: wp(12) }}>
-            <View style={{ width: 3, height: 18, borderRadius: 1.5, backgroundColor: '#00D984', marginRight: 8 }} />
-            <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.walk}</Text>
-          </View>
           <MetalCard style={{
-            marginBottom: wp(2), borderRadius: wp(14), borderWidth: 0.5,
+            marginTop: wp(4), marginBottom: wp(2), borderRadius: wp(14), borderWidth: 0.5,
             borderColor: walkGlow ? 'rgba(0,217,132,0.5)' : 'rgba(74,79,85,0.3)',
           }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+              <View style={{ width: 3, height: 18, borderRadius: 1.5, backgroundColor: '#00D984', marginRight: 8 }} />
+              <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.walk}</Text>
+            </View>
             {/* Stats */}
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: wp(10), paddingVertical: wp(6), gap: wp(10) }}>
               <Text style={{ fontSize: fp(10), color: '#FF6B6B', fontWeight: '600' }}>📍{walkDistStr}</Text>
@@ -785,14 +787,14 @@ export default function ActivityPage({ navigation }) {
           </MetalCard>
 
           {/* ═══ COURSE — SAVANE AFRICAINE ═══ */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(16), marginTop: wp(12), marginBottom: wp(12) }}>
-            <View style={{ width: 3, height: 18, borderRadius: 1.5, backgroundColor: '#00D984', marginRight: 8 }} />
-            <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.run}</Text>
-          </View>
           <MetalCard style={{
-            marginBottom: wp(2), borderRadius: wp(14), borderWidth: 0.5,
+            marginTop: wp(12), marginBottom: wp(2), borderRadius: wp(14), borderWidth: 0.5,
             borderColor: runGlow ? 'rgba(255,140,66,0.5)' : 'rgba(74,79,85,0.3)',
           }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+              <View style={{ width: 3, height: 18, borderRadius: 1.5, backgroundColor: '#00D984', marginRight: 8 }} />
+              <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.run}</Text>
+            </View>
             {/* Stats */}
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: wp(10), paddingVertical: wp(6), gap: wp(10) }}>
               <Text style={{ fontSize: fp(10), color: '#FF6B6B', fontWeight: '600' }}>📍{runDistStr}</Text>
@@ -955,10 +957,10 @@ export default function ActivityPage({ navigation }) {
               <View style={{ width: 3, height: 18, borderRadius: 1.5, backgroundColor: '#00D984', marginRight: 8 }} />
               <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.otherActivities}</Text>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: wp(14), gap: wp(8) }}>
-              {OTHER_SPORTS.map(function(key) {
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(8) }}>
+              {OTHER_SPORTS.map(function(key, idx) {
                 return (
-                  <View key={key} style={{ width: wp(100) }}>
+                  <View key={key} style={{ width: wp(100), marginLeft: idx === 0 ? 0 : undefined, marginRight: idx === OTHER_SPORTS.length - 1 ? wp(16) : undefined }}>
                     <SportCard
                       sportKey={key}
                       onPress={function() { setModalSport(key); setModalVisible(true); }}
@@ -1037,11 +1039,11 @@ export default function ActivityPage({ navigation }) {
                 <View style={{ width: wp(3), height: wp(16), backgroundColor: recommendation.color, borderRadius: wp(2), marginRight: wp(8) }} />
                 <Text style={{ fontSize: fp(16), fontWeight: '900', color: '#FFFFFF', letterSpacing: 1 }}>{t.recommendation}</Text>
               </View>
-              <View style={{
-                borderRadius: wp(14), borderWidth: 1,
-                borderColor: recommendation.type === 'maintain' ? 'rgba(0,217,132,0.2)' : 'rgba(255,140,66,0.2)',
-                backgroundColor: recommendation.type === 'maintain' ? 'rgba(0,217,132,0.06)' : 'rgba(255,140,66,0.06)',
-                padding: wp(14),
+              <View style={{ borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
+              <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
+                borderRadius: 15, padding: wp(14),
+                borderLeftWidth: 3,
+                borderLeftColor: recommendation.color,
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
                   <View style={{ marginRight: wp(8) }}>
@@ -1080,6 +1082,7 @@ export default function ActivityPage({ navigation }) {
                 >
                   <Text style={{ color: '#000', fontSize: fp(11), fontWeight: '700' }}>{t.startNow}</Text>
                 </TouchableOpacity>
+              </LinearGradient>
               </View>
             </View>
           )}

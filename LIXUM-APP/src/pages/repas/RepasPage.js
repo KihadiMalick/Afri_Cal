@@ -145,6 +145,10 @@ export default function RepasPage({ navigation }) {
   // Ref XscanScreen
   const xscanRef = useRef(null);
 
+  // Ref for XSCAN button position (tooltip highlight)
+  const xscanButtonRef = useRef(null);
+  const [xscanButtonLayout, setXscanButtonLayout] = useState(null);
+
   // === FONCTIONS ===
 
   const loadDashboardData = async () => {
@@ -551,7 +555,13 @@ export default function RepasPage({ navigation }) {
           )}
 
           {/* ═══ 3. CARTE XSCAN ═══ */}
-          <View style={{ marginHorizontal: wp(16), marginTop: 16 }}>
+          <View ref={xscanButtonRef} onLayout={() => {
+            if (xscanButtonRef.current) {
+              xscanButtonRef.current.measureInWindow((x, y, width, height) => {
+                setXscanButtonLayout({ x, y, width, height });
+              });
+            }
+          }} style={{ marginHorizontal: wp(16), marginTop: 16 }}>
             <View style={{
               borderRadius: 18, padding: 1.2,
               backgroundColor: '#4A4F55', elevation: 12,
@@ -574,10 +584,10 @@ export default function RepasPage({ navigation }) {
 
                 <View style={{ alignItems: 'center', marginBottom: wp(10) }}>
                   <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
-                    {/* Left arrow */}
-                    <Animated.View style={{ marginRight: wp(6), opacity: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 1, 0.3] }), transform: [{ translateX: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [6, 0, 6] }) }] }}>
+                    {/* Left arrow — pointe vers la droite (vers le bouton X) */}
+                    <Animated.View style={{ marginRight: wp(6), opacity: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 1, 0.3] }), transform: [{ translateX: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [-6, 0, -6] }) }] }}>
                       <Svg width={20} height={30} viewBox="0 0 20 30">
-                        <Path d="M16 5 L4 15 L16 25" fill="none" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                        <Path d="M4 5 L16 15 L4 25" fill="none" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
                       </Svg>
                     </Animated.View>
 
@@ -678,10 +688,10 @@ export default function RepasPage({ navigation }) {
                     </View>
                     </View>
 
-                    {/* Right arrow */}
-                    <Animated.View style={{ marginLeft: wp(6), opacity: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 1, 0.3] }), transform: [{ translateX: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [-6, 0, -6] }) }] }}>
+                    {/* Right arrow — pointe vers la gauche (vers le bouton X) */}
+                    <Animated.View style={{ marginLeft: wp(6), opacity: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 1, 0.3] }), transform: [{ translateX: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [6, 0, 6] }) }] }}>
                       <Svg width={20} height={30} viewBox="0 0 20 30">
-                        <Path d="M4 5 L16 15 L4 25" fill="none" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                        <Path d="M16 5 L4 15 L16 25" fill="none" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
                       </Svg>
                     </Animated.View>
                   </View>
@@ -757,31 +767,43 @@ export default function RepasPage({ navigation }) {
           </View>
 
           {/* CartScan banner */}
-          <TouchableOpacity
-            onPress={() => setShowCartScan(true)}
-            activeOpacity={0.85}
-            style={{
-              marginHorizontal: wp(16), marginTop: 20, marginBottom: 0,
-              borderRadius: wp(16), borderWidth: 1, borderColor: 'rgba(77,166,255,0.25)',
-              backgroundColor: 'rgba(77,166,255,0.06)', padding: wp(16),
-              flexDirection: 'row', alignItems: 'center',
-            }}
-          >
+          <View style={{ marginHorizontal: wp(16), marginTop: 20 }}>
             <View style={{
-              width: wp(50), height: wp(50), borderRadius: wp(14),
-              backgroundColor: 'rgba(77,166,255,0.12)', borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)',
-              alignItems: 'center', justifyContent: 'center', marginRight: wp(14),
+              borderRadius: 16, padding: 1,
+              backgroundColor: '#4A4F55', elevation: 8,
+              shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+              shadowOpacity: 0.25, shadowRadius: 6,
             }}>
-              <Text style={{ fontSize: fp(24) }}>🛒</Text>
+              <LinearGradient
+                colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                style={{ borderRadius: 15 }}
+              >
+                <TouchableOpacity
+                  onPress={() => setShowCartScan(true)}
+                  activeOpacity={0.85}
+                  style={{
+                    padding: wp(16),
+                    flexDirection: 'row', alignItems: 'center',
+                  }}
+                >
+                  <View style={{
+                    width: wp(50), height: wp(50), borderRadius: wp(14),
+                    backgroundColor: 'rgba(77,166,255,0.12)', borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)',
+                    alignItems: 'center', justifyContent: 'center', marginRight: wp(14),
+                  }}>
+                    <Text style={{ fontSize: fp(24) }}>🛒</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fp(15), fontWeight: '800', color: '#4DA6FF', marginBottom: wp(2) }}>CARTSCAN</Text>
+                    <Text style={{ fontSize: fp(10), color: '#9CA3AF' }}>
+                      Faites vos courses avec LIXUM — scannez vos produits et obtenez un rapport nutritionnel complet
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: fp(18), color: '#4DA6FF', marginLeft: wp(8) }}>›</Text>
+                </TouchableOpacity>
+              </LinearGradient>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(15), fontWeight: '800', color: '#4DA6FF', marginBottom: wp(2) }}>CARTSCAN</Text>
-              <Text style={{ fontSize: fp(10), color: '#9CA3AF' }}>
-                Faites vos courses avec LIXUM — scannez vos produits et obtenez un rapport nutritionnel complet
-              </Text>
-            </View>
-            <Text style={{ fontSize: fp(18), color: '#4DA6FF', marginLeft: wp(8) }}>›</Text>
-          </TouchableOpacity>
+          </View>
 
           {/* Bouton Ajouter Manuellement */}
           <Pressable
@@ -805,10 +827,10 @@ export default function RepasPage({ navigation }) {
           </Pressable>
 
           {/* ═══ 5. PLATS DU JOUR ═══ */}
-          <View style={{
-            marginTop: 28, marginHorizontal: wp(16),
-            backgroundColor: 'rgba(30, 37, 48, 0.5)',
-            borderRadius: 16, padding: 16,
+          <View style={{ marginTop: 28, marginHorizontal: wp(16) }}>
+          <View style={{ borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
+            borderRadius: 15, padding: 16,
             borderLeftWidth: 3, borderLeftColor: '#00D984',
           }}>
             <SectionTitle title={lang === 'fr' ? 'Plat du jour' : 'Meals today'} />
@@ -850,6 +872,8 @@ export default function RepasPage({ navigation }) {
                 );
               })}
             </ScrollView>
+          </LinearGradient>
+          </View>
           </View>
 
           {/* ═══ SECTIONS POUVOIRS CARACTÈRES ═══ */}
@@ -959,10 +983,10 @@ export default function RepasPage({ navigation }) {
           })}
 
           {/* ═══ 6. SECTION RECETTES ═══ */}
-          <View style={{
-            marginTop: 28, marginHorizontal: wp(16),
-            backgroundColor: 'rgba(30, 37, 48, 0.5)',
-            borderRadius: 16, padding: 16,
+          <View style={{ marginTop: 28, marginHorizontal: wp(16) }}>
+          <View style={{ borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
+            borderRadius: 15, padding: 16,
             borderLeftWidth: 3, borderLeftColor: '#00D984',
           }}>
             <SectionTitle
@@ -972,29 +996,37 @@ export default function RepasPage({ navigation }) {
             />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(12) }}>
               {MOCK_RECIPES.map((recipe, index) => (
-                <Pressable key={index} delayPressIn={120}
-                  style={({ pressed }) => ({
-                    width: wp(140), borderRadius: 12, overflow: 'hidden',
-                    transform: [{ scale: pressed ? 0.96 : 1 }],
-                    elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
-                    shadowOpacity: 0.4, shadowRadius: 12, backgroundColor: '#1E2530',
-                    borderWidth: 1, borderColor: 'rgba(74,79,85,0.5)',
-                  })}
-                >
-                  <View style={{ width: '100%', height: wp(95), backgroundColor: '#1A1D22' }}>
-                    <Image source={{ uri: recipe.image }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
-                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.5)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%' }} />
-                    <View style={{ position: 'absolute', top: wp(6), right: wp(6), backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
-                      <Text style={{ color: '#FF8C42', fontSize: fp(8), fontWeight: '700' }}>{recipe.cal} kcal</Text>
-                    </View>
-                  </View>
-                  <View style={{ backgroundColor: '#1E2530', paddingHorizontal: wp(8), paddingVertical: wp(7) }}>
-                    <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '700' }} numberOfLines={1}>{recipe.name}</Text>
-                    <Text style={{ color: '#6A7080', fontSize: fp(9), marginTop: 2 }}>{recipe.origin}</Text>
-                  </View>
-                </Pressable>
+                <View key={index} style={{
+                  width: wp(140), borderRadius: 16, padding: 1,
+                  backgroundColor: '#4A4F55', elevation: 10,
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: 0.4, shadowRadius: 12,
+                }}>
+                  <Pressable delayPressIn={120}
+                    style={({ pressed }) => ({
+                      borderRadius: 15, overflow: 'hidden',
+                      transform: [{ scale: pressed ? 0.96 : 1 }],
+                    })}
+                  >
+                    <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15, overflow: 'hidden' }}>
+                      <View style={{ width: '100%', height: wp(95), backgroundColor: '#1A1D22' }}>
+                        <Image source={{ uri: recipe.image }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.5)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%' }} />
+                        <View style={{ position: 'absolute', top: wp(6), right: wp(6), backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                          <Text style={{ color: '#FF8C42', fontSize: fp(8), fontWeight: '700' }}>{recipe.cal} kcal</Text>
+                        </View>
+                      </View>
+                      <View style={{ paddingHorizontal: wp(8), paddingVertical: wp(7) }}>
+                        <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '700' }} numberOfLines={1}>{recipe.name}</Text>
+                        <Text style={{ color: '#6A7080', fontSize: fp(9), marginTop: 2 }}>{recipe.origin}</Text>
+                      </View>
+                    </LinearGradient>
+                  </Pressable>
+                </View>
               ))}
             </ScrollView>
+          </LinearGradient>
+          </View>
           </View>
 
           {/* ═══ RECETTES POUR VOUS — Mood × Météo ═══ */}
@@ -1048,10 +1080,10 @@ export default function RepasPage({ navigation }) {
           <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginHorizontal: wp(16), marginTop: wp(12) }}/>
 
           {/* ═══ 7. PLATS FRÉQUENTS ═══ */}
-          <View style={{
-            marginTop: 28, marginHorizontal: wp(16),
-            backgroundColor: 'rgba(30, 37, 48, 0.5)',
-            borderRadius: 16, padding: 16,
+          <View style={{ marginTop: 28, marginHorizontal: wp(16) }}>
+          <View style={{ borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
+            borderRadius: 15, padding: 16,
             borderLeftWidth: 3, borderLeftColor: '#00D984',
           }}>
             <SectionTitle title={lang === 'fr' ? 'Plats fréquents' : 'Frequent meals'} />
@@ -1103,6 +1135,8 @@ export default function RepasPage({ navigation }) {
                 </Pressable>
               ))}
             </ScrollView>
+          </LinearGradient>
+          </View>
           </View>
 
 
@@ -1151,25 +1185,38 @@ export default function RepasPage({ navigation }) {
           onManual={() => { setShowAddModal(false); setShowManualEntry(true); }}
         />
 
-        {/* XSCAN Highlight Overlay */}
-        {showScanTooltip && (
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' }}>
-            <View style={{ alignItems: 'center', paddingHorizontal: 30 }}>
+        {/* XSCAN Highlight Overlay — trou sur le vrai bouton */}
+        {showScanTooltip && xscanButtonLayout && (
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
+            {/* Overlay sombre */}
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)' }} />
+            {/* Trou lumineux autour de la carte XSCAN */}
+            <View style={{
+              position: 'absolute',
+              top: xscanButtonLayout.y - 4,
+              left: xscanButtonLayout.x - 4,
+              width: xscanButtonLayout.width + 8,
+              height: xscanButtonLayout.height + 8,
+              borderRadius: 22,
+              borderWidth: 2, borderColor: '#00D984',
+              backgroundColor: 'transparent',
+              shadowColor: '#00D984', shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.6, shadowRadius: 20, elevation: 15,
+            }} />
+            {/* Texte explicatif sous le trou */}
+            <View style={{
+              position: 'absolute',
+              top: xscanButtonLayout.y + xscanButtonLayout.height + 20,
+              left: wp(16), right: wp(16),
+              alignItems: 'center',
+            }}>
               <View style={{
-                width: wp(80), height: wp(80), borderRadius: wp(40),
-                backgroundColor: '#1A1F26', borderWidth: 2, borderColor: '#00D984',
-                justifyContent: 'center', alignItems: 'center',
+                backgroundColor: '#1E2530', borderRadius: 18, padding: wp(18),
+                borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.4)',
                 shadowColor: '#00D984', shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.5, shadowRadius: 20, elevation: 15,
+                shadowOpacity: 0.25, shadowRadius: 15, elevation: 10,
+                alignItems: 'center',
               }}>
-                <Svg width={wp(30)} height={wp(30)} viewBox="0 0 40 40">
-                  <Line x1="7" y1="7" x2="33" y2="33" stroke="#00D984" strokeWidth={3.5} strokeLinecap="round"/>
-                  <Line x1="33" y1="7" x2="7" y2="33" stroke="#00D984" strokeWidth={3.5} strokeLinecap="round"/>
-                  <Circle cx="20" cy="20" r="3" fill="#00D984" opacity={0.3}/>
-                  <Circle cx="20" cy="20" r="1.5" fill="#00D984" opacity={0.7}/>
-                </Svg>
-              </View>
-              <View style={{ marginTop: 20, alignItems: 'center' }}>
                 <Text style={{ color: '#00D984', fontSize: fp(16), fontWeight: '800', marginBottom: 8 }}>
                   {lang === 'fr' ? 'Technologie Xscan' : 'Xscan Technology'}
                 </Text>
@@ -1182,13 +1229,13 @@ export default function RepasPage({ navigation }) {
                     {lang === 'fr' ? '1 scan gratuit offert' : '1 free scan included'}
                   </Text>
                 </View>
+                <TouchableOpacity onPress={dismissTooltip} activeOpacity={0.7}
+                  style={{ backgroundColor: '#00D984', borderRadius: 14, paddingHorizontal: 30, paddingVertical: 12 }}>
+                  <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
+                    {lang === 'fr' ? 'Compris !' : 'Got it!'}
+                  </Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={dismissTooltip} activeOpacity={0.7}
-                style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: 14, paddingHorizontal: 30, paddingVertical: 12, borderWidth: 1, borderColor: 'rgba(0,217,132,0.4)' }}>
-                <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '800' }}>
-                  {lang === 'fr' ? 'Compris !' : 'Got it!'}
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
         )}
