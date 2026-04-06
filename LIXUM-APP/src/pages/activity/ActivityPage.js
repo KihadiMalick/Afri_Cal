@@ -516,7 +516,7 @@ export default function ActivityPage({ navigation }) {
       style={{ flex: 1 }}
     >
       <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 50 : 55 }}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: wp(120) }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 90 }}>
 
           {/* Header */}
           <PageHeader

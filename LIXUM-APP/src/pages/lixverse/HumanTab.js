@@ -191,7 +191,7 @@ export default function HumanTab({
       const myMood = '💪';
       const myWeather = '🌤️';
       return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingHorizontal: wp(16), paddingTop: wp(8) }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 90, paddingHorizontal: wp(16), paddingTop: wp(8) }}>
           <View style={{ marginHorizontal: wp(-16) }}><HumanTabSelector activeTab="binome" /></View>
           <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(16), padding: wp(16), marginBottom: wp(16), borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -297,7 +297,7 @@ export default function HumanTab({
     }
 
     return (
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: wp(100), paddingTop: wp(8) }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 90, paddingTop: wp(8) }}>
         <HumanTabSelector activeTab="binome" />
         <View style={{ alignItems: 'center', paddingHorizontal: wp(16) }}>
           <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#D4AF37', letterSpacing: 2, marginBottom: wp(4) }}>BINÔME</Text>
@@ -564,7 +564,7 @@ export default function HumanTab({
   if (humanTab === 'suivi') {
     return (
       <View style={{ flex: 1 }}>
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: wp(8), paddingBottom: wp(100) }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: wp(8), paddingBottom: 90 }}>
           <HumanTabSelector activeTab="suivi" />
           <SuiviHumainTeaser showLixAlert={showLixAlert} />
         </ScrollView>

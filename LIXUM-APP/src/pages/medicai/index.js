@@ -2113,7 +2113,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       {/* ===== HEADER — MedicAi sobre sur fond clair ===== */}
       <View style={{
         backgroundColor: '#F4F6F8',
-        paddingTop: Platform.OS === 'android' ? 35 : 50,
+        paddingTop: Platform.OS === 'android' ? 50 : 55,
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(0,0,0,0.05)',
       }}>
@@ -2136,7 +2136,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         <ScrollView
           ref={scrollViewRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 10, paddingTop: 0 }}
+          contentContainerStyle={{ paddingBottom: 90, paddingTop: 0 }}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           keyboardShouldPersistTaps="handled"
         >
