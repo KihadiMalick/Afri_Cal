@@ -37,10 +37,10 @@ import {
 
 const WALK_SCENE_W = 2000;
 const WALK_MAX_DIST = 10000;
-const WALK_CANVAS_H = 85;
+const WALK_CANVAS_H = 60;
 const RUN_SCENE_W = 8400;
 const RUN_MAX_DIST = 42000;
-const RUN_CANVAS_H = 85;
+const RUN_CANVAS_H = 60;
 const RUN_METERS_PER_PIXEL = RUN_MAX_DIST / RUN_SCENE_W;
 const RUN_PIXELS_PER_METER = RUN_SCENE_W / RUN_MAX_DIST;
 
@@ -571,8 +571,8 @@ export default function ActivityPage({ navigation }) {
 
           {/* Day summary */}
           <View style={{ marginHorizontal: wp(16), marginTop: wp(8), marginBottom: wp(4) }}>
-          <View style={{ borderRadius: 16, padding: 1, backgroundColor: '#4A4F55', elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6 }}>
-          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15, padding: wp(10) }}>
+          <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B', elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8 }}>
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 14, padding: wp(10) }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(8) }}>
               <View style={{ flex: 1, alignItems: 'center' }}>
                 <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>{t.burned}</Text>
@@ -607,9 +607,9 @@ export default function ActivityPage({ navigation }) {
 
           {/* OMS weekly */}
           <View style={{ marginHorizontal: wp(16), marginTop: wp(2), marginBottom: wp(4) }}>
-          <View style={{ borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
+          <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
           <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
-            borderRadius: 15, padding: wp(10),
+            borderRadius: 14, padding: wp(10),
             flexDirection: 'row', alignItems: 'center',
           }}>
             <View style={{ width: wp(44), height: wp(44), marginRight: wp(10) }}>
@@ -643,18 +643,18 @@ export default function ActivityPage({ navigation }) {
 
           {/* ═══ MARCHE — SIDE-SCROLL ═══ */}
           <MetalCard style={{
-            marginTop: wp(4), marginBottom: wp(2), borderRadius: wp(14), borderWidth: 0.5,
+            marginHorizontal: wp(16), marginTop: wp(4), marginBottom: wp(2), borderRadius: wp(14), borderWidth: 0.5,
             borderColor: walkGlow ? 'rgba(0,217,132,0.5)' : 'rgba(74,79,85,0.3)',
           }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+            {/* Header row: titre + stats alignés */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
               <View style={{ width: 3, height: 18, borderRadius: 1.5, backgroundColor: '#00D984', marginRight: 8 }} />
-              <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.walk}</Text>
-            </View>
-            {/* Stats */}
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: wp(10), paddingVertical: wp(6), gap: wp(10) }}>
-              <Text style={{ fontSize: fp(10), color: '#FF6B6B', fontWeight: '600' }}>📍{walkDistStr}</Text>
-              <Text style={{ fontSize: fp(10), color: '#FF8C42', fontWeight: '600' }}>🔥{walkCal}kcal</Text>
-              <Text style={{ fontSize: fp(10), color: '#4DA6FF', fontWeight: '600' }}>💧{walkWater}ml</Text>
+              <Text style={{ color: '#FFFFFF', fontSize: fp(14), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.walk}</Text>
+              <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: wp(8) }}>
+                <Text style={{ fontSize: fp(9), color: '#FF6B6B', fontWeight: '600' }}>📍{walkDistStr}</Text>
+                <Text style={{ fontSize: fp(9), color: '#FF8C42', fontWeight: '600' }}>🔥{walkCal}kcal</Text>
+                <Text style={{ fontSize: fp(9), color: '#4DA6FF', fontWeight: '600' }}>💧{walkWater}ml</Text>
+              </View>
             </View>
 
             {/* Canvas SVG */}
@@ -795,18 +795,18 @@ export default function ActivityPage({ navigation }) {
 
           {/* ═══ COURSE — SAVANE AFRICAINE ═══ */}
           <MetalCard style={{
-            marginTop: wp(12), marginBottom: wp(2), borderRadius: wp(14), borderWidth: 0.5,
+            marginHorizontal: wp(16), marginTop: wp(12), marginBottom: wp(2), borderRadius: wp(14), borderWidth: 0.5,
             borderColor: runGlow ? 'rgba(255,140,66,0.5)' : 'rgba(74,79,85,0.3)',
           }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+            {/* Header row: titre + stats alignés */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
               <View style={{ width: 3, height: 18, borderRadius: 1.5, backgroundColor: '#00D984', marginRight: 8 }} />
-              <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.run}</Text>
-            </View>
-            {/* Stats */}
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: wp(10), paddingVertical: wp(6), gap: wp(10) }}>
-              <Text style={{ fontSize: fp(10), color: '#FF6B6B', fontWeight: '600' }}>📍{runDistStr}</Text>
-              <Text style={{ fontSize: fp(10), color: '#FF8C42', fontWeight: '600' }}>🔥{runCalories}kcal</Text>
-              <Text style={{ fontSize: fp(10), color: '#4DA6FF', fontWeight: '600' }}>💧{runWater}ml</Text>
+              <Text style={{ color: '#FFFFFF', fontSize: fp(14), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.run}</Text>
+              <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: wp(8) }}>
+                <Text style={{ fontSize: fp(9), color: '#FF6B6B', fontWeight: '600' }}>📍{runDistStr}</Text>
+                <Text style={{ fontSize: fp(9), color: '#FF8C42', fontWeight: '600' }}>🔥{runCalories}kcal</Text>
+                <Text style={{ fontSize: fp(9), color: '#4DA6FF', fontWeight: '600' }}>💧{runWater}ml</Text>
+              </View>
             </View>
 
             {/* Canvas SVG savane */}
@@ -958,100 +958,102 @@ export default function ActivityPage({ navigation }) {
             </View>
           </MetalCard>
 
-          {/* Other sports */}
-          <View style={{ marginTop: wp(12) }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(16), marginBottom: wp(12) }}>
-              <View style={{ width: 3, height: 18, borderRadius: 1.5, backgroundColor: '#00D984', marginRight: 8 }} />
-              <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.otherActivities}</Text>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(8) }}>
-              {OTHER_SPORTS.map(function(key, idx) {
-                return (
-                  <View key={key} style={{ width: wp(100), marginLeft: idx === 0 ? 0 : undefined, marginRight: idx === OTHER_SPORTS.length - 1 ? wp(16) : undefined }}>
-                    <SportCard
-                      sportKey={key}
-                      onPress={function() { setModalSport(key); setModalVisible(true); }}
-                      lang={lang}
-                      userWeight={userWeight}
-                    />
-                  </View>
-                );
-              })}
-            </ScrollView>
-          </View>
-
-          {/* Today's history */}
-          <View style={{ marginTop: wp(12) }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: wp(16), marginBottom: wp(12) }}>
-              <View style={{ width: 3, height: 18, borderRadius: 1.5, backgroundColor: '#00D984', marginRight: 8 }} />
-              <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.todayHistory}</Text>
-            </View>
-          </View>
-
-          {todayActivities.length === 0 ? (
-            <MetalCard>
-              <View style={{ alignItems: 'center', paddingVertical: wp(10) }}>
-                <Text style={{ color: '#555E6C', fontSize: fp(11), fontWeight: '600', textAlign: 'center' }}>
-                  {t.noActivity}
-                </Text>
-              </View>
-            </MetalCard>
-          ) : (
-            todayActivities.map((act) => {
-              const sportData = ACTIVITY_DATA[act.type] || {};
-              const sportColor = sportData.color || '#00D984';
-              const createdTime = act.created_at
-                ? new Date(act.created_at).toLocaleTimeString(lang === 'fr' ? 'fr-FR' : 'en-US', { hour: '2-digit', minute: '2-digit' })
-                : '';
-              return (
-                <MetalCard key={act.id} style={{ borderLeftWidth: wp(3), borderLeftColor: '#00D984' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                      <View style={{ marginRight: wp(8) }}>
-                        <SportIcon type={act.type} size={wp(20)} color={sportColor} />
+          {/* Other sports — grouped MetalCard */}
+          <View style={{ marginHorizontal: wp(16), marginTop: wp(12) }}>
+            <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
+              <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 14, padding: 16, borderLeftWidth: 3, borderLeftColor: '#00D984' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
+                  <Text style={{ color: '#FFFFFF', fontSize: fp(14), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.otherActivities}</Text>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(8) }}>
+                  {OTHER_SPORTS.map(function(key) {
+                    return (
+                      <View key={key} style={{ width: wp(100) }}>
+                        <SportCard
+                          sportKey={key}
+                          onPress={function() { setModalSport(key); setModalVisible(true); }}
+                          lang={lang}
+                          userWeight={userWeight}
+                        />
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{act.name}</Text>
-                        <View style={{ flexDirection: 'row', marginTop: wp(2), gap: wp(8) }}>
-                          <Text style={{ color: '#8892A0', fontSize: fp(9) }}>{formatDuration(act.duration_minutes)}</Text>
-                          <Text style={{ color: '#FF8C42', fontSize: fp(9), fontWeight: '700' }}>{act.calories_burned} kcal</Text>
-                          {act.water_lost_ml > 0 && (
-                            <Text style={{ color: '#4DA6FF', fontSize: fp(9) }}>{String.fromCodePoint(0x1F4A7)} {act.water_lost_ml} ml</Text>
-                          )}
-                          <Text style={{ color: '#555E6C', fontSize: fp(9) }}>{createdTime}</Text>
-                          {act.source === 'live_gps' && (
-                            <View style={{ backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(4), paddingHorizontal: wp(4), paddingVertical: wp(1) }}>
-                              <Text style={{ fontSize: fp(7), color: '#00D984', fontWeight: '700' }}>GPS</Text>
+                    );
+                  })}
+                </ScrollView>
+              </LinearGradient>
+            </View>
+          </View>
+
+          {/* Today's history — grouped MetalCard */}
+          <View style={{ marginHorizontal: wp(16), marginTop: wp(12) }}>
+            <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
+              <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 14, padding: 16, borderLeftWidth: 3, borderLeftColor: '#00D984' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
+                  <Text style={{ color: '#FFFFFF', fontSize: fp(14), fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }}>{t.todayHistory}</Text>
+                </View>
+                {todayActivities.length === 0 ? (
+                  <View style={{ alignItems: 'center', paddingVertical: wp(10), backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12 }}>
+                    <Text style={{ color: '#555E6C', fontSize: fp(11), fontWeight: '600', textAlign: 'center' }}>
+                      {t.noActivity}
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={{ gap: wp(8) }}>
+                    {todayActivities.map((act) => {
+                      const sportData = ACTIVITY_DATA[act.type] || {};
+                      const sportColor = sportData.color || '#00D984';
+                      const createdTime = act.created_at
+                        ? new Date(act.created_at).toLocaleTimeString(lang === 'fr' ? 'fr-FR' : 'en-US', { hour: '2-digit', minute: '2-digit' })
+                        : '';
+                      return (
+                        <View key={act.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: wp(10) }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                            <View style={{ marginRight: wp(8) }}>
+                              <SportIcon type={act.type} size={wp(20)} color={sportColor} />
                             </View>
-                          )}
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{act.name}</Text>
+                              <View style={{ flexDirection: 'row', marginTop: wp(2), gap: wp(8), flexWrap: 'wrap' }}>
+                                <Text style={{ color: '#8892A0', fontSize: fp(9) }}>{formatDuration(act.duration_minutes)}</Text>
+                                <Text style={{ color: '#FF8C42', fontSize: fp(9), fontWeight: '700' }}>{act.calories_burned} kcal</Text>
+                                {act.water_lost_ml > 0 && (
+                                  <Text style={{ color: '#4DA6FF', fontSize: fp(9) }}>{String.fromCodePoint(0x1F4A7)} {act.water_lost_ml} ml</Text>
+                                )}
+                                <Text style={{ color: '#555E6C', fontSize: fp(9) }}>{createdTime}</Text>
+                                {act.source === 'live_gps' && (
+                                  <View style={{ backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(4), paddingHorizontal: wp(4), paddingVertical: wp(1) }}>
+                                    <Text style={{ fontSize: fp(7), color: '#00D984', fontWeight: '700' }}>GPS</Text>
+                                  </View>
+                                )}
+                              </View>
+                            </View>
+                          </View>
+                          <Pressable onPress={() => handleDeleteActivity(act)} style={{
+                            width: wp(24), height: wp(24), borderRadius: wp(12),
+                            backgroundColor: 'rgba(255,107,107,0.1)', justifyContent: 'center', alignItems: 'center', marginLeft: wp(8),
+                          }}>
+                            <Ionicons name="close" size={wp(14)} color="#FF6B6B" />
+                          </Pressable>
                         </View>
-                      </View>
-                    </View>
-                    <Pressable onPress={() => handleDeleteActivity(act)} style={{
-                      width: wp(24), height: wp(24), borderRadius: wp(12),
-                      backgroundColor: 'rgba(255,107,107,0.1)', justifyContent: 'center', alignItems: 'center', marginLeft: wp(8),
-                    }}>
-                      <Ionicons name="close" size={wp(14)} color="#FF6B6B" />
-                    </Pressable>
+                      );
+                    })}
                   </View>
-                </MetalCard>
-              );
-            })
-          )}
+                )}
+              </LinearGradient>
+            </View>
+          </View>
 
-          {/* Recommendation */}
+          {/* Recommendation — grouped MetalCard */}
           {recommendation && (
-            <View style={{ paddingHorizontal: wp(16), marginTop: wp(12) }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-                <View style={{ width: wp(3), height: wp(16), backgroundColor: recommendation.color, borderRadius: wp(2), marginRight: wp(8) }} />
-                <Text style={{ fontSize: fp(16), fontWeight: '900', color: '#FFFFFF', letterSpacing: 1 }}>{t.recommendation}</Text>
-              </View>
-              <View style={{ borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
+            <View style={{ marginHorizontal: wp(16), marginTop: wp(12) }}>
+              <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
               <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
-                borderRadius: 15, padding: wp(14),
+                borderRadius: 14, padding: wp(14),
                 borderLeftWidth: 3,
                 borderLeftColor: recommendation.color,
               }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '900', color: '#FFFFFF', letterSpacing: 1 }}>{t.recommendation}</Text>
+                </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
                   <View style={{ marginRight: wp(8) }}>
                     <SportIcon type={recommendation.type === 'maintain' ? 'marche' : 'course'} size={wp(24)} color={recommendation.color} />

@@ -145,9 +145,7 @@ export default function RepasPage({ navigation }) {
   // Ref XscanScreen
   const xscanRef = useRef(null);
 
-  // Ref for XSCAN button position (tooltip highlight)
-  const xscanButtonRef = useRef(null);
-  const [xscanButtonLayout, setXscanButtonLayout] = useState(null);
+  // (tooltip no longer needs button position measurement)
 
   // === FONCTIONS ===
 
@@ -460,14 +458,16 @@ export default function RepasPage({ navigation }) {
           {/* ═══ 2. RÉSUMÉ CALORIES ═══ */}
           <View style={{ marginHorizontal: wp(16), marginTop: wp(12) }}>
             <View style={{
-              borderRadius: 16, padding: 1,
-              backgroundColor: '#4A4F55', elevation: 8,
-              shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
-              shadowOpacity: 0.25, shadowRadius: 6,
+              borderRadius: 16, borderWidth: 1.5,
+              borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+              borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+              backgroundColor: '#2A303B', elevation: 8,
+              shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.4, shadowRadius: 8,
             }}>
               <LinearGradient
                 colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-                style={{ borderRadius: 15 }}
+                style={{ borderRadius: 14 }}
               >
                 <View style={{ padding: wp(16) }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -560,16 +560,12 @@ export default function RepasPage({ navigation }) {
           )}
 
           {/* ═══ 3. CARTE XSCAN ═══ */}
-          <View ref={xscanButtonRef} onLayout={() => {
-            if (xscanButtonRef.current) {
-              xscanButtonRef.current.measureInWindow((x, y, width, height) => {
-                setXscanButtonLayout({ x, y, width, height });
-              });
-            }
-          }} style={{ marginHorizontal: wp(16), marginTop: 16 }}>
+          <View style={{ marginHorizontal: wp(16), marginTop: 16, zIndex: showScanTooltip ? 10000 : 0 }}>
             <View style={{
-              borderRadius: 18, padding: 1.2,
-              backgroundColor: '#4A4F55', elevation: 12,
+              borderRadius: 16, borderWidth: 1.5,
+              borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+              borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+              backgroundColor: '#2A303B', elevation: 12,
               shadowColor: '#00D984', shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 0.15, shadowRadius: 12,
             }}>
@@ -811,29 +807,32 @@ export default function RepasPage({ navigation }) {
           </View>
 
           {/* Bouton Ajouter Manuellement */}
-          <Pressable
-            onPress={() => setShowManualEntry(true)}
-            style={({ pressed }) => ({
-              marginHorizontal: wp(50), marginTop: 20,
-              flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-              paddingVertical: wp(8), borderRadius: 12,
-              backgroundColor: pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
-              borderWidth: 1, borderColor: pressed ? '#5A6070' : '#3A3F46',
-              opacity: 0.7,
-            })}
-          >
-            <Svg width={14} height={14} viewBox="0 0 16 16" style={{ marginRight: 6 }}>
-              <Path d="M12 1.5L14.5 4L5 13.5L1.5 14.5L2.5 11L12 1.5Z" fill="none" stroke="#8892A0" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round"/>
-              <Path d="M10 3.5L12.5 6" stroke="#8892A0" strokeWidth={1.2} strokeLinecap="round"/>
-            </Svg>
-            <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '600' }}>
-              {lang === 'fr' ? 'Ajouter Manuellement' : 'Add Manually'}
-            </Text>
-          </Pressable>
+          <View style={{ marginHorizontal: wp(16), marginTop: 20 }}>
+            <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
+              <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15 }}>
+                <Pressable
+                  onPress={() => setShowManualEntry(true)}
+                  style={({ pressed }) => ({
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                    paddingVertical: wp(12), borderRadius: 15,
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Svg width={14} height={14} viewBox="0 0 16 16" style={{ marginRight: 6 }}>
+                    <Path d="M12 1.5L14.5 4L5 13.5L1.5 14.5L2.5 11L12 1.5Z" fill="none" stroke="#8892A0" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round"/>
+                    <Path d="M10 3.5L12.5 6" stroke="#8892A0" strokeWidth={1.2} strokeLinecap="round"/>
+                  </Svg>
+                  <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '600' }}>
+                    {lang === 'fr' ? 'Ajouter Manuellement' : 'Add Manually'}
+                  </Text>
+                </Pressable>
+              </LinearGradient>
+            </View>
+          </View>
 
           {/* ═══ 5. PLATS DU JOUR ═══ */}
           <View style={{ marginTop: 28, marginHorizontal: wp(16) }}>
-          <View style={{ borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
+          <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
           <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
             borderRadius: 15, padding: 16,
             borderLeftWidth: 3, borderLeftColor: '#00D984',
@@ -989,7 +988,7 @@ export default function RepasPage({ navigation }) {
 
           {/* ═══ 6. SECTION RECETTES ═══ */}
           <View style={{ marginTop: 28, marginHorizontal: wp(16) }}>
-          <View style={{ borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
+          <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
           <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
             borderRadius: 15, padding: 16,
             borderLeftWidth: 3, borderLeftColor: '#00D984',
@@ -1002,8 +1001,10 @@ export default function RepasPage({ navigation }) {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(12) }}>
               {MOCK_RECIPES.map((recipe, index) => (
                 <View key={index} style={{
-                  width: wp(140), borderRadius: 16, padding: 1,
-                  backgroundColor: '#4A4F55', elevation: 10,
+                  width: wp(140), borderRadius: 16, borderWidth: 1.5,
+                  borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+                  borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+                  backgroundColor: '#2A303B', elevation: 10,
                   shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
                   shadowOpacity: 0.4, shadowRadius: 12,
                 }}>
@@ -1086,7 +1087,7 @@ export default function RepasPage({ navigation }) {
 
           {/* ═══ 7. PLATS FRÉQUENTS ═══ */}
           <View style={{ marginTop: 28, marginHorizontal: wp(16) }}>
-          <View style={{ borderRadius: 16, padding: 1, backgroundColor: '#4A4F55' }}>
+          <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
           <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
             borderRadius: 15, padding: 16,
             borderLeftWidth: 3, borderLeftColor: '#00D984',
@@ -1190,59 +1191,30 @@ export default function RepasPage({ navigation }) {
           onManual={() => { setShowAddModal(false); setShowManualEntry(true); }}
         />
 
-        {/* XSCAN Highlight Overlay — trou sur le vrai bouton */}
-        {showScanTooltip && xscanButtonLayout && (
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
-            {/* Overlay sombre */}
-            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)' }} />
-            {/* Trou lumineux autour de la carte XSCAN */}
-            <View style={{
-              position: 'absolute',
-              top: xscanButtonLayout.y - 4,
-              left: xscanButtonLayout.x - 4,
-              width: xscanButtonLayout.width + 8,
-              height: xscanButtonLayout.height + 8,
-              borderRadius: 22,
-              borderWidth: 2, borderColor: '#00D984',
-              backgroundColor: 'transparent',
-              shadowColor: '#00D984', shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.6, shadowRadius: 20, elevation: 15,
-            }} />
-            {/* Texte explicatif sous le trou */}
-            <View style={{
-              position: 'absolute',
-              top: xscanButtonLayout.y + xscanButtonLayout.height + 20,
-              left: wp(16), right: wp(16),
-              alignItems: 'center',
-            }}>
-              <View style={{
-                backgroundColor: '#1E2530', borderRadius: 18, padding: wp(18),
-                borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.4)',
-                shadowColor: '#00D984', shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.25, shadowRadius: 15, elevation: 10,
-                alignItems: 'center',
-              }}>
-                <Text style={{ color: '#00D984', fontSize: fp(16), fontWeight: '800', marginBottom: 8 }}>
-                  {lang === 'fr' ? 'Technologie Xscan' : 'Xscan Technology'}
+        {/* XSCAN Tooltip — overlay sombre, le bouton XSCAN passe au-dessus via zIndex */}
+        {showScanTooltip && (
+          <Pressable onPress={dismissTooltip} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 140 }}>
+            <View style={{ alignItems: 'center', paddingHorizontal: wp(24) }}>
+              <Text style={{ color: '#00D984', fontSize: fp(18), fontWeight: '800', marginBottom: 10 }}>
+                {lang === 'fr' ? 'Technologie Xscan' : 'Xscan Technology'}
+              </Text>
+              <Text style={{ color: '#EAEEF3', fontSize: fp(13), textAlign: 'center', lineHeight: fp(20), marginBottom: 8 }}>
+                {lang === 'fr' ? 'Scannez votre premier repas !' : 'Scan your first meal!'}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, marginBottom: 24 }}>
+                <Text style={{ fontSize: 14, marginRight: 6 }}>🎁</Text>
+                <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '700' }}>
+                  {lang === 'fr' ? '1 scan gratuit offert' : '1 free scan included'}
                 </Text>
-                <Text style={{ color: '#EAEEF3', fontSize: fp(13), textAlign: 'center', lineHeight: fp(19), marginBottom: 6 }}>
-                  {lang === 'fr' ? 'Scannez votre premier repas !' : 'Scan your first meal!'}
-                </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, marginBottom: 20 }}>
-                  <Text style={{ fontSize: 14, marginRight: 6 }}>🎁</Text>
-                  <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '700' }}>
-                    {lang === 'fr' ? '1 scan gratuit offert' : '1 free scan included'}
-                  </Text>
-                </View>
-                <TouchableOpacity onPress={dismissTooltip} activeOpacity={0.7}
-                  style={{ backgroundColor: '#00D984', borderRadius: 14, paddingHorizontal: 30, paddingVertical: 12 }}>
-                  <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
-                    {lang === 'fr' ? 'Compris !' : 'Got it!'}
-                  </Text>
-                </TouchableOpacity>
               </View>
+              <TouchableOpacity onPress={dismissTooltip} activeOpacity={0.7}
+                style={{ backgroundColor: '#00D984', borderRadius: 14, paddingHorizontal: 30, paddingVertical: 12 }}>
+                <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
+                  {lang === 'fr' ? 'Compris !' : 'Got it!'}
+                </Text>
+              </TouchableOpacity>
             </View>
-          </View>
+          </Pressable>
         )}
 
         {/* ═══ BOTTOM TABS ═══ */}
