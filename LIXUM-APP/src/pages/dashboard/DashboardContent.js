@@ -51,7 +51,7 @@ const DashboardContent = ({
 
   return (
     <ScrollView ref={scrollRef} style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(15), paddingTop: wp(8) }}
+      contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: 90, paddingTop: wp(8) }}
       showsVerticalScrollIndicator={false}
       onScrollBeginDrag={function() { setShowInfoLeft(false); setShowInfoRight(false); }}
       refreshControl={

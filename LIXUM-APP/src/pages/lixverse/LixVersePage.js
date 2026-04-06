@@ -1063,7 +1063,7 @@ export default function LixVersePage({ navigation }) {
     <View style={{ flex: 1, backgroundColor: '#141A22' }}>
       <LinearGradient colors={['#1A1D22','#252A30','#1E2328']} style={{ flex: 1 }}>
         <StatusBar barStyle="light-content"/>
-        <View style={{ paddingTop: Platform.OS === 'android' ? 35 : 50 }}>
+        <View style={{ paddingTop: Platform.OS === 'android' ? 50 : 55 }}>
           <PageHeader
             title="LixVerse"
             subtitle="UNIVERS LIXUM"

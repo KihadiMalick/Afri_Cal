@@ -1031,7 +1031,7 @@ export default function RepasPage({ navigation }) {
 
           {/* ═══ RECETTES POUR VOUS — Mood × Météo ═══ */}
           {userMood && (
-            <View style={{ marginTop: 28, paddingHorizontal: wp(14) }}>
+            <View style={{ marginTop: 28, paddingHorizontal: wp(16) }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
                 <View style={{ width: wp(3), height: wp(16), backgroundColor: '#00D984', borderRadius: wp(2), marginRight: wp(8) }} />
                 <Text style={{ fontSize: fp(16), fontWeight: '900', color: '#FFFFFF', letterSpacing: 1 }}>RECETTES POUR VOUS</Text>
