@@ -115,10 +115,10 @@ export default function RepasPage({ navigation }) {
   const [addModalSlot, setAddModalSlot] = useState(null);
   const [selectedMealType, setSelectedMealType] = useState(null);
 
-  // Animated arrows for XSCAN
-  var arrowAnim = useRef(new Animated.Value(0)).current;
+  // Animated flux lines for XSCAN
+  var fluxAnim = useRef(new Animated.Value(0)).current;
   useEffect(function() {
-    Animated.loop(Animated.timing(arrowAnim, { toValue: 1, duration: 2000, easing: require('react-native').Easing.inOut(require('react-native').Easing.ease), useNativeDriver: true })).start();
+    Animated.loop(Animated.timing(fluxAnim, { toValue: 1, duration: 2000, easing: require('react-native').Easing.linear, useNativeDriver: true })).start();
   }, []);
 
   // Bouton X animations
@@ -573,12 +573,47 @@ export default function RepasPage({ navigation }) {
 
                 <View style={{ alignItems: 'center', marginBottom: wp(10) }}>
                   <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
-                    {/* Left arrow — pointe vers la droite (vers le bouton X) */}
-                    <Animated.View style={{ marginRight: wp(6), opacity: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 1, 0.3] }), transform: [{ translateX: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [-6, 0, -6] }) }] }}>
-                      <Svg width={20} height={30} viewBox="0 0 20 30">
-                        <Path d="M4 5 L16 15 L4 25" fill="none" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                    {/* Left flux lines — 3 groupes convergent vers le X */}
+                    <View style={{ width: wp(50), height: wp(60), justifyContent: 'center', marginRight: wp(8) }}>
+                      <Svg width={wp(50)} height={wp(60)} viewBox="0 0 120 80">
+                        {/* Groupe 1 — le plus éloigné */}
+                        <Line x1="5" y1="25" x2="35" y2="32" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Line x1="5" y1="40" x2="40" y2="40" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Line x1="5" y1="55" x2="35" y2="48" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        {/* Groupe 2 — milieu */}
+                        <Line x1="42" y1="29" x2="72" y2="35" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Line x1="42" y1="40" x2="77" y2="40" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Line x1="42" y1="51" x2="72" y2="45" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        {/* Groupe 3 — le plus proche */}
+                        <Line x1="79" y1="33" x2="109" y2="37" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Line x1="79" y1="40" x2="114" y2="40" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Line x1="79" y1="47" x2="109" y2="43" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
                       </Svg>
-                    </Animated.View>
+                      {/* Glow overlay — groupe 1 */}
+                      <Animated.View style={{ position: 'absolute', top: 0, left: 0, opacity: fluxAnim.interpolate({ inputRange: [0, 0.15, 0.3, 0.45, 1], outputRange: [0, 0.9, 0, 0, 0] }) }}>
+                        <Svg width={wp(50)} height={wp(60)} viewBox="0 0 120 80">
+                          <Line x1="5" y1="25" x2="35" y2="32" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                          <Line x1="5" y1="40" x2="40" y2="40" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                          <Line x1="5" y1="55" x2="35" y2="48" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                        </Svg>
+                      </Animated.View>
+                      {/* Glow overlay — groupe 2 */}
+                      <Animated.View style={{ position: 'absolute', top: 0, left: 0, opacity: fluxAnim.interpolate({ inputRange: [0, 0.15, 0.3, 0.45, 0.6, 1], outputRange: [0, 0, 0.9, 0, 0, 0] }) }}>
+                        <Svg width={wp(50)} height={wp(60)} viewBox="0 0 120 80">
+                          <Line x1="42" y1="29" x2="72" y2="35" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                          <Line x1="42" y1="40" x2="77" y2="40" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                          <Line x1="42" y1="51" x2="72" y2="45" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                        </Svg>
+                      </Animated.View>
+                      {/* Glow overlay — groupe 3 */}
+                      <Animated.View style={{ position: 'absolute', top: 0, left: 0, opacity: fluxAnim.interpolate({ inputRange: [0, 0.3, 0.45, 0.6, 0.75, 1], outputRange: [0, 0, 0.9, 0, 0, 0] }) }}>
+                        <Svg width={wp(50)} height={wp(60)} viewBox="0 0 120 80">
+                          <Line x1="79" y1="33" x2="109" y2="37" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                          <Line x1="79" y1="40" x2="114" y2="40" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                          <Line x1="79" y1="47" x2="109" y2="43" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                        </Svg>
+                      </Animated.View>
+                    </View>
 
                     <View style={{ justifyContent: 'center', alignItems: 'center' }}>
                     {showRings && (
@@ -677,12 +712,47 @@ export default function RepasPage({ navigation }) {
                     </View>
                     </View>
 
-                    {/* Right arrow — pointe vers la gauche (vers le bouton X) */}
-                    <Animated.View style={{ marginLeft: wp(6), opacity: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 1, 0.3] }), transform: [{ translateX: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [6, 0, 6] }) }] }}>
-                      <Svg width={20} height={30} viewBox="0 0 20 30">
-                        <Path d="M16 5 L4 15 L16 25" fill="none" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                    {/* Right flux lines — 3 groupes convergent vers le X (miroir) */}
+                    <View style={{ width: wp(50), height: wp(60), justifyContent: 'center', marginLeft: wp(8) }}>
+                      <Svg width={wp(50)} height={wp(60)} viewBox="0 0 120 80">
+                        {/* Groupe 1 — le plus éloigné (à droite) */}
+                        <Line x1="115" y1="25" x2="85" y2="32" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Line x1="115" y1="40" x2="80" y2="40" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Line x1="115" y1="55" x2="85" y2="48" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        {/* Groupe 2 — milieu */}
+                        <Line x1="78" y1="29" x2="48" y2="35" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Line x1="78" y1="40" x2="43" y2="40" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Line x1="78" y1="51" x2="48" y2="45" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        {/* Groupe 3 — le plus proche */}
+                        <Line x1="41" y1="33" x2="11" y2="37" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Line x1="41" y1="40" x2="6" y2="40" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
+                        <Line x1="41" y1="47" x2="11" y2="43" stroke="#4A4F55" strokeWidth={2.5} strokeLinecap="round"/>
                       </Svg>
-                    </Animated.View>
+                      {/* Glow overlay — groupe 1 */}
+                      <Animated.View style={{ position: 'absolute', top: 0, left: 0, opacity: fluxAnim.interpolate({ inputRange: [0, 0.15, 0.3, 0.45, 1], outputRange: [0, 0.9, 0, 0, 0] }) }}>
+                        <Svg width={wp(50)} height={wp(60)} viewBox="0 0 120 80">
+                          <Line x1="115" y1="25" x2="85" y2="32" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                          <Line x1="115" y1="40" x2="80" y2="40" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                          <Line x1="115" y1="55" x2="85" y2="48" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                        </Svg>
+                      </Animated.View>
+                      {/* Glow overlay — groupe 2 */}
+                      <Animated.View style={{ position: 'absolute', top: 0, left: 0, opacity: fluxAnim.interpolate({ inputRange: [0, 0.15, 0.3, 0.45, 0.6, 1], outputRange: [0, 0, 0.9, 0, 0, 0] }) }}>
+                        <Svg width={wp(50)} height={wp(60)} viewBox="0 0 120 80">
+                          <Line x1="78" y1="29" x2="48" y2="35" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                          <Line x1="78" y1="40" x2="43" y2="40" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                          <Line x1="78" y1="51" x2="48" y2="45" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                        </Svg>
+                      </Animated.View>
+                      {/* Glow overlay — groupe 3 */}
+                      <Animated.View style={{ position: 'absolute', top: 0, left: 0, opacity: fluxAnim.interpolate({ inputRange: [0, 0.3, 0.45, 0.6, 0.75, 1], outputRange: [0, 0, 0.9, 0, 0, 0] }) }}>
+                        <Svg width={wp(50)} height={wp(60)} viewBox="0 0 120 80">
+                          <Line x1="41" y1="33" x2="11" y2="37" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                          <Line x1="41" y1="40" x2="6" y2="40" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                          <Line x1="41" y1="47" x2="11" y2="43" stroke="#00D984" strokeWidth={3} strokeLinecap="round"/>
+                        </Svg>
+                      </Animated.View>
+                    </View>
                   </View>
                 </View>
 
