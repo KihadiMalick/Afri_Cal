@@ -37,10 +37,10 @@ import {
 
 const WALK_SCENE_W = 2000;
 const WALK_MAX_DIST = 10000;
-const WALK_CANVAS_H = 60;
+const WALK_CANVAS_H = 48;
 const RUN_SCENE_W = 8400;
 const RUN_MAX_DIST = 42000;
-const RUN_CANVAS_H = 60;
+const RUN_CANVAS_H = 48;
 const RUN_METERS_PER_PIXEL = RUN_MAX_DIST / RUN_SCENE_W;
 const RUN_PIXELS_PER_METER = RUN_SCENE_W / RUN_MAX_DIST;
 
@@ -570,7 +570,7 @@ export default function ActivityPage({ navigation }) {
           )}
 
           {/* Day summary */}
-          <View style={{ marginHorizontal: wp(16), marginTop: wp(8), marginBottom: wp(4) }}>
+          <View style={{ marginHorizontal: wp(16), marginTop: wp(8), marginBottom: 16 }}>
           <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B', elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8 }}>
           <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 14, padding: wp(10) }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(8) }}>
@@ -606,7 +606,7 @@ export default function ActivityPage({ navigation }) {
           </View>
 
           {/* OMS weekly */}
-          <View style={{ marginHorizontal: wp(16), marginTop: wp(2), marginBottom: wp(4) }}>
+          <View style={{ marginHorizontal: wp(16), marginBottom: 16 }}>
           <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
           <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
             borderRadius: 14, padding: wp(10),
@@ -643,7 +643,7 @@ export default function ActivityPage({ navigation }) {
 
           {/* ═══ MARCHE — SIDE-SCROLL ═══ */}
           <MetalCard style={{
-            marginHorizontal: wp(16), marginTop: wp(4), marginBottom: wp(2), borderRadius: wp(14), borderWidth: 0.5,
+            marginHorizontal: wp(16), marginBottom: 16, borderRadius: wp(14), borderWidth: 0.5,
             borderColor: walkGlow ? 'rgba(0,217,132,0.5)' : 'rgba(74,79,85,0.3)',
           }}>
             {/* Header row: titre + stats alignés */}
@@ -705,49 +705,49 @@ export default function ActivityPage({ navigation }) {
             </View>
 
             {/* Controls */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: wp(6), paddingVertical: wp(4), marginTop: wp(4) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: wp(4), paddingVertical: wp(4), marginTop: wp(4) }}>
               <TouchableOpacity onPress={() => setWalkRoundTrip(!walkRoundTrip)} style={{
                 backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
                 borderRadius: wp(6), borderWidth: 0.5,
                 borderColor: walkRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(74,79,85,0.4)',
-                paddingHorizontal: wp(6), paddingVertical: wp(3),
+                paddingHorizontal: wp(5), paddingVertical: wp(3),
               }}>
                 <Text style={{ fontSize: fp(7), color: walkRoundTrip ? '#00D984' : '#6B7280' }}>
                   {walkRoundTrip ? '↔ ' + t.roundTripX2 : '↔ ' + t.roundTrip}
                 </Text>
               </TouchableOpacity>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(4) }}>
                 <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}
                   style={({ pressed }) => ({
-                    width: wp(44), height: wp(44), borderRadius: wp(22),
+                    width: wp(36), height: wp(36), borderRadius: wp(18),
                     backgroundColor: pressed ? '#2A303B' : '#1A1D22',
                     borderWidth: 1.5, borderColor: pressed ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.12)',
                     alignItems: 'center', justifyContent: 'center',
                   })}
                 >
-                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24">
+                  <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24">
                     <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
                 </Pressable>
                 <Text style={{ fontSize: fp(7), color: '#555E6C', fontWeight: '600' }}>{t.hold}</Text>
                 <Pressable onPressIn={() => startWalkMoving(1)} onPressOut={stopWalkMoving}
                   style={({ pressed }) => ({
-                    width: wp(44), height: wp(44), borderRadius: wp(22),
+                    width: wp(36), height: wp(36), borderRadius: wp(18),
                     backgroundColor: pressed ? '#2A303B' : '#1A1D22',
                     borderWidth: 1.5, borderColor: pressed ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.12)',
                     alignItems: 'center', justifyContent: 'center',
                   })}
                 >
-                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24">
+                  <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24">
                     <Path d="M9 5l7 7-7 7" stroke="#00D984" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
                 </Pressable>
               </View>
 
-              <View style={{ alignItems: 'flex-end', minWidth: wp(50) }}>
-                <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#00D984' }} numberOfLines={1}>{walkDurStr}</Text>
-                <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{t.normalSpeed}</Text>
+              <View style={{ alignItems: 'flex-end', maxWidth: wp(60) }}>
+                <Text style={{ fontSize: fp(13), fontWeight: '800', color: '#00D984' }} numberOfLines={1}>{walkDurStr}</Text>
+                <Text style={{ fontSize: fp(7), color: '#6B7280' }} numberOfLines={1}>{t.normalSpeed}</Text>
               </View>
             </View>
 
@@ -795,7 +795,7 @@ export default function ActivityPage({ navigation }) {
 
           {/* ═══ COURSE — SAVANE AFRICAINE ═══ */}
           <MetalCard style={{
-            marginHorizontal: wp(16), marginTop: wp(12), marginBottom: wp(2), borderRadius: wp(14), borderWidth: 0.5,
+            marginHorizontal: wp(16), marginBottom: 16, borderRadius: wp(14), borderWidth: 0.5,
             borderColor: runGlow ? 'rgba(255,140,66,0.5)' : 'rgba(74,79,85,0.3)',
           }}>
             {/* Header row: titre + stats alignés */}
@@ -886,49 +886,49 @@ export default function ActivityPage({ navigation }) {
             </View>
 
             {/* Controls */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: wp(6), paddingVertical: wp(4), marginTop: wp(4) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: wp(4), paddingVertical: wp(4), marginTop: wp(4) }}>
               <TouchableOpacity onPress={() => setRunRoundTrip(!runRoundTrip)} style={{
                 backgroundColor: runRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
                 borderRadius: wp(6), borderWidth: 0.5,
                 borderColor: runRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(74,79,85,0.4)',
-                paddingHorizontal: wp(6), paddingVertical: wp(3),
+                paddingHorizontal: wp(5), paddingVertical: wp(3),
               }}>
                 <Text style={{ fontSize: fp(7), color: runRoundTrip ? '#00D984' : '#6B7280' }}>
                   {runRoundTrip ? '↔ ' + t.roundTripX2 : '↔ ' + t.roundTrip}
                 </Text>
               </TouchableOpacity>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(4) }}>
                 <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}
                   style={({ pressed }) => ({
-                    width: wp(44), height: wp(44), borderRadius: wp(22),
+                    width: wp(36), height: wp(36), borderRadius: wp(18),
                     backgroundColor: pressed ? '#2A303B' : '#1A1D22',
                     borderWidth: 1.5, borderColor: pressed ? 'rgba(255,140,66,0.4)' : 'rgba(255,255,255,0.12)',
                     alignItems: 'center', justifyContent: 'center',
                   })}
                 >
-                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24">
+                  <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24">
                     <Path d="M15 19l-7-7 7-7" stroke="#FF8C42" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
                 </Pressable>
                 <Text style={{ fontSize: fp(7), color: '#555E6C', fontWeight: '600' }}>{t.hold}</Text>
                 <Pressable onPressIn={() => startRunMoving(1)} onPressOut={stopRunMoving}
                   style={({ pressed }) => ({
-                    width: wp(44), height: wp(44), borderRadius: wp(22),
+                    width: wp(36), height: wp(36), borderRadius: wp(18),
                     backgroundColor: pressed ? '#2A303B' : '#1A1D22',
                     borderWidth: 1.5, borderColor: pressed ? 'rgba(255,140,66,0.4)' : 'rgba(255,255,255,0.12)',
                     alignItems: 'center', justifyContent: 'center',
                   })}
                 >
-                  <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24">
+                  <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24">
                     <Path d="M9 5l7 7-7 7" stroke="#FF8C42" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
                 </Pressable>
               </View>
 
-              <View style={{ alignItems: 'flex-end', minWidth: wp(50) }}>
-                <Text style={{ fontSize: fp(14), fontWeight: '800', color: '#00D984' }} numberOfLines={1}>{runDurStr}</Text>
-                <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{t.normalPace}</Text>
+              <View style={{ alignItems: 'flex-end', maxWidth: wp(60) }}>
+                <Text style={{ fontSize: fp(13), fontWeight: '800', color: '#00D984' }} numberOfLines={1}>{runDurStr}</Text>
+                <Text style={{ fontSize: fp(7), color: '#6B7280' }} numberOfLines={1}>{t.normalPace}</Text>
               </View>
             </View>
 
@@ -959,7 +959,7 @@ export default function ActivityPage({ navigation }) {
           </MetalCard>
 
           {/* Other sports — grouped MetalCard */}
-          <View style={{ marginHorizontal: wp(16), marginTop: wp(12) }}>
+          <View style={{ marginHorizontal: wp(16), marginBottom: 16 }}>
             <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
               <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 14, padding: 16, borderLeftWidth: 3, borderLeftColor: '#00D984' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
@@ -984,7 +984,7 @@ export default function ActivityPage({ navigation }) {
           </View>
 
           {/* Today's history — grouped MetalCard */}
-          <View style={{ marginHorizontal: wp(16), marginTop: wp(12) }}>
+          <View style={{ marginHorizontal: wp(16), marginBottom: 16 }}>
             <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
               <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 14, padding: 16, borderLeftWidth: 3, borderLeftColor: '#00D984' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
@@ -1044,7 +1044,7 @@ export default function ActivityPage({ navigation }) {
 
           {/* Recommendation — grouped MetalCard */}
           {recommendation && (
-            <View style={{ marginHorizontal: wp(16), marginTop: wp(12) }}>
+            <View style={{ marginHorizontal: wp(16), marginBottom: 16 }}>
               <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
               <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
                 borderRadius: 14, padding: wp(14),
@@ -1087,9 +1087,9 @@ export default function ActivityPage({ navigation }) {
                       setWalkScrollOffset(Math.min(targetOffset, WALK_SCENE_W - walkCanvasW));
                     }
                   }}
-                  style={{ marginTop: wp(10), paddingVertical: wp(10), borderRadius: wp(10), backgroundColor: recommendation.color, alignItems: 'center' }}
+                  style={{ marginTop: wp(10), paddingVertical: wp(10), borderRadius: wp(10), backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#00D984', alignItems: 'center' }}
                 >
-                  <Text style={{ color: '#000', fontSize: fp(11), fontWeight: '700' }}>{t.startNow}</Text>
+                  <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700' }}>{t.startNow}</Text>
                 </TouchableOpacity>
               </LinearGradient>
               </View>
