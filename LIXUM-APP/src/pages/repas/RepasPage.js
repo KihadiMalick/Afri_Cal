@@ -15,11 +15,11 @@ import { MOCK_FREQUENT, MOCK_RECIPES, getFlag } from './repasConstants';
 // Composants partagés
 import BottomTabs, { AvatarButton } from '../../components/shared/NavBar';
 import CircuitPattern from '../../components/shared/CircuitPattern';
+import PageHeader from '../../components/shared/PageHeader';
 
 // Composants Repas
 import MealDayCard from '../../components/repas/MealDayCard';
 import AddMealModal from '../../components/repas/AddMealModal';
-import XscanTooltip from '../../components/repas/XscanTooltip';
 
 // Sous-écrans Repas
 import XscanScreen from './XscanScreen';
@@ -108,8 +108,6 @@ export default function RepasPage({ navigation }) {
 
   // === ÉTATS UI ===
   const [activeTab, setActiveTab] = useState('meals');
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownAnim = useRef(new Animated.Value(0)).current;
 
   // Sous-écrans
   const [showXscan, setShowXscan] = useState(false);
@@ -124,18 +122,23 @@ export default function RepasPage({ navigation }) {
   const [addModalSlot, setAddModalSlot] = useState(null);
   const [selectedMealType, setSelectedMealType] = useState(null);
 
-  // Tooltip Xscan (show only once via AsyncStorage)
+  // Tooltip XSCAN highlight (show only once)
   const [showScanTooltip, setShowScanTooltip] = useState(false);
-  const [xButtonY, setXButtonY] = useState(0);
   useEffect(function() {
-    AsyncStorage.getItem('repas_tooltip_seen').then(function(v) {
+    AsyncStorage.getItem('repas_xscan_tooltip_seen').then(function(v) {
       if (!v) setShowScanTooltip(true);
     }).catch(function() {});
   }, []);
   var dismissTooltip = function() {
     setShowScanTooltip(false);
-    AsyncStorage.setItem('repas_tooltip_seen', 'true').catch(function() {});
+    AsyncStorage.setItem('repas_xscan_tooltip_seen', 'true').catch(function() {});
   };
+
+  // Animated arrows for XSCAN
+  var arrowAnim = useRef(new Animated.Value(0)).current;
+  useEffect(function() {
+    Animated.loop(Animated.timing(arrowAnim, { toValue: 1, duration: 2000, easing: require('react-native').Easing.inOut(require('react-native').Easing.ease), useNativeDriver: true })).start();
+  }, []);
 
   // Bouton X animations
   const [isXPressed, setIsXPressed] = useState(false);
@@ -385,12 +388,6 @@ export default function RepasPage({ navigation }) {
 
   // === FONCTIONS UI ===
 
-  const toggleDropdown = () => {
-    const toValue = dropdownOpen ? 0 : 1;
-    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: true }).start();
-    setDropdownOpen(!dropdownOpen);
-  };
-
   const handleTabPress = (key) => {
     if (key === 'meals') return;
     const routes = { home: 'Accueil', meals: 'Repas', medicai: 'MedicAi', activity: 'Activite', lixverse: 'LixVerse' };
@@ -450,96 +447,13 @@ export default function RepasPage({ navigation }) {
           contentContainerStyle={{ paddingBottom: wp(120) }}
         >
           {/* ═══ 1. HEADER ═══ */}
-          <View style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingHorizontal: wp(16),
-            paddingTop: 0,
-            paddingBottom: wp(10),
-            overflow: 'hidden',
-          }}>
-            <Text style={{
-              color: '#EAEEF3',
-              fontSize: fp(16),
-              fontWeight: '800',
-              letterSpacing: 2,
-              flexShrink: 0,
-            }} numberOfLines={1}>
-              MES REPAS
-            </Text>
-
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8), flexShrink: 1 }}>
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: 'rgba(0,217,132,0.08)',
-                paddingHorizontal: wp(8),
-                paddingVertical: wp(6),
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: 'rgba(0,217,132,0.15)',
-                flexShrink: 1,
-              }}>
-                <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600' }} numberOfLines={1}>
-                  {lang === 'fr' ? "Aujourd'hui" : 'Today'}
-                </Text>
-                <Text style={{ color: '#8892A0', fontSize: fp(10), marginLeft: 4 }} numberOfLines={1}>
-                  {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' })}
-                </Text>
-              </View>
-              <TouchableOpacity onPress={toggleDropdown} style={{
-                flexDirection: 'row', alignItems: 'center',
-                backgroundColor: 'rgba(0,0,0,0.4)',
-                borderWidth: 1, borderColor: '#4A4F55',
-                borderRadius: 20, paddingHorizontal: wp(8), paddingVertical: 6,
-                maxWidth: wp(100), flexShrink: 1,
-              }}>
-                <Svg width={12} height={12} viewBox="0 0 24 24">
-                  <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
-                  <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
-                </Svg>
-                <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(10), marginLeft: 3 }} numberOfLines={1}>{lixBalance}</Text>
-                <Text style={{ color: '#888', fontSize: fp(9), marginLeft: 2 }}>▾</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Dropdown Lix/Énergie/Profil */}
-          {dropdownOpen && (
-            <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}>
-              <Animated.View style={{
-                position: 'absolute', top: Platform.OS === 'android' ? 100 : 110, right: wp(16),
-                backgroundColor: 'rgba(30, 37, 48, 0.95)',
-                borderWidth: 1, borderColor: '#4A4F55',
-                borderRadius: 16, padding: 16, zIndex: 999,
-                opacity: dropdownAnim,
-                transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
-              }}>
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (navigation) navigation.navigate('LixVerse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-                  <Svg width={14} height={14} viewBox="0 0 24 24">
-                    <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
-                    <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
-                  </Svg>
-                  <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixBalance}</Text>
-                  <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (navigation) navigation.navigate('LixVerse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-                  <Svg width={14} height={14} viewBox="0 0 24 24">
-                    <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
-                  </Svg>
-                  <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{userEnergy}</Text>
-                  <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>énergie</Text>
-                </TouchableOpacity>
-                <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (navigation) navigation.navigate('Profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-                  <Text style={{ fontSize: 18 }}>{(activeCharAvatar || activeChar)?.slug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[(activeCharAvatar || activeChar).slug] || '👤' : '👤'}</Text>
-                  <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>Mon Profil</Text>
-                  <Text style={{ color: '#888', fontSize: 14 }}>→</Text>
-                </TouchableOpacity>
-              </Animated.View>
-            </TouchableOpacity>
-          )}
+          <PageHeader
+            title="MES REPAS"
+            lixBalance={lixBalance}
+            userEnergy={userEnergy}
+            onLixPress={function() { if (navigation) navigation.navigate('LixVerse'); }}
+            onProfilePress={function() { if (navigation) navigation.navigate('Profile'); }}
+          />
 
           {/* ═══ 2. RÉSUMÉ CALORIES ═══ */}
           <View style={{ marginHorizontal: wp(16), marginTop: wp(12) }}>
@@ -666,7 +580,15 @@ export default function RepasPage({ navigation }) {
                 </View>
 
                 <View style={{ alignItems: 'center', marginBottom: wp(10) }}>
-                  <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                  <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
+                    {/* Left arrow */}
+                    <Animated.View style={{ marginRight: wp(6), opacity: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 1, 0.3] }), transform: [{ translateX: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [6, 0, 6] }) }] }}>
+                      <Svg width={20} height={30} viewBox="0 0 20 30">
+                        <Path d="M16 5 L4 15 L16 25" fill="none" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                      </Svg>
+                    </Animated.View>
+
+                    <View style={{ justifyContent: 'center', alignItems: 'center' }}>
                     {showRings && (
                       <>
                         <Animated.View style={{
@@ -694,11 +616,6 @@ export default function RepasPage({ navigation }) {
                     )}
 
                     <View
-                      onLayout={(event) => {
-                        event.target.measureInWindow((x, y, width, height) => {
-                          setXButtonY(y + height / 2 + wp(10));
-                        });
-                      }}
                       style={{
                         width: wp(75), height: wp(75), borderRadius: wp(37.5),
                         backgroundColor: '#22272E',
@@ -766,6 +683,13 @@ export default function RepasPage({ navigation }) {
                         </View>
                       </View>
                     </View>
+
+                    {/* Right arrow */}
+                    <Animated.View style={{ marginLeft: wp(6), opacity: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 1, 0.3] }), transform: [{ translateX: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [-6, 0, -6] }) }] }}>
+                      <Svg width={20} height={30} viewBox="0 0 20 30">
+                        <Path d="M4 5 L16 15 L4 25" fill="none" stroke="#00D984" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                      </Svg>
+                    </Animated.View>
                   </View>
                 </View>
 
@@ -1216,12 +1140,47 @@ export default function RepasPage({ navigation }) {
           onManual={() => { setShowAddModal(false); setShowManualEntry(true); }}
         />
 
-        {/* Tooltip Xscan */}
-        <XscanTooltip
-          visible={showScanTooltip}
-          xButtonY={xButtonY}
-          onDismiss={dismissTooltip}
-        />
+        {/* XSCAN Highlight Overlay */}
+        {showScanTooltip && (
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{ alignItems: 'center', paddingHorizontal: 30 }}>
+              <View style={{
+                width: wp(80), height: wp(80), borderRadius: wp(40),
+                backgroundColor: '#1A1F26', borderWidth: 2, borderColor: '#00D984',
+                justifyContent: 'center', alignItems: 'center',
+                shadowColor: '#00D984', shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.5, shadowRadius: 20, elevation: 15,
+              }}>
+                <Svg width={wp(30)} height={wp(30)} viewBox="0 0 40 40">
+                  <Line x1="7" y1="7" x2="33" y2="33" stroke="#00D984" strokeWidth={3.5} strokeLinecap="round"/>
+                  <Line x1="33" y1="7" x2="7" y2="33" stroke="#00D984" strokeWidth={3.5} strokeLinecap="round"/>
+                  <Circle cx="20" cy="20" r="3" fill="#00D984" opacity={0.3}/>
+                  <Circle cx="20" cy="20" r="1.5" fill="#00D984" opacity={0.7}/>
+                </Svg>
+              </View>
+              <View style={{ marginTop: 20, alignItems: 'center' }}>
+                <Text style={{ color: '#00D984', fontSize: fp(16), fontWeight: '800', marginBottom: 8 }}>
+                  {lang === 'fr' ? 'Technologie Xscan' : 'Xscan Technology'}
+                </Text>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(13), textAlign: 'center', lineHeight: fp(19), marginBottom: 6 }}>
+                  {lang === 'fr' ? 'Scannez votre premier repas !' : 'Scan your first meal!'}
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, marginBottom: 20 }}>
+                  <Text style={{ fontSize: 14, marginRight: 6 }}>🎁</Text>
+                  <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '700' }}>
+                    {lang === 'fr' ? '1 scan gratuit offert' : '1 free scan included'}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={dismissTooltip} activeOpacity={0.7}
+                style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: 14, paddingHorizontal: 30, paddingVertical: 12, borderWidth: 1, borderColor: 'rgba(0,217,132,0.4)' }}>
+                <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '800' }}>
+                  {lang === 'fr' ? 'Compris !' : 'Got it!'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* ═══ BOTTOM TABS ═══ */}
         <BottomTabs
