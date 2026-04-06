@@ -28,6 +28,7 @@ import CartScanScreen from './CartScanScreen';
 import RecettesScreen from './RecettesScreen';
 import CookingModeScreen from './CookingModeScreen';
 import { useAuth } from '../../config/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const W = Dimensions.get('window').width;
 const BASE_WIDTH = 320;
 const MEAL_CARD_WIDTH = wp(160);
@@ -123,9 +124,18 @@ export default function RepasPage({ navigation }) {
   const [addModalSlot, setAddModalSlot] = useState(null);
   const [selectedMealType, setSelectedMealType] = useState(null);
 
-  // Tooltip Xscan
-  const [showScanTooltip, setShowScanTooltip] = useState(true);
+  // Tooltip Xscan (show only once via AsyncStorage)
+  const [showScanTooltip, setShowScanTooltip] = useState(false);
   const [xButtonY, setXButtonY] = useState(0);
+  useEffect(function() {
+    AsyncStorage.getItem('repas_tooltip_seen').then(function(v) {
+      if (!v) setShowScanTooltip(true);
+    }).catch(function() {});
+  }, []);
+  var dismissTooltip = function() {
+    setShowScanTooltip(false);
+    AsyncStorage.setItem('repas_tooltip_seen', 'true').catch(function() {});
+  };
 
   // Bouton X animations
   const [isXPressed, setIsXPressed] = useState(false);
@@ -1210,7 +1220,7 @@ export default function RepasPage({ navigation }) {
         <XscanTooltip
           visible={showScanTooltip}
           xButtonY={xButtonY}
-          onDismiss={() => setShowScanTooltip(false)}
+          onDismiss={dismissTooltip}
         />
 
         {/* ═══ BOTTOM TABS ═══ */}
