@@ -33,30 +33,23 @@ const W = Dimensions.get('window').width;
 const BASE_WIDTH = 320;
 const MEAL_CARD_WIDTH = wp(160);
 
-// SectionTitle — composant local
+// SectionTitle — composant local (sans barre verte, le borderLeft du container parent fait office)
 const SectionTitle = ({ title, rightAction, rightLabel }) => (
   <View style={{
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: wp(16),
-    marginBottom: wp(12),
+    marginBottom: 12,
   }}>
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <View style={{
-        width: 3, height: 18, borderRadius: 1.5,
-        backgroundColor: '#00D984', marginRight: 8,
-      }}/>
-      <Text style={{
-        color: '#FFFFFF',
-        fontSize: fp(16),
-        fontWeight: '900',
-        letterSpacing: 1,
-        textTransform: 'uppercase',
-      }}>
-        {title}
-      </Text>
-    </View>
+    <Text style={{
+      color: '#FFFFFF',
+      fontSize: fp(16),
+      fontWeight: '900',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+    }}>
+      {title}
+    </Text>
     {rightLabel && (
       <Pressable onPressIn={rightAction}>
         <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600' }}>
@@ -811,12 +804,17 @@ export default function RepasPage({ navigation }) {
           </Pressable>
 
           {/* ═══ 5. PLATS DU JOUR ═══ */}
-          <View style={{ marginTop: 28 }}>
+          <View style={{
+            marginTop: 28, marginHorizontal: wp(16),
+            backgroundColor: 'rgba(30, 37, 48, 0.5)',
+            borderRadius: 16, padding: 16,
+            borderLeftWidth: 3, borderLeftColor: '#00D984',
+          }}>
             <SectionTitle title={lang === 'fr' ? 'Plat du jour' : 'Meals today'} />
             <ScrollView
               horizontal showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(10) }}
-              snapToInterval={MEAL_CARD_WIDTH + wp(10)}
+              contentContainerStyle={{ gap: wp(12) }}
+              snapToInterval={MEAL_CARD_WIDTH + wp(12)}
               decelerationRate="fast"
             >
               {[
@@ -960,26 +958,32 @@ export default function RepasPage({ navigation }) {
           })}
 
           {/* ═══ 6. SECTION RECETTES ═══ */}
-          <View style={{ marginTop: 28 }}>
+          <View style={{
+            marginTop: 28, marginHorizontal: wp(16),
+            backgroundColor: 'rgba(30, 37, 48, 0.5)',
+            borderRadius: 16, padding: 16,
+            borderLeftWidth: 3, borderLeftColor: '#00D984',
+          }}>
             <SectionTitle
               title={lang === 'fr' ? 'Recettes' : 'Recipes'}
               rightLabel={lang === 'fr' ? 'Voir tout ›' : 'See all ›'}
               rightAction={() => setShowRecettes(true)}
             />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(10) }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(12) }}>
               {MOCK_RECIPES.map((recipe, index) => (
                 <Pressable key={index} delayPressIn={120}
                   style={({ pressed }) => ({
-                    width: wp(140), borderRadius: 16, overflow: 'hidden',
+                    width: wp(140), borderRadius: 12, overflow: 'hidden',
                     transform: [{ scale: pressed ? 0.96 : 1 }],
-                    elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3, shadowRadius: 8, backgroundColor: '#1E2530',
+                    elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.4, shadowRadius: 12, backgroundColor: '#1E2530',
+                    borderWidth: 1, borderColor: 'rgba(74,79,85,0.5)',
                   })}
                 >
                   <View style={{ width: '100%', height: wp(95), backgroundColor: '#1A1D22' }}>
                     <Image source={{ uri: recipe.image }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
-                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.4)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%' }} />
-                    <View style={{ position: 'absolute', top: wp(6), right: wp(6), backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.5)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%' }} />
+                    <View style={{ position: 'absolute', top: wp(6), right: wp(6), backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
                       <Text style={{ color: '#FF8C42', fontSize: fp(8), fontWeight: '700' }}>{recipe.cal} kcal</Text>
                     </View>
                   </View>
@@ -1043,21 +1047,28 @@ export default function RepasPage({ navigation }) {
           <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginHorizontal: wp(16), marginTop: wp(12) }}/>
 
           {/* ═══ 7. PLATS FRÉQUENTS ═══ */}
-          <View style={{ marginTop: 28 }}>
+          <View style={{
+            marginTop: 28, marginHorizontal: wp(16),
+            backgroundColor: 'rgba(30, 37, 48, 0.5)',
+            borderRadius: 16, padding: 16,
+            borderLeftWidth: 3, borderLeftColor: '#00D984',
+          }}>
             <SectionTitle title={lang === 'fr' ? 'Plats fréquents' : 'Frequent meals'} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: wp(16), gap: wp(8) }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(12) }}>
               {(frequentMeals.length > 0 ? frequentMeals : MOCK_FREQUENT).map((item, index) => (
                 <Pressable key={index} delayPressIn={120}
                   style={({ pressed }) => ({
-                    width: wp(75), backgroundColor: pressed ? '#2A2F36' : '#1E2530',
-                    borderRadius: 12, borderWidth: 1, borderColor: '#2E333A',
+                    width: wp(80), backgroundColor: pressed ? '#2A2F36' : '#252A30',
+                    borderRadius: 12, borderWidth: 1, borderColor: '#4A4F55',
                     padding: wp(8), alignItems: 'center',
                     transform: [{ scale: pressed ? 0.95 : 1 }],
+                    elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.2, shadowRadius: 4,
                   })}
                 >
                   <View style={{
                     width: wp(32), height: wp(32), borderRadius: wp(16),
-                    backgroundColor: '#252A32', justifyContent: 'center', alignItems: 'center',
+                    backgroundColor: '#1E2228', justifyContent: 'center', alignItems: 'center',
                     marginBottom: wp(5),
                     borderWidth: 1, borderColor: index % 4 === 0 ? 'rgba(255,140,66,0.3)' : index % 4 === 1 ? 'rgba(0,217,132,0.3)' : index % 4 === 2 ? 'rgba(77,166,255,0.3)' : 'rgba(212,175,55,0.3)',
                   }}>
@@ -1086,7 +1097,7 @@ export default function RepasPage({ navigation }) {
                       </Svg>
                     )}
                   </View>
-                  <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={1}>{item.name}</Text>
+                  <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={2}>{item.name}</Text>
                   <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 1 }}>{item.cal} kcal</Text>
                 </Pressable>
               ))}
