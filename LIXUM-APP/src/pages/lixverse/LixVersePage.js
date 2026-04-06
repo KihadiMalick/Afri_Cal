@@ -235,7 +235,7 @@ export default function LixVersePage({ navigation }) {
         setShowCharOnboarding(true);
         const charsRes = await fetch(SUPABASE_URL + '/rest/v1/lixverse_characters?tier=eq.standard&order=sort_order.asc', { headers: HEADERS });
         const chars = await charsRes.json();
-        setUserCollection((chars || []).map(c => ({ ...c, owned: false, level: 0, fragments: 0 })));
+        setUserCollection((chars || []).map(c => ({ ...c, owned: false, level: 0, fragments: 0, fragments_required: FRAGS_NIV1[c.tier] || 3 })));
         return;
       }
       const collection = await supaRpc('get_user_collection', { p_user_id: userId });
@@ -969,7 +969,7 @@ export default function LixVersePage({ navigation }) {
         setSelectedChar({ ...collectionChar, slug: collectionChar.slug || newCharId });
       } else {
         const fallback = ALL_CHARACTERS[cardViewIndex];
-        setSelectedChar({ ...fallback, slug: newCharId, owned: false, level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: fallback.uses || 10, fragments: 0, fragments_required: 3 });
+        setSelectedChar({ ...fallback, slug: newCharId, owned: false, level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: fallback.uses || 10, fragments: 0, fragments_required: FRAGS_NIV1[fallback.tier] || 3 });
       }
       loadCharPowers(newCharId);
     }
