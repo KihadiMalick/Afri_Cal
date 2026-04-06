@@ -676,6 +676,7 @@ export default function RepasPage({ navigation }) {
                         </View>
                       </View>
                     </View>
+                    </View>
 
                     {/* Right arrow */}
                     <Animated.View style={{ marginLeft: wp(6), opacity: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.3, 1, 0.3] }), transform: [{ translateX: arrowAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [-6, 0, -6] }) }] }}>
