@@ -1084,20 +1084,29 @@ export default function RepasPage({ navigation }) {
             />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(12) }}>
               {MOCK_RECIPES.map((recipe, index) => (
-                <View key={index} style={{
-                  width: wp(140), borderRadius: 12, borderWidth: 1,
-                  borderColor: '#4A4F55',
-                  backgroundColor: '#252A30', elevation: 10,
-                  shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
-                  shadowOpacity: 0.4, shadowRadius: 12,
-                }}>
-                  <Pressable delayPressIn={120}
-                    style={({ pressed }) => ({
-                      borderRadius: 11, overflow: 'hidden',
-                      transform: [{ scale: pressed ? 0.96 : 1 }],
-                    })}
-                  >
-                    <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 11, overflow: 'hidden' }}>
+                <Pressable key={index} delayPressIn={120}
+                  style={({ pressed }) => ({
+                    width: wp(140),
+                    transform: [{ scale: pressed ? 0.96 : 1 }],
+                  })}
+                >
+                  <View style={{
+                    borderRadius: 20, padding: 3, borderWidth: 2,
+                    borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+                    borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+                    backgroundColor: '#2A303B',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.5, shadowRadius: 12, elevation: 10,
+                  }}>
+                    <View style={{
+                      borderRadius: 16, borderWidth: 1.5,
+                      borderColor: 'rgba(0,217,132,0.25)', overflow: 'hidden',
+                      backgroundColor: '#151B23',
+                    }}>
+                      <View style={{
+                        position: 'absolute', top: 0, left: 12, right: 12,
+                        height: 1, backgroundColor: 'rgba(136,146,160,0.2)', zIndex: 1,
+                      }}/>
                       <View style={{ width: '100%', height: wp(95), backgroundColor: '#1A1D22' }}>
                         <Image source={{ uri: recipe.image }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
                         <LinearGradient colors={['transparent', 'rgba(0,0,0,0.5)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%' }} />
@@ -1109,9 +1118,9 @@ export default function RepasPage({ navigation }) {
                         <Text style={{ color: '#EAEEF3', fontSize: fp(11), fontWeight: '700' }} numberOfLines={1}>{recipe.name}</Text>
                         <Text style={{ color: '#6A7080', fontSize: fp(9), marginTop: 2 }}>{recipe.origin}</Text>
                       </View>
-                    </LinearGradient>
-                  </Pressable>
-                </View>
+                    </View>
+                  </View>
+                </Pressable>
               ))}
             </ScrollView>
           </LinearGradient>
@@ -1178,14 +1187,23 @@ export default function RepasPage({ navigation }) {
               {(frequentMeals.length > 0 ? frequentMeals : MOCK_FREQUENT).map((item, index) => (
                 <Pressable key={index} delayPressIn={120}
                   style={({ pressed }) => ({
-                    width: wp(80), backgroundColor: pressed ? '#2A2F36' : '#252A30',
-                    borderRadius: 12, borderWidth: 1, borderColor: '#4A4F55',
-                    padding: wp(8), alignItems: 'center',
+                    width: wp(80),
                     transform: [{ scale: pressed ? 0.95 : 1 }],
-                    elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.2, shadowRadius: 4,
                   })}
                 >
+                <View style={{
+                  borderRadius: 16, padding: 2, borderWidth: 1.5,
+                  borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+                  borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+                  backgroundColor: '#2A303B',
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
+                }}>
+                <View style={{
+                  borderRadius: 12, borderWidth: 1,
+                  borderColor: 'rgba(0,217,132,0.2)', overflow: 'hidden',
+                  backgroundColor: '#151B23', padding: wp(8), alignItems: 'center',
+                }}>
                   <View style={{
                     width: wp(32), height: wp(32), borderRadius: wp(16),
                     backgroundColor: '#1E2228', justifyContent: 'center', alignItems: 'center',
@@ -1219,6 +1237,8 @@ export default function RepasPage({ navigation }) {
                   </View>
                   <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={2}>{item.name}</Text>
                   <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 1 }}>{item.cal} kcal</Text>
+                </View>
+                </View>
                 </Pressable>
               ))}
             </ScrollView>
