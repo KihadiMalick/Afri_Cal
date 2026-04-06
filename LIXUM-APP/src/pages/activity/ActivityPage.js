@@ -769,12 +769,12 @@ export default function ActivityPage({ navigation }) {
                   }}
                   disabled={walkSaved}
                   style={({ pressed }) => ({
-                    flex: 2, paddingVertical: wp(9), borderRadius: wp(10),
-                    backgroundColor: walkSaved ? '#00D984' : pressed ? '#00B572' : '#00D984',
-                    alignItems: 'center',
+                    flex: 2, paddingVertical: wp(9), borderRadius: 12,
+                    backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#00D984',
+                    alignItems: 'center', opacity: pressed ? 0.7 : 1,
                   })}
                 >
-                  <Text style={{ color: '#1A1D22', fontSize: fp(11), fontWeight: '700' }}>
+                  <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700' }}>
                     {walkSaved ? String.fromCodePoint(0x2713) + ' ' + t.added : String.fromCodePoint(0x2713) + ' ' + t.validate + ' — ' + walkCal + ' kcal'}
                   </Text>
                 </Pressable>
@@ -937,12 +937,12 @@ export default function ActivityPage({ navigation }) {
               {runScrollOffset > 0 && (
                 <Pressable onPress={handleAddRun} disabled={runSaved}
                   style={({ pressed }) => ({
-                    flex: 2, paddingVertical: wp(9), borderRadius: wp(10),
-                    backgroundColor: runSaved ? '#00D984' : pressed ? '#00B572' : '#00D984',
-                    alignItems: 'center',
+                    flex: 2, paddingVertical: wp(9), borderRadius: 12,
+                    backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#00D984',
+                    alignItems: 'center', opacity: pressed ? 0.7 : 1,
                   })}
                 >
-                  <Text style={{ color: '#1A1D22', fontSize: fp(11), fontWeight: '700' }}>
+                  <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700' }}>
                     {runSaved ? String.fromCodePoint(0x2713) + ' ' + t.added : String.fromCodePoint(0x2713) + ' ' + t.validate + ' — ' + runCalories + ' kcal'}
                   </Text>
                 </Pressable>
