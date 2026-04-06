@@ -88,7 +88,7 @@ const DashboardContent = ({
               <Text style={{ fontSize: fp(13), fontWeight: '800', color: '#00D984', textShadowColor: 'rgba(0, 217, 132, 0.3)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 4 }}>{formatNumberFR(OBJECTIVE)} kcal</Text>
               <Text style={{ fontSize: fp(7), fontWeight: '600', color: '#6B7280', letterSpacing: 0.5, marginTop: wp(1) }}>Objectif du Jour</Text>
             </View>
-            <View style={{ width: wp(5), height: wp(5), borderRadius: wp(2.5), backgroundColor: '#00D984', marginLeft: wp(4) }} />
+            <View style={{ width: wp(5), height: wp(5), borderRadius: wp(2.5), backgroundColor: '#00D984', marginLeft: wp(4), alignSelf: 'flex-start', marginTop: wp(5) }} />
           </View>
         </View>
 
@@ -130,7 +130,7 @@ const DashboardContent = ({
           </View>
         </View>
 
-        <RNAnimated.View style={{ alignItems: 'center', marginTop: wp(12), marginLeft: -3, opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3 ? (tooltipStep === 3 ? pulseOpacity : 1) : 0.05 }}>
+        <RNAnimated.View style={{ alignItems: 'center', marginTop: wp(12), opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3 ? (tooltipStep === 3 ? pulseOpacity : 1) : 0.05 }}>
           <EcgPulse score={vitalityScore} />
           <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#D4AF37', marginTop: 2, letterSpacing: 1.5 }}>VITALITÉ</Text>
         </RNAnimated.View>

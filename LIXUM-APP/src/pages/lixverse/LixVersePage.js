@@ -31,7 +31,7 @@ const W = SCREEN_WIDTH;
 export default function LixVersePage({ navigation }) {
   var auth = useAuth(); var userId = auth.userId;
   const [activeTab, setActiveTab] = useState('defi');
-  const [lixBalance, setLixBalance] = useState(500);
+  const [lixBalance, setLixBalance] = useState(0);
   const [userEnergy, setUserEnergy] = useState(20);
   const [ownedCharacters, setOwnedCharacters] = useState([]);
   const [challenges, setChallenges] = useState([]);

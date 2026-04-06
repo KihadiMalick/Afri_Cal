@@ -169,8 +169,10 @@ export default function DashboardPage({ navigation }) {
     try {
       var newBalance = realLixBalance - 100;
       var unlockUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      await supabase.from('users_profile').update({ lix_balance: newBalance, hydration_history_unlocked_until: unlockUntil }).eq('user_id', userId);
-      setRealLixBalance(newBalance); setHistoryUnlockedUntil(unlockUntil); fetchWeeklyHydration();
+      var { data, error } = await supabase.from('users_profile').update({ lix_balance: newBalance, hydration_history_unlocked_until: unlockUntil }).eq('user_id', userId).select('lix_balance, hydration_history_unlocked_until').single();
+      if (error) { console.warn('unlockHistory update error:', error); showToast('⚠️ Erreur — réessayez', '#FF6B6B'); return; }
+      if (data) { setRealLixBalance(data.lix_balance); setHistoryUnlockedUntil(data.hydration_history_unlocked_until); }
+      fetchWeeklyHydration();
       try { var Vibration = require('react-native').Vibration; Vibration.vibrate([0, 30, 50, 30]); } catch(e) {}
     } catch(err) { console.warn('unlockHistoryWithLix error:', err); showToast('⚠️ Erreur — réessayez', '#FF6B6B'); }
   };
@@ -191,8 +193,10 @@ export default function DashboardPage({ navigation }) {
     try {
       var newBalance = realLixBalance - 200;
       var unlockUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      await supabase.from('users_profile').update({ lix_balance: newBalance, stats_unlocked_until: unlockUntil }).eq('user_id', userId);
-      setRealLixBalance(newBalance); setStatsUnlockedUntil(unlockUntil); fetchWeeklyStats();
+      var { data, error } = await supabase.from('users_profile').update({ lix_balance: newBalance, stats_unlocked_until: unlockUntil }).eq('user_id', userId).select('lix_balance, stats_unlocked_until').single();
+      if (error) { console.warn('unlockStats update error:', error); showToast('⚠️ Erreur — réessayez', '#FF6B6B'); return; }
+      if (data) { setRealLixBalance(data.lix_balance); setStatsUnlockedUntil(data.stats_unlocked_until); }
+      fetchWeeklyStats();
       try { var Vibration = require('react-native').Vibration; Vibration.vibrate([0, 30, 50, 30]); } catch(e) {}
     } catch(err) { console.warn('unlockStatsWithLix error:', err); showToast('⚠️ Erreur — réessayez', '#FF6B6B'); }
   };
