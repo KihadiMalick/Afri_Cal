@@ -764,7 +764,18 @@ const SportModal = ({ visible, sportKey, onClose, onSave, lang, userWeight }) =>
         }}
       >
         <Pressable onPress={() => {}} style={{ width: W - wp(40) }}>
-          <MetalCard style={{ marginHorizontal: 0, marginBottom: 0 }}>
+          <View style={{
+            borderRadius: 16, borderWidth: 1.5,
+            borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+            borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+            backgroundColor: '#2A303B',
+            shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.6, shadowRadius: 16, elevation: 14,
+          }}>
+          <LinearGradient
+            colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+            style={{ borderRadius: 14, padding: wp(14) }}
+          >
             <View>
               {/* Header */}
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
@@ -887,7 +898,8 @@ const SportModal = ({ visible, sportKey, onClose, onSave, lang, userWeight }) =>
                 </Text>
               </TouchableOpacity>
             </View>
-          </MetalCard>
+          </LinearGradient>
+          </View>
         </Pressable>
       </Pressable>
     </Modal>
