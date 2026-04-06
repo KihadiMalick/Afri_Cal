@@ -19,6 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY, ENERGY_CONFIG, TABS, wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
 import { useAuth } from '../../config/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../config/supabase';
 import { BottomTabs, FormattedText, FormattedResponseText, MetalCard, parseQuickReplies, parseAlixenResponse, QuickReplyButtons, BottomSpacer, LockIcon, ScrollArrow } from './shared';
 import { SynapticNetwork, ResponseCard, LoadingSteps, FileQueuePreview, ModalScrollContent, parseDirectionBlocks, DirectionCard } from './AlixenChat';
@@ -36,6 +37,8 @@ import PageHeader from '../../components/shared/PageHeader';
 export default function MedicAiPage({ navigation }) {
   var auth = useAuth();
   var userId = auth.userId;
+  var lixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
+  var userEnergy = auth.energy; var refreshLixFromServer = auth.refreshLixFromServer;
 
   var getAuthHeaders = async function() {
     var result = await supabase.auth.getSession();
@@ -59,9 +62,6 @@ export default function MedicAiPage({ navigation }) {
   const [energyLimit, setEnergyLimit] = useState(ENERGY_CONFIG.FREE_DAILY_ENERGY);
   const [userNameAvatar, setUserNameAvatar] = useState('');
   const [activeCharAvatar, setActiveCharAvatar] = useState(null);
-  const [lixBalance, setLixBalance] = useState(0);
-  const [userEnergy, setUserEnergy] = useState(20);
-
   // === ALIXEN SUPER CONTEXT v1 — Geolocation + Super Context ===
   const [userLocation, setUserLocation] = useState(null);
   const alixenContextRef = useRef(null);
@@ -341,7 +341,7 @@ export default function MedicAiPage({ navigation }) {
         const pD = await pRes.json();
         if (pD && pD[0]) {
           setUserNameAvatar(pD[0].full_name || '');
-          setLixBalance(pD[0].lix_balance || 0);
+          updateLixBalance(pD[0].lix_balance || 0);
         }
         const cRes = await fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters?user_id=eq.' + userId + '&is_active=eq.true&select=character_slug', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
         const cD = await cRes.json();
@@ -354,6 +354,11 @@ export default function MedicAiPage({ navigation }) {
       Animated.spring(inputEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
     ]).start();
   }, [userId]);
+
+  // Refresh Lix balance when page gains focus
+  useFocusEffect(useCallback(function() {
+    if (userId) refreshLixFromServer();
+  }, [userId, refreshLixFromServer]));
 
   // ── Afficher le message de bienvenue dans la carte ──────────────────────
   useEffect(() => {

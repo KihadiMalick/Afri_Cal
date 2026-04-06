@@ -14,6 +14,7 @@ import {
   getCharEmoji,
 } from './profileConstants';
 import { useAuth } from '../../config/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../config/supabase';
 import MetalCard from '../../components/shared/MetalCard';
 
@@ -47,13 +48,15 @@ var ProfileScrollPicker = function(pickerProps) {
 export default function ProfilePage({ navigation }) {
   var auth = useAuth();
   var userId = auth.userId;
+  var lixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
+  var refreshLixFromServer = auth.refreshLixFromServer;
   var getAuthHeaders = async function() {
     var result = await supabase.auth.getSession();
     var token = result.data.session ? result.data.session.access_token : SUPABASE_ANON_KEY;
     return { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
   };
   var _profile = useState(null), profile = _profile[0], setProfile = _profile[1];
-  var _lixBalance = useState(0), lixBalance = _lixBalance[0], setLixBalance = _lixBalance[1];
+  // lixBalance from AuthContext
   var _ownedCharacters = useState(0), ownedCharacters = _ownedCharacters[0], setOwnedCharacters = _ownedCharacters[1];
   var _userXP = useState({ user_xp: 0, user_level: 1, xp_progress: 0, xp_needed: 80, xp_percent: 0 }), userXP = _userXP[0], setUserXP = _userXP[1];
   var _activeCharSlug = useState(null), activeCharSlug = _activeCharSlug[0], setActiveCharSlug = _activeCharSlug[1];
@@ -80,6 +83,10 @@ export default function ProfilePage({ navigation }) {
   var showToast = function(message, color) { setToast({ message: message, color: color || '#00D984' }); setTimeout(function() { setToast(null); }, 2500); };
   useEffect(function() { if (userId) loadProfile(); }, [userId]);
 
+  useFocusEffect(useCallback(function() {
+    if (userId) refreshLixFromServer();
+  }, [userId, refreshLixFromServer]));
+
   var loadProfile = async function() {
     if (!userId) return;
     var hdrs = await getAuthHeaders();
@@ -89,7 +96,7 @@ export default function ProfilePage({ navigation }) {
     ]).then(function(responses) { return Promise.all(responses.map(function(r) { return r.json(); })); })
     .then(function(results) {
       var pD = results[0]; var cD = results[1];
-      if (pD && pD[0]) { setProfile(pD[0]); setLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); if (pD[0].language === 'EN') setLang('en'); else setLang('fr'); }
+      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); if (pD[0].language === 'EN') setLang('en'); else setLang('fr'); }
       if (Array.isArray(cD)) { setOwnedCharacters(cD.length); var activeC = cD.find(function(c) { return c.is_active; }); if (activeC) setActiveCharSlug(activeC.character_slug); }
       fetch(SUPABASE_URL + '/rest/v1/rpc/get_user_xp', { method: 'POST', headers: Object.assign({}, hdrs, { 'Content-Type': 'application/json' }), body: JSON.stringify({ p_user_id: userId }) })
         .then(function(r) { return r.json(); }).then(function(d) { if (d) setUserXP(d); }).catch(function(err) { console.warn('[LIXUM] XP fetch error:', err); });
@@ -108,7 +115,7 @@ export default function ProfilePage({ navigation }) {
     var newTarget = calculateDailyTarget(newTDEE, currentGoal, profile ? profile.target_weight_loss : 0, profile ? profile.target_months : 3);
     var body = { full_name: editName.trim(), age: parseInt(editAge) || null, weight: parseFloat(editWeight) || null, height: parseFloat(editHeight) || null, gender: currentGender, activity_level: currentActivityLevel, dietary_regime: profile ? (profile.dietary_regime || 'classic') : 'classic', goal: currentGoal, bmr: newBMR, tdee: newTDEE, daily_calorie_target: newTarget, language: lang === 'en' ? 'EN' : 'FR' };
     fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId, { method: 'PATCH', headers: h, body: JSON.stringify(body) })
-      .then(function(r) { return r.json(); }).then(function(data) { if (data && data[0]) { setProfile(data[0]); setLixBalance(data[0].lix_balance || 0); } setShowEditProfile(false); showToast(lang === 'fr' ? 'Profil mis \u00e0 jour \u2713' : 'Profile updated \u2713', '#00D984'); })
+      .then(function(r) { return r.json(); }).then(function(data) { if (data && data[0]) { setProfile(data[0]); updateLixBalance(data[0].lix_balance || 0); } setShowEditProfile(false); showToast(lang === 'fr' ? 'Profil mis \u00e0 jour \u2713' : 'Profile updated \u2713', '#00D984'); })
       .catch(function() { showToast(lang === 'fr' ? 'Erreur de sauvegarde' : 'Save error', '#FF6B6B'); });
   };
 
