@@ -165,14 +165,16 @@ export default function DashboardPage({ navigation }) {
   };
 
   var unlockHistoryWithLix = async function() {
+    if (!userId) { showToast('⚠️ Connectez-vous d\'abord', '#FF6B6B'); return; }
     if (realLixBalance < 100) { setLixAlert({ visible: true, missing: 100 - realLixBalance, type: 'hydration' }); return; }
     try {
       var newBalance = realLixBalance - 100;
       var unlockUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       var { data, error } = await supabase.from('users_profile').update({ lix_balance: newBalance, hydration_history_unlocked_until: unlockUntil }).eq('user_id', userId).select('lix_balance, hydration_history_unlocked_until').single();
-      if (error) { console.warn('unlockHistory update error:', error); showToast('⚠️ Erreur — réessayez', '#FF6B6B'); return; }
+      if (error) { console.warn('unlockHistory update error:', error.message); showToast('⚠️ Erreur Supabase: ' + error.message, '#FF6B6B'); return; }
       if (data) { setRealLixBalance(data.lix_balance); setHistoryUnlockedUntil(data.hydration_history_unlocked_until); }
       fetchWeeklyHydration();
+      showToast('💎 Historique débloqué ! -100 Lix', '#00D984');
       try { var Vibration = require('react-native').Vibration; Vibration.vibrate([0, 30, 50, 30]); } catch(e) {}
     } catch(err) { console.warn('unlockHistoryWithLix error:', err); showToast('⚠️ Erreur — réessayez', '#FF6B6B'); }
   };

@@ -29,6 +29,7 @@ import { SecretPocketContent } from './SecretPocket';
 import { AllModals } from './Modals';
 import AlertSheet from './AlertSheet';
 import { AlixenFace, FunnelBridgeUnified, getWireMode, FRAME_W, FRAME_H, MODULE_H, BRIDGE_TOP } from './alixenzone';
+import PageHeader from '../../components/shared/PageHeader';
 
 
 
@@ -60,18 +61,10 @@ export default function MedicAiPage({ navigation }) {
   const [activeCharAvatar, setActiveCharAvatar] = useState(null);
   const [lixBalance, setLixBalance] = useState(0);
   const [userEnergy, setUserEnergy] = useState(20);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // === ALIXEN SUPER CONTEXT v1 — Geolocation + Super Context ===
   const [userLocation, setUserLocation] = useState(null);
   const alixenContextRef = useRef(null);
-  const dropdownAnim = useRef(new Animated.Value(0)).current;
-
-  const toggleDropdown = () => {
-    const toValue = dropdownOpen ? 0 : 1;
-    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: true }).start();
-    setDropdownOpen(!dropdownOpen);
-  };
 
   const [lastResetTime, setLastResetTime] = useState(Date.now());
 
@@ -2121,123 +2114,18 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       <View style={{
         backgroundColor: '#F4F6F8',
         paddingTop: Platform.OS === 'android' ? 35 : 50,
-        paddingBottom: 6,
-        paddingHorizontal: 16,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(0,0,0,0.05)',
       }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View>
-            <Text style={{ color: '#1A2030', fontSize: 22, fontWeight: 'bold' }}>MedicAi</Text>
-            <Text style={{ color: 'rgba(0,150,120,0.45)', fontSize: 7, letterSpacing: 2 }}>{userLang === 'EN' ? 'SMART HEALTH SPACE' : 'ESPACE SANTÉ INTELLIGENT'}</Text>
-          </View>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {/* Badge compact Lix + dropdown */}
-          <TouchableOpacity onPress={toggleDropdown} style={{
-            flexDirection: 'row', alignItems: 'center',
-            backgroundColor: 'rgba(0,0,0,0.4)',
-            borderWidth: 1, borderColor: '#4A4F55',
-            borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
-          }}>
-            <Svg width={14} height={14} viewBox="0 0 24 24">
-              <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
-              <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
-            </Svg>
-            <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(14), marginLeft: 4 }}>{lixBalance}</Text>
-            <Text style={{ color: '#888', fontSize: fp(10), marginLeft: 4 }}>▾</Text>
-          </TouchableOpacity>
-          <View style={{ alignItems: 'flex-end' }}>
-          {energyLeft > 0 ? (
-            <View style={{
-              backgroundColor: 'rgba(0,180,130,0.08)',
-              borderWidth: 1,
-              borderColor: 'rgba(0,180,130,0.2)',
-              borderRadius: 14,
-              paddingHorizontal: 8,
-              paddingVertical: 3,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 4,
-            }}>
-              <Svg width={wp(10)} height={wp(10)} viewBox="0 0 24 24" fill="#00D984">
-                <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-              </Svg>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#00D984' }} />
-              <Text style={{ color: '#00A878', fontSize: 10 }}>{userLang === 'EN' ? 'Online' : 'En ligne'}</Text>
-            </View>
-          ) : (
-            <View style={{
-              flexDirection: 'row', alignItems: 'center',
-              borderRadius: wp(12), paddingHorizontal: wp(10), paddingVertical: wp(4),
-              borderWidth: 1, borderColor: 'rgba(255,107,107,0.3)',
-              backgroundColor: 'rgba(255,107,107,0.08)',
-              gap: 4,
-            }}>
-              <Svg width={wp(10)} height={wp(10)} viewBox="0 0 24 24" fill="#FF6B6B">
-                <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-              </Svg>
-              <View style={{ width: wp(6), height: wp(6), borderRadius: wp(3), backgroundColor: '#FF6B6B' }} />
-              <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#FF6B6B' }}>{userLang === 'EN' ? 'Out of energy' : 'Hors énergie'}</Text>
-            </View>
-          )}
-          <Text style={{
-            fontSize: fp(9),
-            fontWeight: '600',
-            color: energyPercent <= 15 ? 'rgba(255,107,107,0.6)' : energyPercent <= 40 ? 'rgba(255,140,66,0.5)' : 'rgba(0,217,132,0.4)',
-            marginTop: wp(2),
-          }}>
-            {energyLeft > 0 ? energyLeft + (userLang === 'EN' ? ' energy' : ' énergie') : (userLang === 'EN' ? 'Energy depleted' : 'Énergie épuisée')}
-          </Text>
-          <Text style={{
-            fontSize: fp(9),
-            fontWeight: '600',
-            color: 'rgba(0,217,132,0.4)',
-            letterSpacing: 1.5,
-            marginTop: wp(3),
-          }}>LXM-2K7F4A</Text>
-          </View>
-        </View>
+        <PageHeader
+          title="MedicAi"
+          titleColor="#FF3B5C"
+          lixBalance={lixBalance}
+          userEnergy={userEnergy}
+          onLixPress={function() { if (navigation) navigation.navigate('LixVerse'); }}
+          onProfilePress={function() { if (navigation) navigation.navigate('Profile'); }}
+        />
       </View>
-
-      {/* Dropdown Lix/Énergie/Profil */}
-      {dropdownOpen && (
-        <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}>
-          <Animated.View style={{
-            position: 'absolute', top: Platform.OS === 'android' ? 85 : 100, right: wp(16),
-            backgroundColor: 'rgba(30, 37, 48, 0.95)',
-            borderWidth: 1, borderColor: '#4A4F55',
-            borderRadius: 16, padding: 16, zIndex: 999,
-            opacity: dropdownAnim,
-            transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
-          }}>
-            <TouchableOpacity onPress={() => { toggleDropdown(); setActiveTab('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-              <Svg width={14} height={14} viewBox="0 0 24 24">
-                <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
-                <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
-              </Svg>
-              <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixBalance}</Text>
-              <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => { toggleDropdown(); setActiveTab('lixverse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-              <Svg width={14} height={14} viewBox="0 0 24 24">
-                <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
-              </Svg>
-              <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{userEnergy}</Text>
-              <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>énergie</Text>
-            </TouchableOpacity>
-            <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
-            <TouchableOpacity onPress={() => { toggleDropdown(); setActiveTab('profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-              <Text style={{ fontSize: 18 }}>{activeCharAvatar?.slug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[activeCharAvatar.slug] || '👤' : '👤'}</Text>
-              <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>Mon Profil</Text>
-              <Text style={{ color: '#888', fontSize: 14 }}>→</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </TouchableOpacity>
-      )}
 
       {/* ===== ZONE DE CONTENU ===== */}
       <KeyboardAvoidingView

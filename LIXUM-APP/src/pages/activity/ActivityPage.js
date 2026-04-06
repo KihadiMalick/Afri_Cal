@@ -15,6 +15,7 @@ import { wp, fp } from '../../constants/layout';
 // Composants partagés
 import BottomTabs from '../../components/shared/NavBar';
 import MetalCard from '../../components/shared/MetalCard';
+import PageHeader from '../../components/shared/PageHeader';
 
 // Composants Activité
 import {
@@ -107,9 +108,6 @@ export default function ActivityPage({ navigation }) {
   const [lixBalance, setLixBalance] = useState(0);
   const [userEnergy, setUserEnergy] = useState(20);
   var _weight = useState(70); var userWeight = _weight[0]; var setUserWeight = _weight[1];
-
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownAnim = useRef(new Animated.Value(0)).current;
 
   // Shoe animation
   const shoeAnim = useRef(new Animated.Value(0)).current;
@@ -381,12 +379,6 @@ export default function ActivityPage({ navigation }) {
 
   // === FONCTIONS UI ===
 
-  var toggleDropdown = function() {
-    var toValue = dropdownOpen ? 0 : 1;
-    Animated.spring(dropdownAnim, { toValue: toValue, tension: 80, friction: 10, useNativeDriver: true }).start();
-    setDropdownOpen(!dropdownOpen);
-  };
-
   const handleTabPress = (key) => {
     if (key === 'activity') return;
     const routes = { home: 'Accueil', meals: 'Repas', medicai: 'MedicAi', activity: 'Activite', lixverse: 'LixVerse' };
@@ -527,73 +519,13 @@ export default function ActivityPage({ navigation }) {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: wp(120) }}>
 
           {/* Header */}
-          <View style={{
-            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-            paddingHorizontal: wp(12), paddingBottom: wp(8),
-          }}>
-            <Text style={{ color: '#EAEEF3', fontSize: fp(18), fontWeight: '800', letterSpacing: 1.5 }}>
-              {t.activity}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
-              <View style={{
-                flexDirection: 'row', alignItems: 'center',
-                backgroundColor: 'rgba(0,217,132,0.08)',
-                paddingHorizontal: wp(8), paddingVertical: wp(4),
-                borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
-              }}>
-                <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600' }}>{t.today}</Text>
-                <Text style={{ color: '#8892A0', fontSize: fp(9), marginLeft: wp(4) }}>{todayDateStr}</Text>
-              </View>
-              <TouchableOpacity onPress={toggleDropdown} style={{
-                flexDirection: 'row', alignItems: 'center',
-                backgroundColor: 'rgba(0,0,0,0.4)',
-                borderWidth: 1, borderColor: '#4A4F55',
-                borderRadius: wp(20), paddingHorizontal: wp(10), paddingVertical: wp(6),
-              }}>
-                <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24">
-                  <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
-                  <Path d="M12 2L2 9h20z" fill="#33E8A0" opacity={0.6} />
-                </Svg>
-                <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(12), marginLeft: wp(4) }}>{lixBalance}</Text>
-                <Text style={{ color: '#888', fontSize: fp(10), marginLeft: wp(4) }}>▾</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Dropdown */}
-          {dropdownOpen && (
-            <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}>
-              <Animated.View style={{
-                position: 'absolute', top: Platform.OS === 'android' ? 100 : 110, right: wp(16),
-                backgroundColor: 'rgba(26, 29, 34, 0.97)',
-                borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
-                borderRadius: wp(16), padding: wp(14), zIndex: 999,
-                opacity: dropdownAnim,
-                transform: [{ scale: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }],
-              }}>
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (navigation) navigation.navigate('LixVerse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
-                  <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24">
-                    <Path d="M12 2L2 9l10 13L22 9z" fill="#00D984" />
-                  </Svg>
-                  <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(16), marginLeft: wp(10) }}>{lixBalance}</Text>
-                  <Text style={{ color: '#888', fontSize: fp(12), marginLeft: wp(4) }}>Lix</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (navigation) navigation.navigate('LixVerse'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
-                  <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24">
-                    <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
-                  </Svg>
-                  <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: fp(16), marginLeft: wp(10) }}>{userEnergy}</Text>
-                  <Text style={{ color: '#888', fontSize: fp(12), marginLeft: wp(4) }}>{t.energy}</Text>
-                </TouchableOpacity>
-                <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(74,79,85,0.4)', marginVertical: wp(4) }} />
-                <TouchableOpacity onPress={() => { toggleDropdown(); if (navigation) navigation.navigate('Profile'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8) }}>
-                  <Text style={{ fontSize: fp(14), marginRight: wp(10) }}>{activeChar?.slug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️' })[activeChar.slug] || '👤' : '👤'}</Text>
-                  <Text style={{ color: '#FFF', fontSize: fp(12), flex: 1 }}>{t.myProfile}</Text>
-                  <Text style={{ color: '#555E6C', fontSize: fp(12) }}>{String.fromCodePoint(0x2192)}</Text>
-                </TouchableOpacity>
-              </Animated.View>
-            </TouchableOpacity>
-          )}
+          <PageHeader
+            title="MES ACTIVITÉS"
+            lixBalance={lixBalance}
+            userEnergy={userEnergy}
+            onLixPress={function() { if (navigation) navigation.navigate('LixVerse'); }}
+            onProfilePress={function() { if (navigation) navigation.navigate('Profile'); }}
+          />
 
           {/* Power banners */}
           {pagePowers.length > 0 && activeChar && (

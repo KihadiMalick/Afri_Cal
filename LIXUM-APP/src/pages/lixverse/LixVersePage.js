@@ -20,6 +20,7 @@ import {
 } from './lixverseConstants';
 import { useAuth } from '../../config/AuthContext';
 import { LixGem } from './lixverseComponents';
+import PageHeader from '../../components/shared/PageHeader';
 import SpinTab from './SpinTab';
 import DefiTab from './DefiTab';
 import CharactersTab from './CharactersTab';
@@ -156,8 +157,6 @@ export default function LixVersePage({ navigation }) {
   const [inlinePowerModal, setInlinePowerModal] = useState(null);
   const [humanTab, setHumanTab] = useState('binome');
   const [userNameAvatar, setUserNameAvatar] = useState('');
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownAnim = useRef(new Animated.Value(0)).current;
   const flipAnim = useRef(new Animated.Value(0)).current;
   const cardViewIndexRef = useRef(0);
   const cardSlideAnim = useRef(new Animated.Value(0)).current;
@@ -182,11 +181,6 @@ export default function LixVersePage({ navigation }) {
     };
   }, []);
 
-  const toggleDropdown = () => {
-    const toValue = dropdownOpen ? 0 : 1;
-    Animated.timing(dropdownAnim, { toValue, duration: 200, useNativeDriver: true }).start();
-    setDropdownOpen(!dropdownOpen);
-  };
 
   const navigateCard = (direction) => {
     const newIdx = cardViewIndex + direction;
@@ -1069,73 +1063,38 @@ export default function LixVersePage({ navigation }) {
     <View style={{ flex: 1, backgroundColor: '#141A22' }}>
       <LinearGradient colors={['#1A1D22','#252A30','#1E2328']} style={{ flex: 1 }}>
         <StatusBar barStyle="light-content"/>
-        <View style={{ paddingTop: Platform.OS === 'android' ? 35 : 50, paddingBottom: wp(6), paddingHorizontal: wp(16), flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View>
-            <Text style={{ fontSize: fp(24), fontWeight: '800', color: '#D4AF37', letterSpacing: 1 }}>LixVerse</Text>
-            <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', letterSpacing: 2.5 }}>UNIVERS LIXUM</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(10) }}>
-            <Pressable delayPressIn={120} onPress={() => setShowNotifPanel(true)}
-              style={({ pressed }) => ({
-                width: wp(36), height: wp(36), borderRadius: wp(18),
-                backgroundColor: 'rgba(255,255,255,0.06)',
-                borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-                justifyContent: 'center', alignItems: 'center',
-                transform: [{ scale: pressed ? 0.9 : 1 }],
-              })}>
-              <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
-                <Path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <Path d="M13.73 21a2 2 0 01-3.46 0" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round"/>
-              </Svg>
-              {unreadCount > 0 && (
-                <View style={{ position: 'absolute', top: wp(-2), right: wp(-2), minWidth: wp(16), height: wp(16), borderRadius: wp(8), backgroundColor: '#FF3B5C', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(4), borderWidth: 1.5, borderColor: '#1A1D22' }}>
-                  <Text style={{ fontSize: fp(8), fontWeight: '800', color: '#FFF' }}>{unreadCount}</Text>
-                </View>
-              )}
-            </Pressable>
-            <TouchableOpacity onPress={toggleDropdown} style={{
-              flexDirection: 'row', alignItems: 'center',
-              backgroundColor: 'rgba(0,0,0,0.4)',
-              borderWidth: 1, borderColor: '#4A4F55',
-              borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
-            }}>
-              <LixGem size={14} />
-              <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(14), marginLeft: 4 }}>{lixBalance}</Text>
-              <Text style={{ color: '#888', fontSize: fp(10), marginLeft: 4 }}>▾</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {dropdownOpen && (
-          <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }}>
-            <Animated.View style={{
-              position: 'absolute', top: Platform.OS === 'android' ? 85 : 100, right: wp(16),
-              backgroundColor: 'rgba(16, 20, 28, 0.97)', borderWidth: 1, borderColor: '#4A4F55',
-              borderRadius: 16, padding: 16, zIndex: 999,
-              shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 10,
-              opacity: dropdownAnim, transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
-            }}>
-              <TouchableOpacity onPress={() => { toggleDropdown(); setActiveTab('lixspin'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-                <LixGem size={14} />
-                <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{lixBalance}</Text>
-                <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>Lix</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => { toggleDropdown(); setActiveTab('lixspin'); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-                <Svg width={14} height={14} viewBox="0 0 24 24">
-                  <Path d="M13 2L3 14h7l-2 8 10-12h-7z" fill={userEnergy <= 5 ? '#FF6B6B' : '#FFB800'} />
+        <View style={{ paddingTop: Platform.OS === 'android' ? 35 : 50 }}>
+          <PageHeader
+            title="LixVerse"
+            subtitle="UNIVERS LIXUM"
+            titleColor="#D4AF37"
+            lixBalance={lixBalance}
+            userEnergy={userEnergy}
+            onLixPress={function() { }}
+            onProfilePress={function() { if (navigation) navigation.navigate('Profile'); }}
+            rightExtra={
+              <Pressable delayPressIn={120} onPress={() => setShowNotifPanel(true)}
+                style={({ pressed }) => ({
+                  width: wp(36), height: wp(36), borderRadius: wp(18),
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                  justifyContent: 'center', alignItems: 'center',
+                  marginRight: wp(10),
+                  transform: [{ scale: pressed ? 0.9 : 1 }],
+                })}>
+                <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                  <Path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <Path d="M13.73 21a2 2 0 01-3.46 0" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round"/>
                 </Svg>
-                <Text style={{ color: userEnergy <= 5 ? '#FF6B6B' : '#FFF', fontWeight: 'bold', fontSize: 18, marginLeft: 8 }}>{userEnergy}</Text>
-                <Text style={{ color: '#888', fontSize: 14, marginLeft: 6 }}>énergie</Text>
-              </TouchableOpacity>
-              <View style={{ borderTopWidth: 1, borderTopColor: '#4A4F55', marginVertical: 4 }} />
-              <TouchableOpacity onPress={() => { toggleDropdown(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
-                <Text style={{ fontSize: 18 }}>{activeCharSlug ? ({ emerald_owl: '🦉', hawk_eye: '🦅', ruby_tiger: '🐯', amber_fox: '🦊', gipsy: '🕷️', jade_phoenix: '🔥', silver_wolf: '🐺', boukki: '🦴', iron_rhino: '🦏', coral_dolphin: '🐬' })[activeCharSlug] || '👤' : '👤'}</Text>
-                <Text style={{ color: '#FFF', fontSize: 14, marginLeft: 8, flex: 1 }}>Mon Profil</Text>
-                <Text style={{ color: '#888', fontSize: 14 }}>→</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </TouchableOpacity>
-        )}
+                {unreadCount > 0 && (
+                  <View style={{ position: 'absolute', top: wp(-2), right: wp(-2), minWidth: wp(16), height: wp(16), borderRadius: wp(8), backgroundColor: '#FF3B5C', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(4), borderWidth: 1.5, borderColor: '#1A1D22' }}>
+                    <Text style={{ fontSize: fp(8), fontWeight: '800', color: '#FFF' }}>{unreadCount}</Text>
+                  </View>
+                )}
+              </Pressable>
+            }
+          />
+        </View>
 
         {notifications.length > 0 && (
           <View style={{ height: wp(28), backgroundColor: 'rgba(212,175,55,0.06)', borderBottomWidth: 1, borderBottomColor: 'rgba(212,175,55,0.1)', overflow: 'hidden', justifyContent: 'center' }}>
