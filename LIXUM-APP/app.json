@@ -82,17 +82,9 @@
         }
       ]
     ],
-    "extra": {
-      "eas": {
-        "projectId": "aa185157-efcb-4568-880f-393dac60e425"
-      }
-    },
     "owner": "moussa2966",
     "runtimeVersion": {
       "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/aa185157-efcb-4568-880f-393dac60e425"
     }
   }
 }
