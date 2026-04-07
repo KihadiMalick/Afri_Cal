@@ -84,7 +84,7 @@ export default function SpinTab({
     : spinTier === 'super' ? ['#FF8C42', '#E67E22']
     : spinTier === 'mega' ? ['#D4AF37', '#B8941F']
     : ['#3A3F46', '#252A30'];
-  const spinBtnBorder = spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : (spinCost === 0 ? '#5DFFB4' : '#4A4F55');
+  const spinBtnBorder = spinTier === 'mega' ? '#D4AF37' : spinTier === 'super' ? '#FF8C42' : (spinCost === 0 ? '#00D984' : '#4A4F55');
 
   const tierButtons = [
     { key: 'normal', label: 'Spin ⚡', sub: !freeSpinUsed ? 'Gratuit' : '50 Lix' },
@@ -465,8 +465,9 @@ export default function SpinTab({
 
         <Pressable delayPressIn={120} onPress={() => showLixAlert('Gold', 'Bientôt disponible.\n\n10 000 Lix/mois + 150 énergie/6h + fragments bonus', [{ text: 'Me notifier', color: '#D4AF37' }, { text: 'Fermer', style: 'cancel' }], '⭐')}
           style={({ pressed }) => ({ marginBottom: wp(8), transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42']}
-            style={{ borderRadius: wp(14), padding: wp(16), borderWidth: 1.5, borderColor: 'rgba(212,175,55,0.3)', flexDirection: 'row', alignItems: 'center', shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 3 }}>
+          <View style={{ borderRadius: 16, borderWidth: 1, borderColor: '#4A4F55', borderLeftWidth: 3, borderLeftColor: '#D4AF37', overflow: 'hidden' }}>
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+            style={{ borderRadius: 14, padding: wp(16), flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(212,175,55,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)' }}>
               <Text style={{ fontSize: fp(20) }}>⭐</Text>
             </View>
@@ -484,24 +485,27 @@ export default function SpinTab({
               <Text style={{ fontSize: fp(8), color: 'rgba(212,175,55,0.6)', textAlign: 'center' }}>/mois</Text>
             </View>
           </LinearGradient>
+          </View>
         </Pressable>
 
-        <Pressable delayPressIn={120} onPress={() => showLixAlert('Platinum', 'Bientôt disponible.\n\n18 000 Lix/mois + 350 énergie/6h + fragments Elite', [{ text: 'Me notifier', color: '#00CEC9' }, { text: 'Fermer', style: 'cancel' }], '💎')}
+        <Pressable delayPressIn={120} onPress={() => showLixAlert('Platinum', 'Bientôt disponible.\n\n18 000 Lix/mois + 350 énergie/6h + fragments Elite', [{ text: 'Me notifier', color: '#4DA6FF' }, { text: 'Fermer', style: 'cancel' }], '💎')}
           style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42']}
-            style={{ borderRadius: wp(14), padding: wp(16), borderWidth: 1.5, borderColor: 'rgba(0,206,201,0.3)', flexDirection: 'row', alignItems: 'center', shadowColor: '#00CEC9', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 3 }}>
-            <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(0,206,201,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(0,206,201,0.25)' }}>
+          <View style={{ borderRadius: 16, borderWidth: 1, borderColor: '#4A4F55', borderLeftWidth: 3, borderLeftColor: '#4DA6FF', overflow: 'hidden' }}>
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+            style={{ borderRadius: 14, padding: wp(16), flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(77,166,255,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(77,166,255,0.25)' }}>
               <Text style={{ fontSize: fp(20) }}>💎</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#00CEC9' }}>Platinum</Text>
+              <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#4DA6FF' }}>Platinum</Text>
               <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>18K Lix + 350 énergie/6h + fragments Elite</Text>
             </View>
-            <View style={{ backgroundColor: 'rgba(0,206,201,0.2)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}>
-              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#00CEC9' }}>$14.99</Text>
-              <Text style={{ fontSize: fp(8), color: 'rgba(0,206,201,0.6)', textAlign: 'center' }}>/mois</Text>
+            <View style={{ backgroundColor: 'rgba(77,166,255,0.2)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#4DA6FF' }}>$14.99</Text>
+              <Text style={{ fontSize: fp(8), color: 'rgba(77,166,255,0.6)', textAlign: 'center' }}>/mois</Text>
             </View>
           </LinearGradient>
+          </View>
         </Pressable>
       </View>
 
@@ -515,11 +519,15 @@ export default function SpinTab({
 
       <View style={{ paddingHorizontal: wp(16) }}>
         <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Acheter des Lix</Text>
-        {[{ n: 'Micro', p: '$0.99', l: 990, b: '', c: '#00D984' }, { n: 'Basic', p: '$4.99', l: 5240, b: '+5%', c: '#4DA6FF' }, { n: 'Standard', p: '$9.99', l: 10990, b: '+10%', c: '#9B6DFF', best: true }, { n: 'Mega', p: '$29.99', l: 35990, b: '+20%', c: '#D4AF37' }, { n: 'Ultra', p: '$99.99', l: 129990, b: '+30%', c: '#D4AF37', ultra: true }].map((pk, i) => (
-          <Pressable key={i} delayPressIn={120} onPress={() => showLixAlert('Achat ' + pk.n, pk.p + ' → ' + pk.l.toLocaleString('fr-FR') + ' Lix\n\nBientôt disponible.', [{ text: 'OK', style: 'cancel' }], '💎')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(14), borderRadius: wp(14), marginBottom: wp(8), backgroundColor: 'transparent', borderWidth: pk.ultra ? 2 : pk.best ? 1.5 : 1, borderColor: pk.ultra ? '#D4AF37' : pk.best ? pk.c + '50' : pk.c + '25', ...(pk.ultra ? { shadowColor: '#D4AF37', shadowOpacity: 0.3, shadowRadius: wp(8), elevation: 4 } : {}), transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-            <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: pk.c + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}><LixGem size={wp(22)} /></View>
-            <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), flexWrap: 'wrap' }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{pk.n}</Text>{pk.b ? <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37' }}>{pk.b}</Text></View> : null}</View><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{pk.l.toLocaleString('fr-FR')} Lix</Text>{pk.best ? <View style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(2), marginTop: wp(3), alignSelf: 'flex-start' }}><Text style={{ fontSize: fp(7), fontWeight: '800', color: '#00D984' }}>MEILLEUR RAPPORT</Text></View> : null}</View>
-            <View style={{ backgroundColor: pk.c + '20', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}><Text style={{ fontSize: fp(13), fontWeight: '700', color: pk.c }}>{pk.p}</Text></View>
+        {[{ n: 'Micro', p: '$0.99', l: 990, b: '', c: '#00D984' }, { n: 'Basic', p: '$4.99', l: 5240, b: '+5%', c: '#4DA6FF' }, { n: 'Standard', p: '$9.99', l: 10990, b: '+10%', c: '#D4AF37', best: true }, { n: 'Mega', p: '$29.99', l: 35990, b: '+20%', c: '#D4AF37' }, { n: 'Ultra', p: '$99.99', l: 129990, b: '+30%', c: '#D4AF37', ultra: true }].map((pk, i) => (
+          <Pressable key={i} delayPressIn={120} onPress={() => showLixAlert('Achat ' + pk.n, pk.p + ' → ' + pk.l.toLocaleString('fr-FR') + ' Lix\n\nBientôt disponible.', [{ text: 'OK', style: 'cancel' }], '💎')} style={({ pressed }) => ({ marginBottom: wp(8), transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <View style={{ borderRadius: 16, borderWidth: 1, borderColor: (pk.best || pk.ultra) ? '#D4AF37' : '#4A4F55', overflow: 'hidden' }}>
+            <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 14, padding: wp(14), flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(212,175,55,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12), borderWidth: 1, borderColor: '#4A4F55' }}><LixGem size={wp(22)} /></View>
+              <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), flexWrap: 'wrap' }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{pk.n}</Text>{pk.b ? <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(9), fontWeight: '700', color: '#D4AF37' }}>{pk.b}</Text></View> : null}</View><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{pk.l.toLocaleString('fr-FR')} Lix</Text>{pk.best ? <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(2), marginTop: wp(3), alignSelf: 'flex-start' }}><Text style={{ fontSize: fp(7), fontWeight: '800', color: '#D4AF37' }}>MEILLEUR RAPPORT</Text></View> : null}</View>
+              <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6) }}><Text style={{ fontSize: fp(13), fontWeight: '700', color: '#D4AF37' }}>{pk.p}</Text></View>
+            </LinearGradient>
+            </View>
           </Pressable>
         ))}
       </View>
@@ -563,13 +571,17 @@ export default function SpinTab({
               ],
               '⚡'
             );
-          }} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', padding: wp(12), borderRadius: wp(12), marginBottom: wp(6), backgroundColor: pk.best ? 'rgba(255,140,66,0.06)' : 'transparent', borderWidth: pk.best ? 1.5 : 1, borderColor: pk.best ? (pk.c || '#00D984') + '40' : 'rgba(255,255,255,0.08)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-            <Text style={{ fontSize: fp(14), marginRight: wp(10) }}>{pk.emoji || '⚡'}</Text>
-            <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
-  <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>+{pk.e} énergie</Text>
-  {pk.best && <View style={{ backgroundColor: 'rgba(255,140,66,0.15)', borderRadius: wp(4), paddingHorizontal: wp(5), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(7), fontWeight: '800', color: '#FF8C42' }}>POPULAIRE</Text></View>}
-</View><Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{pk.d}</Text></View>
-            <Text style={{ fontSize: fp(12), fontWeight: '700', color: pk.c || '#00D984' }}>{pk.l} Lix</Text>
+          }} style={({ pressed }) => ({ marginBottom: wp(6), transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <View style={{ borderRadius: 12, borderWidth: 1, borderColor: pk.best ? '#FF8C42' : '#4A4F55', overflow: 'hidden' }}>
+            <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 11, padding: wp(12), flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(14), marginRight: wp(10) }}>{pk.emoji || '⚡'}</Text>
+              <View style={{ flex: 1 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>+{pk.e} énergie</Text>
+                {pk.best && <View style={{ backgroundColor: 'rgba(255,140,66,0.15)', borderRadius: wp(4), paddingHorizontal: wp(5), paddingVertical: wp(1) }}><Text style={{ fontSize: fp(7), fontWeight: '800', color: '#FF8C42' }}>POPULAIRE</Text></View>}
+              </View><Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{pk.d}</Text></View>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#00D984' }}>{pk.l} Lix</Text>
+            </LinearGradient>
+            </View>
           </Pressable>
         ))}
       </View>

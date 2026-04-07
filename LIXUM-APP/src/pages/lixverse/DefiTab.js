@@ -69,29 +69,19 @@ export default function DefiTab({
           <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>{Math.min(wallStickers.length, 9)}/9</Text>
         </View>
         <View style={{
-          marginHorizontal: wp(8), borderRadius: wp(16), overflow: 'hidden',
-          borderWidth: 2, borderColor: '#8B7A2E',
+          marginHorizontal: wp(8), borderRadius: 16, overflow: 'hidden',
+          borderWidth: 1.5,
+          borderTopColor: '#D4AF37', borderLeftColor: '#B8972A',
+          borderRightColor: '#8B7A2E', borderBottomColor: '#6B5D1E',
+          backgroundColor: '#2A303B',
           shadowColor: '#D4AF37',
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.25,
-          shadowRadius: 14,
+          shadowOpacity: 0.2,
+          shadowRadius: 12,
           elevation: 8,
         }}>
-          <LinearGradient colors={['#3A3F46', '#2D3238', '#3A3F46', '#333840']}
-            style={{ minHeight: wp(280), padding: wp(12), position: 'relative' }}>
-            {[
-              { top: wp(6), left: wp(6), borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: wp(4) },
-              { top: wp(6), right: wp(6), borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: wp(4) },
-              { bottom: wp(6), left: wp(6), borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: wp(4) },
-              { bottom: wp(6), right: wp(6), borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: wp(4) },
-            ].map((cornerStyle, i) => (
-              <View key={i} style={{
-                position: 'absolute', zIndex: 10,
-                width: wp(20), height: wp(20),
-                borderColor: '#8B7A2E',
-                ...cornerStyle,
-              }} />
-            ))}
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+            style={{ minHeight: wp(280), padding: wp(12), position: 'relative', borderRadius: 14 }}>
             <View style={{ alignItems: 'center', marginBottom: wp(4), paddingTop: wp(0) }}>
               <Image
                 source={null}
@@ -272,16 +262,16 @@ export default function DefiTab({
           <Pressable onPress={() => onSetShowSearchGroup(true)} delayPressIn={120}
             style={({ pressed }) => ({
               flex: 1, flexDirection: 'row', alignItems: 'center', gap: wp(8),
-              backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12),
+              borderRadius: 12, borderWidth: 1, borderColor: '#4A4F55',
+              backgroundColor: '#252A30',
               paddingHorizontal: wp(12), paddingVertical: wp(10),
-              borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
               transform: [{ scale: pressed ? 0.97 : 1 }],
             })}>
             <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
-              <Circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
-              <Line x1="16.5" y1="16.5" x2="21" y2="21" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+              <Circle cx="11" cy="11" r="7" stroke="#8892A0" strokeWidth="1.5" />
+              <Line x1="16.5" y1="16.5" x2="21" y2="21" stroke="#8892A0" strokeWidth="1.5" strokeLinecap="round" />
             </Svg>
-            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.25)' }}>Rechercher une équipe...</Text>
+            <Text style={{ fontSize: fp(11), color: '#6B7280' }}>Rechercher une équipe...</Text>
           </Pressable>
 
           {pendingRequests.length > 0 && (
@@ -308,7 +298,7 @@ export default function DefiTab({
 
       {myGroups.length > 0 && (
         <View style={{ paddingHorizontal: wp(16), marginBottom: wp(8) }}>
-          <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Mes équipes</Text>
+          <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFF', marginBottom: wp(10), letterSpacing: 1.5, textTransform: 'uppercase' }}>Mes équipes</Text>
           {myGroups.map((gm, i) => {
             const g = gm.lixverse_groups; if (!g) return null;
             const score = challengeScores.find(s => s.challenge_id === g.challenge_id);
@@ -350,15 +340,22 @@ export default function DefiTab({
 
       <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
         <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginBottom: wp(14) }} />
-        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Défis du mois</Text>
+        <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFF', marginBottom: wp(10), letterSpacing: 1.5, textTransform: 'uppercase' }}>Défis du mois</Text>
         {loading ? <ActivityIndicator color="#D4AF37" style={{ padding: wp(20) }} /> : challenges.length === 0 ? (
-          <View style={{ alignItems: 'center', paddingVertical: wp(30) }}>
-            <Text style={{ fontSize: fp(28), marginBottom: wp(8) }}>🏆</Text>
-            <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.25)' }}>Aucun defi actif pour le moment</Text>
-            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.15)', marginTop: wp(4) }}>Reviens bientot pour de nouveaux defis !</Text>
+          <View style={{
+            borderRadius: 16, borderWidth: 1.5,
+            borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+            borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+            backgroundColor: '#2A303B', padding: 2,
+          }}>
+            <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 14, padding: wp(20), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(28), marginBottom: wp(8) }}>🏆</Text>
+              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#EAEEF3', marginBottom: wp(4) }}>Aucun défi actif</Text>
+              <Text style={{ fontSize: fp(10), color: '#6B7280', textAlign: 'center' }}>Les défis du mois seront disponibles prochainement</Text>
+            </LinearGradient>
           </View>
         ) : challenges.map(ch => {
-          var chColor = chColor;
+          var chColor = ch.color || '#D4AF37';
           var chIcon = ch.icon || '🏆';
           const dl = ch.registration_deadline ? new Date(ch.registration_deadline) : new Date(0);
           const hLeft = Math.max(0, Math.ceil((dl - new Date()) / 3600000));
@@ -369,8 +366,14 @@ export default function DefiTab({
           const daysPassed = Math.max(0, Math.min(Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000), ch.duration_days || 30));
           const progressPct = Math.max(0, Math.min(100, Math.round((daysPassed / (ch.duration_days || 30)) * 100)));
           return (
-            <View key={ch.id} style={{ borderRadius: 16, marginBottom: wp(10), borderWidth: 1, borderColor: '#4A4F55', overflow: 'hidden' }}>
-              <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ padding: wp(16), borderRadius: 16 }}>
+            <View key={ch.id} style={{
+              borderRadius: 16, marginBottom: wp(10), borderWidth: 1.5,
+              borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+              borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+              backgroundColor: '#2A303B', overflow: 'hidden',
+              borderLeftWidth: 3, borderLeftColor: chColor,
+            }}>
+              <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ padding: wp(16), borderRadius: 14 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
                   <Text style={{ fontSize: fp(24), marginRight: wp(10) }}>{chIcon}</Text>
                   <View style={{ flex: 1 }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{ch.title}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{ch.duration_days}j | {(ch.total_participants || 0) + ' participant' + ((ch.total_participants || 0) > 1 ? 's' : '')} | {(ch.total_groups || 0) + ' equipe' + ((ch.total_groups || 0) > 1 ? 's' : '')}</Text></View>
@@ -591,7 +594,7 @@ export default function DefiTab({
       </View>
 
       <View style={{ paddingHorizontal: wp(16) }}>
-        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Classements</Text>
+        <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFF', marginBottom: wp(10), letterSpacing: 1.5, textTransform: 'uppercase' }}>Classements</Text>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(10) }}>
           <View style={{ flexDirection: 'row', gap: wp(4) }}>
@@ -627,8 +630,13 @@ export default function DefiTab({
         </ScrollView>
 
         <View style={{
-          backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(14),
-          padding: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+          borderRadius: 16, borderWidth: 1.5,
+          borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+          borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+          backgroundColor: '#2A303B',
+        }}>
+        <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
+          borderRadius: 14, padding: wp(14),
         }}>
 
           {leaderboardTab === 'equipes' && (
@@ -923,6 +931,7 @@ export default function DefiTab({
               )}
             </View>
           )}
+        </LinearGradient>
         </View>
       </View>
     </ScrollView>
