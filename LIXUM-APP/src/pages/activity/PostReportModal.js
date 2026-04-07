@@ -39,7 +39,7 @@ export default function PostReportModal({
             <Text style={{ fontSize: fp(40), marginBottom: wp(8) }}>🎉</Text>
 
             <Text style={{
-              fontSize: fp(18), fontWeight: '800', color: '#00D984',
+              fontSize: fp(18), fontWeight: '800', color: '#EAEEF3',
               marginBottom: wp(4),
             }}>
               {t.bravo}
