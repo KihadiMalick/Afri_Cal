@@ -146,5 +146,113 @@ function getEyeTarget(p, t) {
   return { x: Math.sin(t * 3.5) * 50 + sr(idx * 2.1) * 4, y: ((idx - 270) / (NUM_PARTICLES - 270)) * 30 - 15 };
 }
 
-// --- TARGET FUNCTIONS PART 2 PLACEHOLDER (Phase 4) ---
+function getMemoryTarget(p, t) {
+  var ag = 3 + Math.sin(t * 1.5 + p.id * 0.3) * 2;
+  return { x: p.homeX + Math.sin(t * 0.8 + p.phX) * ag, y: p.homeY + Math.cos(t * 0.6 + p.phY) * ag };
+}
+
+function isMemoryFlash(pid, el) {
+  var slot = Math.floor(el * 5);
+  for (var f = 0; f < 5; f++) { if (Math.floor(sr(slot * 7.7 + f * 13.3) * NUM_PARTICLES) === pid) return true; }
+  return false;
+}
+
+function getSadTarget(p, t) {
+  var idx = p.id;
+  if (idx < 160) { var a = (idx / 160) * Math.PI * 2; var r = 38 + (sr(idx * 3.3) - 0.5) * 3; return { x: Math.cos(a) * r, y: Math.sin(a) * r * 0.85 + Math.sin(t * 1.2) * 0.5 }; }
+  if (idx < 185) { var a2 = ((idx - 160) / 25) * Math.PI * 2; var r2 = 4 + sr(idx * 4.4) * 2; return { x: -14 + Math.cos(a2) * r2, y: -12 + Math.sin(a2) * r2 }; }
+  if (idx < 210) { var a3 = ((idx - 185) / 25) * Math.PI * 2; var r3 = 4 + sr(idx * 5.5) * 2; return { x: 14 + Math.cos(a3) * r3, y: -12 + Math.sin(a3) * r3 }; }
+  if (idx < 310) { var s = ((idx - 210) / 99); var sx = (s - 0.5) * 40; var curve = -Math.sin(s * Math.PI) * 12; return { x: sx, y: 14 + curve + (sr(idx * 6.6) - 0.5) * 2.5 + Math.sin(t * 1.5) * 0.8 }; }
+  var a4 = sr(idx * 7.7) * Math.PI * 2; var r4 = 45 + sr(idx * 8.8) * 15;
+  return { x: Math.cos(a4) * r4, y: Math.sin(a4) * r4 * 0.5 + Math.sin(t * 0.3 + idx) * 3 };
+}
+
+function getHappyTarget(p, t) {
+  var idx = p.id;
+  if (idx < 160) { var a = (idx / 160) * Math.PI * 2; var r = 38 + (sr(idx * 3.3) - 0.5) * 3; return { x: Math.cos(a) * r, y: Math.sin(a) * r * 0.85 + Math.sin(t * 2) * 0.8 }; }
+  if (idx < 185) { var a2 = ((idx - 160) / 25) * Math.PI * 2; var r2 = 4 + sr(idx * 4.4) * 2; return { x: -14 + Math.cos(a2) * r2, y: -12 + Math.sin(a2) * r2 }; }
+  if (idx < 210) { var a3 = ((idx - 185) / 25) * Math.PI * 2; var r3 = 4 + sr(idx * 5.5) * 2; return { x: 14 + Math.cos(a3) * r3, y: -12 + Math.sin(a3) * r3 }; }
+  if (idx < 310) { var s = ((idx - 210) / 99); var sx = (s - 0.5) * 40; var curve = Math.sin(s * Math.PI) * 12; return { x: sx, y: 14 + curve + (sr(idx * 6.6) - 0.5) * 2.5 + Math.sin(t * 2) * 0.8 }; }
+  var risePhase = (t * 0.4 + sr(idx * 7.7)) % 1;
+  return { x: (sr(idx * 2.2) - 0.5) * 80 + Math.sin(t * 2 + idx * 0.2) * 2, y: 35 - risePhase * 65 };
+}
+
+function getWowTarget(p, t) {
+  var idx = p.id; var phase = t % 4.5;
+  var tiltAngle = -0.75 + Math.sin((phase / 4.5) * Math.PI) * 0.55;
+  if (idx < 50) { var ci = idx / 49; var side = (sr(idx * 2.2) - 0.5) * (1.5 + ci * 5); return { x: -60 + ci * 55 * Math.cos(tiltAngle) + side * Math.sin(tiltAngle), y: 40 + ci * 55 * Math.sin(tiltAngle) - side * Math.cos(tiltAngle) }; }
+  var confIdx = idx - 50; var confGroup = confIdx % 3; var shotStart = confGroup * 1.4; var shotPhase = phase - shotStart;
+  var tipX = -60 + 55 * Math.cos(tiltAngle); var tipY = 40 + 55 * Math.sin(tiltAngle);
+  if (shotPhase < 0 || shotPhase > 1.2) { return { x: tipX + sr(idx * 2.2) * 4, y: tipY + sr(idx * 3.3) * 4 }; }
+  var eT = shotPhase / 1.2; var spreadAngle = tiltAngle + (sr(idx * 8.8) - 0.5) * 1.6; var speed = 55 + sr(idx * 9.9) * 60;
+  return { x: tipX + Math.cos(spreadAngle) * speed * eT, y: tipY + Math.sin(spreadAngle) * speed * eT };
+}
+
+function getHeartTarget(p, t) {
+  var hT = (p.id / NUM_PARTICLES) * Math.PI * 2; var s = 2.8;
+  var hx = s * 16 * Math.pow(Math.sin(hT), 3); var hy = -s * (13 * Math.cos(hT) - 5 * Math.cos(2 * hT) - 2 * Math.cos(3 * hT) - Math.cos(4 * hT));
+  var beat = 1 + Math.sin(t * 3) * 0.06;
+  return { x: hx * beat + sr(p.id * 5.5) * 4 - 2, y: hy * beat + sr(p.id * 6.6) * 4 - 7 };
+}
+
+function gpsPathPoint(progress) {
+  var startX = -HEX_W * 0.32; var startY = -HEX_H * 0.35;
+  var endX = HEX_W * 0.32; var endY = HEX_H * 0.35;
+  var gx = startX + (endX - startX) * progress;
+  var sCurve = Math.sin(progress * Math.PI * 2) * (HEX_W * 0.18);
+  var gy = startY + (endY - startY) * progress + sCurve;
+  return { x: gx, y: gy };
+}
+
+function getGpsTarget(p, t) {
+  var idx = p.id;
+  var cycle = 5.0;
+  var phase = (t % cycle) / cycle;
+  if (idx < 30) {
+    var pinCenter = gpsPathPoint(0);
+    var a = (idx / 30) * Math.PI * 2 + t * 0.5;
+    var r = 4 + sr(idx * 3.3) * 6;
+    var pulse = 1 + Math.sin(t * 2) * 0.15;
+    return { x: pinCenter.x + Math.cos(a) * r * pulse, y: pinCenter.y + Math.sin(a) * r * 0.7 * pulse };
+  }
+  if (idx >= NUM_PARTICLES - 50) {
+    var arrIdx = idx - (NUM_PARTICLES - 50);
+    var pinEnd = gpsPathPoint(1);
+    var a2 = (arrIdx / 50) * Math.PI * 2 + t * 0.8;
+    var r2 = 5 + sr(idx * 4.4) * 7;
+    var arrived = phase > 0.75;
+    var sparkle = arrived ? (1 + Math.sin(t * 8 + arrIdx * 1.5) * 0.3) : 1;
+    return { x: pinEnd.x + Math.cos(a2) * r2 * sparkle, y: pinEnd.y + Math.sin(a2) * r2 * 0.7 * sparkle };
+  }
+  var trailIdx = idx - 30;
+  var totalTrail = NUM_PARTICLES - 80;
+  var posOnPath = trailIdx / totalTrail;
+  var drawProgress = phase * 1.3;
+  if (posOnPath > drawProgress) {
+    var waitPt = gpsPathPoint(0);
+    return { x: waitPt.x + sr(idx * 2.2) * 8 - 4, y: waitPt.y + sr(idx * 3.3) * 6 - 3 };
+  }
+  var pt = gpsPathPoint(posOnPath);
+  var jitter = Math.sin(t * 3 + idx * 0.4) * 1.5;
+  var recentness = Math.max(0, 1 - (drawProgress - posOnPath) * 5);
+  var trailSpread = 2 + recentness * 3;
+  return { x: pt.x + Math.sin(idx * 1.7) * trailSpread + jitter, y: pt.y + Math.cos(idx * 2.3) * trailSpread * 0.5 };
+}
+
+function getTarget(p, t, state) {
+  switch (state) {
+    case 'speaking': return getSpeakTarget(p, t);
+    case 'thinking': return getBrainTarget(p, t);
+    case 'listening': return getListenTarget(p, t);
+    case 'scanning': return getEyeTarget(p, t);
+    case 'memory': return getMemoryTarget(p, t);
+    case 'sad': return getSadTarget(p, t);
+    case 'happy': return getHappyTarget(p, t);
+    case 'wow': return getWowTarget(p, t);
+    case 'heart': return getHeartTarget(p, t);
+    case 'gps': return getGpsTarget(p, t);
+    default: return { x: p.homeX, y: p.homeY };
+  }
+}
+
 // --- COMPONENTS PLACEHOLDER (Phase 5-7) ---
