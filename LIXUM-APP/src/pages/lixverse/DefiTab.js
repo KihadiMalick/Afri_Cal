@@ -342,13 +342,8 @@ export default function DefiTab({
         <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginBottom: wp(14) }} />
         <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFF', marginBottom: wp(10), letterSpacing: 1.5, textTransform: 'uppercase' }}>Défis du mois</Text>
         {loading ? <ActivityIndicator color="#D4AF37" style={{ padding: wp(20) }} /> : challenges.length === 0 ? (
-          <View style={{
-            borderRadius: 16, borderWidth: 1.5,
-            borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
-            borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
-            backgroundColor: '#2A303B', padding: 2,
-          }}>
-            <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 14, padding: wp(20), alignItems: 'center' }}>
+          <View style={{ borderRadius: 16, borderWidth: 1, borderColor: '#4A4F55', overflow: 'hidden' }}>
+            <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15, padding: wp(20), alignItems: 'center' }}>
               <Text style={{ fontSize: fp(28), marginBottom: wp(8) }}>🏆</Text>
               <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#EAEEF3', marginBottom: wp(4) }}>Aucun défi actif</Text>
               <Text style={{ fontSize: fp(10), color: '#6B7280', textAlign: 'center' }}>Les défis du mois seront disponibles prochainement</Text>
@@ -367,13 +362,10 @@ export default function DefiTab({
           const progressPct = Math.max(0, Math.min(100, Math.round((daysPassed / (ch.duration_days || 30)) * 100)));
           return (
             <View key={ch.id} style={{
-              borderRadius: 16, marginBottom: wp(10), borderWidth: 1.5,
-              borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
-              borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
-              backgroundColor: '#2A303B', overflow: 'hidden',
-              borderLeftWidth: 3, borderLeftColor: chColor,
+              borderRadius: 16, marginBottom: wp(10), borderWidth: 1, borderColor: '#4A4F55',
+              borderLeftWidth: 3, borderLeftColor: chColor, overflow: 'hidden',
             }}>
-              <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ padding: wp(16), borderRadius: 14 }}>
+              <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ padding: wp(16), borderRadius: 15 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
                   <Text style={{ fontSize: fp(24), marginRight: wp(10) }}>{chIcon}</Text>
                   <View style={{ flex: 1 }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{ch.title}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{ch.duration_days}j | {(ch.total_participants || 0) + ' participant' + ((ch.total_participants || 0) > 1 ? 's' : '')} | {(ch.total_groups || 0) + ' equipe' + ((ch.total_groups || 0) > 1 ? 's' : '')}</Text></View>
@@ -555,13 +547,13 @@ export default function DefiTab({
                     delayPressIn={120}
                     style={({ pressed }) => ({
                       flex: 1, paddingVertical: wp(11), borderRadius: wp(12), alignItems: 'center',
-                      backgroundColor: isOpen ? (chColor) + '20' : 'rgba(255,255,255,0.03)',
-                      borderWidth: 1.5, borderColor: isOpen ? (chColor) + '50' : 'rgba(255,255,255,0.06)',
+                      backgroundColor: 'transparent',
+                      borderWidth: 1.5, borderColor: isOpen ? '#00D984' : 'rgba(255,255,255,0.06)',
                       transform: [{ scale: pressed ? 0.95 : 1 }],
                       opacity: eligibilityChecking ? 0.5 : (isOpen ? 1 : 0.5),
                     })}
                   >
-                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: isOpen ? (chColor) : 'rgba(255,255,255,0.2)' }}>Créer une équipe</Text>
+                    <Text style={{ fontSize: fp(11), fontWeight: '700', color: isOpen ? '#00D984' : 'rgba(255,255,255,0.2)' }}>Créer une équipe</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => {
@@ -575,8 +567,8 @@ export default function DefiTab({
                     delayPressIn={120}
                     style={({ pressed }) => ({
                       flex: 1, paddingVertical: wp(11), borderRadius: wp(12), alignItems: 'center',
-                      backgroundColor: isOpen ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
-                      borderWidth: 1, borderColor: isOpen ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
+                      backgroundColor: 'transparent',
+                      borderWidth: 1, borderColor: isOpen ? '#4A4F55' : 'rgba(255,255,255,0.05)',
                       transform: [{ scale: pressed ? 0.95 : 1 }],
                       opacity: eligibilityChecking ? 0.5 : (isOpen ? 1 : 0.5),
                     })}
@@ -614,12 +606,8 @@ export default function DefiTab({
                 }}
                 style={{
                   paddingHorizontal: wp(14), paddingVertical: wp(8), borderRadius: wp(10),
-                  backgroundColor: leaderboardTab === tab.key ? 'rgba(212,175,55,0.15)' : 'transparent',
-                  borderWidth: 1.5, borderColor: leaderboardTab === tab.key ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.08)',
-                  shadowColor: leaderboardTab === tab.key ? '#D4AF37' : 'transparent',
-                  shadowOpacity: leaderboardTab === tab.key ? 0.15 : 0,
-                  shadowRadius: wp(4),
-                  elevation: leaderboardTab === tab.key ? 2 : 0,
+                  backgroundColor: leaderboardTab === tab.key ? 'rgba(212,175,55,0.1)' : 'transparent',
+                  borderWidth: 1, borderColor: leaderboardTab === tab.key ? '#D4AF37' : '#4A4F55',
                 }}>
                 <Text style={{ fontSize: fp(11), fontWeight: leaderboardTab === tab.key ? '700' : '500', color: leaderboardTab === tab.key ? '#D4AF37' : 'rgba(255,255,255,0.35)' }}>
                   {tab.label}
@@ -629,14 +617,9 @@ export default function DefiTab({
           </View>
         </ScrollView>
 
-        <View style={{
-          borderRadius: 16, borderWidth: 1.5,
-          borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
-          borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
-          backgroundColor: '#2A303B',
-        }}>
+        <View style={{ borderRadius: 16, borderWidth: 1, borderColor: '#4A4F55', overflow: 'hidden' }}>
         <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
-          borderRadius: 14, padding: wp(14),
+          borderRadius: 15, padding: wp(14),
         }}>
 
           {leaderboardTab === 'equipes' && (

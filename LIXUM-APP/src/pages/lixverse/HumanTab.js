@@ -51,14 +51,15 @@ const SuiviHumainTeaser = ({ showLixAlert }) => {
   const [notifyPressed, setNotifyPressed] = useState(false);
   return (
     <View style={{ paddingHorizontal: wp(16), alignItems: 'center' }}>
-      <View style={{ backgroundColor: 'rgba(212,175,55,0.12)', borderRadius: wp(20), paddingHorizontal: wp(16), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)', marginBottom: wp(16) }}>
+      <View style={{ backgroundColor: 'transparent', borderRadius: 8, paddingHorizontal: wp(16), paddingVertical: wp(6), borderWidth: 1, borderColor: '#D4AF37', marginBottom: wp(16) }}>
         <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#D4AF37', letterSpacing: 2 }}>BIENTÔT DISPONIBLE</Text>
       </View>
       <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#EAEEF3', textAlign: 'center', marginBottom: wp(8) }}>Suivi Humain</Text>
       <Text style={{ fontSize: fp(12), color: '#8892A0', textAlign: 'center', lineHeight: fp(18), marginBottom: wp(20), paddingHorizontal: wp(10) }}>
         Un vrai nutritionniste te suit chaque semaine.{'\n'}Tes données santé lui sont envoyées automatiquement.{'\n'}Communication 100% confidentielle via LixTag.
       </Text>
-      <View style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(16), padding: wp(16), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', marginBottom: wp(20) }}>
+      <View style={{ width: '100%', borderRadius: 16, borderWidth: 1, borderColor: '#4A4F55', overflow: 'hidden', marginBottom: wp(20) }}>
+      <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15, padding: wp(16) }}>
         {[
           { step: '1', icon: '🔍', title: 'Trouve ton nutritionniste', desc: 'Recherche parmi des professionnels certifiés. Vois leur expérience dans l\'app.', color: '#4DA6FF' },
           { step: '2', icon: '🔒', title: 'Connexion anonyme', desc: 'Toi et le nutritionniste ne voyez que vos LixTags. LIXUM protège ton identité.', color: '#00D984' },
@@ -77,15 +78,16 @@ const SuiviHumainTeaser = ({ showLixAlert }) => {
             </View>
           </View>
         ))}
+      </LinearGradient>
       </View>
-      <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.06)', borderRadius: wp(12), padding: wp(12), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)', marginBottom: wp(16) }}>
+      <View style={{ width: '100%', borderRadius: 12, borderWidth: 1, borderColor: '#4A4F55', borderLeftWidth: 3, borderLeftColor: '#00D984', padding: wp(12), flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.04)', marginBottom: wp(16) }}>
         <Text style={{ fontSize: fp(20), marginRight: wp(10) }}>🛡️</Text>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>100% confidentiel</Text>
           <Text style={{ fontSize: fp(9), color: '#8892A0', marginTop: wp(2) }}>Tu communiques par Lixsigns uniquement. Le nutritionniste ne voit jamais ton nom.</Text>
         </View>
       </View>
-      <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,140,66,0.06)', borderRadius: wp(12), padding: wp(12), borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)', marginBottom: wp(20) }}>
+      <View style={{ width: '100%', borderRadius: 12, borderWidth: 1, borderColor: '#4A4F55', borderLeftWidth: 3, borderLeftColor: '#FF8C42', padding: wp(12), flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,140,66,0.04)', marginBottom: wp(20) }}>
         <Text style={{ fontSize: fp(20), marginRight: wp(10) }}>⚠️</Text>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#FF8C42' }}>Coaching nutritionnel</Text>
@@ -99,13 +101,14 @@ const SuiviHumainTeaser = ({ showLixAlert }) => {
         }}
         disabled={notifyPressed}
         style={({ pressed }) => ({
-          width: '100%', paddingVertical: wp(14), borderRadius: wp(14),
-          backgroundColor: notifyPressed ? 'rgba(212,175,55,0.08)' : pressed ? '#B8952E' : '#D4AF37',
-          borderWidth: notifyPressed ? 1 : 0, borderColor: 'rgba(212,175,55,0.3)',
+          width: '100%', paddingVertical: wp(14), borderRadius: 12,
+          backgroundColor: 'transparent',
+          borderWidth: 1.5, borderColor: '#D4AF37',
           alignItems: 'center', transform: [{ scale: pressed && !notifyPressed ? 0.97 : 1 }],
+          opacity: notifyPressed ? 0.6 : 1,
         })}
       >
-        <Text style={{ fontSize: fp(14), fontWeight: '700', color: notifyPressed ? '#D4AF37' : '#1A1D22' }}>
+        <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#D4AF37' }}>
           {notifyPressed ? '🔔 Tu seras notifié' : '🔔 Me notifier au lancement'}
         </Text>
       </Pressable>
@@ -152,20 +155,19 @@ export default function HumanTab({
   const HumanTabSelector = ({ activeTab }) => (
     <View style={{
       flexDirection: 'row', marginHorizontal: wp(16), marginBottom: wp(12),
-      backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12), padding: wp(3),
-      borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+      gap: wp(8),
     }}>
       <Pressable onPress={() => setHumanTab('binome')} style={{
-        flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
-        backgroundColor: activeTab === 'binome' ? 'rgba(0,217,132,0.12)' : 'transparent',
-        borderWidth: activeTab === 'binome' ? 1 : 0, borderColor: 'rgba(0,217,132,0.25)', alignItems: 'center',
+        flex: 1, paddingVertical: wp(10), borderRadius: 12, alignItems: 'center',
+        borderWidth: 1, borderColor: activeTab === 'binome' ? '#D4AF37' : '#4A4F55',
+        backgroundColor: activeTab === 'binome' ? 'rgba(212,175,55,0.08)' : 'transparent',
       }}>
-        <Text style={{ fontSize: fp(12), fontWeight: '700', color: activeTab === 'binome' ? '#00D984' : '#6B7B8D' }}>🤝 Binôme</Text>
+        <Text style={{ fontSize: fp(12), fontWeight: '700', color: activeTab === 'binome' ? '#D4AF37' : '#6B7B8D' }}>🤝 Binôme</Text>
       </Pressable>
       <Pressable onPress={() => setHumanTab('suivi')} style={{
-        flex: 1, paddingVertical: wp(10), borderRadius: wp(10),
-        backgroundColor: activeTab === 'suivi' ? 'rgba(212,175,55,0.12)' : 'transparent',
-        borderWidth: activeTab === 'suivi' ? 1 : 0, borderColor: 'rgba(212,175,55,0.25)', alignItems: 'center',
+        flex: 1, paddingVertical: wp(10), borderRadius: 12, alignItems: 'center',
+        borderWidth: 1, borderColor: activeTab === 'suivi' ? '#D4AF37' : '#4A4F55',
+        backgroundColor: activeTab === 'suivi' ? 'rgba(212,175,55,0.08)' : 'transparent',
       }}>
         <Text style={{ fontSize: fp(12), fontWeight: '700', color: activeTab === 'suivi' ? '#D4AF37' : '#6B7B8D' }}>👨‍⚕️ Suivi Humain</Text>
       </Pressable>
@@ -546,10 +548,12 @@ export default function HumanTab({
                 </Text>
               </View>
             ) : (
-              <Pressable delayPressIn={120} onPress={onStartBinomeSearch} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }], width: '100%' })}>
-                <LinearGradient colors={['#D4AF37', '#B8941F']} style={{ paddingVertical: wp(16), borderRadius: wp(16), alignItems: 'center' }}>
-                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Appeler mon Binôme</Text>
-                </LinearGradient>
+              <Pressable delayPressIn={120} onPress={onStartBinomeSearch} style={({ pressed }) => ({
+                transform: [{ scale: pressed ? 0.95 : 1 }], width: '100%',
+                paddingVertical: wp(16), borderRadius: 12, alignItems: 'center',
+                backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#D4AF37',
+              })}>
+                <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37' }}>Appeler mon Binôme</Text>
               </Pressable>
             )}
             <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)', marginTop: wp(12), textAlign: 'center' }}>
