@@ -29,7 +29,8 @@ import { MediBookContent } from './MediBookPages';
 import { SecretPocketContent } from './SecretPocket';
 import { AllModals } from './Modals';
 import AlertSheet from './AlertSheet';
-import { AlixenFace, FunnelBridgeUnified, getWireMode, FRAME_W, FRAME_H, MODULE_H, BRIDGE_TOP } from './alixenzone';
+import { AlixenFaceSkia, getWireMode, FRAME_W, FRAME_H, MODULE_H, BRIDGE_TOP } from './AlixenFaceSkia';
+import { FunnelBridgeUnified } from './alixenzone';
 import PageHeader from '../../components/shared/PageHeader';
 
 
@@ -2151,7 +2152,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               <View style={{ position: 'absolute', top: BRIDGE_TOP, left: 0, width: FRAME_W }}>
                 <FunnelBridgeUnified wireMode={wm} />
               </View>
-              <AlixenFace state={alixenState} keystrokeCount={keystrokeCount} />
+              <AlixenFaceSkia state={alixenState} keystrokeCount={keystrokeCount} />
             </View>
             <View style={{ alignSelf: 'stretch', flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 6, marginTop: Math.round(FRAME_W * -0.065), gap: 8 }}>
               <MetalCard
