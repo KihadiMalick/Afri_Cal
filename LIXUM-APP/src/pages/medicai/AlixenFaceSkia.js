@@ -19,9 +19,9 @@ var HEX_H = FRAME_H - INSET_Y_TOP - INSET_Y_BOTTOM;
 var HEX_CX = HEX_W / 2;
 var HEX_CY = HEX_H / 2;
 var HEX_INSET = Math.round(HEX_W * 0.085);
-var NUM_PARTICLES = 420;
-var CONN_DIST = 36;
-var MAX_CONN = 300;
+var NUM_PARTICLES = 250;
+var CONN_DIST = 30;
+var MAX_CONN = 150;
 var P_SCALE = Math.max(1, FRAME_W / 312);
 var A_SCALE = Math.max(1, HEX_W / 240);
 var BRIDGE_TOP = Math.round(FRAME_H * 0.79);
@@ -255,13 +255,14 @@ function getTarget(p, t, state) {
   }
 }
 
-var AlixenParticlesSkia = function(props) {
+var AlixenParticlesSkia = React.memo(function AlixenParticlesSkia(props) {
   var reqState = props.state || 'idle';
   var keystrokeCount = props.keystrokeCount || 0;
   var particles = useMemo(function() { return genParticles(); }, []);
   var morphRef = useRef(0); var activeRef = useRef('idle'); var pendingRef = useRef(null); var phaseRef = useRef('idle'); var startRef = useRef(Date.now());
   var lastKeystrokeRef = useRef(0);
   var runningRef = useRef(true);
+  var connFrameRef = useRef(0);
 
   // Pre-allocate once — mutate in place every frame, zero GC pressure
   var frameRef = useRef(null);
@@ -347,25 +348,29 @@ var AlixenParticlesSkia = function(props) {
         var slot = fd.p[i];
         slot.x = x; slot.y = y; slot.size = size; slot.opacity = opacity; slot.color = color; slot.layer = p.layer; slot.flash = flash;
       }
-      var cc = 0;
-      for (var a = 0; a < particles.length; a += 3) {
-        if (cc >= MAX_CONN) break;
-        for (var b = a + 1; b < Math.min(a + 40, particles.length); b++) {
+      // Recalculate connections every 2 frames to halve CPU cost
+      connFrameRef.current++;
+      if (connFrameRef.current % 2 === 0) {
+        var cc = 0;
+        for (var a = 0; a < particles.length; a += 3) {
           if (cc >= MAX_CONN) break;
-          var pa = fd.p[a]; var pb = fd.p[b]; var dx = pa.x - pb.x; var dy = pa.y - pb.y; var dd = Math.sqrt(dx * dx + dy * dy);
-          if (dd < CONN_DIST && dd > 2) { var lo = (1 - dd / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a * 0.3) * 0.5); if (lo > 0.01) { var cs = fd.c[cc]; cs.x1 = pa.x; cs.y1 = pa.y; cs.x2 = pb.x; cs.y2 = pb.y; cs.op = lo; cc++; } }
+          for (var b = a + 1; b < Math.min(a + 40, particles.length); b++) {
+            if (cc >= MAX_CONN) break;
+            var pa = fd.p[a]; var pb = fd.p[b]; var dx = pa.x - pb.x; var dy = pa.y - pb.y; var dd = Math.sqrt(dx * dx + dy * dy);
+            if (dd < CONN_DIST && dd > 2) { var lo = (1 - dd / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a * 0.3) * 0.5); if (lo > 0.01) { var cs = fd.c[cc]; cs.x1 = pa.x; cs.y1 = pa.y; cs.x2 = pb.x; cs.y2 = pb.y; cs.op = lo; cc++; } }
+          }
         }
-      }
-      for (var a2 = particles.length - 1; a2 > 0; a2 -= 3) {
-        if (cc >= MAX_CONN) break;
-        for (var b2 = a2 - 1; b2 > Math.max(a2 - 40, 0); b2--) {
+        for (var a2 = particles.length - 1; a2 > 0; a2 -= 3) {
           if (cc >= MAX_CONN) break;
-          var pa2 = fd.p[a2]; var pb2 = fd.p[b2]; var dx2 = pa2.x - pb2.x; var dy2 = pa2.y - pb2.y; var dd2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-          if (dd2 < CONN_DIST && dd2 > 2) { var lo2 = (1 - dd2 / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a2 * 0.3) * 0.5); if (lo2 > 0.01) { var cs2 = fd.c[cc]; cs2.x1 = pa2.x; cs2.y1 = pa2.y; cs2.x2 = pb2.x; cs2.y2 = pb2.y; cs2.op = lo2; cc++; } }
+          for (var b2 = a2 - 1; b2 > Math.max(a2 - 40, 0); b2--) {
+            if (cc >= MAX_CONN) break;
+            var pa2 = fd.p[a2]; var pb2 = fd.p[b2]; var dx2 = pa2.x - pb2.x; var dy2 = pa2.y - pb2.y; var dd2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+            if (dd2 < CONN_DIST && dd2 > 2) { var lo2 = (1 - dd2 / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a2 * 0.3) * 0.5); if (lo2 > 0.01) { var cs2 = fd.c[cc]; cs2.x1 = pa2.x; cs2.y1 = pa2.y; cs2.x2 = pb2.x; cs2.y2 = pb2.y; cs2.op = lo2; cc++; } }
+          }
         }
+        if (state === 'thinking' && m > 0.5) { for (var mi = 0; mi < 9; mi++) { if (cc < MAX_CONN) { var csT = fd.c[cc]; csT.x1 = fd.p[mi].x; csT.y1 = fd.p[mi].y; csT.x2 = fd.p[mi + 1].x; csT.y2 = fd.p[mi + 1].y; csT.op = 0.12; cc++; } } }
+        fd.connCount = cc;
       }
-      if (state === 'thinking' && m > 0.5) { for (var mi = 0; mi < 9; mi++) { if (cc < MAX_CONN) { var csT = fd.c[cc]; csT.x1 = fd.p[mi].x; csT.y1 = fd.p[mi].y; csT.x2 = fd.p[mi + 1].x; csT.y2 = fd.p[mi + 1].y; csT.op = 0.12; cc++; } } }
-      fd.connCount = cc;
       fd.ready = true;
       // Single number increment — minimal React re-render, zero object creation
       setFrame(function(f) { return f + 1; });
@@ -450,7 +455,7 @@ var AlixenParticlesSkia = function(props) {
       })}
     </Canvas>
   );
-};
+});
 
 function getWireMode(s) {
   if (s === 'listening' || s === 'scanning') return 'user';
