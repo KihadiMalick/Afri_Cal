@@ -259,10 +259,21 @@ var AlixenParticlesSkia = function(props) {
   var reqState = props.state || 'idle';
   var keystrokeCount = props.keystrokeCount || 0;
   var particles = useMemo(function() { return genParticles(); }, []);
-  var _pos = useState(null); var pos = _pos[0]; var setPos = _pos[1];
   var morphRef = useRef(0); var activeRef = useRef('idle'); var pendingRef = useRef(null); var phaseRef = useRef('idle'); var startRef = useRef(Date.now());
   var lastKeystrokeRef = useRef(0);
   var runningRef = useRef(true);
+
+  // Pre-allocate once — mutate in place every frame, zero GC pressure
+  var frameRef = useRef(null);
+  if (!frameRef.current) {
+    var initP = [];
+    for (var pi = 0; pi < NUM_PARTICLES; pi++) { initP.push({ x: 0, y: 0, size: 1, opacity: 0, color: '#4DA6FF', layer: 'dust', flash: false }); }
+    var initC = [];
+    for (var ci = 0; ci < MAX_CONN; ci++) { initC.push({ x1: 0, y1: 0, x2: 0, y2: 0, op: 0 }); }
+    frameRef.current = { p: initP, c: initC, connCount: 0, morph: 0, ready: false };
+  }
+  // Minimal state: single counter to trigger re-render
+  var _frame = useState(0); var setFrame = _frame[1];
 
   useEffect(function() {
     if (keystrokeCount > 0 && keystrokeCount !== lastKeystrokeRef.current) {
@@ -296,7 +307,8 @@ var AlixenParticlesSkia = function(props) {
       else if (ph === 'active') { m = 1; } else { m = 0; }
       morphRef.current = m;
       var state = activeRef.current; var isMem = state === 'memory' && m > 0.5;
-      var np = [];
+      var fd = frameRef.current;
+      fd.morph = m;
       for (var i = 0; i < particles.length; i++) {
         var p = particles[i];
         var dist = Math.sqrt(p.homeX * p.homeX + p.homeY * p.homeY);
@@ -331,36 +343,48 @@ var AlixenParticlesSkia = function(props) {
           opacity = Math.min(1, opacity + shimmer * shimmerStr * 0.45);
           if (shimmer > 0.82) size *= 1.4;
         }
-        np.push({ x: x, y: y, size: size, opacity: opacity, color: color, layer: p.layer, flash: flash });
+        // Mutate pre-allocated object in place — zero allocation
+        var slot = fd.p[i];
+        slot.x = x; slot.y = y; slot.size = size; slot.opacity = opacity; slot.color = color; slot.layer = p.layer; slot.flash = flash;
       }
-      var conns = [];
+      var cc = 0;
       for (var a = 0; a < particles.length; a += 3) {
-        if (conns.length >= MAX_CONN) break;
+        if (cc >= MAX_CONN) break;
         for (var b = a + 1; b < Math.min(a + 40, particles.length); b++) {
-          if (conns.length >= MAX_CONN) break;
-          var pa = np[a]; var pb = np[b]; var dx = pa.x - pb.x; var dy = pa.y - pb.y; var dd = Math.sqrt(dx * dx + dy * dy);
-          if (dd < CONN_DIST && dd > 2) { var lo = (1 - dd / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a * 0.3) * 0.5); if (lo > 0.01) conns.push({ x1: pa.x, y1: pa.y, x2: pb.x, y2: pb.y, op: lo }); }
+          if (cc >= MAX_CONN) break;
+          var pa = fd.p[a]; var pb = fd.p[b]; var dx = pa.x - pb.x; var dy = pa.y - pb.y; var dd = Math.sqrt(dx * dx + dy * dy);
+          if (dd < CONN_DIST && dd > 2) { var lo = (1 - dd / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a * 0.3) * 0.5); if (lo > 0.01) { var cs = fd.c[cc]; cs.x1 = pa.x; cs.y1 = pa.y; cs.x2 = pb.x; cs.y2 = pb.y; cs.op = lo; cc++; } }
         }
       }
       for (var a2 = particles.length - 1; a2 > 0; a2 -= 3) {
-        if (conns.length >= MAX_CONN) break;
+        if (cc >= MAX_CONN) break;
         for (var b2 = a2 - 1; b2 > Math.max(a2 - 40, 0); b2--) {
-          if (conns.length >= MAX_CONN) break;
-          var pa2 = np[a2]; var pb2 = np[b2]; var dx2 = pa2.x - pb2.x; var dy2 = pa2.y - pb2.y; var dd2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-          if (dd2 < CONN_DIST && dd2 > 2) { var lo2 = (1 - dd2 / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a2 * 0.3) * 0.5); if (lo2 > 0.01) conns.push({ x1: pa2.x, y1: pa2.y, x2: pb2.x, y2: pb2.y, op: lo2 }); }
+          if (cc >= MAX_CONN) break;
+          var pa2 = fd.p[a2]; var pb2 = fd.p[b2]; var dx2 = pa2.x - pb2.x; var dy2 = pa2.y - pb2.y; var dd2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+          if (dd2 < CONN_DIST && dd2 > 2) { var lo2 = (1 - dd2 / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a2 * 0.3) * 0.5); if (lo2 > 0.01) { var cs2 = fd.c[cc]; cs2.x1 = pa2.x; cs2.y1 = pa2.y; cs2.x2 = pb2.x; cs2.y2 = pb2.y; cs2.op = lo2; cc++; } }
         }
       }
-      if (state === 'thinking' && m > 0.5) { for (var mi = 0; mi < 9; mi++) conns.push({ x1: np[mi].x, y1: np[mi].y, x2: np[mi + 1].x, y2: np[mi + 1].y, op: 0.12 }); }
-      setPos({ p: np, c: conns, morph: m });
+      if (state === 'thinking' && m > 0.5) { for (var mi = 0; mi < 9; mi++) { if (cc < MAX_CONN) { var csT = fd.c[cc]; csT.x1 = fd.p[mi].x; csT.y1 = fd.p[mi].y; csT.x2 = fd.p[mi + 1].x; csT.y2 = fd.p[mi + 1].y; csT.op = 0.12; cc++; } } }
+      fd.connCount = cc;
+      fd.ready = true;
+      // Single number increment — minimal React re-render, zero object creation
+      setFrame(function(f) { return f + 1; });
       requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
     return function() { runningRef.current = false; };
   }, []);
 
-  if (!pos) return null;
+  var fd = frameRef.current;
+  if (!fd || !fd.ready) return null;
 
-  var nebulaOp = 1 - pos.morph;
+  var nebulaOp = 1 - fd.morph;
+  // Build connection elements only up to connCount (skip unused pool slots)
+  var connElements = [];
+  for (var ci = 0; ci < fd.connCount; ci++) {
+    var c = fd.c[ci];
+    connElements.push(React.createElement(Line, { key: 'c' + ci, p1: vec(c.x1, c.y1), p2: vec(c.x2, c.y2), color: '#4DA6FF', strokeWidth: 0.7 * P_SCALE, opacity: c.op, style: 'stroke' }));
+  }
 
   return (
     <Canvas style={{ width: HEX_W, height: HEX_H }}>
@@ -383,18 +407,16 @@ var AlixenParticlesSkia = function(props) {
         </Oval>
       </Group>
 
-      {pos.c.map(function(c, i) {
-        return React.createElement(Line, { key: 'c' + i, p1: vec(c.x1, c.y1), p2: vec(c.x2, c.y2), color: '#4DA6FF', strokeWidth: 0.7 * P_SCALE, opacity: c.op, style: 'stroke' });
-      })}
+      {connElements}
 
-      {pos.p.map(function(p, i) {
+      {fd.p.map(function(p, i) {
         if (p.layer === 'dust' || p.layer === 'ambient') {
           return React.createElement(Circle, { key: 'p' + i, cx: p.x, cy: p.y, r: p.size, color: p.color, opacity: p.opacity });
         }
         return null;
       })}
 
-      {pos.p.map(function(p, i) {
+      {fd.p.map(function(p, i) {
         if (p.layer === 'mid') {
           if (p.flash) {
             return React.createElement(Group, { key: 'm' + i },
@@ -410,7 +432,7 @@ var AlixenParticlesSkia = function(props) {
         return null;
       })}
 
-      {pos.p.map(function(p, i) {
+      {fd.p.map(function(p, i) {
         if (p.layer === 'core') {
           if (p.flash) {
             return React.createElement(Group, { key: 'k' + i },
