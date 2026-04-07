@@ -192,7 +192,7 @@ export const DirectionCard = ({ placeName, placeAddress, description, destLat, d
   );
 };
 
-export const LoadingSteps = ({ steps }) => {
+export const LoadingSteps = React.memo(({ steps }) => {
   const [stepIndex, setStepIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const bounce1 = useRef(new Animated.Value(0)).current;
@@ -265,7 +265,7 @@ export const LoadingSteps = ({ steps }) => {
       </Animated.Text>
     </View>
   );
-};
+});
 
 export const FileQueuePreview = ({ files, onRemove }) => {
   if (!files || files.length === 0) return null;
@@ -339,7 +339,7 @@ export const FileQueuePreview = ({ files, onRemove }) => {
 };
 
 // === ALIXEN SUPER CONTEXT v1 — ResponseCard with DirectionCard support ===
-export const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuickReply, onPreciserPress, loadingSteps, userLocation }) => {
+export const ResponseCard = React.memo(({ currentMessage, isLoading, isUserMessage, onQuickReply, onPreciserPress, loadingSteps, userLocation }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [displayedText, setDisplayedText] = useState('');
 
@@ -494,10 +494,10 @@ export const ResponseCard = ({ currentMessage, isLoading, isUserMessage, onQuick
       })()}
     </Animated.View>
   );
-};
+});
 
 export let _ballGradIdx = 0;
-export const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status, onPress, hasAttachment, contentLength, isLatest, previewText, timestamp }) => {
+export const NeumorphBall = React.memo(({ index, isBot, isSearchHit, isSearchActive, status, onPress, hasAttachment, contentLength, isLatest, previewText, timestamp }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const loadPulse = useRef(new Animated.Value(0.3)).current;
   const latestPulse = useRef(new Animated.Value(1)).current;
@@ -654,7 +654,7 @@ export const NeumorphBall = ({ index, isBot, isSearchHit, isSearchActive, status
       )}
     </Animated.View>
   );
-};
+});
 
 export const S_BALL_SIZE = 32;
 export const BALLS_PER_ROW = 8;
@@ -672,7 +672,7 @@ export const getBallPosition = (index) => {
   };
 };
 
-export const SynapticNetwork = ({ messages, searchHits, onBallPress, onNewSession }) => {
+export const SynapticNetwork = React.memo(({ messages, searchHits, onBallPress, onNewSession }) => {
   const totalCount = messages.length + 1; // +1 for "new session" button
   const totalRows = Math.ceil(totalCount / BALLS_PER_ROW);
   const containerHeight = totalRows * (S_BALL_SIZE + 12) + 10;
@@ -775,7 +775,7 @@ export const SynapticNetwork = ({ messages, searchHits, onBallPress, onNewSessio
       )}
     </View>
   );
-};
+});
 
 export const HighlightedText = ({ text, searchTerm, currentIndex, style, onLayoutOccurrence }) => {
   if (!text || !searchTerm || !searchTerm.trim()) {
