@@ -360,8 +360,74 @@ var AlixenParticlesSkia = function(props) {
 
   if (!pos) return null;
 
-  // --- CANVAS RENDERING PLACEHOLDER (Phase 6) ---
-  return null;
+  var nebulaOp = 1 - pos.morph;
+
+  return (
+    <Canvas style={{ width: HEX_W, height: HEX_H }}>
+      <Group opacity={nebulaOp}>
+        <Oval x={HEX_CX - HEX_W * 0.78} y={HEX_CY - HEX_H * 0.55} width={HEX_W * 1.56} height={HEX_H * 1.1}>
+          <RadialGradient
+            c={vec(HEX_CX, HEX_CY)}
+            r={HEX_W * 0.78}
+            colors={['rgba(77,166,255,0.20)', 'rgba(42,127,255,0.12)', 'rgba(77,166,255,0.08)', 'rgba(42,127,255,0.05)', 'rgba(77,166,255,0.02)']}
+            positions={[0, 0.25, 0.5, 0.75, 1]}
+          />
+        </Oval>
+        <Oval x={HEX_CX - HEX_W * 0.25} y={HEX_CY + HEX_H * 0.12 - HEX_H * 0.20} width={HEX_W * 0.50} height={HEX_H * 0.40}>
+          <RadialGradient
+            c={vec(HEX_CX, HEX_CY + HEX_H * 0.12)}
+            r={HEX_W * 0.25}
+            colors={['rgba(0,217,132,0.12)', 'rgba(0,168,102,0.06)', 'rgba(0,217,132,0)']}
+            positions={[0, 0.5, 1]}
+          />
+        </Oval>
+      </Group>
+
+      {pos.c.map(function(c, i) {
+        return React.createElement(Line, { key: 'c' + i, p1: vec(c.x1, c.y1), p2: vec(c.x2, c.y2), color: '#4DA6FF', strokeWidth: 0.7 * P_SCALE, opacity: c.op, style: 'stroke' });
+      })}
+
+      {pos.p.map(function(p, i) {
+        if (p.layer === 'dust' || p.layer === 'ambient') {
+          return React.createElement(Circle, { key: 'p' + i, cx: p.x, cy: p.y, r: p.size, color: p.color, opacity: p.opacity });
+        }
+        return null;
+      })}
+
+      {pos.p.map(function(p, i) {
+        if (p.layer === 'mid') {
+          if (p.flash) {
+            return React.createElement(Group, { key: 'm' + i },
+              React.createElement(Circle, { cx: p.x, cy: p.y, r: p.size * 2, color: p.color, opacity: 0.4 }),
+              React.createElement(Circle, { cx: p.x, cy: p.y, r: p.size, color: '#FFFFFF', opacity: 0.85 })
+            );
+          }
+          return React.createElement(Group, { key: 'm' + i },
+            React.createElement(Circle, { cx: p.x, cy: p.y, r: p.size * 2.2, color: p.color, opacity: p.opacity * 0.05 }),
+            React.createElement(Circle, { cx: p.x, cy: p.y, r: p.size, color: p.color, opacity: p.opacity })
+          );
+        }
+        return null;
+      })}
+
+      {pos.p.map(function(p, i) {
+        if (p.layer === 'core') {
+          if (p.flash) {
+            return React.createElement(Group, { key: 'k' + i },
+              React.createElement(Circle, { cx: p.x, cy: p.y, r: p.size * 3, color: p.color, opacity: 0.25 }),
+              React.createElement(Circle, { cx: p.x, cy: p.y, r: p.size * 1.5, color: p.color, opacity: 0.8 }),
+              React.createElement(Circle, { cx: p.x, cy: p.y, r: p.size, color: '#FFFFFF', opacity: 0.95 })
+            );
+          }
+          return React.createElement(Group, { key: 'k' + i },
+            React.createElement(Circle, { cx: p.x, cy: p.y, r: p.size * 3, color: p.color, opacity: p.opacity * 0.06 }),
+            React.createElement(Circle, { cx: p.x, cy: p.y, r: p.size, color: p.color, opacity: p.opacity })
+          );
+        }
+        return null;
+      })}
+    </Canvas>
+  );
 };
 
 // --- ALIXENFACESKIA WRAPPER PLACEHOLDER (Phase 7) ---
