@@ -430,4 +430,82 @@ var AlixenParticlesSkia = function(props) {
   );
 };
 
-// --- ALIXENFACESKIA WRAPPER PLACEHOLDER (Phase 7) ---
+function getWireMode(s) {
+  if (s === 'listening' || s === 'scanning') return 'user';
+  if (s === 'speaking' || s === 'thinking' || s === 'memory') return 'alixen';
+  return 'idle';
+}
+
+var AlixenFaceSkia = function(props) {
+  var wireMode = getWireMode(props.state || 'idle');
+  var _imp = useState([]); var imps = _imp[0]; var setImps = _imp[1];
+
+  useEffect(function() {
+    var st = Date.now();
+    var iv = setInterval(function() {
+      var el = (Date.now() - st) / 1000; var ni = [];
+      for (var w = 0; w < 3; w++) {
+        var wire = WIRES[w];
+        var active = (wireMode === 'user' && wire.role === 'user') || (wireMode === 'alixen' && wire.role === 'alixen');
+        if (!active) continue;
+        var sp = wire.role === 'user' ? 2.0 : 2.4;
+        for (var k = 0; k < 3; k++) {
+          var phase = (el / sp + k * 0.33) % 1;
+          var p = wire.dir === 'down' ? phase : 1 - phase;
+          var fI = phase < 0.15 ? phase / 0.15 : 1;
+          var fO = phase > 0.85 ? (1 - phase) / 0.15 : 1;
+          ni.push({ w: w, pos: p, op: fI * fO * 0.75, color: wire.color });
+        }
+      }
+      setImps(ni);
+    }, 50);
+    return function() { clearInterval(iv); };
+  }, [wireMode]);
+
+  var tubeTop = FRAME_H * 0.68;
+  var tubeHeight = FRAME_H * 0.16;
+  var tubePositions = [FRAME_W * 0.415, FRAME_W * 0.503, FRAME_W * 0.59];
+
+  var IMG_SCALE = 1.05;
+  var naturalH = Math.round(FRAME_W * 0.68);
+  var imgW, imgH, imgLeft, imgTop;
+  if (FRAME_H < naturalH) {
+    imgH = Math.round(FRAME_H * IMG_SCALE);
+    imgW = Math.round(imgH / 0.667);
+    imgLeft = Math.round((FRAME_W - imgW) / 2);
+    imgTop = Math.round(-(imgH - FRAME_H) * 0.3);
+  } else {
+    imgW = Math.round(FRAME_W * IMG_SCALE);
+    imgH = Math.round(imgW * 0.667);
+    imgLeft = Math.round(-(imgW - FRAME_W) / 2);
+    imgTop = Math.round(-(imgH - FRAME_H) * 0.35);
+  }
+
+  return (
+    <View style={{ width: FRAME_W, height: FRAME_H, position: 'relative', overflow: 'visible' }}>
+      <Image
+        source={null}
+        style={{ width: imgW, height: imgH, position: 'absolute', top: imgTop, left: imgLeft }}
+        resizeMode="contain"
+        pointerEvents="none"
+      />
+      <View style={{ position: 'absolute', top: INSET_Y_TOP, left: INSET_X, width: HEX_W, height: HEX_H }}>
+        <AlixenParticlesSkia state={props.state} keystrokeCount={props.keystrokeCount} />
+      </View>
+      <Canvas style={{ position: 'absolute', top: 0, left: 0, width: FRAME_W, height: FRAME_H }} pointerEvents="none">
+        {imps.map(function(imp, i) {
+          var tx = tubePositions[imp.w];
+          var cy = tubeTop + imp.pos * tubeHeight;
+          return React.createElement(Group, { key: 'i' + i },
+            React.createElement(Circle, { cx: tx, cy: cy, r: 5, color: imp.color, opacity: imp.op * 0.08 }),
+            React.createElement(Circle, { cx: tx, cy: cy, r: 3, color: imp.color, opacity: imp.op * 0.35 }),
+            React.createElement(Circle, { cx: tx, cy: cy, r: 1.5, color: imp.color, opacity: imp.op * 0.6 }),
+            React.createElement(Circle, { cx: tx, cy: cy, r: 0.6, color: '#FFFFFF', opacity: imp.op * 0.8 })
+          );
+        })}
+      </Canvas>
+    </View>
+  );
+};
+
+export { AlixenFaceSkia, getWireMode, FRAME_W, FRAME_H, MODULE_H, BRIDGE_TOP };
