@@ -75,5 +75,76 @@ function genParticles() {
   return p;
 }
 
-// --- TARGET FUNCTIONS PLACEHOLDER (Phase 3-4) ---
+var membraneImpacts = [];
+
+function getSpeakTarget(p, t) {
+  var idx = p.id;
+  var numRings = 6;
+  var ring = idx % numRings;
+  var posInRing = Math.floor(idx / numRings);
+  var totalInRing = Math.ceil(NUM_PARTICLES / numRings);
+  var angle = (posInRing / totalInRing) * Math.PI * 2 + ring * 0.5;
+  var baseR = 8 + ring * (HEX_W * 0.065);
+  var pulse = Math.sin(t * 3.5 - ring * 1.2) * (5 + ring * 2);
+  var r = baseR + pulse;
+  var wobble = Math.sin(t * 2 + idx * 0.15) * 1.5;
+  return { x: Math.cos(angle + t * 0.15) * (r + wobble), y: Math.sin(angle + t * 0.15) * (r + wobble) * 0.55 };
+}
+
+function getBrainTarget(p, t) {
+  var idx = p.id; var hemiGap = 45;
+  if (idx < 10) { return { x: Math.sin(t * (1.5 + sr(idx * 3.3)) + idx * 0.628) * hemiGap, y: Math.sin(t * 2.3 + idx * 1.7) * 8 }; }
+  var isLeft = (idx % 2 === 0); var centerX = isLeft ? -hemiGap : hemiGap;
+  var px = centerX + Math.cos(sr(idx * 4.7) * Math.PI * 2 + t * 0.15) * (28 + sr(idx * 5.1) * 12) * 0.85;
+  var py = Math.sin(sr(idx * 4.7) * Math.PI * 2 + t * 0.12) * (32 + sr(idx * 6.3) * 10) * 0.85;
+  var pulseLR = isLeft ? (Math.sin(t * 1.8) * 0.5 + 0.5) : (Math.sin(t * 1.8 + Math.PI) * 0.5 + 0.5);
+  var scale = 0.85 + pulseLR * 0.15;
+  return { x: px * scale, y: py * scale };
+}
+
+function getListenTarget(p, t) {
+  var idx = p.id;
+  if (idx < 100) {
+    var ringLayers = 3;
+    var layer = idx % ringLayers;
+    var posInLayer = Math.floor(idx / ringLayers);
+    var totalInLayer = Math.ceil(100 / ringLayers);
+    var angle = (posInLayer / totalInLayer) * Math.PI * 2 + t * 0.3 + layer * 0.3;
+    var baseR = HEX_W * 0.28 + layer * 5;
+    var r = baseR + Math.sin(t * 2 + posInLayer * 0.2) * 3;
+    var splashY = 0;
+    var now = Date.now() / 1000;
+    for (var k = 0; k < membraneImpacts.length; k++) {
+      var imp = membraneImpacts[k];
+      var age = now - imp.time;
+      if (age > 0.9) continue;
+      var impAngle = Math.atan2(imp.y, imp.x);
+      var angleDist = Math.abs(((angle - impAngle + Math.PI) % (Math.PI * 2)) - Math.PI);
+      if (angleDist < 1.2) {
+        var spatial = Math.max(0, 1 - angleDist / 1.2);
+        var upSplash = Math.max(0, 1 - age * 2.5) * Math.exp(-age * 3);
+        splashY -= upSplash * spatial * 16;
+        splashY += Math.sin(age * Math.PI * 6) * Math.exp(-age * 5) * spatial * 3;
+      }
+    }
+    return { x: Math.cos(angle) * r, y: -22 + Math.sin(angle) * r * 0.12 + splashY };
+  }
+  var fIdx = idx - 100;
+  var progress = fIdx / (NUM_PARTICLES - 100);
+  var funnelY = -18 + progress * 58;
+  var widthAtY = HEX_W * 0.35 * (1 - progress * 0.92);
+  var rF = Math.max(2, widthAtY - Math.sin(t * 2 + progress * 3) * 3);
+  return { x: Math.cos(sr(idx * 4.4) * Math.PI * 2 + t * 0.3) * rF, y: funnelY };
+}
+
+function getEyeTarget(p, t) {
+  var idx = p.id;
+  if (idx < 40) { var a = (idx / 40) * Math.PI * 2; var r = 3 + sr(idx * 3.3) * (6 - 2 - Math.sin(t * 2.5) * 2); return { x: Math.cos(a) * r, y: Math.sin(a) * r * 0.9 }; }
+  if (idx < 140) { var a2 = ((idx - 40) / 100) * Math.PI * 2 + t * 0.12; var r2 = 18 + sr(idx * 4.7) * 5; return { x: Math.cos(a2) * r2, y: Math.sin(a2) * r2 * 0.75 }; }
+  if (idx < 240) { var eIdx = idx - 140; var t2 = eIdx / 99; var ang = (t2 * 2 - 1) * Math.PI * 0.85; var rx = 55; var ry = 18; var ex = Math.cos(ang) * rx; var isTop = eIdx < 50; var ey = isTop ? -Math.sqrt(Math.max(0, 1 - (ex * ex) / (rx * rx))) * ry : Math.sqrt(Math.max(0, 1 - (ex * ex) / (rx * rx))) * ry * 0.7; return { x: ex, y: ey + (isTop ? -Math.sin(t * 1.2) * 2 : Math.sin(t * 1.2) * 2) }; }
+  if (idx < 270) { var cIdx = idx - 240; var isRight = cIdx >= 15; var ci = cIdx % 15; var cornerX = isRight ? 52 : -52; var cAngle = isRight ? (-0.3 + ci * 0.04) : (Math.PI + 0.3 - ci * 0.04); return { x: cornerX + Math.cos(cAngle) * (8 + ci * 0.8), y: Math.sin(cAngle) * (8 + ci * 0.8) }; }
+  return { x: Math.sin(t * 3.5) * 50 + sr(idx * 2.1) * 4, y: ((idx - 270) / (NUM_PARTICLES - 270)) * 30 - 15 };
+}
+
+// --- TARGET FUNCTIONS PART 2 PLACEHOLDER (Phase 4) ---
 // --- COMPONENTS PLACEHOLDER (Phase 5-7) ---
