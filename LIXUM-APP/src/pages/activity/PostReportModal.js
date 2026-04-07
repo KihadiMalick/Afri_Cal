@@ -392,10 +392,11 @@ export default function PostReportModal({
               onPress={onClose}
               style={{
                 paddingVertical: wp(12), paddingHorizontal: wp(40),
-                borderRadius: wp(12), backgroundColor: '#00D984',
+                borderRadius: wp(12), backgroundColor: 'transparent',
+                borderWidth: 1.5, borderColor: '#00D984',
               }}
             >
-              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#1A1D22' }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#00D984' }}>
                 {t.continueBtn} {String.fromCodePoint(0x1F4AA)}
               </Text>
             </TouchableOpacity>
