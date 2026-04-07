@@ -113,15 +113,24 @@ export default function CharactersTab({
             </View>
           </LinearGradient>
         ) : (
-          <View style={{ padding: wp(16), alignItems: 'center', marginBottom: wp(12) }}>
-            <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.35)' }}>Aucun compagnon actif</Text>
+          <View style={{ borderRadius: 16, borderWidth: 1, borderColor: '#4A4F55', overflow: 'hidden', marginBottom: wp(12) }}>
+            <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15, padding: wp(20), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(36), marginBottom: wp(8) }}>🎭</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.4)', marginBottom: wp(12) }}>Aucun compagnon actif</Text>
+              <Pressable delayPressIn={120} style={({ pressed }) => ({ borderWidth: 1.5, borderColor: '#00D984', borderRadius: wp(10), paddingHorizontal: wp(20), paddingVertical: wp(8), backgroundColor: 'transparent', transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>Choisir un compagnon</Text>
+              </Pressable>
+            </LinearGradient>
           </View>
         )}
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(12) }}>
-          <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Ma collection</Text>
-          <View style={{ backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(10), paddingHorizontal: wp(12), paddingVertical: wp(6), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)' }}>
-            <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#D4AF37' }}>🃏 {userCollection.filter(c => c.owned !== false).length}/{userCollection.length || 16}</Text>
+          <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFF', letterSpacing: 1.5, textTransform: 'uppercase' }}>Ma collection</Text>
+          <View style={{ borderRadius: 12, borderWidth: 1, borderColor: '#D4AF37', overflow: 'hidden' }}>
+            <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 11, paddingHorizontal: wp(12), paddingVertical: wp(6), flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+              <Text style={{ fontSize: fp(11) }}>🧩</Text>
+              <Text style={{ fontSize: fp(11), fontWeight: '800', color: '#FFF' }}>{userCollection.filter(c => c.owned !== false).length}/{userCollection.length || 16}</Text>
+            </LinearGradient>
           </View>
         </View>
 
@@ -142,14 +151,13 @@ export default function CharactersTab({
                   onLoadCharPowers(ch.slug || ch.id);
                 }}
                 style={({ pressed }) => ({
-                  width: cardW, borderRadius: wp(14), overflow: 'hidden',
-                  opacity: 1,
+                  width: cardW, borderRadius: 12, overflow: 'hidden',
                   borderWidth: isActive ? 2 : 1,
-                  borderColor: isActive ? '#00D984' : own ? '#4A4F55' : 'rgba(255,255,255,0.08)',
+                  borderColor: isActive ? '#00D984' : '#4A4F55',
                   ...(isActive ? { shadowColor: '#00D984', shadowOpacity: 0.25, shadowRadius: 6, elevation: 4 } : {}),
                   transform: [{ scale: pressed ? 0.93 : 1 }],
                 })}>
-                <LinearGradient colors={['#3A3F46','#252A30','#333A42','#1A1D22']} style={{ alignItems: 'center', paddingVertical: wp(8), opacity: own ? 1 : 0.55 }}>
+                <LinearGradient colors={['#2A2F36', '#1E2530']} style={{ alignItems: 'center', paddingVertical: wp(8), paddingBottom: wp(4), opacity: own ? 1 : 0.55 }}>
                   <View style={{ width: wp(50), height: wp(50), borderRadius: wp(25), backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center', marginBottom: wp(4) }}>
                     {(() => {
                       const charImg = getCharImage(ch.slug || ch.id);
@@ -188,6 +196,7 @@ export default function CharactersTab({
                       </View>
                     </View>
                   )}
+                  <View style={{ width: '100%', height: 2, marginTop: wp(4), backgroundColor: ch.tier === 'ultimate' ? '#00D984' : ch.tier === 'mythique' ? '#D4AF37' : ch.tier === 'elite' ? '#FF8C42' : ch.tier === 'rare' ? '#4DA6FF' : '#4A4F55', borderRadius: 1 }} />
                 </LinearGradient>
               </Pressable>
             );
