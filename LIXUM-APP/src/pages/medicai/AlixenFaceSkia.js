@@ -255,4 +255,113 @@ function getTarget(p, t, state) {
   }
 }
 
-// --- COMPONENTS PLACEHOLDER (Phase 5-7) ---
+var AlixenParticlesSkia = function(props) {
+  var reqState = props.state || 'idle';
+  var keystrokeCount = props.keystrokeCount || 0;
+  var particles = useMemo(function() { return genParticles(); }, []);
+  var _pos = useState(null); var pos = _pos[0]; var setPos = _pos[1];
+  var morphRef = useRef(0); var activeRef = useRef('idle'); var pendingRef = useRef(null); var phaseRef = useRef('idle'); var startRef = useRef(Date.now());
+  var lastKeystrokeRef = useRef(0);
+  var runningRef = useRef(true);
+
+  useEffect(function() {
+    if (keystrokeCount > 0 && keystrokeCount !== lastKeystrokeRef.current) {
+      lastKeystrokeRef.current = keystrokeCount;
+      var now = Date.now() / 1000;
+      var impX = Math.sin(keystrokeCount * 7.13) * 0.75;
+      var impY = Math.cos(keystrokeCount * 5.47) * 0.75;
+      membraneImpacts.push({ x: impX, y: impY, time: now });
+      membraneImpacts = membraneImpacts.filter(function(imp) { return now - imp.time < 1.0; });
+    }
+  }, [keystrokeCount]);
+
+  useEffect(function() {
+    var cur = activeRef.current;
+    if (reqState === cur) return;
+    if (reqState === 'idle') { phaseRef.current = 'out'; pendingRef.current = null; }
+    else if (cur === 'idle') { activeRef.current = reqState; phaseRef.current = 'in'; }
+    else { phaseRef.current = 'out'; pendingRef.current = reqState; }
+  }, [reqState]);
+
+  useEffect(function() {
+    runningRef.current = true;
+    startRef.current = Date.now();
+
+    var tick = function() {
+      if (!runningRef.current) return;
+      var el = (Date.now() - startRef.current) / 1000;
+      var ph = phaseRef.current; var m = morphRef.current;
+      if (ph === 'in') { m += 0.025; if (m >= 1) { m = 1; phaseRef.current = 'active'; } }
+      else if (ph === 'out') { m -= 0.03; if (m <= 0.02) { m = 0; var pend = pendingRef.current; if (pend) { activeRef.current = pend; pendingRef.current = null; phaseRef.current = 'in'; } else { activeRef.current = 'idle'; phaseRef.current = 'idle'; } } }
+      else if (ph === 'active') { m = 1; } else { m = 0; }
+      morphRef.current = m;
+      var state = activeRef.current; var isMem = state === 'memory' && m > 0.5;
+      var np = [];
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
+        var dist = Math.sqrt(p.homeX * p.homeX + p.homeY * p.homeY);
+        var dX = Math.sin(el * p.fX1 + p.phX) * p.drift + Math.sin(el * p.fX2 + p.phX * 1.7) * p.drift * 0.4;
+        var dY = Math.cos(el * p.fY1 + p.phY) * p.drift + Math.cos(el * p.fY2 + p.phY * 1.3) * p.drift * 0.4;
+        var idleX = HEX_CX + (p.homeX + dX); var idleY = HEX_CY + (p.homeY + dY);
+        var tgt = getTarget(p, el, state);
+        var needScale = (state === 'thinking' || state === 'scanning' || state === 'sad' || state === 'happy' || state === 'wow' || state === 'heart');
+        var asc = needScale ? A_SCALE : 1;
+        var tgtX = HEX_CX + tgt.x * asc; var tgtY = HEX_CY + tgt.y * asc;
+        var delay = (dist / (Math.min(HEX_W, HEX_H) * 0.45)) * 0.3;
+        var adj = Math.max(0, Math.min(1, (m - delay) / Math.max(0.01, 1 - delay)));
+        var eased = adj < 0.5 ? 4 * adj * adj * adj : 1 - Math.pow(-2 * adj + 2, 3) / 2;
+        var x = Math.max(4, Math.min(HEX_W - 4, idleX + (tgtX - idleX) * eased));
+        var y = Math.max(4, Math.min(HEX_H - 4, idleY + (tgtY - idleY) * eased));
+        var breathe = Math.sin(el * 0.35 + p.phX) * 0.5 + 0.5;
+        var opacity = p.baseOp;
+        if (state !== 'idle' && m > 0.4) { if (p.layer === 'core') opacity = Math.min(0.95, opacity * 1.8); if (p.layer === 'mid') opacity = Math.min(0.70, opacity * 1.5); }
+        opacity = opacity * (0.85 + breathe * 0.15);
+        var flash = false;
+        if (isMem && isMemoryFlash(p.id, el)) { opacity = 1.0; flash = true; }
+        var color = p.color;
+        if (state === 'thinking' && m > 0.5 && p.id < 10) { color = '#D4AF37'; opacity = 0.9; }
+        if (state === 'thinking' && m > 0.5 && p.id >= 10) { var pulseTh = (p.id % 2 === 0) ? (Math.sin(el * 1.8) * 0.5 + 0.5) : (Math.sin(el * 1.8 + Math.PI) * 0.5 + 0.5); opacity = opacity * (0.6 + pulseTh * 0.4); }
+        var size = p.size;
+        if (flash) size = p.size * 2.5;
+        if (state === 'speaking' && m > 0.4) size *= (1 + Math.sin(el * 3 - (p.id % 6) * 0.9) * 0.2);
+        var edgeN = dist / (Math.min(HEX_W, HEX_H) * 0.5);
+        if (edgeN > 0.55) {
+          var shimmer = Math.sin(el * 5 + p.phX * 3) * 0.5 + 0.5;
+          var shimmerStr = (edgeN - 0.55) * 2.2;
+          opacity = Math.min(1, opacity + shimmer * shimmerStr * 0.45);
+          if (shimmer > 0.82) size *= 1.4;
+        }
+        np.push({ x: x, y: y, size: size, opacity: opacity, color: color, layer: p.layer, flash: flash });
+      }
+      var conns = [];
+      for (var a = 0; a < particles.length; a += 3) {
+        if (conns.length >= MAX_CONN) break;
+        for (var b = a + 1; b < Math.min(a + 40, particles.length); b++) {
+          if (conns.length >= MAX_CONN) break;
+          var pa = np[a]; var pb = np[b]; var dx = pa.x - pb.x; var dy = pa.y - pb.y; var dd = Math.sqrt(dx * dx + dy * dy);
+          if (dd < CONN_DIST && dd > 2) { var lo = (1 - dd / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a * 0.3) * 0.5); if (lo > 0.01) conns.push({ x1: pa.x, y1: pa.y, x2: pb.x, y2: pb.y, op: lo }); }
+        }
+      }
+      for (var a2 = particles.length - 1; a2 > 0; a2 -= 3) {
+        if (conns.length >= MAX_CONN) break;
+        for (var b2 = a2 - 1; b2 > Math.max(a2 - 40, 0); b2--) {
+          if (conns.length >= MAX_CONN) break;
+          var pa2 = np[a2]; var pb2 = np[b2]; var dx2 = pa2.x - pb2.x; var dy2 = pa2.y - pb2.y; var dd2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+          if (dd2 < CONN_DIST && dd2 > 2) { var lo2 = (1 - dd2 / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a2 * 0.3) * 0.5); if (lo2 > 0.01) conns.push({ x1: pa2.x, y1: pa2.y, x2: pb2.x, y2: pb2.y, op: lo2 }); }
+        }
+      }
+      if (state === 'thinking' && m > 0.5) { for (var mi = 0; mi < 9; mi++) conns.push({ x1: np[mi].x, y1: np[mi].y, x2: np[mi + 1].x, y2: np[mi + 1].y, op: 0.12 }); }
+      setPos({ p: np, c: conns, morph: m });
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    return function() { runningRef.current = false; };
+  }, []);
+
+  if (!pos) return null;
+
+  // --- CANVAS RENDERING PLACEHOLDER (Phase 6) ---
+  return null;
+};
+
+// --- ALIXENFACESKIA WRAPPER PLACEHOLDER (Phase 7) ---
