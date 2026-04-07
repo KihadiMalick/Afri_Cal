@@ -262,16 +262,16 @@ export default function DefiTab({
           <Pressable onPress={() => onSetShowSearchGroup(true)} delayPressIn={120}
             style={({ pressed }) => ({
               flex: 1, flexDirection: 'row', alignItems: 'center', gap: wp(8),
-              backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12),
+              borderRadius: 12, borderWidth: 1, borderColor: '#4A4F55',
+              backgroundColor: '#252A30',
               paddingHorizontal: wp(12), paddingVertical: wp(10),
-              borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
               transform: [{ scale: pressed ? 0.97 : 1 }],
             })}>
             <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
-              <Circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
-              <Line x1="16.5" y1="16.5" x2="21" y2="21" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+              <Circle cx="11" cy="11" r="7" stroke="#8892A0" strokeWidth="1.5" />
+              <Line x1="16.5" y1="16.5" x2="21" y2="21" stroke="#8892A0" strokeWidth="1.5" strokeLinecap="round" />
             </Svg>
-            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.25)' }}>Rechercher une équipe...</Text>
+            <Text style={{ fontSize: fp(11), color: '#6B7280' }}>Rechercher une équipe...</Text>
           </Pressable>
 
           {pendingRequests.length > 0 && (
@@ -298,7 +298,7 @@ export default function DefiTab({
 
       {myGroups.length > 0 && (
         <View style={{ paddingHorizontal: wp(16), marginBottom: wp(8) }}>
-          <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Mes équipes</Text>
+          <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFF', marginBottom: wp(10), letterSpacing: 1.5, textTransform: 'uppercase' }}>Mes équipes</Text>
           {myGroups.map((gm, i) => {
             const g = gm.lixverse_groups; if (!g) return null;
             const score = challengeScores.find(s => s.challenge_id === g.challenge_id);
