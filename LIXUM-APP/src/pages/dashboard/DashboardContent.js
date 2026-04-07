@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Pressable, RefreshControl,
-  Animated as RNAnimated, Image, Platform, Easing, StyleSheet,
+  Animated as RNAnimated, Image, Platform, Easing, StyleSheet, Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Ellipse } from 'react-native-svg';
+import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Ellipse, Circle as SvgCircle, Line as SvgLine, G, Rect } from 'react-native-svg';
 import MetalCard from '../../components/shared/MetalCard';
 import LockIcon from '../../components/shared/LockIcon';
 import {
@@ -20,7 +20,7 @@ const DashboardContent = ({
   onHydrationPress, hydrationMl, hydrationGoal, gender,
   burnedExtra, sportAlert, consumedTotal, burnedTotal,
   scrollRef, dailyTarget, lastMeal, tooltipStep,
-  vitalityScore, activeChar, pagePowers,
+  vitalityScore, vitalityDetails, activeChar, pagePowers,
   toggleStates, setToggleStates, consumePower,
   userName, onAvatarPress, onNavigate, showToast, onOpenStats,
   refreshing, onRefresh,
@@ -28,6 +28,7 @@ const DashboardContent = ({
   const OBJECTIVE = dailyTarget || DAILY_OBJECTIVE;
   const [showInfoLeft, setShowInfoLeft] = useState(false);
   const [showInfoRight, setShowInfoRight] = useState(false);
+  var _showVitalityInfo = useState(false); var showVitalityInfo = _showVitalityInfo[0]; var setShowVitalityInfo = _showVitalityInfo[1];
   const remaining = Math.max(0, OBJECTIVE - (consumedTotal - burnedTotal));
   var _mealExpanded = useState(false);
   var mealExpanded = _mealExpanded[0]; var setMealExpanded = _mealExpanded[1];
@@ -132,7 +133,13 @@ const DashboardContent = ({
 
         <RNAnimated.View style={{ alignItems: 'center', marginTop: wp(12), opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3 ? (tooltipStep === 3 ? pulseOpacity : 1) : 0.05 }}>
           <EcgPulse score={vitalityScore} />
-          <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#D4AF37', marginTop: 2, letterSpacing: 1.5, marginLeft: 4 }}>VITALITÉ</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+            <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#D4AF37', letterSpacing: 1.5, marginLeft: 4 }}>VITALITE</Text>
+            <Pressable onPress={function() { setShowVitalityInfo(true); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={{ width: wp(16), height: wp(16), borderRadius: wp(8), backgroundColor: 'rgba(212,175,55,0.12)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)', justifyContent: 'center', alignItems: 'center', marginLeft: wp(5) }}>
+              <Text style={{ color: '#D4AF37', fontSize: fp(8), fontWeight: '700' }}>i</Text>
+            </Pressable>
+          </View>
         </RNAnimated.View>
 
         {showInfoLeft && (
@@ -478,6 +485,146 @@ const DashboardContent = ({
         </View>
       </MetalCard>
     </ScrollView>
+
+    <Modal visible={showVitalityInfo} transparent animationType="fade" onRequestClose={function() { setShowVitalityInfo(false); }}>
+      <Pressable onPress={function() { setShowVitalityInfo(false); }} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
+        <Pressable onPress={function() {}} style={{ width: '100%', maxWidth: 380, backgroundColor: '#1A1D22', borderRadius: wp(16), borderWidth: 1, borderColor: '#4A4F55', padding: wp(16), maxHeight: H * 0.82 }}>
+          <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+            <Text style={{ color: '#D4AF37', fontSize: fp(15), fontWeight: '800', textAlign: 'center', letterSpacing: 1 }}>Votre score de Vitalite</Text>
+            <Text style={{ color: '#8892A0', fontSize: fp(11), textAlign: 'center', marginTop: wp(6), marginBottom: wp(14), lineHeight: fp(16) }}>Votre Vitalite reflete votre equilibre sante du jour sur 100 points, repartis en 4 piliers :</Text>
+
+            {(function() {
+              var vd = vitalityDetails || {};
+              var consumed = vd.consumed || 0;
+              var target = vd.target || 2100;
+              var hydroMl = vd.hydroMl || 0;
+              var hydroGoal = vd.hydroGoal || 2500;
+              var actMin = vd.activityMin || 0;
+              var mf = vd.moodFilled || false;
+              var lm = vd.lastMeal;
+
+              var nutDev = target > 0 && consumed > 0 ? Math.abs(1 - consumed / target) : 1;
+              var nutScore = consumed > 0 ? Math.max(0, 25 - Math.round(nutDev * 83)) : 0;
+              var nutRatio = target > 0 ? consumed / target : 0;
+              var nutPos = Math.max(0, Math.min(1, nutRatio / 2));
+
+              var hydroScore = Math.round((Math.min((hydroMl / hydroGoal) * 100, 100) / 100) * 25);
+              var hydroRatio = hydroGoal > 0 ? hydroMl / hydroGoal : 0;
+              var hydroPos = Math.max(0, Math.min(1, hydroRatio / 2));
+
+              var actScore = Math.round(Math.min(actMin / 30, 1) * 25);
+              var actNorm = Math.min(actMin / 30, 1);
+
+              var regPts = 0;
+              if (mf) regPts += 8;
+              if (lm) regPts += 9;
+              regPts += 8;
+              var regNorm = regPts / 25;
+
+              var BAR_W = 240;
+              var BAR_H = 14;
+
+              return React.createElement(View, null,
+                React.createElement(View, { style: { marginBottom: wp(16) } },
+                  React.createElement(Text, { style: { color: '#FFF', fontSize: fp(13), fontWeight: '700', marginBottom: wp(6) } }, '\uD83C\uDF7D Nutrition (' + nutScore + '/25)'),
+                  React.createElement(View, { style: { alignItems: 'center' } },
+                    React.createElement(Svg, { width: BAR_W, height: BAR_H + 20, viewBox: '0 0 ' + BAR_W + ' ' + (BAR_H + 20) },
+                      React.createElement(Defs, null,
+                        React.createElement(SvgLinearGradient, { id: 'nutGrad', x1: '0', y1: '0', x2: '1', y2: '0' },
+                          React.createElement(Stop, { offset: '0%', stopColor: '#FF6B6B' }),
+                          React.createElement(Stop, { offset: '25%', stopColor: '#FF8C42' }),
+                          React.createElement(Stop, { offset: '50%', stopColor: '#00D984' }),
+                          React.createElement(Stop, { offset: '75%', stopColor: '#FF8C42' }),
+                          React.createElement(Stop, { offset: '100%', stopColor: '#FF6B6B' })
+                        )
+                      ),
+                      React.createElement(Rect, { x: 0, y: 6, width: BAR_W, height: BAR_H, rx: BAR_H / 2, fill: 'url(#nutGrad)', opacity: 0.85 }),
+                      React.createElement(SvgLine, { x1: BAR_W / 2, y1: 4, x2: BAR_W / 2, y2: BAR_H + 8, stroke: '#FFF', strokeWidth: 1, opacity: 0.4 }),
+                      React.createElement(Path, { d: 'M ' + (nutPos * BAR_W - 5) + ' 2 L ' + (nutPos * BAR_W + 5) + ' 2 L ' + (nutPos * BAR_W) + ' 8 Z', fill: '#FFF' }),
+                      React.createElement(SvgLine, { x1: nutPos * BAR_W, y1: 8, x2: nutPos * BAR_W, y2: BAR_H + 8, stroke: '#FFF', strokeWidth: 2.5 })
+                    ),
+                    React.createElement(Text, { style: { color: '#8892A0', fontSize: fp(8), marginTop: 2 } }, formatNumberFR(target) + ' kcal objectif')
+                  ),
+                  React.createElement(Text, { style: { color: '#6B7280', fontSize: fp(10), marginTop: wp(4), lineHeight: fp(15) } }, 'Plus vous approchez de votre objectif calorique, plus vous gagnez de points. Trop ou pas assez fait baisser le score.')
+                ),
+
+                React.createElement(View, { style: { marginBottom: wp(16) } },
+                  React.createElement(Text, { style: { color: '#FFF', fontSize: fp(13), fontWeight: '700', marginBottom: wp(6) } }, '\uD83D\uDCA7 Hydratation (' + hydroScore + '/25)'),
+                  React.createElement(View, { style: { alignItems: 'center' } },
+                    React.createElement(Svg, { width: BAR_W, height: BAR_H + 20, viewBox: '0 0 ' + BAR_W + ' ' + (BAR_H + 20) },
+                      React.createElement(Defs, null,
+                        React.createElement(SvgLinearGradient, { id: 'hydroGrad', x1: '0', y1: '0', x2: '1', y2: '0' },
+                          React.createElement(Stop, { offset: '0%', stopColor: '#FF6B6B' }),
+                          React.createElement(Stop, { offset: '25%', stopColor: '#FF8C42' }),
+                          React.createElement(Stop, { offset: '50%', stopColor: '#00D984' }),
+                          React.createElement(Stop, { offset: '75%', stopColor: '#FF8C42' }),
+                          React.createElement(Stop, { offset: '100%', stopColor: '#FF6B6B' })
+                        )
+                      ),
+                      React.createElement(Rect, { x: 0, y: 6, width: BAR_W, height: BAR_H, rx: BAR_H / 2, fill: 'url(#hydroGrad)', opacity: 0.85 }),
+                      React.createElement(SvgLine, { x1: BAR_W / 2, y1: 4, x2: BAR_W / 2, y2: BAR_H + 8, stroke: '#FFF', strokeWidth: 1, opacity: 0.4 }),
+                      React.createElement(Path, { d: 'M ' + (hydroPos * BAR_W - 5) + ' 2 L ' + (hydroPos * BAR_W + 5) + ' 2 L ' + (hydroPos * BAR_W) + ' 8 Z', fill: '#FFF' }),
+                      React.createElement(SvgLine, { x1: hydroPos * BAR_W, y1: 8, x2: hydroPos * BAR_W, y2: BAR_H + 8, stroke: '#FFF', strokeWidth: 2.5 })
+                    ),
+                    React.createElement(Text, { style: { color: '#8892A0', fontSize: fp(8), marginTop: 2 } }, (hydroGoal / 1000).toFixed(1) + 'L objectif')
+                  ),
+                  React.createElement(Text, { style: { color: '#6B7280', fontSize: fp(10), marginTop: wp(4), lineHeight: fp(15) } }, 'Buvez regulierement. Objectif : 2.5L (homme) / 2L (femme).')
+                ),
+
+                (function() {
+                  var GW = 120; var GH = 70; var cx = GW / 2; var cy = GH - 6; var rOuter = 50; var rInner = 38;
+                  function gaugeArc(norm) {
+                    var angle = Math.PI + norm * Math.PI;
+                    var ex = cx + Math.cos(angle) * rOuter;
+                    var ey = cy + Math.sin(angle) * rOuter;
+                    return { x: ex, y: ey };
+                  }
+                  function needlePt(norm) {
+                    var angle = Math.PI + norm * Math.PI;
+                    return { x: cx + Math.cos(angle) * (rInner - 4), y: cy + Math.sin(angle) * (rInner - 4) };
+                  }
+                  function makeGauge(label, score, norm, desc, key) {
+                    var np = needlePt(norm);
+                    return React.createElement(View, { key: key, style: { marginBottom: wp(16) } },
+                      React.createElement(Text, { style: { color: '#FFF', fontSize: fp(13), fontWeight: '700', marginBottom: wp(6) } }, label),
+                      React.createElement(View, { style: { alignItems: 'center' } },
+                        React.createElement(Svg, { width: GW, height: GH, viewBox: '0 0 ' + GW + ' ' + GH },
+                          React.createElement(Defs, null,
+                            React.createElement(SvgLinearGradient, { id: 'gauge' + key, x1: '0', y1: '0', x2: '1', y2: '0' },
+                              React.createElement(Stop, { offset: '0%', stopColor: '#FF6B6B' }),
+                              React.createElement(Stop, { offset: '33%', stopColor: '#FF8C42' }),
+                              React.createElement(Stop, { offset: '66%', stopColor: '#FFD93D' }),
+                              React.createElement(Stop, { offset: '100%', stopColor: '#00D984' })
+                            )
+                          ),
+                          React.createElement(Path, {
+                            d: 'M ' + (cx - rOuter) + ' ' + cy + ' A ' + rOuter + ' ' + rOuter + ' 0 0 1 ' + (cx + rOuter) + ' ' + cy,
+                            stroke: 'url(#gauge' + key + ')', strokeWidth: 10, fill: 'none', strokeLinecap: 'round'
+                          }),
+                          React.createElement(SvgLine, { x1: cx, y1: cy, x2: np.x, y2: np.y, stroke: '#FFF', strokeWidth: 2.5, strokeLinecap: 'round' }),
+                          React.createElement(SvgCircle, { cx: cx, cy: cy, r: 4, fill: '#4A4F55' }),
+                          React.createElement(SvgCircle, { cx: cx, cy: cy, r: 2.5, fill: '#D4AF37' })
+                        ),
+                        React.createElement(Text, { style: { color: '#FFF', fontSize: fp(14), fontWeight: '800', marginTop: -2 } }, score + '/25')
+                      ),
+                      React.createElement(Text, { style: { color: '#6B7280', fontSize: fp(10), marginTop: wp(4), lineHeight: fp(15) } }, desc)
+                    );
+                  }
+                  return React.createElement(View, null,
+                    makeGauge('\uD83C\uDFC3 Activite (' + actScore + '/25)', actScore, actNorm, '30 minutes d\'activite physique par jour pour le maximum.', 'act'),
+                    makeGauge('\u2728 Regularite (' + regPts + '/25)', regPts, regNorm, 'Loguer vos repas, remplir votre humeur et utiliser l\'app regulierement.', 'reg')
+                  );
+                })()
+              );
+            })()}
+
+            <Pressable onPress={function() { setShowVitalityInfo(false); }} style={{ marginTop: wp(12), paddingVertical: wp(10), borderRadius: wp(10), backgroundColor: 'rgba(212,175,55,0.1)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)', alignItems: 'center' }}>
+              <Text style={{ color: '#D4AF37', fontSize: fp(13), fontWeight: '700' }}>Compris</Text>
+            </Pressable>
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 };
 
