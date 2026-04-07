@@ -261,15 +261,14 @@ export default function MedicAiPage({ navigation }) {
   };
   var wm = getWireMode(alixenState);
 
-  // Pulse animation for labels
-  var pulseRef = useRef(null);
-  var _pulse = useState(0); var pulse = _pulse[0]; var setPulse = _pulse[1];
+  // Pulse animation for labels — native driver, zero JS re-renders
+  var pulseAnim = useRef(new Animated.Value(0)).current;
   useEffect(function() {
-    var st = Date.now();
-    pulseRef.current = setInterval(function() {
-      setPulse(Math.sin((Date.now() - st) / 1000 * 2) * 0.5 + 0.5);
-    }, 80);
-    return function() { clearInterval(pulseRef.current); };
+    Animated.loop(Animated.sequence([
+      Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(pulseAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+    ])).start();
+    return function() { pulseAnim.stopAnimation(); };
   }, []);
   useEffect(function() {
     return function() {
@@ -2184,22 +2183,22 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           {/* Labels ALIXEN / Membre — bulles animées */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8, marginBottom: 4, gap: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: wm === 'alixen' ? 12 : 10, height: wm === 'alixen' ? 12 : 10, borderRadius: 6, backgroundColor: '#4DA6FF', marginRight: 5, justifyContent: 'center', alignItems: 'center', opacity: wm === 'alixen' ? (0.8 + pulse * 0.2) : 0.35 }}>
-                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFF', opacity: wm === 'alixen' ? (0.6 + pulse * 0.4) : 0.3 }} />
-              </View>
+              <Animated.View style={{ width: wm === 'alixen' ? 12 : 10, height: wm === 'alixen' ? 12 : 10, borderRadius: 6, backgroundColor: '#4DA6FF', marginRight: 5, justifyContent: 'center', alignItems: 'center', opacity: wm === 'alixen' ? pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.0] }) : 0.35 }}>
+                <Animated.View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFF', opacity: wm === 'alixen' ? pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.0] }) : 0.3 }} />
+              </Animated.View>
               <Text style={{ color: wm === 'alixen' ? '#4DA6FF' : '#8892A0', fontSize: 9, fontWeight: '600' }}>ALIXEN</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: wm === 'user' ? 12 : 10, height: wm === 'user' ? 12 : 10, borderRadius: 6, backgroundColor: '#00D984', marginRight: 5, justifyContent: 'center', alignItems: 'center', opacity: wm === 'user' ? (0.8 + pulse * 0.2) : 0.35 }}>
-                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFF', opacity: wm === 'user' ? (0.6 + pulse * 0.4) : 0.3 }} />
-              </View>
+              <Animated.View style={{ width: wm === 'user' ? 12 : 10, height: wm === 'user' ? 12 : 10, borderRadius: 6, backgroundColor: '#00D984', marginRight: 5, justifyContent: 'center', alignItems: 'center', opacity: wm === 'user' ? pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.0] }) : 0.35 }}>
+                <Animated.View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFF', opacity: wm === 'user' ? pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.0] }) : 0.3 }} />
+              </Animated.View>
               <Text style={{ color: wm === 'user' ? '#00D984' : '#8892A0', fontSize: 9, fontWeight: '600' }}>{userLang === 'EN' ? 'Member' : 'Membre'}</Text>
             </View>
           </View>
           {alixenState !== 'idle' && alixenState !== 'listening' && getAlixenMention(alixenState) ? (
-            <Text style={{ textAlign: 'center', color: wm === 'alixen' ? '#4DA6FF' : '#00D984', fontSize: 8, fontWeight: '600', opacity: 0.5 + pulse * 0.3, marginBottom: 4 }}>
+            <Animated.Text style={{ textAlign: 'center', color: wm === 'alixen' ? '#4DA6FF' : '#00D984', fontSize: 8, fontWeight: '600', opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0.8] }), marginBottom: 4 }}>
               {getAlixenMention(alixenState)}
-            </Text>
+            </Animated.Text>
           ) : null}
 
           {/* Boules en S */}
