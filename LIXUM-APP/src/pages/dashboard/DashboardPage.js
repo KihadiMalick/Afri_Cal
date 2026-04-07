@@ -105,17 +105,18 @@ export default function DashboardPage({ navigation }) {
   };
   useEffect(function() { return function() { if (toastTimerRef.current) clearTimeout(toastTimerRef.current); if (beverageToastTimerRef.current) clearTimeout(beverageToastTimerRef.current); }; }, []);
 
-  const calcVitalityScore = () => {
-    const OBJECTIVE = realDailyTarget || 2100;
-    let score = 0;
+  var calcVitalityScore = function() {
+    var OBJECTIVE = realDailyTarget || 2100;
+    var score = 0;
     if (OBJECTIVE > 0 && realConsumed > 0) {
-      const deviation = Math.abs(1 - realConsumed / OBJECTIVE);
+      var deviation = Math.abs(1 - realConsumed / OBJECTIVE);
       score += Math.max(0, 25 - Math.round(deviation * 83));
     }
-    const hydroGoal = realGender === 'femme' ? 2000 : 2500;
+    var hydroGoal = realGender === 'femme' ? 2000 : 2500;
     score += Math.round((Math.min((hydrationMl / hydroGoal) * 100, 100) / 100) * 25);
-    score += 0;
-    let regPts = 0;
+    var totalActivityMin = activities.reduce(function(s, a) { return s + (a.durationMin || 0); }, 0);
+    score += Math.round(Math.min(totalActivityMin / 30, 1) * 25);
+    var regPts = 0;
     if (moodFilled) regPts += 8;
     if (lastMeal) regPts += 9;
     regPts += Math.min(8, 8);
@@ -339,9 +340,18 @@ export default function DashboardPage({ navigation }) {
     if (userId) refreshLixFromServer();
   }, [userId, refreshLixFromServer]));
 
+  var vitalityDebounceRef = useRef(null);
   useEffect(function() {
-    setVitalityScore(calcVitalityScore());
-  }, [realConsumed, hydrationMl, moodFilled, lastMeal, realDailyTarget, realGender]);
+    var newScore = calcVitalityScore();
+    setVitalityScore(newScore);
+    if (userId && vitalityDebounceRef.current) clearTimeout(vitalityDebounceRef.current);
+    if (userId) {
+      vitalityDebounceRef.current = setTimeout(function() {
+        supabase.from('users_profile').update({ vitality_score: newScore }).eq('user_id', userId).then(function() {});
+      }, 2000);
+    }
+    return function() { if (vitalityDebounceRef.current) clearTimeout(vitalityDebounceRef.current); };
+  }, [realConsumed, hydrationMl, moodFilled, lastMeal, realDailyTarget, realGender, activities, userId]);
 
   return (
     <View style={{ flex: 1, backgroundColor: '#1E2530' }}>
@@ -365,6 +375,12 @@ export default function DashboardPage({ navigation }) {
           consumedTotal={consumedTotal} burnedTotal={burnedTotal}
           scrollRef={scrollRef} dailyTarget={realDailyTarget} lastMeal={lastMeal}
           tooltipStep={tooltipStep} vitalityScore={vitalityScore}
+          vitalityDetails={{
+            consumed: realConsumed, target: realDailyTarget || 2100,
+            hydroMl: hydrationMl, hydroGoal: realGender === 'femme' ? 2000 : 2500,
+            activityMin: activities.reduce(function(s, a) { return s + (a.durationMin || 0); }, 0),
+            moodFilled: moodFilled, lastMeal: lastMeal
+          }}
           activeChar={activeChar} pagePowers={pagePowers}
           toggleStates={toggleStates} setToggleStates={setToggleStates}
           consumePower={consumePower} userName={userName}
