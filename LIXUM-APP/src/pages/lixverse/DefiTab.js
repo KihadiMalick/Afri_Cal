@@ -350,8 +350,21 @@ export default function DefiTab({
 
       <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
         <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.04)', marginBottom: wp(14) }} />
-        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Défis du mois</Text>
-        {loading ? <ActivityIndicator color="#D4AF37" style={{ padding: wp(20) }} /> : challenges.map(ch => {
+        <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFF', marginBottom: wp(10), letterSpacing: 1.5, textTransform: 'uppercase' }}>Défis du mois</Text>
+        {loading ? <ActivityIndicator color="#D4AF37" style={{ padding: wp(20) }} /> : challenges.length === 0 ? (
+          <View style={{
+            borderRadius: 16, borderWidth: 1.5,
+            borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+            borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+            backgroundColor: '#2A303B', padding: 2,
+          }}>
+            <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 14, padding: wp(20), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(28), marginBottom: wp(8) }}>🏆</Text>
+              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#EAEEF3', marginBottom: wp(4) }}>Aucun défi actif</Text>
+              <Text style={{ fontSize: fp(10), color: '#6B7280', textAlign: 'center' }}>Les défis du mois seront disponibles prochainement</Text>
+            </LinearGradient>
+          </View>
+        ) : challenges.map(ch => {
           const dl = new Date(ch.registration_deadline);
           const hLeft = Math.max(0, Math.ceil((dl - new Date()) / 3600000));
           const dLeft = Math.floor(hLeft / 24);
@@ -361,8 +374,14 @@ export default function DefiTab({
           const daysPassed = Math.max(0, Math.min(Math.ceil((new Date() - new Date(ch.start_date || ch.created_at)) / 86400000), ch.duration_days || 30));
           const progressPct = Math.max(0, Math.min(100, Math.round((daysPassed / (ch.duration_days || 30)) * 100)));
           return (
-            <View key={ch.id} style={{ borderRadius: wp(16), marginBottom: wp(10), borderWidth: 1.5, borderColor: ch.color + '40', overflow: 'hidden' }}>
-              <LinearGradient colors={['#2A2F36', '#1E2328']} style={{ padding: wp(16), borderRadius: wp(14) }}>
+            <View key={ch.id} style={{
+              borderRadius: 16, marginBottom: wp(10), borderWidth: 1.5,
+              borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+              borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+              backgroundColor: '#2A303B', overflow: 'hidden',
+              borderLeftWidth: 3, borderLeftColor: ch.color || '#D4AF37',
+            }}>
+              <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ padding: wp(16), borderRadius: 14 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
                   <Text style={{ fontSize: fp(24), marginRight: wp(10) }}>{ch.icon}</Text>
                   <View style={{ flex: 1 }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>{ch.title}</Text><Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{ch.duration_days}j | Max {ch.max_group_size}/équipe</Text></View>
