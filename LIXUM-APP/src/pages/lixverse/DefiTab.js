@@ -69,29 +69,19 @@ export default function DefiTab({
           <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>{Math.min(wallStickers.length, 9)}/9</Text>
         </View>
         <View style={{
-          marginHorizontal: wp(8), borderRadius: wp(16), overflow: 'hidden',
-          borderWidth: 2, borderColor: '#8B7A2E',
+          marginHorizontal: wp(8), borderRadius: 16, overflow: 'hidden',
+          borderWidth: 1.5,
+          borderTopColor: '#D4AF37', borderLeftColor: '#B8972A',
+          borderRightColor: '#8B7A2E', borderBottomColor: '#6B5D1E',
+          backgroundColor: '#2A303B',
           shadowColor: '#D4AF37',
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.25,
-          shadowRadius: 14,
+          shadowOpacity: 0.2,
+          shadowRadius: 12,
           elevation: 8,
         }}>
-          <LinearGradient colors={['#3A3F46', '#2D3238', '#3A3F46', '#333840']}
-            style={{ minHeight: wp(280), padding: wp(12), position: 'relative' }}>
-            {[
-              { top: wp(6), left: wp(6), borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: wp(4) },
-              { top: wp(6), right: wp(6), borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: wp(4) },
-              { bottom: wp(6), left: wp(6), borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: wp(4) },
-              { bottom: wp(6), right: wp(6), borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: wp(4) },
-            ].map((cornerStyle, i) => (
-              <View key={i} style={{
-                position: 'absolute', zIndex: 10,
-                width: wp(20), height: wp(20),
-                borderColor: '#8B7A2E',
-                ...cornerStyle,
-              }} />
-            ))}
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+            style={{ minHeight: wp(280), padding: wp(12), position: 'relative', borderRadius: 14 }}>
             <View style={{ alignItems: 'center', marginBottom: wp(4), paddingTop: wp(0) }}>
               <Image
                 source={null}
@@ -593,7 +583,7 @@ export default function DefiTab({
       </View>
 
       <View style={{ paddingHorizontal: wp(16) }}>
-        <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Classements</Text>
+        <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFF', marginBottom: wp(10), letterSpacing: 1.5, textTransform: 'uppercase' }}>Classements</Text>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(10) }}>
           <View style={{ flexDirection: 'row', gap: wp(4) }}>
@@ -629,8 +619,13 @@ export default function DefiTab({
         </ScrollView>
 
         <View style={{
-          backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(14),
-          padding: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+          borderRadius: 16, borderWidth: 1.5,
+          borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+          borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+          backgroundColor: '#2A303B',
+        }}>
+        <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
+          borderRadius: 14, padding: wp(14),
         }}>
 
           {leaderboardTab === 'equipes' && (
@@ -925,6 +920,7 @@ export default function DefiTab({
               )}
             </View>
           )}
+        </LinearGradient>
         </View>
       </View>
     </ScrollView>
