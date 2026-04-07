@@ -2,7 +2,7 @@
 // medicai/index.js — MedicAi : Composant principal
 // State, routing, API calls, renderMain, renderContent
 // ──────────────────────────────────────────────────────────────────────────────
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   Image, Platform, Animated, KeyboardAvoidingView,
@@ -261,15 +261,14 @@ export default function MedicAiPage({ navigation }) {
   };
   var wm = getWireMode(alixenState);
 
-  // Pulse animation for labels
-  var pulseRef = useRef(null);
-  var _pulse = useState(0); var pulse = _pulse[0]; var setPulse = _pulse[1];
+  // Pulse animation for labels — native driver, zero JS re-renders
+  var pulseAnim = useRef(new Animated.Value(0)).current;
   useEffect(function() {
-    var st = Date.now();
-    pulseRef.current = setInterval(function() {
-      setPulse(Math.sin((Date.now() - st) / 1000 * 2) * 0.5 + 0.5);
-    }, 80);
-    return function() { clearInterval(pulseRef.current); };
+    Animated.loop(Animated.sequence([
+      Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(pulseAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+    ])).start();
+    return function() { pulseAnim.stopAnimation(); };
   }, []);
   useEffect(function() {
     return function() {
@@ -292,14 +291,14 @@ export default function MedicAiPage({ navigation }) {
   };
 
   // Dynamic Secret Pocket categories with real counts
-  const getSpCategories = () => [
-    { id: 'diagnostics', title: 'Diagnostics à surveiller', desc: 'Diabète, hypertension, cholestérol...', icon: 'heart-pulse', color: '#FF6B6B', count: secretPocketItems.filter(i => i.category === 'diagnostics').length },
-    { id: 'allergies', title: 'Allergies et intolérances', desc: 'Alimentaires, médicamenteuses...', icon: 'shield-alert', color: '#FF8C42', count: secretPocketItems.filter(i => i.category === 'allergies').length },
-    { id: 'medications', title: 'Médicaments en cours', desc: 'Traitements actuels et posologie', icon: 'pill', color: '#4DA6FF', count: secretPocketItems.filter(i => i.category === 'medications').length },
-    { id: 'lab-results', title: "Résultats d'analyses", desc: 'Bilans sanguins, examens...', icon: 'flask', color: '#00D984', count: secretPocketItems.filter(i => i.category === 'lab-results').length },
-    { id: 'notes', title: 'Notes personnelles', desc: 'Vos observations de santé', icon: 'edit', color: '#9B6DFF', count: secretPocketItems.filter(i => i.category === 'notes').length },
-    { id: 'conversations', title: 'Conversations sensibles', desc: 'Échanges privés avec ALIXEN', icon: 'message-lock', color: '#D4AF37', count: secretPocketItems.filter(i => i.category === 'conversations').length },
-  ];
+  const spCategories = useMemo(function() { return [
+    { id: 'diagnostics', title: 'Diagnostics à surveiller', desc: 'Diabète, hypertension, cholestérol...', icon: 'heart-pulse', color: '#FF6B6B', count: secretPocketItems.filter(function(i) { return i.category === 'diagnostics'; }).length },
+    { id: 'allergies', title: 'Allergies et intolérances', desc: 'Alimentaires, médicamenteuses...', icon: 'shield-alert', color: '#FF8C42', count: secretPocketItems.filter(function(i) { return i.category === 'allergies'; }).length },
+    { id: 'medications', title: 'Médicaments en cours', desc: 'Traitements actuels et posologie', icon: 'pill', color: '#4DA6FF', count: secretPocketItems.filter(function(i) { return i.category === 'medications'; }).length },
+    { id: 'lab-results', title: "Résultats d'analyses", desc: 'Bilans sanguins, examens...', icon: 'flask', color: '#00D984', count: secretPocketItems.filter(function(i) { return i.category === 'lab-results'; }).length },
+    { id: 'notes', title: 'Notes personnelles', desc: 'Vos observations de santé', icon: 'edit', color: '#9B6DFF', count: secretPocketItems.filter(function(i) { return i.category === 'notes'; }).length },
+    { id: 'conversations', title: 'Conversations sensibles', desc: 'Échanges privés avec ALIXEN', icon: 'message-lock', color: '#D4AF37', count: secretPocketItems.filter(function(i) { return i.category === 'conversations'; }).length },
+  ]; }, [secretPocketItems]);
 
   // Refs
   const scrollViewRef = useRef(null);
@@ -2184,22 +2183,22 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           {/* Labels ALIXEN / Membre — bulles animées */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8, marginBottom: 4, gap: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: wm === 'alixen' ? 12 : 10, height: wm === 'alixen' ? 12 : 10, borderRadius: 6, backgroundColor: '#4DA6FF', marginRight: 5, justifyContent: 'center', alignItems: 'center', opacity: wm === 'alixen' ? (0.8 + pulse * 0.2) : 0.35 }}>
-                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFF', opacity: wm === 'alixen' ? (0.6 + pulse * 0.4) : 0.3 }} />
-              </View>
+              <Animated.View style={{ width: wm === 'alixen' ? 12 : 10, height: wm === 'alixen' ? 12 : 10, borderRadius: 6, backgroundColor: '#4DA6FF', marginRight: 5, justifyContent: 'center', alignItems: 'center', opacity: wm === 'alixen' ? pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.0] }) : 0.35 }}>
+                <Animated.View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFF', opacity: wm === 'alixen' ? pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.0] }) : 0.3 }} />
+              </Animated.View>
               <Text style={{ color: wm === 'alixen' ? '#4DA6FF' : '#8892A0', fontSize: 9, fontWeight: '600' }}>ALIXEN</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: wm === 'user' ? 12 : 10, height: wm === 'user' ? 12 : 10, borderRadius: 6, backgroundColor: '#00D984', marginRight: 5, justifyContent: 'center', alignItems: 'center', opacity: wm === 'user' ? (0.8 + pulse * 0.2) : 0.35 }}>
-                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFF', opacity: wm === 'user' ? (0.6 + pulse * 0.4) : 0.3 }} />
-              </View>
+              <Animated.View style={{ width: wm === 'user' ? 12 : 10, height: wm === 'user' ? 12 : 10, borderRadius: 6, backgroundColor: '#00D984', marginRight: 5, justifyContent: 'center', alignItems: 'center', opacity: wm === 'user' ? pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.0] }) : 0.35 }}>
+                <Animated.View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFF', opacity: wm === 'user' ? pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.0] }) : 0.3 }} />
+              </Animated.View>
               <Text style={{ color: wm === 'user' ? '#00D984' : '#8892A0', fontSize: 9, fontWeight: '600' }}>{userLang === 'EN' ? 'Member' : 'Membre'}</Text>
             </View>
           </View>
           {alixenState !== 'idle' && alixenState !== 'listening' && getAlixenMention(alixenState) ? (
-            <Text style={{ textAlign: 'center', color: wm === 'alixen' ? '#4DA6FF' : '#00D984', fontSize: 8, fontWeight: '600', opacity: 0.5 + pulse * 0.3, marginBottom: 4 }}>
+            <Animated.Text style={{ textAlign: 'center', color: wm === 'alixen' ? '#4DA6FF' : '#00D984', fontSize: 8, fontWeight: '600', opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0.8] }), marginBottom: 4 }}>
               {getAlixenMention(alixenState)}
-            </Text>
+            </Animated.Text>
           ) : null}
 
           {/* Boules en S */}
@@ -2212,7 +2211,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               messages={messages}
               searchHits={searchHits}
               onBallPress={handleBallPress}
-              onNewSession={() => setShowNewSessionSheet(true)}
+              onNewSession={useCallback(function() { setShowNewSessionSheet(true); }, [])}
             />
           </Animated.View>
 
@@ -2323,7 +2322,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             {/* Fichiers en attente */}
             <FileQueuePreview
               files={fileQueue}
-              onRemove={(id) => setFileQueue(prev => prev.filter(f => f.id !== id))}
+              onRemove={useCallback(function(id) { setFileQueue(function(prev) { return prev.filter(function(f) { return f.id !== id; }); }); }, [])}
             />
 
             <View style={{
@@ -2336,7 +2335,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               {/* Bouton "+" ajout document */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => setShowDocumentSheet(true)}
+                onPress={useCallback(function() { setShowDocumentSheet(true); }, [])}
                 style={({ pressed }) => ({
                   width: wp(38),
                   height: wp(38),
@@ -2369,7 +2368,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               {/* Bouton Recherche — style MetalCard comme le "+" */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => setSearchVisible(!searchVisible)}
+                onPress={useCallback(function() { setSearchVisible(function(v) { return !v; }); }, [])}
                 style={({ pressed }) => ({
                   width: wp(38),
                   height: wp(38),
@@ -2432,7 +2431,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               {isLocked ? (
                 <Pressable
                   delayPressIn={120}
-                  onPress={() => setShowRechargeSheet(true)}
+                  onPress={useCallback(function() { setShowRechargeSheet(true); }, [])}
                   style={({ pressed }) => ({
                     width: wp(38), height: wp(38), borderRadius: wp(19),
                     backgroundColor: 'rgba(255,107,107,0.15)',
@@ -2448,7 +2447,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 </Pressable>
               ) : (
                 <TouchableOpacity
-                  onPress={() => { if (inputText.trim() || fileQueue.length > 0) sendMessage(); }}
+                  onPress={useCallback(function() { if (inputText.trim() || fileQueue.length > 0) sendMessage(); }, [inputText, fileQueue, sendMessage])}
                   disabled={!inputText.trim() && fileQueue.length === 0}
                   style={{
                     width: 38, height: 38, borderRadius: 19,
