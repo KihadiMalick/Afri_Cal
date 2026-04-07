@@ -226,17 +226,26 @@ export default function ActivityPage({ navigation }) {
   const fetchWeeklyMinutes = async () => {
     if (!userId) return;
     try {
-      const now = new Date();
-      const dayOfWeek = now.getDay();
-      const monday = new Date(now);
+      var now = new Date();
+      var dayOfWeek = now.getDay();
+      var monday = new Date(now);
       monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
       monday.setHours(0, 0, 0, 0);
-      const { data } = await supabase
-        .from('user_activities')
-        .select('duration_min')
+      // Try activities table first (main table), fallback to user_activities
+      var { data, error } = await supabase
+        .from('activities')
+        .select('duration_minutes')
         .eq('user_id', userId)
-        .gte('performed_at', monday.toISOString());
-      const total = (data || []).reduce((sum, a) => sum + (a.duration_min || 0), 0);
+        .gte('created_at', monday.toISOString());
+      if (error || !data) {
+        var res2 = await supabase
+          .from('user_activities')
+          .select('duration_minutes, duration_min')
+          .eq('user_id', userId)
+          .gte('performed_at', monday.toISOString());
+        data = res2.data || [];
+      }
+      var total = (data || []).reduce(function(sum, a) { return sum + (a.duration_minutes || a.duration_min || 0); }, 0);
       setWeeklyMinutes(total);
     } catch (e) {
       console.warn('Weekly minutes error:', e);
@@ -609,34 +618,34 @@ export default function ActivityPage({ navigation }) {
           <View style={{ marginHorizontal: wp(16), marginBottom: 16 }}>
           <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
           <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
-            borderRadius: 14, padding: wp(10),
+            borderRadius: 14, paddingHorizontal: wp(10), paddingVertical: wp(6),
             flexDirection: 'row', alignItems: 'center',
           }}>
-            <View style={{ width: wp(44), height: wp(44), marginRight: wp(10) }}>
-              <Svg width={wp(44)} height={wp(44)} viewBox="0 0 44 44">
-                <Circle cx="22" cy="22" r="18" stroke="rgba(74,79,85,0.3)" strokeWidth="4" fill="none" />
-                <Circle cx="22" cy="22" r="18"
-                  stroke={weeklyMinutes >= 150 ? '#00D984' : '#FF8C42'} strokeWidth="4" fill="none"
+            <View style={{ width: wp(32), height: wp(32), marginRight: wp(8) }}>
+              <Svg width={wp(32)} height={wp(32)} viewBox="0 0 32 32">
+                <Circle cx="16" cy="16" r="13" stroke="rgba(74,79,85,0.3)" strokeWidth="3" fill="none" />
+                <Circle cx="16" cy="16" r="13"
+                  stroke={weeklyMinutes >= 150 ? '#00D984' : '#FF8C42'} strokeWidth="3" fill="none"
                   strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 18}`}
-                  strokeDashoffset={`${2 * Math.PI * 18 * (1 - Math.min(weeklyMinutes / 150, 1))}`}
-                  transform="rotate(-90 22 22)"
+                  strokeDasharray={`${2 * Math.PI * 13}`}
+                  strokeDashoffset={`${2 * Math.PI * 13 * (1 - Math.min(weeklyMinutes / 150, 1))}`}
+                  transform="rotate(-90 16 16)"
                 />
               </Svg>
               <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: fp(10), fontWeight: '800', color: weeklyMinutes >= 150 ? '#00D984' : '#FFFFFF' }}>
+                <Text style={{ fontSize: fp(8), fontWeight: '800', color: weeklyMinutes >= 150 ? '#00D984' : '#FFFFFF' }}>
                   {Math.min(Math.round((weeklyMinutes / 150) * 100), 100)}%
                 </Text>
               </View>
             </View>
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                <Text style={{ fontSize: fp(16), fontWeight: '800', color: weeklyMinutes >= 150 ? '#00D984' : '#FFFFFF' }}>{weeklyMinutes}</Text>
-                <Text style={{ fontSize: fp(10), color: '#6B7280', marginLeft: wp(3) }}>/ 150 min</Text>
+                <Text style={{ fontSize: fp(14), fontWeight: '800', color: weeklyMinutes >= 150 ? '#00D984' : '#FFFFFF' }}>{weeklyMinutes}</Text>
+                <Text style={{ fontSize: fp(9), color: '#6B7280', marginLeft: wp(3) }}>/ 150 min</Text>
               </View>
-              <Text style={{ fontSize: fp(8), color: '#6B7280', marginTop: wp(2) }}>{t.weeklyObj}</Text>
+              <Text style={{ fontSize: fp(7), color: '#6B7280', marginTop: wp(1) }}>{t.weeklyObj}</Text>
             </View>
-            {weeklyMinutes >= 150 && <Text style={{ fontSize: fp(18) }}>🏅</Text>}
+            {weeklyMinutes >= 150 && <Text style={{ fontSize: fp(16) }}>🏅</Text>}
           </LinearGradient>
           </View>
           </View>

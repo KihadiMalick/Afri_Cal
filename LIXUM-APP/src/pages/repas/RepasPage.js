@@ -1203,6 +1203,7 @@ export default function RepasPage({ navigation }) {
                   borderRadius: 12, borderWidth: 1,
                   borderColor: 'rgba(0,217,132,0.2)', overflow: 'hidden',
                   backgroundColor: '#151B23', padding: wp(8), alignItems: 'center',
+                  height: wp(90),
                 }}>
                   <View style={{
                     width: wp(32), height: wp(32), borderRadius: wp(16),
@@ -1235,8 +1236,8 @@ export default function RepasPage({ navigation }) {
                       </Svg>
                     )}
                   </View>
-                  <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={2}>{item.name}</Text>
-                  <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 1 }}>{item.cal} kcal</Text>
+                  <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
+                  <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 1 }} numberOfLines={1}>{item.cal} kcal</Text>
                 </View>
                 </View>
                 </Pressable>
