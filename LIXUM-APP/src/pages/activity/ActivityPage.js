@@ -231,21 +231,13 @@ export default function ActivityPage({ navigation }) {
       var monday = new Date(now);
       monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
       monday.setHours(0, 0, 0, 0);
-      // Try activities table first (main table), fallback to user_activities
       var { data, error } = await supabase
         .from('activities')
         .select('duration_minutes')
         .eq('user_id', userId)
         .gte('created_at', monday.toISOString());
-      if (error || !data) {
-        var res2 = await supabase
-          .from('user_activities')
-          .select('duration_minutes, duration_min')
-          .eq('user_id', userId)
-          .gte('performed_at', monday.toISOString());
-        data = res2.data || [];
-      }
-      var total = (data || []).reduce(function(sum, a) { return sum + (a.duration_minutes || a.duration_min || 0); }, 0);
+      if (error || !data) { data = []; }
+      var total = (data || []).reduce(function(sum, a) { return sum + (a.duration_minutes || 0); }, 0);
       setWeeklyMinutes(total);
     } catch (e) {
       console.warn('Weekly minutes error:', e);
@@ -272,7 +264,7 @@ export default function ActivityPage({ navigation }) {
       (async () => {
         try {
           const today = new Date().toISOString().split('T')[0];
-          const { data } = await supabase.from('user_activities').select('id').eq('user_id', userId).gte('created_at', today + 'T00:00:00').limit(1);
+          const { data } = await supabase.from('activities').select('id').eq('user_id', userId).gte('created_at', today + 'T00:00:00').limit(1);
           if (data && data.length > 0) setLixRewardedToday(true);
         } catch (e) {}
       })();
