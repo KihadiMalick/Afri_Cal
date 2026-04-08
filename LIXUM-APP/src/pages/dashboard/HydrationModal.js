@@ -36,23 +36,30 @@ const HydrationModal = ({
 
   var _deleteConfirm = useState(null);
   var deleteConfirmIdx = _deleteConfirm[0]; var setDeleteConfirmIdx = _deleteConfirm[1];
+  var _tempMl = useState(0); var tempMl = _tempMl[0]; var setTempMl = _tempMl[1];
 
   var _selectedDayLogs = selectedDayLogs || [];
   var _fetchDayHydrationLogs = fetchDayHydrationLogs || function() {};
   var _historyData = historyData || [];
 
-  const getTimeStr = () => {
-    const now = new Date();
+  var getTimeStr = function() {
+    var now = new Date();
     return pad2(now.getHours()) + ':' + pad2(now.getMinutes());
   };
 
-  const addWater = (ml) => {
-    setCurrentMl(prev => prev + ml);
-    setHydroLogs(prev => [...prev, { time: getTimeStr(), amount: ml, type: 'eau', icon: '💧' }]);
-    try {
-      var Vibration = require('react-native').Vibration;
-      Vibration.vibrate(30);
-    } catch(e) {}
+  var addWater = function(ml) {
+    setTempMl(function(prev) { return prev + ml; });
+    try { var Vibration = require('react-native').Vibration; Vibration.vibrate(30); } catch(e) {}
+  };
+
+  var removeWater = function(ml) {
+    setTempMl(function(prev) { return Math.max(0, prev - ml); });
+    try { var Vibration = require('react-native').Vibration; Vibration.vibrate(15); } catch(e) {}
+  };
+
+  var confirmDrink = function() {
+    if (tempMl <= 0) return;
+    var ml = tempMl;
     supabase.rpc('add_beverage_log', {
       p_user_id: userId,
       p_beverage_name: 'eau',
@@ -64,28 +71,25 @@ const HydrationModal = ({
       p_sugar_estimated: false,
       p_sugar_cubes: 0,
     }).then(function(res) {
-      if (res.error) console.warn('addWater Supabase error:', res.error.message);
-    }).catch(function(e) {
-      console.warn('addWater save error:', e);
-    });
+      if (res.error) { console.warn('confirmDrink error:', res.error.message); return; }
+      setCurrentMl(function(prev) { return prev + ml; });
+      setHydroLogs(function(prev) { return [].concat(prev, [{ time: getTimeStr(), amount: ml, type: 'eau', icon: '\uD83D\uDCA7' }]); });
+      setTempMl(0);
+    }).catch(function(e) { console.warn('confirmDrink save error:', e); });
   };
 
-  const removeWater = (ml) => {
-    setCurrentMl(prev => Math.max(0, prev - ml));
-    setHydroLogs(prev => {
-      const idx = [...prev].reverse().findIndex(l => l.amount === ml && l.type === 'eau');
-      if (idx === -1) return prev;
-      const realIdx = prev.length - 1 - idx;
-      return [...prev.slice(0, realIdx), ...prev.slice(realIdx + 1)];
-    });
-    try {
-      var Vibration = require('react-native').Vibration;
-      Vibration.vibrate(15);
-    } catch(e) {}
+  var deleteFromHistory = function(realIdx) {
+    var removedLog = hydroLogs[realIdx];
+    if (!removedLog) { setDeleteConfirmIdx(null); return; }
     supabase.rpc('get_daily_hydration', {
       p_user_id: userId,
       p_date: new Date().toISOString().split('T')[0],
-    }).then(function() {}).catch(function(err) { console.warn('[LIXUM] hydration refresh error:', err); });
+    }).then(function() {
+      setHydroLogs(function(prev) { return prev.filter(function(_, idx) { return idx !== realIdx; }); });
+      setCurrentMl(function(prev) { return Math.max(0, prev - removedLog.amount); });
+      try { var Vibration = require('react-native').Vibration; Vibration.vibrate(15); } catch(e) {}
+      setDeleteConfirmIdx(null);
+    }).catch(function() { setDeleteConfirmIdx(null); });
   };
 
   const palierLabels = gender === 'homme'
@@ -148,31 +152,43 @@ const HydrationModal = ({
             <View style={{ marginHorizontal: 24, marginBottom: 12, backgroundColor: 'rgba(30,37,48,0.4)', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: 'rgba(77,166,255,0.08)' }}>
               <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '700', letterSpacing: 2, marginBottom: 14 }}>EAU 💧</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                {quantities.map((item) => (
-                  <View key={item.ml} style={{ alignItems: 'center' }}>
-                    <TouchableOpacity
-                      style={{ width: 54, height: 54, borderRadius: 14, backgroundColor: 'rgba(21,27,35,0.8)', borderWidth: 1, borderColor: 'rgba(77,166,255,0.15)', justifyContent: 'center', alignItems: 'center' }}
-                      activeOpacity={0.7} onPress={() => addWater(item.ml)}
-                    >
-                      <Text style={{ fontSize: 18 }}>{item.icon}</Text>
-                      <Text style={{ color: '#C0C8D4', fontSize: 10, fontWeight: '700', marginTop: 1 }}>{item.label}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={{ marginTop: 5, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(30,35,45,0.8)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)', justifyContent: 'center', alignItems: 'center' }}
-                      activeOpacity={0.7} onPress={() => removeWater(item.ml)}
-                    >
-                      <Text style={{ color: '#FF3B30', fontSize: 16, fontWeight: '700', lineHeight: 18 }}>−</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))}
+                {quantities.map(function(item) {
+                  return React.createElement(View, { key: item.ml, style: { alignItems: 'center' } },
+                    React.createElement(TouchableOpacity, {
+                      style: { width: 54, height: 54, borderRadius: 14, backgroundColor: 'rgba(21,27,35,0.8)', borderWidth: 1, borderColor: 'rgba(77,166,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+                      activeOpacity: 0.7, onPress: function() { addWater(item.ml); }
+                    },
+                      React.createElement(Text, { style: { fontSize: 18 } }, item.icon),
+                      React.createElement(Text, { style: { color: '#C0C8D4', fontSize: 10, fontWeight: '700', marginTop: 1 } }, item.label)
+                    ),
+                    React.createElement(TouchableOpacity, {
+                      style: { marginTop: 5, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(30,35,45,0.8)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)', justifyContent: 'center', alignItems: 'center' },
+                      activeOpacity: 0.7, onPress: function() { removeWater(item.ml); }
+                    },
+                      React.createElement(Text, { style: { color: '#FF3B30', fontSize: 16, fontWeight: '700', lineHeight: 18 } }, '\u2212')
+                    )
+                  );
+                })}
               </View>
+              {tempMl > 0 ? (
+                <Text style={{ color: '#4DA6FF', fontSize: 12, fontWeight: '700', textAlign: 'center', marginTop: 10 }}>{tempMl} ml a valider</Text>
+              ) : null}
             </View>
 
+            {tempMl > 0 ? (
+              <TouchableOpacity
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 24, marginBottom: 8, backgroundColor: '#00D984', borderRadius: 16, paddingVertical: 14 }}
+                activeOpacity={0.7} onPress={confirmDrink}
+              >
+                <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '800', letterSpacing: 0.5 }}>Boire {tempMl} ml \uD83D\uDCA7</Text>
+              </TouchableOpacity>
+            ) : null}
+
             <TouchableOpacity
-              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 24, marginBottom: 20, backgroundColor: 'rgba(0, 217, 132, 0.08)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.25)', paddingVertical: 14 }}
-              activeOpacity={0.7} onPress={onAddBeverage}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 24, marginBottom: 20, backgroundColor: 'rgba(0, 217, 132, 0.08)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.25)', paddingVertical: 14, opacity: tempMl > 0 ? 0.4 : 1 }}
+              activeOpacity={0.7} onPress={tempMl > 0 ? undefined : onAddBeverage} disabled={tempMl > 0}
             >
-              <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '800', letterSpacing: 0.5 }}>AJOUTER BOISSONS 🥤</Text>
+              <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '800', letterSpacing: 0.5 }}>AJOUTER BOISSONS \uD83E\uDD64</Text>
             </TouchableOpacity>
 
             <View style={{ marginHorizontal: 24 }}>
@@ -208,15 +224,7 @@ const HydrationModal = ({
                                 style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
                                 <Text style={{ color: '#8892A0', fontSize: 11, fontWeight: '600' }}>Non</Text>
                               </Pressable>
-                              <Pressable onPress={function() {
-                                var realIdx = arr.length - 1 - i;
-                                var removedLog = hydroLogs[realIdx];
-                                if (!removedLog) { setDeleteConfirmIdx(null); return; }
-                                setHydroLogs(function(prev) { return prev.filter(function(_, idx) { return idx !== realIdx; }); });
-                                setCurrentMl(function(prev) { return Math.max(0, prev - removedLog.amount); });
-                                try { var Vibration = require('react-native').Vibration; Vibration.vibrate(15); } catch(e) {}
-                                setDeleteConfirmIdx(null);
-                              }}
+                              <Pressable onPress={function() { deleteFromHistory(arr.length - 1 - i); }}
                                 style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(255,59,48,0.12)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)' }}>
                                 <Text style={{ color: '#FF3B30', fontSize: 11, fontWeight: '700' }}>Oui</Text>
                               </Pressable>
