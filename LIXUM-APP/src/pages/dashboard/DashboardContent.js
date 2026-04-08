@@ -687,10 +687,13 @@ const DashboardContent = ({
               );
             })()}
 
-            <Pressable onPress={function() { setShowVitalityInfo(false); }} style={{ marginTop: wp(12), paddingVertical: wp(10), borderRadius: wp(10), backgroundColor: 'rgba(212,175,55,0.1)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)', alignItems: 'center' }}>
-              <Text style={{ color: '#D4AF37', fontSize: fp(13), fontWeight: '700' }}>Compris</Text>
-            </Pressable>
+            <TouchableOpacity activeOpacity={0.7} onPress={function() { setShowVitalityInfo(false); }} style={{ backgroundColor: '#00D984', borderRadius: 12, paddingVertical: 14, marginTop: 20, alignItems: 'center' }}>
+              <Text style={{ color: '#1A1D22', fontSize: 16, fontWeight: '700' }}>Compris</Text>
+            </TouchableOpacity>
           </ScrollView>
+          <TouchableOpacity activeOpacity={0.7} onPress={function() { setShowVitalityInfo(false); }} style={{ position: 'absolute', top: 12, right: 12 }}>
+            <Text style={{ color: '#8A8F98', fontSize: 20 }}>✕</Text>
+          </TouchableOpacity>
         </Pressable>
       </Pressable>
     </Modal>
