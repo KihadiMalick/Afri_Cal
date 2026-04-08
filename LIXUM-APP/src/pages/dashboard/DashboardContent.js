@@ -32,6 +32,7 @@ const DashboardContent = ({
   var _showVitalityInfo = useState(false); var showVitalityInfo = _showVitalityInfo[0]; var setShowVitalityInfo = _showVitalityInfo[1];
   const remaining = Math.max(0, OBJECTIVE - (consumedTotal - burnedTotal));
   var netConsumed = Math.max(0, consumedTotal - burnedTotal);
+  console.log('DEBUG netConsumed:', netConsumed, 'remaining:', remaining, 'consumedTotal:', consumedTotal, 'burnedTotal:', burnedTotal, 'OBJECTIVE:', OBJECTIVE);
   var _mealExpanded = useState(false);
   var mealExpanded = _mealExpanded[0]; var setMealExpanded = _mealExpanded[1];
   var _coachExpanded = useState(false);

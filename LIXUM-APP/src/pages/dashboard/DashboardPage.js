@@ -326,6 +326,7 @@ export default function DashboardPage({ navigation }) {
   var consumedTotal = realConsumed + (hydrationData.totalKcal || 0);
   var burnedExtra = activities.reduce(function(sum, a) { return sum + a.kcalBurned; }, 0);
   var burnedTotal = burnedExtra;
+  console.log('DEBUG burnedTotal:', burnedTotal, 'burnedExtra:', burnedExtra, 'activities:', JSON.stringify(activities));
   var surplus = Math.max(0, consumedTotal - burnedExtra - DAILY_OBJECTIVE);
   var totalWaterLost = activities.reduce(function(sum, a) { return sum + (a.waterLostMl || 0); }, 0);
   var adjustedHydrationGoal = hydrationGoalBase + totalWaterLost;
