@@ -441,7 +441,7 @@ const DashboardContent = ({
             <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#EAEEF3', marginBottom: wp(10) }}>🧠 Analyse du jour</Text>
             {(function() {
               var OBJECTIVE_CALC = dailyTarget || 2100;
-              var hydroGoalCalc = gender === 'femme' ? 2000 : 2500;
+              var hydroGoalCalc = hydrationGoal || (gender === 'femme' ? 2000 : 2500);
               var nutritionPct = OBJECTIVE_CALC > 0 && consumedTotal > 0 ? Math.max(0, Math.min(100, 100 - Math.round(Math.abs(1 - consumedTotal / OBJECTIVE_CALC) * 330))) : 0;
               var hydroPct = Math.min(Math.round((hydrationMl / hydroGoalCalc) * 100), 100);
               var totalDurationMin = vitalityDetails && vitalityDetails.activityMin ? vitalityDetails.activityMin : 0;
