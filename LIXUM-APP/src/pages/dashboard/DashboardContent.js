@@ -391,10 +391,18 @@ const DashboardContent = ({
             <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
             <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>{!lastMeal ? 'Scannez un repas pour activer les suggestions' : '25g de protéines au prochain repas'}</Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
-            <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
-            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>{Math.max(0, Math.ceil((hydrationGoal - hydrationMl) / 250))} verre{Math.ceil((hydrationGoal - hydrationMl) / 250) > 1 ? 's' : ''} d'eau (hydratation à {Math.round((hydrationMl / hydrationGoal) * 100)}%)</Text>
-          </View>
+          {(function() {
+            var sportHydroBonus = Math.round((burnedExtra || 0) * 1.2);
+            var adjustedGoal = hydrationGoal + sportHydroBonus;
+            var glassesNeeded = Math.max(0, Math.ceil((adjustedGoal - hydrationMl) / 250));
+            if (hydrationMl >= adjustedGoal) return null;
+            return React.createElement(View, { style: { flexDirection: 'row', alignItems: 'center', marginBottom: 3 } },
+              React.createElement(Text, { style: { color: '#00D984', fontSize: fp(10), marginRight: wp(6) } }, '+'),
+              React.createElement(Text, { style: { color: '#EAEEF3', fontSize: fp(11) } },
+                glassesNeeded + ' verre' + (glassesNeeded > 1 ? 's' : '') + ' d\'eau pour atteindre votre objectif' + (sportHydroBonus > 0 ? ' (+' + sportHydroBonus + 'ml sport)' : '')
+              )
+            );
+          })()}
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
             <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>{burnedExtra > 0 ? 'Bonne séance ! ' + burnedExtra + ' kcal brûlées' : '15 min de marche pour brûler 85 kcal'}</Text>
