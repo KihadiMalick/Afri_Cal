@@ -53,7 +53,7 @@ const DashboardContent = ({
   return (
     <View style={{ flex: 1 }}>
     <ScrollView ref={scrollRef} style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: 90, paddingTop: wp(8) }}
+      contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: 20, paddingTop: wp(8) }}
       showsVerticalScrollIndicator={false}
       onScrollBeginDrag={function() { setShowInfoLeft(false); setShowInfoRight(false); }}
       refreshControl={
@@ -134,8 +134,8 @@ const DashboardContent = ({
 
         <RNAnimated.View style={{ alignItems: 'center', marginTop: wp(12), opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3 ? (tooltipStep === 3 ? pulseOpacity : 1) : 0.05 }}>
           <EcgPulse score={vitalityScore} />
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-            <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#D4AF37', letterSpacing: 1.5, marginLeft: 4 }}>VITALITE</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
+            <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#D4AF37', letterSpacing: 1.5 }}>VITALITE</Text>
             <Pressable onPress={function() { setShowVitalityInfo(true); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={{ width: wp(16), height: wp(16), borderRadius: wp(8), backgroundColor: 'rgba(212,175,55,0.12)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)', justifyContent: 'center', alignItems: 'center', marginLeft: wp(5) }}>
               <Text style={{ color: '#D4AF37', fontSize: fp(8), fontWeight: '700' }}>i</Text>

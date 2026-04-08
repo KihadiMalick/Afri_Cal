@@ -244,7 +244,7 @@ export default function SpinTab({
   };
 
   return (
-    <ScrollView ref={lixSpinScrollRef} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 90 }}>
+    <ScrollView ref={lixSpinScrollRef} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 20 }}>
       <View style={{ alignItems: 'center', paddingTop: wp(8), marginBottom: wp(10) }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(212,175,55,0.06)', borderRadius: wp(12), paddingVertical: wp(8), paddingHorizontal: wp(20), borderWidth: 1, borderColor: 'rgba(212,175,55,0.12)', gap: wp(8) }}>
           <LixGem size={wp(18)} />

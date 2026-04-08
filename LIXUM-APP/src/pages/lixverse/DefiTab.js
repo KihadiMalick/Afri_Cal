@@ -49,7 +49,7 @@ export default function DefiTab({
   leaderboardChallengeId,
 }) {
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 90 }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 20 }}>
       <View style={{ marginBottom: wp(16) }}>
         <View style={{ paddingHorizontal: wp(16), marginBottom: wp(8), flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ fontSize: fp(18), fontWeight: '800', color: '#D4AF37', letterSpacing: 1 }}>WALL OF HEALTH</Text>

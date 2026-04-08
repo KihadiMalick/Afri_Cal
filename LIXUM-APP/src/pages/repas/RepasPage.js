@@ -432,7 +432,7 @@ export default function RepasPage({ navigation }) {
       <View style={{ flex: 1, paddingTop: Platform.OS === 'android' ? 50 : 55 }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 20 }}
         >
           {/* ═══ 1. HEADER ═══ */}
           <PageHeader
