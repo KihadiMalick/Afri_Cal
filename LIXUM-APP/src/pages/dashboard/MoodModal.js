@@ -405,12 +405,13 @@ const MoodModal = ({ visible, onClose, onMoodSaved }) => {
                           await supabase.from('users_profile').update({
                             current_mood: moodNumeric, current_weather: selectedWeather, last_mood_at: new Date().toISOString(),
                           }).eq('user_id', userId);
+                          if (onMoodSaved) onMoodSaved(moodResult, selectedWeather);
                         } catch (e) {
                           console.warn('Mood save error:', e);
+                        } finally {
+                          resetAllStates();
+                          onClose();
                         }
-                        if (onMoodSaved) onMoodSaved(moodResult, selectedWeather);
-                        resetAllStates();
-                        onClose();
                       }}
                       style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: 14, paddingHorizontal: 30, paddingVertical: 12, borderWidth: 1, borderColor: 'rgba(0,217,132,0.4)' }}>
                       <Text style={{ color: '#00D984', fontSize: 15, fontWeight: '800' }}>Valider ✓</Text>
