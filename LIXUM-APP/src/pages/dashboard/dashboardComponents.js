@@ -323,12 +323,13 @@ const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubble
   );
 };
 
-const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, tooltipStep }) => {
-  const percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
-  const glasses = Math.round(currentMl / 250);
-  const totalGlasses = Math.round(goalMl / 250);
-  const liters = (currentMl / 1000).toFixed(1);
-  const goalL = (goalMl / 1000).toFixed(1);
+const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, tooltipStep, totalWaterLost }) => {
+  var percent = Math.min(Math.round((currentMl / goalMl) * 100), 100);
+  var glasses = Math.round(currentMl / 250);
+  var totalGlasses = Math.round(goalMl / 250);
+  var liters = (currentMl / 1000).toFixed(1);
+  var goalL = (goalMl / 1000).toFixed(1);
+  var showSportBadge = (totalWaterLost || 0) > 0 && currentMl < goalMl;
 
   return (
     <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }) }} onPress={onPress}>
@@ -342,6 +343,7 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, 
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={{ width: 50, alignItems: 'center', marginRight: 12 }}>
           <SilhouetteFill fillPercent={percent} height={wp(62)} gender={gender} />
+          {showSportBadge ? React.createElement(Text, { style: { color: '#00D984', fontSize: 9, fontWeight: '700', marginTop: 2, textAlign: 'center' } }, '+' + totalWaterLost + 'ml') : null}
         </View>
         <View style={{ flex: 1 }}>
           <View style={{ height: 8, backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>

@@ -316,12 +316,14 @@ export default function DashboardPage({ navigation }) {
   var isStatsUnlocked = function() { return isUnlockedByLix(statsUnlockedUntil) || hasActivePower('stats_report'); };
 
   var gender = realGender;
-  var hydrationGoalValue = gender === 'homme' ? 2500 : 2000;
+  var hydrationGoalBase = gender === 'homme' ? 2500 : 2000;
   var consumedTotal = realConsumed + (hydrationData.totalKcal || 0);
   var burnedExtra = activities.reduce(function(sum, a) { return sum + a.kcalBurned; }, 0);
   var burnedTotal = burnedExtra;
   var surplus = Math.max(0, consumedTotal - burnedExtra - DAILY_OBJECTIVE);
-  var sportWaterLoss = activities.reduce(function(sum, a) { return sum + calculateWaterLoss(a.durationMin, a.intensity); }, 0);
+  var totalWaterLost = activities.reduce(function(sum, a) { return sum + (a.waterLostMl || 0); }, 0);
+  var adjustedHydrationGoal = hydrationGoalBase + totalWaterLost;
+  var sportWaterLoss = totalWaterLost;
   var sportAlert = sportWaterLoss > 0 ? '🏃 -' + sportWaterLoss + 'ml perdus — pensez à compenser' : null;
 
   useEffect(function() {
@@ -377,7 +379,8 @@ export default function DashboardPage({ navigation }) {
 
         <DashboardContent
           onHydrationPress={function() { setHydroModalVisible(true); }}
-          hydrationMl={hydrationMl} hydrationGoal={hydrationGoalValue} gender={gender}
+          hydrationMl={hydrationMl} hydrationGoal={adjustedHydrationGoal} gender={gender}
+          totalWaterLost={totalWaterLost}
           burnedExtra={burnedExtra} sportAlert={sportAlert}
           consumedTotal={consumedTotal} burnedTotal={burnedTotal}
           scrollRef={scrollRef} dailyTarget={realDailyTarget} lastMeal={lastMeal}
@@ -412,7 +415,7 @@ export default function DashboardPage({ navigation }) {
       <HydrationModal
         visible={hydroModalVisible} onClose={function() { setHydroModalVisible(false); }}
         currentMl={hydrationMl} setCurrentMl={setHydrationMl}
-        goalMl={hydrationGoalValue} gender={gender}
+        goalMl={adjustedHydrationGoal} gender={gender}
         hydroLogs={hydroLogs} setHydroLogs={setHydroLogs}
         onAddBeverage={function() { setShowBeverageModal(true); }}
         showResetConfirm={showResetConfirm} setShowResetConfirm={setShowResetConfirm}
