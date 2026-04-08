@@ -109,6 +109,29 @@ const XscanScreen = forwardRef(function XscanScreen({
   const ring3Anim = useRef(new Animated.Value(0)).current;
   const [showRings, setShowRings] = useState(false);
 
+  // Analyse orbital + pulse animations
+  var orbitAnim = useRef(new Animated.Value(0)).current;
+  var pulseAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(function() {
+    if (scanScreen === 'analyzing') {
+      var orbitLoop = Animated.loop(Animated.timing(orbitAnim, { toValue: 1, duration: 3000, easing: require('react-native').Easing.linear, useNativeDriver: true }));
+      var pulseLoop = Animated.loop(Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
+      ]));
+      orbitLoop.start();
+      pulseLoop.start();
+      return function() { orbitLoop.stop(); pulseLoop.stop(); };
+    } else {
+      orbitAnim.setValue(0);
+      pulseAnim.setValue(0);
+    }
+  }, [scanScreen]);
+
+  var orbitRotate = orbitAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  var orbitRotateReverse = orbitAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-360deg'] });
+
   // Shake animation pour icône "Pas ce plat ?"
   const alertShakeAnim = useRef(new Animated.Value(0)).current;
 
@@ -1401,26 +1424,56 @@ const XscanScreen = forwardRef(function XscanScreen({
 
           <View style={{ alignItems: 'center', paddingHorizontal: wp(30) }}>
 
-            {capturedPhoto && (
-              <View style={{
-                width: wp(140), height: wp(140), borderRadius: 20,
-                overflow: 'hidden', marginBottom: wp(30),
-                borderWidth: 2, borderColor: 'rgba(0,217,132,0.2)',
-              }}>
-                <Image
-                  source={{ uri: capturedPhoto.uri }}
-                  style={{ width: '100%', height: '100%' }}
-                />
+            {/* Anneaux orbitaux + photo */}
+            <View style={{ width: wp(180), height: wp(180), justifyContent: 'center', alignItems: 'center', marginBottom: wp(24) }}>
+              {/* Anneau extérieur — vert doux */}
+              <Animated.View style={{
+                position: 'absolute', width: wp(180), height: wp(180),
+                borderRadius: wp(90), borderWidth: 1.5,
+                borderColor: 'transparent', borderTopColor: 'rgba(0,217,132,0.35)', borderBottomColor: 'rgba(0,217,132,0.12)',
+                transform: [{ rotate: orbitRotate }],
+              }} />
+              {/* Anneau intérieur — gold */}
+              <Animated.View style={{
+                position: 'absolute', width: wp(160), height: wp(160),
+                borderRadius: wp(80), borderWidth: 1.5,
+                borderColor: 'transparent', borderTopColor: '#D4AF37', borderBottomColor: 'rgba(212,175,55,0.15)',
+                transform: [{ rotate: orbitRotateReverse }],
+              }} />
+
+              {capturedPhoto ? (
                 <View style={{
-                  position: 'absolute',
-                  left: 0, right: 0,
-                  height: 2,
-                  backgroundColor: '#00D984',
-                  top: '50%',
-                  opacity: 0.6,
-                }}/>
-              </View>
-            )}
+                  width: wp(140), height: wp(140), borderRadius: 20,
+                  overflow: 'hidden',
+                  borderWidth: 2, borderColor: 'rgba(0,217,132,0.2)',
+                }}>
+                  <Image
+                    source={{ uri: capturedPhoto.uri }}
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                  <View style={{
+                    position: 'absolute',
+                    left: 0, right: 0,
+                    height: 2,
+                    backgroundColor: 'rgba(0,217,132,0.35)',
+                    top: '50%',
+                    opacity: 0.6,
+                  }}/>
+                </View>
+              ) : null}
+            </View>
+
+            {/* Label ANALYSE EN COURS */}
+            <Text style={{
+              color: 'rgba(0,217,132,0.35)',
+              fontSize: fp(10),
+              fontWeight: '800',
+              letterSpacing: 3,
+              marginBottom: wp(10),
+              textAlign: 'center',
+            }}>
+              ANALYSE EN COURS
+            </Text>
 
             <Text style={{
               color: '#EAEEF3',
@@ -1433,19 +1486,32 @@ const XscanScreen = forwardRef(function XscanScreen({
               {loadingTexts[currentLoadingIndex]}
             </Text>
 
-            <View style={{
-              width: wp(220),
-              height: 6,
-              backgroundColor: 'rgba(0,217,132,0.1)',
-              borderRadius: 3,
-              overflow: 'hidden',
-            }}>
+            {/* Barre de progression + point pulse */}
+            <View style={{ width: wp(220), alignItems: 'flex-start' }}>
               <View style={{
-                height: '100%',
-                width: `${analysisProgress}%`,
-                backgroundColor: 'rgba(0,217,132,0.35)',
+                width: wp(220),
+                height: 6,
+                backgroundColor: 'rgba(0,217,132,0.1)',
                 borderRadius: 3,
-              }}/>
+                overflow: 'hidden',
+              }}>
+                <View style={{
+                  height: '100%',
+                  width: analysisProgress + '%',
+                  backgroundColor: 'rgba(0,217,132,0.35)',
+                  borderRadius: 3,
+                }}/>
+              </View>
+              {/* Point pulse au bout de la barre */}
+              <Animated.View style={{
+                position: 'absolute',
+                top: -2,
+                left: wp(220) * analysisProgress / 100 - 5,
+                width: 10, height: 10, borderRadius: 5,
+                backgroundColor: 'rgba(0,217,132,0.35)',
+                opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }),
+                transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.3] }) }],
+              }} />
             </View>
 
             <Text style={{
