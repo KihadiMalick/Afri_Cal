@@ -408,10 +408,21 @@ const DashboardContent = ({
               )
             );
           })()}
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
-            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>{burnedExtra > 0 ? 'Bonne séance ! ' + burnedExtra + ' kcal brûlées' : '15 min de marche pour brûler 85 kcal'}</Text>
-          </View>
+          {(function() {
+            var actMin = vitalityDetails && vitalityDetails.activityMin ? vitalityDetails.activityMin : 0;
+            if (actMin >= 30) {
+              return React.createElement(View, { style: { flexDirection: 'row', alignItems: 'center' } },
+                React.createElement(Text, { style: { color: '#00D984', fontSize: fp(10), marginRight: wp(6) } }, '✓'),
+                React.createElement(Text, { style: { color: '#00D984', fontSize: fp(11), fontWeight: '600' } }, 'Objectif activite atteint ! ' + (burnedExtra || 0) + ' kcal brulees')
+              );
+            }
+            var remainingMin = Math.max(0, 30 - actMin);
+            var estKcal = remainingMin * 4;
+            return React.createElement(View, { style: { flexDirection: 'row', alignItems: 'center' } },
+              React.createElement(Text, { style: { color: '#00D984', fontSize: fp(10), marginRight: wp(6) } }, '+'),
+              React.createElement(Text, { style: { color: '#EAEEF3', fontSize: fp(11) } }, remainingMin + ' min de marche pour brûler ~' + estKcal + ' kcal')
+            );
+          })()}
         </View>
         <TouchableOpacity onPress={function() { onNavigate('meals'); }} activeOpacity={0.7}
           style={{ backgroundColor: 'rgba(0, 217, 132, 0.08)', borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.15)', paddingVertical: wp(8), paddingHorizontal: wp(12), marginTop: wp(8), flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
@@ -433,7 +444,8 @@ const DashboardContent = ({
               var hydroGoalCalc = gender === 'femme' ? 2000 : 2500;
               var nutritionPct = OBJECTIVE_CALC > 0 && consumedTotal > 0 ? Math.max(0, Math.min(100, 100 - Math.round(Math.abs(1 - consumedTotal / OBJECTIVE_CALC) * 330))) : 0;
               var hydroPct = Math.min(Math.round((hydrationMl / hydroGoalCalc) * 100), 100);
-              var activityPct = 0;
+              var totalDurationMin = vitalityDetails && vitalityDetails.activityMin ? vitalityDetails.activityMin : 0;
+              var activityPct = Math.min(100, Math.round((totalDurationMin / 30) * 100));
               var regularityPct = Math.round(((lastMeal ? 50 : 0) + (hydrationMl > 0 ? 30 : 0) + 20) / 100 * 100);
               return [
                 { label: 'Nutrition', pct: nutritionPct, color: '#FF8C42' },
