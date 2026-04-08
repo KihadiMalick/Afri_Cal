@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Rect, Path, Circle, Line } from 'react-native-svg';
-import { CameraView } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useLang } from '../../config/LanguageContext';
 import { wp, fp } from '../../constants/layout';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
@@ -31,6 +31,7 @@ export default function CartScanScreen({ visible, onClose }) {
   const [cartReport, setCartReport] = useState(null);
   const [showCartReport, setShowCartReport] = useState(false);
 
+  var _camPerm = useCameraPermissions(); var permission = _camPerm[0]; var requestPermission = _camPerm[1];
   const cameraRef = useRef(null);
 
   // === FONCTIONS ===
@@ -314,8 +315,33 @@ export default function CartScanScreen({ visible, onClose }) {
   // === JSX ===
 
   if (!visible) return null;
+
+  if (!permission) {
+    return React.createElement(View, { style: { flex: 1, backgroundColor: '#1A1D22' } });
+  }
+
+  if (!permission.granted) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(30) }}>
+        <Text style={{ color: '#EAEEF3', fontSize: fp(18), fontWeight: '800', textAlign: 'center', marginBottom: wp(12) }}>
+          🛒 CARTSCAN
+        </Text>
+        <Text style={{ color: '#C0C4CC', fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: wp(24) }}>
+          CartScan a besoin d&apos;accéder à votre caméra pour scanner les code-barres
+        </Text>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={function() { requestPermission(); }}
+          style={{ backgroundColor: 'rgba(0,217,132,0.06)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)', borderRadius: 10, paddingHorizontal: wp(24), paddingVertical: wp(12) }}
+        >
+          <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '700' }}>Autoriser la caméra</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
-    <>
+    <View style={{ flex: 1 }}>
       {/* ══════ MODAL CARTSCAN v3 — Caméra Unifiée ══════ */}
       <Modal
         visible={!showStoreInput && !showCartReport}
@@ -1032,6 +1058,6 @@ export default function CartScanScreen({ visible, onClose }) {
           </View>
         </View>
       </Modal>
-    </>
+    </View>
   );
 }
