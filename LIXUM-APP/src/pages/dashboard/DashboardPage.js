@@ -29,6 +29,7 @@ export default function DashboardPage({ navigation }) {
   var userEnergy = auth.energy; var updateEnergy = auth.updateEnergy;
   var refreshLixFromServer = auth.refreshLixFromServer;
   const [realConsumed, setRealConsumed] = useState(0);
+  var _dailyMacros = useState({ protein: 0, carbs: 0, fat: 0 }); var dailyMacros = _dailyMacros[0]; var setDailyMacros = _dailyMacros[1];
   const [realDailyTarget, setRealDailyTarget] = useState(2330);
   const [realGender, setRealGender] = useState('homme');
   const [lastMeal, setLastMeal] = useState(null);
@@ -260,7 +261,7 @@ export default function DashboardPage({ navigation }) {
       var todayStart = today + 'T00:00:00';
       var [profileRes, summaryRes, mealsRes, moodRes, activitiesRes] = await Promise.all([
         supabase.from('users_profile').select('full_name, daily_calorie_target, lix_balance, energy, gender, hydration_history_unlocked_until, stats_unlocked_until, custom_hydration_goal_ml').eq('user_id', userId).single(),
-        supabase.from('daily_summary').select('total_calories').eq('user_id', userId).eq('date', today).single(),
+        supabase.from('daily_summary').select('total_calories, total_protein, total_carbs, total_fat').eq('user_id', userId).eq('date', today).single(),
         supabase.from('meals').select('food_name, calories, protein_g, carbs_g, fat_g, meal_time, photo_url, source, meal_type').eq('user_id', userId).eq('date', today).order('created_at', { ascending: false }).limit(1),
         supabase.from('moods').select('mood_level, weather').eq('user_id', userId).gte('created_at', todayStart).order('created_at', { ascending: false }).limit(1),
         supabase.from('user_activities').select('activity_id, duration_min, calories_burned, water_lost_ml, performed_at').eq('user_id', userId).gte('performed_at', todayStart).order('performed_at', { ascending: false }),
@@ -275,7 +276,10 @@ export default function DashboardPage({ navigation }) {
         setCustomHydroGoal(profile.custom_hydration_goal_ml || null);
       }
       var summary = summaryRes.data;
-      if (summary) setRealConsumed(Math.round(summary.total_calories || 0));
+      if (summary) {
+        setRealConsumed(Math.round(summary.total_calories || 0));
+        setDailyMacros({ protein: Math.round(summary.total_protein || 0), carbs: Math.round(summary.total_carbs || 0), fat: Math.round(summary.total_fat || 0) });
+      }
       var meals = mealsRes.data;
       if (meals && meals.length > 0) setLastMeal(meals[0]);
       var todayMood = moodRes.data;
@@ -384,7 +388,7 @@ export default function DashboardPage({ navigation }) {
           hydrationMl={hydrationMl} hydrationGoal={adjustedHydrationGoal} gender={gender}
           totalWaterLost={totalWaterLost}
           burnedExtra={burnedExtra} sportAlert={sportAlert}
-          consumedTotal={consumedTotal} burnedTotal={burnedTotal}
+          consumedTotal={consumedTotal} burnedTotal={burnedTotal} dailyMacros={dailyMacros}
           scrollRef={scrollRef} dailyTarget={realDailyTarget} lastMeal={lastMeal}
           tooltipStep={tooltipStep} vitalityScore={vitalityScore}
           vitalityDetails={{
