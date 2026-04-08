@@ -38,6 +38,8 @@ const HydrationModal = ({
   var deleteConfirmIdx = _deleteConfirm[0]; var setDeleteConfirmIdx = _deleteConfirm[1];
   var _tempMl = useState(0); var tempMl = _tempMl[0]; var setTempMl = _tempMl[1];
   var _isAdding = useState(false); var isAdding = _isAdding[0]; var setIsAdding = _isAdding[1];
+  var _isDeleting = useState(false); var isDeleting = _isDeleting[0]; var setIsDeleting = _isDeleting[1];
+  var _isTransitioning = useState(false); var isTransitioning = _isTransitioning[0]; var setIsTransitioning = _isTransitioning[1];
 
   var _selectedDayLogs = selectedDayLogs || [];
   var _fetchDayHydrationLogs = fetchDayHydrationLogs || function() {};
@@ -74,41 +76,77 @@ const HydrationModal = ({
         p_sugar_estimated: false,
         p_sugar_cubes: 0,
       });
-      if (res.error) { console.warn('confirmDrink error:', res.error.message); return; }
-      setCurrentMl(function(prev) { return prev + ml; });
-      setHydroLogs(function(prev) { return [].concat(prev, [{ time: getTimeStr(), amount: ml, type: 'eau', icon: '💧' }]); });
-      setTempMl(0);
+      if (res.error) { console.warn('confirmDrink error:', res.error.message); setIsAdding(false); return; }
+      var logId = null;
+      try {
+        var latest = await supabase.from('hydration_logs').select('id').eq('user_id', userId).order('logged_at', { ascending: false }).limit(1);
+        if (latest.data && latest.data[0]) { logId = latest.data[0].id; }
+      } catch (_e) {}
+      setIsTransitioning(true);
+      setTimeout(function() {
+        setCurrentMl(function(prev) { return prev + ml; });
+        setHydroLogs(function(prev) { return [].concat(prev, [{ id: logId, time: getTimeStr(), amount: ml, type: 'eau', icon: '💧' }]); });
+        setTempMl(0);
+        setIsTransitioning(false);
+        setIsAdding(false);
+      }, 400);
     } catch (e) {
       console.warn('confirmDrink save error:', e);
-    } finally {
       setIsAdding(false);
     }
   };
 
   var deleteFromHistory = async function(realIdx) {
     var removedLog = hydroLogs[realIdx];
-    if (!removedLog || isAdding) { setDeleteConfirmIdx(null); return; }
-    setIsAdding(true);
+    if (!removedLog || isDeleting) { setDeleteConfirmIdx(null); return; }
+    setIsDeleting(true);
     try {
-      var today = new Date().toISOString().split('T')[0];
-      var { data, error } = await supabase
-        .from('hydration_logs')
-        .select('id')
-        .eq('user_id', userId)
-        .gte('logged_at', today + 'T00:00:00Z')
-        .order('logged_at', { ascending: false })
-        .limit(1);
-      if (!error && data && data.length > 0) {
-        await supabase.from('hydration_logs').delete().eq('id', data[0].id);
+      var delError = null;
+      if (removedLog.id) {
+        var res = await supabase.from('hydration_logs').delete().eq('id', removedLog.id);
+        delError = res.error;
+      } else {
+        var today = new Date().toISOString().split('T')[0];
+        var { data, error } = await supabase
+          .from('hydration_logs')
+          .select('id')
+          .eq('user_id', userId)
+          .gte('logged_at', today + 'T00:00:00Z')
+          .order('logged_at', { ascending: false })
+          .limit(1);
+        if (error || !data || data.length === 0) { delError = error || { message: 'no entry found' }; }
+        else { var r = await supabase.from('hydration_logs').delete().eq('id', data[0].id); delError = r.error; }
       }
+      if (delError) { console.warn('deleteFromHistory error:', delError.message); return; }
       setHydroLogs(function(prev) { return prev.filter(function(_, idx) { return idx !== realIdx; }); });
       setCurrentMl(function(prev) { return Math.max(0, prev - removedLog.amount); });
       try { var Vibration = require('react-native').Vibration; Vibration.vibrate(15); } catch(e) {}
     } catch (e) {
       console.warn('deleteFromHistory error:', e);
     } finally {
-      setIsAdding(false);
+      setIsDeleting(false);
       setDeleteConfirmIdx(null);
+    }
+  };
+
+  var handleReset = async function() {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    try {
+      var today = new Date().toISOString().split('T')[0];
+      var { error } = await supabase
+        .from('hydration_logs')
+        .delete()
+        .eq('user_id', userId)
+        .gte('logged_at', today + 'T00:00:00Z');
+      if (error) { console.warn('Reset hydration error:', error.message); return; }
+      setCurrentMl(0);
+      setHydroLogs([]);
+      setShowResetConfirm(false);
+    } catch (e) {
+      console.warn('Reset hydration error:', e);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -142,15 +180,15 @@ const HydrationModal = ({
 
             <View style={{ alignItems: 'center', marginTop: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <SilhouetteFill fillPercent={percent} height={260} gender={gender} showBubbles />
+                <SilhouetteFill fillPercent={percent} previewPercent={Math.min(Math.round((tempMl / goalMl) * 100), 100 - percent)} height={260} gender={gender} showBubbles transitionToValidated={isTransitioning} />
                 <View style={{ marginLeft: 20, height: 260, justifyContent: 'space-between', paddingVertical: 12 }}>
                   {palierLabels.slice().reverse().map((label, i) => {
                     const palierPct = (4 - i) * 25;
                     const reached = percent >= palierPct;
                     return (
                       <View key={i} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <View style={{ width: 12, height: 1, backgroundColor: reached ? '#4DA6FF' : '#2A3040' }} />
-                        <Text style={{ color: reached ? '#4DA6FF' : '#555E6C', fontSize: 11, marginLeft: 6, fontWeight: reached ? '700' : '400' }}>{label}</Text>
+                        <View style={{ width: 12, height: 1, backgroundColor: reached ? '#00D984' : '#8A8F98' }} />
+                        <Text style={{ color: reached ? '#00D984' : '#8A8F98', fontSize: 11, marginLeft: 6, fontWeight: reached ? '700' : '400' }}>{label}</Text>
                       </View>
                     );
                   })}
@@ -453,7 +491,7 @@ const HydrationModal = ({
                     <TouchableOpacity onPress={() => setShowResetConfirm(false)} style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(136,146,160,0.2)', alignItems: 'center' }}>
                       <Text style={{ color: '#8892A0', fontSize: 14, fontWeight: '600' }}>Annuler</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => { setCurrentMl(0); setHydroLogs([]); setShowResetConfirm(false); }} style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: 'rgba(255,59,48,0.12)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)', alignItems: 'center' }}>
+                    <TouchableOpacity onPress={handleReset} disabled={isDeleting} style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: 'rgba(255,59,48,0.12)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)', alignItems: 'center', opacity: isDeleting ? 0.5 : 1 }}>
                       <Text style={{ color: '#FF3B30', fontSize: 14, fontWeight: '800' }}>Réinitialiser</Text>
                     </TouchableOpacity>
                   </View>
