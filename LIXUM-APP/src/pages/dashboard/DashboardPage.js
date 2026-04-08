@@ -55,6 +55,7 @@ export default function DashboardPage({ navigation }) {
   const [vitalityScore, setVitalityScore] = useState(0);
   const [hydrationData, setHydrationData] = useState({ totalEffective: 0, totalVolume: 0, totalKcal: 0, totalSugar: 0, entryCount: 0 });
   const [hydrationGoal, setHydrationGoal] = useState(2500);
+  var _customHydroGoal = useState(null); var customHydroGoal = _customHydroGoal[0]; var setCustomHydroGoal = _customHydroGoal[1];
   const [hydroModalVisible, setHydroModalVisible] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [hydroLogs, setHydroLogs] = useState([]);
@@ -258,7 +259,7 @@ export default function DashboardPage({ navigation }) {
       var today = new Date().toISOString().split('T')[0];
       var todayStart = today + 'T00:00:00';
       var [profileRes, summaryRes, mealsRes, moodRes, activitiesRes] = await Promise.all([
-        supabase.from('users_profile').select('full_name, daily_calorie_target, lix_balance, energy, gender, hydration_history_unlocked_until, stats_unlocked_until').eq('user_id', userId).single(),
+        supabase.from('users_profile').select('full_name, daily_calorie_target, lix_balance, energy, gender, hydration_history_unlocked_until, stats_unlocked_until, custom_hydration_goal_ml').eq('user_id', userId).single(),
         supabase.from('daily_summary').select('total_calories').eq('user_id', userId).eq('date', today).single(),
         supabase.from('meals').select('food_name, calories, protein_g, carbs_g, fat_g, meal_time, image_url, source').eq('user_id', userId).order('meal_time', { ascending: false }).limit(1),
         supabase.from('moods').select('mood_level, weather').eq('user_id', userId).gte('created_at', todayStart).order('created_at', { ascending: false }).limit(1),
@@ -271,6 +272,7 @@ export default function DashboardPage({ navigation }) {
         setRealGender(profile.gender === 'female' || profile.gender === 'femme' ? 'femme' : 'homme');
         setHistoryUnlockedUntil(profile.hydration_history_unlocked_until || null);
         setStatsUnlockedUntil(profile.stats_unlocked_until || null);
+        setCustomHydroGoal(profile.custom_hydration_goal_ml || null);
       }
       var summary = summaryRes.data;
       if (summary) setRealConsumed(Math.round(summary.total_calories || 0));
@@ -316,7 +318,7 @@ export default function DashboardPage({ navigation }) {
   var isStatsUnlocked = function() { return isUnlockedByLix(statsUnlockedUntil) || hasActivePower('stats_report'); };
 
   var gender = realGender;
-  var hydrationGoalBase = gender === 'homme' ? 2500 : 2000;
+  var hydrationGoalBase = customHydroGoal || (gender === 'homme' ? 2500 : 2000);
   var consumedTotal = realConsumed + (hydrationData.totalKcal || 0);
   var burnedExtra = activities.reduce(function(sum, a) { return sum + a.kcalBurned; }, 0);
   var burnedTotal = burnedExtra;
