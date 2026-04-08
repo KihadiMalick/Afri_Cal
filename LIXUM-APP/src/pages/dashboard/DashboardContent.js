@@ -300,8 +300,8 @@ const DashboardContent = ({
           <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '700', letterSpacing: wp(1), marginLeft: wp(8) }}>DERNIER REPAS</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {lastMeal && lastMeal.image_url ? (
-            <Image source={{ uri: lastMeal.image_url }} style={{ width: wp(52), height: wp(52), borderRadius: wp(12), marginRight: wp(12) }} resizeMode="cover" />
+          {lastMeal && (lastMeal.photo_url || lastMeal.image_url) ? (
+            <Image source={{ uri: lastMeal.photo_url || lastMeal.image_url }} style={{ width: wp(52), height: wp(52), borderRadius: wp(12), marginRight: wp(12) }} resizeMode="cover" />
           ) : (
             <View style={{ width: wp(52), height: wp(52), borderRadius: wp(12), backgroundColor: 'rgba(30, 37, 48, 0.8)', borderWidth: 1, borderColor: 'rgba(62, 72, 85, 0.3)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
               <Svg width={wp(28)} height={wp(28)} viewBox="0 0 32 32">
@@ -319,11 +319,16 @@ const DashboardContent = ({
             </View>
           )}
           <View style={{ flex: 1 }}>
-            <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>
-              {lastMeal ? lastMeal.food_name : 'Aucun repas scanné'}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600', flex: 1 }}>
+                {lastMeal ? lastMeal.food_name : 'Aucun repas enregistre'}
+              </Text>
+              {lastMeal ? React.createElement(View, { style: { backgroundColor: lastMeal.source === 'manual' ? 'rgba(138,143,152,0.15)' : 'rgba(0,217,132,0.12)', borderRadius: wp(4), paddingHorizontal: wp(5), paddingVertical: wp(1), marginLeft: wp(6) } },
+                React.createElement(Text, { style: { fontSize: fp(10), fontWeight: '700', color: lastMeal.source === 'manual' ? '#8A8F98' : '#00D984' } }, lastMeal.source === 'manual' ? 'Manuel' : 'IA')
+              ) : null}
+            </View>
             <Text style={{ color: '#8892A0', fontSize: fp(11), marginTop: 2 }}>
-              {lastMeal ? Math.round(lastMeal.calories) + ' kcal • ' : 'Prenez une photo de votre plat →'}
+              {lastMeal ? Math.round(lastMeal.calories) + ' kcal \u2022 ' : 'Scannez ou ajoutez votre plat \u2192'}
               <Text style={{ color: '#EAEEF3' }}>{lastMeal ? formatTimeFR(lastMeal.meal_time) : ''}</Text>
             </Text>
             <View style={{ flexDirection: 'row', marginTop: 4, gap: wp(10) }}>
