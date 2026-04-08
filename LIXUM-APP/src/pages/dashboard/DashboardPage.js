@@ -335,10 +335,17 @@ export default function DashboardPage({ navigation }) {
     }
   }, [userId]);
 
-  // Refresh Lix balance when page gains focus
+  // Refresh all data when page gains focus (returning from Activity, Repas, etc.)
   useFocusEffect(useCallback(function() {
-    if (userId) refreshLixFromServer();
-  }, [userId, refreshLixFromServer]));
+    if (userId) {
+      refreshLixFromServer();
+      loadDashboardFromSupabase();
+      fetchDailyHydration().then(function(data) {
+        setHydrationData(data);
+        setHydrationMl(data.totalEffective || 0);
+      });
+    }
+  }, [userId]));
 
   var vitalityDebounceRef = useRef(null);
   useEffect(function() {
