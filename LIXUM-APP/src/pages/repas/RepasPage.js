@@ -107,6 +107,7 @@ export default function RepasPage({ navigation }) {
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [showCartScan, setShowCartScan] = useState(false);
   const [showRecettes, setShowRecettes] = useState(false);
+  var recettesInitialTab = useRef('general');
   const [showCookingMode, setShowCookingMode] = useState(false);
   const [cookingRecipe, setCookingRecipe] = useState(null);
 
@@ -1080,7 +1081,7 @@ export default function RepasPage({ navigation }) {
             <SectionTitle
               title={lang === 'fr' ? 'Recettes' : 'Recipes'}
               rightLabel={lang === 'fr' ? 'Voir tout ›' : 'See all ›'}
-              rightAction={() => setShowRecettes(true)}
+              rightAction={function() { recettesInitialTab.current = 'general'; setShowRecettes(true); }}
             />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(12) }}>
               {MOCK_RECIPES.map((recipe, index) => (
@@ -1154,6 +1155,7 @@ export default function RepasPage({ navigation }) {
                   </View>
                 )}
               </View>
+              <TouchableOpacity activeOpacity={0.7} onPress={function() { recettesInitialTab.current = 'personalized'; setShowRecettes(true); }}>
               <View style={{ backgroundColor: '#252A30', borderRadius: wp(14), borderWidth: 0.5, borderColor: 'rgba(74,79,85,0.4)', padding: wp(14) }}>
                 <Text style={{ fontSize: fp(12), color: '#EAEEF3', fontWeight: '600', marginBottom: wp(6) }}>
                   {userMood === 'sad' && userWeather === 'rainy' ? '🍲 Journée cocooning — un bon plat chaud réconfortant'
@@ -1172,6 +1174,7 @@ export default function RepasPage({ navigation }) {
                   Suggestion basée sur votre humeur et la météo du jour
                 </Text>
               </View>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -1277,6 +1280,7 @@ export default function RepasPage({ navigation }) {
           userWeather={userWeather}
           lixBalance={lixBalance}
           setLixBalance={updateLixBalance}
+          initialTab={recettesInitialTab.current}
           onNavigate={function(key) { var routes = { home: 'Accueil', meals: 'Repas', medicai: 'MedicAi', activity: 'Activite', lixverse: 'LixVerse', profile: 'Profile' }; if (routes[key] && navigation) navigation.navigate(routes[key]); }}
           onOpenCooking={(recipe) => { setCookingRecipe(recipe); setShowCookingMode(true); }}
         />
