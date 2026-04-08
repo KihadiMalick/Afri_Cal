@@ -51,6 +51,7 @@ const DashboardContent = ({
   const pulseScale = tooltipPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.03] });
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView ref={scrollRef} style={{ flex: 1 }}
       contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: 90, paddingTop: wp(8) }}
       showsVerticalScrollIndicator={false}
@@ -625,6 +626,7 @@ const DashboardContent = ({
         </Pressable>
       </Pressable>
     </Modal>
+    </View>
   );
 };
 
