@@ -1443,7 +1443,7 @@ const XscanScreen = forwardRef(function XscanScreen({
               <View style={{
                 height: '100%',
                 width: `${analysisProgress}%`,
-                backgroundColor: '#00D984',
+                backgroundColor: 'rgba(0,217,132,0.35)',
                 borderRadius: 3,
               }}/>
             </View>
@@ -2039,13 +2039,17 @@ const XscanScreen = forwardRef(function XscanScreen({
                   backgroundColor: saveSuccess
                     ? '#00D984'
                     : isSaving
-                      ? 'rgba(0,217,132,0.5)'
-                      : pressed ? '#00B572' : '#00D984',
+                      ? 'rgba(0,217,132,0.12)'
+                      : pressed ? 'rgba(0,217,132,0.12)' : 'rgba(0,217,132,0.06)',
+                  borderWidth: saveSuccess ? 0 : 1,
+                  borderColor: saveSuccess
+                    ? 'transparent'
+                    : pressed ? 'rgba(0,217,132,0.35)' : 'rgba(0,217,132,0.15)',
                   alignItems: 'center',
                   opacity: isSaving ? 0.7 : 1,
                 })}
               >
-                <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
+                <Text style={{ color: saveSuccess ? '#0D1117' : '#00D984', fontSize: fp(14), fontWeight: '800' }}>
                   {saveSuccess
                     ? '✓ SAUVEGARDÉ ! +10 Lix'
                     : isSaving
@@ -2228,16 +2232,18 @@ const XscanScreen = forwardRef(function XscanScreen({
 
                   {/* Bouton fermer */}
                   <Pressable
-                    onPress={() => setShowAlternatives(false)}
+                    onPress={function() { setShowAlternatives(false); }}
                     style={({ pressed }) => ({
                       marginTop: wp(8),
                       paddingVertical: wp(12),
                       borderRadius: 14,
-                      backgroundColor: pressed ? '#00B572' : '#00D984',
+                      backgroundColor: pressed ? 'rgba(0,217,132,0.12)' : 'rgba(0,217,132,0.06)',
+                      borderWidth: 1,
+                      borderColor: pressed ? 'rgba(0,217,132,0.35)' : 'rgba(0,217,132,0.15)',
                       alignItems: 'center',
                     })}
                   >
-                    <Text style={{ color: '#0D1117', fontSize: fp(14), fontWeight: '800' }}>
+                    <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '800' }}>
                       {lang === 'fr' ? 'Valider' : 'Confirm'}
                     </Text>
                   </Pressable>
@@ -2551,11 +2557,13 @@ const XscanScreen = forwardRef(function XscanScreen({
                   style={({ pressed }) => ({
                     paddingVertical: wp(14),
                     borderRadius: 14,
-                    backgroundColor: pressed ? '#00B572' : '#00D984',
+                    backgroundColor: pressed ? 'rgba(0,217,132,0.12)' : 'rgba(0,217,132,0.06)',
+                    borderWidth: 1,
+                    borderColor: pressed ? 'rgba(0,217,132,0.35)' : 'rgba(0,217,132,0.15)',
                     alignItems: 'center',
                   })}
                 >
-                  <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
+                  <Text style={{ color: '#00D984', fontSize: fp(15), fontWeight: '800' }}>
                     ✓ {lang === 'fr' ? 'APPLIQUER LA CORRECTION' : 'APPLY CORRECTION'}
                   </Text>
                 </Pressable>
