@@ -18,6 +18,7 @@ import { EcgPulse, ReactorCore, DnaHelix, HydrationCardCompact } from './dashboa
 
 const DashboardContent = ({
   onHydrationPress, hydrationMl, hydrationGoal, gender,
+  totalWaterLost,
   burnedExtra, sportAlert, consumedTotal, burnedTotal,
   scrollRef, dailyTarget, lastMeal, tooltipStep,
   vitalityScore, vitalityDetails, activeChar, pagePowers,
@@ -291,7 +292,7 @@ const DashboardContent = ({
         </View>
       )}
 
-      <HydrationCardCompact currentMl={hydrationMl} goalMl={hydrationGoal} gender={gender} onPress={onHydrationPress} sportAlert={sportAlert} tooltipStep={tooltipStep} />
+      <HydrationCardCompact currentMl={hydrationMl} goalMl={hydrationGoal} gender={gender} onPress={onHydrationPress} sportAlert={sportAlert} tooltipStep={tooltipStep} totalWaterLost={totalWaterLost || 0} />
 
       <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }) }} onPress={function() { if (!lastMeal) { onNavigate('meals'); } else { setMealExpanded(function(v) { return !v; }); } }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
