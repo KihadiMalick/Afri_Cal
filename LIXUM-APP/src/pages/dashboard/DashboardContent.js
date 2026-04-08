@@ -8,7 +8,7 @@ import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Ellipse, Ci
 import MetalCard from '../../components/shared/MetalCard';
 import LockIcon from '../../components/shared/LockIcon';
 import {
-  wp, fp, DAILY_OBJECTIVE,
+  wp, fp, DAILY_OBJECTIVE, H,
   suggestActivities, ACTIVITY_ICONS, ACTIVITY_LABELS,
   formatNumberFR, formatTimeFR,
   REACTOR_SIZE, DNA_WIDTH,
