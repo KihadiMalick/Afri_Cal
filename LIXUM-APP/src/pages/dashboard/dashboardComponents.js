@@ -355,9 +355,11 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, 
           </View>
           {sportAlert ? (
             <Text style={{ color: '#FF8C42', fontSize: 11 }}>{sportAlert}</Text>
-          ) : (
-            <Text style={{ color: '#555E6C', fontSize: 11 }}>Tap pour ajouter →</Text>
-          )}
+          ) : null}
+          <TouchableOpacity activeOpacity={0.7} onPress={onPress}
+            style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: 10, borderWidth: 1, borderColor: '#00D984', paddingVertical: 8, paddingHorizontal: 16, alignSelf: 'flex-start', marginTop: 6 }}>
+            <Text style={{ color: '#00D984', fontSize: 13, fontWeight: '600' }}>+ Ajouter de l'eau</Text>
+          </TouchableOpacity>
           {percent < 30 && percent > 0 && (
             <Text style={{ color: '#FF3B30', fontSize: 10, fontWeight: '700', marginTop: 2 }}>
               ⚠️ Pensez à vous réhydrater ! 💧
