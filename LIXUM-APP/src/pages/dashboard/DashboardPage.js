@@ -225,7 +225,7 @@ export default function DashboardPage({ navigation }) {
       await Promise.all(days.map(function(dy) {
         return Promise.all([
           supabase.from('daily_summary').select('total_calories, total_protein, total_carbs, total_fat').eq('user_id', userId).eq('date', dy.date).single(),
-          supabase.from('activities').select('duration_minutes, calories_burned').eq('user_id', userId).gte('created_at', dy.date + 'T00:00:00').lt('created_at', dy.date + 'T23:59:59'),
+          supabase.from('activities').select('duration_minutes, calories_burned').eq('user_id', userId).eq('date', dy.date),
           supabase.rpc('get_daily_hydration', { p_user_id: userId, p_date: dy.date }),
           supabase.from('moods').select('mood_level').eq('user_id', userId).gte('created_at', dy.date + 'T00:00:00').lt('created_at', dy.date + 'T23:59:59').limit(1),
         ]).then(function(results) {
@@ -264,7 +264,7 @@ export default function DashboardPage({ navigation }) {
         supabase.from('daily_summary').select('total_calories, total_protein, total_carbs, total_fat').eq('user_id', userId).eq('date', today).single(),
         supabase.from('meals').select('food_name, calories, protein_g, carbs_g, fat_g, meal_time, photo_url, source, meal_type').eq('user_id', userId).eq('date', today).order('created_at', { ascending: false }).limit(1),
         supabase.from('moods').select('mood_level, weather').eq('user_id', userId).gte('created_at', todayStart).order('created_at', { ascending: false }).limit(1),
-        supabase.from('activities').select('id, duration_minutes, calories_burned, water_lost_ml, created_at').eq('user_id', userId).gte('created_at', todayStart).order('created_at', { ascending: false }),
+        supabase.from('activities').select('id, duration_minutes, calories_burned, water_lost_ml, created_at').eq('user_id', userId).eq('date', today).order('created_at', { ascending: false }),
       ]);
       var profile = profileRes.data;
       if (profile) {
@@ -285,6 +285,7 @@ export default function DashboardPage({ navigation }) {
       var todayMood = moodRes.data;
       if (todayMood && todayMood.length > 0) { setCurrentMood(todayMood[0].mood_level); setMoodFilled(true); }
       var todayActivities = activitiesRes.data;
+      console.log('ACTIVITIES FETCH:', JSON.stringify(todayActivities));
       if (todayActivities && todayActivities.length > 0) {
         setActivities(todayActivities.map(function(a) { return { name: 'activité', durationMin: a.duration_minutes || 0, intensity: a.intensity || 'modere', kcalBurned: a.calories_burned || 0, waterLostMl: a.water_lost_ml || 0 }; }));
       } else { setActivities([]); }
