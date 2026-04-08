@@ -27,6 +27,7 @@ export default function RecettesScreen({
   setLixBalance,
   onNavigate,
   onOpenCooking,
+  initialTab,
 }) {
   var auth = useAuth(); var userId = auth.userId;
   var _lc = useLang(); var lang = _lc.lang;
@@ -155,7 +156,7 @@ export default function RecettesScreen({
   // Initialisation quand visible passe à true
   useEffect(function() {
     if (visible) {
-      setRecipesTab('general');
+      setRecipesTab(initialTab || 'general');
       setRecipesSearch('');
       setRecipesRegion('all');
       setRecipesCategory('all');
