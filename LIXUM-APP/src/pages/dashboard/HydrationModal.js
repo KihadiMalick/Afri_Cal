@@ -37,6 +37,7 @@ const HydrationModal = ({
   var _deleteConfirm = useState(null);
   var deleteConfirmIdx = _deleteConfirm[0]; var setDeleteConfirmIdx = _deleteConfirm[1];
   var _tempMl = useState(0); var tempMl = _tempMl[0]; var setTempMl = _tempMl[1];
+  var _isAdding = useState(false); var isAdding = _isAdding[0]; var setIsAdding = _isAdding[1];
 
   var _selectedDayLogs = selectedDayLogs || [];
   var _fetchDayHydrationLogs = fetchDayHydrationLogs || function() {};
@@ -57,39 +58,58 @@ const HydrationModal = ({
     try { var Vibration = require('react-native').Vibration; Vibration.vibrate(15); } catch(e) {}
   };
 
-  var confirmDrink = function() {
-    if (tempMl <= 0) return;
+  var confirmDrink = async function() {
+    if (tempMl <= 0 || isAdding) return;
+    setIsAdding(true);
     var ml = tempMl;
-    supabase.rpc('add_beverage_log', {
-      p_user_id: userId,
-      p_beverage_name: 'eau',
-      p_amount_ml: ml,
-      p_hydration_coeff: 1.0,
-      p_source: 'manual',
-      p_kcal: 0,
-      p_sugar_g: 0,
-      p_sugar_estimated: false,
-      p_sugar_cubes: 0,
-    }).then(function(res) {
+    try {
+      var res = await supabase.rpc('add_beverage_log', {
+        p_user_id: userId,
+        p_beverage_name: 'eau',
+        p_amount_ml: ml,
+        p_hydration_coeff: 1.0,
+        p_source: 'manual',
+        p_kcal: 0,
+        p_sugar_g: 0,
+        p_sugar_estimated: false,
+        p_sugar_cubes: 0,
+      });
       if (res.error) { console.warn('confirmDrink error:', res.error.message); return; }
       setCurrentMl(function(prev) { return prev + ml; });
-      setHydroLogs(function(prev) { return [].concat(prev, [{ time: getTimeStr(), amount: ml, type: 'eau', icon: '\uD83D\uDCA7' }]); });
+      setHydroLogs(function(prev) { return [].concat(prev, [{ time: getTimeStr(), amount: ml, type: 'eau', icon: '💧' }]); });
       setTempMl(0);
-    }).catch(function(e) { console.warn('confirmDrink save error:', e); });
+    } catch (e) {
+      console.warn('confirmDrink save error:', e);
+    } finally {
+      setIsAdding(false);
+    }
   };
 
-  var deleteFromHistory = function(realIdx) {
+  var deleteFromHistory = async function(realIdx) {
     var removedLog = hydroLogs[realIdx];
-    if (!removedLog) { setDeleteConfirmIdx(null); return; }
-    supabase.rpc('get_daily_hydration', {
-      p_user_id: userId,
-      p_date: new Date().toISOString().split('T')[0],
-    }).then(function() {
+    if (!removedLog || isAdding) { setDeleteConfirmIdx(null); return; }
+    setIsAdding(true);
+    try {
+      var today = new Date().toISOString().split('T')[0];
+      var { data, error } = await supabase
+        .from('hydration_logs')
+        .select('id')
+        .eq('user_id', userId)
+        .gte('logged_at', today + 'T00:00:00Z')
+        .order('logged_at', { ascending: false })
+        .limit(1);
+      if (!error && data && data.length > 0) {
+        await supabase.from('hydration_logs').delete().eq('id', data[0].id);
+      }
       setHydroLogs(function(prev) { return prev.filter(function(_, idx) { return idx !== realIdx; }); });
       setCurrentMl(function(prev) { return Math.max(0, prev - removedLog.amount); });
       try { var Vibration = require('react-native').Vibration; Vibration.vibrate(15); } catch(e) {}
+    } catch (e) {
+      console.warn('deleteFromHistory error:', e);
+    } finally {
+      setIsAdding(false);
       setDeleteConfirmIdx(null);
-    }).catch(function() { setDeleteConfirmIdx(null); });
+    }
   };
 
   const palierLabels = gender === 'homme'
@@ -165,7 +185,7 @@ const HydrationModal = ({
                       style: { marginTop: 5, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(30,35,45,0.8)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)', justifyContent: 'center', alignItems: 'center' },
                       activeOpacity: 0.7, onPress: function() { removeWater(item.ml); }
                     },
-                      React.createElement(Text, { style: { color: '#FF3B30', fontSize: 16, fontWeight: '700', lineHeight: 18 } }, '\u2212')
+                      React.createElement(Text, { style: { color: '#FF3B30', fontSize: 16, fontWeight: '700', lineHeight: 18 } }, '−')
                     )
                   );
                 })}
@@ -177,10 +197,10 @@ const HydrationModal = ({
 
             {tempMl > 0 ? (
               <TouchableOpacity
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 24, marginBottom: 8, backgroundColor: '#00D984', borderRadius: 16, paddingVertical: 14 }}
-                activeOpacity={0.7} onPress={confirmDrink}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 24, marginBottom: 8, backgroundColor: '#00D984', borderRadius: 16, paddingVertical: 14, opacity: isAdding ? 0.5 : 1 }}
+                activeOpacity={0.7} onPress={confirmDrink} disabled={isAdding}
               >
-                <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '800', letterSpacing: 0.5 }}>Boire {tempMl} ml \uD83D\uDCA7</Text>
+                <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '800', letterSpacing: 0.5 }}>Boire {tempMl} ml 💧</Text>
               </TouchableOpacity>
             ) : null}
 
@@ -188,7 +208,7 @@ const HydrationModal = ({
               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 24, marginBottom: 20, backgroundColor: 'rgba(0, 217, 132, 0.08)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.25)', paddingVertical: 14, opacity: tempMl > 0 ? 0.4 : 1 }}
               activeOpacity={0.7} onPress={tempMl > 0 ? undefined : onAddBeverage} disabled={tempMl > 0}
             >
-              <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '800', letterSpacing: 0.5 }}>AJOUTER BOISSONS \uD83E\uDD64</Text>
+              <Text style={{ color: '#00D984', fontSize: 14, fontWeight: '800', letterSpacing: 0.5 }}>AJOUTER BOISSONS 🥤</Text>
             </TouchableOpacity>
 
             <View style={{ marginHorizontal: 24 }}>
