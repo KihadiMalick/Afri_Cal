@@ -225,13 +225,13 @@ export default function DashboardPage({ navigation }) {
       await Promise.all(days.map(function(dy) {
         return Promise.all([
           supabase.from('daily_summary').select('total_calories, total_protein, total_carbs, total_fat').eq('user_id', userId).eq('date', dy.date).single(),
-          supabase.from('user_activities').select('duration_min, calories_burned').eq('user_id', userId).gte('performed_at', dy.date + 'T00:00:00').lt('performed_at', dy.date + 'T23:59:59'),
+          supabase.from('activities').select('duration_minutes, calories_burned').eq('user_id', userId).gte('created_at', dy.date + 'T00:00:00').lt('created_at', dy.date + 'T23:59:59'),
           supabase.rpc('get_daily_hydration', { p_user_id: userId, p_date: dy.date }),
           supabase.from('moods').select('mood_level').eq('user_id', userId).gte('created_at', dy.date + 'T00:00:00').lt('created_at', dy.date + 'T23:59:59').limit(1),
         ]).then(function(results) {
           var sumRes = results[0]; var actRes = results[1]; var hydRes = results[2]; var moodRes = results[3];
           if (sumRes.data) { dy.calories = Math.round(sumRes.data.total_calories || 0); dy.protein = Math.round(sumRes.data.total_protein || 0); dy.carbs = Math.round(sumRes.data.total_carbs || 0); dy.fat = Math.round(sumRes.data.total_fat || 0); }
-          if (actRes.data) { dy.activityMin = actRes.data.reduce(function(s, a) { return s + (a.duration_min || 0); }, 0); dy.activityKcal = actRes.data.reduce(function(s, a) { return s + (a.calories_burned || 0); }, 0); }
+          if (actRes.data) { dy.activityMin = actRes.data.reduce(function(s, a) { return s + (a.duration_minutes || 0); }, 0); dy.activityKcal = actRes.data.reduce(function(s, a) { return s + (a.calories_burned || 0); }, 0); }
           if (hydRes.data && hydRes.data.length > 0) { dy.hydrationMl = hydRes.data[0].total_effective_ml || 0; }
           if (moodRes.data && moodRes.data.length > 0) { dy.mood = moodRes.data[0].mood_level; }
         });
@@ -264,7 +264,7 @@ export default function DashboardPage({ navigation }) {
         supabase.from('daily_summary').select('total_calories, total_protein, total_carbs, total_fat').eq('user_id', userId).eq('date', today).single(),
         supabase.from('meals').select('food_name, calories, protein_g, carbs_g, fat_g, meal_time, photo_url, source, meal_type').eq('user_id', userId).eq('date', today).order('created_at', { ascending: false }).limit(1),
         supabase.from('moods').select('mood_level, weather').eq('user_id', userId).gte('created_at', todayStart).order('created_at', { ascending: false }).limit(1),
-        supabase.from('user_activities').select('activity_id, duration_min, calories_burned, water_lost_ml, performed_at').eq('user_id', userId).gte('performed_at', todayStart).order('performed_at', { ascending: false }),
+        supabase.from('activities').select('id, duration_minutes, calories_burned, water_lost_ml, created_at').eq('user_id', userId).gte('created_at', todayStart).order('created_at', { ascending: false }),
       ]);
       var profile = profileRes.data;
       if (profile) {
@@ -286,7 +286,7 @@ export default function DashboardPage({ navigation }) {
       if (todayMood && todayMood.length > 0) { setCurrentMood(todayMood[0].mood_level); setMoodFilled(true); }
       var todayActivities = activitiesRes.data;
       if (todayActivities && todayActivities.length > 0) {
-        setActivities(todayActivities.map(function(a) { return { name: 'activité', durationMin: a.duration_min || 0, intensity: 'modere', kcalBurned: a.calories_burned || 0, waterLostMl: a.water_lost_ml || 0 }; }));
+        setActivities(todayActivities.map(function(a) { return { name: 'activité', durationMin: a.duration_minutes || 0, intensity: a.intensity || 'modere', kcalBurned: a.calories_burned || 0, waterLostMl: a.water_lost_ml || 0 }; }));
       } else { setActivities([]); }
     } catch (err) { console.warn('Erreur chargement dashboard:', err); }
     setIsLoadingDashboard(false);

@@ -760,7 +760,7 @@ export default function MedicAiPage({ navigation }) {
       fetchTable('lixverse_challenges', '*', '&status=in.(active,completed)&order=created_at.desc&limit=10'),
       fetchTable('lixverse_group_members', '*'),
       fetchTable('meals', '*', `&created_at=gte.${getWeekStart()}&order=created_at.desc`),
-      fetchTable('user_activities', '*', `&performed_at=gte.${getWeekStart()}&order=performed_at.desc`),
+      fetchTable('activities', '*', `&created_at=gte.${getWeekStart()}&order=created_at.desc`),
       fetchTable('moods', '*', `&created_at=gte.${getWeekStart()}&order=created_at.desc`),
       fetchTable('daily_summary', 'total_calories,total_protein,total_carbs,total_fat,hydration_ml', `&date=gte.${getWeekStart()}&order=date.desc`),
       fetchTable('daily_summary', '*', `&date=eq.${getTodayDate()}`).then(r => r[0] || {}),
