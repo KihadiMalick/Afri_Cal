@@ -19,7 +19,7 @@ import { EcgPulse, ReactorCore, DnaHelix, HydrationCardCompact } from './dashboa
 const DashboardContent = ({
   onHydrationPress, hydrationMl, hydrationGoal, gender,
   totalWaterLost,
-  burnedExtra, sportAlert, consumedTotal, burnedTotal,
+  burnedExtra, sportAlert, consumedTotal, burnedTotal, dailyMacros,
   scrollRef, dailyTarget, lastMeal, tooltipStep,
   vitalityScore, vitalityDetails, activeChar, pagePowers,
   toggleStates, setToggleStates, consumePower,
@@ -300,8 +300,8 @@ const DashboardContent = ({
           <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '700', letterSpacing: wp(1), marginLeft: wp(8) }}>DERNIER REPAS</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {lastMeal && lastMeal.image_url ? (
-            <Image source={{ uri: lastMeal.image_url }} style={{ width: wp(52), height: wp(52), borderRadius: wp(12), marginRight: wp(12) }} resizeMode="cover" />
+          {lastMeal && (lastMeal.photo_url || lastMeal.image_url) ? (
+            <Image source={{ uri: lastMeal.photo_url || lastMeal.image_url }} style={{ width: wp(52), height: wp(52), borderRadius: wp(12), marginRight: wp(12) }} resizeMode="cover" />
           ) : (
             <View style={{ width: wp(52), height: wp(52), borderRadius: wp(12), backgroundColor: 'rgba(30, 37, 48, 0.8)', borderWidth: 1, borderColor: 'rgba(62, 72, 85, 0.3)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
               <Svg width={wp(28)} height={wp(28)} viewBox="0 0 32 32">
@@ -319,11 +319,16 @@ const DashboardContent = ({
             </View>
           )}
           <View style={{ flex: 1 }}>
-            <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600' }}>
-              {lastMeal ? lastMeal.food_name : 'Aucun repas scanné'}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600', flex: 1 }}>
+                {lastMeal ? lastMeal.food_name : 'Aucun repas enregistre'}
+              </Text>
+              {lastMeal ? React.createElement(View, { style: { backgroundColor: lastMeal.source === 'manual' ? 'rgba(138,143,152,0.15)' : 'rgba(0,217,132,0.12)', borderRadius: wp(4), paddingHorizontal: wp(5), paddingVertical: wp(1), marginLeft: wp(6) } },
+                React.createElement(Text, { style: { fontSize: fp(10), fontWeight: '700', color: lastMeal.source === 'manual' ? '#8A8F98' : '#00D984' } }, lastMeal.source === 'manual' ? 'Manuel' : 'IA')
+              ) : null}
+            </View>
             <Text style={{ color: '#8892A0', fontSize: fp(11), marginTop: 2 }}>
-              {lastMeal ? Math.round(lastMeal.calories) + ' kcal • ' : 'Prenez une photo de votre plat →'}
+              {lastMeal ? Math.round(lastMeal.calories) + ' kcal \u2022 ' : 'Scannez ou ajoutez votre plat \u2192'}
               <Text style={{ color: '#EAEEF3' }}>{lastMeal ? formatTimeFR(lastMeal.meal_time) : ''}</Text>
             </Text>
             <View style={{ flexDirection: 'row', marginTop: 4, gap: wp(10) }}>
@@ -390,40 +395,77 @@ const DashboardContent = ({
               ? 'Déficit de ' + (OBJECTIVE - consumedTotal + burnedTotal) + ' kcal — bonne stratégie pour la perte de poids !'
               : 'Surplus de ' + (consumedTotal - OBJECTIVE) + ' kcal — pensez à une activité physique !'}
         </Text>
-        <View style={{ backgroundColor: 'rgba(0, 217, 132, 0.03)', borderRadius: wp(10), padding: wp(10), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.06)' }}>
-          <Text style={{ color: '#8892A0', fontSize: fp(8), fontWeight: '700', letterSpacing: wp(1), marginBottom: wp(4) }}>SUGGESTIONS</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
-            <Text style={{ color: '#00D984', fontSize: fp(10), marginRight: wp(6) }}>+</Text>
-            <Text style={{ color: '#EAEEF3', fontSize: fp(11) }}>{!lastMeal ? 'Scannez un repas pour activer les suggestions' : '25g de protéines au prochain repas'}</Text>
-          </View>
-          {(function() {
-            var sportHydroBonus = Math.round((burnedExtra || 0) * 1.2);
-            var adjustedGoal = hydrationGoal + sportHydroBonus;
-            var glassesNeeded = Math.max(0, Math.ceil((adjustedGoal - hydrationMl) / 250));
-            if (hydrationMl >= adjustedGoal) return null;
-            return React.createElement(View, { style: { flexDirection: 'row', alignItems: 'center', marginBottom: 3 } },
+        {(function() {
+          var OBJECTIVE_S = dailyTarget || 2100;
+          var proteinTarget = Math.round(OBJECTIVE_S * 0.25 / 4);
+          var carbsTarget = Math.round(OBJECTIVE_S * 0.45 / 4);
+          var fatTarget = Math.round(OBJECTIVE_S * 0.30 / 9);
+          var dm = dailyMacros || { protein: 0, carbs: 0, fat: 0 };
+          var proteinDef = proteinTarget - (dm.protein || 0);
+          var carbsDef = carbsTarget - (dm.carbs || 0);
+          var fatDef = fatTarget - (dm.fat || 0);
+
+          var s1 = null;
+          if (!lastMeal) {
+            s1 = React.createElement(View, { style: { flexDirection: 'row', alignItems: 'center', marginBottom: 3 } },
+              React.createElement(Text, { style: { color: '#00D984', fontSize: fp(10), marginRight: wp(6) } }, '+'),
+              React.createElement(Text, { style: { color: '#EAEEF3', fontSize: fp(11) } }, 'Scannez ou ajoutez un repas pour activer les suggestions')
+            );
+          } else if (proteinDef > 0 || carbsDef > 0 || fatDef > 0) {
+            var macroLabel = 'proteines'; var macroDef = proteinDef; var macroColor = '#FF6B8A';
+            if (carbsDef > proteinDef && carbsDef > fatDef) { macroLabel = 'glucides'; macroDef = carbsDef; macroColor = '#FFD93D'; }
+            else if (fatDef > proteinDef && fatDef > carbsDef) { macroLabel = 'lipides'; macroDef = fatDef; macroColor = '#4DA6FF'; }
+            s1 = React.createElement(View, { style: { flexDirection: 'row', alignItems: 'center', marginBottom: 3 } },
+              React.createElement(Text, { style: { color: '#00D984', fontSize: fp(10), marginRight: wp(6) } }, '+'),
+              React.createElement(Text, { style: { color: macroColor, fontSize: fp(11), fontWeight: '600' } }, 'Privilegiez les ' + macroLabel + ' : ~' + Math.round(macroDef) + 'g restants')
+            );
+          }
+
+          var s2 = null;
+          var sportHydroBonus = Math.round((burnedExtra || 0) * 1.2);
+          var adjustedGoal = hydrationGoal + sportHydroBonus;
+          var glassesNeeded = Math.max(0, Math.ceil((adjustedGoal - hydrationMl) / 250));
+          if (hydrationMl < adjustedGoal) {
+            s2 = React.createElement(View, { style: { flexDirection: 'row', alignItems: 'center', marginBottom: 3 } },
               React.createElement(Text, { style: { color: '#00D984', fontSize: fp(10), marginRight: wp(6) } }, '+'),
               React.createElement(Text, { style: { color: '#EAEEF3', fontSize: fp(11) } },
                 glassesNeeded + ' verre' + (glassesNeeded > 1 ? 's' : '') + ' d\'eau pour atteindre votre objectif' + (sportHydroBonus > 0 ? ' (+' + sportHydroBonus + 'ml sport)' : '')
               )
             );
-          })()}
-          {(function() {
-            var actMin = vitalityDetails && vitalityDetails.activityMin ? vitalityDetails.activityMin : 0;
-            if (actMin >= 30) {
-              return React.createElement(View, { style: { flexDirection: 'row', alignItems: 'center' } },
-                React.createElement(Text, { style: { color: '#00D984', fontSize: fp(10), marginRight: wp(6) } }, '✓'),
-                React.createElement(Text, { style: { color: '#00D984', fontSize: fp(11), fontWeight: '600' } }, 'Objectif activite atteint ! ' + (burnedExtra || 0) + ' kcal brulees')
-              );
-            }
+          }
+
+          var actMin = vitalityDetails && vitalityDetails.activityMin ? vitalityDetails.activityMin : 0;
+          var s3done = actMin >= 30;
+          var s3 = null;
+          if (s3done) {
+            s3 = React.createElement(View, { style: { flexDirection: 'row', alignItems: 'center' } },
+              React.createElement(Text, { style: { color: '#00D984', fontSize: fp(10), marginRight: wp(6) } }, '\u2713'),
+              React.createElement(Text, { style: { color: '#00D984', fontSize: fp(11), fontWeight: '600' } }, 'Objectif activite atteint ! ' + (burnedExtra || 0) + ' kcal brulees')
+            );
+          } else {
             var remainingMin = Math.max(0, 30 - actMin);
             var estKcal = remainingMin * 4;
-            return React.createElement(View, { style: { flexDirection: 'row', alignItems: 'center' } },
+            s3 = React.createElement(View, { style: { flexDirection: 'row', alignItems: 'center' } },
               React.createElement(Text, { style: { color: '#00D984', fontSize: fp(10), marginRight: wp(6) } }, '+'),
-              React.createElement(Text, { style: { color: '#EAEEF3', fontSize: fp(11) } }, remainingMin + ' min de marche pour brûler ~' + estKcal + ' kcal')
+              React.createElement(Text, { style: { color: '#EAEEF3', fontSize: fp(11) } }, remainingMin + ' min de marche pour bruler ~' + estKcal + ' kcal')
             );
-          })()}
-        </View>
+          }
+
+          var allDone = !s1 && !s2 && s3done;
+
+          if (allDone) {
+            return React.createElement(View, { style: { backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(12), padding: wp(16), marginTop: wp(8), alignItems: 'center' } },
+              React.createElement(Text, { style: { fontSize: fp(28) } }, '\uD83C\uDFC6'),
+              React.createElement(Text, { style: { color: '#00D984', fontSize: fp(14), fontWeight: '600', textAlign: 'center', marginTop: wp(6) } }, 'Journee exemplaire ! Tous vos objectifs sont atteints.'),
+              React.createElement(Text, { style: { color: '#8A8F98', fontSize: fp(12), textAlign: 'center', marginTop: wp(4) } }, 'Continuez comme ca, ALIXEN est fier de vous.')
+            );
+          }
+
+          return React.createElement(View, { style: { backgroundColor: 'rgba(0,217,132,0.03)', borderRadius: wp(10), padding: wp(10), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(0,217,132,0.06)' } },
+            React.createElement(Text, { style: { color: '#8892A0', fontSize: fp(8), fontWeight: '700', letterSpacing: wp(1), marginBottom: wp(4) } }, 'SUGGESTIONS'),
+            s1, s2, s3
+          );
+        })()}
         <TouchableOpacity onPress={function() { onNavigate('meals'); }} activeOpacity={0.7}
           style={{ backgroundColor: 'rgba(0, 217, 132, 0.08)', borderRadius: wp(10), borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.15)', paddingVertical: wp(8), paddingHorizontal: wp(12), marginTop: wp(8), flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: fp(14), marginRight: wp(6) }}>📸</Text>
@@ -441,7 +483,7 @@ const DashboardContent = ({
             <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#EAEEF3', marginBottom: wp(10) }}>🧠 Analyse du jour</Text>
             {(function() {
               var OBJECTIVE_CALC = dailyTarget || 2100;
-              var hydroGoalCalc = gender === 'femme' ? 2000 : 2500;
+              var hydroGoalCalc = hydrationGoal || (gender === 'femme' ? 2000 : 2500);
               var nutritionPct = OBJECTIVE_CALC > 0 && consumedTotal > 0 ? Math.max(0, Math.min(100, 100 - Math.round(Math.abs(1 - consumedTotal / OBJECTIVE_CALC) * 330))) : 0;
               var hydroPct = Math.min(Math.round((hydrationMl / hydroGoalCalc) * 100), 100);
               var totalDurationMin = vitalityDetails && vitalityDetails.activityMin ? vitalityDetails.activityMin : 0;

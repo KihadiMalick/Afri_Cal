@@ -62,6 +62,9 @@ export default function ProfilePage({ navigation }) {
   var _activeCharSlug = useState(null), activeCharSlug = _activeCharSlug[0], setActiveCharSlug = _activeCharSlug[1];
   var _userEnergy = useState(20), userEnergy = _userEnergy[0], setUserEnergy = _userEnergy[1];
   var _showEditProfile = useState(false), showEditProfile = _showEditProfile[0], setShowEditProfile = _showEditProfile[1];
+  var _hydroGoalL = useState(null); var hydroGoalL = _hydroGoalL[0]; var setHydroGoalL = _hydroGoalL[1];
+  var _showMedicalWarning = useState(false); var showMedicalWarning = _showMedicalWarning[0]; var setShowMedicalWarning = _showMedicalWarning[1];
+  var _pendingHydroGoal = useState(null); var pendingHydroGoal = _pendingHydroGoal[0]; var setPendingHydroGoal = _pendingHydroGoal[1];
   var _showLocationPicker = useState(false), showLocationPicker = _showLocationPicker[0], setShowLocationPicker = _showLocationPicker[1];
   var _showGlossary = useState(false), showGlossary = _showGlossary[0], setShowGlossary = _showGlossary[1];
   var _showFeatures = useState(false), showFeatures = _showFeatures[0], setShowFeatures = _showFeatures[1];
@@ -96,7 +99,7 @@ export default function ProfilePage({ navigation }) {
     ]).then(function(responses) { return Promise.all(responses.map(function(r) { return r.json(); })); })
     .then(function(results) {
       var pD = results[0]; var cD = results[1];
-      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); if (pD[0].language === 'EN') setLang('en'); else setLang('fr'); }
+      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); if (pD[0].language === 'EN') setLang('en'); else setLang('fr'); var cGoal = pD[0].custom_hydration_goal_ml; setHydroGoalL(cGoal ? (cGoal / 1000) : null); }
       if (Array.isArray(cD)) { setOwnedCharacters(cD.length); var activeC = cD.find(function(c) { return c.is_active; }); if (activeC) setActiveCharSlug(activeC.character_slug); }
       fetch(SUPABASE_URL + '/rest/v1/rpc/get_user_xp', { method: 'POST', headers: Object.assign({}, hdrs, { 'Content-Type': 'application/json' }), body: JSON.stringify({ p_user_id: userId }) })
         .then(function(r) { return r.json(); }).then(function(d) { if (d) setUserXP(d); }).catch(function(err) { console.warn('[LIXUM] XP fetch error:', err); });
@@ -121,6 +124,38 @@ export default function ProfilePage({ navigation }) {
 
   var saveLocation = function(city) { setEditLocation(city); setShowLocationPicker(false); showToast('\uD83D\uDCCD ' + city, '#FF8C42'); };
   var toggleConnector = function(connId) { setConnectedApps(function(prev) { var n = Object.assign({}, prev); if (n[connId]) { delete n[connId]; showToast(lang === 'fr' ? 'D\u00e9connect\u00e9' : 'Disconnected', '#FF6B6B'); } else { n[connId] = { connectedAt: new Date().toISOString(), lastSync: new Date().toISOString() }; showToast(lang === 'fr' ? 'Connect\u00e9 \u2713' : 'Connected \u2713', '#00D984'); } return n; }); };
+  var defaultHydroGoalL = (profile && (profile.gender === 'female' || profile.gender === 'femme')) ? 2.0 : 2.5;
+  var currentHydroL = hydroGoalL !== null ? hydroGoalL : defaultHydroGoalL;
+  var hydroValues = [];
+  for (var hv = 5; hv <= 50; hv++) { hydroValues.push(hv / 10); }
+
+  var saveHydrationGoal = async function(valL) {
+    var mlVal = Math.round(valL * 1000);
+    var isDefault = valL === defaultHydroGoalL;
+    var dbVal = isDefault ? null : mlVal;
+    try {
+      await supabase.from('users_profile').update({ custom_hydration_goal_ml: dbVal }).eq('user_id', userId);
+      setHydroGoalL(isDefault ? null : valL);
+      showToast('Objectif hydratation mis a jour', '#4DA6FF');
+    } catch (e) { showToast('Erreur sauvegarde', '#FF6B6B'); }
+  };
+
+  var trySetHydroGoal = function(valL) {
+    var mlVal = Math.round(valL * 1000);
+    if (mlVal < 1500 || mlVal > 3500) {
+      setPendingHydroGoal(valL);
+      setShowMedicalWarning(true);
+    } else {
+      saveHydrationGoal(valL);
+    }
+  };
+
+  var confirmMedicalWarning = function() {
+    if (pendingHydroGoal !== null) saveHydrationGoal(pendingHydroGoal);
+    setPendingHydroGoal(null);
+    setShowMedicalWarning(false);
+  };
+
   var handleLogout = function() { auth.signOut(); setShowLogoutConfirm(false); };
   var handleDeleteAccount = function() { auth.signOut(); setShowDeleteConfirm(false); };
 
@@ -239,6 +274,59 @@ export default function ProfilePage({ navigation }) {
           )}
 
           <Pressable delayPressIn={120} onPress={function() { setShowEditProfile(true); }} style={{ marginHorizontal: wp(16), marginBottom: wp(20), paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.06)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}><Text style={{ fontSize: fp(13), fontWeight: '600', color: '#00D984' }}>{t.editProfile}</Text></Pressable>
+
+          <MetalCard style={{ marginHorizontal: wp(16), marginBottom: wp(16) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+              <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>💧</Text>
+              <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', letterSpacing: 1.5 }}>OBJECTIF HYDRATATION</Text>
+            </View>
+            <Text style={{ fontSize: fp(12), color: '#8A8F98', marginBottom: wp(12) }}>Recommande : 2.5L (H) / 2.0L (F)</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flex: 1 }}>
+                <ProfileScrollPicker values={hydroValues} selectedValue={currentHydroL} onSelect={function(val) { trySetHydroGoal(val); }} unit="L" color="#4DA6FF" height={140} />
+              </View>
+              <View style={{ marginLeft: wp(16), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#00D984' }}>{currentHydroL.toFixed(1)}</Text>
+                <Text style={{ fontSize: fp(14), color: '#8A8F98' }}>L</Text>
+                {currentHydroL === defaultHydroGoalL ? (
+                  <View style={{ marginTop: wp(6), backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                    <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#00D984' }}>Recommande</Text>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+            <Text style={{ fontSize: fp(12), marginTop: wp(10), color: currentHydroL === defaultHydroGoalL ? '#8A8F98' : currentHydroL < defaultHydroGoalL ? '#FF8C42' : '#4DA6FF' }}>
+              {currentHydroL === defaultHydroGoalL ? 'Base sur les recommandations EFSA' : currentHydroL < defaultHydroGoalL ? 'Inferieur aux recommandations standards' : 'Superieur aux recommandations standards'}
+            </Text>
+          </MetalCard>
+
+          <Modal visible={showMedicalWarning} transparent animationType="fade" onRequestClose={function() { setShowMedicalWarning(false); setPendingHydroGoal(null); }}>
+            <Pressable onPress={function() { setShowMedicalWarning(false); setPendingHydroGoal(null); }} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
+              <Pressable onPress={function() {}} style={{ width: '100%', maxWidth: 320, borderRadius: 20, padding: 24, overflow: 'hidden' }}>
+                <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 20 }} />
+                <View style={{ alignItems: 'center' }}>
+                  <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,68,68,0.15)', justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(24), color: '#FF4444' }}>⚕</Text>
+                  </View>
+                  <Text style={{ color: '#FFF', fontSize: fp(18), fontWeight: '800', textAlign: 'center', marginTop: 16 }}>Avertissement medical</Text>
+                  <Text style={{ color: '#C0C4CC', fontSize: fp(14), lineHeight: fp(22), textAlign: 'center', marginTop: 12 }}>
+                    {pendingHydroGoal !== null && pendingHydroGoal < 1.5
+                      ? 'Un objectif inferieur a 1.5L est generalement prescrit pour des conditions medicales specifiques (insuffisance cardiaque, insuffisance renale). Consultez votre medecin avant de modifier cet objectif.'
+                      : 'Un apport superieur a 3.5L par jour peut entrainer une hyponatremie (baisse dangereuse du sodium sanguin). Consultez votre medecin.'}
+                  </Text>
+                  <Text style={{ color: '#666', fontSize: fp(10), fontStyle: 'italic', marginTop: 8 }}>Sources : EFSA 2010, NIH StatPearls 2025</Text>
+                  <View style={{ flexDirection: 'row', marginTop: 20, gap: 12 }}>
+                    <Pressable delayPressIn={120} onPress={function() { setShowMedicalWarning(false); setPendingHydroGoal(null); }} style={{ flex: 1, borderWidth: 1, borderColor: '#4A4F55', borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}>
+                      <Text style={{ color: '#8A8F98', fontSize: fp(14), fontWeight: '600' }}>Annuler</Text>
+                    </Pressable>
+                    <Pressable delayPressIn={120} onPress={confirmMedicalWarning} style={{ flex: 1, backgroundColor: '#00D984', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginLeft: 12 }}>
+                      <Text style={{ color: '#000', fontSize: fp(14), fontWeight: '700' }}>Je confirme</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </Pressable>
+            </Pressable>
+          </Modal>
 
           <View style={{ paddingHorizontal: wp(16), marginBottom: wp(4) }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>{t.settings}</Text></View>
           <Section icon={'\uD83D\uDCCD'} title={t.location} subtitle={t.locationSub} color="#FF8C42" rightText={editLocation || t.notDefined} onPress={function() { setShowLocationPicker(true); }} />

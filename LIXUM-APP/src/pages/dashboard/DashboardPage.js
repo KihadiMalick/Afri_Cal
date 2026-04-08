@@ -29,6 +29,7 @@ export default function DashboardPage({ navigation }) {
   var userEnergy = auth.energy; var updateEnergy = auth.updateEnergy;
   var refreshLixFromServer = auth.refreshLixFromServer;
   const [realConsumed, setRealConsumed] = useState(0);
+  var _dailyMacros = useState({ protein: 0, carbs: 0, fat: 0 }); var dailyMacros = _dailyMacros[0]; var setDailyMacros = _dailyMacros[1];
   const [realDailyTarget, setRealDailyTarget] = useState(2330);
   const [realGender, setRealGender] = useState('homme');
   const [lastMeal, setLastMeal] = useState(null);
@@ -55,6 +56,7 @@ export default function DashboardPage({ navigation }) {
   const [vitalityScore, setVitalityScore] = useState(0);
   const [hydrationData, setHydrationData] = useState({ totalEffective: 0, totalVolume: 0, totalKcal: 0, totalSugar: 0, entryCount: 0 });
   const [hydrationGoal, setHydrationGoal] = useState(2500);
+  var _customHydroGoal = useState(null); var customHydroGoal = _customHydroGoal[0]; var setCustomHydroGoal = _customHydroGoal[1];
   const [hydroModalVisible, setHydroModalVisible] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [hydroLogs, setHydroLogs] = useState([]);
@@ -112,7 +114,7 @@ export default function DashboardPage({ navigation }) {
       var deviation = Math.abs(1 - realConsumed / OBJECTIVE);
       score += Math.max(0, 25 - Math.round(deviation * 83));
     }
-    var hydroGoal = realGender === 'femme' ? 2000 : 2500;
+    var hydroGoal = customHydroGoal || (realGender === 'femme' ? 2000 : 2500);
     score += Math.round((Math.min((hydrationMl / hydroGoal) * 100, 100) / 100) * 25);
     var totalActivityMin = activities.reduce(function(s, a) { return s + (a.durationMin || 0); }, 0);
     score += Math.round(Math.min(totalActivityMin / 30, 1) * 25);
@@ -258,9 +260,9 @@ export default function DashboardPage({ navigation }) {
       var today = new Date().toISOString().split('T')[0];
       var todayStart = today + 'T00:00:00';
       var [profileRes, summaryRes, mealsRes, moodRes, activitiesRes] = await Promise.all([
-        supabase.from('users_profile').select('full_name, daily_calorie_target, lix_balance, energy, gender, hydration_history_unlocked_until, stats_unlocked_until').eq('user_id', userId).single(),
-        supabase.from('daily_summary').select('total_calories').eq('user_id', userId).eq('date', today).single(),
-        supabase.from('meals').select('food_name, calories, protein_g, carbs_g, fat_g, meal_time, image_url, source').eq('user_id', userId).order('meal_time', { ascending: false }).limit(1),
+        supabase.from('users_profile').select('full_name, daily_calorie_target, lix_balance, energy, gender, hydration_history_unlocked_until, stats_unlocked_until, custom_hydration_goal_ml').eq('user_id', userId).single(),
+        supabase.from('daily_summary').select('total_calories, total_protein, total_carbs, total_fat').eq('user_id', userId).eq('date', today).single(),
+        supabase.from('meals').select('food_name, calories, protein_g, carbs_g, fat_g, meal_time, photo_url, source, meal_type').eq('user_id', userId).eq('date', today).order('created_at', { ascending: false }).limit(1),
         supabase.from('moods').select('mood_level, weather').eq('user_id', userId).gte('created_at', todayStart).order('created_at', { ascending: false }).limit(1),
         supabase.from('user_activities').select('activity_id, duration_min, calories_burned, water_lost_ml, performed_at').eq('user_id', userId).gte('performed_at', todayStart).order('performed_at', { ascending: false }),
       ]);
@@ -271,9 +273,13 @@ export default function DashboardPage({ navigation }) {
         setRealGender(profile.gender === 'female' || profile.gender === 'femme' ? 'femme' : 'homme');
         setHistoryUnlockedUntil(profile.hydration_history_unlocked_until || null);
         setStatsUnlockedUntil(profile.stats_unlocked_until || null);
+        setCustomHydroGoal(profile.custom_hydration_goal_ml || null);
       }
       var summary = summaryRes.data;
-      if (summary) setRealConsumed(Math.round(summary.total_calories || 0));
+      if (summary) {
+        setRealConsumed(Math.round(summary.total_calories || 0));
+        setDailyMacros({ protein: Math.round(summary.total_protein || 0), carbs: Math.round(summary.total_carbs || 0), fat: Math.round(summary.total_fat || 0) });
+      }
       var meals = mealsRes.data;
       if (meals && meals.length > 0) setLastMeal(meals[0]);
       var todayMood = moodRes.data;
@@ -316,7 +322,7 @@ export default function DashboardPage({ navigation }) {
   var isStatsUnlocked = function() { return isUnlockedByLix(statsUnlockedUntil) || hasActivePower('stats_report'); };
 
   var gender = realGender;
-  var hydrationGoalBase = gender === 'homme' ? 2500 : 2000;
+  var hydrationGoalBase = customHydroGoal || (gender === 'homme' ? 2500 : 2000);
   var consumedTotal = realConsumed + (hydrationData.totalKcal || 0);
   var burnedExtra = activities.reduce(function(sum, a) { return sum + a.kcalBurned; }, 0);
   var burnedTotal = burnedExtra;
@@ -382,12 +388,12 @@ export default function DashboardPage({ navigation }) {
           hydrationMl={hydrationMl} hydrationGoal={adjustedHydrationGoal} gender={gender}
           totalWaterLost={totalWaterLost}
           burnedExtra={burnedExtra} sportAlert={sportAlert}
-          consumedTotal={consumedTotal} burnedTotal={burnedTotal}
+          consumedTotal={consumedTotal} burnedTotal={burnedTotal} dailyMacros={dailyMacros}
           scrollRef={scrollRef} dailyTarget={realDailyTarget} lastMeal={lastMeal}
           tooltipStep={tooltipStep} vitalityScore={vitalityScore}
           vitalityDetails={{
             consumed: realConsumed, target: realDailyTarget || 2100,
-            hydroMl: hydrationMl, hydroGoal: realGender === 'femme' ? 2000 : 2500,
+            hydroMl: hydrationMl, hydroGoal: hydrationGoalBase,
             activityMin: activities.reduce(function(s, a) { return s + (a.durationMin || 0); }, 0),
             moodFilled: moodFilled, lastMeal: lastMeal
           }}
