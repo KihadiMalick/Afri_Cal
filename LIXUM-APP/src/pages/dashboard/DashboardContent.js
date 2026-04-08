@@ -30,6 +30,7 @@ const DashboardContent = ({
   const [showInfoRight, setShowInfoRight] = useState(false);
   var _showVitalityInfo = useState(false); var showVitalityInfo = _showVitalityInfo[0]; var setShowVitalityInfo = _showVitalityInfo[1];
   const remaining = Math.max(0, OBJECTIVE - (consumedTotal - burnedTotal));
+  var netConsumed = Math.max(0, consumedTotal - burnedTotal);
   var _mealExpanded = useState(false);
   var mealExpanded = _mealExpanded[0]; var setMealExpanded = _mealExpanded[1];
   var _coachExpanded = useState(false);
@@ -97,11 +98,11 @@ const DashboardContent = ({
         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', overflow: 'visible', paddingVertical: 4, paddingHorizontal: 6 }}>
           <View style={{ alignItems: 'center', width: REACTOR_SIZE + 20 }}>
             <RNAnimated.View style={{ opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2 ? (tooltipStep === 2 ? pulseOpacity : 1) : 0.05, transform: tooltipStep === 2 ? [{ scale: pulseScale }] : [] }}>
-              <ReactorCore size={REACTOR_SIZE} value={consumedTotal} percentage={Math.round((consumedTotal / OBJECTIVE) * 100)} label="Consommé" color="#FF8C42" colorLight="#FFB87A" colorDark="#CC6020" clockwise={true} />
+              <ReactorCore size={REACTOR_SIZE} value={netConsumed} percentage={Math.round((netConsumed / OBJECTIVE) * 100)} label="Consommé" color="#FF8C42" colorLight="#FFB87A" colorDark="#CC6020" clockwise={true} />
             </RNAnimated.View>
             <RNAnimated.View style={{ alignItems: 'center', marginTop: 4, opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 2 ? (tooltipStep === 2 ? pulseOpacity : 1) : 0.05 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo', fontSize: fp(11), fontWeight: '700', color: '#FF8C42' }}>{formatNumberFR(consumedTotal)} kcal</Text>
+                <Text style={{ fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo', fontSize: fp(11), fontWeight: '700', color: '#FF8C42' }}>{formatNumberFR(netConsumed)} kcal</Text>
                 <Pressable onPress={function() { setShowInfoLeft(function(v) { return !v; }); setShowInfoRight(false); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   style={{ width: wp(16), height: wp(16), borderRadius: wp(8), backgroundColor: showInfoLeft ? 'rgba(255,140,66,0.15)' : 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: showInfoLeft ? 'rgba(255,140,66,0.3)' : 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center', marginLeft: wp(4) }}>
                   <Text style={{ color: showInfoLeft ? '#FF8C42' : '#8892A0', fontSize: fp(8), fontWeight: '700' }}>i</Text>
@@ -146,13 +147,14 @@ const DashboardContent = ({
         {showInfoLeft && (
           <View style={{ backgroundColor: 'rgba(255,140,66,0.06)', borderRadius: wp(12), padding: wp(12), marginTop: wp(8), borderWidth: 1, borderColor: 'rgba(255,140,66,0.15)' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
-              <Text style={{ fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo', fontSize: fp(14), fontWeight: '800', color: '#FF8C42' }}>{Math.round((consumedTotal / OBJECTIVE) * 100)}%</Text>
+              <Text style={{ fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo', fontSize: fp(14), fontWeight: '800', color: '#FF8C42' }}>{Math.round((netConsumed / OBJECTIVE) * 100)}%</Text>
               <Text style={{ color: '#8892A0', fontSize: fp(10), marginLeft: wp(6) }}>du quota journalier</Text>
             </View>
-            <Text style={{ color: '#EAEEF3', fontSize: fp(11), lineHeight: fp(16), marginBottom: wp(8) }}>Votre activité sportive brûle vos calories consommées.</Text>
               <View style={{ backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: wp(8), padding: wp(8) }}>
-                <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700' }}>- {burnedExtra || 0} kcal / Sport</Text>
-                <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700', marginTop: wp(2) }}>= {formatNumberFR(consumedTotal)} kcal net consommé</Text>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(10), fontWeight: '700' }}>{formatNumberFR(consumedTotal)} kcal repas</Text>
+                <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700', marginTop: wp(2) }}>- {burnedExtra || 0} kcal sport</Text>
+                <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: wp(4) }} />
+                <Text style={{ color: '#FF8C42', fontSize: fp(11), fontWeight: '800' }}>= {formatNumberFR(netConsumed)} kcal net consomme</Text>
               </View>
           </View>
         )}
@@ -163,10 +165,12 @@ const DashboardContent = ({
               <Text style={{ fontFamily: Platform.OS === 'android' ? 'monospace' : 'Menlo', fontSize: fp(14), fontWeight: '800', color: '#4DA6FF' }}>{Math.min(Math.round((remaining / OBJECTIVE) * 100), 100)}%</Text>
               <Text style={{ color: '#8892A0', fontSize: fp(10), marginLeft: wp(6) }}>de vos calories disponibles</Text>
             </View>
-            <Text style={{ color: '#EAEEF3', fontSize: fp(11), lineHeight: fp(16), marginBottom: wp(8) }}>Si vous faites de l'activité, vos calories consommées diminuent et augmentent votre marge restante.</Text>
               <View style={{ backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: wp(8), padding: wp(8) }}>
-                <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>+ {burnedExtra || 0} kcal / Sport</Text>
-                <Text style={{ color: '#4DA6FF', fontSize: fp(10), fontWeight: '700', marginTop: wp(2) }}>= {formatNumberFR(remaining)} kcal disponibles</Text>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(10), fontWeight: '700' }}>{formatNumberFR(OBJECTIVE)} kcal objectif</Text>
+                <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700', marginTop: wp(2) }}>- {formatNumberFR(consumedTotal)} kcal repas</Text>
+                {burnedExtra > 0 ? React.createElement(Text, { style: { color: '#00D984', fontSize: fp(10), fontWeight: '700', marginTop: wp(2) } }, '+ ' + (burnedExtra || 0) + ' kcal sport') : null}
+                <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: wp(4) }} />
+                <Text style={{ color: '#4DA6FF', fontSize: fp(11), fontWeight: '800' }}>= {formatNumberFR(remaining)} kcal disponibles</Text>
               </View>
           </View>
         )}
