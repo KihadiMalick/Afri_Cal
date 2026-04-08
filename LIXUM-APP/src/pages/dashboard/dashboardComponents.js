@@ -251,72 +251,210 @@ const DnaHelix = ({ height = 68, width = 60 }) => {
   );
 };
 
-const SilhouetteFill = ({ fillPercent, height = 60, gender = 'homme', showBubbles = false }) => {
-  const fillAnim = useRef(new RNAnimated.Value(fillPercent)).current;
-  const svgPath = gender === 'femme' ? FEMALE_PATH : MALE_PATH;
-  const vbH = 130;
-  const ratio = height / vbH;
-  const svgW = Math.round(100 * ratio);
-  const clipId = `silClip_${height}_${gender}`;
-  const gradId = `waterGrad_${height}_${gender}`;
-  const bubbleAnims = useRef(BUBBLE_CONFIG.map(() => new RNAnimated.Value(0))).current;
-  const [bubblePositions, setBubblePositions] = useState(BUBBLE_CONFIG.map(() => 0));
+var PREVIEW_BUBBLES = [
+  { cx: 40, size: 1.5, duration: 1600, delay: 0 },
+  { cx: 52, size: 1, duration: 2000, delay: 500 },
+  { cx: 45, size: 2, duration: 1800, delay: 300 },
+];
 
-  useEffect(() => {
-    RNAnimated.timing(fillAnim, { toValue: fillPercent, duration: 400, useNativeDriver: false }).start();
+var SilhouetteFill = function(props) {
+  var fillPercent = props.fillPercent || 0;
+  var previewPercent = props.previewPercent || 0;
+  var _height = props.height || 60;
+  var _gender = props.gender || 'homme';
+  var _showBubbles = props.showBubbles || false;
+  var transitionToValidated = props.transitionToValidated || false;
+
+  var svgPath = _gender === 'femme' ? FEMALE_PATH : MALE_PATH;
+  var vbH = 130;
+  var ratio = _height / vbH;
+  var svgW = Math.round(100 * ratio);
+  var clipId = 'silClip_' + _height + '_' + _gender;
+  var gradId = 'waterGrad_' + _height + '_' + _gender;
+
+  // Animated fill level (blue validated zone, 600ms easeOut)
+  var fillAnim = useRef(new RNAnimated.Value(fillPercent)).current;
+  var _af = useState(fillPercent); var animFill = _af[0]; var setAnimFill = _af[1];
+
+  // Animated preview level (grey pending zone, 600ms easeOut)
+  var prevAnim = useRef(new RNAnimated.Value(0)).current;
+  var _ap = useState(0); var animPreview = _ap[0]; var setAnimPreview = _ap[1];
+
+  // Transition grey→blue (400ms)
+  var transAnim = useRef(new RNAnimated.Value(0)).current;
+  var _tp = useState(0); var transProgress = _tp[0]; var setTransProgress = _tp[1];
+  var prevPreviewRef = useRef(0);
+
+  // 100% glow pulse
+  var glowAnim = useRef(new RNAnimated.Value(0.1)).current;
+  var _gp = useState(0); var glowOpacity = _gp[0]; var setGlowOpacity = _gp[1];
+
+  // Bubble anims (main blue zone)
+  var bubbleAnims = useRef(BUBBLE_CONFIG.map(function() { return new RNAnimated.Value(0); })).current;
+  var _bp = useState(BUBBLE_CONFIG.map(function() { return 0; }));
+  var bubblePositions = _bp[0]; var setBubblePositions = _bp[1];
+
+  // Preview micro-bubble anims (grey zone)
+  var prevBubAnims = useRef(PREVIEW_BUBBLES.map(function() { return new RNAnimated.Value(0); })).current;
+  var _pbp = useState(PREVIEW_BUBBLES.map(function() { return 0; }));
+  var prevBubPos = _pbp[0]; var setPrevBubPos = _pbp[1];
+
+  // --- Fill animation ---
+  useEffect(function() {
+    RNAnimated.timing(fillAnim, { toValue: fillPercent, duration: 600, easing: Easing.out(Easing.ease), useNativeDriver: false }).start();
   }, [fillPercent]);
+  useEffect(function() {
+    var id = fillAnim.addListener(function(v) { setAnimFill(v.value); });
+    return function() { fillAnim.removeListener(id); };
+  }, []);
 
-  useEffect(() => {
-    if (!showBubbles || fillPercent < 10) return;
-    const timers = [];
-    bubbleAnims.forEach((anim, i) => {
-      const cfg = BUBBLE_CONFIG[i];
-      const startTimer = setTimeout(() => {
-        const loop = () => {
+  // --- Preview animation ---
+  useEffect(function() {
+    RNAnimated.timing(prevAnim, { toValue: previewPercent, duration: 600, easing: Easing.out(Easing.ease), useNativeDriver: false }).start();
+  }, [previewPercent]);
+  useEffect(function() {
+    var id = prevAnim.addListener(function(v) { setAnimPreview(v.value); });
+    return function() { prevAnim.removeListener(id); };
+  }, []);
+
+  // --- Transition grey→blue ---
+  useEffect(function() {
+    if (transitionToValidated) {
+      transAnim.setValue(0);
+      RNAnimated.timing(transAnim, { toValue: 1, duration: 400, useNativeDriver: false }).start();
+    }
+  }, [transitionToValidated]);
+  useEffect(function() {
+    // Reset transition when a new preview starts
+    if (prevPreviewRef.current <= 0 && previewPercent > 0) {
+      transAnim.setValue(0);
+      setTransProgress(0);
+    }
+    prevPreviewRef.current = previewPercent;
+  }, [previewPercent]);
+  useEffect(function() {
+    var id = transAnim.addListener(function(v) { setTransProgress(v.value); });
+    return function() { transAnim.removeListener(id); };
+  }, []);
+
+  // --- 100% glow pulse ---
+  var isComplete = fillPercent >= 100;
+  useEffect(function() {
+    if (isComplete) {
+      var pulse = RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(glowAnim, { toValue: 0.3, duration: 1000, useNativeDriver: false }),
+          RNAnimated.timing(glowAnim, { toValue: 0.1, duration: 1000, useNativeDriver: false }),
+        ])
+      );
+      pulse.start();
+      return function() { pulse.stop(); };
+    }
+    glowAnim.setValue(0);
+    setGlowOpacity(0);
+  }, [isComplete]);
+  useEffect(function() {
+    var id = glowAnim.addListener(function(v) { setGlowOpacity(v.value); });
+    return function() { glowAnim.removeListener(id); };
+  }, []);
+
+  // --- Main bubbles ---
+  useEffect(function() {
+    if (!_showBubbles || fillPercent < 10) return;
+    var timers = [];
+    bubbleAnims.forEach(function(anim, i) {
+      var cfg = BUBBLE_CONFIG[i];
+      var startTimer = setTimeout(function() {
+        var loop = function() {
           anim.setValue(0);
-          RNAnimated.timing(anim, { toValue: 1, duration: cfg.duration, useNativeDriver: false }).start(() => loop());
+          RNAnimated.timing(anim, { toValue: 1, duration: cfg.duration, useNativeDriver: false }).start(function() { loop(); });
         };
         loop();
-        anim.addListener(({ value }) => {
-          setBubblePositions(prev => { const next = [...prev]; next[i] = value; return next; });
+        anim.addListener(function(v) {
+          setBubblePositions(function(prev) { var next = prev.slice(); next[i] = v.value; return next; });
         });
       }, cfg.delay);
       timers.push(startTimer);
     });
-    return () => { timers.forEach(t => clearTimeout(t)); bubbleAnims.forEach(a => a.removeAllListeners()); };
-  }, [showBubbles, fillPercent > 10]);
+    return function() { timers.forEach(function(t) { clearTimeout(t); }); bubbleAnims.forEach(function(a) { a.removeAllListeners(); }); };
+  }, [_showBubbles, fillPercent > 10]);
 
-  const waterTop = vbH * (1 - fillPercent / 100);
-  const waterHeight = vbH * (fillPercent / 100);
+  // --- Preview micro-bubbles ---
+  useEffect(function() {
+    if (previewPercent < 5) {
+      prevBubAnims.forEach(function(a) { a.removeAllListeners(); a.stopAnimation(); });
+      return;
+    }
+    var timers = [];
+    prevBubAnims.forEach(function(anim, i) {
+      var cfg = PREVIEW_BUBBLES[i];
+      var startTimer = setTimeout(function() {
+        var loop = function() {
+          anim.setValue(0);
+          RNAnimated.timing(anim, { toValue: 1, duration: cfg.duration, useNativeDriver: false }).start(function() { loop(); });
+        };
+        loop();
+        anim.addListener(function(v) {
+          setPrevBubPos(function(prev) { var next = prev.slice(); next[i] = v.value; return next; });
+        });
+      }, cfg.delay);
+      timers.push(startTimer);
+    });
+    return function() { timers.forEach(function(t) { clearTimeout(t); }); prevBubAnims.forEach(function(a) { a.removeAllListeners(); }); };
+  }, [previewPercent >= 5]);
+
+  // --- Computed values ---
+  var totalPct = Math.min(animFill + animPreview, 100);
+  var waterTop = vbH * (1 - animFill / 100);
+  var waterHeight = Math.max(0, vbH * (animFill / 100));
+  var previewTop = vbH * (1 - totalPct / 100);
+  var previewH = Math.max(0, totalPct - animFill) / 100 * vbH;
+  var bubbleColor = isComplete ? '#00D984' : '#FFFFFF';
 
   return (
-    <View style={{ width: svgW, height }}>
-      <Svg width={svgW} height={height} viewBox="0 0 100 130" style={{ position: 'absolute' }}>
+    <View style={{ width: svgW, height: _height }}>
+      {isComplete && glowOpacity > 0 ? (
+        <Svg width={svgW} height={_height} viewBox="0 0 100 130" style={{ position: 'absolute' }}>
+          <Path d={svgPath} fill="none" stroke="#00D984" strokeWidth={4} opacity={glowOpacity} />
+        </Svg>
+      ) : null}
+      <Svg width={svgW} height={_height} viewBox="0 0 100 130" style={{ position: 'absolute' }}>
         <Path d={svgPath} fill="#2A3040" opacity={0.5} />
         <Path d={svgPath} fill="none" stroke="#4A5568" strokeWidth={1.2} opacity={0.6} />
       </Svg>
-      <Svg width={svgW} height={height} viewBox="0 0 100 130" style={{ position: 'absolute' }}>
+      <Svg width={svgW} height={_height} viewBox="0 0 100 130" style={{ position: 'absolute' }}>
         <Defs>
           <ClipPath id={clipId}>
             <Path d={svgPath} />
           </ClipPath>
           <SvgLinearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
-            <Stop offset="0" stopColor="#006994" stopOpacity="0.9" />
-            <Stop offset="0.5" stopColor="#00BCD4" stopOpacity="0.8" />
-            <Stop offset="1" stopColor="#4DA6FF" stopOpacity="0.7" />
+            <Stop offset="0" stopColor={isComplete ? '#006B3F' : '#006994'} stopOpacity="0.9" />
+            <Stop offset="0.5" stopColor={isComplete ? '#00D984' : '#00B4D8'} stopOpacity="0.85" />
+            <Stop offset="1" stopColor={isComplete ? '#00D984' : '#00B4D8'} stopOpacity="0.7" />
           </SvgLinearGradient>
         </Defs>
-        <G clipPath={`url(#${clipId})`}>
-          <Rect x="0" y={waterTop} width="100" height={waterHeight} fill={`url(#${gradId})`} />
-          {showBubbles && fillPercent >= 10 && BUBBLE_CONFIG.map((cfg, i) => {
-            const progress = bubblePositions[i] || 0;
-            const bubbleY = waterTop + waterHeight - (progress * waterHeight);
-            const oscillation = Math.sin(progress * Math.PI * 4) * 3;
-            const opacity = progress < 0.8 ? 0.3 : 0.3 * (1 - (progress - 0.8) / 0.2);
-            return (
-              <Circle key={`bubble-${i}`} cx={cfg.cx + oscillation} cy={bubbleY} r={cfg.size} fill="#FFFFFF" opacity={Math.max(0, opacity)} />
-            );
-          })}
+        <G clipPath={'url(#' + clipId + ')'}>
+          <Rect x="0" y={waterTop} width="100" height={waterHeight} fill={'url(#' + gradId + ')'} />
+          {animPreview > 0.5 ? (
+            <Rect x="0" y={previewTop} width="100" height={previewH} fill="rgba(180,190,200,0.4)" opacity={1 - transProgress} />
+          ) : null}
+          {animPreview > 0.5 && transProgress > 0 ? (
+            <Rect x="0" y={previewTop} width="100" height={previewH} fill={'url(#' + gradId + ')'} opacity={transProgress} />
+          ) : null}
+          {_showBubbles && animFill >= 10 ? BUBBLE_CONFIG.map(function(cfg, i) {
+            var progress = bubblePositions[i] || 0;
+            var bubbleY = waterTop + waterHeight - (progress * waterHeight);
+            var oscillation = Math.sin(progress * Math.PI * 4) * 3;
+            var op = progress < 0.8 ? 0.3 : 0.3 * (1 - (progress - 0.8) / 0.2);
+            return React.createElement(Circle, { key: 'b' + i, cx: cfg.cx + oscillation, cy: bubbleY, r: cfg.size, fill: bubbleColor, opacity: Math.max(0, op) });
+          }) : null}
+          {animPreview >= 5 ? PREVIEW_BUBBLES.map(function(cfg, i) {
+            var progress = prevBubPos[i] || 0;
+            var bubbleY = previewTop + previewH - (progress * previewH);
+            var oscillation = Math.sin(progress * Math.PI * 3) * 2;
+            var op = progress < 0.8 ? 0.25 : 0.25 * (1 - (progress - 0.8) / 0.2);
+            return React.createElement(Circle, { key: 'pb' + i, cx: cfg.cx + oscillation, cy: bubbleY, r: cfg.size, fill: 'rgba(200,210,220,0.3)', opacity: Math.max(0, op) });
+          }) : null}
         </G>
       </Svg>
     </View>

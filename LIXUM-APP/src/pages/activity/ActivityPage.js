@@ -228,14 +228,19 @@ export default function ActivityPage({ navigation }) {
     try {
       var now = new Date();
       var dayOfWeek = now.getDay();
+      var diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
       var monday = new Date(now);
-      monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-      monday.setHours(0, 0, 0, 0);
+      monday.setDate(now.getDate() - diffToMonday);
+      var sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      var mondayStr = monday.toISOString().split('T')[0];
+      var sundayStr = sunday.toISOString().split('T')[0];
       var { data, error } = await supabase
         .from('activities')
         .select('duration_minutes')
         .eq('user_id', userId)
-        .gte('created_at', monday.toISOString());
+        .gte('date', mondayStr)
+        .lte('date', sundayStr);
       if (error || !data) { data = []; }
       var total = (data || []).reduce(function(sum, a) { return sum + (a.duration_minutes || 0); }, 0);
       setWeeklyMinutes(total);
@@ -637,7 +642,7 @@ export default function ActivityPage({ navigation }) {
                 <Text style={{ fontSize: fp(14), fontWeight: '800', color: weeklyMinutes >= 150 ? '#00D984' : '#FFFFFF' }}>{weeklyMinutes}</Text>
                 <Text style={{ fontSize: fp(9), color: '#6B7280', marginLeft: wp(3) }}>/ 150 min</Text>
               </View>
-              <Text style={{ fontSize: fp(7), color: '#6B7280', marginTop: wp(1) }}>{t.weeklyObj}</Text>
+              <Text style={{ fontSize: fp(7), color: weeklyMinutes >= 150 ? '#00D984' : '#6B7280', fontWeight: weeklyMinutes >= 150 ? '700' : '400', marginTop: wp(1) }}>{weeklyMinutes >= 150 ? 'Complet ✓' : t.weeklyObj}</Text>
             </View>
             {weeklyMinutes >= 150 && <Text style={{ fontSize: fp(16) }}>🏅</Text>}
           </LinearGradient>
