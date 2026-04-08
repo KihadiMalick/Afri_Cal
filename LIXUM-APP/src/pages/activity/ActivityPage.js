@@ -373,6 +373,7 @@ export default function ActivityPage({ navigation }) {
       if (pagePowers.length > 0) { await runPostSaveHooks(activityType, caloriesBurned, durationMin); } else { setHookResults({}); }
       await loadTodayActivities();
       fetchSmartData();
+      fetchWeeklyMinutes();
       if (!lixRewardedToday) setLixRewardedToday(true);
       return true;
     } catch (e) {
@@ -388,6 +389,7 @@ export default function ActivityPage({ navigation }) {
       });
       if (error) { alert('Erreur suppression : ' + error.message); return; }
       await loadTodayActivities();
+      fetchWeeklyMinutes();
     } catch (e) {
       console.error('Delete activity error:', e);
     }
