@@ -78,6 +78,8 @@ export default function ProfilePage({ navigation }) {
   var _editAge = useState(''), editAge = _editAge[0], setEditAge = _editAge[1];
   var _editWeight = useState(''), editWeight = _editWeight[0], setEditWeight = _editWeight[1];
   var _editHeight = useState(''), editHeight = _editHeight[0], setEditHeight = _editHeight[1];
+  var _editGoal = useState('maintain'), editGoal = _editGoal[0], setEditGoal = _editGoal[1];
+  var _editDiet = useState('classic'), editDiet = _editDiet[0], setEditDiet = _editDiet[1];
   var _editLocation = useState(''), editLocation = _editLocation[0], setEditLocation = _editLocation[1];
   var _lang = useState('fr'), lang = _lang[0], setLang = _lang[1];
   var _connectedApps = useState({}), connectedApps = _connectedApps[0], setConnectedApps = _connectedApps[1];
@@ -99,7 +101,7 @@ export default function ProfilePage({ navigation }) {
     ]).then(function(responses) { return Promise.all(responses.map(function(r) { return r.json(); })); })
     .then(function(results) {
       var pD = results[0]; var cD = results[1];
-      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); if (pD[0].language === 'EN') setLang('en'); else setLang('fr'); var cGoal = pD[0].custom_hydration_goal_ml; setHydroGoalL(cGoal ? (cGoal / 1000) : null); }
+      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); setEditGoal(pD[0].goal || 'maintain'); setEditDiet(pD[0].dietary_regime || 'classic'); if (pD[0].language === 'EN') setLang('en'); else setLang('fr'); var cGoal = pD[0].custom_hydration_goal_ml; setHydroGoalL(cGoal ? (cGoal / 1000) : null); }
       if (Array.isArray(cD)) { setOwnedCharacters(cD.length); var activeC = cD.find(function(c) { return c.is_active; }); if (activeC) setActiveCharSlug(activeC.character_slug); }
       fetch(SUPABASE_URL + '/rest/v1/rpc/get_user_xp', { method: 'POST', headers: Object.assign({}, hdrs, { 'Content-Type': 'application/json' }), body: JSON.stringify({ p_user_id: userId }) })
         .then(function(r) { return r.json(); }).then(function(d) { if (d) setUserXP(d); }).catch(function(err) { console.warn('[LIXUM] XP fetch error:', err); });
@@ -114,9 +116,9 @@ export default function ProfilePage({ navigation }) {
     if (typeof currentActivityLevel === 'number') currentActivityLevel = activityIndexToKey(currentActivityLevel);
     var newBMR = calculateBMR(editWeight, editHeight, editAge, currentGender);
     var newTDEE = calculateTDEE(newBMR, currentActivityLevel);
-    var currentGoal = profile ? profile.goal || 'maintain' : 'maintain';
+    var currentGoal = editGoal || 'maintain';
     var newTarget = calculateDailyTarget(newTDEE, currentGoal, profile ? profile.target_weight_loss : 0, profile ? profile.target_months : 3);
-    var body = { full_name: editName.trim(), age: parseInt(editAge) || null, weight: parseFloat(editWeight) || null, height: parseFloat(editHeight) || null, gender: currentGender, activity_level: currentActivityLevel, dietary_regime: profile ? (profile.dietary_regime || 'classic') : 'classic', goal: currentGoal, bmr: newBMR, tdee: newTDEE, daily_calorie_target: newTarget, language: lang === 'en' ? 'EN' : 'FR' };
+    var body = { full_name: editName.trim(), age: parseInt(editAge) || null, weight: parseFloat(editWeight) || null, height: parseFloat(editHeight) || null, gender: currentGender, activity_level: currentActivityLevel, dietary_regime: editDiet || 'classic', goal: currentGoal, bmr: newBMR, tdee: newTDEE, daily_calorie_target: newTarget, language: lang === 'en' ? 'EN' : 'FR' };
     fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId, { method: 'PATCH', headers: h, body: JSON.stringify(body) })
       .then(function(r) { return r.json(); }).then(function(data) { if (data && data[0]) { setProfile(data[0]); updateLixBalance(data[0].lix_balance || 0); } setShowEditProfile(false); showToast(lang === 'fr' ? 'Profil mis \u00e0 jour \u2713' : 'Profile updated \u2713', '#00D984'); })
       .catch(function() { showToast(lang === 'fr' ? 'Erreur de sauvegarde' : 'Save error', '#FF6B6B'); });
@@ -128,6 +130,9 @@ export default function ProfilePage({ navigation }) {
   var currentHydroL = hydroGoalL !== null ? hydroGoalL : defaultHydroGoalL;
   var hydroValues = [];
   for (var hv = 5; hv <= 50; hv++) { hydroValues.push(hv / 10); }
+  var ageValues = []; for (var av = 14; av <= 80; av++) { ageValues.push(av); }
+  var weightValues = []; for (var wv = 30; wv <= 200; wv++) { weightValues.push(wv); }
+  var heightValues = []; for (var htv = 120; htv <= 220; htv++) { heightValues.push(htv); }
 
   var saveHydrationGoal = async function(valL) {
     var mlVal = Math.round(valL * 1000);
@@ -275,31 +280,6 @@ export default function ProfilePage({ navigation }) {
 
           <Pressable delayPressIn={120} onPress={function() { setShowEditProfile(true); }} style={{ marginHorizontal: wp(16), marginBottom: wp(20), paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.06)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}><Text style={{ fontSize: fp(13), fontWeight: '600', color: '#00D984' }}>{t.editProfile}</Text></Pressable>
 
-          <MetalCard style={{ marginHorizontal: wp(16), marginBottom: wp(16) }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-              <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>💧</Text>
-              <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', letterSpacing: 1.5 }}>OBJECTIF HYDRATATION</Text>
-            </View>
-            <Text style={{ fontSize: fp(12), color: '#8A8F98', marginBottom: wp(12) }}>Recommande : 2.5L (H) / 2.0L (F)</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ flex: 1 }}>
-                <ProfileScrollPicker values={hydroValues} selectedValue={currentHydroL} onSelect={function(val) { trySetHydroGoal(val); }} unit="L" color="#4DA6FF" height={140} />
-              </View>
-              <View style={{ marginLeft: wp(16), alignItems: 'center' }}>
-                <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#00D984' }}>{currentHydroL.toFixed(1)}</Text>
-                <Text style={{ fontSize: fp(14), color: '#8A8F98' }}>L</Text>
-                {currentHydroL === defaultHydroGoalL ? (
-                  <View style={{ marginTop: wp(6), backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
-                    <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#00D984' }}>Recommande</Text>
-                  </View>
-                ) : null}
-              </View>
-            </View>
-            <Text style={{ fontSize: fp(12), marginTop: wp(10), color: currentHydroL === defaultHydroGoalL ? '#8A8F98' : currentHydroL < defaultHydroGoalL ? '#FF8C42' : '#4DA6FF' }}>
-              {currentHydroL === defaultHydroGoalL ? 'Base sur les recommandations EFSA' : currentHydroL < defaultHydroGoalL ? 'Inferieur aux recommandations standards' : 'Superieur aux recommandations standards'}
-            </Text>
-          </MetalCard>
-
           <Modal visible={showMedicalWarning} transparent animationType="fade" onRequestClose={function() { setShowMedicalWarning(false); setPendingHydroGoal(null); }}>
             <Pressable onPress={function() { setShowMedicalWarning(false); setPendingHydroGoal(null); }} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
               <Pressable onPress={function() {}} style={{ width: '100%', maxWidth: 320, borderRadius: 20, padding: 24, overflow: 'hidden' }}>
@@ -370,6 +350,96 @@ export default function ProfilePage({ navigation }) {
               <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: wp(20) }}>{t.deleteConfirm}</Text>
               <Pressable delayPressIn={120} onPress={handleDeleteAccount} style={{ paddingVertical: wp(14), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,59,48,0.12)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)', marginBottom: wp(8) }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FF3B30' }}>{t.deleteAccount}</Text></Pressable>
               <Pressable onPress={function() { setShowDeleteConfirm(false); }} style={{ paddingVertical: wp(12), alignItems: 'center' }}><Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>{t.cancel}</Text></Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal visible={showEditProfile} transparent animationType="slide" onRequestClose={function() { setShowEditProfile(false); }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' }}>
+            <View style={{ flex: 1, marginTop: Platform.OS === 'android' ? 40 : 60 }}>
+              <LinearGradient colors={['#1A1D22', '#252A30', '#1E2328']} style={{ flex: 1, borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), overflow: 'hidden' }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: wp(20), paddingVertical: wp(16), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' }}>
+                  <Text style={{ fontSize: fp(18), fontWeight: '800', color: '#FFF' }}>{t.editProfile}</Text>
+                  <Pressable onPress={function() { setShowEditProfile(false); }} style={{ padding: wp(8) }}>
+                    <Text style={{ fontSize: fp(20), color: 'rgba(255,255,255,0.4)' }}>{'\u2715'}</Text>
+                  </Pressable>
+                </View>
+                <ScrollView contentContainerStyle={{ padding: wp(20), paddingBottom: wp(40) }} showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)', letterSpacing: 1.5, marginBottom: wp(6) }}>{lang === 'fr' ? 'NOM COMPLET' : 'FULL NAME'}</Text>
+                  <TextInput value={editName} onChangeText={setEditName} placeholder={lang === 'fr' ? 'Nom complet' : 'Full name'} placeholderTextColor="rgba(255,255,255,0.15)" style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12), paddingHorizontal: wp(16), paddingVertical: wp(12), fontSize: fp(14), color: '#FFF', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', marginBottom: wp(16) }} />
+
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)', letterSpacing: 1.5, marginBottom: wp(8) }}>{lang === 'fr' ? 'MENSURATIONS' : 'MEASUREMENTS'}</Text>
+                  <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16) }}>
+                    <View style={{ flex: 1, alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(9), fontWeight: '600', color: '#D4AF37', letterSpacing: 1, marginBottom: wp(6) }}>{t.age}</Text>
+                      <ProfileScrollPicker values={ageValues} selectedValue={parseInt(editAge) || 25} onSelect={function(val) { setEditAge(String(val)); }} unit={t.years} color="#D4AF37" height={120} />
+                    </View>
+                    <View style={{ flex: 1, alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(9), fontWeight: '600', color: '#00D984', letterSpacing: 1, marginBottom: wp(6) }}>{t.weight}</Text>
+                      <ProfileScrollPicker values={weightValues} selectedValue={parseInt(editWeight) || 70} onSelect={function(val) { setEditWeight(String(val)); }} unit={t.kg} color="#00D984" height={120} />
+                    </View>
+                    <View style={{ flex: 1, alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(9), fontWeight: '600', color: '#00BFA6', letterSpacing: 1, marginBottom: wp(6) }}>{t.height}</Text>
+                      <ProfileScrollPicker values={heightValues} selectedValue={parseInt(editHeight) || 170} onSelect={function(val) { setEditHeight(String(val)); }} unit={t.cm} color="#00BFA6" height={120} />
+                    </View>
+                  </View>
+
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)', letterSpacing: 1.5, marginBottom: wp(8) }}>{lang === 'fr' ? 'OBJECTIF' : 'GOAL'}</Text>
+                  <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16) }}>
+                    {GOALS.map(function(g) {
+                      var sel = editGoal === g.key;
+                      return (
+                        <Pressable key={g.key} onPress={function() { setEditGoal(g.key); }} style={{ flex: 1 }}>
+                          <View style={{ paddingVertical: wp(14), paddingHorizontal: wp(6), borderRadius: wp(12), alignItems: 'center', borderWidth: sel ? 1.5 : 1, borderColor: sel ? g.color + '60' : 'rgba(255,255,255,0.08)', backgroundColor: sel ? g.color + '08' : 'rgba(255,255,255,0.03)' }}>
+                            <Text style={{ fontSize: fp(22), marginBottom: wp(4) }}>{g.emoji}</Text>
+                            <Text style={{ color: sel ? g.color : 'rgba(255,255,255,0.5)', fontSize: fp(10), fontWeight: '700', textAlign: 'center' }}>{g.label}</Text>
+                            {sel ? <View style={{ width: wp(6), height: wp(6), borderRadius: wp(3), backgroundColor: g.color, marginTop: wp(4) }} /> : null}
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)', letterSpacing: 1.5, marginBottom: wp(8) }}>{lang === 'fr' ? 'REGIME ALIMENTAIRE' : 'DIETARY REGIME'}</Text>
+                  {DIETS.map(function(diet) {
+                    var sel = editDiet === diet.key;
+                    return (
+                      <Pressable key={diet.key} onPress={function() { setEditDiet(diet.key); }} style={{ marginBottom: wp(8) }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(12), paddingHorizontal: wp(12), borderRadius: wp(12), borderWidth: sel ? 1.5 : 1, borderColor: sel ? diet.color + '50' : 'rgba(255,255,255,0.08)', backgroundColor: sel ? diet.color + '08' : 'rgba(255,255,255,0.03)' }}>
+                          <View style={{ width: wp(40), height: wp(40), borderRadius: wp(12), backgroundColor: sel ? diet.color + '15' : 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: sel ? diet.color + '30' : 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center', marginRight: wp(12) }}>
+                            <Text style={{ fontSize: fp(20) }}>{diet.emoji}</Text>
+                          </View>
+                          <Text style={{ flex: 1, color: sel ? diet.color : '#FFF', fontSize: fp(13), fontWeight: '600' }}>{diet.label}</Text>
+                          {sel ? <View style={{ width: wp(18), height: wp(18), borderRadius: wp(9), backgroundColor: diet.color + '20', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: diet.color, fontSize: fp(12), fontWeight: '800' }}>{'\u2713'}</Text></View> : null}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.3)', letterSpacing: 1.5, marginTop: wp(8), marginBottom: wp(8) }}>{lang === 'fr' ? 'OBJECTIF HYDRATATION' : 'HYDRATION GOAL'}</Text>
+                  <MetalCard>
+                    <Text style={{ fontSize: fp(11), color: '#8A8F98', marginBottom: wp(8) }}>{lang === 'fr' ? 'Recommande' : 'Recommended'} : {defaultHydroGoalL}L</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={{ flex: 1 }}>
+                        <ProfileScrollPicker values={hydroValues} selectedValue={currentHydroL} onSelect={function(val) { trySetHydroGoal(val); }} unit="L" color="#4DA6FF" height={120} />
+                      </View>
+                      <View style={{ marginLeft: wp(16), alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(24), fontWeight: '800', color: '#00D984' }}>{currentHydroL.toFixed(1)}</Text>
+                        <Text style={{ fontSize: fp(12), color: '#8A8F98' }}>L</Text>
+                        {currentHydroL === defaultHydroGoalL ? (
+                          <View style={{ marginTop: wp(4), backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(2) }}>
+                            <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#00D984' }}>{lang === 'fr' ? 'Recommande' : 'Recommended'}</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                    </View>
+                  </MetalCard>
+
+                  <Pressable delayPressIn={120} onPress={saveProfile} style={{ marginTop: wp(20), paddingVertical: wp(14), borderRadius: wp(14), alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.12)', borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.3)' }}>
+                    <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#00D984' }}>{lang === 'fr' ? 'Sauvegarder' : 'Save'}</Text>
+                  </Pressable>
+                </ScrollView>
+              </LinearGradient>
             </View>
           </View>
         </Modal>
