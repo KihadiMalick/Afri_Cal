@@ -567,12 +567,17 @@ export default function RepasPage({ navigation }) {
                   height: 1, backgroundColor: 'rgba(0,217,132,0.10)',
                 }}/>
 
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: wp(12) }}>
-                  <Text style={{ color: '#00D984', fontSize: fp(22), fontWeight: '900', letterSpacing: 1 }}>X</Text>
-                  <Text style={{ color: '#EAEEF3', fontSize: fp(22), fontWeight: '900', letterSpacing: 1 }}>SCAN</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: wp(6) }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                    <Text style={{ color: '#00D984', fontSize: fp(22), fontWeight: '900', letterSpacing: 1 }}>X</Text>
+                    <Text style={{ color: '#EAEEF3', fontSize: fp(22), fontWeight: '900', letterSpacing: 1 }}>SCAN</Text>
+                  </View>
+                  <Text style={{ color: '#8892A0', fontSize: fp(11) }}>
+                    {lang === 'fr' ? 'Scanner votre repas' : 'Scan your meal'}
+                  </Text>
                 </View>
 
-                <View style={{ alignItems: 'center', marginBottom: wp(10) }}>
+                <View style={{ alignItems: 'center', marginBottom: wp(6) }}>
                   <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
                     {/* Left flux chevrons — 3 groupes pointant vers le X */}
                     <View style={{ width: wp(80), height: wp(65), justifyContent: 'center', marginRight: wp(10) }}>
@@ -783,10 +788,6 @@ export default function RepasPage({ navigation }) {
                   </View>
                 </View>
 
-                <Text style={{ color: '#8892A0', fontSize: fp(12), textAlign: 'center', marginBottom: wp(12) }}>
-                  {lang === 'fr' ? 'Scanner votre repas' : 'Scan your meal'}
-                </Text>
-
                 <View style={{ alignItems: 'center' }}>
                   <Pressable
                     onPress={() => { setShowXscan(true); if (xscanRef.current?.openGallery) xscanRef.current.openGallery(); }}
@@ -810,10 +811,6 @@ export default function RepasPage({ navigation }) {
                     </Text>
                   </Pressable>
                 </View>
-
-                <Text style={{ fontSize: fp(9), color: '#6B7280', textAlign: 'center', marginTop: wp(8), fontStyle: 'italic' }}>
-                  Scan IA avancé · Reconnaissance multi-angle · LIXUM AI
-                </Text>
 
                 {/* Dots scans */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: wp(6), gap: wp(6) }}>
@@ -852,67 +849,89 @@ export default function RepasPage({ navigation }) {
             </View>
           </View>
 
-          {/* CartScan banner */}
+          {/* CartScan banner — premium */}
           <View style={{ marginHorizontal: wp(16), marginTop: 20 }}>
-            <View style={{
-              borderRadius: 16, padding: 1,
-              backgroundColor: '#4A4F55', elevation: 8,
-              shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
-              shadowOpacity: 0.25, shadowRadius: 6,
-            }}>
+            <TouchableOpacity
+              onPress={function() { setShowCartScan(true); }}
+              activeOpacity={0.85}
+            >
               <LinearGradient
                 colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-                style={{ borderRadius: 15 }}
+                style={{
+                  borderRadius: 16, borderWidth: 1.5, borderColor: '#4A4F55',
+                  padding: wp(16), flexDirection: 'row', alignItems: 'center',
+                }}
               >
-                <TouchableOpacity
-                  onPress={() => setShowCartScan(true)}
-                  activeOpacity={0.85}
-                  style={{
-                    padding: wp(16),
-                    flexDirection: 'row', alignItems: 'center',
-                  }}
-                >
+                {/* Badge SMART */}
+                <View style={{
+                  position: 'absolute', top: wp(8), right: wp(10),
+                  backgroundColor: 'rgba(0,217,132,0.15)',
+                  paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
+                }}>
+                  <Text style={{ color: '#00D984', fontSize: fp(8), fontWeight: '800', letterSpacing: 1 }}>SMART</Text>
+                </View>
+
+                {/* Zone gauche — scanner barcode visuel */}
+                <View style={{ width: wp(56), alignItems: 'center', marginRight: wp(14) }}>
                   <View style={{
-                    width: wp(50), height: wp(50), borderRadius: wp(14),
-                    backgroundColor: 'rgba(77,166,255,0.12)', borderWidth: 1, borderColor: 'rgba(77,166,255,0.2)',
-                    alignItems: 'center', justifyContent: 'center', marginRight: wp(14),
+                    width: wp(40), height: wp(52), borderRadius: 8,
+                    borderWidth: 1.5, borderColor: '#00D984',
+                    justifyContent: 'center', alignItems: 'center',
+                    overflow: 'hidden',
                   }}>
-                    <Text style={{ fontSize: fp(24) }}>🛒</Text>
+                    {/* Barcode lines */}
+                    <View style={{ width: '60%', height: 2, backgroundColor: '#00D984', opacity: 0.4, marginBottom: 4 }} />
+                    <View style={{ width: '80%', height: 2, backgroundColor: '#00D984', opacity: 0.5, marginBottom: 4 }} />
+                    <View style={{ width: '50%', height: 2, backgroundColor: '#00D984', opacity: 0.35, marginBottom: 4 }} />
+                    <View style={{ width: '70%', height: 2, backgroundColor: '#00D984', opacity: 0.45 }} />
+                    {/* Red scan laser line */}
+                    <View style={{
+                      position: 'absolute', left: -2, right: -2, top: '48%',
+                      height: 2, backgroundColor: '#FF6B8A', opacity: 0.9,
+                    }} />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: fp(15), fontWeight: '800', color: '#4DA6FF', marginBottom: wp(2) }}>CARTSCAN</Text>
-                    <Text style={{ fontSize: fp(10), color: '#9CA3AF' }}>
-                      Faites vos courses avec LIXUM — scannez vos produits et obtenez un rapport nutritionnel complet
-                    </Text>
-                  </View>
-                  <Text style={{ fontSize: fp(18), color: '#4DA6FF', marginLeft: wp(8) }}>›</Text>
-                </TouchableOpacity>
+                  <Text style={{ color: '#666', fontSize: fp(8), marginTop: wp(3) }}>ou photo</Text>
+                </View>
+
+                {/* Zone droite — texte */}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#00D984', marginBottom: wp(3) }}>CARTSCAN</Text>
+                  <Text style={{ fontSize: fp(11), color: '#EAEEF3', marginBottom: wp(2) }}>
+                    Scannez vos produits en magasin
+                  </Text>
+                  <Text style={{ fontSize: fp(9), color: '#888' }}>
+                    Code-barres ou photo · Alertes allergies en direct
+                  </Text>
+                </View>
+
+                {/* Chevron */}
+                <Text style={{ fontSize: fp(18), color: '#00D984', marginLeft: wp(4) }}>›</Text>
               </LinearGradient>
-            </View>
+            </TouchableOpacity>
           </View>
 
-          {/* Bouton Ajouter Manuellement */}
+          {/* Bouton Ajouter Manuellement — contour emerald */}
           <View style={{ marginHorizontal: wp(16), marginTop: 20 }}>
-            <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
-              <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15 }}>
-                <Pressable
-                  onPress={() => setShowManualEntry(true)}
-                  style={({ pressed }) => ({
-                    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-                    paddingVertical: wp(12), borderRadius: 15,
-                    opacity: pressed ? 0.7 : 1,
-                  })}
-                >
-                  <Svg width={14} height={14} viewBox="0 0 16 16" style={{ marginRight: 6 }}>
-                    <Path d="M12 1.5L14.5 4L5 13.5L1.5 14.5L2.5 11L12 1.5Z" fill="none" stroke="#8892A0" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round"/>
-                    <Path d="M10 3.5L12.5 6" stroke="#8892A0" strokeWidth={1.2} strokeLinecap="round"/>
-                  </Svg>
-                  <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '600' }}>
-                    {lang === 'fr' ? 'Ajouter Manuellement' : 'Add Manually'}
-                  </Text>
-                </Pressable>
-              </LinearGradient>
-            </View>
+            <Pressable
+              onPress={function() { setShowManualEntry(true); }}
+              style={function(state) {
+                return {
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                  paddingVertical: wp(12), borderRadius: 12,
+                  backgroundColor: 'transparent',
+                  borderWidth: 1, borderColor: '#00D984',
+                  opacity: state.pressed ? 0.7 : 1,
+                };
+              }}
+            >
+              <Svg width={14} height={14} viewBox="0 0 16 16" style={{ marginRight: 6 }}>
+                <Path d="M12 1.5L14.5 4L5 13.5L1.5 14.5L2.5 11L12 1.5Z" fill="none" stroke="#00D984" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round"/>
+                <Path d="M10 3.5L12.5 6" stroke="#00D984" strokeWidth={1.2} strokeLinecap="round"/>
+              </Svg>
+              <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600' }}>
+                {lang === 'fr' ? 'Ajouter Manuellement' : 'Add Manually'}
+              </Text>
+            </Pressable>
           </View>
 
           {/* ═══ 5. PLATS DU JOUR ═══ */}
