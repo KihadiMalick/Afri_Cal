@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, FlatList, Image,
-  ScrollView, TextInput, Modal, StatusBar, Vibration, Alert,
+  ScrollView, TextInput, Modal, StatusBar, Vibration,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Rect, Path, Circle, Line } from 'react-native-svg';
@@ -10,6 +10,7 @@ import { useLang } from '../../config/LanguageContext';
 import { useAuth } from '../../config/AuthContext';
 import { wp, fp } from '../../constants/layout';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
+import LixumModal from '../../components/shared/LixumModal';
 
 export default function CartScanScreen({ visible, onClose }) {
   var _lc = useLang(); var lang = _lc.lang;
@@ -37,6 +38,9 @@ export default function CartScanScreen({ visible, onClose }) {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedHistoryReport, setSelectedHistoryReport] = useState(null);
   const [capturingPhoto, setCapturingPhoto] = useState(false);
+  var _modalCfg = useState({ visible: false, type: 'info', title: '', message: '' });
+  var modalCfg = _modalCfg[0]; var setModalCfg = _modalCfg[1];
+  var closeModal = function() { setModalCfg(function(p) { return Object.assign({}, p, { visible: false }); }); };
 
   var _camPerm = useCameraPermissions(); var permission = _camPerm[0]; var requestPermission = _camPerm[1];
   const cameraRef = useRef(null);
@@ -305,7 +309,7 @@ export default function CartScanScreen({ visible, onClose }) {
       setShowCartReport(true);
     } catch (e) {
       console.error('Generate report error:', e);
-      Alert.alert('Erreur', 'Impossible de générer le rapport. Réessayez.');
+      setModalCfg({ visible: true, type: 'error', title: 'Erreur', message: 'Impossible de générer le rapport. Réessayez.', onClose: closeModal });
     }
     setGeneratingReport(false);
   };
@@ -1311,6 +1315,7 @@ export default function CartScanScreen({ visible, onClose }) {
           </View>
         </View>
       </Modal>
+      <LixumModal visible={modalCfg.visible} type={modalCfg.type} title={modalCfg.title} message={modalCfg.message} onClose={modalCfg.onClose || closeModal} />
     </View>
   );
 }

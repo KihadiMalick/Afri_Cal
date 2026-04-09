@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, ScrollView, Pressable, TouchableOpacity,
-  Animated, Platform, Dimensions, Alert, Image,
+  Animated, Platform, Dimensions, Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Line, Circle, Rect, Ellipse, Defs, Mask,
@@ -28,6 +28,7 @@ import CartScanScreen from './CartScanScreen';
 import RecettesScreen from './RecettesScreen';
 import CookingModeScreen from './CookingModeScreen';
 import { useAuth } from '../../config/AuthContext';
+import LixumModal from '../../components/shared/LixumModal';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 const W = Dimensions.get('window').width;
@@ -110,6 +111,12 @@ export default function RepasPage({ navigation }) {
   var recettesInitialTab = useRef('general');
   const [showCookingMode, setShowCookingMode] = useState(false);
   const [cookingRecipe, setCookingRecipe] = useState(null);
+
+  // Modal state
+  var _modalCfg = useState({ visible: false, type: 'info', title: '', message: '' });
+  var modalCfg = _modalCfg[0]; var setModalCfg = _modalCfg[1];
+  var closeModal = function() { setModalCfg(function(p) { return Object.assign({}, p, { visible: false }); }); };
+  var showModal = function(type, title, message) { setModalCfg({ visible: true, type: type, title: title, message: message, onClose: closeModal }); };
 
   // AddMealModal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -283,8 +290,7 @@ export default function RepasPage({ navigation }) {
         return { success: true, uses_remaining: data.uses_remaining };
       }
       if (data?.error === 'No uses remaining') {
-        Alert.alert('⚡ Utilisations épuisées',
-          'Recharge ton ' + (activeChar?.name || 'personnage') + ' dans l\'onglet Caractères.');
+        showModal('info', '⚡ Utilisations épuisées', 'Recharge ton ' + (activeChar?.name || 'personnage') + ' dans l\'onglet Caractères.');
       }
       return { success: false, error: data?.error };
     } catch (e) {
@@ -313,20 +319,20 @@ export default function RepasPage({ navigation }) {
         setShowResumeModal(true);
         break;
       case 'hawk_micronutriments':
-        Alert.alert('🔬 Micronutriments', 'Disponible après votre prochain scan Xscan.');
+        showModal('info', '🔬 Micronutriments', 'Disponible après votre prochain scan Xscan.');
         break;
       case 'fox_sub_1':
       case 'fox_sub_2':
       case 'fox_sub_3':
         setTodaySubstitutions(prev => prev + 1);
-        Alert.alert('🦊 Substitution', 'Tap sur un ingrédient pour voir des alternatives.');
+        showModal('info', '🦊 Substitution', 'Tap sur un ingrédient pour voir des alternatives.');
         break;
       case 'gipsy_correlation_1':
       case 'gipsy_correlation_2':
-        Alert.alert('🕷️ Corrélation', 'Graphique corrélation humeur-nutrition en cours de développement.');
+        showModal('info', '🕷️ Corrélation', 'Graphique corrélation humeur-nutrition en cours de développement.');
         break;
       default:
-        Alert.alert(power.name_fr || power.power_key, power.description_fr || '');
+        showModal('info', power.name_fr || power.power_key, power.description_fr || '');
     }
   };
 
@@ -336,16 +342,16 @@ export default function RepasPage({ navigation }) {
         handleSuggestionRepas();
         break;
       case 'hawk_comparateur':
-        Alert.alert('⚖️ Comparateur', 'Sélectionnez 2 scans à comparer. (À venir)');
+        showModal('info', '⚖️ Comparateur', 'Sélectionnez 2 scans à comparer. (À venir)');
         break;
       case 'hawk_historique':
-        Alert.alert('📈 Historique', 'Historique de vos 30 derniers scans. (À venir)');
+        showModal('info', '📈 Historique', 'Historique de vos 30 derniers scans. (À venir)');
         break;
       case 'gipsy_toile_sante':
-        Alert.alert('🕸️ Toile de Santé', 'Rapport mensuel croisé en cours de développement.');
+        showModal('info', '🕸️ Toile de Santé', 'Rapport mensuel croisé en cours de développement.');
         break;
       default:
-        Alert.alert(power.name_fr || power.power_key, power.description_fr || '');
+        showModal('info', power.name_fr || power.power_key, power.description_fr || '');
     }
   };
 
@@ -367,7 +373,7 @@ export default function RepasPage({ navigation }) {
         setSuggestionMeal(random);
         setShowSuggestionModal(true);
       } else {
-        Alert.alert('🍽️ Suggestion', 'Aucun plat trouvé pour compléter vos macros.');
+        showModal('info', '🍽️ Suggestion', 'Aucun plat trouvé pour compléter vos macros.');
       }
     } catch (e) {
       console.error('Suggestion error:', e);
@@ -1305,6 +1311,14 @@ export default function RepasPage({ navigation }) {
         />
 
         {/* ═══ BOTTOM TABS ═══ */}
+        <LixumModal
+          visible={modalCfg.visible}
+          type={modalCfg.type}
+          title={modalCfg.title}
+          message={modalCfg.message}
+          onClose={modalCfg.onClose || closeModal}
+        />
+
         <BottomTabs
           activeTab={activeTab}
           onTabPress={handleTabPress}
