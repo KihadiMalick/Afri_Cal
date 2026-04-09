@@ -492,6 +492,9 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved, initi
                     <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '600' }}>← Autre plat</Text>
                   </Pressable>
 
+                <View style={{ borderRadius: 16, borderWidth: 1, borderColor: '#4A4F55', overflow: 'hidden', marginBottom: wp(16) }}>
+                <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 15, padding: wp(16) }}>
+
                   {/* Nom + Pays */}
                   <Text style={{ color: '#EAEEF3', fontSize: fp(20), fontWeight: '900', marginBottom: wp(4) }}>
                     {selectedMeal.name}
@@ -500,20 +503,16 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved, initi
                     {selectedMeal.country_origin} • {selectedMeal.category}
                   </Text>
 
-                  {/* Totaux macros — MetalCard style */}
+                  {/* Totaux macros */}
                   <View style={{
-                    borderRadius: 16, padding: 1, backgroundColor: '#4A4F55', marginBottom: wp(16),
+                    borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.25)', borderWidth: 1, borderColor: '#4A4F55', marginBottom: wp(16), padding: wp(14), alignItems: 'center',
                   }}>
-                    <LinearGradient
-                      colors={['#3A3F46', '#252A30', '#1A1D22']}
-                      style={{ borderRadius: 15, padding: wp(14), alignItems: 'center' }}
-                    >
-                      <Text style={{ color: '#FF8C42', fontSize: fp(28), fontWeight: '900' }}>
+                      <Text style={{ color: '#00D984', fontSize: fp(28), fontWeight: '900' }}>
                         {getMealMacros().calories} kcal
                       </Text>
                       <View style={{ flexDirection: 'row', marginTop: wp(8), gap: wp(16) }}>
                         <View style={{ alignItems: 'center' }}>
-                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF6B6B', marginBottom: 2 }} />
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF6B8A', marginBottom: 2 }} />
                           <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '700' }}>{getMealMacros().protein_g}g</Text>
                           <Text style={{ color: '#5A6070', fontSize: fp(8) }}>Protéines</Text>
                         </View>
@@ -528,7 +527,6 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved, initi
                           <Text style={{ color: '#5A6070', fontSize: fp(8) }}>Lipides</Text>
                         </View>
                       </View>
-                    </LinearGradient>
                   </View>
 
                   {/* Portion modifiable */}
@@ -606,6 +604,9 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved, initi
                       ))}
                     </View>
                   )}
+
+                </LinearGradient>
+                </View>
                 </>
               )}
             </View>
@@ -822,12 +823,14 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved, initi
               disabled={isSavingManual || saveManualSuccess}
               style={({ pressed }) => ({
                 paddingVertical: wp(14), borderRadius: 14,
-                backgroundColor: saveManualSuccess ? '#00D984' : isSavingManual ? 'rgba(0,217,132,0.5)' : pressed ? '#00B572' : '#00D984',
+                backgroundColor: saveManualSuccess ? '#00D984' : 'transparent',
+                borderWidth: saveManualSuccess ? 0 : 1.5,
+                borderColor: isSavingManual ? 'rgba(0,217,132,0.4)' : '#00D984',
                 alignItems: 'center',
-                opacity: isSavingManual ? 0.7 : 1,
+                opacity: pressed ? 0.7 : isSavingManual ? 0.6 : 1,
               })}
             >
-              <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
+              <Text style={{ color: saveManualSuccess ? '#0D1117' : '#00D984', fontSize: fp(15), fontWeight: '800' }}>
                 {saveManualSuccess ? '✓ SAUVEGARDÉ ! +3 Lix' : isSavingManual ? '⏳ SAUVEGARDE...' : '✓ CONFIRMER LE REPAS'}
               </Text>
             </Pressable>
