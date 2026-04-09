@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import {
   View, Text, Pressable, Image, ScrollView, TextInput,
-  KeyboardAvoidingView, Platform, Animated, Vibration, Alert,
+  KeyboardAvoidingView, Platform, Animated, Vibration,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line, Circle, Path, Rect, Defs, Mask } from 'react-native-svg';
@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
+import LixumModal from '../../components/shared/LixumModal';
 import { useLang } from '../../config/LanguageContext';
 import { wp, fp } from '../../constants/layout';
 import { MEAL_SLOTS } from './repasConstants';
@@ -27,6 +28,11 @@ const XscanScreen = forwardRef(function XscanScreen({
 }, ref) {
   var auth = useAuth(); var userId = auth.userId;
   var _lc = useLang(); var lang = _lc.lang;
+
+  // Modal state
+  var _xModalCfg = useState({ visible: false, type: 'info', title: '', message: '' });
+  var xModalCfg = _xModalCfg[0]; var setXModalCfg = _xModalCfg[1];
+  var closeXModal = function() { setXModalCfg(function(p) { return Object.assign({}, p, { visible: false }); }); };
 
   // === PERMISSIONS CAMÉRA ===
   const [permission, requestPermission] = useCameraPermissions();
@@ -2068,13 +2074,13 @@ const XscanScreen = forwardRef(function XscanScreen({
                     <Pressable
                       onPress={async () => {
                         if (todaySubstitutions >= maxSubs) {
-                          Alert.alert('Limite atteinte', maxSubs + ' substitution' + (maxSubs > 1 ? 's' : '') + ' max par jour');
+                          setXModalCfg({ visible: true, type: 'info', title: 'Limite atteinte', message: maxSubs + ' substitution' + (maxSubs > 1 ? 's' : '') + ' max par jour', onClose: closeXModal });
                           return;
                         }
                         const result = await consumePower(foxPower.power_key);
                         if (!result.success) return;
                         setTodaySubstitutions(prev => prev + 1);
-                        Alert.alert('🦊 Substitution', 'Tap sur un ingrédient dans la liste ci-dessus pour voir des alternatives plus saines.', [{ text: 'Compris !' }]);
+                        setXModalCfg({ visible: true, type: 'info', title: '🦊 Substitution', message: 'Tap sur un ingrédient dans la liste ci-dessus pour voir des alternatives plus saines.', onClose: closeXModal });
                       }}
                       style={({ pressed }) => ({
                         backgroundColor: pressed ? 'rgba(255,140,66,0.2)' : 'rgba(255,140,66,0.1)',
@@ -2664,6 +2670,7 @@ const XscanScreen = forwardRef(function XscanScreen({
         </View>
       )}
 
+      <LixumModal visible={xModalCfg.visible} type={xModalCfg.type} title={xModalCfg.title} message={xModalCfg.message} onClose={xModalCfg.onClose || closeXModal} />
     </View>
   );
 });
