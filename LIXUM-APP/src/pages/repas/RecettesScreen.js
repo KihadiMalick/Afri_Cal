@@ -1330,22 +1330,20 @@ export default function RecettesScreen({
                                 return {
                                   width: '31%',
                                   paddingVertical: wp(14),
-                                  borderRadius: wp(12),
-                                  backgroundColor: state.pressed
-                                    ? 'rgba(0,217,132,0.12)'
-                                    : isNight && isLight
-                                      ? 'rgba(0,217,132,0.06)'
-                                      : 'rgba(255,255,255,0.03)',
+                                  borderRadius: 14,
+                                  backgroundColor: state.pressed ? 'rgba(0,217,132,0.10)' : '#2A303B',
                                   borderWidth: 1,
-                                  borderColor: isNight && isLight
-                                    ? 'rgba(0,217,132,0.2)'
-                                    : isNight && isHeavy
-                                      ? 'rgba(255,140,66,0.15)'
-                                      : 'rgba(255,255,255,0.06)',
+                                  borderColor: state.pressed
+                                    ? 'rgba(0,217,132,0.4)'
+                                    : isNight && isLight
+                                      ? 'rgba(0,217,132,0.25)'
+                                      : isNight && isHeavy
+                                        ? 'rgba(255,140,66,0.15)'
+                                        : '#3A3F46',
                                   alignItems: 'center',
                                   opacity: isNight && isHeavy ? 0.5 : 1,
                                 };
-                              }}
+                              }
                             >
                               <Text style={{ fontSize: fp(20), marginBottom: wp(4) }}>{cat.emoji}</Text>
                               <Text style={{
@@ -1368,7 +1366,7 @@ export default function RecettesScreen({
                         marginVertical: wp(16),
                       }} />
 
-                      {/* Bouton "Mes ingrédients" */}
+                      {/* Bouton "Mes ingrédients" — MetalCard bordure dense */}
                       <Pressable
                         onPress={function() {
                           setAlixenRecipeScreen('my_ingredients');
@@ -1378,30 +1376,37 @@ export default function RecettesScreen({
                         }}
                         style={function(state) {
                           return {
-                            flexDirection: 'row', alignItems: 'center',
-                            padding: wp(14), borderRadius: wp(14),
-                            backgroundColor: state.pressed ? 'rgba(212,175,55,0.12)' : 'rgba(212,175,55,0.06)',
-                            borderWidth: 1.5, borderColor: 'rgba(212,175,55,0.25)',
+                            borderRadius: 14, overflow: 'hidden',
+                            opacity: state.pressed ? 0.85 : 1,
                           };
                         }}
                       >
-                        <View style={{
-                          width: wp(40), height: wp(40), borderRadius: wp(12),
-                          backgroundColor: 'rgba(212,175,55,0.1)',
-                          justifyContent: 'center', alignItems: 'center',
-                          marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
-                        }}>
-                          <Text style={{ fontSize: fp(18) }}>🔍</Text>
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={{ color: '#D4AF37', fontSize: fp(14), fontWeight: '800' }}>
-                            Mes ingrédients
-                          </Text>
-                          <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: 2 }}>
-                            Propose tes ingrédients, ALIXEN crée la recette
-                          </Text>
-                        </View>
-                        <Text style={{ color: '#D4AF37', fontSize: fp(16) }}>›</Text>
+                        <LinearGradient
+                          colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                          style={{
+                            flexDirection: 'row', alignItems: 'center',
+                            padding: wp(14), borderRadius: 14,
+                            borderWidth: 1.5, borderColor: '#4A4F55',
+                          }}
+                        >
+                          <View style={{
+                            width: wp(40), height: wp(40), borderRadius: wp(12),
+                            backgroundColor: 'rgba(0,217,132,0.08)',
+                            justifyContent: 'center', alignItems: 'center',
+                            marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                          }}>
+                            <Text style={{ fontSize: fp(18) }}>🔍</Text>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '800' }}>
+                              Mes ingrédients
+                            </Text>
+                            <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: 2 }}>
+                              Propose tes ingrédients, ALIXEN crée la recette
+                            </Text>
+                          </View>
+                          <Text style={{ color: '#00D984', fontSize: fp(16) }}>›</Text>
+                        </LinearGradient>
                       </Pressable>
 
                       {alixenContext && alixenContext.mood && (
