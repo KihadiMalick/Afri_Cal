@@ -1187,64 +1187,49 @@ export default function RepasPage({ navigation }) {
           }}>
             <SectionTitle title={lang === 'fr' ? 'Plats fréquents' : 'Frequent meals'} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(12) }}>
-              {(frequentMeals.length > 0 ? frequentMeals : MOCK_FREQUENT).map((item, index) => (
+              {(frequentMeals.length > 0 ? frequentMeals : MOCK_FREQUENT).map(function(item, index) {
+                var nameLower = (item.name || '').toLowerCase();
+                var foodEmoji = nameLower.indexOf('croissant') >= 0 || nameLower.indexOf('pain') >= 0 ? '🥐'
+                  : nameLower.indexOf('riz') >= 0 ? '🍚'
+                  : nameLower.indexOf('poulet') >= 0 ? '🍗'
+                  : nameLower.indexOf('poisson') >= 0 || nameLower.indexOf('thon') >= 0 || nameLower.indexOf('saumon') >= 0 ? '🐟'
+                  : nameLower.indexOf('salade') >= 0 ? '🥗'
+                  : nameLower.indexOf('oeuf') >= 0 || nameLower.indexOf('œuf') >= 0 ? '🥚'
+                  : nameLower.indexOf('soupe') >= 0 ? '🥣'
+                  : nameLower.indexOf('lait') >= 0 || nameLower.indexOf('yaourt') >= 0 ? '🥛'
+                  : nameLower.indexOf('fruit') >= 0 || nameLower.indexOf('banane') >= 0 || nameLower.indexOf('pomme') >= 0 ? '🍎'
+                  : nameLower.indexOf('pâte') >= 0 || nameLower.indexOf('pasta') >= 0 ? '🍝'
+                  : nameLower.indexOf('accra') >= 0 || nameLower.indexOf('beignet') >= 0 ? '🧆'
+                  : nameLower.indexOf('viande') >= 0 || nameLower.indexOf('boeuf') >= 0 || nameLower.indexOf('bœuf') >= 0 ? '🥩'
+                  : '🍽️';
+
+                return (
                 <Pressable key={index} delayPressIn={120}
-                  style={({ pressed }) => ({
-                    width: wp(80),
-                    transform: [{ scale: pressed ? 0.95 : 1 }],
-                  })}
+                  style={function(state) {
+                    return {
+                      width: wp(90),
+                      transform: [{ scale: state.pressed ? 0.95 : 1 }],
+                    };
+                  }}
                 >
                 <View style={{
-                  borderRadius: 16, padding: 2, borderWidth: 1.5,
-                  borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
-                  borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+                  borderRadius: 14, overflow: 'hidden',
                   backgroundColor: '#2A303B',
-                  shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
+                  borderWidth: 1, borderColor: '#3A3F46',
                 }}>
                 <View style={{
-                  borderRadius: 12, borderWidth: 1,
-                  borderColor: 'rgba(0,217,132,0.2)', overflow: 'hidden',
-                  backgroundColor: '#151B23', padding: wp(8), alignItems: 'center',
+                  borderRadius: 13,
+                  backgroundColor: '#2A303B', padding: wp(8), alignItems: 'center',
                   height: wp(90),
                 }}>
-                  <View style={{
-                    width: wp(32), height: wp(32), borderRadius: wp(16),
-                    backgroundColor: '#1E2228', justifyContent: 'center', alignItems: 'center',
-                    marginBottom: wp(5),
-                    borderWidth: 1, borderColor: index % 4 === 0 ? 'rgba(255,140,66,0.3)' : index % 4 === 1 ? 'rgba(0,217,132,0.3)' : index % 4 === 2 ? 'rgba(77,166,255,0.3)' : 'rgba(212,175,55,0.3)',
-                  }}>
-                    {index % 4 === 0 && (
-                      <Svg width={16} height={16} viewBox="0 0 20 20">
-                        <Ellipse cx="10" cy="14" rx="8" ry="3.5" fill="none" stroke="#FF8C42" strokeWidth={1}/>
-                        <Path d="M2 14C2 12 5 9.5 10 9.5C15 9.5 18 12 18 14" fill="none" stroke="#FF8C42" strokeWidth={1}/>
-                      </Svg>
-                    )}
-                    {index % 4 === 1 && (
-                      <Svg width={16} height={16} viewBox="0 0 20 20">
-                        <Rect x="4" y="8" width="8" height="6" rx="1" fill="none" stroke="#00D984" strokeWidth={1}/>
-                        <Path d="M12 9C13.5 9 14.5 9.5 14.5 10.5C14.5 11.5 13.5 12 12 12" fill="none" stroke="#00D984" strokeWidth={0.8}/>
-                      </Svg>
-                    )}
-                    {index % 4 === 2 && (
-                      <Svg width={16} height={16} viewBox="0 0 20 20">
-                        <Circle cx="10" cy="11" r="7" fill="none" stroke="#4DA6FF" strokeWidth={1}/>
-                        <Circle cx="10" cy="11" r="4.5" fill="none" stroke="#4DA6FF" strokeWidth={0.6} opacity={0.4}/>
-                      </Svg>
-                    )}
-                    {index % 4 === 3 && (
-                      <Svg width={16} height={16} viewBox="0 0 20 20">
-                        <Path d="M6 5L4 15H16L14 5" fill="none" stroke="#D4AF37" strokeWidth={1} strokeLinecap="round"/>
-                        <Path d="M3 15H17" stroke="#D4AF37" strokeWidth={1} strokeLinecap="round"/>
-                      </Svg>
-                    )}
-                  </View>
-                  <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
+                  <Text style={{ fontSize: fp(22), marginBottom: wp(4) }}>{foodEmoji}</Text>
+                  <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={2}>{item.name}</Text>
                   <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 1 }} numberOfLines={1}>{item.cal} kcal</Text>
                 </View>
                 </View>
                 </Pressable>
-              ))}
+                );
+              })}
             </ScrollView>
           </LinearGradient>
           </View>
