@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, Pressable, ScrollView,
-  Modal, Platform, Alert, Vibration,
+  Modal, Platform, Vibration,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Line } from 'react-native-svg';
@@ -13,6 +13,7 @@ import { supabase } from '../../config/supabase';
 import { useAuth } from '../../config/AuthContext';
 import { useLang } from '../../config/LanguageContext';
 import { wp, fp } from '../../constants/layout';
+import LixumModal from '../../components/shared/LixumModal';
 import {
   SPEED_ZONES, getSpeedZone, FOOD_ITEMS, getFoodEquivalent,
   WEATHER_WATER_MULTIPLIER, getWeatherWaterMult,
@@ -37,6 +38,10 @@ export default function LiveTrackingScreen({
   var auth = useAuth(); var userId = auth.userId;
   var _lc = useLang(); var lang = _lc.lang;
   var t = getLang(lang);
+
+  var _liveModal = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null });
+  var liveModal = _liveModal[0]; var setLiveModal = _liveModal[1];
+  var closeLiveModal = function() { setLiveModal(function(p) { return Object.assign({}, p, { visible: false }); }); };
 
   // === ÉTATS ===
   var _liveActive = useState(false); var liveActive = _liveActive[0]; var setLiveActive = _liveActive[1];
@@ -144,7 +149,7 @@ export default function LiveTrackingScreen({
     try {
       var perm = await Location.requestForegroundPermissionsAsync();
       if (perm.status !== 'granted') {
-        Alert.alert('Permission GPS requise', 'LIXUM a besoin du GPS pour le suivi en temps réel.', [{ text: 'OK' }]);
+        setLiveModal({ visible: true, type: 'error', title: 'Permission GPS requise', message: 'LIXUM a besoin du GPS pour le suivi en temps réel.', onClose: closeLiveModal });
         return;
       }
 
@@ -217,7 +222,7 @@ export default function LiveTrackingScreen({
                 if (liveSuspectCounterRef.current > ANTI_CHEAT_DURATION) {
                   setLiveAutoPaused(true);
                   Vibration.vibrate([0, 300, 100, 300, 100, 300]);
-                  Alert.alert('Vitesse suspecte', 'Vitesse trop élevée détectée. Tracking en pause.');
+                  setLiveModal({ visible: true, type: 'info', title: 'Vitesse suspecte', message: 'Vitesse trop élevée détectée. Tracking en pause.', onClose: closeLiveModal });
                 }
                 liveLastPosRef.current = { lat: lat, lon: lon, timestamp: timestamp };
                 return paused;
@@ -336,7 +341,7 @@ export default function LiveTrackingScreen({
       );
     } catch (e) {
       console.error('GPS error:', e);
-      Alert.alert('Erreur GPS', 'Impossible de démarrer le suivi GPS.');
+      setLiveModal({ visible: true, type: 'error', title: 'Erreur GPS', message: 'Impossible de démarrer le suivi GPS.', onClose: closeLiveModal });
     }
   };
 
@@ -851,8 +856,7 @@ export default function LiveTrackingScreen({
               </TouchableOpacity>
 
               <TouchableOpacity onPress={function() {
-                Alert.alert('Arrêter ?', 'Votre activité sera sauvegardée.',
-                  [{ text: 'Continuer', style: 'cancel' }, { text: 'Arrêter', style: 'destructive', onPress: stopLiveTracking }]);
+                setLiveModal({ visible: true, type: 'confirm', title: 'Arrêter ?', message: 'Votre activité sera sauvegardée.', confirmText: 'Arrêter', cancelText: 'Continuer', onConfirm: function() { closeLiveModal(); stopLiveTracking(); }, onClose: closeLiveModal });
               }} style={{
                 flex: 1, paddingVertical: wp(16), borderRadius: wp(14),
                 backgroundColor: 'rgba(255,27,68,0.12)', borderWidth: 1.5, borderColor: 'rgba(255,27,68,0.3)',
@@ -900,6 +904,7 @@ export default function LiveTrackingScreen({
           </LinearGradient>
         </View>
       </Modal>
+      <LixumModal visible={liveModal.visible} type={liveModal.type} title={liveModal.title} message={liveModal.message} onConfirm={liveModal.onConfirm} onClose={liveModal.onClose || closeLiveModal} confirmText={liveModal.confirmText} cancelText={liveModal.cancelText} />
     </>
   );
 }

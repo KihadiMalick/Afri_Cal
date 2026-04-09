@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, Pressable, ScrollView, Modal,
-  StatusBar, Alert, Vibration,
+  StatusBar, Vibration,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLang } from '../../config/LanguageContext';
 import { wp, fp } from '../../constants/layout';
+import LixumModal from '../../components/shared/LixumModal';
 
 export default function CookingModeScreen({ visible, onClose, recipe }) {
   var _lc = useLang(); var lang = _lc.lang;
+
+  var _cookModal = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null });
+  var cookModal = _cookModal[0]; var setCookModal = _cookModal[1];
+  var closeCookModal = function() { setCookModal(function(p) { return Object.assign({}, p, { visible: false }); }); };
 
   // === ÉTATS ===
   var _cookingSteps = useState([]); var cookingSteps = _cookingSteps[0]; var setCookingSteps = _cookingSteps[1];
@@ -117,17 +122,7 @@ export default function CookingModeScreen({ visible, onClose, recipe }) {
   var handleClose = function() {
     var hasActiveTimer = Object.keys(cookingTimers).some(function(k) { return cookingTimers[k].running; });
     if (hasActiveTimer) {
-      Alert.alert(
-        'Minuteurs en cours',
-        'Tu as des minuteurs actifs. Quitter maintenant ?',
-        [
-          { text: 'Continuer', style: 'cancel' },
-          { text: 'Quitter', style: 'destructive', onPress: function() {
-            setCookingTimers({});
-            onClose();
-          }},
-        ]
-      );
+      setCookModal({ visible: true, type: 'confirm', title: 'Minuteurs en cours', message: 'Tu as des minuteurs actifs. Quitter maintenant ?', confirmText: 'Quitter', cancelText: 'Continuer', onConfirm: function() { closeCookModal(); setCookingTimers({}); onClose(); }, onClose: closeCookModal });
     } else {
       onClose();
     }
@@ -482,13 +477,11 @@ export default function CookingModeScreen({ visible, onClose, recipe }) {
               onPress={function() {
                 var hasActiveTimer = Object.keys(cookingTimers).some(function(k) { return cookingTimers[k].running; });
                 if (hasActiveTimer) {
-                  Alert.alert('Minuteurs en cours', 'Attends que tous les minuteurs soient terminés.', [
-                    { text: 'OK' },
-                  ]);
+                  setCookModal({ visible: true, type: 'info', title: 'Minuteurs en cours', message: 'Attends que tous les minuteurs soient terminés.', onClose: closeCookModal });
                 } else {
                   setCookingTimers({});
                   onClose();
-                  Alert.alert('🎉 Bon appétit !', 'Ta préparation est terminée. Régale-toi !');
+                  setCookModal({ visible: true, type: 'success', title: '🎉 Bon appétit !', message: 'Ta préparation est terminée. Régale-toi !', onClose: closeCookModal });
                 }
               }}
               style={function(state) {
@@ -546,5 +539,6 @@ export default function CookingModeScreen({ visible, onClose, recipe }) {
 
       </View>
     </Modal>
+    <LixumModal visible={cookModal.visible} type={cookModal.type} title={cookModal.title} message={cookModal.message} onConfirm={cookModal.onConfirm} onClose={cookModal.onClose || closeCookModal} confirmText={cookModal.confirmText} cancelText={cookModal.cancelText} />
   );
 }
