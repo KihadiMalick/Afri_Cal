@@ -577,8 +577,17 @@ const DashboardContent = ({
               var mf = vd.moodFilled || false;
               var lm = vd.lastMeal;
 
-              var nutDev = target > 0 && consumed > 0 ? Math.abs(1 - consumed / target) : 1;
-              var nutScore = consumed > 0 ? Math.max(0, 25 - Math.round(nutDev * 83)) : 0;
+              var nutRatioVal = target > 0 && consumed > 0 ? consumed / target : 0;
+              var nutScore = 0;
+              if (consumed > 0 && target > 0) {
+                if (nutRatioVal <= 1.0) {
+                  nutScore = Math.round(nutRatioVal * 25);
+                } else if (nutRatioVal <= 1.2) {
+                  nutScore = Math.round(25 - (nutRatioVal - 1.0) * 50);
+                } else {
+                  nutScore = Math.max(0, Math.round(25 - (nutRatioVal - 1.0) * 25));
+                }
+              }
               var nutRatio = target > 0 ? consumed / target : 0;
               var nutPos = Math.max(0, Math.min(1, nutRatio / 2));
 

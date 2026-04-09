@@ -11,7 +11,7 @@ import { MEAL_SLOTS } from './repasConstants';
 import { useAuth } from '../../config/AuthContext';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 
-export default function ManualEntryScreen({ visible, onClose, onMealSaved }) {
+export default function ManualEntryScreen({ visible, onClose, onMealSaved, initialMealType }) {
   var auth = useAuth(); var userId = auth.userId;
   var _lc = useLang(); var lang = _lc.lang;
 
@@ -23,6 +23,12 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved }) {
   const [manualMealType, setManualMealType] = useState(null);
   const [isSavingManual, setIsSavingManual] = useState(false);
   const [saveManualSuccess, setSaveManualSuccess] = useState(false);
+
+  useEffect(function() {
+    if (visible && initialMealType) {
+      setManualMealType(initialMealType);
+    }
+  }, [visible, initialMealType]);
 
   // Onglet Plats
   const [mealSearchQuery, setMealSearchQuery] = useState('');

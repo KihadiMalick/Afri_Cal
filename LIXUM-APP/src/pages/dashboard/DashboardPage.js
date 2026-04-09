@@ -111,8 +111,14 @@ export default function DashboardPage({ navigation }) {
     var OBJECTIVE = realDailyTarget || 2100;
     var score = 0;
     if (OBJECTIVE > 0 && realConsumed > 0) {
-      var deviation = Math.abs(1 - realConsumed / OBJECTIVE);
-      score += Math.max(0, 25 - Math.round(deviation * 83));
+      var nutRatio = realConsumed / OBJECTIVE;
+      if (nutRatio <= 1.0) {
+        score += Math.round(nutRatio * 25);
+      } else if (nutRatio <= 1.2) {
+        score += Math.round(25 - (nutRatio - 1.0) * 50);
+      } else {
+        score += Math.max(0, Math.round(25 - (nutRatio - 1.0) * 25));
+      }
     }
     var hydroGoal = customHydroGoal || (realGender === 'femme' ? 2000 : 2500);
     score += Math.round((Math.min((hydrationMl / hydroGoal) * 100, 100) / 100) * 25);
@@ -423,6 +429,7 @@ export default function DashboardPage({ navigation }) {
         visible={hydroModalVisible} onClose={function() { setHydroModalVisible(false); }}
         currentMl={hydrationMl} setCurrentMl={setHydrationMl}
         goalMl={adjustedHydrationGoal} gender={gender}
+        totalWaterLost={totalWaterLost}
         hydroLogs={hydroLogs} setHydroLogs={setHydroLogs}
         onAddBeverage={function() { setShowBeverageModal(true); }}
         showResetConfirm={showResetConfirm} setShowResetConfirm={setShowResetConfirm}

@@ -23,6 +23,7 @@ const SCREEN_HEIGHT = require('react-native').Dimensions.get('window').height;
 const XscanScreen = forwardRef(function XscanScreen({
   visible, onClose, onMealSaved, userProfile,
   pagePowers, activeChar, todaySubstitutions, setTodaySubstitutions, consumePower,
+  initialMealType,
 }, ref) {
   var auth = useAuth(); var userId = auth.userId;
   var _lc = useLang(); var lang = _lc.lang;
@@ -60,6 +61,12 @@ const XscanScreen = forwardRef(function XscanScreen({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState(null);
   const [scanError, setScanError] = useState(null);
+
+  useEffect(function() {
+    if (visible && initialMealType) {
+      setSelectedMealType(initialMealType);
+    }
+  }, [visible, initialMealType]);
 
   // === STATES CORRECTION ===
   const [correctionMode, setCorrectionMode] = useState(false);
