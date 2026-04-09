@@ -20,12 +20,11 @@ import PageHeader from '../../components/shared/PageHeader';
 
 // Composants Activité
 import {
-  TreeIcon, BenchIcon, BirdsIcon, PondIcon,
   SportIcon, SportCard, SportModal,
-  WalkShoeAnimated, RunShoeAnimated,
 } from './activityComponents';
 import LiveTrackingScreen from './LiveTrackingScreen';
 import PostReportModal from './PostReportModal';
+import PulseTrack from './PulseTrack';
 
 // Constantes
 import {
@@ -666,52 +665,17 @@ export default function ActivityPage({ navigation }) {
               </View>
             </View>
 
-            {/* Canvas SVG */}
-            <View
-              style={{ position: 'relative', height: WALK_CANVAS_H, borderRadius: wp(10), overflow: 'hidden', backgroundColor: 'rgba(0,217,132,0.03)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.08)' }}
-              onLayout={(e) => setWalkCanvasW(e.nativeEvent.layout.width)}
-            >
-              <Svg width={walkCanvasW} height={WALK_CANVAS_H} viewBox={`${walkScrollOffset} 0 ${walkCanvasW} ${WALK_CANVAS_H}`}>
-                <Defs>
-                  <SvgLinearGradient id="wSkyGrad" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0%" stopColor="#87CEEB" stopOpacity={0.9} />
-                    <Stop offset="40%" stopColor="#B0E0FF" stopOpacity={0.7} />
-                    <Stop offset="100%" stopColor="#E8F5E9" stopOpacity={0.3} />
-                  </SvgLinearGradient>
-                  <SvgLinearGradient id="wGrassGrad" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0%" stopColor="#4CAF50" stopOpacity={0.4} />
-                    <Stop offset="100%" stopColor="#2E7D32" stopOpacity={0.6} />
-                  </SvgLinearGradient>
-                  <SvgLinearGradient id="wPathGrad" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0%" stopColor="#D7CCC8" stopOpacity={0.3} />
-                    <Stop offset="100%" stopColor="#A1887F" stopOpacity={0.2} />
-                  </SvgLinearGradient>
-                </Defs>
-                {(function() {
-                  var scW = WALK_SCENE_W;
-                  var scH = WALK_CANVAS_H;
-                  var groundY = scH * 0.60;
-                  var pathY = scH * 0.58;
-                  return (
-                    <G>
-                      <Rect x={0} y={0} width={scW} height={groundY} fill="url(#wSkyGrad)" />
-                      <Rect x={0} y={groundY} width={scW} height={scH - groundY} fill="url(#wGrassGrad)" />
-                      <Path d={`M0 ${pathY + 5} Q500 ${pathY - 2} 1000 ${pathY + 3} Q1500 ${pathY - 1} ${scW} ${pathY + 5}`}
-                        fill="none" stroke="url(#wPathGrad)" strokeWidth={18} strokeLinecap="round" />
-                      <TreeIcon x={440} y={pathY - 15} passed={walkScrollOffset > 300} />
-                      <BenchIcon x={840} y={pathY} />
-                      <BirdsIcon x={1300} y={pathY - 20} passed={walkProg > 0.65} />
-                      <PondIcon x={1850} y={pathY - 5} />
-                    </G>
-                  );
-                })()}
-              </Svg>
-
-              <LinearGradient colors={['#252A30', 'rgba(37,42,48,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 30 }} />
-              <LinearGradient colors={['rgba(37,42,48,0)', '#252A30']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 30 }} />
-            </View>
+            {/* PulseTrack Marche */}
+            <PulseTrack
+              color="#00E5FF"
+              speed="slow"
+              isActive={walkGlow}
+              distance={walkDistStr}
+              calories={walkCal}
+              waterLost={walkWater}
+              duration={walkDurStr}
+              hasParticles={false}
+            />
 
             {/* Controls */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: wp(4), paddingVertical: wp(4), marginTop: wp(4) }}>
