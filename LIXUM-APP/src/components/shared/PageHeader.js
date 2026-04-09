@@ -2,17 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, Animated as RNAnimated } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { fp } from '../../constants/layout';
-
-var LixGem = function(props) {
-  var s = props.size || 14;
-  return (
-    <Svg width={s} height={s} viewBox="0 0 24 24">
-      <Path d="M12 2L3 9l9 13 9-13-9-7z" fill="#00D984" opacity={0.9} />
-      <Path d="M12 2L3 9h18L12 2z" fill="#5DFFB4" opacity={0.5} />
-      <Path d="M12 2l-4 7h8l-4-7z" fill="#FFFFFF" opacity={0.2} />
-    </Svg>
-  );
-};
+import LixIcon from './LixIcon';
 
 export default function PageHeader({ title, subtitle, titleColor, lixBalance, userEnergy, onLixPress, onProfilePress, onEnergyPress, rightExtra }) {
   var _dropdown = useState(false);
@@ -34,7 +24,7 @@ export default function PageHeader({ title, subtitle, titleColor, lixBalance, us
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         {rightExtra}
         <TouchableOpacity onPress={toggleDropdown} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: '#4A4F55', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 }}>
-          <LixGem size={14} />
+          <LixIcon size={14} />
           <Text style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: fp(14), marginLeft: 4 }}>{lixBalance || 0}</Text>
           <Text style={{ color: '#888', fontSize: fp(10), marginLeft: 4 }}>▾</Text>
         </TouchableOpacity>
@@ -43,7 +33,7 @@ export default function PageHeader({ title, subtitle, titleColor, lixBalance, us
         <TouchableOpacity activeOpacity={1} onPress={toggleDropdown} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: -500, zIndex: 998 }}>
           <RNAnimated.View style={{ position: 'absolute', top: 55, right: 14, backgroundColor: '#252A30', borderWidth: 1, borderColor: '#4A4F55', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, zIndex: 999, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 10, opacity: dropdownAnim, transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) }] }}>
             <TouchableOpacity onPress={function() { toggleDropdown(); if (onLixPress) onLixPress(); }} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
-              <LixGem size={13} />
+              <LixIcon size={13} />
               <Text style={{ color: '#D4AF37', fontWeight: '800', fontSize: 16, marginLeft: 6 }}>{lixBalance || 0}</Text>
               <Text style={{ color: '#6B7280', fontSize: 12, marginLeft: 4 }}>Lix</Text>
             </TouchableOpacity>
