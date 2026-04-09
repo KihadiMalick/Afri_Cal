@@ -1568,20 +1568,18 @@ export default function RecettesScreen({
                   {!alixenLoading && alixenProposals.length > 0 && (
                     <View>
                       <Text style={{
-                        color: '#8892A0', fontSize: fp(10), fontWeight: '700',
-                        letterSpacing: 1.5, marginBottom: wp(12),
+                        color: '#AAA', fontSize: fp(11), fontWeight: '700',
+                        letterSpacing: 2, marginBottom: wp(12),
+                        textTransform: 'uppercase',
                       }}>
                         ALIXEN TE PROPOSE 3 OPTIONS
                       </Text>
 
                       {alixenProposals.map(function(proposal, idx) {
-                        var typeColors = ['#4DA6FF', '#00D984', '#FF8C42'];
-                        var typeLabels = ['LÉGER', 'DÎNER', 'CONSISTANT'];
                         var typeEmojis = ['🥗', '🍲', '🥩'];
-                        var color = typeColors[idx] || '#00D984';
-                        var label = typeLabels[idx] || '';
                         var emoji = typeEmojis[idx] || '🍽️';
                         var isOver = alixenContext && proposal.kcal > alixenContext.remaining;
+                        var slotLabel = alixenMealSlot === 'breakfast' ? 'Petit-déj' : alixenMealSlot === 'lunch' ? 'Déjeuner' : alixenMealSlot === 'dinner' ? 'Dîner' : alixenMealSlot === 'snack' ? 'Snacks' : '';
 
                         return (
                           <Pressable
@@ -1592,89 +1590,93 @@ export default function RecettesScreen({
                             }}
                             style={function(state) {
                               return {
-                                borderRadius: wp(14), padding: 1,
-                                backgroundColor: state.pressed ? color : '#4A4F55',
-                                marginBottom: wp(10),
+                                backgroundColor: state.pressed ? '#333A44' : '#2A303B',
+                                borderRadius: 14,
+                                borderWidth: 1,
+                                borderColor: state.pressed ? 'rgba(0,217,132,0.3)' : '#3A3F46',
+                                padding: wp(14),
+                                marginBottom: wp(12),
                               };
                             }}
                           >
-                            <LinearGradient
-                              colors={['#3A3F46', '#252A30', '#1A1D22']}
-                              style={{ borderRadius: wp(13), padding: wp(14) }}
-                            >
-                              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-                                <Text style={{ fontSize: fp(18), marginRight: wp(8) }}>{emoji}</Text>
-                                <View style={{ flex: 1 }}>
-                                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                            {/* Ligne 1 — Header */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                              <Text style={{ fontSize: fp(18), marginRight: wp(8) }}>{emoji}</Text>
+                              <View style={{ flex: 1 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginBottom: wp(3) }}>
+                                  {slotLabel !== '' && (
                                     <View style={{
-                                      backgroundColor: color + '15',
-                                      paddingHorizontal: wp(8), paddingVertical: wp(2), borderRadius: wp(4),
+                                      backgroundColor: 'rgba(0,217,132,0.15)',
+                                      paddingHorizontal: wp(8), paddingVertical: wp(2), borderRadius: 8,
                                     }}>
-                                      <Text style={{ color: color, fontSize: fp(8), fontWeight: '800' }}>{label}</Text>
+                                      <Text style={{ color: '#00D984', fontSize: fp(8), fontWeight: '800' }}>{slotLabel}</Text>
                                     </View>
-                                    {isOver && (
-                                      <View style={{
-                                        backgroundColor: 'rgba(255,140,66,0.1)',
-                                        paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4),
-                                      }}>
-                                        <Text style={{ color: '#FF8C42', fontSize: fp(7), fontWeight: '700' }}>Au-dessus</Text>
-                                      </View>
-                                    )}
-                                  </View>
-                                  <Text style={{
-                                    color: '#EAEEF3', fontSize: fp(14), fontWeight: '700',
-                                    marginTop: wp(4),
-                                  }} numberOfLines={1}>
-                                    {proposal.name || 'Recette'}
-                                  </Text>
+                                  )}
+                                  {isOver && (
+                                    <View style={{
+                                      backgroundColor: 'rgba(255,140,66,0.1)',
+                                      paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4),
+                                    }}>
+                                      <Text style={{ color: '#FF8C42', fontSize: fp(7), fontWeight: '700' }}>Au-dessus</Text>
+                                    </View>
+                                  )}
                                 </View>
-                                <View style={{ alignItems: 'flex-end' }}>
-                                  <Text style={{ color: '#FF8C42', fontSize: fp(16), fontWeight: '800' }}>
-                                    {proposal.kcal || '—'}
-                                  </Text>
-                                  <Text style={{ color: '#5A6070', fontSize: fp(8) }}>kcal</Text>
-                                </View>
-                              </View>
-
-                              {proposal.description && (
                                 <Text style={{
-                                  color: '#8892A0', fontSize: fp(10),
-                                  fontStyle: 'italic', marginBottom: wp(8),
-                                }} numberOfLines={2}>
-                                  "{proposal.description}"
-                                </Text>
-                              )}
-
-                              <View style={{ flexDirection: 'row', gap: wp(10) }}>
-                                <Text style={{ color: '#FF6B6B', fontSize: fp(9), fontWeight: '600' }}>
-                                  P: {proposal.protein || 0}g
-                                </Text>
-                                <Text style={{ color: '#FFD93D', fontSize: fp(9), fontWeight: '600' }}>
-                                  G: {proposal.carbs || 0}g
-                                </Text>
-                                <Text style={{ color: '#4DA6FF', fontSize: fp(9), fontWeight: '600' }}>
-                                  L: {proposal.fat || 0}g
-                                </Text>
-                                <Text style={{ color: '#5A6070', fontSize: fp(8) }}>
-                                  • {proposal.time || '20 min'}
+                                  color: '#EAEEF3', fontSize: fp(14), fontWeight: '700',
+                                }} numberOfLines={1}>
+                                  {proposal.name || 'Recette'}
                                 </Text>
                               </View>
-
-                              <View style={{
-                                marginTop: wp(10), paddingVertical: wp(8), borderRadius: wp(8),
-                                backgroundColor: color + '12',
-                                borderWidth: 1, borderColor: color + '25',
-                                alignItems: 'center',
-                              }}>
-                                <Text style={{ color: color, fontSize: fp(10), fontWeight: '700' }}>
-                                  Voir la recette →
+                              <View style={{ alignItems: 'flex-end' }}>
+                                <Text style={{ color: '#00D984', fontSize: fp(20), fontWeight: '800' }}>
+                                  {proposal.kcal || '—'}
                                 </Text>
+                                <Text style={{ color: '#888', fontSize: fp(11) }}>kcal</Text>
                               </View>
-                            </LinearGradient>
+                            </View>
+
+                            {/* Ligne 2 — Description */}
+                            {proposal.description && (
+                              <Text style={{
+                                color: '#AAA', fontSize: fp(12),
+                                fontStyle: 'italic', marginBottom: wp(8),
+                              }} numberOfLines={2}>
+                                "{proposal.description}"
+                              </Text>
+                            )}
+
+                            {/* Ligne 3 — Macros + temps */}
+                            <View style={{ flexDirection: 'row', gap: wp(10), marginBottom: wp(10) }}>
+                              <Text style={{ color: '#FF6B8A', fontSize: fp(9), fontWeight: '600' }}>
+                                P: {proposal.protein || 0}g
+                              </Text>
+                              <Text style={{ color: '#FFD93D', fontSize: fp(9), fontWeight: '600' }}>
+                                G: {proposal.carbs || 0}g
+                              </Text>
+                              <Text style={{ color: '#4DA6FF', fontSize: fp(9), fontWeight: '600' }}>
+                                L: {proposal.fat || 0}g
+                              </Text>
+                              <Text style={{ color: '#888', fontSize: fp(8) }}>
+                                • {proposal.time || '20 min'}
+                              </Text>
+                            </View>
+
+                            {/* Ligne 4 — Bouton contour emerald */}
+                            <View style={{
+                              paddingVertical: wp(8), borderRadius: 10,
+                              backgroundColor: 'transparent',
+                              borderWidth: 1, borderColor: '#00D984',
+                              alignItems: 'center',
+                            }}>
+                              <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>
+                                Voir la recette →
+                              </Text>
+                            </View>
                           </Pressable>
                         );
                       })}
 
+                      {/* Bouton "Autres suggestions" — MetalCard simple */}
                       <Pressable
                         onPress={function() {
                           setAlixenLoading(true);
@@ -1682,14 +1684,14 @@ export default function RecettesScreen({
                         }}
                         style={function(state) {
                           return {
-                            paddingVertical: wp(10), borderRadius: wp(10),
-                            backgroundColor: state.pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
-                            borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+                            paddingVertical: wp(10), borderRadius: 14,
+                            backgroundColor: state.pressed ? '#333A44' : '#2A303B',
+                            borderWidth: 1, borderColor: '#3A3F46',
                             alignItems: 'center', marginTop: wp(6),
                           };
                         }}
                       >
-                        <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '600' }}>
+                        <Text style={{ color: '#AAA', fontSize: fp(11), fontWeight: '600' }}>
                           ↻ Autres suggestions
                         </Text>
                       </Pressable>
