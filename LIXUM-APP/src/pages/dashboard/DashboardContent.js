@@ -16,6 +16,28 @@ import {
 import { LixGemIcon, LixCoinIcon, ForkKnifeIcon, StatsIcon } from './dashboardIcons';
 import { EcgPulse, ReactorCore, DnaHelix, HydrationCardCompact } from './dashboardComponents';
 
+var getFoodEmoji = function(name) {
+  var n = (name || '').toLowerCase();
+  if (n.indexOf('croissant') >= 0 || n.indexOf('pain') >= 0 || n.indexOf('baguette') >= 0) return '🥐';
+  if (n.indexOf('riz') >= 0) return '🍚';
+  if (n.indexOf('poulet') >= 0 || n.indexOf('chicken') >= 0) return '🍗';
+  if (n.indexOf('poisson') >= 0 || n.indexOf('thon') >= 0 || n.indexOf('saumon') >= 0 || n.indexOf('tilapia') >= 0) return '🐟';
+  if (n.indexOf('salade') >= 0 || n.indexOf('légume') >= 0 || n.indexOf('legume') >= 0) return '🥗';
+  if (n.indexOf('soupe') >= 0 || n.indexOf('bouillon') >= 0) return '🍲';
+  if (n.indexOf('pâte') >= 0 || n.indexOf('pasta') >= 0 || n.indexOf('spaghetti') >= 0) return '🍝';
+  if (n.indexOf('viande') >= 0 || n.indexOf('boeuf') >= 0 || n.indexOf('bœuf') >= 0 || n.indexOf('steak') >= 0) return '🥩';
+  if (n.indexOf('oeuf') >= 0 || n.indexOf('œuf') >= 0 || n.indexOf('omelette') >= 0) return '🥚';
+  if (n.indexOf('fruit') >= 0 || n.indexOf('banane') >= 0 || n.indexOf('mangue') >= 0 || n.indexOf('pomme') >= 0) return '🍎';
+  if (n.indexOf('ndolé') >= 0 || n.indexOf('ndole') >= 0 || n.indexOf('épinard') >= 0 || n.indexOf('epinard') >= 0) return '🥬';
+  if (n.indexOf('pizza') >= 0) return '🍕';
+  if (n.indexOf('burger') >= 0 || n.indexOf('hamburger') >= 0) return '🍔';
+  if (n.indexOf('sandwich') >= 0) return '🥪';
+  if (n.indexOf('gâteau') >= 0 || n.indexOf('gateau') >= 0 || n.indexOf('dessert') >= 0 || n.indexOf('pâtisserie') >= 0) return '🍰';
+  if (n.indexOf('accra') >= 0 || n.indexOf('beignet') >= 0) return '🧆';
+  if (n.indexOf('lait') >= 0 || n.indexOf('yaourt') >= 0) return '🥛';
+  return '🍽️';
+};
+
 const DashboardContent = ({
   onHydrationPress, hydrationMl, hydrationGoal, gender,
   totalWaterLost,
@@ -304,19 +326,8 @@ const DashboardContent = ({
           {lastMeal && (lastMeal.photo_url || lastMeal.image_url) ? (
             <Image source={{ uri: lastMeal.photo_url || lastMeal.image_url }} style={{ width: wp(52), height: wp(52), borderRadius: wp(12), marginRight: wp(12) }} resizeMode="cover" />
           ) : (
-            <View style={{ width: wp(52), height: wp(52), borderRadius: wp(12), backgroundColor: 'rgba(30, 37, 48, 0.8)', borderWidth: 1, borderColor: 'rgba(62, 72, 85, 0.3)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
-              <Svg width={wp(28)} height={wp(28)} viewBox="0 0 32 32">
-                <Defs>
-                  <SvgLinearGradient id="plateGrd" x1="0.5" y1="0" x2="0.5" y2="1">
-                    <Stop offset="0%" stopColor="#8892A0" />
-                    <Stop offset="100%" stopColor="#6B7B8D" />
-                  </SvgLinearGradient>
-                </Defs>
-                <Ellipse cx="16" cy="22" rx="13" ry="5" fill="url(#plateGrd)" opacity={0.3} />
-                <Ellipse cx="16" cy="20" rx="12" ry="4.5" fill="none" stroke="#8892A0" strokeWidth={1.2} opacity={0.5} />
-                <Path d="M11 14 Q11 11 13 12 Q15 13 13 10" fill="none" stroke="#8892A0" strokeWidth={1} strokeLinecap="round" opacity={0.4} />
-                <Path d="M16 13 Q16 10 18 11 Q20 12 18 9" fill="none" stroke="#8892A0" strokeWidth={1} strokeLinecap="round" opacity={0.35} />
-              </Svg>
+            <View style={{ width: wp(52), height: wp(52), borderRadius: wp(12), backgroundColor: '#2A303B', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
+              <Text style={{ fontSize: fp(28) }}>{getFoodEmoji(lastMeal ? lastMeal.food_name : '')}</Text>
             </View>
           )}
           <View style={{ flex: 1 }}>
