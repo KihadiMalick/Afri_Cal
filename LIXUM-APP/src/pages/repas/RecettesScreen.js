@@ -1226,22 +1226,20 @@ export default function RecettesScreen({
                             <Pressable
                               key={slot.key}
                               onPress={function() { setAlixenMealSlot(slot.key); }}
-                              style={function(state) {
-                                return {
-                                  width: '47%',
-                                  paddingVertical: wp(20),
-                                  borderRadius: 14,
-                                  backgroundColor: state.pressed ? 'rgba(0,217,132,0.08)' : '#2A303B',
-                                  borderWidth: 1,
-                                  borderColor: state.pressed ? 'rgba(0,217,132,0.3)' : '#3A3F46',
-                                  alignItems: 'center',
-                                };
-                              }}
+                              style={{ width: '47%' }}
                             >
-                              <Text style={{ fontSize: fp(28), marginBottom: wp(6) }}>{slot.emoji}</Text>
-                              <Text style={{
-                                color: '#EAEEF3', fontSize: fp(12), fontWeight: '700',
-                              }}>{slot.label}</Text>
+                              <LinearGradient
+                                colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                                style={{
+                                  borderRadius: 14, paddingVertical: wp(20), alignItems: 'center',
+                                  borderWidth: 1.5, borderColor: '#4A4F55',
+                                }}
+                              >
+                                <Text style={{ fontSize: fp(28), marginBottom: wp(6) }}>{slot.emoji}</Text>
+                                <Text style={{
+                                  color: '#EAEEF3', fontSize: fp(12), fontWeight: '700',
+                                }}>{slot.label}</Text>
+                              </LinearGradient>
                             </Pressable>
                           );
                         })}
