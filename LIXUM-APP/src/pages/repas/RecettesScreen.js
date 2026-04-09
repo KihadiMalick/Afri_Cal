@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, Pressable, TouchableOpacity,
   ScrollView, FlatList, Modal, Image, ActivityIndicator,
-  StatusBar, Alert,
+  Animated, StatusBar, Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -69,6 +69,67 @@ export default function RecettesScreen({
   var _alixenAdvice = useState(null); var alixenAdvice = _alixenAdvice[0]; var setAlixenAdvice = _alixenAdvice[1];
   var _alixenFreeUsedToday = useState(false); var alixenFreeUsedToday = _alixenFreeUsedToday[0]; var setAlixenFreeUsedToday = _alixenFreeUsedToday[1];
   var _alixenHasOwlPass = useState(false); var alixenHasOwlPass = _alixenHasOwlPass[0]; var setAlixenHasOwlPass = _alixenHasOwlPass[1];
+  var _alixenMealSlot = useState(null); var alixenMealSlot = _alixenMealSlot[0]; var setAlixenMealSlot = _alixenMealSlot[1];
+
+  // === LOADING ANIMATION ALIXEN ===
+  var _loadingPhase = useState(0); var loadingPhase = _loadingPhase[0]; var setLoadingPhase = _loadingPhase[1];
+  var loadingFade = useRef(new Animated.Value(1)).current;
+  var loadingProgress = useRef(new Animated.Value(0)).current;
+  var loadingPulse = useRef(new Animated.Value(1)).current;
+  var loadingPhaseTimer = useRef(null);
+  var loadingPulseLoop = useRef(null);
+
+  useEffect(function() {
+    if (alixenLoading) {
+      setLoadingPhase(0);
+      loadingProgress.setValue(0);
+      loadingFade.setValue(1);
+      loadingPulse.setValue(1);
+
+      // Pulse animation loop
+      loadingPulseLoop.current = Animated.loop(
+        Animated.sequence([
+          Animated.timing(loadingPulse, { toValue: 1.12, duration: 600, useNativeDriver: true }),
+          Animated.timing(loadingPulse, { toValue: 1, duration: 600, useNativeDriver: true }),
+        ])
+      );
+      loadingPulseLoop.current.start();
+
+      // Phase 0→1 after 2s
+      loadingPhaseTimer.current = setTimeout(function() {
+        Animated.timing(loadingFade, { toValue: 0, duration: 200, useNativeDriver: true }).start(function() {
+          setLoadingPhase(1);
+          Animated.timing(loadingFade, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+        });
+        Animated.timing(loadingProgress, { toValue: 0.33, duration: 2000, useNativeDriver: false }).start();
+      }, 100);
+
+      // Phase 1→2 after 2s+2s
+      var timer2 = setTimeout(function() {
+        Animated.timing(loadingFade, { toValue: 0, duration: 200, useNativeDriver: true }).start(function() {
+          setLoadingPhase(2);
+          Animated.timing(loadingFade, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+        });
+        Animated.timing(loadingProgress, { toValue: 0.66, duration: 2000, useNativeDriver: false }).start();
+      }, 2100);
+
+      // Phase 2 progress to ~90%
+      var timer3 = setTimeout(function() {
+        Animated.timing(loadingProgress, { toValue: 0.90, duration: 4000, useNativeDriver: false }).start();
+      }, 4200);
+
+      return function() {
+        clearTimeout(loadingPhaseTimer.current);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+        if (loadingPulseLoop.current) loadingPulseLoop.current.stop();
+      };
+    } else {
+      // Loading finished — snap to 100%
+      Animated.timing(loadingProgress, { toValue: 1, duration: 300, useNativeDriver: false }).start();
+      if (loadingPulseLoop.current) loadingPulseLoop.current.stop();
+    }
+  }, [alixenLoading]);
 
   // === FONCTIONS ===
 
@@ -169,6 +230,7 @@ export default function RecettesScreen({
       setAlixenProposals([]);
       setAlixenSelectedRecipe(null);
       setAlixenCategory(null);
+      setAlixenMealSlot(null);
       setAlixenMyIngredients([]);
       setAlixenAdvice(null);
       if (userId) {
@@ -770,45 +832,63 @@ export default function RecettesScreen({
             <View style={{ width: 60 }} />
           </View>
 
-          {/* 2 Onglets : Général / Personnalisé */}
+          {/* 2 Onglets : Général / ALIXEN Chef — MetalCard dense */}
           <View style={{
             flexDirection: 'row', marginHorizontal: wp(16), marginTop: wp(10),
-            borderRadius: 14, overflow: 'hidden',
-            backgroundColor: 'rgba(255,255,255,0.03)',
-            borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
+            gap: wp(8),
           }}>
             <Pressable
-              onPress={() => { setRecipesTab('general'); if (recipesData.length === 0) loadRecipes(0); }}
-              style={{
-                flex: 1, paddingVertical: wp(12), alignItems: 'center',
-                backgroundColor: recipesTab === 'general' ? 'rgba(0,217,132,0.12)' : 'transparent',
-                borderRightWidth: 0.5, borderRightColor: 'rgba(255,255,255,0.05)',
-              }}
+              onPress={function() { setRecipesTab('general'); if (recipesData.length === 0) loadRecipes(0); }}
+              style={{ flex: 1 }}
             >
-              <Text style={{ fontSize: 16, marginBottom: 2 }}>🌍</Text>
-              <Text style={{
-                color: recipesTab === 'general' ? '#00D984' : '#8892A0',
-                fontSize: fp(11), fontWeight: recipesTab === 'general' ? '800' : '600',
-              }}>{lang === 'fr' ? 'Général' : 'General'}</Text>
-              <Text style={{ color: '#00D984', fontSize: fp(7), fontWeight: '600', marginTop: 1 }}>
-                {lang === 'fr' ? '524 plats' : '524 dishes'}
-              </Text>
+              <LinearGradient
+                colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                style={{
+                  borderRadius: 14, paddingVertical: wp(12), alignItems: 'center',
+                  borderWidth: 1.5,
+                  borderColor: recipesTab === 'general' ? '#00D984' : '#4A4F55',
+                }}
+              >
+                {recipesTab === 'general' && (
+                  <View style={{
+                    position: 'absolute', top: -1, left: -1, right: -1, bottom: -1,
+                    borderRadius: 14, borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.3)',
+                  }} />
+                )}
+                <Text style={{ fontSize: 16, marginBottom: 2 }}>🌍</Text>
+                <Text style={{
+                  color: recipesTab === 'general' ? '#00D984' : '#8892A0',
+                  fontSize: fp(11), fontWeight: recipesTab === 'general' ? '800' : '600',
+                }}>{lang === 'fr' ? 'Général' : 'General'}</Text>
+              </LinearGradient>
             </Pressable>
             <Pressable
-              onPress={() => { setRecipesTab('personalized'); loadMoodRecipes(); }}
-              style={{
-                flex: 1, paddingVertical: wp(12), alignItems: 'center',
-                backgroundColor: recipesTab === 'personalized' ? 'rgba(212,175,55,0.10)' : 'transparent',
-              }}
+              onPress={function() { setRecipesTab('personalized'); loadMoodRecipes(); }}
+              style={{ flex: 1 }}
             >
-              <Text style={{ fontSize: 16, marginBottom: 2 }}>🤖</Text>
-              <Text style={{
-                color: recipesTab === 'personalized' ? '#D4AF37' : '#8892A0',
-                fontSize: fp(11), fontWeight: recipesTab === 'personalized' ? '800' : '600',
-              }}>ALIXEN Chef</Text>
-              <Text style={{ color: '#D4AF37', fontSize: fp(7), fontWeight: '600', marginTop: 1 }}>
-                Recettes IA
-              </Text>
+              <LinearGradient
+                colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                style={{
+                  borderRadius: 14, paddingVertical: wp(12), alignItems: 'center',
+                  borderWidth: 1.5,
+                  borderColor: recipesTab === 'personalized' ? '#00D984' : '#4A4F55',
+                }}
+              >
+                {recipesTab === 'personalized' && (
+                  <View style={{
+                    position: 'absolute', top: -1, left: -1, right: -1, bottom: -1,
+                    borderRadius: 14, borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.3)',
+                  }} />
+                )}
+                <Text style={{ fontSize: 16, marginBottom: 2 }}>🤖</Text>
+                <Text style={{
+                  color: recipesTab === 'personalized' ? '#00D984' : '#8892A0',
+                  fontSize: fp(11), fontWeight: recipesTab === 'personalized' ? '800' : '600',
+                }}><Text style={{ color: recipesTab === 'personalized' ? '#00D984' : '#8892A0' }}>ALIXEN</Text> Chef</Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(7), fontWeight: '600', marginTop: 1 }}>
+                  Recettes Personnalisées
+                </Text>
+              </LinearGradient>
             </Pressable>
           </View>
 
@@ -1006,95 +1086,72 @@ export default function RecettesScreen({
               {alixenRecipeScreen === 'welcome' && (
                 <View style={{ paddingHorizontal: wp(16), paddingTop: wp(14) }}>
 
-                  {/* Carte ALIXEN greeting */}
+                  {/* Carte ALIXEN greeting — compacte */}
                   <View style={{
-                    borderRadius: 16, padding: 1, backgroundColor: '#4A4F55',
-                    marginBottom: wp(16),
+                    backgroundColor: '#2A303B', borderRadius: 14,
+                    borderWidth: 1, borderColor: '#3A3F46',
+                    padding: wp(12), marginBottom: wp(12),
                   }}>
-                    <LinearGradient
-                      colors={['#3A3F46', '#252A30', '#1A1D22']}
-                      style={{ borderRadius: 15, padding: wp(16) }}
-                    >
-                      <View style={{ position: 'absolute', top: 0, left: 16, right: 16, height: 1, backgroundColor: 'rgba(0,217,132,0.10)' }} />
-
-                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
-                        <View style={{
-                          width: wp(36), height: wp(36), borderRadius: wp(18),
-                          backgroundColor: 'rgba(0,217,132,0.1)',
-                          justifyContent: 'center', alignItems: 'center',
-                          marginRight: wp(10), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
-                        }}>
-                          <Text style={{ fontSize: fp(18) }}>🤖</Text>
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '800' }}>ALIXEN</Text>
-                          <Text style={{ color: '#5A6070', fontSize: fp(9) }}>Chef cuisinier IA personnel</Text>
-                        </View>
-                        <View style={{
-                          backgroundColor: 'rgba(0,217,132,0.08)',
-                          paddingHorizontal: wp(8), paddingVertical: wp(3), borderRadius: wp(6),
-                        }}>
-                          <Text style={{ color: '#00D984', fontSize: fp(8), fontWeight: '700' }}>IA</Text>
-                        </View>
-                      </View>
-
-                      <Text style={{
-                        color: '#EAEEF3', fontSize: fp(13), lineHeight: fp(20),
-                        fontStyle: 'italic',
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
+                      <Text style={{ fontSize: fp(16), marginRight: wp(8) }}>🤖</Text>
+                      <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '800', flex: 1 }}>ALIXEN</Text>
+                      <View style={{
+                        backgroundColor: 'rgba(0,217,132,0.08)',
+                        paddingHorizontal: wp(8), paddingVertical: wp(2), borderRadius: wp(6),
                       }}>
-                        "{alixenGreeting || 'Chargement...'}"
-                      </Text>
-
-                      {alixenContext && (
-                        <View style={{
-                          flexDirection: 'row', marginTop: wp(12), gap: wp(8),
-                        }}>
-                          <View style={{
-                            flex: 1, backgroundColor: 'rgba(255,140,66,0.06)',
-                            borderRadius: wp(8), padding: wp(8), alignItems: 'center',
-                            borderWidth: 0.5, borderColor: 'rgba(255,140,66,0.15)',
-                          }}>
-                            <Text style={{ color: '#FF8C42', fontSize: fp(14), fontWeight: '800' }}>
-                              {Math.round(alixenContext.remaining)}
-                            </Text>
-                            <Text style={{ color: '#5A6070', fontSize: fp(8) }}>kcal restant</Text>
-                          </View>
-                          <View style={{
-                            flex: 1, backgroundColor: 'rgba(255,107,107,0.06)',
-                            borderRadius: wp(8), padding: wp(8), alignItems: 'center',
-                            borderWidth: 0.5, borderColor: 'rgba(255,107,107,0.15)',
-                          }}>
-                            <Text style={{ color: '#FF6B6B', fontSize: fp(14), fontWeight: '800' }}>
-                              {Math.round(alixenContext.protRemaining)}g
-                            </Text>
-                            <Text style={{ color: '#5A6070', fontSize: fp(8) }}>prot. restant</Text>
-                          </View>
-                          <View style={{
-                            flex: 1, backgroundColor: 'rgba(0,217,132,0.06)',
-                            borderRadius: wp(8), padding: wp(8), alignItems: 'center',
-                            borderWidth: 0.5, borderColor: 'rgba(0,217,132,0.15)',
-                          }}>
-                            <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '800' }}>
-                              {alixenContext.mealsCount}
-                            </Text>
-                            <Text style={{ color: '#5A6070', fontSize: fp(8) }}>repas pris</Text>
-                          </View>
-                        </View>
-                      )}
-                    </LinearGradient>
+                        <Text style={{ color: '#00D984', fontSize: fp(8), fontWeight: '700' }}>IA</Text>
+                      </View>
+                    </View>
+                    <Text style={{
+                      color: '#EAEEF3', fontSize: fp(11), lineHeight: fp(17),
+                      fontStyle: 'italic',
+                    }} numberOfLines={2}>
+                      "{alixenGreeting || 'Chargement...'}"
+                    </Text>
                   </View>
 
-                  <Text style={{
-                    color: '#8892A0', fontSize: fp(10), fontWeight: '700',
-                    letterSpacing: 1.5, marginBottom: wp(10),
-                  }}>
-                    QUE VEUX-TU PRÉPARER ?
-                  </Text>
+                  {/* Pilules macros */}
+                  {alixenContext && (
+                    <View style={{
+                      flexDirection: 'row', marginBottom: wp(14), gap: wp(8),
+                    }}>
+                      <View style={{
+                        flex: 1, backgroundColor: 'rgba(255,140,66,0.06)',
+                        borderRadius: wp(8), padding: wp(8), alignItems: 'center',
+                        borderWidth: 0.5, borderColor: 'rgba(255,140,66,0.15)',
+                      }}>
+                        <Text style={{ color: '#FF8C42', fontSize: fp(14), fontWeight: '800' }}>
+                          {Math.round(alixenContext.remaining)}
+                        </Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(8) }}>kcal restant</Text>
+                      </View>
+                      <View style={{
+                        flex: 1, backgroundColor: 'rgba(255,107,107,0.06)',
+                        borderRadius: wp(8), padding: wp(8), alignItems: 'center',
+                        borderWidth: 0.5, borderColor: 'rgba(255,107,107,0.15)',
+                      }}>
+                        <Text style={{ color: '#FF6B6B', fontSize: fp(14), fontWeight: '800' }}>
+                          {Math.round(alixenContext.protRemaining)}g
+                        </Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(8) }}>prot. restant</Text>
+                      </View>
+                      <View style={{
+                        flex: 1, backgroundColor: 'rgba(0,217,132,0.06)',
+                        borderRadius: wp(8), padding: wp(8), alignItems: 'center',
+                        borderWidth: 0.5, borderColor: 'rgba(0,217,132,0.15)',
+                      }}>
+                        <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '800' }}>
+                          {alixenContext.mealsCount}
+                        </Text>
+                        <Text style={{ color: '#5A6070', fontSize: fp(8) }}>repas pris</Text>
+                      </View>
+                    </View>
+                  )}
 
                   {/* Badge coût */}
                   <View style={{
                     flexDirection: 'row', alignItems: 'center',
-                    marginBottom: wp(8),
+                    marginBottom: wp(10),
                   }}>
                     {alixenHasOwlPass ? (
                       <View style={{
@@ -1138,170 +1195,251 @@ export default function RecettesScreen({
                     )}
                   </View>
 
-                  <View style={{
-                    flexDirection: 'row', flexWrap: 'wrap',
-                    gap: wp(8),
-                  }}>
-                    {ALIXEN_CATEGORIES.map(function(cat) {
-                      var isNight = alixenContext && alixenContext.timeOfDay === 'night';
-                      var isHeavy = cat.key === 'rice' || cat.key === 'hearty';
-                      var isLight = cat.key === 'light' || cat.key === 'soup' || cat.key === 'milkshake' || cat.key === 'salad';
-
-                      return (
-                        <Pressable
-                          key={cat.key}
-                          onPress={function() {
-                            var costCheck = checkAlixenRecipeCost();
-                            if (!costCheck.allowed) {
-                              Alert.alert(
-                                '💎 Lix insuffisants',
-                                'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées',
-                                [
-                                  { text: 'Aller au LixVerse', onPress: function() { if (onNavigate) onNavigate('lixverse'); onClose(); } },
-                                  { text: 'OK', style: 'cancel' },
-                                ]
-                              );
-                              return;
-                            }
-                            if (costCheck.cost > 0) {
-                              Alert.alert(
-                                '🤖 Recette ALIXEN',
-                                'Ta recette gratuite du jour a été utilisée.\nCette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix',
-                                [
-                                  { text: 'Annuler', style: 'cancel' },
-                                  { text: 'Confirmer (50 Lix)', onPress: function() {
-                                    deductAlixenLix(50).then(function(success) {
-                                      if (success) {
-                                        setAlixenCategory(cat.key);
-                                        setAlixenRecipeScreen('proposals');
-                                        setAlixenLoading(true);
-                                        generateAlixenProposals(cat.key);
-                                      } else {
-                                        Alert.alert('Erreur', 'Impossible de débiter les Lix.');
-                                      }
-                                    });
-                                  }},
-                                ]
-                              );
-                              return;
-                            }
-                            setAlixenCategory(cat.key);
-                            setAlixenRecipeScreen('proposals');
-                            setAlixenLoading(true);
-                            generateAlixenProposals(cat.key);
-                          }}
-                          style={function(state) {
-                            return {
-                              width: '31%',
-                              paddingVertical: wp(14),
-                              borderRadius: wp(12),
-                              backgroundColor: state.pressed
-                                ? 'rgba(0,217,132,0.12)'
-                                : isNight && isLight
-                                  ? 'rgba(0,217,132,0.06)'
-                                  : 'rgba(255,255,255,0.03)',
-                              borderWidth: 1,
-                              borderColor: isNight && isLight
-                                ? 'rgba(0,217,132,0.2)'
-                                : isNight && isHeavy
-                                  ? 'rgba(255,140,66,0.15)'
-                                  : 'rgba(255,255,255,0.06)',
-                              alignItems: 'center',
-                              opacity: isNight && isHeavy ? 0.5 : 1,
-                            };
-                          }}
-                        >
-                          <Text style={{ fontSize: fp(20), marginBottom: wp(4) }}>{cat.emoji}</Text>
-                          <Text style={{
-                            color: '#EAEEF3', fontSize: fp(9), fontWeight: '600',
-                            textAlign: 'center',
-                          }} numberOfLines={1}>{cat.label}</Text>
-                          {isNight && isHeavy && (
-                            <Text style={{ color: '#FF8C42', fontSize: fp(7), marginTop: wp(2) }}>Déconseillé</Text>
-                          )}
-                          {isNight && isLight && (
-                            <Text style={{ color: '#00D984', fontSize: fp(7), marginTop: wp(2) }}>Recommandé</Text>
-                          )}
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-
-                  <View style={{
-                    height: 1, backgroundColor: 'rgba(255,255,255,0.05)',
-                    marginVertical: wp(16),
-                  }} />
-
-                  {/* Bouton "Mes ingrédients" */}
-                  <Pressable
-                    onPress={function() {
-                      setAlixenRecipeScreen('my_ingredients');
-                      setAlixenMyIngredients([]);
-                      setAlixenIngSearch('');
-                      setAlixenIngResults([]);
-                    }}
-                    style={function(state) {
-                      return {
-                        flexDirection: 'row', alignItems: 'center',
-                        padding: wp(14), borderRadius: wp(14),
-                        backgroundColor: state.pressed ? 'rgba(212,175,55,0.12)' : 'rgba(212,175,55,0.06)',
-                        borderWidth: 1.5, borderColor: 'rgba(212,175,55,0.25)',
-                      };
-                    }}
-                  >
-                    <View style={{
-                      width: wp(40), height: wp(40), borderRadius: wp(12),
-                      backgroundColor: 'rgba(212,175,55,0.1)',
-                      justifyContent: 'center', alignItems: 'center',
-                      marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
-                    }}>
-                      <Text style={{ fontSize: fp(18) }}>🔍</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#D4AF37', fontSize: fp(14), fontWeight: '800' }}>
-                        Mes ingrédients
+                  {/* ── ÉTAPE 1 : Sélection créneau (si pas encore choisi) ── */}
+                  {!alixenMealSlot && (
+                    <View>
+                      <Text style={{
+                        color: '#8892A0', fontSize: fp(10), fontWeight: '700',
+                        letterSpacing: 1.5, marginBottom: wp(10),
+                      }}>
+                        CHOISIS TON CRÉNEAU
                       </Text>
-                      <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: 2 }}>
-                        Propose tes ingrédients, ALIXEN crée la recette
-                      </Text>
-                    </View>
-                    <Text style={{ color: '#D4AF37', fontSize: fp(16) }}>›</Text>
-                  </Pressable>
 
-                  {alixenContext && alixenContext.mood && (
-                    <View style={{
-                      flexDirection: 'row', alignItems: 'center',
-                      marginTop: wp(12), gap: wp(8),
-                    }}>
+                      <View style={{
+                        flexDirection: 'row', flexWrap: 'wrap', gap: wp(10),
+                      }}>
+                        {[
+                          { key: 'breakfast', emoji: '☀️', label: 'Petit-déjeuner' },
+                          { key: 'lunch', emoji: '⛅', label: 'Déjeuner' },
+                          { key: 'dinner', emoji: '🌙', label: 'Dîner' },
+                          { key: 'snack', emoji: '🍿', label: 'Snacks' },
+                        ].map(function(slot) {
+                          return (
+                            <Pressable
+                              key={slot.key}
+                              onPress={function() { setAlixenMealSlot(slot.key); }}
+                              style={function(state) {
+                                return {
+                                  width: '47%',
+                                  paddingVertical: wp(20),
+                                  borderRadius: 14,
+                                  backgroundColor: state.pressed ? 'rgba(0,217,132,0.08)' : '#2A303B',
+                                  borderWidth: 1,
+                                  borderColor: state.pressed ? 'rgba(0,217,132,0.3)' : '#3A3F46',
+                                  alignItems: 'center',
+                                };
+                              }}
+                            >
+                              <Text style={{ fontSize: fp(28), marginBottom: wp(6) }}>{slot.emoji}</Text>
+                              <Text style={{
+                                color: '#EAEEF3', fontSize: fp(12), fontWeight: '700',
+                              }}>{slot.label}</Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* ── ÉTAPE 2 : Créneau sélectionné → catégories ── */}
+                  {alixenMealSlot && (
+                    <View>
+                      {/* Bouton retour créneau */}
+                      <Pressable onPress={function() { setAlixenMealSlot(null); }}>
+                        <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '600', marginBottom: wp(10) }}>
+                          ← Changer de créneau
+                        </Text>
+                      </Pressable>
+
+                      {/* Chip créneau sélectionné */}
                       <View style={{
                         flexDirection: 'row', alignItems: 'center',
-                        backgroundColor: 'rgba(0,217,132,0.06)',
-                        borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4),
+                        backgroundColor: 'rgba(0,217,132,0.08)',
+                        borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(5),
+                        alignSelf: 'flex-start', marginBottom: wp(12),
+                        borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
                       }}>
-                        <Text style={{ fontSize: fp(10), marginRight: wp(4) }}>
-                          {alixenContext.mood === 'happy' ? '😊' : alixenContext.mood === 'sad' ? '😢' : alixenContext.mood === 'stressed' ? '😰' : alixenContext.mood === 'tired' ? '😴' : '😐'}
+                        <Text style={{ fontSize: fp(12), marginRight: wp(4) }}>
+                          {alixenMealSlot === 'breakfast' ? '☀️' : alixenMealSlot === 'lunch' ? '⛅' : alixenMealSlot === 'dinner' ? '🌙' : '🍿'}
                         </Text>
-                        <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '600' }}>
-                          {alixenContext.mood}
+                        <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>
+                          {alixenMealSlot === 'breakfast' ? 'Petit-déjeuner' : alixenMealSlot === 'lunch' ? 'Déjeuner' : alixenMealSlot === 'dinner' ? 'Dîner' : 'Snacks'}
                         </Text>
                       </View>
-                      {alixenContext.weather && (
+
+                      <Text style={{
+                        color: '#8892A0', fontSize: fp(10), fontWeight: '700',
+                        letterSpacing: 1.5, marginBottom: wp(10),
+                      }}>
+                        QUE VEUX-TU PRÉPARER ?
+                      </Text>
+
+                      <View style={{
+                        flexDirection: 'row', flexWrap: 'wrap',
+                        gap: wp(8),
+                      }}>
+                        {ALIXEN_CATEGORIES.filter(function(cat) { return cat.key !== 'snack'; }).map(function(cat) {
+                          var isNight = alixenContext && alixenContext.timeOfDay === 'night';
+                          var isHeavy = cat.key === 'rice' || cat.key === 'hearty';
+                          var isLight = cat.key === 'light' || cat.key === 'soup' || cat.key === 'milkshake' || cat.key === 'salad';
+
+                          return (
+                            <Pressable
+                              key={cat.key}
+                              onPress={function() {
+                                var costCheck = checkAlixenRecipeCost();
+                                if (!costCheck.allowed) {
+                                  Alert.alert(
+                                    '💎 Lix insuffisants',
+                                    'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées',
+                                    [
+                                      { text: 'Aller au LixVerse', onPress: function() { if (onNavigate) onNavigate('lixverse'); onClose(); } },
+                                      { text: 'OK', style: 'cancel' },
+                                    ]
+                                  );
+                                  return;
+                                }
+                                if (costCheck.cost > 0) {
+                                  Alert.alert(
+                                    '🤖 Recette ALIXEN',
+                                    'Ta recette gratuite du jour a été utilisée.\nCette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix',
+                                    [
+                                      { text: 'Annuler', style: 'cancel' },
+                                      { text: 'Confirmer (50 Lix)', onPress: function() {
+                                        deductAlixenLix(50).then(function(success) {
+                                          if (success) {
+                                            setAlixenCategory(cat.key);
+                                            setAlixenRecipeScreen('proposals');
+                                            setAlixenLoading(true);
+                                            generateAlixenProposals(cat.key);
+                                          } else {
+                                            Alert.alert('Erreur', 'Impossible de débiter les Lix.');
+                                          }
+                                        });
+                                      }},
+                                    ]
+                                  );
+                                  return;
+                                }
+                                setAlixenCategory(cat.key);
+                                setAlixenRecipeScreen('proposals');
+                                setAlixenLoading(true);
+                                generateAlixenProposals(cat.key);
+                              }}
+                              style={function(state) {
+                                return {
+                                  width: '31%',
+                                  paddingVertical: wp(14),
+                                  borderRadius: wp(12),
+                                  backgroundColor: state.pressed
+                                    ? 'rgba(0,217,132,0.12)'
+                                    : isNight && isLight
+                                      ? 'rgba(0,217,132,0.06)'
+                                      : 'rgba(255,255,255,0.03)',
+                                  borderWidth: 1,
+                                  borderColor: isNight && isLight
+                                    ? 'rgba(0,217,132,0.2)'
+                                    : isNight && isHeavy
+                                      ? 'rgba(255,140,66,0.15)'
+                                      : 'rgba(255,255,255,0.06)',
+                                  alignItems: 'center',
+                                  opacity: isNight && isHeavy ? 0.5 : 1,
+                                };
+                              }}
+                            >
+                              <Text style={{ fontSize: fp(20), marginBottom: wp(4) }}>{cat.emoji}</Text>
+                              <Text style={{
+                                color: '#EAEEF3', fontSize: fp(9), fontWeight: '600',
+                                textAlign: 'center',
+                              }} numberOfLines={1}>{cat.label}</Text>
+                              {isNight && isHeavy && (
+                                <Text style={{ color: '#FF8C42', fontSize: fp(7), marginTop: wp(2) }}>Déconseillé</Text>
+                              )}
+                              {isNight && isLight && (
+                                <Text style={{ color: '#00D984', fontSize: fp(7), marginTop: wp(2) }}>Recommandé</Text>
+                              )}
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+
+                      <View style={{
+                        height: 1, backgroundColor: 'rgba(255,255,255,0.05)',
+                        marginVertical: wp(16),
+                      }} />
+
+                      {/* Bouton "Mes ingrédients" */}
+                      <Pressable
+                        onPress={function() {
+                          setAlixenRecipeScreen('my_ingredients');
+                          setAlixenMyIngredients([]);
+                          setAlixenIngSearch('');
+                          setAlixenIngResults([]);
+                        }}
+                        style={function(state) {
+                          return {
+                            flexDirection: 'row', alignItems: 'center',
+                            padding: wp(14), borderRadius: wp(14),
+                            backgroundColor: state.pressed ? 'rgba(212,175,55,0.12)' : 'rgba(212,175,55,0.06)',
+                            borderWidth: 1.5, borderColor: 'rgba(212,175,55,0.25)',
+                          };
+                        }}
+                      >
+                        <View style={{
+                          width: wp(40), height: wp(40), borderRadius: wp(12),
+                          backgroundColor: 'rgba(212,175,55,0.1)',
+                          justifyContent: 'center', alignItems: 'center',
+                          marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
+                        }}>
+                          <Text style={{ fontSize: fp(18) }}>🔍</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: '#D4AF37', fontSize: fp(14), fontWeight: '800' }}>
+                            Mes ingrédients
+                          </Text>
+                          <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: 2 }}>
+                            Propose tes ingrédients, ALIXEN crée la recette
+                          </Text>
+                        </View>
+                        <Text style={{ color: '#D4AF37', fontSize: fp(16) }}>›</Text>
+                      </Pressable>
+
+                      {alixenContext && alixenContext.mood && (
                         <View style={{
                           flexDirection: 'row', alignItems: 'center',
-                          backgroundColor: 'rgba(77,166,255,0.06)',
-                          borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4),
+                          marginTop: wp(12), gap: wp(8),
                         }}>
-                          <Text style={{ fontSize: fp(10), marginRight: wp(4) }}>
-                            {alixenContext.weather === 'sunny' ? '☀️' : alixenContext.weather === 'rainy' ? '🌧️' : '⛅'}
-                          </Text>
-                          <Text style={{ color: '#4DA6FF', fontSize: fp(9), fontWeight: '600' }}>
-                            {alixenContext.weather}
+                          <View style={{
+                            flexDirection: 'row', alignItems: 'center',
+                            backgroundColor: 'rgba(0,217,132,0.06)',
+                            borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4),
+                          }}>
+                            <Text style={{ fontSize: fp(10), marginRight: wp(4) }}>
+                              {alixenContext.mood === 'happy' ? '😊' : alixenContext.mood === 'sad' ? '😢' : alixenContext.mood === 'stressed' ? '😰' : alixenContext.mood === 'tired' ? '😴' : '😐'}
+                            </Text>
+                            <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '600' }}>
+                              {alixenContext.mood}
+                            </Text>
+                          </View>
+                          {alixenContext.weather && (
+                            <View style={{
+                              flexDirection: 'row', alignItems: 'center',
+                              backgroundColor: 'rgba(77,166,255,0.06)',
+                              borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4),
+                            }}>
+                              <Text style={{ fontSize: fp(10), marginRight: wp(4) }}>
+                                {alixenContext.weather === 'sunny' ? '☀️' : alixenContext.weather === 'rainy' ? '🌧️' : '⛅'}
+                              </Text>
+                              <Text style={{ color: '#4DA6FF', fontSize: fp(9), fontWeight: '600' }}>
+                                {alixenContext.weather}
+                              </Text>
+                            </View>
+                          )}
+                          <Text style={{ color: '#5A6070', fontSize: fp(8), fontStyle: 'italic' }}>
+                            ALIXEN adapte ses suggestions
                           </Text>
                         </View>
                       )}
-                      <Text style={{ color: '#5A6070', fontSize: fp(8), fontStyle: 'italic' }}>
-                        ALIXEN adapte ses suggestions
-                      </Text>
                     </View>
                   )}
 
@@ -1313,17 +1451,116 @@ export default function RecettesScreen({
                 <View style={{ paddingHorizontal: wp(16), paddingTop: wp(14) }}>
 
                   <Pressable onPress={function() { setAlixenRecipeScreen('welcome'); setAlixenProposals([]); }}>
-                    <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '600', marginBottom: wp(12) }}>← Changer de catégorie</Text>
+                    <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '600', marginBottom: wp(12) }}>← Changer de créneau</Text>
                   </Pressable>
 
                   {alixenLoading && (
-                    <View style={{ alignItems: 'center', paddingVertical: wp(40) }}>
-                      <ActivityIndicator size="large" color="#00D984" />
-                      <Text style={{ color: '#00D984', fontSize: fp(13), marginTop: wp(12), fontWeight: '600' }}>
-                        ALIXEN prépare 3 suggestions...
-                      </Text>
-                      <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: wp(4), textAlign: 'center' }}>
-                        Analyse de ton profil, tes repas du jour et tes macros restantes
+                    <View style={{
+                      backgroundColor: '#2A303B', borderRadius: 16,
+                      borderWidth: 1, borderColor: '#3A3F46',
+                      padding: wp(24), alignItems: 'center',
+                    }}>
+                      {/* Phase icon + text with fade */}
+                      <Animated.View style={{ opacity: loadingFade, alignItems: 'center' }}>
+
+                        {/* Phase 0 — Profil */}
+                        {loadingPhase === 0 && (
+                          <View style={{ alignItems: 'center' }}>
+                            <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
+                              <View style={{
+                                width: wp(48), height: wp(48), borderRadius: wp(24),
+                                backgroundColor: 'rgba(0,217,132,0.1)',
+                                borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.25)',
+                                justifyContent: 'center', alignItems: 'center',
+                              }}>
+                                <Ionicons name="person-outline" size={fp(22)} color="#00D984" />
+                              </View>
+                            </Animated.View>
+                            <Text style={{
+                              color: '#00D984', fontSize: fp(13), fontWeight: '700',
+                              marginTop: wp(12),
+                            }}>Analyse de ton profil...</Text>
+                          </View>
+                        )}
+
+                        {/* Phase 1 — Macros */}
+                        {loadingPhase === 1 && (
+                          <View style={{ alignItems: 'center' }}>
+                            <View style={{ flexDirection: 'row', gap: wp(10) }}>
+                              <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
+                                <View style={{
+                                  width: wp(36), height: wp(36), borderRadius: wp(18),
+                                  backgroundColor: 'rgba(255,107,138,0.12)',
+                                  borderWidth: 1.5, borderColor: 'rgba(255,107,138,0.3)',
+                                  justifyContent: 'center', alignItems: 'center',
+                                }}>
+                                  <Text style={{ color: '#FF6B8A', fontSize: fp(13), fontWeight: '800' }}>P</Text>
+                                </View>
+                              </Animated.View>
+                              <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
+                                <View style={{
+                                  width: wp(36), height: wp(36), borderRadius: wp(18),
+                                  backgroundColor: 'rgba(255,217,61,0.12)',
+                                  borderWidth: 1.5, borderColor: 'rgba(255,217,61,0.3)',
+                                  justifyContent: 'center', alignItems: 'center',
+                                }}>
+                                  <Text style={{ color: '#FFD93D', fontSize: fp(13), fontWeight: '800' }}>G</Text>
+                                </View>
+                              </Animated.View>
+                              <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
+                                <View style={{
+                                  width: wp(36), height: wp(36), borderRadius: wp(18),
+                                  backgroundColor: 'rgba(77,166,255,0.12)',
+                                  borderWidth: 1.5, borderColor: 'rgba(77,166,255,0.3)',
+                                  justifyContent: 'center', alignItems: 'center',
+                                }}>
+                                  <Text style={{ color: '#4DA6FF', fontSize: fp(13), fontWeight: '800' }}>L</Text>
+                                </View>
+                              </Animated.View>
+                            </View>
+                            <Text style={{
+                              color: '#00D984', fontSize: fp(13), fontWeight: '700',
+                              marginTop: wp(12),
+                            }}>Calcul des macros restantes...</Text>
+                          </View>
+                        )}
+
+                        {/* Phase 2 — Cuisine */}
+                        {loadingPhase === 2 && (
+                          <View style={{ alignItems: 'center' }}>
+                            <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
+                              <Text style={{ fontSize: fp(32) }}>🤖</Text>
+                            </Animated.View>
+                            <Text style={{
+                              color: '#00D984', fontSize: fp(13), fontWeight: '700',
+                              marginTop: wp(12),
+                            }}>ALIXEN cuisine pour toi...</Text>
+                          </View>
+                        )}
+
+                      </Animated.View>
+
+                      {/* Progress bar */}
+                      <View style={{
+                        width: '100%', height: 3, backgroundColor: '#333',
+                        borderRadius: 2, marginTop: wp(20), overflow: 'hidden',
+                      }}>
+                        <Animated.View style={{
+                          height: '100%', borderRadius: 2,
+                          backgroundColor: '#00D984',
+                          width: loadingProgress.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: ['0%', '100%'],
+                          }),
+                        }} />
+                      </View>
+
+                      {/* Sous-texte fixe */}
+                      <Text style={{
+                        color: '#888', fontSize: fp(11), textAlign: 'center',
+                        marginTop: wp(10), lineHeight: fp(16),
+                      }}>
+                        Analyse de ton profil, tes repas du jour{'\n'}et tes macros restantes
                       </Text>
                     </View>
                   )}
@@ -1331,20 +1568,18 @@ export default function RecettesScreen({
                   {!alixenLoading && alixenProposals.length > 0 && (
                     <View>
                       <Text style={{
-                        color: '#8892A0', fontSize: fp(10), fontWeight: '700',
-                        letterSpacing: 1.5, marginBottom: wp(12),
+                        color: '#AAA', fontSize: fp(11), fontWeight: '700',
+                        letterSpacing: 2, marginBottom: wp(12),
+                        textTransform: 'uppercase',
                       }}>
                         ALIXEN TE PROPOSE 3 OPTIONS
                       </Text>
 
                       {alixenProposals.map(function(proposal, idx) {
-                        var typeColors = ['#4DA6FF', '#00D984', '#FF8C42'];
-                        var typeLabels = ['LÉGER', 'DÎNER', 'CONSISTANT'];
                         var typeEmojis = ['🥗', '🍲', '🥩'];
-                        var color = typeColors[idx] || '#00D984';
-                        var label = typeLabels[idx] || '';
                         var emoji = typeEmojis[idx] || '🍽️';
                         var isOver = alixenContext && proposal.kcal > alixenContext.remaining;
+                        var slotLabel = alixenMealSlot === 'breakfast' ? 'Petit-déj' : alixenMealSlot === 'lunch' ? 'Déjeuner' : alixenMealSlot === 'dinner' ? 'Dîner' : alixenMealSlot === 'snack' ? 'Snacks' : '';
 
                         return (
                           <Pressable
@@ -1355,89 +1590,93 @@ export default function RecettesScreen({
                             }}
                             style={function(state) {
                               return {
-                                borderRadius: wp(14), padding: 1,
-                                backgroundColor: state.pressed ? color : '#4A4F55',
-                                marginBottom: wp(10),
+                                backgroundColor: state.pressed ? '#333A44' : '#2A303B',
+                                borderRadius: 14,
+                                borderWidth: 1,
+                                borderColor: state.pressed ? 'rgba(0,217,132,0.3)' : '#3A3F46',
+                                padding: wp(14),
+                                marginBottom: wp(12),
                               };
                             }}
                           >
-                            <LinearGradient
-                              colors={['#3A3F46', '#252A30', '#1A1D22']}
-                              style={{ borderRadius: wp(13), padding: wp(14) }}
-                            >
-                              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-                                <Text style={{ fontSize: fp(18), marginRight: wp(8) }}>{emoji}</Text>
-                                <View style={{ flex: 1 }}>
-                                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                            {/* Ligne 1 — Header */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                              <Text style={{ fontSize: fp(18), marginRight: wp(8) }}>{emoji}</Text>
+                              <View style={{ flex: 1 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginBottom: wp(3) }}>
+                                  {slotLabel !== '' && (
                                     <View style={{
-                                      backgroundColor: color + '15',
-                                      paddingHorizontal: wp(8), paddingVertical: wp(2), borderRadius: wp(4),
+                                      backgroundColor: 'rgba(0,217,132,0.15)',
+                                      paddingHorizontal: wp(8), paddingVertical: wp(2), borderRadius: 8,
                                     }}>
-                                      <Text style={{ color: color, fontSize: fp(8), fontWeight: '800' }}>{label}</Text>
+                                      <Text style={{ color: '#00D984', fontSize: fp(8), fontWeight: '800' }}>{slotLabel}</Text>
                                     </View>
-                                    {isOver && (
-                                      <View style={{
-                                        backgroundColor: 'rgba(255,140,66,0.1)',
-                                        paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4),
-                                      }}>
-                                        <Text style={{ color: '#FF8C42', fontSize: fp(7), fontWeight: '700' }}>Au-dessus</Text>
-                                      </View>
-                                    )}
-                                  </View>
-                                  <Text style={{
-                                    color: '#EAEEF3', fontSize: fp(14), fontWeight: '700',
-                                    marginTop: wp(4),
-                                  }} numberOfLines={1}>
-                                    {proposal.name || 'Recette'}
-                                  </Text>
+                                  )}
+                                  {isOver && (
+                                    <View style={{
+                                      backgroundColor: 'rgba(255,140,66,0.1)',
+                                      paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4),
+                                    }}>
+                                      <Text style={{ color: '#FF8C42', fontSize: fp(7), fontWeight: '700' }}>Au-dessus</Text>
+                                    </View>
+                                  )}
                                 </View>
-                                <View style={{ alignItems: 'flex-end' }}>
-                                  <Text style={{ color: '#FF8C42', fontSize: fp(16), fontWeight: '800' }}>
-                                    {proposal.kcal || '—'}
-                                  </Text>
-                                  <Text style={{ color: '#5A6070', fontSize: fp(8) }}>kcal</Text>
-                                </View>
-                              </View>
-
-                              {proposal.description && (
                                 <Text style={{
-                                  color: '#8892A0', fontSize: fp(10),
-                                  fontStyle: 'italic', marginBottom: wp(8),
-                                }} numberOfLines={2}>
-                                  "{proposal.description}"
-                                </Text>
-                              )}
-
-                              <View style={{ flexDirection: 'row', gap: wp(10) }}>
-                                <Text style={{ color: '#FF6B6B', fontSize: fp(9), fontWeight: '600' }}>
-                                  P: {proposal.protein || 0}g
-                                </Text>
-                                <Text style={{ color: '#FFD93D', fontSize: fp(9), fontWeight: '600' }}>
-                                  G: {proposal.carbs || 0}g
-                                </Text>
-                                <Text style={{ color: '#4DA6FF', fontSize: fp(9), fontWeight: '600' }}>
-                                  L: {proposal.fat || 0}g
-                                </Text>
-                                <Text style={{ color: '#5A6070', fontSize: fp(8) }}>
-                                  • {proposal.time || '20 min'}
+                                  color: '#EAEEF3', fontSize: fp(14), fontWeight: '700',
+                                }} numberOfLines={1}>
+                                  {proposal.name || 'Recette'}
                                 </Text>
                               </View>
-
-                              <View style={{
-                                marginTop: wp(10), paddingVertical: wp(8), borderRadius: wp(8),
-                                backgroundColor: color + '12',
-                                borderWidth: 1, borderColor: color + '25',
-                                alignItems: 'center',
-                              }}>
-                                <Text style={{ color: color, fontSize: fp(10), fontWeight: '700' }}>
-                                  Voir la recette →
+                              <View style={{ alignItems: 'flex-end' }}>
+                                <Text style={{ color: '#00D984', fontSize: fp(20), fontWeight: '800' }}>
+                                  {proposal.kcal || '—'}
                                 </Text>
+                                <Text style={{ color: '#888', fontSize: fp(11) }}>kcal</Text>
                               </View>
-                            </LinearGradient>
+                            </View>
+
+                            {/* Ligne 2 — Description */}
+                            {proposal.description && (
+                              <Text style={{
+                                color: '#AAA', fontSize: fp(12),
+                                fontStyle: 'italic', marginBottom: wp(8),
+                              }} numberOfLines={2}>
+                                "{proposal.description}"
+                              </Text>
+                            )}
+
+                            {/* Ligne 3 — Macros + temps */}
+                            <View style={{ flexDirection: 'row', gap: wp(10), marginBottom: wp(10) }}>
+                              <Text style={{ color: '#FF6B8A', fontSize: fp(9), fontWeight: '600' }}>
+                                P: {proposal.protein || 0}g
+                              </Text>
+                              <Text style={{ color: '#FFD93D', fontSize: fp(9), fontWeight: '600' }}>
+                                G: {proposal.carbs || 0}g
+                              </Text>
+                              <Text style={{ color: '#4DA6FF', fontSize: fp(9), fontWeight: '600' }}>
+                                L: {proposal.fat || 0}g
+                              </Text>
+                              <Text style={{ color: '#888', fontSize: fp(8) }}>
+                                • {proposal.time || '20 min'}
+                              </Text>
+                            </View>
+
+                            {/* Ligne 4 — Bouton contour emerald */}
+                            <View style={{
+                              paddingVertical: wp(8), borderRadius: 10,
+                              backgroundColor: 'transparent',
+                              borderWidth: 1, borderColor: '#00D984',
+                              alignItems: 'center',
+                            }}>
+                              <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>
+                                Voir la recette →
+                              </Text>
+                            </View>
                           </Pressable>
                         );
                       })}
 
+                      {/* Bouton "Autres suggestions" — MetalCard simple */}
                       <Pressable
                         onPress={function() {
                           setAlixenLoading(true);
@@ -1445,14 +1684,14 @@ export default function RecettesScreen({
                         }}
                         style={function(state) {
                           return {
-                            paddingVertical: wp(10), borderRadius: wp(10),
-                            backgroundColor: state.pressed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
-                            borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+                            paddingVertical: wp(10), borderRadius: 14,
+                            backgroundColor: state.pressed ? '#333A44' : '#2A303B',
+                            borderWidth: 1, borderColor: '#3A3F46',
                             alignItems: 'center', marginTop: wp(6),
                           };
                         }}
                       >
-                        <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '600' }}>
+                        <Text style={{ color: '#AAA', fontSize: fp(11), fontWeight: '600' }}>
                           ↻ Autres suggestions
                         </Text>
                       </Pressable>
