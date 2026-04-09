@@ -346,6 +346,11 @@ const DashboardContent = ({
                 <Text style={{ color: '#8892A0', fontSize: fp(10) }}>{lastMeal ? Math.round(lastMeal.fat_g || 0) : 0}g L</Text>
               </View>
             </View>
+            {lastMeal ? (
+              <Text style={{ color: mealExpanded ? '#8A8F98' : '#00D984', fontSize: 12, fontWeight: '600', alignSelf: 'flex-end', marginTop: 6 }}>
+                {mealExpanded ? 'Voir moins \u25B4' : 'Voir plus \u25BE'}
+              </Text>
+            ) : null}
           </View>
         </View>
         {mealExpanded && lastMeal && (
