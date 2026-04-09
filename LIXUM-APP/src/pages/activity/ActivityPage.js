@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, Pressable, TouchableOpacity,
-  Animated, Platform, Image, Alert,
+  Animated, Platform, Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { G, Line, Circle, Path, Rect, Ellipse, Defs,
-  LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../config/supabase';
 import { useAuth } from '../../config/AuthContext';
@@ -109,18 +108,6 @@ export default function ActivityPage({ navigation }) {
   const [userNameAvatar, setUserNameAvatar] = useState('');
   // lixBalance and userEnergy from AuthContext
   var _weight = useState(70); var userWeight = _weight[0]; var setUserWeight = _weight[1];
-
-  // Shoe animation
-  const shoeAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(shoeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.timing(shoeAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
 
   // === FONCTIONS DONNÉES ===
 
