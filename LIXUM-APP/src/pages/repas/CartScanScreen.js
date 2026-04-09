@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, FlatList, Image,
   ScrollView, TextInput, Modal, StatusBar, Vibration, Alert,
@@ -7,11 +7,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Rect, Path, Circle, Line } from 'react-native-svg';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useLang } from '../../config/LanguageContext';
+import { useAuth } from '../../config/AuthContext';
 import { wp, fp } from '../../constants/layout';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 
 export default function CartScanScreen({ visible, onClose }) {
   var _lc = useLang(); var lang = _lc.lang;
+  var auth = useAuth(); var userId = auth.userId;
 
   // === ÉTATS ===
   const [cartPhotoMode, setCartPhotoMode] = useState(false);
@@ -30,23 +32,39 @@ export default function CartScanScreen({ visible, onClose }) {
   const [generatingReport, setGeneratingReport] = useState(false);
   const [cartReport, setCartReport] = useState(null);
   const [showCartReport, setShowCartReport] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyReports, setHistoryReports] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [selectedHistoryReport, setSelectedHistoryReport] = useState(null);
+  const [capturingPhoto, setCapturingPhoto] = useState(false);
 
   var _camPerm = useCameraPermissions(); var permission = _camPerm[0]; var requestPermission = _camPerm[1];
   const cameraRef = useRef(null);
 
+  // === LOAD RECENT STORES ON MOUNT ===
+  useEffect(function() {
+    if (visible && userId) {
+      loadRecentStores();
+    }
+  }, [visible, userId]);
+
   // === FONCTIONS ===
 
-  const checkProductAlerts = async (product) => {
+  var getAuthHeaders = function() {
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    };
+  };
+
+  var checkProductAlerts = async function(product) {
+    if (!userId) return [];
     try {
-      const userId = '00000000-0000-0000-0000-000000000001';
-      const response = await fetch(
+      var response = await fetch(
         SUPABASE_URL + '/functions/v1/analyze-cart',
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             action: 'check_product',
             user_id: userId,
@@ -54,18 +72,28 @@ export default function CartScanScreen({ visible, onClose }) {
           }),
         }
       );
-      const result = await response.json();
-      return result.alerts || [];
+      var result = await response.json();
+      var alerts = result.alerts || [];
+      // Update product in cart with alerts
+      setCartProducts(function(prev) {
+        return prev.map(function(p) {
+          if (p.barcode === product.barcode) {
+            return Object.assign({}, p, { alerts: alerts, has_danger: result.has_danger, has_warning: result.has_warning });
+          }
+          return p;
+        });
+      });
+      return alerts;
     } catch (e) {
       console.error('Check product error:', e);
       return [];
     }
   };
 
-  const lookupBarcode = async (barcode) => {
-    if (cartProducts.find(p => p.barcode === barcode)) {
+  var lookupBarcode = async function(barcode) {
+    if (cartProducts.find(function(p) { return p.barcode === barcode; })) {
       setScanError('Déjà scanné !');
-      setTimeout(() => setScanError(null), 1500);
+      setTimeout(function() { setScanError(null); }, 1500);
       return;
     }
 
@@ -73,37 +101,35 @@ export default function CartScanScreen({ visible, onClose }) {
     setScanError(null);
 
     try {
-      const response = await fetch(
+      var response = await fetch(
         SUPABASE_URL + '/functions/v1/lookup-barcode',
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({ barcode }),
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ barcode: barcode }),
         }
       );
 
-      const result = await response.json();
+      var result = await response.json();
 
       if (result.product) {
-        const productName = (result.product.product_name || '').toLowerCase();
-        const categories = (result.product.categories || '').toLowerCase();
-        const nonFoodKeywords = ['medicine', 'medicament', 'pharmaceutical', 'cough',
+        var productName = (result.product.product_name || '').toLowerCase();
+        var categories = (result.product.categories || '').toLowerCase();
+        var nonFoodKeywords = ['medicine', 'medicament', 'pharmaceutical', 'cough',
           'tablet', 'capsule', 'syrup', 'cosmetic', 'shampoo', 'soap', 'detergent',
           'cleaning', 'nettoyant', 'savon', 'dentifrice', 'toothpaste'];
 
-        const isNonFood = nonFoodKeywords.some(kw =>
-          productName.includes(kw) || categories.includes(kw)
-        );
+        var isNonFood = nonFoodKeywords.some(function(kw) {
+          return productName.includes(kw) || categories.includes(kw);
+        });
 
         if (isNonFood) {
           setScanError('Produit non-alimentaire détecté');
-          setTimeout(() => setScanError(null), 2000);
+          setTimeout(function() { setScanError(null); }, 2000);
         } else {
           Vibration.vibrate(100);
-          setCartProducts(prev => [...prev, result.product]);
+          var newProduct = Object.assign({}, result.product, { alerts: [] });
+          setCartProducts(function(prev) { return prev.concat([newProduct]); });
           checkProductAlerts(result.product);
         }
       } else {
@@ -113,92 +139,116 @@ export default function CartScanScreen({ visible, onClose }) {
     } catch (e) {
       console.error('Barcode lookup error:', e);
       setScanError('Erreur réseau');
-      setTimeout(() => setScanError(null), 2000);
+      setTimeout(function() { setScanError(null); }, 2000);
     }
 
     setLookingUp(false);
   };
 
-  const captureCartPhoto = async () => {
+  var captureCartPhoto = async function() {
+    if (capturingPhoto || !cameraRef.current) return;
+    setCapturingPhoto(true);
+    setScanError('Capture photo en cours...');
     try {
-      setScanError('Capture photo en cours...');
-      setTimeout(() => {
-        setScanError(null);
-        Alert.alert(
-          '📸 Mode Photo CartScan',
-          'La capture photo pour CartScan sera disponible dans la version build (EAS). ' +
-          'En attendant, utilisez le scan code-barres pour les produits emballés.',
-          [
-            {
-              text: 'Retour au barcode',
-              onPress: () => setCartPhotoMode(false),
-            },
-            {
-              text: 'OK',
-              style: 'cancel',
-            },
-          ]
-        );
-      }, 500);
+      var photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.5 });
+      setScanError(null);
+      if (!photo || !photo.base64) {
+        setScanError('Erreur capture photo');
+        setTimeout(function() { setScanError(null); }, 2000);
+        setCapturingPhoto(false);
+        return;
+      }
+      // Send to scan-meal edge function
+      var response = await fetch(
+        SUPABASE_URL + '/functions/v1/scan-meal',
+        {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            photos_base64: [photo.base64],
+            user_id: userId,
+            user_country: 'BI',
+            user_origin_country: 'BI',
+            lang: 'fr',
+          }),
+        }
+      );
+      var result = await response.json();
+      if (result.suggestions && result.suggestions.length > 0) {
+        var sug = result.suggestions[0];
+        var photoProduct = {
+          barcode: 'photo_' + Date.now(),
+          product_name: sug.food_name || sug.name || 'Produit scanné',
+          kcal_per_100g: Math.round(sug.kcal || sug.calories || 0),
+          protein_per_100g: parseFloat(sug.protein || 0),
+          carbs_per_100g: parseFloat(sug.carbs || 0),
+          fat_per_100g: parseFloat(sug.fat || 0),
+          image_url: null,
+          source: 'photo_scan',
+          alerts: [],
+        };
+        Vibration.vibrate(100);
+        setCartProducts(function(prev) { return prev.concat([photoProduct]); });
+        setCartPhotoMode(false);
+        setPhotoPromptVisible(false);
+      } else {
+        setScanError('Produit non reconnu');
+        setTimeout(function() { setScanError(null); }, 2000);
+      }
     } catch (e) {
       console.error('Cart photo error:', e);
-      setScanError('Erreur capture photo');
-      setTimeout(() => setScanError(null), 2000);
+      setScanError('Erreur analyse photo');
+      setTimeout(function() { setScanError(null); }, 2000);
     }
+    setCapturingPhoto(false);
   };
 
-  const handleBarcodeScan = ({ type, data }) => {
+  var handleBarcodeScan = function(evt) {
     if (!scanningActive || lookingUp) return;
-    if (data === lastScannedCode) return;
-    setLastScannedCode(data);
+    if (evt.data === lastScannedCode) return;
+    setLastScannedCode(evt.data);
     setScanningActive(false);
-    lookupBarcode(data).then(() => {
-      setTimeout(() => {
+    lookupBarcode(evt.data).then(function() {
+      setTimeout(function() {
         setScanningActive(true);
         setLastScannedCode(null);
       }, 1500);
     });
   };
 
-  const loadRecentStores = async () => {
+  var loadRecentStores = async function() {
+    if (!userId) return;
     try {
-      const userId = '00000000-0000-0000-0000-000000000001';
-      const response = await fetch(
+      var response = await fetch(
         SUPABASE_URL + '/functions/v1/analyze-cart',
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             action: 'search_stores',
             user_id: userId,
           }),
         }
       );
-      const result = await response.json();
-      setRecentStores(result.recent || []);
+      var result = await response.json();
+      setRecentStores(result.stores || result.recent || []);
     } catch (e) {
       console.error('Load stores error:', e);
     }
   };
 
-  const searchStoresApi = async (query) => {
+  var searchStoresApi = async function(query) {
     if (query.length < 2) {
       setStoreResults([]);
       return;
     }
+    if (!userId) return;
     try {
-      const userId = '00000000-0000-0000-0000-000000000001';
-      const response = await fetch(
+      var response = await fetch(
         SUPABASE_URL + '/functions/v1/analyze-cart',
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             action: 'search_stores',
             user_id: userId,
@@ -206,50 +256,82 @@ export default function CartScanScreen({ visible, onClose }) {
           }),
         }
       );
-      const result = await response.json();
+      var result = await response.json();
       setStoreResults(result.stores || []);
     } catch (e) {
       console.error('Search stores error:', e);
     }
   };
 
-  const generateCartReport = async () => {
-    if (cartProducts.length === 0 || generatingReport) return;
+  var generateCartReport = async function() {
+    if (cartProducts.length === 0 || generatingReport || !userId) return;
     setGeneratingReport(true);
 
     try {
-      const userId = '00000000-0000-0000-0000-000000000001';
-      const response = await fetch(
+      // Step 1: Global analysis
+      var analysisResponse = await fetch(
         SUPABASE_URL + '/functions/v1/analyze-cart',
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-          },
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            user_id: userId,
+            cart_products: cartProducts,
+          }),
+        }
+      );
+      var analysis = await analysisResponse.json();
+
+      // Step 2: Generate and save report
+      var reportResponse = await fetch(
+        SUPABASE_URL + '/functions/v1/analyze-cart',
+        {
+          method: 'POST',
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             action: 'generate_report',
             user_id: userId,
             cart_products: cartProducts,
-            store_name: storeName || 'Non spécifié',
+            store_name: storeName || null,
+            analysis: analysis,
           }),
         }
       );
-      const result = await response.json();
-      setCartReport(result);
+      var reportResult = await reportResponse.json();
+
+      // Use analysis data for display, reportResult for persistence confirmation
+      setCartReport(Object.assign({}, analysis, { report_id: reportResult.report_id, store_id: reportResult.store_id }));
       setShowStoreInput(false);
       setShowCartReport(true);
     } catch (e) {
       console.error('Generate report error:', e);
+      Alert.alert('Erreur', 'Impossible de générer le rapport. Réessayez.');
     }
     setGeneratingReport(false);
   };
 
-  const removeFromCart = (barcode) => {
-    setCartProducts(prev => prev.filter(p => p.barcode !== barcode));
+  var loadHistory = async function() {
+    if (!userId) return;
+    setHistoryLoading(true);
+    try {
+      var res = await supabase
+        .from('cart_reports')
+        .select('*')
+        .eq('user_id', userId)
+        .order('report_date', { ascending: false })
+        .limit(10);
+      setHistoryReports(res.data || []);
+    } catch (e) {
+      console.error('Load history error:', e);
+    }
+    setHistoryLoading(false);
   };
 
-  const clearCart = () => {
+  var removeFromCart = function(barcode) {
+    setCartProducts(function(prev) { return prev.filter(function(p) { return p.barcode !== barcode; }); });
+  };
+
+  var clearCart = function() {
     setCartProducts([]);
     setCartPhotoMode(false);
     setPhotoPromptVisible(false);
@@ -265,7 +347,7 @@ export default function CartScanScreen({ visible, onClose }) {
     setSelectedCartProduct(null);
   };
 
-  const closeCartScan = () => {
+  var closeCartScan = function() {
     setCartPhotoMode(false);
     setPhotoPromptVisible(false);
     setFailedBarcode(null);
@@ -283,9 +365,9 @@ export default function CartScanScreen({ visible, onClose }) {
     onClose();
   };
 
-  const getCartTotals = () => {
-    const totals = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
-    cartProducts.forEach(p => {
+  var getCartTotals = function() {
+    var totals = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+    cartProducts.forEach(function(p) {
       totals.kcal += Math.round(p.kcal_per_100g || 0);
       totals.protein += parseFloat(p.protein_per_100g || 0);
       totals.carbs += parseFloat(p.carbs_per_100g || 0);
@@ -299,13 +381,13 @@ export default function CartScanScreen({ visible, onClose }) {
     };
   };
 
-  const getNutriColor = (score) => {
+  var getNutriColor = function(score) {
     if (!score) return '#6B7280';
-    const colors = { a: '#00D984', b: '#A8E06C', c: '#FFD93D', d: '#FF8C42', e: '#FF6B6B' };
+    var colors = { a: '#00D984', b: '#A8E06C', c: '#FFD93D', d: '#FF8C42', e: '#FF6B6B' };
     return colors[score.toLowerCase()] || '#6B7280';
   };
 
-  const getAlertBadgeColor = (alerts) => {
+  var getAlertBadgeColor = function(alerts) {
     if (!alerts || alerts.length === 0) return null;
     if (alerts.some(a => a.type === 'danger')) return '#FF6B6B';
     if (alerts.some(a => a.type === 'warning')) return '#FF8C42';
@@ -376,6 +458,19 @@ export default function CartScanScreen({ visible, onClose }) {
               {cartProducts.length} 📦
             </Text>
           </View>
+
+          {/* Bouton historique courses */}
+          <TouchableOpacity
+            onPress={function() { setShowHistory(true); loadHistory(); }}
+            style={{
+              marginHorizontal: wp(16), marginBottom: wp(6),
+              borderWidth: 1, borderColor: '#00D984', borderRadius: 10,
+              paddingVertical: wp(7), alignItems: 'center',
+              backgroundColor: 'transparent',
+            }}
+          >
+            <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600' }}>📋 Mes courses récentes</Text>
+          </TouchableOpacity>
 
           {/* ══════ ZONE CAMÉRA POLYVALENTE ══════ */}
           <View style={{
@@ -1063,6 +1158,156 @@ export default function CartScanScreen({ visible, onClose }) {
                 Terminer ✓
               </Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ══════ MODAL HISTORIQUE COURSES ══════ */}
+      <Modal
+        visible={showHistory}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={function() { setShowHistory(false); setSelectedHistoryReport(null); }}
+      >
+        <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
+          <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
+          <View style={{
+            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+            paddingTop: wp(45), paddingBottom: wp(12), paddingHorizontal: wp(16),
+            borderBottomWidth: 1, borderBottomColor: '#4A4F55',
+          }}>
+            <TouchableOpacity onPress={function() { setShowHistory(false); setSelectedHistoryReport(null); }}>
+              <Text style={{ fontSize: fp(13), color: '#00D984' }}>← Retour</Text>
+            </TouchableOpacity>
+            <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#FFFFFF' }}>MES COURSES RÉCENTES</Text>
+            <View style={{ width: 60 }} />
+          </View>
+
+          {historyLoading ? (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: '#888', fontSize: fp(12) }}>Chargement...</Text>
+            </View>
+          ) : historyReports.length === 0 ? (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(30) }}>
+              <Text style={{ fontSize: fp(36), marginBottom: wp(12) }}>🛒</Text>
+              <Text style={{ color: '#888', fontSize: fp(12), textAlign: 'center' }}>
+                Aucune course enregistrée — scannez vos produits pour commencer !
+              </Text>
+            </View>
+          ) : (
+            <ScrollView style={{ flex: 1, padding: wp(16) }} showsVerticalScrollIndicator={false}>
+              {historyReports.map(function(report, idx) {
+                var reportDate = report.report_date ? new Date(report.report_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Date inconnue';
+                return (
+                  <TouchableOpacity
+                    key={report.id || idx}
+                    onPress={function() { setSelectedHistoryReport(report); }}
+                    activeOpacity={0.85}
+                    style={{
+                      backgroundColor: '#2A303B', borderRadius: 14,
+                      borderWidth: 1, borderColor: '#3A3F46',
+                      padding: wp(14), marginBottom: wp(10),
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(6) }}>
+                      <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '700' }}>{report.store_name || 'Magasin inconnu'}</Text>
+                      <Text style={{ color: '#888', fontSize: fp(10) }}>{reportDate}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(10) }}>
+                      <Text style={{ color: '#888', fontSize: fp(10) }}>{report.products_count || 0} produits</Text>
+                      <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700' }}>{Math.round(report.total_kcal_estimated || 0)} kcal</Text>
+                      {report.danger_count > 0 ? (
+                        <View style={{ backgroundColor: 'rgba(255,107,107,0.15)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                          <Text style={{ color: '#FF6B6B', fontSize: fp(9), fontWeight: '700' }}>{report.danger_count} danger</Text>
+                        </View>
+                      ) : null}
+                      {report.warning_count > 0 ? (
+                        <View style={{ backgroundColor: 'rgba(255,140,66,0.15)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                          <Text style={{ color: '#FF8C42', fontSize: fp(9), fontWeight: '700' }}>{report.warning_count} avert.</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+              <View style={{ height: wp(40) }} />
+            </ScrollView>
+          )}
+        </View>
+      </Modal>
+
+      {/* ══════ MODAL DÉTAIL COURSE HISTORIQUE ══════ */}
+      <Modal
+        visible={selectedHistoryReport !== null}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={function() { setSelectedHistoryReport(null); }}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', paddingHorizontal: wp(16) }}>
+          <View style={{
+            backgroundColor: '#1A1D22', borderRadius: wp(18),
+            borderWidth: 1, borderColor: '#4A4F55',
+            padding: wp(18), maxHeight: '80%',
+          }}>
+            {selectedHistoryReport && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800', marginBottom: wp(4) }}>
+                  {selectedHistoryReport.store_name || 'Magasin inconnu'}
+                </Text>
+                <Text style={{ color: '#888', fontSize: fp(10), marginBottom: wp(12) }}>
+                  {selectedHistoryReport.report_date ? new Date(selectedHistoryReport.report_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+                  {' · '}{selectedHistoryReport.products_count || 0} produits
+                  {' · '}{Math.round(selectedHistoryReport.total_kcal_estimated || 0)} kcal
+                </Text>
+
+                {selectedHistoryReport.budget_message ? (
+                  <View style={{ backgroundColor: 'rgba(77,166,255,0.06)', borderRadius: 10, padding: wp(10), marginBottom: wp(10), borderWidth: 1, borderColor: 'rgba(77,166,255,0.15)' }}>
+                    <Text style={{ color: '#4DA6FF', fontSize: fp(10) }}>{selectedHistoryReport.budget_message}</Text>
+                  </View>
+                ) : null}
+
+                {selectedHistoryReport.products_json ? (
+                  <View style={{ marginBottom: wp(10) }}>
+                    <Text style={{ color: '#888', fontSize: fp(10), fontWeight: '700', marginBottom: wp(6) }}>PRODUITS</Text>
+                    {(function() { try { return JSON.parse(selectedHistoryReport.products_json); } catch (e) { return []; } })().map(function(p, pi) {
+                      return (
+                        <View key={pi} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: wp(4), borderBottomWidth: 1, borderBottomColor: '#333A42' }}>
+                          <Text style={{ color: '#EAEEF3', fontSize: fp(10), flex: 1 }} numberOfLines={1}>{p.product_name || p.name || 'Produit'}</Text>
+                          <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700' }}>{Math.round(p.kcal_per_100g || p.kcal || 0)} kcal</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ) : null}
+
+                {selectedHistoryReport.alerts_json ? (
+                  <View style={{ marginBottom: wp(10) }}>
+                    <Text style={{ color: '#FF6B6B', fontSize: fp(10), fontWeight: '700', marginBottom: wp(6) }}>ALERTES</Text>
+                    {(function() { try { return JSON.parse(selectedHistoryReport.alerts_json); } catch (e) { return []; } })().map(function(a, ai) {
+                      return (
+                        <View key={ai} style={{
+                          backgroundColor: a.type === 'danger' ? 'rgba(255,107,107,0.1)' : 'rgba(255,140,66,0.1)',
+                          borderRadius: 8, padding: wp(8), marginBottom: wp(4),
+                          borderWidth: 1, borderColor: a.type === 'danger' ? 'rgba(255,107,107,0.3)' : 'rgba(255,140,66,0.2)',
+                        }}>
+                          <Text style={{ color: '#D1D5DB', fontSize: fp(10) }}>{a.icon || '⚠️'} {a.message_fr || a.message}</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ) : null}
+
+                <TouchableOpacity
+                  onPress={function() { setSelectedHistoryReport(null); }}
+                  style={{
+                    paddingVertical: wp(12), borderRadius: 12,
+                    backgroundColor: '#00D984', alignItems: 'center', marginTop: wp(6),
+                  }}
+                >
+                  <Text style={{ color: '#1A1D22', fontSize: fp(13), fontWeight: '700' }}>Fermer</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
           </View>
         </View>
       </Modal>
