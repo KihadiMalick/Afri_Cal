@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, Platform, StatusBar, Pressable, Alert,
+  View, Text, ScrollView, Platform, StatusBar, Pressable,
 } from 'react-native';
 import Svg, {
   Rect, Path, Circle, Line,
@@ -8,6 +8,7 @@ import Svg, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { wp, fp } from './constants';
 import { BottomSpacer } from './shared';
+import LixumModal from '../../components/shared/LixumModal';
 
 // ============================================
 // SECRET POCKET — DATA + ICONS
@@ -45,6 +46,9 @@ export const renderCategoryIcon = (iconName, color, size = wp(20)) => {
 };
 
 export const SecretPocketContent = ({ isUnlocked, setIsUnlocked, setCurrentSubPage }) => {
+  var _spModal = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null });
+  var spModal = _spModal[0]; var setSpModal = _spModal[1];
+  var closeSpModal = function() { setSpModal(function(p) { return Object.assign({}, p, { visible: false }); }); };
 
   const renderSecretPocketLocked = () => (
     <LinearGradient colors={['#1A1D22', '#252A30', '#1A1D22']} style={{ flex: 1 }}>
@@ -147,14 +151,7 @@ export const SecretPocketContent = ({ isUnlocked, setIsUnlocked, setCurrentSubPa
         </View>
         <Pressable delayPressIn={120}
           onPress={() => {
-            Alert.alert(
-              'Verrouiller',
-              'Votre Secret Pocket sera verrouillé.',
-              [
-                { text: 'Verrouiller', onPress: () => { setIsUnlocked(false); setCurrentSubPage('main'); } },
-                { text: 'Annuler', style: 'cancel' },
-              ]
-            );
+            setSpModal({ visible: true, type: 'confirm', title: 'Verrouiller', message: 'Votre Secret Pocket sera verrouillé.', confirmText: 'Verrouiller', onConfirm: function() { closeSpModal(); setIsUnlocked(false); setCurrentSubPage('main'); }, onClose: closeSpModal });
           }}
           style={({ pressed }) => ({
             flexDirection: 'row', alignItems: 'center', gap: wp(4),
@@ -188,10 +185,7 @@ export const SecretPocketContent = ({ isUnlocked, setIsUnlocked, setCurrentSubPa
         {spCategories.map((cat) => (
           <Pressable key={cat.id} delayPressIn={120}
             onPress={() => {
-              Alert.alert(
-                cat.title,
-                'Les données transférées depuis MediBook apparaîtront ici.\n\nPour ajouter des données, utilisez le bouton + dans MediBook puis transférez-les ici.',
-              );
+              setSpModal({ visible: true, type: 'info', title: cat.title, message: 'Les données transférées depuis MediBook apparaîtront ici.\n\nPour ajouter des données, utilisez le bouton + dans MediBook puis transférez-les ici.', onClose: closeSpModal });
             }}
             style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }], marginBottom: wp(10) })}>
             <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
@@ -249,6 +243,8 @@ export const SecretPocketContent = ({ isUnlocked, setIsUnlocked, setCurrentSubPa
     </LinearGradient>
   );
 
-  if (!isUnlocked) return renderSecretPocketLocked();
-  return renderSecretPocketUnlocked();
+  var spModalEl = React.createElement(LixumModal, { visible: spModal.visible, type: spModal.type, title: spModal.title, message: spModal.message, onConfirm: spModal.onConfirm, onClose: spModal.onClose || closeSpModal, confirmText: spModal.confirmText, cancelText: spModal.cancelText });
+
+  if (!isUnlocked) return React.createElement(View, { style: { flex: 1 } }, renderSecretPocketLocked(), spModalEl);
+  return React.createElement(View, { style: { flex: 1 } }, renderSecretPocketUnlocked(), spModalEl);
 };
