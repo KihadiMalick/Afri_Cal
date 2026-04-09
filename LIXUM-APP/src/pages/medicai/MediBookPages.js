@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  Image, Platform, Animated, Dimensions, StatusBar, Pressable, Alert, ActivityIndicator,
+  Image, Platform, Animated, Dimensions, StatusBar, Pressable, ActivityIndicator,
 } from 'react-native';
 import Svg, {
   Defs, Rect, Path, Circle, Ellipse, Line,
@@ -13,6 +13,7 @@ import { wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT, SUPABASE_URL, SUPABASE_ANON_KEY } 
 import { useAuth } from '../../config/AuthContext';
 import { supabase } from '../../config/supabase';
 import { BottomSpacer } from './shared';
+import LixumModal from '../../components/shared/LixumModal';
 
 export const mbDataStatus = [
   { name: 'Nutrition', days: 87, total: 90, percent: 96 },
@@ -216,6 +217,11 @@ export const MediBookContent = (props) => {
 
   var auth = useAuth();
   var userId = auth.userId;
+
+  var _mbModal = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null });
+  var mbModal = _mbModal[0]; var setMbModal = _mbModal[1];
+  var closeMbModal = function() { setMbModal(function(p) { return Object.assign({}, p, { visible: false }); }); };
+  var showMbModal = function(type, title, message, extra) { setMbModal(Object.assign({ visible: true, type: type, title: title, message: message, onClose: closeMbModal, onConfirm: null, confirmText: 'Confirmer', cancelText: 'Annuler' }, extra || {})); };
 
   var getAuthHeaders = async function() {
     var result = await supabase.auth.getSession();
@@ -474,18 +480,7 @@ export const MediBookContent = (props) => {
         {/* Bouton retour */}
         <Pressable
           onPress={() => {
-            Alert.alert(
-              'Quitter l\'analyse ?',
-              'Les données extraites seront perdues.',
-              [
-                { text: 'Quitter', style: 'destructive', onPress: () => {
-                  setUploadState('idle');
-                  setScanResults(null);
-                  setScanSteps([]);
-                }},
-                { text: 'Continuer', style: 'cancel' },
-              ]
-            );
+            showMbModal('confirm', 'Quitter l\'analyse ?', 'Les données extraites seront perdues.', { confirmText: 'Quitter', cancelText: 'Continuer', onConfirm: function() { closeMbModal(); setUploadState('idle'); setScanResults(null); setScanSteps([]); } });
           }}
           style={{
             width: wp(36), height: wp(36), borderRadius: wp(18),
@@ -689,7 +684,7 @@ export const MediBookContent = (props) => {
               setUploadState('integrating');
 
               try {
-                if (!userId) { Alert.alert('Erreur', 'Utilisateur non connecté'); setUploadState('idle'); return; }
+                if (!userId) { showMbModal('error', 'Erreur', 'Utilisateur non connecté'); setUploadState('idle'); return; }
                 const headers = await getAuthHeaders();
                 headers['Prefer'] = 'return=minimal';
 
@@ -770,10 +765,7 @@ export const MediBookContent = (props) => {
                 setScanSteps([]);
                 setUploadState('idle');
 
-                Alert.alert(
-                  'Données intégrées ✓',
-                  'Les informations ont été ajoutées à votre MediBook. Consultez Mes Stats pour voir les résultats.',
-                );
+                showMbModal('success', 'Données intégrées ✓', 'Les informations ont été ajoutées à votre MediBook. Consultez Mes Stats pour voir les résultats.');
 
                 // Recharger les données médicales
                 loadMedicalData();
@@ -781,7 +773,7 @@ export const MediBookContent = (props) => {
               } catch (error) {
                 console.error('Erreur intégration:', error);
                 setUploadState('idle');
-                Alert.alert('Erreur', 'L\'intégration a échoué. Réessayez.');
+                showMbModal('error', 'Erreur', 'L\'intégration a échoué. Réessayez.');
               }
             }}>
             <LinearGradient colors={['#00D984', '#00B871']}
@@ -1165,20 +1157,7 @@ export const MediBookContent = (props) => {
                 <Pressable
                   key={index}
                   onPress={() => {
-                    Alert.alert(
-                      'Page ' + (index + 1),
-                      'Supprimer cette photo ?',
-                      [
-                        { text: 'Supprimer', style: 'destructive', onPress: () => {
-                          setCarnetPhotos(prev => {
-                            const updated = [...prev];
-                            updated[index] = undefined;
-                            return updated;
-                          });
-                        }},
-                        { text: 'Annuler', style: 'cancel' },
-                      ]
-                    );
+                    showMbModal('confirm', 'Page ' + (index + 1), 'Supprimer cette photo ?', { confirmText: 'Supprimer', onConfirm: function() { closeMbModal(); setCarnetPhotos(function(prev) { var updated = prev.slice(); updated[index] = undefined; return updated; }); } });
                   }}
                   style={{
                     width: caseSize, height: caseSize,
@@ -2228,21 +2207,21 @@ export const MediBookContent = (props) => {
             subtitle={allergiesCount > 0 ? 'Profil allergique enregistré' : 'Aucune allergie enregistrée'}
             count={allergiesCount} color="#FF8C42"
             icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#FF8C42" strokeWidth="1.5" /></Svg>}
-            onPress={() => Alert.alert('Allergies', 'Détail allergies — prochaine mise à jour.')}
+            onPress={function() { showMbModal('info', 'Allergies', 'Détail allergies — prochaine mise à jour.'); }}
           />
 
           <SectionCard title="Carnet vaccinal"
             subtitle={vaccCount > 0 ? vaccCount + ' vaccin' + (vaccCount > 1 ? 's' : '') + ' enregistré' + (vaccCount > 1 ? 's' : '') : 'Aucun vaccin enregistré'}
             count={vaccCount} color="#9B6DFF"
             icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M18 2l4 4-9.5 9.5-4-4L18 2z" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><Path d="M8.5 11.5L2 18v4h4l6.5-6.5" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
-            onPress={() => Alert.alert('Vaccins', 'Détail vaccins — prochaine mise à jour.')}
+            onPress={function() { showMbModal('info', 'Vaccins', 'Détail vaccins — prochaine mise à jour.'); }}
           />
 
           <SectionCard title="Diagnostics à surveiller"
             subtitle={diagCount > 0 ? diagCount + ' diagnostic' + (diagCount > 1 ? 's' : '') : 'Aucun diagnostic enregistré'}
             count={diagCount} color="#FF6B6B"
             icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke="#FF6B6B" strokeWidth="1.5" /><Path d="M3 12h4l3-6 4 12 3-6h4" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
-            onPress={() => Alert.alert('Diagnostics', 'Détail diagnostics — prochaine mise à jour.')}
+            onPress={function() { showMbModal('info', 'Diagnostics', 'Détail diagnostics — prochaine mise à jour.'); }}
           />
 
           <Pressable delayPressIn={120} onPress={() => setReportSection('pdf-preview')} style={{ marginTop: wp(12), marginBottom: wp(16) }}>
@@ -2367,7 +2346,7 @@ export const MediBookContent = (props) => {
         ))}
 
         <Pressable delayPressIn={120}
-          onPress={() => Alert.alert('MediBook', 'La génération PDF sera disponible prochainement !')}
+          onPress={function() { showMbModal('info', 'MediBook', 'La génération PDF sera disponible prochainement !'); }}
           onPressIn={() => Animated.timing(mbGenerateScale, { toValue: 0.95, duration: 120, useNativeDriver: true }).start()}
           onPressOut={() => Animated.spring(mbGenerateScale, { toValue: 1, useNativeDriver: true }).start()}>
           <Animated.View style={{ transform: [{ scale: mbGenerateScale }], marginTop: wp(24), marginBottom: wp(32) }}>
@@ -2422,8 +2401,10 @@ export const MediBookContent = (props) => {
       </View>
     );
   }
-  if (mediBookView === 'carnet') return renderCarnetCapture();
-  if (mediBookView === 'stats') return renderMediBookStats();
-  if (mediBookView === 'report') return renderMediBookReport();
-  return renderMediBookLanding();
+  var mbModalEl = React.createElement(LixumModal, { visible: mbModal.visible, type: mbModal.type, title: mbModal.title, message: mbModal.message, onConfirm: mbModal.onConfirm, onClose: mbModal.onClose || closeMbModal, confirmText: mbModal.confirmText, cancelText: mbModal.cancelText });
+
+  if (mediBookView === 'carnet') return React.createElement(View, { style: { flex: 1 } }, renderCarnetCapture(), mbModalEl);
+  if (mediBookView === 'stats') return React.createElement(View, { style: { flex: 1 } }, renderMediBookStats(), mbModalEl);
+  if (mediBookView === 'report') return React.createElement(View, { style: { flex: 1 } }, renderMediBookReport(), mbModalEl);
+  return React.createElement(View, { style: { flex: 1 } }, renderMediBookLanding(), mbModalEl);
 };

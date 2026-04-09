@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, TextInput, ScrollView, Pressable, Alert, Modal, ActivityIndicator,
+  View, Text, TextInput, ScrollView, Pressable, Modal, ActivityIndicator,
 } from 'react-native';
 import Svg, {
   Rect, Path, Circle, Line,
@@ -8,6 +8,7 @@ import Svg, {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
+import LixumModal from '../../components/shared/LixumModal';
 
 export const AllModals = (props) => {
   const {
@@ -63,8 +64,12 @@ export const AllModals = (props) => {
     confirmAddAnalysis,
   } = props;
 
+  var _modalsModal = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null });
+  var modalsModal = _modalsModal[0]; var setModalsModal = _modalsModal[1];
+  var closeModalsModal = function() { setModalsModal(function(p) { return Object.assign({}, p, { visible: false }); }); };
+
   return (
-    <>
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'box-none' }}>
       {/* Bottom Sheet — Ajouter à MediBook (bouton FAB +) */}
       <Modal
         visible={showMediBookUploadSheet}
@@ -322,14 +327,7 @@ export const AllModals = (props) => {
                 onPress={() => {
                   setShowDocumentSheet(false);
                   setTimeout(() => {
-                    Alert.alert(
-                      'Partager ma localisation',
-                      'ALIXEN utilisera ta position une seule fois pour te recommander des supermarchés, restaurants et salles de sport à proximité.\n\nTa localisation sera automatiquement effacée après utilisation.',
-                      [
-                        { text: 'Partager', onPress: () => {} },
-                        { text: 'Non merci', style: 'cancel' },
-                      ]
-                    );
+                    setModalsModal({ visible: true, type: 'confirm', title: 'Partager ma localisation', message: 'ALIXEN utilisera ta position une seule fois pour te recommander des supermarchés, restaurants et salles de sport à proximité.\n\nTa localisation sera automatiquement effacée après utilisation.', confirmText: 'Partager', cancelText: 'Non merci', onConfirm: closeModalsModal, onClose: closeModalsModal });
                   }, 300);
                 }}
                 style={{
@@ -368,14 +366,7 @@ export const AllModals = (props) => {
                 onPress={() => {
                   setShowDocumentSheet(false);
                   setTimeout(() => {
-                    Alert.alert(
-                      'Importer une conversation',
-                      'Sélectionnez une conversation compactée depuis votre Secret Pocket pour la réimporter dans cette session.',
-                      [
-                        { text: 'Ouvrir Secret Pocket', onPress: () => setCurrentSubPage('secretpocket') },
-                        { text: 'Annuler', style: 'cancel' },
-                      ]
-                    );
+                    setModalsModal({ visible: true, type: 'confirm', title: 'Importer une conversation', message: 'Sélectionnez une conversation compactée depuis votre Secret Pocket pour la réimporter dans cette session.', confirmText: 'Ouvrir Secret Pocket', onConfirm: function() { closeModalsModal(); setCurrentSubPage('secretpocket'); }, onClose: closeModalsModal });
                   }, 300);
                 }}
                 style={{
@@ -1221,7 +1212,7 @@ export const AllModals = (props) => {
               delayPressIn={120}
               onPress={() => {
                 if (newChildName.trim().length === 0) {
-                  Alert.alert('Nom requis', 'Veuillez entrer le prénom de l\'enfant.');
+                  setModalsModal({ visible: true, type: 'info', title: 'Nom requis', message: 'Veuillez entrer le prénom de l\'enfant.', onClose: closeModalsModal });
                   return;
                 }
                 if (editingChildId) {
@@ -1721,6 +1712,7 @@ export const AllModals = (props) => {
           </Pressable>
         </Pressable>
       </Modal>
-    </>
+      <LixumModal visible={modalsModal.visible} type={modalsModal.type} title={modalsModal.title} message={modalsModal.message} onConfirm={modalsModal.onConfirm} onClose={modalsModal.onClose || closeModalsModal} confirmText={modalsModal.confirmText} cancelText={modalsModal.cancelText} />
+    </View>
   );
 };

@@ -6,7 +6,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   Image, Platform, Animated, KeyboardAvoidingView,
-  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Alert, Modal, ActivityIndicator,
+  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Modal, ActivityIndicator,
 } from 'react-native';
 import Svg, {
   Defs, Rect, Path, Circle, Ellipse, Line,
@@ -21,6 +21,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY, ENERGY_CONFIG, TABS, wp, fp, SCREEN_WI
 import { useAuth } from '../../config/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../config/supabase';
+import LixumModal from '../../components/shared/LixumModal';
 import { BottomTabs, FormattedText, FormattedResponseText, MetalCard, parseQuickReplies, parseAlixenResponse, QuickReplyButtons, BottomSpacer, LockIcon, ScrollArrow } from './shared';
 import { SynapticNetwork, ResponseCard, LoadingSteps, FileQueuePreview, ModalScrollContent, parseDirectionBlocks, DirectionCard } from './AlixenChat';
 // === ALIXEN SUPER CONTEXT v1 — Geolocation ===
@@ -39,6 +40,12 @@ export default function MedicAiPage({ navigation }) {
   var userId = auth.userId;
   var lixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
   var userEnergy = auth.energy; var refreshLixFromServer = auth.refreshLixFromServer;
+
+  // Modal state
+  var _mModal = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null, onClose: null, confirmText: 'Confirmer', cancelText: 'Annuler' });
+  var mModal = _mModal[0]; var setMModal = _mModal[1];
+  var closeMModal = function() { setMModal(function(p) { return Object.assign({}, p, { visible: false }); }); };
+  var showMModal = function(type, title, message, extra) { setMModal(Object.assign({ visible: true, type: type, title: title, message: message, onClose: closeMModal, onConfirm: null, confirmText: 'Confirmer', cancelText: 'Annuler' }, extra || {})); };
 
   var getAuthHeaders = async function() {
     var result = await supabase.auth.getSession();
@@ -407,14 +414,7 @@ export default function MedicAiPage({ navigation }) {
   const addBotMessage = useCallback((text) => {
     setMessages(prev => {
       if (prev.length >= 30) {
-        Alert.alert(
-          'Session pleine',
-          'Vous avez atteint la limite de 30 échanges par session.\n\nCompactez cette conversation pour la ranger dans votre Secret Pocket et démarrer une nouvelle session.',
-          [
-            { text: 'Compacter et ranger', onPress: () => {} },
-            { text: 'Annuler', style: 'cancel' },
-          ]
-        );
+        showMModal('confirm', 'Session pleine', 'Vous avez atteint la limite de 30 échanges par session.\n\nCompactez cette conversation pour la ranger dans votre Secret Pocket et démarrer une nouvelle session.', { confirmText: 'Compacter et ranger', onConfirm: closeMModal });
         return prev;
       }
       return [...prev, {
@@ -1358,14 +1358,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
     // Limite 30 bulles par session
     if (messages.length >= 30) {
-      Alert.alert(
-        'Session pleine',
-        'Vous avez atteint la limite de 30 échanges. Souhaitez-vous compacter cette conversation et la ranger dans votre Secret Pocket ?',
-        [
-          { text: 'Compacter et ranger', onPress: () => {} },
-          { text: 'Continuer quand même', style: 'cancel' },
-        ]
-      );
+      showMModal('confirm', 'Session pleine', 'Vous avez atteint la limite de 30 échanges. Souhaitez-vous compacter cette conversation et la ranger dans votre Secret Pocket ?', { confirmText: 'Compacter et ranger', cancelText: 'Continuer quand même', onConfirm: closeMModal });
       return;
     }
 
@@ -1576,10 +1569,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       console.error('Erreur scan médical:', error);
       setUploadState('idle');
       setScanResults(null);
-      Alert.alert(
-        'Erreur d\'analyse',
-        'ALIXEN n\'a pas pu analyser ce document. Vérifiez que l\'image est lisible et réessayez.\n\nDétail : ' + (error.message || 'Erreur inconnue'),
-      );
+      showMModal('error', 'Erreur d\'analyse', 'ALIXEN n\'a pas pu analyser ce document. Vérifiez que l\'image est lisible et réessayez.\n\nDétail : ' + (error.message || 'Erreur inconnue'));
     }
   };
 
@@ -1613,7 +1603,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Permission requise', 'Autorisez l\'accès à la caméra pour prendre des photos.');
+        showMModal('error', 'Permission requise', 'Autorisez l\'accès à la caméra pour prendre des photos.');
         return;
       }
       const result = await ImagePicker.launchCameraAsync({
@@ -1642,15 +1632,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   const pickDocument = async (context) => {
     try {
-      Alert.alert(
-        'Importer un document',
-        'Pour l\'instant, prenez une photo du document ou importez depuis la galerie.',
-        [
-          { text: 'Prendre une photo', onPress: () => takePhoto(context) },
-          { text: 'Depuis la galerie', onPress: () => pickImage(context) },
-          { text: 'Annuler', style: 'cancel' },
-        ]
-      );
+      showMModal('confirm', 'Importer un document', 'Prenez une photo du document ou importez depuis la galerie.', {
+        confirmText: 'Prendre une photo', cancelText: 'Depuis la galerie',
+        onConfirm: function() { closeMModal(); takePhoto(context); },
+        onClose: function() { closeMModal(); pickImage(context); },
+      });
     } catch (error) {
     }
   };
@@ -1740,37 +1726,23 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
   };
 
   const archiveMedication = async (medicationId, medicationName) => {
-    Alert.alert(
-      'Archiver ce médicament ?',
-      '"' + medicationName + '" sera déplacé dans vos médicaments archivés. Vous pourrez toujours le consulter.',
-      [
-        {
-          text: 'Archiver',
-          onPress: async () => {
-            try {
-              await fetch(
-                SUPABASE_URL + '/rest/v1/medications?id=eq.' + medicationId,
-                {
-                  method: 'PATCH',
-                  headers: {
-                    'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=minimal',
-                  },
-                  body: JSON.stringify({ status: 'completed' }),
-                }
-              );
-              loadMedicalData();
-            } catch (error) {
-              console.error('Erreur archivage:', error);
-              Alert.alert('Erreur', 'L\'archivage a échoué.');
-            }
-          },
-        },
-        { text: 'Annuler', style: 'cancel' },
-      ]
-    );
+    showMModal('confirm', 'Archiver ce médicament ?', '"' + medicationName + '" sera déplacé dans vos médicaments archivés. Vous pourrez toujours le consulter.', {
+      confirmText: 'Archiver',
+      onConfirm: async function() {
+        closeMModal();
+        try {
+          await fetch(SUPABASE_URL + '/rest/v1/medications?id=eq.' + medicationId, {
+            method: 'PATCH',
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ status: 'completed' }),
+          });
+          loadMedicalData();
+        } catch (error) {
+          console.error('Erreur archivage:', error);
+          showMModal('error', 'Erreur', 'L\'archivage a échoué.');
+        }
+      },
+    });
   };
 
   const searchMedications = async (query) => {
@@ -1862,13 +1834,10 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       // Recharger les données
       loadMedicalData();
 
-      Alert.alert(
-        'Médicament ajouté ✓',
-        selectedMedFromDb.name + ' ' + newMedDosageValue + ' ' + newMedDosageUnit + ' a été ajouté à vos traitements en cours.',
-      );
+      showMModal('success', 'Médicament ajouté ✓', selectedMedFromDb.name + ' ' + newMedDosageValue + ' ' + newMedDosageUnit + ' a été ajouté à vos traitements en cours.');
     } catch (error) {
       console.error('Erreur ajout médicament:', error);
-      Alert.alert('Erreur', 'L\'ajout a échoué. Réessayez.');
+      showMModal('error', 'Erreur', 'L\'ajout a échoué. Réessayez.');
     }
   };
 
@@ -1885,15 +1854,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   const searchMedicationAI = async (query) => {
     try {
-      Alert.alert(
-        'Recherche IA — 50 Lix',
-        'ALIXEN va chercher "' + query + '" dans sa base de connaissances médicales.\n\nCoût : 50 Lix',
-        [
-          {
-            text: 'Rechercher',
-            onPress: async () => {
-              try {
-                setMedSearchResults([{ _loading: true, name: 'Recherche en cours...', id: 'loading' }]);
+      showMModal('confirm', 'Recherche IA — 50 Lix', 'ALIXEN va chercher "' + query + '" dans sa base de connaissances médicales.\n\nCoût : 50 Lix', {
+        confirmText: 'Rechercher', cancelText: 'Annuler',
+        onClose: function() { closeMModal(); setMedSearchResults([]); },
+        onConfirm: async function() {
+          closeMModal();
+          try {
+            setMedSearchResults([{ _loading: true, name: 'Recherche en cours...', id: 'loading' }]);
 
                 const response = await fetch(
                   SUPABASE_URL + '/functions/v1/search-medication',
@@ -1931,21 +1898,15 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                   setMedSearchResults([med]);
                 } else {
                   setMedSearchResults([]);
-                  Alert.alert(
-                    'Non trouvé',
-                    result.suggestion || 'ALIXEN n\'a pas trouvé ce médicament. Vérifiez l\'orthographe et réessayez.',
-                  );
+                  showMModal('info', 'Non trouvé', result.suggestion || 'ALIXEN n\'a pas trouvé ce médicament. Vérifiez l\'orthographe et réessayez.');
                 }
               } catch (error) {
                 console.error('Erreur recherche IA:', error);
                 setMedSearchResults([]);
-                Alert.alert('Erreur', 'La recherche IA a échoué. Vérifiez votre connexion.');
+                showMModal('error', 'Erreur', 'La recherche IA a échoué. Vérifiez votre connexion.');
               }
-            },
-          },
-          { text: 'Annuler', style: 'cancel', onPress: () => setMedSearchResults([]) },
-        ]
-      );
+        },
+      });
     } catch (error) {
       console.error('Erreur searchMedicationAI:', error);
     }
@@ -1953,11 +1914,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   const confirmAddAnalysis = async () => {
     if (!newAnalysisLabel.trim()) {
-      Alert.alert('Champ requis', 'Veuillez entrer le type d\'analyse.');
+      showMModal('info', 'Champ requis', 'Veuillez entrer le type d\'analyse.');
       return;
     }
     if (!newAnalysisDate.trim()) {
-      Alert.alert('Champ requis', 'Veuillez entrer la date prévue (format : JJ/MM/AAAA).');
+      showMModal('info', 'Champ requis', 'Veuillez entrer la date prévue (format : JJ/MM/AAAA).');
       return;
     }
 
@@ -2003,63 +1964,38 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
       loadMedicalData();
 
-      Alert.alert('Analyse planifiée ✓', newAnalysisLabel.trim() + ' a été ajoutée à vos analyses à venir.');
+      showMModal('success', 'Analyse planifiée ✓', newAnalysisLabel.trim() + ' a été ajoutée à vos analyses à venir.');
     } catch (error) {
       console.error('Erreur ajout analyse:', error);
-      Alert.alert('Erreur', 'L\'ajout a échoué. Réessayez.');
+      showMModal('error', 'Erreur', 'L\'ajout a échoué. Réessayez.');
     }
   };
 
   const handleTransferToSecretPocket = (tableName, rowIndex, rowData) => {
     const itemName = typeof rowData[0] === 'object' ? rowData[0].text : rowData[0];
 
-    Alert.alert(
-      'Transférer vers Secret Pocket',
-      '"' + itemName + '" sera déplacé dans votre coffre-fort sécurisé et supprimé de MediBook.\n\nContinuer ?',
-      [
-        {
-          text: 'Transférer',
-          onPress: async () => {
-            try {
-              let sourceArray;
-              let itemId;
+    showMModal('confirm', 'Transférer vers Secret Pocket', '"' + itemName + '" sera déplacé dans votre coffre-fort sécurisé et supprimé de MediBook.\n\nContinuer ?', {
+      confirmText: 'Transférer',
+      onConfirm: async function() {
+        closeMModal();
+        try {
+          var sourceArray;
+          var itemId;
+          if (tableName === 'analyses') { sourceArray = medicalData.analyses; itemId = sourceArray[rowIndex]?.id; }
+          else if (tableName === 'medications') { sourceArray = medicalData.medications; itemId = sourceArray[rowIndex]?.id; }
+          else if (tableName === 'allergies') { sourceArray = medicalData.allergies; itemId = sourceArray[rowIndex]?.id; }
+          else if (tableName === 'vaccinations') { sourceArray = medicalData.vaccinations; itemId = sourceArray[rowIndex]?.id; }
 
-              if (tableName === 'analyses') {
-                sourceArray = medicalData.analyses;
-                itemId = sourceArray[rowIndex]?.id;
-              } else if (tableName === 'medications') {
-                sourceArray = medicalData.medications;
-                itemId = sourceArray[rowIndex]?.id;
-              } else if (tableName === 'allergies') {
-                sourceArray = medicalData.allergies;
-                itemId = sourceArray[rowIndex]?.id;
-              } else if (tableName === 'vaccinations') {
-                sourceArray = medicalData.vaccinations;
-                itemId = sourceArray[rowIndex]?.id;
-              }
+          if (!itemId) { showMModal('success', 'Transféré ✓', '"' + itemName + '" a été déplacé dans votre Secret Pocket.'); return; }
 
-              if (!itemId) {
-                Alert.alert('Transféré ✓', '"' + itemName + '" a été déplacé dans votre Secret Pocket.');
-                return;
-              }
-
-              // Pour l'instant, on supprime de la vue locale
-              // TODO: Quand le champ is_secret sera ajouté dans Supabase, marquer l'élément comme secret au lieu de le supprimer
-              setMedicalData(prev => ({
-                ...prev,
-                [tableName]: prev[tableName].filter((_, i) => i !== rowIndex),
-              }));
-
-              Alert.alert('Transféré ✓', '"' + itemName + '" a été déplacé dans votre Secret Pocket.');
-
-            } catch (error) {
-              console.error('Erreur transfert:', error);
-              Alert.alert('Erreur', 'Le transfert a échoué.');
-            }
-          },
-        },
-        { text: 'Annuler', style: 'cancel' },
-      ]
+          setMedicalData(function(prev) { var updated = Object.assign({}, prev); updated[tableName] = prev[tableName].filter(function(_, i) { return i !== rowIndex; }); return updated; });
+          showMModal('success', 'Transféré ✓', '"' + itemName + '" a été déplacé dans votre Secret Pocket.');
+        } catch (error) {
+          console.error('Erreur transfert:', error);
+          showMModal('error', 'Erreur', 'Le transfert a échoué.');
+        }
+      },
+    }
     );
   };
 
@@ -2768,6 +2704,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         newAnalysisNotes={newAnalysisNotes} setNewAnalysisNotes={setNewAnalysisNotes}
         confirmAddAnalysis={confirmAddAnalysis}
       />
+      <LixumModal visible={mModal.visible} type={mModal.type} title={mModal.title} message={mModal.message} onConfirm={mModal.onConfirm} onClose={mModal.onClose || closeMModal} confirmText={mModal.confirmText} cancelText={mModal.cancelText} />
     </View>
   );
 }
