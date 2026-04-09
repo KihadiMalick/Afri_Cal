@@ -8,7 +8,7 @@ import Svg, { Line, Circle, Path, Rect, Defs, Mask } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { supabase } from '../../config/supabase';
+import { supabase, SUPABASE_ANON_KEY } from '../../config/supabase';
 import { useLang } from '../../config/LanguageContext';
 import { wp, fp } from '../../constants/layout';
 import { MEAL_SLOTS } from './repasConstants';
@@ -386,13 +386,14 @@ const XscanScreen = forwardRef(function XscanScreen({
     }, 100);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch(
         'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC7pUn0',
+            'Authorization': 'Bearer ' + (session?.access_token || SUPABASE_ANON_KEY),
           },
           body: JSON.stringify({
             photos_base64: [photo.base64],
@@ -556,13 +557,14 @@ const XscanScreen = forwardRef(function XscanScreen({
     setRecalculating(true);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch(
         'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC3pUn0',
+            'Authorization': 'Bearer ' + (session?.access_token || SUPABASE_ANON_KEY),
           },
           body: JSON.stringify({
             action: 'search_ingredients',
@@ -656,13 +658,14 @@ const XscanScreen = forwardRef(function XscanScreen({
     const oldQty = ing.quantity_g || 100;
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch(
         'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC3pUn0',
+            'Authorization': 'Bearer ' + (session?.access_token || SUPABASE_ANON_KEY),
           },
           body: JSON.stringify({
             action: 'search_ingredients',
@@ -725,13 +728,14 @@ const XscanScreen = forwardRef(function XscanScreen({
 
     setIsSearching(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch(
         'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1aG9yZG56ZnBjc3d6dHVqb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzMwNDgsImV4cCI6MjA4NjkwOTA0OH0.maCsNdVUaUzxrUHFyahTDPRPZYctbUfefA5EMC3pUn0',
+            'Authorization': 'Bearer ' + (session?.access_token || SUPABASE_ANON_KEY),
           },
           body: JSON.stringify({
             action: 'search_ingredients',
