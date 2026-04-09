@@ -316,26 +316,34 @@ export default function CartScanScreen({ visible, onClose }) {
 
   if (!visible) return null;
 
-  if (!permission) {
-    return React.createElement(View, { style: { flex: 1, backgroundColor: '#1A1D22' } });
-  }
-
-  if (!permission.granted) {
+  // Permission loading or not granted — show inside a closeable screen
+  if (!permission || !permission.granted) {
     return (
       <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(30) }}>
+        <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
+        <TouchableOpacity
+          onPress={onClose}
+          style={{ position: 'absolute', top: wp(52), left: wp(16) }}
+        >
+          <Text style={{ fontSize: fp(14), color: '#9CA3AF' }}>✕ Fermer</Text>
+        </TouchableOpacity>
         <Text style={{ color: '#EAEEF3', fontSize: fp(18), fontWeight: '800', textAlign: 'center', marginBottom: wp(12) }}>
           🛒 CARTSCAN
         </Text>
         <Text style={{ color: '#C0C4CC', fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: wp(24) }}>
-          CartScan a besoin d&apos;accéder à votre caméra pour scanner les code-barres
+          {!permission
+            ? 'Chargement des permissions caméra...'
+            : 'CartScan a besoin d\'accéder à votre caméra pour scanner les code-barres'}
         </Text>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={function() { requestPermission(); }}
-          style={{ backgroundColor: 'rgba(0,217,132,0.06)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)', borderRadius: 10, paddingHorizontal: wp(24), paddingVertical: wp(12) }}
-        >
-          <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '700' }}>Autoriser la caméra</Text>
-        </TouchableOpacity>
+        {permission && !permission.granted ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={function() { requestPermission(); }}
+            style={{ backgroundColor: 'rgba(0,217,132,0.06)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)', borderRadius: 10, paddingHorizontal: wp(24), paddingVertical: wp(12) }}
+          >
+            <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '700' }}>Autoriser la caméra</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     );
   }
