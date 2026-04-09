@@ -8,7 +8,7 @@ import Svg, { Line, Circle, Path, Rect, Defs, Mask } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { supabase, SUPABASE_ANON_KEY } from '../../config/supabase';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 import { useLang } from '../../config/LanguageContext';
 import { wp, fp } from '../../constants/layout';
 import { MEAL_SLOTS } from './repasConstants';
@@ -394,16 +394,23 @@ const XscanScreen = forwardRef(function XscanScreen({
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      var authToken = session?.access_token || SUPABASE_ANON_KEY;
+      console.log('[XScan] Starting scan-meal request',
+        'hasSession:', !!session,
+        'tokenPrefix:', authToken.substring(0, 20) + '...',
+        'base64Length:', photo.base64 ? photo.base64.length : 0);
+
       const response = await fetch(
-        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
+        SUPABASE_URL + '/functions/v1/scan-meal',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + (session?.access_token || SUPABASE_ANON_KEY),
+            'Authorization': 'Bearer ' + authToken,
           },
           body: JSON.stringify({
             photos_base64: [photo.base64],
+            user_id: userId,
             user_country: 'BI',
             user_origin_country: 'BI',
             lang: lang || 'fr',
@@ -414,9 +421,14 @@ const XscanScreen = forwardRef(function XscanScreen({
       clearInterval(textInterval);
       clearInterval(progressInterval);
 
+      console.log('[XScan] Response status:', response.status);
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Erreur serveur');
+        var errorText = '';
+        try { var errorData = await response.json(); errorText = errorData.error || JSON.stringify(errorData); }
+        catch (e) { try { errorText = await response.text(); } catch (e2) { errorText = 'Status ' + response.status; } }
+        console.error('[XScan] Server error:', response.status, errorText);
+        throw new Error(errorText || 'Erreur serveur (HTTP ' + response.status + ')');
       }
 
       const result = await response.json();
@@ -566,7 +578,7 @@ const XscanScreen = forwardRef(function XscanScreen({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch(
-        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
+        SUPABASE_URL + '/functions/v1/scan-meal',
         {
           method: 'POST',
           headers: {
@@ -667,7 +679,7 @@ const XscanScreen = forwardRef(function XscanScreen({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch(
-        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
+        SUPABASE_URL + '/functions/v1/scan-meal',
         {
           method: 'POST',
           headers: {
@@ -737,7 +749,7 @@ const XscanScreen = forwardRef(function XscanScreen({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch(
-        'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/scan-meal',
+        SUPABASE_URL + '/functions/v1/scan-meal',
         {
           method: 'POST',
           headers: {
