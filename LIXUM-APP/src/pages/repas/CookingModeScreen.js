@@ -131,6 +131,7 @@ export default function CookingModeScreen({ visible, onClose, recipe }) {
   // === JSX ===
 
   return (
+    <View style={{ flex: 1 }}>
     <Modal
       visible={visible}
       animationType="slide"
@@ -540,5 +541,6 @@ export default function CookingModeScreen({ visible, onClose, recipe }) {
       </View>
     </Modal>
     <LixumModal visible={cookModal.visible} type={cookModal.type} title={cookModal.title} message={cookModal.message} onConfirm={cookModal.onConfirm} onClose={cookModal.onClose || closeCookModal} confirmText={cookModal.confirmText} cancelText={cookModal.cancelText} />
+    </View>
   );
 }

@@ -69,7 +69,7 @@ export const AllModals = (props) => {
   var closeModalsModal = function() { setModalsModal(function(p) { return Object.assign({}, p, { visible: false }); }); };
 
   return (
-    <>
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'box-none' }}>
       {/* Bottom Sheet — Ajouter à MediBook (bouton FAB +) */}
       <Modal
         visible={showMediBookUploadSheet}
@@ -1713,6 +1713,6 @@ export const AllModals = (props) => {
         </Pressable>
       </Modal>
       <LixumModal visible={modalsModal.visible} type={modalsModal.type} title={modalsModal.title} message={modalsModal.message} onConfirm={modalsModal.onConfirm} onClose={modalsModal.onClose || closeModalsModal} confirmText={modalsModal.confirmText} cancelText={modalsModal.cancelText} />
-    </>
+    </View>
   );
 };

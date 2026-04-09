@@ -513,7 +513,7 @@ export default function LiveTrackingScreen({
 
   if (!visible && !liveActive && liveCountdown === 0) return null;
   return (
-    <>
+    <View style={{ flex: 1 }}>
       {/* Countdown 3-2-1 */}
       <Modal visible={liveCountdown > 0} transparent animationType="fade">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
@@ -905,6 +905,6 @@ export default function LiveTrackingScreen({
         </View>
       </Modal>
       <LixumModal visible={liveModal.visible} type={liveModal.type} title={liveModal.title} message={liveModal.message} onConfirm={liveModal.onConfirm} onClose={liveModal.onClose || closeLiveModal} confirmText={liveModal.confirmText} cancelText={liveModal.cancelText} />
-    </>
+    </View>
   );
 }

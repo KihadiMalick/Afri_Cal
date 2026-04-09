@@ -844,7 +844,7 @@ export default function RecettesScreen({
 
   if (!visible && !selectedRecipe && !showAddConfirm) return null;
   return (
-    <>
+    <View style={{ flex: 1 }}>
       {/* Écran principal recettes */}
       {visible && !selectedRecipe && (
         <View style={{
@@ -2678,6 +2678,6 @@ export default function RecettesScreen({
         confirmText={modalCfg.confirmText}
         cancelText={modalCfg.cancelText}
       />
-    </>
+    </View>
   );
 }

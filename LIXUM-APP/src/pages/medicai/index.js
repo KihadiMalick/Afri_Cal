@@ -1905,9 +1905,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 setMedSearchResults([]);
                 showMModal('error', 'Erreur', 'La recherche IA a échoué. Vérifiez votre connexion.');
               }
-          } catch (error) {
-            console.error('Erreur searchMedicationAI outer:', error);
-          }
         },
       });
     } catch (error) {
