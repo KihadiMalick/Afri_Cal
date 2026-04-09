@@ -34,15 +34,16 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
             <View style={{ height: MEAL_CARD_HEIGHT }}>
 
             {/* Header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: wp(11), paddingHorizontal: wp(11) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: wp(12), paddingHorizontal: wp(12) }}>
               <Text style={{ fontSize: 14 }}>{icon}</Text>
-              <Text style={{
+              <Text numberOfLines={1} style={{
                 color: '#8892A0', fontSize: fp(9), fontWeight: '700',
                 letterSpacing: 1, marginLeft: 4, textTransform: 'uppercase',
+                flex: 1, marginRight: wp(6),
               }}>{label}</Text>
               {hasMultiple && (
                 <View style={{
-                  marginLeft: 'auto',
+                  flexShrink: 0,
                   backgroundColor: 'rgba(0,217,132,0.1)',
                   paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4,
                 }}>
@@ -50,7 +51,7 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
                 </View>
               )}
               {!hasMultiple && (
-                <Text style={{ color: '#3A4050', fontSize: fp(9), marginLeft: 'auto' }}>{meal.time}</Text>
+                <Text style={{ color: '#3A4050', fontSize: fp(9), flexShrink: 0 }}>{meal.time}</Text>
               )}
             </View>
 
