@@ -16,6 +16,7 @@ const HydrationModal = ({
   visible, onClose,
   currentMl, setCurrentMl,
   goalMl, gender,
+  totalWaterLost,
   hydroLogs, setHydroLogs,
   onAddBeverage,
   showResetConfirm, setShowResetConfirm,
@@ -205,6 +206,9 @@ const HydrationModal = ({
                 <LinearGradient colors={['#4DA6FF', '#00BCD4']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: percent + '%', height: '100%', borderRadius: 4 }} />
               </View>
               <Text style={{ color: '#4DA6FF', fontSize: 13, fontWeight: '700', marginTop: 8 }}>{percent}% • {glasses}/{totalGlasses} verres</Text>
+              {(totalWaterLost || 0) > 0 ? (
+                <Text style={{ color: '#FF8C42', fontSize: 11, fontWeight: '600', marginTop: 6 }}>{'dont ' + totalWaterLost + 'ml à compenser (sport)'}</Text>
+              ) : null}
             </View>
 
             <View style={{ marginHorizontal: 24, marginBottom: 12, backgroundColor: 'rgba(30,37,48,0.4)', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: 'rgba(77,166,255,0.08)' }}>

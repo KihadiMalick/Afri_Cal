@@ -1262,11 +1262,13 @@ export default function RepasPage({ navigation }) {
           userProfile={userProfile}
           pagePowers={pagePowers}
           activeChar={activeChar}
+          initialMealType={addModalSlot}
         />
         <ManualEntryScreen
           visible={showManualEntry}
           onClose={() => setShowManualEntry(false)}
           onMealSaved={() => { setShowManualEntry(false); loadDashboardData(); }}
+          initialMealType={addModalSlot}
         />
         <CartScanScreen
           visible={showCartScan}
