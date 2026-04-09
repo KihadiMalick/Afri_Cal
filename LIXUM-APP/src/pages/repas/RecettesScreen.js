@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, Pressable, TouchableOpacity,
   ScrollView, FlatList, Modal, Image, ActivityIndicator,
-  Animated, StatusBar, Alert,
+  Animated, StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,7 @@ import {
 } from './repasConstants';
 
 import { useAuth } from '../../config/AuthContext';
+import LixumModal from '../../components/shared/LixumModal';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 
 export default function RecettesScreen({
@@ -72,6 +73,12 @@ export default function RecettesScreen({
   var _alixenMealSlot = useState(null); var alixenMealSlot = _alixenMealSlot[0]; var setAlixenMealSlot = _alixenMealSlot[1];
   var _alixenAltCategories = useState([]); var alixenAltCategories = _alixenAltCategories[0]; var setAlixenAltCategories = _alixenAltCategories[1];
   var _alixenGlobalComment = useState(null); var alixenGlobalComment = _alixenGlobalComment[0]; var setAlixenGlobalComment = _alixenGlobalComment[1];
+
+  // Modal state
+  var _modalCfg = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null, onClose: null, confirmText: 'Confirmer', cancelText: 'Annuler' });
+  var modalCfg = _modalCfg[0]; var setModalCfg = _modalCfg[1];
+  var closeModal = function() { setModalCfg(function(p) { return Object.assign({}, p, { visible: false }); }); };
+  var showModal = function(type, title, message, extra) { setModalCfg(Object.assign({ visible: true, type: type, title: title, message: message, onClose: closeModal, onConfirm: null, confirmText: 'Confirmer', cancelText: 'Annuler' }, extra || {})); };
 
   // === LOADING ANIMATION ALIXEN — 5 tubes ===
   var TUBE_COUNT = 5;
@@ -357,7 +364,7 @@ export default function RecettesScreen({
     } catch (e) {
       console.error('Add recipe error:', e);
       setAddingMeal(false);
-      Alert.alert('Erreur', 'Impossible d\'ajouter ce plat. Réessayez.');
+      showModal('error', 'Erreur', 'Impossible d\'ajouter ce plat. Réessayez.');
     }
   };
 
@@ -626,7 +633,7 @@ export default function RecettesScreen({
       }
       if (!ctx) {
         setAlixenLoading(false);
-        Alert.alert('Erreur', 'Impossible de charger le contexte.');
+        showModal('error', 'Erreur', 'Impossible de charger le contexte.');
         return;
       }
 
@@ -1317,36 +1324,26 @@ export default function RecettesScreen({
                               onPress={function() {
                                 var costCheck = checkAlixenRecipeCost();
                                 if (!costCheck.allowed) {
-                                  Alert.alert(
-                                    '💎 Lix insuffisants',
-                                    'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées',
-                                    [
-                                      { text: 'Aller au LixVerse', onPress: function() { if (onNavigate) onNavigate('lixverse'); onClose(); } },
-                                      { text: 'OK', style: 'cancel' },
-                                    ]
-                                  );
+                                  showModal('error', '💎 Lix insuffisants', 'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées', { type: 'confirm', confirmText: 'Aller au LixVerse', cancelText: 'OK', onConfirm: function() { closeModal(); if (onNavigate) onNavigate('lixverse'); onClose(); } });
                                   return;
                                 }
                                 if (costCheck.cost > 0) {
-                                  Alert.alert(
-                                    '🤖 Recette ALIXEN',
-                                    'Ta recette gratuite du jour a été utilisée.\nCette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix',
-                                    [
-                                      { text: 'Annuler', style: 'cancel' },
-                                      { text: 'Confirmer (50 Lix)', onPress: function() {
-                                        deductAlixenLix(50).then(function(success) {
-                                          if (success) {
-                                            setAlixenCategory(cat.key);
-                                            setAlixenRecipeScreen('proposals');
-                                            setAlixenLoading(true);
-                                            generateAlixenProposals(cat.key);
-                                          } else {
-                                            Alert.alert('Erreur', 'Impossible de débiter les Lix.');
-                                          }
-                                        });
-                                      }},
-                                    ]
-                                  );
+                                  showModal('confirm', '🤖 Recette ALIXEN', 'Ta recette gratuite du jour a été utilisée.\nCette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
+                                    confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
+                                    onConfirm: function() {
+                                      closeModal();
+                                      deductAlixenLix(50).then(function(success) {
+                                        if (success) {
+                                          setAlixenCategory(cat.key);
+                                          setAlixenRecipeScreen('proposals');
+                                          setAlixenLoading(true);
+                                          generateAlixenProposals(cat.key);
+                                        } else {
+                                          showModal('error', 'Erreur', 'Impossible de débiter les Lix.');
+                                        }
+                                      });
+                                    },
+                                  });
                                   return;
                                 }
                                 setAlixenCategory(cat.key);
@@ -1936,30 +1933,23 @@ export default function RecettesScreen({
                       onPress={function() {
                         var costCheck = checkAlixenRecipeCost();
                         if (!costCheck.allowed) {
-                          Alert.alert(
-                            '💎 Lix insuffisants',
-                            'Il te faut 50 Lix pour une recette ALIXEN.\n\nReviens demain pour ta recette gratuite ou obtiens des Lix dans le LixVerse.',
-                            [{ text: 'OK', style: 'cancel' }]
-                          );
+                          showModal('error', '💎 Lix insuffisants', 'Il te faut 50 Lix pour une recette ALIXEN.\n\nReviens demain pour ta recette gratuite ou obtiens des Lix dans le LixVerse.');
                           return;
                         }
                         if (costCheck.cost > 0) {
-                          Alert.alert(
-                            '🤖 Recette ALIXEN',
-                            'Cette génération coûte 50 Lix.\nSolde : ' + lixBalance + ' Lix',
-                            [
-                              { text: 'Annuler', style: 'cancel' },
-                              { text: 'Confirmer (50 Lix)', onPress: function() {
-                                deductAlixenLix(50).then(function(success) {
-                                  if (success) {
-                                    setAlixenRecipeScreen('proposals');
-                                    setAlixenLoading(true);
-                                    generateAlixenProposals('my_ingredients');
-                                  }
-                                });
-                              }},
-                            ]
-                          );
+                          showModal('confirm', '🤖 Recette ALIXEN', 'Cette génération coûte 50 Lix.\nSolde : ' + lixBalance + ' Lix', {
+                            confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
+                            onConfirm: function() {
+                              closeModal();
+                              deductAlixenLix(50).then(function(success) {
+                                if (success) {
+                                  setAlixenRecipeScreen('proposals');
+                                  setAlixenLoading(true);
+                                  generateAlixenProposals('my_ingredients');
+                                }
+                              });
+                            },
+                          });
                           return;
                         }
                         setAlixenRecipeScreen('proposals');
@@ -2168,16 +2158,9 @@ export default function RecettesScreen({
                           p_portion_g: null,
                         }).then(function(res) {
                           if (res.error) {
-                            Alert.alert('Erreur', res.error.message);
+                            showModal('error', 'Erreur', res.error.message);
                           } else {
-                            Alert.alert(
-                              '✅ Ajouté !',
-                              recipe.name + ' ajouté au ' + (slot === 'breakfast' ? 'petit-déjeuner' : slot === 'lunch' ? 'déjeuner' : slot === 'dinner' ? 'dîner' : 'snack') + '.',
-                              [{ text: 'OK', onPress: function() {
-                                onMealSaved();
-                                onClose();
-                              }}]
-                            );
+                            showModal('success', '✅ Ajouté !', recipe.name + ' ajouté au ' + (slot === 'breakfast' ? 'petit-déjeuner' : slot === 'lunch' ? 'déjeuner' : slot === 'dinner' ? 'dîner' : 'snack') + '.', { onClose: function() { closeModal(); onMealSaved(); onClose(); } });
                             setAlixenFreeUsedToday(true);
                           }
                         });
@@ -2221,7 +2204,7 @@ export default function RecettesScreen({
 
                     <Pressable
                       onPress={function() {
-                        Alert.alert('📝 Modifier', 'La modification des quantités sera disponible prochainement.');
+                        showModal('info', '📝 Modifier', 'La modification des quantités sera disponible prochainement.');
                       }}
                       style={function(state) {
                         return {
@@ -2685,6 +2668,16 @@ export default function RecettesScreen({
           </View>
         </View>
       </Modal>
+      <LixumModal
+        visible={modalCfg.visible}
+        type={modalCfg.type}
+        title={modalCfg.title}
+        message={modalCfg.message}
+        onConfirm={modalCfg.onConfirm}
+        onClose={modalCfg.onClose || closeModal}
+        confirmText={modalCfg.confirmText}
+        cancelText={modalCfg.cancelText}
+      />
     </>
   );
 }
