@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, Pressable, TouchableOpacity,
-  Animated, Platform, Alert,
+  Animated, Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -24,6 +24,7 @@ import {
 import LiveTrackingScreen from './LiveTrackingScreen';
 import PostReportModal from './PostReportModal';
 import PulseTrack from './PulseTrack';
+import LixumModal from '../../components/shared/LixumModal';
 
 // Constantes
 import {
@@ -108,6 +109,12 @@ export default function ActivityPage({ navigation }) {
   const [userNameAvatar, setUserNameAvatar] = useState('');
   // lixBalance and userEnergy from AuthContext
   var _weight = useState(70); var userWeight = _weight[0]; var setUserWeight = _weight[1];
+
+  // Modal state
+  var _modal = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null, onClose: null, confirmText: 'Confirmer', cancelText: 'Annuler' });
+  var modalCfg = _modal[0]; var setModalCfg = _modal[1];
+  var closeModal = function() { setModalCfg(function(prev) { return Object.assign({}, prev, { visible: false }); }); };
+  var _deleteTarget = useState(null); var deleteTarget = _deleteTarget[0]; var setDeleteTarget = _deleteTarget[1];
 
   // === FONCTIONS DONNÉES ===
 
@@ -297,7 +304,7 @@ export default function ActivityPage({ navigation }) {
         return { success: true, uses_remaining: data.uses_remaining };
       }
       if (data?.error === 'No uses remaining') {
-        Alert.alert('⚡ Utilisations épuisées', 'Recharge ton ' + (activeChar?.name || 'personnage') + ' dans l\'onglet Caractères.');
+        setModalCfg({ visible: true, type: 'info', title: '⚡ Utilisations épuisées', message: 'Recharge ton ' + (activeChar?.name || 'personnage') + ' dans l\'onglet Caractères.', onClose: closeModal });
       }
       return { success: false, error: data?.error };
     } catch (e) {
@@ -502,11 +509,9 @@ export default function ActivityPage({ navigation }) {
     }
   };
 
-  const handleDeleteActivity = (activity) => {
-    Alert.alert(t.delete, t.deleteConfirm, [
-      { text: t.cancel, style: 'cancel' },
-      { text: t.delete, style: 'destructive', onPress: () => deleteActivity(activity.id) },
-    ]);
+  var handleDeleteActivity = function(activity) {
+    setDeleteTarget(activity.id);
+    setModalCfg({ visible: true, type: 'confirm', title: t.delete, message: t.deleteConfirm, confirmText: t.delete, cancelText: t.cancel, onConfirm: function() { deleteActivity(activity.id); closeModal(); setDeleteTarget(null); }, onClose: function() { closeModal(); setDeleteTarget(null); } });
   };
 
   // === JSX ===
@@ -1126,6 +1131,17 @@ export default function ActivityPage({ navigation }) {
           onSave={handleSportSave}
           lang={lang}
           userWeight={userWeight}
+        />
+
+        <LixumModal
+          visible={modalCfg.visible}
+          type={modalCfg.type}
+          title={modalCfg.title}
+          message={modalCfg.message}
+          onConfirm={modalCfg.onConfirm}
+          onClose={modalCfg.onClose || closeModal}
+          confirmText={modalCfg.confirmText}
+          cancelText={modalCfg.cancelText}
         />
 
         {/* BottomTabs */}
