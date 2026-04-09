@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, Pressable, TouchableOpacity,
   ScrollView, FlatList, Modal, Image, ActivityIndicator,
-  StatusBar, Alert,
+  Animated, StatusBar, Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -70,6 +70,66 @@ export default function RecettesScreen({
   var _alixenFreeUsedToday = useState(false); var alixenFreeUsedToday = _alixenFreeUsedToday[0]; var setAlixenFreeUsedToday = _alixenFreeUsedToday[1];
   var _alixenHasOwlPass = useState(false); var alixenHasOwlPass = _alixenHasOwlPass[0]; var setAlixenHasOwlPass = _alixenHasOwlPass[1];
   var _alixenMealSlot = useState(null); var alixenMealSlot = _alixenMealSlot[0]; var setAlixenMealSlot = _alixenMealSlot[1];
+
+  // === LOADING ANIMATION ALIXEN ===
+  var _loadingPhase = useState(0); var loadingPhase = _loadingPhase[0]; var setLoadingPhase = _loadingPhase[1];
+  var loadingFade = useRef(new Animated.Value(1)).current;
+  var loadingProgress = useRef(new Animated.Value(0)).current;
+  var loadingPulse = useRef(new Animated.Value(1)).current;
+  var loadingPhaseTimer = useRef(null);
+  var loadingPulseLoop = useRef(null);
+
+  useEffect(function() {
+    if (alixenLoading) {
+      setLoadingPhase(0);
+      loadingProgress.setValue(0);
+      loadingFade.setValue(1);
+      loadingPulse.setValue(1);
+
+      // Pulse animation loop
+      loadingPulseLoop.current = Animated.loop(
+        Animated.sequence([
+          Animated.timing(loadingPulse, { toValue: 1.12, duration: 600, useNativeDriver: true }),
+          Animated.timing(loadingPulse, { toValue: 1, duration: 600, useNativeDriver: true }),
+        ])
+      );
+      loadingPulseLoop.current.start();
+
+      // Phase 0→1 after 2s
+      loadingPhaseTimer.current = setTimeout(function() {
+        Animated.timing(loadingFade, { toValue: 0, duration: 200, useNativeDriver: true }).start(function() {
+          setLoadingPhase(1);
+          Animated.timing(loadingFade, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+        });
+        Animated.timing(loadingProgress, { toValue: 0.33, duration: 2000, useNativeDriver: false }).start();
+      }, 100);
+
+      // Phase 1→2 after 2s+2s
+      var timer2 = setTimeout(function() {
+        Animated.timing(loadingFade, { toValue: 0, duration: 200, useNativeDriver: true }).start(function() {
+          setLoadingPhase(2);
+          Animated.timing(loadingFade, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+        });
+        Animated.timing(loadingProgress, { toValue: 0.66, duration: 2000, useNativeDriver: false }).start();
+      }, 2100);
+
+      // Phase 2 progress to ~90%
+      var timer3 = setTimeout(function() {
+        Animated.timing(loadingProgress, { toValue: 0.90, duration: 4000, useNativeDriver: false }).start();
+      }, 4200);
+
+      return function() {
+        clearTimeout(loadingPhaseTimer.current);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+        if (loadingPulseLoop.current) loadingPulseLoop.current.stop();
+      };
+    } else {
+      // Loading finished — snap to 100%
+      Animated.timing(loadingProgress, { toValue: 1, duration: 300, useNativeDriver: false }).start();
+      if (loadingPulseLoop.current) loadingPulseLoop.current.stop();
+    }
+  }, [alixenLoading]);
 
   // === FONCTIONS ===
 
@@ -1395,13 +1455,112 @@ export default function RecettesScreen({
                   </Pressable>
 
                   {alixenLoading && (
-                    <View style={{ alignItems: 'center', paddingVertical: wp(40) }}>
-                      <ActivityIndicator size="large" color="#00D984" />
-                      <Text style={{ color: '#00D984', fontSize: fp(13), marginTop: wp(12), fontWeight: '600' }}>
-                        ALIXEN prépare 3 suggestions...
-                      </Text>
-                      <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: wp(4), textAlign: 'center' }}>
-                        Analyse de ton profil, tes repas du jour et tes macros restantes
+                    <View style={{
+                      backgroundColor: '#2A303B', borderRadius: 16,
+                      borderWidth: 1, borderColor: '#3A3F46',
+                      padding: wp(24), alignItems: 'center',
+                    }}>
+                      {/* Phase icon + text with fade */}
+                      <Animated.View style={{ opacity: loadingFade, alignItems: 'center' }}>
+
+                        {/* Phase 0 — Profil */}
+                        {loadingPhase === 0 && (
+                          <View style={{ alignItems: 'center' }}>
+                            <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
+                              <View style={{
+                                width: wp(48), height: wp(48), borderRadius: wp(24),
+                                backgroundColor: 'rgba(0,217,132,0.1)',
+                                borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.25)',
+                                justifyContent: 'center', alignItems: 'center',
+                              }}>
+                                <Ionicons name="person-outline" size={fp(22)} color="#00D984" />
+                              </View>
+                            </Animated.View>
+                            <Text style={{
+                              color: '#00D984', fontSize: fp(13), fontWeight: '700',
+                              marginTop: wp(12),
+                            }}>Analyse de ton profil...</Text>
+                          </View>
+                        )}
+
+                        {/* Phase 1 — Macros */}
+                        {loadingPhase === 1 && (
+                          <View style={{ alignItems: 'center' }}>
+                            <View style={{ flexDirection: 'row', gap: wp(10) }}>
+                              <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
+                                <View style={{
+                                  width: wp(36), height: wp(36), borderRadius: wp(18),
+                                  backgroundColor: 'rgba(255,107,138,0.12)',
+                                  borderWidth: 1.5, borderColor: 'rgba(255,107,138,0.3)',
+                                  justifyContent: 'center', alignItems: 'center',
+                                }}>
+                                  <Text style={{ color: '#FF6B8A', fontSize: fp(13), fontWeight: '800' }}>P</Text>
+                                </View>
+                              </Animated.View>
+                              <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
+                                <View style={{
+                                  width: wp(36), height: wp(36), borderRadius: wp(18),
+                                  backgroundColor: 'rgba(255,217,61,0.12)',
+                                  borderWidth: 1.5, borderColor: 'rgba(255,217,61,0.3)',
+                                  justifyContent: 'center', alignItems: 'center',
+                                }}>
+                                  <Text style={{ color: '#FFD93D', fontSize: fp(13), fontWeight: '800' }}>G</Text>
+                                </View>
+                              </Animated.View>
+                              <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
+                                <View style={{
+                                  width: wp(36), height: wp(36), borderRadius: wp(18),
+                                  backgroundColor: 'rgba(77,166,255,0.12)',
+                                  borderWidth: 1.5, borderColor: 'rgba(77,166,255,0.3)',
+                                  justifyContent: 'center', alignItems: 'center',
+                                }}>
+                                  <Text style={{ color: '#4DA6FF', fontSize: fp(13), fontWeight: '800' }}>L</Text>
+                                </View>
+                              </Animated.View>
+                            </View>
+                            <Text style={{
+                              color: '#00D984', fontSize: fp(13), fontWeight: '700',
+                              marginTop: wp(12),
+                            }}>Calcul des macros restantes...</Text>
+                          </View>
+                        )}
+
+                        {/* Phase 2 — Cuisine */}
+                        {loadingPhase === 2 && (
+                          <View style={{ alignItems: 'center' }}>
+                            <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
+                              <Text style={{ fontSize: fp(32) }}>🤖</Text>
+                            </Animated.View>
+                            <Text style={{
+                              color: '#00D984', fontSize: fp(13), fontWeight: '700',
+                              marginTop: wp(12),
+                            }}>ALIXEN cuisine pour toi...</Text>
+                          </View>
+                        )}
+
+                      </Animated.View>
+
+                      {/* Progress bar */}
+                      <View style={{
+                        width: '100%', height: 3, backgroundColor: '#333',
+                        borderRadius: 2, marginTop: wp(20), overflow: 'hidden',
+                      }}>
+                        <Animated.View style={{
+                          height: '100%', borderRadius: 2,
+                          backgroundColor: '#00D984',
+                          width: loadingProgress.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: ['0%', '100%'],
+                          }),
+                        }} />
+                      </View>
+
+                      {/* Sous-texte fixe */}
+                      <Text style={{
+                        color: '#888', fontSize: fp(11), textAlign: 'center',
+                        marginTop: wp(10), lineHeight: fp(16),
+                      }}>
+                        Analyse de ton profil, tes repas du jour{'\n'}et tes macros restantes
                       </Text>
                     </View>
                   )}
