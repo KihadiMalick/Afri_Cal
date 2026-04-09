@@ -337,7 +337,7 @@ export default function DashboardPage({ navigation }) {
   var totalWaterLost = activities.reduce(function(sum, a) { return sum + (a.waterLostMl || 0); }, 0);
   var adjustedHydrationGoal = hydrationGoalBase + totalWaterLost;
   var sportWaterLoss = totalWaterLost;
-  var sportAlert = sportWaterLoss > 0 ? '🏃 -' + sportWaterLoss + 'ml perdus — pensez à compenser' : null;
+  var sportAlert = sportWaterLoss > 0 ? '🏃 -' + sportWaterLoss + ' ml perdus — pensez à compenser' : null;
 
   useEffect(function() {
     if (userId) {
