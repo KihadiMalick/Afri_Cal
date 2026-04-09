@@ -50,9 +50,8 @@ import { wp, fp, SCREEN } from '../constants/layout';
 import { COLORS, GRADIENTS } from '../constants/colors';
 import { useLang } from '../config/LanguageContext';
 
-var CARD_W = SCREEN.width - 56;
+var CARD_W = SCREEN.width - 96;
 var CARD_H = SCREEN.height * 0.48;
-var SWIPE_THRESHOLD = SCREEN.width * 0.25;
 
 var logoImage = null;
 
@@ -68,27 +67,35 @@ var texts = {
     tagline: 'CR\u00c9\u00c9 EN AFRIQUE \u00B7 POUR LE MONDE',
 
     slide1Title: 'SCAN X',
-    slide1Subtitle: 'Scannez, on calcule tout',
+    slide1Subtitle: 'Photographiez, LIXUM calcule tout',
     slide1Lines: [
-      { icon: 'aperture-outline', text: 'Pas un gadget \u2014 un vrai moteur de calcul' },
-      { icon: 'cube-outline', text: 'Calories, prot\u00e9ines, glucides, lipides' },
-      { icon: 'earth-outline', text: 'Thi\u00e9boudienne, ndol\u00e9, couscous... 524 plats africains' },
+      { icon: 'aperture-outline', text: 'Calories, prot\u00e9ines, glucides, lipides en temps r\u00e9el' },
+      { icon: 'cube-outline', text: '524+ plats africains reconnus' },
+      { icon: 'earth-outline', text: 'Thi\u00e9boudienne, ndol\u00e9, couscous et bien plus' },
     ],
 
-    slide2Title: 'PROCESSUS RIGOUREUX',
-    slide2Subtitle: 'Des donn\u00e9es que vous pouvez v\u00e9rifier',
+    slide2Title: 'VOTRE SANT\u00c9 EN UN COUP D\u2019\u0152IL',
+    slide2Subtitle: 'Comprenez votre corps en chiffres',
     slide2Lines: [
-      { icon: 'shield-checkmark-outline', text: 'Sources certifi\u00e9es USDA \u00B7 FAO \u00B7 ANSES' },
-      { icon: 'color-palette-outline', text: 'Recettes adapt\u00e9es \u00e0 votre humeur et m\u00e9t\u00e9o' },
-      { icon: 'git-network-outline', text: 'Formule Mifflin-St Jeor valid\u00e9e scientifiquement' },
+      { icon: 'radio-outline', text: 'Score Vitalit\u00e9 temps r\u00e9el sur 100' },
+      { icon: 'water-outline', text: 'Hydratation intelligente adapt\u00e9e \u00e0 votre activit\u00e9' },
+      { icon: 'shield-checkmark-outline', text: 'Sources certifi\u00e9es : USDA, FAO, Mifflin-St Jeor' },
     ],
 
-    slide3Title: 'VOTRE CORPS, QUANTIFI\u00c9',
-    slide3Subtitle: 'Votre hygi\u00e8ne de vie en chiffres',
+    slide3Title: 'ALIXEN, VOTRE COACH IA',
+    slide3Subtitle: 'Il conna\u00eet vos donn\u00e9es, vos go\u00fbts, votre objectif',
     slide3Lines: [
-      { icon: 'radio-outline', text: 'Score Vitalit\u00e9 en temps r\u00e9el sur 100' },
-      { icon: 'water-outline', text: 'Hydratation intelligente avec BHI scientifique' },
-      { icon: 'people-outline', text: 'Bin\u00f4me sant\u00e9 — progressez \u00e0 deux' },
+      { icon: 'nutrition-outline', text: 'Recommandations nutrition personnalis\u00e9es' },
+      { icon: 'color-palette-outline', text: 'Recettes adapt\u00e9es \u00e0 votre humeur et m\u00e9t\u00e9o' },
+      { icon: 'medkit-outline', text: 'Suivi m\u00e9dical intelligent avec MedicAi' },
+    ],
+
+    slide4Title: 'BIEN PLUS QU\u2019UN TRACKER',
+    slide4Subtitle: 'Un \u00e9cosyst\u00e8me de sant\u00e9 complet',
+    slide4Lines: [
+      { icon: 'trophy-outline', text: 'D\u00e9fis mensuels et classements mondiaux' },
+      { icon: 'people-outline', text: 'Bin\u00f4me sant\u00e9 \u2014 progressez \u00e0 deux' },
+      { icon: 'shapes-outline', text: 'Personnages qui d\u00e9bloquent des avantages IA' },
     ],
 
     hasAccount: 'D\u00e9j\u00e0 un compte ?',
@@ -106,27 +113,35 @@ var texts = {
     tagline: 'MADE IN AFRICA \u00B7 FOR THE WORLD',
 
     slide1Title: 'SCAN X',
-    slide1Subtitle: 'Scan it, we calculate everything',
+    slide1Subtitle: 'Snap it, LIXUM calculates everything',
     slide1Lines: [
-      { icon: 'aperture-outline', text: 'Not a gimmick \u2014 a real calculation engine' },
-      { icon: 'cube-outline', text: 'Calories, proteins, carbs, fats' },
-      { icon: 'earth-outline', text: 'Thi\u00e9boudienne, ndol\u00e9, couscous... 524 African dishes' },
+      { icon: 'aperture-outline', text: 'Calories, proteins, carbs, fats in real time' },
+      { icon: 'cube-outline', text: '524+ African dishes recognized' },
+      { icon: 'earth-outline', text: 'Thi\u00e9boudienne, ndol\u00e9, couscous and more' },
     ],
 
-    slide2Title: 'RIGOROUS PROCESS',
-    slide2Subtitle: 'Data you can actually verify',
+    slide2Title: 'YOUR HEALTH AT A GLANCE',
+    slide2Subtitle: 'Understand your body in numbers',
     slide2Lines: [
-      { icon: 'shield-checkmark-outline', text: 'Certified sources: USDA \u00B7 FAO \u00B7 ANSES' },
-      { icon: 'color-palette-outline', text: 'Recipes adapted to your mood & weather' },
-      { icon: 'git-network-outline', text: 'Mifflin-St Jeor formula, scientifically validated' },
+      { icon: 'radio-outline', text: 'Real-time Vitality Score out of 100' },
+      { icon: 'water-outline', text: 'Smart hydration adapted to your activity' },
+      { icon: 'shield-checkmark-outline', text: 'Certified sources: USDA, FAO, Mifflin-St Jeor' },
     ],
 
-    slide3Title: 'YOUR BODY, QUANTIFIED',
-    slide3Subtitle: 'Your lifestyle in numbers',
+    slide3Title: 'ALIXEN, YOUR AI COACH',
+    slide3Subtitle: 'It knows your data, your tastes, your goals',
     slide3Lines: [
-      { icon: 'radio-outline', text: 'Real-time Vitality Score out of 100' },
-      { icon: 'water-outline', text: 'Smart hydration with scientific BHI' },
-      { icon: 'people-outline', text: 'Health partner — progress together' },
+      { icon: 'nutrition-outline', text: 'Personalized nutrition recommendations' },
+      { icon: 'color-palette-outline', text: 'Recipes adapted to your mood & weather' },
+      { icon: 'medkit-outline', text: 'Smart medical tracking with MedicAi' },
+    ],
+
+    slide4Title: 'MORE THAN A TRACKER',
+    slide4Subtitle: 'A complete health ecosystem',
+    slide4Lines: [
+      { icon: 'trophy-outline', text: 'Monthly challenges & global leaderboards' },
+      { icon: 'people-outline', text: 'Health partner \u2014 progress together' },
+      { icon: 'shapes-outline', text: 'Characters that unlock AI perks' },
     ],
 
     hasAccount: 'Already have an account?',
@@ -214,6 +229,22 @@ function SlideIcon(props) {
               <Circle cx="28" cy="28" r="26" fill="rgba(0,0,0,0.3)" stroke={color + '50'} strokeWidth="1.5" />
             </Svg>
             <Ionicons name="pulse-outline" size={28} color={color} style={{ position: 'absolute' }} />
+          </View>
+        )}
+        {type === 'alixen' && (
+          <View style={{ width: 52, height: 52, alignItems: 'center', justifyContent: 'center' }}>
+            <Svg width={52} height={52} viewBox="0 0 56 56">
+              <Circle cx="28" cy="28" r="26" fill="rgba(0,217,132,0.1)" stroke={color + '50'} strokeWidth="1.5" />
+            </Svg>
+            <Text style={{ position: 'absolute', fontSize: 24 }}>{'\uD83E\uDD16'}</Text>
+          </View>
+        )}
+        {type === 'ecosystem' && (
+          <View style={{ width: 52, height: 52, alignItems: 'center', justifyContent: 'center' }}>
+            <Svg width={52} height={52} viewBox="0 0 56 56">
+              <Circle cx="28" cy="28" r="26" fill="rgba(0,0,0,0.3)" stroke={color + '50'} strokeWidth="1.5" />
+            </Svg>
+            <Ionicons name="globe-outline" size={28} color={color} style={{ position: 'absolute' }} />
           </View>
         )}
       </Animated.View>
@@ -365,43 +396,14 @@ function PokemonCard(props) {
   var index = props.index;
   var isTopCard = props.isTopCard;
   var currentIndex = props.currentIndex;
-  var onSwipe = props.onSwipe;
   var lang = props.lang;
-
-  var translateX = useSharedValue(0);
-  var translateY = useSharedValue(0);
-  var rotateZ = useSharedValue(0);
-
-  var gesture = Gesture.Pan()
-    .enabled(isTopCard)
-    .onUpdate(function (event) {
-      translateX.value = event.translationX;
-      translateY.value = event.translationY * 0.3;
-      rotateZ.value = interpolate(
-        event.translationX, [-SCREEN.width, 0, SCREEN.width], [-12, 0, 12],
-        Extrapolation.CLAMP
-      );
-    })
-    .onEnd(function (event) {
-      if (Math.abs(event.translationX) > SWIPE_THRESHOLD) {
-        var dir = event.translationX > 0 ? 1 : -1;
-        translateX.value = withTiming(dir * SCREEN.width * 1.5, { duration: 300 });
-        rotateZ.value = withTiming(dir * 20, { duration: 300 });
-        runOnJS(onSwipe)(dir);
-      } else {
-        translateX.value = withSpring(0, { damping: 15, stiffness: 150 });
-        translateY.value = withSpring(0, { damping: 15, stiffness: 150 });
-        rotateZ.value = withSpring(0, { damping: 15, stiffness: 150 });
-      }
-    });
+  var animateX = props.animateX;
 
   var animStyle = useAnimatedStyle(function () {
     if (!isTopCard) return {};
     return {
       transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
-        { rotateZ: rotateZ.value + 'deg' },
+        { translateX: animateX ? animateX.value : 0 },
       ],
     };
   });
@@ -412,7 +414,6 @@ function PokemonCard(props) {
   } : {};
 
   return (
-    <GestureDetector gesture={gesture}>
       <Animated.View style={[
         { position: 'absolute', alignSelf: 'center', zIndex: isTopCard ? 10 : 5 },
         isTopCard ? animStyle : behindStyle,
@@ -488,11 +489,6 @@ function PokemonCard(props) {
                 </View>
 
                 <View>
-                  {isTopCard && currentIndex === 0 ? (
-                    <View style={{ alignItems: 'center', marginBottom: 14 }}>
-                      <SwipeHint lang={lang} />
-                    </View>
-                  ) : null}
                   <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
                     {slide.badges.map(function (badge, i) {
                       return (
@@ -512,7 +508,6 @@ function PokemonCard(props) {
           </View>
         </View>
       </Animated.View>
-    </GestureDetector>
   );
 }
 
@@ -587,23 +582,58 @@ export default function App({ navigation }) {
   var slides = [
     {
       key: 'scan', title: t.slide1Title, subtitle: t.slide1Subtitle,
-      lines: t.slide1Lines, badges: ['AI-POWERED', 'REAL-TIME', '524 PLATS'], color: COLORS.emerald,
+      lines: t.slide1Lines, badges: ['AI-POWERED', 'REAL-TIME', '524+ PLATS'], color: COLORS.emerald,
     },
     {
-      key: 'nutrition', title: t.slide2Title, subtitle: t.slide2Subtitle,
-      lines: t.slide2Lines, badges: ['USDA', 'FAO', 'ANSES'], color: COLORS.emerald,
+      key: 'dashboard', title: t.slide2Title, subtitle: t.slide2Subtitle,
+      lines: t.slide2Lines, badges: ['SCORE 0-100', 'HYDRATATION', 'CERTIFI\u00c9'], color: COLORS.emerald,
     },
     {
-      key: 'dashboard', title: t.slide3Title, subtitle: t.slide3Subtitle,
-      lines: t.slide3Lines, badges: ['SCORE 0-100', 'BHI', 'AI COACH'], color: COLORS.emerald,
+      key: 'alixen', title: t.slide3Title, subtitle: t.slide3Subtitle,
+      lines: t.slide3Lines, badges: ['COACH IA', 'RECETTES', 'MEDICAI'], color: COLORS.emerald,
+    },
+    {
+      key: 'ecosystem', title: t.slide4Title, subtitle: t.slide4Subtitle,
+      lines: t.slide4Lines, badges: ['LIXVERSE', 'D\u00c9FIS', 'COMMUNAUT\u00c9'], color: COLORS.emerald,
     },
   ];
 
-  var handleSwipe = useCallback(function (direction) {
-    setTimeout(function () {
-      setCurrentIndex(function (prev) { return Math.min(prev + 1, slides.length); });
-    }, 200);
-  }, [slides.length]);
+  var cardAnimX = useSharedValue(0);
+  var isAnimating = useRef(false);
+
+  var finishNext = useCallback(function () {
+    setCurrentIndex(function (prev) { return prev + 1; });
+    cardAnimX.value = 0;
+    isAnimating.current = false;
+  }, []);
+
+  var finishPrev = useCallback(function () {
+    setCurrentIndex(function (prev) { return prev - 1; });
+    cardAnimX.value = 0;
+    isAnimating.current = false;
+  }, []);
+
+  var goNext = useCallback(function () {
+    if (isAnimating.current) return;
+    if (currentIndex >= slides.length - 1) return;
+    isAnimating.current = true;
+    cardAnimX.value = withSpring(-SCREEN.width * 1.5, { damping: 15, stiffness: 150 }, function (finished) {
+      if (finished) {
+        runOnJS(finishNext)();
+      }
+    });
+  }, [currentIndex, slides.length, finishNext]);
+
+  var goPrev = useCallback(function () {
+    if (isAnimating.current) return;
+    if (currentIndex <= 0) return;
+    isAnimating.current = true;
+    cardAnimX.value = withSpring(SCREEN.width * 1.5, { damping: 15, stiffness: 150 }, function (finished) {
+      if (finished) {
+        runOnJS(finishPrev)();
+      }
+    });
+  }, [currentIndex, finishPrev]);
 
   var handleJoin = function () {
     navigation.navigate('Register');
@@ -612,8 +642,6 @@ export default function App({ navigation }) {
   var handleSignIn = function () {
     navigation.navigate('Login');
   };
-
-  var allSwiped = currentIndex >= slides.length;
 
   return (
     <SafeAreaProvider>
@@ -715,9 +743,20 @@ export default function App({ navigation }) {
               </Text>
             </View>
 
-            {/* ZONE CARTES */}
+            {/* ZONE CARTES + FLÈCHES */}
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              {!allSwiped ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                {/* Flèche gauche */}
+                <View style={{ width: wp(22), alignItems: 'center', justifyContent: 'center' }}>
+                  {currentIndex > 0 ? (
+                    <TouchableOpacity onPress={goPrev} activeOpacity={0.7}
+                      style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="chevron-back" size={fp(22)} color={COLORS.emerald} />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+
+                {/* Carte */}
                 <View style={{ width: CARD_W + 8, height: CARD_H + 8 }}>
                   {slides.map(function (slide, index) {
                     if (index < currentIndex) return null;
@@ -729,90 +768,23 @@ export default function App({ navigation }) {
                         index={index}
                         isTopCard={index === currentIndex}
                         currentIndex={currentIndex}
-                        onSwipe={handleSwipe}
                         lang={lang}
+                        animateX={index === currentIndex ? cardAnimX : null}
                       />
                     );
                   })}
                 </View>
-              ) : (
-                <Animated.View entering={FadeInDown.duration(600).springify()}>
-                  {/* CARTE FINALE — Cadre doré + Dashboard Preview */}
-                  <View style={{
-                    width: CARD_W + 8, height: CARD_H + 8, borderRadius: 24, padding: 4,
-                    borderWidth: 2, borderTopColor: COLORS.gold, borderLeftColor: '#C5A028',
-                    borderRightColor: '#8B7516', borderBottomColor: '#6B5A10',
-                    backgroundColor: '#5A4C12',
-                    shadowColor: COLORS.gold, shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.2, shadowRadius: 16, elevation: 14, alignSelf: 'center',
-                  }}>
-                    <View style={{
-                      flex: 1, borderRadius: 20, borderWidth: 1.5,
-                      borderColor: 'rgba(212, 175, 55, 0.4)', overflow: 'hidden',
-                    }}>
-                      <View style={{ flex: 1, backgroundColor: COLORS.surface, borderRadius: 18 }}>
-                        <CircuitPattern width={CARD_W} height={CARD_H} color="rgba(212, 175, 55, 0.05)" />
-                        <View style={{
-                          position: 'absolute', top: 0, left: 0, right: 0, height: 120,
-                          borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden',
-                        }}>
-                          <LinearGradient
-                            colors={['rgba(212, 175, 55, 0.08)', 'rgba(212, 175, 55, 0.03)', 'rgba(212, 175, 55, 0)']}
-                            start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
-                            style={{ flex: 1 }}
-                          />
-                        </View>
-                        <View style={{
-                          position: 'absolute', top: 0, left: 16, right: 16,
-                          height: 1, backgroundColor: COLORS.gold, opacity: 0.25,
-                        }} />
 
-                        {/* Points dorés aux coins */}
-                        <View style={{ position: 'absolute', top: 8, left: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.4)' }} />
-                        <View style={{ position: 'absolute', top: 8, right: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.4)' }} />
-                        <View style={{ position: 'absolute', bottom: 8, left: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.3)' }} />
-                        <View style={{ position: 'absolute', bottom: 8, right: 8, width: 3, height: 3, borderRadius: 1.5, backgroundColor: 'rgba(212,175,55,0.3)' }} />
-
-                        <View style={{
-                          flex: 1, paddingVertical: 16, paddingHorizontal: 24,
-                          alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          {/* Titre */}
-                          <Text style={{
-                            color: '#EAEEF3', fontSize: 18, fontWeight: '700',
-                            textAlign: 'center', marginBottom: 4,
-                          }}>{t.readyTitle}</Text>
-
-                          <Text style={{
-                            color: '#8892A0', fontSize: 10, fontWeight: '500',
-                            textAlign: 'center', letterSpacing: 1, marginBottom: 14,
-                          }}>{t.readySubtitle}</Text>
-
-                          {/* === MINI DASHBOARD PREVIEW === */}
-                          <MiniDashboardPreview lang={lang} />
-
-                          {/* Badge Conçu avec amour */}
-                          <View style={{
-                            flexDirection: 'row', alignItems: 'center', gap: 5,
-                            backgroundColor: 'rgba(0,217,132,0.06)',
-                            borderRadius: 8, paddingHorizontal: 12, paddingVertical: 5,
-                            borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)',
-                            marginBottom: 14,
-                          }}>
-                            <Text style={{
-                              color: '#8892A0', fontSize: 9, fontWeight: '600', letterSpacing: 1.5,
-                            }}>{lang === 'fr' ? 'Con\u00e7u avec' : 'Made with'}</Text>
-                            <Text style={{ fontSize: 11 }}>{'\u2764\uFE0F'}</Text>
-                          </View>
-
-                          {/* Bouton doré shimmer */}
-                          <ShimmerButton onPress={handleJoin} text={t.joinBtn} />
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                </Animated.View>
-              )}
+                {/* Flèche droite */}
+                <View style={{ width: wp(22), alignItems: 'center', justifyContent: 'center' }}>
+                  {currentIndex < slides.length - 1 ? (
+                    <TouchableOpacity onPress={goNext} activeOpacity={0.7}
+                      style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="chevron-forward" size={fp(22)} color={COLORS.emerald} />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              </View>
             </View>
 
             {/* ZONE BASSE */}
@@ -833,22 +805,32 @@ export default function App({ navigation }) {
                 })}
               </View>
 
-              {/* Se connecter — visible après swipes */}
-              {allSwiped ? (
-                <Animated.View entering={FadeInDown.delay(200).duration(400).springify()}>
-                  <TouchableOpacity onPress={handleSignIn} activeOpacity={0.7}
-                    style={{
-                      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-                      paddingVertical: 10, paddingHorizontal: 20,
-                      borderRadius: 10, borderWidth: 1,
-                      borderColor: 'rgba(62,72,85,0.4)',
-                      backgroundColor: 'rgba(27,31,38,0.4)', gap: 6,
-                    }}>
-                    <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '500' }}>{t.hasAccount}</Text>
-                    <Text style={{ color: COLORS.emerald, fontSize: 13, fontWeight: '700' }}>{t.signIn}</Text>
-                  </TouchableOpacity>
-                </Animated.View>
+              {/* Bouton Rejoindre — uniquement slide 4 (index 3) */}
+              {currentIndex === slides.length - 1 ? (
+                <TouchableOpacity onPress={handleJoin} activeOpacity={0.7}
+                  style={{
+                    backgroundColor: COLORS.emerald, borderRadius: 14,
+                    paddingVertical: 16, alignItems: 'center', marginBottom: 10,
+                    marginHorizontal: 20,
+                    shadowColor: COLORS.emerald, shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.25, shadowRadius: 10, elevation: 6,
+                  }}>
+                  <Text style={{ color: '#1A1D22', fontSize: fp(16), fontWeight: '800', letterSpacing: 1.5 }}>{t.joinBtn}</Text>
+                </TouchableOpacity>
               ) : null}
+
+              {/* Se connecter — visible sur TOUTES les slides */}
+              <TouchableOpacity onPress={handleSignIn} activeOpacity={0.7}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                  paddingVertical: 10, paddingHorizontal: 20,
+                  borderRadius: 10, borderWidth: 1,
+                  borderColor: 'rgba(62,72,85,0.4)',
+                  backgroundColor: 'rgba(27,31,38,0.4)', gap: 6,
+                }}>
+                <Text style={{ color: '#8892A0', fontSize: 13, fontWeight: '500' }}>{t.hasAccount}</Text>
+                <Text style={{ color: COLORS.emerald, fontSize: 13, fontWeight: '700' }}>{t.signIn}</Text>
+              </TouchableOpacity>
             </View>
 
           </View>
