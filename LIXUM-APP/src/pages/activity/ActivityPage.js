@@ -99,7 +99,6 @@ export default function ActivityPage({ navigation }) {
   const [totalEaten, setTotalEaten] = useState(0);
   const [totalBurnedActivities, setTotalBurnedActivities] = useState(0);
   const [userMood, setUserMood] = useState(null);
-  const [recommendation, setRecommendation] = useState(null);
   const [weeklyMinutes, setWeeklyMinutes] = useState(0);
   const [lixRewardedToday, setLixRewardedToday] = useState(false);
 
@@ -124,54 +123,6 @@ export default function ActivityPage({ navigation }) {
   }, []);
 
   // === FONCTIONS DONNÉES ===
-
-  const generateRecommendation = (toBurn, mood, weight) => {
-    if (toBurn <= 0) {
-      setRecommendation({
-        type: 'maintain', emoji: '✅',
-        title: t.inObjective,
-        subtitle: t.walkKeeps,
-        activity: t.walk, duration: '15 min', distance: '1 km', color: '#00D984',
-      });
-      return;
-    }
-
-    const walkHours = toBurn / (ACTIVITY_DATA.marche.met * weight);
-    const walkMin = Math.ceil(walkHours * 60);
-    const walkKm = (walkMin * 5 / 60).toFixed(1);
-    const runHours = toBurn / (ACTIVITY_DATA.course.met * weight);
-    const runMin = Math.ceil(runHours * 60);
-    const runKm = (runMin * 8 / 60).toFixed(1);
-
-    let preferActivity = 'both';
-    if (mood) {
-      if (mood === 'sad' || mood === 'chill') preferActivity = 'walk';
-      if (mood === 'happy' || mood === 'excited') preferActivity = 'run';
-    }
-
-    if (preferActivity === 'walk' || (preferActivity === 'both' && toBurn < 150)) {
-      setRecommendation({
-        type: 'burn', emoji: '🚶',
-        title: toBurn + ' ' + t.toCompensate,
-        subtitle: t.walk + ' ' + walkMin + ' min (\u2248' + walkKm + ' km)',
-        activity: t.walk, duration: walkMin + ' min', distance: walkKm + ' km', color: '#FF8C42',
-      });
-    } else if (preferActivity === 'run') {
-      setRecommendation({
-        type: 'burn', emoji: '🏃',
-        title: toBurn + ' ' + t.toCompensate,
-        subtitle: t.run + ' ' + runMin + ' min (\u2248' + runKm + ' km)',
-        activity: t.run, duration: runMin + ' min', distance: runKm + ' km', color: '#FF8C42',
-      });
-    } else {
-      setRecommendation({
-        type: 'burn', emoji: '🔥',
-        title: toBurn + ' ' + t.toCompensate,
-        subtitle: t.walk + ' ' + walkMin + ' min ou ' + t.run + ' ' + runMin + ' min',
-        activity: t.walk + ' / ' + t.run, duration: walkMin + ' / ' + runMin + ' min', distance: walkKm + ' / ' + runKm + ' km', color: '#FF8C42',
-      });
-    }
-  };
 
   const fetchSmartData = async () => {
     if (!userId) return;
@@ -205,7 +156,6 @@ export default function ActivityPage({ navigation }) {
       const balance = eaten - burned - target;
       const toBurn = balance > 0 ? balance : 0;
       setCaloriesToBurn(toBurn);
-      generateRecommendation(toBurn, mood, weight);
     } catch (e) {
       console.warn('Smart data fetch error:', e);
     }
@@ -1049,60 +999,6 @@ export default function ActivityPage({ navigation }) {
               </LinearGradient>
             </View>
           </View>
-
-          {/* Recommendation — grouped MetalCard */}
-          {recommendation && (
-            <View style={{ marginHorizontal: wp(16), marginBottom: 16 }}>
-              <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B' }}>
-              <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{
-                borderRadius: 14, padding: wp(14),
-                borderLeftWidth: 3,
-                borderLeftColor: recommendation.color,
-              }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-                  <Text style={{ fontSize: fp(14), fontWeight: '900', color: '#FFFFFF', letterSpacing: 1 }}>{t.recommendation}</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
-                  <View style={{ marginRight: wp(8) }}>
-                    <SportIcon type={recommendation.type === 'maintain' ? 'marche' : 'course'} size={wp(24)} color={recommendation.color} />
-                  </View>
-                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: recommendation.color, flex: 1 }}>{recommendation.title}</Text>
-                </View>
-                <Text style={{ fontSize: fp(11), color: '#D1D5DB', lineHeight: fp(16), marginBottom: wp(8) }}>
-                  {recommendation.subtitle}
-                </Text>
-                {recommendation.type === 'burn' && (
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#252A30', borderRadius: wp(10), padding: wp(10) }}>
-                    <View style={{ alignItems: 'center' }}>
-                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{t.activityLabel}</Text>
-                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFFFFF' }}>{recommendation.activity}</Text>
-                    </View>
-                    <View style={{ alignItems: 'center' }}>
-                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{t.durationSmall}</Text>
-                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FF8C42' }}>{recommendation.duration}</Text>
-                    </View>
-                    <View style={{ alignItems: 'center' }}>
-                      <Text style={{ fontSize: fp(8), color: '#6B7280' }}>{t.distanceSmall}</Text>
-                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#4DA6FF' }}>{recommendation.distance}</Text>
-                    </View>
-                  </View>
-                )}
-                <TouchableOpacity
-                  onPress={function() {
-                    if (recommendation.activity === t.walk || recommendation.activity === t.walk + ' / ' + t.run) {
-                      var targetDist = parseFloat(recommendation.distance) * 1000;
-                      var targetOffset = (targetDist / WALK_MAX_DIST) * (WALK_SCENE_W - walkCanvasW);
-                      setWalkScrollOffset(Math.min(targetOffset, WALK_SCENE_W - walkCanvasW));
-                    }
-                  }}
-                  style={{ marginTop: wp(10), paddingVertical: wp(10), borderRadius: wp(10), backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#00D984', alignItems: 'center' }}
-                >
-                  <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700' }}>{t.startNow}</Text>
-                </TouchableOpacity>
-              </LinearGradient>
-              </View>
-            </View>
-          )}
 
           {/* Lix reward badge */}
           {lixRewardedToday ? (

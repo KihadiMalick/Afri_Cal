@@ -151,9 +151,9 @@ const HydrationModal = ({
     }
   };
 
-  const palierLabels = gender === 'homme'
-    ? ['0.6L', '1.25L', '1.9L', '2.5L']
-    : ['0.5L', '1L', '1.5L', '2L'];
+  const paliers = gender === 'homme'
+    ? [{ label: '0.6L', ml: 600 }, { label: '1.25L', ml: 1250 }, { label: '1.9L', ml: 1900 }, { label: '2.5L', ml: 2500 }]
+    : [{ label: '0.5L', ml: 500 }, { label: '1L', ml: 1000 }, { label: '1.5L', ml: 1500 }, { label: '2L', ml: 2000 }];
 
   const quantities = [
     { ml: 50, icon: '🥛', label: '50ml' },
@@ -183,13 +183,12 @@ const HydrationModal = ({
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <SilhouetteFill fillPercent={percent} previewPercent={Math.min(Math.round((tempMl / goalMl) * 100), 100 - percent)} height={260} gender={gender} showBubbles transitionToValidated={isTransitioning} />
                 <View style={{ marginLeft: 20, height: 260, justifyContent: 'space-between', paddingVertical: 12 }}>
-                  {palierLabels.slice().reverse().map((label, i) => {
-                    const palierPct = (4 - i) * 25;
-                    const reached = percent >= palierPct;
+                  {paliers.slice().reverse().map(function(palier, i) {
+                    var reached = currentMl >= palier.ml;
                     return (
                       <View key={i} style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <View style={{ width: 12, height: 1, backgroundColor: reached ? '#00D984' : '#8A8F98' }} />
-                        <Text style={{ color: reached ? '#00D984' : '#8A8F98', fontSize: 11, marginLeft: 6, fontWeight: reached ? '700' : '400' }}>{label}</Text>
+                        <Text style={{ color: reached ? '#00D984' : '#8A8F98', fontSize: 11, marginLeft: 6, fontWeight: reached ? '700' : '400' }}>{palier.label}</Text>
                       </View>
                     );
                   })}
