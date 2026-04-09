@@ -70,6 +70,8 @@ export default function RecettesScreen({
   var _alixenFreeUsedToday = useState(false); var alixenFreeUsedToday = _alixenFreeUsedToday[0]; var setAlixenFreeUsedToday = _alixenFreeUsedToday[1];
   var _alixenHasOwlPass = useState(false); var alixenHasOwlPass = _alixenHasOwlPass[0]; var setAlixenHasOwlPass = _alixenHasOwlPass[1];
   var _alixenMealSlot = useState(null); var alixenMealSlot = _alixenMealSlot[0]; var setAlixenMealSlot = _alixenMealSlot[1];
+  var _alixenAltCategories = useState([]); var alixenAltCategories = _alixenAltCategories[0]; var setAlixenAltCategories = _alixenAltCategories[1];
+  var _alixenGlobalComment = useState(null); var alixenGlobalComment = _alixenGlobalComment[0]; var setAlixenGlobalComment = _alixenGlobalComment[1];
 
   // === LOADING ANIMATION ALIXEN ===
   var _loadingPhase = useState(0); var loadingPhase = _loadingPhase[0]; var setLoadingPhase = _loadingPhase[1];
@@ -233,6 +235,8 @@ export default function RecettesScreen({
       setAlixenMealSlot(null);
       setAlixenMyIngredients([]);
       setAlixenAdvice(null);
+      setAlixenAltCategories([]);
+      setAlixenGlobalComment(null);
       if (userId) {
         loadAlixenContext();
       }
@@ -669,6 +673,8 @@ export default function RecettesScreen({
 
       if (data.proposals && Array.isArray(data.proposals) && data.proposals.length > 0) {
         setAlixenProposals(data.proposals);
+        setAlixenAltCategories(Array.isArray(data.alt_categories) ? data.alt_categories : []);
+        setAlixenGlobalComment(data.global_comment || null);
         setAlixenLoading(false);
         if (ctx.timeOfDay === 'night' && ctx.remaining > 800) {
           setAlixenAdvice(
@@ -686,6 +692,8 @@ export default function RecettesScreen({
 
         if (proposals.length > 0) {
           setAlixenProposals(proposals);
+          setAlixenAltCategories(Array.isArray(parsed.alt_categories) ? parsed.alt_categories : []);
+          setAlixenGlobalComment(parsed.global_comment || null);
           if (ctx.timeOfDay === 'night' && ctx.remaining > 800) {
             setAlixenAdvice(
               ctx.userName + ', il te reste ' + Math.round(ctx.remaining) + ' kcal mais il est ' + ctx.hour + 'h. ' +
@@ -1572,13 +1580,31 @@ export default function RecettesScreen({
 
                   {!alixenLoading && alixenProposals.length > 0 && (
                     <View>
-                      <Text style={{
-                        color: '#AAA', fontSize: fp(11), fontWeight: '700',
-                        letterSpacing: 2, marginBottom: wp(12),
-                        textTransform: 'uppercase',
-                      }}>
-                        ALIXEN TE PROPOSE 3 OPTIONS
-                      </Text>
+                      {/* Global comment ALIXEN (optionnel) */}
+                      {alixenGlobalComment ? (
+                        <View style={{
+                          backgroundColor: '#2A303B', borderRadius: 14,
+                          borderWidth: 1, borderColor: '#3A3F46',
+                          padding: wp(12), marginBottom: wp(12),
+                          flexDirection: 'row',
+                        }}>
+                          <Text style={{ fontSize: fp(14), marginRight: wp(8), marginTop: wp(1) }}>🤖</Text>
+                          <Text style={{
+                            color: '#CCC', fontSize: fp(12), flex: 1,
+                            lineHeight: fp(18),
+                          }}>
+                            {alixenGlobalComment}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text style={{
+                          color: '#AAA', fontSize: fp(11), fontWeight: '700',
+                          letterSpacing: 2, marginBottom: wp(12),
+                          textTransform: 'uppercase',
+                        }}>
+                          ALIXEN TE PROPOSE 3 OPTIONS
+                        </Text>
+                      )}
 
                       {alixenProposals.map(function(proposal, idx) {
                         var typeEmojis = ['🥗', '🍲', '🥩'];
@@ -1666,7 +1692,37 @@ export default function RecettesScreen({
                               </Text>
                             </View>
 
-                            {/* Ligne 4 — Bouton contour emerald */}
+                            {/* Ligne 4 — Commentaire ALIXEN */}
+                            {proposal.comment ? (
+                              <View style={{
+                                backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: 10,
+                                padding: wp(10), marginBottom: wp(8),
+                                flexDirection: 'row',
+                              }}>
+                                <Text style={{ fontSize: fp(12), marginRight: wp(6), marginTop: wp(1) }}>💬</Text>
+                                <Text style={{
+                                  color: '#CCC', fontSize: fp(11), fontStyle: 'italic',
+                                  flex: 1, lineHeight: fp(16),
+                                }}>
+                                  {proposal.comment}
+                                </Text>
+                              </View>
+                            ) : null}
+
+                            {/* Ligne 5 — Hydratation */}
+                            {proposal.water_ml ? (
+                              <View style={{
+                                flexDirection: 'row', alignItems: 'center',
+                                marginBottom: wp(10),
+                              }}>
+                                <Text style={{ fontSize: fp(11), marginRight: wp(4) }}>💧</Text>
+                                <Text style={{ color: '#00E5FF', fontSize: fp(10) }}>
+                                  Boire {proposal.water_ml}ml d'eau{proposal.water_tip ? ' — ' + proposal.water_tip : ''}
+                                </Text>
+                              </View>
+                            ) : null}
+
+                            {/* Ligne 6 — Bouton contour emerald */}
                             <View style={{
                               paddingVertical: wp(8), borderRadius: 10,
                               backgroundColor: 'transparent',
@@ -1680,6 +1736,44 @@ export default function RecettesScreen({
                           </Pressable>
                         );
                       })}
+
+                      {/* Catégories alternatives */}
+                      {alixenAltCategories.length > 0 && (
+                        <View style={{ marginTop: wp(4), marginBottom: wp(8) }}>
+                          <Text style={{ color: '#888', fontSize: fp(11), marginBottom: wp(8) }}>
+                            Pas convaincu ? Essaie plutôt :
+                          </Text>
+                          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(8) }}>
+                            {alixenAltCategories.map(function(altCat, altIdx) {
+                              var altLabel = altCat.label || altCat;
+                              return (
+                                <Pressable
+                                  key={altIdx}
+                                  onPress={function() {
+                                    setAlixenLoading(true);
+                                    setAlixenProposals([]);
+                                    setAlixenAltCategories([]);
+                                    setAlixenGlobalComment(null);
+                                    generateAlixenProposals(altLabel);
+                                  }}
+                                  style={function(state) {
+                                    return {
+                                      backgroundColor: state.pressed ? '#333A44' : '#2A303B',
+                                      borderRadius: 20,
+                                      borderWidth: 1,
+                                      borderColor: state.pressed ? 'rgba(0,217,132,0.3)' : '#3A3F46',
+                                      paddingHorizontal: wp(16),
+                                      paddingVertical: wp(8),
+                                    };
+                                  }}
+                                >
+                                  <Text style={{ color: '#CCC', fontSize: fp(11) }}>{altLabel}</Text>
+                                </Pressable>
+                              );
+                            })}
+                          </ScrollView>
+                        </View>
+                      )}
 
                       {/* Bouton "Autres suggestions" — MetalCard simple */}
                       <Pressable
