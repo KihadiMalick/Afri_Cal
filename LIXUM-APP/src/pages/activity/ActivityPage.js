@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, Pressable, TouchableOpacity,
-  Animated, Platform, Image, Alert,
+  Animated, Platform, Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { G, Line, Circle, Path, Rect, Ellipse, Defs,
-  LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../config/supabase';
 import { useAuth } from '../../config/AuthContext';
@@ -20,12 +19,11 @@ import PageHeader from '../../components/shared/PageHeader';
 
 // Composants Activité
 import {
-  TreeIcon, BenchIcon, BirdsIcon, PondIcon,
   SportIcon, SportCard, SportModal,
-  WalkShoeAnimated, RunShoeAnimated,
 } from './activityComponents';
 import LiveTrackingScreen from './LiveTrackingScreen';
 import PostReportModal from './PostReportModal';
+import PulseTrack from './PulseTrack';
 
 // Constantes
 import {
@@ -109,18 +107,6 @@ export default function ActivityPage({ navigation }) {
   const [userNameAvatar, setUserNameAvatar] = useState('');
   // lixBalance and userEnergy from AuthContext
   var _weight = useState(70); var userWeight = _weight[0]; var setUserWeight = _weight[1];
-
-  // Shoe animation
-  const shoeAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(shoeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.timing(shoeAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
 
   // === FONCTIONS DONNÉES ===
 
@@ -616,52 +602,17 @@ export default function ActivityPage({ navigation }) {
               </View>
             </View>
 
-            {/* Canvas SVG */}
-            <View
-              style={{ position: 'relative', height: WALK_CANVAS_H, borderRadius: wp(10), overflow: 'hidden', backgroundColor: 'rgba(0,217,132,0.03)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.08)' }}
-              onLayout={(e) => setWalkCanvasW(e.nativeEvent.layout.width)}
-            >
-              <Svg width={walkCanvasW} height={WALK_CANVAS_H} viewBox={`${walkScrollOffset} 0 ${walkCanvasW} ${WALK_CANVAS_H}`}>
-                <Defs>
-                  <SvgLinearGradient id="wSkyGrad" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0%" stopColor="#87CEEB" stopOpacity={0.9} />
-                    <Stop offset="40%" stopColor="#B0E0FF" stopOpacity={0.7} />
-                    <Stop offset="100%" stopColor="#E8F5E9" stopOpacity={0.3} />
-                  </SvgLinearGradient>
-                  <SvgLinearGradient id="wGrassGrad" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0%" stopColor="#4CAF50" stopOpacity={0.4} />
-                    <Stop offset="100%" stopColor="#2E7D32" stopOpacity={0.6} />
-                  </SvgLinearGradient>
-                  <SvgLinearGradient id="wPathGrad" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0%" stopColor="#D7CCC8" stopOpacity={0.3} />
-                    <Stop offset="100%" stopColor="#A1887F" stopOpacity={0.2} />
-                  </SvgLinearGradient>
-                </Defs>
-                {(function() {
-                  var scW = WALK_SCENE_W;
-                  var scH = WALK_CANVAS_H;
-                  var groundY = scH * 0.60;
-                  var pathY = scH * 0.58;
-                  return (
-                    <G>
-                      <Rect x={0} y={0} width={scW} height={groundY} fill="url(#wSkyGrad)" />
-                      <Rect x={0} y={groundY} width={scW} height={scH - groundY} fill="url(#wGrassGrad)" />
-                      <Path d={`M0 ${pathY + 5} Q500 ${pathY - 2} 1000 ${pathY + 3} Q1500 ${pathY - 1} ${scW} ${pathY + 5}`}
-                        fill="none" stroke="url(#wPathGrad)" strokeWidth={18} strokeLinecap="round" />
-                      <TreeIcon x={440} y={pathY - 15} passed={walkScrollOffset > 300} />
-                      <BenchIcon x={840} y={pathY} />
-                      <BirdsIcon x={1300} y={pathY - 20} passed={walkProg > 0.65} />
-                      <PondIcon x={1850} y={pathY - 5} />
-                    </G>
-                  );
-                })()}
-              </Svg>
-
-              <LinearGradient colors={['#252A30', 'rgba(37,42,48,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 30 }} />
-              <LinearGradient colors={['rgba(37,42,48,0)', '#252A30']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 30 }} />
-            </View>
+            {/* PulseTrack Marche */}
+            <PulseTrack
+              color="#00E5FF"
+              speed="slow"
+              isActive={walkGlow}
+              distance={walkDistStr}
+              calories={walkCal}
+              waterLost={walkWater}
+              duration={walkDurStr}
+              hasParticles={false}
+            />
 
             {/* Controls */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: wp(4), paddingVertical: wp(4), marginTop: wp(4) }}>
@@ -768,81 +719,17 @@ export default function ActivityPage({ navigation }) {
               </View>
             </View>
 
-            {/* Canvas SVG savane */}
-            <View
-              style={{ position: 'relative', height: RUN_CANVAS_H, borderRadius: wp(10), overflow: 'hidden', backgroundColor: '#D4632A', borderWidth: 1, borderColor: 'rgba(232,148,74,0.3)' }}
-              onLayout={(e) => setRunCanvasW(e.nativeEvent.layout.width)}
-            >
-              <Svg width={runCanvasW} height={RUN_CANVAS_H} viewBox={`0 0 ${runCanvasW} ${RUN_CANVAS_H}`} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-                {(function() {
-                  var cW = runCanvasW;
-                  var cH = RUN_CANVAS_H;
-                  var groundY = cH * 0.45;
-                  var sOff = runScrollOffset;
-                  var trailY = groundY + cH * 0.15;
-                  var trailH = cH * 0.2;
-                  var sunX = cW * 0.8 - sOff * 0.05;
-
-                  var trees = [
-                    { x: 100, type: 'acacia' }, { x: 400, type: 'baobab' },
-                    { x: 750, type: 'acacia' }, { x: 1100, type: 'baobab' },
-                    { x: 1500, type: 'acacia' }, { x: 2000, type: 'baobab' },
-                    { x: 2600, type: 'acacia' }, { x: 3200, type: 'baobab' },
-                  ];
-
-                  return (
-                    <G>
-                      {/* Ciel coucher de soleil */}
-                      <Rect x={0} y={0} width={cW} height={groundY} fill="#D4632A" />
-                      <Rect x={0} y={cH * 0.3} width={cW} height={cH * 0.15} fill="#E8944A" opacity={0.7} />
-
-                      {/* Soleil */}
-                      <Circle cx={sunX} cy={cH * 0.38} r={22} fill="#F5C040" opacity={0.9} />
-                      <Circle cx={sunX} cy={cH * 0.38} r={14} fill="#FADE6A" opacity={0.6} />
-
-                      {/* Silhouettes arbres */}
-                      {trees.map(function(tree, i) {
-                        var tx = tree.x - sOff * 0.3;
-                        if (tx < -40 || tx > cW + 40) return null;
-                        if (tree.type === 'acacia') {
-                          return (
-                            <G key={'t' + i}>
-                              <Rect x={tx - 1} y={groundY - 30} width={3} height={30} fill="#1A0F05" opacity={0.8} />
-                              <Ellipse cx={tx} cy={groundY - 32} rx={22} ry={8} fill="#1A0F05" opacity={0.8} />
-                            </G>
-                          );
-                        }
-                        return (
-                          <G key={'t' + i}>
-                            <Path d={`M${tx - 5} ${groundY} L${tx - 3} ${groundY - 25} L${tx + 3} ${groundY - 25} L${tx + 5} ${groundY} Z`} fill="#1A0F05" opacity={0.8} />
-                            <Ellipse cx={tx} cy={groundY - 28} rx={15} ry={10} fill="#1A0F05" opacity={0.8} />
-                          </G>
-                        );
-                      })}
-
-                      {/* Sol savane + piste */}
-                      <Rect x={0} y={groundY} width={cW} height={cH * 0.55} fill="#5A3E1B" />
-                      <Rect x={0} y={trailY} width={cW} height={trailH} fill="#4A3418" />
-                    </G>
-                  );
-                })()}
-              </Svg>
-
-              {/* Brouillards */}
-              <LinearGradient colors={['#5A3E1B', 'rgba(90,62,27,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 30 }} />
-              <LinearGradient colors={['rgba(90,62,27,0)', '#5A3E1B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 30 }} />
-
-              {/* Poussière */}
-              {isRunning && (
-                <View style={{ position: 'absolute', left: '18%', bottom: 10, flexDirection: 'row' }}>
-                  {[0.35, 0.25, 0.15, 0.08].map(function(op, i) {
-                    return <View key={i} style={{ width: 4 + i * 3, height: 4 + i * 3, borderRadius: 10, backgroundColor: 'rgba(140, 110, 60, ' + op + ')', marginRight: 2 }} />;
-                  })}
-                </View>
-              )}
-            </View>
+            {/* PulseTrack Course */}
+            <PulseTrack
+              color="#FF8C42"
+              speed="fast"
+              isActive={runGlow}
+              distance={runDistStr}
+              calories={runCalories}
+              waterLost={runWater}
+              duration={runDurStr}
+              hasParticles={true}
+            />
 
             {/* Controls */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: wp(4), paddingVertical: wp(4), marginTop: wp(4) }}>
