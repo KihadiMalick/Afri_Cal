@@ -73,63 +73,85 @@ export default function RecettesScreen({
   var _alixenAltCategories = useState([]); var alixenAltCategories = _alixenAltCategories[0]; var setAlixenAltCategories = _alixenAltCategories[1];
   var _alixenGlobalComment = useState(null); var alixenGlobalComment = _alixenGlobalComment[0]; var setAlixenGlobalComment = _alixenGlobalComment[1];
 
-  // === LOADING ANIMATION ALIXEN ===
-  var _loadingPhase = useState(0); var loadingPhase = _loadingPhase[0]; var setLoadingPhase = _loadingPhase[1];
-  var loadingFade = useRef(new Animated.Value(1)).current;
-  var loadingProgress = useRef(new Animated.Value(0)).current;
-  var loadingPulse = useRef(new Animated.Value(1)).current;
-  var loadingPhaseTimer = useRef(null);
-  var loadingPulseLoop = useRef(null);
+  // === LOADING ANIMATION ALIXEN — 5 tubes ===
+  var TUBE_COUNT = 5;
+  var TUBE_LABELS = ['Ton Objectif', 'Ta Santé', 'Ingrédients', 'Préparation', 'Présentation'];
+  var TUBE_COLORS = ['#4DA6FF', 'rgba(255,255,255,0.7)', '#FFD93D', '#FF8C42', '#00D984'];
+  var TUBE_DURATION = 1500;
+
+  var _tubePhase = useState(0); var tubePhase = _tubePhase[0]; var setTubePhase = _tubePhase[1];
+  var tubeFills = useRef([
+    new Animated.Value(0), new Animated.Value(0), new Animated.Value(0),
+    new Animated.Value(0), new Animated.Value(0),
+  ]).current;
+  var tubePulse = useRef(new Animated.Value(0.7)).current;
+  var tubeGlow = useRef(new Animated.Value(0)).current;
+  var tubeBubbles = useRef([
+    new Animated.Value(0), new Animated.Value(0), new Animated.Value(0),
+  ]).current;
+  var tubeTimers = useRef([]);
+  var tubePulseLoop = useRef(null);
+  var tubeBubbleLoop = useRef(null);
 
   useEffect(function() {
     if (alixenLoading) {
-      setLoadingPhase(0);
-      loadingProgress.setValue(0);
-      loadingFade.setValue(1);
-      loadingPulse.setValue(1);
+      setTubePhase(0);
+      tubeFills.forEach(function(f) { f.setValue(0); });
+      tubeGlow.setValue(0);
 
-      // Pulse animation loop
-      loadingPulseLoop.current = Animated.loop(
+      // Pulse loop for active tube liquid
+      tubePulseLoop.current = Animated.loop(
         Animated.sequence([
-          Animated.timing(loadingPulse, { toValue: 1.12, duration: 600, useNativeDriver: true }),
-          Animated.timing(loadingPulse, { toValue: 1, duration: 600, useNativeDriver: true }),
+          Animated.timing(tubePulse, { toValue: 1, duration: 400, useNativeDriver: false }),
+          Animated.timing(tubePulse, { toValue: 0.7, duration: 400, useNativeDriver: false }),
         ])
       );
-      loadingPulseLoop.current.start();
+      tubePulseLoop.current.start();
 
-      // Phase 0→1 after 2s
-      loadingPhaseTimer.current = setTimeout(function() {
-        Animated.timing(loadingFade, { toValue: 0, duration: 200, useNativeDriver: true }).start(function() {
-          setLoadingPhase(1);
-          Animated.timing(loadingFade, { toValue: 1, duration: 400, useNativeDriver: true }).start();
-        });
-        Animated.timing(loadingProgress, { toValue: 0.33, duration: 2000, useNativeDriver: false }).start();
-      }, 100);
+      // Bubble loop
+      tubeBubbleLoop.current = Animated.loop(
+        Animated.stagger(300, tubeBubbles.map(function(b) {
+          return Animated.sequence([
+            Animated.timing(b, { toValue: 0, duration: 0, useNativeDriver: true }),
+            Animated.timing(b, { toValue: 1, duration: 800, useNativeDriver: true }),
+          ]);
+        }))
+      );
+      tubeBubbleLoop.current.start();
 
-      // Phase 1→2 after 2s+2s
-      var timer2 = setTimeout(function() {
-        Animated.timing(loadingFade, { toValue: 0, duration: 200, useNativeDriver: true }).start(function() {
-          setLoadingPhase(2);
-          Animated.timing(loadingFade, { toValue: 1, duration: 400, useNativeDriver: true }).start();
-        });
-        Animated.timing(loadingProgress, { toValue: 0.66, duration: 2000, useNativeDriver: false }).start();
-      }, 2100);
-
-      // Phase 2 progress to ~90%
-      var timer3 = setTimeout(function() {
-        Animated.timing(loadingProgress, { toValue: 0.90, duration: 4000, useNativeDriver: false }).start();
-      }, 4200);
+      // Sequential tube fills
+      var timers = [];
+      for (var i = 0; i < TUBE_COUNT; i++) {
+        (function(idx) {
+          var t = setTimeout(function() {
+            setTubePhase(idx);
+            Animated.timing(tubeFills[idx], {
+              toValue: 1, duration: TUBE_DURATION, useNativeDriver: false,
+            }).start(function() {
+              if (idx === TUBE_COUNT - 1) {
+                // Final glow
+                Animated.sequence([
+                  Animated.timing(tubeGlow, { toValue: 0.3, duration: 200, useNativeDriver: false }),
+                  Animated.timing(tubeGlow, { toValue: 0, duration: 200, useNativeDriver: false }),
+                ]).start();
+              }
+            });
+          }, idx * TUBE_DURATION);
+          timers.push(t);
+        })(i);
+      }
+      tubeTimers.current = timers;
 
       return function() {
-        clearTimeout(loadingPhaseTimer.current);
-        clearTimeout(timer2);
-        clearTimeout(timer3);
-        if (loadingPulseLoop.current) loadingPulseLoop.current.stop();
+        tubeTimers.current.forEach(function(t) { clearTimeout(t); });
+        if (tubePulseLoop.current) tubePulseLoop.current.stop();
+        if (tubeBubbleLoop.current) tubeBubbleLoop.current.stop();
       };
     } else {
-      // Loading finished — snap to 100%
-      Animated.timing(loadingProgress, { toValue: 1, duration: 300, useNativeDriver: false }).start();
-      if (loadingPulseLoop.current) loadingPulseLoop.current.stop();
+      // Loading done — fill all tubes instantly
+      tubeFills.forEach(function(f) { f.setValue(1); });
+      if (tubePulseLoop.current) tubePulseLoop.current.stop();
+      if (tubeBubbleLoop.current) tubeBubbleLoop.current.stop();
     }
   }, [alixenLoading]);
 
@@ -1226,22 +1248,20 @@ export default function RecettesScreen({
                             <Pressable
                               key={slot.key}
                               onPress={function() { setAlixenMealSlot(slot.key); }}
-                              style={function(state) {
-                                return {
-                                  width: '47%',
-                                  paddingVertical: wp(20),
-                                  borderRadius: 14,
-                                  backgroundColor: state.pressed ? 'rgba(0,217,132,0.08)' : '#2A303B',
-                                  borderWidth: 1,
-                                  borderColor: state.pressed ? 'rgba(0,217,132,0.3)' : '#3A3F46',
-                                  alignItems: 'center',
-                                };
-                              }}
+                              style={{ width: '47%' }}
                             >
-                              <Text style={{ fontSize: fp(28), marginBottom: wp(6) }}>{slot.emoji}</Text>
-                              <Text style={{
-                                color: '#EAEEF3', fontSize: fp(12), fontWeight: '700',
-                              }}>{slot.label}</Text>
+                              <LinearGradient
+                                colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                                style={{
+                                  borderRadius: 14, paddingVertical: wp(20), alignItems: 'center',
+                                  borderWidth: 1.5, borderColor: '#4A4F55',
+                                }}
+                              >
+                                <Text style={{ fontSize: fp(28), marginBottom: wp(6) }}>{slot.emoji}</Text>
+                                <Text style={{
+                                  color: '#EAEEF3', fontSize: fp(12), fontWeight: '700',
+                                }}>{slot.label}</Text>
+                              </LinearGradient>
                             </Pressable>
                           );
                         })}
@@ -1471,110 +1491,85 @@ export default function RecettesScreen({
                     <View style={{
                       backgroundColor: '#2A303B', borderRadius: 16,
                       borderWidth: 1, borderColor: '#3A3F46',
-                      padding: wp(24), alignItems: 'center',
+                      padding: wp(20), alignItems: 'center',
                     }}>
-                      {/* Phase icon + text with fade */}
-                      <Animated.View style={{ opacity: loadingFade, alignItems: 'center' }}>
+                      {/* Glow overlay */}
+                      <Animated.View style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        borderRadius: 16, backgroundColor: 'rgba(0,217,132,0.1)',
+                        opacity: tubeGlow,
+                      }} />
 
-                        {/* Phase 0 — Profil */}
-                        {loadingPhase === 0 && (
-                          <View style={{ alignItems: 'center' }}>
-                            <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
-                              <View style={{
-                                width: wp(48), height: wp(48), borderRadius: wp(24),
-                                backgroundColor: 'rgba(0,217,132,0.1)',
-                                borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.25)',
-                                justifyContent: 'center', alignItems: 'center',
-                              }}>
-                                <Ionicons name="person-outline" size={fp(22)} color="#00D984" />
-                              </View>
-                            </Animated.View>
-                            <Text style={{
-                              color: '#00D984', fontSize: fp(13), fontWeight: '700',
-                              marginTop: wp(12),
-                            }}>Analyse de ton profil...</Text>
-                          </View>
-                        )}
-
-                        {/* Phase 1 — Macros */}
-                        {loadingPhase === 1 && (
-                          <View style={{ alignItems: 'center' }}>
-                            <View style={{ flexDirection: 'row', gap: wp(10) }}>
-                              <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
-                                <View style={{
-                                  width: wp(36), height: wp(36), borderRadius: wp(18),
-                                  backgroundColor: 'rgba(255,107,138,0.12)',
-                                  borderWidth: 1.5, borderColor: 'rgba(255,107,138,0.3)',
-                                  justifyContent: 'center', alignItems: 'center',
-                                }}>
-                                  <Text style={{ color: '#FF6B8A', fontSize: fp(13), fontWeight: '800' }}>P</Text>
-                                </View>
-                              </Animated.View>
-                              <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
-                                <View style={{
-                                  width: wp(36), height: wp(36), borderRadius: wp(18),
-                                  backgroundColor: 'rgba(255,217,61,0.12)',
-                                  borderWidth: 1.5, borderColor: 'rgba(255,217,61,0.3)',
-                                  justifyContent: 'center', alignItems: 'center',
-                                }}>
-                                  <Text style={{ color: '#FFD93D', fontSize: fp(13), fontWeight: '800' }}>G</Text>
-                                </View>
-                              </Animated.View>
-                              <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
-                                <View style={{
-                                  width: wp(36), height: wp(36), borderRadius: wp(18),
-                                  backgroundColor: 'rgba(77,166,255,0.12)',
-                                  borderWidth: 1.5, borderColor: 'rgba(77,166,255,0.3)',
-                                  justifyContent: 'center', alignItems: 'center',
-                                }}>
-                                  <Text style={{ color: '#4DA6FF', fontSize: fp(13), fontWeight: '800' }}>L</Text>
-                                </View>
-                              </Animated.View>
-                            </View>
-                            <Text style={{
-                              color: '#00D984', fontSize: fp(13), fontWeight: '700',
-                              marginTop: wp(12),
-                            }}>Calcul des macros restantes...</Text>
-                          </View>
-                        )}
-
-                        {/* Phase 2 — Cuisine */}
-                        {loadingPhase === 2 && (
-                          <View style={{ alignItems: 'center' }}>
-                            <Animated.View style={{ transform: [{ scale: loadingPulse }] }}>
-                              <Text style={{ fontSize: fp(32) }}>🤖</Text>
-                            </Animated.View>
-                            <Text style={{
-                              color: '#00D984', fontSize: fp(13), fontWeight: '700',
-                              marginTop: wp(12),
-                            }}>ALIXEN cuisine pour toi...</Text>
-                          </View>
-                        )}
-
-                      </Animated.View>
-
-                      {/* Progress bar */}
-                      <View style={{
-                        width: '100%', height: 3, backgroundColor: '#333',
-                        borderRadius: 2, marginTop: wp(20), overflow: 'hidden',
-                      }}>
-                        <Animated.View style={{
-                          height: '100%', borderRadius: 2,
-                          backgroundColor: '#00D984',
-                          width: loadingProgress.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: ['0%', '100%'],
-                          }),
-                        }} />
-                      </View>
-
-                      {/* Sous-texte fixe */}
+                      {/* Title */}
                       <Text style={{
-                        color: '#888', fontSize: fp(11), textAlign: 'center',
-                        marginTop: wp(10), lineHeight: fp(16),
+                        color: '#00D984', fontSize: fp(14), fontWeight: '600',
+                        marginBottom: wp(4),
+                      }}>ALIXEN cuisine pour toi...</Text>
+                      <Text style={{
+                        color: '#888', fontSize: fp(11), marginBottom: wp(16),
+                      }}>{TUBE_LABELS[tubePhase] || ''}</Text>
+
+                      {/* 5 tubes */}
+                      <View style={{
+                        flexDirection: 'row', justifyContent: 'center',
+                        gap: wp(12), marginBottom: wp(10),
                       }}>
-                        Analyse de ton profil, tes repas du jour{'\n'}et tes macros restantes
-                      </Text>
+                        {[0, 1, 2, 3, 4].map(function(idx) {
+                          var tubeH = wp(55);
+                          var tubeW = wp(14);
+                          var isActive = idx === tubePhase;
+                          var isFilled = idx < tubePhase;
+                          return (
+                            <View key={idx} style={{ alignItems: 'center' }}>
+                              {/* Tube */}
+                              <View style={{
+                                width: tubeW, height: tubeH, borderRadius: 8,
+                                borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+                                backgroundColor: 'transparent', overflow: 'hidden',
+                              }}>
+                                {/* Liquid fill */}
+                                <Animated.View style={{
+                                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                                  backgroundColor: TUBE_COLORS[idx],
+                                  borderRadius: 6,
+                                  opacity: isActive ? tubePulse : 1,
+                                  height: tubeFills[idx].interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [0, tubeH - 2],
+                                  }),
+                                }} />
+                                {/* Bubbles — active tube only */}
+                                {isActive && tubeBubbles.map(function(b, bi) {
+                                  var leftPos = bi === 0 ? 2 : bi === 1 ? 6 : 4;
+                                  return (
+                                    <Animated.View key={bi} style={{
+                                      position: 'absolute',
+                                      left: leftPos, width: 3, height: 3, borderRadius: 2,
+                                      backgroundColor: 'rgba(255,255,255,0.5)',
+                                      opacity: b.interpolate({
+                                        inputRange: [0, 0.3, 0.7, 1],
+                                        outputRange: [0, 0.7, 0.7, 0],
+                                      }),
+                                      transform: [{
+                                        translateY: b.interpolate({
+                                          inputRange: [0, 1],
+                                          outputRange: [tubeH - 8, 4],
+                                        }),
+                                      }],
+                                    }} />
+                                  );
+                                })}
+                              </View>
+                              {/* Label */}
+                              <Text style={{
+                                color: isActive ? '#CCC' : isFilled ? TUBE_COLORS[idx] : '#555',
+                                fontSize: fp(7), textAlign: 'center',
+                                marginTop: wp(4), width: wp(42),
+                              }} numberOfLines={1}>{TUBE_LABELS[idx]}</Text>
+                            </View>
+                          );
+                        })}
+                      </View>
                     </View>
                   )}
 

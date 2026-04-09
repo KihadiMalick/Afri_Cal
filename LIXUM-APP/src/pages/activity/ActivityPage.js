@@ -307,11 +307,12 @@ export default function ActivityPage({ navigation }) {
   const saveActivity = async (activityType, durationMin, caloriesBurned, intensity, waterLost) => {
     const actData = ACTIVITY_DATA[activityType];
     if (!actData) return false;
+    var safeDuration = Math.max(1, Math.round(durationMin || 0));
     try {
       const { error } = await supabase.rpc('add_user_activity', {
         p_user_id: userId,
         p_name: actData.label, p_type: activityType,
-        p_duration_minutes: Math.round(durationMin),
+        p_duration_minutes: safeDuration,
         p_calories_burned: Math.round(caloriesBurned),
         p_intensity: intensity || 'modere',
         p_water_lost_ml: Math.round(waterLost),

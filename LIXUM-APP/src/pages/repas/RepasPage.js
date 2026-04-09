@@ -1189,18 +1189,23 @@ export default function RepasPage({ navigation }) {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: wp(12) }}>
               {(frequentMeals.length > 0 ? frequentMeals : MOCK_FREQUENT).map(function(item, index) {
                 var nameLower = (item.name || '').toLowerCase();
-                var foodEmoji = nameLower.indexOf('croissant') >= 0 || nameLower.indexOf('pain') >= 0 ? '🥐'
+                var foodEmoji = nameLower.indexOf('croissant') >= 0 || nameLower.indexOf('pain') >= 0 || nameLower.indexOf('baguette') >= 0 ? '🥐'
                   : nameLower.indexOf('riz') >= 0 ? '🍚'
-                  : nameLower.indexOf('poulet') >= 0 ? '🍗'
-                  : nameLower.indexOf('poisson') >= 0 || nameLower.indexOf('thon') >= 0 || nameLower.indexOf('saumon') >= 0 ? '🐟'
-                  : nameLower.indexOf('salade') >= 0 ? '🥗'
-                  : nameLower.indexOf('oeuf') >= 0 || nameLower.indexOf('œuf') >= 0 ? '🥚'
-                  : nameLower.indexOf('soupe') >= 0 ? '🥣'
-                  : nameLower.indexOf('lait') >= 0 || nameLower.indexOf('yaourt') >= 0 ? '🥛'
-                  : nameLower.indexOf('fruit') >= 0 || nameLower.indexOf('banane') >= 0 || nameLower.indexOf('pomme') >= 0 ? '🍎'
-                  : nameLower.indexOf('pâte') >= 0 || nameLower.indexOf('pasta') >= 0 ? '🍝'
+                  : nameLower.indexOf('poulet') >= 0 || nameLower.indexOf('chicken') >= 0 ? '🍗'
+                  : nameLower.indexOf('poisson') >= 0 || nameLower.indexOf('thon') >= 0 || nameLower.indexOf('saumon') >= 0 || nameLower.indexOf('tilapia') >= 0 ? '🐟'
+                  : nameLower.indexOf('salade') >= 0 || nameLower.indexOf('légume') >= 0 || nameLower.indexOf('legume') >= 0 ? '🥗'
+                  : nameLower.indexOf('soupe') >= 0 || nameLower.indexOf('bouillon') >= 0 ? '🍲'
+                  : nameLower.indexOf('pâte') >= 0 || nameLower.indexOf('pasta') >= 0 || nameLower.indexOf('spaghetti') >= 0 ? '🍝'
+                  : nameLower.indexOf('viande') >= 0 || nameLower.indexOf('boeuf') >= 0 || nameLower.indexOf('bœuf') >= 0 || nameLower.indexOf('steak') >= 0 ? '🥩'
+                  : nameLower.indexOf('oeuf') >= 0 || nameLower.indexOf('œuf') >= 0 || nameLower.indexOf('omelette') >= 0 ? '🥚'
+                  : nameLower.indexOf('fruit') >= 0 || nameLower.indexOf('banane') >= 0 || nameLower.indexOf('mangue') >= 0 || nameLower.indexOf('pomme') >= 0 ? '🍎'
+                  : nameLower.indexOf('ndolé') >= 0 || nameLower.indexOf('ndole') >= 0 || nameLower.indexOf('épinard') >= 0 || nameLower.indexOf('epinard') >= 0 ? '🥬'
+                  : nameLower.indexOf('pizza') >= 0 ? '🍕'
+                  : nameLower.indexOf('burger') >= 0 || nameLower.indexOf('hamburger') >= 0 ? '🍔'
+                  : nameLower.indexOf('sandwich') >= 0 ? '🥪'
+                  : nameLower.indexOf('gâteau') >= 0 || nameLower.indexOf('gateau') >= 0 || nameLower.indexOf('dessert') >= 0 || nameLower.indexOf('pâtisserie') >= 0 ? '🍰'
                   : nameLower.indexOf('accra') >= 0 || nameLower.indexOf('beignet') >= 0 ? '🧆'
-                  : nameLower.indexOf('viande') >= 0 || nameLower.indexOf('boeuf') >= 0 || nameLower.indexOf('bœuf') >= 0 ? '🥩'
+                  : nameLower.indexOf('lait') >= 0 || nameLower.indexOf('yaourt') >= 0 ? '🥛'
                   : '🍽️';
 
                 return (
@@ -1208,24 +1213,20 @@ export default function RepasPage({ navigation }) {
                   style={function(state) {
                     return {
                       width: wp(90),
+                      borderRadius: wp(10), overflow: 'hidden',
+                      backgroundColor: '#1E2530',
+                      borderWidth: 1, borderColor: state.pressed ? 'rgba(0,217,132,0.2)' : 'rgba(255,255,255,0.04)',
                       transform: [{ scale: state.pressed ? 0.95 : 1 }],
                     };
                   }}
                 >
                 <View style={{
-                  borderRadius: 14, overflow: 'hidden',
-                  backgroundColor: '#2A303B',
-                  borderWidth: 1, borderColor: '#3A3F46',
-                }}>
-                <View style={{
-                  borderRadius: 13,
-                  backgroundColor: '#2A303B', padding: wp(8), alignItems: 'center',
+                  padding: wp(8), alignItems: 'center',
                   height: wp(90),
                 }}>
                   <Text style={{ fontSize: fp(22), marginBottom: wp(4) }}>{foodEmoji}</Text>
                   <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={2}>{item.name}</Text>
                   <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 1 }} numberOfLines={1}>{item.cal} kcal</Text>
-                </View>
                 </View>
                 </Pressable>
                 );

@@ -481,7 +481,7 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, 
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={{ width: 50, alignItems: 'center', marginRight: 12 }}>
           <SilhouetteFill fillPercent={percent} height={wp(62)} gender={gender} />
-          {showSportBadge ? React.createElement(Text, { style: { color: '#00D984', fontSize: 9, fontWeight: '700', marginTop: 2, textAlign: 'center' } }, '+' + totalWaterLost + 'ml') : null}
+          {showSportBadge ? React.createElement(Text, { style: { color: '#00D984', fontSize: 9, fontWeight: '700', marginTop: 2, textAlign: 'center' } }, '+' + totalWaterLost + ' ml') : null}
         </View>
         <View style={{ flex: 1 }}>
           <View style={{ height: 8, backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
@@ -492,7 +492,7 @@ const HydrationCardCompact = ({ currentMl, goalMl, gender, onPress, sportAlert, 
             <Text style={{ color: '#4DA6FF', fontSize: 12, fontWeight: '700' }}>{percent}%</Text>
           </View>
           {sportAlert ? (
-            <Text style={{ color: '#FF8C42', fontSize: 11 }}>{sportAlert}</Text>
+            <Text style={{ color: currentMl >= goalMl ? '#666' : '#FF8C42', fontSize: 11 }}>{sportAlert}</Text>
           ) : null}
           <TouchableOpacity activeOpacity={0.7} onPress={onPress}
             style={{ backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: 10, borderWidth: 1, borderColor: '#00D984', paddingVertical: 8, paddingHorizontal: 16, alignSelf: 'flex-start', marginTop: 6 }}>
