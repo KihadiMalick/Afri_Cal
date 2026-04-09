@@ -1351,7 +1351,7 @@ export default function RecettesScreen({
                                   alignItems: 'center',
                                   opacity: isNight && isHeavy ? 0.5 : 1,
                                 };
-                              }
+                              }}
                             >
                               <Text style={{ fontSize: fp(20), marginBottom: wp(4) }}>{cat.emoji}</Text>
                               <Text style={{
