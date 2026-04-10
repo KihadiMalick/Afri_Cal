@@ -431,8 +431,8 @@ export const MetalCard = ({ title, titleColor = '#00D984', iconElement, onPress 
     <Pressable delayPressIn={120} onPressIn={handlePressIn} onPressOut={handlePressOut} onPress={onPress}>
       <Animated.View style={{
         width: wp(130),
-        height: wp(85),
-        borderRadius: wp(16),
+        height: wp(55),
+        borderRadius: wp(12),
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
@@ -444,23 +444,26 @@ export const MetalCard = ({ title, titleColor = '#00D984', iconElement, onPress 
           colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
           style={{
             flex: 1,
-            borderRadius: wp(16),
+            borderRadius: wp(12),
             borderWidth: 1,
             borderColor: '#4A4F55',
             justifyContent: 'center',
             alignItems: 'center',
+            flexDirection: 'row',
+            paddingHorizontal: wp(10),
+            gap: wp(6),
             overflow: 'hidden',
           }}
         >
           {/* Icône SVG */}
-          <View style={{ marginBottom: 6 }}>
+          <View style={{ width: wp(22), height: wp(22) }}>
             {iconElement}
           </View>
 
           {/* Titre */}
           <Text style={{
             color: titleColor,
-            fontSize: fp(12),
+            fontSize: fp(11),
             fontWeight: '700',
             letterSpacing: 0.5,
           }}>{title}</Text>

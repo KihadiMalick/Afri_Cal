@@ -1286,7 +1286,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
   };
 
   const handlePreciserPress = () => {
-    scrollViewRef.current?.scrollToEnd({ animated: true });
     preciserTimersRef.current.forEach(t => clearTimeout(t));
     preciserTimersRef.current = [];
     var pt1 = setTimeout(() => {
@@ -2087,11 +2086,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             </View>
             <AlixenFace state={alixenState} keystrokeCount={keystrokeCount} paused={!pageActive} />
           </View>
-          <View style={{ alignSelf: 'stretch', flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 6, marginTop: Math.round(FRAME_W * -0.065), gap: 8 }}>
+          <View style={{ alignSelf: 'stretch', flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 4, marginTop: Math.round(FRAME_W * -0.065), gap: 8 }}>
             <MetalCard
               title="MediBook"
               iconElement={
-                <Svg width={wp(30)} height={wp(30)} viewBox="0 0 24 24" fill="none">
+                <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
                   <Rect x="3" y="2" width="14" height="20" rx="2" stroke="#00D984" strokeWidth="1.5" fill="none"/>
                   <Line x1="7" y1="8" x2="13" y2="8" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
                   <Line x1="7" y1="12" x2="13" y2="12" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
@@ -2103,7 +2102,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               title="Secret Pocket"
               titleColor="#D4AF37"
               iconElement={
-                <Svg width={wp(30)} height={wp(30)} viewBox="0 0 24 24" fill="none">
+                <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
                   <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" fill="none"/>
                   <Rect x="9" y="10" width="6" height="5" rx="1" stroke="#D4AF37" strokeWidth="1.5" fill="none"/>
                   <Path d="M10 10V8a2 2 0 014 0v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
@@ -2142,7 +2141,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           ref={scrollViewRef}
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: 90, paddingTop: 8 }}
-          onContentSizeChange={function() { scrollViewRef.current?.scrollToEnd({ animated: true }); }}
+          onContentSizeChange={function() { /* removed auto-scroll — user reads from top */ }}
           keyboardShouldPersistTaps="handled"
         >
 
