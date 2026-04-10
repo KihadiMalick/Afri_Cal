@@ -1226,20 +1226,27 @@ export default function RepasPage({ navigation }) {
                   style={function(state) {
                     return {
                       width: wp(90),
-                      borderRadius: wp(10), overflow: 'hidden',
-                      backgroundColor: '#1E2530',
-                      borderWidth: 1, borderColor: state.pressed ? 'rgba(0,217,132,0.2)' : 'rgba(255,255,255,0.04)',
                       transform: [{ scale: state.pressed ? 0.95 : 1 }],
                     };
                   }}
                 >
                 <View style={{
+                  borderRadius: 20, padding: 2, borderWidth: 2,
+                  borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D',
+                  borderRightColor: '#3E4855', borderBottomColor: '#2A303B',
+                  backgroundColor: '#2A303B',
+                }}>
+                <View style={{
+                  borderRadius: 16, borderWidth: 1.5,
+                  borderColor: 'rgba(0,217,132,0.25)', overflow: 'hidden',
+                  backgroundColor: '#151B23',
                   padding: wp(8), alignItems: 'center',
                   height: wp(90),
                 }}>
                   <Text style={{ fontSize: fp(22), marginBottom: wp(4) }}>{foodEmoji}</Text>
                   <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={2}>{item.name}</Text>
                   <Text style={{ color: '#5A6070', fontSize: fp(8), marginTop: 1 }} numberOfLines={1}>{item.cal} kcal</Text>
+                </View>
                 </View>
                 </Pressable>
                 );
