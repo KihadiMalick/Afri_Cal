@@ -341,42 +341,42 @@ export const FileQueuePreview = ({ files, onRemove }) => {
 };
 
 // === ALIXEN SUPER CONTEXT v1 — ResponseCard with DirectionCard support ===
-export const ResponseCard = React.memo(({ currentMessage, isLoading, isUserMessage, onQuickReply, onPreciserPress, loadingSteps, userLocation }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const [displayedText, setDisplayedText] = useState('');
+export const ResponseCard = React.memo(function ResponseCard(props) {
+  var currentMessage = props.currentMessage;
+  var isLoading = props.isLoading;
+  var isUserMessage = props.isUserMessage;
+  var onQuickReply = props.onQuickReply;
+  var onPreciserPress = props.onPreciserPress;
+  var loadingSteps = props.loadingSteps;
+  var userLocation = props.userLocation;
 
-  useEffect(() => {
-    if (currentMessage || isLoading) {
+  var fadeAnim = useRef(new Animated.Value(0)).current;
+  var slideAnim = useRef(new Animated.Value(15)).current;
+  var prevMsgRef = useRef(null);
+
+  // Fade-in + slide-up when new message arrives (replaces typewriter)
+  useEffect(function() {
+    if (currentMessage && currentMessage !== prevMsgRef.current) {
+      prevMsgRef.current = currentMessage;
       fadeAnim.setValue(0);
-      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+      slideAnim.setValue(15);
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+      ]).start();
+    } else if (isLoading) {
+      fadeAnim.setValue(0);
+      slideAnim.setValue(0);
+      Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
     }
   }, [currentMessage, isLoading]);
-
-  // Effet machine à écrire pour les réponses IA (optimized: 30ms/4chars)
-  useEffect(function() {
-    if (currentMessage && !isUserMessage && !isLoading) {
-      setDisplayedText('');
-      var idx = 0;
-      var interval = setInterval(function() {
-        idx += 4;
-        if (idx >= currentMessage.length) {
-          setDisplayedText(currentMessage);
-          clearInterval(interval);
-        } else {
-          setDisplayedText(currentMessage.substring(0, idx));
-        }
-      }, 30);
-      return function() { clearInterval(interval); };
-    } else if (isUserMessage && currentMessage) {
-      setDisplayedText(currentMessage);
-    }
-  }, [currentMessage, isUserMessage, isLoading]);
 
   if (!currentMessage && !isLoading) return null;
 
   return (
     <Animated.View style={{
       opacity: fadeAnim,
+      transform: [{ translateY: slideAnim }],
       marginHorizontal: 10,
       marginBottom: 8,
       borderRadius: wp(16),
@@ -432,38 +432,37 @@ export const ResponseCard = React.memo(({ currentMessage, isLoading, isUserMessa
       {/* Contenu */}
       {isLoading ? (
         <LoadingSteps steps={loadingSteps} />
-      ) : (() => {
-        const fullText = displayedText + (!isUserMessage && displayedText.length < (currentMessage || '').length ? '|' : '');
-        const { cleanText, choices } = parseQuickReplies(fullText);
-        const isTypingDone = !isUserMessage && displayedText.length >= (currentMessage || '').length;
+      ) : (function() {
+        var parsed = parseQuickReplies(currentMessage || '');
+        var cleanText = parsed.cleanText;
+        var choices = parsed.choices;
         return (
-          <>
-            {isTypingDone && !isUserMessage ? (
-              // === ALIXEN SUPER CONTEXT v1 — Render DirectionCards inline ===
-              (() => {
-                const dirParts = parseDirectionBlocks(cleanText);
-                const hasDirections = dirParts.some(p => p.type === 'direction');
+          <View>
+            {!isUserMessage ? (
+              (function() {
+                var dirParts = parseDirectionBlocks(cleanText);
+                var hasDirections = dirParts.some(function(p) { return p.type === 'direction'; });
                 if (hasDirections) {
                   return (
                     <View>
-                      {dirParts.map((part, pi) => {
+                      {dirParts.map(function(part, pi) {
                         if (part.type === 'direction') {
                           return (
                             <DirectionCard
-                              key={`dir-${pi}`}
+                              key={'dir-' + pi}
                               placeName={part.data.place_name}
                               placeAddress={part.data.place_address}
                               description={part.data.description}
                               destLat={part.data.dest_lat}
                               destLng={part.data.dest_lng}
-                              userLat={userLocation?.lat}
-                              userLng={userLocation?.lng}
+                              userLat={userLocation ? userLocation.lat : undefined}
+                              userLng={userLocation ? userLocation.lng : undefined}
                             />
                           );
                         }
                         return (
                           <FormattedResponseText
-                            key={`txt-${pi}`}
+                            key={'txt-' + pi}
                             text={part.content}
                             style={{ color: '#3A4550', fontSize: 13, lineHeight: fp(22) }}
                           />
@@ -484,14 +483,14 @@ export const ResponseCard = React.memo(({ currentMessage, isLoading, isUserMessa
                 {cleanText}
               </Text>
             )}
-            {isTypingDone && !isUserMessage && choices.length > 0 && (
+            {!isUserMessage && choices.length > 0 ? (
               <QuickReplyButtons
                 choices={choices}
                 onPress={onQuickReply}
                 onPreciser={onPreciserPress}
               />
-            )}
-          </>
+            ) : null}
+          </View>
         );
       })()}
     </Animated.View>
