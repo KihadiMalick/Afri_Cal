@@ -270,11 +270,12 @@ export default function MedicAiPage({ navigation }) {
   // Pulse animation for labels — native driver, zero JS re-renders
   var pulseAnim = useRef(new Animated.Value(0)).current;
   useEffect(function() {
-    Animated.loop(Animated.sequence([
+    var anim = Animated.loop(Animated.sequence([
       Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
       Animated.timing(pulseAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
-    ])).start();
-    return function() { pulseAnim.stopAnimation(); };
+    ]));
+    anim.start();
+    return function() { anim.stop(); };
   }, []);
   useEffect(function() {
     return function() {
@@ -311,17 +312,18 @@ export default function MedicAiPage({ navigation }) {
   const inputRef = useRef(null);
   const carnetPulseAnim = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    if (mediBookView === 'carnet' && carnetPhotos.filter(p => p).length === 0) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(carnetPulseAnim, { toValue: 1.08, duration: 800, useNativeDriver: true }),
-          Animated.timing(carnetPulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        ])
-      ).start();
+  useEffect(function() {
+    var anim = null;
+    if (mediBookView === 'carnet' && carnetPhotos.filter(function(p) { return p; }).length === 0) {
+      anim = Animated.loop(Animated.sequence([
+        Animated.timing(carnetPulseAnim, { toValue: 1.08, duration: 800, useNativeDriver: true }),
+        Animated.timing(carnetPulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      ]));
+      anim.start();
     } else {
       carnetPulseAnim.setValue(1);
     }
+    return function() { if (anim) anim.stop(); };
   }, [mediBookView, carnetPhotos]);
 
   // Animations d'entrée
