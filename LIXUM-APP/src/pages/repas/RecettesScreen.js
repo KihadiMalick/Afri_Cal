@@ -953,7 +953,8 @@ export default function RecettesScreen({
                 colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
                 style={{
                   borderRadius: 14, paddingVertical: wp(12), alignItems: 'center',
-                  borderWidth: 1.5,
+                  borderWidth: 1.5, minHeight: wp(58),
+                  justifyContent: 'center',
                   borderColor: recipesTab === 'general' ? '#00D984' : '#4A4F55',
                 }}
               >
@@ -978,7 +979,8 @@ export default function RecettesScreen({
                 colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
                 style={{
                   borderRadius: 14, paddingVertical: wp(12), alignItems: 'center',
-                  borderWidth: 1.5,
+                  borderWidth: 1.5, minHeight: wp(58),
+                  justifyContent: 'center',
                   borderColor: recipesTab === 'personalized' ? '#00D984' : '#4A4F55',
                 }}
               >

@@ -207,7 +207,7 @@ const HydrationModal = ({
               </View>
               <Text style={{ color: '#4DA6FF', fontSize: 13, fontWeight: '700', marginTop: 8 }}>{percent}% • {glasses}/{totalGlasses} verres</Text>
               {(totalWaterLost || 0) > 0 ? (
-                <Text style={{ color: '#FF8C42', fontSize: 11, fontWeight: '600', marginTop: 6 }}>{'dont ' + totalWaterLost + 'ml à compenser (sport)'}</Text>
+                <Text style={{ color: '#FF8C42', fontSize: 11, fontWeight: '600', marginTop: 6 }}>{'dont ' + totalWaterLost + ' ml (eau perdue en sport)'}</Text>
               ) : null}
             </View>
 
