@@ -2079,50 +2079,44 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        <ScrollView
-          ref={scrollViewRef}
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 90, paddingTop: 0 }}
-          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* ===== ZONE SOMBRE ALIXEN V6 ===== */}
-          <View style={{ backgroundColor: '#1E2530', overflow: 'hidden' }}>
-            <View style={{ width: FRAME_W, height: MODULE_H, alignSelf: 'center' }}>
-              <View style={{ position: 'absolute', top: BRIDGE_TOP, left: 0, width: FRAME_W }}>
-                <FunnelBridgeUnified wireMode={wm} />
-              </View>
-              <AlixenFace state={alixenState} keystrokeCount={keystrokeCount} paused={!pageActive} />
+        {/* ===== ZONE ALIXEN STICKY (hors du scroll) ===== */}
+        <View style={{ backgroundColor: '#1E2530', overflow: 'hidden' }}>
+          <View style={{ width: FRAME_W, height: MODULE_H, alignSelf: 'center' }}>
+            <View style={{ position: 'absolute', top: BRIDGE_TOP, left: 0, width: FRAME_W }}>
+              <FunnelBridgeUnified wireMode={wm} />
             </View>
-            <View style={{ alignSelf: 'stretch', flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 6, marginTop: Math.round(FRAME_W * -0.065), gap: 8 }}>
-              <MetalCard
-                title="MediBook"
-                iconElement={
-                  <Svg width={wp(30)} height={wp(30)} viewBox="0 0 24 24" fill="none">
-                    <Rect x="3" y="2" width="14" height="20" rx="2" stroke="#00D984" strokeWidth="1.5" fill="none"/>
-                    <Line x1="7" y1="8" x2="13" y2="8" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
-                    <Line x1="7" y1="12" x2="13" y2="12" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
-                  </Svg>
-                }
-                onPress={function() { setCurrentSubPage('medibook'); }}
-              />
-              <MetalCard
-                title="Secret Pocket"
-                titleColor="#D4AF37"
-                iconElement={
-                  <Svg width={wp(30)} height={wp(30)} viewBox="0 0 24 24" fill="none">
-                    <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" fill="none"/>
-                    <Rect x="9" y="10" width="6" height="5" rx="1" stroke="#D4AF37" strokeWidth="1.5" fill="none"/>
-                    <Path d="M10 10V8a2 2 0 014 0v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-                  </Svg>
-                }
-                onPress={function() { setCurrentSubPage('secretpocket'); }}
-              />
-            </View>
+            <AlixenFace state={alixenState} keystrokeCount={keystrokeCount} paused={!pageActive} />
           </View>
+          <View style={{ alignSelf: 'stretch', flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 6, marginTop: Math.round(FRAME_W * -0.065), gap: 8 }}>
+            <MetalCard
+              title="MediBook"
+              iconElement={
+                <Svg width={wp(30)} height={wp(30)} viewBox="0 0 24 24" fill="none">
+                  <Rect x="3" y="2" width="14" height="20" rx="2" stroke="#00D984" strokeWidth="1.5" fill="none"/>
+                  <Line x1="7" y1="8" x2="13" y2="8" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                  <Line x1="7" y1="12" x2="13" y2="12" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round"/>
+                </Svg>
+              }
+              onPress={function() { setCurrentSubPage('medibook'); }}
+            />
+            <MetalCard
+              title="Secret Pocket"
+              titleColor="#D4AF37"
+              iconElement={
+                <Svg width={wp(30)} height={wp(30)} viewBox="0 0 24 24" fill="none">
+                  <Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" fill="none"/>
+                  <Rect x="9" y="10" width="6" height="5" rx="1" stroke="#D4AF37" strokeWidth="1.5" fill="none"/>
+                  <Path d="M10 10V8a2 2 0 014 0v2" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+                </Svg>
+              }
+              onPress={function() { setCurrentSubPage('secretpocket'); }}
+            />
+          </View>
+        </View>
 
-          {/* Labels ALIXEN / Membre — bulles animées */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8, marginBottom: 4, gap: 16 }}>
+        {/* Labels ALIXEN / Membre — sticky */}
+        <View style={{ backgroundColor: '#E8ECF0', paddingTop: 4, paddingBottom: 2 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 2, gap: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Animated.View style={{ width: wm === 'alixen' ? 12 : 10, height: wm === 'alixen' ? 12 : 10, borderRadius: 6, backgroundColor: '#4DA6FF', marginRight: 5, justifyContent: 'center', alignItems: 'center', opacity: wm === 'alixen' ? pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.0] }) : 0.35 }}>
                 <Animated.View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#FFF', opacity: wm === 'alixen' ? pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.0] }) : 0.3 }} />
@@ -2137,10 +2131,20 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             </View>
           </View>
           {alixenState !== 'idle' && alixenState !== 'listening' && getAlixenMention(alixenState) ? (
-            <Animated.Text style={{ textAlign: 'center', color: wm === 'alixen' ? '#4DA6FF' : '#00D984', fontSize: 8, fontWeight: '600', opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0.8] }), marginBottom: 4 }}>
+            <Animated.Text style={{ textAlign: 'center', color: wm === 'alixen' ? '#4DA6FF' : '#00D984', fontSize: 8, fontWeight: '600', opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0.8] }), marginBottom: 2 }}>
               {getAlixenMention(alixenState)}
             </Animated.Text>
           ) : null}
+        </View>
+
+        {/* ===== ZONE CHAT SCROLLABLE ===== */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 90, paddingTop: 8 }}
+          onContentSizeChange={function() { scrollViewRef.current?.scrollToEnd({ animated: true }); }}
+          keyboardShouldPersistTaps="handled"
+        >
 
           {/* Boules en S */}
           <Animated.View style={{
