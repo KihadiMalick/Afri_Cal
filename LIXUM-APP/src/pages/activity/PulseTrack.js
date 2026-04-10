@@ -23,11 +23,8 @@ export default function PulseTrack(props) {
   var color = props.color || '#00E5FF';
   var speed = props.speed || 'slow';
   var isActive = props.isActive || false;
-  var distance = props.distance || '0 m';
-  var calories = props.calories || 0;
-  var waterLost = props.waterLost || 0;
-  var duration = props.duration || '0 min';
   var hasParticles = props.hasParticles || false;
+  var moveDirection = props.direction || 1; // 1=forward, -1=backward
 
   var angleRef = useRef(0);
   var trailRef = useRef([]);
@@ -50,12 +47,14 @@ export default function PulseTrack(props) {
 
   var angleStep = speed === 'fast' ? 0.06 : 0.02;
   var trailLen = speed === 'fast' ? TRAIL_LENGTH_FAST : TRAIL_LENGTH_SLOW;
+  var dirRef = useRef(1);
+  useEffect(function() { dirRef.current = moveDirection >= 0 ? 1 : -1; }, [moveDirection]);
 
   useEffect(function() {
     if (isActive) {
       var prevLap = lapCountRef.current;
       frameRef.current = setInterval(function() {
-        angleRef.current += angleStep;
+        angleRef.current += angleStep * dirRef.current;
 
         // Lap detection
         var currentLap = Math.floor(angleRef.current / (2 * Math.PI));
