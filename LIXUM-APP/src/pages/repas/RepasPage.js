@@ -1314,11 +1314,13 @@ export default function RepasPage({ navigation }) {
           onClose={modalCfg.onClose || closeModal}
         />
 
-        <BottomTabs
-          activeTab={activeTab}
-          onTabPress={handleTabPress}
-          lang={lang}
-        />
+        {!showRecettes && !showCartScan && !showXscan && !showCookingMode && !showManualEntry ? (
+          <BottomTabs
+            activeTab={activeTab}
+            onTabPress={handleTabPress}
+            lang={lang}
+          />
+        ) : null}
 
       </View>
     </LinearGradient>

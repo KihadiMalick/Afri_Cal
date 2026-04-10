@@ -715,6 +715,12 @@ export default function RecettesScreen({
         setAlixenProposals(data.proposals);
         setAlixenAltCategories(Array.isArray(data.alt_categories) ? data.alt_categories : []);
         setAlixenGlobalComment(data.global_comment || null);
+        // Consume free recipe on successful generation
+        if (!alixenFreeUsedToday && !alixenHasOwlPass) {
+          setAlixenFreeUsedToday(true);
+          var todayMark = new Date().toISOString().split('T')[0];
+          supabase.from('meals').insert({ user_id: userId, source: 'alixen_recipe', food_name: 'ALIXEN_FREE_USED', calories: 0, date: todayMark, created_at: new Date().toISOString() }).then(function() {});
+        }
         setAlixenLoading(false);
         if (ctx.timeOfDay === 'night' && ctx.remaining > 800) {
           setAlixenAdvice(
@@ -734,6 +740,12 @@ export default function RecettesScreen({
           setAlixenProposals(proposals);
           setAlixenAltCategories(Array.isArray(parsed.alt_categories) ? parsed.alt_categories : []);
           setAlixenGlobalComment(parsed.global_comment || null);
+          // Consume free recipe on successful generation
+          if (!alixenFreeUsedToday && !alixenHasOwlPass) {
+            setAlixenFreeUsedToday(true);
+            var todayMark2 = new Date().toISOString().split('T')[0];
+            supabase.from('meals').insert({ user_id: userId, source: 'alixen_recipe', food_name: 'ALIXEN_FREE_USED', calories: 0, date: todayMark2, created_at: new Date().toISOString() }).then(function() {});
+          }
           if (ctx.timeOfDay === 'night' && ctx.remaining > 800) {
             setAlixenAdvice(
               ctx.userName + ', il te reste ' + Math.round(ctx.remaining) + ' kcal mais il est ' + ctx.hour + 'h. ' +
@@ -953,7 +965,8 @@ export default function RecettesScreen({
                 colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
                 style={{
                   borderRadius: 14, paddingVertical: wp(12), alignItems: 'center',
-                  borderWidth: 1.5,
+                  borderWidth: 1.5, minHeight: wp(58),
+                  justifyContent: 'center',
                   borderColor: recipesTab === 'general' ? '#00D984' : '#4A4F55',
                 }}
               >
@@ -978,7 +991,8 @@ export default function RecettesScreen({
                 colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
                 style={{
                   borderRadius: 14, paddingVertical: wp(12), alignItems: 'center',
-                  borderWidth: 1.5,
+                  borderWidth: 1.5, minHeight: wp(58),
+                  justifyContent: 'center',
                   borderColor: recipesTab === 'personalized' ? '#00D984' : '#4A4F55',
                 }}
               >
@@ -2261,7 +2275,6 @@ export default function RecettesScreen({
                             showModal('error', 'Erreur', res.error.message);
                           } else {
                             showModal('success', '✅ Ajouté !', recipe.name + ' ajouté au ' + (slot === 'breakfast' ? 'petit-déjeuner' : slot === 'lunch' ? 'déjeuner' : slot === 'dinner' ? 'dîner' : 'snack') + '.', { onClose: function() { closeModal(); onMealSaved(); onClose(); } });
-                            setAlixenFreeUsedToday(true);
                           }
                         });
                       }}
