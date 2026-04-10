@@ -270,11 +270,12 @@ export default function MedicAiPage({ navigation }) {
   // Pulse animation for labels — native driver, zero JS re-renders
   var pulseAnim = useRef(new Animated.Value(0)).current;
   useEffect(function() {
-    Animated.loop(Animated.sequence([
+    var anim = Animated.loop(Animated.sequence([
       Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
       Animated.timing(pulseAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
-    ])).start();
-    return function() { pulseAnim.stopAnimation(); };
+    ]));
+    anim.start();
+    return function() { anim.stop(); };
   }, []);
   useEffect(function() {
     return function() {
@@ -311,17 +312,18 @@ export default function MedicAiPage({ navigation }) {
   const inputRef = useRef(null);
   const carnetPulseAnim = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    if (mediBookView === 'carnet' && carnetPhotos.filter(p => p).length === 0) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(carnetPulseAnim, { toValue: 1.08, duration: 800, useNativeDriver: true }),
-          Animated.timing(carnetPulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        ])
-      ).start();
+  useEffect(function() {
+    var anim = null;
+    if (mediBookView === 'carnet' && carnetPhotos.filter(function(p) { return p; }).length === 0) {
+      anim = Animated.loop(Animated.sequence([
+        Animated.timing(carnetPulseAnim, { toValue: 1.08, duration: 800, useNativeDriver: true }),
+        Animated.timing(carnetPulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      ]));
+      anim.start();
     } else {
       carnetPulseAnim.setValue(1);
     }
+    return function() { if (anim) anim.stop(); };
   }, [mediBookView, carnetPhotos]);
 
   // Animations d'entrée
@@ -362,8 +364,11 @@ export default function MedicAiPage({ navigation }) {
   }, [userId]);
 
   // Refresh Lix balance when page gains focus
+  var _pageActive = useState(true); var pageActive = _pageActive[0]; var setPageActive = _pageActive[1];
   useFocusEffect(useCallback(function() {
+    setPageActive(true);
     if (userId) refreshLixFromServer();
+    return function() { setPageActive(false); };
   }, [userId, refreshLixFromServer]));
 
   // ── Afficher le message de bienvenue dans la carte ──────────────────────
@@ -655,19 +660,20 @@ export default function MedicAiPage({ navigation }) {
     }]);
   };
 
-  // === ALIXEN SUPER CONTEXT v1 — Geolocation at mount ===
-  useEffect(() => {
-    (async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-          setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-        }
-      } catch (e) {
+  // === ALIXEN SUPER CONTEXT v1 — Geolocation (lazy, on-demand) ===
+  var requestLocationOnce = async function() {
+    if (userLocation) return userLocation;
+    try {
+      var result = await Location.requestForegroundPermissionsAsync();
+      if (result.status === 'granted') {
+        var loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        var coords = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+        setUserLocation(coords);
+        return coords;
       }
-    })();
-  }, []);
+    } catch (e) {}
+    return null;
+  };
 
   // === CHECK WOW EVENTS AU MONTAGE ===
   useEffect(function() {
@@ -2086,7 +2092,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               <View style={{ position: 'absolute', top: BRIDGE_TOP, left: 0, width: FRAME_W }}>
                 <FunnelBridgeUnified wireMode={wm} />
               </View>
-              <AlixenFace state={alixenState} keystrokeCount={keystrokeCount} />
+              <AlixenFace state={alixenState} keystrokeCount={keystrokeCount} paused={!pageActive} />
             </View>
             <View style={{ alignSelf: 'stretch', flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 6, marginTop: Math.round(FRAME_W * -0.065), gap: 8 }}>
               <MetalCard

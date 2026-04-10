@@ -209,13 +209,15 @@ export const FormattedText = ({ text, style, onRecipePress }) => {
 export const ScrollArrow = () => {
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    Animated.loop(
+  useEffect(function() {
+    var anim = Animated.loop(
       Animated.sequence([
         Animated.timing(bounceAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
         Animated.timing(bounceAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
       ])
-    ).start();
+    );
+    anim.start();
+    return function() { anim.stop(); };
   }, []);
 
   return (

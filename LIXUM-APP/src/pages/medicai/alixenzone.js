@@ -18,10 +18,10 @@ var HEX_H = FRAME_H - INSET_Y_TOP - INSET_Y_BOTTOM;
 var HEX_CX = HEX_W / 2;
 var HEX_CY = HEX_H / 2;
 var HEX_INSET = Math.round(HEX_W * 0.085);
-var NUM_PARTICLES = 420;
+var NUM_PARTICLES = 150;
 var FPS = 33;
-var CONN_DIST = Math.round(HEX_W * 0.153);
-var MAX_CONN = 300;
+var CONN_DIST = Math.round(HEX_W * 0.18);
+var MAX_CONN = 80;
 var P_SCALE = Math.max(1, FRAME_W / 312);
 var A_SCALE = Math.max(1, HEX_W / 240);
 var BRIDGE_TOP = Math.round(FRAME_H * 0.79);
@@ -251,6 +251,8 @@ function getTarget(p, t, state) {
 
 var AlixenParticles = function(props) {
   var reqState = props.state || 'idle';
+  var pausedRef = useRef(false);
+  useEffect(function() { pausedRef.current = !!props.paused; }, [props.paused]);
   var keystrokeCount = props.keystrokeCount || 0;
   var particles = useMemo(function() { return genParticles(); }, []);
   var _pos = useState(null); var pos = _pos[0]; var setPos = _pos[1];
@@ -280,6 +282,7 @@ var AlixenParticles = function(props) {
     var running = true; startRef.current = Date.now();
     var tick = function() {
       if (!running) return;
+      if (pausedRef.current) return;
       var el = (Date.now() - startRef.current) / 1000;
       var ph = phaseRef.current; var m = morphRef.current;
       if (ph === 'in') { m += 0.025; if (m >= 1) { m = 1; phaseRef.current = 'active'; } }
@@ -394,10 +397,13 @@ var AlixenParticles = function(props) {
 var AlixenFace = function(props) {
   var wireMode = getWireMode(props.state || 'idle');
   var _imp = useState([]); var imps = _imp[0]; var setImps = _imp[1];
+  var facePausedRef = useRef(false);
+  useEffect(function() { facePausedRef.current = !!props.paused; }, [props.paused]);
 
   useEffect(function() {
     var st = Date.now();
     var iv = setInterval(function() {
+      if (facePausedRef.current) return;
       var el = (Date.now() - st) / 1000; var ni = [];
       for (var w = 0; w < 3; w++) {
         var wire = WIRES[w];
@@ -445,7 +451,7 @@ var AlixenFace = function(props) {
         pointerEvents="none"
       />
       <View style={{ position: 'absolute', top: INSET_Y_TOP, left: INSET_X, width: HEX_W, height: HEX_H }}>
-        <AlixenParticles state={props.state} keystrokeCount={props.keystrokeCount} />
+        <AlixenParticles state={props.state} keystrokeCount={props.keystrokeCount} paused={props.paused} />
       </View>
       <Svg width={FRAME_W} height={FRAME_H} viewBox={'0 0 ' + FRAME_W + ' ' + FRAME_H} style={{ position: 'absolute', top: 0, left: 0 }}>
         {imps.map(function(imp, i) {
