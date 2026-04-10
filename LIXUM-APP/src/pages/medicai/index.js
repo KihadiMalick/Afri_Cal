@@ -655,19 +655,20 @@ export default function MedicAiPage({ navigation }) {
     }]);
   };
 
-  // === ALIXEN SUPER CONTEXT v1 — Geolocation at mount ===
-  useEffect(() => {
-    (async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-          setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-        }
-      } catch (e) {
+  // === ALIXEN SUPER CONTEXT v1 — Geolocation (lazy, on-demand) ===
+  var requestLocationOnce = async function() {
+    if (userLocation) return userLocation;
+    try {
+      var result = await Location.requestForegroundPermissionsAsync();
+      if (result.status === 'granted') {
+        var loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        var coords = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+        setUserLocation(coords);
+        return coords;
       }
-    })();
-  }, []);
+    } catch (e) {}
+    return null;
+  };
 
   // === CHECK WOW EVENTS AU MONTAGE ===
   useEffect(function() {
