@@ -877,33 +877,21 @@ export default function RepasPage({ navigation }) {
                   <Text style={{ color: '#00D984', fontSize: fp(8), fontWeight: '800', letterSpacing: 1 }}>SMART</Text>
                 </View>
 
-                {/* Zone gauche — scanner barcode visuel */}
-                <View style={{ width: wp(56), alignItems: 'center', marginRight: wp(14) }}>
-                  <View style={{
-                    width: wp(40), height: wp(52), borderRadius: 8,
-                    borderWidth: 1.5, borderColor: '#00D984',
-                    justifyContent: 'center', alignItems: 'center',
-                    overflow: 'hidden',
-                  }}>
-                    {/* Barcode lines */}
-                    <View style={{ width: '60%', height: 2, backgroundColor: '#00D984', opacity: 0.4, marginBottom: 4 }} />
-                    <View style={{ width: '80%', height: 2, backgroundColor: '#00D984', opacity: 0.5, marginBottom: 4 }} />
-                    <View style={{ width: '50%', height: 2, backgroundColor: '#00D984', opacity: 0.35, marginBottom: 4 }} />
-                    <View style={{ width: '70%', height: 2, backgroundColor: '#00D984', opacity: 0.45 }} />
-                    {/* Red scan laser line */}
-                    <View style={{
-                      position: 'absolute', left: -2, right: -2, top: '48%',
-                      height: 2, backgroundColor: '#FF6B8A', opacity: 0.9,
-                    }} />
-                  </View>
-                  <Text style={{ color: '#666', fontSize: fp(8), marginTop: wp(3) }}>ou photo</Text>
+                {/* Zone gauche — icône caddie */}
+                <View style={{
+                  width: wp(48), height: wp(48), borderRadius: wp(24),
+                  backgroundColor: 'rgba(0,217,132,0.15)',
+                  justifyContent: 'center', alignItems: 'center',
+                  marginRight: wp(14),
+                }}>
+                  <Text style={{ fontSize: fp(24) }}>🛒</Text>
                 </View>
 
                 {/* Zone droite — texte */}
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: fp(16), fontWeight: '800', color: '#00D984', marginBottom: wp(3) }}>CARTSCAN</Text>
                   <Text style={{ fontSize: fp(11), color: '#EAEEF3', marginBottom: wp(2) }}>
-                    Scannez vos produits en magasin
+                    Faites vos courses avec LIXUM
                   </Text>
                   <Text style={{ fontSize: fp(9), color: '#888' }}>
                     Code-barres ou photo · Alertes allergies en direct

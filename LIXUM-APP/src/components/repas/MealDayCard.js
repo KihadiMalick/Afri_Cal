@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
-import Svg, { Line, Path, Rect, Circle, Ellipse } from 'react-native-svg';
+import Svg, { Line, Path } from 'react-native-svg';
 import { wp, fp } from '../../constants/layout';
 
 const MEAL_CARD_WIDTH = wp(160);
@@ -180,50 +180,17 @@ const MealDayCard = ({ icon, label, meal, meals, lang, onAddMeal, slotKey }) => 
             }}>{label}</Text>
           </View>
 
-          {/* Icône thématique SVG selon le créneau */}
+          {/* Icône emoji selon le créneau */}
           <View style={{
             width: wp(44), height: wp(44), borderRadius: wp(22),
             borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.06)',
             justifyContent: 'center', alignItems: 'center',
             backgroundColor: 'rgba(255,255,255,0.03)',
             marginTop: wp(8),
-            opacity: 0.3,
           }}>
-            {slotKey === 'breakfast' && (
-              <Svg width={24} height={24} viewBox="0 0 24 24">
-                <Rect x="4" y="12" width="9" height="7" rx="1.5" fill="none" stroke="#5A6070" strokeWidth={1.2}/>
-                <Path d="M13 13.5C14.5 13.5 15.5 14.2 15.5 15.5C15.5 16.8 14.5 17.5 13 17.5" fill="none" stroke="#5A6070" strokeWidth={1}/>
-                <Path d="M6 11C6 9.5 7 9 7 8" fill="none" stroke="#5A6070" strokeWidth={0.8} opacity={0.5}/>
-                <Path d="M9 10.5C9 9 10 8.5 10 7.5" fill="none" stroke="#5A6070" strokeWidth={0.8} opacity={0.5}/>
-                <Path d="M15 8C15 5 17 4 19 5C19.5 6 19 8 17 9" fill="none" stroke="#5A6070" strokeWidth={1} opacity={0.6}/>
-              </Svg>
-            )}
-            {slotKey === 'lunch' && (
-              <Svg width={24} height={24} viewBox="0 0 24 24">
-                <Ellipse cx="12" cy="16" rx="9" ry="3.5" fill="none" stroke="#5A6070" strokeWidth={1.2}/>
-                <Path d="M3 16C3 13.5 6.5 11 12 11C17.5 11 21 13.5 21 16" fill="none" stroke="#5A6070" strokeWidth={1.2}/>
-                <Path d="M8 9C8 7.5 9 7 9 6" fill="none" stroke="#5A6070" strokeWidth={0.8} opacity={0.4}/>
-                <Path d="M12 8C12 6.5 13 6 13 5" fill="none" stroke="#5A6070" strokeWidth={0.8} opacity={0.4}/>
-                <Path d="M16 9C16 7.5 17 7 17 6" fill="none" stroke="#5A6070" strokeWidth={0.8} opacity={0.4}/>
-              </Svg>
-            )}
-            {slotKey === 'dinner' && (
-              <Svg width={24} height={24} viewBox="0 0 24 24">
-                <Circle cx="12" cy="13" r="8" fill="none" stroke="#5A6070" strokeWidth={1.2}/>
-                <Circle cx="12" cy="13" r="5" fill="none" stroke="#5A6070" strokeWidth={0.7} opacity={0.4}/>
-                <Line x1="2" y1="7" x2="2" y2="19" stroke="#5A6070" strokeWidth={1} strokeLinecap="round"/>
-                <Line x1="22" y1="7" x2="22" y2="19" stroke="#5A6070" strokeWidth={1} strokeLinecap="round"/>
-              </Svg>
-            )}
-            {slotKey === 'snack' && (
-              <Svg width={24} height={24} viewBox="0 0 24 24">
-                <Path d="M8 7L6 17H18L16 7" fill="none" stroke="#5A6070" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round"/>
-                <Path d="M5 17H19" stroke="#5A6070" strokeWidth={1.2} strokeLinecap="round"/>
-                <Circle cx="10" cy="12" r="1" fill="#5A6070" opacity={0.5}/>
-                <Circle cx="14" cy="11" r="1" fill="#5A6070" opacity={0.5}/>
-                <Circle cx="12" cy="14" r="0.8" fill="#5A6070" opacity={0.4}/>
-              </Svg>
-            )}
+            <Text style={{ fontSize: fp(28) }}>
+              {slotKey === 'breakfast' ? '🥐' : slotKey === 'lunch' ? '🍽️' : slotKey === 'dinner' ? '🍲' : '🍿'}
+            </Text>
           </View>
           <Text style={{ color: '#4A4F55', fontSize: fp(10), textAlign: 'center', marginTop: wp(4) }}>
             {slotKey === 'breakfast' ? (lang === 'fr' ? "Qu'avez-vous mangé ce matin ?" : 'What did you eat this morning?') :
