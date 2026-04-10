@@ -513,7 +513,7 @@ export default function LiveTrackingScreen({
 
   if (!visible && !liveActive && liveCountdown === 0) return null;
   return (
-    <View style={{ flex: 1 }}>
+    <View>
       {/* Countdown 3-2-1 */}
       <Modal visible={liveCountdown > 0} transparent animationType="fade">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>

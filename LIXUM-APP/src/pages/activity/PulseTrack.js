@@ -4,11 +4,11 @@ import Svg, { Ellipse } from 'react-native-svg';
 import { wp, fp } from '../../constants/layout';
 
 var TRACK_W = 280;
-var TRACK_H = wp(55);
+var TRACK_H = wp(75);
 var RX = 110;
 var RY = 18;
 var CX = TRACK_W / 2;
-var CY = TRACK_H / 2 - 8;
+var CY = TRACK_H / 2 - wp(10);
 var TRAIL_LENGTH_SLOW = 14;
 var TRAIL_LENGTH_FAST = 8;
 
@@ -44,9 +44,9 @@ export default function PulseTrack(props) {
   var trackW = _trackW[0]; var setTrackW = _trackW[1];
 
   var cx = trackW / 2;
-  var rx = Math.min(trackW * 0.40, 130);
-  var ry = 18;
-  var cy = CY;
+  var rx = Math.min(trackW * 0.38, wp(28) * 5);
+  var ry = wp(18);
+  var cy = TRACK_H / 2 - wp(10);
 
   var angleStep = speed === 'fast' ? 0.06 : 0.02;
   var trailLen = speed === 'fast' ? TRAIL_LENGTH_FAST : TRAIL_LENGTH_SLOW;
@@ -174,17 +174,17 @@ export default function PulseTrack(props) {
       }} />
 
       {/* Center: duration */}
-      <View style={{ position: 'absolute', top: cy - fp(14), left: 0, right: 0, alignItems: 'center' }}>
+      <View style={{ position: 'absolute', top: cy - fp(12), left: 0, right: 0, alignItems: 'center' }}>
         <Text style={{
-          color: color, fontSize: fp(22), fontWeight: '500',
+          color: color, fontSize: fp(20), fontWeight: '500',
           fontVariant: ['tabular-nums'],
         }}>{duration}</Text>
       </View>
 
       {/* Bottom indicators */}
       <View style={{
-        position: 'absolute', bottom: wp(4), left: 0, right: 0,
-        flexDirection: 'row', justifyContent: 'center', gap: wp(20),
+        position: 'absolute', bottom: wp(6), left: 0, right: 0,
+        flexDirection: 'row', justifyContent: 'center', gap: wp(28),
       }}>
         <View style={{ alignItems: 'center' }}>
           <Text style={{ color: '#FF6B8A', fontSize: fp(12), fontWeight: '700' }}>{distance}</Text>

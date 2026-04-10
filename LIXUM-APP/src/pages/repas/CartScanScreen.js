@@ -405,7 +405,7 @@ export default function CartScanScreen({ visible, onClose }) {
   // Permission loading or not granted — show inside a closeable screen
   if (!permission || !permission.granted) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(30) }}>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1400, backgroundColor: '#1A1D22', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(30) }}>
         <StatusBar barStyle="light-content" backgroundColor="#1A1D22" />
         <TouchableOpacity
           onPress={onClose}
@@ -435,7 +435,7 @@ export default function CartScanScreen({ visible, onClose }) {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1400 }}>
       {/* ══════ MODAL CARTSCAN v3 — Caméra Unifiée ══════ */}
       <Modal
         visible={!showStoreInput && !showCartReport}
