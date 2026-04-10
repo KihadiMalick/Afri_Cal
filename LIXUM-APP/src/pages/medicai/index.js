@@ -364,8 +364,11 @@ export default function MedicAiPage({ navigation }) {
   }, [userId]);
 
   // Refresh Lix balance when page gains focus
+  var _pageActive = useState(true); var pageActive = _pageActive[0]; var setPageActive = _pageActive[1];
   useFocusEffect(useCallback(function() {
+    setPageActive(true);
     if (userId) refreshLixFromServer();
+    return function() { setPageActive(false); };
   }, [userId, refreshLixFromServer]));
 
   // ── Afficher le message de bienvenue dans la carte ──────────────────────
@@ -2089,7 +2092,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               <View style={{ position: 'absolute', top: BRIDGE_TOP, left: 0, width: FRAME_W }}>
                 <FunnelBridgeUnified wireMode={wm} />
               </View>
-              <AlixenFace state={alixenState} keystrokeCount={keystrokeCount} />
+              <AlixenFace state={alixenState} keystrokeCount={keystrokeCount} paused={!pageActive} />
             </View>
             <View style={{ alignSelf: 'stretch', flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 6, marginTop: Math.round(FRAME_W * -0.065), gap: 8 }}>
               <MetalCard
