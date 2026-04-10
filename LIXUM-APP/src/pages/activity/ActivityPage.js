@@ -605,115 +605,6 @@ export default function ActivityPage({ navigation }) {
           </View>
           </View>
 
-          {/* OMS weekly — MetalCard redesign */}
-          {(function() {
-            var isComplete = weeklyMinutes >= 150;
-            var progressRatio = Math.min(weeklyMinutes / 150, 1.3);
-            var arcColor = progressRatio >= 0.8 ? '#00D984' : progressRatio >= 0.5 ? '#FF8C42' : '#FF6B8A';
-            var valueColor = arcColor;
-            var arcRadius = wp(18);
-            var arcStroke = 8;
-            var arcCircumference = Math.PI * arcRadius;
-            var arcOffset = arcCircumference * (1 - Math.min(progressRatio, 1));
-            var remaining = Math.max(0, 150 - weeklyMinutes);
-            var surplus = Math.max(0, weeklyMinutes - 150);
-
-            // Week dates
-            var now = new Date();
-            var dayOfWeek = now.getDay();
-            var diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-            var monday = new Date(now); monday.setDate(now.getDate() - diffToMonday);
-            var sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
-            var weekLabel = monday.getDate() + '-' + sunday.getDate() + ' ' + sunday.toLocaleDateString('fr-FR', { month: 'long' });
-
-            // Days remaining
-            var diffToSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
-            var daysLeft = Math.max(1, diffToSunday);
-            var minPerDay = Math.ceil(remaining / daysLeft);
-
-            return (
-              <View style={{
-                marginHorizontal: wp(16), marginBottom: 16,
-                backgroundColor: '#2A303B', borderRadius: 14,
-                borderWidth: 1, borderColor: '#3A3F46', padding: wp(16),
-              }}>
-                {/* Ligne 1 — header */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(10) }}>
-                  <Text style={{ color: '#888', fontSize: fp(9), letterSpacing: 2, textTransform: 'uppercase' }}>🌍 OBJECTIF OMS</Text>
-                  <Text style={{ color: '#888', fontSize: fp(9) }}>Semaine du {weekLabel}</Text>
-                </View>
-
-                {/* Ligne 2 — jauge + textes */}
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {/* Jauge semi-circulaire */}
-                  <View style={{ width: arcRadius * 2 + arcStroke + 4, height: arcRadius + arcStroke + 4, marginRight: wp(14) }}>
-                    <Svg width={arcRadius * 2 + arcStroke + 4} height={arcRadius + arcStroke + 4} viewBox={'0 0 ' + (arcRadius * 2 + arcStroke + 4) + ' ' + (arcRadius + arcStroke + 4)}>
-                      {/* Background arc */}
-                      <Circle
-                        cx={arcRadius + arcStroke / 2 + 2} cy={arcRadius + arcStroke / 2 + 2} r={arcRadius}
-                        stroke="#333" strokeWidth={arcStroke} fill="none"
-                        strokeLinecap="round"
-                        strokeDasharray={arcCircumference + ' ' + arcCircumference}
-                        strokeDashoffset={0}
-                        transform={'rotate(180 ' + (arcRadius + arcStroke / 2 + 2) + ' ' + (arcRadius + arcStroke / 2 + 2) + ')'}
-                      />
-                      {/* Progress arc */}
-                      <Circle
-                        cx={arcRadius + arcStroke / 2 + 2} cy={arcRadius + arcStroke / 2 + 2} r={arcRadius}
-                        stroke={arcColor} strokeWidth={arcStroke} fill="none"
-                        strokeLinecap="round"
-                        strokeDasharray={arcCircumference + ' ' + arcCircumference}
-                        strokeDashoffset={arcOffset}
-                        transform={'rotate(180 ' + (arcRadius + arcStroke / 2 + 2) + ' ' + (arcRadius + arcStroke / 2 + 2) + ')'}
-                      />
-                    </Svg>
-                    {/* Center value */}
-                    <View style={{ position: 'absolute', top: wp(6), left: 0, right: 0, alignItems: 'center' }}>
-                      <Text style={{ color: valueColor, fontSize: fp(22), fontWeight: '800' }}>{weeklyMinutes}</Text>
-                      <Text style={{ color: '#666', fontSize: fp(10) }}>/ 150 min</Text>
-                    </View>
-                  </View>
-
-                  {/* Textes à droite */}
-                  <View style={{ flex: 1 }}>
-                    {isComplete ? (
-                      <View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginBottom: wp(4) }}>
-                          <View style={{ backgroundColor: 'rgba(0,217,132,0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
-                            <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>ATTEINT ✓</Text>
-                          </View>
-                          <Text style={{ fontSize: fp(16) }}>🏅</Text>
-                        </View>
-                        <Text style={{ color: '#00D984', fontSize: fp(10) }}>
-                          Tu dépasses de {surplus} min la recommandation
-                        </Text>
-                      </View>
-                    ) : (
-                      <View>
-                        <View style={{ marginBottom: wp(4) }}>
-                          <View style={{ backgroundColor: 'rgba(255,140,66,0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, alignSelf: 'flex-start' }}>
-                            <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700' }}>EN COURS</Text>
-                          </View>
-                        </View>
-                        <Text style={{ color: '#FF8C42', fontSize: fp(10) }}>
-                          Il te reste {remaining} min cette semaine
-                        </Text>
-                        <Text style={{ color: '#666', fontSize: fp(9), marginTop: wp(2) }}>
-                          ≈ {minPerDay} min/jour sur {daysLeft} jour{daysLeft > 1 ? 's' : ''} restant{daysLeft > 1 ? 's' : ''}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-
-                {/* Ligne 3 — contexte OMS */}
-                <Text style={{ color: '#555', fontSize: fp(8), fontStyle: 'italic', marginTop: wp(10) }}>
-                  Recommandation OMS : 150 min d'activité modérée par semaine
-                </Text>
-              </View>
-            );
-          })()}
-
           {/* ═══ MARCHE — SIDE-SCROLL ═══ */}
           <MetalCard style={{
             marginHorizontal: wp(16), marginBottom: 16, borderRadius: wp(14), borderWidth: 0.5,
@@ -1093,6 +984,73 @@ export default function ActivityPage({ navigation }) {
               <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#D4AF37' }}>{t.bonusFirst}</Text>
             </View>
           )}
+
+          {/* OMS weekly — MetalCard redesign (moved to bottom) */}
+          {(function() {
+            var isComplete = weeklyMinutes >= 150;
+            var progressRatio = Math.min(weeklyMinutes / 150, 1.3);
+            var arcColor = progressRatio >= 0.8 ? '#00D984' : progressRatio >= 0.5 ? '#FF8C42' : '#FF6B8A';
+            var valueColor = arcColor;
+            var arcRadius = wp(18);
+            var arcStroke = 8;
+            var arcCircumference = Math.PI * arcRadius;
+            var arcOffset = arcCircumference * (1 - Math.min(progressRatio, 1));
+            var remaining = Math.max(0, 150 - weeklyMinutes);
+            var surplus = Math.max(0, weeklyMinutes - 150);
+            var now = new Date();
+            var dayOfWeek = now.getDay();
+            var diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            var monday = new Date(now); monday.setDate(now.getDate() - diffToMonday);
+            var sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+            var weekLabel = monday.getDate() + '-' + sunday.getDate() + ' ' + sunday.toLocaleDateString('fr-FR', { month: 'long' });
+            var diffToSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+            var daysLeft = Math.max(1, diffToSunday);
+            var minPerDay = Math.ceil(remaining / daysLeft);
+            return (
+              <View style={{ marginHorizontal: wp(16), marginBottom: 16, backgroundColor: '#2A303B', borderRadius: 14, borderWidth: 1, borderColor: '#3A3F46', padding: wp(16) }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(10) }}>
+                  <Text style={{ color: '#888', fontSize: fp(9), letterSpacing: 2, textTransform: 'uppercase' }}>🌍 OBJECTIF OMS</Text>
+                  <Text style={{ color: '#888', fontSize: fp(9) }}>Semaine du {weekLabel}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ width: arcRadius * 2 + arcStroke + 4, height: arcRadius + arcStroke + 4, marginRight: wp(14) }}>
+                    <Svg width={arcRadius * 2 + arcStroke + 4} height={arcRadius + arcStroke + 4} viewBox={'0 0 ' + (arcRadius * 2 + arcStroke + 4) + ' ' + (arcRadius + arcStroke + 4)}>
+                      <Circle cx={arcRadius + arcStroke / 2 + 2} cy={arcRadius + arcStroke / 2 + 2} r={arcRadius} stroke="#333" strokeWidth={arcStroke} fill="none" strokeLinecap="round" strokeDasharray={arcCircumference + ' ' + arcCircumference} strokeDashoffset={0} transform={'rotate(180 ' + (arcRadius + arcStroke / 2 + 2) + ' ' + (arcRadius + arcStroke / 2 + 2) + ')'} />
+                      <Circle cx={arcRadius + arcStroke / 2 + 2} cy={arcRadius + arcStroke / 2 + 2} r={arcRadius} stroke={arcColor} strokeWidth={arcStroke} fill="none" strokeLinecap="round" strokeDasharray={arcCircumference + ' ' + arcCircumference} strokeDashoffset={arcOffset} transform={'rotate(180 ' + (arcRadius + arcStroke / 2 + 2) + ' ' + (arcRadius + arcStroke / 2 + 2) + ')'} />
+                    </Svg>
+                    <View style={{ position: 'absolute', top: wp(6), left: 0, right: 0, alignItems: 'center' }}>
+                      <Text style={{ color: valueColor, fontSize: fp(22), fontWeight: '800' }}>{weeklyMinutes}</Text>
+                      <Text style={{ color: '#666', fontSize: fp(10) }}>/ 150 min</Text>
+                    </View>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    {isComplete ? (
+                      <View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginBottom: wp(4) }}>
+                          <View style={{ backgroundColor: 'rgba(0,217,132,0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
+                            <Text style={{ color: '#00D984', fontSize: fp(10), fontWeight: '700' }}>ATTEINT ✓</Text>
+                          </View>
+                          <Text style={{ fontSize: fp(16) }}>🏅</Text>
+                        </View>
+                        <Text style={{ color: '#00D984', fontSize: fp(10) }}>Tu dépasses de {surplus} min la recommandation</Text>
+                      </View>
+                    ) : (
+                      <View>
+                        <View style={{ marginBottom: wp(4) }}>
+                          <View style={{ backgroundColor: 'rgba(255,140,66,0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, alignSelf: 'flex-start' }}>
+                            <Text style={{ color: '#FF8C42', fontSize: fp(10), fontWeight: '700' }}>EN COURS</Text>
+                          </View>
+                        </View>
+                        <Text style={{ color: '#FF8C42', fontSize: fp(10) }}>Il te reste {remaining} min cette semaine</Text>
+                        <Text style={{ color: '#666', fontSize: fp(9), marginTop: wp(2) }}>≈ {minPerDay} min/jour sur {daysLeft} jour{daysLeft > 1 ? 's' : ''} restant{daysLeft > 1 ? 's' : ''}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+                <Text style={{ color: '#555', fontSize: fp(8), fontStyle: 'italic', marginTop: wp(10) }}>Recommandation OMS : 150 min d'activité modérée par semaine</Text>
+              </View>
+            );
+          })()}
 
         </ScrollView>
 
