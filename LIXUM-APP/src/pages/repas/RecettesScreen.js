@@ -676,21 +676,21 @@ export default function RecettesScreen({
         'Moment: ' + ctx.timeOfDay + '\n' +
         (ctx.mood ? 'Humeur: ' + ctx.mood + '\n' : '') +
         (ctx.weather ? 'Météo: ' + ctx.weather + '\n' : '') +
-        '\nCATÉGORIE CHOISIE: ' + (category === 'my_ingredients' ? 'Recette avec ingrédients imposés' : category) + '\n' +
+        '\nCATÉGORIE CHOISIE: ' + (category === 'my_ingredients' ? 'Recette avec ingrédients imposés' : category === 'surprise' ? 'Surprise — choisis 3 plats variés et créatifs' : category) + '\n' +
         (userIngList ? 'INGRÉDIENTS IMPOSÉS: ' + userIngList + '\n' : '') +
+        '\nMODE APERÇU — Donne UNIQUEMENT un résumé rapide, PAS d\'ingrédients ni d\'étapes.\n' +
         '\nRÈGLES STRICTES:\n' +
-        '1. Propose EXACTEMENT 3 recettes: une légère, une normale (dîner), une consistante\n' +
-        '2. Adapte les grammes pour couvrir les macros RESTANTES\n' +
+        '1. Propose EXACTEMENT 3 recettes: une légère, une normale, une consistante\n' +
+        '2. Adapte les macros pour couvrir le RESTANT\n' +
         '3. Respecte le régime (' + ctx.regime + ')\n' +
-        '4. NUIT (après 20h): PAS de riz ni plats lourds. Soupes, milkshakes, yaourts, salades\n' +
-        '5. Si > 800 kcal restantes le soir: signale et propose de rattraper demain\n' +
+        '4. NUIT (après 20h): PAS de riz ni plats lourds\n' +
+        '5. Si > 800 kcal restantes le soir: signale\n' +
         '6. Culture africaine: mafé/thiéboudienne = MIDI uniquement\n' +
-        '7. Chaque recette: nom, kcal total, protéines/glucides/lipides, temps de préparation, liste ingrédients avec grammes ET kcal par ingrédient, étapes de préparation\n' +
-        '8. Si météo pluie + humeur triste: privilégie soupes réconfortantes\n' +
-        '9. Description courte et motivante en 1 phrase pour chaque option\n' +
+        '7. Si météo pluie + humeur triste: soupes réconfortantes\n' +
+        '8. Chaque recette: nom, kcal, protein, carbs, fat, time, description (1 phrase), comment (2-3 phrases pourquoi ce plat), water_ml, water_tip\n' +
         '\nRÉPONDS EN JSON STRICTEMENT (pas de markdown, pas de backticks):\n' +
-        '{"proposals":[{"name":"Nom","kcal":520,"protein":45,"carbs":60,"fat":20,"time":"25 min","description":"Phrase motivante courte","ingredients":[{"name":"Poulet","quantity":"180g","kcal":248},{"name":"Riz","quantity":"100g","kcal":130}],"steps":"1. Faire... 2. Ajouter..."}]}\n' +
-        'IMPORTANT: Exactement 3 objets dans proposals. JSON pur, rien d\'autre.';
+        '{"proposals":[{"name":"Nom","kcal":520,"protein":45,"carbs":60,"fat":20,"time":"25 min","description":"Phrase courte","comment":"Pourquoi ce plat...","water_ml":300,"water_tip":"Aide à la digestion"}]}\n' +
+        'IMPORTANT: Exactement 3 objets. PAS d\'ingrédients, PAS d\'étapes. JSON pur.';
 
       var response = await fetch(
         SUPABASE_URL + '/functions/v1/lixman-chat',
@@ -756,6 +756,66 @@ export default function RecettesScreen({
     }
 
     setAlixenLoading(false);
+  };
+
+  // Phase 2 — Load full recipe details (ingredients + steps) for a single proposal
+  var _detailLoading = useState(false); var detailLoading = _detailLoading[0]; var setDetailLoading = _detailLoading[1];
+
+  var loadRecipeDetails = async function(proposal) {
+    setDetailLoading(true);
+    setAlixenSelectedRecipe(proposal);
+    setAlixenRecipeScreen('detail');
+
+    try {
+      var detailPrompt = 'Tu es ALIXEN, chef cuisinier IA. Donne les ingrédients détaillés et les étapes de préparation UNIQUEMENT pour ce plat :\n\n' +
+        'Plat : ' + proposal.name + '\n' +
+        'Kcal total : ' + (proposal.kcal || 0) + '\n' +
+        'Protéines : ' + (proposal.protein || 0) + 'g, Glucides : ' + (proposal.carbs || 0) + 'g, Lipides : ' + (proposal.fat || 0) + 'g\n' +
+        'Temps : ' + (proposal.time || '20 min') + '\n\n' +
+        'RÈGLES :\n' +
+        '1. Liste COMPLÈTE des ingrédients avec nom, quantité en grammes, et kcal par ingrédient\n' +
+        '2. Étapes de préparation numérotées et détaillées\n' +
+        '3. Les quantités doivent totaliser les macros indiquées\n\n' +
+        'RÉPONDS EN JSON STRICTEMENT (pas de markdown) :\n' +
+        '{"ingredients":[{"name":"Poulet","quantity":"180g","kcal":248}],"steps":"1. Faire... 2. Ajouter..."}\n' +
+        'JSON pur, rien d\'autre.';
+
+      var response = await fetch(
+        SUPABASE_URL + '/functions/v1/lixman-chat',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+          body: JSON.stringify({ userId: userId, message: detailPrompt, mode: 'recipe' }),
+        }
+      );
+
+      var data = await response.json();
+      var rawMessage = data.message || data.reply || '';
+      var details = null;
+
+      if (data.ingredients) {
+        details = data;
+      } else {
+        try {
+          var cleaned = rawMessage.replace(/```json/g, '').replace(/```/g, '').trim();
+          details = JSON.parse(cleaned);
+        } catch (e) {
+          console.error('Detail parse error:', e);
+        }
+      }
+
+      if (details) {
+        var enriched = Object.assign({}, proposal, {
+          ingredients: details.ingredients || [],
+          steps: details.steps || '',
+        });
+        setAlixenSelectedRecipe(enriched);
+      }
+    } catch (e) {
+      console.error('loadRecipeDetails error:', e);
+    }
+
+    setDetailLoading(false);
   };
 
   var generateFallbackProposals = function(ctx, category) {
@@ -1642,8 +1702,7 @@ export default function RecettesScreen({
                           <Pressable
                             key={idx}
                             onPress={function() {
-                              setAlixenSelectedRecipe(proposal);
-                              setAlixenRecipeScreen('detail');
+                              loadRecipeDetails(proposal);
                             }}
                             style={function(state) {
                               return {
@@ -2078,7 +2137,14 @@ export default function RecettesScreen({
                     </LinearGradient>
                   </View>
 
-                  <View style={{ marginBottom: wp(16) }}>
+                  {detailLoading ? (
+                    <View style={{ alignItems: 'center', paddingVertical: wp(20), backgroundColor: '#2A303B', borderRadius: 14, borderWidth: 1, borderColor: '#3A3F46', marginBottom: wp(16) }}>
+                      <ActivityIndicator size="small" color="#00D984" />
+                      <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600', marginTop: wp(8) }}>Chargement des ingrédients...</Text>
+                    </View>
+                  ) : null}
+
+                  {!detailLoading ? <View style={{ marginBottom: wp(16) }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
                       <View style={{ width: 3, height: 16, borderRadius: 2, backgroundColor: '#D4AF37', marginRight: wp(8) }} />
                       <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '700' }}>
@@ -2116,9 +2182,9 @@ export default function RecettesScreen({
                         );
                       })}
                     </View>
-                  </View>
+                  </View> : null}
 
-                  {alixenSelectedRecipe.steps && (
+                  {!detailLoading && alixenSelectedRecipe.steps ? (
                     <View style={{ marginBottom: wp(16) }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
                         <View style={{ width: 3, height: 16, borderRadius: 2, backgroundColor: '#FF8C42', marginRight: wp(8) }} />
@@ -2138,7 +2204,7 @@ export default function RecettesScreen({
                         </Text>
                       </View>
                     </View>
-                  )}
+                  ) : null}
 
                   {alixenAdvice && (
                     <View style={{
