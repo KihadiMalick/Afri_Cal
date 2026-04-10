@@ -259,6 +259,20 @@ var AlixenParticles = function(props) {
   var morphRef = useRef(0); var activeRef = useRef('idle'); var pendingRef = useRef(null); var phaseRef = useRef('idle'); var startRef = useRef(Date.now());
   var lastKeystrokeRef = useRef(0);
 
+  // Fix 3: Pre-allocated buffers (no per-frame allocation)
+  var npBuf = useRef(null);
+  var connsBuf = useRef(null);
+  var frameCountRef = useRef(0);
+  var lastConnsRef = useRef([]);
+  if (!npBuf.current) {
+    npBuf.current = [];
+    for (var bi = 0; bi < NUM_PARTICLES; bi++) { npBuf.current.push({ x: 0, y: 0, size: 1, opacity: 0, color: '#4DA6FF', layer: 'dust', flash: false }); }
+  }
+  if (!connsBuf.current) {
+    connsBuf.current = [];
+    for (var ci = 0; ci < MAX_CONN + 10; ci++) { connsBuf.current.push({ x1: 0, y1: 0, x2: 0, y2: 0, op: 0 }); }
+  }
+
   useEffect(function() {
     if (keystrokeCount > 0 && keystrokeCount !== lastKeystrokeRef.current) {
       lastKeystrokeRef.current = keystrokeCount;
@@ -270,12 +284,19 @@ var AlixenParticles = function(props) {
     }
   }, [keystrokeCount]);
 
+  // Fix 1: Direct A→B transition (skip idle)
   useEffect(function() {
     var cur = activeRef.current;
     if (reqState === cur) return;
     if (reqState === 'idle') { phaseRef.current = 'out'; pendingRef.current = null; }
     else if (cur === 'idle') { activeRef.current = reqState; phaseRef.current = 'in'; }
-    else { phaseRef.current = 'out'; pendingRef.current = reqState; }
+    else {
+      // Direct transition: morph out then immediately switch to new state
+      activeRef.current = reqState;
+      morphRef.current = 0;
+      phaseRef.current = 'in';
+      pendingRef.current = null;
+    }
   }, [reqState]);
 
   useEffect(function() {
@@ -285,12 +306,14 @@ var AlixenParticles = function(props) {
       if (pausedRef.current) return;
       var el = (Date.now() - startRef.current) / 1000;
       var ph = phaseRef.current; var m = morphRef.current;
-      if (ph === 'in') { m += 0.025; if (m >= 1) { m = 1; phaseRef.current = 'active'; } }
-      else if (ph === 'out') { m -= 0.03; if (m <= 0.02) { m = 0; var pend = pendingRef.current; if (pend) { activeRef.current = pend; pendingRef.current = null; phaseRef.current = 'in'; } else { activeRef.current = 'idle'; phaseRef.current = 'idle'; } } }
+      // Fix 2: Doubled morph speed (0.025→0.05, 0.03→0.06)
+      if (ph === 'in') { m += 0.05; if (m >= 1) { m = 1; phaseRef.current = 'active'; } }
+      else if (ph === 'out') { m -= 0.06; if (m <= 0.02) { m = 0; var pend = pendingRef.current; if (pend) { activeRef.current = pend; pendingRef.current = null; phaseRef.current = 'in'; } else { activeRef.current = 'idle'; phaseRef.current = 'idle'; } } }
       else if (ph === 'active') { m = 1; } else { m = 0; }
       morphRef.current = m;
       var state = activeRef.current; var isMem = state === 'memory' && m > 0.5;
-      var np = [];
+      // Fix 3: Reuse npBuf instead of allocating new array
+      var np = npBuf.current;
       for (var i = 0; i < particles.length; i++) {
         var p = particles[i];
         var dist = Math.sqrt(p.homeX * p.homeX + p.homeY * p.homeY);
@@ -325,27 +348,35 @@ var AlixenParticles = function(props) {
           opacity = Math.min(1, opacity + shimmer * shimmerStr * 0.45);
           if (shimmer > 0.82) size *= 1.4;
         }
-        np.push({ x: x, y: y, size: size, opacity: opacity, color: color, layer: p.layer, flash: flash });
+        np[i].x = x; np[i].y = y; np[i].size = size; np[i].opacity = opacity; np[i].color = color; np[i].layer = p.layer; np[i].flash = flash;
       }
-      var conns = [];
-      for (var a = 0; a < particles.length; a += 3) {
-        if (conns.length >= MAX_CONN) break;
-        for (var b = a + 1; b < Math.min(a + 40, particles.length); b++) {
-          if (conns.length >= MAX_CONN) break;
-          var pa = np[a]; var pb = np[b]; var dx = pa.x - pb.x; var dy = pa.y - pb.y; var dd = Math.sqrt(dx * dx + dy * dy);
-          if (dd < CONN_DIST && dd > 2) { var lo = (1 - dd / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a * 0.3) * 0.5); if (lo > 0.01) conns.push({ x1: pa.x, y1: pa.y, x2: pb.x, y2: pb.y, op: lo }); }
+      // Fix 4: Connections calculated every 3rd frame
+      frameCountRef.current += 1;
+      var conns;
+      var connCount = 0;
+      if (frameCountRef.current % 3 === 0) {
+        conns = connsBuf.current;
+        connCount = 0;
+        for (var a = 0; a < particles.length; a += 3) {
+          if (connCount >= MAX_CONN) break;
+          for (var b = a + 1; b < Math.min(a + 40, particles.length); b++) {
+            if (connCount >= MAX_CONN) break;
+            var pa = np[a]; var pb = np[b]; var dx = pa.x - pb.x; var dy = pa.y - pb.y; var dd = Math.sqrt(dx * dx + dy * dy);
+            if (dd < CONN_DIST && dd > 2) { var lo = (1 - dd / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a * 0.3) * 0.5); if (lo > 0.01) { conns[connCount].x1 = pa.x; conns[connCount].y1 = pa.y; conns[connCount].x2 = pb.x; conns[connCount].y2 = pb.y; conns[connCount].op = lo; connCount++; } }
+          }
         }
-      }
-      for (var a2 = particles.length - 1; a2 > 0; a2 -= 3) {
-        if (conns.length >= MAX_CONN) break;
-        for (var b2 = a2 - 1; b2 > Math.max(a2 - 40, 0); b2--) {
-          if (conns.length >= MAX_CONN) break;
-          var pa2 = np[a2]; var pb2 = np[b2]; var dx2 = pa2.x - pb2.x; var dy2 = pa2.y - pb2.y; var dd2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-          if (dd2 < CONN_DIST && dd2 > 2) { var lo2 = (1 - dd2 / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a2 * 0.3) * 0.5); if (lo2 > 0.01) conns.push({ x1: pa2.x, y1: pa2.y, x2: pb2.x, y2: pb2.y, op: lo2 }); }
+        for (var a2 = particles.length - 1; a2 > 0; a2 -= 3) {
+          if (connCount >= MAX_CONN) break;
+          for (var b2 = a2 - 1; b2 > Math.max(a2 - 40, 0); b2--) {
+            if (connCount >= MAX_CONN) break;
+            var pa2 = np[a2]; var pb2 = np[b2]; var dx2 = pa2.x - pb2.x; var dy2 = pa2.y - pb2.y; var dd2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+            if (dd2 < CONN_DIST && dd2 > 2) { var lo2 = (1 - dd2 / CONN_DIST) * 0.35 * (0.5 + Math.sin(el * 1.2 + a2 * 0.3) * 0.5); if (lo2 > 0.01) { conns[connCount].x1 = pa2.x; conns[connCount].y1 = pa2.y; conns[connCount].x2 = pb2.x; conns[connCount].y2 = pb2.y; conns[connCount].op = lo2; connCount++; } }
+          }
         }
+        if (state === 'thinking' && m > 0.5) { for (var mi = 0; mi < 9 && connCount < MAX_CONN; mi++) { conns[connCount].x1 = np[mi].x; conns[connCount].y1 = np[mi].y; conns[connCount].x2 = np[mi + 1].x; conns[connCount].y2 = np[mi + 1].y; conns[connCount].op = 0.12; connCount++; } }
+        lastConnsRef.current = conns.slice(0, connCount);
       }
-      if (state === 'thinking' && m > 0.5) { for (var mi = 0; mi < 9; mi++) conns.push({ x1: np[mi].x, y1: np[mi].y, x2: np[mi + 1].x, y2: np[mi + 1].y, op: 0.12 }); }
-      setPos({ p: np, c: conns, morph: m });
+      setPos({ p: np.slice(0, particles.length), c: lastConnsRef.current, morph: m });
     };
     var interval = setInterval(tick, FPS); tick();
     return function() { running = false; clearInterval(interval); };

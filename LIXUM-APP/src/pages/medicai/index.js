@@ -6,7 +6,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   Image, Platform, Animated, KeyboardAvoidingView,
-  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Modal, ActivityIndicator,
+  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Modal, ActivityIndicator, BackHandler,
 } from 'react-native';
 import Svg, {
   Defs, Rect, Path, Circle, Ellipse, Line,
@@ -370,6 +370,20 @@ export default function MedicAiPage({ navigation }) {
     if (userId) refreshLixFromServer();
     return function() { setPageActive(false); };
   }, [userId, refreshLixFromServer]));
+
+  // Close MedicAi — navigate to Home
+  var closeMedicAi = function() {
+    if (navigation) navigation.navigate('Accueil');
+  };
+
+  // Android back button → close MedicAi
+  useEffect(function() {
+    var handler = BackHandler.addEventListener('hardwareBackPress', function() {
+      closeMedicAi();
+      return true;
+    });
+    return function() { handler.remove(); };
+  }, []);
 
   // ── Afficher le message de bienvenue dans la carte ──────────────────────
   useEffect(() => {
@@ -2052,24 +2066,27 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
   };
 
   const renderMain = () => (
-    <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
-      <StatusBar barStyle="dark-content" />
+    <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
+      <StatusBar barStyle="light-content" backgroundColor="#1E2530" />
 
-      {/* ===== HEADER — MedicAi sobre sur fond clair ===== */}
+      {/* ===== HEADER — MedicAi immersive ===== */}
       <View style={{
-        backgroundColor: '#F4F6F8',
-        paddingTop: Platform.OS === 'android' ? 50 : 55,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
+        backgroundColor: '#1E2530',
+        paddingTop: Platform.OS === 'android' ? 44 : 50,
+        paddingHorizontal: 16, paddingBottom: 6,
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
       }}>
-        <PageHeader
-          title="MedicAi"
-          titleColor="#FF3B5C"
-          lixBalance={lixBalance}
-          userEnergy={userEnergy}
-          onLixPress={function() { if (navigation) navigation.navigate('LixVerse'); }}
-          onProfilePress={function() { if (navigation) navigation.navigate('Profile'); }}
-        />
+        <Text style={{ fontSize: fp(20), fontWeight: '900', color: '#FF3B5C', letterSpacing: 1 }}>MedicAi</Text>
+        <Pressable onPress={closeMedicAi} style={function(state) {
+          return {
+            width: 36, height: 36, borderRadius: 18,
+            backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46',
+            justifyContent: 'center', alignItems: 'center',
+            opacity: state.pressed ? 0.7 : 1,
+          };
+        }}>
+          <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '600' }}>✕</Text>
+        </Pressable>
       </View>
 
       {/* ===== ZONE DE CONTENU ===== */}
@@ -2114,7 +2131,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         </View>
 
         {/* Labels ALIXEN / Membre — sticky */}
-        <View style={{ backgroundColor: '#E8ECF0', paddingTop: 4, paddingBottom: 2 }}>
+        <View style={{ backgroundColor: '#1E2530', paddingTop: 4, paddingBottom: 2 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 2, gap: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Animated.View style={{ width: wm === 'alixen' ? 12 : 10, height: wm === 'alixen' ? 12 : 10, borderRadius: 6, backgroundColor: '#4DA6FF', marginRight: 5, justifyContent: 'center', alignItems: 'center', opacity: wm === 'alixen' ? pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.0] }) : 0.35 }}>
@@ -2242,14 +2259,15 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         }}>
           <View style={{
             marginHorizontal: wp(12),
-            marginBottom: wp(12),
+            marginBottom: wp(16),
             borderRadius: wp(28),
             overflow: 'hidden',
             backgroundColor: '#FFFFFF',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.08,
-            shadowRadius: 8,
+            borderWidth: 1, borderColor: 'rgba(0,217,132,0.3)',
+            shadowColor: '#00D984',
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.15,
+            shadowRadius: 12,
             elevation: 3,
             position: 'relative',
           }}>
@@ -2414,14 +2432,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         </Animated.View>
       </KeyboardAvoidingView>
 
-      {/* ===== BOTTOM TAB BAR ===== */}
-      {!keyboardVisible && (
-        <BottomTabs activeTab="medicai" onTabPress={function(key) {
-          if (key === 'medicai') return;
-          var routes = { home: 'Accueil', meals: 'Repas', medicai: 'MedicAi', activity: 'Activite', lixverse: 'LixVerse' };
-          if (routes[key] && navigation) navigation.navigate(routes[key]);
-        }} />
-      )}
+      {/* BottomTabs removed — MedicAi is immersive full-screen */}
 
       {/* === MODAL MESSAGE COMPLET === */}
       {selectedMessage && (

@@ -126,37 +126,48 @@ export default function RecettesScreen({
       );
       tubeBubbleLoop.current.start();
 
-      // Sequential tube fills
-      var timers = [];
-      for (var i = 0; i < TUBE_COUNT; i++) {
-        (function(idx) {
-          var t = setTimeout(function() {
-            setTubePhase(idx);
-            Animated.timing(tubeFills[idx], {
-              toValue: 1, duration: TUBE_DURATION, useNativeDriver: false,
-            }).start(function() {
-              if (idx === TUBE_COUNT - 1) {
-                // Final glow
-                Animated.sequence([
-                  Animated.timing(tubeGlow, { toValue: 0.3, duration: 200, useNativeDriver: false }),
-                  Animated.timing(tubeGlow, { toValue: 0, duration: 200, useNativeDriver: false }),
-                ]).start();
-              }
+      // Cycling tube fills — loops every 10s, snaps on API response
+      var tubeIdx = 0;
+      var fillNext = function() {
+        if (tubeIdx >= TUBE_COUNT) {
+          // Reset and loop
+          tubeIdx = 0;
+          tubeFills.forEach(function(f) { f.setValue(0); });
+        }
+        setTubePhase(tubeIdx);
+        Animated.timing(tubeFills[tubeIdx], {
+          toValue: 1, duration: 1800, useNativeDriver: false,
+        }).start(function() {
+          tubeIdx++;
+          if (tubeIdx < TUBE_COUNT) {
+            tubeTimers.current[0] = setTimeout(fillNext, 100);
+          } else {
+            // Glow then reset
+            Animated.sequence([
+              Animated.timing(tubeGlow, { toValue: 0.2, duration: 200, useNativeDriver: false }),
+              Animated.timing(tubeGlow, { toValue: 0, duration: 200, useNativeDriver: false }),
+            ]).start(function() {
+              tubeTimers.current[0] = setTimeout(fillNext, 400);
             });
-          }, idx * TUBE_DURATION);
-          timers.push(t);
-        })(i);
-      }
-      tubeTimers.current = timers;
+          }
+        });
+      };
+      fillNext();
+      tubeTimers.current = [null];
 
       return function() {
-        tubeTimers.current.forEach(function(t) { clearTimeout(t); });
+        if (tubeTimers.current) tubeTimers.current.forEach(function(t) { if (t) clearTimeout(t); });
+        tubeFills.forEach(function(f) { f.stopAnimation(); });
         if (tubePulseLoop.current) tubePulseLoop.current.stop();
         if (tubeBubbleLoop.current) tubeBubbleLoop.current.stop();
       };
     } else {
-      // Loading done — fill all tubes instantly
-      tubeFills.forEach(function(f) { f.setValue(1); });
+      // Loading done — snap all tubes to full + final glow
+      tubeFills.forEach(function(f) { f.stopAnimation(); Animated.timing(f, { toValue: 1, duration: 300, useNativeDriver: false }).start(); });
+      Animated.sequence([
+        Animated.timing(tubeGlow, { toValue: 0.3, duration: 150, useNativeDriver: false }),
+        Animated.timing(tubeGlow, { toValue: 0, duration: 150, useNativeDriver: false }),
+      ]).start();
       if (tubePulseLoop.current) tubePulseLoop.current.stop();
       if (tubeBubbleLoop.current) tubeBubbleLoop.current.stop();
     }
@@ -665,21 +676,21 @@ export default function RecettesScreen({
         'Moment: ' + ctx.timeOfDay + '\n' +
         (ctx.mood ? 'Humeur: ' + ctx.mood + '\n' : '') +
         (ctx.weather ? 'Météo: ' + ctx.weather + '\n' : '') +
-        '\nCATÉGORIE CHOISIE: ' + (category === 'my_ingredients' ? 'Recette avec ingrédients imposés' : category) + '\n' +
+        '\nCATÉGORIE CHOISIE: ' + (category === 'my_ingredients' ? 'Recette avec ingrédients imposés' : category === 'surprise' ? 'Surprise — choisis 3 plats variés et créatifs' : category) + '\n' +
         (userIngList ? 'INGRÉDIENTS IMPOSÉS: ' + userIngList + '\n' : '') +
+        '\nMODE APERÇU — Donne UNIQUEMENT un résumé rapide, PAS d\'ingrédients ni d\'étapes.\n' +
         '\nRÈGLES STRICTES:\n' +
-        '1. Propose EXACTEMENT 3 recettes: une légère, une normale (dîner), une consistante\n' +
-        '2. Adapte les grammes pour couvrir les macros RESTANTES\n' +
+        '1. Propose EXACTEMENT 3 recettes: une légère, une normale, une consistante\n' +
+        '2. Adapte les macros pour couvrir le RESTANT\n' +
         '3. Respecte le régime (' + ctx.regime + ')\n' +
-        '4. NUIT (après 20h): PAS de riz ni plats lourds. Soupes, milkshakes, yaourts, salades\n' +
-        '5. Si > 800 kcal restantes le soir: signale et propose de rattraper demain\n' +
+        '4. NUIT (après 20h): PAS de riz ni plats lourds\n' +
+        '5. Si > 800 kcal restantes le soir: signale\n' +
         '6. Culture africaine: mafé/thiéboudienne = MIDI uniquement\n' +
-        '7. Chaque recette: nom, kcal total, protéines/glucides/lipides, temps de préparation, liste ingrédients avec grammes ET kcal par ingrédient, étapes de préparation\n' +
-        '8. Si météo pluie + humeur triste: privilégie soupes réconfortantes\n' +
-        '9. Description courte et motivante en 1 phrase pour chaque option\n' +
+        '7. Si météo pluie + humeur triste: soupes réconfortantes\n' +
+        '8. Chaque recette: nom, kcal, protein, carbs, fat, time, description (1 phrase), comment (2-3 phrases pourquoi ce plat), water_ml, water_tip\n' +
         '\nRÉPONDS EN JSON STRICTEMENT (pas de markdown, pas de backticks):\n' +
-        '{"proposals":[{"name":"Nom","kcal":520,"protein":45,"carbs":60,"fat":20,"time":"25 min","description":"Phrase motivante courte","ingredients":[{"name":"Poulet","quantity":"180g","kcal":248},{"name":"Riz","quantity":"100g","kcal":130}],"steps":"1. Faire... 2. Ajouter..."}]}\n' +
-        'IMPORTANT: Exactement 3 objets dans proposals. JSON pur, rien d\'autre.';
+        '{"proposals":[{"name":"Nom","kcal":520,"protein":45,"carbs":60,"fat":20,"time":"25 min","description":"Phrase courte","comment":"Pourquoi ce plat...","water_ml":300,"water_tip":"Aide à la digestion"}]}\n' +
+        'IMPORTANT: Exactement 3 objets. PAS d\'ingrédients, PAS d\'étapes. JSON pur.';
 
       var response = await fetch(
         SUPABASE_URL + '/functions/v1/lixman-chat',
@@ -745,6 +756,66 @@ export default function RecettesScreen({
     }
 
     setAlixenLoading(false);
+  };
+
+  // Phase 2 — Load full recipe details (ingredients + steps) for a single proposal
+  var _detailLoading = useState(false); var detailLoading = _detailLoading[0]; var setDetailLoading = _detailLoading[1];
+
+  var loadRecipeDetails = async function(proposal) {
+    setDetailLoading(true);
+    setAlixenSelectedRecipe(proposal);
+    setAlixenRecipeScreen('detail');
+
+    try {
+      var detailPrompt = 'Tu es ALIXEN, chef cuisinier IA. Donne les ingrédients détaillés et les étapes de préparation UNIQUEMENT pour ce plat :\n\n' +
+        'Plat : ' + proposal.name + '\n' +
+        'Kcal total : ' + (proposal.kcal || 0) + '\n' +
+        'Protéines : ' + (proposal.protein || 0) + 'g, Glucides : ' + (proposal.carbs || 0) + 'g, Lipides : ' + (proposal.fat || 0) + 'g\n' +
+        'Temps : ' + (proposal.time || '20 min') + '\n\n' +
+        'RÈGLES :\n' +
+        '1. Liste COMPLÈTE des ingrédients avec nom, quantité en grammes, et kcal par ingrédient\n' +
+        '2. Étapes de préparation numérotées et détaillées\n' +
+        '3. Les quantités doivent totaliser les macros indiquées\n\n' +
+        'RÉPONDS EN JSON STRICTEMENT (pas de markdown) :\n' +
+        '{"ingredients":[{"name":"Poulet","quantity":"180g","kcal":248}],"steps":"1. Faire... 2. Ajouter..."}\n' +
+        'JSON pur, rien d\'autre.';
+
+      var response = await fetch(
+        SUPABASE_URL + '/functions/v1/lixman-chat',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+          body: JSON.stringify({ userId: userId, message: detailPrompt, mode: 'recipe' }),
+        }
+      );
+
+      var data = await response.json();
+      var rawMessage = data.message || data.reply || '';
+      var details = null;
+
+      if (data.ingredients) {
+        details = data;
+      } else {
+        try {
+          var cleaned = rawMessage.replace(/```json/g, '').replace(/```/g, '').trim();
+          details = JSON.parse(cleaned);
+        } catch (e) {
+          console.error('Detail parse error:', e);
+        }
+      }
+
+      if (details) {
+        var enriched = Object.assign({}, proposal, {
+          ingredients: details.ingredients || [],
+          steps: details.steps || '',
+        });
+        setAlixenSelectedRecipe(enriched);
+      }
+    } catch (e) {
+      console.error('loadRecipeDetails error:', e);
+    }
+
+    setDetailLoading(false);
   };
 
   var generateFallbackProposals = function(ctx, category) {
@@ -1302,22 +1373,108 @@ export default function RecettesScreen({
                         </Text>
                       </View>
 
-                      <Text style={{
-                        color: '#8892A0', fontSize: fp(10), fontWeight: '700',
-                        letterSpacing: 1.5, marginBottom: wp(10),
-                      }}>
-                        QUE VEUX-TU PRÉPARER ?
+                      {/* SURPRENDS-MOI — MetalCard bordure dense */}
+                      <Pressable
+                        onPress={function() {
+                          var costCheck = checkAlixenRecipeCost();
+                          if (!costCheck.allowed) {
+                            showModal('error', '💎 Lix insuffisants', 'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées', { type: 'confirm', confirmText: 'Aller au LixVerse', cancelText: 'OK', onConfirm: function() { closeModal(); if (onNavigate) onNavigate('lixverse'); onClose(); } });
+                            return;
+                          }
+                          if (costCheck.cost > 0) {
+                            showModal('confirm', '🤖 Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
+                              confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
+                              onConfirm: function() {
+                                closeModal();
+                                deductAlixenLix(50).then(function(success) {
+                                  if (success) {
+                                    setAlixenCategory('surprise');
+                                    setAlixenRecipeScreen('proposals');
+                                    setAlixenLoading(true);
+                                    generateAlixenProposals('surprise');
+                                  } else {
+                                    showModal('error', 'Erreur', 'Impossible de débiter les Lix.');
+                                  }
+                                });
+                              },
+                            });
+                            return;
+                          }
+                          setAlixenCategory('surprise');
+                          setAlixenRecipeScreen('proposals');
+                          setAlixenLoading(true);
+                          generateAlixenProposals('surprise');
+                        }}
+                        style={function(state) { return { opacity: state.pressed ? 0.85 : 1, marginBottom: wp(8) }; }}
+                      >
+                        <LinearGradient
+                          colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                          style={{
+                            flexDirection: 'row', alignItems: 'center',
+                            padding: wp(14), borderRadius: 14,
+                            borderWidth: 1.5, borderColor: '#4A4F55',
+                          }}
+                        >
+                          <View style={{
+                            width: wp(44), height: wp(44), borderRadius: wp(22),
+                            backgroundColor: 'rgba(0,217,132,0.15)',
+                            justifyContent: 'center', alignItems: 'center',
+                            marginRight: wp(12),
+                          }}>
+                            <Text style={{ fontSize: fp(20) }}>✨</Text>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '800' }}>SURPRENDS-MOI</Text>
+                            <Text style={{ color: '#888', fontSize: fp(10), marginTop: 2 }}>ALIXEN choisit pour toi selon ta journée</Text>
+                          </View>
+                          <Text style={{ color: '#00D984', fontSize: fp(16) }}>›</Text>
+                        </LinearGradient>
+                      </Pressable>
+
+                      {/* Bouton "Mes ingrédients" — MetalCard bordure dense */}
+                      <Pressable
+                        onPress={function() {
+                          setAlixenRecipeScreen('my_ingredients');
+                          setAlixenMyIngredients([]);
+                          setAlixenIngSearch('');
+                          setAlixenIngResults([]);
+                        }}
+                        style={function(state) { return { opacity: state.pressed ? 0.85 : 1, marginBottom: wp(8) }; }}
+                      >
+                        <LinearGradient
+                          colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
+                          style={{
+                            flexDirection: 'row', alignItems: 'center',
+                            padding: wp(14), borderRadius: 14,
+                            borderWidth: 1.5, borderColor: '#4A4F55',
+                          }}
+                        >
+                          <View style={{
+                            width: wp(44), height: wp(44), borderRadius: wp(22),
+                            backgroundColor: 'rgba(0,217,132,0.08)',
+                            justifyContent: 'center', alignItems: 'center',
+                            marginRight: wp(12),
+                          }}>
+                            <Text style={{ fontSize: fp(20) }}>🔍</Text>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '800' }}>Mes ingrédients</Text>
+                            <Text style={{ color: '#888', fontSize: fp(10), marginTop: 2 }}>Propose tes ingrédients, ALIXEN crée la recette</Text>
+                          </View>
+                          <Text style={{ color: '#00D984', fontSize: fp(16) }}>›</Text>
+                        </LinearGradient>
+                      </Pressable>
+
+                      {/* Séparateur catégories */}
+                      <Text style={{ color: '#666', fontSize: fp(9), letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center', marginVertical: wp(14) }}>
+                        OU CHOISIS UNE CATÉGORIE
                       </Text>
 
-                      <View style={{
-                        flexDirection: 'row', flexWrap: 'wrap',
-                        gap: wp(8),
-                      }}>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8) }}>
                         {ALIXEN_CATEGORIES.filter(function(cat) { return cat.key !== 'snack'; }).map(function(cat) {
                           var isNight = alixenContext && alixenContext.timeOfDay === 'night';
                           var isHeavy = cat.key === 'rice' || cat.key === 'hearty';
                           var isLight = cat.key === 'light' || cat.key === 'soup' || cat.key === 'milkshake' || cat.key === 'salad';
-
                           return (
                             <Pressable
                               key={cat.key}
@@ -1353,86 +1510,23 @@ export default function RecettesScreen({
                               }}
                               style={function(state) {
                                 return {
-                                  width: '31%',
-                                  paddingVertical: wp(14),
-                                  borderRadius: 14,
+                                  width: '31%', paddingVertical: wp(14), borderRadius: 14,
                                   backgroundColor: state.pressed ? 'rgba(0,217,132,0.10)' : '#2A303B',
                                   borderWidth: 1,
-                                  borderColor: state.pressed
-                                    ? 'rgba(0,217,132,0.4)'
-                                    : isNight && isLight
-                                      ? 'rgba(0,217,132,0.25)'
-                                      : isNight && isHeavy
-                                        ? 'rgba(255,140,66,0.15)'
-                                        : '#3A3F46',
+                                  borderColor: state.pressed ? 'rgba(0,217,132,0.4)' : isNight && isLight ? 'rgba(0,217,132,0.25)' : isNight && isHeavy ? 'rgba(255,140,66,0.15)' : '#3A3F46',
                                   alignItems: 'center',
                                   opacity: isNight && isHeavy ? 0.5 : 1,
                                 };
                               }}
                             >
                               <Text style={{ fontSize: fp(20), marginBottom: wp(4) }}>{cat.emoji}</Text>
-                              <Text style={{
-                                color: '#EAEEF3', fontSize: fp(9), fontWeight: '600',
-                                textAlign: 'center',
-                              }} numberOfLines={1}>{cat.label}</Text>
-                              {isNight && isHeavy && (
-                                <Text style={{ color: '#FF8C42', fontSize: fp(7), marginTop: wp(2) }}>Déconseillé</Text>
-                              )}
-                              {isNight && isLight && (
-                                <Text style={{ color: '#00D984', fontSize: fp(7), marginTop: wp(2) }}>Recommandé</Text>
-                              )}
+                              <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={1}>{cat.label}</Text>
+                              {isNight && isHeavy ? <Text style={{ color: '#FF8C42', fontSize: fp(7), marginTop: wp(2) }}>Déconseillé</Text> : null}
+                              {isNight && isLight ? <Text style={{ color: '#00D984', fontSize: fp(7), marginTop: wp(2) }}>Recommandé</Text> : null}
                             </Pressable>
                           );
                         })}
                       </View>
-
-                      <View style={{
-                        height: 1, backgroundColor: 'rgba(255,255,255,0.05)',
-                        marginVertical: wp(16),
-                      }} />
-
-                      {/* Bouton "Mes ingrédients" — MetalCard bordure dense */}
-                      <Pressable
-                        onPress={function() {
-                          setAlixenRecipeScreen('my_ingredients');
-                          setAlixenMyIngredients([]);
-                          setAlixenIngSearch('');
-                          setAlixenIngResults([]);
-                        }}
-                        style={function(state) {
-                          return {
-                            borderRadius: 14, overflow: 'hidden',
-                            opacity: state.pressed ? 0.85 : 1,
-                          };
-                        }}
-                      >
-                        <LinearGradient
-                          colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-                          style={{
-                            flexDirection: 'row', alignItems: 'center',
-                            padding: wp(14), borderRadius: 14,
-                            borderWidth: 1.5, borderColor: '#4A4F55',
-                          }}
-                        >
-                          <View style={{
-                            width: wp(40), height: wp(40), borderRadius: wp(12),
-                            backgroundColor: 'rgba(0,217,132,0.08)',
-                            justifyContent: 'center', alignItems: 'center',
-                            marginRight: wp(12), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
-                          }}>
-                            <Text style={{ fontSize: fp(18) }}>🔍</Text>
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '800' }}>
-                              Mes ingrédients
-                            </Text>
-                            <Text style={{ color: '#5A6070', fontSize: fp(10), marginTop: 2 }}>
-                              Propose tes ingrédients, ALIXEN crée la recette
-                            </Text>
-                          </View>
-                          <Text style={{ color: '#00D984', fontSize: fp(16) }}>›</Text>
-                        </LinearGradient>
-                      </Pressable>
 
                       {alixenContext && alixenContext.mood && (
                         <View style={{
@@ -1608,8 +1702,7 @@ export default function RecettesScreen({
                           <Pressable
                             key={idx}
                             onPress={function() {
-                              setAlixenSelectedRecipe(proposal);
-                              setAlixenRecipeScreen('detail');
+                              loadRecipeDetails(proposal);
                             }}
                             style={function(state) {
                               return {
@@ -2044,7 +2137,14 @@ export default function RecettesScreen({
                     </LinearGradient>
                   </View>
 
-                  <View style={{ marginBottom: wp(16) }}>
+                  {detailLoading ? (
+                    <View style={{ alignItems: 'center', paddingVertical: wp(20), backgroundColor: '#2A303B', borderRadius: 14, borderWidth: 1, borderColor: '#3A3F46', marginBottom: wp(16) }}>
+                      <ActivityIndicator size="small" color="#00D984" />
+                      <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '600', marginTop: wp(8) }}>Chargement des ingrédients...</Text>
+                    </View>
+                  ) : null}
+
+                  {!detailLoading ? <View style={{ marginBottom: wp(16) }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
                       <View style={{ width: 3, height: 16, borderRadius: 2, backgroundColor: '#D4AF37', marginRight: wp(8) }} />
                       <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '700' }}>
@@ -2082,9 +2182,9 @@ export default function RecettesScreen({
                         );
                       })}
                     </View>
-                  </View>
+                  </View> : null}
 
-                  {alixenSelectedRecipe.steps && (
+                  {!detailLoading && alixenSelectedRecipe.steps ? (
                     <View style={{ marginBottom: wp(16) }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(10) }}>
                         <View style={{ width: 3, height: 16, borderRadius: 2, backgroundColor: '#FF8C42', marginRight: wp(8) }} />
@@ -2104,7 +2204,7 @@ export default function RecettesScreen({
                         </Text>
                       </View>
                     </View>
-                  )}
+                  ) : null}
 
                   {alixenAdvice && (
                     <View style={{
