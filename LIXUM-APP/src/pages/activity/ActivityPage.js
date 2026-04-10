@@ -520,34 +520,34 @@ export default function ActivityPage({ navigation }) {
           )}
 
           {/* Day summary */}
-          <View style={{ marginHorizontal: wp(16), marginTop: wp(8), marginBottom: 16 }}>
+          <View style={{ marginHorizontal: wp(16), marginTop: wp(8), marginBottom: 12 }}>
           <View style={{ borderRadius: 16, borderWidth: 1.5, borderTopColor: '#8892A0', borderLeftColor: '#6B7B8D', borderRightColor: '#3E4855', borderBottomColor: '#2A303B', backgroundColor: '#2A303B', elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8 }}>
-          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 14, padding: wp(10) }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(8) }}>
+          <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ borderRadius: 14, paddingVertical: wp(6), paddingHorizontal: wp(10) }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
               <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>{t.burned}</Text>
-                <Text style={{ fontSize: fp(22), fontWeight: '900', color: '#FF8C42' }}>{totalCalories}</Text>
-                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>kcal</Text>
+                <Text style={{ fontSize: fp(8), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(2) }}>{t.burned}</Text>
+                <Text style={{ fontSize: fp(18), fontWeight: '900', color: '#FF8C42' }}>{totalCalories}</Text>
+                <Text style={{ fontSize: fp(7), color: '#6B7280' }}>kcal</Text>
               </View>
               <View style={{ width: 1, backgroundColor: 'rgba(74,79,85,0.4)', marginHorizontal: wp(4) }} />
               <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={{ fontSize: fp(9), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(4) }}>{t.toBurn}</Text>
-                <Text style={{ fontSize: fp(22), fontWeight: '900', color: caloriesToBurn > 0 ? '#FF6B6B' : '#00D984' }}>{caloriesToBurn}</Text>
-                <Text style={{ fontSize: fp(8), color: '#6B7280' }}>kcal</Text>
+                <Text style={{ fontSize: fp(8), color: '#9CA3AF', fontWeight: '600', marginBottom: wp(2) }}>{t.toBurn}</Text>
+                <Text style={{ fontSize: fp(18), fontWeight: '900', color: caloriesToBurn > 0 ? '#FF6B6B' : '#00D984' }}>{caloriesToBurn}</Text>
+                <Text style={{ fontSize: fp(7), color: '#6B7280' }}>kcal</Text>
               </View>
             </View>
-            <View style={{ height: 1, backgroundColor: 'rgba(74,79,85,0.3)', marginBottom: wp(6) }} />
+            <View style={{ height: 1, backgroundColor: 'rgba(74,79,85,0.3)', marginBottom: wp(4) }} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={{ marginLeft: wp(6) }}>
                   <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{t.time}</Text>
-                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFFFFF' }}>{formatDuration(totalDuration)}</Text>
+                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFFFFF' }}>{formatDuration(totalDuration)}</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={{ marginLeft: wp(6) }}>
                   <Text style={{ fontSize: fp(7), color: '#6B7280' }}>{t.waterLost}</Text>
-                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#4DA6FF' }}>{totalWater} ml</Text>
+                  <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#4DA6FF' }}>{totalWater} ml</Text>
                 </View>
               </View>
             </View>
@@ -576,16 +576,13 @@ export default function ActivityPage({ navigation }) {
               color="#00E5FF"
               speed="slow"
               isActive={walkGlow}
-              distance={walkDistStr}
-              calories={walkCal}
-              waterLost={walkWater}
-              duration={walkDurStr}
+              direction={walkGlow ? (walkScrollOffset <= 0 ? 1 : walkScrollOffset >= (WALK_SCENE_W - walkCanvasW) ? -1 : (walkIntervalRef.current ? 1 : 0)) : 0}
               hasParticles={false}
             />
 
             {/* Controls */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: wp(4), paddingVertical: wp(4), marginTop: wp(4) }}>
-              <TouchableOpacity onPress={() => setWalkRoundTrip(!walkRoundTrip)} style={{
+              <TouchableOpacity onPress={function() { setWalkRoundTrip(!walkRoundTrip); }} style={{
                 backgroundColor: walkRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
                 borderRadius: wp(6), borderWidth: 0.5,
                 borderColor: walkRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(74,79,85,0.4)',
@@ -597,26 +594,38 @@ export default function ActivityPage({ navigation }) {
               </TouchableOpacity>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(4) }}>
-                <Pressable onPressIn={() => startWalkMoving(-1)} onPressOut={stopWalkMoving}
-                  style={({ pressed }) => ({
-                    width: wp(36), height: wp(36), borderRadius: wp(18),
-                    backgroundColor: pressed ? '#2A303B' : '#1A1D22',
-                    borderWidth: 1.5, borderColor: pressed ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.12)',
-                    alignItems: 'center', justifyContent: 'center',
-                  })}
+                <Pressable
+                  onPressIn={walkScrollOffset > 0 ? function() { startWalkMoving(-1); } : undefined}
+                  onPressOut={walkScrollOffset > 0 ? stopWalkMoving : undefined}
+                  style={function(state) {
+                    var disabled = walkScrollOffset <= 0;
+                    return {
+                      width: wp(36), height: wp(36), borderRadius: wp(18),
+                      backgroundColor: state.pressed && !disabled ? '#2A303B' : '#1A1D22',
+                      borderWidth: 1.5, borderColor: state.pressed && !disabled ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.12)',
+                      alignItems: 'center', justifyContent: 'center',
+                      opacity: disabled ? 0.3 : 1,
+                    };
+                  }}
                 >
                   <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24">
                     <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
                 </Pressable>
                 <Text style={{ fontSize: fp(7), color: '#555E6C', fontWeight: '600' }}>{t.hold}</Text>
-                <Pressable onPressIn={() => startWalkMoving(1)} onPressOut={stopWalkMoving}
-                  style={({ pressed }) => ({
-                    width: wp(36), height: wp(36), borderRadius: wp(18),
-                    backgroundColor: pressed ? '#2A303B' : '#1A1D22',
-                    borderWidth: 1.5, borderColor: pressed ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.12)',
-                    alignItems: 'center', justifyContent: 'center',
-                  })}
+                <Pressable
+                  onPressIn={walkScrollOffset < (WALK_SCENE_W - walkCanvasW) ? function() { startWalkMoving(1); } : undefined}
+                  onPressOut={walkScrollOffset < (WALK_SCENE_W - walkCanvasW) ? stopWalkMoving : undefined}
+                  style={function(state) {
+                    var disabled = walkScrollOffset >= (WALK_SCENE_W - walkCanvasW);
+                    return {
+                      width: wp(36), height: wp(36), borderRadius: wp(18),
+                      backgroundColor: state.pressed && !disabled ? '#2A303B' : '#1A1D22',
+                      borderWidth: 1.5, borderColor: state.pressed && !disabled ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.12)',
+                      alignItems: 'center', justifyContent: 'center',
+                      opacity: disabled ? 0.3 : 1,
+                    };
+                  }}
                 >
                   <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24">
                     <Path d="M9 5l7 7-7 7" stroke="#00D984" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
@@ -625,7 +634,9 @@ export default function ActivityPage({ navigation }) {
               </View>
 
               <View style={{ alignItems: 'flex-end', maxWidth: wp(60) }}>
-                <Text style={{ fontSize: fp(13), fontWeight: '800', color: '#00D984' }} numberOfLines={1}>{walkDurStr}</Text>
+                <Text style={{ fontSize: fp(13), fontWeight: '800', color: walkScrollOffset >= (WALK_SCENE_W - walkCanvasW) ? '#888' : '#00D984' }} numberOfLines={1}>
+                  {walkScrollOffset >= (WALK_SCENE_W - walkCanvasW) ? 'Max' : walkDurStr}
+                </Text>
                 <Text style={{ fontSize: fp(7), color: '#6B7280' }} numberOfLines={1}>{t.normalSpeed}</Text>
               </View>
             </View>
@@ -693,16 +704,13 @@ export default function ActivityPage({ navigation }) {
               color="#FF8C42"
               speed="fast"
               isActive={runGlow}
-              distance={runDistStr}
-              calories={runCalories}
-              waterLost={runWater}
-              duration={runDurStr}
+              direction={runGlow ? 1 : 0}
               hasParticles={true}
             />
 
             {/* Controls */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: wp(4), paddingVertical: wp(4), marginTop: wp(4) }}>
-              <TouchableOpacity onPress={() => setRunRoundTrip(!runRoundTrip)} style={{
+              <TouchableOpacity onPress={function() { setRunRoundTrip(!runRoundTrip); }} style={{
                 backgroundColor: runRoundTrip ? 'rgba(0,217,132,0.1)' : 'transparent',
                 borderRadius: wp(6), borderWidth: 0.5,
                 borderColor: runRoundTrip ? 'rgba(0,217,132,0.3)' : 'rgba(74,79,85,0.4)',
@@ -714,26 +722,38 @@ export default function ActivityPage({ navigation }) {
               </TouchableOpacity>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(4) }}>
-                <Pressable onPressIn={() => startRunMoving(-1)} onPressOut={stopRunMoving}
-                  style={({ pressed }) => ({
-                    width: wp(36), height: wp(36), borderRadius: wp(18),
-                    backgroundColor: pressed ? '#2A303B' : '#1A1D22',
-                    borderWidth: 1.5, borderColor: pressed ? 'rgba(255,140,66,0.4)' : 'rgba(255,255,255,0.12)',
-                    alignItems: 'center', justifyContent: 'center',
-                  })}
+                <Pressable
+                  onPressIn={runScrollOffset > 0 ? function() { startRunMoving(-1); } : undefined}
+                  onPressOut={runScrollOffset > 0 ? stopRunMoving : undefined}
+                  style={function(state) {
+                    var disabled = runScrollOffset <= 0;
+                    return {
+                      width: wp(36), height: wp(36), borderRadius: wp(18),
+                      backgroundColor: state.pressed && !disabled ? '#2A303B' : '#1A1D22',
+                      borderWidth: 1.5, borderColor: state.pressed && !disabled ? 'rgba(255,140,66,0.4)' : 'rgba(255,255,255,0.12)',
+                      alignItems: 'center', justifyContent: 'center',
+                      opacity: disabled ? 0.3 : 1,
+                    };
+                  }}
                 >
                   <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24">
                     <Path d="M15 19l-7-7 7-7" stroke="#FF8C42" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
                 </Pressable>
                 <Text style={{ fontSize: fp(7), color: '#555E6C', fontWeight: '600' }}>{t.hold}</Text>
-                <Pressable onPressIn={() => startRunMoving(1)} onPressOut={stopRunMoving}
-                  style={({ pressed }) => ({
-                    width: wp(36), height: wp(36), borderRadius: wp(18),
-                    backgroundColor: pressed ? '#2A303B' : '#1A1D22',
-                    borderWidth: 1.5, borderColor: pressed ? 'rgba(255,140,66,0.4)' : 'rgba(255,255,255,0.12)',
-                    alignItems: 'center', justifyContent: 'center',
-                  })}
+                <Pressable
+                  onPressIn={runScrollOffset < (RUN_SCENE_W - runCanvasW) ? function() { startRunMoving(1); } : undefined}
+                  onPressOut={runScrollOffset < (RUN_SCENE_W - runCanvasW) ? stopRunMoving : undefined}
+                  style={function(state) {
+                    var disabled = runScrollOffset >= (RUN_SCENE_W - runCanvasW);
+                    return {
+                      width: wp(36), height: wp(36), borderRadius: wp(18),
+                      backgroundColor: state.pressed && !disabled ? '#2A303B' : '#1A1D22',
+                      borderWidth: 1.5, borderColor: state.pressed && !disabled ? 'rgba(255,140,66,0.4)' : 'rgba(255,255,255,0.12)',
+                      alignItems: 'center', justifyContent: 'center',
+                      opacity: disabled ? 0.3 : 1,
+                    };
+                  }}
                 >
                   <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24">
                     <Path d="M9 5l7 7-7 7" stroke="#FF8C42" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
@@ -742,7 +762,9 @@ export default function ActivityPage({ navigation }) {
               </View>
 
               <View style={{ alignItems: 'flex-end', maxWidth: wp(60) }}>
-                <Text style={{ fontSize: fp(13), fontWeight: '800', color: '#00D984' }} numberOfLines={1}>{runDurStr}</Text>
+                <Text style={{ fontSize: fp(13), fontWeight: '800', color: runScrollOffset >= (RUN_SCENE_W - runCanvasW) ? '#888' : '#00D984' }} numberOfLines={1}>
+                  {runScrollOffset >= (RUN_SCENE_W - runCanvasW) ? 'Max' : runDurStr}
+                </Text>
                 <Text style={{ fontSize: fp(7), color: '#6B7280' }} numberOfLines={1}>{t.normalPace}</Text>
               </View>
             </View>
