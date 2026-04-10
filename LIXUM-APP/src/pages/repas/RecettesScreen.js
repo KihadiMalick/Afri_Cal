@@ -844,7 +844,7 @@ export default function RecettesScreen({
 
   if (!visible && !selectedRecipe && !showAddConfirm) return null;
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1300 }}>
       {/* Écran principal recettes */}
       {visible && !selectedRecipe && (
         <View style={{

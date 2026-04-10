@@ -131,7 +131,7 @@ export default function CookingModeScreen({ visible, onClose, recipe }) {
   // === JSX ===
 
   return (
-    <View style={{ flex: 1 }}>
+    <View>
     <Modal
       visible={visible}
       animationType="slide"
