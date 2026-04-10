@@ -4,7 +4,7 @@ import Svg, { Ellipse } from 'react-native-svg';
 import { wp, fp } from '../../constants/layout';
 
 var TRACK_W = 280;
-var TRACK_H = wp(75);
+var TRACK_H = wp(60);
 var RX = 110;
 var RY = 18;
 var CX = TRACK_W / 2;
@@ -44,9 +44,9 @@ export default function PulseTrack(props) {
   var trackW = _trackW[0]; var setTrackW = _trackW[1];
 
   var cx = trackW / 2;
-  var rx = Math.min(trackW * 0.38, wp(28) * 5);
-  var ry = wp(18);
-  var cy = TRACK_H / 2 - wp(10);
+  var rx = Math.min(trackW * 0.43, wp(28) * 5 + wp(5));
+  var ry = wp(22);
+  var cy = TRACK_H / 2;
 
   var angleStep = speed === 'fast' ? 0.06 : 0.02;
   var trailLen = speed === 'fast' ? TRAIL_LENGTH_FAST : TRAIL_LENGTH_SLOW;
@@ -113,14 +113,7 @@ export default function PulseTrack(props) {
         backgroundColor: color, opacity: lapFlash, borderRadius: 16,
       }} />
 
-      {/* Lap counter */}
-      {lapCountRef.current > 0 && (
-        <View style={{ position: 'absolute', top: wp(4), alignSelf: 'center', zIndex: 5 }}>
-          <Text style={{ color: color, fontSize: fp(8), fontWeight: '700', opacity: 0.7 }}>
-            Tour {lapCountRef.current}
-          </Text>
-        </View>
-      )}
+      {/* (lap counter moved to center) */}
 
       {/* Track ellipse (SVG background) */}
       <Svg width={trackW} height={TRACK_H} style={{ position: 'absolute', top: 0, left: 0 }}>
@@ -173,31 +166,13 @@ export default function PulseTrack(props) {
         backgroundColor: color,
       }} />
 
-      {/* Center: duration */}
-      <View style={{ position: 'absolute', top: cy - fp(12), left: 0, right: 0, alignItems: 'center' }}>
+      {/* Center: lap counter */}
+      <View style={{ position: 'absolute', top: cy - fp(14), left: 0, right: 0, alignItems: 'center' }}>
         <Text style={{
-          color: color, fontSize: fp(20), fontWeight: '500',
+          color: color, fontSize: fp(20), fontWeight: '700',
           fontVariant: ['tabular-nums'],
-        }}>{duration}</Text>
-      </View>
-
-      {/* Bottom indicators */}
-      <View style={{
-        position: 'absolute', bottom: wp(6), left: 0, right: 0,
-        flexDirection: 'row', justifyContent: 'center', gap: wp(28),
-      }}>
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#FF6B8A', fontSize: fp(12), fontWeight: '700' }}>{distance}</Text>
-          <Text style={{ color: '#888', fontSize: fp(8) }}>distance</Text>
-        </View>
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#FFD93D', fontSize: fp(12), fontWeight: '700' }}>{calories}</Text>
-          <Text style={{ color: '#888', fontSize: fp(8) }}>kcal</Text>
-        </View>
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#4DA6FF', fontSize: fp(12), fontWeight: '700' }}>{waterLost}</Text>
-          <Text style={{ color: '#888', fontSize: fp(8) }}>ml eau</Text>
-        </View>
+        }}>{lapCountRef.current}</Text>
+        <Text style={{ color: '#888', fontSize: fp(9) }}>tours</Text>
       </View>
     </View>
   );
