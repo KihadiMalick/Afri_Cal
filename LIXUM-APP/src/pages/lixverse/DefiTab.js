@@ -69,8 +69,8 @@ export default function DefiTab({
           <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.3)' }}>{Math.min(wallStickers.length, 9)}/9</Text>
         </View>
         <View style={{
-          marginHorizontal: wp(8), borderRadius: 16, overflow: 'hidden',
-          borderWidth: 1.5,
+          marginHorizontal: wp(8), borderRadius: 20, overflow: 'hidden',
+          padding: 3, borderWidth: 2,
           borderTopColor: '#D4AF37', borderLeftColor: '#B8972A',
           borderRightColor: '#8B7A2E', borderBottomColor: '#6B5D1E',
           backgroundColor: '#2A303B',
@@ -81,7 +81,7 @@ export default function DefiTab({
           elevation: 8,
         }}>
           <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-            style={{ minHeight: wp(280), padding: wp(12), position: 'relative', borderRadius: 14 }}>
+            style={{ minHeight: wp(280), padding: wp(12), position: 'relative', borderRadius: 16, borderWidth: 1.5, borderColor: 'rgba(212,175,55,0.2)' }}>
             <View style={{ alignItems: 'center', marginBottom: wp(4), paddingTop: wp(0) }}>
               <Image
                 source={null}
