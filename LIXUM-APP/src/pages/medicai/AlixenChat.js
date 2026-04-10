@@ -352,21 +352,21 @@ export const ResponseCard = React.memo(({ currentMessage, isLoading, isUserMessa
     }
   }, [currentMessage, isLoading]);
 
-  // Effet machine à écrire pour les réponses IA
-  useEffect(() => {
+  // Effet machine à écrire pour les réponses IA (optimized: 30ms/4chars)
+  useEffect(function() {
     if (currentMessage && !isUserMessage && !isLoading) {
       setDisplayedText('');
-      let idx = 0;
-      const interval = setInterval(() => {
-        idx += 2;
+      var idx = 0;
+      var interval = setInterval(function() {
+        idx += 4;
         if (idx >= currentMessage.length) {
           setDisplayedText(currentMessage);
           clearInterval(interval);
         } else {
           setDisplayedText(currentMessage.substring(0, idx));
         }
-      }, 15);
-      return () => clearInterval(interval);
+      }, 30);
+      return function() { clearInterval(interval); };
     } else if (isUserMessage && currentMessage) {
       setDisplayedText(currentMessage);
     }
