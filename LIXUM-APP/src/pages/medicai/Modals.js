@@ -20,6 +20,7 @@ export const AllModals = (props) => {
     setCurrentSubPage,
     // New Session Sheet
     showNewSessionSheet, setShowNewSessionSheet,
+    onStartFreshSession,
     showCompactConfirm, setShowCompactConfirm,
     // Recharge Sheet
     showRechargeSheet, setShowRechargeSheet,
@@ -496,7 +497,7 @@ export const AllModals = (props) => {
               {/* Option 2 : Demarrer a zero */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => { setShowNewSessionSheet(false); }}
+                onPress={function() { setShowNewSessionSheet(false); if (onStartFreshSession) onStartFreshSession(); }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   paddingVertical: wp(14), paddingHorizontal: wp(12),

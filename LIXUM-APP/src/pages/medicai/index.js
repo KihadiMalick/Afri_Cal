@@ -14,6 +14,7 @@ import Svg, {
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -58,6 +59,18 @@ export default function MedicAiPage({ navigation }) {
 
   // Messages du chat
   const [messages, setMessages] = useState([]);
+  var chatStorageKey = userId ? 'alixen_chat_' + userId : null;
+
+  var saveChatToStorage = function(msgs) {
+    if (!chatStorageKey) return;
+    try { AsyncStorage.setItem(chatStorageKey, JSON.stringify(msgs)); } catch (e) {}
+  };
+
+  var clearChatStorage = function() {
+    if (!chatStorageKey) return;
+    try { AsyncStorage.removeItem(chatStorageKey); } catch (e) {}
+  };
+
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -335,6 +348,11 @@ export default function MedicAiPage({ navigation }) {
   const mbGenerateScale = useRef(new Animated.Value(1)).current;
   const spAddScale = useRef(new Animated.Value(1)).current;
 
+  // ── Persist chat to AsyncStorage on every change ──────────────────────────
+  useEffect(function() {
+    if (messages.length > 0) { saveChatToStorage(messages); }
+  }, [messages]);
+
   // ── Chargement des données au mount ──────────────────────────────────────
   useEffect(() => {
     if (!userId) return;
@@ -448,6 +466,34 @@ export default function MedicAiPage({ navigation }) {
   }, []);
 
   const loadUserData = async () => {
+    // Load persisted chat first
+    if (chatStorageKey) {
+      try {
+        var saved = await AsyncStorage.getItem(chatStorageKey);
+        if (saved) {
+          var parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMessages(parsed);
+            // Set card to last assistant message
+            for (var si = parsed.length - 1; si >= 0; si--) {
+              if (parsed[si].role === 'assistant') {
+                setCardMessage(parsed[si].content);
+                setCardIsUser(false);
+                setCardIsLoading(false);
+                break;
+              }
+            }
+            // Skip greeting — chat restored
+            try {
+              var profileRes2 = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=*', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
+              var pd2 = await profileRes2.json();
+              if (pd2.length > 0) setUserProfile(pd2[0]);
+            } catch (e) {}
+            return;
+          }
+        }
+      } catch (e) {}
+    }
     try {
       const profileRes = await fetch(
         `${SUPABASE_URL}/rest/v1/users_profile?user_id=eq.${userId}&select=*`,
@@ -2688,6 +2734,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         showDocumentSheet={showDocumentSheet} setShowDocumentSheet={setShowDocumentSheet}
         setCurrentSubPage={setCurrentSubPage}
         showNewSessionSheet={showNewSessionSheet} setShowNewSessionSheet={setShowNewSessionSheet}
+        onStartFreshSession={function() { setMessages([]); clearChatStorage(); setCardMessage(null); setCardIsUser(false); setCardIsLoading(false); loadUserData(); }}
         showCompactConfirm={showCompactConfirm} setShowCompactConfirm={setShowCompactConfirm}
         showRechargeSheet={showRechargeSheet} setShowRechargeSheet={setShowRechargeSheet}
         setEnergyUsed={setEnergyUsed}
