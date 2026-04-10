@@ -1121,16 +1121,31 @@ export default function LixVersePage({ navigation }) {
             { key: 'human', label: 'Human', icon: '🤝' },
             { key: 'characters', label: 'Caractères', icon: '🃏' },
             { key: 'lixspin', label: 'Lix & Spin', icon: '💎' },
-          ].map(tab => (
-            <Pressable key={tab.key} onPress={() => setActiveTab(tab.key)} style={{
-              flex: 1, paddingVertical: wp(10), borderRadius: wp(12), alignItems: 'center',
-              backgroundColor: activeTab === tab.key ? '#D4AF37' : 'rgba(255,255,255,0.05)',
-              borderWidth: 1, borderColor: activeTab === tab.key ? '#D4AF37' : 'rgba(255,255,255,0.08)',
-            }}>
-              <Text style={{ fontSize: fp(14) }}>{tab.icon}</Text>
-              <Text style={{ fontSize: fp(10), fontWeight: '600', marginTop: wp(2), color: activeTab === tab.key ? '#1A1D22' : 'rgba(255,255,255,0.4)' }}>{tab.label}</Text>
-            </Pressable>
-          ))}
+          ].map(function(tab) {
+            var isActive = activeTab === tab.key;
+            return (
+              <Pressable key={tab.key} onPress={function() { setActiveTab(tab.key); }} style={{ flex: 1 }}>
+                <View style={{
+                  borderRadius: 20, padding: 2, borderWidth: 1.5,
+                  borderTopColor: isActive ? '#D4AF37' : '#8892A0',
+                  borderLeftColor: isActive ? '#B8972A' : '#6B7B8D',
+                  borderRightColor: isActive ? '#8B7A2E' : '#3E4855',
+                  borderBottomColor: isActive ? '#6B5D1E' : '#2A303B',
+                  backgroundColor: '#2A303B',
+                }}>
+                  <View style={{
+                    borderRadius: 16, borderWidth: 1,
+                    borderColor: isActive ? 'rgba(212,175,55,0.35)' : 'rgba(255,255,255,0.06)',
+                    backgroundColor: '#151B23',
+                    paddingVertical: wp(8), alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(14) }}>{tab.icon}</Text>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', marginTop: wp(2), color: isActive ? '#D4AF37' : 'rgba(255,255,255,0.4)' }}>{tab.label}</Text>
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
 
         {activeTab === 'defi' && (
