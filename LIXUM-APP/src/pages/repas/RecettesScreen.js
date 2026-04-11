@@ -639,7 +639,7 @@ export default function RecettesScreen({
     }
   };
 
-  var generateAlixenProposals = async function(category) {
+  var generateAlixenProposals = async function(category, opts) {
     setAlixenLoading(true);
     setAlixenProposals([]);
 
@@ -654,51 +654,62 @@ export default function RecettesScreen({
         return;
       }
 
-      var userIngList = '';
-      if (category === 'my_ingredients' && alixenMyIngredients.length > 0) {
-        userIngList = alixenMyIngredients.map(function(ing) { return ing.name; }).join(', ');
+      var slotLabel = alixenMealSlot === 'breakfast' ? 'Petit-déjeuner' : alixenMealSlot === 'lunch' ? 'Déjeuner' : alixenMealSlot === 'dinner' ? 'Dîner' : alixenMealSlot === 'snack' ? 'Snacks' : 'Non spécifié';
+
+      var prompt;
+      if (category === 'surprise') {
+        prompt = 'SURPRENDS-MOI. Créneau: ' + slotLabel + '. Choisis la meilleure catégorie et les meilleurs filtres selon mon profil, mon objectif, mon humeur, la météo et mon historique nutritionnel.';
+      } else if (category === 'my_ingredients') {
+        var userIngList = alixenMyIngredients.map(function(ing) { return ing.name; }).join(', ');
+        var mealsText = ctx.mealsToday.map(function(m) {
+          return m.meal_type + ': ' + m.food_name + ' (' + m.calories + ' kcal)';
+        }).join(', ') || 'Aucun repas aujourd\'hui';
+        prompt = 'Tu es ALIXEN, chef cuisinier IA personnel dans l\'app LIXUM.\n\n' +
+          'PROFIL DU MEMBRE:\n' +
+          'Prénom: ' + ctx.userName + '\n' +
+          'Régime: ' + ctx.regime + '\n' +
+          'Poids: ' + ctx.weight + 'kg, Sexe: ' + ctx.gender + '\n\n' +
+          'BILAN DU JOUR:\n' +
+          'Objectif: ' + ctx.target + ' kcal\n' +
+          'Déjà mangé: ' + ctx.eaten + ' kcal (' + mealsText + ')\n' +
+          'Brûlé en activité: ' + ctx.burned + ' kcal\n' +
+          'RESTANT: ' + Math.round(ctx.remaining) + ' kcal | ' +
+          Math.round(ctx.protRemaining) + 'g prot | ' +
+          Math.round(ctx.carbsRemaining) + 'g gluc | ' +
+          Math.round(ctx.fatRemaining) + 'g lip\n' +
+          'Repas restants estimés: ' + ctx.mealsRemaining + '\n\n' +
+          'CONTEXTE:\n' +
+          'Heure: ' + ctx.hour + 'h' + (ctx.minutes < 10 ? '0' : '') + ctx.minutes + '\n' +
+          'Moment: ' + ctx.timeOfDay + '\n' +
+          (ctx.mood ? 'Humeur: ' + ctx.mood + '\n' : '') +
+          (ctx.weather ? 'Météo: ' + ctx.weather + '\n' : '') +
+          '\nCRÉNEAU REPAS: ' + slotLabel + '\n' +
+          '\nCATÉGORIE CHOISIE: Recette avec ingrédients imposés\n' +
+          'INGRÉDIENTS IMPOSÉS: ' + userIngList + '\n' +
+          '\nMODE APERÇU — Donne UNIQUEMENT un résumé rapide, PAS d\'ingrédients ni d\'étapes.\n' +
+          '\nRÈGLES STRICTES:\n' +
+          '1. Propose EXACTEMENT 3 recettes: une légère, une normale, une consistante\n' +
+          '2. Adapte les macros pour couvrir le RESTANT\n' +
+          '3. Respecte le régime (' + ctx.regime + ')\n' +
+          '4. NUIT (après 20h): PAS de riz ni plats lourds\n' +
+          '5. Si > 800 kcal restantes le soir: signale\n' +
+          '6. Culture africaine: mafé/thiéboudienne = MIDI uniquement\n' +
+          '7. Si météo pluie + humeur triste: soupes réconfortantes\n' +
+          '8. Chaque recette: nom, kcal, protein, carbs, fat, time, description (1 phrase), comment (2-3 phrases pourquoi ce plat), water_ml, water_tip\n' +
+          '\nRÉPONDS EN JSON STRICTEMENT (pas de markdown, pas de backticks):\n' +
+          '{"proposals":[{"name":"Nom","kcal":520,"protein":45,"carbs":60,"fat":20,"time":"25 min","description":"Phrase courte","comment":"Pourquoi ce plat...","water_ml":300,"water_tip":"Aide à la digestion"}]}\n' +
+          'IMPORTANT: Exactement 3 objets. PAS d\'ingrédients, PAS d\'étapes. JSON pur.';
+      } else {
+        var effectiveRegion = (opts && opts.region !== undefined) ? opts.region : selectedRegion;
+        var effectiveType = (opts && opts.type !== undefined) ? opts.type : selectedType;
+        var parts = [];
+        parts.push('Créneau: ' + slotLabel);
+        if (effectiveRegion) parts.push('Région: ' + effectiveRegion);
+        if (effectiveType) parts.push('Type: ' + effectiveType);
+        if (healthFilters.length > 0) parts.push('Filtres santé: ' + healthFilters.join(', '));
+        if (practicalFilters.length > 0) parts.push('Contraintes: ' + practicalFilters.join(', '));
+        prompt = parts.join('. ') + '. Propose 3 recettes.';
       }
-
-      var mealsText = ctx.mealsToday.map(function(m) {
-        return m.meal_type + ': ' + m.food_name + ' (' + m.calories + ' kcal)';
-      }).join(', ') || 'Aucun repas aujourd\'hui';
-
-      var prompt = 'Tu es ALIXEN, chef cuisinier IA personnel dans l\'app LIXUM.\n\n' +
-        'PROFIL DU MEMBRE:\n' +
-        'Prénom: ' + ctx.userName + '\n' +
-        'Régime: ' + ctx.regime + '\n' +
-        'Poids: ' + ctx.weight + 'kg, Sexe: ' + ctx.gender + '\n\n' +
-        'BILAN DU JOUR:\n' +
-        'Objectif: ' + ctx.target + ' kcal\n' +
-        'Déjà mangé: ' + ctx.eaten + ' kcal (' + mealsText + ')\n' +
-        'Brûlé en activité: ' + ctx.burned + ' kcal\n' +
-        'RESTANT: ' + Math.round(ctx.remaining) + ' kcal | ' +
-        Math.round(ctx.protRemaining) + 'g prot | ' +
-        Math.round(ctx.carbsRemaining) + 'g gluc | ' +
-        Math.round(ctx.fatRemaining) + 'g lip\n' +
-        'Repas restants estimés: ' + ctx.mealsRemaining + '\n\n' +
-        'CONTEXTE:\n' +
-        'Heure: ' + ctx.hour + 'h' + (ctx.minutes < 10 ? '0' : '') + ctx.minutes + '\n' +
-        'Moment: ' + ctx.timeOfDay + '\n' +
-        (ctx.mood ? 'Humeur: ' + ctx.mood + '\n' : '') +
-        (ctx.weather ? 'Météo: ' + ctx.weather + '\n' : '') +
-        '\nCRÉNEAU REPAS: ' + (alixenMealSlot === 'breakfast' ? 'Petit-déjeuner' : alixenMealSlot === 'lunch' ? 'Déjeuner' : alixenMealSlot === 'dinner' ? 'Dîner' : alixenMealSlot === 'snack' ? 'Snacks' : 'Non spécifié') + '\n' +
-        '\nCATÉGORIE CHOISIE: ' + (category === 'my_ingredients' ? 'Recette avec ingrédients imposés' : category === 'surprise' ? 'Surprise — choisis 3 plats variés et créatifs' : category === 'filtered' ? 'Sélection personnalisée avec filtres' : category) + '\n' +
-        (category === 'filtered' ? (selectedRegion ? 'RÉGION CUISINE: ' + selectedRegion + '\n' : '') + (selectedType ? 'TYPE DE PLAT: ' + selectedType + '\n' : '') + (healthFilters.length > 0 ? 'FILTRES SANTÉ: ' + healthFilters.join(', ') + '\n' : '') + (practicalFilters.length > 0 ? 'CONTRAINTES PRATIQUES: ' + practicalFilters.join(', ') + '\n' : '') : '') +
-        (userIngList ? 'INGRÉDIENTS IMPOSÉS: ' + userIngList + '\n' : '') +
-        '\nMODE APERÇU — Donne UNIQUEMENT un résumé rapide, PAS d\'ingrédients ni d\'étapes.\n' +
-        '\nRÈGLES STRICTES:\n' +
-        '1. Propose EXACTEMENT 3 recettes: une légère, une normale, une consistante\n' +
-        '2. Adapte les macros pour couvrir le RESTANT\n' +
-        '3. Respecte le régime (' + ctx.regime + ')\n' +
-        '4. NUIT (après 20h): PAS de riz ni plats lourds\n' +
-        '5. Si > 800 kcal restantes le soir: signale\n' +
-        '6. Culture africaine: mafé/thiéboudienne = MIDI uniquement\n' +
-        '7. Si météo pluie + humeur triste: soupes réconfortantes\n' +
-        '8. Chaque recette: nom, kcal, protein, carbs, fat, time, description (1 phrase), comment (2-3 phrases pourquoi ce plat), water_ml, water_tip\n' +
-        '\nRÉPONDS EN JSON STRICTEMENT (pas de markdown, pas de backticks):\n' +
-        '{"proposals":[{"name":"Nom","kcal":520,"protein":45,"carbs":60,"fat":20,"time":"25 min","description":"Phrase courte","comment":"Pourquoi ce plat...","water_ml":300,"water_tip":"Aide à la digestion"}]}\n' +
-        'IMPORTANT: Exactement 3 objets. PAS d\'ingrédients, PAS d\'étapes. JSON pur.';
 
       var response = await fetch(
         SUPABASE_URL + '/functions/v1/lixman-chat',
@@ -729,6 +740,8 @@ export default function RecettesScreen({
           var todayMark = new Date().toISOString().split('T')[0];
           supabase.from('meals').insert({ user_id: userId, source: 'alixen_recipe', food_name: 'ALIXEN_FREE_USED', calories: 0, date: todayMark, created_at: new Date().toISOString() }).then(function() {});
         }
+        setSelectedRegion(null);
+        setSelectedType(null);
         setAlixenLoading(false);
         if (ctx.timeOfDay === 'night' && ctx.remaining > 800) {
           setAlixenAdvice(
@@ -775,6 +788,8 @@ export default function RecettesScreen({
       setAlixenProposals(generateFallbackProposals(ctx2, category));
     }
 
+    setSelectedRegion(null);
+    setSelectedType(null);
     setAlixenLoading(false);
   };
 
@@ -1528,7 +1543,37 @@ export default function RecettesScreen({
                             <Pressable
                               key={r.key}
                               onPress={function() {
-                                setSelectedRegion(function(prev) { return prev === r.key ? null : r.key; });
+                                if (selectedRegion === r.key) { setSelectedRegion(null); return; }
+                                var costCheck = checkAlixenRecipeCost();
+                                if (!costCheck.allowed) {
+                                  showModal('error', '💎 Lix insuffisants', 'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées', { type: 'confirm', confirmText: 'Aller au LixVerse', cancelText: 'OK', onConfirm: function() { closeModal(); if (onNavigate) onNavigate('lixverse'); onClose(); } });
+                                  return;
+                                }
+                                if (costCheck.cost > 0) {
+                                  showModal('confirm', '🤖 Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
+                                    confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
+                                    onConfirm: function() {
+                                      closeModal();
+                                      deductAlixenLix(50).then(function(success) {
+                                        if (success) {
+                                          setSelectedRegion(r.key);
+                                          setAlixenCategory('filtered');
+                                          setAlixenRecipeScreen('proposals');
+                                          setAlixenLoading(true);
+                                          generateAlixenProposals('filtered', { region: r.key });
+                                        } else {
+                                          showModal('error', 'Erreur', 'Impossible de débiter les Lix.');
+                                        }
+                                      });
+                                    },
+                                  });
+                                  return;
+                                }
+                                setSelectedRegion(r.key);
+                                setAlixenCategory('filtered');
+                                setAlixenRecipeScreen('proposals');
+                                setAlixenLoading(true);
+                                generateAlixenProposals('filtered', { region: r.key });
                               }}
                               style={function(state) {
                                 return {
@@ -1559,7 +1604,37 @@ export default function RecettesScreen({
                             <Pressable
                               key={t.key}
                               onPress={function() {
-                                setSelectedType(function(prev) { return prev === t.key ? null : t.key; });
+                                if (selectedType === t.key) { setSelectedType(null); return; }
+                                var costCheck = checkAlixenRecipeCost();
+                                if (!costCheck.allowed) {
+                                  showModal('error', '💎 Lix insuffisants', 'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées', { type: 'confirm', confirmText: 'Aller au LixVerse', cancelText: 'OK', onConfirm: function() { closeModal(); if (onNavigate) onNavigate('lixverse'); onClose(); } });
+                                  return;
+                                }
+                                if (costCheck.cost > 0) {
+                                  showModal('confirm', '🤖 Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
+                                    confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
+                                    onConfirm: function() {
+                                      closeModal();
+                                      deductAlixenLix(50).then(function(success) {
+                                        if (success) {
+                                          setSelectedType(t.key);
+                                          setAlixenCategory('filtered');
+                                          setAlixenRecipeScreen('proposals');
+                                          setAlixenLoading(true);
+                                          generateAlixenProposals('filtered', { type: t.key });
+                                        } else {
+                                          showModal('error', 'Erreur', 'Impossible de débiter les Lix.');
+                                        }
+                                      });
+                                    },
+                                  });
+                                  return;
+                                }
+                                setSelectedType(t.key);
+                                setAlixenCategory('filtered');
+                                setAlixenRecipeScreen('proposals');
+                                setAlixenLoading(true);
+                                generateAlixenProposals('filtered', { type: t.key });
                               }}
                               style={function(state) {
                                 return {
@@ -1612,53 +1687,6 @@ export default function RecettesScreen({
                           })}
                         </View>
                       </ScrollView>
-
-                      {/* ── BOUTON GÉNÉRER ── */}
-                      {(healthFilters.length > 0 || selectedRegion !== null || selectedType !== null || practicalFilters.length > 0) ? (
-                        <Pressable
-                          onPress={function() {
-                            var costCheck = checkAlixenRecipeCost();
-                            if (!costCheck.allowed) {
-                              showModal('error', '💎 Lix insuffisants', 'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées', { type: 'confirm', confirmText: 'Aller au LixVerse', cancelText: 'OK', onConfirm: function() { closeModal(); if (onNavigate) onNavigate('lixverse'); onClose(); } });
-                              return;
-                            }
-                            if (costCheck.cost > 0) {
-                              showModal('confirm', '🤖 Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
-                                confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
-                                onConfirm: function() {
-                                  closeModal();
-                                  deductAlixenLix(50).then(function(success) {
-                                    if (success) {
-                                      setAlixenCategory('filtered');
-                                      setAlixenRecipeScreen('proposals');
-                                      setAlixenLoading(true);
-                                      generateAlixenProposals('filtered');
-                                    } else {
-                                      showModal('error', 'Erreur', 'Impossible de débiter les Lix.');
-                                    }
-                                  });
-                                },
-                              });
-                              return;
-                            }
-                            setAlixenCategory('filtered');
-                            setAlixenRecipeScreen('proposals');
-                            setAlixenLoading(true);
-                            generateAlixenProposals('filtered');
-                          }}
-                          style={function(state) {
-                            return {
-                              marginTop: wp(18),
-                              backgroundColor: state.pressed ? 'rgba(0,217,132,0.8)' : '#00D984',
-                              borderRadius: 12,
-                              paddingVertical: wp(14),
-                              alignItems: 'center',
-                            };
-                          }}
-                        >
-                          <Text style={{ color: '#1A1D22', fontSize: fp(14), fontWeight: '800' }}>GÉNÉRER MA RECETTE</Text>
-                        </Pressable>
-                      ) : null}
 
                       {/* ── G) BARRE CONTEXTE ── */}
                       {alixenContext ? (
