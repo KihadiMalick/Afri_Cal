@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+var Voice = require('@react-native-voice/voice').default;
+var Speech = require('expo-speech');
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY, TEST_USER_ID, ENERGY_CONFIG, TABS, wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
 import { BottomTabs, FormattedText, FormattedResponseText, MetalCard, parseQuickReplies, parseAlixenResponse, QuickReplyButtons, BottomSpacer, LockIcon, ScrollArrow } from './shared';
@@ -99,6 +101,12 @@ export default function MedicAiPage() {
   const [emotionOverride, setEmotionOverride] = useState(null);
   const emotionTimerRef = useRef(null);
   const [userLang, setUserLang] = useState('FR');
+
+  // Voice & TTS state
+  var [isListening, setIsListening] = useState(false);
+  var [voiceText, setVoiceText] = useState('');
+  var [isSpeaking, setIsSpeaking] = useState(false);
+  var voiceTriggeredRef = useRef(false);
 
   // AlertSheet state
   const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', icon: 'info', buttons: [] });
@@ -197,6 +205,8 @@ export default function MedicAiPage() {
   // === ALIXEN Face State — dérivé des variables de chat ===
   const getAlixenState = function() {
     if (emotionOverride) return emotionOverride;
+    if (isListening) return 'listening';
+    if (isSpeaking) return 'speaking';
     if (uploadState === 'scanning') return 'scanning';
     if (cardIsLoading || isLoading) return 'thinking';
     if (cardIsUser) return 'listening';
@@ -333,6 +343,50 @@ export default function MedicAiPage() {
       Animated.spring(inputEntry, { toValue: 1, friction: 6, useNativeDriver: true }),
     ]).start();
   }, []);
+
+  // ── Voice recognition setup ──────────────────────────────────────────────
+  useEffect(function() {
+    Voice.onSpeechResults = function(e) {
+      if (e.value && e.value[0]) {
+        setVoiceText(e.value[0]);
+      }
+    };
+    Voice.onSpeechPartialResults = function(e) {
+      if (e.value && e.value[0]) {
+        setVoiceText(e.value[0]);
+      }
+    };
+    Voice.onSpeechEnd = function() {
+      setIsListening(false);
+    };
+    Voice.onSpeechError = function(e) {
+      console.log('Voice error:', e);
+      setIsListening(false);
+    };
+    return function() {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
+
+  // ── Voice functions ──────────────────────────────────────────────────────
+  var startListening = function() {
+    setVoiceText('');
+    setIsListening(true);
+    Voice.start('fr-FR');
+  };
+  var stopListening = function() {
+    Voice.stop();
+    setIsListening(false);
+  };
+
+  // ── Auto-send voiceText when recognition ends ────────────────────────────
+  useEffect(function() {
+    if (voiceText && !isListening) {
+      voiceTriggeredRef.current = true;
+      handleQuickReply(voiceText);
+      setVoiceText('');
+    }
+  }, [voiceText, isListening]);
 
   // ── Afficher le message de bienvenue dans la carte ──────────────────────
   useEffect(() => {
@@ -1141,6 +1195,16 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           }];
         });
 
+        // TTS — lire la réponse à voix haute si déclenché par la voix
+        if (voiceTriggeredRef.current) {
+          voiceTriggeredRef.current = false;
+          var ttsText = finalText.replace(/\[.*?\]/g, '').replace(/\n{2,}/g, '\n').trim();
+          if (ttsText) {
+            setIsSpeaking(true);
+            Speech.speak(ttsText, { language: 'fr-FR', rate: 0.95, onDone: function() { setIsSpeaking(false); }, onStopped: function() { setIsSpeaking(false); } });
+          }
+        }
+
         if (data.tokens_used) {
           const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
           setEnergyUsed(prev => prev + energyCost);
@@ -1438,6 +1502,16 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         if (prev.length >= 30) return prev;
         return [...prev, botMsg];
       });
+
+      // TTS — lire la réponse à voix haute si déclenché par la voix
+      if (voiceTriggeredRef.current) {
+        voiceTriggeredRef.current = false;
+        var ttsText = finalText.replace(/\[.*?\]/g, '').replace(/\n{2,}/g, '\n').trim();
+        if (ttsText) {
+          setIsSpeaking(true);
+          Speech.speak(ttsText, { language: 'fr-FR', rate: 0.95, onDone: function() { setIsSpeaking(false); }, onStopped: function() { setIsSpeaking(false); } });
+        }
+      }
 
       if (data.tokens_used) {
         const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
@@ -2296,15 +2370,36 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
           {/* Carte de réponse */}
           {/* === ALIXEN SUPER CONTEXT v1 — userLocation prop === */}
-          <ResponseCard
-            currentMessage={cardMessage}
-            isLoading={cardIsLoading}
-            isUserMessage={cardIsUser}
-            onQuickReply={handleQuickReply}
-            onPreciserPress={handlePreciserPress}
-            loadingSteps={loadingSteps}
-            userLocation={userLocation}
-          />
+          <View style={{ position: 'relative' }}>
+            <ResponseCard
+              currentMessage={cardMessage}
+              isLoading={cardIsLoading}
+              isUserMessage={cardIsUser}
+              onQuickReply={handleQuickReply}
+              onPreciserPress={handlePreciserPress}
+              loadingSteps={loadingSteps}
+              userLocation={userLocation}
+            />
+            {isSpeaking ? (
+              <Pressable
+                onPress={function() { Speech.stop(); setIsSpeaking(false); }}
+                style={function(state) {
+                  return {
+                    position: 'absolute', right: wp(16), bottom: wp(8),
+                    backgroundColor: 'rgba(255,107,107,0.12)',
+                    borderWidth: 1, borderColor: '#FF6B6B',
+                    borderRadius: 16,
+                    paddingHorizontal: wp(10), paddingVertical: wp(5),
+                    flexDirection: 'row', alignItems: 'center', gap: wp(4),
+                    opacity: state.pressed ? 0.7 : 1,
+                  };
+                }}
+              >
+                <Ionicons name="stop-circle" size={fp(13)} color="#FF6B6B" />
+                <Text style={{ color: '#FF6B6B', fontSize: fp(9), fontWeight: '600' }}>Stop</Text>
+              </Pressable>
+            ) : null}
+          </View>
         </ScrollView>
 
         {/* Panneau recherche (si ouvert) — avec bouton X */}
@@ -2477,6 +2572,43 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 </LinearGradient>
               </Pressable>
 
+              {/* Bouton Micro — voice input */}
+              <Pressable
+                delayPressIn={120}
+                onPress={function() { if (isListening) { stopListening(); } else { startListening(); } }}
+                style={function(state) {
+                  return {
+                    width: wp(38),
+                    height: wp(38),
+                    borderRadius: wp(19),
+                    borderWidth: 1,
+                    borderColor: isListening ? '#00D984' : '#4A4F55',
+                    backgroundColor: isListening ? 'rgba(0,217,132,0.15)' : 'transparent',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    overflow: 'hidden',
+                    transform: [{ scale: state.pressed ? 0.92 : 1 }],
+                  };
+                }}
+              >
+                {isListening ? (
+                  <Ionicons name="mic" size={wp(20)} color="#00D984" />
+                ) : (
+                  <LinearGradient
+                    colors={['#3A3F46', '#252A30']}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: wp(19),
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Ionicons name="mic-outline" size={wp(18)} color="#00D984" />
+                  </LinearGradient>
+                )}
+              </Pressable>
+
               {/* Champ message — zone délimitée */}
               <View style={{
                 flex: 1,
@@ -2485,24 +2617,25 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 paddingHorizontal: wp(14),
                 marginHorizontal: wp(6),
                 borderWidth: 1,
-                borderColor: 'rgba(0, 0, 0, 0.06)',
+                borderColor: isListening ? 'rgba(0,217,132,0.3)' : 'rgba(0, 0, 0, 0.06)',
               }}>
                 <TextInput
                   ref={inputRef}
                   style={{
                     fontSize: fp(14),
-                    color: '#2D3436',
+                    color: isListening ? '#999' : '#2D3436',
+                    fontStyle: isListening ? 'italic' : 'normal',
                     paddingVertical: wp(8),
                     maxHeight: 50,
                   }}
-                  placeholder={userLang === 'EN' ? 'Your message' : 'Votre message'}
-                  placeholderTextColor="rgba(0, 0, 0, 0.3)"
+                  placeholder={isListening ? 'Parlez...' : (userLang === 'EN' ? 'Your message' : 'Votre message')}
+                  placeholderTextColor={isListening ? 'rgba(0,217,132,0.4)' : 'rgba(0, 0, 0, 0.3)'}
                   selectionColor="#00A878"
-                  value={inputText}
-                  onChangeText={function(t) { setInputText(t); setKeystrokeCount(function(c) { return c + 1; }); }}
+                  value={isListening ? voiceText : inputText}
+                  onChangeText={function(t) { if (!isListening) { setInputText(t); setKeystrokeCount(function(c) { return c + 1; }); } }}
                   multiline
                   blurOnSubmit={false}
-                  editable={!isLocked}
+                  editable={!isLocked && !isListening}
                 />
               </View>
 
