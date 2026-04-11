@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
-var Voice = require('@react-native-voice/voice').default;
+var { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } = require('expo-speech-recognition');
 var Speech = require('expo-speech');
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY, TEST_USER_ID, ENERGY_CONFIG, TABS, wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
@@ -345,37 +345,27 @@ export default function MedicAiPage() {
   }, []);
 
   // ── Voice recognition setup ──────────────────────────────────────────────
-  useEffect(function() {
-    Voice.onSpeechResults = function(e) {
-      if (e.value && e.value[0]) {
-        setVoiceText(e.value[0]);
-      }
-    };
-    Voice.onSpeechPartialResults = function(e) {
-      if (e.value && e.value[0]) {
-        setVoiceText(e.value[0]);
-      }
-    };
-    Voice.onSpeechEnd = function() {
-      setIsListening(false);
-    };
-    Voice.onSpeechError = function(e) {
-      console.log('Voice error:', e);
-      setIsListening(false);
-    };
-    return function() {
-      Voice.destroy().then(Voice.removeAllListeners);
-    };
-  }, []);
+  useSpeechRecognitionEvent('result', function(event) {
+    if (event.results && event.results[0]) {
+      setVoiceText(event.results[0].transcript);
+    }
+  });
+  useSpeechRecognitionEvent('end', function() {
+    setIsListening(false);
+  });
+  useSpeechRecognitionEvent('error', function(event) {
+    console.log('Speech error:', event.error);
+    setIsListening(false);
+  });
 
   // ── Voice functions ──────────────────────────────────────────────────────
   var startListening = function() {
     setVoiceText('');
     setIsListening(true);
-    Voice.start('fr-FR');
+    ExpoSpeechRecognitionModule.start({ lang: 'fr-FR', interimResults: true });
   };
   var stopListening = function() {
-    Voice.stop();
+    ExpoSpeechRecognitionModule.stop();
     setIsListening(false);
   };
 
