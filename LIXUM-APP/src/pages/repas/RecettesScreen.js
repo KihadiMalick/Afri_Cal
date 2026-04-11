@@ -1116,61 +1116,63 @@ export default function RecettesScreen({
               {/* Grille 2 colonnes */}
               <FlatList
                 data={recipesData}
-                keyExtractor={(item) => item.id}
+                keyExtractor={function(item) { return item.id; }}
                 numColumns={2}
                 scrollEnabled={false}
                 columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: wp(10) }}
-                renderItem={({ item: recipe }) => (
-                  <Pressable
-                    onPress={() => openRecipeDetail(recipe)}
-                    style={({ pressed }) => ({
-                      width: '48%',
-                      marginBottom: wp(12),
-                      borderRadius: wp(10), overflow: 'hidden',
-                      backgroundColor: '#1E2530',
-                      borderWidth: 1, borderColor: pressed ? 'rgba(0,217,132,0.2)' : 'rgba(255,255,255,0.04)',
-                      transform: [{ scale: pressed ? 0.97 : 1 }],
-                      height: wp(200),
-                    })}
-                  >
-                    {/* Zone image */}
-                    <View style={{
-                      height: '58%', backgroundColor: '#151B23',
-                      justifyContent: 'center', alignItems: 'center',
-                      borderTopLeftRadius: wp(10), borderTopRightRadius: wp(10),
-                    }}>
-                      <LinearGradient
-                        colors={['rgba(0,217,132,0.06)', 'rgba(0,217,132,0.02)', 'transparent']}
-                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                      />
-                      <Text style={{ fontSize: 28 }}>{getFlag(recipe.country_origin)}</Text>
+                renderItem={function(info) {
+                  var recipe = info.item;
+                  return (
+                    <Pressable
+                      onPress={function() { openRecipeDetail(recipe); }}
+                      style={function(state) {
+                        return {
+                          width: '48%',
+                          marginBottom: wp(12),
+                          borderRadius: 14, overflow: 'hidden',
+                          backgroundColor: '#2A303B',
+                          borderWidth: 1, borderColor: state.pressed ? 'rgba(0,217,132,0.25)' : '#3A3F46',
+                          transform: [{ scale: state.pressed ? 0.97 : 1 }],
+                        };
+                      }}
+                    >
+                      {/* Zone drapeau */}
                       <View style={{
-                        position: 'absolute', top: wp(6), right: wp(6),
-                        backgroundColor: 'rgba(0,0,0,0.6)',
-                        paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
+                        height: wp(75), backgroundColor: '#2A303B',
+                        justifyContent: 'center', alignItems: 'center',
                       }}>
-                        <Text style={{ color: '#FF8C42', fontSize: fp(8), fontWeight: '700' }}>
-                          {Math.round(recipe.kcal_per_100g)} kcal
-                        </Text>
+                        <Text style={{ fontSize: 32 }}>{getFlag(recipe.country_origin)}</Text>
+                        <View style={{
+                          position: 'absolute', top: wp(6), right: wp(6),
+                          backgroundColor: 'rgba(0,217,132,0.15)',
+                          paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10,
+                        }}>
+                          <Text style={{ color: '#00D984', fontSize: fp(8), fontWeight: '700' }}>
+                            {Math.round(recipe.kcal_per_100g)} kcal
+                          </Text>
+                        </View>
                       </View>
-                    </View>
 
-                    {/* Infos */}
-                    <View style={{ padding: wp(8), flex: 1, justifyContent: 'center' }}>
-                      <Text style={{
-                        color: '#FFFFFF', fontSize: fp(11), fontWeight: '700',
-                      }} numberOfLines={1}>{getFlag(recipe.country_origin)} {recipe.name}</Text>
-                      <Text style={{ color: '#9CA3AF', fontSize: fp(9), marginTop: 2 }} numberOfLines={1}>
-                        {Math.round(recipe.kcal_per_100g)} kcal · {recipe.country_origin}
-                      </Text>
-                      <View style={{ flexDirection: 'row', marginTop: wp(4), gap: wp(6) }}>
-                        <Text style={{ color: '#FF6B6B', fontSize: fp(8), fontWeight: '600' }}>{recipe.protein_per_100g}P</Text>
-                        <Text style={{ color: '#FFD93D', fontSize: fp(8), fontWeight: '600' }}>{recipe.carbs_per_100g}G</Text>
-                        <Text style={{ color: '#4DA6FF', fontSize: fp(8), fontWeight: '600' }}>{recipe.fat_per_100g}L</Text>
+                      {/* Séparateur */}
+                      <View style={{ height: 1, backgroundColor: '#3A3F46', marginHorizontal: wp(8) }} />
+
+                      {/* Infos */}
+                      <View style={{ padding: wp(8) }}>
+                        <Text style={{
+                          color: '#FFFFFF', fontSize: fp(11), fontWeight: '700',
+                        }} numberOfLines={1}>{recipe.name}</Text>
+                        <Text style={{ color: '#999', fontSize: fp(9), marginTop: 2 }} numberOfLines={1}>
+                          {Math.round(recipe.kcal_per_100g)} kcal · {recipe.country_origin}
+                        </Text>
+                        <View style={{ flexDirection: 'row', marginTop: wp(4), gap: wp(6) }}>
+                          <Text style={{ color: '#FF6B8A', fontSize: fp(8), fontWeight: '600' }}>{recipe.protein_per_100g}P</Text>
+                          <Text style={{ color: '#FFD93D', fontSize: fp(8), fontWeight: '600' }}>{recipe.carbs_per_100g}G</Text>
+                          <Text style={{ color: '#4DA6FF', fontSize: fp(8), fontWeight: '600' }}>{recipe.fat_per_100g}L</Text>
+                        </View>
                       </View>
-                    </View>
-                  </Pressable>
-                )}
+                    </Pressable>
+                  );
+                }}
               />
 
               {/* Bouton Charger plus */}
