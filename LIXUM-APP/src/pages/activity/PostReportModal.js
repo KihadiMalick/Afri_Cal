@@ -6,6 +6,7 @@ import MapView, { Polyline, Marker } from 'react-native-maps';
 import { useLang } from '../../config/LanguageContext';
 import { wp, fp } from '../../constants/layout';
 import { getFoodEquivalent, getLang } from './activityConstants';
+var AlixenIcon = require('../../components/AlixenIcon');
 
 export default function PostReportModal({
   visible,
@@ -280,7 +281,7 @@ export default function PostReportModal({
                     backgroundColor: 'rgba(0,217,132,0.1)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)',
                     justifyContent: 'center', alignItems: 'center',
                   }}>
-                    <Text style={{ fontSize: fp(16) }}>🤖</Text>
+                    <AlixenIcon size={18} />
                   </View>
                   <View>
                     <Text style={{ fontSize: fp(12), fontWeight: '800', color: '#00D984' }}>ALIXEN</Text>

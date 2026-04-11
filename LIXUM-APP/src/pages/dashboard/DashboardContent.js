@@ -15,6 +15,7 @@ import {
 } from './dashboardConstants';
 import { LixGemIcon, LixCoinIcon, ForkKnifeIcon, StatsIcon } from './dashboardIcons';
 import { EcgPulse, ReactorCore, DnaHelix, HydrationCardCompact } from './dashboardComponents';
+var AlixenIcon = require('../../components/AlixenIcon');
 
 var getFoodEmoji = function(name) {
   var n = (name || '').toLowerCase();
@@ -398,7 +399,7 @@ const DashboardContent = ({
       <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }) }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
           <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(0,217,132,0.12)', borderWidth: 1, borderColor: 'rgba(0, 217, 132, 0.25)', justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{ fontSize: 18 }}>🤖</Text>
+            <AlixenIcon size={20} />
           </View>
           <Text style={{ color: '#EAEEF3', fontSize: fp(13), fontWeight: '700', letterSpacing: wp(1), marginLeft: wp(8) }}>COACH ALIXEN</Text>
           <View style={{ backgroundColor: 'rgba(212, 175, 55, 0.12)', borderRadius: wp(6), paddingHorizontal: wp(6), paddingVertical: wp(2), marginLeft: wp(8) }}>
