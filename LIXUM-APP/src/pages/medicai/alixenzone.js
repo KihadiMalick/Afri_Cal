@@ -476,7 +476,7 @@ var AlixenFace = function(props) {
   return (
     <View style={{ width: FRAME_W, height: FRAME_H, position: 'relative', overflow: 'visible' }}>
       <Image
-        source={require('../../../assets/images/alixen-frame.png')}
+        source={require('../../../assets/images/alixen-frame.webp')}
         style={{ width: imgW, height: imgH, position: 'absolute', top: imgTop, left: imgLeft }}
         resizeMode="contain"
         pointerEvents="none"
