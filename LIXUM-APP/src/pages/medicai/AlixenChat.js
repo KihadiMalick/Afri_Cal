@@ -506,8 +506,8 @@ export const NeumorphBall = React.memo(({ index, isBot, isSearchHit, isSearchAct
   const gradId = useRef('ball' + (_ballGradIdx++)).current;
   const [showPreview, setShowPreview] = useState(false);
 
-  const baseSize = wp(30);
-  const sizeBonus = contentLength > 200 ? wp(6) : contentLength > 100 ? wp(3) : 0;
+  var baseSize = wp(22);
+  var sizeBonus = contentLength > 200 ? wp(4) : contentLength > 100 ? wp(2) : 0;
   const BALL_SIZE = baseSize + sizeBonus;
 
   useEffect(() => {
@@ -555,9 +555,9 @@ export const NeumorphBall = React.memo(({ index, isBot, isSearchHit, isSearchAct
   const dimmed = isSearchActive && !isSearchHit;
   const isActive = status === 'unread' || isSearchHit;
 
-  const topColor = isBot ? '#FF8A80' : '#7DD3FC';
-  const bottomColor = isBot ? '#C62828' : '#0A5EB5';
-  const glowColor = isBot ? '#E74C3C' : '#3498DB';
+  var topColor = isBot ? '#4DA6FF' : '#00D984';
+  var bottomColor = isBot ? '#1565C0' : '#00A866';
+  var glowColor = isBot ? '#4DA6FF' : '#00D984';
 
   const timeStr = timestamp
     ? new Date(timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
@@ -614,7 +614,7 @@ export const NeumorphBall = React.memo(({ index, isBot, isSearchHit, isSearchAct
               justifyContent: 'center', alignItems: 'center',
             }}>
               <Text style={{
-                color: '#FFF', fontSize: fp(BALL_SIZE > baseSize ? 12 : 11),
+                color: '#FFF', fontSize: fp(BALL_SIZE > baseSize ? 10 : 9),
                 fontWeight: '800',
                 textShadowColor: 'rgba(0,0,0,0.3)',
                 textShadowOffset: { width: 0, height: 1 },
@@ -640,7 +640,7 @@ export const NeumorphBall = React.memo(({ index, isBot, isSearchHit, isSearchAct
             position: 'absolute', bottom: -wp(3),
             alignSelf: 'center',
             width: wp(6), height: wp(6), borderRadius: wp(3),
-            backgroundColor: isBot ? '#E74C3C' : '#3498DB',
+            backgroundColor: isBot ? '#4DA6FF' : '#00D984',
             borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
           }} />
         )}

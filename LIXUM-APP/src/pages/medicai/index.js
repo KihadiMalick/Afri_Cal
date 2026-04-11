@@ -1392,6 +1392,23 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     setSelectedMessage(null);
   };
 
+  // ── Strip ALIXEN formatting for plain text preview ────────────────────
+  var stripAlixenFormatting = function(text) {
+    if (!text) return '';
+    var t = text;
+    t = t.replace(/\[TITRE\]([\s\S]*?)\[\/TITRE\]/g, '$1');
+    t = t.replace(/\[SECTION:[^\]]*\]([\s\S]*?)\[\/SECTION\]/g, '$1');
+    t = t.replace(/\[ALERTE\]([\s\S]*?)\[\/ALERTE\]/g, '$1');
+    t = t.replace(/\[INFO\]([\s\S]*?)\[\/INFO\]/g, '$1');
+    t = t.replace(/\[SUCCESS\]([\s\S]*?)\[\/SUCCESS\]/g, '$1');
+    t = t.replace(/\[PRIX\]([\s\S]*?)\[\/PRIX\]/g, '$1');
+    t = t.replace(/\[CHOIX:[^\]]*\][^\n]*/g, '');
+    t = t.replace(/\[ALIXEN_EMOTION:[^\]]*\]/g, '');
+    t = t.replace(/\*\*(.*?)\*\*/g, '$1');
+    t = t.replace(/\n{3,}/g, '\n\n');
+    return t.trim();
+  };
+
   // ── Recherche dans les messages ────────────────────────────────────────
   const toggleSearchModal = () => {
     setSearchVisible(!searchVisible);
@@ -2480,7 +2497,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
       {/* BottomTabs removed — MedicAi is immersive full-screen */}
 
-      {/* === MODAL MESSAGE COMPLET === */}
+      {/* === MODAL MESSAGE COMPLET — plain text preview === */}
       {selectedMessage && (
         <View style={{
           position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
@@ -2498,8 +2515,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             width: SCREEN_WIDTH * 0.92,
             maxHeight: SCREEN_HEIGHT * 0.65,
             borderWidth: 1,
-            borderColor: selectedMessage.role === 'assistant'
-              ? 'rgba(210,80,80,0.15)' : 'rgba(70,140,220,0.15)',
+            borderColor: 'rgba(0,0,0,0.06)',
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.1,
@@ -2508,28 +2524,21 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           }}>
             {/* Header */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                {selectedMessage.role === 'assistant' ? (
-                  <>
-                    <Image source={null}
-                      style={{ width: 22, height: 22, borderRadius: 11, marginRight: 8, borderWidth: 1, borderColor: '#D06060' }}
-                      resizeMode="cover" />
-                    <Text style={{ color: '#D06060', fontSize: 12, fontWeight: 'bold' }}>ALIXEN</Text>
-                  </>
-                ) : (
-                  <Text style={{ color: '#4A8CDC', fontSize: 12, fontWeight: 'bold' }}>👤 Vous</Text>
-                )}
-                <Text style={{ color: 'rgba(0,0,0,0.2)', fontSize: 9, marginLeft: 8 }}>#{selectedMessage.index + 1}</Text>
-              </View>
+              <Text style={{ color: '#333', fontSize: 12, fontWeight: '700' }}>
+                {selectedMessage.role === 'assistant' ? 'ALIXEN' : 'Vous'} #{selectedMessage.index + 1}
+              </Text>
               <TouchableOpacity onPress={closeModal}
                 style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)' }}>
                 <Text style={{ color: 'rgba(0,0,0,0.4)', fontSize: 10 }}>Fermer</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Contenu scrollable avec surlignage et navigation */}
-            {/* === ALIXEN SUPER CONTEXT v1 — userLocation prop === */}
-            <ModalScrollContent selectedMessage={selectedMessage} closeModal={closeModal} handleRecipePress={handleRecipePress} searchTerm={searchQuery} onQuickReply={(text) => { closeModal(); setTimeout(() => handleQuickReply(text), 300); }} onPreciserPress={() => { closeModal(); setTimeout(() => { if (inputRef.current) inputRef.current.focus(); }, 300); }} userLocation={userLocation} />
+            {/* Plain text content */}
+            <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.45 }}>
+              <Text style={{ color: '#333', fontSize: fp(13), lineHeight: 20 }}>
+                {stripAlixenFormatting(selectedMessage.content)}
+              </Text>
+            </ScrollView>
 
             {/* Heure */}
             <Text style={{ color: 'rgba(0,0,0,0.2)', fontSize: 8, marginTop: 8, textAlign: 'right' }}>
