@@ -24,7 +24,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../config/supabase';
 import LixumModal from '../../components/shared/LixumModal';
 import { BottomTabs, FormattedText, FormattedResponseText, MetalCard, parseQuickReplies, parseAlixenResponse, QuickReplyButtons, BottomSpacer, LockIcon, ScrollArrow } from './shared';
-import { SynapticNetwork, ResponseCard, LoadingSteps, FileQueuePreview, ModalScrollContent, parseDirectionBlocks, DirectionCard } from './AlixenChat';
+import { SynapticNetwork, ResponseCard, LoadingSteps, FileQueuePreview, ModalScrollContent, parseDirectionBlocks, DirectionCard, HighlightedText, countOccurrences } from './AlixenChat';
 // === ALIXEN SUPER CONTEXT v1 — Geolocation ===
 import * as Location from 'expo-location';
 import { MediBookContent } from './MediBookPages';
@@ -227,8 +227,8 @@ export default function MedicAiPage({ navigation }) {
   const getAlixenState = function() {
     if (emotionOverride) return emotionOverride;
     if (uploadState === 'scanning') return 'scanning';
-    if (cardIsLoading || isLoading) return 'thinking';
     if (cardIsUser) return 'listening';
+    if (cardIsLoading || isLoading) return 'thinking';
     if (cardMessage && !cardIsUser && !cardIsLoading) return 'speaking';
     if (medicalDataLoading) return 'memory';
     return 'idle';
@@ -1430,6 +1430,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       if (m.content.toLowerCase().includes(low)) hits.add(i);
     });
     setSearchHits(hits);
+    if (hits.size > 0 && scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: true });
+    }
   };
 
   // ── Envoi de message et appel IA ────────────────────────────────────────
@@ -1449,12 +1452,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
     const userText = hasText ? inputText.trim() : (filesToSend.length > 0 ? filesToSend.length + ' fichier' + (filesToSend.length > 1 ? 's' : '') + ' envoyé' + (filesToSend.length > 1 ? 's' : '') : '');
     setInputText('');
-    setIsLoading(true);
+    Keyboard.dismiss();
 
-    // 1. Afficher le message user dans la carte
+    // 1. Afficher le message user dans la carte — green flux visible
     setCardMessage(userText);
     setCardIsUser(true);
     setCardIsLoading(false);
+    setIsLoading(true);
 
     // 2. Créer la boule user
     const userMsg = {
@@ -2285,9 +2289,24 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               onChangeText={handleSearch}
             />
 
+            {/* Bouton submit recherche */}
+            {searchQuery.trim().length > 0 ? (
+              <TouchableOpacity
+                onPress={function() { Keyboard.dismiss(); }}
+                style={{
+                  width: 28, height: 28, borderRadius: 14,
+                  backgroundColor: 'rgba(0,217,132,0.15)',
+                  justifyContent: 'center', alignItems: 'center',
+                  marginLeft: 6,
+                }}
+              >
+                <Text style={{ color: '#00D984', fontSize: 14, fontWeight: 'bold' }}>⌕</Text>
+              </TouchableOpacity>
+            ) : null}
+
             {/* Bouton fermer X */}
             <TouchableOpacity
-              onPress={() => {
+              onPress={function() {
                 setSearchVisible(false);
                 setSearchQuery('');
                 setSearchHits(new Set());
@@ -2538,11 +2557,20 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               </TouchableOpacity>
             </View>
 
-            {/* Plain text content */}
+            {/* Content — highlighted if searching */}
             <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.45 }}>
-              <Text style={{ color: '#333', fontSize: fp(13), lineHeight: 20 }}>
-                {stripAlixenFormatting(selectedMessage.content)}
-              </Text>
+              {searchQuery && searchQuery.trim() ? (
+                <HighlightedText
+                  text={stripAlixenFormatting(selectedMessage.content)}
+                  searchTerm={searchQuery}
+                  currentIndex={0}
+                  style={{ color: '#333', fontSize: fp(13), lineHeight: 20 }}
+                />
+              ) : (
+                <Text style={{ color: '#333', fontSize: fp(13), lineHeight: 20 }}>
+                  {stripAlixenFormatting(selectedMessage.content)}
+                </Text>
+              )}
             </ScrollView>
 
             {/* Heure */}
