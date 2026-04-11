@@ -2141,11 +2141,14 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         paddingHorizontal: 16, paddingBottom: 6,
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
       }}>
-        <Text style={{ fontSize: fp(20), fontWeight: '900', color: '#FF3B5C', letterSpacing: 1 }}>MedicAi</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ fontSize: fp(22), fontWeight: '900', color: '#FFFFFF', letterSpacing: 1 }}>Medic</Text>
+          <Text style={{ fontSize: fp(22), fontWeight: '900', color: '#4DA6FF', letterSpacing: 1 }}>Ai</Text>
+        </View>
         <Pressable onPress={closeMedicAi} style={function(state) {
           return {
-            width: 36, height: 36, borderRadius: 18,
-            backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46',
+            width: 36, height: 36, borderRadius: 20,
+            backgroundColor: 'rgba(255,255,255,0.1)',
             justifyContent: 'center', alignItems: 'center',
             opacity: state.pressed ? 0.7 : 1,
           };
@@ -2324,7 +2327,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         }}>
           <View style={{
             marginHorizontal: wp(12),
-            marginBottom: wp(16),
+            marginBottom: wp(24),
             borderRadius: wp(28),
             overflow: 'hidden',
             backgroundColor: '#FFFFFF',

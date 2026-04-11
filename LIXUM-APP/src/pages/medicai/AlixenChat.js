@@ -760,7 +760,7 @@ export const SynapticNetwork = React.memo(({ messages, searchHits, onBallPress, 
       {messages.length > 0 && (
         <View style={{
           position: 'absolute',
-          left: newSessionPos.x - S_BALL_SIZE / 2,
+          left: newSessionPos.x - S_BALL_SIZE / 2 + wp(3),
           top: newSessionPos.y,
         }}>
           <Pressable
