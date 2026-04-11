@@ -2083,10 +2083,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
 
 
-  // ── RENDER CONTENT (conditionnel) ─────────────────────────────────────
-  const renderContent = () => {
+  // ── RENDER CONTENT (conditionnel — keys forcent React à remonter les composants) ──
+  var renderContent = function() {
     if (currentSubPage === 'medibook' || uploadState === 'scanning' || uploadState === 'results' || uploadState === 'integrating') {
       return (
+        <View key="medibook-wrapper" style={{ flex: 1 }}>
         <MediBookContent
           mediBookView={mediBookView} setMediBookView={setMediBookView}
           reportSection={reportSection} setReportSection={setReportSection}
@@ -2120,16 +2121,17 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           showAddAnalysisSheet={showAddAnalysisSheet} setShowAddAnalysisSheet={setShowAddAnalysisSheet}
           mbGenerateScale={mbGenerateScale}
         />
+        </View>
       );
     }
     if (currentSubPage === 'secretpocket') {
-      return <SecretPocketContent isUnlocked={isUnlocked} setIsUnlocked={setIsUnlocked} setCurrentSubPage={setCurrentSubPage} />;
+      return <View key="secretpocket-wrapper" style={{ flex: 1 }}><SecretPocketContent isUnlocked={isUnlocked} setIsUnlocked={setIsUnlocked} setCurrentSubPage={setCurrentSubPage} /></View>;
     }
     return renderMain();
   };
 
-  const renderMain = () => (
-    <View style={{ flex: 1, backgroundColor: '#1A1D22' }}>
+  var renderMain = function() { return (
+    <View key="main-wrapper" style={{ flex: 1, backgroundColor: '#1A1D22' }}>
       <StatusBar barStyle="light-content" backgroundColor="#1E2530" />
 
       {/* ===== HEADER — MedicAi immersive ===== */}
@@ -2730,7 +2732,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         </View>
       )}
     </View>
-  );
+  ); };
 
 
   // ── FINAL RETURN ───────────────────────────────────────────────────────
