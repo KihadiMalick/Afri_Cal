@@ -141,19 +141,58 @@ const RECIPE_CATEGORIES = [
   { key: 'Boisson', label: '🥤 Boisson', labelEn: '🥤 Drink' },
 ];
 
-var ALIXEN_CATEGORIES = [
-  { key: 'rice', emoji: '🍚', label: 'À base de riz', labelEN: 'Rice-based' },
-  { key: 'protein', emoji: '🥩', label: 'Riche en protéines', labelEN: 'High protein' },
-  { key: 'light', emoji: '🥗', label: 'Léger', labelEN: 'Light' },
-  { key: 'hearty', emoji: '🍲', label: 'Consistant', labelEN: 'Hearty' },
-  { key: 'soup', emoji: '🥣', label: 'Soupe', labelEN: 'Soup' },
-  { key: 'african', emoji: '🌍', label: 'Africain', labelEN: 'African' },
-  { key: 'european', emoji: '🇫🇷', label: 'Européen', labelEN: 'European' },
-  { key: 'asian', emoji: '🇯🇵', label: 'Asiatique', labelEN: 'Asian' },
-  { key: 'milkshake', emoji: '🥤', label: 'Milkshake/Boisson', labelEN: 'Milkshake/Drink' },
-  { key: 'pastry', emoji: '🍰', label: 'Pâtisserie', labelEN: 'Pastry' },
-  { key: 'salad', emoji: '🥙', label: 'Salade', labelEN: 'Salad' },
-  { key: 'snack', emoji: '🍿', label: 'Snack', labelEN: 'Snack' },
+var ALIXEN_HEALTH_FILTERS = [
+  { key: 'sans_sucre', label: 'Sans sucre' },
+  { key: 'sans_huile', label: 'Sans huile' },
+  { key: 'sans_sel', label: 'Sans sel' },
+  { key: 'sans_gluten', label: 'Sans gluten' },
+  { key: 'sans_lactose', label: 'Sans lactose' },
+  { key: 'faible_cholesterol', label: 'Faible cholest.' },
+  { key: 'riche_fibres', label: 'Riche fibres' },
+  { key: 'riche_fer', label: 'Riche fer' },
+  { key: 'riche_proteines', label: 'Riche protéines' },
+  { key: 'anti_inflammatoire', label: 'Anti-inflam.' },
+];
+
+var ALIXEN_REGIONS = [
+  { key: 'west_africa', label: 'Afr. Ouest', emoji: '🇨🇮' },
+  { key: 'east_africa', label: 'Afr. Est', emoji: '🇰🇪' },
+  { key: 'central_africa', label: 'Afr. Centrale', emoji: '🇨🇲' },
+  { key: 'north_africa', label: 'Maghreb', emoji: '🇲🇦' },
+  { key: 'south_africa', label: 'Afr. Sud', emoji: '🇿🇦' },
+  { key: 'european', label: 'Européen', emoji: '🇫🇷' },
+  { key: 'asian', label: 'Asiatique', emoji: '🇯🇵' },
+  { key: 'indian', label: 'Indien', emoji: '🇮🇳' },
+  { key: 'middle_east', label: 'Moyen-Orient', emoji: '🇪🇬' },
+  { key: 'mediterranean', label: 'Méditerranéen', emoji: '🇬🇷' },
+  { key: 'latin_america', label: 'Am. Latine', emoji: '🇲🇽' },
+  { key: 'caribbean', label: 'Caraïbes', emoji: '🇬🇾' },
+  { key: 'american', label: 'Américain', emoji: '🇺🇸' },
+  { key: 'oceania', label: 'Océanie', emoji: '🇦🇺' },
+];
+
+var ALIXEN_DISH_TYPES = [
+  { key: 'soup', label: 'Soupe', emoji: '🍲' },
+  { key: 'salad', label: 'Salade', emoji: '🥗' },
+  { key: 'hearty', label: 'Consistant', emoji: '🍖' },
+  { key: 'light', label: 'Léger', emoji: '🥒' },
+  { key: 'rice', label: 'À base de riz', emoji: '🍚' },
+  { key: 'pasta', label: 'Pâtes', emoji: '🍝' },
+  { key: 'grill', label: 'Grillades', emoji: '🥩' },
+  { key: 'stew', label: 'Ragoût', emoji: '🫕' },
+  { key: 'street_food', label: 'Street food', emoji: '🌮' },
+  { key: 'wrap', label: 'Wrap', emoji: '🥙' },
+  { key: 'bowl', label: 'Bowl', emoji: '🥣' },
+  { key: 'smoothie', label: 'Smoothie', emoji: '🥤' },
+];
+
+var ALIXEN_PRACTICAL_FILTERS = [
+  { key: 'under_15min', label: '-15 min' },
+  { key: 'under_30min', label: '-30 min' },
+  { key: 'no_cooking', label: 'Zéro cuisson' },
+  { key: 'budget', label: 'Petit budget' },
+  { key: 'meal_prep', label: 'Meal prep' },
+  { key: 'healthy_dessert', label: 'Pâtisserie saine' },
 ];
 
 const MOOD_MATRIX = {
@@ -182,6 +221,9 @@ export {
   getFlag,
   RECIPE_REGIONS,
   RECIPE_CATEGORIES,
-  ALIXEN_CATEGORIES,
+  ALIXEN_HEALTH_FILTERS,
+  ALIXEN_REGIONS,
+  ALIXEN_DISH_TYPES,
+  ALIXEN_PRACTICAL_FILTERS,
   MOOD_MATRIX,
 };
