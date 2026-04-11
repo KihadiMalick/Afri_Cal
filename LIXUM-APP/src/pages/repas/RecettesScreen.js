@@ -10,7 +10,8 @@ import { supabase } from '../../config/supabase';
 import { useLang } from '../../config/LanguageContext';
 import { wp, fp } from '../../constants/layout';
 import {
-  RECIPE_REGIONS, RECIPE_CATEGORIES, ALIXEN_CATEGORIES,
+  RECIPE_REGIONS, RECIPE_CATEGORIES,
+  ALIXEN_HEALTH_FILTERS, ALIXEN_REGIONS, ALIXEN_DISH_TYPES, ALIXEN_PRACTICAL_FILTERS,
   MOOD_MATRIX, getFlag, MEAL_SLOTS,
 } from './repasConstants';
 
@@ -74,6 +75,10 @@ export default function RecettesScreen({
   var _alixenMealSlot = useState(null); var alixenMealSlot = _alixenMealSlot[0]; var setAlixenMealSlot = _alixenMealSlot[1];
   var _alixenAltCategories = useState([]); var alixenAltCategories = _alixenAltCategories[0]; var setAlixenAltCategories = _alixenAltCategories[1];
   var _alixenGlobalComment = useState(null); var alixenGlobalComment = _alixenGlobalComment[0]; var setAlixenGlobalComment = _alixenGlobalComment[1];
+  var _healthFilters = useState([]); var healthFilters = _healthFilters[0]; var setHealthFilters = _healthFilters[1];
+  var _selectedRegion = useState(null); var selectedRegion = _selectedRegion[0]; var setSelectedRegion = _selectedRegion[1];
+  var _selectedType = useState(null); var selectedType = _selectedType[0]; var setSelectedType = _selectedType[1];
+  var _practicalFilters = useState([]); var practicalFilters = _practicalFilters[0]; var setPracticalFilters = _practicalFilters[1];
 
   // Modal state
   var _modalCfg = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null, onClose: null, confirmText: 'Confirmer', cancelText: 'Annuler' });
@@ -677,7 +682,9 @@ export default function RecettesScreen({
         'Moment: ' + ctx.timeOfDay + '\n' +
         (ctx.mood ? 'Humeur: ' + ctx.mood + '\n' : '') +
         (ctx.weather ? 'Météo: ' + ctx.weather + '\n' : '') +
-        '\nCATÉGORIE CHOISIE: ' + (category === 'my_ingredients' ? 'Recette avec ingrédients imposés' : category === 'surprise' ? 'Surprise — choisis 3 plats variés et créatifs' : category) + '\n' +
+        '\nCRÉNEAU REPAS: ' + (alixenMealSlot === 'breakfast' ? 'Petit-déjeuner' : alixenMealSlot === 'lunch' ? 'Déjeuner' : alixenMealSlot === 'dinner' ? 'Dîner' : alixenMealSlot === 'snack' ? 'Snacks' : 'Non spécifié') + '\n' +
+        '\nCATÉGORIE CHOISIE: ' + (category === 'my_ingredients' ? 'Recette avec ingrédients imposés' : category === 'surprise' ? 'Surprise — choisis 3 plats variés et créatifs' : category === 'filtered' ? 'Sélection personnalisée avec filtres' : category) + '\n' +
+        (category === 'filtered' ? (selectedRegion ? 'RÉGION CUISINE: ' + selectedRegion + '\n' : '') + (selectedType ? 'TYPE DE PLAT: ' + selectedType + '\n' : '') + (healthFilters.length > 0 ? 'FILTRES SANTÉ: ' + healthFilters.join(', ') + '\n' : '') + (practicalFilters.length > 0 ? 'CONTRAINTES PRATIQUES: ' + practicalFilters.join(', ') + '\n' : '') : '') +
         (userIngList ? 'INGRÉDIENTS IMPOSÉS: ' + userIngList + '\n' : '') +
         '\nMODE APERÇU — Donne UNIQUEMENT un résumé rapide, PAS d\'ingrédients ni d\'étapes.\n' +
         '\nRÈGLES STRICTES:\n' +
@@ -1424,28 +1431,22 @@ export default function RecettesScreen({
                         }}
                         style={function(state) { return { opacity: state.pressed ? 0.85 : 1, marginBottom: wp(8) }; }}
                       >
-                        <LinearGradient
-                          colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
-                          style={{
+                        <View style={{
                             flexDirection: 'row', alignItems: 'center',
                             padding: wp(14), borderRadius: 14,
-                            borderWidth: 1.5, borderColor: '#4A4F55',
-                          }}
-                        >
-                          <View style={{
-                            width: wp(44), height: wp(44), borderRadius: wp(22),
-                            backgroundColor: 'rgba(0,217,132,0.15)',
-                            justifyContent: 'center', alignItems: 'center',
-                            marginRight: wp(12),
+                            backgroundColor: '#2A303B',
+                            borderWidth: 1, borderColor: '#3A3F46',
                           }}>
-                            <Text style={{ fontSize: fp(20) }}>✨</Text>
-                          </View>
+                          <View style={{
+                            width: 10, height: 10, borderRadius: 5,
+                            backgroundColor: '#00D984',
+                            marginRight: wp(10),
+                          }} />
                           <View style={{ flex: 1 }}>
                             <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '800' }}>SURPRENDS-MOI</Text>
-                            <Text style={{ color: '#888', fontSize: fp(10), marginTop: 2 }}>ALIXEN choisit pour toi selon ta journée</Text>
+                            <Text style={{ color: '#888', fontSize: fp(10), marginTop: 2 }}>ALIXEN choisit pour toi selon ton objectif, humeur et déficit</Text>
                           </View>
-                          <Text style={{ color: '#00D984', fontSize: fp(16) }}>›</Text>
-                        </LinearGradient>
+                        </View>
                       </Pressable>
 
                       {/* Bouton "Mes ingrédients" — MetalCard bordure dense */}
@@ -1482,105 +1483,189 @@ export default function RecettesScreen({
                         </LinearGradient>
                       </Pressable>
 
-                      {/* Séparateur catégories */}
-                      <Text style={{ color: '#666', fontSize: fp(9), letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center', marginVertical: wp(14) }}>
-                        OU CHOISIS UNE CATÉGORIE
+                      {/* ── C) FILTRES SANTÉ ── */}
+                      <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '700', letterSpacing: 1.5, marginTop: wp(16), marginBottom: wp(8) }}>
+                        FILTRES SANTÉ
                       </Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(4) }}>
+                        <View style={{ flexDirection: 'row', gap: wp(6) }}>
+                          {ALIXEN_HEALTH_FILTERS.map(function(f) {
+                            var isOn = healthFilters.indexOf(f.key) !== -1;
+                            return (
+                              <Pressable
+                                key={f.key}
+                                onPress={function() {
+                                  setHealthFilters(function(prev) {
+                                    return prev.indexOf(f.key) !== -1
+                                      ? prev.filter(function(k) { return k !== f.key; })
+                                      : prev.concat([f.key]);
+                                  });
+                                }}
+                                style={{
+                                  borderWidth: 1,
+                                  borderColor: isOn ? '#00D984' : '#3A3F46',
+                                  backgroundColor: isOn ? 'rgba(0,217,132,0.08)' : 'transparent',
+                                  borderRadius: 20,
+                                  paddingHorizontal: wp(12),
+                                  paddingVertical: wp(6),
+                                }}
+                              >
+                                <Text style={{ color: isOn ? '#00D984' : '#999', fontSize: fp(10), fontWeight: '600' }}>{f.label}</Text>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      </ScrollView>
 
+                      {/* ── D) RÉGIONS DU MONDE ── */}
+                      <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '700', letterSpacing: 1.5, marginTop: wp(16), marginBottom: wp(8) }}>
+                        RÉGIONS DU MONDE
+                      </Text>
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8) }}>
-                        {ALIXEN_CATEGORIES.filter(function(cat) { return cat.key !== 'snack'; }).map(function(cat) {
-                          var isNight = alixenContext && alixenContext.timeOfDay === 'night';
-                          var isHeavy = cat.key === 'rice' || cat.key === 'hearty';
-                          var isLight = cat.key === 'light' || cat.key === 'soup' || cat.key === 'milkshake' || cat.key === 'salad';
+                        {ALIXEN_REGIONS.map(function(r) {
+                          var isSelected = selectedRegion === r.key;
                           return (
                             <Pressable
-                              key={cat.key}
+                              key={r.key}
                               onPress={function() {
-                                var costCheck = checkAlixenRecipeCost();
-                                if (!costCheck.allowed) {
-                                  showModal('error', '💎 Lix insuffisants', 'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées', { type: 'confirm', confirmText: 'Aller au LixVerse', cancelText: 'OK', onConfirm: function() { closeModal(); if (onNavigate) onNavigate('lixverse'); onClose(); } });
-                                  return;
-                                }
-                                if (costCheck.cost > 0) {
-                                  showModal('confirm', '🤖 Recette ALIXEN', 'Ta recette gratuite du jour a été utilisée.\nCette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
-                                    confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
-                                    onConfirm: function() {
-                                      closeModal();
-                                      deductAlixenLix(50).then(function(success) {
-                                        if (success) {
-                                          setAlixenCategory(cat.key);
-                                          setAlixenRecipeScreen('proposals');
-                                          setAlixenLoading(true);
-                                          generateAlixenProposals(cat.key);
-                                        } else {
-                                          showModal('error', 'Erreur', 'Impossible de débiter les Lix.');
-                                        }
-                                      });
-                                    },
-                                  });
-                                  return;
-                                }
-                                setAlixenCategory(cat.key);
-                                setAlixenRecipeScreen('proposals');
-                                setAlixenLoading(true);
-                                generateAlixenProposals(cat.key);
+                                setSelectedRegion(function(prev) { return prev === r.key ? null : r.key; });
                               }}
                               style={function(state) {
                                 return {
-                                  width: '31%', paddingVertical: wp(14), borderRadius: 14,
-                                  backgroundColor: state.pressed ? 'rgba(0,217,132,0.10)' : '#2A303B',
+                                  width: '31%', padding: wp(10), borderRadius: 10,
+                                  backgroundColor: isSelected ? 'rgba(0,217,132,0.1)' : '#2A303B',
                                   borderWidth: 1,
-                                  borderColor: state.pressed ? 'rgba(0,217,132,0.4)' : isNight && isLight ? 'rgba(0,217,132,0.25)' : isNight && isHeavy ? 'rgba(255,140,66,0.15)' : '#3A3F46',
+                                  borderColor: isSelected ? '#00D984' : '#3A3F46',
                                   alignItems: 'center',
-                                  opacity: isNight && isHeavy ? 0.5 : 1,
+                                  opacity: state.pressed ? 0.7 : 1,
                                 };
                               }}
                             >
-                              <Text style={{ fontSize: fp(20), marginBottom: wp(4) }}>{cat.emoji}</Text>
-                              <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={1}>{cat.label}</Text>
-                              {isNight && isHeavy ? <Text style={{ color: '#FF8C42', fontSize: fp(7), marginTop: wp(2) }}>Déconseillé</Text> : null}
-                              {isNight && isLight ? <Text style={{ color: '#00D984', fontSize: fp(7), marginTop: wp(2) }}>Recommandé</Text> : null}
+                              <Text style={{ fontSize: fp(20), marginBottom: wp(4) }}>{r.emoji}</Text>
+                              <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={1}>{r.label}</Text>
                             </Pressable>
                           );
                         })}
                       </View>
 
-                      {alixenContext && alixenContext.mood && (
-                        <View style={{
-                          flexDirection: 'row', alignItems: 'center',
-                          marginTop: wp(12), gap: wp(8),
-                        }}>
-                          <View style={{
-                            flexDirection: 'row', alignItems: 'center',
-                            backgroundColor: 'rgba(0,217,132,0.06)',
-                            borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4),
-                          }}>
-                            <Text style={{ fontSize: fp(10), marginRight: wp(4) }}>
-                              {alixenContext.mood === 'happy' ? '😊' : alixenContext.mood === 'sad' ? '😢' : alixenContext.mood === 'stressed' ? '😰' : alixenContext.mood === 'tired' ? '😴' : '😐'}
-                            </Text>
-                            <Text style={{ color: '#00D984', fontSize: fp(9), fontWeight: '600' }}>
-                              {alixenContext.mood}
-                            </Text>
-                          </View>
-                          {alixenContext.weather && (
-                            <View style={{
-                              flexDirection: 'row', alignItems: 'center',
-                              backgroundColor: 'rgba(77,166,255,0.06)',
-                              borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4),
-                            }}>
-                              <Text style={{ fontSize: fp(10), marginRight: wp(4) }}>
-                                {alixenContext.weather === 'sunny' ? '☀️' : alixenContext.weather === 'rainy' ? '🌧️' : '⛅'}
-                              </Text>
-                              <Text style={{ color: '#4DA6FF', fontSize: fp(9), fontWeight: '600' }}>
-                                {alixenContext.weather}
-                              </Text>
-                            </View>
-                          )}
-                          <Text style={{ color: '#5A6070', fontSize: fp(8), fontStyle: 'italic' }}>
-                            ALIXEN adapte ses suggestions
-                          </Text>
+                      {/* ── E) TYPE DE PLAT ── */}
+                      <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '700', letterSpacing: 1.5, marginTop: wp(16), marginBottom: wp(8) }}>
+                        TYPE DE PLAT
+                      </Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8) }}>
+                        {ALIXEN_DISH_TYPES.map(function(t) {
+                          var isSelected = selectedType === t.key;
+                          return (
+                            <Pressable
+                              key={t.key}
+                              onPress={function() {
+                                setSelectedType(function(prev) { return prev === t.key ? null : t.key; });
+                              }}
+                              style={function(state) {
+                                return {
+                                  width: '31%', padding: wp(10), borderRadius: 10,
+                                  backgroundColor: isSelected ? 'rgba(0,217,132,0.1)' : '#2A303B',
+                                  borderWidth: 1,
+                                  borderColor: isSelected ? '#00D984' : '#3A3F46',
+                                  alignItems: 'center',
+                                  opacity: state.pressed ? 0.7 : 1,
+                                };
+                              }}
+                            >
+                              <Text style={{ fontSize: fp(20), marginBottom: wp(4) }}>{t.emoji}</Text>
+                              <Text style={{ color: '#EAEEF3', fontSize: fp(9), fontWeight: '600', textAlign: 'center' }} numberOfLines={1}>{t.label}</Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+
+                      {/* ── F) PRATIQUE ── */}
+                      <Text style={{ color: '#8892A0', fontSize: fp(9), fontWeight: '700', letterSpacing: 1.5, marginTop: wp(16), marginBottom: wp(8) }}>
+                        PRATIQUE
+                      </Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(4) }}>
+                        <View style={{ flexDirection: 'row', gap: wp(6) }}>
+                          {ALIXEN_PRACTICAL_FILTERS.map(function(f) {
+                            var isOn = practicalFilters.indexOf(f.key) !== -1;
+                            return (
+                              <Pressable
+                                key={f.key}
+                                onPress={function() {
+                                  setPracticalFilters(function(prev) {
+                                    return prev.indexOf(f.key) !== -1
+                                      ? prev.filter(function(k) { return k !== f.key; })
+                                      : prev.concat([f.key]);
+                                  });
+                                }}
+                                style={{
+                                  borderWidth: 1,
+                                  borderColor: isOn ? '#00D984' : '#3A3F46',
+                                  backgroundColor: isOn ? 'rgba(0,217,132,0.08)' : 'transparent',
+                                  borderRadius: 20,
+                                  paddingHorizontal: wp(12),
+                                  paddingVertical: wp(6),
+                                }}
+                              >
+                                <Text style={{ color: isOn ? '#00D984' : '#999', fontSize: fp(10), fontWeight: '600' }}>{f.label}</Text>
+                              </Pressable>
+                            );
+                          })}
                         </View>
-                      )}
+                      </ScrollView>
+
+                      {/* ── BOUTON GÉNÉRER ── */}
+                      {(healthFilters.length > 0 || selectedRegion !== null || selectedType !== null || practicalFilters.length > 0) ? (
+                        <Pressable
+                          onPress={function() {
+                            var costCheck = checkAlixenRecipeCost();
+                            if (!costCheck.allowed) {
+                              showModal('error', '💎 Lix insuffisants', 'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées', { type: 'confirm', confirmText: 'Aller au LixVerse', cancelText: 'OK', onConfirm: function() { closeModal(); if (onNavigate) onNavigate('lixverse'); onClose(); } });
+                              return;
+                            }
+                            if (costCheck.cost > 0) {
+                              showModal('confirm', '🤖 Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
+                                confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
+                                onConfirm: function() {
+                                  closeModal();
+                                  deductAlixenLix(50).then(function(success) {
+                                    if (success) {
+                                      setAlixenCategory('filtered');
+                                      setAlixenRecipeScreen('proposals');
+                                      setAlixenLoading(true);
+                                      generateAlixenProposals('filtered');
+                                    } else {
+                                      showModal('error', 'Erreur', 'Impossible de débiter les Lix.');
+                                    }
+                                  });
+                                },
+                              });
+                              return;
+                            }
+                            setAlixenCategory('filtered');
+                            setAlixenRecipeScreen('proposals');
+                            setAlixenLoading(true);
+                            generateAlixenProposals('filtered');
+                          }}
+                          style={function(state) {
+                            return {
+                              marginTop: wp(18),
+                              backgroundColor: state.pressed ? 'rgba(0,217,132,0.8)' : '#00D984',
+                              borderRadius: 12,
+                              paddingVertical: wp(14),
+                              alignItems: 'center',
+                            };
+                          }}
+                        >
+                          <Text style={{ color: '#1A1D22', fontSize: fp(14), fontWeight: '800' }}>GÉNÉRER MA RECETTE</Text>
+                        </Pressable>
+                      ) : null}
+
+                      {/* ── G) BARRE CONTEXTE ── */}
+                      {alixenContext ? (
+                        <Text style={{ color: '#5A6070', fontSize: fp(8), textAlign: 'center', marginTop: wp(16), marginBottom: wp(8) }}>
+                          {(alixenContext.mood ? (alixenContext.mood === 'happy' ? '😊' : alixenContext.mood === 'sad' ? '😢' : alixenContext.mood === 'stressed' ? '😰' : alixenContext.mood === 'tired' ? '😴' : '😐') + ' ' + (alixenContext.mood === 'happy' ? '5' : alixenContext.mood === 'neutral' ? '3' : alixenContext.mood === 'sad' ? '1' : alixenContext.mood === 'stressed' ? '2' : '2') : '') + (alixenContext.mood && alixenContext.weather ? ' · ' : '') + (alixenContext.weather ? (alixenContext.weather === 'sunny' ? '☀️' : alixenContext.weather === 'rainy' ? '🌧️' : '⛅') + ' ' + alixenContext.weather : '') + ' · Régime: ' + (alixenContext.regime || 'classique') + ' · Obj: ' + alixenContext.target + ' kcal/j'}
+                        </Text>
+                      ) : null}
                     </View>
                   )}
 
