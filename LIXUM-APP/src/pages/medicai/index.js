@@ -2088,7 +2088,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     );
   };
 
-
+  // ── HOISTED useCallbacks (must run on every render to keep hook count constant) ──
+  var cbNewSession = useCallback(function() { setShowNewSessionSheet(true); }, []);
+  var cbRemoveFile = useCallback(function(id) { setFileQueue(function(prev) { return prev.filter(function(f) { return f.id !== id; }); }); }, []);
+  var cbOpenDocSheet = useCallback(function() { setShowDocumentSheet(true); }, []);
+  var cbToggleSearch = useCallback(function() { setSearchVisible(function(v) { return !v; }); }, []);
+  var cbOpenRecharge = useCallback(function() { setShowRechargeSheet(true); }, []);
+  var cbSendMessage = useCallback(function() { if (inputText.trim() || fileQueue.length > 0) sendMessage(); }, [inputText, fileQueue, sendMessage]);
 
   // ── RENDER CONTENT (conditionnel — keys forcent React à remonter les composants) ──
   var renderContent = function() {
@@ -2247,7 +2253,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               messages={messages}
               searchHits={searchHits}
               onBallPress={handleBallPress}
-              onNewSession={useCallback(function() { setShowNewSessionSheet(true); }, [])}
+              onNewSession={cbNewSession}
               sessionFull={messages.length >= 24}
             />
           </Animated.View>
@@ -2375,7 +2381,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             {/* Fichiers en attente */}
             <FileQueuePreview
               files={fileQueue}
-              onRemove={useCallback(function(id) { setFileQueue(function(prev) { return prev.filter(function(f) { return f.id !== id; }); }); }, [])}
+              onRemove={cbRemoveFile}
             />
 
             <View style={{
@@ -2388,7 +2394,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               {/* Bouton "+" ajout document */}
               <Pressable
                 delayPressIn={120}
-                onPress={useCallback(function() { setShowDocumentSheet(true); }, [])}
+                onPress={cbOpenDocSheet}
                 style={({ pressed }) => ({
                   width: wp(38),
                   height: wp(38),
@@ -2421,7 +2427,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               {/* Bouton Recherche — style MetalCard comme le "+" */}
               <Pressable
                 delayPressIn={120}
-                onPress={useCallback(function() { setSearchVisible(function(v) { return !v; }); }, [])}
+                onPress={cbToggleSearch}
                 style={({ pressed }) => ({
                   width: wp(38),
                   height: wp(38),
@@ -2484,7 +2490,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               {isLocked ? (
                 <Pressable
                   delayPressIn={120}
-                  onPress={useCallback(function() { setShowRechargeSheet(true); }, [])}
+                  onPress={cbOpenRecharge}
                   style={function(state) {
                     return {
                       width: wp(38), height: wp(38), borderRadius: wp(19),
@@ -2502,7 +2508,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 </Pressable>
               ) : (inputText.trim() || fileQueue.length > 0) ? (
                 <TouchableOpacity
-                  onPress={useCallback(function() { if (inputText.trim() || fileQueue.length > 0) sendMessage(); }, [inputText, fileQueue, sendMessage])}
+                  onPress={cbSendMessage}
                   style={{
                     width: 40, height: 40, borderRadius: 20,
                     backgroundColor: '#FFFFFF',
