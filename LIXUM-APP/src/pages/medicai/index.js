@@ -2350,7 +2350,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         }}>
           <View style={{
             marginHorizontal: wp(12),
-            marginBottom: wp(24),
+            marginBottom: 15,
             borderRadius: wp(28),
             overflow: 'hidden',
             backgroundColor: '#FFFFFF',
@@ -2480,30 +2480,31 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 />
               </View>
 
-              {/* Bouton Envoyer / X rouge si énergie vide */}
+              {/* Bouton Micro / Envoyer / X rouge si énergie vide */}
               {isLocked ? (
                 <Pressable
                   delayPressIn={120}
                   onPress={useCallback(function() { setShowRechargeSheet(true); }, [])}
-                  style={({ pressed }) => ({
-                    width: wp(38), height: wp(38), borderRadius: wp(19),
-                    backgroundColor: 'rgba(255,107,107,0.15)',
-                    borderWidth: 1.5, borderColor: '#FF6B6B',
-                    justifyContent: 'center', alignItems: 'center',
-                    transform: [{ scale: pressed ? 0.92 : 1 }],
-                  })}
+                  style={function(state) {
+                    return {
+                      width: wp(38), height: wp(38), borderRadius: wp(19),
+                      backgroundColor: 'rgba(255,107,107,0.15)',
+                      borderWidth: 1.5, borderColor: '#FF6B6B',
+                      justifyContent: 'center', alignItems: 'center',
+                      transform: [{ scale: state.pressed ? 0.92 : 1 }],
+                    };
+                  }}
                 >
                   <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
                     <Line x1="18" y1="6" x2="6" y2="18" stroke="#FF6B6B" strokeWidth="2.5" strokeLinecap="round"/>
                     <Line x1="6" y1="6" x2="18" y2="18" stroke="#FF6B6B" strokeWidth="2.5" strokeLinecap="round"/>
                   </Svg>
                 </Pressable>
-              ) : (
+              ) : (inputText.trim() || fileQueue.length > 0) ? (
                 <TouchableOpacity
                   onPress={useCallback(function() { if (inputText.trim() || fileQueue.length > 0) sendMessage(); }, [inputText, fileQueue, sendMessage])}
-                  disabled={!inputText.trim() && fileQueue.length === 0}
                   style={{
-                    width: 38, height: 38, borderRadius: 19,
+                    width: 40, height: 40, borderRadius: 20,
                     backgroundColor: '#FFFFFF',
                     justifyContent: 'center', alignItems: 'center',
                     shadowColor: 'rgba(0,0,0,0.15)',
@@ -2512,11 +2513,23 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                     borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)',
                   }}
                 >
-                  <Text style={{
-                    color: (inputText.trim() || fileQueue.length > 0) ? '#00D984' : 'rgba(0,0,0,0.12)',
-                    fontSize: 15, fontWeight: 'bold',
-                  }}>{'➤'}</Text>
+                  <Text style={{ color: '#00D984', fontSize: 15, fontWeight: 'bold' }}>{'➤'}</Text>
                 </TouchableOpacity>
+              ) : (
+                <Pressable
+                  delayPressIn={120}
+                  onPress={function() { console.log('Micro pressed'); }}
+                  style={function(state) {
+                    return {
+                      width: 40, height: 40, borderRadius: 20,
+                      backgroundColor: 'transparent',
+                      justifyContent: 'center', alignItems: 'center',
+                      transform: [{ scale: state.pressed ? 0.92 : 1 }],
+                    };
+                  }}
+                >
+                  <Ionicons name="mic-outline" size={wp(22)} color="#00D984" />
+                </Pressable>
               )}
             </View>
           </View>
