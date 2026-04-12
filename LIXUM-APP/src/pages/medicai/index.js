@@ -450,8 +450,8 @@ export default function MedicAiPage({ navigation }) {
 
   const addBotMessage = useCallback((text) => {
     setMessages(prev => {
-      if (prev.length >= 30) {
-        showMModal('confirm', 'Session pleine', 'Vous avez atteint la limite de 30 échanges par session.\n\nCompactez cette conversation pour la ranger dans votre Secret Pocket et démarrer une nouvelle session.', { confirmText: 'Compacter et ranger', onConfirm: closeMModal });
+      if (prev.length >= 24) {
+        showMModal('confirm', 'Session complète', 'Tu as atteint 24 messages dans cette session. Ouvre une nouvelle discussion en cliquant sur + pour continuer.', { confirmText: 'Compris', cancelText: null, onConfirm: closeMModal });
         return prev;
       }
       return [...prev, {
@@ -1024,7 +1024,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   const sendImageToAlixen = async (base64Data, fileName, mimeType) => {
     if (isLoading || isLocked) return;
-    if (messages.length >= 30) return;
+    if (messages.length >= 24) return;
 
     const userText = 'Photo envoyée : ' + (fileName || 'Document');
     const userMsg = {
@@ -1152,7 +1152,10 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       setPendingAction(null);
     }
 
-    if (messages.length >= 30) return;
+    if (messages.length >= 24) {
+      showMModal('info', 'Session complète', 'Tu as atteint 24 messages dans cette session. Ouvre une nouvelle discussion en cliquant sur + pour continuer.', { confirmText: 'Compris', onConfirm: closeMModal });
+      return;
+    }
 
     const userMsg = {
       id: Date.now().toString(),
@@ -1441,9 +1444,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     const hasText = inputText.trim().length > 0;
     if ((!hasText && !hasFiles) || isLoading || isLocked) return;
 
-    // Limite 30 bulles par session
-    if (messages.length >= 30) {
-      showMModal('confirm', 'Session pleine', 'Vous avez atteint la limite de 30 échanges. Souhaitez-vous compacter cette conversation et la ranger dans votre Secret Pocket ?', { confirmText: 'Compacter et ranger', cancelText: 'Continuer quand même', onConfirm: closeMModal });
+    // Limite 24 bulles par session
+    if (messages.length >= 24) {
+      showMModal('info', 'Session complète', 'Tu as atteint 24 messages dans cette session. Ouvre une nouvelle discussion en cliquant sur + pour continuer.', { confirmText: 'Compris', onConfirm: closeMModal });
       return;
     }
 
@@ -2245,6 +2248,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               searchHits={searchHits}
               onBallPress={handleBallPress}
               onNewSession={useCallback(function() { setShowNewSessionSheet(true); }, [])}
+              sessionFull={messages.length >= 24}
             />
           </Animated.View>
 
