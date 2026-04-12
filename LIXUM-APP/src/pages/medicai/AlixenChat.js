@@ -678,17 +678,33 @@ export const getBallPosition = (index) => {
   const actualCol = reversed ? (BALLS_PER_ROW - 1 - col) : col;
   return {
     x: S_PADDING_H + actualCol * S_GAP + S_GAP / 2,
-    y: row * (S_BALL_SIZE + 12),
+    y: row * (S_BALL_SIZE + 5),
   };
 };
 
-export const SynapticNetwork = React.memo(({ messages, searchHits, onBallPress, onNewSession }) => {
+export const SynapticNetwork = React.memo(({ messages, searchHits, onBallPress, onNewSession, sessionFull }) => {
   const totalCount = messages.length + 1; // +1 for "new session" button
   const totalRows = Math.ceil(totalCount / BALLS_PER_ROW);
-  const containerHeight = totalRows * (S_BALL_SIZE + 12) + 10;
+  const containerHeight = totalRows * (S_BALL_SIZE + 5) + 10;
 
   // Position of the "new session" button = next slot after last message
   const newSessionPos = getBallPosition(messages.length);
+
+  // Pulse animation for (+) button when session is full
+  var pulseAnim = useRef(new Animated.Value(1)).current;
+  useEffect(function() {
+    if (sessionFull) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 0.4, duration: 600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.stopAnimation();
+      pulseAnim.setValue(1);
+    }
+  }, [sessionFull]);
 
   return (
     <View style={{ height: containerHeight, position: 'relative', marginHorizontal: 8 }}>
@@ -758,30 +774,33 @@ export const SynapticNetwork = React.memo(({ messages, searchHits, onBallPress, 
 
       {/* Bouton Nouvelle session — dernier element du S */}
       {messages.length > 0 && (
-        <View style={{
+        <Animated.View style={{
           position: 'absolute',
           left: newSessionPos.x - S_BALL_SIZE / 2 + wp(3),
           top: newSessionPos.y,
+          opacity: sessionFull ? pulseAnim : 1,
         }}>
           <Pressable
             delayPressIn={120}
             onPress={onNewSession}
-            style={({ pressed }) => ({
-              width: wp(32),
-              height: wp(32),
-              borderRadius: wp(10),
-              backgroundColor: 'rgba(0,217,132,0.08)',
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderWidth: 1.5,
-              borderColor: 'rgba(0,217,132,0.3)',
-              borderStyle: 'dashed',
-              transform: [{ scale: pressed ? 0.92 : 1 }],
-            })}
+            style={function(state) {
+              return {
+                width: wp(32),
+                height: wp(32),
+                borderRadius: wp(10),
+                backgroundColor: sessionFull ? 'rgba(0,217,132,0.2)' : 'rgba(0,217,132,0.08)',
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderWidth: sessionFull ? 2 : 1.5,
+                borderColor: sessionFull ? '#00D984' : 'rgba(0,217,132,0.3)',
+                borderStyle: sessionFull ? 'solid' : 'dashed',
+                transform: [{ scale: state.pressed ? 0.92 : 1 }],
+              };
+            }}
           >
-            <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: '300' }}>+</Text>
+            <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: sessionFull ? '700' : '300' }}>+</Text>
           </Pressable>
-        </View>
+        </Animated.View>
       )}
     </View>
   );

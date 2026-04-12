@@ -1025,7 +1025,7 @@ export default function RecettesScreen({
                     borderRadius: 14, borderWidth: 1.5, borderColor: 'rgba(0,217,132,0.3)',
                   }} />
                 )}
-                <View style={{ marginBottom: 2 }}><AlixenIcon size={20} /></View>
+                <View style={{ marginBottom: 2 }}><AlixenIcon size={28} /></View>
                 <Text style={{
                   color: recipesTab === 'personalized' ? '#00D984' : '#8892A0',
                   fontSize: fp(11), fontWeight: recipesTab === 'personalized' ? '800' : '600',
@@ -1240,7 +1240,7 @@ export default function RecettesScreen({
                     padding: wp(12), marginBottom: wp(12),
                   }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(6) }}>
-                      <View style={{ marginRight: wp(8) }}><AlixenIcon size={18} /></View>
+                      <View style={{ marginRight: wp(8) }}><AlixenIcon size={28} /></View>
                       <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '800', flex: 1 }}>ALIXEN</Text>
                       <View style={{
                         backgroundColor: 'rgba(0,217,132,0.08)',
@@ -1421,7 +1421,7 @@ export default function RecettesScreen({
                             return;
                           }
                           if (costCheck.cost > 0) {
-                            showModal('confirm', '🤖 Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
+                            showModal('confirm', 'Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
                               confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
                               onConfirm: function() {
                                 closeModal();
@@ -1550,7 +1550,7 @@ export default function RecettesScreen({
                                   return;
                                 }
                                 if (costCheck.cost > 0) {
-                                  showModal('confirm', '🤖 Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
+                                  showModal('confirm', 'Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
                                     confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
                                     onConfirm: function() {
                                       closeModal();
@@ -1611,7 +1611,7 @@ export default function RecettesScreen({
                                   return;
                                 }
                                 if (costCheck.cost > 0) {
-                                  showModal('confirm', '🤖 Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
+                                  showModal('confirm', 'Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
                                     confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
                                     onConfirm: function() {
                                       closeModal();
@@ -1804,7 +1804,7 @@ export default function RecettesScreen({
                           padding: wp(12), marginBottom: wp(12),
                           flexDirection: 'row',
                         }}>
-                          <View style={{ marginRight: wp(8), marginTop: wp(1) }}><AlixenIcon size={16} /></View>
+                          <View style={{ marginRight: wp(8), marginTop: wp(1) }}><AlixenIcon size={24} /></View>
                           <Text style={{
                             color: '#CCC', fontSize: fp(12), flex: 1,
                             lineHeight: fp(18),
@@ -2160,7 +2160,7 @@ export default function RecettesScreen({
                           return;
                         }
                         if (costCheck.cost > 0) {
-                          showModal('confirm', '🤖 Recette ALIXEN', 'Cette génération coûte 50 Lix.\nSolde : ' + lixBalance + ' Lix', {
+                          showModal('confirm', 'Recette ALIXEN', 'Cette génération coûte 50 Lix.\nSolde : ' + lixBalance + ' Lix', {
                             confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
                             onConfirm: function() {
                               closeModal();
@@ -2188,7 +2188,7 @@ export default function RecettesScreen({
                       }}
                     >
                       <Text style={{ color: '#0D1117', fontSize: fp(15), fontWeight: '800' }}>
-                        🤖 ALIXEN, fais-moi une recette !
+                        ALIXEN, fais-moi une recette !
                       </Text>
                       <Text style={{ color: 'rgba(0,0,0,0.5)', fontSize: fp(10), marginTop: wp(2) }}>
                         Avec {alixenMyIngredients.length} ingrédients sélectionnés
@@ -2344,7 +2344,7 @@ export default function RecettesScreen({
                       marginBottom: wp(16),
                     }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
-                        <View style={{ marginRight: wp(6) }}><AlixenIcon size={16} /></View>
+                        <View style={{ marginRight: wp(6) }}><AlixenIcon size={24} /></View>
                         <Text style={{ color: '#FF8C42', fontSize: fp(11), fontWeight: '700' }}>Conseil ALIXEN</Text>
                       </View>
                       <Text style={{ color: '#EAEEF3', fontSize: fp(11), lineHeight: fp(17) }}>
@@ -2745,7 +2745,7 @@ export default function RecettesScreen({
                             borderTopWidth: 1, borderTopColor: 'rgba(74,79,85,0.4)',
                           }}>
                             <Text style={{ fontSize: fp(9), color: '#6B7280', fontStyle: 'italic' }}>
-                              🤖 Recette générée par ALIXEN · basée sur {recipeIngredients.length} ingrédients
+                              Recette générée par ALIXEN · basée sur {recipeIngredients.length} ingrédients
                             </Text>
                           </View>
                         )}

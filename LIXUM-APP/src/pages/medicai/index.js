@@ -450,8 +450,8 @@ export default function MedicAiPage({ navigation }) {
 
   const addBotMessage = useCallback((text) => {
     setMessages(prev => {
-      if (prev.length >= 30) {
-        showMModal('confirm', 'Session pleine', 'Vous avez atteint la limite de 30 échanges par session.\n\nCompactez cette conversation pour la ranger dans votre Secret Pocket et démarrer une nouvelle session.', { confirmText: 'Compacter et ranger', onConfirm: closeMModal });
+      if (prev.length >= 24) {
+        showMModal('confirm', 'Session complète', 'Tu as atteint 24 messages dans cette session. Ouvre une nouvelle discussion en cliquant sur + pour continuer.', { confirmText: 'Compris', cancelText: null, onConfirm: closeMModal });
         return prev;
       }
       return [...prev, {
@@ -1024,7 +1024,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   const sendImageToAlixen = async (base64Data, fileName, mimeType) => {
     if (isLoading || isLocked) return;
-    if (messages.length >= 30) return;
+    if (messages.length >= 24) return;
 
     const userText = 'Photo envoyée : ' + (fileName || 'Document');
     const userMsg = {
@@ -1152,7 +1152,10 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       setPendingAction(null);
     }
 
-    if (messages.length >= 30) return;
+    if (messages.length >= 24) {
+      showMModal('info', 'Session complète', 'Tu as atteint 24 messages dans cette session. Ouvre une nouvelle discussion en cliquant sur + pour continuer.', { confirmText: 'Compris', onConfirm: closeMModal });
+      return;
+    }
 
     const userMsg = {
       id: Date.now().toString(),
@@ -1441,9 +1444,9 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     const hasText = inputText.trim().length > 0;
     if ((!hasText && !hasFiles) || isLoading || isLocked) return;
 
-    // Limite 30 bulles par session
-    if (messages.length >= 30) {
-      showMModal('confirm', 'Session pleine', 'Vous avez atteint la limite de 30 échanges. Souhaitez-vous compacter cette conversation et la ranger dans votre Secret Pocket ?', { confirmText: 'Compacter et ranger', cancelText: 'Continuer quand même', onConfirm: closeMModal });
+    // Limite 24 bulles par session
+    if (messages.length >= 24) {
+      showMModal('info', 'Session complète', 'Tu as atteint 24 messages dans cette session. Ouvre une nouvelle discussion en cliquant sur + pour continuer.', { confirmText: 'Compris', onConfirm: closeMModal });
       return;
     }
 
@@ -2085,7 +2088,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     );
   };
 
-
+  // ── HOISTED useCallbacks (must run on every render to keep hook count constant) ──
+  var cbNewSession = useCallback(function() { setShowNewSessionSheet(true); }, []);
+  var cbRemoveFile = useCallback(function(id) { setFileQueue(function(prev) { return prev.filter(function(f) { return f.id !== id; }); }); }, []);
+  var cbOpenDocSheet = useCallback(function() { setShowDocumentSheet(true); }, []);
+  var cbToggleSearch = useCallback(function() { setSearchVisible(function(v) { return !v; }); }, []);
+  var cbOpenRecharge = useCallback(function() { setShowRechargeSheet(true); }, []);
+  var cbSendMessage = useCallback(function() { if (inputText.trim() || fileQueue.length > 0) sendMessage(); }, [inputText, fileQueue, sendMessage]);
 
   // ── RENDER CONTENT (conditionnel — keys forcent React à remonter les composants) ──
   var renderContent = function() {
@@ -2244,7 +2253,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               messages={messages}
               searchHits={searchHits}
               onBallPress={handleBallPress}
-              onNewSession={useCallback(function() { setShowNewSessionSheet(true); }, [])}
+              onNewSession={cbNewSession}
+              sessionFull={messages.length >= 24}
             />
           </Animated.View>
 
@@ -2346,7 +2356,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         }}>
           <View style={{
             marginHorizontal: wp(12),
-            marginBottom: wp(24),
+            marginBottom: 15,
             borderRadius: wp(28),
             overflow: 'hidden',
             backgroundColor: '#FFFFFF',
@@ -2371,7 +2381,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             {/* Fichiers en attente */}
             <FileQueuePreview
               files={fileQueue}
-              onRemove={useCallback(function(id) { setFileQueue(function(prev) { return prev.filter(function(f) { return f.id !== id; }); }); }, [])}
+              onRemove={cbRemoveFile}
             />
 
             <View style={{
@@ -2384,7 +2394,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               {/* Bouton "+" ajout document */}
               <Pressable
                 delayPressIn={120}
-                onPress={useCallback(function() { setShowDocumentSheet(true); }, [])}
+                onPress={cbOpenDocSheet}
                 style={({ pressed }) => ({
                   width: wp(38),
                   height: wp(38),
@@ -2417,7 +2427,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               {/* Bouton Recherche — style MetalCard comme le "+" */}
               <Pressable
                 delayPressIn={120}
-                onPress={useCallback(function() { setSearchVisible(function(v) { return !v; }); }, [])}
+                onPress={cbToggleSearch}
                 style={({ pressed }) => ({
                   width: wp(38),
                   height: wp(38),
@@ -2476,30 +2486,31 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                 />
               </View>
 
-              {/* Bouton Envoyer / X rouge si énergie vide */}
+              {/* Bouton Micro / Envoyer / X rouge si énergie vide */}
               {isLocked ? (
                 <Pressable
                   delayPressIn={120}
-                  onPress={useCallback(function() { setShowRechargeSheet(true); }, [])}
-                  style={({ pressed }) => ({
-                    width: wp(38), height: wp(38), borderRadius: wp(19),
-                    backgroundColor: 'rgba(255,107,107,0.15)',
-                    borderWidth: 1.5, borderColor: '#FF6B6B',
-                    justifyContent: 'center', alignItems: 'center',
-                    transform: [{ scale: pressed ? 0.92 : 1 }],
-                  })}
+                  onPress={cbOpenRecharge}
+                  style={function(state) {
+                    return {
+                      width: wp(38), height: wp(38), borderRadius: wp(19),
+                      backgroundColor: 'rgba(255,107,107,0.15)',
+                      borderWidth: 1.5, borderColor: '#FF6B6B',
+                      justifyContent: 'center', alignItems: 'center',
+                      transform: [{ scale: state.pressed ? 0.92 : 1 }],
+                    };
+                  }}
                 >
                   <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
                     <Line x1="18" y1="6" x2="6" y2="18" stroke="#FF6B6B" strokeWidth="2.5" strokeLinecap="round"/>
                     <Line x1="6" y1="6" x2="18" y2="18" stroke="#FF6B6B" strokeWidth="2.5" strokeLinecap="round"/>
                   </Svg>
                 </Pressable>
-              ) : (
+              ) : (inputText.trim() || fileQueue.length > 0) ? (
                 <TouchableOpacity
-                  onPress={useCallback(function() { if (inputText.trim() || fileQueue.length > 0) sendMessage(); }, [inputText, fileQueue, sendMessage])}
-                  disabled={!inputText.trim() && fileQueue.length === 0}
+                  onPress={cbSendMessage}
                   style={{
-                    width: 38, height: 38, borderRadius: 19,
+                    width: 40, height: 40, borderRadius: 20,
                     backgroundColor: '#FFFFFF',
                     justifyContent: 'center', alignItems: 'center',
                     shadowColor: 'rgba(0,0,0,0.15)',
@@ -2508,11 +2519,23 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                     borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)',
                   }}
                 >
-                  <Text style={{
-                    color: (inputText.trim() || fileQueue.length > 0) ? '#00D984' : 'rgba(0,0,0,0.12)',
-                    fontSize: 15, fontWeight: 'bold',
-                  }}>{'➤'}</Text>
+                  <Text style={{ color: '#00D984', fontSize: 15, fontWeight: 'bold' }}>{'➤'}</Text>
                 </TouchableOpacity>
+              ) : (
+                <Pressable
+                  delayPressIn={120}
+                  onPress={function() { console.log('Micro pressed'); }}
+                  style={function(state) {
+                    return {
+                      width: 40, height: 40, borderRadius: 20,
+                      backgroundColor: 'transparent',
+                      justifyContent: 'center', alignItems: 'center',
+                      transform: [{ scale: state.pressed ? 0.92 : 1 }],
+                    };
+                  }}
+                >
+                  <Ionicons name="mic-outline" size={wp(22)} color="#00D984" />
+                </Pressable>
               )}
             </View>
           </View>

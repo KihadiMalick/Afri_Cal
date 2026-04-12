@@ -281,7 +281,7 @@ export default function PostReportModal({
                     backgroundColor: 'rgba(0,217,132,0.1)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)',
                     justifyContent: 'center', alignItems: 'center',
                   }}>
-                    <AlixenIcon size={18} />
+                    <AlixenIcon size={28} />
                   </View>
                   <View>
                     <Text style={{ fontSize: fp(12), fontWeight: '800', color: '#00D984' }}>ALIXEN</Text>
