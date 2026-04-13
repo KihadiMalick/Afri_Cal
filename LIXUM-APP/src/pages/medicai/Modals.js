@@ -76,6 +76,22 @@ export const AllModals = (props) => {
     newDiagStatus, setNewDiagStatus,
     newDiagNotes, setNewDiagNotes,
     confirmAddDiagnostic,
+    // Add Allergy
+    showAddAllergySheet, setShowAddAllergySheet,
+    newAllergyAllergen, setNewAllergyAllergen,
+    newAllergyType, setNewAllergyType,
+    newAllergySeverity, setNewAllergySeverity,
+    newAllergyReaction, setNewAllergyReaction,
+    confirmAddAllergy,
+    // Add Vaccination
+    showAddVaccSheet, setShowAddVaccSheet,
+    newVaccName, setNewVaccName,
+    newVaccDate, setNewVaccDate,
+    newVaccDose, setNewVaccDose,
+    newVaccNextDue, setNewVaccNextDue,
+    newVaccDoctor, setNewVaccDoctor,
+    newVaccBatch, setNewVaccBatch,
+    confirmAddVaccination,
   } = props;
 
   var _modalsModal = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null });
@@ -1726,6 +1742,161 @@ export const AllModals = (props) => {
           </Pressable>
         </Pressable>
       </Modal>
+      {/* ===== MODAL — Ajouter une allergie ===== */}
+      <Modal
+        visible={showAddAllergySheet}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={function() { setShowAddAllergySheet(false); }}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          onPress={function() { setShowAddAllergySheet(false); }}
+        >
+          <Pressable onPress={function(e) { e.stopPropagation(); }}>
+            <LinearGradient
+              colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}
+            >
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }}/>
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>Ajouter une allergie</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>Renseignez votre profil allergique</Text>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Substance allergène *</Text>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="Ex : Arachides, Pénicilline, Pollen..." placeholderTextColor="rgba(255,255,255,0.25)" value={newAllergyAllergen} onChangeText={setNewAllergyAllergen} autoFocus={true} />
+                </View>
+
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(8) }}>Type</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8), marginBottom: wp(16) }}>
+                  {[
+                    { key: 'alimentaire', label: 'Alimentaire', color: '#FF8C42' },
+                    { key: 'medicamenteuse', label: 'Médicamenteuse', color: '#FF6B6B' },
+                    { key: 'respiratoire', label: 'Respiratoire', color: '#4DA6FF' },
+                    { key: 'cutanee', label: 'Cutanée', color: '#9B6DFF' },
+                  ].map(function(t) {
+                    var isActive = newAllergyType === t.key;
+                    return (
+                      <Pressable key={t.key} onPress={function() { setNewAllergyType(t.key); }}
+                        style={{ paddingVertical: wp(10), paddingHorizontal: wp(14), borderRadius: wp(10), backgroundColor: isActive ? t.color + '20' : 'rgba(255,255,255,0.04)', borderWidth: 1.5, borderColor: isActive ? t.color : 'rgba(255,255,255,0.08)' }}>
+                        <Text style={{ fontSize: fp(12), fontWeight: '700', color: isActive ? t.color : 'rgba(255,255,255,0.4)' }}>{t.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(8) }}>Sévérité</Text>
+                <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16) }}>
+                  {[
+                    { key: 'mild', label: 'Légère', color: '#00D984' },
+                    { key: 'moderate', label: 'Modérée', color: '#FF8C42' },
+                    { key: 'severe', label: 'Sévère', color: '#FF6B6B' },
+                  ].map(function(s) {
+                    var isActive = newAllergySeverity === s.key;
+                    return (
+                      <Pressable key={s.key} onPress={function() { setNewAllergySeverity(s.key); }}
+                        style={{ flex: 1, paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center', backgroundColor: isActive ? s.color + '20' : 'rgba(255,255,255,0.04)', borderWidth: 1.5, borderColor: isActive ? s.color : 'rgba(255,255,255,0.08)' }}>
+                        <Text style={{ fontSize: fp(12), fontWeight: '700', color: isActive ? s.color : 'rgba(255,255,255,0.4)' }}>{s.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Réaction (optionnel)</Text>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(20), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12), minHeight: wp(50) }} placeholder="Décrivez la réaction..." placeholderTextColor="rgba(255,255,255,0.25)" value={newAllergyReaction} onChangeText={setNewAllergyReaction} multiline />
+                </View>
+
+                <Pressable delayPressIn={120} onPress={confirmAddAllergy}>
+                  <LinearGradient colors={['#FF8C42', '#E67E3C']} style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center', marginBottom: wp(10) }}>
+                    <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Confirmer et ajouter</Text>
+                  </LinearGradient>
+                </Pressable>
+                <Pressable onPress={function() { setShowAddAllergySheet(false); }}
+                  style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
+                </Pressable>
+              </ScrollView>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ===== MODAL — Ajouter un vaccin ===== */}
+      <Modal
+        visible={showAddVaccSheet}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={function() { setShowAddVaccSheet(false); }}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          onPress={function() { setShowAddVaccSheet(false); }}
+        >
+          <Pressable onPress={function(e) { e.stopPropagation(); }}>
+            <LinearGradient
+              colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}
+            >
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }}/>
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>Ajouter un vaccin</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(20) }}>Complétez votre carnet vaccinal</Text>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Nom du vaccin *</Text>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="Ex : BCG, ROR, COVID-19 Pfizer..." placeholderTextColor="rgba(255,255,255,0.25)" value={newVaccName} onChangeText={setNewVaccName} autoFocus={true} />
+                </View>
+
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Date d'administration</Text>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="JJ/MM/AAAA" placeholderTextColor="rgba(255,255,255,0.25)" value={newVaccDate} onChangeText={setNewVaccDate} keyboardType="numeric" />
+                </View>
+
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(8) }}>Numéro de dose</Text>
+                <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16) }}>
+                  {[1, 2, 3, 4, 5].map(function(d) {
+                    var isActive = newVaccDose === d;
+                    return (
+                      <Pressable key={d} onPress={function() { setNewVaccDose(d); }}
+                        style={{ width: wp(44), height: wp(44), borderRadius: wp(12), justifyContent: 'center', alignItems: 'center', backgroundColor: isActive ? 'rgba(155,109,255,0.2)' : 'rgba(255,255,255,0.04)', borderWidth: 1.5, borderColor: isActive ? '#9B6DFF' : 'rgba(255,255,255,0.08)' }}>
+                        <Text style={{ fontSize: fp(15), fontWeight: '700', color: isActive ? '#9B6DFF' : 'rgba(255,255,255,0.4)' }}>{d}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Prochain rappel (optionnel)</Text>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="JJ/MM/AAAA" placeholderTextColor="rgba(255,255,255,0.25)" value={newVaccNextDue} onChangeText={setNewVaccNextDue} keyboardType="numeric" />
+                </View>
+
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Médecin / Centre (optionnel)</Text>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="Nom du médecin ou centre" placeholderTextColor="rgba(255,255,255,0.25)" value={newVaccDoctor} onChangeText={setNewVaccDoctor} />
+                </View>
+
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Numéro de lot (optionnel)</Text>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(20), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="Ex : AB1234" placeholderTextColor="rgba(255,255,255,0.25)" value={newVaccBatch} onChangeText={setNewVaccBatch} />
+                </View>
+
+                <Pressable delayPressIn={120} onPress={confirmAddVaccination}>
+                  <LinearGradient colors={['#9B6DFF', '#8B5CF6']} style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center', marginBottom: wp(10) }}>
+                    <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Confirmer et ajouter</Text>
+                  </LinearGradient>
+                </Pressable>
+                <Pressable onPress={function() { setShowAddVaccSheet(false); }}
+                  style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
+                </Pressable>
+              </ScrollView>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       {/* ===== MODAL — Ajouter un diagnostic ===== */}
       <Modal
         visible={showAddDiagSheet}
