@@ -359,7 +359,7 @@ export default function CharactersTab({
                               onPress={() => {
                                 if (!own && (ch.fragments || ch.duplicates_count || 0) > 0) {
                                   const remaining = (ch.fragments_required || FRAGS_NIV1[tier] || 3) - (ch.fragments || ch.duplicates_count || 0);
-                                  showLixAlert('🧩 Fragments manquants', 'Il te manque encore ' + remaining + ' fragment' + (remaining > 1 ? 's' : '') + ' pour débloquer ' + name + '.\n\nTourne la roue ou participe aux défis !', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'OK', style: 'cancel' }], '🧩');
+                                  showLixAlert('🧩 Fragments manquants', 'Il te manque encore ' + remaining + ' fragment' + (remaining > 1 ? 's' : '') + ' pour débloquer ' + name + '.\n\nParticipe aux défis pour obtenir des fragments !', [{ text: 'Voir les Défis', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'OK', style: 'cancel' }], '🧩');
                                   return;
                                 }
                                 if (own && usesRem === 0) {
@@ -507,7 +507,7 @@ export default function CharactersTab({
                                           const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
                                           const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
                                           if (!isOwnedCheck) {
-                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
+                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Voir les Défis', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
                                             return;
                                           }
                                           if (onShouldConsumePower(power)) {
@@ -538,7 +538,7 @@ export default function CharactersTab({
                                           const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
                                           const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
                                           if (!isOwnedCheck) {
-                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
+                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Voir les Défis', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
                                             return;
                                           }
                                           const r = await onConsumePower(power.power_key);
@@ -598,7 +598,7 @@ export default function CharactersTab({
                                           const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
                                           const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
                                           if (!isOwnedCheck) {
-                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Aller au Spin', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
+                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Voir les Défis', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
                                             return;
                                           }
                                           if (onShouldConsumePower(power)) {

@@ -15,14 +15,12 @@ import {
   HEADERS, POST_HEADERS, ALL_CHARACTERS, CHAR_NAMES,
   CHAR_EMOJIS, FRAGS_NIV1, TIER_CONFIG, SLUGS_BY_TIER,
   randomSlugFromTier, NAV_TABS,
-  NORMAL_SEGMENTS, SUPER_SEGMENTS, MEGA_SEGMENTS,
-  WORLD_DOTS, getSegmentAngles
+  WORLD_DOTS
 } from './lixverseConstants';
 import { useAuth } from '../../config/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { LixGem } from './lixverseComponents';
 import PageHeader from '../../components/shared/PageHeader';
-import SpinTab from './SpinTab';
 import DefiTab from './DefiTab';
 import CharactersTab from './CharactersTab';
 import HumanTab from './HumanTab';
@@ -72,28 +70,6 @@ export default function LixVersePage({ navigation }) {
   const [showPendingRequests, setShowPendingRequests] = useState(false);
   const [pendingRequestsLoading, setPendingRequestsLoading] = useState(false);
   const [showCharacterDetail, setShowCharacterDetail] = useState(null);
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [spinResult, setSpinResult] = useState(null);
-  const [freeSpinUsed, setFreeSpinUsed] = useState(false);
-  const [spinTier, setSpinTier] = useState('normal');
-  const [timeToFree, setTimeToFree] = useState('');
-  const [showSpinResultModal, setShowSpinResultModal] = useState(false);
-  const [spinWinnerSeg, setSpinWinnerSeg] = useState(null);
-  const spinResultPulse = useRef(new Animated.Value(1)).current;
-  const [fragmentResult, setFragmentResult] = useState(null);
-  const [showFragmentModal, setShowFragmentModal] = useState(false);
-  const [fragmentSaving, setFragmentSaving] = useState(false);
-  const [spinLoading, setSpinLoading] = useState(false);
-  const [serverResult, setServerResult] = useState(null);
-  const [freeSpinAvailable, setFreeSpinAvailable] = useState(true);
-  const [nextFreeAt, setNextFreeAt] = useState(null);
-  const fragmentSlideAnim = useRef(new Animated.Value(0)).current;
-  const lixSpinScrollRef = useRef(null);
-  const [winnerGlowIdx, setWinnerGlowIdx] = useState(null);
-  const glowOpacity = useRef(new Animated.Value(0)).current;
-  const arrowBounce = useRef(new Animated.Value(0)).current;
-  const spinBtnScale = useRef(new Animated.Value(1)).current;
-  const freeBtnPulse = useRef(new Animated.Value(1)).current;
   const [wallStickers, setWallStickers] = useState([]);
   const [selectedSticker, setSelectedSticker] = useState(null);
   const [showGiftModal, setShowGiftModal] = useState(false);
@@ -114,7 +90,6 @@ export default function LixVersePage({ navigation }) {
   const [selectedStickerChoice, setSelectedStickerChoice] = useState(null);
   const [stickerMessage, setStickerMessage] = useState('');
   const notifScrollX = useRef(new Animated.Value(0)).current;
-  const spinAnim = useRef(new Animated.Value(0)).current;
   const [binomeStatus, setBinomeStatus] = useState('none');
   const [binomePartner, setBinomePartner] = useState(null);
   const [binomeCommonPoints, setBinomeCommonPoints] = useState([]);
@@ -161,7 +136,6 @@ export default function LixVersePage({ navigation }) {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const cardViewIndexRef = useRef(0);
   const cardSlideAnim = useRef(new Animated.Value(0)).current;
-  const spinResultTimerRef = useRef(null);
   const floatingHeartTimersRef = useRef([]);
   const binomeSearchTimersRef = useRef([]);
   const binomeSearchIntervalsRef = useRef([]);
@@ -175,7 +149,6 @@ export default function LixVersePage({ navigation }) {
 
   useEffect(() => {
     return () => {
-      if (spinResultTimerRef.current) clearTimeout(spinResultTimerRef.current);
       floatingHeartTimersRef.current.forEach(t => clearTimeout(t));
       binomeSearchTimersRef.current.forEach(t => clearTimeout(t));
       binomeSearchIntervalsRef.current.forEach(t => clearInterval(t));
@@ -323,208 +296,6 @@ export default function LixVersePage({ navigation }) {
       }
     } catch (e) {
       console.error('Recharge error:', e);
-    }
-  }
-
-  const getSegments = () => {
-    if (spinTier === 'super') return SUPER_SEGMENTS;
-    if (spinTier === 'mega') return MEGA_SEGMENTS;
-    return NORMAL_SEGMENTS;
-  };
-
-  async function checkFreeSpin() {
-    try {
-      const data = await supaRpc('check_free_spin_available', { p_user_id: userId });
-      if (data && typeof data === 'object') {
-        const available = data.free_available !== false;
-        setFreeSpinAvailable(available);
-        setFreeSpinUsed(!available);
-        if (data.next_free_at) {
-          setNextFreeAt(new Date(data.next_free_at).getTime());
-        } else {
-          setNextFreeAt(null);
-        }
-      }
-    } catch (e) {
-      try {
-        const res = await fetch(SUPABASE_URL + '/rest/v1/spin_history?user_id=eq.' + userId + '&spin_tier=eq.normal&lix_cost=eq.0&order=created_at.desc&limit=1', { headers: HEADERS });
-        const d = await res.json();
-        if (Array.isArray(d) && d.length > 0) {
-          const lastFree = new Date(d[0].created_at).getTime();
-          const sixHoursMs = 6 * 60 * 60 * 1000;
-          const nextAt = lastFree + sixHoursMs;
-          if (Date.now() >= nextAt) {
-            setFreeSpinAvailable(true); setFreeSpinUsed(false); setNextFreeAt(null);
-          } else {
-            setFreeSpinAvailable(false); setFreeSpinUsed(true); setNextFreeAt(nextAt);
-          }
-        } else {
-          setFreeSpinAvailable(true); setFreeSpinUsed(false); setNextFreeAt(null);
-        }
-      } catch (e2) {
-        setFreeSpinAvailable(true); setFreeSpinUsed(false);
-      }
-    }
-  }
-
-  const triggerArrowBounce = (strong) => {
-    arrowBounce.setValue(strong ? 1.6 : 1);
-    Animated.spring(arrowBounce, { toValue: 0, friction: 6, tension: 300, useNativeDriver: true }).start();
-  };
-
-  const onSpinComplete = (spinData) => {
-    checkFreeSpin();
-    const rv = spinData.reward_value || {};
-    const rType = spinData.reward_type;
-    if (rType === 'fragment' || rType === 'full_card') {
-      const fragTier = rv.tier || spinData.character_tier || 'standard';
-      const fragSlug = spinData.character_name ? Object.entries(CHAR_NAMES).find(([k,v]) => v === spinData.character_name)?.[0] : randomSlugFromTier(fragTier);
-      const fragData = {
-        slug: fragSlug || 'unknown',
-        name: spinData.character_name || CHAR_NAMES[fragSlug] || fragSlug || 'Inconnu',
-        emoji: spinData.character_emoji || CHAR_EMOJIS[fragSlug] || '🎭',
-        tier: fragTier, amount: rv.fragment || 1,
-        isComplete: rType === 'full_card', levelUp: false, newLevel: 0,
-        totalFrags: rv.fragment || 1, fragsNeeded: FRAGS_NIV1[fragTier] || 3,
-      };
-      setFragmentResult(fragData);
-      if (rType === 'full_card' && fragSlug) {
-        supaRpc('add_character_fragment', { p_user_id: userId, p_slug: fragSlug, p_amount: FRAGS_NIV1[fragTier] || 3 })
-          .then(result => { if (result?.level_up) setFragmentResult(prev => prev ? { ...prev, levelUp: true, newLevel: result.new_level } : prev); })
-          .catch(() => {});
-      }
-    }
-  };
-
-  async function distributeFragment(tier, amount) {
-    const slug = randomSlugFromTier(tier);
-    if (!slug) return null;
-    setFragmentSaving(true);
-    try {
-      const data = await supaRpc('add_character_fragment', { p_user_id: userId, p_slug: slug, p_amount: amount });
-      const result = {
-        slug, name: CHAR_NAMES[slug] || slug, emoji: CHAR_EMOJIS[slug] || '🎭', tier, amount,
-        isComplete: amount >= FRAGS_NIV1[tier], levelUp: data?.level_up || false, newLevel: data?.new_level || 0,
-        totalFrags: data?.fragments || amount, fragsNeeded: FRAGS_NIV1[tier],
-      };
-      setFragmentResult(result); setShowFragmentModal(true); fragmentSlideAnim.setValue(0);
-      return result;
-    } catch (e) {
-      console.error('Fragment distribution error:', e);
-      return null;
-    } finally {
-      setFragmentSaving(false);
-    }
-  }
-
-  async function doSpin() {
-    if (isSpinning || spinLoading) return;
-    const segments = getSegments();
-    setSpinLoading(true);
-    try {
-      const spinPromise = supaRpc('execute_spin', { p_user_id: userId, p_spin_tier: spinTier });
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Connexion lente — réessaie')), 15000));
-      const data = await Promise.race([spinPromise, timeoutPromise]);
-      if (data && typeof data.reward_value === 'string') {
-        try { data.reward_value = JSON.parse(data.reward_value); } catch(e) {}
-      }
-      if (!data?.success) {
-        const errMsg = data?.error || data?.message || JSON.stringify(data);
-        if (errMsg === 'Lix insuffisants' || errMsg === 'Insufficient Lix') {
-          const required = data?.required || data?.cost || (spinTier === 'normal' ? 50 : spinTier === 'super' ? 150 : 500);
-          const current = data?.current || data?.current_lix || lixBalance;
-          showLixAlert('💰 Lix insuffisants', 'Il te faut ' + required + ' Lix pour ce spin.\n\nTon solde actuel : ' + current + ' Lix\nIl te manque ' + (required - current) + ' Lix.',
-            [{ text: 'Recharger en Lix', color: '#D4AF37', onPress: () => { setActiveTab('lixspin'); setTimeout(() => { if (lixSpinScrollRef.current) lixSpinScrollRef.current.scrollTo({ y: 800, animated: true }); }, 300); } }, { text: 'Fermer', style: 'cancel' }], '💰');
-        } else {
-          showLixAlert('Erreur', errMsg, [{ text: 'OK', style: 'cancel' }], '⚠️');
-        }
-        setSpinLoading(false);
-        return;
-      }
-      setServerResult(data);
-      if (data.new_lix_balance !== undefined) updateLixBalance(data.new_lix_balance);
-      if (data.new_energy !== undefined) setUserEnergy(data.new_energy);
-      if (data.is_free) { setFreeSpinUsed(true); setFreeSpinAvailable(false); setNextFreeAt(Date.now() + 6 * 60 * 60 * 1000); }
-      setSpinLoading(false);
-
-      const findWinnerIndex = (segs, srvData) => {
-        const sType = srvData.reward_type;
-        const sVal = srvData.reward_value || {};
-        const typeMap = { 'energy': 'energy', 'lix': 'lix', 'fragment': 'fragment', 'xscan': 'scan', 'free_spin': 'free_spin', 'full_card': 'card' };
-        const localType = typeMap[sType] || sType;
-        let targetAmount = null;
-        if (localType === 'energy') targetAmount = sVal.energy;
-        if (localType === 'lix') targetAmount = sVal.lix;
-        if (localType === 'scan') targetAmount = sVal.scans;
-        if (localType === 'fragment') targetAmount = sVal.fragment;
-        for (let i = 0; i < segs.length; i++) {
-          const r = segs[i].reward;
-          if (r.type !== localType) continue;
-          if (localType === 'energy' && targetAmount != null && r.amount === targetAmount) return i;
-          if (localType === 'lix' && targetAmount != null && r.amount === targetAmount) return i;
-          if (localType === 'scan' && targetAmount != null && r.amount === targetAmount) return i;
-          if (localType === 'fragment') { if (r.tier === (sVal.tier || srvData.character_tier)) return i; }
-          if (localType === 'free_spin') return i;
-          if (localType === 'card') return i;
-        }
-        for (let i = 0; i < segs.length; i++) { if (segs[i].reward.type === localType) return i; }
-        return 0;
-      };
-
-      const winnerIndex = findWinnerIndex(segments, data);
-      const winner = segments[winnerIndex];
-      setIsSpinning(true); setSpinResult(null); setShowSpinResultModal(false); setSpinWinnerSeg(null);
-      setWinnerGlowIdx(null); glowOpacity.setValue(0);
-
-      const angledSegs = getSegmentAngles(segments);
-      const winSeg = angledSegs[winnerIndex];
-      const winMidAngle = winSeg.startAngle + winSeg.sweepAngle / 2;
-      const targetAngle = 360 - winMidAngle;
-      const totalRotation = 360 * 5 + targetAngle;
-      const duration = spinTier === 'mega' ? 6000 : spinTier === 'super' ? 5000 : 4000;
-
-      let lastTickIndex = -1;
-      const totalTicks = 12;
-      const listenerId = spinAnim.addListener(({ value }) => {
-        const normalizedAngle = value % 360;
-        const tickIndex = Math.floor(normalizedAngle / (360 / totalTicks));
-        if (tickIndex !== lastTickIndex) {
-          lastTickIndex = tickIndex;
-          const progress = value / totalRotation;
-          triggerArrowBounce(progress > 0.85);
-        }
-      });
-
-      spinAnim.setValue(0);
-      Animated.timing(spinAnim, {
-        toValue: totalRotation, duration: duration,
-        easing: Easing.out(Easing.cubic), useNativeDriver: true,
-      }).start(() => {
-        spinAnim.removeListener(listenerId);
-        setIsSpinning(false); setSpinWinnerSeg(winner); setWinnerGlowIdx(winnerIndex);
-        Animated.loop(Animated.sequence([
-          Animated.timing(glowOpacity, { toValue: 0.6, duration: 500, useNativeDriver: true }),
-          Animated.timing(glowOpacity, { toValue: 0.1, duration: 500, useNativeDriver: true }),
-        ])).start();
-        spinResultTimerRef.current = setTimeout(() => {
-          glowOpacity.stopAnimation(); glowOpacity.setValue(0);
-          setShowSpinResultModal(true);
-          const rType = data.reward_value?.type || winner.reward.type;
-          if (rType === 'fragment' || rType === 'card_complete' || rType === 'card') {
-            spinResultPulse.setValue(1);
-            Animated.loop(Animated.sequence([
-              Animated.timing(spinResultPulse, { toValue: 1.15, duration: 600, useNativeDriver: true }),
-              Animated.timing(spinResultPulse, { toValue: 1, duration: 600, useNativeDriver: true }),
-            ])).start();
-          }
-          onSpinComplete(data);
-          if (data.reward_type === 'free_spin') { setFreeSpinAvailable(true); setFreeSpinUsed(false); setNextFreeAt(null); }
-        }, 2000);
-      });
-    } catch (e) {
-      console.error('Spin error:', e);
-      showLixAlert('Erreur', e?.message || e?.details || JSON.stringify(e), [{ text: 'OK', style: 'cancel' }], '⚠️');
-      setSpinLoading(false); setIsSpinning(false); setWinnerGlowIdx(null);
     }
   }
 
@@ -976,20 +747,7 @@ export default function LixVersePage({ navigation }) {
   }, [cardViewIndex]);
 
   useEffect(() => {
-    if (!freeSpinUsed || !nextFreeAt) { setTimeToFree(''); return; }
-    const timer = setInterval(() => {
-      const diff = nextFreeAt - Date.now();
-      if (diff <= 0) { setTimeToFree(''); setFreeSpinUsed(false); setFreeSpinAvailable(true); setNextFreeAt(null); clearInterval(timer); return; }
-      const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
-      const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
-      const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
-      setTimeToFree(h + ':' + m + ':' + s);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [freeSpinUsed, nextFreeAt]);
-
-  useEffect(() => {
-    loadAll(); checkFreeSpin();
+    loadAll();
     (async () => {
       try {
         const res = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=full_name', { headers: HEADERS });
@@ -998,10 +756,6 @@ export default function LixVersePage({ navigation }) {
       } catch (e) {}
     })();
     fetchChallengeScores().then(scores => setChallengeScores(scores));
-    Animated.loop(Animated.sequence([
-      Animated.timing(freeBtnPulse, { toValue: 1.04, duration: 1200, useNativeDriver: true }),
-      Animated.timing(freeBtnPulse, { toValue: 1, duration: 1200, useNativeDriver: true }),
-    ])).start();
   }, [userId]);
 
   // Refresh Lix balance when page gains focus
@@ -1120,7 +874,6 @@ export default function LixVersePage({ navigation }) {
             { key: 'defi', label: 'Défi', icon: '🏆' },
             { key: 'human', label: 'Human', icon: '🤝' },
             { key: 'characters', label: 'Caractères', icon: '🃏' },
-            { key: 'lixspin', label: 'Lix & Spin', icon: '💎' },
           ].map(function(tab) {
             var isActive = activeTab === tab.key;
             return (
@@ -1207,34 +960,8 @@ export default function LixVersePage({ navigation }) {
             onSwitchActiveCharacter={switchActiveCharacter} onLoadCharPowers={loadCharPowers}
             onNavigateCard={navigateCard} onFlipCard={flipCard}
             onRechargeChar={rechargeChar} onShouldConsumePower={shouldConsumePower}
-            onConsumePower={consumePower} onGoToSpin={() => setActiveTab('lixspin')}
+            onConsumePower={consumePower} onGoToSpin={() => setActiveTab('defi')}
             onNavigateTo={navigateTo}
-          />
-        )}
-
-        {activeTab === 'lixspin' && (
-          <SpinTab
-            lixBalance={lixBalance} userEnergy={userEnergy}
-            spinTier={spinTier} setSpinTier={setSpinTier}
-            freeSpinAvailable={freeSpinAvailable} freeSpinUsed={freeSpinUsed}
-            nextFreeAt={nextFreeAt} timeToFree={timeToFree}
-            isSpinning={isSpinning} spinLoading={spinLoading}
-            winnerGlowIdx={winnerGlowIdx} spinAnim={spinAnim}
-            arrowBounce={arrowBounce} spinBtnScale={spinBtnScale}
-            freeBtnPulse={freeBtnPulse} glowOpacity={glowOpacity}
-            showSpinResultModal={showSpinResultModal} spinWinnerSeg={spinWinnerSeg}
-            serverResult={serverResult} fragmentResult={fragmentResult}
-            showFragmentModal={showFragmentModal} fragmentSlideAnim={fragmentSlideAnim}
-            spinResultPulse={spinResultPulse} showLixAlert={showLixAlert}
-            lixSpinScrollRef={lixSpinScrollRef}
-            onDoSpin={doSpin}
-            onCloseSpinResult={() => {
-              setShowSpinResultModal(false); spinResultPulse.stopAnimation();
-              setSpinWinnerSeg(null); setServerResult(null); setFragmentResult(null);
-            }}
-            onCloseFragmentModal={() => { setShowFragmentModal(false); setFragmentResult(null); }}
-            onGoToCharacters={() => { setActiveTab('characters'); loadCharacterData(); }}
-            onGoToLixSpin={() => setActiveTab('lixspin')}
           />
         )}
       </LinearGradient>

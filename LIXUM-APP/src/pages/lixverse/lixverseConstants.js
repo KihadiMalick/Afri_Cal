@@ -137,36 +137,6 @@ const TIER_CONFIG = {
   ultimate: { label: 'Ultime', color: '#DFE6E9', bg: 'rgba(223,230,233,0.08)', border: 'rgba(223,230,233,0.25)' },
 };
 
-const NORMAL_SEGMENTS = [
-  { label: '3', icon: '⚡', chance: 27, color: '#2A4A3A', reward: { type: 'energy', amount: 3 } },
-  { label: '30', icon: '💰', chance: 20, color: '#3A4A2A', reward: { type: 'lix', amount: 30 } },
-  { label: '1', icon: '🧩', chance: 15, color: '#3A2A4A', subLabel: 'Frag Std', reward: { type: 'fragment', tier: 'standard', amount: 1 } },
-  { label: '1', icon: '📸', chance: 15, color: '#4A3A2A', subLabel: 'scan', reward: { type: 'scan', amount: 1 } },
-  { label: '1', icon: '🎁', chance: 10, color: '#4A2A2A', subLabel: 'spin', reward: { type: 'free_spin', amount: 1 } },
-  { label: '1', icon: '🧩', chance: 8, color: '#2A3A4A', subLabel: 'Frag Rare', reward: { type: 'fragment', tier: 'rare', amount: 1 } },
-  { label: '10', icon: '⚡⚡', chance: 5, color: '#4A4A2A', subLabel: 'énergie', reward: { type: 'energy', amount: 10 } },
-];
-
-const SUPER_SEGMENTS = [
-  { label: '5', icon: '⚡', chance: 30, color: '#2A4A3A', reward: { type: 'energy', amount: 5 } },
-  { label: '50', icon: '💰', chance: 20, color: '#3A4A2A', reward: { type: 'lix', amount: 50 } },
-  { label: '1', icon: '🃏', chance: 7, color: '#3A2A4A', subLabel: 'carte Std', reward: { type: 'card', tier: 'standard', amount: 1 } },
-  { label: '2', icon: '📸', chance: 18, color: '#4A3A2A', subLabel: 'scans', reward: { type: 'scan', amount: 2 } },
-  { label: '1', icon: '🎁', chance: 10, color: '#4A2A2A', subLabel: 'super', reward: { type: 'free_spin', amount: 1 } },
-  { label: '1', icon: '🧩', chance: 8, color: '#2A3A4A', subLabel: 'Frag Elite', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
-  { label: '25', icon: '⚡⚡', chance: 7, color: '#4A4A2A', subLabel: 'énergie', reward: { type: 'energy', amount: 25 } },
-];
-
-const MEGA_SEGMENTS = [
-  { label: '10', icon: '⚡', chance: 30, color: '#2A4A3A', reward: { type: 'energy', amount: 10 } },
-  { label: '100', icon: '💰', chance: 20, color: '#3A4A2A', reward: { type: 'lix', amount: 100 } },
-  { label: '2', icon: '🧩', chance: 15, color: '#3A2A4A', subLabel: 'Frag Rare', reward: { type: 'fragment', tier: 'rare', amount: 2 } },
-  { label: '1', icon: '🧩', chance: 13, color: '#4A3A2A', subLabel: 'Frag Elite', reward: { type: 'fragment', tier: 'elite', amount: 1 } },
-  { label: '1', icon: '🃏', chance: 5, color: '#4A2A2A', subLabel: 'carte Rare', reward: { type: 'card', tier: 'rare', amount: 1 } },
-  { label: '1', icon: '🧩', chance: 7, color: '#2A3A4A', subLabel: 'Frag Myth', reward: { type: 'fragment', tier: 'mythique', amount: 1 } },
-  { label: '50', icon: '⚡⚡', chance: 10, color: '#4A4A2A', subLabel: 'énergie', reward: { type: 'energy', amount: 50 } },
-];
-
 const SLUGS_BY_TIER = {
   standard: ['emerald_owl', 'hawk_eye', 'ruby_tiger', 'amber_fox', 'gipsy'],
   rare: ['jade_phoenix', 'silver_wolf', 'boukki', 'iron_rhino', 'coral_dolphin'],
@@ -221,16 +191,6 @@ const CHARACTER_IMAGES = {
   'tardigrum': { img: null, emoji: '🧬' },
 };
 
-const SEGMENT_GRADIENTS = {
-  '#2A4A3A': { inner: '#3A5A4A', outer: '#1A3A2A' },
-  '#3A4A2A': { inner: '#4A5A3A', outer: '#2A3A1A' },
-  '#3A2A4A': { inner: '#4A3A5A', outer: '#2A1A3A' },
-  '#4A3A2A': { inner: '#5A4A3A', outer: '#3A2A1A' },
-  '#4A2A2A': { inner: '#5A3A3A', outer: '#3A1A1A' },
-  '#2A3A4A': { inner: '#3A4A5A', outer: '#1A2A3A' },
-  '#4A4A2A': { inner: '#5A5A3A', outer: '#3A3A1A' },
-};
-
 const NAV_TABS = [
   { key: 'home', label: 'Accueil', iconDefault: 'home-outline', iconActive: 'home' },
   { key: 'meals', label: 'Repas', iconDefault: 'restaurant-outline', iconActive: 'restaurant' },
@@ -247,46 +207,6 @@ const randomSlugFromTier = (tier) => {
   return slugs[Math.floor(Math.random() * slugs.length)];
 };
 
-const getSegmentAngles = (segments) => {
-  const total = segments.reduce((sum, s) => sum + s.chance, 0);
-  let currentAngle = 0;
-  return segments.map(seg => {
-    const sweepAngle = (seg.chance / total) * 360;
-    const startAngle = currentAngle;
-    currentAngle += sweepAngle;
-    return { ...seg, startAngle, sweepAngle };
-  });
-};
-
-const describeArc = (cx, cy, radius, startAngle, endAngle) => {
-  const startRad = (startAngle - 90) * Math.PI / 180;
-  const endRad = (endAngle - 90) * Math.PI / 180;
-  const x1 = cx + radius * Math.cos(startRad);
-  const y1 = cy + radius * Math.sin(startRad);
-  const x2 = cx + radius * Math.cos(endRad);
-  const y2 = cy + radius * Math.sin(endRad);
-  const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
-  return 'M ' + cx + ' ' + cy + ' L ' + x1 + ' ' + y1 + ' A ' + radius + ' ' + radius + ' 0 ' + largeArc + ' 1 ' + x2 + ' ' + y2 + ' Z';
-};
-
-const getSegmentRewardType = (seg) => seg.reward.type || 'energy';
-
-const getSegmentTypeLabel = (seg) => {
-  if (seg.subLabel) return seg.subLabel;
-  if (seg.reward.type === 'energy') return 'énergie';
-  if (seg.reward.type === 'lix') return 'Lix';
-  if (seg.reward.type === 'card') return 'Carte';
-  if (seg.reward.type === 'scan') return 'scan';
-  if (seg.reward.type === 'free_spin') return 'spin';
-  if (seg.reward.type === 'fragment') {
-    if (seg.reward.tier === 'mythique') return 'Frag Myth';
-    if (seg.reward.tier === 'elite') return 'Frag Elite';
-    if (seg.reward.tier === 'standard') return 'Frag Std';
-    return 'Frag Rare';
-  }
-  return '';
-};
-
 export {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
@@ -297,21 +217,13 @@ export {
   WORLD_DOTS,
   BINOME_LEADERBOARD,
   TIER_CONFIG,
-  NORMAL_SEGMENTS,
-  SUPER_SEGMENTS,
-  MEGA_SEGMENTS,
   SLUGS_BY_TIER,
   CHAR_EMOJIS,
   CHAR_NAMES,
   FRAGS_NIV1,
   TIER_COLORS,
   CHARACTER_IMAGES,
-  SEGMENT_GRADIENTS,
   NAV_TABS,
   getCharImage,
   randomSlugFromTier,
-  getSegmentAngles,
-  describeArc,
-  getSegmentRewardType,
-  getSegmentTypeLabel,
 };

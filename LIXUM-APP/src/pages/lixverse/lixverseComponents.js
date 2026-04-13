@@ -87,9 +87,6 @@ const renderSegmentIcon = (type, tier, x, y, s, angle) => {
   if (type === 'scan') return (
     <G transform={t}><Path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" fill="none" stroke="#B0B8C4" strokeWidth={2} /><Circle cx={12} cy={13} r={4} fill="none" stroke="#B0B8C4" strokeWidth={2} /></G>
   );
-  if (type === 'free_spin') return (
-    <G transform={t}><Path d="M20 12v10H4V12" fill="none" stroke="#B0B8C4" strokeWidth={2} /><Path d="M2 7h20v5H2z" fill="none" stroke="#B0B8C4" strokeWidth={2} /><Path d="M12 22V7" stroke="#B0B8C4" strokeWidth={2} /><Path d="M12 7c-1.5-2-4-3-4-3s1 3 4 3z" fill="#B0B8C4" /><Path d="M12 7c1.5-2 4-3 4-3s-1 3-4 3z" fill="#B0B8C4" /></G>
-  );
   if (type === 'card') return (
     <G transform={t}>
       <Rect x={2} y={0} width={20} height={24} rx={3} fill="#1A1D22" stroke="#4A4F55" strokeWidth={1.2} />
