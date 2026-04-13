@@ -2927,6 +2927,45 @@ export const MediBookContent = (props) => {
             </Pressable>
           </View>
 
+          {/* Barre de filtres */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}
+            style={{ marginBottom: wp(10) }}
+            contentContainerStyle={{ paddingHorizontal: wp(2), gap: wp(6) }}>
+            {[
+              { key: 'diagnostic', label: 'Diagnostics', color: '#FF6B6B', emoji: '\uD83D\uDD34' },
+              { key: 'medication', label: 'Médicaments', color: '#4DA6FF', emoji: '\uD83D\uDD35' },
+              { key: 'analysis', label: 'Analyses', color: '#00D984', emoji: '\uD83D\uDFE2' },
+              { key: 'vaccination', label: 'Vaccins', color: '#9B6DFF', emoji: '\uD83D\uDFE3' },
+              { key: 'allergy', label: 'Allergies', color: '#FF8C42', emoji: '\uD83D\uDFE0' },
+            ].map(function(chip) {
+              var active = calendarFilters[chip.key];
+              return (
+                <Pressable key={chip.key} delayPressIn={80}
+                  onPress={function() {
+                    setCalendarFilters(function(prev) {
+                      var next = Object.assign({}, prev);
+                      next[chip.key] = !prev[chip.key];
+                      return next;
+                    });
+                  }}
+                  style={function(state) { return {
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: active ? chip.color : 'transparent',
+                    borderRadius: wp(20), paddingHorizontal: wp(12), paddingVertical: wp(7),
+                    borderWidth: 1.5,
+                    borderColor: active ? chip.color : 'rgba(0,0,0,0.15)',
+                    transform: [{ scale: state.pressed ? 0.95 : 1 }],
+                  }; }}>
+                  <Text style={{ fontSize: fp(12), marginRight: wp(4) }}>{chip.emoji}</Text>
+                  <Text style={{
+                    fontSize: fp(11), fontWeight: '600',
+                    color: active ? '#FFF' : 'rgba(0,0,0,0.35)',
+                  }}>{chip.label}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
           {/* Grille calendrier */}
           <View style={{
             backgroundColor: '#FAFBFC', borderRadius: wp(16), padding: wp(10), marginBottom: wp(12),
