@@ -34,6 +34,7 @@ import AlertSheet from './AlertSheet';
 import { AlixenFace, FunnelBridgeUnified, getWireMode, FRAME_W, FRAME_H, MODULE_H, BRIDGE_TOP } from './alixenzone';
 import PageHeader from '../../components/shared/PageHeader';
 import EnergyGateModal from '../../components/shared/EnergyGateModal';
+var NotificationService = require('../../services/NotificationService');
 
 
 
@@ -1319,6 +1320,14 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             source: 'alixen',
           }),
         });
+        // Schedule medication reminder (ALIXEN sets reminder_enabled: true)
+        NotificationService.scheduleMedicationReminder({
+          name: action.payload.name,
+          dosage: action.payload.dosage,
+          reminder_enabled: true,
+          frequency_times: ['08:00'],
+          id: null,
+        }, userId);
         addBotMessage('Médicament ajouté : ' + action.payload.name + ' ✅\nRetrouve-le dans MediBook > Médicaments.');
       }
 
@@ -1370,6 +1379,14 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           }),
         });
         console.log('[ALIXEN] ✅ Vaccination ajoutée: ' + action.payload.vaccine_name);
+        // Schedule vaccine reminder if next_due_date provided
+        if (action.payload.next_due_date) {
+          NotificationService.scheduleVaccineReminder({
+            vaccine_name: action.payload.vaccine_name,
+            next_due_date: action.payload.next_due_date,
+            dose_number: action.payload.dose_number || 1,
+          }, userId);
+        }
         loadMedicalData();
         addBotMessage('Vaccination ajoutée : ' + action.payload.vaccine_name + ' ✅\nRetrouve-la dans MediBook > Carnet vaccinal.');
       }
@@ -1387,6 +1404,15 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             reminder_enabled: true,
           }),
         });
+        // Schedule analysis reminder
+        if (action.payload.scheduled_date) {
+          NotificationService.scheduleAnalysisReminder({
+            label: action.payload.label,
+            is_scheduled: true,
+            scheduled_date: action.payload.scheduled_date,
+            id: null,
+          }, userId);
+        }
         addBotMessage('Analyse planifiée : ' + action.payload.label + ' ✅\nRetrouve-la dans MediBook > Analyses.');
       }
 
@@ -1436,6 +1462,14 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               }),
             });
             console.log('[ALIXEN] ✅ Médicament inséré: ' + med.name);
+            // Schedule medication reminder
+            NotificationService.scheduleMedicationReminder({
+              name: med.name,
+              dosage: med.dosage || null,
+              reminder_enabled: true,
+              frequency_times: ['08:00'],
+              id: null,
+            }, userId);
             insertCount++;
           }
         }
@@ -1457,6 +1491,15 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               }),
             });
             console.log('[ALIXEN] ✅ Analyse planifiée: ' + an.label);
+            // Schedule analysis reminder
+            if (an.scheduled_date) {
+              NotificationService.scheduleAnalysisReminder({
+                label: an.label,
+                is_scheduled: true,
+                scheduled_date: an.scheduled_date,
+                id: null,
+              }, userId);
+            }
             insertCount++;
           }
         }
@@ -1898,6 +1941,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           m.id === medicationId ? { ...m, reminder_enabled: newValue } : m
         ),
       }));
+      // Schedule or cancel notifications
+      if (newValue) {
+        var med = medicalData.medications.find(function(m) { return m.id === medicationId; });
+        if (med) NotificationService.scheduleMedicationReminder(Object.assign({}, med, { reminder_enabled: true }), userId);
+      } else {
+        NotificationService.cancelAllReminders(medicationId, userId);
+      }
     } catch (error) {
       console.error('Erreur toggle rappel:', error);
     }
@@ -2056,6 +2106,17 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           medication_db_id: (selectedMedFromDb.id && !String(selectedMedFromDb.id).startsWith('ai-')) ? selectedMedFromDb.id : null,
         }),
       });
+
+      // Schedule medication reminder if enabled
+      if (newMedReminder) {
+        NotificationService.scheduleMedicationReminder({
+          name: selectedMedFromDb.name,
+          dosage: newMedDosageValue + ' ' + newMedDosageUnit,
+          reminder_enabled: true,
+          frequency_times: defaultTimes[newMedFrequency] || ['08:00'],
+          id: null,
+        }, userId);
+      }
 
       // Fermer et reset
       setShowAddMedSheet(false);
@@ -2318,6 +2379,14 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           source: 'manual',
         }),
       });
+      // Schedule vaccine reminder if next_due_date provided
+      if (nextDue) {
+        NotificationService.scheduleVaccineReminder({
+          vaccine_name: newVaccName.trim(),
+          next_due_date: nextDue,
+          dose_number: newVaccDose,
+        }, userId);
+      }
       setShowAddVaccSheet(false);
       setNewVaccName(''); setNewVaccDate(''); setNewVaccDose(1); setNewVaccNextDue(''); setNewVaccDoctor(''); setNewVaccBatch('');
       loadMedicalData();
