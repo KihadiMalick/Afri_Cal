@@ -2282,6 +2282,13 @@ export const MediBookContent = (props) => {
             onPress={function() { setReportSection('diagnostics'); }}
           />
 
+          <SectionCard title="Calendrier de santé"
+            subtitle={(doneAnalyses + activeCount + terminatedCount + allergiesCount + vaccCount + diagCount) + ' événements médicaux'}
+            count="" color="#D4AF37"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Rect x="3" y="4" width="18" height="18" rx="2" stroke="#D4AF37" strokeWidth="1.5" /><Line x1="16" y1="2" x2="16" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" /><Line x1="8" y1="2" x2="8" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" /><Line x1="3" y1="10" x2="21" y2="10" stroke="#D4AF37" strokeWidth="1.5" /></Svg>}
+            onPress={function() { setReportSection('calendar'); }}
+          />
+
           <Pressable delayPressIn={120} onPress={() => setReportSection('pdf-preview')} style={{ marginTop: wp(12), marginBottom: wp(16) }}>
             <LinearGradient colors={['#00D984', '#00B871']}
               style={{ borderRadius: wp(16), paddingVertical: wp(16), flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: wp(10) }}>
@@ -2623,6 +2630,183 @@ export const MediBookContent = (props) => {
     );
   };
 
+  // ── RENDER CALENDAR SECTION ────────────────────────────────────────────
+  var _calMonth = useState(new Date().getMonth()); var calendarMonth = _calMonth[0]; var setCalendarMonth = _calMonth[1];
+  var _calYear = useState(new Date().getFullYear()); var calendarYear = _calYear[0]; var setCalendarYear = _calYear[1];
+
+  var renderCalendarSection = function() {
+    var MONTH_NAMES = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    var DAY_HEADERS = ['L','M','M','J','V','S','D'];
+    var TYPE_COLORS = { diagnostic: '#FF6B6B', medication: '#4DA6FF', analysis: '#00D984', vaccination: '#9B6DFF', allergy: '#FF8C42' };
+
+    var firstDay = new Date(calendarYear, calendarMonth, 1);
+    var lastDay = new Date(calendarYear, calendarMonth + 1, 0);
+    var daysInMonth = lastDay.getDate();
+    var startDow = (firstDay.getDay() + 6) % 7;
+    var today = new Date();
+    var isCurrentMonth = today.getMonth() === calendarMonth && today.getFullYear() === calendarYear;
+
+    // Build events map from medicalData
+    var eventsMap = {};
+    var addEvent = function(day, type) {
+      if (!eventsMap[day]) eventsMap[day] = {};
+      eventsMap[day][type] = true;
+    };
+
+    if (medicalData.diagnostics) {
+      medicalData.diagnostics.forEach(function(d) {
+        if (d.diagnosed_date) {
+          var dt = new Date(d.diagnosed_date);
+          if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'diagnostic');
+        }
+      });
+    }
+    if (medicalData.medications) {
+      medicalData.medications.forEach(function(m) {
+        if (m.start_date) { var dt = new Date(m.start_date); if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'medication'); }
+        if (m.end_date) { var dt2 = new Date(m.end_date); if (dt2.getMonth() === calendarMonth && dt2.getFullYear() === calendarYear) addEvent(dt2.getDate(), 'medication'); }
+      });
+    }
+    if (medicalData.medsTerminated) {
+      medicalData.medsTerminated.forEach(function(m) {
+        if (m.end_date) { var dt = new Date(m.end_date); if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'medication'); }
+      });
+    }
+    if (medicalData.vaccinations) {
+      medicalData.vaccinations.forEach(function(v) {
+        if (v.administration_date) { var dt = new Date(v.administration_date); if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'vaccination'); }
+        if (v.next_due_date) { var dt2 = new Date(v.next_due_date); if (dt2.getMonth() === calendarMonth && dt2.getFullYear() === calendarYear) addEvent(dt2.getDate(), 'vaccination'); }
+      });
+    }
+    if (medicalData.analyses) {
+      medicalData.analyses.forEach(function(a) {
+        var dateStr = a.analysis_date || a.created_at;
+        if (dateStr) { var dt = new Date(dateStr); if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'analysis'); }
+      });
+    }
+    if (medicalData.scheduledAnalyses) {
+      medicalData.scheduledAnalyses.forEach(function(a) {
+        if (a.scheduled_date) { var dt = new Date(a.scheduled_date); if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'analysis'); }
+      });
+    }
+    if (medicalData.allergies) {
+      medicalData.allergies.forEach(function(a) {
+        if (a.created_at) { var dt = new Date(a.created_at); if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'allergy'); }
+      });
+    }
+
+    var goNextMonth = function() {
+      if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
+      else { setCalendarMonth(calendarMonth + 1); }
+    };
+    var goPrevMonth = function() {
+      if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
+      else { setCalendarMonth(calendarMonth - 1); }
+    };
+
+    // Build grid cells
+    var cells = [];
+    for (var blank = 0; blank < startDow; blank++) { cells.push({ day: 0, key: 'b' + blank }); }
+    for (var d = 1; d <= daysInMonth; d++) { cells.push({ day: d, key: 'd' + d }); }
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient colors={['#3A3F46', '#252A30']}
+          style={{ paddingTop: Platform.OS === 'android' ? 35 : 50, paddingBottom: wp(12), paddingHorizontal: wp(12), flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#4A4F55' }}>
+          <Pressable delayPressIn={120} onPress={function() { setReportSection('hub'); }}
+            style={function(state) { return { width: wp(36), height: wp(36), borderRadius: wp(18), backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10), transform: [{ scale: state.pressed ? 0.92 : 1 }] }; }}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Calendrier de santé</Text>
+          </View>
+          {renderProfileSwitchButton()}
+        </LinearGradient>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(12), paddingTop: wp(16), paddingBottom: wp(50) }}>
+          {/* Month navigation */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: wp(16), paddingHorizontal: wp(4) }}>
+            <Pressable onPress={goPrevMonth} style={function(state) { return { width: wp(36), height: wp(36), borderRadius: wp(18), backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', justifyContent: 'center', alignItems: 'center', opacity: state.pressed ? 0.6 : 1 }; }}>
+              <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none"><Path d="M15 19l-7-7 7-7" stroke="#EAEEF3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></Svg>
+            </Pressable>
+            <Text style={{ fontSize: fp(17), fontWeight: '700', color: '#2D3436' }}>{MONTH_NAMES[calendarMonth] + ' ' + calendarYear}</Text>
+            <Pressable onPress={goNextMonth} style={function(state) { return { width: wp(36), height: wp(36), borderRadius: wp(18), backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', justifyContent: 'center', alignItems: 'center', opacity: state.pressed ? 0.6 : 1 }; }}>
+              <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none"><Path d="M9 5l7 7-7 7" stroke="#EAEEF3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></Svg>
+            </Pressable>
+          </View>
+
+          {/* Day headers */}
+          <View style={{ flexDirection: 'row', marginBottom: wp(8) }}>
+            {DAY_HEADERS.map(function(h, hi) {
+              return (
+                <View key={hi} style={{ flex: 1, alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(0,0,0,0.3)' }}>{h}</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Calendar grid */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            {cells.map(function(cell) {
+              if (cell.day === 0) {
+                return <View key={cell.key} style={{ width: '14.28%', height: wp(44) }} />;
+              }
+              var isToday = isCurrentMonth && today.getDate() === cell.day;
+              var dayEvents = eventsMap[cell.day];
+              var eventTypes = dayEvents ? Object.keys(dayEvents) : [];
+              return (
+                <View key={cell.key} style={{ width: '14.28%', height: wp(44), alignItems: 'center', paddingTop: wp(4) }}>
+                  <View style={{
+                    width: wp(30), height: wp(30), borderRadius: wp(8),
+                    backgroundColor: isToday ? 'rgba(0,217,132,0.12)' : eventTypes.length > 0 ? '#2A303B' : 'transparent',
+                    borderWidth: isToday ? 1.5 : eventTypes.length > 0 ? 1 : 0,
+                    borderColor: isToday ? '#00D984' : '#3A3F46',
+                    justifyContent: 'center', alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(12), fontWeight: isToday ? '800' : eventTypes.length > 0 ? '600' : '400', color: isToday ? '#00D984' : eventTypes.length > 0 ? '#EAEEF3' : '#2D3436' }}>
+                      {cell.day}
+                    </Text>
+                  </View>
+                  {eventTypes.length > 0 ? (
+                    <View style={{ flexDirection: 'row', gap: 2, marginTop: 2 }}>
+                      {eventTypes.slice(0, 4).map(function(t, ti) {
+                        return <View key={ti} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: TYPE_COLORS[t] || '#999' }} />;
+                      })}
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Legend */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(10), marginTop: wp(16), paddingHorizontal: wp(4) }}>
+            {[
+              { color: '#FF6B6B', label: 'Diagnostic' },
+              { color: '#4DA6FF', label: 'Médicament' },
+              { color: '#00D984', label: 'Analyse' },
+              { color: '#9B6DFF', label: 'Vaccin' },
+              { color: '#FF8C42', label: 'Allergie' },
+            ].map(function(leg, li) {
+              return (
+                <View key={li} style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: leg.color }} />
+                  <Text style={{ fontSize: fp(10), color: 'rgba(0,0,0,0.4)' }}>{leg.label}</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          <BottomSpacer />
+        </ScrollView>
+      </View>
+    );
+  };
+
   // ── RENDER DIAGNOSTICS DETAIL ──────────────────────────────────────────
   var renderDiagnosticsDetail = function() {
     var diagList = medicalData.diagnostics || [];
@@ -2751,6 +2935,7 @@ export const MediBookContent = (props) => {
     if (reportSection === 'allergies') return renderAllergiesDetail();
     if (reportSection === 'vaccinations') return renderVaccinationsDetail();
     if (reportSection === 'diagnostics') return renderDiagnosticsDetail();
+    if (reportSection === 'calendar') return renderCalendarSection();
     return renderReportHub();
   };
 
