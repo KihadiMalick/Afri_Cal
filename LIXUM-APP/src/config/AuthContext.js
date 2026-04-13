@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+var NotificationService = require('../services/NotificationService');
 
 var AuthContext = createContext(null);
 
@@ -36,6 +37,9 @@ export function AuthProvider(props) {
 
   var _onboardingUsage = useState({ xscan: 0, gallery: 0, chat: 0, recipe: 0, medic: 0, cartscan: 0 });
   var onboardingUsage = _onboardingUsage[0], setOnboardingUsage = _onboardingUsage[1];
+
+  var _pushToken = useState(null);
+  var pushToken = _pushToken[0], setPushToken = _pushToken[1];
 
   var updateLixBalance = useCallback(function(newBalance) {
     setLixBalance(newBalance);
@@ -74,9 +78,14 @@ export function AuthProvider(props) {
     }
   }, [userId]);
 
-  // Load initial balance when userId is set
+  // Load initial balance when userId is set + register push notifications
   useEffect(function() {
-    if (userId) refreshLixFromServer();
+    if (userId) {
+      refreshLixFromServer();
+      NotificationService.registerForPushNotifications(userId).then(function(token) {
+        if (token) setPushToken(token);
+      });
+    }
   }, [userId, refreshLixFromServer]);
 
   useEffect(function() {
@@ -155,6 +164,7 @@ export function AuthProvider(props) {
         dailyEnergyResetAt: dailyEnergyResetAt,
         onboardingUsage: onboardingUsage,
         setOnboardingUsage: setOnboardingUsage,
+        pushToken: pushToken,
       }
     }, props.children)
   );
