@@ -212,6 +212,8 @@ export const MediBookContent = (props) => {
     showAddMedSheet, setShowAddMedSheet,
     showAddAnalysisSheet, setShowAddAnalysisSheet,
     showAddDiagSheet, setShowAddDiagSheet,
+    showAddAllergySheet, setShowAddAllergySheet,
+    showAddVaccSheet, setShowAddVaccSheet,
     // Animation
     mbGenerateScale,
   } = props;
@@ -720,6 +722,8 @@ export const MediBookContent = (props) => {
                 const headers = await getAuthHeaders();
                 headers['Prefer'] = 'return=minimal';
 
+                var scanDate = scanResults.date || null;
+
                 // Insérer les analyses
                 if (scanResults.data && scanResults.data.length > 0) {
                   await fetch(SUPABASE_URL + '/rest/v1/medical_analyses', {
@@ -732,6 +736,7 @@ export const MediBookContent = (props) => {
                       reference_range: item.ref || null,
                       status: item.status || 'normal',
                       category: scanResults.category || 'other',
+                      analysis_date: item.date || scanDate,
                     }))),
                   });
                 }
@@ -747,6 +752,7 @@ export const MediBookContent = (props) => {
                       frequency: med.frequency || null,
                       duration: med.duration || null,
                       status: 'active',
+                      start_date: med.start_date || scanDate,
                     }))),
                   });
                 }
@@ -758,9 +764,10 @@ export const MediBookContent = (props) => {
                     body: JSON.stringify(scanResults.vaccinations.map(vac => ({
                       user_id: userId,
                       vaccine_name: vac.name,
-                      administration_date: vac.date || null,
+                      administration_date: vac.date || scanDate,
                       dose_number: parseInt(vac.dose) || 1,
                       status: 'completed',
+                      next_due_date: vac.nextDue || null,
                     }))),
                   });
                 }
@@ -790,7 +797,7 @@ export const MediBookContent = (props) => {
                         severity: d.severity || 'moderate',
                         status: d.status || 'active',
                         notes: d.notes || null,
-                        diagnosed_date: d.diagnosed_date || null,
+                        diagnosed_date: d.diagnosed_date || scanDate,
                         diagnosed_by: d.diagnosed_by || null,
                         source: 'scan',
                       };
@@ -2258,14 +2265,14 @@ export const MediBookContent = (props) => {
             subtitle={allergiesCount > 0 ? 'Profil allergique enregistré' : 'Aucune allergie enregistrée'}
             count={allergiesCount} color="#FF8C42"
             icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#FF8C42" strokeWidth="1.5" /></Svg>}
-            onPress={function() { showMbModal('info', 'Allergies', 'Détail allergies — prochaine mise à jour.'); }}
+            onPress={function() { setReportSection('allergies'); }}
           />
 
           <SectionCard title="Carnet vaccinal"
             subtitle={vaccCount > 0 ? vaccCount + ' vaccin' + (vaccCount > 1 ? 's' : '') + ' enregistré' + (vaccCount > 1 ? 's' : '') : 'Aucun vaccin enregistré'}
             count={vaccCount} color="#9B6DFF"
             icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M18 2l4 4-9.5 9.5-4-4L18 2z" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><Path d="M8.5 11.5L2 18v4h4l6.5-6.5" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
-            onPress={function() { showMbModal('info', 'Vaccins', 'Détail vaccins — prochaine mise à jour.'); }}
+            onPress={function() { setReportSection('vaccinations'); }}
           />
 
           <SectionCard title="Diagnostics à surveiller"
@@ -2273,6 +2280,13 @@ export const MediBookContent = (props) => {
             count={diagCount} color="#FF6B6B"
             icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke="#FF6B6B" strokeWidth="1.5" /><Path d="M3 12h4l3-6 4 12 3-6h4" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
             onPress={function() { setReportSection('diagnostics'); }}
+          />
+
+          <SectionCard title="Calendrier de santé"
+            subtitle={(doneAnalyses + activeCount + terminatedCount + allergiesCount + vaccCount + diagCount) + ' événements médicaux'}
+            count="" color="#D4AF37"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Rect x="3" y="4" width="18" height="18" rx="2" stroke="#D4AF37" strokeWidth="1.5" /><Line x1="16" y1="2" x2="16" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" /><Line x1="8" y1="2" x2="8" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" /><Line x1="3" y1="10" x2="21" y2="10" stroke="#D4AF37" strokeWidth="1.5" /></Svg>}
+            onPress={function() { setReportSection('calendar'); }}
           />
 
           <Pressable delayPressIn={120} onPress={() => setReportSection('pdf-preview')} style={{ marginTop: wp(12), marginBottom: wp(16) }}>
@@ -2421,6 +2435,378 @@ export const MediBookContent = (props) => {
     </View>
   );
 
+  // ── RENDER ALLERGIES DETAIL ────────────────────────────────────────────
+  var renderAllergiesDetail = function() {
+    var allergyList = medicalData.allergies || [];
+    var TYPE_STYLES = {
+      alimentaire: { color: '#FF8C42', label: 'Alimentaire' },
+      medicamenteuse: { color: '#FF6B6B', label: 'Médicamenteuse' },
+      respiratoire: { color: '#4DA6FF', label: 'Respiratoire' },
+      cutanee: { color: '#9B6DFF', label: 'Cutanée' },
+    };
+    var SEV_COLORS = { mild: '#00D984', moderate: '#FF8C42', severe: '#FF6B6B' };
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient colors={['#3A3F46', '#252A30']}
+          style={{ paddingTop: Platform.OS === 'android' ? 35 : 50, paddingBottom: wp(12), paddingHorizontal: wp(12), flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#4A4F55' }}>
+          <Pressable delayPressIn={120} onPress={function() { setReportSection('hub'); }}
+            style={function(state) { return { width: wp(36), height: wp(36), borderRadius: wp(18), backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10), transform: [{ scale: state.pressed ? 0.92 : 1 }] }; }}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Allergies et intolérances</Text>
+          </View>
+          {renderProfileSwitchButton()}
+        </LinearGradient>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(100) }}>
+          {allergyList.length === 0 ? (
+            <View style={{ padding: wp(30), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(14), color: 'rgba(0,0,0,0.3)', textAlign: 'center' }}>
+                Aucune allergie enregistrée.{'\n'}Scannez un document ou ajoutez manuellement.
+              </Text>
+            </View>
+          ) : (
+            allergyList.map(function(allergy, i) {
+              var typeStyle = TYPE_STYLES[allergy.type] || { color: '#999', label: allergy.type || 'Autre' };
+              var sevColor = SEV_COLORS[allergy.severity] || '#999';
+              return (
+                <View key={allergy.id || i} style={{
+                  backgroundColor: '#FAFBFC', borderRadius: wp(16), padding: wp(16),
+                  marginBottom: wp(10), borderLeftWidth: wp(4), borderLeftColor: typeStyle.color,
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+                }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#2D3436', flex: 1 }}>{allergy.allergen}</Text>
+                    <View style={{ flexDirection: 'row', gap: wp(6) }}>
+                      <View style={{ backgroundColor: typeStyle.color + '20', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                        <Text style={{ fontSize: fp(9), fontWeight: '700', color: typeStyle.color }}>{typeStyle.label}</Text>
+                      </View>
+                      <View style={{ backgroundColor: sevColor + '20', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                        <Text style={{ fontSize: fp(9), fontWeight: '700', color: sevColor }}>
+                          {allergy.severity === 'severe' ? 'SÉVÈRE' : allergy.severity === 'moderate' ? 'MODÉRÉ' : 'LÉGER'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  {allergy.reaction ? (
+                    <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.45)', marginTop: wp(6), fontStyle: 'italic' }} numberOfLines={2}>{allergy.reaction}</Text>
+                  ) : null}
+                </View>
+              );
+            })
+          )}
+          <BottomSpacer />
+        </ScrollView>
+
+        <View style={{ position: 'absolute', bottom: wp(30), left: 0, right: 0, alignItems: 'center' }}>
+          <Pressable delayPressIn={120}
+            onPress={function() { setShowAddAllergySheet(true); }}
+            style={function(state) { return {
+              flexDirection: 'row', alignItems: 'center',
+              backgroundColor: '#FF8C42', borderRadius: wp(28), paddingHorizontal: wp(22), paddingVertical: wp(14),
+              shadowColor: '#FF8C42', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 8,
+              gap: wp(8), transform: [{ scale: state.pressed ? 0.95 : 1 }],
+            }; }}>
+            <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+              <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+              <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+            </Svg>
+            <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>Ajouter une allergie</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  };
+
+  // ── RENDER VACCINATIONS DETAIL ───────────────────────────────────────────
+  var renderVaccinationsDetail = function() {
+    var vaccList = medicalData.vaccinations || [];
+    var now = Date.now();
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient colors={['#3A3F46', '#252A30']}
+          style={{ paddingTop: Platform.OS === 'android' ? 35 : 50, paddingBottom: wp(12), paddingHorizontal: wp(12), flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#4A4F55' }}>
+          <Pressable delayPressIn={120} onPress={function() { setReportSection('hub'); }}
+            style={function(state) { return { width: wp(36), height: wp(36), borderRadius: wp(18), backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10), transform: [{ scale: state.pressed ? 0.92 : 1 }] }; }}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Carnet vaccinal</Text>
+          </View>
+          {renderProfileSwitchButton()}
+        </LinearGradient>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(100) }}>
+          {vaccList.length === 0 ? (
+            <View style={{ padding: wp(30), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(14), color: 'rgba(0,0,0,0.3)', textAlign: 'center' }}>
+                Aucun vaccin enregistré.{'\n'}Scannez votre carnet ou ajoutez manuellement.
+              </Text>
+            </View>
+          ) : (
+            vaccList.map(function(vac, i) {
+              var nextDue = vac.next_due_date ? new Date(vac.next_due_date).getTime() : null;
+              var isOverdue = nextDue && nextDue < now;
+              var isSoon = nextDue && !isOverdue && (nextDue - now) < 90 * 24 * 60 * 60 * 1000;
+              return (
+                <View key={vac.id || i} style={{
+                  backgroundColor: '#FAFBFC', borderRadius: wp(16), padding: wp(16),
+                  marginBottom: wp(10), borderLeftWidth: wp(4), borderLeftColor: '#9B6DFF',
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+                }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#2D3436' }}>{vac.vaccine_name}</Text>
+                      {vac.administration_date ? (
+                        <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginTop: wp(2) }}>
+                          {new Date(vac.administration_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                        </Text>
+                      ) : null}
+                      {vac.administered_by ? (
+                        <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.35)', marginTop: wp(2) }}>{vac.administered_by}</Text>
+                      ) : null}
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: wp(6), alignItems: 'center' }}>
+                      <View style={{ backgroundColor: 'rgba(155,109,255,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                        <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#9B6DFF' }}>{'Dose ' + (vac.dose_number || 1)}</Text>
+                      </View>
+                      {isOverdue ? (
+                        <View style={{ backgroundColor: 'rgba(255,107,107,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                          <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF6B6B' }}>Rappel en retard</Text>
+                        </View>
+                      ) : isSoon ? (
+                        <View style={{ backgroundColor: 'rgba(255,140,66,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                          <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF8C42' }}>Rappel bientôt</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+                  {vac.next_due_date ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(8), gap: wp(6) }}>
+                      <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                        <Rect x="3" y="4" width="18" height="18" rx="2" stroke={isOverdue ? '#FF6B6B' : '#FF8C42'} strokeWidth="1.5" />
+                        <Line x1="16" y1="2" x2="16" y2="6" stroke={isOverdue ? '#FF6B6B' : '#FF8C42'} strokeWidth="1.5" strokeLinecap="round" />
+                        <Line x1="8" y1="2" x2="8" y2="6" stroke={isOverdue ? '#FF6B6B' : '#FF8C42'} strokeWidth="1.5" strokeLinecap="round" />
+                        <Line x1="3" y1="10" x2="21" y2="10" stroke={isOverdue ? '#FF6B6B' : '#FF8C42'} strokeWidth="1.5" />
+                      </Svg>
+                      <Text style={{ fontSize: fp(11), color: isOverdue ? '#FF6B6B' : '#FF8C42', fontWeight: '600' }}>
+                        {'Prochain rappel : ' + new Date(vac.next_due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })
+          )}
+          <BottomSpacer />
+        </ScrollView>
+
+        <View style={{ position: 'absolute', bottom: wp(30), left: 0, right: 0, alignItems: 'center' }}>
+          <Pressable delayPressIn={120}
+            onPress={function() { setShowAddVaccSheet(true); }}
+            style={function(state) { return {
+              flexDirection: 'row', alignItems: 'center',
+              backgroundColor: '#9B6DFF', borderRadius: wp(28), paddingHorizontal: wp(22), paddingVertical: wp(14),
+              shadowColor: '#9B6DFF', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 8,
+              gap: wp(8), transform: [{ scale: state.pressed ? 0.95 : 1 }],
+            }; }}>
+            <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+              <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+              <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+            </Svg>
+            <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>Ajouter un vaccin</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  };
+
+  // ── RENDER CALENDAR SECTION ────────────────────────────────────────────
+  var _calMonth = useState(new Date().getMonth()); var calendarMonth = _calMonth[0]; var setCalendarMonth = _calMonth[1];
+  var _calYear = useState(new Date().getFullYear()); var calendarYear = _calYear[0]; var setCalendarYear = _calYear[1];
+
+  var renderCalendarSection = function() {
+    var MONTH_NAMES = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    var DAY_HEADERS = ['L','M','M','J','V','S','D'];
+    var TYPE_COLORS = { diagnostic: '#FF6B6B', medication: '#4DA6FF', analysis: '#00D984', vaccination: '#9B6DFF', allergy: '#FF8C42' };
+
+    var firstDay = new Date(calendarYear, calendarMonth, 1);
+    var lastDay = new Date(calendarYear, calendarMonth + 1, 0);
+    var daysInMonth = lastDay.getDate();
+    var startDow = (firstDay.getDay() + 6) % 7;
+    var today = new Date();
+    var isCurrentMonth = today.getMonth() === calendarMonth && today.getFullYear() === calendarYear;
+
+    // Build events map from medicalData
+    var eventsMap = {};
+    var addEvent = function(day, type) {
+      if (!eventsMap[day]) eventsMap[day] = {};
+      eventsMap[day][type] = true;
+    };
+
+    if (medicalData.diagnostics) {
+      medicalData.diagnostics.forEach(function(d) {
+        if (d.diagnosed_date) {
+          var dt = new Date(d.diagnosed_date);
+          if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'diagnostic');
+        }
+      });
+    }
+    if (medicalData.medications) {
+      medicalData.medications.forEach(function(m) {
+        if (m.start_date) { var dt = new Date(m.start_date); if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'medication'); }
+        if (m.end_date) { var dt2 = new Date(m.end_date); if (dt2.getMonth() === calendarMonth && dt2.getFullYear() === calendarYear) addEvent(dt2.getDate(), 'medication'); }
+      });
+    }
+    if (medicalData.medsTerminated) {
+      medicalData.medsTerminated.forEach(function(m) {
+        if (m.end_date) { var dt = new Date(m.end_date); if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'medication'); }
+      });
+    }
+    if (medicalData.vaccinations) {
+      medicalData.vaccinations.forEach(function(v) {
+        if (v.administration_date) { var dt = new Date(v.administration_date); if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'vaccination'); }
+        if (v.next_due_date) { var dt2 = new Date(v.next_due_date); if (dt2.getMonth() === calendarMonth && dt2.getFullYear() === calendarYear) addEvent(dt2.getDate(), 'vaccination'); }
+      });
+    }
+    if (medicalData.analyses) {
+      medicalData.analyses.forEach(function(a) {
+        var dateStr = a.analysis_date || a.created_at;
+        if (dateStr) { var dt = new Date(dateStr); if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'analysis'); }
+      });
+    }
+    if (medicalData.scheduledAnalyses) {
+      medicalData.scheduledAnalyses.forEach(function(a) {
+        if (a.scheduled_date) { var dt = new Date(a.scheduled_date); if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'analysis'); }
+      });
+    }
+    if (medicalData.allergies) {
+      medicalData.allergies.forEach(function(a) {
+        if (a.created_at) { var dt = new Date(a.created_at); if (dt.getMonth() === calendarMonth && dt.getFullYear() === calendarYear) addEvent(dt.getDate(), 'allergy'); }
+      });
+    }
+
+    var goNextMonth = function() {
+      if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
+      else { setCalendarMonth(calendarMonth + 1); }
+    };
+    var goPrevMonth = function() {
+      if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
+      else { setCalendarMonth(calendarMonth - 1); }
+    };
+
+    // Build grid cells
+    var cells = [];
+    for (var blank = 0; blank < startDow; blank++) { cells.push({ day: 0, key: 'b' + blank }); }
+    for (var d = 1; d <= daysInMonth; d++) { cells.push({ day: d, key: 'd' + d }); }
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient colors={['#3A3F46', '#252A30']}
+          style={{ paddingTop: Platform.OS === 'android' ? 35 : 50, paddingBottom: wp(12), paddingHorizontal: wp(12), flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#4A4F55' }}>
+          <Pressable delayPressIn={120} onPress={function() { setReportSection('hub'); }}
+            style={function(state) { return { width: wp(36), height: wp(36), borderRadius: wp(18), backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10), transform: [{ scale: state.pressed ? 0.92 : 1 }] }; }}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Calendrier de santé</Text>
+          </View>
+          {renderProfileSwitchButton()}
+        </LinearGradient>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(12), paddingTop: wp(16), paddingBottom: wp(50) }}>
+          {/* Month navigation */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: wp(16), paddingHorizontal: wp(4) }}>
+            <Pressable onPress={goPrevMonth} style={function(state) { return { width: wp(36), height: wp(36), borderRadius: wp(18), backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', justifyContent: 'center', alignItems: 'center', opacity: state.pressed ? 0.6 : 1 }; }}>
+              <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none"><Path d="M15 19l-7-7 7-7" stroke="#EAEEF3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></Svg>
+            </Pressable>
+            <Text style={{ fontSize: fp(17), fontWeight: '700', color: '#2D3436' }}>{MONTH_NAMES[calendarMonth] + ' ' + calendarYear}</Text>
+            <Pressable onPress={goNextMonth} style={function(state) { return { width: wp(36), height: wp(36), borderRadius: wp(18), backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', justifyContent: 'center', alignItems: 'center', opacity: state.pressed ? 0.6 : 1 }; }}>
+              <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none"><Path d="M9 5l7 7-7 7" stroke="#EAEEF3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></Svg>
+            </Pressable>
+          </View>
+
+          {/* Day headers */}
+          <View style={{ flexDirection: 'row', marginBottom: wp(8) }}>
+            {DAY_HEADERS.map(function(h, hi) {
+              return (
+                <View key={hi} style={{ flex: 1, alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(0,0,0,0.3)' }}>{h}</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Calendar grid */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            {cells.map(function(cell) {
+              if (cell.day === 0) {
+                return <View key={cell.key} style={{ width: '14.28%', height: wp(44) }} />;
+              }
+              var isToday = isCurrentMonth && today.getDate() === cell.day;
+              var dayEvents = eventsMap[cell.day];
+              var eventTypes = dayEvents ? Object.keys(dayEvents) : [];
+              return (
+                <View key={cell.key} style={{ width: '14.28%', height: wp(44), alignItems: 'center', paddingTop: wp(4) }}>
+                  <View style={{
+                    width: wp(30), height: wp(30), borderRadius: wp(8),
+                    backgroundColor: isToday ? 'rgba(0,217,132,0.12)' : eventTypes.length > 0 ? '#2A303B' : 'transparent',
+                    borderWidth: isToday ? 1.5 : eventTypes.length > 0 ? 1 : 0,
+                    borderColor: isToday ? '#00D984' : '#3A3F46',
+                    justifyContent: 'center', alignItems: 'center',
+                  }}>
+                    <Text style={{ fontSize: fp(12), fontWeight: isToday ? '800' : eventTypes.length > 0 ? '600' : '400', color: isToday ? '#00D984' : eventTypes.length > 0 ? '#EAEEF3' : '#2D3436' }}>
+                      {cell.day}
+                    </Text>
+                  </View>
+                  {eventTypes.length > 0 ? (
+                    <View style={{ flexDirection: 'row', gap: 2, marginTop: 2 }}>
+                      {eventTypes.slice(0, 4).map(function(t, ti) {
+                        return <View key={ti} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: TYPE_COLORS[t] || '#999' }} />;
+                      })}
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Legend */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(10), marginTop: wp(16), paddingHorizontal: wp(4) }}>
+            {[
+              { color: '#FF6B6B', label: 'Diagnostic' },
+              { color: '#4DA6FF', label: 'Médicament' },
+              { color: '#00D984', label: 'Analyse' },
+              { color: '#9B6DFF', label: 'Vaccin' },
+              { color: '#FF8C42', label: 'Allergie' },
+            ].map(function(leg, li) {
+              return (
+                <View key={li} style={{ flexDirection: 'row', alignItems: 'center', gap: wp(4) }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: leg.color }} />
+                  <Text style={{ fontSize: fp(10), color: 'rgba(0,0,0,0.4)' }}>{leg.label}</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          <BottomSpacer />
+        </ScrollView>
+      </View>
+    );
+  };
+
   // ── RENDER DIAGNOSTICS DETAIL ──────────────────────────────────────────
   var renderDiagnosticsDetail = function() {
     var diagList = medicalData.diagnostics || [];
@@ -2546,7 +2932,10 @@ export const MediBookContent = (props) => {
     if (reportSection === 'pdf-preview') return renderPdfPreview();
     if (reportSection === 'analyses') return renderAnalysesDetail();
     if (reportSection === 'medications') return renderMedicationsDetail();
+    if (reportSection === 'allergies') return renderAllergiesDetail();
+    if (reportSection === 'vaccinations') return renderVaccinationsDetail();
     if (reportSection === 'diagnostics') return renderDiagnosticsDetail();
+    if (reportSection === 'calendar') return renderCalendarSection();
     return renderReportHub();
   };
 

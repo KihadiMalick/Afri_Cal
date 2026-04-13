@@ -182,6 +182,20 @@ export default function MedicAiPage({ navigation }) {
   var [newDiagDoctor, setNewDiagDoctor] = useState('');
   var [newDiagStatus, setNewDiagStatus] = useState('active');
   var [newDiagNotes, setNewDiagNotes] = useState('');
+  // Add Allergy
+  var [showAddAllergySheet, setShowAddAllergySheet] = useState(false);
+  var [newAllergyAllergen, setNewAllergyAllergen] = useState('');
+  var [newAllergyType, setNewAllergyType] = useState('alimentaire');
+  var [newAllergySeverity, setNewAllergySeverity] = useState('moderate');
+  var [newAllergyReaction, setNewAllergyReaction] = useState('');
+  // Add Vaccination
+  var [showAddVaccSheet, setShowAddVaccSheet] = useState(false);
+  var [newVaccName, setNewVaccName] = useState('');
+  var [newVaccDate, setNewVaccDate] = useState('');
+  var [newVaccDose, setNewVaccDose] = useState(1);
+  var [newVaccNextDue, setNewVaccNextDue] = useState('');
+  var [newVaccDoctor, setNewVaccDoctor] = useState('');
+  var [newVaccBatch, setNewVaccBatch] = useState('');
   const [activeProfile, setActiveProfile] = useState('self');
   const [children, setChildren] = useState([
     { id: 'child-0', name: 'Mon enfant', age: '', free: true },
@@ -348,7 +362,6 @@ export default function MedicAiPage({ navigation }) {
   useEffect(() => {
     if (!userId) return;
     loadUserData();
-    loadTokenQuota();
     loadAvailableMeals();
     loadMedicalData();
     // Avatar profil
@@ -501,23 +514,6 @@ export default function MedicAiPage({ navigation }) {
     } catch (error) {
       console.error('Erreur chargement données:', error);
       addBotMessage("Bonjour ! Je suis ALIXEN, votre coach nutritionniste IA personnel. Comment puis-je vous aider aujourd'hui ?");
-    }
-  };
-
-  const loadTokenQuota = async () => {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/medic_token_quotas?user_id=eq.${userId}&date=eq.${today}&select=*`,
-        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
-      );
-      const data = await res.json();
-      if (data.length > 0) {
-        // Energy is now server-side — refresh from auth
-        refreshLixFromServer();
-      }
-    } catch (error) {
-      // Pas grave, on affiche les défauts
     }
   };
 
@@ -1309,6 +1305,41 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         addBotMessage('Diagnostic ajouté : ' + action.payload.condition_name + ' ✅\nRetrouve-le dans MediBook > Diagnostics.');
       }
 
+      if (action.type === 'add_allergy') {
+        await fetch(SUPABASE_URL + '/rest/v1/allergies', {
+          method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            user_id: userId,
+            allergen: action.payload.allergen,
+            type: action.payload.type || 'autre',
+            severity: action.payload.severity || 'moderate',
+            reaction: action.payload.reaction || null,
+          }),
+        });
+        console.log('[ALIXEN] ✅ Allergie ajoutée: ' + action.payload.allergen);
+        loadMedicalData();
+        addBotMessage('Allergie ajoutée : ' + action.payload.allergen + ' ✅\nRetrouve-la dans MediBook > Allergies.');
+      }
+
+      if (action.type === 'add_vaccination') {
+        await fetch(SUPABASE_URL + '/rest/v1/vaccinations', {
+          method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            user_id: userId,
+            vaccine_name: action.payload.vaccine_name,
+            administration_date: action.payload.date || new Date().toISOString().split('T')[0],
+            dose_number: action.payload.dose_number || 1,
+            next_due_date: action.payload.next_due_date || null,
+            administered_by: action.payload.administered_by || null,
+            batch_number: action.payload.batch_number || null,
+            status: 'completed',
+          }),
+        });
+        console.log('[ALIXEN] ✅ Vaccination ajoutée: ' + action.payload.vaccine_name);
+        loadMedicalData();
+        addBotMessage('Vaccination ajoutée : ' + action.payload.vaccine_name + ' ✅\nRetrouve-la dans MediBook > Carnet vaccinal.');
+      }
+
       if (action.type === 'add_analysis') {
         await fetch(SUPABASE_URL + '/rest/v1/medical_analyses', {
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
@@ -1323,6 +1354,85 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           }),
         });
         addBotMessage('Analyse planifiée : ' + action.payload.label + ' ✅\nRetrouve-la dans MediBook > Analyses.');
+      }
+
+      if (action.type === 'add_full_diagnosis') {
+        var p = action.payload;
+        var startDate = new Date().toISOString().split('T')[0];
+        var insertCount = 0;
+
+        // a) INSERT diagnostic
+        if (p.diagnosis && p.diagnosis.condition_name) {
+          await fetch(SUPABASE_URL + '/rest/v1/diagnostics', {
+            method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+            body: JSON.stringify({
+              user_id: userId,
+              condition_name: p.diagnosis.condition_name,
+              severity: p.diagnosis.severity || 'moderate',
+              status: p.diagnosis.status || 'active',
+              diagnosed_date: p.diagnosis.diagnosed_date || null,
+              diagnosed_by: p.diagnosis.diagnosed_by || null,
+              notes: (p.dietary_notes ? 'Alimentation: ' + p.dietary_notes + '. ' : '') + (p.activity_notes ? 'Activité: ' + p.activity_notes : ''),
+              source: 'alixen',
+            }),
+          });
+          console.log('[ALIXEN] ✅ Diagnostic inséré: ' + p.diagnosis.condition_name);
+          insertCount++;
+        }
+
+        // b) INSERT medications
+        if (p.medications && p.medications.length > 0) {
+          for (var mi = 0; mi < p.medications.length; mi++) {
+            var med = p.medications[mi];
+            var durationDays = parseInt(med.duration) || 7;
+            var endDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            await fetch(SUPABASE_URL + '/rest/v1/medications', {
+              method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+              body: JSON.stringify({
+                user_id: userId,
+                name: med.name,
+                dosage: med.dosage || null,
+                frequency: med.frequency || null,
+                duration: med.duration || null,
+                status: 'active',
+                start_date: startDate,
+                end_date: endDate,
+                reminder_enabled: true,
+                source: 'alixen',
+              }),
+            });
+            console.log('[ALIXEN] ✅ Médicament inséré: ' + med.name);
+            insertCount++;
+          }
+        }
+
+        // c) INSERT scheduled analyses
+        if (p.analyses && p.analyses.length > 0) {
+          for (var ai = 0; ai < p.analyses.length; ai++) {
+            var an = p.analyses[ai];
+            await fetch(SUPABASE_URL + '/rest/v1/medical_analyses', {
+              method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+              body: JSON.stringify({
+                user_id: userId,
+                label: an.label,
+                value: 'À effectuer',
+                status: 'unknown',
+                is_scheduled: true,
+                scheduled_date: an.scheduled_date || null,
+                reminder_enabled: true,
+              }),
+            });
+            console.log('[ALIXEN] ✅ Analyse planifiée: ' + an.label);
+            insertCount++;
+          }
+        }
+
+        loadMedicalData();
+        addBotMessage('Diagnostic complet enregistré ✅\n\n' + insertCount + ' élément' + (insertCount > 1 ? 's' : '') + ' ajouté' + (insertCount > 1 ? 's' : '') + ' dans ton MediBook :\n' +
+          (p.diagnosis ? '• Diagnostic : ' + p.diagnosis.condition_name + '\n' : '') +
+          (p.medications && p.medications.length > 0 ? '• ' + p.medications.length + ' médicament' + (p.medications.length > 1 ? 's' : '') + '\n' : '') +
+          (p.analyses && p.analyses.length > 0 ? '• ' + p.analyses.length + ' analyse' + (p.analyses.length > 1 ? 's' : '') + ' planifiée' + (p.analyses.length > 1 ? 's' : '') + '\n' : '') +
+          '\nRetrouve tout dans MediBook > Mes données.');
       }
 
       if (action.type === 'navigate') {
@@ -2121,6 +2231,69 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     }
   };
 
+  var confirmAddAllergy = async function() {
+    if (!newAllergyAllergen.trim()) { showMModal('info', 'Champ requis', 'Veuillez entrer la substance allergène.'); return; }
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/allergies', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          user_id: userId,
+          allergen: newAllergyAllergen.trim(),
+          type: newAllergyType,
+          severity: newAllergySeverity,
+          reaction: newAllergyReaction.trim() || null,
+          source: 'manual',
+        }),
+      });
+      setShowAddAllergySheet(false);
+      setNewAllergyAllergen(''); setNewAllergyType('alimentaire'); setNewAllergySeverity('moderate'); setNewAllergyReaction('');
+      loadMedicalData();
+      showMModal('success', 'Allergie ajoutée ✓', newAllergyAllergen.trim() + ' a été ajoutée à vos allergies.');
+    } catch (error) {
+      console.error('Erreur ajout allergie:', error);
+      showMModal('error', 'Erreur', 'L\'ajout a échoué. Réessayez.');
+    }
+  };
+
+  var confirmAddVaccination = async function() {
+    if (!newVaccName.trim()) { showMModal('info', 'Champ requis', 'Veuillez entrer le nom du vaccin.'); return; }
+    try {
+      var vaccDate = null;
+      if (newVaccDate.trim()) {
+        var parts = newVaccDate.split('/');
+        vaccDate = parts.length === 3 ? parts[2] + '-' + parts[1] + '-' + parts[0] : newVaccDate;
+      }
+      var nextDue = null;
+      if (newVaccNextDue.trim()) {
+        var ndParts = newVaccNextDue.split('/');
+        nextDue = ndParts.length === 3 ? ndParts[2] + '-' + ndParts[1] + '-' + ndParts[0] : newVaccNextDue;
+      }
+      await fetch(SUPABASE_URL + '/rest/v1/vaccinations', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          user_id: userId,
+          vaccine_name: newVaccName.trim(),
+          administration_date: vaccDate || new Date().toISOString().split('T')[0],
+          dose_number: newVaccDose,
+          next_due_date: nextDue,
+          administered_by: newVaccDoctor.trim() || null,
+          batch_number: newVaccBatch.trim() || null,
+          status: 'completed',
+          source: 'manual',
+        }),
+      });
+      setShowAddVaccSheet(false);
+      setNewVaccName(''); setNewVaccDate(''); setNewVaccDose(1); setNewVaccNextDue(''); setNewVaccDoctor(''); setNewVaccBatch('');
+      loadMedicalData();
+      showMModal('success', 'Vaccin ajouté ✓', newVaccName.trim() + ' a été ajouté à votre carnet vaccinal.');
+    } catch (error) {
+      console.error('Erreur ajout vaccination:', error);
+      showMModal('error', 'Erreur', 'L\'ajout a échoué. Réessayez.');
+    }
+  };
+
   const handleTransferToSecretPocket = (tableName, rowIndex, rowData) => {
     const itemName = typeof rowData[0] === 'object' ? rowData[0].text : rowData[0];
 
@@ -2194,6 +2367,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           showAddMedSheet={showAddMedSheet} setShowAddMedSheet={setShowAddMedSheet}
           showAddAnalysisSheet={showAddAnalysisSheet} setShowAddAnalysisSheet={setShowAddAnalysisSheet}
           showAddDiagSheet={showAddDiagSheet} setShowAddDiagSheet={setShowAddDiagSheet}
+          showAddAllergySheet={showAddAllergySheet} setShowAddAllergySheet={setShowAddAllergySheet}
+          showAddVaccSheet={showAddVaccSheet} setShowAddVaccSheet={setShowAddVaccSheet}
           mbGenerateScale={mbGenerateScale}
         />
         </View>
@@ -2905,6 +3080,20 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         newDiagStatus={newDiagStatus} setNewDiagStatus={setNewDiagStatus}
         newDiagNotes={newDiagNotes} setNewDiagNotes={setNewDiagNotes}
         confirmAddDiagnostic={confirmAddDiagnostic}
+        showAddAllergySheet={showAddAllergySheet} setShowAddAllergySheet={setShowAddAllergySheet}
+        newAllergyAllergen={newAllergyAllergen} setNewAllergyAllergen={setNewAllergyAllergen}
+        newAllergyType={newAllergyType} setNewAllergyType={setNewAllergyType}
+        newAllergySeverity={newAllergySeverity} setNewAllergySeverity={setNewAllergySeverity}
+        newAllergyReaction={newAllergyReaction} setNewAllergyReaction={setNewAllergyReaction}
+        confirmAddAllergy={confirmAddAllergy}
+        showAddVaccSheet={showAddVaccSheet} setShowAddVaccSheet={setShowAddVaccSheet}
+        newVaccName={newVaccName} setNewVaccName={setNewVaccName}
+        newVaccDate={newVaccDate} setNewVaccDate={setNewVaccDate}
+        newVaccDose={newVaccDose} setNewVaccDose={setNewVaccDose}
+        newVaccNextDue={newVaccNextDue} setNewVaccNextDue={setNewVaccNextDue}
+        newVaccDoctor={newVaccDoctor} setNewVaccDoctor={setNewVaccDoctor}
+        newVaccBatch={newVaccBatch} setNewVaccBatch={setNewVaccBatch}
+        confirmAddVaccination={confirmAddVaccination}
       />
       <LixumModal visible={mModal.visible} type={mModal.type} title={mModal.title} message={mModal.message} onConfirm={mModal.onConfirm} onClose={mModal.onClose || closeMModal} confirmText={mModal.confirmText} cancelText={mModal.cancelText} />
       <EnergyGateModal
