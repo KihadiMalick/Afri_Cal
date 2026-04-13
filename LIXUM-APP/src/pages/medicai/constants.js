@@ -15,15 +15,36 @@ export const fp = (size) => {
 // ============================================
 // SYSTÈME ÉNERGIE LIXUM
 // ============================================
-export const ENERGY_CONFIG = {
+export var ENERGY_CONFIG = {
   TOKEN_DIVISOR: 120,
-  FREE_DAILY_ENERGY: 100,
-  ONBOARDING_DAILY_ENERGY: 50,
-  ONBOARDING_DAYS: 7,
-  SILVER_DAILY_ENERGY: 60,
-  GOLD_DAILY_ENERGY: 150,
-  PLATINUM_DAILY_ENERGY: 300,
-  SESSION_DURATION_MS: 24 * 60 * 60 * 1000,
+  COSTS: {
+    chat: 6,
+    xscan: 12,
+    gallery: 12,
+    recipe: 8,
+    medic: 30,
+    cartscan: 1,
+    manual_entry: 3
+  },
+  ONBOARDING_FREE: {
+    chat: 4,
+    xscan: 1,
+    gallery: 2,
+    recipe: 1,
+    medic: 1,
+    cartscan: 5
+  },
+  SUBSCRIPTION_DAILY_ENERGY: {
+    free: 0,
+    silver: 60,
+    gold: 150,
+    platinum: 300
+  },
+  SUBSCRIPTION_PRICES: {
+    silver: 3.99,
+    gold: 9.99,
+    platinum: 14.99
+  }
 };
 
 // ============================================

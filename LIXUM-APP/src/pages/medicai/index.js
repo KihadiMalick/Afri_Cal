@@ -79,7 +79,7 @@ export default function MedicAiPage({ navigation }) {
   const [todaySummary, setTodaySummary] = useState(null);
   const [todayMeals, setTodayMeals] = useState([]);
   const [energyUsed, setEnergyUsed] = useState(0);
-  const [energyLimit, setEnergyLimit] = useState(ENERGY_CONFIG.FREE_DAILY_ENERGY);
+  const [energyLimit, setEnergyLimit] = useState(ENERGY_CONFIG.SUBSCRIPTION_DAILY_ENERGY[auth.subscriptionTier] || 0);
   const [userNameAvatar, setUserNameAvatar] = useState('');
   const [activeCharAvatar, setActiveCharAvatar] = useState(null);
   // === ALIXEN SUPER CONTEXT v1 — Geolocation + Super Context ===
@@ -439,7 +439,7 @@ export default function MedicAiPage({ navigation }) {
   // ── Timer reset automatique 6h ────────────────────────────────────────────
   useEffect(() => {
     const checkReset = setInterval(() => {
-      if (Date.now() - lastResetTime >= ENERGY_CONFIG.SESSION_DURATION_MS) {
+      if (Date.now() - lastResetTime >= 24 * 60 * 60 * 1000) {
         setEnergyUsed(0);
         setLastResetTime(Date.now());
         setIsLocked(false);
@@ -503,8 +503,7 @@ export default function MedicAiPage({ navigation }) {
       if (profileData.length > 0) {
         setUserProfile(profileData[0]);
         if (profileData[0].language) setUserLang(profileData[0].language === 'EN' ? 'EN' : 'FR');
-        var daysSinceCreation = Math.floor((Date.now() - new Date(profileData[0].created_at).getTime()) / 86400000);
-        setEnergyLimit(daysSinceCreation <= ENERGY_CONFIG.ONBOARDING_DAYS ? ENERGY_CONFIG.ONBOARDING_DAILY_ENERGY : ENERGY_CONFIG.FREE_DAILY_ENERGY);
+        setEnergyLimit(ENERGY_CONFIG.SUBSCRIPTION_DAILY_ENERGY[auth.subscriptionTier] || 0);
       }
 
       const today = new Date().toISOString().split('T')[0];
