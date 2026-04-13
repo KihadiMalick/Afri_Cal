@@ -875,6 +875,38 @@ export default function MedicAiPage({ navigation }) {
         }).join('; ')
       : 'Aucune analyse planifiée';
 
+    // Rappels vaccins
+    var now = new Date();
+    var vaccineReminders = '';
+    var vaccineOverdue = '';
+    if (medicalData.vaccinations && medicalData.vaccinations.length > 0) {
+      var upcoming = medicalData.vaccinations.filter(function(v) { return v.next_due_date && new Date(v.next_due_date) >= now; });
+      var overdue = medicalData.vaccinations.filter(function(v) { return v.next_due_date && new Date(v.next_due_date) < now; });
+      if (upcoming.length > 0) {
+        vaccineReminders = upcoming.map(function(v) {
+          var d = Math.ceil((new Date(v.next_due_date) - now) / (1000 * 60 * 60 * 24));
+          return 'Vaccin ' + (v.vaccine_name || '?') + ' le ' + new Date(v.next_due_date).toLocaleDateString('fr-FR') + ' (dans ' + d + ' jours)';
+        }).join('; ');
+      }
+      if (overdue.length > 0) {
+        vaccineOverdue = overdue.map(function(v) {
+          var d = Math.ceil((now - new Date(v.next_due_date)) / (1000 * 60 * 60 * 24));
+          return 'Vaccin ' + (v.vaccine_name || '?') + ' prévu le ' + new Date(v.next_due_date).toLocaleDateString('fr-FR') + ' (retard de ' + d + ' jours)';
+        }).join('; ');
+      }
+    }
+    // Analyses en retard
+    var analysesOverdue = '';
+    if (medicalData.scheduledAnalyses && medicalData.scheduledAnalyses.length > 0) {
+      var overdueAn = medicalData.scheduledAnalyses.filter(function(a) { return a.scheduled_date && new Date(a.scheduled_date) < now; });
+      if (overdueAn.length > 0) {
+        analysesOverdue = overdueAn.map(function(a) {
+          var d = Math.ceil((now - new Date(a.scheduled_date)) / (1000 * 60 * 60 * 24));
+          return 'Analyse ' + (a.label || '?') + ' prévue le ' + new Date(a.scheduled_date).toLocaleDateString('fr-FR') + ' (retard de ' + d + ' jours)';
+        }).join('; ');
+      }
+    }
+
     // Résultats anormaux récents
     const abnormalResults = medicalData.analyses
       ? medicalData.analyses
@@ -941,6 +973,8 @@ DONNÉES MÉDICALES :
 - Prochaines analyses : ${upcomingAnalyses}
 ${abnormalResults ? '- Résultats anormaux récents : ' + abnormalResults : ''}
 ${diagList ? '- Diagnostics à surveiller : ' + diagList : ''}
+${vaccineReminders ? '- Rappels vaccins à venir : ' + vaccineReminders : ''}
+${vaccineOverdue || analysesOverdue ? 'ATTENTION — Rappels en retard : ' + [vaccineOverdue, analysesOverdue].filter(Boolean).join('; ') : ''}
 
 ${temporalContext}
 
