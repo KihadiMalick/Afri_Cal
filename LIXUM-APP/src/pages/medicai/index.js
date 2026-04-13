@@ -348,7 +348,6 @@ export default function MedicAiPage({ navigation }) {
   useEffect(() => {
     if (!userId) return;
     loadUserData();
-    loadTokenQuota();
     loadAvailableMeals();
     loadMedicalData();
     // Avatar profil
@@ -501,23 +500,6 @@ export default function MedicAiPage({ navigation }) {
     } catch (error) {
       console.error('Erreur chargement données:', error);
       addBotMessage("Bonjour ! Je suis ALIXEN, votre coach nutritionniste IA personnel. Comment puis-je vous aider aujourd'hui ?");
-    }
-  };
-
-  const loadTokenQuota = async () => {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/medic_token_quotas?user_id=eq.${userId}&date=eq.${today}&select=*`,
-        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
-      );
-      const data = await res.json();
-      if (data.length > 0) {
-        // Energy is now server-side — refresh from auth
-        refreshLixFromServer();
-      }
-    } catch (error) {
-      // Pas grave, on affiche les défauts
     }
   };
 

@@ -720,6 +720,8 @@ export const MediBookContent = (props) => {
                 const headers = await getAuthHeaders();
                 headers['Prefer'] = 'return=minimal';
 
+                var scanDate = scanResults.date || null;
+
                 // Insérer les analyses
                 if (scanResults.data && scanResults.data.length > 0) {
                   await fetch(SUPABASE_URL + '/rest/v1/medical_analyses', {
@@ -732,6 +734,7 @@ export const MediBookContent = (props) => {
                       reference_range: item.ref || null,
                       status: item.status || 'normal',
                       category: scanResults.category || 'other',
+                      analysis_date: item.date || scanDate,
                     }))),
                   });
                 }
@@ -747,6 +750,7 @@ export const MediBookContent = (props) => {
                       frequency: med.frequency || null,
                       duration: med.duration || null,
                       status: 'active',
+                      start_date: med.start_date || scanDate,
                     }))),
                   });
                 }
@@ -758,9 +762,10 @@ export const MediBookContent = (props) => {
                     body: JSON.stringify(scanResults.vaccinations.map(vac => ({
                       user_id: userId,
                       vaccine_name: vac.name,
-                      administration_date: vac.date || null,
+                      administration_date: vac.date || scanDate,
                       dose_number: parseInt(vac.dose) || 1,
                       status: 'completed',
+                      next_due_date: vac.nextDue || null,
                     }))),
                   });
                 }
@@ -790,7 +795,7 @@ export const MediBookContent = (props) => {
                         severity: d.severity || 'moderate',
                         status: d.status || 'active',
                         notes: d.notes || null,
-                        diagnosed_date: d.diagnosed_date || null,
+                        diagnosed_date: d.diagnosed_date || scanDate,
                         diagnosed_by: d.diagnosed_by || null,
                         source: 'scan',
                       };
