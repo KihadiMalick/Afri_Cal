@@ -241,6 +241,12 @@ export const MediBookContent = (props) => {
   var _calEventDetail = useState(null);
   var calEventDetail = _calEventDetail[0]; var setCalEventDetail = _calEventDetail[1];
   var calSlideAnim = useRef(new Animated.Value(0)).current;
+  var _upcomingReminders = useState([]);
+  var upcomingReminders = _upcomingReminders[0]; var setUpcomingReminders = _upcomingReminders[1];
+  var _reminderDetail = useState(null);
+  var reminderDetail = _reminderDetail[0]; var setReminderDetail = _reminderDetail[1];
+  var _reminderPostponeDate = useState('');
+  var reminderPostponeDate = _reminderPostponeDate[0]; var setReminderPostponeDate = _reminderPostponeDate[1];
 
   var getAuthHeaders = async function() {
     var result = await supabase.auth.getSession();
@@ -2811,6 +2817,77 @@ export const MediBookContent = (props) => {
 
   var formatCalDate = function(d) { return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }); };
 
+  // ── LOAD UPCOMING REMINDERS ────────────────────────────────────────────────
+  var loadUpcomingReminders = function() {
+    if (!userId) return;
+    var now = new Date();
+    var todayStr = now.toISOString().split('T')[0];
+    var reminders = [];
+
+    getAuthHeaders().then(function(headers) {
+      var vaccUpcomingUrl = SUPABASE_URL + '/rest/v1/vaccinations?select=*&user_id=eq.' + userId + '&next_due_date=not.is.null&next_due_date=gte.' + todayStr + '&order=next_due_date.asc&limit=5';
+      var vaccOverdueUrl = SUPABASE_URL + '/rest/v1/vaccinations?select=*&user_id=eq.' + userId + '&next_due_date=not.is.null&next_due_date=lt.' + todayStr + '&order=next_due_date.asc';
+      var analUpcomingUrl = SUPABASE_URL + '/rest/v1/medical_analyses?select=*&user_id=eq.' + userId + '&is_scheduled=eq.true&scheduled_date=gte.' + todayStr + '&order=scheduled_date.asc&limit=5';
+      var analOverdueUrl = SUPABASE_URL + '/rest/v1/medical_analyses?select=*&user_id=eq.' + userId + '&is_scheduled=eq.true&scheduled_date=lt.' + todayStr + '&order=scheduled_date.asc';
+
+      Promise.all([
+        fetch(vaccUpcomingUrl, { headers: headers }).then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
+        fetch(vaccOverdueUrl, { headers: headers }).then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
+        fetch(analUpcomingUrl, { headers: headers }).then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
+        fetch(analOverdueUrl, { headers: headers }).then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
+      ]).then(function(results) {
+        var vaccUpcoming = results[0]; var vaccOverdue = results[1];
+        var analUpcoming = results[2]; var analOverdue = results[3];
+
+        vaccOverdue.forEach(function(v) {
+          var dueDate = new Date(v.next_due_date);
+          var daysLate = Math.ceil((now - dueDate) / (1000 * 60 * 60 * 24));
+          reminders.push({ kind: 'vaccine', urgency: 'overdue', title: v.vaccine_name || 'Vaccin', dueDate: dueDate, daysLate: daysLate, raw: v });
+        });
+        analOverdue.forEach(function(a) {
+          var dueDate = new Date(a.scheduled_date);
+          var daysLate = Math.ceil((now - dueDate) / (1000 * 60 * 60 * 24));
+          reminders.push({ kind: 'analysis', urgency: 'overdue', title: a.label || 'Analyse', dueDate: dueDate, daysLate: daysLate, raw: a });
+        });
+        vaccUpcoming.forEach(function(v) {
+          var dueDate = new Date(v.next_due_date);
+          var daysUntil = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+          var urg = daysUntil <= 7 ? 'week' : daysUntil <= 30 ? 'month' : 'quarter';
+          reminders.push({ kind: 'vaccine', urgency: urg, title: v.vaccine_name || 'Vaccin', dueDate: dueDate, daysUntil: daysUntil, raw: v });
+        });
+        analUpcoming.forEach(function(a) {
+          var dueDate = new Date(a.scheduled_date);
+          var daysUntil = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+          var urg = daysUntil <= 7 ? 'week' : daysUntil <= 30 ? 'month' : 'quarter';
+          reminders.push({ kind: 'analysis', urgency: urg, title: a.label || 'Analyse', dueDate: dueDate, daysUntil: daysUntil, raw: a });
+        });
+
+        reminders.sort(function(a, b) {
+          var order = { overdue: 0, week: 1, month: 2, quarter: 3 };
+          return (order[a.urgency] || 4) - (order[b.urgency] || 4);
+        });
+        setUpcomingReminders(reminders);
+      });
+    });
+  };
+
+  useEffect(function() { loadUpcomingReminders(); }, [userId]);
+
+  var REMINDER_STYLES = {
+    overdue: { bg: 'rgba(226,75,74,0.15)', border: '#E24B4A' },
+    week: { bg: 'rgba(226,75,74,0.1)', border: '#E24B4A' },
+    month: { bg: 'rgba(186,117,23,0.1)', border: '#BA7517' },
+    quarter: { bg: 'rgba(29,158,117,0.1)', border: '#1D9E75' },
+  };
+
+  var getReminderText = function(r) {
+    var prefix = r.kind === 'vaccine' ? 'Vaccin' : 'Analyse';
+    if (r.urgency === 'overdue') return prefix + ' ' + r.title + ' en retard de ' + r.daysLate + ' jour' + (r.daysLate > 1 ? 's' : '');
+    if (r.urgency === 'week') return 'Rappel ' + prefix.toLowerCase() + ' ' + r.title + ' — dans ' + r.daysUntil + ' jour' + (r.daysUntil > 1 ? 's' : '');
+    if (r.urgency === 'month') return 'Rappel ' + prefix.toLowerCase() + ' ' + r.title + ' — dans ' + r.daysUntil + ' jours';
+    return prefix + ' ' + r.title + ' prévu le ' + formatCalDate(r.dueDate);
+  };
+
   // ── RENDER CALENDAR SECTION ────────────────────────────────────────────────
   var renderCalendarSection = function() {
     var daysInMonth = getDaysInMonth(calendarMonth, calendarYear);
@@ -2916,6 +2993,39 @@ export const MediBookContent = (props) => {
         </LinearGradient>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(12), paddingBottom: wp(100) }}>
+          {/* Rappels à venir */}
+          {upcomingReminders.length > 0 ? (
+            <View style={{ marginBottom: wp(12) }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(8) }}>Rappels à venir</Text>
+              {upcomingReminders.map(function(rem, ri) {
+                var style = REMINDER_STYLES[rem.urgency] || REMINDER_STYLES.quarter;
+                return (
+                  <Pressable key={ri} delayPressIn={80}
+                    onPress={function() { setReminderDetail(rem); setReminderPostponeDate(''); }}
+                    style={function(state) { return {
+                      backgroundColor: style.bg, borderRadius: wp(12), padding: wp(12),
+                      marginBottom: wp(6), borderLeftWidth: wp(4), borderLeftColor: style.border,
+                      flexDirection: 'row', alignItems: 'center',
+                      transform: [{ scale: state.pressed ? 0.97 : 1 }],
+                    }; }}>
+                    <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(10) }}>
+                      {rem.kind === 'vaccine' ? (
+                        <Path d="M18 2l4 4-9.5 9.5-4-4L18 2zM8.5 11.5L2 18v4h4l6.5-6.5" stroke={style.border} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      ) : (
+                        <Path d="M9 2v6l-5 8a3 3 0 002.6 4.5h10.8A3 3 0 0020 16l-5-8V2M9 2h6" stroke={style.border} strokeWidth="1.5" strokeLinecap="round" />
+                      )}
+                    </Svg>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fp(12), fontWeight: '600', color: style.border }}>{getReminderText(rem)}</Text>
+                      <Text style={{ fontSize: fp(10), color: 'rgba(0,0,0,0.35)', marginTop: wp(1) }}>{formatCalDate(rem.dueDate)}</Text>
+                    </View>
+                    <Text style={{ fontSize: fp(14), color: 'rgba(0,0,0,0.15)' }}>{">"}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
+
           {calendarView === 'month' ? (
           <View>
           {/* Navigation mois */}
