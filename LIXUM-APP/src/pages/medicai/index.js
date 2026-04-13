@@ -878,7 +878,7 @@ export default function MedicAiPage({ navigation }) {
 
     // Diagnostics
     const diagList = medicalData.diagnostics && medicalData.diagnostics.length > 0
-      ? medicalData.diagnostics.map(d => d.condition || d.label || '').join(', ')
+      ? medicalData.diagnostics.map(d => d.condition_name || '').join(', ')
       : '';
 
     // Score vitalité

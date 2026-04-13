@@ -656,6 +656,37 @@ export const MediBookContent = (props) => {
           </View>
         )}
 
+        {/* Section Diagnostics */}
+        {scanResults?.diagnostics && scanResults.diagnostics.length > 0 && (
+          <View style={{ marginTop: wp(20) }}>
+            <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>
+              Diagnostics détectés
+            </Text>
+            {scanResults.diagnostics.map(function(diag, i) {
+              var sevColor = diag.severity === 'severe' ? '#FF6B6B' : diag.severity === 'moderate' ? '#FF8C42' : '#00D984';
+              return (
+                <View key={i} style={{
+                  backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: wp(12),
+                  padding: wp(14), marginBottom: wp(8),
+                  borderLeftWidth: 3, borderLeftColor: '#FF6B6B',
+                }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF', flex: 1 }}>{diag.condition_name}</Text>
+                    <View style={{ backgroundColor: sevColor + '30', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                      <Text style={{ fontSize: fp(9), fontWeight: '700', color: sevColor }}>
+                        {diag.severity === 'severe' ? 'SÉVÈRE' : diag.severity === 'moderate' ? 'MODÉRÉ' : 'LÉGER'}
+                      </Text>
+                    </View>
+                  </View>
+                  {diag.notes ? (
+                    <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.5)', marginTop: wp(3), fontStyle: 'italic' }}>{diag.notes}</Text>
+                  ) : null}
+                </View>
+              );
+            })}
+          </View>
+        )}
+
         {/* Section Alertes */}
         {scanResults?.alerts && scanResults.alerts.length > 0 && (
           <View style={{ marginTop: wp(20) }}>
@@ -747,6 +778,25 @@ export const MediBookContent = (props) => {
                   });
                 }
 
+                // Insérer les diagnostics
+                if (scanResults.diagnostics && scanResults.diagnostics.length > 0) {
+                  await fetch(SUPABASE_URL + '/rest/v1/diagnostics', {
+                    method: 'POST', headers,
+                    body: JSON.stringify(scanResults.diagnostics.map(function(d) {
+                      return {
+                        user_id: userId,
+                        condition_name: d.condition_name,
+                        severity: d.severity || 'moderate',
+                        status: d.status || 'active',
+                        notes: d.notes || null,
+                        diagnosed_date: d.diagnosed_date || null,
+                        diagnosed_by: d.diagnosed_by || null,
+                        source: 'scan',
+                      };
+                    })),
+                  });
+                }
+
                 // Sauvegarder le document scanné
                 await fetch(SUPABASE_URL + '/rest/v1/scanned_documents', {
                   method: 'POST', headers,
@@ -756,7 +806,7 @@ export const MediBookContent = (props) => {
                     summary: scanResults.summary || '',
                     raw_ai_response: scanResults,
                     scan_context: 'medibook',
-                    items_extracted: (scanResults.data?.length || 0) + (scanResults.medications?.length || 0) + (scanResults.vaccinations?.length || 0) + (scanResults.allergies?.length || 0),
+                    items_extracted: (scanResults.data?.length || 0) + (scanResults.medications?.length || 0) + (scanResults.vaccinations?.length || 0) + (scanResults.allergies?.length || 0) + (scanResults.diagnostics?.length || 0),
                   }),
                 });
 
@@ -2221,7 +2271,7 @@ export const MediBookContent = (props) => {
             subtitle={diagCount > 0 ? diagCount + ' diagnostic' + (diagCount > 1 ? 's' : '') : 'Aucun diagnostic enregistré'}
             count={diagCount} color="#FF6B6B"
             icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke="#FF6B6B" strokeWidth="1.5" /><Path d="M3 12h4l3-6 4 12 3-6h4" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
-            onPress={function() { showMbModal('info', 'Diagnostics', 'Détail diagnostics — prochaine mise à jour.'); }}
+            onPress={function() { setReportSection('diagnostics'); }}
           />
 
           <Pressable delayPressIn={120} onPress={() => setReportSection('pdf-preview')} style={{ marginTop: wp(12), marginBottom: wp(16) }}>
@@ -2370,10 +2420,110 @@ export const MediBookContent = (props) => {
     </View>
   );
 
+  // ── RENDER DIAGNOSTICS DETAIL ──────────────────────────────────────────
+  var renderDiagnosticsDetail = function() {
+    var diagList = medicalData.diagnostics || [];
+    var SEVERITY_COLORS = { mild: '#00D984', moderate: '#FF8C42', severe: '#FF6B6B' };
+    var STATUS_STYLES = {
+      active: { bg: 'rgba(255,107,107,0.15)', color: '#FF6B6B', label: 'Actif' },
+      resolved: { bg: 'rgba(0,217,132,0.15)', color: '#00D984', label: 'Résolu' },
+      chronic: { bg: 'rgba(77,166,255,0.15)', color: '#4DA6FF', label: 'Chronique' },
+      monitoring: { bg: 'rgba(241,196,15,0.15)', color: '#F1C40F', label: 'Suivi' },
+    };
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient colors={['#3A3F46', '#252A30']}
+          style={{
+            paddingTop: Platform.OS === 'android' ? 35 : 50,
+            paddingBottom: wp(12), paddingHorizontal: wp(12),
+            flexDirection: 'row', alignItems: 'center',
+            borderBottomWidth: 1, borderBottomColor: '#4A4F55',
+          }}>
+          <Pressable delayPressIn={120} onPress={function() { setReportSection('hub'); }}
+            style={function(state) { return {
+              width: wp(36), height: wp(36), borderRadius: wp(18),
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              justifyContent: 'center', alignItems: 'center', marginRight: wp(10),
+              transform: [{ scale: state.pressed ? 0.92 : 1 }],
+            }; }}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Diagnostics</Text>
+          </View>
+          {renderProfileSwitchButton()}
+        </LinearGradient>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(100) }}>
+          {diagList.length === 0 ? (
+            <View style={{ padding: wp(30), alignItems: 'center' }}>
+              <Svg width={wp(48)} height={wp(48)} viewBox="0 0 24 24" fill="none" style={{ marginBottom: wp(12), opacity: 0.3 }}>
+                <Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke="#FF6B6B" strokeWidth="1.5" />
+                <Path d="M3 12h4l3-6 4 12 3-6h4" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+              <Text style={{ fontSize: fp(14), color: 'rgba(0,0,0,0.3)', textAlign: 'center', lineHeight: fp(20) }}>
+                Aucun diagnostic enregistré.{'\n'}Ajoutez vos diagnostics pour un suivi complet.
+              </Text>
+            </View>
+          ) : (
+            diagList.map(function(diag, i) {
+              var sevColor = SEVERITY_COLORS[diag.severity] || '#999';
+              var statusStyle = STATUS_STYLES[diag.status] || STATUS_STYLES.active;
+              return (
+                <View key={diag.id || i} style={{
+                  backgroundColor: '#FAFBFC', borderRadius: wp(16), padding: wp(16),
+                  marginBottom: wp(10), borderLeftWidth: wp(4), borderLeftColor: sevColor,
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+                }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <View style={{ flex: 1, marginRight: wp(8) }}>
+                      <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#2D3436' }}>{diag.condition_name}</Text>
+                      {diag.diagnosed_by ? (
+                        <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginTop: wp(2) }}>
+                          {'Dr. ' + diag.diagnosed_by}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: wp(6), alignItems: 'center' }}>
+                      <View style={{ backgroundColor: sevColor + '20', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                        <Text style={{ fontSize: fp(9), fontWeight: '700', color: sevColor }}>
+                          {diag.severity === 'severe' ? 'SÉVÈRE' : diag.severity === 'moderate' ? 'MODÉRÉ' : 'LÉGER'}
+                        </Text>
+                      </View>
+                      <View style={{ backgroundColor: statusStyle.bg, borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                        <Text style={{ fontSize: fp(9), fontWeight: '700', color: statusStyle.color }}>{statusStyle.label}</Text>
+                      </View>
+                    </View>
+                  </View>
+                  {diag.diagnosed_date ? (
+                    <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.35)', marginTop: wp(6) }}>
+                      {'Diagnostiqué le ' + new Date(diag.diagnosed_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    </Text>
+                  ) : null}
+                  {diag.notes ? (
+                    <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.45)', marginTop: wp(6), fontStyle: 'italic' }} numberOfLines={2}>
+                      {diag.notes}
+                    </Text>
+                  ) : null}
+                </View>
+              );
+            })
+          )}
+          <BottomSpacer />
+        </ScrollView>
+      </View>
+    );
+  };
+
   const renderMediBookReport = () => {
     if (reportSection === 'pdf-preview') return renderPdfPreview();
     if (reportSection === 'analyses') return renderAnalysesDetail();
     if (reportSection === 'medications') return renderMedicationsDetail();
+    if (reportSection === 'diagnostics') return renderDiagnosticsDetail();
     return renderReportHub();
   };
 
