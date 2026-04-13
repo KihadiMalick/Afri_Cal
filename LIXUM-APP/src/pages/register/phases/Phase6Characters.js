@@ -163,12 +163,6 @@ function Phase6Characters({ lang }) {
         })}
       </View>
 
-      <View style={{ backgroundColor: 'rgba(0,217,132,0.04)', borderRadius: 10, padding: 12, marginBottom: 8,
-        borderWidth: 1, borderColor: 'rgba(0,217,132,0.12)', alignItems: 'center' }}>
-        <Text style={{ color: '#00D984', fontSize: 11, fontWeight: '700', letterSpacing: 1, textAlign: 'center' }}>
-          {lang === 'fr' ? '🎡 Votre premier tour de roue gratuit vous attend !' : '🎡 Your first free spin awaits!'}
-        </Text>
-      </View>
     </View>
   );
 }
