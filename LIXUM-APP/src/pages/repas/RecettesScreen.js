@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../../config/AuthContext';
 var AlixenIcon = require('../../components/AlixenIcon');
 import LixumModal from '../../components/shared/LixumModal';
+import EnergyGateModal from '../../components/shared/EnergyGateModal';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 
 export default function RecettesScreen({
@@ -33,6 +34,7 @@ export default function RecettesScreen({
   initialTab,
 }) {
   var auth = useAuth(); var userId = auth.userId;
+  var updateEnergy = auth.updateEnergy; var refreshLixFromServer = auth.refreshLixFromServer;
   var _lc = useLang(); var lang = _lc.lang;
 
   // === ÉTATS RECETTES ===
@@ -79,6 +81,9 @@ export default function RecettesScreen({
   var _selectedRegion = useState(null); var selectedRegion = _selectedRegion[0]; var setSelectedRegion = _selectedRegion[1];
   var _selectedType = useState(null); var selectedType = _selectedType[0]; var setSelectedType = _selectedType[1];
   var _practicalFilters = useState([]); var practicalFilters = _practicalFilters[0]; var setPracticalFilters = _practicalFilters[1];
+
+  // Energy gate state
+  var _energyGateData = useState(null); var energyGateData = _energyGateData[0]; var setEnergyGateData = _energyGateData[1];
 
   // Modal state
   var _modalCfg = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null, onClose: null, confirmText: 'Confirmer', cancelText: 'Annuler' });
@@ -727,7 +732,12 @@ export default function RecettesScreen({
         }
       );
 
+      if (response.status === 402) {
+        var gateData = await response.json();
+        setEnergyGateData(gateData); setAlixenLoading(false); return;
+      }
       var data = await response.json();
+      if (data.energy_remaining != null) updateEnergy(data.energy_remaining);
       var rawMessage = data.message || data.reply || '';
 
       if (data.proposals && Array.isArray(data.proposals) && data.proposals.length > 0) {
@@ -824,7 +834,12 @@ export default function RecettesScreen({
         }
       );
 
+      if (response.status === 402) {
+        var gateData = await response.json();
+        setEnergyGateData(gateData); setDetailLoading(false); return;
+      }
       var data = await response.json();
+      if (data.energy_remaining != null) updateEnergy(data.energy_remaining);
       var rawMessage = data.message || data.reply || '';
       var details = null;
 
@@ -2906,6 +2921,15 @@ export default function RecettesScreen({
         onClose={modalCfg.onClose || closeModal}
         confirmText={modalCfg.confirmText}
         cancelText={modalCfg.cancelText}
+      />
+      <EnergyGateModal
+        visible={energyGateData !== null}
+        onClose={function() { setEnergyGateData(null); }}
+        energyCost={energyGateData ? energyGateData.energy_cost : 0}
+        energyBalance={energyGateData ? energyGateData.energy_balance : 0}
+        lixBalance={energyGateData ? energyGateData.lix_balance : 0}
+        onRecharge={function() { setEnergyGateData(null); refreshLixFromServer(); }}
+        onViewPlans={function() { setEnergyGateData(null); console.log('Navigate to subscription plans'); }}
       />
     </View>
   );
