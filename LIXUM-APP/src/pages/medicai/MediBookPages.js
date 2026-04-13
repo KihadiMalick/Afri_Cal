@@ -15,6 +15,7 @@ import { useAuth } from '../../config/AuthContext';
 import { supabase } from '../../config/supabase';
 import { BottomSpacer } from './shared';
 import LixumModal from '../../components/shared/LixumModal';
+var NotificationService = require('../../services/NotificationService');
 
 export const mbDataStatus = [
   { name: 'Nutrition', days: 87, total: 90, percent: 96 },
@@ -791,6 +792,16 @@ export const MediBookContent = (props) => {
                       status: 'completed',
                       next_due_date: vac.nextDue || null,
                     }))),
+                  });
+                  // Schedule vaccine reminders for those with next_due_date
+                  scanResults.vaccinations.forEach(function(vac) {
+                    if (vac.nextDue) {
+                      NotificationService.scheduleVaccineReminder({
+                        vaccine_name: vac.name,
+                        next_due_date: vac.nextDue,
+                        dose_number: parseInt(vac.dose) || 1,
+                      }, userId);
+                    }
                   });
                 }
 
@@ -3394,6 +3405,7 @@ export const MediBookContent = (props) => {
                               body: JSON.stringify({ next_due_date: null }),
                             });
                           }).then(function() {
+                            NotificationService.cancelAllReminders(rem.raw.id, userId);
                             setReminderDetail(null);
                             loadUpcomingReminders();
                             if (loadMedicalData) loadMedicalData();
@@ -3404,6 +3416,7 @@ export const MediBookContent = (props) => {
                             method: 'PATCH', headers: Object.assign({}, headers, { 'Prefer': 'return=minimal' }),
                             body: JSON.stringify({ is_scheduled: false, analysis_date: new Date().toISOString().split('T')[0] }),
                           }).then(function() {
+                            NotificationService.cancelAllReminders(rem.raw.id, userId);
                             setReminderDetail(null);
                             loadUpcomingReminders();
                             if (loadMedicalData) loadMedicalData();
@@ -3452,6 +3465,17 @@ export const MediBookContent = (props) => {
                               method: 'PATCH', headers: Object.assign({}, headers, { 'Prefer': 'return=minimal' }),
                               body: JSON.stringify(body),
                             }).then(function() {
+                              // Cancel old notifications then reschedule with new date
+                              NotificationService.cancelAllReminders(rem.raw.id, userId).then(function() {
+                                var updatedRaw = Object.assign({}, rem.raw);
+                                if (rem.kind === 'vaccine') {
+                                  updatedRaw.next_due_date = newDate;
+                                  NotificationService.scheduleVaccineReminder(updatedRaw, userId);
+                                } else {
+                                  updatedRaw.scheduled_date = newDate;
+                                  NotificationService.scheduleAnalysisReminder(updatedRaw, userId);
+                                }
+                              });
                               setReminderDetail(null);
                               setReminderPostponeDate('');
                               loadUpcomingReminders();
