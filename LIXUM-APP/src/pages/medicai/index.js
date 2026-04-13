@@ -1356,6 +1356,85 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         addBotMessage('Analyse planifiée : ' + action.payload.label + ' ✅\nRetrouve-la dans MediBook > Analyses.');
       }
 
+      if (action.type === 'add_full_diagnosis') {
+        var p = action.payload;
+        var startDate = new Date().toISOString().split('T')[0];
+        var insertCount = 0;
+
+        // a) INSERT diagnostic
+        if (p.diagnosis && p.diagnosis.condition_name) {
+          await fetch(SUPABASE_URL + '/rest/v1/diagnostics', {
+            method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+            body: JSON.stringify({
+              user_id: userId,
+              condition_name: p.diagnosis.condition_name,
+              severity: p.diagnosis.severity || 'moderate',
+              status: p.diagnosis.status || 'active',
+              diagnosed_date: p.diagnosis.diagnosed_date || null,
+              diagnosed_by: p.diagnosis.diagnosed_by || null,
+              notes: (p.dietary_notes ? 'Alimentation: ' + p.dietary_notes + '. ' : '') + (p.activity_notes ? 'Activité: ' + p.activity_notes : ''),
+              source: 'alixen',
+            }),
+          });
+          console.log('[ALIXEN] ✅ Diagnostic inséré: ' + p.diagnosis.condition_name);
+          insertCount++;
+        }
+
+        // b) INSERT medications
+        if (p.medications && p.medications.length > 0) {
+          for (var mi = 0; mi < p.medications.length; mi++) {
+            var med = p.medications[mi];
+            var durationDays = parseInt(med.duration) || 7;
+            var endDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            await fetch(SUPABASE_URL + '/rest/v1/medications', {
+              method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+              body: JSON.stringify({
+                user_id: userId,
+                name: med.name,
+                dosage: med.dosage || null,
+                frequency: med.frequency || null,
+                duration: med.duration || null,
+                status: 'active',
+                start_date: startDate,
+                end_date: endDate,
+                reminder_enabled: true,
+                source: 'alixen',
+              }),
+            });
+            console.log('[ALIXEN] ✅ Médicament inséré: ' + med.name);
+            insertCount++;
+          }
+        }
+
+        // c) INSERT scheduled analyses
+        if (p.analyses && p.analyses.length > 0) {
+          for (var ai = 0; ai < p.analyses.length; ai++) {
+            var an = p.analyses[ai];
+            await fetch(SUPABASE_URL + '/rest/v1/medical_analyses', {
+              method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+              body: JSON.stringify({
+                user_id: userId,
+                label: an.label,
+                value: 'À effectuer',
+                status: 'unknown',
+                is_scheduled: true,
+                scheduled_date: an.scheduled_date || null,
+                reminder_enabled: true,
+              }),
+            });
+            console.log('[ALIXEN] ✅ Analyse planifiée: ' + an.label);
+            insertCount++;
+          }
+        }
+
+        loadMedicalData();
+        addBotMessage('Diagnostic complet enregistré ✅\n\n' + insertCount + ' élément' + (insertCount > 1 ? 's' : '') + ' ajouté' + (insertCount > 1 ? 's' : '') + ' dans ton MediBook :\n' +
+          (p.diagnosis ? '• Diagnostic : ' + p.diagnosis.condition_name + '\n' : '') +
+          (p.medications && p.medications.length > 0 ? '• ' + p.medications.length + ' médicament' + (p.medications.length > 1 ? 's' : '') + '\n' : '') +
+          (p.analyses && p.analyses.length > 0 ? '• ' + p.analyses.length + ' analyse' + (p.analyses.length > 1 ? 's' : '') + ' planifiée' + (p.analyses.length > 1 ? 's' : '') + '\n' : '') +
+          '\nRetrouve tout dans MediBook > Mes données.');
+      }
+
       if (action.type === 'navigate') {
         const target = action.payload.target;
         if (target === 'repas') setActiveTab('meals');
