@@ -3294,6 +3294,179 @@ export const MediBookContent = (props) => {
           <BottomSpacer />
         </ScrollView>
 
+        {/* Modal détail rappel */}
+        <Modal visible={reminderDetail !== null} transparent animationType="slide"
+          onRequestClose={function() { setReminderDetail(null); }}>
+          <Pressable onPress={function() { setReminderDetail(null); }}
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+            <Pressable onPress={function() {}}
+              style={{
+                backgroundColor: '#FAFBFC', borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24),
+                padding: wp(20), paddingBottom: wp(40), maxHeight: SCREEN_HEIGHT * 0.65,
+              }}>
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(0,0,0,0.12)', alignSelf: 'center', marginBottom: wp(16) }} />
+              {reminderDetail ? (
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  {/* Type + titre */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(14) }}>
+                    <View style={{
+                      width: wp(40), height: wp(40), borderRadius: wp(12),
+                      backgroundColor: (REMINDER_STYLES[reminderDetail.urgency] || REMINDER_STYLES.quarter).bg,
+                      justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                    }}>
+                      <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                        {reminderDetail.kind === 'vaccine' ? (
+                          <Path d="M18 2l4 4-9.5 9.5-4-4L18 2zM8.5 11.5L2 18v4h4l6.5-6.5" stroke={(REMINDER_STYLES[reminderDetail.urgency] || REMINDER_STYLES.quarter).border} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        ) : (
+                          <Path d="M9 2v6l-5 8a3 3 0 002.6 4.5h10.8A3 3 0 0020 16l-5-8V2M9 2h6" stroke={(REMINDER_STYLES[reminderDetail.urgency] || REMINDER_STYLES.quarter).border} strokeWidth="1.5" strokeLinecap="round" />
+                        )}
+                      </Svg>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#2D3436' }}>{reminderDetail.title}</Text>
+                      <Text style={{ fontSize: fp(12), color: (REMINDER_STYLES[reminderDetail.urgency] || REMINDER_STYLES.quarter).border, fontWeight: '600', marginTop: wp(2) }}>
+                        {reminderDetail.kind === 'vaccine' ? 'Vaccin' : 'Analyse programmée'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Date prévue */}
+                  <View style={{ backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(10) }}>
+                    <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>Date prévue</Text>
+                    <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>{formatCalDate(reminderDetail.dueDate)}</Text>
+                    {reminderDetail.urgency === 'overdue' ? (
+                      <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#E24B4A', marginTop: wp(4) }}>{'En retard de ' + reminderDetail.daysLate + ' jour' + (reminderDetail.daysLate > 1 ? 's' : '')}</Text>
+                    ) : (
+                      <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)', marginTop: wp(4) }}>{'Dans ' + reminderDetail.daysUntil + ' jour' + ((reminderDetail.daysUntil || 0) > 1 ? 's' : '')}</Text>
+                    )}
+                  </View>
+
+                  {/* Médecin prescripteur */}
+                  {reminderDetail.raw && (reminderDetail.raw.prescribed_by || reminderDetail.raw.administered_by) ? (
+                    <View style={{ backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(10) }}>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>Prescripteur</Text>
+                      <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>{reminderDetail.raw.prescribed_by || reminderDetail.raw.administered_by}</Text>
+                    </View>
+                  ) : null}
+
+                  {/* Dose info pour vaccins */}
+                  {reminderDetail.kind === 'vaccine' && reminderDetail.raw && reminderDetail.raw.dose_number ? (
+                    <View style={{ backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(10) }}>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>Dernière dose</Text>
+                      <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>{'Dose ' + reminderDetail.raw.dose_number}</Text>
+                    </View>
+                  ) : null}
+
+                  {/* Bouton Marquer comme fait */}
+                  <Pressable delayPressIn={120}
+                    onPress={function() {
+                      var rem = reminderDetail;
+                      if (!rem || !userId) return;
+                      getAuthHeaders().then(function(headers) {
+                        if (rem.kind === 'vaccine') {
+                          var newDose = (rem.raw.dose_number || 1) + 1;
+                          fetch(SUPABASE_URL + '/rest/v1/vaccinations', {
+                            method: 'POST', headers: headers,
+                            body: JSON.stringify({
+                              user_id: userId,
+                              vaccine_name: rem.raw.vaccine_name,
+                              dose_number: newDose,
+                              administration_date: new Date().toISOString().split('T')[0],
+                              status: 'completed',
+                            }),
+                          }).then(function() {
+                            return fetch(SUPABASE_URL + '/rest/v1/vaccinations?id=eq.' + rem.raw.id, {
+                              method: 'PATCH', headers: Object.assign({}, headers, { 'Prefer': 'return=minimal' }),
+                              body: JSON.stringify({ next_due_date: null }),
+                            });
+                          }).then(function() {
+                            setReminderDetail(null);
+                            loadUpcomingReminders();
+                            if (loadMedicalData) loadMedicalData();
+                            showMbModal('success', 'Vaccin enregistré', rem.title + ' — dose ' + newDose + ' marquée comme faite.');
+                          });
+                        } else {
+                          fetch(SUPABASE_URL + '/rest/v1/medical_analyses?id=eq.' + rem.raw.id, {
+                            method: 'PATCH', headers: Object.assign({}, headers, { 'Prefer': 'return=minimal' }),
+                            body: JSON.stringify({ is_scheduled: false, analysis_date: new Date().toISOString().split('T')[0] }),
+                          }).then(function() {
+                            setReminderDetail(null);
+                            loadUpcomingReminders();
+                            if (loadMedicalData) loadMedicalData();
+                            showMbModal('success', 'Analyse complétée', rem.title + ' marquée comme effectuée.');
+                          });
+                        }
+                      });
+                    }}
+                    style={function(state) { return {
+                      backgroundColor: '#00D984', borderRadius: wp(12),
+                      paddingVertical: wp(14), alignItems: 'center', marginTop: wp(6),
+                      transform: [{ scale: state.pressed ? 0.97 : 1 }],
+                    }; }}>
+                    <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF' }}>Marquer comme fait</Text>
+                  </Pressable>
+
+                  {/* Reporter — mini date input */}
+                  <View style={{ marginTop: wp(10) }}>
+                    <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginBottom: wp(4) }}>Reporter à une nouvelle date (JJ/MM/AAAA)</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+                      <TextInput
+                        value={reminderPostponeDate}
+                        onChangeText={function(t) { setReminderPostponeDate(t); }}
+                        placeholder="ex: 15/06/2026"
+                        placeholderTextColor="rgba(0,0,0,0.2)"
+                        style={{
+                          flex: 1, backgroundColor: 'rgba(0,0,0,0.04)', borderRadius: wp(10),
+                          paddingHorizontal: wp(12), paddingVertical: wp(10), fontSize: fp(13), color: '#2D3436',
+                          borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)',
+                        }}
+                      />
+                      <Pressable delayPressIn={120}
+                        onPress={function() {
+                          var rem = reminderDetail;
+                          if (!rem || !userId || !reminderPostponeDate) return;
+                          var parts = reminderPostponeDate.split('/');
+                          if (parts.length !== 3) { showMbModal('info', 'Format invalide', 'Utilisez le format JJ/MM/AAAA'); return; }
+                          var newDate = parts[2] + '-' + parts[1] + '-' + parts[0];
+                          if (isNaN(new Date(newDate).getTime())) { showMbModal('info', 'Date invalide', 'Vérifiez la date saisie.'); return; }
+                          getAuthHeaders().then(function(headers) {
+                            var table = rem.kind === 'vaccine' ? 'vaccinations' : 'medical_analyses';
+                            var field = rem.kind === 'vaccine' ? 'next_due_date' : 'scheduled_date';
+                            var body = {};
+                            body[field] = newDate;
+                            fetch(SUPABASE_URL + '/rest/v1/' + table + '?id=eq.' + rem.raw.id, {
+                              method: 'PATCH', headers: Object.assign({}, headers, { 'Prefer': 'return=minimal' }),
+                              body: JSON.stringify(body),
+                            }).then(function() {
+                              setReminderDetail(null);
+                              setReminderPostponeDate('');
+                              loadUpcomingReminders();
+                              if (loadMedicalData) loadMedicalData();
+                              showMbModal('success', 'Rappel reporté', rem.title + ' reporté au ' + reminderPostponeDate + '.');
+                            });
+                          });
+                        }}
+                        style={function(state) { return {
+                          backgroundColor: 'transparent', borderRadius: wp(10), borderWidth: 1.5, borderColor: '#00D984',
+                          paddingHorizontal: wp(14), paddingVertical: wp(10),
+                          transform: [{ scale: state.pressed ? 0.95 : 1 }],
+                        }; }}>
+                        <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#00D984' }}>Reporter</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+
+                  {/* Fermer */}
+                  <Pressable delayPressIn={120} onPress={function() { setReminderDetail(null); }}
+                    style={{ alignItems: 'center', marginTop: wp(14), paddingVertical: wp(8) }}>
+                    <Text style={{ fontSize: fp(13), color: 'rgba(0,0,0,0.35)' }}>Fermer</Text>
+                  </Pressable>
+                </ScrollView>
+              ) : null}
+            </Pressable>
+          </Pressable>
+        </Modal>
+
         {/* Modal détail événement */}
         <Modal visible={calEventDetail !== null} transparent animationType="slide"
           onRequestClose={function() { setCalEventDetail(null); }}>
