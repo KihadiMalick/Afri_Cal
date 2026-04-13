@@ -2892,10 +2892,32 @@ export const MediBookContent = (props) => {
             <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Calendrier santé</Text>
             <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>Tous vos événements médicaux</Text>
           </View>
+          {/* Toggle Mois | Année */}
+          <View style={{
+            flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.08)',
+            borderRadius: wp(10), padding: wp(3), marginRight: wp(8),
+          }}>
+            <Pressable delayPressIn={80} onPress={function() { setCalendarView('month'); }}
+              style={{
+                paddingHorizontal: wp(10), paddingVertical: wp(5), borderRadius: wp(8),
+                backgroundColor: calendarView === 'month' ? '#00D984' : 'transparent',
+              }}>
+              <Text style={{ fontSize: fp(10), fontWeight: '700', color: calendarView === 'month' ? '#FFF' : 'rgba(255,255,255,0.5)' }}>Mois</Text>
+            </Pressable>
+            <Pressable delayPressIn={80} onPress={function() { setCalendarView('year'); }}
+              style={{
+                paddingHorizontal: wp(10), paddingVertical: wp(5), borderRadius: wp(8),
+                backgroundColor: calendarView === 'year' ? '#00D984' : 'transparent',
+              }}>
+              <Text style={{ fontSize: fp(10), fontWeight: '700', color: calendarView === 'year' ? '#FFF' : 'rgba(255,255,255,0.5)' }}>Année</Text>
+            </Pressable>
+          </View>
           {renderProfileSwitchButton()}
         </LinearGradient>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(12), paddingBottom: wp(100) }}>
+          {calendarView === 'month' ? (
+          <View>
           {/* Navigation mois */}
           <View style={{
             flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -3070,9 +3092,269 @@ export const MediBookContent = (props) => {
               })}
             </View>
           ) : null}
+          </View>
+          ) : (
+          <View>
+            {/* Vue année — grille 4x3 */}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: '#FAFBFC', borderRadius: wp(14), padding: wp(10), marginBottom: wp(12),
+              shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+            }}>
+              <Pressable delayPressIn={120} onPress={function() { setCalendarYear(calendarYear - 1); }}
+                style={function(state) { return {
+                  width: wp(36), height: wp(36), borderRadius: wp(12),
+                  backgroundColor: state.pressed ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.03)',
+                  justifyContent: 'center', alignItems: 'center',
+                }; }}>
+                <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                  <Path d="M15 19l-7-7 7-7" stroke="#2D3436" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+              </Pressable>
+              <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#2D3436', marginHorizontal: wp(20) }}>{calendarYear}</Text>
+              <Pressable delayPressIn={120} onPress={function() { setCalendarYear(calendarYear + 1); }}
+                style={function(state) { return {
+                  width: wp(36), height: wp(36), borderRadius: wp(12),
+                  backgroundColor: state.pressed ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.03)',
+                  justifyContent: 'center', alignItems: 'center',
+                }; }}>
+                <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                  <Path d="M9 5l7 7-7 7" stroke="#2D3436" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+              </Pressable>
+            </View>
+
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+              {MONTH_NAMES.map(function(mName, mi) {
+                var monthEvents = allEvents.filter(function(e) {
+                  return e.date.getMonth() === mi && e.date.getFullYear() === calendarYear && calendarFilters[e.type];
+                });
+                var eventCount = monthEvents.length;
+                var typesInMonth = {};
+                monthEvents.forEach(function(e) { typesInMonth[e.type] = true; });
+                var pastilleTypes = Object.keys(typesInMonth).slice(0, 5);
+                var isCurrentMonth = mi === new Date().getMonth() && calendarYear === new Date().getFullYear();
+                var cardW = (SCREEN_WIDTH - wp(32) - wp(10) * 3) / 4;
+
+                return (
+                  <Pressable key={mi} delayPressIn={80}
+                    onPress={function() { setCalendarMonth(mi); setCalendarView('month'); setSelectedDay(null); }}
+                    style={function(state) { return {
+                      width: cardW, backgroundColor: '#FAFBFC', borderRadius: wp(12),
+                      padding: wp(8), marginBottom: wp(10), alignItems: 'center',
+                      shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
+                      borderWidth: isCurrentMonth ? 1.5 : 0, borderColor: '#00D984',
+                      transform: [{ scale: state.pressed ? 0.95 : 1 }],
+                    }; }}>
+                    <Text style={{
+                      fontSize: fp(11), fontWeight: '700',
+                      color: isCurrentMonth ? '#00D984' : '#2D3436', marginBottom: wp(4),
+                    }}>
+                      {mName.substring(0, 3)}
+                    </Text>
+                    {eventCount > 0 ? (
+                      <View style={{
+                        backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(8),
+                        paddingHorizontal: wp(6), paddingVertical: wp(2), marginBottom: wp(4),
+                      }}>
+                        <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984' }}>{eventCount}</Text>
+                      </View>
+                    ) : (
+                      <Text style={{ fontSize: fp(9), color: 'rgba(0,0,0,0.2)', marginBottom: wp(4) }}>—</Text>
+                    )}
+                    {pastilleTypes.length > 0 ? (
+                      <View style={{ flexDirection: 'row', gap: wp(2) }}>
+                        {pastilleTypes.map(function(t, pi) {
+                          return (
+                            <View key={pi} style={{
+                              width: wp(5), height: wp(5), borderRadius: wp(2.5),
+                              backgroundColor: CAL_COLORS[t],
+                            }} />
+                          );
+                        })}
+                      </View>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+          )}
 
           <BottomSpacer />
         </ScrollView>
+
+        {/* Modal détail événement */}
+        <Modal visible={calEventDetail !== null} transparent animationType="slide"
+          onRequestClose={function() { setCalEventDetail(null); }}>
+          <Pressable onPress={function() { setCalEventDetail(null); }}
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+            <Pressable onPress={function() {}}
+              style={{
+                backgroundColor: '#FAFBFC', borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24),
+                padding: wp(20), paddingBottom: wp(40), maxHeight: SCREEN_HEIGHT * 0.7,
+              }}>
+              {/* Handle */}
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(0,0,0,0.12)', alignSelf: 'center', marginBottom: wp(16) }} />
+              {calEventDetail ? (
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  {/* Type badge + titre */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
+                    <View style={{
+                      width: wp(12), height: wp(12), borderRadius: wp(6),
+                      backgroundColor: CAL_COLORS[calEventDetail.type], marginRight: wp(10),
+                    }} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#2D3436' }}>{calEventDetail.title}</Text>
+                      <Text style={{ fontSize: fp(12), color: CAL_COLORS[calEventDetail.type], fontWeight: '600', marginTop: wp(2) }}>{CAL_LABELS[calEventDetail.type]}</Text>
+                    </View>
+                  </View>
+
+                  {/* Date */}
+                  <View style={{ backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(12) }}>
+                    <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>Date</Text>
+                    <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>{formatCalDate(calEventDetail.date)}</Text>
+                  </View>
+
+                  {/* Détails selon type */}
+                  {calEventDetail.type === 'diagnostic' && calEventDetail.raw ? (
+                    <View>
+                      <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(10) }}>
+                        {calEventDetail.raw.severity ? (
+                          <View style={{ backgroundColor: (CAL_COLORS.diagnostic) + '15', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
+                            <Text style={{ fontSize: fp(11), fontWeight: '700', color: CAL_COLORS.diagnostic }}>
+                              {calEventDetail.raw.severity === 'severe' ? 'Sévère' : calEventDetail.raw.severity === 'moderate' ? 'Modéré' : 'Léger'}
+                            </Text>
+                          </View>
+                        ) : null}
+                        {calEventDetail.raw.status ? (
+                          <View style={{ backgroundColor: calEventDetail.raw.status === 'active' ? 'rgba(255,107,107,0.12)' : 'rgba(0,217,132,0.12)', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
+                            <Text style={{ fontSize: fp(11), fontWeight: '700', color: calEventDetail.raw.status === 'active' ? '#FF6B6B' : '#00D984' }}>
+                              {calEventDetail.raw.status === 'active' ? 'Actif' : calEventDetail.raw.status === 'resolved' ? 'Résolu' : calEventDetail.raw.status}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      {calEventDetail.raw.diagnosed_by ? (
+                        <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.5)', marginBottom: wp(6) }}>{'Dr. ' + calEventDetail.raw.diagnosed_by}</Text>
+                      ) : null}
+                      {calEventDetail.raw.notes ? (
+                        <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.45)', fontStyle: 'italic', lineHeight: fp(18) }}>{calEventDetail.raw.notes}</Text>
+                      ) : null}
+                    </View>
+                  ) : null}
+
+                  {calEventDetail.type === 'medication' && calEventDetail.raw ? (
+                    <View>
+                      {calEventDetail.raw.dosage ? (
+                        <View style={{ backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(8) }}>
+                          <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>Dosage</Text>
+                          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>{calEventDetail.raw.dosage}</Text>
+                        </View>
+                      ) : null}
+                      {calEventDetail.raw.frequency ? (
+                        <View style={{ backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(8) }}>
+                          <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>Fréquence</Text>
+                          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>{calEventDetail.raw.frequency}</Text>
+                        </View>
+                      ) : null}
+                      {calEventDetail.raw.duration ? (
+                        <View style={{ backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(8) }}>
+                          <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>Durée</Text>
+                          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>{calEventDetail.raw.duration}</Text>
+                        </View>
+                      ) : null}
+                      {calEventDetail.raw.status ? (
+                        <View style={{ backgroundColor: calEventDetail.raw.status === 'active' ? 'rgba(0,217,132,0.12)' : 'rgba(0,0,0,0.04)', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4), alignSelf: 'flex-start' }}>
+                          <Text style={{ fontSize: fp(11), fontWeight: '700', color: calEventDetail.raw.status === 'active' ? '#00D984' : 'rgba(0,0,0,0.4)' }}>
+                            {calEventDetail.raw.status === 'active' ? 'En cours' : 'Terminé'}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  ) : null}
+
+                  {calEventDetail.type === 'vaccination' && calEventDetail.raw ? (
+                    <View>
+                      <View style={{ backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(8) }}>
+                        <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>Dose</Text>
+                        <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>{'Dose ' + (calEventDetail.raw.dose_number || 1)}</Text>
+                      </View>
+                      {calEventDetail.raw.next_due_date ? (
+                        <View style={{ backgroundColor: 'rgba(255,140,66,0.1)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(8) }}>
+                          <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>Prochain rappel</Text>
+                          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FF8C42' }}>{formatCalDate(calEventDetail.raw.next_due_date)}</Text>
+                        </View>
+                      ) : (
+                        <View style={{ backgroundColor: 'rgba(0,217,132,0.1)', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4), alignSelf: 'flex-start' }}>
+                          <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>A jour</Text>
+                        </View>
+                      )}
+                    </View>
+                  ) : null}
+
+                  {calEventDetail.type === 'analysis' && calEventDetail.raw ? (
+                    <View>
+                      {calEventDetail.raw.value ? (
+                        <View style={{ backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(8) }}>
+                          <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>Valeur</Text>
+                          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>{calEventDetail.raw.value}</Text>
+                        </View>
+                      ) : null}
+                      {calEventDetail.raw.status ? (
+                        <View style={{ backgroundColor: (calEventDetail.raw.status === 'normal' ? 'rgba(0,217,132,0.12)' : calEventDetail.raw.status === 'elevated' || calEventDetail.raw.status === 'critical' ? 'rgba(255,107,107,0.12)' : 'rgba(255,140,66,0.12)'), borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4), alignSelf: 'flex-start' }}>
+                          <Text style={{ fontSize: fp(11), fontWeight: '700', color: calEventDetail.raw.status === 'normal' ? '#00D984' : calEventDetail.raw.status === 'elevated' || calEventDetail.raw.status === 'critical' ? '#FF6B6B' : '#FF8C42' }}>
+                            {calEventDetail.raw.status === 'normal' ? 'Normal' : calEventDetail.raw.status === 'elevated' ? 'Élevé' : calEventDetail.raw.status === 'low' ? 'Bas' : 'Critique'}
+                          </Text>
+                        </View>
+                      ) : null}
+                      {calEventDetail.raw.prescribed_by ? (
+                        <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.5)', marginTop: wp(8) }}>{'Prescrit par ' + calEventDetail.raw.prescribed_by}</Text>
+                      ) : null}
+                      {calEventDetail.raw.laboratory ? (
+                        <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.5)', marginTop: wp(4) }}>{'Labo: ' + calEventDetail.raw.laboratory}</Text>
+                      ) : null}
+                    </View>
+                  ) : null}
+
+                  {calEventDetail.type === 'allergy' && calEventDetail.raw ? (
+                    <View>
+                      {calEventDetail.raw.type ? (
+                        <View style={{ backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: wp(12), padding: wp(12), marginBottom: wp(8) }}>
+                          <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>Type</Text>
+                          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>{calEventDetail.raw.type}</Text>
+                        </View>
+                      ) : null}
+                      {calEventDetail.raw.severity ? (
+                        <View style={{ backgroundColor: (calEventDetail.raw.severity === 'severe' || calEventDetail.raw.severity === 'life_threatening' ? 'rgba(255,107,107,0.12)' : calEventDetail.raw.severity === 'moderate' ? 'rgba(255,140,66,0.12)' : 'rgba(0,217,132,0.12)'), borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4), alignSelf: 'flex-start', marginBottom: wp(8) }}>
+                          <Text style={{ fontSize: fp(11), fontWeight: '700', color: calEventDetail.raw.severity === 'severe' || calEventDetail.raw.severity === 'life_threatening' ? '#FF6B6B' : calEventDetail.raw.severity === 'moderate' ? '#FF8C42' : '#00D984' }}>
+                            {calEventDetail.raw.severity === 'severe' ? 'Sévère' : calEventDetail.raw.severity === 'life_threatening' ? 'Vital' : calEventDetail.raw.severity === 'moderate' ? 'Modéré' : 'Léger'}
+                          </Text>
+                        </View>
+                      ) : null}
+                      {calEventDetail.raw.reaction ? (
+                        <View style={{ backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: wp(12), padding: wp(12) }}>
+                          <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginBottom: wp(2) }}>Réaction</Text>
+                          <Text style={{ fontSize: fp(13), color: '#2D3436', lineHeight: fp(18) }}>{calEventDetail.raw.reaction}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  ) : null}
+
+                  {/* Bouton fermer */}
+                  <Pressable delayPressIn={120} onPress={function() { setCalEventDetail(null); }}
+                    style={function(state) { return {
+                      backgroundColor: '#E8ECF0', borderRadius: wp(12),
+                      paddingVertical: wp(12), alignItems: 'center', marginTop: wp(16),
+                      transform: [{ scale: state.pressed ? 0.97 : 1 }],
+                    }; }}>
+                    <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>Fermer</Text>
+                  </Pressable>
+                </ScrollView>
+              ) : null}
+            </Pressable>
+          </Pressable>
+        </Modal>
       </View>
     );
   };
