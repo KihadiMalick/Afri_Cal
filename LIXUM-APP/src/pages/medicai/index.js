@@ -182,6 +182,20 @@ export default function MedicAiPage({ navigation }) {
   var [newDiagDoctor, setNewDiagDoctor] = useState('');
   var [newDiagStatus, setNewDiagStatus] = useState('active');
   var [newDiagNotes, setNewDiagNotes] = useState('');
+  // Add Allergy
+  var [showAddAllergySheet, setShowAddAllergySheet] = useState(false);
+  var [newAllergyAllergen, setNewAllergyAllergen] = useState('');
+  var [newAllergyType, setNewAllergyType] = useState('alimentaire');
+  var [newAllergySeverity, setNewAllergySeverity] = useState('moderate');
+  var [newAllergyReaction, setNewAllergyReaction] = useState('');
+  // Add Vaccination
+  var [showAddVaccSheet, setShowAddVaccSheet] = useState(false);
+  var [newVaccName, setNewVaccName] = useState('');
+  var [newVaccDate, setNewVaccDate] = useState('');
+  var [newVaccDose, setNewVaccDose] = useState(1);
+  var [newVaccNextDue, setNewVaccNextDue] = useState('');
+  var [newVaccDoctor, setNewVaccDoctor] = useState('');
+  var [newVaccBatch, setNewVaccBatch] = useState('');
   const [activeProfile, setActiveProfile] = useState('self');
   const [children, setChildren] = useState([
     { id: 'child-0', name: 'Mon enfant', age: '', free: true },
@@ -2138,6 +2152,69 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     }
   };
 
+  var confirmAddAllergy = async function() {
+    if (!newAllergyAllergen.trim()) { showMModal('info', 'Champ requis', 'Veuillez entrer la substance allergène.'); return; }
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/allergies', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          user_id: userId,
+          allergen: newAllergyAllergen.trim(),
+          type: newAllergyType,
+          severity: newAllergySeverity,
+          reaction: newAllergyReaction.trim() || null,
+          source: 'manual',
+        }),
+      });
+      setShowAddAllergySheet(false);
+      setNewAllergyAllergen(''); setNewAllergyType('alimentaire'); setNewAllergySeverity('moderate'); setNewAllergyReaction('');
+      loadMedicalData();
+      showMModal('success', 'Allergie ajoutée ✓', newAllergyAllergen.trim() + ' a été ajoutée à vos allergies.');
+    } catch (error) {
+      console.error('Erreur ajout allergie:', error);
+      showMModal('error', 'Erreur', 'L\'ajout a échoué. Réessayez.');
+    }
+  };
+
+  var confirmAddVaccination = async function() {
+    if (!newVaccName.trim()) { showMModal('info', 'Champ requis', 'Veuillez entrer le nom du vaccin.'); return; }
+    try {
+      var vaccDate = null;
+      if (newVaccDate.trim()) {
+        var parts = newVaccDate.split('/');
+        vaccDate = parts.length === 3 ? parts[2] + '-' + parts[1] + '-' + parts[0] : newVaccDate;
+      }
+      var nextDue = null;
+      if (newVaccNextDue.trim()) {
+        var ndParts = newVaccNextDue.split('/');
+        nextDue = ndParts.length === 3 ? ndParts[2] + '-' + ndParts[1] + '-' + ndParts[0] : newVaccNextDue;
+      }
+      await fetch(SUPABASE_URL + '/rest/v1/vaccinations', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          user_id: userId,
+          vaccine_name: newVaccName.trim(),
+          administration_date: vaccDate || new Date().toISOString().split('T')[0],
+          dose_number: newVaccDose,
+          next_due_date: nextDue,
+          administered_by: newVaccDoctor.trim() || null,
+          batch_number: newVaccBatch.trim() || null,
+          status: 'completed',
+          source: 'manual',
+        }),
+      });
+      setShowAddVaccSheet(false);
+      setNewVaccName(''); setNewVaccDate(''); setNewVaccDose(1); setNewVaccNextDue(''); setNewVaccDoctor(''); setNewVaccBatch('');
+      loadMedicalData();
+      showMModal('success', 'Vaccin ajouté ✓', newVaccName.trim() + ' a été ajouté à votre carnet vaccinal.');
+    } catch (error) {
+      console.error('Erreur ajout vaccination:', error);
+      showMModal('error', 'Erreur', 'L\'ajout a échoué. Réessayez.');
+    }
+  };
+
   const handleTransferToSecretPocket = (tableName, rowIndex, rowData) => {
     const itemName = typeof rowData[0] === 'object' ? rowData[0].text : rowData[0];
 
@@ -2211,6 +2288,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           showAddMedSheet={showAddMedSheet} setShowAddMedSheet={setShowAddMedSheet}
           showAddAnalysisSheet={showAddAnalysisSheet} setShowAddAnalysisSheet={setShowAddAnalysisSheet}
           showAddDiagSheet={showAddDiagSheet} setShowAddDiagSheet={setShowAddDiagSheet}
+          showAddAllergySheet={showAddAllergySheet} setShowAddAllergySheet={setShowAddAllergySheet}
+          showAddVaccSheet={showAddVaccSheet} setShowAddVaccSheet={setShowAddVaccSheet}
           mbGenerateScale={mbGenerateScale}
         />
         </View>
@@ -2922,6 +3001,20 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         newDiagStatus={newDiagStatus} setNewDiagStatus={setNewDiagStatus}
         newDiagNotes={newDiagNotes} setNewDiagNotes={setNewDiagNotes}
         confirmAddDiagnostic={confirmAddDiagnostic}
+        showAddAllergySheet={showAddAllergySheet} setShowAddAllergySheet={setShowAddAllergySheet}
+        newAllergyAllergen={newAllergyAllergen} setNewAllergyAllergen={setNewAllergyAllergen}
+        newAllergyType={newAllergyType} setNewAllergyType={setNewAllergyType}
+        newAllergySeverity={newAllergySeverity} setNewAllergySeverity={setNewAllergySeverity}
+        newAllergyReaction={newAllergyReaction} setNewAllergyReaction={setNewAllergyReaction}
+        confirmAddAllergy={confirmAddAllergy}
+        showAddVaccSheet={showAddVaccSheet} setShowAddVaccSheet={setShowAddVaccSheet}
+        newVaccName={newVaccName} setNewVaccName={setNewVaccName}
+        newVaccDate={newVaccDate} setNewVaccDate={setNewVaccDate}
+        newVaccDose={newVaccDose} setNewVaccDose={setNewVaccDose}
+        newVaccNextDue={newVaccNextDue} setNewVaccNextDue={setNewVaccNextDue}
+        newVaccDoctor={newVaccDoctor} setNewVaccDoctor={setNewVaccDoctor}
+        newVaccBatch={newVaccBatch} setNewVaccBatch={setNewVaccBatch}
+        confirmAddVaccination={confirmAddVaccination}
       />
       <LixumModal visible={mModal.visible} type={mModal.type} title={mModal.title} message={mModal.message} onConfirm={mModal.onConfirm} onClose={mModal.onClose || closeMModal} confirmText={mModal.confirmText} cancelText={mModal.cancelText} />
       <EnergyGateModal
