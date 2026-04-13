@@ -63,6 +63,19 @@ export const AllModals = (props) => {
     newAnalysisLab, setNewAnalysisLab,
     newAnalysisNotes, setNewAnalysisNotes,
     confirmAddAnalysis,
+    // Add Diagnostic
+    showAddDiagSheet, setShowAddDiagSheet,
+    addDiagStep, setAddDiagStep,
+    diagSearchQuery,
+    diagSearchResults, setDiagSearchResults,
+    selectedDiagFromDb, setSelectedDiagFromDb,
+    searchDiseases, selectDiagFromDb,
+    newDiagSeverity, setNewDiagSeverity,
+    newDiagDate, setNewDiagDate,
+    newDiagDoctor, setNewDiagDoctor,
+    newDiagStatus, setNewDiagStatus,
+    newDiagNotes, setNewDiagNotes,
+    confirmAddDiagnostic,
   } = props;
 
   var _modalsModal = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null });
@@ -1709,6 +1722,246 @@ export const AllModals = (props) => {
                   <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Annuler</Text>
                 </Pressable>
               </ScrollView>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
+      {/* ===== MODAL — Ajouter un diagnostic ===== */}
+      <Modal
+        visible={showAddDiagSheet}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={function() { setShowAddDiagSheet(false); setAddDiagStep('search'); setDiagSearchResults([]); setSelectedDiagFromDb(null); }}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          onPress={function() { setShowAddDiagSheet(false); setAddDiagStep('search'); }}
+        >
+          <Pressable onPress={function(e) { e.stopPropagation(); }}>
+            <LinearGradient
+              colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{
+                borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24),
+                paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34),
+                maxHeight: SCREEN_HEIGHT * 0.85,
+              }}
+            >
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }}/>
+
+              {addDiagStep === 'search' ? (
+                <View>
+                  <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>
+                    Ajouter un diagnostic
+                  </Text>
+                  <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(16) }}>
+                    97+ maladies référencées
+                  </Text>
+
+                  <View style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(14),
+                    paddingHorizontal: wp(14), marginBottom: wp(12),
+                    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                  }}>
+                    <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(8) }}>
+                      <Circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5"/>
+                      <Line x1="16.5" y1="16.5" x2="21" y2="21" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round"/>
+                    </Svg>
+                    <TextInput
+                      style={{ flex: 1, fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
+                      placeholder="Nom de la maladie..."
+                      placeholderTextColor="rgba(255,255,255,0.25)"
+                      value={diagSearchQuery}
+                      onChangeText={searchDiseases}
+                      autoFocus={true}
+                    />
+                    {diagSearchQuery.length > 0 ? (
+                      <Pressable onPress={function() { searchDiseases(''); }}>
+                        <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: fp(16) }}>✕</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+
+                  <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.4 }}>
+                    {diagSearchResults.map(function(disease, i) {
+                      return (
+                        <Pressable key={disease.id || i} delayPressIn={120}
+                          onPress={function() { selectDiagFromDb(disease); }}
+                          style={function(state) { return {
+                            flexDirection: 'row', alignItems: 'center',
+                            paddingVertical: wp(12), paddingHorizontal: wp(12),
+                            backgroundColor: state.pressed ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+                            borderRadius: wp(12), marginBottom: wp(6),
+                            borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+                          }; }}
+                        >
+                          <View style={{
+                            width: wp(38), height: wp(38), borderRadius: wp(12),
+                            backgroundColor: 'rgba(255,107,107,0.1)',
+                            justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                          }}>
+                            <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                              <Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke="#FF6B6B" strokeWidth="1.5" />
+                            </Svg>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{disease.name_fr}</Text>
+                            <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginTop: wp(2) }}>{disease.category || ''}</Text>
+                          </View>
+                          {disease.is_chronic ? (
+                            <View style={{ backgroundColor: 'rgba(77,166,255,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                              <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#4DA6FF' }}>Chronique</Text>
+                            </View>
+                          ) : null}
+                        </Pressable>
+                      );
+                    })}
+
+                    {diagSearchQuery.length >= 3 && diagSearchResults.length === 0 ? (
+                      <View style={{ padding: wp(16), alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginBottom: wp(12) }}>
+                          Aucun résultat pour "{diagSearchQuery}"
+                        </Text>
+                        <Pressable
+                          onPress={function() {
+                            selectDiagFromDb({ name_fr: diagSearchQuery.trim(), source: 'ai', id: null, icd_code: null, category: null, is_chronic: false });
+                          }}
+                          style={function(state) { return {
+                            flexDirection: 'row', alignItems: 'center', gap: wp(6),
+                            backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(12),
+                            paddingHorizontal: wp(14), paddingVertical: wp(10),
+                            borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)',
+                            opacity: state.pressed ? 0.7 : 1,
+                          }; }}
+                        >
+                          <Text style={{ fontSize: fp(12), color: '#D4AF37' }}>Pas trouvé ? Ajouter manuellement</Text>
+                        </Pressable>
+                      </View>
+                    ) : null}
+                  </ScrollView>
+                </View>
+              ) : (
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(16) }}>
+                    <View style={{
+                      width: wp(44), height: wp(44), borderRadius: wp(14),
+                      backgroundColor: 'rgba(255,107,107,0.12)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                    }}>
+                      <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                        <Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke="#FF6B6B" strokeWidth="1.5" />
+                      </Svg>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF' }}>{selectedDiagFromDb ? selectedDiagFromDb.name_fr : ''}</Text>
+                      {selectedDiagFromDb && selectedDiagFromDb.category ? (
+                        <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginTop: wp(2) }}>{selectedDiagFromDb.category}</Text>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(8) }}>Sévérité</Text>
+                  <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16) }}>
+                    {[
+                      { key: 'mild', label: 'Légère', color: '#00D984' },
+                      { key: 'moderate', label: 'Modérée', color: '#FF8C42' },
+                      { key: 'severe', label: 'Sévère', color: '#FF6B6B' },
+                    ].map(function(sev) {
+                      var isActive = newDiagSeverity === sev.key;
+                      return (
+                        <Pressable key={sev.key} onPress={function() { setNewDiagSeverity(sev.key); }}
+                          style={{
+                            flex: 1, paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center',
+                            backgroundColor: isActive ? sev.color + '20' : 'rgba(255,255,255,0.04)',
+                            borderWidth: 1.5, borderColor: isActive ? sev.color : 'rgba(255,255,255,0.08)',
+                          }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '700', color: isActive ? sev.color : 'rgba(255,255,255,0.4)' }}>{sev.label}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(8) }}>Statut</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8), marginBottom: wp(16) }}>
+                    {[
+                      { key: 'active', label: 'Actif', color: '#FF6B6B' },
+                      { key: 'chronic', label: 'Chronique', color: '#4DA6FF' },
+                      { key: 'monitoring', label: 'En rémission', color: '#F1C40F' },
+                      { key: 'resolved', label: 'Résolu', color: '#00D984' },
+                    ].map(function(st) {
+                      var isActive = newDiagStatus === st.key;
+                      return (
+                        <Pressable key={st.key} onPress={function() { setNewDiagStatus(st.key); }}
+                          style={{
+                            paddingVertical: wp(10), paddingHorizontal: wp(14), borderRadius: wp(10),
+                            backgroundColor: isActive ? st.color + '20' : 'rgba(255,255,255,0.04)',
+                            borderWidth: 1.5, borderColor: isActive ? st.color : 'rgba(255,255,255,0.08)',
+                          }}>
+                          <Text style={{ fontSize: fp(12), fontWeight: '700', color: isActive ? st.color : 'rgba(255,255,255,0.4)' }}>{st.label}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Date du diagnostic</Text>
+                  <View style={{
+                    backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12),
+                    paddingHorizontal: wp(14), marginBottom: wp(14),
+                    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                  }}>
+                    <TextInput
+                      style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
+                      placeholder="JJ/MM/AAAA"
+                      placeholderTextColor="rgba(255,255,255,0.25)"
+                      value={newDiagDate}
+                      onChangeText={setNewDiagDate}
+                      keyboardType="numeric"
+                    />
+                  </View>
+
+                  <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Diagnostiqué par</Text>
+                  <View style={{
+                    backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12),
+                    paddingHorizontal: wp(14), marginBottom: wp(14),
+                    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                  }}>
+                    <TextInput
+                      style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
+                      placeholder="Nom du médecin"
+                      placeholderTextColor="rgba(255,255,255,0.25)"
+                      value={newDiagDoctor}
+                      onChangeText={setNewDiagDoctor}
+                    />
+                  </View>
+
+                  <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Notes</Text>
+                  <View style={{
+                    backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12),
+                    paddingHorizontal: wp(14), marginBottom: wp(20),
+                    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+                  }}>
+                    <TextInput
+                      style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12), minHeight: wp(60) }}
+                      placeholder="Observations, contexte..."
+                      placeholderTextColor="rgba(255,255,255,0.25)"
+                      value={newDiagNotes}
+                      onChangeText={setNewDiagNotes}
+                      multiline
+                    />
+                  </View>
+
+                  <Pressable delayPressIn={120} onPress={confirmAddDiagnostic}>
+                    <LinearGradient colors={['#00D984', '#00B871']}
+                      style={{ paddingVertical: wp(16), borderRadius: wp(14), alignItems: 'center', marginBottom: wp(10) }}>
+                      <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>Confirmer et ajouter</Text>
+                    </LinearGradient>
+                  </Pressable>
+
+                  <Pressable onPress={function() { setAddDiagStep('search'); setSelectedDiagFromDb(null); }}
+                    style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                    <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>← Changer</Text>
+                  </Pressable>
+                </ScrollView>
+              )}
             </LinearGradient>
           </Pressable>
         </Pressable>

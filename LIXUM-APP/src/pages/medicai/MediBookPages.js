@@ -211,6 +211,7 @@ export const MediBookContent = (props) => {
     // Modals
     showAddMedSheet, setShowAddMedSheet,
     showAddAnalysisSheet, setShowAddAnalysisSheet,
+    showAddDiagSheet, setShowAddDiagSheet,
     // Animation
     mbGenerateScale,
   } = props;
@@ -2515,6 +2516,28 @@ export const MediBookContent = (props) => {
           )}
           <BottomSpacer />
         </ScrollView>
+
+        <View style={{ position: 'absolute', bottom: wp(30), left: 0, right: 0, alignItems: 'center' }}>
+          <Pressable
+            delayPressIn={120}
+            onPress={function() { setShowAddDiagSheet(true); }}
+            style={function(state) { return {
+              flexDirection: 'row', alignItems: 'center',
+              backgroundColor: '#FF6B6B',
+              borderRadius: wp(28), paddingHorizontal: wp(22), paddingVertical: wp(14),
+              shadowColor: '#FF6B6B', shadowOpacity: 0.4, shadowRadius: 12,
+              shadowOffset: { width: 0, height: 4 }, elevation: 8,
+              gap: wp(8),
+              transform: [{ scale: state.pressed ? 0.95 : 1 }],
+            }; }}
+          >
+            <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+              <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+              <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
+            </Svg>
+            <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FFF' }}>Ajouter un diagnostic</Text>
+          </Pressable>
+        </View>
       </View>
     );
   };

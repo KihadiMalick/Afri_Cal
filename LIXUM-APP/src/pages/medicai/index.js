@@ -171,6 +171,17 @@ export default function MedicAiPage({ navigation }) {
   const [newAnalysisDoctor, setNewAnalysisDoctor] = useState('');
   const [newAnalysisLab, setNewAnalysisLab] = useState('');
   const [newAnalysisNotes, setNewAnalysisNotes] = useState('');
+  // Add Diagnostic
+  var [showAddDiagSheet, setShowAddDiagSheet] = useState(false);
+  var [addDiagStep, setAddDiagStep] = useState('search');
+  var [diagSearchQuery, setDiagSearchQuery] = useState('');
+  var [diagSearchResults, setDiagSearchResults] = useState([]);
+  var [selectedDiagFromDb, setSelectedDiagFromDb] = useState(null);
+  var [newDiagSeverity, setNewDiagSeverity] = useState('moderate');
+  var [newDiagDate, setNewDiagDate] = useState('');
+  var [newDiagDoctor, setNewDiagDoctor] = useState('');
+  var [newDiagStatus, setNewDiagStatus] = useState('active');
+  var [newDiagNotes, setNewDiagNotes] = useState('');
   const [activeProfile, setActiveProfile] = useState('self');
   const [children, setChildren] = useState([
     { id: 'child-0', name: 'Mon enfant', age: '', free: true },
@@ -1281,6 +1292,23 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         addBotMessage('Médicament ajouté : ' + action.payload.name + ' ✅\nRetrouve-le dans MediBook > Médicaments.');
       }
 
+      if (action.type === 'add_diagnostic') {
+        await fetch(SUPABASE_URL + '/rest/v1/diagnostics', {
+          method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            user_id: userId,
+            condition_name: action.payload.condition_name,
+            severity: action.payload.severity || 'moderate',
+            status: action.payload.status || 'active',
+            diagnosed_date: action.payload.diagnosed_date || null,
+            diagnosed_by: action.payload.diagnosed_by || null,
+            notes: action.payload.notes || null,
+            source: 'alixen',
+          }),
+        });
+        addBotMessage('Diagnostic ajouté : ' + action.payload.condition_name + ' ✅\nRetrouve-le dans MediBook > Diagnostics.');
+      }
+
       if (action.type === 'add_analysis') {
         await fetch(SUPABASE_URL + '/rest/v1/medical_analyses', {
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
@@ -2032,6 +2060,67 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     }
   };
 
+  // ── DIAGNOSTIC — Recherche DB + sélection + confirmation ──────────────
+  var searchDiseases = async function(query) {
+    setDiagSearchQuery(query);
+    if (query.length < 2) { setDiagSearchResults([]); return; }
+    try {
+      var res = await fetch(
+        SUPABASE_URL + '/rest/v1/rpc/search_diseases_db',
+        {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_query: query, p_limit: 8 }),
+        }
+      );
+      var data = await res.json();
+      if (Array.isArray(data)) setDiagSearchResults(data);
+    } catch (error) {
+      console.error('Erreur recherche maladie:', error);
+    }
+  };
+
+  var selectDiagFromDb = function(disease) {
+    setSelectedDiagFromDb(disease);
+    setNewDiagStatus(disease.is_chronic ? 'chronic' : 'active');
+    setAddDiagStep('details');
+  };
+
+  var confirmAddDiagnostic = async function() {
+    if (!selectedDiagFromDb) return;
+    try {
+      var diagDate = null;
+      if (newDiagDate.trim()) {
+        var parts = newDiagDate.split('/');
+        diagDate = parts.length === 3 ? parts[2] + '-' + parts[1] + '-' + parts[0] : newDiagDate;
+      }
+      await fetch(SUPABASE_URL + '/rest/v1/diagnostics', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          user_id: userId,
+          condition_name: selectedDiagFromDb.name_fr,
+          icd_code: selectedDiagFromDb.icd_code || null,
+          severity: newDiagSeverity,
+          diagnosed_date: diagDate,
+          diagnosed_by: newDiagDoctor.trim() || null,
+          status: newDiagStatus,
+          notes: newDiagNotes.trim() || null,
+          disease_db_id: selectedDiagFromDb.id || null,
+          source: selectedDiagFromDb.source === 'ai' ? 'ai' : 'manual',
+        }),
+      });
+      setShowAddDiagSheet(false);
+      setAddDiagStep('search'); setDiagSearchQuery(''); setDiagSearchResults([]); setSelectedDiagFromDb(null);
+      setNewDiagSeverity('moderate'); setNewDiagDate(''); setNewDiagDoctor(''); setNewDiagStatus('active'); setNewDiagNotes('');
+      loadMedicalData();
+      showMModal('success', 'Diagnostic ajouté ✓', selectedDiagFromDb.name_fr + ' a été ajouté à vos diagnostics.');
+    } catch (error) {
+      console.error('Erreur ajout diagnostic:', error);
+      showMModal('error', 'Erreur', 'L\'ajout a échoué. Réessayez.');
+    }
+  };
+
   const handleTransferToSecretPocket = (tableName, rowIndex, rowData) => {
     const itemName = typeof rowData[0] === 'object' ? rowData[0].text : rowData[0];
 
@@ -2104,6 +2193,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           archiveMedication={archiveMedication}
           showAddMedSheet={showAddMedSheet} setShowAddMedSheet={setShowAddMedSheet}
           showAddAnalysisSheet={showAddAnalysisSheet} setShowAddAnalysisSheet={setShowAddAnalysisSheet}
+          showAddDiagSheet={showAddDiagSheet} setShowAddDiagSheet={setShowAddDiagSheet}
           mbGenerateScale={mbGenerateScale}
         />
         </View>
@@ -2803,6 +2893,18 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         newAnalysisLab={newAnalysisLab} setNewAnalysisLab={setNewAnalysisLab}
         newAnalysisNotes={newAnalysisNotes} setNewAnalysisNotes={setNewAnalysisNotes}
         confirmAddAnalysis={confirmAddAnalysis}
+        showAddDiagSheet={showAddDiagSheet} setShowAddDiagSheet={setShowAddDiagSheet}
+        addDiagStep={addDiagStep} setAddDiagStep={setAddDiagStep}
+        diagSearchQuery={diagSearchQuery}
+        diagSearchResults={diagSearchResults} setDiagSearchResults={setDiagSearchResults}
+        selectedDiagFromDb={selectedDiagFromDb} setSelectedDiagFromDb={setSelectedDiagFromDb}
+        searchDiseases={searchDiseases} selectDiagFromDb={selectDiagFromDb}
+        newDiagSeverity={newDiagSeverity} setNewDiagSeverity={setNewDiagSeverity}
+        newDiagDate={newDiagDate} setNewDiagDate={setNewDiagDate}
+        newDiagDoctor={newDiagDoctor} setNewDiagDoctor={setNewDiagDoctor}
+        newDiagStatus={newDiagStatus} setNewDiagStatus={setNewDiagStatus}
+        newDiagNotes={newDiagNotes} setNewDiagNotes={setNewDiagNotes}
+        confirmAddDiagnostic={confirmAddDiagnostic}
       />
       <LixumModal visible={mModal.visible} type={mModal.type} title={mModal.title} message={mModal.message} onConfirm={mModal.onConfirm} onClose={mModal.onClose || closeMModal} confirmText={mModal.confirmText} cancelText={mModal.cancelText} />
       <EnergyGateModal
