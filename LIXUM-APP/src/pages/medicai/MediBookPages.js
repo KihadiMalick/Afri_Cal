@@ -2304,12 +2304,26 @@ export const MediBookContent = (props) => {
             onPress={function() { setReportSection('diagnostics'); }}
           />
 
-          <SectionCard title="Calendrier de santé"
-            subtitle={(doneAnalyses + activeCount + terminatedCount + allergiesCount + vaccCount + diagCount) + ' événements médicaux'}
-            count="" color="#D4AF37"
-            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Rect x="3" y="4" width="18" height="18" rx="2" stroke="#D4AF37" strokeWidth="1.5" /><Line x1="16" y1="2" x2="16" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" /><Line x1="8" y1="2" x2="8" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" /><Line x1="3" y1="10" x2="21" y2="10" stroke="#D4AF37" strokeWidth="1.5" /></Svg>}
-            onPress={function() { setReportSection('calendar'); setSelectedDay(null); }}
-          />
+          <View>
+            <SectionCard title="Calendrier de santé"
+              subtitle={(doneAnalyses + activeCount + terminatedCount + allergiesCount + vaccCount + diagCount) + ' événements médicaux'}
+              count="" color="#D4AF37"
+              icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Rect x="3" y="4" width="18" height="18" rx="2" stroke="#D4AF37" strokeWidth="1.5" /><Line x1="16" y1="2" x2="16" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" /><Line x1="8" y1="2" x2="8" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" /><Line x1="3" y1="10" x2="21" y2="10" stroke="#D4AF37" strokeWidth="1.5" /></Svg>}
+              onPress={function() { setReportSection('calendar'); setSelectedDay(null); }}
+            />
+            {upcomingReminders.filter(function(r) { return r.urgency === 'overdue' || r.urgency === 'week' || r.urgency === 'month'; }).length > 0 ? (
+              <View style={{
+                position: 'absolute', top: wp(-4), right: wp(-4),
+                width: wp(20), height: wp(20), borderRadius: wp(10),
+                backgroundColor: '#E24B4A', justifyContent: 'center', alignItems: 'center',
+                zIndex: 10,
+              }}>
+                <Text style={{ fontSize: fp(10), fontWeight: '800', color: '#FFF' }}>
+                  {upcomingReminders.filter(function(r) { return r.urgency === 'overdue' || r.urgency === 'week' || r.urgency === 'month'; }).length}
+                </Text>
+              </View>
+            ) : null}
+          </View>
 
           <Pressable delayPressIn={120} onPress={() => setReportSection('pdf-preview')} style={{ marginTop: wp(12), marginBottom: wp(16) }}>
             <LinearGradient colors={['#00D984', '#00B871']}
