@@ -101,7 +101,7 @@ serve(async (req: Request) => {
 
   try {
     // === ALIXEN SUPER CONTEXT v1 — Extended body fields ===
-    const { messages, userId, userContext, imageBase64, mimeType, user_lat, user_lng, alixen_context } = await req.json();
+    const { messages, userId, userContext, imageBase64, mimeType, user_lat, user_lng, alixen_context, mode } = await req.json();
 
     const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
     if (!ANTHROPIC_API_KEY) {
@@ -248,6 +248,51 @@ Tu veux que je sauvegarde ce menu dans ta page Repas ?
       }
     }
 
+    // ═══ ENERGY GATE — check & deduct before AI call ═══
+    const ENERGY_COSTS: Record<string, number> = { chat: 6, xscan: 12, gallery: 12, recipe: 8, medic: 30, cartscan: 1, manual_entry: 3 };
+
+    // Determine feature type
+    let feature = 'chat';
+    if (mode === 'recipe') {
+      feature = 'recipe';
+    } else if (imageBase64) {
+      feature = 'gallery';
+    }
+
+    let gateResult: any = null;
+    if (userId) {
+      const gateResponse = await fetch(
+        Deno.env.get('SUPABASE_URL') + '/rest/v1/rpc/check_and_deduct_energy',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+            'Authorization': 'Bearer ' + Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+          },
+          body: JSON.stringify({
+            p_user_id: userId,
+            p_energy_cost: ENERGY_COSTS[feature] || 6,
+            p_feature: feature,
+          }),
+        }
+      );
+      gateResult = await gateResponse.json();
+
+      if (!gateResult.allowed) {
+        return new Response(JSON.stringify({
+          error: 'energy_required',
+          reason: gateResult.reason,
+          energy_balance: gateResult.energy_balance,
+          lix_balance: gateResult.lix_balance,
+          energy_cost: gateResult.energy_cost,
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Appel à l'API Anthropic
     const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -273,6 +318,35 @@ Tu veux que je sauvegarde ce menu dans ta page Repas ?
     const result = await anthropicResponse.json();
     const replyText = result.content?.[0]?.text || 'Désolé, je n\'ai pas pu générer de réponse.';
     const usage = result.usage;
+
+    // ═══ ENERGY LOG — log usage after successful AI call ═══
+    if (gateResult && gateResult.reason !== 'onboarding_free' && userId) {
+      try {
+        await fetch(
+          Deno.env.get('SUPABASE_URL') + '/rest/v1/energy_log',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+              'Authorization': 'Bearer ' + Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify({
+              user_id: userId,
+              amount: gateResult.energy_cost,
+              direction: 'debit',
+              source: 'ai_call',
+              feature: feature,
+              edge_function: 'lixman-chat',
+              tokens_used: (usage?.input_tokens || 0) + (usage?.output_tokens || 0),
+            }),
+          }
+        );
+      } catch (logErr) {
+        console.error('Energy log error (non-blocking):', logErr);
+      }
+    }
 
     // Parser le bloc ALIXEN_DATA si présent
     let visual = null;
@@ -309,6 +383,11 @@ Tu veux que je sauvegarde ce menu dans ta page Repas ?
       visual: visual,
       pending_action: pendingAction,
       emotion: emotion,
+      energy_remaining: gateResult ? gateResult.energy_balance : null,
+      gate_reason: gateResult ? gateResult.reason : null,
+      ...(gateResult && gateResult.reason === 'onboarding_free' && gateResult.onboarding_remaining
+        ? { onboarding_remaining: gateResult.onboarding_remaining }
+        : {}),
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

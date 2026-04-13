@@ -33,6 +33,7 @@ import { AllModals } from './Modals';
 import AlertSheet from './AlertSheet';
 import { AlixenFace, FunnelBridgeUnified, getWireMode, FRAME_W, FRAME_H, MODULE_H, BRIDGE_TOP } from './alixenzone';
 import PageHeader from '../../components/shared/PageHeader';
+import EnergyGateModal from '../../components/shared/EnergyGateModal';
 
 
 
@@ -40,7 +41,10 @@ export default function MedicAiPage({ navigation }) {
   var auth = useAuth();
   var userId = auth.userId;
   var lixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
-  var userEnergy = auth.energy; var refreshLixFromServer = auth.refreshLixFromServer;
+  var userEnergy = auth.energy; var updateEnergy = auth.updateEnergy; var refreshLixFromServer = auth.refreshLixFromServer;
+
+  // Energy gate state (server-side 402)
+  var _energyGateData = useState(null); var energyGateData = _energyGateData[0]; var setEnergyGateData = _energyGateData[1];
 
   // Modal state
   var _mModal = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null, onClose: null, confirmText: 'Confirmer', cancelText: 'Annuler' });
@@ -78,15 +82,11 @@ export default function MedicAiPage({ navigation }) {
   const [userProfile, setUserProfile] = useState(null);
   const [todaySummary, setTodaySummary] = useState(null);
   const [todayMeals, setTodayMeals] = useState([]);
-  const [energyUsed, setEnergyUsed] = useState(0);
-  const [energyLimit, setEnergyLimit] = useState(ENERGY_CONFIG.FREE_DAILY_ENERGY);
   const [userNameAvatar, setUserNameAvatar] = useState('');
   const [activeCharAvatar, setActiveCharAvatar] = useState(null);
   // === ALIXEN SUPER CONTEXT v1 — Geolocation + Super Context ===
   const [userLocation, setUserLocation] = useState(null);
   const alixenContextRef = useRef(null);
-
-  const [lastResetTime, setLastResetTime] = useState(Date.now());
 
   // Plats disponibles + modal recette
   const [availableMeals, setAvailableMeals] = useState([]);
@@ -171,6 +171,17 @@ export default function MedicAiPage({ navigation }) {
   const [newAnalysisDoctor, setNewAnalysisDoctor] = useState('');
   const [newAnalysisLab, setNewAnalysisLab] = useState('');
   const [newAnalysisNotes, setNewAnalysisNotes] = useState('');
+  // Add Diagnostic
+  var [showAddDiagSheet, setShowAddDiagSheet] = useState(false);
+  var [addDiagStep, setAddDiagStep] = useState('search');
+  var [diagSearchQuery, setDiagSearchQuery] = useState('');
+  var [diagSearchResults, setDiagSearchResults] = useState([]);
+  var [selectedDiagFromDb, setSelectedDiagFromDb] = useState(null);
+  var [newDiagSeverity, setNewDiagSeverity] = useState('moderate');
+  var [newDiagDate, setNewDiagDate] = useState('');
+  var [newDiagDoctor, setNewDiagDoctor] = useState('');
+  var [newDiagStatus, setNewDiagStatus] = useState('active');
+  var [newDiagNotes, setNewDiagNotes] = useState('');
   const [activeProfile, setActiveProfile] = useState('self');
   const [children, setChildren] = useState([
     { id: 'child-0', name: 'Mon enfant', age: '', free: true },
@@ -211,17 +222,6 @@ export default function MedicAiPage({ navigation }) {
   const [scanContext, setScanContext] = useState(null);
   const [scanCategory, setScanCategory] = useState(null);
   const [scanFileName, setScanFileName] = useState('');
-
-  // Énergie — valeurs dérivées
-  const energyLeft = Math.max(0, energyLimit - energyUsed);
-  const energyPercent = Math.max(0, Math.min(100, (energyLeft / energyLimit) * 100));
-  const getEnergyColor = (pct) => {
-    if (pct > 60) return '#00D984';
-    if (pct > 35) return '#F1C40F';
-    if (pct > 15) return '#FF8C42';
-    return '#FF6B6B';
-  };
-  const energyColor = getEnergyColor(energyPercent);
 
   // === ALIXEN Face State — dérivé des variables de chat ===
   const getAlixenState = function() {
@@ -300,15 +300,6 @@ export default function MedicAiPage({ navigation }) {
       preciserTimersRef.current.forEach(function(t) { clearTimeout(t); });
     };
   }, []);
-
-  // Progress bar color — evolves with message count
-  const getProgressColor = () => {
-    const progress = Math.min((energyUsed / energyLimit) * 100, 100);
-    if (progress < 50) return 'rgba(0, 217, 132, 0.25)';
-    if (progress < 75) return 'rgba(255, 140, 66, 0.25)';
-    if (progress < 90) return 'rgba(255, 107, 107, 0.25)';
-    return 'rgba(231, 76, 60, 0.35)';
-  };
 
   // Dynamic Secret Pocket categories with real counts
   const spCategories = useMemo(function() { return [
@@ -431,22 +422,6 @@ export default function MedicAiPage({ navigation }) {
     }
   }, [mediBookView]);
 
-  // ── Lock quand quota atteint ──────────────────────────────────────────────
-  useEffect(() => {
-    setIsLocked(energyUsed >= energyLimit);
-  }, [energyUsed, energyLimit]);
-
-  // ── Timer reset automatique 6h ────────────────────────────────────────────
-  useEffect(() => {
-    const checkReset = setInterval(() => {
-      if (Date.now() - lastResetTime >= ENERGY_CONFIG.SESSION_DURATION_MS) {
-        setEnergyUsed(0);
-        setLastResetTime(Date.now());
-        setIsLocked(false);
-      }
-    }, 60000);
-    return () => clearInterval(checkReset);
-  }, [lastResetTime]);
 
   const addBotMessage = useCallback((text) => {
     setMessages(prev => {
@@ -503,8 +478,6 @@ export default function MedicAiPage({ navigation }) {
       if (profileData.length > 0) {
         setUserProfile(profileData[0]);
         if (profileData[0].language) setUserLang(profileData[0].language === 'EN' ? 'EN' : 'FR');
-        var daysSinceCreation = Math.floor((Date.now() - new Date(profileData[0].created_at).getTime()) / 86400000);
-        setEnergyLimit(daysSinceCreation <= ENERGY_CONFIG.ONBOARDING_DAYS ? ENERGY_CONFIG.ONBOARDING_DAILY_ENERGY : ENERGY_CONFIG.FREE_DAILY_ENERGY);
       }
 
       const today = new Date().toISOString().split('T')[0];
@@ -540,8 +513,8 @@ export default function MedicAiPage({ navigation }) {
       );
       const data = await res.json();
       if (data.length > 0) {
-        const usedEnergy = Math.ceil((data[0].tokens_used || 0) / ENERGY_CONFIG.TOKEN_DIVISOR_SONNET);
-        setEnergyUsed(usedEnergy);
+        // Energy is now server-side — refresh from auth
+        refreshLixFromServer();
       }
     } catch (error) {
       // Pas grave, on affiche les défauts
@@ -916,7 +889,7 @@ export default function MedicAiPage({ navigation }) {
 
     // Diagnostics
     const diagList = medicalData.diagnostics && medicalData.diagnostics.length > 0
-      ? medicalData.diagnostics.map(d => d.condition || d.label || '').join(', ')
+      ? medicalData.diagnostics.map(d => d.condition_name || '').join(', ')
       : '';
 
     // Score vitalité
@@ -1086,6 +1059,10 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           }
         );
 
+        if (response.status === 402) {
+          var gateData = await response.json();
+          setEnergyGateData(gateData); setIsLoading(false); setCardIsLoading(false); return;
+        }
         const data = await response.json();
         const replyText = data.message || data.error || 'Erreur de connexion.';
 
@@ -1113,10 +1090,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           }];
         });
 
-        if (data.tokens_used) {
-          const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
-          setEnergyUsed(prev => prev + energyCost);
-        }
+        if (data.energy_remaining != null) updateEnergy(data.energy_remaining);
       } catch (error) {
         console.error('Erreur envoi image ALIXEN:', error);
         setLoadingSteps([]);
@@ -1210,6 +1184,10 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           }
         );
 
+        if (response.status === 402) {
+          var gateData = await response.json();
+          setEnergyGateData(gateData); setIsLoading(false); setCardIsLoading(false); return;
+        }
         const data = await response.json();
         const replyText = data.message || data.error || 'Erreur de connexion.';
 
@@ -1234,10 +1212,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           }];
         });
 
-        if (data.tokens_used) {
-          const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
-          setEnergyUsed(prev => prev + energyCost);
-        }
+        if (data.energy_remaining != null) updateEnergy(data.energy_remaining);
       } catch (error) {
         console.error('Erreur Quick Reply:', error);
         setLoadingSteps([]);
@@ -1315,6 +1290,23 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           }),
         });
         addBotMessage('Médicament ajouté : ' + action.payload.name + ' ✅\nRetrouve-le dans MediBook > Médicaments.');
+      }
+
+      if (action.type === 'add_diagnostic') {
+        await fetch(SUPABASE_URL + '/rest/v1/diagnostics', {
+          method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            user_id: userId,
+            condition_name: action.payload.condition_name,
+            severity: action.payload.severity || 'moderate',
+            status: action.payload.status || 'active',
+            diagnosed_date: action.payload.diagnosed_date || null,
+            diagnosed_by: action.payload.diagnosed_by || null,
+            notes: action.payload.notes || null,
+            source: 'alixen',
+          }),
+        });
+        addBotMessage('Diagnostic ajouté : ' + action.payload.condition_name + ' ✅\nRetrouve-le dans MediBook > Diagnostics.');
       }
 
       if (action.type === 'add_analysis') {
@@ -1521,6 +1513,10 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         }
       );
 
+      if (response.status === 402) {
+        var gateData = await response.json();
+        setEnergyGateData(gateData); setIsLoading(false); setCardIsLoading(false); return;
+      }
       const data = await response.json();
       const replyText = data.message || data.error || "Erreur de connexion.";
 
@@ -1551,10 +1547,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         return [...prev, botMsg];
       });
 
-      if (data.tokens_used) {
-        const energyCost = Math.ceil(data.tokens_used / ENERGY_CONFIG.TOKEN_DIVISOR);
-        setEnergyUsed(prev => prev + energyCost);
-      }
+      if (data.energy_remaining != null) updateEnergy(data.energy_remaining);
 
     } catch (error) {
       console.error('Erreur ALIXEN:', error);
@@ -1629,6 +1622,13 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       );
 
       clearInterval(stepInterval);
+
+      if (response.status === 402) {
+        var gateData = await response.json();
+        setEnergyGateData(gateData);
+        setUploadState(null);
+        return;
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -2060,6 +2060,67 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     }
   };
 
+  // ── DIAGNOSTIC — Recherche DB + sélection + confirmation ──────────────
+  var searchDiseases = async function(query) {
+    setDiagSearchQuery(query);
+    if (query.length < 2) { setDiagSearchResults([]); return; }
+    try {
+      var res = await fetch(
+        SUPABASE_URL + '/rest/v1/rpc/search_diseases_db',
+        {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_query: query, p_limit: 8 }),
+        }
+      );
+      var data = await res.json();
+      if (Array.isArray(data)) setDiagSearchResults(data);
+    } catch (error) {
+      console.error('Erreur recherche maladie:', error);
+    }
+  };
+
+  var selectDiagFromDb = function(disease) {
+    setSelectedDiagFromDb(disease);
+    setNewDiagStatus(disease.is_chronic ? 'chronic' : 'active');
+    setAddDiagStep('details');
+  };
+
+  var confirmAddDiagnostic = async function() {
+    if (!selectedDiagFromDb) return;
+    try {
+      var diagDate = null;
+      if (newDiagDate.trim()) {
+        var parts = newDiagDate.split('/');
+        diagDate = parts.length === 3 ? parts[2] + '-' + parts[1] + '-' + parts[0] : newDiagDate;
+      }
+      await fetch(SUPABASE_URL + '/rest/v1/diagnostics', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({
+          user_id: userId,
+          condition_name: selectedDiagFromDb.name_fr,
+          icd_code: selectedDiagFromDb.icd_code || null,
+          severity: newDiagSeverity,
+          diagnosed_date: diagDate,
+          diagnosed_by: newDiagDoctor.trim() || null,
+          status: newDiagStatus,
+          notes: newDiagNotes.trim() || null,
+          disease_db_id: selectedDiagFromDb.id || null,
+          source: selectedDiagFromDb.source === 'ai' ? 'ai' : 'manual',
+        }),
+      });
+      setShowAddDiagSheet(false);
+      setAddDiagStep('search'); setDiagSearchQuery(''); setDiagSearchResults([]); setSelectedDiagFromDb(null);
+      setNewDiagSeverity('moderate'); setNewDiagDate(''); setNewDiagDoctor(''); setNewDiagStatus('active'); setNewDiagNotes('');
+      loadMedicalData();
+      showMModal('success', 'Diagnostic ajouté ✓', selectedDiagFromDb.name_fr + ' a été ajouté à vos diagnostics.');
+    } catch (error) {
+      console.error('Erreur ajout diagnostic:', error);
+      showMModal('error', 'Erreur', 'L\'ajout a échoué. Réessayez.');
+    }
+  };
+
   const handleTransferToSecretPocket = (tableName, rowIndex, rowData) => {
     const itemName = typeof rowData[0] === 'object' ? rowData[0].text : rowData[0];
 
@@ -2132,6 +2193,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           archiveMedication={archiveMedication}
           showAddMedSheet={showAddMedSheet} setShowAddMedSheet={setShowAddMedSheet}
           showAddAnalysisSheet={showAddAnalysisSheet} setShowAddAnalysisSheet={setShowAddAnalysisSheet}
+          showAddDiagSheet={showAddDiagSheet} setShowAddDiagSheet={setShowAddDiagSheet}
           mbGenerateScale={mbGenerateScale}
         />
         </View>
@@ -2368,14 +2430,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             elevation: 3,
             position: 'relative',
           }}>
-            {/* Barre de progression — couleur évolue selon le remplissage */}
+            {/* Accent line énergie */}
             <View style={{
               position: 'absolute',
-              left: 0, top: 0, bottom: 0,
-              width: `${Math.min((energyUsed / energyLimit) * 100, 100)}%`,
-              backgroundColor: getProgressColor(),
-              borderTopLeftRadius: wp(28),
-              borderBottomLeftRadius: wp(28),
+              left: 0, top: 0, right: 0, height: 2,
+              backgroundColor: 'rgba(0,217,132,0.2)',
             }}/>
 
             {/* Fichiers en attente */}
@@ -2633,7 +2692,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               Énergie épuisée
             </Text>
             <Text style={{ color: '#888', fontSize: 11, textAlign: 'center', marginBottom: 4 }}>
-              {energyUsed} énergie consommée sur {energyLimit}
+              {userEnergy} énergie restante
             </Text>
             <Text style={{ color: '#AAA', fontSize: 10, textAlign: 'center', marginBottom: 16, lineHeight: 16 }}>
               Rechargez pour continuer à consulter ALIXEN.
@@ -2642,7 +2701,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             {/* Option 1 : Recharger 100 Lix */}
             <TouchableOpacity
               onPress={() => {
-                setEnergyUsed(prev => Math.max(0, prev - ENERGY_CONFIG.ENERGY_PER_RECHARGE));
+                refreshLixFromServer();
                 setShowLockModal(false);
                 addBotMessage("Recharge de 10 énergie effectuée ! Continuons. 💚");
               }}
@@ -2663,7 +2722,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             {/* Option 2 : Mega recharge 500 Lix */}
             <TouchableOpacity
               onPress={() => {
-                setEnergyUsed(prev => Math.max(0, prev - 50));
+                refreshLixFromServer();
                 setShowLockModal(false);
                 addBotMessage("Recharge de 50 énergie effectuée ! ALIXEN est prête. 🚀");
               }}
@@ -2802,7 +2861,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         onStartFreshSession={function() { setMessages([]); clearChatStorage(); setCardMessage(null); setCardIsUser(false); setCardIsLoading(false); loadUserData(); }}
         showCompactConfirm={showCompactConfirm} setShowCompactConfirm={setShowCompactConfirm}
         showRechargeSheet={showRechargeSheet} setShowRechargeSheet={setShowRechargeSheet}
-        setEnergyUsed={setEnergyUsed}
         showProfileSwitcher={showProfileSwitcher} setShowProfileSwitcher={setShowProfileSwitcher}
         activeProfile={activeProfile} setActiveProfile={setActiveProfile}
         children={children} setChildren={setChildren}
@@ -2835,8 +2893,29 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         newAnalysisLab={newAnalysisLab} setNewAnalysisLab={setNewAnalysisLab}
         newAnalysisNotes={newAnalysisNotes} setNewAnalysisNotes={setNewAnalysisNotes}
         confirmAddAnalysis={confirmAddAnalysis}
+        showAddDiagSheet={showAddDiagSheet} setShowAddDiagSheet={setShowAddDiagSheet}
+        addDiagStep={addDiagStep} setAddDiagStep={setAddDiagStep}
+        diagSearchQuery={diagSearchQuery}
+        diagSearchResults={diagSearchResults} setDiagSearchResults={setDiagSearchResults}
+        selectedDiagFromDb={selectedDiagFromDb} setSelectedDiagFromDb={setSelectedDiagFromDb}
+        searchDiseases={searchDiseases} selectDiagFromDb={selectDiagFromDb}
+        newDiagSeverity={newDiagSeverity} setNewDiagSeverity={setNewDiagSeverity}
+        newDiagDate={newDiagDate} setNewDiagDate={setNewDiagDate}
+        newDiagDoctor={newDiagDoctor} setNewDiagDoctor={setNewDiagDoctor}
+        newDiagStatus={newDiagStatus} setNewDiagStatus={setNewDiagStatus}
+        newDiagNotes={newDiagNotes} setNewDiagNotes={setNewDiagNotes}
+        confirmAddDiagnostic={confirmAddDiagnostic}
       />
       <LixumModal visible={mModal.visible} type={mModal.type} title={mModal.title} message={mModal.message} onConfirm={mModal.onConfirm} onClose={mModal.onClose || closeMModal} confirmText={mModal.confirmText} cancelText={mModal.cancelText} />
+      <EnergyGateModal
+        visible={energyGateData !== null}
+        onClose={function() { setEnergyGateData(null); }}
+        energyCost={energyGateData ? energyGateData.energy_cost : 0}
+        energyBalance={energyGateData ? energyGateData.energy_balance : 0}
+        lixBalance={lixBalance}
+        onRecharge={function() { setEnergyGateData(null); refreshLixFromServer(); }}
+        onViewPlans={function() { setEnergyGateData(null); console.log('Navigate to subscription plans'); }}
+      />
     </View>
   );
 }

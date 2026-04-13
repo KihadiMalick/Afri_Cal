@@ -10,6 +10,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 import LixumModal from '../../components/shared/LixumModal';
+import EnergyGateModal from '../../components/shared/EnergyGateModal';
 import { useLang } from '../../config/LanguageContext';
 import { wp, fp } from '../../constants/layout';
 import { MEAL_SLOTS } from './repasConstants';
@@ -27,7 +28,11 @@ const XscanScreen = forwardRef(function XscanScreen({
   initialMealType,
 }, ref) {
   var auth = useAuth(); var userId = auth.userId;
+  var updateEnergy = auth.updateEnergy; var refreshLixFromServer = auth.refreshLixFromServer;
   var _lc = useLang(); var lang = _lc.lang;
+
+  // Energy gate state
+  var _energyGateData = useState(null); var energyGateData = _energyGateData[0]; var setEnergyGateData = _energyGateData[1];
 
   // Modal state
   var _xModalCfg = useState({ visible: false, type: 'info', title: '', message: '' });
@@ -428,6 +433,14 @@ const XscanScreen = forwardRef(function XscanScreen({
       clearInterval(progressInterval);
 
       console.log('[XScan] Response status:', response.status);
+
+      if (response.status === 402) {
+        var gateData = await response.json();
+        setEnergyGateData(gateData);
+        clearInterval(textInterval);
+        clearInterval(progressInterval);
+        return;
+      }
 
       if (!response.ok) {
         var errorText = '';
@@ -2671,6 +2684,15 @@ const XscanScreen = forwardRef(function XscanScreen({
       )}
 
       <LixumModal visible={xModalCfg.visible} type={xModalCfg.type} title={xModalCfg.title} message={xModalCfg.message} onClose={xModalCfg.onClose || closeXModal} />
+      <EnergyGateModal
+        visible={energyGateData !== null}
+        onClose={function() { setEnergyGateData(null); }}
+        energyCost={energyGateData ? energyGateData.energy_cost : 0}
+        energyBalance={energyGateData ? energyGateData.energy_balance : 0}
+        lixBalance={energyGateData ? energyGateData.lix_balance : 0}
+        onRecharge={function() { setEnergyGateData(null); refreshLixFromServer(); }}
+        onViewPlans={function() { setEnergyGateData(null); console.log('Navigate to subscription plans'); }}
+      />
     </View>
   );
 });

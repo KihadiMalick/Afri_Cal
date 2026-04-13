@@ -11,10 +11,15 @@ import { useAuth } from '../../config/AuthContext';
 import { wp, fp } from '../../constants/layout';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 import LixumModal from '../../components/shared/LixumModal';
+import EnergyGateModal from '../../components/shared/EnergyGateModal';
 
 export default function CartScanScreen({ visible, onClose }) {
   var _lc = useLang(); var lang = _lc.lang;
   var auth = useAuth(); var userId = auth.userId;
+  var refreshLixFromServer = auth.refreshLixFromServer;
+
+  // Energy gate state
+  var _energyGateData = useState(null); var energyGateData = _energyGateData[0]; var setEnergyGateData = _energyGateData[1];
 
   // === ÉTATS ===
   const [cartPhotoMode, setCartPhotoMode] = useState(false);
@@ -177,6 +182,10 @@ export default function CartScanScreen({ visible, onClose }) {
           }),
         }
       );
+      if (response.status === 402) {
+        var gateData = await response.json();
+        setEnergyGateData(gateData); setCapturingPhoto(false); return;
+      }
       var result = await response.json();
       if (result.suggestions && result.suggestions.length > 0) {
         var sug = result.suggestions[0];
@@ -1316,6 +1325,15 @@ export default function CartScanScreen({ visible, onClose }) {
         </View>
       </Modal>
       <LixumModal visible={modalCfg.visible} type={modalCfg.type} title={modalCfg.title} message={modalCfg.message} onClose={modalCfg.onClose || closeModal} />
+      <EnergyGateModal
+        visible={energyGateData !== null}
+        onClose={function() { setEnergyGateData(null); }}
+        energyCost={energyGateData ? energyGateData.energy_cost : 0}
+        energyBalance={energyGateData ? energyGateData.energy_balance : 0}
+        lixBalance={energyGateData ? energyGateData.lix_balance : 0}
+        onRecharge={function() { setEnergyGateData(null); refreshLixFromServer(); }}
+        onViewPlans={function() { setEnergyGateData(null); console.log('Navigate to subscription plans'); }}
+      />
     </View>
   );
 }
