@@ -1291,6 +1291,41 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         addBotMessage('Diagnostic ajouté : ' + action.payload.condition_name + ' ✅\nRetrouve-le dans MediBook > Diagnostics.');
       }
 
+      if (action.type === 'add_allergy') {
+        await fetch(SUPABASE_URL + '/rest/v1/allergies', {
+          method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            user_id: userId,
+            allergen: action.payload.allergen,
+            type: action.payload.type || 'autre',
+            severity: action.payload.severity || 'moderate',
+            reaction: action.payload.reaction || null,
+          }),
+        });
+        console.log('[ALIXEN] ✅ Allergie ajoutée: ' + action.payload.allergen);
+        loadMedicalData();
+        addBotMessage('Allergie ajoutée : ' + action.payload.allergen + ' ✅\nRetrouve-la dans MediBook > Allergies.');
+      }
+
+      if (action.type === 'add_vaccination') {
+        await fetch(SUPABASE_URL + '/rest/v1/vaccinations', {
+          method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            user_id: userId,
+            vaccine_name: action.payload.vaccine_name,
+            administration_date: action.payload.date || new Date().toISOString().split('T')[0],
+            dose_number: action.payload.dose_number || 1,
+            next_due_date: action.payload.next_due_date || null,
+            administered_by: action.payload.administered_by || null,
+            batch_number: action.payload.batch_number || null,
+            status: 'completed',
+          }),
+        });
+        console.log('[ALIXEN] ✅ Vaccination ajoutée: ' + action.payload.vaccine_name);
+        loadMedicalData();
+        addBotMessage('Vaccination ajoutée : ' + action.payload.vaccine_name + ' ✅\nRetrouve-la dans MediBook > Carnet vaccinal.');
+      }
+
       if (action.type === 'add_analysis') {
         await fetch(SUPABASE_URL + '/rest/v1/medical_analyses', {
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
