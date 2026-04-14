@@ -21,6 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, ENERGY_CONFIG, TABS, wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
 import { useAuth } from '../../config/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../config/supabase';
 import LixumModal from '../../components/shared/LixumModal';
 import { BottomTabs, FormattedText, FormattedResponseText, MetalCard, parseQuickReplies, parseAlixenResponse, QuickReplyButtons, BottomSpacer, LockIcon, ScrollArrow } from './shared';
@@ -39,6 +40,7 @@ var NotificationService = require('../../services/NotificationService');
 
 
 export default function MedicAiPage({ navigation }) {
+  var insets = useSafeAreaInsets();
   var auth = useAuth();
   var userId = auth.userId;
   var lixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
@@ -2753,7 +2755,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       {/* ===== ZONE DE CONTENU ===== */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {/* ===== ZONE ALIXEN STICKY (hors du scroll) ===== */}
@@ -2818,7 +2820,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         <ScrollView
           ref={scrollViewRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 90, paddingTop: 8 }}
+          contentContainerStyle={{ paddingBottom: 80 + insets.bottom, paddingTop: 8 }}
           onContentSizeChange={function() { /* removed auto-scroll — user reads from top */ }}
           keyboardShouldPersistTaps="handled"
         >
@@ -2936,7 +2938,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         }}>
           <View style={{
             marginHorizontal: wp(12),
-            marginBottom: 15,
+            marginBottom: Math.max(insets.bottom, 12) + 4,
             borderRadius: wp(28),
             overflow: 'hidden',
             backgroundColor: '#FFFFFF',
@@ -2946,7 +2948,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             shadowOpacity: 0.15,
             shadowRadius: 12,
             elevation: 3,
-            position: 'relative',
           }}>
             {/* Accent line énergie */}
             <View style={{
