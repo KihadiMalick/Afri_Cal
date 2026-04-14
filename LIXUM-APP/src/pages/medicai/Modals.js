@@ -98,6 +98,8 @@ export const AllModals = (props) => {
     newVaccDoctor, setNewVaccDoctor,
     newVaccBatch, setNewVaccBatch,
     confirmAddVaccination,
+    vaccSearchResults, searchVaccinesDb, selectedVaccineFromDb, selectVaccineFromDb,
+    vaccReminderNote, vaccReminderAutoFilled, tryFetchVaccReminder,
     // Batch scan
     pickMultiplePhotos, batchPhotos, setBatchPhotos,
     showBatchPreview, setShowBatchPreview,
@@ -1976,9 +1978,49 @@ export const AllModals = (props) => {
 
               <ScrollView showsVerticalScrollIndicator={false}>
                 <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Nom du vaccin *</Text>
-                <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="Ex : BCG, ROR, Pfizer..." placeholderTextColor="rgba(255,255,255,0.25)" value={newVaccName} onChangeText={setNewVaccName} autoFocus={true} />
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(6), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="Tapez pour rechercher..." placeholderTextColor="rgba(255,255,255,0.25)" value={newVaccName}
+                    onChangeText={function(text) { setNewVaccName(text); if (searchVaccinesDb) searchVaccinesDb(text); }}
+                    autoFocus={true} />
                 </View>
+                {/* Résultats recherche vaccins */}
+                {vaccSearchResults && vaccSearchResults.length > 0 ? (
+                  <View style={{ maxHeight: wp(150), marginBottom: wp(8), borderRadius: wp(10), overflow: 'hidden', borderWidth: 1, borderColor: '#3A3F46' }}>
+                    <ScrollView nestedScrollEnabled={true}>
+                      {vaccSearchResults.map(function(v, idx) {
+                        return (
+                          <Pressable key={v.id || idx} onPress={function() { if (selectVaccineFromDb) selectVaccineFromDb(v); }}
+                            style={{ paddingVertical: wp(10), paddingHorizontal: wp(12), backgroundColor: '#2A303B', borderBottomWidth: 1, borderBottomColor: '#3A3F46', flexDirection: 'row', alignItems: 'center' }}>
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ color: '#FFF', fontSize: fp(13), fontWeight: '600' }}>{v.name}</Text>
+                              {v.disease_target ? (
+                                <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: fp(10), marginTop: wp(1) }}>{v.disease_target}</Text>
+                              ) : null}
+                            </View>
+                            {v.category ? (
+                              <View style={{ backgroundColor: v.category === 'PEV' ? 'rgba(0,217,132,0.15)' : 'rgba(77,166,255,0.15)', paddingHorizontal: wp(8), paddingVertical: wp(3), borderRadius: wp(6) }}>
+                                <Text style={{ color: v.category === 'PEV' ? '#00D984' : '#4DA6FF', fontSize: fp(9), fontWeight: '600' }}>{v.category}</Text>
+                              </View>
+                            ) : null}
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                ) : null}
+                {/* Badge vaccin sélectionné */}
+                {selectedVaccineFromDb ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.1)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(6), marginBottom: wp(10) }}>
+                    <Text style={{ color: '#00D984', fontSize: fp(11), flex: 1 }}>
+                      {'✓ ' + selectedVaccineFromDb.name + (selectedVaccineFromDb.total_doses ? ' — ' + selectedVaccineFromDb.total_doses + ' dose(s)' : '')}
+                    </Text>
+                    <Pressable onPress={function() { if (selectVaccineFromDb) selectVaccineFromDb(null); }}>
+                      <Text style={{ color: '#FF6B8A', fontSize: fp(12), fontWeight: '700' }}>✕</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <View style={{ marginBottom: wp(8) }} />
+                )}
 
                 <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Date d'administration</Text>
                 <Pressable onPress={function() { setDpTarget('vaccDate'); }}
@@ -1987,23 +2029,43 @@ export const AllModals = (props) => {
                 </Pressable>
 
                 <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(8) }}>Numéro de dose</Text>
-                <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16) }}>
-                  {[1, 2, 3, 4, 5].map(function(d) {
-                    var isActive = newVaccDose === d;
-                    return (
-                      <Pressable key={d} onPress={function() { setNewVaccDose(d); }}
-                        style={{ width: wp(44), height: wp(44), borderRadius: wp(12), justifyContent: 'center', alignItems: 'center', backgroundColor: isActive ? 'rgba(155,109,255,0.2)' : 'rgba(255,255,255,0.04)', borderWidth: 1.5, borderColor: isActive ? '#9B6DFF' : 'rgba(255,255,255,0.08)' }}>
-                        <Text style={{ fontSize: fp(15), fontWeight: '700', color: isActive ? '#9B6DFF' : 'rgba(255,255,255,0.4)' }}>{d}</Text>
-                      </Pressable>
-                    );
-                  })}
+                <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16), flexWrap: 'wrap' }}>
+                  {(function() {
+                    var maxDoses = selectedVaccineFromDb && selectedVaccineFromDb.total_doses ? Math.max(selectedVaccineFromDb.total_doses, 1) : 5;
+                    var chips = [];
+                    for (var dd = 1; dd <= maxDoses; dd++) { chips.push(dd); }
+                    return chips.map(function(d) {
+                      var isActive = newVaccDose === d;
+                      return (
+                        <Pressable key={d} onPress={function() { setNewVaccDose(d); if (tryFetchVaccReminder) tryFetchVaccReminder(null, d, newVaccDate); }}
+                          style={{ width: wp(44), height: wp(44), borderRadius: wp(12), justifyContent: 'center', alignItems: 'center', backgroundColor: isActive ? 'rgba(155,109,255,0.2)' : 'rgba(255,255,255,0.04)', borderWidth: 1.5, borderColor: isActive ? '#9B6DFF' : 'rgba(255,255,255,0.08)' }}>
+                          <Text style={{ fontSize: fp(15), fontWeight: '700', color: isActive ? '#9B6DFF' : 'rgba(255,255,255,0.4)' }}>{d}</Text>
+                        </Pressable>
+                      );
+                    });
+                  })()}
                 </View>
 
-                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Prochain rappel (optionnel)</Text>
+                <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>
+                  {vaccReminderAutoFilled ? 'Prochain rappel (vous pouvez modifier)' : 'Prochain rappel (optionnel)'}
+                </Text>
                 <Pressable onPress={function() { setDpTarget('vaccNextDue'); }}
-                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), paddingVertical: wp(12), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                  <Text style={{ fontSize: fp(15), color: dpDisplay.vaccNextDue ? '#FFF' : 'rgba(255,255,255,0.25)' }}>{dpDisplay.vaccNextDue || 'Sélectionner une date'}</Text>
+                  style={{ backgroundColor: vaccReminderAutoFilled ? 'rgba(0,217,132,0.08)' : 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), paddingVertical: wp(12), marginBottom: wp(6), borderWidth: 1, borderColor: vaccReminderAutoFilled ? 'rgba(0,217,132,0.2)' : 'rgba(255,255,255,0.1)' }}>
+                  <Text style={{ fontSize: fp(15), color: (dpDisplay.vaccNextDue || (newVaccNextDue && vaccReminderAutoFilled)) ? '#FFF' : 'rgba(255,255,255,0.25)' }}>
+                    {dpDisplay.vaccNextDue || (newVaccNextDue && vaccReminderAutoFilled ? (function() {
+                      var p = newVaccNextDue.split('-');
+                      var MN = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+                      return parseInt(p[2]) + ' ' + MN[parseInt(p[1]) - 1] + ' ' + p[0];
+                    })() : 'Sélectionner une date')}
+                  </Text>
                 </Pressable>
+                {vaccReminderNote ? (
+                  <Text style={{ fontSize: fp(11), color: '#00D984', marginBottom: wp(10), paddingHorizontal: wp(4) }}>
+                    {'\uD83D\uDCCB ' + vaccReminderNote}
+                  </Text>
+                ) : (
+                  <View style={{ marginBottom: wp(8) }} />
+                )}
 
                 <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Médecin / Centre (optionnel)</Text>
                 <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
