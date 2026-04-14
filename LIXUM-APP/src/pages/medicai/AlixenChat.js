@@ -777,8 +777,12 @@ export const SynapticNetwork = React.memo(({ messages, searchHits, onBallPress, 
       {messages.length > 0 && (
         <Animated.View style={{
           position: 'absolute',
-          left: newSessionPos.x - S_BALL_SIZE / 2 + wp(3),
+          left: newSessionPos.x - S_BALL_SIZE / 2,
           top: newSessionPos.y,
+          width: S_BALL_SIZE,
+          height: S_BALL_SIZE,
+          justifyContent: 'center',
+          alignItems: 'center',
           opacity: sessionFull ? pulseAnim : 1,
         }}>
           <Pressable
@@ -786,8 +790,8 @@ export const SynapticNetwork = React.memo(({ messages, searchHits, onBallPress, 
             onPress={onNewSession}
             style={function(state) {
               return {
-                width: wp(32),
-                height: wp(32),
+                width: S_BALL_SIZE,
+                height: S_BALL_SIZE,
                 borderRadius: wp(10),
                 backgroundColor: sessionFull ? 'rgba(0,217,132,0.2)' : 'rgba(0,217,132,0.08)',
                 justifyContent: 'center',
