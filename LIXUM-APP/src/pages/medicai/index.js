@@ -2378,7 +2378,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       setSelectedMedFromDb(null);
 
       // Recharger les données
-      loadMedicalData();
+      await loadMedicalData();
 
       showMModal('success', 'Médicament ajouté ✓', selectedMedFromDb.name + ' ' + newMedDosageValue + ' ' + newMedDosageUnit + ' a été ajouté à vos traitements en cours.');
     } catch (error) {
@@ -2509,7 +2509,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       setNewAnalysisLab('');
       setNewAnalysisNotes('');
 
-      loadMedicalData();
+      await loadMedicalData();
 
       showMModal('success', 'Analyse planifiée ✓', newAnalysisLabel.trim() + ' a été ajoutée à vos analyses à venir.');
     } catch (error) {
@@ -2572,7 +2572,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       setShowAddDiagSheet(false);
       setAddDiagStep('search'); setDiagSearchQuery(''); setDiagSearchResults([]); setSelectedDiagFromDb(null);
       setNewDiagSeverity('moderate'); setNewDiagDate(''); setNewDiagDoctor(''); setNewDiagStatus('active'); setNewDiagNotes('');
-      loadMedicalData();
+      await loadMedicalData();
       showMModal('success', 'Diagnostic ajouté ✓', selectedDiagFromDb.name_fr + ' a été ajouté à vos diagnostics.');
     } catch (error) {
       console.error('Erreur ajout diagnostic:', error);
@@ -2598,7 +2598,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       });
       setShowAddAllergySheet(false);
       setNewAllergyAllergen(''); setNewAllergyType('alimentaire'); setNewAllergySeverity('moderate'); setNewAllergyReaction('');
-      loadMedicalData();
+      await loadMedicalData();
       showMModal('success', 'Allergie ajoutée ✓', newAllergyAllergen.trim() + ' a été ajoutée à vos allergies.');
     } catch (error) {
       console.error('Erreur ajout allergie:', error);
@@ -2645,7 +2645,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       }
       setShowAddVaccSheet(false);
       setNewVaccName(''); setNewVaccDate(''); setNewVaccDose(1); setNewVaccNextDue(''); setNewVaccDoctor(''); setNewVaccBatch('');
-      loadMedicalData();
+      await loadMedicalData();
       showMModal('success', 'Vaccin ajouté ✓', newVaccName.trim() + ' a été ajouté à votre carnet vaccinal.');
     } catch (error) {
       console.error('Erreur ajout vaccination:', error);
