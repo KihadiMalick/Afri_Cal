@@ -235,6 +235,15 @@ export default function MedicAiPage({ navigation }) {
   const [scanContext, setScanContext] = useState(null);
   const [scanCategory, setScanCategory] = useState(null);
   const [scanFileName, setScanFileName] = useState('');
+  // Batch scan
+  var _batchPhotos = useState([]);
+  var batchPhotos = _batchPhotos[0]; var setBatchPhotos = _batchPhotos[1];
+  var _showBatchPreview = useState(false);
+  var showBatchPreview = _showBatchPreview[0]; var setShowBatchPreview = _showBatchPreview[1];
+  var _batchProgress = useState('');
+  var batchProgress = _batchProgress[0]; var setBatchProgress = _batchProgress[1];
+  var _batchId = useState(null);
+  var batchIdState = _batchId[0]; var setBatchIdState = _batchId[1];
 
   // === ALIXEN Face State — dérivé des variables de chat ===
   const getAlixenState = function() {
@@ -1957,6 +1966,34 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     }
   };
 
+  // ── BATCH PHOTO PICKER ──────────────────────────────────────────────────
+  var pickMultiplePhotos = async function() {
+    try {
+      var result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        quality: 0.7,
+        base64: true,
+        selectionLimit: 10,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        var photos = result.assets.slice(0, 10).map(function(asset, i) {
+          return { id: Date.now() + '-' + i, uri: asset.uri, base64: asset.base64 };
+        });
+        setBatchPhotos(photos);
+        setShowBatchPreview(true);
+      }
+    } catch (error) {
+      console.warn('Erreur sélection multiple:', error);
+    }
+  };
+
+  var removeBatchPhoto = function(photoId) {
+    setBatchPhotos(function(prev) { return prev.filter(function(p) { return p.id !== photoId; }); });
+  };
+
+  var getBatchEnergyCost = function(count) { return count <= 5 ? 50 : 80; };
+
   // ── TRANSFERT VERS SECRET POCKET ──────────────────────────────────────
   const toggleMedicationReminder = async (medicationId, currentValue) => {
     try {
@@ -2494,6 +2531,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           scanSteps={scanSteps} setScanSteps={setScanSteps}
           scanContext={scanContext} setScanContext={setScanContext}
           scanFileName={scanFileName}
+          batchPhotos={batchPhotos} batchProgress={batchProgress}
+          batchIdState={batchIdState}
           carnetPhotos={carnetPhotos} setCarnetPhotos={setCarnetPhotos}
           carnetPulseAnim={carnetPulseAnim}
           selectedCarnetPage={selectedCarnetPage} setSelectedCarnetPage={setSelectedCarnetPage}
@@ -3198,6 +3237,10 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         carnetPhotos={carnetPhotos} setCarnetPhotos={setCarnetPhotos}
         showAnalyzeSheet={showAnalyzeSheet} setShowAnalyzeSheet={setShowAnalyzeSheet}
         startMedicalScan={startMedicalScan}
+        pickMultiplePhotos={pickMultiplePhotos}
+        batchPhotos={batchPhotos} setBatchPhotos={setBatchPhotos}
+        showBatchPreview={showBatchPreview} setShowBatchPreview={setShowBatchPreview}
+        getBatchEnergyCost={getBatchEnergyCost} removeBatchPhoto={removeBatchPhoto}
         showAddMedSheet={showAddMedSheet} setShowAddMedSheet={setShowAddMedSheet}
         addMedStep={addMedStep} setAddMedStep={setAddMedStep}
         medSearchQuery={medSearchQuery}
