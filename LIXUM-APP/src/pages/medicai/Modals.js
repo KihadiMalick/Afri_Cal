@@ -2265,6 +2265,7 @@ export const AllModals = (props) => {
       {React.createElement(DatePickerModal, {
         visible: dpTarget !== null,
         title: dpTarget === 'analysis' ? 'Date de l\'analyse' : dpTarget === 'vaccDate' ? 'Date d\'administration' : dpTarget === 'vaccNextDue' ? 'Date du rappel' : dpTarget === 'diag' ? 'Date du diagnostic' : 'Choisir une date',
+        isFuture: dpTarget === 'vaccNextDue' || dpTarget === 'analysis',
         onClose: function() { setDpTarget(null); },
         onSelect: function(iso, display) {
           if (dpTarget === 'analysis') { setNewAnalysisDate(iso); }

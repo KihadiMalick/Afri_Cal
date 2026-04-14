@@ -16,7 +16,12 @@ function DatePickerModal(props) {
   var title = props.title || 'Choisir une date';
   var initialDate = props.initialDate;
 
+  var isFuture = props.isFuture;
+
   var now = new Date();
+  var currentYear = now.getFullYear();
+  var minYear = props.minYear || (currentYear - 100);
+  var maxYear = props.maxYear || (isFuture ? currentYear + 80 : currentYear);
   var initD = initialDate ? new Date(initialDate) : now;
   var _day = useState(initD.getDate());
   var day = _day[0]; var setDay = _day[1];
@@ -28,8 +33,15 @@ function DatePickerModal(props) {
   var daysInMonth = new Date(year, month + 1, 0).getDate();
   var days = [];
   for (var d = 1; d <= daysInMonth; d++) { days.push(d); }
+  // Build years array with current year near the START for easy access
   var years = [];
-  for (var y = now.getFullYear() - 5; y <= now.getFullYear() + 10; y++) { years.push(y); }
+  if (isFuture) {
+    for (var y = currentYear; y <= maxYear; y++) { years.push(y); }
+    for (var y2 = currentYear - 1; y2 >= minYear; y2--) { years.unshift(y2); }
+  } else {
+    // Past dates: current year first, then descending
+    for (var y3 = currentYear; y3 >= minYear; y3--) { years.push(y3); }
+  }
 
   var formatDisplay = function() {
     return day + ' ' + MONTHS_FR[month] + ' ' + year;
