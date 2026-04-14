@@ -1711,22 +1711,237 @@ export const MediBookContent = (props) => {
 
     // ── PLACEHOLDER TABS (à compléter) ──
     var renderVitaliteContent = function() {
+      var vScore = medicalData.vitalityScore || 0;
+      var circumference = 2 * Math.PI * 42;
+      var offset = circumference * (1 - vScore / 100);
+
+      // Piliers de vitalité — calculs
+      var nutData = nutritionStats;
+      var nutScore = nutData && nutData.length > 0
+        ? Math.min(100, Math.round((nutData.reduce(function(s, d) { return s + (d.total_kcal || 0); }, 0) / nutData.length / 2100) * 100))
+        : 0;
+      var hydData = hydrationStats;
+      var hydScore = hydData && hydData.length > 0
+        ? Math.min(100, Math.round((hydData.reduce(function(s, d) { return s + (d.total_ml || 0); }, 0) / hydData.length / 2500) * 100))
+        : 0;
+      var actData = activityStats;
+      var actScore = actData && actData.length > 0
+        ? Math.min(100, Math.round((actData.reduce(function(s, d) { return s + (d.total_calories_burned || 0); }, 0) / actData.length / 500) * 100))
+        : 0;
+      var mData = moodStats;
+      var moodScore = mData && mData.length > 0
+        ? Math.round(mData.reduce(function(s, d) { return s + (d.max_gauge_percent || 0); }, 0) / mData.length)
+        : 0;
+      var regScore = nutData && nutData.length > 0 ? Math.min(100, Math.round((nutData.length / selectedRange.days) * 100)) : 0;
+
+      var piliers = [
+        { label: 'Nutrition', score: nutScore, color: '#00D984' },
+        { label: 'Activité', score: actScore, color: '#4DA6FF' },
+        { label: 'Hydratation', score: hydScore, color: '#4DA6FF' },
+        { label: 'Régularité', score: regScore, color: '#FFD93D' },
+        { label: 'Humeur', score: moodScore, color: '#9B8ACF' }
+      ];
+
+      // Courbe vitalité (from daily_summary nutrition data as proxy)
+      var chartW = SCREEN_WIDTH - wp(64);
+      var chartH = wp(100);
+
+      // Insights non-médicaux
+      var nonMedInsights = healthInsights.filter(function(ins) {
+        return ins.insight_type !== 'diagnostic' && ins.insight_type !== 'medicament' && ins.insight_type !== 'vaccination' && ins.insight_type !== 'allergie';
+      });
+
       return (
-        <View style={{ padding: wp(40), alignItems: 'center' }}>
-          <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>💚</Text>
-          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Vitalité</Text>
-          <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Chargement en cours...</Text>
-          <ActivityIndicator size="small" color="#00D984" style={{ marginTop: wp(12) }} />
+        <View>
+          {/* Hero — Anneau Score Vitalité */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(20), marginBottom: wp(12), alignItems: 'center' }}>
+            <View style={{ width: wp(120), height: wp(120), justifyContent: 'center', alignItems: 'center' }}>
+              <Svg width={wp(120)} height={wp(120)} viewBox="0 0 100 100">
+                <Circle cx="50" cy="50" r="42" stroke="#3A3F46" strokeWidth="6" fill="none" />
+                <Circle cx="50" cy="50" r="42" stroke="#00D984" strokeWidth="6" fill="none"
+                  strokeDasharray={String(circumference)}
+                  strokeDashoffset={String(offset)}
+                  strokeLinecap="round" rotation="-90" origin="50,50" />
+              </Svg>
+              <View style={{ position: 'absolute', alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#FFF' }}>{vScore}</Text>
+                <Text style={{ fontSize: fp(11), color: '#888' }}>/100</Text>
+              </View>
+            </View>
+            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF', marginTop: wp(10) }}>Score Vitalité</Text>
+            <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(2) }}>Moyenne sur la période</Text>
+          </View>
+
+          {/* Piliers de vitalité */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Piliers de vitalité</Text>
+            {piliers.map(function(p, idx) {
+              var barW = Math.max(0, Math.min(100, p.score));
+              return (
+                <View key={idx} style={{ marginBottom: idx < piliers.length - 1 ? wp(10) : 0 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
+                    <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#FFF' }}>{p.label}</Text>
+                    <Text style={{ fontSize: fp(12), fontWeight: '600', color: p.color }}>{p.score}/100</Text>
+                  </View>
+                  <View style={{ height: wp(6), backgroundColor: '#1E2530', borderRadius: wp(3) }}>
+                    <View style={{ width: barW + '%', height: '100%', backgroundColor: p.color, borderRadius: wp(3) }} />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Insights ALIXEN */}
+          {nonMedInsights.length > 0 ? (
+            <View style={{ marginBottom: wp(12) }}>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(8) }}>ALIXEN a remarqué...</Text>
+              {nonMedInsights.slice(0, 5).map(function(ins, idx) {
+                var insColor = ins.insight_color || '#00D984';
+                return (
+                  <View key={idx} style={{
+                    backgroundColor: insColor + '10', borderLeftWidth: wp(3), borderLeftColor: insColor,
+                    padding: wp(12), marginBottom: wp(8), borderRadius: 0,
+                  }}>
+                    <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#FFF' }}>{ins.insight_icon || '💡'} {ins.insight_text || ''}</Text>
+                    {ins.insight_value ? <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(2) }}>{ins.insight_value}</Text> : null}
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
         </View>
       );
     };
     var renderActiviteContent = function() {
+      var data = activityStats;
+      var hasData = data && data.length > 0;
+      if (!hasData) {
+        return (
+          <View style={{ padding: wp(40), alignItems: 'center' }}>
+            <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>🏃</Text>
+            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Pas de données d'activité</Text>
+            <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Les données apparaîtront depuis votre suivi quotidien</Text>
+          </View>
+        );
+      }
+      var avgBurned = Math.round(data.reduce(function(s, d) { return s + (d.total_calories_burned || 0); }, 0) / data.length);
+      var avgBalance = Math.round(data.reduce(function(s, d) { return s + (d.calorie_balance || 0); }, 0) / data.length);
+      var totalBurned = data.reduce(function(s, d) { return s + (d.total_calories_burned || 0); }, 0);
+      var bestDay = data.reduce(function(best, d) { return (d.total_calories_burned || 0) > (best.total_calories_burned || 0) ? d : best; }, data[0]);
+      var bestDayDate = bestDay && bestDay.stat_date ? new Date(bestDay.stat_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '-';
+
+      var chartW = SCREEN_WIDTH - wp(64);
+      var chartH = wp(100);
+      var maxBurned = Math.max.apply(null, data.map(function(d) { return d.total_calories_burned || 0; }).concat([100]));
+      var barW = Math.max(wp(8), (chartW / data.length) - wp(4));
+
+      // Balance chart
+      var balanceMax = Math.max.apply(null, data.map(function(d) { return Math.abs(d.calorie_balance || 0); }).concat([100]));
+
       return (
-        <View style={{ padding: wp(40), alignItems: 'center' }}>
-          <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>🏃</Text>
-          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Activité</Text>
-          <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Chargement en cours...</Text>
-          <ActivityIndicator size="small" color="#00D984" style={{ marginTop: wp(12) }} />
+        <View>
+          {/* Hero */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#888', letterSpacing: 1 }}>CETTE PÉRIODE</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: wp(6) }}>
+              <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#FFF' }}>{avgBurned}</Text>
+              <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#888', marginLeft: wp(4) }}>kcal brûlées / jour</Text>
+            </View>
+            <Text style={{ fontSize: fp(12), color: avgBalance <= 0 ? '#00D984' : '#FFD93D', marginTop: wp(4) }}>
+              {'Balance : ' + (avgBalance > 0 ? '+' : '') + avgBalance + ' kcal'}
+            </Text>
+          </View>
+
+          {/* Bar chart — Calories brûlées */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Calories brûlées</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: chartH }}>
+              {data.map(function(d, i) {
+                var val = d.total_calories_burned || 0;
+                var h = Math.max(wp(4), (val / maxBurned) * (chartH - wp(10)));
+                var bal = d.calorie_balance || 0;
+                return (
+                  <View key={i} style={{ alignItems: 'center', flex: 1 }}>
+                    <View style={{ width: Math.min(barW, wp(16)), height: h, backgroundColor: bal <= 0 ? '#00D984' : '#FFD93D', borderRadius: wp(4) }} />
+                  </View>
+                );
+              })}
+            </View>
+            {/* X labels */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6) }}>
+              {data.length <= 10 ? data.map(function(d, i) {
+                var dt = new Date(d.stat_date);
+                return <Text key={i} style={{ fontSize: fp(8), color: '#666', flex: 1, textAlign: 'center' }}>{['Di','Lu','Ma','Me','Je','Ve','Sa'][dt.getDay()]}</Text>;
+              }) : (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', flex: 1 }}>
+                  <Text style={{ fontSize: fp(8), color: '#666' }}>{data[0] ? data[0].stat_date.substring(5, 10) : ''}</Text>
+                  <Text style={{ fontSize: fp(8), color: '#666' }}>{data[data.length - 1] ? data[data.length - 1].stat_date.substring(5, 10) : ''}</Text>
+                </View>
+              )}
+            </View>
+            {/* Ligne moyenne */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(8) }}>
+              <View style={{ width: wp(12), height: 1, backgroundColor: '#FF6B8A', marginRight: wp(6) }} />
+              <Text style={{ fontSize: fp(10), color: '#888' }}>{'Moy. ' + avgBurned + ' kcal'}</Text>
+            </View>
+          </View>
+
+          {/* Balance calorique — Line chart */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Balance calorique</Text>
+            <Svg width={chartW} height={chartH}>
+              <Defs>
+                <SvgLinearGradient id="balPos" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor="#FF6B8A" stopOpacity="0.2" />
+                  <Stop offset="1" stopColor="#FF6B8A" stopOpacity="0" />
+                </SvgLinearGradient>
+                <SvgLinearGradient id="balNeg" x1="0" y1="1" x2="0" y2="0">
+                  <Stop offset="0" stopColor="#00D984" stopOpacity="0.2" />
+                  <Stop offset="1" stopColor="#00D984" stopOpacity="0" />
+                </SvgLinearGradient>
+              </Defs>
+              {/* Zero line */}
+              <Line x1="0" y1={chartH / 2} x2={chartW} y2={chartH / 2} stroke="#3A3F46" strokeWidth="1" strokeDasharray="4,4" />
+              {/* Balance line */}
+              {data.length > 1 ? (
+                <Polyline
+                  points={data.map(function(d, i) {
+                    var x = (i / (data.length - 1)) * chartW;
+                    var bal = d.calorie_balance || 0;
+                    var y = (chartH / 2) - (bal / balanceMax) * (chartH / 2 - wp(5));
+                    return x + ',' + y;
+                  }).join(' ')}
+                  fill="none" stroke="#4DA6FF" strokeWidth="2" strokeLinejoin="round"
+                />
+              ) : null}
+              {data.map(function(d, i) {
+                var x = data.length > 1 ? (i / (data.length - 1)) * chartW : chartW / 2;
+                var bal = d.calorie_balance || 0;
+                var y = (chartH / 2) - (bal / balanceMax) * (chartH / 2 - wp(5));
+                return <Circle key={i} cx={x} cy={y} r="3" fill={bal <= 0 ? '#00D984' : '#FF6B8A'} />;
+              })}
+            </Svg>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6) }}>
+              <Text style={{ fontSize: fp(9), color: '#00D984' }}>Déficit (bien)</Text>
+              <Text style={{ fontSize: fp(9), color: '#FF6B8A' }}>Surplus</Text>
+            </View>
+          </View>
+
+          {/* Résumé hebdo */}
+          <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(12) }}>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>{totalBurned}</Text>
+              <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>kcal total</Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#00D984' }}>{bestDayDate}</Text>
+              <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>meilleur jour</Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>{avgBurned}</Text>
+              <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>moy/jour</Text>
+            </View>
+          </View>
         </View>
       );
     };
