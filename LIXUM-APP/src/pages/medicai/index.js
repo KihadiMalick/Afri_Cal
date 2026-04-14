@@ -55,6 +55,15 @@ export default function MedicAiPage({ navigation }) {
   var closeMModal = function() { setMModal(function(p) { return Object.assign({}, p, { visible: false }); }); };
   var showMModal = function(type, title, message, extra) { setMModal(Object.assign({ visible: true, type: type, title: title, message: message, onClose: closeMModal, onConfirm: null, confirmText: 'Confirmer', cancelText: 'Annuler' }, extra || {})); };
 
+  var getAlixenErrorMessage = function(status, error) {
+    if (status === 429) return '⚠️ ALIXEN reçoit beaucoup de demandes. Réessayez dans quelques secondes.';
+    if (status === 500 || status === 502 || status === 503) return '⚠️ ALIXEN est en mise à jour. Réessayez dans quelques instants.';
+    if (status >= 400 && status < 500) return '⚠️ ALIXEN n\'a pas pu traiter cette demande. Réessayez.';
+    if (error && (error.message || '').indexOf('timeout') >= 0) return '⚠️ La réponse prend trop de temps. Réessayez avec un message plus court.';
+    if (error && (error.message || '').indexOf('Connexion lente') >= 0) return '⚠️ La réponse prend trop de temps. Réessayez avec un message plus court.';
+    return '⚠️ Connexion interrompue. Vérifiez votre connexion internet et réessayez.';
+  };
+
   var getAuthHeaders = async function() {
     var result = await supabase.auth.getSession();
     var token = result.data.session ? result.data.session.access_token : SUPABASE_ANON_KEY;
@@ -1137,7 +1146,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           setEnergyGateData(gateData); setIsLoading(false); setCardIsLoading(false); return;
         }
         const data = await response.json();
-        const replyText = data.message || data.error || 'Erreur de connexion.';
+        const replyText = data.message || data.error || '⚠️ ALIXEN est en mise à jour. Réessayez dans quelques instants.';
 
         const alixenParsed = parseAlixenResponse(replyText);
         const finalText = alixenParsed.cleanText;
@@ -1166,16 +1175,17 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         if (data.energy_remaining != null) updateEnergy(data.energy_remaining);
       } catch (error) {
         console.error('Erreur envoi image ALIXEN:', error);
+        var errMsg = getAlixenErrorMessage(null, error);
         setLoadingSteps([]);
         setCardIsLoading(false);
-        setCardMessage('Erreur réseau. Vérifiez votre connexion.');
+        setCardMessage(errMsg);
         setCardIsUser(false);
         setMessages(prev => {
           if (prev.length >= 30) return prev;
           return [...prev, {
             id: botMsgId,
             role: 'assistant',
-            content: 'Erreur réseau. Vérifiez votre connexion.',
+            content: errMsg,
             timestamp: new Date(),
             _isNew: true,
             _status: 'read',
@@ -1262,7 +1272,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           setEnergyGateData(gateData); setIsLoading(false); setCardIsLoading(false); return;
         }
         const data = await response.json();
-        const replyText = data.message || data.error || 'Erreur de connexion.';
+        const replyText = data.message || data.error || '⚠️ ALIXEN est en mise à jour. Réessayez dans quelques instants.';
 
         const alixenParsed = parseAlixenResponse(replyText);
         const finalText = alixenParsed.cleanText;
@@ -1288,16 +1298,17 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         if (data.energy_remaining != null) updateEnergy(data.energy_remaining);
       } catch (error) {
         console.error('Erreur Quick Reply:', error);
+        var errMsg = getAlixenErrorMessage(null, error);
         setLoadingSteps([]);
         setCardIsLoading(false);
-        setCardMessage('Erreur réseau. Vérifiez votre connexion.');
+        setCardMessage(errMsg);
         setCardIsUser(false);
         setMessages(prev => {
           if (prev.length >= 30) return prev;
           return [...prev, {
             id: botMsgId,
             role: 'assistant',
-            content: 'Erreur réseau. Vérifiez votre connexion.',
+            content: errMsg,
             timestamp: new Date(),
             _isNew: true,
             _status: 'read',
@@ -1574,7 +1585,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
     } catch (error) {
       console.error('Erreur action ALIXEN:', error);
-      addBotMessage('Erreur lors de l\'exécution. Réessayez. ❌');
+      addBotMessage('⚠️ Connexion interrompue. Vérifiez votre connexion internet et réessayez.');
     }
   };
 
@@ -1789,15 +1800,16 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
     } catch (error) {
       console.error('Erreur ALIXEN:', error);
+      var errMsg = getAlixenErrorMessage(null, error);
       setLoadingSteps([]);
       setCardIsLoading(false);
-      setCardMessage("Erreur réseau. Vérifiez votre connexion.");
+      setCardMessage(errMsg);
       setCardIsUser(false);
 
-      const botMsg = {
+      var botMsg = {
         id: botMsgId,
         role: 'assistant',
-        content: "Erreur réseau. Vérifiez votre connexion.",
+        content: errMsg,
         timestamp: new Date(),
         _isNew: true,
         _status: 'read',
@@ -1869,9 +1881,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       }
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Erreur scan-medical:', response.status, errorText);
-        throw new Error('Erreur serveur: ' + response.status);
+        console.error('Erreur scan-medical:', response.status);
+        throw { _status: response.status, message: getAlixenErrorMessage(response.status) };
       }
 
       const result = await response.json();
@@ -1896,7 +1907,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       console.error('Erreur scan médical:', error);
       setUploadState('idle');
       setScanResults(null);
-      showMModal('error', 'Erreur d\'analyse', 'ALIXEN n\'a pas pu analyser ce document. Vérifiez que l\'image est lisible et réessayez.\n\nDétail : ' + (error.message || 'Erreur inconnue'));
+      var scanErrMsg = error && error._status ? error.message : getAlixenErrorMessage(null, error);
+      showMModal('error', 'Analyse impossible', scanErrMsg);
     }
   };
 
@@ -2148,7 +2160,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       setUploadState('idle');
       setBatchProgress('');
       setScanResults(null);
-      showMModal('error', 'Erreur d\'analyse batch', 'ALIXEN n\'a pas pu analyser le batch. ' + (error.message || 'Erreur inconnue'));
+      var batchErrMsg = error && error._status ? error.message : getAlixenErrorMessage(null, error);
+      showMModal('error', 'Analyse impossible', batchErrMsg);
     }
   };
 
@@ -2257,7 +2270,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           loadMedicalData();
         } catch (error) {
           console.error('Erreur archivage:', error);
-          showMModal('error', 'Erreur', 'L\'archivage a échoué.');
+          showMModal('error', 'Archivage échoué', '⚠️ Connexion interrompue. Vérifiez votre connexion internet et réessayez.');
         }
       },
     });
@@ -2367,7 +2380,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       showMModal('success', 'Médicament ajouté ✓', selectedMedFromDb.name + ' ' + newMedDosageValue + ' ' + newMedDosageUnit + ' a été ajouté à vos traitements en cours.');
     } catch (error) {
       console.error('Erreur ajout médicament:', error);
-      showMModal('error', 'Erreur', 'L\'ajout a échoué. Réessayez.');
+      showMModal('error', 'Ajout échoué', '⚠️ Connexion interrompue. Vérifiez votre connexion internet et réessayez.');
     }
   };
 
@@ -2433,7 +2446,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               } catch (error) {
                 console.error('Erreur recherche IA:', error);
                 setMedSearchResults([]);
-                showMModal('error', 'Erreur', 'La recherche IA a échoué. Vérifiez votre connexion.');
+                showMModal('error', 'Recherche impossible', '⚠️ Connexion interrompue. Vérifiez votre connexion internet et réessayez.');
               }
         },
       });
