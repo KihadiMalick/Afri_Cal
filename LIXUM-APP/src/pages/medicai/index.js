@@ -119,6 +119,8 @@ export default function MedicAiPage({ navigation }) {
   const [cardMessage, setCardMessage] = useState(null);
   const [cardIsUser, setCardIsUser] = useState(false);
   const [cardIsLoading, setCardIsLoading] = useState(false);
+  var _cardIsError = useState(false);
+  var cardIsError = _cardIsError[0]; var setCardIsError = _cardIsError[1];
   const [loadingSteps, setLoadingSteps] = useState([]);
   const [pendingAction, setPendingAction] = useState(null);
   const [fileQueue, setFileQueue] = useState([]);
@@ -1064,6 +1066,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           body: JSON.stringify({
             action: 'loading_steps',
             userMessage: userMessage,
+            userId: userId,
             userContext: buildUserContext(),
             lang: userLang,
           }),
@@ -1180,6 +1183,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         setCardIsLoading(false);
         setCardMessage(errMsg);
         setCardIsUser(false);
+        setCardIsError(true);
         setMessages(prev => {
           if (prev.length >= 30) return prev;
           return [...prev, {
@@ -1303,6 +1307,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         setCardIsLoading(false);
         setCardMessage(errMsg);
         setCardIsUser(false);
+        setCardIsError(true);
         setMessages(prev => {
           if (prev.length >= 30) return prev;
           return [...prev, {
@@ -2859,6 +2864,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             currentMessage={cardMessage}
             isLoading={cardIsLoading}
             isUserMessage={cardIsUser}
+            isError={cardIsError}
             onQuickReply={handleQuickReply}
             onPreciserPress={handlePreciserPress}
             loadingSteps={loadingSteps}
@@ -3390,7 +3396,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         showDocumentSheet={showDocumentSheet} setShowDocumentSheet={setShowDocumentSheet}
         setCurrentSubPage={setCurrentSubPage}
         showNewSessionSheet={showNewSessionSheet} setShowNewSessionSheet={setShowNewSessionSheet}
-        onStartFreshSession={function() { setMessages([]); clearChatStorage(); setCardMessage(null); setCardIsUser(false); setCardIsLoading(false); loadUserData(); }}
+        onStartFreshSession={function() { setMessages([]); clearChatStorage(); setCardMessage(null); setCardIsUser(false); setCardIsLoading(false); setCardIsError(false); loadUserData(); }}
         showCompactConfirm={showCompactConfirm} setShowCompactConfirm={setShowCompactConfirm}
         showRechargeSheet={showRechargeSheet} setShowRechargeSheet={setShowRechargeSheet}
         showProfileSwitcher={showProfileSwitcher} setShowProfileSwitcher={setShowProfileSwitcher}

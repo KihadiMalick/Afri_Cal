@@ -18,7 +18,7 @@ export const fp = (size) => {
 export var ENERGY_CONFIG = {
   TOKEN_DIVISOR: 120,
   COSTS: {
-    chat: 6,
+    chat: 10,
     xscan: 12,
     gallery: 12,
     recipe: 8,
