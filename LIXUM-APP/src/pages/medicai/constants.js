@@ -41,7 +41,7 @@ export var ENERGY_CONFIG = {
     platinum: 300
   },
   SUBSCRIPTION_PRICES: {
-    silver: 3.99,
+    silver: 4.99,
     gold: 9.99,
     platinum: 14.99
   }
