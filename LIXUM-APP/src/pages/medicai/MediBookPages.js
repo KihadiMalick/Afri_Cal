@@ -2131,12 +2131,216 @@ export const MediBookContent = (props) => {
       );
     };
     var renderSanteContent = function() {
+      var tl = healthTimeline || [];
+      var ins = healthInsights || [];
+      var vs = vaccStats;
+      var EVENT_ICONS = { 'diagnostic': '🤒', 'vaccination': '💉', 'allergie': '⚠️', 'medicament': '💊', 'analyse': '🔬' };
+
+      // Counts
+      var diagCount = tl.filter(function(e) { return e.event_type === 'diagnostic'; }).length;
+      var vaccDone = vs ? (vs.done_count || 0) : 0;
+      var medCount = tl.filter(function(e) { return e.event_type === 'medicament'; }).length;
+      var overdueCount = vs ? (vs.overdue_count || 0) : 0;
+      var allergyCount = tl.filter(function(e) { return e.event_type === 'allergie'; }).length;
+      var analysisCount = tl.filter(function(e) { return e.event_type === 'analyse'; }).length;
+
+      var summaryChips = [
+        { icon: '🤒', count: diagCount, label: 'maladies', color: '#FF6B8A' },
+        { icon: '💉', count: vaccDone, label: 'vaccins', color: '#9B8ACF' },
+        { icon: '💊', count: medCount, label: 'traitements', color: '#00D984' },
+        { icon: '⚠️', count: overdueCount, label: 'rappel dû', color: '#FF6B8A' },
+        { icon: '🛡️', count: allergyCount, label: 'allergie', color: '#FFD93D' },
+        { icon: '🔬', count: analysisCount, label: 'analyses', color: '#4DA6FF' }
+      ];
+
+      // Maladies par mois
+      var diseasesByMonth = {};
+      tl.forEach(function(e) {
+        if (e.event_type === 'diagnostic' && e.event_date) {
+          var monthKey = e.event_date.substring(0, 7);
+          if (!diseasesByMonth[monthKey]) diseasesByMonth[monthKey] = 0;
+          diseasesByMonth[monthKey]++;
+        }
+      });
+      var monthKeys = Object.keys(diseasesByMonth).sort();
+      var maxDisease = Math.max.apply(null, monthKeys.map(function(k) { return diseasesByMonth[k]; }).concat([1]));
+
+      // Allergies from timeline
+      var allergies = tl.filter(function(e) { return e.event_type === 'allergie'; });
+
+      // Medications from timeline
+      var medications = tl.filter(function(e) { return e.event_type === 'medicament'; });
+
+      // Analyses from timeline
+      var analyses = tl.filter(function(e) { return e.event_type === 'analyse'; });
+
+      // Vaccine completion
+      var vaccPct = vs ? (vs.completion_percent || 0) : 0;
+      var vaccTotal = vs ? (vs.total_vaccines || 0) : 0;
+      var vaccCircum = 2 * Math.PI * 22;
+
       return (
-        <View style={{ padding: wp(40), alignItems: 'center' }}>
-          <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>🏥</Text>
-          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Santé</Text>
-          <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Chargement en cours...</Text>
-          <ActivityIndicator size="small" color="#00D984" style={{ marginTop: wp(12) }} />
+        <View>
+          {/* Section A — Résumé en chips */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8), marginBottom: wp(12) }}>
+            {summaryChips.map(function(chip, i) {
+              return (
+                <View key={i} style={{ width: (SCREEN_WIDTH - wp(56)) / 3, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(10), alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(18) }}>{chip.icon}</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: chip.color, marginTop: wp(4) }}>{chip.count}</Text>
+                  <Text style={{ fontSize: fp(9), color: '#888', marginTop: wp(2) }}>{chip.label}</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Section B — Maladies par mois */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Historique des maladies</Text>
+            {monthKeys.length > 0 ? (
+              <View>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: wp(60) }}>
+                  {monthKeys.map(function(mk, i) {
+                    var h = Math.max(wp(4), (diseasesByMonth[mk] / maxDisease) * wp(50));
+                    return (
+                      <View key={i} style={{ alignItems: 'center', flex: 1 }}>
+                        <Text style={{ fontSize: fp(9), color: '#FF6B8A', marginBottom: wp(4) }}>{diseasesByMonth[mk]}</Text>
+                        <View style={{ width: wp(14), height: h, backgroundColor: '#FF6B8A', borderRadius: wp(4) }} />
+                      </View>
+                    );
+                  })}
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6) }}>
+                  {monthKeys.map(function(mk, i) {
+                    return <Text key={i} style={{ fontSize: fp(8), color: '#666', flex: 1, textAlign: 'center' }}>{mk.substring(5)}</Text>;
+                  })}
+                </View>
+              </View>
+            ) : (
+              <View style={{ backgroundColor: '#00D98410', borderRadius: wp(10), padding: wp(14), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(12), color: '#00D984' }}>Aucune maladie enregistrée — continuez comme ça ! 💪</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Section C — Timeline */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>📅 Chronologie santé</Text>
+            {tl.length > 0 ? tl.slice(0, 20).map(function(evt, idx) {
+              var evtColor = evt.color_code || '#888';
+              var evtIcon = EVENT_ICONS[evt.event_type] || '📋';
+              var evtDate = evt.event_date ? new Date(evt.event_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '';
+              return (
+                <View key={idx} style={{ flexDirection: 'row', marginBottom: wp(12) }}>
+                  {/* Ligne verticale + point */}
+                  <View style={{ width: wp(24), alignItems: 'center' }}>
+                    {idx > 0 ? <View style={{ width: wp(2), height: wp(12), backgroundColor: '#3A3F46', position: 'absolute', top: -wp(12) }} /> : null}
+                    <View style={{ width: wp(12), height: wp(12), borderRadius: wp(6), backgroundColor: evtColor, marginTop: wp(2) }} />
+                    {idx < Math.min(tl.length, 20) - 1 ? <View style={{ width: wp(2), flex: 1, backgroundColor: '#3A3F46', marginTop: wp(2) }} /> : null}
+                  </View>
+                  {/* Content */}
+                  <View style={{ flex: 1, marginLeft: wp(8), paddingBottom: wp(4) }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                      <Text style={{ fontSize: fp(11), color: '#888' }}>{evtDate}</Text>
+                      <Text style={{ fontSize: fp(10), color: evtColor, fontWeight: '600', textTransform: 'uppercase' }}>{evtIcon + ' ' + (evt.event_type || '')}</Text>
+                    </View>
+                    <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF', marginTop: wp(2) }}>{evt.title || ''}</Text>
+                    {evt.subtitle ? <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(1) }}>{evt.subtitle}</Text> : null}
+                  </View>
+                </View>
+              );
+            }) : (
+              <Text style={{ fontSize: fp(12), color: '#888', textAlign: 'center', padding: wp(12) }}>Aucun événement de santé sur cette période.</Text>
+            )}
+          </View>
+
+          {/* Section D — Allergies */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🛡️ Allergies connues</Text>
+            {allergies.length > 0 ? allergies.map(function(a, i) {
+              var sev = (a.severity || '').toLowerCase();
+              var sevLabel = sev === 'severe' || sev === 'grave' ? 'Sévère' : sev === 'moderate' || sev === 'modéré' ? 'Modéré' : 'Léger';
+              var sevBg = sev === 'severe' || sev === 'grave' ? '#FF6B8A15' : sev === 'moderate' || sev === 'modéré' ? '#FFD93D15' : '#4DA6FF15';
+              var sevColor = sev === 'severe' || sev === 'grave' ? '#FF6B8A' : sev === 'moderate' || sev === 'modéré' ? '#FFD93D' : '#4DA6FF';
+              return (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8), borderBottomWidth: i < allergies.length - 1 ? 1 : 0, borderBottomColor: '#3A3F46' }}>
+                  <Text style={{ fontSize: fp(14), marginRight: wp(8) }}>⚠️</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>{a.title || ''}</Text>
+                    {a.event_date ? <Text style={{ fontSize: fp(10), color: '#666', marginTop: wp(2) }}>{'Détecté le ' + new Date(a.event_date).toLocaleDateString('fr-FR')}</Text> : null}
+                  </View>
+                  <View style={{ backgroundColor: sevBg, paddingHorizontal: wp(8), paddingVertical: wp(3), borderRadius: wp(6) }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: sevColor }}>{sevLabel}</Text>
+                  </View>
+                </View>
+              );
+            }) : (
+              <Text style={{ fontSize: fp(12), color: '#888', textAlign: 'center' }}>Aucune allergie enregistrée</Text>
+            )}
+          </View>
+
+          {/* Section E — Médicaments */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>💊 Traitements</Text>
+            {medications.length > 0 ? medications.slice(0, 10).map(function(m, i) {
+              var isActive = !m.subtitle || m.subtitle.indexOf('Terminé') === -1;
+              return (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8), borderBottomWidth: i < Math.min(medications.length, 10) - 1 ? 1 : 0, borderBottomColor: '#3A3F46' }}>
+                  <Text style={{ fontSize: fp(14), marginRight: wp(8) }}>💊</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>{m.title || ''}</Text>
+                    {m.subtitle ? <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>{m.subtitle}</Text> : null}
+                  </View>
+                  <View style={{ backgroundColor: isActive ? '#00D98415' : '#3A3F46', paddingHorizontal: wp(8), paddingVertical: wp(3), borderRadius: wp(6) }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: isActive ? '#00D984' : '#888' }}>{isActive ? 'En cours' : 'Terminé'}</Text>
+                  </View>
+                </View>
+              );
+            }) : (
+              <Text style={{ fontSize: fp(12), color: '#888', textAlign: 'center' }}>Aucun traitement enregistré</Text>
+            )}
+          </View>
+
+          {/* Section F — Couverture vaccinale */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>💉 Vaccination</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(14) }}>
+              <View style={{ width: wp(60), height: wp(60), justifyContent: 'center', alignItems: 'center' }}>
+                <Svg width={wp(60)} height={wp(60)} viewBox="0 0 50 50">
+                  <Circle cx="25" cy="25" r="22" stroke="#3A3F46" strokeWidth="4" fill="none" />
+                  <Circle cx="25" cy="25" r="22" stroke="#9B8ACF" strokeWidth="4" fill="none"
+                    strokeDasharray={String(vaccCircum)}
+                    strokeDashoffset={String(vaccCircum * (1 - vaccPct / 100))}
+                    strokeLinecap="round" rotation="-90" origin="25,25" />
+                </Svg>
+                <Text style={{ position: 'absolute', fontSize: fp(12), fontWeight: '700', color: '#9B8ACF' }}>{vaccPct + '%'}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{vaccDone + '/' + vaccTotal + ' vaccins à jour'}</Text>
+                {overdueCount > 0 ? <Text style={{ fontSize: fp(11), color: '#FF6B8A', marginTop: wp(4) }}>{'⚠️ ' + overdueCount + ' rappel' + (overdueCount > 1 ? 's' : '') + ' en retard'}</Text> : null}
+              </View>
+            </View>
+          </View>
+
+          {/* Section G — Analyses récentes */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🔬 Dernières analyses</Text>
+            {analyses.length > 0 ? analyses.slice(0, 8).map(function(a, i) {
+              var isNormal = (a.subtitle || '').toLowerCase().indexOf('normal') !== -1;
+              return (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8), borderBottomWidth: i < Math.min(analyses.length, 8) - 1 ? 1 : 0, borderBottomColor: '#3A3F46' }}>
+                  <Text style={{ fontSize: fp(14), marginRight: wp(8) }}>🔬</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>{a.title || ''}</Text>
+                    {a.subtitle ? <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>{a.subtitle}</Text> : null}
+                  </View>
+                  {a.event_date ? <Text style={{ fontSize: fp(10), color: '#666' }}>{new Date(a.event_date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</Text> : null}
+                </View>
+              );
+            }) : (
+              <Text style={{ fontSize: fp(12), color: '#888', textAlign: 'center' }}>Aucune analyse sur cette période</Text>
+            )}
+          </View>
         </View>
       );
     };
