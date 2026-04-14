@@ -386,7 +386,7 @@ export default function RecettesScreen({
     } catch (e) {
       console.error('Add recipe error:', e);
       setAddingMeal(false);
-      showModal('error', 'Erreur', 'Impossible d\'ajouter ce plat. Réessayez.');
+      showModal('error', 'Ajout impossible', '⚠️ Connexion interrompue. Vérifiez votre connexion internet et réessayez.');
     }
   };
 
@@ -461,7 +461,7 @@ export default function RecettesScreen({
         setLoadingSteps(false);
         typewriterEffect(result.steps);
       } else {
-        throw new Error(result.error || 'Erreur génération');
+        throw new Error(result.error || 'Génération échouée');
       }
     } catch (e) {
       console.error('Recipe generation error:', e);
@@ -655,7 +655,7 @@ export default function RecettesScreen({
       }
       if (!ctx) {
         setAlixenLoading(false);
-        showModal('error', 'Erreur', 'Impossible de charger le contexte.');
+        showModal('error', 'Chargement impossible', '⚠️ Connexion interrompue. Vérifiez votre connexion internet et réessayez.');
         return;
       }
 
@@ -1447,7 +1447,7 @@ export default function RecettesScreen({
                                     setAlixenLoading(true);
                                     generateAlixenProposals('surprise');
                                   } else {
-                                    showModal('error', 'Erreur', 'Impossible de débiter les Lix.');
+                                    showModal('error', 'Lix insuffisants', '⚠️ Impossible de débiter les Lix. Vérifiez votre solde.');
                                   }
                                 });
                               },
@@ -1577,7 +1577,7 @@ export default function RecettesScreen({
                                           setAlixenLoading(true);
                                           generateAlixenProposals('filtered', { region: r.key });
                                         } else {
-                                          showModal('error', 'Erreur', 'Impossible de débiter les Lix.');
+                                          showModal('error', 'Lix insuffisants', '⚠️ Impossible de débiter les Lix. Vérifiez votre solde.');
                                         }
                                       });
                                     },
@@ -1638,7 +1638,7 @@ export default function RecettesScreen({
                                           setAlixenLoading(true);
                                           generateAlixenProposals('filtered', { type: t.key });
                                         } else {
-                                          showModal('error', 'Erreur', 'Impossible de débiter les Lix.');
+                                          showModal('error', 'Lix insuffisants', '⚠️ Impossible de débiter les Lix. Vérifiez votre solde.');
                                         }
                                       });
                                     },

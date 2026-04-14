@@ -147,7 +147,7 @@ export default function CartScanScreen({ visible, onClose }) {
       }
     } catch (e) {
       console.error('Barcode lookup error:', e);
-      setScanError('Erreur réseau');
+      setScanError('⚠️ Connexion interrompue');
       setTimeout(function() { setScanError(null); }, 2000);
     }
 
@@ -162,7 +162,7 @@ export default function CartScanScreen({ visible, onClose }) {
       var photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.5 });
       setScanError(null);
       if (!photo || !photo.base64) {
-        setScanError('Erreur capture photo');
+        setScanError('⚠️ Capture échouée');
         setTimeout(function() { setScanError(null); }, 2000);
         setCapturingPhoto(false);
         return;
@@ -210,7 +210,7 @@ export default function CartScanScreen({ visible, onClose }) {
       }
     } catch (e) {
       console.error('Cart photo error:', e);
-      setScanError('Erreur analyse photo');
+      setScanError('⚠️ L\'analyse du ticket n\'a pas pu être complétée. Réessayez.');
       setTimeout(function() { setScanError(null); }, 2000);
     }
     setCapturingPhoto(false);
@@ -318,7 +318,7 @@ export default function CartScanScreen({ visible, onClose }) {
       setShowCartReport(true);
     } catch (e) {
       console.error('Generate report error:', e);
-      setModalCfg({ visible: true, type: 'error', title: 'Erreur', message: 'Impossible de générer le rapport. Réessayez.', onClose: closeModal });
+      setModalCfg({ visible: true, type: 'error', title: 'Rapport impossible', message: '⚠️ Connexion interrompue. Vérifiez votre connexion internet et réessayez.', onClose: closeModal });
     }
     setGeneratingReport(false);
   };
