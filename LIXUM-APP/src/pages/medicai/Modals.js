@@ -8,9 +8,13 @@ import Svg, {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
+import { supabase } from '../../config/supabase';
+import { useAuth } from '../../config/AuthContext';
 import LixumModal from '../../components/shared/LixumModal';
 
 export const AllModals = (props) => {
+  var auth = useAuth();
+  var userId = auth.userId;
   const {
     // MediBook Upload Sheet
     showMediBookUploadSheet, setShowMediBookUploadSheet,
@@ -29,6 +33,7 @@ export const AllModals = (props) => {
     showProfileSwitcher, setShowProfileSwitcher,
     activeProfile, setActiveProfile,
     children, setChildren,
+    loadFamilyMembers, lixBalance, refreshLixFromServer,
     editingChildId, setEditingChildId,
     newChildIsFree, setNewChildIsFree,
     // Child Name Input
@@ -92,6 +97,10 @@ export const AllModals = (props) => {
     newVaccDoctor, setNewVaccDoctor,
     newVaccBatch, setNewVaccBatch,
     confirmAddVaccination,
+    // Batch scan
+    pickMultiplePhotos, batchPhotos, setBatchPhotos,
+    showBatchPreview, setShowBatchPreview,
+    getBatchEnergyCost, removeBatchPhoto,
   } = props;
 
   var _modalsModal = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null });
@@ -175,7 +184,30 @@ export const AllModals = (props) => {
                 <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
               </Pressable>
 
-              {/* Option 3 : Importer un document */}
+              {/* Option 3 : Sélectionner plusieurs photos (batch) */}
+              <Pressable delayPressIn={120}
+                onPress={function() { setShowMediBookUploadSheet(false); setTimeout(function() { if (pickMultiplePhotos) pickMultiplePhotos(); }, 300); }}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  paddingVertical: wp(14), paddingHorizontal: wp(12),
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: wp(14), marginBottom: wp(10),
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                }}>
+                <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: 'rgba(155,109,255,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
+                  <Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none">
+                    <Rect x="2" y="6" width="15" height="12" rx="2" stroke="#9B6DFF" strokeWidth="1.5"/>
+                    <Rect x="7" y="2" width="15" height="12" rx="2" stroke="#9B6DFF" strokeWidth="1.5"/>
+                  </Svg>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Plusieurs photos (batch)</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Analyser 2 à 10 pages d'un coup</Text>
+                </View>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
+              </Pressable>
+
+              {/* Option 4 : Importer un document */}
               <Pressable delayPressIn={120}
                 onPress={() => { setShowMediBookUploadSheet(false); setTimeout(() => pickDocument('medibook'), 300); }}
                 style={{
@@ -877,66 +909,59 @@ export const AllModals = (props) => {
                 )}
               </Pressable>
 
-              {/* Enfants */}
-              {children.map((child) => (
-                <Pressable
-                  key={child.id}
-                  delayPressIn={120}
-                  onPress={() => {
-                    if (child.name === 'Mon enfant' || child.name.startsWith('Enfant ')) {
-                      setShowProfileSwitcher(false);
-                      setNewChildIsFree(child.free);
-                      setNewChildName('');
-                      setEditingChildId(child.id);
-                      setTimeout(() => setShowChildNameInput(true), 400);
-                    } else {
+              {/* Enfants (depuis Supabase family_members) */}
+              {children.map(function(child) {
+                return (
+                  <Pressable
+                    key={child.id}
+                    delayPressIn={120}
+                    onPress={function() {
                       setActiveProfile(child.id);
                       setShowProfileSwitcher(false);
-                    }
-                  }}
-                  style={{
-                    flexDirection: 'row', alignItems: 'center',
-                    paddingVertical: wp(14), paddingHorizontal: wp(12),
-                    backgroundColor: activeProfile === child.id ? 'rgba(77,166,255,0.1)' : 'rgba(255,255,255,0.05)',
-                    borderRadius: wp(14), marginBottom: wp(10),
-                    borderWidth: 1,
-                    borderColor: activeProfile === child.id ? 'rgba(77,166,255,0.3)' : 'rgba(255,255,255,0.08)',
-                  }}
-                >
-                  <View style={{
-                    width: wp(44), height: wp(44), borderRadius: wp(22),
-                    backgroundColor: 'rgba(77,166,255,0.15)',
-                    justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
-                  }}>
-                    <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
-                      <Circle cx="12" cy="8" r="3" stroke="#4DA6FF" strokeWidth="1.5"/>
-                      <Path d="M8 21v-1a4 4 0 018 0v1" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round"/>
-                    </Svg>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF' }}>{child.name}</Text>
-                    <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>
-                      {child.free ? 'Gratuit' : '5 000 Lix'}
-                    </Text>
-                  </View>
-                  {activeProfile === child.id && (
-                    <View style={{ width: wp(22), height: wp(22), borderRadius: wp(11), backgroundColor: '#4DA6FF', justifyContent: 'center', alignItems: 'center' }}>
-                      <Text style={{ color: '#FFF', fontSize: fp(12), fontWeight: '700' }}>✓</Text>
+                    }}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      paddingVertical: wp(14), paddingHorizontal: wp(12),
+                      backgroundColor: activeProfile === child.id ? 'rgba(77,166,255,0.1)' : 'rgba(255,255,255,0.05)',
+                      borderRadius: wp(14), marginBottom: wp(10),
+                      borderWidth: 1,
+                      borderColor: activeProfile === child.id ? 'rgba(77,166,255,0.3)' : 'rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    <View style={{
+                      width: wp(44), height: wp(44), borderRadius: wp(22),
+                      backgroundColor: 'rgba(77,166,255,0.15)',
+                      justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                    }}>
+                      <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
+                        <Circle cx="12" cy="8" r="3" stroke="#4DA6FF" strokeWidth="1.5"/>
+                        <Path d="M8 21v-1a4 4 0 018 0v1" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round"/>
+                      </Svg>
                     </View>
-                  )}
-                </Pressable>
-              ))}
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF' }}>{child.name}</Text>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>
+                        {child.age || 'Profil enfant'}
+                        {child.medical_profile_unlocked ? ' — Profil médical' : ''}
+                      </Text>
+                    </View>
+                    {activeProfile === child.id ? (
+                      <View style={{ width: wp(22), height: wp(22), borderRadius: wp(11), backgroundColor: '#4DA6FF', justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ color: '#FFF', fontSize: fp(12), fontWeight: '700' }}>✓</Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
 
-              {/* Ajouter un enfant */}
+              {/* Ajouter un enfant (via RPC unlock_child_medical_profile) */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => {
+                onPress={function() {
                   setShowProfileSwitcher(false);
-                  const isFree = children.length === 0;
-                  setNewChildIsFree(isFree);
                   setNewChildName('');
                   setEditingChildId(null);
-                  setTimeout(() => setShowChildNameInput(true), 400);
+                  setTimeout(function() { setShowChildNameInput(true); }, 400);
                 }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
@@ -954,15 +979,96 @@ export const AllModals = (props) => {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#D4AF37' }}>Ajouter un enfant</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)' }}>
-                    {children.length === 0 ? '1er enfant gratuit' : '5 000 Lix par enfant'}
-                  </Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)' }}>1 000 Lix</Text>
                 </View>
               </Pressable>
 
               <Pressable onPress={() => setShowProfileSwitcher(false)}
                 style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
                 <Text style={{ fontSize: fp(15), fontWeight: '600', color: 'rgba(255,255,255,0.4)' }}>Fermer</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal — Batch Preview */}
+      <Modal
+        visible={showBatchPreview}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={function() { setShowBatchPreview(false); }}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}
+          onPress={function() { setShowBatchPreview(false); }}
+        >
+          <Pressable onPress={function(e) { e.stopPropagation(); }}>
+            <LinearGradient
+              colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{
+                borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24),
+                paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34),
+                maxHeight: SCREEN_HEIGHT * 0.75,
+              }}
+            >
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }}/>
+
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>
+                {'Batch — ' + (batchPhotos ? batchPhotos.length : 0) + ' photo' + ((batchPhotos && batchPhotos.length > 1) ? 's' : '')}
+              </Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(4) }}>
+                Coût : {getBatchEnergyCost && batchPhotos ? getBatchEnergyCost(batchPhotos.length) : 50} ⚡
+              </Text>
+              <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginBottom: wp(16) }}>
+                Maximum 10 photos par batch
+              </Text>
+
+              {/* Grille preview 3 colonnes */}
+              <ScrollView style={{ maxHeight: wp(200) }} showsVerticalScrollIndicator={false}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(6) }}>
+                  {(batchPhotos || []).map(function(photo) {
+                    var imgSize = (SCREEN_WIDTH - wp(40) - wp(12)) / 3;
+                    return (
+                      <View key={photo.id} style={{ width: imgSize, height: imgSize, borderRadius: wp(10), overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                        <Image source={{ uri: photo.uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                        <Pressable
+                          onPress={function() { if (removeBatchPhoto) removeBatchPhoto(photo.id); }}
+                          style={{
+                            position: 'absolute', top: wp(4), right: wp(4),
+                            width: wp(22), height: wp(22), borderRadius: wp(11),
+                            backgroundColor: 'rgba(255,107,107,0.9)',
+                            justifyContent: 'center', alignItems: 'center',
+                          }}>
+                          <Text style={{ color: '#FFF', fontSize: fp(11), fontWeight: '700' }}>✕</Text>
+                        </Pressable>
+                      </View>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+
+              {/* Bouton Analyser */}
+              <Pressable delayPressIn={120}
+                onPress={function() {
+                  setShowBatchPreview(false);
+                  if (props.startBatchScan) props.startBatchScan(batchPhotos, 'medibook');
+                }}
+                style={function(state) { return {
+                  marginTop: wp(16), borderRadius: wp(14), overflow: 'hidden',
+                  transform: [{ scale: state.pressed ? 0.97 : 1 }],
+                }; }}>
+                <LinearGradient colors={['#00D984', '#00B871']}
+                  style={{ paddingVertical: wp(14), alignItems: 'center', borderRadius: wp(14) }}>
+                  <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>
+                    {'Analyser (' + (batchPhotos ? batchPhotos.length : 0) + ' photo' + ((batchPhotos && batchPhotos.length > 1) ? 's' : '') + ')'}
+                  </Text>
+                </LinearGradient>
+              </Pressable>
+
+              <Pressable onPress={function() { setShowBatchPreview(false); }}
+                style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(8) }}>
+                <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Annuler</Text>
               </Pressable>
             </LinearGradient>
           </Pressable>
@@ -1204,31 +1310,26 @@ export const AllModals = (props) => {
             <Text style={{
               fontSize: fp(18), fontWeight: '700', color: '#FFF',
               textAlign: 'center', marginBottom: wp(6),
-            }}>{editingChildId ? 'Nommer cet enfant' : 'Ajouter un enfant'}</Text>
+            }}>Ajouter un enfant</Text>
 
             <Text style={{
               fontSize: fp(12), color: 'rgba(255,255,255,0.4)',
+              textAlign: 'center', marginBottom: wp(4),
+            }}>Créez un profil médical séparé pour votre enfant</Text>
+            <Text style={{
+              fontSize: fp(12), fontWeight: '600', color: '#D4AF37',
               textAlign: 'center', marginBottom: wp(20),
-            }}>
-              {editingChildId
-                ? 'Entrez le prénom de votre enfant'
-                : newChildIsFree
-                  ? 'Premier enfant gratuit'
-                  : 'Coût : 5 000 Lix'
-              }
-            </Text>
+            }}>{'Coût : 1 000 Lix — Solde : ' + (lixBalance || 0) + ' Lix'}</Text>
 
+            <Text style={{ fontSize: fp(12), fontWeight: '600', color: 'rgba(255,255,255,0.5)', marginBottom: wp(6) }}>Prénom *</Text>
             <View style={{
               backgroundColor: 'rgba(255,255,255,0.08)',
               borderRadius: wp(12), paddingHorizontal: wp(14),
               borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-              marginBottom: wp(24),
+              marginBottom: wp(14),
             }}>
               <TextInput
-                style={{
-                  fontSize: fp(15), color: '#FFF',
-                  paddingVertical: wp(12),
-                }}
+                style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
                 placeholder="Prénom de l'enfant"
                 placeholderTextColor="rgba(255,255,255,0.25)"
                 value={newChildName}
@@ -1238,53 +1339,96 @@ export const AllModals = (props) => {
               />
             </View>
 
+            <Text style={{ fontSize: fp(12), fontWeight: '600', color: 'rgba(255,255,255,0.5)', marginBottom: wp(6) }}>Date de naissance (optionnel)</Text>
+            <View style={{
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              borderRadius: wp(12), paddingHorizontal: wp(14),
+              borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+              marginBottom: wp(14),
+            }}>
+              <TextInput
+                style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
+                placeholder="JJ/MM/AAAA"
+                placeholderTextColor="rgba(255,255,255,0.25)"
+                value={editingChildId || ''}
+                onChangeText={function(t) { setEditingChildId(t); }}
+                keyboardType="numeric"
+                maxLength={10}
+              />
+            </View>
+
+            <Text style={{ fontSize: fp(12), fontWeight: '600', color: 'rgba(255,255,255,0.5)', marginBottom: wp(6) }}>Genre (optionnel)</Text>
+            <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(20) }}>
+              {[
+                { key: 'male', label: 'Garçon', color: '#4DA6FF' },
+                { key: 'female', label: 'Fille', color: '#FF6B8A' },
+              ].map(function(g) {
+                var isActive = newChildIsFree === g.key;
+                return (
+                  <Pressable key={g.key} onPress={function() { setNewChildIsFree(g.key); }}
+                    style={{ flex: 1, paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center', backgroundColor: isActive ? g.color + '20' : 'rgba(255,255,255,0.04)', borderWidth: 1.5, borderColor: isActive ? g.color : 'rgba(255,255,255,0.08)' }}>
+                    <Text style={{ fontSize: fp(13), fontWeight: '700', color: isActive ? g.color : 'rgba(255,255,255,0.4)' }}>{g.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
             <Pressable
               delayPressIn={120}
-              onPress={() => {
+              onPress={function() {
                 if (newChildName.trim().length === 0) {
                   setModalsModal({ visible: true, type: 'info', title: 'Nom requis', message: 'Veuillez entrer le prénom de l\'enfant.', onClose: closeModalsModal });
                   return;
                 }
-                if (editingChildId) {
-                  setChildren(prev => prev.map(c =>
-                    c.id === editingChildId ? { ...c, name: newChildName.trim() } : c
-                  ));
-                  setActiveProfile(editingChildId);
-                  setEditingChildId(null);
-                } else {
-                  const newChild = {
-                    id: 'child-' + children.length,
-                    name: newChildName.trim(),
-                    age: '',
-                    free: newChildIsFree,
-                  };
-                  setChildren(prev => [...prev, newChild]);
-                  setActiveProfile(newChild.id);
+                var birthDate = null;
+                if (editingChildId && editingChildId.length >= 8) {
+                  var parts = editingChildId.split('/');
+                  if (parts.length === 3) birthDate = parts[2] + '-' + parts[1] + '-' + parts[0];
                 }
-                setShowChildNameInput(false);
-                setNewChildName('');
+                var gender = (newChildIsFree === 'male' || newChildIsFree === 'female') ? newChildIsFree : null;
+
+                supabase.rpc('unlock_child_medical_profile', {
+                  p_user_id: userId,
+                  p_child_name: newChildName.trim(),
+                  p_child_birth_date: birthDate,
+                  p_child_gender: gender,
+                }).then(function(result) {
+                  if (result.error) {
+                    var errMsg = result.error.message || '';
+                    if (errMsg.indexOf('insufficient') >= 0 || errMsg.indexOf('Lix') >= 0) {
+                      setModalsModal({ visible: true, type: 'error', title: 'Lix insuffisants', message: 'Il vous faut 1 000 Lix pour ajouter un profil enfant.\n\nSolde actuel : ' + (lixBalance || 0) + ' Lix', onClose: closeModalsModal });
+                    } else {
+                      setModalsModal({ visible: true, type: 'error', title: 'Erreur', message: errMsg || 'L\'ajout a échoué.', onClose: closeModalsModal });
+                    }
+                    return;
+                  }
+                  setShowChildNameInput(false);
+                  setNewChildName('');
+                  setEditingChildId(null);
+                  setNewChildIsFree(false);
+                  if (refreshLixFromServer) refreshLixFromServer();
+                  if (loadFamilyMembers) loadFamilyMembers();
+                  setModalsModal({ visible: true, type: 'success', title: 'Profil créé', message: newChildName.trim() + ' a été ajouté à vos profils.', onClose: closeModalsModal });
+                }).catch(function(err) {
+                  setModalsModal({ visible: true, type: 'error', title: 'Erreur', message: 'Connexion échouée. Réessayez.', onClose: closeModalsModal });
+                });
               }}
             >
               <LinearGradient
-                colors={['#4DA6FF', '#3A8FE8']}
+                colors={['#00D984', '#00B871']}
                 style={{
                   paddingVertical: wp(14), borderRadius: wp(14),
                   alignItems: 'center', width: '100%',
                 }}
               >
                 <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>
-                  {editingChildId
-                    ? 'Confirmer'
-                    : newChildIsFree
-                      ? 'Ajouter gratuitement'
-                      : 'Ajouter (5 000 Lix)'
-                  }
+                  {'Déverrouiller (1 000 Lix)'}
                 </Text>
               </LinearGradient>
             </Pressable>
 
             <Pressable
-              onPress={() => { setShowChildNameInput(false); setNewChildName(''); setEditingChildId(null); }}
+              onPress={function() { setShowChildNameInput(false); setNewChildName(''); setEditingChildId(null); }}
               style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(8) }}
             >
               <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Annuler</Text>

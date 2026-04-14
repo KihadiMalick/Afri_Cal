@@ -188,6 +188,7 @@ export const MediBookContent = (props) => {
     scanSteps, setScanSteps,
     scanContext, setScanContext,
     scanFileName,
+    batchPhotos, batchProgress, batchIdState,
     // Carnet
     carnetPhotos, setCarnetPhotos,
     carnetPulseAnim,
@@ -298,6 +299,11 @@ export const MediBookContent = (props) => {
         <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)' }}>
           {scanFileName}
         </Text>
+        {batchProgress ? (
+          <Text style={{ fontSize: fp(12), color: '#9B6DFF', fontWeight: '600', marginTop: wp(6) }}>
+            {batchProgress}
+          </Text>
+        ) : null}
         <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.25)', marginTop: wp(2) }}>
           Ne fermez pas l'application
         </Text>
@@ -531,6 +537,11 @@ export const MediBookContent = (props) => {
             </Svg>
           </View>
           <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF' }}>Analyse terminée</Text>
+          {scanResults && scanResults._batchPhotoCount ? (
+            <Text style={{ fontSize: fp(12), color: '#9B6DFF', fontWeight: '600', marginTop: wp(4) }}>
+              {'Batch de ' + scanResults._batchPhotoCount + ' photos analysées'}
+            </Text>
+          ) : null}
           <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginTop: wp(4) }}>
             Vérifiez les données avant de valider
           </Text>
@@ -746,6 +757,7 @@ export const MediBookContent = (props) => {
                 headers['Prefer'] = 'return=minimal';
 
                 var scanDate = scanResults.date || null;
+                var fmId = activeProfile === 'self' ? null : activeProfile;
 
                 // Insérer les analyses
                 if (scanResults.data && scanResults.data.length > 0) {
@@ -753,6 +765,7 @@ export const MediBookContent = (props) => {
                     method: 'POST', headers,
                     body: JSON.stringify(scanResults.data.map(item => ({
                       user_id: userId,
+                      family_member_id: fmId,
                       label: item.label,
                       value: item.value,
                       value_numeric: parseFloat(item.value) || null,
@@ -770,6 +783,7 @@ export const MediBookContent = (props) => {
                     method: 'POST', headers,
                     body: JSON.stringify(scanResults.medications.map(med => ({
                       user_id: userId,
+                      family_member_id: fmId,
                       name: med.name,
                       dosage: med.dosage || null,
                       frequency: med.frequency || null,
@@ -786,6 +800,7 @@ export const MediBookContent = (props) => {
                     method: 'POST', headers,
                     body: JSON.stringify(scanResults.vaccinations.map(vac => ({
                       user_id: userId,
+                      family_member_id: fmId,
                       vaccine_name: vac.name,
                       administration_date: vac.date || scanDate,
                       dose_number: parseInt(vac.dose) || 1,
@@ -811,6 +826,7 @@ export const MediBookContent = (props) => {
                     method: 'POST', headers,
                     body: JSON.stringify(scanResults.allergies.map(a => ({
                       user_id: userId,
+                      family_member_id: fmId,
                       allergen: a.allergen,
                       type: a.type || null,
                       severity: a.severity || 'moderate',
@@ -826,6 +842,7 @@ export const MediBookContent = (props) => {
                     body: JSON.stringify(scanResults.diagnostics.map(function(d) {
                       return {
                         user_id: userId,
+                        family_member_id: fmId,
                         condition_name: d.condition_name,
                         severity: d.severity || 'moderate',
                         status: d.status || 'active',
@@ -843,11 +860,14 @@ export const MediBookContent = (props) => {
                   method: 'POST', headers,
                   body: JSON.stringify({
                     user_id: userId,
+                    family_member_id: fmId,
                     document_type: scanResults.documentType || 'Document',
                     summary: scanResults.summary || '',
                     raw_ai_response: scanResults,
                     scan_context: 'medibook',
                     items_extracted: (scanResults.data?.length || 0) + (scanResults.medications?.length || 0) + (scanResults.vaccinations?.length || 0) + (scanResults.allergies?.length || 0) + (scanResults.diagnostics?.length || 0),
+                    batch_id: scanResults._batchId || null,
+                    energy_cost: scanResults._energyCost || null,
                   }),
                 });
 
@@ -3394,6 +3414,7 @@ export const MediBookContent = (props) => {
                             method: 'POST', headers: headers,
                             body: JSON.stringify({
                               user_id: userId,
+                              family_member_id: activeProfile === 'self' ? null : activeProfile,
                               vaccine_name: rem.raw.vaccine_name,
                               dose_number: newDose,
                               administration_date: new Date().toISOString().split('T')[0],

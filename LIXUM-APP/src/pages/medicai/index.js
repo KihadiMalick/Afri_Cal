@@ -198,9 +198,7 @@ export default function MedicAiPage({ navigation }) {
   var [newVaccDoctor, setNewVaccDoctor] = useState('');
   var [newVaccBatch, setNewVaccBatch] = useState('');
   const [activeProfile, setActiveProfile] = useState('self');
-  const [children, setChildren] = useState([
-    { id: 'child-0', name: 'Mon enfant', age: '', free: true },
-  ]);
+  const [children, setChildren] = useState([]);
   const [carnetPhotos, setCarnetPhotos] = useState([]);
   const [statsTab, setStatsTab] = useState('nutrition');
 
@@ -237,6 +235,15 @@ export default function MedicAiPage({ navigation }) {
   const [scanContext, setScanContext] = useState(null);
   const [scanCategory, setScanCategory] = useState(null);
   const [scanFileName, setScanFileName] = useState('');
+  // Batch scan
+  var _batchPhotos = useState([]);
+  var batchPhotos = _batchPhotos[0]; var setBatchPhotos = _batchPhotos[1];
+  var _showBatchPreview = useState(false);
+  var showBatchPreview = _showBatchPreview[0]; var setShowBatchPreview = _showBatchPreview[1];
+  var _batchProgress = useState('');
+  var batchProgress = _batchProgress[0]; var setBatchProgress = _batchProgress[1];
+  var _batchId = useState(null);
+  var batchIdState = _batchId[0]; var setBatchIdState = _batchId[1];
 
   // === ALIXEN Face State — dérivé des variables de chat ===
   const getAlixenState = function() {
@@ -365,6 +372,7 @@ export default function MedicAiPage({ navigation }) {
     loadUserData();
     loadAvailableMeals();
     loadMedicalData();
+    loadFamilyMembers();
     // Avatar profil
     (async () => {
       try {
@@ -436,6 +444,10 @@ export default function MedicAiPage({ navigation }) {
     }
   }, [mediBookView]);
 
+  // ── Recharger les données médicales quand on change de profil ───────────
+  React.useEffect(function() {
+    if (userId) loadMedicalData();
+  }, [activeProfile]);
 
   const addBotMessage = useCallback((text) => {
     setMessages(prev => {
@@ -553,70 +565,74 @@ export default function MedicAiPage({ navigation }) {
   const loadMedicalData = async () => {
     setMedicalDataLoading(true);
     try {
-      const userId = userId;
-      const headers = {
+      var headers = {
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
         'Content-Type': 'application/json',
       };
 
+      // Filtre par profil: self → family_member_id IS NULL, enfant → family_member_id=eq.UUID
+      var fmFilter = activeProfile === 'self'
+        ? '&family_member_id=is.null'
+        : '&family_member_id=eq.' + activeProfile;
+
       // Charger le profil
-      const profileRes = await fetch(
+      var profileRes = await fetch(
         SUPABASE_URL + '/rest/v1/health_profiles?user_id=eq.' + userId + '&profile_type=eq.self&limit=1',
-        { headers }
+        { headers: headers }
       );
-      const profiles = await profileRes.json();
-      const profileId = profiles[0]?.id || null;
-      const vitalityScore = profiles[0]?.vitality_score || 0;
+      var profiles = await profileRes.json();
+      var profileId = profiles[0]?.id || null;
+      var vitalityScore = profiles[0]?.vitality_score || 0;
 
       // Charger les analyses
-      const analysesRes = await fetch(
-        SUPABASE_URL + '/rest/v1/medical_analyses?user_id=eq.' + userId + '&order=created_at.desc',
-        { headers }
+      var analysesRes = await fetch(
+        SUPABASE_URL + '/rest/v1/medical_analyses?user_id=eq.' + userId + fmFilter + '&order=created_at.desc',
+        { headers: headers }
       );
-      const analyses = await analysesRes.json();
+      var analyses = await analysesRes.json();
 
       // Charger les médicaments actifs
-      const medsRes = await fetch(
-        SUPABASE_URL + '/rest/v1/medications?user_id=eq.' + userId + '&status=eq.active&order=created_at.desc',
-        { headers }
+      var medsRes = await fetch(
+        SUPABASE_URL + '/rest/v1/medications?user_id=eq.' + userId + fmFilter + '&status=eq.active&order=created_at.desc',
+        { headers: headers }
       );
-      const medications = await medsRes.json();
+      var medications = await medsRes.json();
 
       // Charger les allergies
-      const allergiesRes = await fetch(
-        SUPABASE_URL + '/rest/v1/allergies?user_id=eq.' + userId + '&order=created_at.desc',
-        { headers }
+      var allergiesRes = await fetch(
+        SUPABASE_URL + '/rest/v1/allergies?user_id=eq.' + userId + fmFilter + '&order=created_at.desc',
+        { headers: headers }
       );
-      const allergiesData = await allergiesRes.json();
+      var allergiesData = await allergiesRes.json();
 
       // Charger les vaccinations
-      const vaccRes = await fetch(
-        SUPABASE_URL + '/rest/v1/vaccinations?user_id=eq.' + userId + '&order=administration_date.desc',
-        { headers }
+      var vaccRes = await fetch(
+        SUPABASE_URL + '/rest/v1/vaccinations?user_id=eq.' + userId + fmFilter + '&order=administration_date.desc',
+        { headers: headers }
       );
-      const vaccinations = await vaccRes.json();
+      var vaccinations = await vaccRes.json();
 
       // Charger les diagnostics
-      const diagRes = await fetch(
-        SUPABASE_URL + '/rest/v1/diagnostics?user_id=eq.' + userId + '&order=created_at.desc',
-        { headers }
+      var diagRes = await fetch(
+        SUPABASE_URL + '/rest/v1/diagnostics?user_id=eq.' + userId + fmFilter + '&order=created_at.desc',
+        { headers: headers }
       );
-      const diagnostics = await diagRes.json();
+      var diagnostics = await diagRes.json();
 
       // Charger les médicaments terminés
-      const medsTermRes = await fetch(
-        SUPABASE_URL + '/rest/v1/medications?user_id=eq.' + userId + '&status=eq.completed&order=end_date.desc',
-        { headers }
+      var medsTermRes = await fetch(
+        SUPABASE_URL + '/rest/v1/medications?user_id=eq.' + userId + fmFilter + '&status=eq.completed&order=end_date.desc',
+        { headers: headers }
       );
-      const medsTerminated = await medsTermRes.json();
+      var medsTerminated = await medsTermRes.json();
 
       // Charger les analyses planifiées
-      const scheduledRes = await fetch(
-        SUPABASE_URL + '/rest/v1/medical_analyses?user_id=eq.' + userId + '&is_scheduled=eq.true&order=scheduled_date.asc',
-        { headers }
+      var scheduledRes = await fetch(
+        SUPABASE_URL + '/rest/v1/medical_analyses?user_id=eq.' + userId + fmFilter + '&is_scheduled=eq.true&order=scheduled_date.asc',
+        { headers: headers }
       );
-      const scheduledAnalyses = await scheduledRes.json();
+      var scheduledAnalyses = await scheduledRes.json();
 
       // Charger les 7 derniers jours de nutrition
       const today = new Date().toISOString().split('T')[0];
@@ -647,6 +663,30 @@ export default function MedicAiPage({ navigation }) {
       console.error('Erreur chargement données médicales:', error);
     } finally {
       setMedicalDataLoading(false);
+    }
+  };
+
+  // ── Charger les profils enfants depuis Supabase ─────────────────────────
+  var loadFamilyMembers = async function() {
+    if (!userId) return;
+    try {
+      var res = await fetch(
+        SUPABASE_URL + '/rest/v1/family_members?user_id=eq.' + userId + '&is_active=eq.true&relation=eq.child&order=created_at.asc&select=*',
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+      );
+      var data = await res.json();
+      if (Array.isArray(data)) {
+        setChildren(data.map(function(fm) {
+          var age = '';
+          if (fm.birth_date) {
+            var diff = Date.now() - new Date(fm.birth_date).getTime();
+            age = Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000)) + ' ans';
+          }
+          return { id: fm.id, name: fm.name, age: age, birth_date: fm.birth_date, gender: fm.gender, medical_profile_unlocked: fm.medical_profile_unlocked };
+        }));
+      }
+    } catch (e) {
+      console.warn('Erreur chargement family_members:', e);
     }
   };
 
@@ -1273,6 +1313,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
         'Content-Type': 'application/json',
       };
+      var fmId = activeProfile === 'self' ? null : activeProfile;
 
       if (action.type === 'save_meal_plan') {
         const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/save_weekly_meal_plan', {
@@ -1309,6 +1350,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
           body: JSON.stringify({
             user_id: userId,
+            family_member_id: fmId,
             name: action.payload.name,
             dosage: action.payload.dosage,
             frequency: action.payload.frequency,
@@ -1336,6 +1378,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
           body: JSON.stringify({
             user_id: userId,
+            family_member_id: fmId,
             condition_name: action.payload.condition_name,
             severity: action.payload.severity || 'moderate',
             status: action.payload.status || 'active',
@@ -1353,6 +1396,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
           body: JSON.stringify({
             user_id: userId,
+            family_member_id: fmId,
             allergen: action.payload.allergen,
             type: action.payload.type || 'autre',
             severity: action.payload.severity || 'moderate',
@@ -1369,6 +1413,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
           body: JSON.stringify({
             user_id: userId,
+            family_member_id: fmId,
             vaccine_name: action.payload.vaccine_name,
             administration_date: action.payload.date || new Date().toISOString().split('T')[0],
             dose_number: action.payload.dose_number || 1,
@@ -1396,6 +1441,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
           body: JSON.stringify({
             user_id: userId,
+            family_member_id: fmId,
             label: action.payload.label,
             value: 'À effectuer',
             status: 'unknown',
@@ -1427,6 +1473,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
             body: JSON.stringify({
               user_id: userId,
+              family_member_id: fmId,
               condition_name: p.diagnosis.condition_name,
               severity: p.diagnosis.severity || 'moderate',
               status: p.diagnosis.status || 'active',
@@ -1450,6 +1497,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
               body: JSON.stringify({
                 user_id: userId,
+                family_member_id: fmId,
                 name: med.name,
                 dosage: med.dosage || null,
                 frequency: med.frequency || null,
@@ -1482,6 +1530,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
               body: JSON.stringify({
                 user_id: userId,
+                family_member_id: fmId,
                 label: an.label,
                 value: 'À effectuer',
                 status: 'unknown',
@@ -1917,6 +1966,190 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     }
   };
 
+  // ── BATCH PHOTO PICKER ──────────────────────────────────────────────────
+  var pickMultiplePhotos = async function() {
+    try {
+      var result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        quality: 0.7,
+        base64: true,
+        selectionLimit: 10,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        var photos = result.assets.slice(0, 10).map(function(asset, i) {
+          return { id: Date.now() + '-' + i, uri: asset.uri, base64: asset.base64 };
+        });
+        setBatchPhotos(photos);
+        setShowBatchPreview(true);
+      }
+    } catch (error) {
+      console.warn('Erreur sélection multiple:', error);
+    }
+  };
+
+  var removeBatchPhoto = function(photoId) {
+    setBatchPhotos(function(prev) { return prev.filter(function(p) { return p.id !== photoId; }); });
+  };
+
+  var getBatchEnergyCost = function(count) { return count <= 5 ? 50 : 80; };
+
+  var generateBatchId = function() {
+    var s4 = function() { return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1); };
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+  };
+
+  var mergeScanResults = function(results) {
+    var merged = { data: [], medications: [], vaccinations: [], allergies: [], diagnostics: [], alerts: [], summary: '', documentType: 'Batch', date: null };
+    var seen = {};
+    results.forEach(function(r) {
+      if (!r) return;
+      if (r.date && !merged.date) merged.date = r.date;
+      if (r.summary) merged.summary += (merged.summary ? '\n' : '') + r.summary;
+      if (r.documentType && r.documentType !== 'Document') merged.documentType = r.documentType;
+      (r.data || []).forEach(function(d) {
+        var key = 'a:' + (d.label || '');
+        if (!seen[key]) { seen[key] = true; merged.data.push(d); }
+      });
+      (r.medications || []).forEach(function(m) {
+        var key = 'm:' + (m.name || '').toLowerCase();
+        if (!seen[key]) { seen[key] = true; merged.medications.push(m); }
+        else {
+          var idx = merged.medications.findIndex(function(x) { return (x.name || '').toLowerCase() === (m.name || '').toLowerCase(); });
+          if (idx >= 0 && m.dosage && !merged.medications[idx].dosage) merged.medications[idx] = m;
+        }
+      });
+      (r.vaccinations || []).forEach(function(v) {
+        var key = 'v:' + (v.name || '').toLowerCase();
+        if (!seen[key]) { seen[key] = true; merged.vaccinations.push(v); }
+      });
+      (r.allergies || []).forEach(function(a) {
+        var key = 'al:' + (a.allergen || '').toLowerCase();
+        if (!seen[key]) { seen[key] = true; merged.allergies.push(a); }
+      });
+      (r.diagnostics || []).forEach(function(d) {
+        var key = 'd:' + (d.condition_name || '').toLowerCase();
+        if (!seen[key]) { seen[key] = true; merged.diagnostics.push(d); }
+      });
+      (r.alerts || []).forEach(function(al) { merged.alerts.push(al); });
+    });
+    return merged;
+  };
+
+  var startBatchScan = async function(photos, context) {
+    if (!photos || photos.length === 0) return;
+    var totalPhotos = photos.length;
+    var cost = getBatchEnergyCost(totalPhotos);
+    var bid = generateBatchId();
+    setBatchIdState(bid);
+    setScanResults(null);
+    setScanSteps([]);
+    setScanContext(context || 'medibook');
+    setScanFileName('Batch de ' + totalPhotos + ' photos');
+    setUploadState('scanning');
+    setBatchProgress('Préparation du batch...');
+
+    // Split into sub-batches of max 5
+    var subBatches = [];
+    for (var i = 0; i < photos.length; i += 5) {
+      subBatches.push(photos.slice(i, i + 5));
+    }
+
+    // Steps animation
+    var steps = [];
+    for (var sb = 0; sb < subBatches.length; sb++) {
+      steps.push('Lot ' + (sb + 1) + '/' + subBatches.length + ' — envoi de ' + subBatches[sb].length + ' photo' + (subBatches[sb].length > 1 ? 's' : '') + '...');
+      steps.push('Lot ' + (sb + 1) + '/' + subBatches.length + ' — analyse en cours...');
+    }
+    steps.push('Fusion des résultats...');
+    steps.push('Dédoublonnage...');
+
+    var stepIdx = 0;
+    var addStep = function(text) {
+      setScanSteps(function(prev) { return prev.concat([{ text: text, done: true }]); });
+    };
+
+    try {
+      var allResults = [];
+
+      for (var bi = 0; bi < subBatches.length; bi++) {
+        var batch = subBatches[bi];
+        setBatchProgress('Lot ' + (bi + 1) + '/' + subBatches.length + ' en cours...');
+        addStep(steps[stepIdx]); stepIdx++;
+
+        // Build images array for this sub-batch
+        var imagesBase64 = batch.map(function(p) { return p.base64; });
+
+        var response = await fetch(
+          SUPABASE_URL + '/functions/v1/scan-medical',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              imageBase64: imagesBase64[0],
+              images_base64: imagesBase64,
+              mimeType: 'image/jpeg',
+              userId: userId || '00000000-0000-0000-0000-000000000001',
+              context: context || 'medibook',
+              category: 'notes',
+              batch_id: bid,
+              batch_index: bi,
+              batch_total: subBatches.length,
+              energy_cost: bi === 0 ? cost : 0,
+              feature: 'medic',
+            }),
+          }
+        );
+
+        if (response.status === 402) {
+          var gateData = await response.json();
+          setEnergyGateData(gateData);
+          setUploadState('idle');
+          setBatchProgress('');
+          return;
+        }
+
+        if (!response.ok) {
+          var errorText = await response.text();
+          throw new Error('Erreur lot ' + (bi + 1) + ': ' + response.status);
+        }
+
+        var result = await response.json();
+        if (result.error) throw new Error(result.error);
+        allResults.push(result);
+        addStep(steps[stepIdx]); stepIdx++;
+      }
+
+      // Merge all results
+      setBatchProgress('Fusion des résultats...');
+      addStep(steps[stepIdx]); stepIdx++;
+      var merged = mergeScanResults(allResults);
+      merged._batchId = bid;
+      merged._batchPhotoCount = totalPhotos;
+      merged._energyCost = cost;
+
+      // Dedup step
+      addStep(steps[stepIdx]); stepIdx++;
+
+      await new Promise(function(resolve) { setTimeout(resolve, 800); });
+
+      setScanResults(merged);
+      setUploadState('results');
+      setBatchProgress('');
+      setBatchPhotos([]);
+
+    } catch (error) {
+      console.error('Erreur batch scan:', error);
+      setUploadState('idle');
+      setBatchProgress('');
+      setScanResults(null);
+      showMModal('error', 'Erreur d\'analyse batch', 'ALIXEN n\'a pas pu analyser le batch. ' + (error.message || 'Erreur inconnue'));
+    }
+  };
+
   // ── TRANSFERT VERS SECRET POCKET ──────────────────────────────────────
   const toggleMedicationReminder = async (medicationId, currentValue) => {
     try {
@@ -2089,6 +2322,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         },
         body: JSON.stringify({
           user_id: userId,
+          family_member_id: activeProfile === 'self' ? null : activeProfile,
           name: selectedMedFromDb.name,
           dosage: newMedDosageValue + ' ' + newMedDosageUnit,
           frequency: newMedFrequency + 'x/jour',
@@ -2237,6 +2471,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         },
         body: JSON.stringify({
           user_id: userId,
+          family_member_id: activeProfile === 'self' ? null : activeProfile,
           label: newAnalysisLabel.trim(),
           value: 'À effectuer',
           status: 'unknown',
@@ -2304,6 +2539,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({
           user_id: userId,
+          family_member_id: activeProfile === 'self' ? null : activeProfile,
           condition_name: selectedDiagFromDb.name_fr,
           icd_code: selectedDiagFromDb.icd_code || null,
           severity: newDiagSeverity,
@@ -2334,6 +2570,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({
           user_id: userId,
+          family_member_id: activeProfile === 'self' ? null : activeProfile,
           allergen: newAllergyAllergen.trim(),
           type: newAllergyType,
           severity: newAllergySeverity,
@@ -2369,6 +2606,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({
           user_id: userId,
+          family_member_id: activeProfile === 'self' ? null : activeProfile,
           vaccine_name: newVaccName.trim(),
           administration_date: vaccDate || new Date().toISOString().split('T')[0],
           dose_number: newVaccDose,
@@ -2449,6 +2687,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           scanSteps={scanSteps} setScanSteps={setScanSteps}
           scanContext={scanContext} setScanContext={setScanContext}
           scanFileName={scanFileName}
+          batchPhotos={batchPhotos} batchProgress={batchProgress}
+          batchIdState={batchIdState}
           carnetPhotos={carnetPhotos} setCarnetPhotos={setCarnetPhotos}
           carnetPulseAnim={carnetPulseAnim}
           selectedCarnetPage={selectedCarnetPage} setSelectedCarnetPage={setSelectedCarnetPage}
@@ -3142,6 +3382,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         showProfileSwitcher={showProfileSwitcher} setShowProfileSwitcher={setShowProfileSwitcher}
         activeProfile={activeProfile} setActiveProfile={setActiveProfile}
         children={children} setChildren={setChildren}
+        loadFamilyMembers={loadFamilyMembers}
+        lixBalance={lixBalance} refreshLixFromServer={refreshLixFromServer}
         editingChildId={editingChildId} setEditingChildId={setEditingChildId}
         newChildIsFree={newChildIsFree} setNewChildIsFree={setNewChildIsFree}
         showChildNameInput={showChildNameInput} setShowChildNameInput={setShowChildNameInput}
@@ -3151,6 +3393,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         carnetPhotos={carnetPhotos} setCarnetPhotos={setCarnetPhotos}
         showAnalyzeSheet={showAnalyzeSheet} setShowAnalyzeSheet={setShowAnalyzeSheet}
         startMedicalScan={startMedicalScan}
+        pickMultiplePhotos={pickMultiplePhotos}
+        batchPhotos={batchPhotos} setBatchPhotos={setBatchPhotos}
+        showBatchPreview={showBatchPreview} setShowBatchPreview={setShowBatchPreview}
+        getBatchEnergyCost={getBatchEnergyCost} removeBatchPhoto={removeBatchPhoto}
+        startBatchScan={startBatchScan}
         showAddMedSheet={showAddMedSheet} setShowAddMedSheet={setShowAddMedSheet}
         addMedStep={addMedStep} setAddMedStep={setAddMedStep}
         medSearchQuery={medSearchQuery}
