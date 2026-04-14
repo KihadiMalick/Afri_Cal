@@ -2234,46 +2234,44 @@ export const MediBookContent = (props) => {
     const nextScheduled = medicalData.scheduledAnalyses.length > 0 ? medicalData.scheduledAnalyses[0] : null;
     const daysUntilNext = nextScheduled ? Math.ceil((new Date(nextScheduled.scheduled_date) - new Date()) / (1000 * 60 * 60 * 24)) : null;
 
-    const SectionCard = ({ title, subtitle, count, color, icon, onPress, badge }) => (
-      <Pressable delayPressIn={120} onPress={onPress}
-        style={({ pressed }) => ({
-          backgroundColor: '#FAFBFC', borderRadius: wp(16), padding: wp(16),
-          marginBottom: wp(10), flexDirection: 'row', alignItems: 'center',
-          shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
-          borderLeftWidth: wp(4), borderLeftColor: color,
-          transform: [{ scale: pressed ? 0.97 : 1 }],
-        })}>
+    var SectionCard = function(p) { return (
+      <Pressable delayPressIn={120} onPress={p.onPress}
+        style={function(state) { return {
+          backgroundColor: '#2A303B', borderRadius: wp(12), padding: wp(14),
+          marginBottom: wp(8), flexDirection: 'row', alignItems: 'center',
+          gap: wp(12), borderWidth: 1, borderColor: '#3A3F46',
+          transform: [{ scale: state.pressed ? 0.97 : 1 }],
+        }; }}>
         <View style={{
-          width: wp(44), height: wp(44), borderRadius: wp(14),
-          backgroundColor: color + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+          width: wp(40), height: wp(40), borderRadius: wp(10),
+          backgroundColor: p.color + '15', justifyContent: 'center', alignItems: 'center',
         }}>
-          {icon}
+          {p.icon}
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#2D3436' }}>{title}</Text>
-          <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginTop: wp(2) }}>{subtitle}</Text>
+          <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>{p.title}</Text>
+          <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(2) }}>{p.subtitle}</Text>
         </View>
-        {badge && (
+        {p.badge ? (
           <View style={{
-            backgroundColor: badge.bgColor || 'rgba(255,107,107,0.15)',
+            backgroundColor: p.badge.bgColor || 'rgba(255,107,107,0.15)',
             borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), marginRight: wp(8),
           }}>
-            <Text style={{ fontSize: fp(10), fontWeight: '700', color: badge.color || '#FF6B6B' }}>{badge.text}</Text>
+            <Text style={{ fontSize: fp(10), fontWeight: '700', color: p.badge.color || '#FF6B6B' }}>{p.badge.text}</Text>
           </View>
-        )}
+        ) : null}
         <View style={{
-          backgroundColor: color + '20', borderRadius: wp(10),
-          paddingHorizontal: wp(10), paddingVertical: wp(4), marginRight: wp(8),
+          backgroundColor: p.color + '15', borderRadius: wp(10),
+          paddingHorizontal: wp(10), paddingVertical: wp(3), minWidth: wp(22),
         }}>
-          <Text style={{ fontSize: fp(13), fontWeight: '700', color: color }}>{count}</Text>
+          <Text style={{ fontSize: fp(11), fontWeight: '600', color: p.color, textAlign: 'center' }}>{p.count}</Text>
         </View>
-        <Text style={{ fontSize: fp(16), color: 'rgba(0,0,0,0.15)' }}>{">"}</Text>
+        <Text style={{ fontSize: fp(14), color: '#555' }}>{">"}</Text>
       </Pressable>
-    );
+    ); };
 
     return (
-      <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+      <View style={{ flex: 1, backgroundColor: '#1A2029' }}>
         <StatusBar barStyle="light-content" />
         <LinearGradient
           colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
@@ -2359,46 +2357,46 @@ export const MediBookContent = (props) => {
 
           <SectionCard title="Analyses médicales"
             subtitle={scheduledCount > 0 ? scheduledCount + ' analyse' + (scheduledCount > 1 ? 's' : '') + ' à venir' : 'Historique de vos bilans'}
-            count={doneAnalyses} color="#00D984"
-            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M9 2v6l-5 8a3 3 0 002.6 4.5h10.8A3 3 0 0020 16l-5-8V2" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" /><Line x1="9" y1="2" x2="15" y2="2" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" /></Svg>}
-            onPress={() => setReportSection('analyses')}
+            count={doneAnalyses} color="#4DA6FF"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M9 2v6l-5 8a3 3 0 002.6 4.5h10.8A3 3 0 0020 16l-5-8V2" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" /><Line x1="9" y1="2" x2="15" y2="2" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" /></Svg>}
+            onPress={function() { setReportSection('analyses'); }}
             badge={scheduledCount > 0 ? { text: scheduledCount + ' à venir', color: '#FF8C42', bgColor: 'rgba(255,140,66,0.15)' } : null}
           />
 
           <SectionCard title="Médicaments"
             subtitle={activeCount > 0 ? activeCount + ' traitement' + (activeCount > 1 ? 's' : '') + ' en cours' : 'Aucun traitement actif'}
-            count={activeCount + terminatedCount} color="#4DA6FF"
-            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M10.5 1.5l-8 8a4.24 4.24 0 006 6l8-8a4.24 4.24 0 00-6-6z" stroke="#4DA6FF" strokeWidth="1.5" /><Line x1="8" y1="8" x2="14" y2="14" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" /></Svg>}
-            onPress={() => setReportSection('medications')}
+            count={activeCount + terminatedCount} color="#00D984"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M10.5 1.5l-8 8a4.24 4.24 0 006 6l8-8a4.24 4.24 0 00-6-6z" stroke="#00D984" strokeWidth="1.5" /><Line x1="8" y1="8" x2="14" y2="14" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" /></Svg>}
+            onPress={function() { setReportSection('medications'); }}
             badge={activeCount > 0 ? { text: activeCount + ' actif' + (activeCount > 1 ? 's' : ''), color: '#00D984', bgColor: 'rgba(0,217,132,0.15)' } : null}
           />
 
           <SectionCard title="Allergies et intolérances"
             subtitle={allergiesCount > 0 ? 'Profil allergique enregistré' : 'Aucune allergie enregistrée'}
-            count={allergiesCount} color="#FF8C42"
-            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#FF8C42" strokeWidth="1.5" /></Svg>}
+            count={allergiesCount} color="#FFD93D"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#FFD93D" strokeWidth="1.5" /></Svg>}
             onPress={function() { setReportSection('allergies'); }}
           />
 
           <SectionCard title="Carnet vaccinal"
             subtitle={vaccCount > 0 ? vaccCount + ' vaccin' + (vaccCount > 1 ? 's' : '') + ' enregistré' + (vaccCount > 1 ? 's' : '') : 'Aucun vaccin enregistré'}
-            count={vaccCount} color="#9B6DFF"
-            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M18 2l4 4-9.5 9.5-4-4L18 2z" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><Path d="M8.5 11.5L2 18v4h4l6.5-6.5" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
+            count={vaccCount} color="#9B8ACF"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M18 2l4 4-9.5 9.5-4-4L18 2z" stroke="#9B8ACF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><Path d="M8.5 11.5L2 18v4h4l6.5-6.5" stroke="#9B8ACF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
             onPress={function() { setReportSection('vaccinations'); }}
           />
 
           <SectionCard title="Diagnostics à surveiller"
             subtitle={diagCount > 0 ? diagCount + ' diagnostic' + (diagCount > 1 ? 's' : '') : 'Aucun diagnostic enregistré'}
-            count={diagCount} color="#FF6B6B"
-            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke="#FF6B6B" strokeWidth="1.5" /><Path d="M3 12h4l3-6 4 12 3-6h4" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
+            count={diagCount} color="#FF6B8A"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke="#FF6B8A" strokeWidth="1.5" /><Path d="M3 12h4l3-6 4 12 3-6h4" stroke="#FF6B8A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
             onPress={function() { setReportSection('diagnostics'); }}
           />
 
           <View>
             <SectionCard title="Calendrier de santé"
               subtitle={(doneAnalyses + activeCount + terminatedCount + allergiesCount + vaccCount + diagCount) + ' événements médicaux'}
-              count="" color="#D4AF37"
-              icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Rect x="3" y="4" width="18" height="18" rx="2" stroke="#D4AF37" strokeWidth="1.5" /><Line x1="16" y1="2" x2="16" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" /><Line x1="8" y1="2" x2="8" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" /><Line x1="3" y1="10" x2="21" y2="10" stroke="#D4AF37" strokeWidth="1.5" /></Svg>}
+              count="" color="#00D984"
+              icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Rect x="3" y="4" width="18" height="18" rx="2" stroke="#00D984" strokeWidth="1.5" /><Line x1="16" y1="2" x2="16" y2="6" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" /><Line x1="8" y1="2" x2="8" y2="6" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" /><Line x1="3" y1="10" x2="21" y2="10" stroke="#00D984" strokeWidth="1.5" /></Svg>}
               onPress={function() { setReportSection('calendar'); setSelectedDay(null); }}
             />
             {upcomingReminders.filter(function(r) { return r.urgency === 'overdue' || r.urgency === 'week' || r.urgency === 'month'; }).length > 0 ? (
