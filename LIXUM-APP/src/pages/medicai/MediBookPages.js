@@ -1057,6 +1057,30 @@ export const MediBookContent = (props) => {
       </LinearGradient>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(20), paddingBottom: wp(50) }}>
+        {/* Bouton Ajouter des données de santé — accès direct */}
+        <Pressable delayPressIn={120} onPress={function() { setShowAddDataSheet(true); }}>
+          <LinearGradient
+            colors={['#00D98420', '#00D98408']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={{
+              flexDirection: 'row', alignItems: 'center',
+              borderRadius: wp(14), padding: wp(14),
+              marginBottom: wp(14), borderWidth: 1, borderColor: '#00D98440',
+            }}>
+            <View style={{ width: wp(40), height: wp(40), borderRadius: wp(12), backgroundColor: '#00D984', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
+              <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                <Line x1="12" y1="5" x2="12" y2="19" stroke="#000" strokeWidth="2.5" strokeLinecap="round"/>
+                <Line x1="5" y1="12" x2="19" y2="12" stroke="#000" strokeWidth="2.5" strokeLinecap="round"/>
+              </Svg>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Ajouter des données de santé</Text>
+              <Text style={{ fontSize: fp(11), color: '#00D98499', marginTop: wp(2) }}>Vaccins, médicaments, analyses...</Text>
+            </View>
+            <Text style={{ fontSize: fp(16), color: '#00D984' }}>{"›"}</Text>
+          </LinearGradient>
+        </Pressable>
+
         {/* Carte 1 : Importer mon carnet de santé */}
         <Pressable delayPressIn={120} onPress={() => setMediBookView('carnet')}>
           <LinearGradient
@@ -1224,6 +1248,54 @@ export const MediBookContent = (props) => {
           </Svg>
         </LinearGradient>
       </Pressable>
+
+      {/* BottomSheet — Ajouter des données de santé */}
+      <Modal visible={showAddDataSheet} transparent animationType="slide"
+        onRequestClose={function() { setShowAddDataSheet(false); }}>
+        <Pressable onPress={function() { setShowAddDataSheet(false); }}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
+          <Pressable onPress={function(e) { e.stopPropagation(); }}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }}/>
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>Ajouter des données</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(16) }}>Choisissez le type de données à ajouter</Text>
+
+              {[
+                { icon: '📷', label: 'Scanner un document', sub: 'Photo ou galerie', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowMediBookUploadSheet(true); }, 300); } },
+                { icon: '💊', label: 'Ajouter un médicament', sub: 'Traitement en cours', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddMedSheet(true); }, 300); } },
+                { icon: '🏥', label: 'Ajouter un diagnostic', sub: 'Pathologie à surveiller', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddDiagSheet(true); }, 300); } },
+                { icon: '💉', label: 'Ajouter un vaccin', sub: 'Carnet vaccinal', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddVaccSheet(true); }, 300); } },
+                { icon: '⚠️', label: 'Ajouter une allergie', sub: 'Profil allergique', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddAllergySheet(true); }, 300); } },
+                { icon: '🔬', label: 'Planifier une analyse', sub: 'Bilan à venir', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddAnalysisSheet(true); }, 300); } },
+              ].map(function(opt, oi) {
+                return (
+                  <Pressable key={oi} delayPressIn={120} onPress={opt.onPress}
+                    style={function(state) { return {
+                      flexDirection: 'row', alignItems: 'center',
+                      paddingVertical: wp(12), paddingHorizontal: wp(10),
+                      backgroundColor: state.pressed ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+                      borderRadius: wp(12), marginBottom: wp(6),
+                      borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+                    }; }}>
+                    <Text style={{ fontSize: fp(18), marginRight: wp(12) }}>{opt.icon}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{opt.label}</Text>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)' }}>{opt.sub}</Text>
+                    </View>
+                    <Text style={{ fontSize: fp(16), color: 'rgba(255,255,255,0.2)' }}>{">"}</Text>
+                  </Pressable>
+                );
+              })}
+
+              <Pressable onPress={function() { setShowAddDataSheet(false); }}
+                style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(6), borderRadius: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Fermer</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 
