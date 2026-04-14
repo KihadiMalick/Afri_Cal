@@ -8,9 +8,13 @@ import Svg, {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
+import { supabase } from '../../config/supabase';
+import { useAuth } from '../../config/AuthContext';
 import LixumModal from '../../components/shared/LixumModal';
 
 export const AllModals = (props) => {
+  var auth = useAuth();
+  var userId = auth.userId;
   const {
     // MediBook Upload Sheet
     showMediBookUploadSheet, setShowMediBookUploadSheet,
@@ -29,6 +33,7 @@ export const AllModals = (props) => {
     showProfileSwitcher, setShowProfileSwitcher,
     activeProfile, setActiveProfile,
     children, setChildren,
+    loadFamilyMembers, lixBalance, refreshLixFromServer,
     editingChildId, setEditingChildId,
     newChildIsFree, setNewChildIsFree,
     // Child Name Input
@@ -877,66 +882,59 @@ export const AllModals = (props) => {
                 )}
               </Pressable>
 
-              {/* Enfants */}
-              {children.map((child) => (
-                <Pressable
-                  key={child.id}
-                  delayPressIn={120}
-                  onPress={() => {
-                    if (child.name === 'Mon enfant' || child.name.startsWith('Enfant ')) {
-                      setShowProfileSwitcher(false);
-                      setNewChildIsFree(child.free);
-                      setNewChildName('');
-                      setEditingChildId(child.id);
-                      setTimeout(() => setShowChildNameInput(true), 400);
-                    } else {
+              {/* Enfants (depuis Supabase family_members) */}
+              {children.map(function(child) {
+                return (
+                  <Pressable
+                    key={child.id}
+                    delayPressIn={120}
+                    onPress={function() {
                       setActiveProfile(child.id);
                       setShowProfileSwitcher(false);
-                    }
-                  }}
-                  style={{
-                    flexDirection: 'row', alignItems: 'center',
-                    paddingVertical: wp(14), paddingHorizontal: wp(12),
-                    backgroundColor: activeProfile === child.id ? 'rgba(77,166,255,0.1)' : 'rgba(255,255,255,0.05)',
-                    borderRadius: wp(14), marginBottom: wp(10),
-                    borderWidth: 1,
-                    borderColor: activeProfile === child.id ? 'rgba(77,166,255,0.3)' : 'rgba(255,255,255,0.08)',
-                  }}
-                >
-                  <View style={{
-                    width: wp(44), height: wp(44), borderRadius: wp(22),
-                    backgroundColor: 'rgba(77,166,255,0.15)',
-                    justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
-                  }}>
-                    <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
-                      <Circle cx="12" cy="8" r="3" stroke="#4DA6FF" strokeWidth="1.5"/>
-                      <Path d="M8 21v-1a4 4 0 018 0v1" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round"/>
-                    </Svg>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF' }}>{child.name}</Text>
-                    <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>
-                      {child.free ? 'Gratuit' : '5 000 Lix'}
-                    </Text>
-                  </View>
-                  {activeProfile === child.id && (
-                    <View style={{ width: wp(22), height: wp(22), borderRadius: wp(11), backgroundColor: '#4DA6FF', justifyContent: 'center', alignItems: 'center' }}>
-                      <Text style={{ color: '#FFF', fontSize: fp(12), fontWeight: '700' }}>✓</Text>
+                    }}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center',
+                      paddingVertical: wp(14), paddingHorizontal: wp(12),
+                      backgroundColor: activeProfile === child.id ? 'rgba(77,166,255,0.1)' : 'rgba(255,255,255,0.05)',
+                      borderRadius: wp(14), marginBottom: wp(10),
+                      borderWidth: 1,
+                      borderColor: activeProfile === child.id ? 'rgba(77,166,255,0.3)' : 'rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    <View style={{
+                      width: wp(44), height: wp(44), borderRadius: wp(22),
+                      backgroundColor: 'rgba(77,166,255,0.15)',
+                      justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+                    }}>
+                      <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
+                        <Circle cx="12" cy="8" r="3" stroke="#4DA6FF" strokeWidth="1.5"/>
+                        <Path d="M8 21v-1a4 4 0 018 0v1" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round"/>
+                      </Svg>
                     </View>
-                  )}
-                </Pressable>
-              ))}
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF' }}>{child.name}</Text>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>
+                        {child.age || 'Profil enfant'}
+                        {child.medical_profile_unlocked ? ' — Profil médical' : ''}
+                      </Text>
+                    </View>
+                    {activeProfile === child.id ? (
+                      <View style={{ width: wp(22), height: wp(22), borderRadius: wp(11), backgroundColor: '#4DA6FF', justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ color: '#FFF', fontSize: fp(12), fontWeight: '700' }}>✓</Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
 
-              {/* Ajouter un enfant */}
+              {/* Ajouter un enfant (via RPC unlock_child_medical_profile) */}
               <Pressable
                 delayPressIn={120}
-                onPress={() => {
+                onPress={function() {
                   setShowProfileSwitcher(false);
-                  const isFree = children.length === 0;
-                  setNewChildIsFree(isFree);
                   setNewChildName('');
                   setEditingChildId(null);
-                  setTimeout(() => setShowChildNameInput(true), 400);
+                  setTimeout(function() { setShowChildNameInput(true); }, 400);
                 }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
@@ -954,9 +952,7 @@ export const AllModals = (props) => {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#D4AF37' }}>Ajouter un enfant</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)' }}>
-                    {children.length === 0 ? '1er enfant gratuit' : '5 000 Lix par enfant'}
-                  </Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(212,175,55,0.5)' }}>1 000 Lix</Text>
                 </View>
               </Pressable>
 
@@ -1204,31 +1200,26 @@ export const AllModals = (props) => {
             <Text style={{
               fontSize: fp(18), fontWeight: '700', color: '#FFF',
               textAlign: 'center', marginBottom: wp(6),
-            }}>{editingChildId ? 'Nommer cet enfant' : 'Ajouter un enfant'}</Text>
+            }}>Ajouter un enfant</Text>
 
             <Text style={{
               fontSize: fp(12), color: 'rgba(255,255,255,0.4)',
+              textAlign: 'center', marginBottom: wp(4),
+            }}>Créez un profil médical séparé pour votre enfant</Text>
+            <Text style={{
+              fontSize: fp(12), fontWeight: '600', color: '#D4AF37',
               textAlign: 'center', marginBottom: wp(20),
-            }}>
-              {editingChildId
-                ? 'Entrez le prénom de votre enfant'
-                : newChildIsFree
-                  ? 'Premier enfant gratuit'
-                  : 'Coût : 5 000 Lix'
-              }
-            </Text>
+            }}>{'Coût : 1 000 Lix — Solde : ' + (lixBalance || 0) + ' Lix'}</Text>
 
+            <Text style={{ fontSize: fp(12), fontWeight: '600', color: 'rgba(255,255,255,0.5)', marginBottom: wp(6) }}>Prénom *</Text>
             <View style={{
               backgroundColor: 'rgba(255,255,255,0.08)',
               borderRadius: wp(12), paddingHorizontal: wp(14),
               borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-              marginBottom: wp(24),
+              marginBottom: wp(14),
             }}>
               <TextInput
-                style={{
-                  fontSize: fp(15), color: '#FFF',
-                  paddingVertical: wp(12),
-                }}
+                style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
                 placeholder="Prénom de l'enfant"
                 placeholderTextColor="rgba(255,255,255,0.25)"
                 value={newChildName}
@@ -1238,53 +1229,96 @@ export const AllModals = (props) => {
               />
             </View>
 
+            <Text style={{ fontSize: fp(12), fontWeight: '600', color: 'rgba(255,255,255,0.5)', marginBottom: wp(6) }}>Date de naissance (optionnel)</Text>
+            <View style={{
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              borderRadius: wp(12), paddingHorizontal: wp(14),
+              borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+              marginBottom: wp(14),
+            }}>
+              <TextInput
+                style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
+                placeholder="JJ/MM/AAAA"
+                placeholderTextColor="rgba(255,255,255,0.25)"
+                value={editingChildId || ''}
+                onChangeText={function(t) { setEditingChildId(t); }}
+                keyboardType="numeric"
+                maxLength={10}
+              />
+            </View>
+
+            <Text style={{ fontSize: fp(12), fontWeight: '600', color: 'rgba(255,255,255,0.5)', marginBottom: wp(6) }}>Genre (optionnel)</Text>
+            <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(20) }}>
+              {[
+                { key: 'male', label: 'Garçon', color: '#4DA6FF' },
+                { key: 'female', label: 'Fille', color: '#FF6B8A' },
+              ].map(function(g) {
+                var isActive = newChildIsFree === g.key;
+                return (
+                  <Pressable key={g.key} onPress={function() { setNewChildIsFree(g.key); }}
+                    style={{ flex: 1, paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center', backgroundColor: isActive ? g.color + '20' : 'rgba(255,255,255,0.04)', borderWidth: 1.5, borderColor: isActive ? g.color : 'rgba(255,255,255,0.08)' }}>
+                    <Text style={{ fontSize: fp(13), fontWeight: '700', color: isActive ? g.color : 'rgba(255,255,255,0.4)' }}>{g.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
             <Pressable
               delayPressIn={120}
-              onPress={() => {
+              onPress={function() {
                 if (newChildName.trim().length === 0) {
                   setModalsModal({ visible: true, type: 'info', title: 'Nom requis', message: 'Veuillez entrer le prénom de l\'enfant.', onClose: closeModalsModal });
                   return;
                 }
-                if (editingChildId) {
-                  setChildren(prev => prev.map(c =>
-                    c.id === editingChildId ? { ...c, name: newChildName.trim() } : c
-                  ));
-                  setActiveProfile(editingChildId);
-                  setEditingChildId(null);
-                } else {
-                  const newChild = {
-                    id: 'child-' + children.length,
-                    name: newChildName.trim(),
-                    age: '',
-                    free: newChildIsFree,
-                  };
-                  setChildren(prev => [...prev, newChild]);
-                  setActiveProfile(newChild.id);
+                var birthDate = null;
+                if (editingChildId && editingChildId.length >= 8) {
+                  var parts = editingChildId.split('/');
+                  if (parts.length === 3) birthDate = parts[2] + '-' + parts[1] + '-' + parts[0];
                 }
-                setShowChildNameInput(false);
-                setNewChildName('');
+                var gender = (newChildIsFree === 'male' || newChildIsFree === 'female') ? newChildIsFree : null;
+
+                supabase.rpc('unlock_child_medical_profile', {
+                  p_user_id: userId,
+                  p_child_name: newChildName.trim(),
+                  p_child_birth_date: birthDate,
+                  p_child_gender: gender,
+                }).then(function(result) {
+                  if (result.error) {
+                    var errMsg = result.error.message || '';
+                    if (errMsg.indexOf('insufficient') >= 0 || errMsg.indexOf('Lix') >= 0) {
+                      setModalsModal({ visible: true, type: 'error', title: 'Lix insuffisants', message: 'Il vous faut 1 000 Lix pour ajouter un profil enfant.\n\nSolde actuel : ' + (lixBalance || 0) + ' Lix', onClose: closeModalsModal });
+                    } else {
+                      setModalsModal({ visible: true, type: 'error', title: 'Erreur', message: errMsg || 'L\'ajout a échoué.', onClose: closeModalsModal });
+                    }
+                    return;
+                  }
+                  setShowChildNameInput(false);
+                  setNewChildName('');
+                  setEditingChildId(null);
+                  setNewChildIsFree(false);
+                  if (refreshLixFromServer) refreshLixFromServer();
+                  if (loadFamilyMembers) loadFamilyMembers();
+                  setModalsModal({ visible: true, type: 'success', title: 'Profil créé', message: newChildName.trim() + ' a été ajouté à vos profils.', onClose: closeModalsModal });
+                }).catch(function(err) {
+                  setModalsModal({ visible: true, type: 'error', title: 'Erreur', message: 'Connexion échouée. Réessayez.', onClose: closeModalsModal });
+                });
               }}
             >
               <LinearGradient
-                colors={['#4DA6FF', '#3A8FE8']}
+                colors={['#00D984', '#00B871']}
                 style={{
                   paddingVertical: wp(14), borderRadius: wp(14),
                   alignItems: 'center', width: '100%',
                 }}
               >
                 <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF' }}>
-                  {editingChildId
-                    ? 'Confirmer'
-                    : newChildIsFree
-                      ? 'Ajouter gratuitement'
-                      : 'Ajouter (5 000 Lix)'
-                  }
+                  {'Déverrouiller (1 000 Lix)'}
                 </Text>
               </LinearGradient>
             </Pressable>
 
             <Pressable
-              onPress={() => { setShowChildNameInput(false); setNewChildName(''); setEditingChildId(null); }}
+              onPress={function() { setShowChildNameInput(false); setNewChildName(''); setEditingChildId(null); }}
               style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(8) }}
             >
               <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Annuler</Text>
