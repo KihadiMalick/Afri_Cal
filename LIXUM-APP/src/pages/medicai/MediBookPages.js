@@ -2426,8 +2426,84 @@ export const MediBookContent = (props) => {
 
           <BottomSpacer />
         </ScrollView>
+
+        {/* Modal déblocage time range */}
+        <Modal visible={showUnlockModal} transparent animationType="fade"
+          onRequestClose={function() { setShowUnlockModal(false); }}>
+          <Pressable onPress={function() { setShowUnlockModal(false); }}
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: wp(24) }}>
+            <Pressable onPress={function(e) { e.stopPropagation(); }}
+              style={{ width: '100%' }}>
+              <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+                style={{ borderRadius: wp(20), padding: wp(24) }}>
+                <Text style={{ fontSize: fp(28), textAlign: 'center', marginBottom: wp(10) }}>📊</Text>
+                <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', textAlign: 'center' }}>
+                  {'Historique ' + (unlockTarget ? unlockTarget.label : '')}
+                </Text>
+                <Text style={{ fontSize: fp(13), color: '#888', textAlign: 'center', marginTop: wp(8), lineHeight: fp(18) }}>
+                  {'Analysez vos tendances de santé sur ' + (unlockTarget && unlockTarget.days === 30 ? 'les 30 derniers jours' : unlockTarget && unlockTarget.days === 365 ? 'les 12 derniers mois' : 'toute la période') + '.'}
+                </Text>
+
+                <View style={{ backgroundColor: '#1E2530', borderRadius: wp(12), padding: wp(14), marginTop: wp(16) }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(6) }}>
+                    <Text style={{ fontSize: fp(12), color: '#888' }}>Coût</Text>
+                    <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFD93D' }}>
+                      {(unlockTarget ? (rangeAccess[unlockTarget.key] ? rangeAccess[unlockTarget.key].lix_cost : 0) : 0) + ' Lix (accès 24h)'}
+                    </Text>
+                  </View>
+                </View>
+
+                <Pressable delayPressIn={120}
+                  onPress={function() {
+                    if (!unlockTarget) return;
+                    fetchRPC('unlock_stats_range', { p_user_id: userId, p_range_key: unlockTarget.key })
+                      .then(function(result) {
+                        if (result && result[0] && result[0].success) {
+                          setShowUnlockModal(false);
+                          var updated = Object.assign({}, rangeAccess);
+                          updated[unlockTarget.key] = { has_access: true, access_reason: 'temporary', expires_at: result[0].unlocked_until };
+                          setRangeAccess(updated);
+                          setSelectedRange(unlockTarget);
+                          loadAllStats(unlockTarget.days);
+                        } else {
+                          Alert.alert('Erreur', (result && result[0] ? result[0].message : '') || 'Solde Lix insuffisant');
+                        }
+                      })
+                      .catch(function() { Alert.alert('Erreur', 'Impossible de débloquer cette plage'); });
+                  }}
+                  style={function(state) { return {
+                    backgroundColor: '#00D984', borderRadius: wp(14), paddingVertical: wp(14),
+                    marginTop: wp(14), alignItems: 'center',
+                    transform: [{ scale: state.pressed ? 0.96 : 1 }],
+                  }; }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#000' }}>
+                    {'💎 Débloquer 24h — ' + (unlockTarget ? (rangeAccess[unlockTarget.key] ? rangeAccess[unlockTarget.key].lix_cost : 0) : 0) + ' Lix'}
+                  </Text>
+                </Pressable>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: wp(14), marginBottom: wp(6) }}>
+                  <View style={{ flex: 1, height: 1, backgroundColor: '#3A3F46' }} />
+                  <Text style={{ fontSize: fp(11), color: '#666', marginHorizontal: wp(10) }}>ou</Text>
+                  <View style={{ flex: 1, height: 1, backgroundColor: '#3A3F46' }} />
+                </View>
+
+                <Text style={{ fontSize: fp(12), color: '#888', textAlign: 'center' }}>Passez à un abonnement pour un accès illimité</Text>
+                <Pressable style={{ marginTop: wp(8), alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#00D984' }}>Voir les abonnements →</Text>
+                </Pressable>
+
+                <Pressable onPress={function() { setShowUnlockModal(false); }}
+                  style={{ marginTop: wp(14), paddingVertical: wp(10), alignItems: 'center', borderRadius: wp(12), borderWidth: 1, borderColor: '#3A3F46' }}>
+                  <Text style={{ fontSize: fp(13), color: '#666' }}>Annuler</Text>
+                </Pressable>
+              </LinearGradient>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </View>
     );
+  };
+
   const renderAnalysesDetail = () => {
     const doneList = medicalData.analyses.filter(a => !a.is_scheduled);
     const scheduledList = medicalData.scheduledAnalyses;
