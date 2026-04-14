@@ -1216,39 +1216,6 @@ export const MediBookContent = (props) => {
         <BottomSpacer />
       </ScrollView>
 
-      {/* Bouton flottant + Ajouter — en bas à droite */}
-      <Pressable
-        delayPressIn={120}
-        onPress={() => setShowMediBookUploadSheet(true)}
-        style={{
-          position: 'absolute',
-          bottom: wp(80),
-          right: wp(20),
-          width: wp(56),
-          height: wp(56),
-          borderRadius: wp(28),
-          overflow: 'hidden',
-          shadowColor: '#00D984',
-          shadowOpacity: 0.4,
-          shadowRadius: 12,
-          elevation: 8,
-          zIndex: 100,
-        }}
-      >
-        <LinearGradient
-          colors={['#00D984', '#00B871']}
-          style={{
-            width: '100%', height: '100%',
-            justifyContent: 'center', alignItems: 'center',
-          }}
-        >
-          <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
-            <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
-            <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
-          </Svg>
-        </LinearGradient>
-      </Pressable>
-
       {/* BottomSheet — Ajouter des données de santé */}
       <Modal visible={showAddDataSheet} transparent animationType="slide"
         onRequestClose={function() { setShowAddDataSheet(false); }}>
