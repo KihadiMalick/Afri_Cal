@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  Image, Platform, Animated, Dimensions, StatusBar, Pressable, ActivityIndicator,
-  Modal,
+  Image, Platform, Animated, Easing, Dimensions, StatusBar, Pressable, ActivityIndicator,
+  Modal, Alert,
 } from 'react-native';
 import Svg, {
-  Defs, Rect, Path, Circle, Ellipse, Line,
+  Defs, Rect, Path, Circle, Ellipse, Line, Polyline, Polygon, G,
   LinearGradient as SvgLinearGradient, Stop,
 } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -252,11 +252,96 @@ export const MediBookContent = (props) => {
   var _reminderPostponeDate = useState('');
   var reminderPostponeDate = _reminderPostponeDate[0]; var setReminderPostponeDate = _reminderPostponeDate[1];
 
+  // ── STATS STATES ──────────────────────────────────────────────────────────
+  var _statsLoading = useState(false);
+  var statsLoading = _statsLoading[0]; var setStatsLoading = _statsLoading[1];
+  var _nutritionStats = useState([]);
+  var nutritionStats = _nutritionStats[0]; var setNutritionStats = _nutritionStats[1];
+  var _activityStats = useState([]);
+  var activityStats = _activityStats[0]; var setActivityStats = _activityStats[1];
+  var _moodStats = useState([]);
+  var moodStats = _moodStats[0]; var setMoodStats = _moodStats[1];
+  var _hydrationStats = useState([]);
+  var hydrationStats = _hydrationStats[0]; var setHydrationStats = _hydrationStats[1];
+  var _healthTimeline = useState([]);
+  var healthTimeline = _healthTimeline[0]; var setHealthTimeline = _healthTimeline[1];
+  var _healthInsights = useState([]);
+  var healthInsights = _healthInsights[0]; var setHealthInsights = _healthInsights[1];
+  var _vaccStats = useState(null);
+  var vaccStats = _vaccStats[0]; var setVaccStats = _vaccStats[1];
+  var _rangeAccess = useState({ '7d': { has_access: true }, '30d': { has_access: false, lix_cost: 500 }, '365d': { has_access: false, lix_cost: 5000 }, 'all': { has_access: false, lix_cost: 10000 } });
+  var rangeAccess = _rangeAccess[0]; var setRangeAccess = _rangeAccess[1];
+  var _selectedRange = useState({ key: '7d', label: '7J', days: 7 });
+  var selectedRange = _selectedRange[0]; var setSelectedRange = _selectedRange[1];
+  var _showUnlockModal = useState(false);
+  var showUnlockModal = _showUnlockModal[0]; var setShowUnlockModal = _showUnlockModal[1];
+  var _unlockTarget = useState(null);
+  var unlockTarget = _unlockTarget[0]; var setUnlockTarget = _unlockTarget[1];
+
   var getAuthHeaders = async function() {
     var result = await supabase.auth.getSession();
     var token = result.data.session ? result.data.session.access_token : SUPABASE_ANON_KEY;
     return { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
   };
+
+  // ── STATS RPC HELPERS ─────────────────────────────────────────────────────
+  var fetchRPC = async function(rpcName, params) {
+    var headers = await getAuthHeaders();
+    var r = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + rpcName, {
+      method: 'POST', headers: headers, body: JSON.stringify(params)
+    });
+    return r.json();
+  };
+
+  var loadAllStats = async function(daysBack) {
+    if (!userId) return;
+    setStatsLoading(true);
+    try {
+      var fmId = activeProfile !== 'self' ? activeProfile : null;
+      var results = await Promise.all([
+        fetchRPC('get_nutrition_stats', { p_user_id: userId, p_days_back: daysBack }),
+        fetchRPC('get_activity_stats', { p_user_id: userId, p_days_back: daysBack }),
+        fetchRPC('get_mood_stats', { p_user_id: userId, p_days_back: daysBack }),
+        fetchRPC('get_hydration_stats', { p_user_id: userId, p_days_back: daysBack }),
+        fetchRPC('get_health_timeline', { p_user_id: userId, p_family_member_id: fmId, p_days_back: daysBack }),
+        fetchRPC('get_health_insights', { p_user_id: userId, p_family_member_id: fmId, p_days_back: daysBack }),
+        fetchRPC('get_vaccine_completion_stats', { p_user_id: userId, p_family_member_id: fmId })
+      ]);
+      setNutritionStats(Array.isArray(results[0]) ? results[0] : []);
+      setActivityStats(Array.isArray(results[1]) ? results[1] : []);
+      setMoodStats(Array.isArray(results[2]) ? results[2] : []);
+      setHydrationStats(Array.isArray(results[3]) ? results[3] : []);
+      setHealthTimeline(Array.isArray(results[4]) ? results[4] : []);
+      setHealthInsights(Array.isArray(results[5]) ? results[5] : []);
+      setVaccStats(results[6] && results[6][0] ? results[6][0] : null);
+    } catch(err) { console.log('Erreur stats:', err); }
+    setStatsLoading(false);
+  };
+
+  var checkRangeAccess = async function() {
+    if (!userId) return;
+    try {
+      var results = await Promise.all([
+        fetchRPC('check_stats_access_for_range', { p_user_id: userId, p_range_key: '7d' }),
+        fetchRPC('check_stats_access_for_range', { p_user_id: userId, p_range_key: '30d' }),
+        fetchRPC('check_stats_access_for_range', { p_user_id: userId, p_range_key: '365d' }),
+        fetchRPC('check_stats_access_for_range', { p_user_id: userId, p_range_key: 'all' })
+      ]);
+      setRangeAccess({
+        '7d': results[0] && results[0][0] ? results[0][0] : { has_access: true },
+        '30d': results[1] && results[1][0] ? results[1][0] : { has_access: false, lix_cost: 500 },
+        '365d': results[2] && results[2][0] ? results[2][0] : { has_access: false, lix_cost: 5000 },
+        'all': results[3] && results[3][0] ? results[3][0] : { has_access: false, lix_cost: 10000 }
+      });
+    } catch(err) { console.log('Erreur accès:', err); }
+  };
+
+  useEffect(function() {
+    if (mediBookView === 'stats' && userId) {
+      loadAllStats(selectedRange.days);
+      checkRangeAccess();
+    }
+  }, [mediBookView]);
 
   const captureCarnetPage = (index) => {
     setSelectedCarnetPage(index);
@@ -1405,274 +1490,280 @@ export const MediBookContent = (props) => {
     );
   };
 
-  // ── RENDER MEDIBOOK STATS ──────────────────────────────────────────────────
-  const renderMediBookStats = () => {
-    const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-    const caloriesData = [1920, 1750, 2050, 1800, 1650, 2200, 1850];
-    const burnedData = [320, 280, 450, 180, 510, 0, 220];
-    const moodData = [3, 4, 3, 2, 4, 5, 4];
+  // ── RENDER MEDIBOOK STATS (PREMIUM DARK REDESIGN) ──────────────────────────
+  var renderMediBookStats = function() {
+    var familyMemberId = activeProfile !== 'self' ? activeProfile : null;
+    var TAB_ITEMS = [
+      { key: 'nutrition', emoji: '🥗', label: 'Nutrition', top: 0, leftPct: 50, anchor: 'center' },
+      { key: 'vitalite', emoji: '💚', label: 'Vitalité', top: wp(38), leftPct: 8, anchor: 'left' },
+      { key: 'humeur', emoji: '😊', label: 'Humeur', top: wp(38), leftPct: 92, anchor: 'right' },
+      { key: 'activite', emoji: '🏃', label: 'Activité', top: wp(78), leftPct: 22, anchor: 'left' },
+      { key: 'sante', emoji: '🏥', label: 'Santé', top: wp(78), leftPct: 78, anchor: 'right' }
+    ];
+    var TIME_RANGES = [
+      { key: '7d', label: '7J', days: 7 },
+      { key: '30d', label: '30J', days: 30 },
+      { key: '365d', label: '1A', days: 365 },
+      { key: 'all', label: 'Origine', days: 9999 }
+    ];
+    var containerW = SCREEN_WIDTH - wp(32);
 
-    const StatsCard = ({ title, children: cardChildren }) => (
-      <View style={{
-        backgroundColor: '#FAFBFC', borderRadius: wp(16),
-        padding: wp(16), marginBottom: wp(12),
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
-      }}>
-        <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(12) }}>
-          {title}
-        </Text>
-        {cardChildren}
-      </View>
-    );
-
-    const renderNutritionTab = () => {
-      // Données live ou fallback hardcodé
-      const hasLiveData = nutritionWeekData && nutritionWeekData.length > 0;
-      const liveCalories = hasLiveData ? nutritionWeekData.map(d => d.total_calories || 0) : caloriesData;
-      const avgCalories = hasLiveData
-        ? Math.round(liveCalories.reduce((s, c) => s + c, 0) / liveCalories.length)
-        : 1850;
-      const liveProtein = hasLiveData
-        ? Math.round(nutritionWeekData.reduce((s, d) => s + (d.total_protein || 0), 0) / nutritionWeekData.length)
-        : 92;
-      const liveCarbs = hasLiveData
-        ? Math.round(nutritionWeekData.reduce((s, d) => s + (d.total_carbs || 0), 0) / nutritionWeekData.length)
-        : 215;
-      const liveFat = hasLiveData
-        ? Math.round(nutritionWeekData.reduce((s, d) => s + (d.total_fat || 0), 0) / nutritionWeekData.length)
-        : 62;
-      const totalMacros = liveProtein + liveCarbs + liveFat || 1;
-      const pctProtein = Math.round((liveProtein / totalMacros) * 100);
-      const pctCarbs = Math.round((liveCarbs / totalMacros) * 100);
-      const pctFat = 100 - pctProtein - pctCarbs;
-      const calPct = Math.min(100, Math.round((avgCalories / 2100) * 100));
-
-      const chartCalories = hasLiveData ? liveCalories : caloriesData;
-      const chartDays = hasLiveData
-        ? nutritionWeekData.map(d => {
-            const dt = new Date(d.date);
-            return ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][dt.getDay()];
-          })
-        : weekDays;
-
-      return (
-        <>
-          <StatsCard title="Calories moyennes / jour">
-            <Text style={{ fontSize: fp(28), fontWeight: '700', color: '#00D984' }}>{avgCalories.toLocaleString('fr-FR')} kcal</Text>
-            <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)', marginTop: wp(4) }}>Objectif : 2 100 kcal</Text>
-            <View style={{ height: wp(6), backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(3), marginTop: wp(10) }}>
-              <View style={{ width: calPct + '%', height: '100%', backgroundColor: '#00D984', borderRadius: wp(3) }} />
-            </View>
-          </StatsCard>
-
-          <StatsCard title="Répartition macros">
-            {[
-              { label: 'Protéines', value: liveProtein + 'g', pct: pctProtein, color: '#4DA6FF' },
-              { label: 'Glucides', value: liveCarbs + 'g', pct: pctCarbs, color: '#00D984' },
-              { label: 'Lipides', value: liveFat + 'g', pct: pctFat, color: '#FF8C42' },
-            ].map((macro, i) => (
-              <View key={i} style={{ marginBottom: wp(10) }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
-                  <Text style={{ fontSize: fp(12), color: '#2D3436', fontWeight: '600' }}>{macro.label}</Text>
-                  <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)' }}>{macro.value} — {macro.pct}%</Text>
-                </View>
-                <View style={{ height: wp(6), backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(3) }}>
-                  <View style={{ width: macro.pct + '%', height: '100%', backgroundColor: macro.color, borderRadius: wp(3) }} />
-                </View>
-              </View>
-            ))}
-          </StatsCard>
-
-          <StatsCard title="Derniers 7 jours">
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: wp(80) }}>
-              {chartCalories.map((cal, i) => {
-                const maxCal = Math.max(2200, ...chartCalories);
-                const h = (cal / maxCal) * wp(65);
-                const inTarget = cal >= 1800 && cal <= 2200;
-                return (
-                  <View key={i} style={{ alignItems: 'center', flex: 1 }}>
-                    <View style={{ width: wp(16), height: h, backgroundColor: inTarget ? '#00D984' : '#FF8C42', borderRadius: wp(4) }} />
-                    <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>{chartDays[i] || ''}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          </StatsCard>
-        </>
-      );
+    // ── Handle time range tap ──
+    var onTimeRangeTap = function(range) {
+      var access = rangeAccess[range.key];
+      if (access && !access.has_access) {
+        setUnlockTarget(range);
+        setShowUnlockModal(true);
+        return;
+      }
+      setSelectedRange(range);
+      loadAllStats(range.days);
     };
 
-    const renderSanteTab = () => {
-      if (medicalDataLoading) {
+    // ── Render semi-arc bubble ──
+    var renderBubble = function(tab) {
+      var isActive = statsTab === tab.key;
+      var sz = isActive ? wp(62) : wp(54);
+      var posStyle = {};
+      if (tab.anchor === 'center') {
+        posStyle = { left: (containerW - sz) / 2 };
+      } else if (tab.anchor === 'left') {
+        posStyle = { left: containerW * (tab.leftPct / 100) };
+      } else {
+        posStyle = { right: containerW * ((100 - tab.leftPct) / 100) };
+      }
+      return (
+        <Pressable key={tab.key} delayPressIn={120}
+          onPress={function() { setStatsTab(tab.key); }}
+          style={function(state) { return Object.assign({
+            position: 'absolute', top: tab.top,
+            width: sz, height: sz, borderRadius: sz / 2,
+            backgroundColor: isActive ? '#00D98425' : '#2A303B',
+            borderWidth: isActive ? 2 : 1.5,
+            borderColor: isActive ? '#00D984' : '#3A3F46',
+            justifyContent: 'center', alignItems: 'center',
+            transform: [{ scale: state.pressed ? 0.92 : 1 }],
+          }, posStyle); }}>
+          <Text style={{ fontSize: isActive ? fp(22) : fp(18) }}>{tab.emoji}</Text>
+          <Text style={{
+            position: 'absolute', bottom: -wp(16),
+            fontSize: fp(10), fontWeight: isActive ? '600' : '400',
+            color: isActive ? '#00D984' : '#888',
+          }}>{tab.label}</Text>
+        </Pressable>
+      );
+    };
+    // ── NUTRITION TAB ──
+    var renderNutritionContent = function() {
+      var data = nutritionStats;
+      var hasData = data && data.length > 0;
+      if (!hasData) {
         return (
           <View style={{ padding: wp(40), alignItems: 'center' }}>
-            <ActivityIndicator size="large" color="#00D984" />
-            <Text style={{ fontSize: fp(13), color: 'rgba(0,0,0,0.4)', marginTop: wp(10) }}>
-              Chargement des données...
-            </Text>
+            <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>🥗</Text>
+            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Pas de données nutrition</Text>
+            <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Commencez à tracker vos repas !</Text>
           </View>
         );
       }
+      var avgCalories = Math.round(data.reduce(function(s, d) { return s + (d.total_kcal || 0); }, 0) / data.length);
+      var avgProtein = Math.round(data.reduce(function(s, d) { return s + (d.total_protein || 0); }, 0) / data.length);
+      var avgCarbs = Math.round(data.reduce(function(s, d) { return s + (d.total_carbs || 0); }, 0) / data.length);
+      var avgFat = Math.round(data.reduce(function(s, d) { return s + (d.total_fat || 0); }, 0) / data.length);
+      var avgFiber = Math.round(data.reduce(function(s, d) { return s + (d.total_fiber || 0); }, 0) / data.length);
+      var avgMeals = (data.reduce(function(s, d) { return s + (d.meal_count || 0); }, 0) / data.length).toFixed(1);
+      var objectifCal = 2100;
+      var calPct = Math.min(100, Math.round((avgCalories / objectifCal) * 100));
+      var deltaVsObj = Math.round(((avgCalories - objectifCal) / objectifCal) * 100);
+      var totalMacros = avgProtein + avgCarbs + avgFat || 1;
+      var pctProtein = Math.round((avgProtein / totalMacros) * 100);
+      var pctCarbs = Math.round((avgCarbs / totalMacros) * 100);
+      var pctFat = 100 - pctProtein - pctCarbs;
 
-      const analysesRows = medicalData.analyses.map(a => [
-        { text: a.label, bold: true },
-        a.value,
-        {
-          text: a.status === 'normal' ? 'Normal'
-            : a.status === 'elevated' ? 'Élevé'
-            : a.status === 'low' ? 'Bas'
-            : a.status === 'critical' ? 'Critique'
-            : a.status,
-          color: a.status === 'normal' ? '#00D984'
-            : a.status === 'elevated' ? '#FF6B6B'
-            : a.status === 'low' ? '#FF8C42'
-            : a.status === 'critical' ? '#FF6B6B'
-            : '#999',
-          bold: true,
-        },
-      ]);
+      var hydData = hydrationStats;
+      var avgHydration = hydData && hydData.length > 0
+        ? Math.round(hydData.reduce(function(s, d) { return s + (d.total_ml || 0); }, 0) / hydData.length) : 0;
+      var hydObjectif = 2500;
+      var hydPct = Math.min(100, Math.round((avgHydration / hydObjectif) * 100));
 
-      const medsRows = medicalData.medications.map(m => [
-        { text: m.name, bold: true },
-        (m.dosage || '') + (m.frequency ? ' / ' + m.frequency : ''),
-        { text: m.duration || '-', color: '#00D984' },
-      ]);
-
-      const allergiesRows = medicalData.allergies.map(a => [
-        { text: a.allergen, bold: true },
-        a.type || '-',
-        {
-          text: a.severity === 'severe' ? 'Sévère'
-            : a.severity === 'moderate' ? 'Modéré'
-            : a.severity === 'mild' ? 'Léger'
-            : a.severity === 'life_threatening' ? 'Vital'
-            : a.severity || '-',
-          color: a.severity === 'severe' || a.severity === 'life_threatening' ? '#FF6B6B'
-            : a.severity === 'moderate' ? '#FF8C42'
-            : '#00D984',
-          bold: true,
-        },
-      ]);
-
-      const vaccRows = medicalData.vaccinations.map(v => {
-        const dateStr = v.administration_date
-          ? new Date(v.administration_date).toLocaleDateString('fr-FR', { month: '2-digit', year: 'numeric' })
-          : '-';
-        const rappelStr = v.next_due_date
-          ? 'Rappel ' + new Date(v.next_due_date).getFullYear()
-          : '✓ À jour';
-        const rappelColor = v.next_due_date ? '#FF8C42' : '#00D984';
-
-        return [
-          { text: v.vaccine_name, bold: true },
-          dateStr,
-          { text: rappelStr, color: rappelColor },
-        ];
-      });
+      var chartW = SCREEN_WIDTH - wp(64);
+      var chartH = wp(120);
+      var maxCal = Math.max.apply(null, data.map(function(d) { return d.total_kcal || 0; }).concat([objectifCal + 200]));
+      var points = data.map(function(d, i) {
+        var x = data.length > 1 ? (i / (data.length - 1)) * chartW : chartW / 2;
+        var y = chartH - ((d.total_kcal || 0) / maxCal) * (chartH - wp(10));
+        return x + ',' + y;
+      }).join(' ');
+      var areaPoints = '0,' + chartH + ' ' + points + ' ' + chartW + ',' + chartH;
+      var objY = chartH - (objectifCal / maxCal) * (chartH - wp(10));
 
       return (
-        <>
-          <StatsCard title="Score Vitalité">
-            <View style={{ alignItems: 'center', marginVertical: wp(8) }}>
-              <View style={{
-                width: wp(100), height: wp(100), borderRadius: wp(50),
-                borderWidth: wp(6), borderColor: '#00D984',
-                justifyContent: 'center', alignItems: 'center',
-                backgroundColor: 'rgba(0,217,132,0.05)',
-              }}>
-                <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#00D984' }}>{medicalData.vitalityScore || 0}</Text>
-                <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.3)' }}>/100</Text>
+        <View>
+          {/* Hero — Calories */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#888', letterSpacing: 1 }}>CALORIES MOY. / JOUR</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: wp(6) }}>
+              <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#FFF' }}>{avgCalories}</Text>
+              <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#888', marginLeft: wp(4) }}>kcal</Text>
+              <View style={{ flex: 1 }} />
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: deltaVsObj < 0 ? '#FF6B8A' : '#00D984' }}>{(deltaVsObj > 0 ? '+' : '') + deltaVsObj + '% vs obj'}</Text>
+            </View>
+            <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(2) }}>{'Objectif : ' + objectifCal + ' kcal'}</Text>
+            <View style={{ height: wp(6), backgroundColor: '#1E2530', borderRadius: wp(3), marginTop: wp(10) }}>
+              <View style={{ width: calPct + '%', height: '100%', backgroundColor: '#00D984', borderRadius: wp(3) }} />
+            </View>
+            <Text style={{ fontSize: fp(10), color: '#00D984', textAlign: 'right', marginTop: wp(4) }}>{calPct + '%'}</Text>
+          </View>
+
+          {/* Macros — 3 mini cartes */}
+          <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(12) }}>
+            {[
+              { label: 'Protéines', value: avgProtein + 'g', pct: pctProtein, color: '#4DA6FF' },
+              { label: 'Glucides', value: avgCarbs + 'g', pct: pctCarbs, color: '#00D984' },
+              { label: 'Lipides', value: avgFat + 'g', pct: pctFat, color: '#FFD93D' },
+            ].map(function(m, i) {
+              return (
+                <View key={i} style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12) }}>
+                  <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#FFF' }}>{m.label}</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: m.color, marginTop: wp(4) }}>{m.value}</Text>
+                  <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>{m.pct + '%'}</Text>
+                  <View style={{ height: wp(4), backgroundColor: '#1E2530', borderRadius: wp(2), marginTop: wp(6) }}>
+                    <View style={{ width: m.pct + '%', height: '100%', backgroundColor: m.color, borderRadius: wp(2) }} />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Courbe Calories */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Évolution calories</Text>
+            <Svg width={chartW} height={chartH}>
+              <Defs>
+                <SvgLinearGradient id="calAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor="#00D984" stopOpacity="0.3" />
+                  <Stop offset="1" stopColor="#00D984" stopOpacity="0" />
+                </SvgLinearGradient>
+              </Defs>
+              <Polygon points={areaPoints} fill="url(#calAreaGrad)" />
+              <Polyline points={points} fill="none" stroke="#00D984" strokeWidth="2" strokeLinejoin="round" />
+              <Line x1="0" y1={objY} x2={chartW} y2={objY} stroke="#FF6B8A" strokeWidth="1" strokeDasharray="4,4" opacity="0.6" />
+              {data.map(function(d, i) {
+                var x = data.length > 1 ? (i / (data.length - 1)) * chartW : chartW / 2;
+                var y = chartH - ((d.total_kcal || 0) / maxCal) * (chartH - wp(10));
+                return <Circle key={i} cx={x} cy={y} r="3.5" fill="#00D984" />;
+              })}
+            </Svg>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6) }}>
+              {data.length <= 10 ? data.map(function(d, i) {
+                var dt = new Date(d.stat_date);
+                var lbl = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][dt.getDay()];
+                return <Text key={i} style={{ fontSize: fp(8), color: '#666' }}>{lbl}</Text>;
+              }) : (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', flex: 1 }}>
+                  <Text style={{ fontSize: fp(8), color: '#666' }}>{data[0] ? data[0].stat_date.substring(5, 10) : ''}</Text>
+                  <Text style={{ fontSize: fp(8), color: '#666' }}>{data[data.length - 1] ? data[data.length - 1].stat_date.substring(5, 10) : ''}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Hydratation */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Hydratation</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(14) }}>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                  <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#4DA6FF' }}>{avgHydration}</Text>
+                  <Text style={{ fontSize: fp(12), color: '#888', marginLeft: wp(4) }}>{'/ ' + hydObjectif + ' ml'}</Text>
+                </View>
+                <View style={{ height: wp(6), backgroundColor: '#1E2530', borderRadius: wp(3), marginTop: wp(8) }}>
+                  <View style={{ width: hydPct + '%', height: '100%', backgroundColor: '#4DA6FF', borderRadius: wp(3) }} />
+                </View>
+              </View>
+              <View style={{ width: wp(50), height: wp(50), justifyContent: 'center', alignItems: 'center' }}>
+                <Svg width={wp(50)} height={wp(50)} viewBox="0 0 50 50">
+                  <Circle cx="25" cy="25" r="20" stroke="#1E2530" strokeWidth="4" fill="none" />
+                  <Circle cx="25" cy="25" r="20" stroke="#4DA6FF" strokeWidth="4" fill="none"
+                    strokeDasharray={String(2 * Math.PI * 20)}
+                    strokeDashoffset={String(2 * Math.PI * 20 * (1 - hydPct / 100))}
+                    strokeLinecap="round" rotation="-90" origin="25,25" />
+                </Svg>
+                <Text style={{ position: 'absolute', fontSize: fp(10), fontWeight: '700', color: '#4DA6FF' }}>{hydPct + '%'}</Text>
               </View>
             </View>
-          </StatsCard>
+          </View>
 
-          {renderLixumTable('Analyses',
-            [{ label: 'Analyse', flex: 2 }, { label: 'Valeur', flex: 1.2 }, { label: 'Statut', flex: 1, align: 'right' }],
-            analysesRows,
-            '#00D984',
-            (rowIndex, row) => handleTransferToSecretPocket('analyses', rowIndex, row)
-          )}
-
-          {renderLixumTable('Médicaments',
-            [{ label: 'Médicament', flex: 2 }, { label: 'Posologie', flex: 1.5 }, { label: 'Durée', flex: 1, align: 'right' }],
-            medsRows,
-            '#4DA6FF',
-            (rowIndex, row) => handleTransferToSecretPocket('medications', rowIndex, row)
-          )}
-
-          {renderLixumTable('Allergies',
-            [{ label: 'Allergène', flex: 2 }, { label: 'Type', flex: 1.5 }, { label: 'Sévérité', flex: 1, align: 'right' }],
-            allergiesRows,
-            '#FF8C42',
-            (rowIndex, row) => handleTransferToSecretPocket('allergies', rowIndex, row)
-          )}
-
-          {renderLixumTable('Vaccins',
-            [{ label: 'Vaccin', flex: 2 }, { label: 'Date', flex: 1.2 }, { label: 'Rappel', flex: 1, align: 'right' }],
-            vaccRows,
-            '#00D984',
-            (rowIndex, row) => handleTransferToSecretPocket('vaccinations', rowIndex, row)
-          )}
-        </>
+          {/* Mini stats */}
+          <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(12) }}>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF' }}>{avgMeals}</Text>
+              <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>repas/jour</Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF' }}>{avgFiber + 'g'}</Text>
+              <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>fibres/jour</Text>
+            </View>
+          </View>
+        </View>
       );
     };
 
-    const renderActiviteTab = () => (
-      <>
-        <StatsCard title="Cette semaine">
-          <Text style={{ fontSize: fp(28), fontWeight: '700', color: '#00D984' }}>12 450 pas / jour</Text>
-          <Text style={{ fontSize: fp(16), fontWeight: '600', color: '#4DA6FF', marginTop: wp(6) }}>4h32 d'activité</Text>
-        </StatsCard>
+    // ── PLACEHOLDER TABS (à compléter) ──
+    var renderVitaliteContent = function() {
+      return (
+        <View style={{ padding: wp(40), alignItems: 'center' }}>
+          <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>💚</Text>
+          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Vitalité</Text>
+          <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Chargement en cours...</Text>
+          <ActivityIndicator size="small" color="#00D984" style={{ marginTop: wp(12) }} />
+        </View>
+      );
+    };
+    var renderActiviteContent = function() {
+      return (
+        <View style={{ padding: wp(40), alignItems: 'center' }}>
+          <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>🏃</Text>
+          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Activité</Text>
+          <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Chargement en cours...</Text>
+          <ActivityIndicator size="small" color="#00D984" style={{ marginTop: wp(12) }} />
+        </View>
+      );
+    };
+    var renderHumeurContent = function() {
+      return (
+        <View style={{ padding: wp(40), alignItems: 'center' }}>
+          <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>😊</Text>
+          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Humeur</Text>
+          <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Chargement en cours...</Text>
+          <ActivityIndicator size="small" color="#00D984" style={{ marginTop: wp(12) }} />
+        </View>
+      );
+    };
+    var renderSanteContent = function() {
+      return (
+        <View style={{ padding: wp(40), alignItems: 'center' }}>
+          <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>🏥</Text>
+          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Santé</Text>
+          <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Chargement en cours...</Text>
+          <ActivityIndicator size="small" color="#00D984" style={{ marginTop: wp(12) }} />
+        </View>
+      );
+    };
 
-        <StatsCard title="Calories brûlées">
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: wp(80) }}>
-            {burnedData.map((cal, i) => {
-              const maxCal = 510;
-              const h = Math.max(wp(4), (cal / maxCal) * wp(65));
-              return (
-                <View key={i} style={{ alignItems: 'center', flex: 1 }}>
-                  <View style={{ width: wp(16), height: h, backgroundColor: '#FF8C42', borderRadius: wp(4) }} />
-                  <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>{weekDays[i]}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </StatsCard>
-      </>
-    );
+    // ── Tab router ──
+    var renderActiveTab = function() {
+      if (statsTab === 'nutrition') return renderNutritionContent();
+      if (statsTab === 'vitalite') return renderVitaliteContent();
+      if (statsTab === 'activite') return renderActiviteContent();
+      if (statsTab === 'humeur') return renderHumeurContent();
+      if (statsTab === 'sante') return renderSanteContent();
+      return renderNutritionContent();
+    };
 
-    const renderHumeurTab = () => (
-      <>
-        <StatsCard title="Humeur moyenne">
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(10) }}>
-            <Text style={{ fontSize: fp(32) }}>😊</Text>
-            <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#00D984' }}>Plutôt bien</Text>
-          </View>
-        </StatsCard>
-
-        <StatsCard title="Courbe 7 jours">
-          <View style={{ height: wp(80), flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-            {moodData.map((val, i) => {
-              const h = (val / 5) * wp(65);
-              return (
-                <View key={i} style={{ alignItems: 'center', flex: 1 }}>
-                  <View style={{
-                    width: wp(10), height: wp(10), borderRadius: wp(5),
-                    backgroundColor: '#00D984',
-                    marginBottom: h,
-                  }} />
-                  <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>{weekDays[i]}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </StatsCard>
-      </>
-    );
-
+    // ── MAIN RENDER ──
     return (
-      <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+      <View style={{ flex: 1, backgroundColor: '#1A2029' }}>
         <StatusBar barStyle="light-content" />
         <LinearGradient
           colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
@@ -1681,92 +1772,68 @@ export const MediBookContent = (props) => {
             paddingBottom: wp(12), paddingHorizontal: wp(12),
             flexDirection: 'row', alignItems: 'center',
             borderBottomWidth: 1, borderBottomColor: '#4A4F55',
-          }}
-        >
-          <Pressable delayPressIn={120} onPress={() => setMediBookView('landing')}
-            style={({ pressed }) => ({
+          }}>
+          <Pressable delayPressIn={120} onPress={function() { setMediBookView('landing'); }}
+            style={function(state) { return {
               width: wp(36), height: wp(36), borderRadius: wp(18),
               backgroundColor: 'rgba(255,255,255,0.08)',
-              justifyContent: 'center', alignItems: 'center',
-              marginRight: wp(10),
-              transform: [{ scale: pressed ? 0.92 : 1 }],
-            })}>
+              justifyContent: 'center', alignItems: 'center', marginRight: wp(10),
+              transform: [{ scale: state.pressed ? 0.92 : 1 }],
+            }; }}>
             <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
               <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
           </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>Mes Stats</Text>
+            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>Dashboard santé premium</Text>
           </View>
           {renderProfileSwitchButton()}
         </LinearGradient>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
-          {/* Onglets */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: wp(12) }}>
-            {['nutrition', 'santé', 'activité', 'humeur'].map(tab => (
-              <Pressable
-                key={tab}
-                onPress={() => setStatsTab(tab)}
-                style={{
-                  paddingHorizontal: wp(18), paddingVertical: wp(8),
-                  borderRadius: wp(20), marginRight: wp(8),
-                  backgroundColor: statsTab === tab ? '#00D984' : 'rgba(0,0,0,0.05)',
-                }}
-              >
-                <Text style={{
-                  fontSize: fp(13), fontWeight: '600',
-                  color: statsTab === tab ? '#FFF' : '#2D3436',
-                }}>
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+          {/* Semi-arc navigation */}
+          <View style={{ position: 'relative', height: wp(140), marginTop: wp(10), marginBottom: wp(20) }}>
+            {TAB_ITEMS.map(function(tab) { return renderBubble(tab); })}
+          </View>
 
-          {statsTab === 'nutrition' && renderNutritionTab()}
-          {statsTab === 'santé' && renderSanteTab()}
-          {statsTab === 'activité' && renderActiviteTab()}
-          {statsTab === 'humeur' && renderHumeurTab()}
+          {/* Time range chips */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: wp(8), marginBottom: wp(16) }}>
+            {TIME_RANGES.map(function(range) {
+              var isSelected = selectedRange.key === range.key;
+              var access = rangeAccess[range.key];
+              var isLocked = access && !access.has_access;
+              return (
+                <Pressable key={range.key} delayPressIn={120}
+                  onPress={function() { onTimeRangeTap(range); }}
+                  style={function(state) { return {
+                    paddingHorizontal: wp(14), paddingVertical: wp(8),
+                    borderRadius: wp(20),
+                    backgroundColor: isSelected ? '#00D98425' : '#2A303B',
+                    borderWidth: 1,
+                    borderColor: isSelected ? '#00D984' : '#3A3F46',
+                    flexDirection: 'row', alignItems: 'center', gap: wp(4),
+                    transform: [{ scale: state.pressed ? 0.95 : 1 }],
+                  }; }}>
+                  <Text style={{ fontSize: fp(12), fontWeight: '600', color: isSelected ? '#00D984' : isLocked ? '#666' : '#FFF' }}>{range.label}</Text>
+                  {isLocked ? <Text style={{ fontSize: fp(10), color: '#666' }}>{'🔒'}</Text> : null}
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Loading or content */}
+          {statsLoading ? (
+            <View style={{ padding: wp(40), alignItems: 'center' }}>
+              <ActivityIndicator size="large" color="#00D984" />
+              <Text style={{ fontSize: fp(13), color: '#888', marginTop: wp(10) }}>Chargement des statistiques...</Text>
+            </View>
+          ) : renderActiveTab()}
+
           <BottomSpacer />
         </ScrollView>
-
-        {/* Bouton flottant + Ajouter — en bas à droite */}
-        <Pressable
-          delayPressIn={120}
-          onPress={() => setShowMediBookUploadSheet(true)}
-          style={{
-            position: 'absolute',
-            bottom: wp(80),
-            right: wp(20),
-            width: wp(56),
-            height: wp(56),
-            borderRadius: wp(28),
-            overflow: 'hidden',
-            shadowColor: '#00D984',
-            shadowOpacity: 0.4,
-            shadowRadius: 12,
-            elevation: 8,
-            zIndex: 100,
-          }}
-        >
-          <LinearGradient
-            colors={['#00D984', '#00B871']}
-            style={{
-              width: '100%', height: '100%',
-              justifyContent: 'center', alignItems: 'center',
-            }}
-          >
-            <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
-              <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
-              <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
-            </Svg>
-          </LinearGradient>
-        </Pressable>
       </View>
     );
-  };
-
   const renderAnalysesDetail = () => {
     const doneList = medicalData.analyses.filter(a => !a.is_scheduled);
     const scheduledList = medicalData.scheduledAnalyses;
