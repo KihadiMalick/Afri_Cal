@@ -746,6 +746,7 @@ export const MediBookContent = (props) => {
                 headers['Prefer'] = 'return=minimal';
 
                 var scanDate = scanResults.date || null;
+                var fmId = activeProfile === 'self' ? null : activeProfile;
 
                 // Insérer les analyses
                 if (scanResults.data && scanResults.data.length > 0) {
@@ -753,6 +754,7 @@ export const MediBookContent = (props) => {
                     method: 'POST', headers,
                     body: JSON.stringify(scanResults.data.map(item => ({
                       user_id: userId,
+                      family_member_id: fmId,
                       label: item.label,
                       value: item.value,
                       value_numeric: parseFloat(item.value) || null,
@@ -770,6 +772,7 @@ export const MediBookContent = (props) => {
                     method: 'POST', headers,
                     body: JSON.stringify(scanResults.medications.map(med => ({
                       user_id: userId,
+                      family_member_id: fmId,
                       name: med.name,
                       dosage: med.dosage || null,
                       frequency: med.frequency || null,
@@ -786,6 +789,7 @@ export const MediBookContent = (props) => {
                     method: 'POST', headers,
                     body: JSON.stringify(scanResults.vaccinations.map(vac => ({
                       user_id: userId,
+                      family_member_id: fmId,
                       vaccine_name: vac.name,
                       administration_date: vac.date || scanDate,
                       dose_number: parseInt(vac.dose) || 1,
@@ -811,6 +815,7 @@ export const MediBookContent = (props) => {
                     method: 'POST', headers,
                     body: JSON.stringify(scanResults.allergies.map(a => ({
                       user_id: userId,
+                      family_member_id: fmId,
                       allergen: a.allergen,
                       type: a.type || null,
                       severity: a.severity || 'moderate',
@@ -826,6 +831,7 @@ export const MediBookContent = (props) => {
                     body: JSON.stringify(scanResults.diagnostics.map(function(d) {
                       return {
                         user_id: userId,
+                        family_member_id: fmId,
                         condition_name: d.condition_name,
                         severity: d.severity || 'moderate',
                         status: d.status || 'active',
@@ -3394,6 +3400,7 @@ export const MediBookContent = (props) => {
                             method: 'POST', headers: headers,
                             body: JSON.stringify({
                               user_id: userId,
+                              family_member_id: activeProfile === 'self' ? null : activeProfile,
                               vaccine_name: rem.raw.vaccine_name,
                               dose_number: newDose,
                               administration_date: new Date().toISOString().split('T')[0],
