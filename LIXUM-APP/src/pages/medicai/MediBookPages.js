@@ -216,6 +216,10 @@ export const MediBookContent = (props) => {
     showAddAnalysisSheet, setShowAddAnalysisSheet,
     showAddDiagSheet, setShowAddDiagSheet,
     showAddAllergySheet, setShowAddAllergySheet,
+    // Vaccine calendar
+    vaccCalendarView, setVaccCalendarView, vaccSchedule, vaccStats,
+    vaccPriorityFilter, setVaccPriorityFilter, vaccCalendarLoading,
+    openAddVaccFromCalendar, getOverdueText,
     showAddVaccSheet, setShowAddVaccSheet,
     // Animation
     mbGenerateScale,
@@ -2665,67 +2669,248 @@ export const MediBookContent = (props) => {
           {renderProfileSwitchButton()}
         </LinearGradient>
 
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(100) }}>
-          {vaccList.length === 0 ? (
-            <View style={{ padding: wp(30), alignItems: 'center' }}>
-              <Text style={{ fontSize: fp(14), color: 'rgba(0,0,0,0.3)', textAlign: 'center' }}>
-                Aucun vaccin enregistré.{'\n'}Scannez votre carnet ou ajoutez manuellement.
-              </Text>
-            </View>
-          ) : (
-            vaccList.map(function(vac, i) {
-              var nextDue = vac.next_due_date ? new Date(vac.next_due_date).getTime() : null;
-              var isOverdue = nextDue && nextDue < now;
-              var isSoon = nextDue && !isOverdue && (nextDue - now) < 90 * 24 * 60 * 60 * 1000;
-              return (
-                <View key={vac.id || i} style={{
-                  backgroundColor: '#FAFBFC', borderRadius: wp(16), padding: wp(16),
-                  marginBottom: wp(10), borderLeftWidth: wp(4), borderLeftColor: '#9B6DFF',
-                  shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
-                }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#2D3436' }}>{vac.vaccine_name}</Text>
-                      {vac.administration_date ? (
-                        <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginTop: wp(2) }}>
-                          {new Date(vac.administration_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                        </Text>
-                      ) : null}
-                      {vac.administered_by ? (
-                        <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.35)', marginTop: wp(2) }}>{vac.administered_by}</Text>
-                      ) : null}
-                    </View>
-                    <View style={{ flexDirection: 'row', gap: wp(6), alignItems: 'center' }}>
-                      <View style={{ backgroundColor: 'rgba(155,109,255,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
-                        <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#9B6DFF' }}>{'Dose ' + (vac.dose_number || 1)}</Text>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(12), paddingBottom: wp(100) }}>
+          {/* Tab Switch */}
+          <View style={{ flexDirection: 'row', marginBottom: wp(14), backgroundColor: '#1E2530', borderRadius: wp(10), padding: wp(3) }}>
+            <Pressable onPress={function() { setVaccCalendarView('calendar'); }}
+              style={{ flex: 1, paddingVertical: wp(10), borderRadius: wp(8), backgroundColor: vaccCalendarView === 'calendar' ? '#2A303B' : 'transparent', alignItems: 'center' }}>
+              <Text style={{ color: vaccCalendarView === 'calendar' ? '#00D984' : 'rgba(0,0,0,0.35)', fontSize: fp(12), fontWeight: vaccCalendarView === 'calendar' ? '700' : '400' }}>Mon calendrier</Text>
+            </Pressable>
+            <Pressable onPress={function() { setVaccCalendarView('list'); }}
+              style={{ flex: 1, paddingVertical: wp(10), borderRadius: wp(8), backgroundColor: vaccCalendarView === 'list' ? '#2A303B' : 'transparent', alignItems: 'center' }}>
+              <Text style={{ color: vaccCalendarView === 'list' ? '#00D984' : 'rgba(0,0,0,0.35)', fontSize: fp(12), fontWeight: vaccCalendarView === 'list' ? '700' : '400' }}>Mes vaccins</Text>
+            </Pressable>
+          </View>
+
+          {vaccCalendarView === 'calendar' ? (
+            <View>
+              {vaccCalendarLoading ? (
+                <View style={{ alignItems: 'center', padding: wp(40) }}>
+                  <ActivityIndicator size="large" color="#00D984" />
+                  <Text style={{ color: 'rgba(0,0,0,0.3)', fontSize: fp(12), marginTop: wp(12) }}>Chargement du calendrier vaccinal...</Text>
+                </View>
+              ) : (
+                <View>
+                  {/* Anneau de progression */}
+                  {vaccStats ? (
+                    <View style={{ backgroundColor: '#2A303B', borderRadius: wp(16), padding: wp(20), marginBottom: wp(14), borderWidth: 1, borderColor: '#3A3F46', alignItems: 'center' }}>
+                      <View style={{ alignItems: 'center', marginBottom: wp(14) }}>
+                        {(function() {
+                          var pct = vaccStats.completion_percent || 0;
+                          var sz = wp(120); var sw = wp(8); var r = (sz - sw) / 2;
+                          var circ = 2 * Math.PI * r;
+                          var off = circ - (pct / 100) * circ;
+                          var col = pct <= 30 ? '#FF6B8A' : pct <= 60 ? '#FFD93D' : pct <= 80 ? '#4DA6FF' : '#00D984';
+                          return (
+                            <View style={{ width: sz, height: sz, alignItems: 'center', justifyContent: 'center' }}>
+                              <Svg width={sz} height={sz} style={{ position: 'absolute' }}>
+                                <Circle cx={sz / 2} cy={sz / 2} r={r} stroke="#3A3F46" strokeWidth={sw} fill="transparent" />
+                                <Circle cx={sz / 2} cy={sz / 2} r={r} stroke={col} strokeWidth={sw} fill="transparent"
+                                  strokeDasharray={circ} strokeDashoffset={off} strokeLinecap="round"
+                                  transform={'rotate(-90 ' + (sz / 2) + ' ' + (sz / 2) + ')'} />
+                              </Svg>
+                              <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#FFF' }}>{Math.round(pct)}%</Text>
+                              <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>couverture</Text>
+                            </View>
+                          );
+                        })()}
                       </View>
-                      {isOverdue ? (
-                        <View style={{ backgroundColor: 'rgba(255,107,107,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
-                          <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF6B6B' }}>Rappel en retard</Text>
-                        </View>
-                      ) : isSoon ? (
-                        <View style={{ backgroundColor: 'rgba(255,140,66,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
-                          <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF8C42' }}>Rappel bientôt</Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  </View>
-                  {vac.next_due_date ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(8), gap: wp(6) }}>
-                      <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
-                        <Rect x="3" y="4" width="18" height="18" rx="2" stroke={isOverdue ? '#FF6B6B' : '#FF8C42'} strokeWidth="1.5" />
-                        <Line x1="16" y1="2" x2="16" y2="6" stroke={isOverdue ? '#FF6B6B' : '#FF8C42'} strokeWidth="1.5" strokeLinecap="round" />
-                        <Line x1="8" y1="2" x2="8" y2="6" stroke={isOverdue ? '#FF6B6B' : '#FF8C42'} strokeWidth="1.5" strokeLinecap="round" />
-                        <Line x1="3" y1="10" x2="21" y2="10" stroke={isOverdue ? '#FF6B6B' : '#FF8C42'} strokeWidth="1.5" />
-                      </Svg>
-                      <Text style={{ fontSize: fp(11), color: isOverdue ? '#FF6B6B' : '#FF8C42', fontWeight: '600' }}>
-                        {'Prochain rappel : ' + new Date(vac.next_due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                      </Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: wp(8) }}>
+                        {[
+                          { label: 'Faits', count: vaccStats.done_count || 0, bg: 'rgba(0,217,132,0.12)', color: '#00D984' },
+                          { label: 'Partiels', count: vaccStats.partial_count || 0, bg: 'rgba(255,217,61,0.12)', color: '#FFD93D' },
+                          { label: 'À faire', count: vaccStats.pending_count || 0, bg: 'rgba(77,166,255,0.12)', color: '#4DA6FF' },
+                          { label: 'En retard', count: vaccStats.overdue_count || 0, bg: 'rgba(255,107,138,0.12)', color: '#FF6B8A' },
+                        ].map(function(s) {
+                          return (
+                            <View key={s.label} style={{ backgroundColor: s.bg, borderRadius: wp(8), paddingHorizontal: wp(10), paddingVertical: wp(4) }}>
+                              <Text style={{ fontSize: fp(10), fontWeight: '700', color: s.color }}>{s.count + ' ' + s.label}</Text>
+                            </View>
+                          );
+                        })}
+                      </View>
                     </View>
                   ) : null}
+
+                  {/* Filtres priorité */}
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: wp(14) }} contentContainerStyle={{ gap: wp(6) }}>
+                    {[
+                      { key: null, label: 'Tous', color: '#00D984' },
+                      { key: 'Essentiel', label: 'Essentiel', color: '#FF6B8A' },
+                      { key: 'Recommandé', label: 'Recommandé', color: '#FFD93D' },
+                      { key: 'Conseillé', label: 'Conseillé', color: '#4DA6FF' },
+                      { key: 'Voyage', label: 'Voyage', color: '#9B8ACF' },
+                    ].map(function(f) {
+                      var active = vaccPriorityFilter === f.key;
+                      return (
+                        <Pressable key={f.label} onPress={function() { setVaccPriorityFilter(f.key); }}
+                          style={{ paddingHorizontal: wp(14), paddingVertical: wp(7), borderRadius: wp(20), backgroundColor: active ? f.color : 'transparent', borderWidth: 1.5, borderColor: active ? f.color : 'rgba(0,0,0,0.1)' }}>
+                          <Text style={{ fontSize: fp(11), fontWeight: '600', color: active ? (f.key === 'Recommandé' ? '#000' : '#FFF') : 'rgba(0,0,0,0.35)' }}>{f.label}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+
+                  {/* Cartes vaccins groupées */}
+                  {(function() {
+                    var STATUS_CFG = {
+                      done: { label: 'Fait \u2713', color: '#00D984', bg: 'rgba(0,217,132,0.12)' },
+                      partial: { label: 'Partiel', color: '#FFD93D', bg: 'rgba(255,217,61,0.12)' },
+                      pending: { label: '\u00C0 faire', color: '#4DA6FF', bg: 'rgba(77,166,255,0.12)' },
+                      overdue: { label: 'En retard', color: '#FF6B8A', bg: 'rgba(255,107,138,0.12)' },
+                    };
+                    var PRIO_CFG = {
+                      'Essentiel': { color: '#FF6B8A', label: 'Vaccins obligatoires' },
+                      'Recommandé': { color: '#FFD93D', label: 'Fortement conseillés' },
+                      'Conseillé': { color: '#4DA6FF', label: 'Selon votre profil' },
+                      'Voyage': { color: '#9B8ACF', label: 'Pour les voyageurs' },
+                    };
+                    var filtered = vaccSchedule;
+                    if (vaccPriorityFilter) {
+                      filtered = vaccSchedule.filter(function(v) { return v.priority === vaccPriorityFilter; });
+                    }
+                    var grouped = {};
+                    filtered.forEach(function(v) {
+                      var p = v.priority || 'Autre';
+                      if (!grouped[p]) grouped[p] = [];
+                      grouped[p].push(v);
+                    });
+                    var order = ['Essentiel', 'Recommandé', 'Conseillé', 'Voyage'];
+                    return order.map(function(prio) {
+                      if (!grouped[prio] || grouped[prio].length === 0) return null;
+                      var pCfg = PRIO_CFG[prio] || { color: '#888', label: '' };
+                      return (
+                        <View key={prio} style={{ marginBottom: wp(16) }}>
+                          <Text style={{ fontSize: fp(11), fontWeight: '700', color: pCfg.color, letterSpacing: 1, marginBottom: wp(8), textTransform: 'uppercase' }}>
+                            {prio + ' — ' + pCfg.label}
+                          </Text>
+                          {grouped[prio].map(function(v, vi) {
+                            var sCfg = STATUS_CFG[v.status] || STATUS_CFG.pending;
+                            return (
+                              <Pressable key={v.vaccine_id || vi} delayPressIn={80}
+                                onPress={function() {
+                                  if (v.status !== 'done' && openAddVaccFromCalendar) {
+                                    openAddVaccFromCalendar({ id: v.vaccine_id, name: v.vaccine_name, total_doses: v.total_doses, doses_done: v.doses_done, booster_interval_days: v.booster_interval_days });
+                                  }
+                                }}
+                                style={function(state) { return {
+                                  backgroundColor: '#2A303B', borderRadius: wp(12), padding: wp(14),
+                                  marginBottom: wp(8), borderWidth: 1, borderColor: '#3A3F46',
+                                  transform: [{ scale: state.pressed && v.status !== 'done' ? 0.97 : 1 }],
+                                }; }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                  {/* Indicateur statut */}
+                                  <View style={{ width: wp(24), height: wp(24), borderRadius: wp(12), marginRight: wp(12), justifyContent: 'center', alignItems: 'center', backgroundColor: sCfg.bg, borderWidth: v.status === 'pending' ? 1.5 : 0, borderColor: 'rgba(255,255,255,0.15)' }}>
+                                    <Text style={{ fontSize: fp(10), color: sCfg.color, fontWeight: '700' }}>
+                                      {v.status === 'done' ? '\u2713' : v.status === 'partial' ? '\u25D0' : v.status === 'overdue' ? '!' : '\u25CB'}
+                                    </Text>
+                                  </View>
+                                  {/* Contenu */}
+                                  <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#EAEEF3' }}>{v.vaccine_name}</Text>
+                                    {v.disease_target ? (
+                                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)', marginTop: wp(1) }}>{v.disease_target}</Text>
+                                    ) : null}
+                                    {v.display_age_label ? (
+                                      <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.25)', marginTop: wp(1) }}>{v.display_age_label}</Text>
+                                    ) : null}
+                                  </View>
+                                  {/* Badge */}
+                                  <View style={{ backgroundColor: sCfg.bg, borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(4) }}>
+                                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: sCfg.color }}>{sCfg.label}</Text>
+                                  </View>
+                                </View>
+                                {/* Infos supplémentaires */}
+                                {(v.status === 'done' || v.status === 'partial') && v.last_dose_date ? (
+                                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)', marginTop: wp(6), marginLeft: wp(36) }}>
+                                    {new Date(v.last_dose_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) + ' — Dose ' + (v.doses_done || 1) + '/' + (v.total_doses || 1)}
+                                  </Text>
+                                ) : null}
+                                {v.status === 'partial' && v.next_due_date ? (
+                                  <Text style={{ fontSize: fp(10), color: '#FFD93D', marginTop: wp(3), marginLeft: wp(36) }}>
+                                    {'\u23F0 Prochaine dose : ' + new Date(v.next_due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                  </Text>
+                                ) : null}
+                                {v.status === 'overdue' && v.next_due_date && getOverdueText ? (
+                                  <Text style={{ fontSize: fp(10), color: '#FF6B8A', marginTop: wp(3), marginLeft: wp(36) }}>
+                                    {'\u26A0\uFE0F Rappel dépassé depuis ' + getOverdueText(v.next_due_date)}
+                                  </Text>
+                                ) : null}
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      );
+                    });
+                  })()}
                 </View>
-              );
-            })
+              )}
+            </View>
+          ) : (
+            <View>
+              {/* Onglet Mes vaccins — liste existante */}
+              {vaccList.length === 0 ? (
+                <View style={{ padding: wp(30), alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(14), color: 'rgba(0,0,0,0.3)', textAlign: 'center' }}>
+                    Aucun vaccin enregistré.{'\n'}Scannez votre carnet ou ajoutez manuellement.
+                  </Text>
+                </View>
+              ) : (
+                vaccList.map(function(vac, i) {
+                  var nextDue = vac.next_due_date ? new Date(vac.next_due_date).getTime() : null;
+                  var isOverdue = nextDue && nextDue < now;
+                  var isSoon = nextDue && !isOverdue && (nextDue - now) < 90 * 24 * 60 * 60 * 1000;
+                  return (
+                    <View key={vac.id || i} style={{
+                      backgroundColor: '#FAFBFC', borderRadius: wp(16), padding: wp(16),
+                      marginBottom: wp(10), borderLeftWidth: wp(4), borderLeftColor: '#9B6DFF',
+                      shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+                    }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#2D3436' }}>{vac.vaccine_name}</Text>
+                          {vac.administration_date ? (
+                            <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginTop: wp(2) }}>
+                              {new Date(vac.administration_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                            </Text>
+                          ) : null}
+                          {vac.administered_by ? (
+                            <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.35)', marginTop: wp(2) }}>{vac.administered_by}</Text>
+                          ) : null}
+                        </View>
+                        <View style={{ flexDirection: 'row', gap: wp(6), alignItems: 'center' }}>
+                          <View style={{ backgroundColor: 'rgba(155,109,255,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                            <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#9B6DFF' }}>{'Dose ' + (vac.dose_number || 1)}</Text>
+                          </View>
+                          {isOverdue ? (
+                            <View style={{ backgroundColor: 'rgba(255,107,107,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                              <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF6B6B' }}>Rappel en retard</Text>
+                            </View>
+                          ) : isSoon ? (
+                            <View style={{ backgroundColor: 'rgba(255,140,66,0.15)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                              <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF8C42' }}>Rappel bientôt</Text>
+                            </View>
+                          ) : null}
+                        </View>
+                      </View>
+                      {vac.next_due_date ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(8), gap: wp(6) }}>
+                          <Svg width={wp(14)} height={wp(14)} viewBox="0 0 24 24" fill="none">
+                            <Rect x="3" y="4" width="18" height="18" rx="2" stroke={isOverdue ? '#FF6B6B' : '#FF8C42'} strokeWidth="1.5" />
+                            <Line x1="16" y1="2" x2="16" y2="6" stroke={isOverdue ? '#FF6B6B' : '#FF8C42'} strokeWidth="1.5" strokeLinecap="round" />
+                            <Line x1="8" y1="2" x2="8" y2="6" stroke={isOverdue ? '#FF6B6B' : '#FF8C42'} strokeWidth="1.5" strokeLinecap="round" />
+                            <Line x1="3" y1="10" x2="21" y2="10" stroke={isOverdue ? '#FF6B6B' : '#FF8C42'} strokeWidth="1.5" />
+                          </Svg>
+                          <Text style={{ fontSize: fp(11), color: isOverdue ? '#FF6B6B' : '#FF8C42', fontWeight: '600' }}>
+                            {'Prochain rappel : ' + new Date(vac.next_due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })
+              )}
+            </View>
           )}
           <BottomSpacer />
         </ScrollView>
