@@ -2300,39 +2300,27 @@ export const MediBookContent = (props) => {
         </LinearGradient>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(50) }}>
-          {/* Bouton Ajouter des données */}
-          <Pressable delayPressIn={120} onPress={function() { setShowAddDataSheet(true); }}
-            style={function(state) { return {
-              flexDirection: 'row', alignItems: 'center',
-              backgroundColor: '#2A303B', borderRadius: wp(12), padding: wp(14),
-              marginBottom: wp(12), borderWidth: 1, borderColor: '#3A3F46',
-              transform: [{ scale: state.pressed ? 0.97 : 1 }],
-            }; }}>
-            <View style={{ width: wp(32), height: wp(32), borderRadius: wp(10), backgroundColor: 'rgba(0,217,132,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
-              <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
-                <Line x1="12" y1="5" x2="12" y2="19" stroke="#00D984" strokeWidth="2.5" strokeLinecap="round"/>
-                <Line x1="5" y1="12" x2="19" y2="12" stroke="#00D984" strokeWidth="2.5" strokeLinecap="round"/>
-              </Svg>
-            </View>
-            <Text style={{ flex: 1, fontSize: fp(14), fontWeight: '600', color: '#EAEEF3' }}>Ajouter des données de santé</Text>
-            <Text style={{ fontSize: fp(16), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
-          </Pressable>
-
           {/* Score Vitalité + prochain RDV */}
           <View style={{
-            backgroundColor: '#FAFBFC', borderRadius: wp(16), padding: wp(16), marginBottom: wp(16),
+            backgroundColor: '#2A303B', borderRadius: wp(12), padding: wp(16), marginBottom: wp(12),
             flexDirection: 'row', alignItems: 'center',
-            shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+            borderWidth: 1, borderColor: '#3A3F46',
           }}>
             <View style={{
               width: wp(56), height: wp(56), borderRadius: wp(28),
-              borderWidth: wp(4), borderColor: '#00D984',
+              borderWidth: wp(4), borderColor: '#3A3F46',
               justifyContent: 'center', alignItems: 'center', marginRight: wp(14),
+              position: 'relative',
             }}>
-              <Text style={{ fontSize: fp(18), fontWeight: '800', color: '#00D984' }}>{medicalData.vitalityScore || 0}</Text>
+              <View style={{
+                position: 'absolute', width: wp(56), height: wp(56), borderRadius: wp(28),
+                borderWidth: wp(4), borderColor: '#00D984', borderTopColor: 'transparent',
+                transform: [{ rotate: '45deg' }],
+              }} />
+              <Text style={{ fontSize: fp(18), fontWeight: '800', color: '#FFF' }}>{medicalData.vitalityScore || 0}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>Score Vitalité</Text>
+              <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Score Vitalité</Text>
               {nextScheduled ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(4) }}>
                   <View style={{
@@ -2341,10 +2329,10 @@ export const MediBookContent = (props) => {
                   }}>
                     <Text style={{ fontSize: fp(10), fontWeight: '700', color: daysUntilNext <= 7 ? '#FF6B6B' : '#FF8C42' }}>J-{daysUntilNext}</Text>
                   </View>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', flex: 1 }} numberOfLines={1}>{nextScheduled.label}</Text>
+                  <Text style={{ fontSize: fp(11), color: '#888', flex: 1 }} numberOfLines={1}>{nextScheduled.label}</Text>
                 </View>
               ) : (
-                <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>Aucune analyse planifiée</Text>
+                <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(4) }}>Aucune analyse planifiée</Text>
               )}
             </View>
           </View>
@@ -2431,53 +2419,6 @@ export const MediBookContent = (props) => {
           <BottomSpacer />
         </ScrollView>
 
-        {/* BottomSheet — Ajouter des données de santé */}
-        <Modal visible={showAddDataSheet} transparent animationType="slide"
-          onRequestClose={function() { setShowAddDataSheet(false); }}>
-          <Pressable onPress={function() { setShowAddDataSheet(false); }}
-            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-            <Pressable onPress={function(e) { e.stopPropagation(); }}>
-              <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
-                style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
-                <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }}/>
-                <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>Ajouter des données</Text>
-                <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(16) }}>Choisissez le type de données à ajouter</Text>
-
-                {[
-                  { icon: '📷', label: 'Scanner un document', sub: 'Photo ou galerie', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowMediBookUploadSheet(true); }, 300); } },
-                  { icon: '💊', label: 'Ajouter un médicament', sub: 'Traitement en cours', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddMedSheet(true); }, 300); } },
-                  { icon: '🏥', label: 'Ajouter un diagnostic', sub: 'Pathologie à surveiller', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddDiagSheet(true); }, 300); } },
-                  { icon: '💉', label: 'Ajouter un vaccin', sub: 'Carnet vaccinal', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddVaccSheet(true); }, 300); } },
-                  { icon: '⚠️', label: 'Ajouter une allergie', sub: 'Profil allergique', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddAllergySheet(true); }, 300); } },
-                  { icon: '🔬', label: 'Planifier une analyse', sub: 'Bilan à venir', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddAnalysisSheet(true); }, 300); } },
-                ].map(function(opt, oi) {
-                  return (
-                    <Pressable key={oi} delayPressIn={120} onPress={opt.onPress}
-                      style={function(state) { return {
-                        flexDirection: 'row', alignItems: 'center',
-                        paddingVertical: wp(12), paddingHorizontal: wp(10),
-                        backgroundColor: state.pressed ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
-                        borderRadius: wp(12), marginBottom: wp(6),
-                        borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-                      }; }}>
-                      <Text style={{ fontSize: fp(18), marginRight: wp(12) }}>{opt.icon}</Text>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{opt.label}</Text>
-                        <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)' }}>{opt.sub}</Text>
-                      </View>
-                      <Text style={{ fontSize: fp(16), color: 'rgba(255,255,255,0.2)' }}>{">"}</Text>
-                    </Pressable>
-                  );
-                })}
-
-                <Pressable onPress={function() { setShowAddDataSheet(false); }}
-                  style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(6), borderRadius: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                  <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Fermer</Text>
-                </Pressable>
-              </LinearGradient>
-            </Pressable>
-          </Pressable>
-        </Modal>
       </View>
     );
   };
