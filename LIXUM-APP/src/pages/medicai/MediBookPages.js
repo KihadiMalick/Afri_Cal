@@ -1946,12 +1946,187 @@ export const MediBookContent = (props) => {
       );
     };
     var renderHumeurContent = function() {
+      var data = moodStats;
+      var hasData = data && data.length > 0;
+      if (!hasData) {
+        return (
+          <View style={{ padding: wp(40), alignItems: 'center' }}>
+            <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>😊</Text>
+            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Pas de données d'humeur</Text>
+            <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Utilisez le mood gauge pour tracker votre humeur !</Text>
+          </View>
+        );
+      }
+      var avgPct = Math.round(data.reduce(function(s, d) { return s + (d.max_gauge_percent || 0); }, 0) / data.length);
+      var heroEmoji = avgPct <= 20 ? '😢' : avgPct <= 40 ? '😔' : avgPct <= 60 ? '😐' : avgPct <= 80 ? '😊' : '😍';
+      var heroLabel = avgPct <= 20 ? 'Très bas' : avgPct <= 40 ? 'Bas' : avgPct <= 60 ? 'Neutre' : avgPct <= 80 ? 'Bien' : 'Excellent';
+      var heroColor = avgPct < 40 ? '#FF6B8A' : avgPct <= 60 ? '#FFD93D' : '#00D984';
+
+      // Courbe humeur
+      var chartW = SCREEN_WIDTH - wp(64);
+      var chartH = wp(100);
+
+      // Corrélation météo
+      var weatherGroups = {};
+      data.forEach(function(d) {
+        var w = d.weather || 'Inconnu';
+        if (!weatherGroups[w]) weatherGroups[w] = { total: 0, count: 0 };
+        weatherGroups[w].total += (d.max_gauge_percent || 0);
+        weatherGroups[w].count++;
+      });
+      var WEATHER_EMOJIS = { 'Soleil': '☀️', 'Nuageux': '☁️', 'Pluie': '🌧️', 'Neige': '❄️', 'Orage': '⛈️', 'Brouillard': '🌫️', 'Vent': '💨' };
+      var weatherStats = Object.keys(weatherGroups).map(function(w) {
+        return { weather: w, emoji: WEATHER_EMOJIS[w] || '🌡️', avg: Math.round(weatherGroups[w].total / weatherGroups[w].count) };
+      }).sort(function(a, b) { return b.avg - a.avg; });
+
+      // Distribution
+      var dist = [0, 0, 0, 0, 0];
+      data.forEach(function(d) {
+        var p = d.max_gauge_percent || 0;
+        if (p <= 20) dist[4]++;
+        else if (p <= 40) dist[3]++;
+        else if (p <= 60) dist[2]++;
+        else if (p <= 80) dist[1]++;
+        else dist[0]++;
+      });
+      var distItems = [
+        { emoji: '😍', range: '81-100%', count: dist[0] },
+        { emoji: '😊', range: '61-80%', count: dist[1] },
+        { emoji: '😐', range: '41-60%', count: dist[2] },
+        { emoji: '😔', range: '21-40%', count: dist[3] },
+        { emoji: '😢', range: '0-20%', count: dist[4] }
+      ];
+      var maxDist = Math.max.apply(null, dist.concat([1]));
+
+      // Best / worst days
+      var bestDay = data.reduce(function(best, d) { return (d.max_gauge_percent || 0) > (best.max_gauge_percent || 0) ? d : best; }, data[0]);
+      var worstDay = data.reduce(function(worst, d) { return (d.max_gauge_percent || 0) < (worst.max_gauge_percent || 0) ? d : worst; }, data[0]);
+      var formatDate = function(ds) { return ds ? new Date(ds).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '-'; };
+      var getEmoji = function(p) { return p <= 20 ? '😢' : p <= 40 ? '😔' : p <= 60 ? '😐' : p <= 80 ? '😊' : '😍'; };
+
       return (
-        <View style={{ padding: wp(40), alignItems: 'center' }}>
-          <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>😊</Text>
-          <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Humeur</Text>
-          <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Chargement en cours...</Text>
-          <ActivityIndicator size="small" color="#00D984" style={{ marginTop: wp(12) }} />
+        <View>
+          {/* Hero — Humeur moyenne */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(20), marginBottom: wp(12), alignItems: 'center' }}>
+            <Text style={{ fontSize: fp(48) }}>{heroEmoji}</Text>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: heroColor, marginTop: wp(8) }}>{heroLabel}</Text>
+            <Text style={{ fontSize: fp(14), color: '#FFF', marginTop: wp(4) }}>{avgPct + '%'}</Text>
+            <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(2) }}>Humeur moyenne sur la période</Text>
+          </View>
+
+          {/* Courbe Humeur */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Évolution humeur</Text>
+            <Svg width={chartW} height={chartH}>
+              <Defs>
+                <SvgLinearGradient id="moodGrad" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor={heroColor} stopOpacity="0.25" />
+                  <Stop offset="1" stopColor={heroColor} stopOpacity="0" />
+                </SvgLinearGradient>
+              </Defs>
+              {data.length > 1 ? (
+                <View>
+                  <Polygon
+                    points={'0,' + chartH + ' ' + data.map(function(d, i) {
+                      var x = (i / (data.length - 1)) * chartW;
+                      var y = chartH - ((d.max_gauge_percent || 0) / 100) * (chartH - wp(10));
+                      return x + ',' + y;
+                    }).join(' ') + ' ' + chartW + ',' + chartH}
+                    fill="url(#moodGrad)"
+                  />
+                  <Polyline
+                    points={data.map(function(d, i) {
+                      var x = (i / (data.length - 1)) * chartW;
+                      var y = chartH - ((d.max_gauge_percent || 0) / 100) * (chartH - wp(10));
+                      return x + ',' + y;
+                    }).join(' ')}
+                    fill="none" stroke={heroColor} strokeWidth="2" strokeLinejoin="round"
+                  />
+                </View>
+              ) : null}
+              {data.map(function(d, i) {
+                var x = data.length > 1 ? (i / (data.length - 1)) * chartW : chartW / 2;
+                var pct = d.max_gauge_percent || 0;
+                var y = chartH - (pct / 100) * (chartH - wp(10));
+                var dotColor = pct < 40 ? '#FF6B8A' : pct <= 60 ? '#FFD93D' : '#00D984';
+                return <Circle key={i} cx={x} cy={y} r="4" fill={dotColor} />;
+              })}
+            </Svg>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6) }}>
+              {data.length <= 10 ? data.map(function(d, i) {
+                var dt = new Date(d.stat_date);
+                return <Text key={i} style={{ fontSize: fp(8), color: '#666' }}>{['Di','Lu','Ma','Me','Je','Ve','Sa'][dt.getDay()]}</Text>;
+              }) : (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', flex: 1 }}>
+                  <Text style={{ fontSize: fp(8), color: '#666' }}>{data[0] ? data[0].stat_date.substring(5, 10) : ''}</Text>
+                  <Text style={{ fontSize: fp(8), color: '#666' }}>{data[data.length - 1] ? data[data.length - 1].stat_date.substring(5, 10) : ''}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Corrélation Météo */}
+          {weatherStats.length > 0 ? (
+            <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Humeur × Météo</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={{ flexDirection: 'row', gap: wp(8) }}>
+                  {weatherStats.map(function(ws, i) {
+                    var wColor = ws.avg < 40 ? '#FF6B8A' : ws.avg <= 60 ? '#FFD93D' : '#00D984';
+                    return (
+                      <View key={i} style={{ backgroundColor: '#1E2530', borderRadius: wp(12), padding: wp(10), paddingHorizontal: wp(14), alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(20) }}>{ws.emoji}</Text>
+                        <Text style={{ fontSize: fp(11), fontWeight: '600', color: wColor, marginTop: wp(4) }}>{ws.avg + '%'}</Text>
+                        <Text style={{ fontSize: fp(9), color: '#666', marginTop: wp(2) }}>{ws.weather}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+            </View>
+          ) : null}
+
+          {/* Distribution */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Distribution</Text>
+            {distItems.map(function(di, idx) {
+              var pct = data.length > 0 ? Math.round((di.count / data.length) * 100) : 0;
+              return (
+                <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(16), width: wp(28) }}>{di.emoji}</Text>
+                  <Text style={{ fontSize: fp(10), color: '#888', width: wp(50) }}>{di.range}</Text>
+                  <View style={{ flex: 1, height: wp(8), backgroundColor: '#1E2530', borderRadius: wp(4), marginHorizontal: wp(8) }}>
+                    <View style={{ width: (di.count / maxDist * 100) + '%', height: '100%', backgroundColor: '#00D984', borderRadius: wp(4) }} />
+                  </View>
+                  <Text style={{ fontSize: fp(10), fontWeight: '600', color: '#FFF', width: wp(30), textAlign: 'right' }}>{pct + '%'}</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Meilleur / Pire jour */}
+          <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(12) }}>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12) }}>
+              <Text style={{ fontSize: fp(10), color: '#888' }}>Meilleur jour</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(4), gap: wp(6) }}>
+                <Text style={{ fontSize: fp(20) }}>{getEmoji(bestDay ? bestDay.max_gauge_percent : 0)}</Text>
+                <View>
+                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#00D984' }}>{(bestDay ? bestDay.max_gauge_percent : 0) + '%'}</Text>
+                  <Text style={{ fontSize: fp(9), color: '#666' }}>{formatDate(bestDay ? bestDay.stat_date : null)}</Text>
+                </View>
+              </View>
+            </View>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12) }}>
+              <Text style={{ fontSize: fp(10), color: '#888' }}>Jour difficile</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(4), gap: wp(6) }}>
+                <Text style={{ fontSize: fp(20) }}>{getEmoji(worstDay ? worstDay.max_gauge_percent : 0)}</Text>
+                <View>
+                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FF6B8A' }}>{(worstDay ? worstDay.max_gauge_percent : 0) + '%'}</Text>
+                  <Text style={{ fontSize: fp(9), color: '#666' }}>{formatDate(worstDay ? worstDay.stat_date : null)}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
         </View>
       );
     };
