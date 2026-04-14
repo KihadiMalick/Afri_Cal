@@ -1994,6 +1994,162 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
   var getBatchEnergyCost = function(count) { return count <= 5 ? 50 : 80; };
 
+  var generateBatchId = function() {
+    var s4 = function() { return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1); };
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+  };
+
+  var mergeScanResults = function(results) {
+    var merged = { data: [], medications: [], vaccinations: [], allergies: [], diagnostics: [], alerts: [], summary: '', documentType: 'Batch', date: null };
+    var seen = {};
+    results.forEach(function(r) {
+      if (!r) return;
+      if (r.date && !merged.date) merged.date = r.date;
+      if (r.summary) merged.summary += (merged.summary ? '\n' : '') + r.summary;
+      if (r.documentType && r.documentType !== 'Document') merged.documentType = r.documentType;
+      (r.data || []).forEach(function(d) {
+        var key = 'a:' + (d.label || '');
+        if (!seen[key]) { seen[key] = true; merged.data.push(d); }
+      });
+      (r.medications || []).forEach(function(m) {
+        var key = 'm:' + (m.name || '').toLowerCase();
+        if (!seen[key]) { seen[key] = true; merged.medications.push(m); }
+        else {
+          var idx = merged.medications.findIndex(function(x) { return (x.name || '').toLowerCase() === (m.name || '').toLowerCase(); });
+          if (idx >= 0 && m.dosage && !merged.medications[idx].dosage) merged.medications[idx] = m;
+        }
+      });
+      (r.vaccinations || []).forEach(function(v) {
+        var key = 'v:' + (v.name || '').toLowerCase();
+        if (!seen[key]) { seen[key] = true; merged.vaccinations.push(v); }
+      });
+      (r.allergies || []).forEach(function(a) {
+        var key = 'al:' + (a.allergen || '').toLowerCase();
+        if (!seen[key]) { seen[key] = true; merged.allergies.push(a); }
+      });
+      (r.diagnostics || []).forEach(function(d) {
+        var key = 'd:' + (d.condition_name || '').toLowerCase();
+        if (!seen[key]) { seen[key] = true; merged.diagnostics.push(d); }
+      });
+      (r.alerts || []).forEach(function(al) { merged.alerts.push(al); });
+    });
+    return merged;
+  };
+
+  var startBatchScan = async function(photos, context) {
+    if (!photos || photos.length === 0) return;
+    var totalPhotos = photos.length;
+    var cost = getBatchEnergyCost(totalPhotos);
+    var bid = generateBatchId();
+    setBatchIdState(bid);
+    setScanResults(null);
+    setScanSteps([]);
+    setScanContext(context || 'medibook');
+    setScanFileName('Batch de ' + totalPhotos + ' photos');
+    setUploadState('scanning');
+    setBatchProgress('Préparation du batch...');
+
+    // Split into sub-batches of max 5
+    var subBatches = [];
+    for (var i = 0; i < photos.length; i += 5) {
+      subBatches.push(photos.slice(i, i + 5));
+    }
+
+    // Steps animation
+    var steps = [];
+    for (var sb = 0; sb < subBatches.length; sb++) {
+      steps.push('Lot ' + (sb + 1) + '/' + subBatches.length + ' — envoi de ' + subBatches[sb].length + ' photo' + (subBatches[sb].length > 1 ? 's' : '') + '...');
+      steps.push('Lot ' + (sb + 1) + '/' + subBatches.length + ' — analyse en cours...');
+    }
+    steps.push('Fusion des résultats...');
+    steps.push('Dédoublonnage...');
+
+    var stepIdx = 0;
+    var addStep = function(text) {
+      setScanSteps(function(prev) { return prev.concat([{ text: text, done: true }]); });
+    };
+
+    try {
+      var allResults = [];
+
+      for (var bi = 0; bi < subBatches.length; bi++) {
+        var batch = subBatches[bi];
+        setBatchProgress('Lot ' + (bi + 1) + '/' + subBatches.length + ' en cours...');
+        addStep(steps[stepIdx]); stepIdx++;
+
+        // Build images array for this sub-batch
+        var imagesBase64 = batch.map(function(p) { return p.base64; });
+
+        var response = await fetch(
+          SUPABASE_URL + '/functions/v1/scan-medical',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              imageBase64: imagesBase64[0],
+              images_base64: imagesBase64,
+              mimeType: 'image/jpeg',
+              userId: userId || '00000000-0000-0000-0000-000000000001',
+              context: context || 'medibook',
+              category: 'notes',
+              batch_id: bid,
+              batch_index: bi,
+              batch_total: subBatches.length,
+              energy_cost: bi === 0 ? cost : 0,
+              feature: 'medic',
+            }),
+          }
+        );
+
+        if (response.status === 402) {
+          var gateData = await response.json();
+          setEnergyGateData(gateData);
+          setUploadState('idle');
+          setBatchProgress('');
+          return;
+        }
+
+        if (!response.ok) {
+          var errorText = await response.text();
+          throw new Error('Erreur lot ' + (bi + 1) + ': ' + response.status);
+        }
+
+        var result = await response.json();
+        if (result.error) throw new Error(result.error);
+        allResults.push(result);
+        addStep(steps[stepIdx]); stepIdx++;
+      }
+
+      // Merge all results
+      setBatchProgress('Fusion des résultats...');
+      addStep(steps[stepIdx]); stepIdx++;
+      var merged = mergeScanResults(allResults);
+      merged._batchId = bid;
+      merged._batchPhotoCount = totalPhotos;
+      merged._energyCost = cost;
+
+      // Dedup step
+      addStep(steps[stepIdx]); stepIdx++;
+
+      await new Promise(function(resolve) { setTimeout(resolve, 800); });
+
+      setScanResults(merged);
+      setUploadState('results');
+      setBatchProgress('');
+      setBatchPhotos([]);
+
+    } catch (error) {
+      console.error('Erreur batch scan:', error);
+      setUploadState('idle');
+      setBatchProgress('');
+      setScanResults(null);
+      showMModal('error', 'Erreur d\'analyse batch', 'ALIXEN n\'a pas pu analyser le batch. ' + (error.message || 'Erreur inconnue'));
+    }
+  };
+
   // ── TRANSFERT VERS SECRET POCKET ──────────────────────────────────────
   const toggleMedicationReminder = async (medicationId, currentValue) => {
     try {
@@ -3241,6 +3397,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         batchPhotos={batchPhotos} setBatchPhotos={setBatchPhotos}
         showBatchPreview={showBatchPreview} setShowBatchPreview={setShowBatchPreview}
         getBatchEnergyCost={getBatchEnergyCost} removeBatchPhoto={removeBatchPhoto}
+        startBatchScan={startBatchScan}
         showAddMedSheet={showAddMedSheet} setShowAddMedSheet={setShowAddMedSheet}
         addMedStep={addMedStep} setAddMedStep={setAddMedStep}
         medSearchQuery={medSearchQuery}
