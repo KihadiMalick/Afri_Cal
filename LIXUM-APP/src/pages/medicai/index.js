@@ -198,9 +198,7 @@ export default function MedicAiPage({ navigation }) {
   var [newVaccDoctor, setNewVaccDoctor] = useState('');
   var [newVaccBatch, setNewVaccBatch] = useState('');
   const [activeProfile, setActiveProfile] = useState('self');
-  const [children, setChildren] = useState([
-    { id: 'child-0', name: 'Mon enfant', age: '', free: true },
-  ]);
+  const [children, setChildren] = useState([]);
   const [carnetPhotos, setCarnetPhotos] = useState([]);
   const [statsTab, setStatsTab] = useState('nutrition');
 
@@ -365,6 +363,7 @@ export default function MedicAiPage({ navigation }) {
     loadUserData();
     loadAvailableMeals();
     loadMedicalData();
+    loadFamilyMembers();
     // Avatar profil
     (async () => {
       try {
@@ -436,6 +435,10 @@ export default function MedicAiPage({ navigation }) {
     }
   }, [mediBookView]);
 
+  // ── Recharger les données médicales quand on change de profil ───────────
+  React.useEffect(function() {
+    if (userId) loadMedicalData();
+  }, [activeProfile]);
 
   const addBotMessage = useCallback((text) => {
     setMessages(prev => {
@@ -553,70 +556,74 @@ export default function MedicAiPage({ navigation }) {
   const loadMedicalData = async () => {
     setMedicalDataLoading(true);
     try {
-      const userId = userId;
-      const headers = {
+      var headers = {
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
         'Content-Type': 'application/json',
       };
 
+      // Filtre par profil: self → family_member_id IS NULL, enfant → family_member_id=eq.UUID
+      var fmFilter = activeProfile === 'self'
+        ? '&family_member_id=is.null'
+        : '&family_member_id=eq.' + activeProfile;
+
       // Charger le profil
-      const profileRes = await fetch(
+      var profileRes = await fetch(
         SUPABASE_URL + '/rest/v1/health_profiles?user_id=eq.' + userId + '&profile_type=eq.self&limit=1',
-        { headers }
+        { headers: headers }
       );
-      const profiles = await profileRes.json();
-      const profileId = profiles[0]?.id || null;
-      const vitalityScore = profiles[0]?.vitality_score || 0;
+      var profiles = await profileRes.json();
+      var profileId = profiles[0]?.id || null;
+      var vitalityScore = profiles[0]?.vitality_score || 0;
 
       // Charger les analyses
-      const analysesRes = await fetch(
-        SUPABASE_URL + '/rest/v1/medical_analyses?user_id=eq.' + userId + '&order=created_at.desc',
-        { headers }
+      var analysesRes = await fetch(
+        SUPABASE_URL + '/rest/v1/medical_analyses?user_id=eq.' + userId + fmFilter + '&order=created_at.desc',
+        { headers: headers }
       );
-      const analyses = await analysesRes.json();
+      var analyses = await analysesRes.json();
 
       // Charger les médicaments actifs
-      const medsRes = await fetch(
-        SUPABASE_URL + '/rest/v1/medications?user_id=eq.' + userId + '&status=eq.active&order=created_at.desc',
-        { headers }
+      var medsRes = await fetch(
+        SUPABASE_URL + '/rest/v1/medications?user_id=eq.' + userId + fmFilter + '&status=eq.active&order=created_at.desc',
+        { headers: headers }
       );
-      const medications = await medsRes.json();
+      var medications = await medsRes.json();
 
       // Charger les allergies
-      const allergiesRes = await fetch(
-        SUPABASE_URL + '/rest/v1/allergies?user_id=eq.' + userId + '&order=created_at.desc',
-        { headers }
+      var allergiesRes = await fetch(
+        SUPABASE_URL + '/rest/v1/allergies?user_id=eq.' + userId + fmFilter + '&order=created_at.desc',
+        { headers: headers }
       );
-      const allergiesData = await allergiesRes.json();
+      var allergiesData = await allergiesRes.json();
 
       // Charger les vaccinations
-      const vaccRes = await fetch(
-        SUPABASE_URL + '/rest/v1/vaccinations?user_id=eq.' + userId + '&order=administration_date.desc',
-        { headers }
+      var vaccRes = await fetch(
+        SUPABASE_URL + '/rest/v1/vaccinations?user_id=eq.' + userId + fmFilter + '&order=administration_date.desc',
+        { headers: headers }
       );
-      const vaccinations = await vaccRes.json();
+      var vaccinations = await vaccRes.json();
 
       // Charger les diagnostics
-      const diagRes = await fetch(
-        SUPABASE_URL + '/rest/v1/diagnostics?user_id=eq.' + userId + '&order=created_at.desc',
-        { headers }
+      var diagRes = await fetch(
+        SUPABASE_URL + '/rest/v1/diagnostics?user_id=eq.' + userId + fmFilter + '&order=created_at.desc',
+        { headers: headers }
       );
-      const diagnostics = await diagRes.json();
+      var diagnostics = await diagRes.json();
 
       // Charger les médicaments terminés
-      const medsTermRes = await fetch(
-        SUPABASE_URL + '/rest/v1/medications?user_id=eq.' + userId + '&status=eq.completed&order=end_date.desc',
-        { headers }
+      var medsTermRes = await fetch(
+        SUPABASE_URL + '/rest/v1/medications?user_id=eq.' + userId + fmFilter + '&status=eq.completed&order=end_date.desc',
+        { headers: headers }
       );
-      const medsTerminated = await medsTermRes.json();
+      var medsTerminated = await medsTermRes.json();
 
       // Charger les analyses planifiées
-      const scheduledRes = await fetch(
-        SUPABASE_URL + '/rest/v1/medical_analyses?user_id=eq.' + userId + '&is_scheduled=eq.true&order=scheduled_date.asc',
-        { headers }
+      var scheduledRes = await fetch(
+        SUPABASE_URL + '/rest/v1/medical_analyses?user_id=eq.' + userId + fmFilter + '&is_scheduled=eq.true&order=scheduled_date.asc',
+        { headers: headers }
       );
-      const scheduledAnalyses = await scheduledRes.json();
+      var scheduledAnalyses = await scheduledRes.json();
 
       // Charger les 7 derniers jours de nutrition
       const today = new Date().toISOString().split('T')[0];
@@ -647,6 +654,30 @@ export default function MedicAiPage({ navigation }) {
       console.error('Erreur chargement données médicales:', error);
     } finally {
       setMedicalDataLoading(false);
+    }
+  };
+
+  // ── Charger les profils enfants depuis Supabase ─────────────────────────
+  var loadFamilyMembers = async function() {
+    if (!userId) return;
+    try {
+      var res = await fetch(
+        SUPABASE_URL + '/rest/v1/family_members?user_id=eq.' + userId + '&is_active=eq.true&relation=eq.child&order=created_at.asc&select=*',
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+      );
+      var data = await res.json();
+      if (Array.isArray(data)) {
+        setChildren(data.map(function(fm) {
+          var age = '';
+          if (fm.birth_date) {
+            var diff = Date.now() - new Date(fm.birth_date).getTime();
+            age = Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000)) + ' ans';
+          }
+          return { id: fm.id, name: fm.name, age: age, birth_date: fm.birth_date, gender: fm.gender, medical_profile_unlocked: fm.medical_profile_unlocked };
+        }));
+      }
+    } catch (e) {
+      console.warn('Erreur chargement family_members:', e);
     }
   };
 
@@ -1273,6 +1304,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
         'Content-Type': 'application/json',
       };
+      var fmId = activeProfile === 'self' ? null : activeProfile;
 
       if (action.type === 'save_meal_plan') {
         const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/save_weekly_meal_plan', {
@@ -1309,6 +1341,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
           body: JSON.stringify({
             user_id: userId,
+            family_member_id: fmId,
             name: action.payload.name,
             dosage: action.payload.dosage,
             frequency: action.payload.frequency,
@@ -1336,6 +1369,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
           body: JSON.stringify({
             user_id: userId,
+            family_member_id: fmId,
             condition_name: action.payload.condition_name,
             severity: action.payload.severity || 'moderate',
             status: action.payload.status || 'active',
@@ -1353,6 +1387,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
           body: JSON.stringify({
             user_id: userId,
+            family_member_id: fmId,
             allergen: action.payload.allergen,
             type: action.payload.type || 'autre',
             severity: action.payload.severity || 'moderate',
@@ -1369,6 +1404,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
           body: JSON.stringify({
             user_id: userId,
+            family_member_id: fmId,
             vaccine_name: action.payload.vaccine_name,
             administration_date: action.payload.date || new Date().toISOString().split('T')[0],
             dose_number: action.payload.dose_number || 1,
@@ -1396,6 +1432,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
           body: JSON.stringify({
             user_id: userId,
+            family_member_id: fmId,
             label: action.payload.label,
             value: 'À effectuer',
             status: 'unknown',
@@ -1427,6 +1464,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
             body: JSON.stringify({
               user_id: userId,
+              family_member_id: fmId,
               condition_name: p.diagnosis.condition_name,
               severity: p.diagnosis.severity || 'moderate',
               status: p.diagnosis.status || 'active',
@@ -1450,6 +1488,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
               body: JSON.stringify({
                 user_id: userId,
+                family_member_id: fmId,
                 name: med.name,
                 dosage: med.dosage || null,
                 frequency: med.frequency || null,
@@ -1482,6 +1521,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               method: 'POST', headers: { ...headers, 'Prefer': 'return=minimal' },
               body: JSON.stringify({
                 user_id: userId,
+                family_member_id: fmId,
                 label: an.label,
                 value: 'À effectuer',
                 status: 'unknown',
@@ -2089,6 +2129,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         },
         body: JSON.stringify({
           user_id: userId,
+          family_member_id: activeProfile === 'self' ? null : activeProfile,
           name: selectedMedFromDb.name,
           dosage: newMedDosageValue + ' ' + newMedDosageUnit,
           frequency: newMedFrequency + 'x/jour',
@@ -2237,6 +2278,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         },
         body: JSON.stringify({
           user_id: userId,
+          family_member_id: activeProfile === 'self' ? null : activeProfile,
           label: newAnalysisLabel.trim(),
           value: 'À effectuer',
           status: 'unknown',
@@ -2304,6 +2346,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({
           user_id: userId,
+          family_member_id: activeProfile === 'self' ? null : activeProfile,
           condition_name: selectedDiagFromDb.name_fr,
           icd_code: selectedDiagFromDb.icd_code || null,
           severity: newDiagSeverity,
@@ -2334,6 +2377,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({
           user_id: userId,
+          family_member_id: activeProfile === 'self' ? null : activeProfile,
           allergen: newAllergyAllergen.trim(),
           type: newAllergyType,
           severity: newAllergySeverity,
@@ -2369,6 +2413,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({
           user_id: userId,
+          family_member_id: activeProfile === 'self' ? null : activeProfile,
           vaccine_name: newVaccName.trim(),
           administration_date: vaccDate || new Date().toISOString().split('T')[0],
           dose_number: newVaccDose,
@@ -3142,6 +3187,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         showProfileSwitcher={showProfileSwitcher} setShowProfileSwitcher={setShowProfileSwitcher}
         activeProfile={activeProfile} setActiveProfile={setActiveProfile}
         children={children} setChildren={setChildren}
+        loadFamilyMembers={loadFamilyMembers}
+        lixBalance={lixBalance} refreshLixFromServer={refreshLixFromServer}
         editingChildId={editingChildId} setEditingChildId={setEditingChildId}
         newChildIsFree={newChildIsFree} setNewChildIsFree={setNewChildIsFree}
         showChildNameInput={showChildNameInput} setShowChildNameInput={setShowChildNameInput}
