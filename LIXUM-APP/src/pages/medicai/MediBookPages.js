@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  Image, Platform, Animated, Dimensions, StatusBar, Pressable, ActivityIndicator,
-  Modal,
+  Image, Platform, Animated, Easing, Dimensions, StatusBar, Pressable, ActivityIndicator,
+  Modal, Alert,
 } from 'react-native';
 import Svg, {
-  Defs, Rect, Path, Circle, Ellipse, Line,
+  Defs, Rect, Path, Circle, Ellipse, Line, Polyline, Polygon, G,
   LinearGradient as SvgLinearGradient, Stop,
 } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -256,11 +256,96 @@ export const MediBookContent = (props) => {
   var _reminderPostponeDate = useState('');
   var reminderPostponeDate = _reminderPostponeDate[0]; var setReminderPostponeDate = _reminderPostponeDate[1];
 
+  // ── STATS STATES ──────────────────────────────────────────────────────────
+  var _statsLoading = useState(false);
+  var statsLoading = _statsLoading[0]; var setStatsLoading = _statsLoading[1];
+  var _nutritionStats = useState([]);
+  var nutritionStats = _nutritionStats[0]; var setNutritionStats = _nutritionStats[1];
+  var _activityStats = useState([]);
+  var activityStats = _activityStats[0]; var setActivityStats = _activityStats[1];
+  var _moodStats = useState([]);
+  var moodStats = _moodStats[0]; var setMoodStats = _moodStats[1];
+  var _hydrationStats = useState([]);
+  var hydrationStats = _hydrationStats[0]; var setHydrationStats = _hydrationStats[1];
+  var _healthTimeline = useState([]);
+  var healthTimeline = _healthTimeline[0]; var setHealthTimeline = _healthTimeline[1];
+  var _healthInsights = useState([]);
+  var healthInsights = _healthInsights[0]; var setHealthInsights = _healthInsights[1];
+  var _vaccStats = useState(null);
+  var vaccStats = _vaccStats[0]; var setVaccStats = _vaccStats[1];
+  var _rangeAccess = useState({ '7d': { has_access: true }, '30d': { has_access: false, lix_cost: 500 }, '365d': { has_access: false, lix_cost: 5000 }, 'all': { has_access: false, lix_cost: 10000 } });
+  var rangeAccess = _rangeAccess[0]; var setRangeAccess = _rangeAccess[1];
+  var _selectedRange = useState({ key: '7d', label: '7J', days: 7 });
+  var selectedRange = _selectedRange[0]; var setSelectedRange = _selectedRange[1];
+  var _showUnlockModal = useState(false);
+  var showUnlockModal = _showUnlockModal[0]; var setShowUnlockModal = _showUnlockModal[1];
+  var _unlockTarget = useState(null);
+  var unlockTarget = _unlockTarget[0]; var setUnlockTarget = _unlockTarget[1];
+
   var getAuthHeaders = async function() {
     var result = await supabase.auth.getSession();
     var token = result.data.session ? result.data.session.access_token : SUPABASE_ANON_KEY;
     return { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
   };
+
+  // ── STATS RPC HELPERS ─────────────────────────────────────────────────────
+  var fetchRPC = async function(rpcName, params) {
+    var headers = await getAuthHeaders();
+    var r = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + rpcName, {
+      method: 'POST', headers: headers, body: JSON.stringify(params)
+    });
+    return r.json();
+  };
+
+  var loadAllStats = async function(daysBack) {
+    if (!userId) return;
+    setStatsLoading(true);
+    try {
+      var fmId = activeProfile !== 'self' ? activeProfile : null;
+      var results = await Promise.all([
+        fetchRPC('get_nutrition_stats', { p_user_id: userId, p_days_back: daysBack }),
+        fetchRPC('get_activity_stats', { p_user_id: userId, p_days_back: daysBack }),
+        fetchRPC('get_mood_stats', { p_user_id: userId, p_days_back: daysBack }),
+        fetchRPC('get_hydration_stats', { p_user_id: userId, p_days_back: daysBack }),
+        fetchRPC('get_health_timeline', { p_user_id: userId, p_family_member_id: fmId, p_days_back: daysBack }),
+        fetchRPC('get_health_insights', { p_user_id: userId, p_family_member_id: fmId, p_days_back: daysBack }),
+        fetchRPC('get_vaccine_completion_stats', { p_user_id: userId, p_family_member_id: fmId })
+      ]);
+      setNutritionStats(Array.isArray(results[0]) ? results[0] : []);
+      setActivityStats(Array.isArray(results[1]) ? results[1] : []);
+      setMoodStats(Array.isArray(results[2]) ? results[2] : []);
+      setHydrationStats(Array.isArray(results[3]) ? results[3] : []);
+      setHealthTimeline(Array.isArray(results[4]) ? results[4] : []);
+      setHealthInsights(Array.isArray(results[5]) ? results[5] : []);
+      setVaccStats(results[6] && results[6][0] ? results[6][0] : null);
+    } catch(err) { console.log('Erreur stats:', err); }
+    setStatsLoading(false);
+  };
+
+  var checkRangeAccess = async function() {
+    if (!userId) return;
+    try {
+      var results = await Promise.all([
+        fetchRPC('check_stats_access_for_range', { p_user_id: userId, p_range_key: '7d' }),
+        fetchRPC('check_stats_access_for_range', { p_user_id: userId, p_range_key: '30d' }),
+        fetchRPC('check_stats_access_for_range', { p_user_id: userId, p_range_key: '365d' }),
+        fetchRPC('check_stats_access_for_range', { p_user_id: userId, p_range_key: 'all' })
+      ]);
+      setRangeAccess({
+        '7d': results[0] && results[0][0] ? results[0][0] : { has_access: true },
+        '30d': results[1] && results[1][0] ? results[1][0] : { has_access: false, lix_cost: 500 },
+        '365d': results[2] && results[2][0] ? results[2][0] : { has_access: false, lix_cost: 5000 },
+        'all': results[3] && results[3][0] ? results[3][0] : { has_access: false, lix_cost: 10000 }
+      });
+    } catch(err) { console.log('Erreur accès:', err); }
+  };
+
+  useEffect(function() {
+    if (mediBookView === 'stats' && userId) {
+      loadAllStats(selectedRange.days);
+      checkRangeAccess();
+    }
+  }, [mediBookView]);
 
   const captureCarnetPage = (index) => {
     setSelectedCarnetPage(index);
@@ -1061,6 +1146,30 @@ export const MediBookContent = (props) => {
       </LinearGradient>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(20), paddingBottom: wp(50) }}>
+        {/* Bouton Ajouter des données de santé — accès direct */}
+        <Pressable delayPressIn={120} onPress={function() { setShowAddDataSheet(true); }}>
+          <LinearGradient
+            colors={['#00D98420', '#00D98408']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={{
+              flexDirection: 'row', alignItems: 'center',
+              borderRadius: wp(14), padding: wp(14),
+              marginBottom: wp(14), borderWidth: 1, borderColor: '#00D98440',
+            }}>
+            <View style={{ width: wp(40), height: wp(40), borderRadius: wp(12), backgroundColor: '#00D984', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
+              <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                <Line x1="12" y1="5" x2="12" y2="19" stroke="#000" strokeWidth="2.5" strokeLinecap="round"/>
+                <Line x1="5" y1="12" x2="19" y2="12" stroke="#000" strokeWidth="2.5" strokeLinecap="round"/>
+              </Svg>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Ajouter des données de santé</Text>
+              <Text style={{ fontSize: fp(11), color: '#00D98499', marginTop: wp(2) }}>Vaccins, médicaments, analyses...</Text>
+            </View>
+            <Text style={{ fontSize: fp(16), color: '#00D984' }}>{"›"}</Text>
+          </LinearGradient>
+        </Pressable>
+
         {/* Carte 1 : Importer mon carnet de santé */}
         <Pressable delayPressIn={120} onPress={() => setMediBookView('carnet')}>
           <LinearGradient
@@ -1196,38 +1305,53 @@ export const MediBookContent = (props) => {
         <BottomSpacer />
       </ScrollView>
 
-      {/* Bouton flottant + Ajouter — en bas à droite */}
-      <Pressable
-        delayPressIn={120}
-        onPress={() => setShowMediBookUploadSheet(true)}
-        style={{
-          position: 'absolute',
-          bottom: wp(80),
-          right: wp(20),
-          width: wp(56),
-          height: wp(56),
-          borderRadius: wp(28),
-          overflow: 'hidden',
-          shadowColor: '#00D984',
-          shadowOpacity: 0.4,
-          shadowRadius: 12,
-          elevation: 8,
-          zIndex: 100,
-        }}
-      >
-        <LinearGradient
-          colors={['#00D984', '#00B871']}
-          style={{
-            width: '100%', height: '100%',
-            justifyContent: 'center', alignItems: 'center',
-          }}
-        >
-          <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
-            <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
-            <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
-          </Svg>
-        </LinearGradient>
-      </Pressable>
+      {/* BottomSheet — Ajouter des données de santé */}
+      <Modal visible={showAddDataSheet} transparent animationType="slide"
+        onRequestClose={function() { setShowAddDataSheet(false); }}>
+        <Pressable onPress={function() { setShowAddDataSheet(false); }}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
+          <Pressable onPress={function(e) { e.stopPropagation(); }}>
+            <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+              style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
+              <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }}/>
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>Ajouter des données</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(16) }}>Choisissez le type de données à ajouter</Text>
+
+              {[
+                { icon: '📷', label: 'Scanner un document', sub: 'Photo ou galerie', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowMediBookUploadSheet(true); }, 300); } },
+                { icon: '💊', label: 'Ajouter un médicament', sub: 'Traitement en cours', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddMedSheet(true); }, 300); } },
+                { icon: '🏥', label: 'Ajouter un diagnostic', sub: 'Pathologie à surveiller', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddDiagSheet(true); }, 300); } },
+                { icon: '💉', label: 'Ajouter un vaccin', sub: 'Carnet vaccinal', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddVaccSheet(true); }, 300); } },
+                { icon: '⚠️', label: 'Ajouter une allergie', sub: 'Profil allergique', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddAllergySheet(true); }, 300); } },
+                { icon: '🔬', label: 'Planifier une analyse', sub: 'Bilan à venir', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddAnalysisSheet(true); }, 300); } },
+              ].map(function(opt, oi) {
+                return (
+                  <Pressable key={oi} delayPressIn={120} onPress={opt.onPress}
+                    style={function(state) { return {
+                      flexDirection: 'row', alignItems: 'center',
+                      paddingVertical: wp(12), paddingHorizontal: wp(10),
+                      backgroundColor: state.pressed ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+                      borderRadius: wp(12), marginBottom: wp(6),
+                      borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+                    }; }}>
+                    <Text style={{ fontSize: fp(18), marginRight: wp(12) }}>{opt.icon}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{opt.label}</Text>
+                      <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)' }}>{opt.sub}</Text>
+                    </View>
+                    <Text style={{ fontSize: fp(16), color: 'rgba(255,255,255,0.2)' }}>{">"}</Text>
+                  </Pressable>
+                );
+              })}
+
+              <Pressable onPress={function() { setShowAddDataSheet(false); }}
+                style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(6), borderRadius: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Fermer</Text>
+              </Pressable>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 
@@ -1370,274 +1494,874 @@ export const MediBookContent = (props) => {
     );
   };
 
-  // ── RENDER MEDIBOOK STATS ──────────────────────────────────────────────────
-  const renderMediBookStats = () => {
-    const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-    const caloriesData = [1920, 1750, 2050, 1800, 1650, 2200, 1850];
-    const burnedData = [320, 280, 450, 180, 510, 0, 220];
-    const moodData = [3, 4, 3, 2, 4, 5, 4];
+  // ── RENDER MEDIBOOK STATS (PREMIUM DARK REDESIGN) ──────────────────────────
+  var renderMediBookStats = function() {
+    var familyMemberId = activeProfile !== 'self' ? activeProfile : null;
+    var TAB_ITEMS = [
+      { key: 'nutrition', emoji: '🥗', label: 'Nutrition', top: 0, leftPct: 50, anchor: 'center' },
+      { key: 'vitalite', emoji: '💚', label: 'Vitalité', top: wp(38), leftPct: 8, anchor: 'left' },
+      { key: 'humeur', emoji: '😊', label: 'Humeur', top: wp(38), leftPct: 92, anchor: 'right' },
+      { key: 'activite', emoji: '🏃', label: 'Activité', top: wp(78), leftPct: 22, anchor: 'left' },
+      { key: 'sante', emoji: '🏥', label: 'Santé', top: wp(78), leftPct: 78, anchor: 'right' }
+    ];
+    var TIME_RANGES = [
+      { key: '7d', label: '7J', days: 7 },
+      { key: '30d', label: '30J', days: 30 },
+      { key: '365d', label: '1A', days: 365 },
+      { key: 'all', label: 'Origine', days: 9999 }
+    ];
+    var containerW = SCREEN_WIDTH - wp(32);
 
-    const StatsCard = ({ title, children: cardChildren }) => (
-      <View style={{
-        backgroundColor: '#FAFBFC', borderRadius: wp(16),
-        padding: wp(16), marginBottom: wp(12),
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
-      }}>
-        <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#2D3436', marginBottom: wp(12) }}>
-          {title}
-        </Text>
-        {cardChildren}
-      </View>
-    );
+    // ── Handle time range tap ──
+    var onTimeRangeTap = function(range) {
+      var access = rangeAccess[range.key];
+      if (access && !access.has_access) {
+        setUnlockTarget(range);
+        setShowUnlockModal(true);
+        return;
+      }
+      setSelectedRange(range);
+      loadAllStats(range.days);
+    };
 
-    const renderNutritionTab = () => {
-      // Données live ou fallback hardcodé
-      const hasLiveData = nutritionWeekData && nutritionWeekData.length > 0;
-      const liveCalories = hasLiveData ? nutritionWeekData.map(d => d.total_calories || 0) : caloriesData;
-      const avgCalories = hasLiveData
-        ? Math.round(liveCalories.reduce((s, c) => s + c, 0) / liveCalories.length)
-        : 1850;
-      const liveProtein = hasLiveData
-        ? Math.round(nutritionWeekData.reduce((s, d) => s + (d.total_protein || 0), 0) / nutritionWeekData.length)
-        : 92;
-      const liveCarbs = hasLiveData
-        ? Math.round(nutritionWeekData.reduce((s, d) => s + (d.total_carbs || 0), 0) / nutritionWeekData.length)
-        : 215;
-      const liveFat = hasLiveData
-        ? Math.round(nutritionWeekData.reduce((s, d) => s + (d.total_fat || 0), 0) / nutritionWeekData.length)
-        : 62;
-      const totalMacros = liveProtein + liveCarbs + liveFat || 1;
-      const pctProtein = Math.round((liveProtein / totalMacros) * 100);
-      const pctCarbs = Math.round((liveCarbs / totalMacros) * 100);
-      const pctFat = 100 - pctProtein - pctCarbs;
-      const calPct = Math.min(100, Math.round((avgCalories / 2100) * 100));
+    // ── Render semi-arc bubble ──
+    var renderBubble = function(tab) {
+      var isActive = statsTab === tab.key;
+      var sz = isActive ? wp(62) : wp(54);
+      var posStyle = {};
+      if (tab.anchor === 'center') {
+        posStyle = { left: (containerW - sz) / 2 };
+      } else if (tab.anchor === 'left') {
+        posStyle = { left: containerW * (tab.leftPct / 100) };
+      } else {
+        posStyle = { right: containerW * ((100 - tab.leftPct) / 100) };
+      }
+      return (
+        <Pressable key={tab.key} delayPressIn={120}
+          onPress={function() { setStatsTab(tab.key); }}
+          style={function(state) { return Object.assign({
+            position: 'absolute', top: tab.top,
+            width: sz, height: sz, borderRadius: sz / 2,
+            backgroundColor: isActive ? '#00D98425' : '#2A303B',
+            borderWidth: isActive ? 2 : 1.5,
+            borderColor: isActive ? '#00D984' : '#3A3F46',
+            justifyContent: 'center', alignItems: 'center',
+            transform: [{ scale: state.pressed ? 0.92 : 1 }],
+          }, posStyle); }}>
+          <Text style={{ fontSize: isActive ? fp(22) : fp(18) }}>{tab.emoji}</Text>
+          <Text style={{
+            position: 'absolute', bottom: -wp(16),
+            fontSize: fp(10), fontWeight: isActive ? '600' : '400',
+            color: isActive ? '#00D984' : '#888',
+          }}>{tab.label}</Text>
+        </Pressable>
+      );
+    };
+    // ── NUTRITION TAB ──
+    var renderNutritionContent = function() {
+      var data = nutritionStats;
+      var hasData = data && data.length > 0;
+      if (!hasData) {
+        return (
+          <View style={{ padding: wp(40), alignItems: 'center' }}>
+            <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>🥗</Text>
+            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Pas de données nutrition</Text>
+            <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Commencez à tracker vos repas !</Text>
+          </View>
+        );
+      }
+      var avgCalories = Math.round(data.reduce(function(s, d) { return s + (d.total_kcal || 0); }, 0) / data.length);
+      var avgProtein = Math.round(data.reduce(function(s, d) { return s + (d.total_protein || 0); }, 0) / data.length);
+      var avgCarbs = Math.round(data.reduce(function(s, d) { return s + (d.total_carbs || 0); }, 0) / data.length);
+      var avgFat = Math.round(data.reduce(function(s, d) { return s + (d.total_fat || 0); }, 0) / data.length);
+      var avgFiber = Math.round(data.reduce(function(s, d) { return s + (d.total_fiber || 0); }, 0) / data.length);
+      var avgMeals = (data.reduce(function(s, d) { return s + (d.meal_count || 0); }, 0) / data.length).toFixed(1);
+      var objectifCal = 2100;
+      var calPct = Math.min(100, Math.round((avgCalories / objectifCal) * 100));
+      var deltaVsObj = Math.round(((avgCalories - objectifCal) / objectifCal) * 100);
+      var totalMacros = avgProtein + avgCarbs + avgFat || 1;
+      var pctProtein = Math.round((avgProtein / totalMacros) * 100);
+      var pctCarbs = Math.round((avgCarbs / totalMacros) * 100);
+      var pctFat = 100 - pctProtein - pctCarbs;
 
-      const chartCalories = hasLiveData ? liveCalories : caloriesData;
-      const chartDays = hasLiveData
-        ? nutritionWeekData.map(d => {
-            const dt = new Date(d.date);
-            return ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][dt.getDay()];
-          })
-        : weekDays;
+      var hydData = hydrationStats;
+      var avgHydration = hydData && hydData.length > 0
+        ? Math.round(hydData.reduce(function(s, d) { return s + (d.total_ml || 0); }, 0) / hydData.length) : 0;
+      var hydObjectif = 2500;
+      var hydPct = Math.min(100, Math.round((avgHydration / hydObjectif) * 100));
+
+      var chartW = SCREEN_WIDTH - wp(64);
+      var chartH = wp(120);
+      var maxCal = Math.max.apply(null, data.map(function(d) { return d.total_kcal || 0; }).concat([objectifCal + 200]));
+      var points = data.map(function(d, i) {
+        var x = data.length > 1 ? (i / (data.length - 1)) * chartW : chartW / 2;
+        var y = chartH - ((d.total_kcal || 0) / maxCal) * (chartH - wp(10));
+        return x + ',' + y;
+      }).join(' ');
+      var areaPoints = '0,' + chartH + ' ' + points + ' ' + chartW + ',' + chartH;
+      var objY = chartH - (objectifCal / maxCal) * (chartH - wp(10));
 
       return (
-        <>
-          <StatsCard title="Calories moyennes / jour">
-            <Text style={{ fontSize: fp(28), fontWeight: '700', color: '#00D984' }}>{avgCalories.toLocaleString('fr-FR')} kcal</Text>
-            <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)', marginTop: wp(4) }}>Objectif : 2 100 kcal</Text>
-            <View style={{ height: wp(6), backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(3), marginTop: wp(10) }}>
+        <View>
+          {/* Hero — Calories */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#888', letterSpacing: 1 }}>CALORIES MOY. / JOUR</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: wp(6) }}>
+              <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#FFF' }}>{avgCalories}</Text>
+              <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#888', marginLeft: wp(4) }}>kcal</Text>
+              <View style={{ flex: 1 }} />
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: deltaVsObj < 0 ? '#FF6B8A' : '#00D984' }}>{(deltaVsObj > 0 ? '+' : '') + deltaVsObj + '% vs obj'}</Text>
+            </View>
+            <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(2) }}>{'Objectif : ' + objectifCal + ' kcal'}</Text>
+            <View style={{ height: wp(6), backgroundColor: '#1E2530', borderRadius: wp(3), marginTop: wp(10) }}>
               <View style={{ width: calPct + '%', height: '100%', backgroundColor: '#00D984', borderRadius: wp(3) }} />
             </View>
-          </StatsCard>
+            <Text style={{ fontSize: fp(10), color: '#00D984', textAlign: 'right', marginTop: wp(4) }}>{calPct + '%'}</Text>
+          </View>
 
-          <StatsCard title="Répartition macros">
+          {/* Macros — 3 mini cartes */}
+          <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(12) }}>
             {[
-              { label: 'Protéines', value: liveProtein + 'g', pct: pctProtein, color: '#4DA6FF' },
-              { label: 'Glucides', value: liveCarbs + 'g', pct: pctCarbs, color: '#00D984' },
-              { label: 'Lipides', value: liveFat + 'g', pct: pctFat, color: '#FF8C42' },
-            ].map((macro, i) => (
-              <View key={i} style={{ marginBottom: wp(10) }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
-                  <Text style={{ fontSize: fp(12), color: '#2D3436', fontWeight: '600' }}>{macro.label}</Text>
-                  <Text style={{ fontSize: fp(12), color: 'rgba(0,0,0,0.4)' }}>{macro.value} — {macro.pct}%</Text>
+              { label: 'Protéines', value: avgProtein + 'g', pct: pctProtein, color: '#4DA6FF' },
+              { label: 'Glucides', value: avgCarbs + 'g', pct: pctCarbs, color: '#00D984' },
+              { label: 'Lipides', value: avgFat + 'g', pct: pctFat, color: '#FFD93D' },
+            ].map(function(m, i) {
+              return (
+                <View key={i} style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12) }}>
+                  <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#FFF' }}>{m.label}</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: m.color, marginTop: wp(4) }}>{m.value}</Text>
+                  <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>{m.pct + '%'}</Text>
+                  <View style={{ height: wp(4), backgroundColor: '#1E2530', borderRadius: wp(2), marginTop: wp(6) }}>
+                    <View style={{ width: m.pct + '%', height: '100%', backgroundColor: m.color, borderRadius: wp(2) }} />
+                  </View>
                 </View>
-                <View style={{ height: wp(6), backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: wp(3) }}>
-                  <View style={{ width: macro.pct + '%', height: '100%', backgroundColor: macro.color, borderRadius: wp(3) }} />
+              );
+            })}
+          </View>
+
+          {/* Courbe Calories */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Évolution calories</Text>
+            <Svg width={chartW} height={chartH}>
+              <Defs>
+                <SvgLinearGradient id="calAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor="#00D984" stopOpacity="0.3" />
+                  <Stop offset="1" stopColor="#00D984" stopOpacity="0" />
+                </SvgLinearGradient>
+              </Defs>
+              <Polygon points={areaPoints} fill="url(#calAreaGrad)" />
+              <Polyline points={points} fill="none" stroke="#00D984" strokeWidth="2" strokeLinejoin="round" />
+              <Line x1="0" y1={objY} x2={chartW} y2={objY} stroke="#FF6B8A" strokeWidth="1" strokeDasharray="4,4" opacity="0.6" />
+              {data.map(function(d, i) {
+                var x = data.length > 1 ? (i / (data.length - 1)) * chartW : chartW / 2;
+                var y = chartH - ((d.total_kcal || 0) / maxCal) * (chartH - wp(10));
+                return <Circle key={i} cx={x} cy={y} r="3.5" fill="#00D984" />;
+              })}
+            </Svg>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6) }}>
+              {data.length <= 10 ? data.map(function(d, i) {
+                var dt = new Date(d.stat_date);
+                var lbl = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][dt.getDay()];
+                return <Text key={i} style={{ fontSize: fp(8), color: '#666' }}>{lbl}</Text>;
+              }) : (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', flex: 1 }}>
+                  <Text style={{ fontSize: fp(8), color: '#666' }}>{data[0] ? data[0].stat_date.substring(5, 10) : ''}</Text>
+                  <Text style={{ fontSize: fp(8), color: '#666' }}>{data[data.length - 1] ? data[data.length - 1].stat_date.substring(5, 10) : ''}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Hydratation */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Hydratation</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(14) }}>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                  <Text style={{ fontSize: fp(22), fontWeight: '800', color: '#4DA6FF' }}>{avgHydration}</Text>
+                  <Text style={{ fontSize: fp(12), color: '#888', marginLeft: wp(4) }}>{'/ ' + hydObjectif + ' ml'}</Text>
+                </View>
+                <View style={{ height: wp(6), backgroundColor: '#1E2530', borderRadius: wp(3), marginTop: wp(8) }}>
+                  <View style={{ width: hydPct + '%', height: '100%', backgroundColor: '#4DA6FF', borderRadius: wp(3) }} />
                 </View>
               </View>
-            ))}
-          </StatsCard>
+              <View style={{ width: wp(50), height: wp(50), justifyContent: 'center', alignItems: 'center' }}>
+                <Svg width={wp(50)} height={wp(50)} viewBox="0 0 50 50">
+                  <Circle cx="25" cy="25" r="20" stroke="#1E2530" strokeWidth="4" fill="none" />
+                  <Circle cx="25" cy="25" r="20" stroke="#4DA6FF" strokeWidth="4" fill="none"
+                    strokeDasharray={String(2 * Math.PI * 20)}
+                    strokeDashoffset={String(2 * Math.PI * 20 * (1 - hydPct / 100))}
+                    strokeLinecap="round" rotation="-90" origin="25,25" />
+                </Svg>
+                <Text style={{ position: 'absolute', fontSize: fp(10), fontWeight: '700', color: '#4DA6FF' }}>{hydPct + '%'}</Text>
+              </View>
+            </View>
+          </View>
 
-          <StatsCard title="Derniers 7 jours">
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: wp(80) }}>
-              {chartCalories.map((cal, i) => {
-                const maxCal = Math.max(2200, ...chartCalories);
-                const h = (cal / maxCal) * wp(65);
-                const inTarget = cal >= 1800 && cal <= 2200;
+          {/* Mini stats */}
+          <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(12) }}>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF' }}>{avgMeals}</Text>
+              <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>repas/jour</Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF' }}>{avgFiber + 'g'}</Text>
+              <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>fibres/jour</Text>
+            </View>
+          </View>
+        </View>
+      );
+    };
+
+    // ── PLACEHOLDER TABS (à compléter) ──
+    var renderVitaliteContent = function() {
+      var vScore = medicalData.vitalityScore || 0;
+      var circumference = 2 * Math.PI * 42;
+      var offset = circumference * (1 - vScore / 100);
+
+      // Piliers de vitalité — calculs
+      var nutData = nutritionStats;
+      var nutScore = nutData && nutData.length > 0
+        ? Math.min(100, Math.round((nutData.reduce(function(s, d) { return s + (d.total_kcal || 0); }, 0) / nutData.length / 2100) * 100))
+        : 0;
+      var hydData = hydrationStats;
+      var hydScore = hydData && hydData.length > 0
+        ? Math.min(100, Math.round((hydData.reduce(function(s, d) { return s + (d.total_ml || 0); }, 0) / hydData.length / 2500) * 100))
+        : 0;
+      var actData = activityStats;
+      var actScore = actData && actData.length > 0
+        ? Math.min(100, Math.round((actData.reduce(function(s, d) { return s + (d.total_calories_burned || 0); }, 0) / actData.length / 500) * 100))
+        : 0;
+      var mData = moodStats;
+      var moodScore = mData && mData.length > 0
+        ? Math.round(mData.reduce(function(s, d) { return s + (d.max_gauge_percent || 0); }, 0) / mData.length)
+        : 0;
+      var regScore = nutData && nutData.length > 0 ? Math.min(100, Math.round((nutData.length / selectedRange.days) * 100)) : 0;
+
+      var piliers = [
+        { label: 'Nutrition', score: nutScore, color: '#00D984' },
+        { label: 'Activité', score: actScore, color: '#4DA6FF' },
+        { label: 'Hydratation', score: hydScore, color: '#4DA6FF' },
+        { label: 'Régularité', score: regScore, color: '#FFD93D' },
+        { label: 'Humeur', score: moodScore, color: '#9B8ACF' }
+      ];
+
+      // Courbe vitalité (from daily_summary nutrition data as proxy)
+      var chartW = SCREEN_WIDTH - wp(64);
+      var chartH = wp(100);
+
+      // Insights non-médicaux
+      var nonMedInsights = healthInsights.filter(function(ins) {
+        return ins.insight_type !== 'diagnostic' && ins.insight_type !== 'medicament' && ins.insight_type !== 'vaccination' && ins.insight_type !== 'allergie';
+      });
+
+      return (
+        <View>
+          {/* Hero — Anneau Score Vitalité */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(20), marginBottom: wp(12), alignItems: 'center' }}>
+            <View style={{ width: wp(120), height: wp(120), justifyContent: 'center', alignItems: 'center' }}>
+              <Svg width={wp(120)} height={wp(120)} viewBox="0 0 100 100">
+                <Circle cx="50" cy="50" r="42" stroke="#3A3F46" strokeWidth="6" fill="none" />
+                <Circle cx="50" cy="50" r="42" stroke="#00D984" strokeWidth="6" fill="none"
+                  strokeDasharray={String(circumference)}
+                  strokeDashoffset={String(offset)}
+                  strokeLinecap="round" rotation="-90" origin="50,50" />
+              </Svg>
+              <View style={{ position: 'absolute', alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#FFF' }}>{vScore}</Text>
+                <Text style={{ fontSize: fp(11), color: '#888' }}>/100</Text>
+              </View>
+            </View>
+            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF', marginTop: wp(10) }}>Score Vitalité</Text>
+            <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(2) }}>Moyenne sur la période</Text>
+          </View>
+
+          {/* Piliers de vitalité */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Piliers de vitalité</Text>
+            {piliers.map(function(p, idx) {
+              var barW = Math.max(0, Math.min(100, p.score));
+              return (
+                <View key={idx} style={{ marginBottom: idx < piliers.length - 1 ? wp(10) : 0 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(4) }}>
+                    <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#FFF' }}>{p.label}</Text>
+                    <Text style={{ fontSize: fp(12), fontWeight: '600', color: p.color }}>{p.score}/100</Text>
+                  </View>
+                  <View style={{ height: wp(6), backgroundColor: '#1E2530', borderRadius: wp(3) }}>
+                    <View style={{ width: barW + '%', height: '100%', backgroundColor: p.color, borderRadius: wp(3) }} />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Insights ALIXEN */}
+          {nonMedInsights.length > 0 ? (
+            <View style={{ marginBottom: wp(12) }}>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(8) }}>ALIXEN a remarqué...</Text>
+              {nonMedInsights.slice(0, 5).map(function(ins, idx) {
+                var insColor = ins.insight_color || '#00D984';
                 return (
-                  <View key={i} style={{ alignItems: 'center', flex: 1 }}>
-                    <View style={{ width: wp(16), height: h, backgroundColor: inTarget ? '#00D984' : '#FF8C42', borderRadius: wp(4) }} />
-                    <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>{chartDays[i] || ''}</Text>
+                  <View key={idx} style={{
+                    backgroundColor: insColor + '10', borderLeftWidth: wp(3), borderLeftColor: insColor,
+                    padding: wp(12), marginBottom: wp(8), borderRadius: 0,
+                  }}>
+                    <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#FFF' }}>{ins.insight_icon || '💡'} {ins.insight_text || ''}</Text>
+                    {ins.insight_value ? <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(2) }}>{ins.insight_value}</Text> : null}
                   </View>
                 );
               })}
             </View>
-          </StatsCard>
-        </>
+          ) : null}
+        </View>
       );
     };
-
-    const renderSanteTab = () => {
-      if (medicalDataLoading) {
+    var renderActiviteContent = function() {
+      var data = activityStats;
+      var hasData = data && data.length > 0;
+      if (!hasData) {
         return (
           <View style={{ padding: wp(40), alignItems: 'center' }}>
-            <ActivityIndicator size="large" color="#00D984" />
-            <Text style={{ fontSize: fp(13), color: 'rgba(0,0,0,0.4)', marginTop: wp(10) }}>
-              Chargement des données...
-            </Text>
+            <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>🏃</Text>
+            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Pas de données d'activité</Text>
+            <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Les données apparaîtront depuis votre suivi quotidien</Text>
           </View>
         );
       }
+      var avgBurned = Math.round(data.reduce(function(s, d) { return s + (d.total_calories_burned || 0); }, 0) / data.length);
+      var avgBalance = Math.round(data.reduce(function(s, d) { return s + (d.calorie_balance || 0); }, 0) / data.length);
+      var totalBurned = data.reduce(function(s, d) { return s + (d.total_calories_burned || 0); }, 0);
+      var bestDay = data.reduce(function(best, d) { return (d.total_calories_burned || 0) > (best.total_calories_burned || 0) ? d : best; }, data[0]);
+      var bestDayDate = bestDay && bestDay.stat_date ? new Date(bestDay.stat_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '-';
 
-      const analysesRows = medicalData.analyses.map(a => [
-        { text: a.label, bold: true },
-        a.value,
-        {
-          text: a.status === 'normal' ? 'Normal'
-            : a.status === 'elevated' ? 'Élevé'
-            : a.status === 'low' ? 'Bas'
-            : a.status === 'critical' ? 'Critique'
-            : a.status,
-          color: a.status === 'normal' ? '#00D984'
-            : a.status === 'elevated' ? '#FF6B6B'
-            : a.status === 'low' ? '#FF8C42'
-            : a.status === 'critical' ? '#FF6B6B'
-            : '#999',
-          bold: true,
-        },
-      ]);
+      var chartW = SCREEN_WIDTH - wp(64);
+      var chartH = wp(100);
+      var maxBurned = Math.max.apply(null, data.map(function(d) { return d.total_calories_burned || 0; }).concat([100]));
+      var barW = Math.max(wp(8), (chartW / data.length) - wp(4));
 
-      const medsRows = medicalData.medications.map(m => [
-        { text: m.name, bold: true },
-        (m.dosage || '') + (m.frequency ? ' / ' + m.frequency : ''),
-        { text: m.duration || '-', color: '#00D984' },
-      ]);
-
-      const allergiesRows = medicalData.allergies.map(a => [
-        { text: a.allergen, bold: true },
-        a.type || '-',
-        {
-          text: a.severity === 'severe' ? 'Sévère'
-            : a.severity === 'moderate' ? 'Modéré'
-            : a.severity === 'mild' ? 'Léger'
-            : a.severity === 'life_threatening' ? 'Vital'
-            : a.severity || '-',
-          color: a.severity === 'severe' || a.severity === 'life_threatening' ? '#FF6B6B'
-            : a.severity === 'moderate' ? '#FF8C42'
-            : '#00D984',
-          bold: true,
-        },
-      ]);
-
-      const vaccRows = medicalData.vaccinations.map(v => {
-        const dateStr = v.administration_date
-          ? new Date(v.administration_date).toLocaleDateString('fr-FR', { month: '2-digit', year: 'numeric' })
-          : '-';
-        const rappelStr = v.next_due_date
-          ? 'Rappel ' + new Date(v.next_due_date).getFullYear()
-          : '✓ À jour';
-        const rappelColor = v.next_due_date ? '#FF8C42' : '#00D984';
-
-        return [
-          { text: v.vaccine_name, bold: true },
-          dateStr,
-          { text: rappelStr, color: rappelColor },
-        ];
-      });
+      // Balance chart
+      var balanceMax = Math.max.apply(null, data.map(function(d) { return Math.abs(d.calorie_balance || 0); }).concat([100]));
 
       return (
-        <>
-          <StatsCard title="Score Vitalité">
-            <View style={{ alignItems: 'center', marginVertical: wp(8) }}>
-              <View style={{
-                width: wp(100), height: wp(100), borderRadius: wp(50),
-                borderWidth: wp(6), borderColor: '#00D984',
-                justifyContent: 'center', alignItems: 'center',
-                backgroundColor: 'rgba(0,217,132,0.05)',
-              }}>
-                <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#00D984' }}>{medicalData.vitalityScore || 0}</Text>
-                <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.3)' }}>/100</Text>
+        <View>
+          {/* Hero */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#888', letterSpacing: 1 }}>CETTE PÉRIODE</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: wp(6) }}>
+              <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#FFF' }}>{avgBurned}</Text>
+              <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#888', marginLeft: wp(4) }}>kcal brûlées / jour</Text>
+            </View>
+            <Text style={{ fontSize: fp(12), color: avgBalance <= 0 ? '#00D984' : '#FFD93D', marginTop: wp(4) }}>
+              {'Balance : ' + (avgBalance > 0 ? '+' : '') + avgBalance + ' kcal'}
+            </Text>
+          </View>
+
+          {/* Bar chart — Calories brûlées */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Calories brûlées</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: chartH }}>
+              {data.map(function(d, i) {
+                var val = d.total_calories_burned || 0;
+                var h = Math.max(wp(4), (val / maxBurned) * (chartH - wp(10)));
+                var bal = d.calorie_balance || 0;
+                return (
+                  <View key={i} style={{ alignItems: 'center', flex: 1 }}>
+                    <View style={{ width: Math.min(barW, wp(16)), height: h, backgroundColor: bal <= 0 ? '#00D984' : '#FFD93D', borderRadius: wp(4) }} />
+                  </View>
+                );
+              })}
+            </View>
+            {/* X labels */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6) }}>
+              {data.length <= 10 ? data.map(function(d, i) {
+                var dt = new Date(d.stat_date);
+                return <Text key={i} style={{ fontSize: fp(8), color: '#666', flex: 1, textAlign: 'center' }}>{['Di','Lu','Ma','Me','Je','Ve','Sa'][dt.getDay()]}</Text>;
+              }) : (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', flex: 1 }}>
+                  <Text style={{ fontSize: fp(8), color: '#666' }}>{data[0] ? data[0].stat_date.substring(5, 10) : ''}</Text>
+                  <Text style={{ fontSize: fp(8), color: '#666' }}>{data[data.length - 1] ? data[data.length - 1].stat_date.substring(5, 10) : ''}</Text>
+                </View>
+              )}
+            </View>
+            {/* Ligne moyenne */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(8) }}>
+              <View style={{ width: wp(12), height: 1, backgroundColor: '#FF6B8A', marginRight: wp(6) }} />
+              <Text style={{ fontSize: fp(10), color: '#888' }}>{'Moy. ' + avgBurned + ' kcal'}</Text>
+            </View>
+          </View>
+
+          {/* Balance calorique — Line chart */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Balance calorique</Text>
+            <Svg width={chartW} height={chartH}>
+              <Defs>
+                <SvgLinearGradient id="balPos" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor="#FF6B8A" stopOpacity="0.2" />
+                  <Stop offset="1" stopColor="#FF6B8A" stopOpacity="0" />
+                </SvgLinearGradient>
+                <SvgLinearGradient id="balNeg" x1="0" y1="1" x2="0" y2="0">
+                  <Stop offset="0" stopColor="#00D984" stopOpacity="0.2" />
+                  <Stop offset="1" stopColor="#00D984" stopOpacity="0" />
+                </SvgLinearGradient>
+              </Defs>
+              {/* Zero line */}
+              <Line x1="0" y1={chartH / 2} x2={chartW} y2={chartH / 2} stroke="#3A3F46" strokeWidth="1" strokeDasharray="4,4" />
+              {/* Balance line */}
+              {data.length > 1 ? (
+                <Polyline
+                  points={data.map(function(d, i) {
+                    var x = (i / (data.length - 1)) * chartW;
+                    var bal = d.calorie_balance || 0;
+                    var y = (chartH / 2) - (bal / balanceMax) * (chartH / 2 - wp(5));
+                    return x + ',' + y;
+                  }).join(' ')}
+                  fill="none" stroke="#4DA6FF" strokeWidth="2" strokeLinejoin="round"
+                />
+              ) : null}
+              {data.map(function(d, i) {
+                var x = data.length > 1 ? (i / (data.length - 1)) * chartW : chartW / 2;
+                var bal = d.calorie_balance || 0;
+                var y = (chartH / 2) - (bal / balanceMax) * (chartH / 2 - wp(5));
+                return <Circle key={i} cx={x} cy={y} r="3" fill={bal <= 0 ? '#00D984' : '#FF6B8A'} />;
+              })}
+            </Svg>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6) }}>
+              <Text style={{ fontSize: fp(9), color: '#00D984' }}>Déficit (bien)</Text>
+              <Text style={{ fontSize: fp(9), color: '#FF6B8A' }}>Surplus</Text>
+            </View>
+          </View>
+
+          {/* Résumé hebdo */}
+          <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(12) }}>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>{totalBurned}</Text>
+              <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>kcal total</Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#00D984' }}>{bestDayDate}</Text>
+              <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>meilleur jour</Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12), alignItems: 'center' }}>
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#FFF' }}>{avgBurned}</Text>
+              <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>moy/jour</Text>
+            </View>
+          </View>
+        </View>
+      );
+    };
+    var renderHumeurContent = function() {
+      var data = moodStats;
+      var hasData = data && data.length > 0;
+      if (!hasData) {
+        return (
+          <View style={{ padding: wp(40), alignItems: 'center' }}>
+            <Text style={{ fontSize: fp(40), marginBottom: wp(12) }}>😊</Text>
+            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Pas de données d'humeur</Text>
+            <Text style={{ fontSize: fp(12), color: '#888', marginTop: wp(4) }}>Utilisez le mood gauge pour tracker votre humeur !</Text>
+          </View>
+        );
+      }
+      var avgPct = Math.round(data.reduce(function(s, d) { return s + (d.max_gauge_percent || 0); }, 0) / data.length);
+      var heroEmoji = avgPct <= 20 ? '😢' : avgPct <= 40 ? '😔' : avgPct <= 60 ? '😐' : avgPct <= 80 ? '😊' : '😍';
+      var heroLabel = avgPct <= 20 ? 'Très bas' : avgPct <= 40 ? 'Bas' : avgPct <= 60 ? 'Neutre' : avgPct <= 80 ? 'Bien' : 'Excellent';
+      var heroColor = avgPct < 40 ? '#FF6B8A' : avgPct <= 60 ? '#FFD93D' : '#00D984';
+
+      // Courbe humeur
+      var chartW = SCREEN_WIDTH - wp(64);
+      var chartH = wp(100);
+
+      // Corrélation météo
+      var weatherGroups = {};
+      data.forEach(function(d) {
+        var w = d.weather || 'Inconnu';
+        if (!weatherGroups[w]) weatherGroups[w] = { total: 0, count: 0 };
+        weatherGroups[w].total += (d.max_gauge_percent || 0);
+        weatherGroups[w].count++;
+      });
+      var WEATHER_EMOJIS = { 'Soleil': '☀️', 'Nuageux': '☁️', 'Pluie': '🌧️', 'Neige': '❄️', 'Orage': '⛈️', 'Brouillard': '🌫️', 'Vent': '💨' };
+      var weatherStats = Object.keys(weatherGroups).map(function(w) {
+        return { weather: w, emoji: WEATHER_EMOJIS[w] || '🌡️', avg: Math.round(weatherGroups[w].total / weatherGroups[w].count) };
+      }).sort(function(a, b) { return b.avg - a.avg; });
+
+      // Distribution
+      var dist = [0, 0, 0, 0, 0];
+      data.forEach(function(d) {
+        var p = d.max_gauge_percent || 0;
+        if (p <= 20) dist[4]++;
+        else if (p <= 40) dist[3]++;
+        else if (p <= 60) dist[2]++;
+        else if (p <= 80) dist[1]++;
+        else dist[0]++;
+      });
+      var distItems = [
+        { emoji: '😍', range: '81-100%', count: dist[0] },
+        { emoji: '😊', range: '61-80%', count: dist[1] },
+        { emoji: '😐', range: '41-60%', count: dist[2] },
+        { emoji: '😔', range: '21-40%', count: dist[3] },
+        { emoji: '😢', range: '0-20%', count: dist[4] }
+      ];
+      var maxDist = Math.max.apply(null, dist.concat([1]));
+
+      // Best / worst days
+      var bestDay = data.reduce(function(best, d) { return (d.max_gauge_percent || 0) > (best.max_gauge_percent || 0) ? d : best; }, data[0]);
+      var worstDay = data.reduce(function(worst, d) { return (d.max_gauge_percent || 0) < (worst.max_gauge_percent || 0) ? d : worst; }, data[0]);
+      var formatDate = function(ds) { return ds ? new Date(ds).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '-'; };
+      var getEmoji = function(p) { return p <= 20 ? '😢' : p <= 40 ? '😔' : p <= 60 ? '😐' : p <= 80 ? '😊' : '😍'; };
+
+      return (
+        <View>
+          {/* Hero — Humeur moyenne */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(20), marginBottom: wp(12), alignItems: 'center' }}>
+            <Text style={{ fontSize: fp(48) }}>{heroEmoji}</Text>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: heroColor, marginTop: wp(8) }}>{heroLabel}</Text>
+            <Text style={{ fontSize: fp(14), color: '#FFF', marginTop: wp(4) }}>{avgPct + '%'}</Text>
+            <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(2) }}>Humeur moyenne sur la période</Text>
+          </View>
+
+          {/* Courbe Humeur */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Évolution humeur</Text>
+            <Svg width={chartW} height={chartH}>
+              <Defs>
+                <SvgLinearGradient id="moodGrad" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor={heroColor} stopOpacity="0.25" />
+                  <Stop offset="1" stopColor={heroColor} stopOpacity="0" />
+                </SvgLinearGradient>
+              </Defs>
+              {data.length > 1 ? (
+                <View>
+                  <Polygon
+                    points={'0,' + chartH + ' ' + data.map(function(d, i) {
+                      var x = (i / (data.length - 1)) * chartW;
+                      var y = chartH - ((d.max_gauge_percent || 0) / 100) * (chartH - wp(10));
+                      return x + ',' + y;
+                    }).join(' ') + ' ' + chartW + ',' + chartH}
+                    fill="url(#moodGrad)"
+                  />
+                  <Polyline
+                    points={data.map(function(d, i) {
+                      var x = (i / (data.length - 1)) * chartW;
+                      var y = chartH - ((d.max_gauge_percent || 0) / 100) * (chartH - wp(10));
+                      return x + ',' + y;
+                    }).join(' ')}
+                    fill="none" stroke={heroColor} strokeWidth="2" strokeLinejoin="round"
+                  />
+                </View>
+              ) : null}
+              {data.map(function(d, i) {
+                var x = data.length > 1 ? (i / (data.length - 1)) * chartW : chartW / 2;
+                var pct = d.max_gauge_percent || 0;
+                var y = chartH - (pct / 100) * (chartH - wp(10));
+                var dotColor = pct < 40 ? '#FF6B8A' : pct <= 60 ? '#FFD93D' : '#00D984';
+                return <Circle key={i} cx={x} cy={y} r="4" fill={dotColor} />;
+              })}
+            </Svg>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6) }}>
+              {data.length <= 10 ? data.map(function(d, i) {
+                var dt = new Date(d.stat_date);
+                return <Text key={i} style={{ fontSize: fp(8), color: '#666' }}>{['Di','Lu','Ma','Me','Je','Ve','Sa'][dt.getDay()]}</Text>;
+              }) : (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', flex: 1 }}>
+                  <Text style={{ fontSize: fp(8), color: '#666' }}>{data[0] ? data[0].stat_date.substring(5, 10) : ''}</Text>
+                  <Text style={{ fontSize: fp(8), color: '#666' }}>{data[data.length - 1] ? data[data.length - 1].stat_date.substring(5, 10) : ''}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Corrélation Météo */}
+          {weatherStats.length > 0 ? (
+            <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+              <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Humeur × Météo</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={{ flexDirection: 'row', gap: wp(8) }}>
+                  {weatherStats.map(function(ws, i) {
+                    var wColor = ws.avg < 40 ? '#FF6B8A' : ws.avg <= 60 ? '#FFD93D' : '#00D984';
+                    return (
+                      <View key={i} style={{ backgroundColor: '#1E2530', borderRadius: wp(12), padding: wp(10), paddingHorizontal: wp(14), alignItems: 'center' }}>
+                        <Text style={{ fontSize: fp(20) }}>{ws.emoji}</Text>
+                        <Text style={{ fontSize: fp(11), fontWeight: '600', color: wColor, marginTop: wp(4) }}>{ws.avg + '%'}</Text>
+                        <Text style={{ fontSize: fp(9), color: '#666', marginTop: wp(2) }}>{ws.weather}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+            </View>
+          ) : null}
+
+          {/* Distribution */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>Distribution</Text>
+            {distItems.map(function(di, idx) {
+              var pct = data.length > 0 ? Math.round((di.count / data.length) * 100) : 0;
+              return (
+                <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(16), width: wp(28) }}>{di.emoji}</Text>
+                  <Text style={{ fontSize: fp(10), color: '#888', width: wp(50) }}>{di.range}</Text>
+                  <View style={{ flex: 1, height: wp(8), backgroundColor: '#1E2530', borderRadius: wp(4), marginHorizontal: wp(8) }}>
+                    <View style={{ width: (di.count / maxDist * 100) + '%', height: '100%', backgroundColor: '#00D984', borderRadius: wp(4) }} />
+                  </View>
+                  <Text style={{ fontSize: fp(10), fontWeight: '600', color: '#FFF', width: wp(30), textAlign: 'right' }}>{pct + '%'}</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Meilleur / Pire jour */}
+          <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(12) }}>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12) }}>
+              <Text style={{ fontSize: fp(10), color: '#888' }}>Meilleur jour</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(4), gap: wp(6) }}>
+                <Text style={{ fontSize: fp(20) }}>{getEmoji(bestDay ? bestDay.max_gauge_percent : 0)}</Text>
+                <View>
+                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#00D984' }}>{(bestDay ? bestDay.max_gauge_percent : 0) + '%'}</Text>
+                  <Text style={{ fontSize: fp(9), color: '#666' }}>{formatDate(bestDay ? bestDay.stat_date : null)}</Text>
+                </View>
               </View>
             </View>
-          </StatsCard>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12) }}>
+              <Text style={{ fontSize: fp(10), color: '#888' }}>Jour difficile</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(4), gap: wp(6) }}>
+                <Text style={{ fontSize: fp(20) }}>{getEmoji(worstDay ? worstDay.max_gauge_percent : 0)}</Text>
+                <View>
+                  <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#FF6B8A' }}>{(worstDay ? worstDay.max_gauge_percent : 0) + '%'}</Text>
+                  <Text style={{ fontSize: fp(9), color: '#666' }}>{formatDate(worstDay ? worstDay.stat_date : null)}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      );
+    };
+    var renderSanteContent = function() {
+      var tl = healthTimeline || [];
+      var ins = healthInsights || [];
+      var vs = vaccStats;
+      var EVENT_ICONS = { 'diagnostic': '🤒', 'vaccination': '💉', 'allergie': '⚠️', 'medicament': '💊', 'analyse': '🔬' };
 
-          {renderLixumTable('Analyses',
-            [{ label: 'Analyse', flex: 2 }, { label: 'Valeur', flex: 1.2 }, { label: 'Statut', flex: 1, align: 'right' }],
-            analysesRows,
-            '#00D984',
-            (rowIndex, row) => handleTransferToSecretPocket('analyses', rowIndex, row)
-          )}
+      // Counts
+      var diagCount = tl.filter(function(e) { return e.event_type === 'diagnostic'; }).length;
+      var vaccDone = vs ? (vs.done_count || 0) : 0;
+      var medCount = tl.filter(function(e) { return e.event_type === 'medicament'; }).length;
+      var overdueCount = vs ? (vs.overdue_count || 0) : 0;
+      var allergyCount = tl.filter(function(e) { return e.event_type === 'allergie'; }).length;
+      var analysisCount = tl.filter(function(e) { return e.event_type === 'analyse'; }).length;
 
-          {renderLixumTable('Médicaments',
-            [{ label: 'Médicament', flex: 2 }, { label: 'Posologie', flex: 1.5 }, { label: 'Durée', flex: 1, align: 'right' }],
-            medsRows,
-            '#4DA6FF',
-            (rowIndex, row) => handleTransferToSecretPocket('medications', rowIndex, row)
-          )}
+      var summaryChips = [
+        { icon: '🤒', count: diagCount, label: 'maladies', color: '#FF6B8A' },
+        { icon: '💉', count: vaccDone, label: 'vaccins', color: '#9B8ACF' },
+        { icon: '💊', count: medCount, label: 'traitements', color: '#00D984' },
+        { icon: '⚠️', count: overdueCount, label: 'rappel dû', color: '#FF6B8A' },
+        { icon: '🛡️', count: allergyCount, label: 'allergie', color: '#FFD93D' },
+        { icon: '🔬', count: analysisCount, label: 'analyses', color: '#4DA6FF' }
+      ];
 
-          {renderLixumTable('Allergies',
-            [{ label: 'Allergène', flex: 2 }, { label: 'Type', flex: 1.5 }, { label: 'Sévérité', flex: 1, align: 'right' }],
-            allergiesRows,
-            '#FF8C42',
-            (rowIndex, row) => handleTransferToSecretPocket('allergies', rowIndex, row)
-          )}
+      // Maladies par mois
+      var diseasesByMonth = {};
+      tl.forEach(function(e) {
+        if (e.event_type === 'diagnostic' && e.event_date) {
+          var monthKey = e.event_date.substring(0, 7);
+          if (!diseasesByMonth[monthKey]) diseasesByMonth[monthKey] = 0;
+          diseasesByMonth[monthKey]++;
+        }
+      });
+      var monthKeys = Object.keys(diseasesByMonth).sort();
+      var maxDisease = Math.max.apply(null, monthKeys.map(function(k) { return diseasesByMonth[k]; }).concat([1]));
 
-          {renderLixumTable('Vaccins',
-            [{ label: 'Vaccin', flex: 2 }, { label: 'Date', flex: 1.2 }, { label: 'Rappel', flex: 1, align: 'right' }],
-            vaccRows,
-            '#00D984',
-            (rowIndex, row) => handleTransferToSecretPocket('vaccinations', rowIndex, row)
-          )}
-        </>
+      // Allergies from timeline
+      var allergies = tl.filter(function(e) { return e.event_type === 'allergie'; });
+
+      // Medications from timeline
+      var medications = tl.filter(function(e) { return e.event_type === 'medicament'; });
+
+      // Analyses from timeline
+      var analyses = tl.filter(function(e) { return e.event_type === 'analyse'; });
+
+      // Vaccine completion
+      var vaccPct = vs ? (vs.completion_percent || 0) : 0;
+      var vaccTotal = vs ? (vs.total_vaccines || 0) : 0;
+      var vaccCircum = 2 * Math.PI * 22;
+
+      return (
+        <View>
+          {/* Section A — Résumé en chips */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8), marginBottom: wp(12) }}>
+            {summaryChips.map(function(chip, i) {
+              return (
+                <View key={i} style={{ width: (SCREEN_WIDTH - wp(56)) / 3, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(10), alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(18) }}>{chip.icon}</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: chip.color, marginTop: wp(4) }}>{chip.count}</Text>
+                  <Text style={{ fontSize: fp(9), color: '#888', marginTop: wp(2) }}>{chip.label}</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Section B — Maladies par mois */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Historique des maladies</Text>
+            {monthKeys.length > 0 ? (
+              <View>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: wp(60) }}>
+                  {monthKeys.map(function(mk, i) {
+                    var h = Math.max(wp(4), (diseasesByMonth[mk] / maxDisease) * wp(50));
+                    return (
+                      <View key={i} style={{ alignItems: 'center', flex: 1 }}>
+                        <Text style={{ fontSize: fp(9), color: '#FF6B8A', marginBottom: wp(4) }}>{diseasesByMonth[mk]}</Text>
+                        <View style={{ width: wp(14), height: h, backgroundColor: '#FF6B8A', borderRadius: wp(4) }} />
+                      </View>
+                    );
+                  })}
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6) }}>
+                  {monthKeys.map(function(mk, i) {
+                    return <Text key={i} style={{ fontSize: fp(8), color: '#666', flex: 1, textAlign: 'center' }}>{mk.substring(5)}</Text>;
+                  })}
+                </View>
+              </View>
+            ) : (
+              <View style={{ backgroundColor: '#00D98410', borderRadius: wp(10), padding: wp(14), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(12), color: '#00D984' }}>Aucune maladie enregistrée — continuez comme ça ! 💪</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Section C — Timeline */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>📅 Chronologie santé</Text>
+            {tl.length > 0 ? tl.slice(0, 20).map(function(evt, idx) {
+              var evtColor = evt.color_code || '#888';
+              var evtIcon = EVENT_ICONS[evt.event_type] || '📋';
+              var evtDate = evt.event_date ? new Date(evt.event_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '';
+              return (
+                <View key={idx} style={{ flexDirection: 'row', marginBottom: wp(12) }}>
+                  {/* Ligne verticale + point */}
+                  <View style={{ width: wp(24), alignItems: 'center' }}>
+                    {idx > 0 ? <View style={{ width: wp(2), height: wp(12), backgroundColor: '#3A3F46', position: 'absolute', top: -wp(12) }} /> : null}
+                    <View style={{ width: wp(12), height: wp(12), borderRadius: wp(6), backgroundColor: evtColor, marginTop: wp(2) }} />
+                    {idx < Math.min(tl.length, 20) - 1 ? <View style={{ width: wp(2), flex: 1, backgroundColor: '#3A3F46', marginTop: wp(2) }} /> : null}
+                  </View>
+                  {/* Content */}
+                  <View style={{ flex: 1, marginLeft: wp(8), paddingBottom: wp(4) }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+                      <Text style={{ fontSize: fp(11), color: '#888' }}>{evtDate}</Text>
+                      <Text style={{ fontSize: fp(10), color: evtColor, fontWeight: '600', textTransform: 'uppercase' }}>{evtIcon + ' ' + (evt.event_type || '')}</Text>
+                    </View>
+                    <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF', marginTop: wp(2) }}>{evt.title || ''}</Text>
+                    {evt.subtitle ? <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(1) }}>{evt.subtitle}</Text> : null}
+                  </View>
+                </View>
+              );
+            }) : (
+              <Text style={{ fontSize: fp(12), color: '#888', textAlign: 'center', padding: wp(12) }}>Aucun événement de santé sur cette période.</Text>
+            )}
+          </View>
+
+          {/* Section D — Allergies */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🛡️ Allergies connues</Text>
+            {allergies.length > 0 ? allergies.map(function(a, i) {
+              var sev = (a.severity || '').toLowerCase();
+              var sevLabel = sev === 'severe' || sev === 'grave' ? 'Sévère' : sev === 'moderate' || sev === 'modéré' ? 'Modéré' : 'Léger';
+              var sevBg = sev === 'severe' || sev === 'grave' ? '#FF6B8A15' : sev === 'moderate' || sev === 'modéré' ? '#FFD93D15' : '#4DA6FF15';
+              var sevColor = sev === 'severe' || sev === 'grave' ? '#FF6B8A' : sev === 'moderate' || sev === 'modéré' ? '#FFD93D' : '#4DA6FF';
+              return (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8), borderBottomWidth: i < allergies.length - 1 ? 1 : 0, borderBottomColor: '#3A3F46' }}>
+                  <Text style={{ fontSize: fp(14), marginRight: wp(8) }}>⚠️</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>{a.title || ''}</Text>
+                    {a.event_date ? <Text style={{ fontSize: fp(10), color: '#666', marginTop: wp(2) }}>{'Détecté le ' + new Date(a.event_date).toLocaleDateString('fr-FR')}</Text> : null}
+                  </View>
+                  <View style={{ backgroundColor: sevBg, paddingHorizontal: wp(8), paddingVertical: wp(3), borderRadius: wp(6) }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: sevColor }}>{sevLabel}</Text>
+                  </View>
+                </View>
+              );
+            }) : (
+              <Text style={{ fontSize: fp(12), color: '#888', textAlign: 'center' }}>Aucune allergie enregistrée</Text>
+            )}
+          </View>
+
+          {/* Section E — Médicaments */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>💊 Traitements</Text>
+            {medications.length > 0 ? medications.slice(0, 10).map(function(m, i) {
+              var isActive = !m.subtitle || m.subtitle.indexOf('Terminé') === -1;
+              return (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8), borderBottomWidth: i < Math.min(medications.length, 10) - 1 ? 1 : 0, borderBottomColor: '#3A3F46' }}>
+                  <Text style={{ fontSize: fp(14), marginRight: wp(8) }}>💊</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>{m.title || ''}</Text>
+                    {m.subtitle ? <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>{m.subtitle}</Text> : null}
+                  </View>
+                  <View style={{ backgroundColor: isActive ? '#00D98415' : '#3A3F46', paddingHorizontal: wp(8), paddingVertical: wp(3), borderRadius: wp(6) }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '600', color: isActive ? '#00D984' : '#888' }}>{isActive ? 'En cours' : 'Terminé'}</Text>
+                  </View>
+                </View>
+              );
+            }) : (
+              <Text style={{ fontSize: fp(12), color: '#888', textAlign: 'center' }}>Aucun traitement enregistré</Text>
+            )}
+          </View>
+
+          {/* Section F — Couverture vaccinale */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>💉 Vaccination</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(14) }}>
+              <View style={{ width: wp(60), height: wp(60), justifyContent: 'center', alignItems: 'center' }}>
+                <Svg width={wp(60)} height={wp(60)} viewBox="0 0 50 50">
+                  <Circle cx="25" cy="25" r="22" stroke="#3A3F46" strokeWidth="4" fill="none" />
+                  <Circle cx="25" cy="25" r="22" stroke="#9B8ACF" strokeWidth="4" fill="none"
+                    strokeDasharray={String(vaccCircum)}
+                    strokeDashoffset={String(vaccCircum * (1 - vaccPct / 100))}
+                    strokeLinecap="round" rotation="-90" origin="25,25" />
+                </Svg>
+                <Text style={{ position: 'absolute', fontSize: fp(12), fontWeight: '700', color: '#9B8ACF' }}>{vaccPct + '%'}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{vaccDone + '/' + vaccTotal + ' vaccins à jour'}</Text>
+                {overdueCount > 0 ? <Text style={{ fontSize: fp(11), color: '#FF6B8A', marginTop: wp(4) }}>{'⚠️ ' + overdueCount + ' rappel' + (overdueCount > 1 ? 's' : '') + ' en retard'}</Text> : null}
+              </View>
+            </View>
+          </View>
+
+          {/* Section G — Analyses récentes */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(10) }}>🔬 Dernières analyses</Text>
+            {analyses.length > 0 ? analyses.slice(0, 8).map(function(a, i) {
+              var isNormal = (a.subtitle || '').toLowerCase().indexOf('normal') !== -1;
+              return (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(8), borderBottomWidth: i < Math.min(analyses.length, 8) - 1 ? 1 : 0, borderBottomColor: '#3A3F46' }}>
+                  <Text style={{ fontSize: fp(14), marginRight: wp(8) }}>🔬</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>{a.title || ''}</Text>
+                    {a.subtitle ? <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>{a.subtitle}</Text> : null}
+                  </View>
+                  {a.event_date ? <Text style={{ fontSize: fp(10), color: '#666' }}>{new Date(a.event_date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</Text> : null}
+                </View>
+              );
+            }) : (
+              <Text style={{ fontSize: fp(12), color: '#888', textAlign: 'center' }}>Aucune analyse sur cette période</Text>
+            )}
+          </View>
+        </View>
       );
     };
 
-    const renderActiviteTab = () => (
-      <>
-        <StatsCard title="Cette semaine">
-          <Text style={{ fontSize: fp(28), fontWeight: '700', color: '#00D984' }}>12 450 pas / jour</Text>
-          <Text style={{ fontSize: fp(16), fontWeight: '600', color: '#4DA6FF', marginTop: wp(6) }}>4h32 d'activité</Text>
-        </StatsCard>
+    // ── Tab router ──
+    var renderActiveTab = function() {
+      if (statsTab === 'nutrition') return renderNutritionContent();
+      if (statsTab === 'vitalite') return renderVitaliteContent();
+      if (statsTab === 'activite') return renderActiviteContent();
+      if (statsTab === 'humeur') return renderHumeurContent();
+      if (statsTab === 'sante') return renderSanteContent();
+      return renderNutritionContent();
+    };
 
-        <StatsCard title="Calories brûlées">
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: wp(80) }}>
-            {burnedData.map((cal, i) => {
-              const maxCal = 510;
-              const h = Math.max(wp(4), (cal / maxCal) * wp(65));
-              return (
-                <View key={i} style={{ alignItems: 'center', flex: 1 }}>
-                  <View style={{ width: wp(16), height: h, backgroundColor: '#FF8C42', borderRadius: wp(4) }} />
-                  <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>{weekDays[i]}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </StatsCard>
-      </>
-    );
-
-    const renderHumeurTab = () => (
-      <>
-        <StatsCard title="Humeur moyenne">
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(10) }}>
-            <Text style={{ fontSize: fp(32) }}>😊</Text>
-            <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#00D984' }}>Plutôt bien</Text>
-          </View>
-        </StatsCard>
-
-        <StatsCard title="Courbe 7 jours">
-          <View style={{ height: wp(80), flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-            {moodData.map((val, i) => {
-              const h = (val / 5) * wp(65);
-              return (
-                <View key={i} style={{ alignItems: 'center', flex: 1 }}>
-                  <View style={{
-                    width: wp(10), height: wp(10), borderRadius: wp(5),
-                    backgroundColor: '#00D984',
-                    marginBottom: h,
-                  }} />
-                  <Text style={{ fontSize: fp(8), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>{weekDays[i]}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </StatsCard>
-      </>
-    );
-
+    // ── MAIN RENDER ──
     return (
-      <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+      <View style={{ flex: 1, backgroundColor: '#1A2029' }}>
         <StatusBar barStyle="light-content" />
         <LinearGradient
           colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
@@ -1646,88 +2370,140 @@ export const MediBookContent = (props) => {
             paddingBottom: wp(12), paddingHorizontal: wp(12),
             flexDirection: 'row', alignItems: 'center',
             borderBottomWidth: 1, borderBottomColor: '#4A4F55',
-          }}
-        >
-          <Pressable delayPressIn={120} onPress={() => setMediBookView('landing')}
-            style={({ pressed }) => ({
+          }}>
+          <Pressable delayPressIn={120} onPress={function() { setMediBookView('landing'); }}
+            style={function(state) { return {
               width: wp(36), height: wp(36), borderRadius: wp(18),
               backgroundColor: 'rgba(255,255,255,0.08)',
-              justifyContent: 'center', alignItems: 'center',
-              marginRight: wp(10),
-              transform: [{ scale: pressed ? 0.92 : 1 }],
-            })}>
+              justifyContent: 'center', alignItems: 'center', marginRight: wp(10),
+              transform: [{ scale: state.pressed ? 0.92 : 1 }],
+            }; }}>
             <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
               <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
           </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>Mes Stats</Text>
+            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>Dashboard santé premium</Text>
           </View>
           {renderProfileSwitchButton()}
         </LinearGradient>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
-          {/* Onglets */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: wp(12) }}>
-            {['nutrition', 'santé', 'activité', 'humeur'].map(tab => (
-              <Pressable
-                key={tab}
-                onPress={() => setStatsTab(tab)}
-                style={{
-                  paddingHorizontal: wp(18), paddingVertical: wp(8),
-                  borderRadius: wp(20), marginRight: wp(8),
-                  backgroundColor: statsTab === tab ? '#00D984' : 'rgba(0,0,0,0.05)',
-                }}
-              >
-                <Text style={{
-                  fontSize: fp(13), fontWeight: '600',
-                  color: statsTab === tab ? '#FFF' : '#2D3436',
-                }}>
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+          {/* Semi-arc navigation */}
+          <View style={{ position: 'relative', height: wp(140), marginTop: wp(10), marginBottom: wp(20) }}>
+            {TAB_ITEMS.map(function(tab) { return renderBubble(tab); })}
+          </View>
 
-          {statsTab === 'nutrition' && renderNutritionTab()}
-          {statsTab === 'santé' && renderSanteTab()}
-          {statsTab === 'activité' && renderActiviteTab()}
-          {statsTab === 'humeur' && renderHumeurTab()}
+          {/* Time range chips */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: wp(8), marginBottom: wp(16) }}>
+            {TIME_RANGES.map(function(range) {
+              var isSelected = selectedRange.key === range.key;
+              var access = rangeAccess[range.key];
+              var isLocked = access && !access.has_access;
+              return (
+                <Pressable key={range.key} delayPressIn={120}
+                  onPress={function() { onTimeRangeTap(range); }}
+                  style={function(state) { return {
+                    paddingHorizontal: wp(14), paddingVertical: wp(8),
+                    borderRadius: wp(20),
+                    backgroundColor: isSelected ? '#00D98425' : '#2A303B',
+                    borderWidth: 1,
+                    borderColor: isSelected ? '#00D984' : '#3A3F46',
+                    flexDirection: 'row', alignItems: 'center', gap: wp(4),
+                    transform: [{ scale: state.pressed ? 0.95 : 1 }],
+                  }; }}>
+                  <Text style={{ fontSize: fp(12), fontWeight: '600', color: isSelected ? '#00D984' : isLocked ? '#666' : '#FFF' }}>{range.label}</Text>
+                  {isLocked ? <Text style={{ fontSize: fp(10), color: '#666' }}>{'🔒'}</Text> : null}
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Loading or content */}
+          {statsLoading ? (
+            <View style={{ padding: wp(40), alignItems: 'center' }}>
+              <ActivityIndicator size="large" color="#00D984" />
+              <Text style={{ fontSize: fp(13), color: '#888', marginTop: wp(10) }}>Chargement des statistiques...</Text>
+            </View>
+          ) : renderActiveTab()}
+
           <BottomSpacer />
         </ScrollView>
 
-        {/* Bouton flottant + Ajouter — en bas à droite */}
-        <Pressable
-          delayPressIn={120}
-          onPress={() => setShowMediBookUploadSheet(true)}
-          style={{
-            position: 'absolute',
-            bottom: wp(80),
-            right: wp(20),
-            width: wp(56),
-            height: wp(56),
-            borderRadius: wp(28),
-            overflow: 'hidden',
-            shadowColor: '#00D984',
-            shadowOpacity: 0.4,
-            shadowRadius: 12,
-            elevation: 8,
-            zIndex: 100,
-          }}
-        >
-          <LinearGradient
-            colors={['#00D984', '#00B871']}
-            style={{
-              width: '100%', height: '100%',
-              justifyContent: 'center', alignItems: 'center',
-            }}
-          >
-            <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
-              <Line x1="12" y1="5" x2="12" y2="19" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
-              <Line x1="5" y1="12" x2="19" y2="12" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round"/>
-            </Svg>
-          </LinearGradient>
-        </Pressable>
+        {/* Modal déblocage time range */}
+        <Modal visible={showUnlockModal} transparent animationType="fade"
+          onRequestClose={function() { setShowUnlockModal(false); }}>
+          <Pressable onPress={function() { setShowUnlockModal(false); }}
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: wp(24) }}>
+            <Pressable onPress={function(e) { e.stopPropagation(); }}
+              style={{ width: '100%' }}>
+              <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
+                style={{ borderRadius: wp(20), padding: wp(24) }}>
+                <Text style={{ fontSize: fp(28), textAlign: 'center', marginBottom: wp(10) }}>📊</Text>
+                <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', textAlign: 'center' }}>
+                  {'Historique ' + (unlockTarget ? unlockTarget.label : '')}
+                </Text>
+                <Text style={{ fontSize: fp(13), color: '#888', textAlign: 'center', marginTop: wp(8), lineHeight: fp(18) }}>
+                  {'Analysez vos tendances de santé sur ' + (unlockTarget && unlockTarget.days === 30 ? 'les 30 derniers jours' : unlockTarget && unlockTarget.days === 365 ? 'les 12 derniers mois' : 'toute la période') + '.'}
+                </Text>
+
+                <View style={{ backgroundColor: '#1E2530', borderRadius: wp(12), padding: wp(14), marginTop: wp(16) }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: wp(6) }}>
+                    <Text style={{ fontSize: fp(12), color: '#888' }}>Coût</Text>
+                    <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFD93D' }}>
+                      {(unlockTarget ? (rangeAccess[unlockTarget.key] ? rangeAccess[unlockTarget.key].lix_cost : 0) : 0) + ' Lix (accès 24h)'}
+                    </Text>
+                  </View>
+                </View>
+
+                <Pressable delayPressIn={120}
+                  onPress={function() {
+                    if (!unlockTarget) return;
+                    fetchRPC('unlock_stats_range', { p_user_id: userId, p_range_key: unlockTarget.key })
+                      .then(function(result) {
+                        if (result && result[0] && result[0].success) {
+                          setShowUnlockModal(false);
+                          var updated = Object.assign({}, rangeAccess);
+                          updated[unlockTarget.key] = { has_access: true, access_reason: 'temporary', expires_at: result[0].unlocked_until };
+                          setRangeAccess(updated);
+                          setSelectedRange(unlockTarget);
+                          loadAllStats(unlockTarget.days);
+                        } else {
+                          Alert.alert('Erreur', (result && result[0] ? result[0].message : '') || 'Solde Lix insuffisant');
+                        }
+                      })
+                      .catch(function() { Alert.alert('Erreur', 'Impossible de débloquer cette plage'); });
+                  }}
+                  style={function(state) { return {
+                    backgroundColor: '#00D984', borderRadius: wp(14), paddingVertical: wp(14),
+                    marginTop: wp(14), alignItems: 'center',
+                    transform: [{ scale: state.pressed ? 0.96 : 1 }],
+                  }; }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#000' }}>
+                    {'💎 Débloquer 24h — ' + (unlockTarget ? (rangeAccess[unlockTarget.key] ? rangeAccess[unlockTarget.key].lix_cost : 0) : 0) + ' Lix'}
+                  </Text>
+                </Pressable>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: wp(14), marginBottom: wp(6) }}>
+                  <View style={{ flex: 1, height: 1, backgroundColor: '#3A3F46' }} />
+                  <Text style={{ fontSize: fp(11), color: '#666', marginHorizontal: wp(10) }}>ou</Text>
+                  <View style={{ flex: 1, height: 1, backgroundColor: '#3A3F46' }} />
+                </View>
+
+                <Text style={{ fontSize: fp(12), color: '#888', textAlign: 'center' }}>Passez à un abonnement pour un accès illimité</Text>
+                <Pressable style={{ marginTop: wp(8), alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#00D984' }}>Voir les abonnements →</Text>
+                </Pressable>
+
+                <Pressable onPress={function() { setShowUnlockModal(false); }}
+                  style={{ marginTop: wp(14), paddingVertical: wp(10), alignItems: 'center', borderRadius: wp(12), borderWidth: 1, borderColor: '#3A3F46' }}>
+                  <Text style={{ fontSize: fp(13), color: '#666' }}>Annuler</Text>
+                </Pressable>
+              </LinearGradient>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </View>
     );
   };
@@ -2199,46 +2975,44 @@ export const MediBookContent = (props) => {
     const nextScheduled = medicalData.scheduledAnalyses.length > 0 ? medicalData.scheduledAnalyses[0] : null;
     const daysUntilNext = nextScheduled ? Math.ceil((new Date(nextScheduled.scheduled_date) - new Date()) / (1000 * 60 * 60 * 24)) : null;
 
-    const SectionCard = ({ title, subtitle, count, color, icon, onPress, badge }) => (
-      <Pressable delayPressIn={120} onPress={onPress}
-        style={({ pressed }) => ({
-          backgroundColor: '#FAFBFC', borderRadius: wp(16), padding: wp(16),
-          marginBottom: wp(10), flexDirection: 'row', alignItems: 'center',
-          shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
-          borderLeftWidth: wp(4), borderLeftColor: color,
-          transform: [{ scale: pressed ? 0.97 : 1 }],
-        })}>
+    var SectionCard = function(p) { return (
+      <Pressable delayPressIn={120} onPress={p.onPress}
+        style={function(state) { return {
+          backgroundColor: '#2A303B', borderRadius: wp(12), padding: wp(14),
+          marginBottom: wp(8), flexDirection: 'row', alignItems: 'center',
+          gap: wp(12), borderWidth: 1, borderColor: '#3A3F46',
+          transform: [{ scale: state.pressed ? 0.97 : 1 }],
+        }; }}>
         <View style={{
-          width: wp(44), height: wp(44), borderRadius: wp(14),
-          backgroundColor: color + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12),
+          width: wp(40), height: wp(40), borderRadius: wp(10),
+          backgroundColor: p.color + '15', justifyContent: 'center', alignItems: 'center',
         }}>
-          {icon}
+          {p.icon}
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#2D3436' }}>{title}</Text>
-          <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', marginTop: wp(2) }}>{subtitle}</Text>
+          <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>{p.title}</Text>
+          <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(2) }}>{p.subtitle}</Text>
         </View>
-        {badge && (
+        {p.badge ? (
           <View style={{
-            backgroundColor: badge.bgColor || 'rgba(255,107,107,0.15)',
+            backgroundColor: p.badge.bgColor || 'rgba(255,107,107,0.15)',
             borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3), marginRight: wp(8),
           }}>
-            <Text style={{ fontSize: fp(10), fontWeight: '700', color: badge.color || '#FF6B6B' }}>{badge.text}</Text>
+            <Text style={{ fontSize: fp(10), fontWeight: '700', color: p.badge.color || '#FF6B6B' }}>{p.badge.text}</Text>
           </View>
-        )}
+        ) : null}
         <View style={{
-          backgroundColor: color + '20', borderRadius: wp(10),
-          paddingHorizontal: wp(10), paddingVertical: wp(4), marginRight: wp(8),
+          backgroundColor: p.color + '15', borderRadius: wp(10),
+          paddingHorizontal: wp(10), paddingVertical: wp(3), minWidth: wp(22),
         }}>
-          <Text style={{ fontSize: fp(13), fontWeight: '700', color: color }}>{count}</Text>
+          <Text style={{ fontSize: fp(11), fontWeight: '600', color: p.color, textAlign: 'center' }}>{p.count}</Text>
         </View>
-        <Text style={{ fontSize: fp(16), color: 'rgba(0,0,0,0.15)' }}>{">"}</Text>
+        <Text style={{ fontSize: fp(14), color: '#555' }}>{">"}</Text>
       </Pressable>
-    );
+    ); };
 
     return (
-      <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+      <View style={{ flex: 1, backgroundColor: '#1A2029' }}>
         <StatusBar barStyle="light-content" />
         <LinearGradient
           colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
@@ -2267,39 +3041,27 @@ export const MediBookContent = (props) => {
         </LinearGradient>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(50) }}>
-          {/* Bouton Ajouter des données */}
-          <Pressable delayPressIn={120} onPress={function() { setShowAddDataSheet(true); }}
-            style={function(state) { return {
-              flexDirection: 'row', alignItems: 'center',
-              backgroundColor: '#2A303B', borderRadius: wp(12), padding: wp(14),
-              marginBottom: wp(12), borderWidth: 1, borderColor: '#3A3F46',
-              transform: [{ scale: state.pressed ? 0.97 : 1 }],
-            }; }}>
-            <View style={{ width: wp(32), height: wp(32), borderRadius: wp(10), backgroundColor: 'rgba(0,217,132,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
-              <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
-                <Line x1="12" y1="5" x2="12" y2="19" stroke="#00D984" strokeWidth="2.5" strokeLinecap="round"/>
-                <Line x1="5" y1="12" x2="19" y2="12" stroke="#00D984" strokeWidth="2.5" strokeLinecap="round"/>
-              </Svg>
-            </View>
-            <Text style={{ flex: 1, fontSize: fp(14), fontWeight: '600', color: '#EAEEF3' }}>Ajouter des données de santé</Text>
-            <Text style={{ fontSize: fp(16), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
-          </Pressable>
-
           {/* Score Vitalité + prochain RDV */}
           <View style={{
-            backgroundColor: '#FAFBFC', borderRadius: wp(16), padding: wp(16), marginBottom: wp(16),
+            backgroundColor: '#2A303B', borderRadius: wp(12), padding: wp(16), marginBottom: wp(12),
             flexDirection: 'row', alignItems: 'center',
-            shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+            borderWidth: 1, borderColor: '#3A3F46',
           }}>
             <View style={{
               width: wp(56), height: wp(56), borderRadius: wp(28),
-              borderWidth: wp(4), borderColor: '#00D984',
+              borderWidth: wp(4), borderColor: '#3A3F46',
               justifyContent: 'center', alignItems: 'center', marginRight: wp(14),
+              position: 'relative',
             }}>
-              <Text style={{ fontSize: fp(18), fontWeight: '800', color: '#00D984' }}>{medicalData.vitalityScore || 0}</Text>
+              <View style={{
+                position: 'absolute', width: wp(56), height: wp(56), borderRadius: wp(28),
+                borderWidth: wp(4), borderColor: '#00D984', borderTopColor: 'transparent',
+                transform: [{ rotate: '45deg' }],
+              }} />
+              <Text style={{ fontSize: fp(18), fontWeight: '800', color: '#FFF' }}>{medicalData.vitalityScore || 0}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#2D3436' }}>Score Vitalité</Text>
+              <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Score Vitalité</Text>
               {nextScheduled ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: wp(4) }}>
                   <View style={{
@@ -2308,10 +3070,10 @@ export const MediBookContent = (props) => {
                   }}>
                     <Text style={{ fontSize: fp(10), fontWeight: '700', color: daysUntilNext <= 7 ? '#FF6B6B' : '#FF8C42' }}>J-{daysUntilNext}</Text>
                   </View>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', flex: 1 }} numberOfLines={1}>{nextScheduled.label}</Text>
+                  <Text style={{ fontSize: fp(11), color: '#888', flex: 1 }} numberOfLines={1}>{nextScheduled.label}</Text>
                 </View>
               ) : (
-                <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.3)', marginTop: wp(4) }}>Aucune analyse planifiée</Text>
+                <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(4) }}>Aucune analyse planifiée</Text>
               )}
             </View>
           </View>
@@ -2324,46 +3086,46 @@ export const MediBookContent = (props) => {
 
           <SectionCard title="Analyses médicales"
             subtitle={scheduledCount > 0 ? scheduledCount + ' analyse' + (scheduledCount > 1 ? 's' : '') + ' à venir' : 'Historique de vos bilans'}
-            count={doneAnalyses} color="#00D984"
-            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M9 2v6l-5 8a3 3 0 002.6 4.5h10.8A3 3 0 0020 16l-5-8V2" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" /><Line x1="9" y1="2" x2="15" y2="2" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" /></Svg>}
-            onPress={() => setReportSection('analyses')}
+            count={doneAnalyses} color="#4DA6FF"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M9 2v6l-5 8a3 3 0 002.6 4.5h10.8A3 3 0 0020 16l-5-8V2" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" /><Line x1="9" y1="2" x2="15" y2="2" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" /></Svg>}
+            onPress={function() { setReportSection('analyses'); }}
             badge={scheduledCount > 0 ? { text: scheduledCount + ' à venir', color: '#FF8C42', bgColor: 'rgba(255,140,66,0.15)' } : null}
           />
 
           <SectionCard title="Médicaments"
             subtitle={activeCount > 0 ? activeCount + ' traitement' + (activeCount > 1 ? 's' : '') + ' en cours' : 'Aucun traitement actif'}
-            count={activeCount + terminatedCount} color="#4DA6FF"
-            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M10.5 1.5l-8 8a4.24 4.24 0 006 6l8-8a4.24 4.24 0 00-6-6z" stroke="#4DA6FF" strokeWidth="1.5" /><Line x1="8" y1="8" x2="14" y2="14" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" /></Svg>}
-            onPress={() => setReportSection('medications')}
+            count={activeCount + terminatedCount} color="#00D984"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M10.5 1.5l-8 8a4.24 4.24 0 006 6l8-8a4.24 4.24 0 00-6-6z" stroke="#00D984" strokeWidth="1.5" /><Line x1="8" y1="8" x2="14" y2="14" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" /></Svg>}
+            onPress={function() { setReportSection('medications'); }}
             badge={activeCount > 0 ? { text: activeCount + ' actif' + (activeCount > 1 ? 's' : ''), color: '#00D984', bgColor: 'rgba(0,217,132,0.15)' } : null}
           />
 
           <SectionCard title="Allergies et intolérances"
             subtitle={allergiesCount > 0 ? 'Profil allergique enregistré' : 'Aucune allergie enregistrée'}
-            count={allergiesCount} color="#FF8C42"
-            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#FF8C42" strokeWidth="1.5" /></Svg>}
+            count={allergiesCount} color="#FFD93D"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" stroke="#FFD93D" strokeWidth="1.5" /></Svg>}
             onPress={function() { setReportSection('allergies'); }}
           />
 
           <SectionCard title="Carnet vaccinal"
             subtitle={vaccCount > 0 ? vaccCount + ' vaccin' + (vaccCount > 1 ? 's' : '') + ' enregistré' + (vaccCount > 1 ? 's' : '') : 'Aucun vaccin enregistré'}
-            count={vaccCount} color="#9B6DFF"
-            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M18 2l4 4-9.5 9.5-4-4L18 2z" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><Path d="M8.5 11.5L2 18v4h4l6.5-6.5" stroke="#9B6DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
+            count={vaccCount} color="#9B8ACF"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M18 2l4 4-9.5 9.5-4-4L18 2z" stroke="#9B8ACF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><Path d="M8.5 11.5L2 18v4h4l6.5-6.5" stroke="#9B8ACF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
             onPress={function() { setReportSection('vaccinations'); }}
           />
 
           <SectionCard title="Diagnostics à surveiller"
             subtitle={diagCount > 0 ? diagCount + ' diagnostic' + (diagCount > 1 ? 's' : '') : 'Aucun diagnostic enregistré'}
-            count={diagCount} color="#FF6B6B"
-            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke="#FF6B6B" strokeWidth="1.5" /><Path d="M3 12h4l3-6 4 12 3-6h4" stroke="#FF6B6B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
+            count={diagCount} color="#FF6B8A"
+            icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Path d="M20.42 4.58a5.4 5.4 0 00-7.65 0L12 5.36l-.77-.78a5.4 5.4 0 00-7.65 7.65l.78.77L12 20.64l7.64-7.64.78-.77a5.4 5.4 0 000-7.65z" stroke="#FF6B8A" strokeWidth="1.5" /><Path d="M3 12h4l3-6 4 12 3-6h4" stroke="#FF6B8A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></Svg>}
             onPress={function() { setReportSection('diagnostics'); }}
           />
 
           <View>
             <SectionCard title="Calendrier de santé"
               subtitle={(doneAnalyses + activeCount + terminatedCount + allergiesCount + vaccCount + diagCount) + ' événements médicaux'}
-              count="" color="#D4AF37"
-              icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Rect x="3" y="4" width="18" height="18" rx="2" stroke="#D4AF37" strokeWidth="1.5" /><Line x1="16" y1="2" x2="16" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" /><Line x1="8" y1="2" x2="8" y2="6" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" /><Line x1="3" y1="10" x2="21" y2="10" stroke="#D4AF37" strokeWidth="1.5" /></Svg>}
+              count="" color="#00D984"
+              icon={<Svg width={wp(22)} height={wp(22)} viewBox="0 0 24 24" fill="none"><Rect x="3" y="4" width="18" height="18" rx="2" stroke="#00D984" strokeWidth="1.5" /><Line x1="16" y1="2" x2="16" y2="6" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" /><Line x1="8" y1="2" x2="8" y2="6" stroke="#00D984" strokeWidth="1.5" strokeLinecap="round" /><Line x1="3" y1="10" x2="21" y2="10" stroke="#00D984" strokeWidth="1.5" /></Svg>}
               onPress={function() { setReportSection('calendar'); setSelectedDay(null); }}
             />
             {upcomingReminders.filter(function(r) { return r.urgency === 'overdue' || r.urgency === 'week' || r.urgency === 'month'; }).length > 0 ? (
@@ -2398,53 +3160,6 @@ export const MediBookContent = (props) => {
           <BottomSpacer />
         </ScrollView>
 
-        {/* BottomSheet — Ajouter des données de santé */}
-        <Modal visible={showAddDataSheet} transparent animationType="slide"
-          onRequestClose={function() { setShowAddDataSheet(false); }}>
-          <Pressable onPress={function() { setShowAddDataSheet(false); }}
-            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-            <Pressable onPress={function(e) { e.stopPropagation(); }}>
-              <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']}
-                style={{ borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), paddingHorizontal: wp(20), paddingTop: wp(12), paddingBottom: wp(34) }}>
-                <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'center', marginBottom: wp(16) }}/>
-                <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>Ajouter des données</Text>
-                <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', marginBottom: wp(16) }}>Choisissez le type de données à ajouter</Text>
-
-                {[
-                  { icon: '📷', label: 'Scanner un document', sub: 'Photo ou galerie', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowMediBookUploadSheet(true); }, 300); } },
-                  { icon: '💊', label: 'Ajouter un médicament', sub: 'Traitement en cours', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddMedSheet(true); }, 300); } },
-                  { icon: '🏥', label: 'Ajouter un diagnostic', sub: 'Pathologie à surveiller', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddDiagSheet(true); }, 300); } },
-                  { icon: '💉', label: 'Ajouter un vaccin', sub: 'Carnet vaccinal', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddVaccSheet(true); }, 300); } },
-                  { icon: '⚠️', label: 'Ajouter une allergie', sub: 'Profil allergique', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddAllergySheet(true); }, 300); } },
-                  { icon: '🔬', label: 'Planifier une analyse', sub: 'Bilan à venir', onPress: function() { setShowAddDataSheet(false); setTimeout(function() { setShowAddAnalysisSheet(true); }, 300); } },
-                ].map(function(opt, oi) {
-                  return (
-                    <Pressable key={oi} delayPressIn={120} onPress={opt.onPress}
-                      style={function(state) { return {
-                        flexDirection: 'row', alignItems: 'center',
-                        paddingVertical: wp(12), paddingHorizontal: wp(10),
-                        backgroundColor: state.pressed ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
-                        borderRadius: wp(12), marginBottom: wp(6),
-                        borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-                      }; }}>
-                      <Text style={{ fontSize: fp(18), marginRight: wp(12) }}>{opt.icon}</Text>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{opt.label}</Text>
-                        <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)' }}>{opt.sub}</Text>
-                      </View>
-                      <Text style={{ fontSize: fp(16), color: 'rgba(255,255,255,0.2)' }}>{">"}</Text>
-                    </Pressable>
-                  );
-                })}
-
-                <Pressable onPress={function() { setShowAddDataSheet(false); }}
-                  style={{ paddingVertical: wp(12), alignItems: 'center', marginTop: wp(6), borderRadius: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                  <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.35)' }}>Fermer</Text>
-                </Pressable>
-              </LinearGradient>
-            </Pressable>
-          </Pressable>
-        </Modal>
       </View>
     );
   };
