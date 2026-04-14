@@ -584,10 +584,8 @@ export default function MedicAiPage({ navigation }) {
         'Content-Type': 'application/json',
       };
 
-      // Filtre par profil: self → family_member_id IS NULL, enfant → family_member_id=eq.UUID
-      var fmFilter = activeProfile === 'self'
-        ? '&family_member_id=is.null'
-        : '&family_member_id=eq.' + activeProfile;
+      // Filtre par profil: enfant → family_member_id=eq.UUID, self → pas de filtre (compatibilité)
+      var fmFilter = activeProfile !== 'self' ? '&family_member_id=eq.' + activeProfile : '';
 
       // Charger le profil
       var profileRes = await fetch(
