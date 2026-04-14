@@ -342,7 +342,7 @@ const XscanScreen = forwardRef(function XscanScreen({
 
       runAnalysis(photo);
     } catch (error) {
-      alert(lang === 'fr' ? 'Erreur lors de la capture' : 'Capture error');
+      alert(lang === 'fr' ? '⚠️ La capture a échoué. Réessayez.' : '⚠️ Capture failed. Please retry.');
     }
   };
 
@@ -381,7 +381,7 @@ const XscanScreen = forwardRef(function XscanScreen({
       }
     } catch (error) {
       console.error('Erreur galerie:', error);
-      alert(lang === 'fr' ? 'Erreur lors du chargement de la photo' : 'Error loading photo');
+      alert(lang === 'fr' ? '⚠️ Impossible de charger la photo. Réessayez.' : '⚠️ Could not load photo. Please retry.');
     }
   };
 
@@ -447,7 +447,7 @@ const XscanScreen = forwardRef(function XscanScreen({
         try { var errorData = await response.json(); errorText = errorData.error || JSON.stringify(errorData); }
         catch (e) { try { errorText = await response.text(); } catch (e2) { errorText = 'Status ' + response.status; } }
         console.error('[XScan] Server error:', response.status, errorText);
-        throw new Error(errorText || 'Erreur serveur (HTTP ' + response.status + ')');
+        throw new Error(lang === 'fr' ? 'Le scan n\'a pas pu être complété. Vérifiez la qualité de la photo et réessayez.' : 'Scan could not be completed. Check photo quality and retry.');
       }
 
       const result = await response.json();
@@ -542,8 +542,8 @@ const XscanScreen = forwardRef(function XscanScreen({
       clearInterval(progressInterval);
       console.error('Scan error:', error);
       alert(lang === 'fr'
-        ? 'Erreur lors de l\'analyse : ' + error.message
-        : 'Analysis error: ' + error.message);
+        ? '⚠️ ' + (error.message || 'Le scan n\'a pas pu être complété. Vérifiez la qualité de la photo et réessayez.')
+        : '⚠️ ' + (error.message || 'Scan could not be completed. Check photo quality and retry.'));
       setScanScreen('none');
       onClose();
       setRecalculating(false);

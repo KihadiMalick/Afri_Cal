@@ -345,6 +345,7 @@ export const ResponseCard = React.memo(function ResponseCard(props) {
   var currentMessage = props.currentMessage;
   var isLoading = props.isLoading;
   var isUserMessage = props.isUserMessage;
+  var isError = props.isError;
   var onQuickReply = props.onQuickReply;
   var onPreciserPress = props.onPreciserPress;
   var loadingSteps = props.loadingSteps;
@@ -380,11 +381,11 @@ export const ResponseCard = React.memo(function ResponseCard(props) {
       marginHorizontal: 10,
       marginBottom: 8,
       borderRadius: wp(16),
-      backgroundColor: '#FAFBFC',
+      backgroundColor: isError ? 'rgba(226,75,74,0.08)' : '#FAFBFC',
       borderWidth: 1,
-      borderColor: isLoading ? 'rgba(0,200,130,0.1)' : (isUserMessage ? 'rgba(70,140,220,0.1)' : 'rgba(210,80,80,0.1)'),
-      borderLeftWidth: (!isUserMessage || isLoading) ? wp(3) : 1,
-      borderLeftColor: (!isUserMessage || isLoading) ? '#00D984' : (isUserMessage ? 'rgba(70,140,220,0.1)' : 'rgba(210,80,80,0.1)'),
+      borderColor: isError ? 'rgba(226,75,74,0.15)' : (isLoading ? 'rgba(0,200,130,0.1)' : (isUserMessage ? 'rgba(70,140,220,0.1)' : 'rgba(210,80,80,0.1)')),
+      borderLeftWidth: (!isUserMessage || isLoading || isError) ? wp(3) : 1,
+      borderLeftColor: isError ? '#E24B4A' : ((!isUserMessage || isLoading) ? '#00D984' : (isUserMessage ? 'rgba(70,140,220,0.1)' : 'rgba(210,80,80,0.1)')),
       padding: 14,
       minHeight: 50,
       shadowColor: '#000',

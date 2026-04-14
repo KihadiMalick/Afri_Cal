@@ -21,6 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, ENERGY_CONFIG, TABS, wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
 import { useAuth } from '../../config/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../config/supabase';
 import LixumModal from '../../components/shared/LixumModal';
 import { BottomTabs, FormattedText, FormattedResponseText, MetalCard, parseQuickReplies, parseAlixenResponse, QuickReplyButtons, BottomSpacer, LockIcon, ScrollArrow } from './shared';
@@ -39,6 +40,7 @@ var NotificationService = require('../../services/NotificationService');
 
 
 export default function MedicAiPage({ navigation }) {
+  var insets = useSafeAreaInsets();
   var auth = useAuth();
   var userId = auth.userId;
   var lixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
@@ -52,6 +54,15 @@ export default function MedicAiPage({ navigation }) {
   var mModal = _mModal[0]; var setMModal = _mModal[1];
   var closeMModal = function() { setMModal(function(p) { return Object.assign({}, p, { visible: false }); }); };
   var showMModal = function(type, title, message, extra) { setMModal(Object.assign({ visible: true, type: type, title: title, message: message, onClose: closeMModal, onConfirm: null, confirmText: 'Confirmer', cancelText: 'Annuler' }, extra || {})); };
+
+  var getAlixenErrorMessage = function(status, error) {
+    if (status === 429) return '⚠️ ALIXEN reçoit beaucoup de demandes. Réessayez dans quelques secondes.';
+    if (status === 500 || status === 502 || status === 503) return '⚠️ ALIXEN est en mise à jour. Réessayez dans quelques instants.';
+    if (status >= 400 && status < 500) return '⚠️ ALIXEN n\'a pas pu traiter cette demande. Réessayez.';
+    if (error && (error.message || '').indexOf('timeout') >= 0) return '⚠️ La réponse prend trop de temps. Réessayez avec un message plus court.';
+    if (error && (error.message || '').indexOf('Connexion lente') >= 0) return '⚠️ La réponse prend trop de temps. Réessayez avec un message plus court.';
+    return '⚠️ Connexion interrompue. Vérifiez votre connexion internet et réessayez.';
+  };
 
   var getAuthHeaders = async function() {
     var result = await supabase.auth.getSession();
@@ -108,6 +119,8 @@ export default function MedicAiPage({ navigation }) {
   const [cardMessage, setCardMessage] = useState(null);
   const [cardIsUser, setCardIsUser] = useState(false);
   const [cardIsLoading, setCardIsLoading] = useState(false);
+  var _cardIsError = useState(false);
+  var cardIsError = _cardIsError[0]; var setCardIsError = _cardIsError[1];
   const [loadingSteps, setLoadingSteps] = useState([]);
   const [pendingAction, setPendingAction] = useState(null);
   const [fileQueue, setFileQueue] = useState([]);
@@ -1053,6 +1066,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           body: JSON.stringify({
             action: 'loading_steps',
             userMessage: userMessage,
+            userId: userId,
             userContext: buildUserContext(),
             lang: userLang,
           }),
@@ -1135,7 +1149,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           setEnergyGateData(gateData); setIsLoading(false); setCardIsLoading(false); return;
         }
         const data = await response.json();
-        const replyText = data.message || data.error || 'Erreur de connexion.';
+        const replyText = data.message || data.error || '⚠️ ALIXEN est en mise à jour. Réessayez dans quelques instants.';
 
         const alixenParsed = parseAlixenResponse(replyText);
         const finalText = alixenParsed.cleanText;
@@ -1164,16 +1178,18 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         if (data.energy_remaining != null) updateEnergy(data.energy_remaining);
       } catch (error) {
         console.error('Erreur envoi image ALIXEN:', error);
+        var errMsg = getAlixenErrorMessage(null, error);
         setLoadingSteps([]);
         setCardIsLoading(false);
-        setCardMessage('Erreur réseau. Vérifiez votre connexion.');
+        setCardMessage(errMsg);
         setCardIsUser(false);
+        setCardIsError(true);
         setMessages(prev => {
           if (prev.length >= 30) return prev;
           return [...prev, {
             id: botMsgId,
             role: 'assistant',
-            content: 'Erreur réseau. Vérifiez votre connexion.',
+            content: errMsg,
             timestamp: new Date(),
             _isNew: true,
             _status: 'read',
@@ -1260,7 +1276,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           setEnergyGateData(gateData); setIsLoading(false); setCardIsLoading(false); return;
         }
         const data = await response.json();
-        const replyText = data.message || data.error || 'Erreur de connexion.';
+        const replyText = data.message || data.error || '⚠️ ALIXEN est en mise à jour. Réessayez dans quelques instants.';
 
         const alixenParsed = parseAlixenResponse(replyText);
         const finalText = alixenParsed.cleanText;
@@ -1286,16 +1302,18 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         if (data.energy_remaining != null) updateEnergy(data.energy_remaining);
       } catch (error) {
         console.error('Erreur Quick Reply:', error);
+        var errMsg = getAlixenErrorMessage(null, error);
         setLoadingSteps([]);
         setCardIsLoading(false);
-        setCardMessage('Erreur réseau. Vérifiez votre connexion.');
+        setCardMessage(errMsg);
         setCardIsUser(false);
+        setCardIsError(true);
         setMessages(prev => {
           if (prev.length >= 30) return prev;
           return [...prev, {
             id: botMsgId,
             role: 'assistant',
-            content: 'Erreur réseau. Vérifiez votre connexion.',
+            content: errMsg,
             timestamp: new Date(),
             _isNew: true,
             _status: 'read',
@@ -1572,7 +1590,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
     } catch (error) {
       console.error('Erreur action ALIXEN:', error);
-      addBotMessage('Erreur lors de l\'exécution. Réessayez. ❌');
+      addBotMessage('⚠️ Connexion interrompue. Vérifiez votre connexion internet et réessayez.');
     }
   };
 
@@ -1787,15 +1805,16 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
 
     } catch (error) {
       console.error('Erreur ALIXEN:', error);
+      var errMsg = getAlixenErrorMessage(null, error);
       setLoadingSteps([]);
       setCardIsLoading(false);
-      setCardMessage("Erreur réseau. Vérifiez votre connexion.");
+      setCardMessage(errMsg);
       setCardIsUser(false);
 
-      const botMsg = {
+      var botMsg = {
         id: botMsgId,
         role: 'assistant',
-        content: "Erreur réseau. Vérifiez votre connexion.",
+        content: errMsg,
         timestamp: new Date(),
         _isNew: true,
         _status: 'read',
@@ -1867,9 +1886,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       }
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Erreur scan-medical:', response.status, errorText);
-        throw new Error('Erreur serveur: ' + response.status);
+        console.error('Erreur scan-medical:', response.status);
+        throw { _status: response.status, message: getAlixenErrorMessage(response.status) };
       }
 
       const result = await response.json();
@@ -1894,7 +1912,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       console.error('Erreur scan médical:', error);
       setUploadState('idle');
       setScanResults(null);
-      showMModal('error', 'Erreur d\'analyse', 'ALIXEN n\'a pas pu analyser ce document. Vérifiez que l\'image est lisible et réessayez.\n\nDétail : ' + (error.message || 'Erreur inconnue'));
+      var scanErrMsg = error && error._status ? error.message : getAlixenErrorMessage(null, error);
+      showMModal('error', 'Analyse impossible', scanErrMsg);
     }
   };
 
@@ -2146,7 +2165,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       setUploadState('idle');
       setBatchProgress('');
       setScanResults(null);
-      showMModal('error', 'Erreur d\'analyse batch', 'ALIXEN n\'a pas pu analyser le batch. ' + (error.message || 'Erreur inconnue'));
+      var batchErrMsg = error && error._status ? error.message : getAlixenErrorMessage(null, error);
+      showMModal('error', 'Analyse impossible', batchErrMsg);
     }
   };
 
@@ -2255,7 +2275,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           loadMedicalData();
         } catch (error) {
           console.error('Erreur archivage:', error);
-          showMModal('error', 'Erreur', 'L\'archivage a échoué.');
+          showMModal('error', 'Archivage échoué', '⚠️ Connexion interrompue. Vérifiez votre connexion internet et réessayez.');
         }
       },
     });
@@ -2365,7 +2385,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       showMModal('success', 'Médicament ajouté ✓', selectedMedFromDb.name + ' ' + newMedDosageValue + ' ' + newMedDosageUnit + ' a été ajouté à vos traitements en cours.');
     } catch (error) {
       console.error('Erreur ajout médicament:', error);
-      showMModal('error', 'Erreur', 'L\'ajout a échoué. Réessayez.');
+      showMModal('error', 'Ajout échoué', '⚠️ Connexion interrompue. Vérifiez votre connexion internet et réessayez.');
     }
   };
 
@@ -2431,7 +2451,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
               } catch (error) {
                 console.error('Erreur recherche IA:', error);
                 setMedSearchResults([]);
-                showMModal('error', 'Erreur', 'La recherche IA a échoué. Vérifiez votre connexion.');
+                showMModal('error', 'Recherche impossible', '⚠️ Connexion interrompue. Vérifiez votre connexion internet et réessayez.');
               }
         },
       });
@@ -2753,7 +2773,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       {/* ===== ZONE DE CONTENU ===== */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {/* ===== ZONE ALIXEN STICKY (hors du scroll) ===== */}
@@ -2818,7 +2838,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         <ScrollView
           ref={scrollViewRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 90, paddingTop: 8 }}
+          contentContainerStyle={{ paddingBottom: 80 + insets.bottom, paddingTop: 8 }}
           onContentSizeChange={function() { /* removed auto-scroll — user reads from top */ }}
           keyboardShouldPersistTaps="handled"
         >
@@ -2844,6 +2864,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             currentMessage={cardMessage}
             isLoading={cardIsLoading}
             isUserMessage={cardIsUser}
+            isError={cardIsError}
             onQuickReply={handleQuickReply}
             onPreciserPress={handlePreciserPress}
             loadingSteps={loadingSteps}
@@ -2936,7 +2957,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         }}>
           <View style={{
             marginHorizontal: wp(12),
-            marginBottom: 15,
+            marginBottom: Math.max(insets.bottom, 12) + 4,
             borderRadius: wp(28),
             overflow: 'hidden',
             backgroundColor: '#FFFFFF',
@@ -2946,7 +2967,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             shadowOpacity: 0.15,
             shadowRadius: 12,
             elevation: 3,
-            position: 'relative',
           }}>
             {/* Accent line énergie */}
             <View style={{
@@ -3376,7 +3396,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         showDocumentSheet={showDocumentSheet} setShowDocumentSheet={setShowDocumentSheet}
         setCurrentSubPage={setCurrentSubPage}
         showNewSessionSheet={showNewSessionSheet} setShowNewSessionSheet={setShowNewSessionSheet}
-        onStartFreshSession={function() { setMessages([]); clearChatStorage(); setCardMessage(null); setCardIsUser(false); setCardIsLoading(false); loadUserData(); }}
+        onStartFreshSession={function() { setMessages([]); clearChatStorage(); setCardMessage(null); setCardIsUser(false); setCardIsLoading(false); setCardIsError(false); loadUserData(); }}
         showCompactConfirm={showCompactConfirm} setShowCompactConfirm={setShowCompactConfirm}
         showRechargeSheet={showRechargeSheet} setShowRechargeSheet={setShowRechargeSheet}
         showProfileSwitcher={showProfileSwitcher} setShowProfileSwitcher={setShowProfileSwitcher}
