@@ -188,6 +188,7 @@ export const MediBookContent = (props) => {
     scanSteps, setScanSteps,
     scanContext, setScanContext,
     scanFileName,
+    batchPhotos, batchProgress, batchIdState,
     // Carnet
     carnetPhotos, setCarnetPhotos,
     carnetPulseAnim,
@@ -298,6 +299,11 @@ export const MediBookContent = (props) => {
         <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)' }}>
           {scanFileName}
         </Text>
+        {batchProgress ? (
+          <Text style={{ fontSize: fp(12), color: '#9B6DFF', fontWeight: '600', marginTop: wp(6) }}>
+            {batchProgress}
+          </Text>
+        ) : null}
         <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.25)', marginTop: wp(2) }}>
           Ne fermez pas l'application
         </Text>
@@ -531,6 +537,11 @@ export const MediBookContent = (props) => {
             </Svg>
           </View>
           <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF' }}>Analyse terminée</Text>
+          {scanResults && scanResults._batchPhotoCount ? (
+            <Text style={{ fontSize: fp(12), color: '#9B6DFF', fontWeight: '600', marginTop: wp(4) }}>
+              {'Batch de ' + scanResults._batchPhotoCount + ' photos analysées'}
+            </Text>
+          ) : null}
           <Text style={{ fontSize: fp(12), color: 'rgba(255,255,255,0.4)', marginTop: wp(4) }}>
             Vérifiez les données avant de valider
           </Text>
@@ -849,11 +860,14 @@ export const MediBookContent = (props) => {
                   method: 'POST', headers,
                   body: JSON.stringify({
                     user_id: userId,
+                    family_member_id: fmId,
                     document_type: scanResults.documentType || 'Document',
                     summary: scanResults.summary || '',
                     raw_ai_response: scanResults,
                     scan_context: 'medibook',
                     items_extracted: (scanResults.data?.length || 0) + (scanResults.medications?.length || 0) + (scanResults.vaccinations?.length || 0) + (scanResults.allergies?.length || 0) + (scanResults.diagnostics?.length || 0),
+                    batch_id: scanResults._batchId || null,
+                    energy_cost: scanResults._energyCost || null,
                   }),
                 });
 
