@@ -11,6 +11,7 @@ import { wp, fp, SCREEN_WIDTH, SCREEN_HEIGHT } from './constants';
 import { supabase } from '../../config/supabase';
 import { useAuth } from '../../config/AuthContext';
 import LixumModal from '../../components/shared/LixumModal';
+var DatePickerModal = require('../../components/shared/DatePickerModal');
 
 export const AllModals = (props) => {
   var auth = useAuth();
@@ -106,6 +107,10 @@ export const AllModals = (props) => {
   var _modalsModal = useState({ visible: false, type: 'info', title: '', message: '', onConfirm: null });
   var modalsModal = _modalsModal[0]; var setModalsModal = _modalsModal[1];
   var closeModalsModal = function() { setModalsModal(function(p) { return Object.assign({}, p, { visible: false }); }); };
+  var _dpTarget = useState(null);
+  var dpTarget = _dpTarget[0]; var setDpTarget = _dpTarget[1];
+  var _dpDisplay = useState({});
+  var dpDisplay = _dpDisplay[0]; var setDpDisplay = _dpDisplay[1];
 
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'box-none' }}>
@@ -1772,7 +1777,7 @@ export const AllModals = (props) => {
                 }}>
                   <TextInput
                     style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
-                    placeholder="Ex : Bilan sanguin complet, NFS, Glycémie..."
+                    placeholder="Ex : Bilan sanguin, NFS..."
                     placeholderTextColor="rgba(255,255,255,0.25)"
                     value={newAnalysisLabel}
                     onChangeText={setNewAnalysisLabel}
@@ -1797,28 +1802,10 @@ export const AllModals = (props) => {
 
                 {/* Date */}
                 <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Date prévue *</Text>
-                <View style={{
-                  backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12),
-                  paddingHorizontal: wp(14), marginBottom: wp(14),
-                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-                }}>
-                  <TextInput
-                    style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
-                    placeholder="JJ/MM/AAAA"
-                    placeholderTextColor="rgba(255,255,255,0.25)"
-                    value={newAnalysisDate}
-                    onChangeText={(text) => {
-                      // Auto-format: ajouter les / automatiquement
-                      const cleaned = text.replace(/[^0-9]/g, '');
-                      let formatted = cleaned;
-                      if (cleaned.length > 2) formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
-                      if (cleaned.length > 4) formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4, 8);
-                      setNewAnalysisDate(formatted);
-                    }}
-                    keyboardType="numeric"
-                    maxLength={10}
-                  />
-                </View>
+                <Pressable onPress={function() { setDpTarget('analysis'); }}
+                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), paddingVertical: wp(12), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <Text style={{ fontSize: fp(15), color: dpDisplay.analysis ? '#FFF' : 'rgba(255,255,255,0.25)' }}>{dpDisplay.analysis || 'Sélectionner une date'}</Text>
+                </Pressable>
 
                 {/* Médecin */}
                 <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Médecin prescripteur</Text>
@@ -1845,7 +1832,7 @@ export const AllModals = (props) => {
                 }}>
                   <TextInput
                     style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
-                    placeholder="Nom du laboratoire"
+                    placeholder="Laboratoire"
                     placeholderTextColor="rgba(255,255,255,0.25)"
                     value={newAnalysisLab}
                     onChangeText={setNewAnalysisLab}
@@ -1861,7 +1848,7 @@ export const AllModals = (props) => {
                 }}>
                   <TextInput
                     style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12), minHeight: wp(50) }}
-                    placeholder="Analyses spécifiques demandées, consignes à jeun..."
+                    placeholder="Notes ou consignes..."
                     placeholderTextColor="rgba(255,255,255,0.25)"
                     value={newAnalysisNotes}
                     onChangeText={setNewAnalysisNotes}
@@ -1909,7 +1896,7 @@ export const AllModals = (props) => {
               <ScrollView showsVerticalScrollIndicator={false}>
                 <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Substance allergène *</Text>
                 <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="Ex : Arachides, Pénicilline, Pollen..." placeholderTextColor="rgba(255,255,255,0.25)" value={newAllergyAllergen} onChangeText={setNewAllergyAllergen} autoFocus={true} />
+                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="Ex : Arachides, Pénicilline..." placeholderTextColor="rgba(255,255,255,0.25)" value={newAllergyAllergen} onChangeText={setNewAllergyAllergen} autoFocus={true} />
                 </View>
 
                 <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(8) }}>Type</Text>
@@ -1990,13 +1977,14 @@ export const AllModals = (props) => {
               <ScrollView showsVerticalScrollIndicator={false}>
                 <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Nom du vaccin *</Text>
                 <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="Ex : BCG, ROR, COVID-19 Pfizer..." placeholderTextColor="rgba(255,255,255,0.25)" value={newVaccName} onChangeText={setNewVaccName} autoFocus={true} />
+                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="Ex : BCG, ROR, Pfizer..." placeholderTextColor="rgba(255,255,255,0.25)" value={newVaccName} onChangeText={setNewVaccName} autoFocus={true} />
                 </View>
 
                 <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Date d'administration</Text>
-                <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="JJ/MM/AAAA" placeholderTextColor="rgba(255,255,255,0.25)" value={newVaccDate} onChangeText={setNewVaccDate} keyboardType="numeric" />
-                </View>
+                <Pressable onPress={function() { setDpTarget('vaccDate'); }}
+                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), paddingVertical: wp(12), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <Text style={{ fontSize: fp(15), color: dpDisplay.vaccDate ? '#FFF' : 'rgba(255,255,255,0.25)' }}>{dpDisplay.vaccDate || 'Sélectionner une date'}</Text>
+                </Pressable>
 
                 <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(8) }}>Numéro de dose</Text>
                 <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16) }}>
@@ -2012,9 +2000,10 @@ export const AllModals = (props) => {
                 </View>
 
                 <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Prochain rappel (optionnel)</Text>
-                <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                  <TextInput style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }} placeholder="JJ/MM/AAAA" placeholderTextColor="rgba(255,255,255,0.25)" value={newVaccNextDue} onChangeText={setNewVaccNextDue} keyboardType="numeric" />
-                </View>
+                <Pressable onPress={function() { setDpTarget('vaccNextDue'); }}
+                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), paddingVertical: wp(12), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <Text style={{ fontSize: fp(15), color: dpDisplay.vaccNextDue ? '#FFF' : 'rgba(255,255,255,0.25)' }}>{dpDisplay.vaccNextDue || 'Sélectionner une date'}</Text>
+                </Pressable>
 
                 <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Médecin / Centre (optionnel)</Text>
                 <View style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
@@ -2218,20 +2207,10 @@ export const AllModals = (props) => {
                   </View>
 
                   <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Date du diagnostic</Text>
-                  <View style={{
-                    backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12),
-                    paddingHorizontal: wp(14), marginBottom: wp(14),
-                    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-                  }}>
-                    <TextInput
-                      style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12) }}
-                      placeholder="JJ/MM/AAAA"
-                      placeholderTextColor="rgba(255,255,255,0.25)"
-                      value={newDiagDate}
-                      onChangeText={setNewDiagDate}
-                      keyboardType="numeric"
-                    />
-                  </View>
+                  <Pressable onPress={function() { setDpTarget('diag'); }}
+                    style={{ backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(12), paddingHorizontal: wp(14), paddingVertical: wp(12), marginBottom: wp(14), borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                    <Text style={{ fontSize: fp(15), color: dpDisplay.diag ? '#FFF' : 'rgba(255,255,255,0.25)' }}>{dpDisplay.diag || 'Sélectionner une date'}</Text>
+                  </Pressable>
 
                   <Text style={{ fontSize: fp(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: wp(6) }}>Diagnostiqué par</Text>
                   <View style={{
@@ -2256,7 +2235,7 @@ export const AllModals = (props) => {
                   }}>
                     <TextInput
                       style={{ fontSize: fp(15), color: '#FFF', paddingVertical: wp(12), minHeight: wp(60) }}
-                      placeholder="Observations, contexte..."
+                      placeholder="Notes..."
                       placeholderTextColor="rgba(255,255,255,0.25)"
                       value={newDiagNotes}
                       onChangeText={setNewDiagNotes}
@@ -2282,6 +2261,20 @@ export const AllModals = (props) => {
         </Pressable>
       </Modal>
       <LixumModal visible={modalsModal.visible} type={modalsModal.type} title={modalsModal.title} message={modalsModal.message} onConfirm={modalsModal.onConfirm} onClose={modalsModal.onClose || closeModalsModal} confirmText={modalsModal.confirmText} cancelText={modalsModal.cancelText} />
+
+      {React.createElement(DatePickerModal, {
+        visible: dpTarget !== null,
+        title: dpTarget === 'analysis' ? 'Date de l\'analyse' : dpTarget === 'vaccDate' ? 'Date d\'administration' : dpTarget === 'vaccNextDue' ? 'Date du rappel' : dpTarget === 'diag' ? 'Date du diagnostic' : 'Choisir une date',
+        onClose: function() { setDpTarget(null); },
+        onSelect: function(iso, display) {
+          if (dpTarget === 'analysis') { setNewAnalysisDate(iso); }
+          if (dpTarget === 'vaccDate') { setNewVaccDate(iso); }
+          if (dpTarget === 'vaccNextDue') { setNewVaccNextDue(iso); }
+          if (dpTarget === 'diag') { setNewDiagDate(iso); }
+          setDpDisplay(function(prev) { var n = Object.assign({}, prev); n[dpTarget] = display; return n; });
+          setDpTarget(null);
+        },
+      })}
     </View>
   );
 };
