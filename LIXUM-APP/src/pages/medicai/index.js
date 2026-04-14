@@ -210,6 +210,14 @@ export default function MedicAiPage({ navigation }) {
   var [newVaccNextDue, setNewVaccNextDue] = useState('');
   var [newVaccDoctor, setNewVaccDoctor] = useState('');
   var [newVaccBatch, setNewVaccBatch] = useState('');
+  var _vaccSearchResults = useState([]);
+  var vaccSearchResults = _vaccSearchResults[0]; var setVaccSearchResults = _vaccSearchResults[1];
+  var _selectedVaccineFromDb = useState(null);
+  var selectedVaccineFromDb = _selectedVaccineFromDb[0]; var setSelectedVaccineFromDb = _selectedVaccineFromDb[1];
+  var _vaccReminderNote = useState('');
+  var vaccReminderNote = _vaccReminderNote[0]; var setVaccReminderNote = _vaccReminderNote[1];
+  var _vaccReminderAutoFilled = useState(false);
+  var vaccReminderAutoFilled = _vaccReminderAutoFilled[0]; var setVaccReminderAutoFilled = _vaccReminderAutoFilled[1];
   const [activeProfile, setActiveProfile] = useState('self');
   const [children, setChildren] = useState([]);
   const [carnetPhotos, setCarnetPhotos] = useState([]);
@@ -2378,7 +2386,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       setSelectedMedFromDb(null);
 
       // Recharger les données
-      loadMedicalData();
+      await loadMedicalData();
 
       showMModal('success', 'Médicament ajouté ✓', selectedMedFromDb.name + ' ' + newMedDosageValue + ' ' + newMedDosageUnit + ' a été ajouté à vos traitements en cours.');
     } catch (error) {
@@ -2509,7 +2517,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       setNewAnalysisLab('');
       setNewAnalysisNotes('');
 
-      loadMedicalData();
+      await loadMedicalData();
 
       showMModal('success', 'Analyse planifiée ✓', newAnalysisLabel.trim() + ' a été ajoutée à vos analyses à venir.');
     } catch (error) {
@@ -2572,7 +2580,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       setShowAddDiagSheet(false);
       setAddDiagStep('search'); setDiagSearchQuery(''); setDiagSearchResults([]); setSelectedDiagFromDb(null);
       setNewDiagSeverity('moderate'); setNewDiagDate(''); setNewDiagDoctor(''); setNewDiagStatus('active'); setNewDiagNotes('');
-      loadMedicalData();
+      await loadMedicalData();
       showMModal('success', 'Diagnostic ajouté ✓', selectedDiagFromDb.name_fr + ' a été ajouté à vos diagnostics.');
     } catch (error) {
       console.error('Erreur ajout diagnostic:', error);
@@ -2598,12 +2606,62 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       });
       setShowAddAllergySheet(false);
       setNewAllergyAllergen(''); setNewAllergyType('alimentaire'); setNewAllergySeverity('moderate'); setNewAllergyReaction('');
-      loadMedicalData();
+      await loadMedicalData();
       showMModal('success', 'Allergie ajoutée ✓', newAllergyAllergen.trim() + ' a été ajoutée à vos allergies.');
     } catch (error) {
       console.error('Erreur ajout allergie:', error);
       showMModal('error', 'Erreur', 'L\'ajout a échoué. Réessayez.');
     }
+  };
+
+  // ── VACCINE SEARCH + AUTO-REMINDER ─────────────────────────────────────
+  var searchVaccinesDb = function(query) {
+    if (!query || query.length < 2) { setVaccSearchResults([]); return; }
+    fetch(SUPABASE_URL + '/rest/v1/rpc/search_vaccines_db', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+      body: JSON.stringify({ search_query: query, max_results: 8 }),
+    }).then(function(res) { return res.json(); })
+      .then(function(data) { if (Array.isArray(data)) setVaccSearchResults(data); })
+      .catch(function() { setVaccSearchResults([]); });
+  };
+
+  var selectVaccineFromDb = function(vaccine) {
+    if (!vaccine) {
+      setSelectedVaccineFromDb(null); setNewVaccName(''); setVaccSearchResults([]);
+      setVaccReminderNote(''); setVaccReminderAutoFilled(false); setNewVaccNextDue('');
+      return;
+    }
+    setSelectedVaccineFromDb(vaccine);
+    setNewVaccName(vaccine.name);
+    setVaccSearchResults([]);
+    setVaccReminderNote(''); setVaccReminderAutoFilled(false); setNewVaccNextDue('');
+    tryFetchVaccReminder(vaccine, newVaccDose, newVaccDate);
+  };
+
+  var fetchVaccineReminder = function(vaccineId, doseNumber, adminDate) {
+    if (!vaccineId || !doseNumber || !adminDate) return;
+    fetch(SUPABASE_URL + '/rest/v1/rpc/get_vaccine_reminder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+      body: JSON.stringify({ p_vaccine_id: vaccineId, p_dose_number: doseNumber, p_administration_date: adminDate }),
+    }).then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data && data.next_reminder_date) {
+          setNewVaccNextDue(data.next_reminder_date);
+          setVaccReminderNote(data.reminder_note || '');
+          setVaccReminderAutoFilled(true);
+        } else if (data && data.reminder_type === 'none') {
+          setVaccReminderNote(data.reminder_note || 'Aucun rappel nécessaire');
+          setVaccReminderAutoFilled(false); setNewVaccNextDue('');
+        }
+      })
+      .catch(function() {});
+  };
+
+  var tryFetchVaccReminder = function(vaccine, dose, date) {
+    var v = vaccine || selectedVaccineFromDb;
+    if (v && v.id && dose && date) fetchVaccineReminder(v.id, dose, date);
   };
 
   var confirmAddVaccination = async function() {
@@ -2631,6 +2689,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           next_due_date: nextDue,
           administered_by: newVaccDoctor.trim() || null,
           batch_number: newVaccBatch.trim() || null,
+          vaccine_master_id: selectedVaccineFromDb ? selectedVaccineFromDb.id : null,
           status: 'completed',
           source: 'manual',
         }),
@@ -2645,7 +2704,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       }
       setShowAddVaccSheet(false);
       setNewVaccName(''); setNewVaccDate(''); setNewVaccDose(1); setNewVaccNextDue(''); setNewVaccDoctor(''); setNewVaccBatch('');
-      loadMedicalData();
+      setSelectedVaccineFromDb(null); setVaccSearchResults([]); setVaccReminderNote(''); setVaccReminderAutoFilled(false);
+      await loadMedicalData();
       showMModal('success', 'Vaccin ajouté ✓', newVaccName.trim() + ' a été ajouté à votre carnet vaccinal.');
     } catch (error) {
       console.error('Erreur ajout vaccination:', error);
@@ -3462,6 +3522,10 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         newVaccDoctor={newVaccDoctor} setNewVaccDoctor={setNewVaccDoctor}
         newVaccBatch={newVaccBatch} setNewVaccBatch={setNewVaccBatch}
         confirmAddVaccination={confirmAddVaccination}
+        vaccSearchResults={vaccSearchResults} searchVaccinesDb={searchVaccinesDb}
+        selectedVaccineFromDb={selectedVaccineFromDb} selectVaccineFromDb={selectVaccineFromDb}
+        vaccReminderNote={vaccReminderNote} vaccReminderAutoFilled={vaccReminderAutoFilled}
+        tryFetchVaccReminder={tryFetchVaccReminder}
       />
       <LixumModal visible={mModal.visible} type={mModal.type} title={mModal.title} message={mModal.message} onConfirm={mModal.onConfirm} onClose={mModal.onClose || closeMModal} confirmText={mModal.confirmText} cancelText={mModal.cancelText} />
       <EnergyGateModal
