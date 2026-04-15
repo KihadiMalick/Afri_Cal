@@ -1611,20 +1611,64 @@ export const MediBookContent = (props) => {
       var areaPoints = '0,' + chartH + ' ' + points + ' ' + chartW + ',' + chartH;
       var objY = chartH - (objectifCal / maxCal) * (chartH - wp(10));
 
+      // Animations
+      var calBarAnim = useRef(new Animated.Value(0)).current;
+      var protBarAnim = useRef(new Animated.Value(0)).current;
+      var carbBarAnim = useRef(new Animated.Value(0)).current;
+      var fatBarAnim = useRef(new Animated.Value(0)).current;
+      var curveOpacity = useRef(new Animated.Value(0)).current;
+      var hydBarAnim = useRef(new Animated.Value(0)).current;
+      var _dispCalRef = useRef({ val: 0 });
+      var _dispCal = useState(0);
+      var displayCal = _dispCal[0]; var setDisplayCal = _dispCal[1];
+
+      useEffect(function() {
+        // Counter animation
+        var target = avgCalories;
+        var steps = 30;
+        var stepVal = target / steps;
+        var stepDelay = 600 / steps;
+        var cur = 0;
+        var iv = setInterval(function() {
+          cur += stepVal;
+          if (cur >= target) { setDisplayCal(target); clearInterval(iv); }
+          else { setDisplayCal(Math.round(cur)); }
+        }, stepDelay);
+        // Bars stagger
+        Animated.stagger(100, [
+          Animated.timing(calBarAnim, { toValue: calPct, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+          Animated.timing(protBarAnim, { toValue: pctProtein, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+          Animated.timing(carbBarAnim, { toValue: pctCarbs, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+          Animated.timing(fatBarAnim, { toValue: pctFat, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+        ]).start();
+        // Curve fade
+        Animated.timing(curveOpacity, { toValue: 1, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+        // Hydration bar
+        Animated.timing(hydBarAnim, { toValue: hydPct, duration: 600, delay: 400, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+        return function() { clearInterval(iv); };
+      }, []);
+
+      var calBarWidth = calBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var protBarWidth = protBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var carbBarWidth = carbBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var fatBarWidth = fatBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var hydBarWidth = hydBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var macroBarWidths = [protBarWidth, carbBarWidth, fatBarWidth];
+
       return (
         <View>
           {/* Hero — Calories */}
           <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
             <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#888', letterSpacing: 1 }}>CALORIES MOY. / JOUR</Text>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: wp(6) }}>
-              <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#FFF' }}>{avgCalories}</Text>
+              <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#FFF' }}>{displayCal}</Text>
               <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#888', marginLeft: wp(4) }}>kcal</Text>
               <View style={{ flex: 1 }} />
               <Text style={{ fontSize: fp(13), fontWeight: '600', color: deltaVsObj < 0 ? '#FF6B8A' : '#00D984' }}>{(deltaVsObj > 0 ? '+' : '') + deltaVsObj + '% vs obj'}</Text>
             </View>
             <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(2) }}>{'Objectif : ' + objectifCal + ' kcal'}</Text>
             <View style={{ height: wp(6), backgroundColor: '#1E2530', borderRadius: wp(3), marginTop: wp(10) }}>
-              <View style={{ width: calPct + '%', height: '100%', backgroundColor: '#00D984', borderRadius: wp(3) }} />
+              <Animated.View style={{ width: calBarWidth, height: '100%', backgroundColor: '#00D984', borderRadius: wp(3) }} />
             </View>
             <Text style={{ fontSize: fp(10), color: '#00D984', textAlign: 'right', marginTop: wp(4) }}>{calPct + '%'}</Text>
           </View>
@@ -1642,7 +1686,7 @@ export const MediBookContent = (props) => {
                   <Text style={{ fontSize: fp(16), fontWeight: '700', color: m.color, marginTop: wp(4) }}>{m.value}</Text>
                   <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>{m.pct + '%'}</Text>
                   <View style={{ height: wp(4), backgroundColor: '#1E2530', borderRadius: wp(2), marginTop: wp(6) }}>
-                    <View style={{ width: m.pct + '%', height: '100%', backgroundColor: m.color, borderRadius: wp(2) }} />
+                    <Animated.View style={{ width: macroBarWidths[i], height: '100%', backgroundColor: m.color, borderRadius: wp(2) }} />
                   </View>
                 </View>
               );
@@ -1652,6 +1696,7 @@ export const MediBookContent = (props) => {
           {/* Courbe Calories */}
           <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
             <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Évolution calories</Text>
+            <Animated.View style={{ opacity: curveOpacity }}>
             <Svg width={chartW} height={chartH}>
               <Defs>
                 <SvgLinearGradient id="calAreaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1668,6 +1713,7 @@ export const MediBookContent = (props) => {
                 return <Circle key={i} cx={x} cy={y} r="3.5" fill="#00D984" />;
               })}
             </Svg>
+            </Animated.View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6) }}>
               {data.length <= 10 ? data.map(function(d, i) {
                 var dt = new Date(d.stat_date);
@@ -1692,7 +1738,7 @@ export const MediBookContent = (props) => {
                   <Text style={{ fontSize: fp(12), color: '#888', marginLeft: wp(4) }}>{'/ ' + hydObjectif + ' ml'}</Text>
                 </View>
                 <View style={{ height: wp(6), backgroundColor: '#1E2530', borderRadius: wp(3), marginTop: wp(8) }}>
-                  <View style={{ width: hydPct + '%', height: '100%', backgroundColor: '#4DA6FF', borderRadius: wp(3) }} />
+                  <Animated.View style={{ width: hydBarWidth, height: '100%', backgroundColor: '#4DA6FF', borderRadius: wp(3) }} />
                 </View>
               </View>
               <View style={{ width: wp(50), height: wp(50), justifyContent: 'center', alignItems: 'center' }}>
