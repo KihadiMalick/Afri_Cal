@@ -3365,6 +3365,245 @@ export const MediBookContent = (props) => {
     );
   };
 
+  // ── BUILD MEDICAL HTML FOR PDF ────────────────────────────────────────────
+  var buildMedicalHTML = function(md, profile, vStats) {
+    var today = new Date();
+    var dateStr = today.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    var patientName = (profile && profile.full_name) || 'Patient';
+    var patientAge = '';
+    if (profile && profile.date_of_birth) {
+      var bd = new Date(profile.date_of_birth);
+      patientAge = Math.floor((today - bd) / (365.25 * 24 * 60 * 60 * 1000)) + ' ans';
+    }
+    var patientSex = (profile && profile.sex) ? (profile.sex === 'M' ? 'M' : profile.sex === 'F' ? 'F' : profile.sex) : '';
+    var patientHeight = (profile && profile.height) ? profile.height + ' cm' : '';
+    var patientWeight = (profile && profile.weight) ? profile.weight + ' kg' : '';
+    var patientBlood = (profile && profile.blood_type) || '';
+    var patientTag = (profile && profile.lix_tag) || '';
+
+    var escH = function(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+
+    var formatDate = function(d) {
+      if (!d) return '-';
+      try {
+        var dt = new Date(d);
+        if (isNaN(dt.getTime())) return d;
+        return dt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      } catch (e) { return d; }
+    };
+
+    var sevLabel = function(s) {
+      if (!s) return '-';
+      if (s === 'severe' || s === 'life_threatening') return '<span class="severity-severe">Sévère</span>';
+      if (s === 'moderate') return '<span class="severity-modere">Modéré</span>';
+      if (s === 'mild') return '<span class="severity-leger">Léger</span>';
+      return escH(s);
+    };
+
+    // Header info line
+    var infoItems = [];
+    if (patientAge) infoItems.push('Âge : ' + escH(patientAge));
+    if (patientSex) infoItems.push('Sexe : ' + escH(patientSex));
+    if (patientTag) infoItems.push('LixTag : ' + escH(patientTag));
+    var infoLine2Items = [];
+    if (patientHeight) infoLine2Items.push('Taille : ' + escH(patientHeight));
+    if (patientWeight) infoLine2Items.push('Poids : ' + escH(patientWeight));
+    if (patientBlood) infoLine2Items.push('Groupe sanguin : ' + escH(patientBlood));
+
+    // ── ALLERGIES
+    var allergies = md.allergies || [];
+    var allergiesHTML = '';
+    if (allergies.length > 0) {
+      allergiesHTML = '<table><tr><th>Allergène</th><th>Type</th><th>Sévérité</th><th>Date</th></tr>';
+      allergies.forEach(function(a) {
+        allergiesHTML += '<tr><td>' + escH(a.allergen) + '</td><td>' + escH(a.type || '-') + '</td><td>' + sevLabel(a.severity) + '</td><td>' + formatDate(a.created_at) + '</td></tr>';
+      });
+      allergiesHTML += '</table>';
+    } else {
+      allergiesHTML = '<p class="empty">Aucune allergie connue</p>';
+    }
+
+    // ── MEDICATIONS
+    var medications = md.medications || [];
+    var medsHTML = '';
+    if (medications.length > 0) {
+      medsHTML = '<table><tr><th>Médicament</th><th>Posologie</th><th>Fréquence</th><th>Depuis</th></tr>';
+      medications.forEach(function(m) {
+        medsHTML += '<tr><td><strong>' + escH(m.name) + '</strong></td><td>' + escH(m.dosage || '-') + '</td><td>' + escH(m.frequency || '-') + '</td><td>' + formatDate(m.start_date || m.created_at) + '</td></tr>';
+      });
+      medsHTML += '</table>';
+    } else {
+      medsHTML = '<p class="empty">Aucun traitement en cours</p>';
+    }
+
+    // ── DIAGNOSTICS
+    var diagnostics = md.diagnostics || [];
+    var diagHTML = '';
+    if (diagnostics.length > 0) {
+      diagHTML = '<table><tr><th>Diagnostic</th><th>Sévérité</th><th>Statut</th><th>Date</th></tr>';
+      diagnostics.forEach(function(d) {
+        var statusLabel = d.status === 'active' ? 'Actif' : d.status === 'resolved' ? 'Résolu' : d.status === 'chronic' ? 'Chronique' : (d.status || '-');
+        diagHTML += '<tr><td>' + escH(d.condition_name) + '</td><td>' + sevLabel(d.severity) + '</td><td>' + escH(statusLabel) + '</td><td>' + formatDate(d.diagnosed_date || d.created_at) + '</td></tr>';
+      });
+      diagHTML += '</table>';
+    } else {
+      diagHTML = '<p class="empty">Aucun antécédent enregistré</p>';
+    }
+
+    // ── VACCINATIONS
+    var vaccinations = md.vaccinations || [];
+    var vaccHTML = '';
+    if (vaccinations.length > 0) {
+      vaccHTML = '<table><tr><th>Vaccin</th><th>Dose</th><th>Date</th></tr>';
+      vaccinations.forEach(function(v) {
+        vaccHTML += '<tr><td>' + escH(v.vaccine_name || v.name || '-') + '</td><td>Dose ' + (v.dose_number || v.dose || '?') + '</td><td>' + formatDate(v.administration_date || v.date || v.created_at) + '</td></tr>';
+      });
+      vaccHTML += '</table>';
+    } else {
+      vaccHTML = '<p class="empty">Aucune vaccination enregistrée</p>';
+    }
+
+    // Vaccine stats (overdue + coverage)
+    var vaccStatsHTML = '';
+    if (vStats) {
+      var overdueList = (vStats.overdue || []);
+      if (overdueList.length > 0) {
+        vaccStatsHTML += '<p class="overdue">Vaccins en retard : ' + overdueList.map(function(o) { return escH(o.vaccine_name || o.name || ''); }).join(', ') + '</p>';
+      }
+      if (vStats.completion_percent !== undefined && vStats.completion_percent !== null) {
+        vaccStatsHTML += '<p style="margin-top:4px;">Couverture vaccinale : <strong>' + Math.round(vStats.completion_percent) + '%</strong></p>';
+      }
+    }
+
+    // ── ANALYSES
+    var analyses = md.analyses || [];
+    var analysesHTML = '';
+    if (analyses.length > 0) {
+      analysesHTML = '<table><tr><th>Analyse</th><th>Valeur</th><th>Statut</th><th>Date</th></tr>';
+      analyses.forEach(function(a) {
+        var statusCls = (a.status === 'critical' || a.status === 'elevated') ? 'severity-severe' : a.status === 'low' ? 'severity-modere' : 'severity-leger';
+        var statusTxt = a.status === 'normal' ? 'Normal' : a.status === 'elevated' ? 'Élevé' : a.status === 'low' ? 'Bas' : a.status === 'critical' ? 'Critique' : (a.status || '-');
+        analysesHTML += '<tr><td>' + escH(a.label) + '</td><td>' + escH((a.value || '-') + (a.unit ? ' ' + a.unit : '')) + '</td><td><span class="' + statusCls + '">' + escH(statusTxt) + '</span></td><td>' + formatDate(a.created_at) + '</td></tr>';
+      });
+      analysesHTML += '</table>';
+    } else {
+      analysesHTML = '<p class="empty">Aucune analyse enregistrée</p>';
+    }
+
+    return '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>MediBook — ' + escH(patientName) + '</title><style>'
+      + 'body { font-family: Helvetica, Arial, sans-serif; color: #333; font-size: 12px; line-height: 1.5; margin: 0; padding: 20px; }'
+      + '.header { background: #1a2029; color: white; padding: 16px 20px; border-radius: 8px; margin-bottom: 16px; }'
+      + '.header .logo { color: #00D984; font-size: 18px; font-weight: bold; margin-bottom: 2px; }'
+      + '.header .date { float: right; color: #aaa; font-size: 11px; }'
+      + '.header .patient-name { font-size: 15px; font-weight: 600; margin-top: 8px; }'
+      + '.header .info-line { color: #aaa; font-size: 11px; margin-top: 4px; }'
+      + '.section { margin-bottom: 16px; border-radius: 8px; padding: 12px 14px; page-break-inside: avoid; }'
+      + '.section-allergies { background: #FFF8E1; border-left: 4px solid #FFD93D; }'
+      + '.section-medications { background: #E8F5E9; border-left: 4px solid #00D984; }'
+      + '.section-diagnostics { background: #FCE4EC; border-left: 4px solid #FF6B8A; }'
+      + '.section-vaccinations { background: #EDE7F6; border-left: 4px solid #9B8ACF; }'
+      + '.section-analyses { background: #E3F2FD; border-left: 4px solid #4DA6FF; }'
+      + '.section-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }'
+      + 'table { width: 100%; border-collapse: collapse; font-size: 11px; }'
+      + 'th { text-align: left; padding: 6px 8px; background: rgba(0,0,0,0.05); font-weight: 500; color: #666; }'
+      + 'td { padding: 6px 8px; border-top: 1px solid rgba(0,0,0,0.08); }'
+      + '.severity-severe { color: #d32f2f; font-weight: 600; }'
+      + '.severity-modere { color: #f57c00; font-weight: 600; }'
+      + '.severity-leger { color: #388e3c; font-weight: 600; }'
+      + '.empty { color: #999; font-style: italic; font-size: 11px; }'
+      + '.overdue { color: #d32f2f; font-weight: 600; font-size: 11px; margin-top: 8px; }'
+      + '.footer { text-align: center; color: #999; font-size: 9px; margin-top: 24px; padding-top: 12px; border-top: 1px solid #eee; }'
+      + '@media print { .section { break-inside: avoid; } }'
+      + '</style></head><body>'
+
+      // Header
+      + '<div class="header">'
+      + '<div class="date">' + escH(dateStr) + '</div>'
+      + '<div class="logo">LIXUM MediBook</div>'
+      + '<div class="patient-name">' + escH(patientName) + '</div>'
+      + (infoItems.length > 0 ? '<div class="info-line">' + infoItems.join('&nbsp;&nbsp;&nbsp;&nbsp;') + '</div>' : '')
+      + (infoLine2Items.length > 0 ? '<div class="info-line">' + infoLine2Items.join('&nbsp;&nbsp;&nbsp;&nbsp;') + '</div>' : '')
+      + '</div>'
+
+      // 1 — Allergies (always first for patient safety)
+      + '<div class="section section-allergies">'
+      + '<div class="section-title">&#9888; ALLERGIES</div>'
+      + allergiesHTML
+      + '</div>'
+
+      // 2 — Traitements en cours
+      + '<div class="section section-medications">'
+      + '<div class="section-title">&#128138; TRAITEMENTS EN COURS</div>'
+      + medsHTML
+      + '</div>'
+
+      // 3 — Antécédents médicaux
+      + '<div class="section section-diagnostics">'
+      + '<div class="section-title">&#127973; ANTÉCÉDENTS MÉDICAUX</div>'
+      + diagHTML
+      + '</div>'
+
+      // 4 — Vaccinations
+      + '<div class="section section-vaccinations">'
+      + '<div class="section-title">&#128137; VACCINATIONS</div>'
+      + vaccHTML
+      + vaccStatsHTML
+      + '</div>'
+
+      // 5 — Analyses médicales
+      + '<div class="section section-analyses">'
+      + '<div class="section-title">&#128300; ANALYSES MÉDICALES</div>'
+      + analysesHTML
+      + '</div>'
+
+      // Footer
+      + '<div class="footer">'
+      + 'LIXUM MediBook — Carnet de santé digital<br>'
+      + 'Ce document est généré automatiquement à partir des données saisies par le patient.<br>'
+      + 'Il ne remplace pas un dossier médical officiel.<br>'
+      + 'Généré le ' + escH(dateStr)
+      + '</div>'
+
+      + '</body></html>';
+  };
+
+  // ── GENERATE & SHARE PDF ─────────────────────────────────────────────────
+  var _pdfLoading = useState(false);
+  var pdfLoading = _pdfLoading[0]; var setPdfLoading = _pdfLoading[1];
+
+  var generateAndSharePDF = async function() {
+    if (pdfLoading) return;
+    setPdfLoading(true);
+    try {
+      var Print = require('expo-print');
+      var Sharing = require('expo-sharing');
+
+      var html = buildMedicalHTML(medicalData, userProfile, vaccStats);
+      var result = await Print.printToFileAsync({
+        html: html,
+        width: 595,
+        height: 842,
+        base64: false,
+      });
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(result.uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: 'MediBook — ' + ((userProfile && userProfile.full_name) || 'Patient'),
+          UTI: 'com.adobe.pdf',
+        });
+      } else {
+        showMbModal('info', 'PDF généré', 'Le fichier a été créé mais le partage n\'est pas disponible sur cet appareil.');
+      }
+    } catch (err) {
+      console.error('[MediBook PDF] Erreur:', err);
+      showMbModal('error', 'Erreur', 'La génération du PDF a échoué. Réessayez.');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   const renderPdfPreview = () => (
     <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
       <StatusBar barStyle="light-content" />
@@ -3451,21 +3690,25 @@ export const MediBookContent = (props) => {
         ))}
 
         <Pressable delayPressIn={120}
-          onPress={function() { showMbModal('info', 'MediBook', 'La génération PDF sera disponible prochainement !'); }}
-          onPressIn={() => Animated.timing(mbGenerateScale, { toValue: 0.95, duration: 120, useNativeDriver: true }).start()}
-          onPressOut={() => Animated.spring(mbGenerateScale, { toValue: 1, useNativeDriver: true }).start()}>
+          onPress={function() { if (!pdfLoading) generateAndSharePDF(); }}
+          onPressIn={function() { Animated.timing(mbGenerateScale, { toValue: 0.95, duration: 120, useNativeDriver: true }).start(); }}
+          onPressOut={function() { Animated.spring(mbGenerateScale, { toValue: 1, useNativeDriver: true }).start(); }}>
           <Animated.View style={{ transform: [{ scale: mbGenerateScale }], marginTop: wp(24), marginBottom: wp(32) }}>
-            <LinearGradient colors={['#00D984', '#00B871']}
+            <LinearGradient colors={pdfLoading ? ['#3A3F46', '#252A30'] : ['#00D984', '#00B871']}
               style={{ borderRadius: wp(16), paddingVertical: wp(16), flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: wp(10) }}>
-              <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
-                <Rect x="4" y="2" width="12" height="18" rx="2" stroke="#FFF" strokeWidth="1.5" />
-                <Line x1="8" y1="7" x2="12" y2="7" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" />
-                <Line x1="8" y1="11" x2="12" y2="11" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" />
-                <Path d="M16 8l4 4-4 4" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
+              {pdfLoading ? (
+                <ActivityIndicator size="small" color="#00D984" />
+              ) : (
+                <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
+                  <Rect x="4" y="2" width="12" height="18" rx="2" stroke="#FFF" strokeWidth="1.5" />
+                  <Line x1="8" y1="7" x2="12" y2="7" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" />
+                  <Line x1="8" y1="11" x2="12" y2="11" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" />
+                  <Path d="M16 8l4 4-4 4" stroke="#FFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+              )}
               <View>
-                <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '700' }}>Générer mon MediBook</Text>
-                <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: fp(11) }}>500 Lix — Rapport PDF 3 mois</Text>
+                <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '700' }}>{pdfLoading ? 'Génération en cours...' : 'Générer mon MediBook'}</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: fp(11) }}>Gratuit — Rapport PDF complet</Text>
               </View>
             </LinearGradient>
           </Animated.View>
