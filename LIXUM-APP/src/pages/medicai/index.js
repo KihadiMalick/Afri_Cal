@@ -2894,7 +2894,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     setShareLoading(true);
     setShareError(null);
     try {
-      var { data, error } = await supabase.rpc('create_medical_share', { p_duration_minutes: 30 });
+      var { data, error } = await supabase.rpc('generate_medical_share', { p_duration_minutes: 30 });
       if (error) throw error;
       if (data && data.length > 0 && data[0].share_token) {
         setShareToken(data[0].share_token);
