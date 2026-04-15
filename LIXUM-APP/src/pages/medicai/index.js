@@ -292,6 +292,12 @@ export default function MedicAiPage({ navigation, route }) {
   const [showAnalyzeSheet, setShowAnalyzeSheet] = useState(false);
   const [showMediBookUploadSheet, setShowMediBookUploadSheet] = useState(false);
 
+  // Medical share (QR code for doctors)
+  var _shareToken = useState(null); var shareToken = _shareToken[0]; var setShareToken = _shareToken[1];
+  var _shareLoading = useState(false); var shareLoading = _shareLoading[0]; var setShareLoading = _shareLoading[1];
+  var _shareError = useState(null); var shareError = _shareError[0]; var setShareError = _shareError[1];
+  var _shareExpiry = useState(null); var shareExpiry = _shareExpiry[0]; var setShareExpiry = _shareExpiry[1];
+
   // Upload / Scan IA
   const [uploadState, setUploadState] = useState('idle');
   const [scanResults, setScanResults] = useState(null);
@@ -2882,6 +2888,31 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     );
   };
 
+  // ── MEDICAL SHARE — Generate QR code token for doctors ──
+  var generateMedicalShare = async function() {
+    if (shareLoading) return;
+    setShareLoading(true);
+    setShareError(null);
+    try {
+      var { data, error } = await supabase.rpc('create_medical_share', { p_duration_minutes: 30 });
+      if (error) throw error;
+      if (data && data.length > 0 && data[0].share_token) {
+        setShareToken(data[0].share_token);
+        setShareExpiry(new Date(Date.now() + 30 * 60 * 1000));
+      } else if (data && data.share_token) {
+        setShareToken(data.share_token);
+        setShareExpiry(new Date(Date.now() + 30 * 60 * 1000));
+      } else {
+        throw new Error('Aucun token reçu');
+      }
+    } catch (err) {
+      console.error('[MedicalShare] Erreur:', err);
+      setShareError('Impossible de générer le lien de partage. Réessayez.');
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
   // ── HOISTED useCallbacks (must run on every render to keep hook count constant) ──
   var cbNewSession = useCallback(function() { setShowNewSessionSheet(true); }, []);
   var cbRemoveFile = useCallback(function(id) { setFileQueue(function(prev) { return prev.filter(function(f) { return f.id !== id; }); }); }, []);
@@ -2938,6 +2969,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           getOverdueText={getOverdueText}
           showAddVaccSheet={showAddVaccSheet} setShowAddVaccSheet={setShowAddVaccSheet}
           mbGenerateScale={mbGenerateScale}
+          shareToken={shareToken} shareLoading={shareLoading} shareError={shareError} shareExpiry={shareExpiry}
+          generateMedicalShare={generateMedicalShare}
         />
         </View>
       );
