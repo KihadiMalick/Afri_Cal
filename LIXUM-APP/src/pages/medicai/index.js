@@ -2633,11 +2633,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     var memberId = activeProfile !== 'self' ? activeProfile : null;
     var headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
     Promise.all([
-      fetch(SUPABASE_URL + '/rest/v1/rpc/get_personalized_vaccine_schedule', {
+      fetch(SUPABASE_URL + '/rest/v1/rpc/get_personalized_vaccine_schedule_by_user', {
         method: 'POST', headers: headers,
         body: JSON.stringify({ p_user_id: userId, p_family_member_id: memberId }),
       }).then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
-      fetch(SUPABASE_URL + '/rest/v1/rpc/get_vaccine_completion_stats', {
+      fetch(SUPABASE_URL + '/rest/v1/rpc/get_vaccine_completion_stats_by_user', {
         method: 'POST', headers: headers,
         body: JSON.stringify({ p_user_id: userId, p_family_member_id: memberId, p_priority_filter: null }),
       }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),

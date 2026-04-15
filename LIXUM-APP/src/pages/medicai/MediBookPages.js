@@ -309,8 +309,15 @@ export const MediBookContent = (props) => {
         fetchRPC('get_hydration_stats', { p_user_id: userId, p_days_back: daysBack }),
         fetchRPC('get_health_timeline', { p_user_id: userId, p_family_member_id: fmId, p_days_back: daysBack }),
         fetchRPC('get_health_insights', { p_user_id: userId, p_family_member_id: fmId, p_days_back: daysBack }),
-        fetchRPC('get_vaccine_completion_stats', { p_user_id: userId, p_family_member_id: fmId })
+        fetchRPC('get_vaccine_completion_stats_by_user', { p_user_id: userId, p_family_member_id: fmId })
       ]);
+      console.log('[Stats] nutrition:', Array.isArray(results[0]) ? results[0].length + ' rows' : 'error', results[0] && results[0].error ? results[0].error : '');
+      console.log('[Stats] activity:', Array.isArray(results[1]) ? results[1].length + ' rows' : 'error', results[1] && results[1].error ? results[1].error : '');
+      console.log('[Stats] mood:', Array.isArray(results[2]) ? results[2].length + ' rows' : 'error', results[2] && results[2].error ? results[2].error : '');
+      console.log('[Stats] hydration:', Array.isArray(results[3]) ? results[3].length + ' rows' : 'error', results[3] && results[3].error ? results[3].error : '');
+      console.log('[Stats] timeline:', Array.isArray(results[4]) ? results[4].length + ' rows' : 'error', results[4] && results[4].error ? results[4].error : '');
+      console.log('[Stats] insights:', Array.isArray(results[5]) ? results[5].length + ' rows' : 'error', results[5] && results[5].error ? results[5].error : '');
+      console.log('[Stats] vaccStats:', results[6]);
       setNutritionStats(Array.isArray(results[0]) ? results[0] : []);
       setActivityStats(Array.isArray(results[1]) ? results[1] : []);
       setMoodStats(Array.isArray(results[2]) ? results[2] : []);
@@ -318,7 +325,7 @@ export const MediBookContent = (props) => {
       setHealthTimeline(Array.isArray(results[4]) ? results[4] : []);
       setHealthInsights(Array.isArray(results[5]) ? results[5] : []);
       setStatsVaccData(results[6] && results[6][0] ? results[6][0] : null);
-    } catch(err) { console.log('Erreur stats:', err); }
+    } catch(err) { console.log('[Stats] Erreur:', err); }
     setStatsLoading(false);
   };
 
@@ -1112,7 +1119,7 @@ export const MediBookContent = (props) => {
 
   // ── RENDER MEDIBOOK LANDING ────────────────────────────────────────────────
   const renderMediBookLanding = () => (
-    <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+    <View style={{ flex: 1, backgroundColor: '#1A2029' }}>
       <StatusBar barStyle="light-content" />
       <LinearGradient
         colors={['#3A3F46', '#252A30']}
@@ -1223,28 +1230,31 @@ export const MediBookContent = (props) => {
         </Pressable>
 
         {/* Carte 3 : Mes Stats */}
-        <Pressable delayPressIn={120} onPress={() => setMediBookView('stats')}>
-          <View style={{
+        <Pressable delayPressIn={120} onPress={function() { setMediBookView('stats'); }}
+          style={function(state) { return {
             flexDirection: 'row', alignItems: 'center',
-            backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(14),
-            padding: wp(14), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
-          }}>
-            <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(12) }}>
+            backgroundColor: '#2A303B', borderRadius: wp(14),
+            padding: wp(16), borderWidth: 1, borderColor: '#3A3F46',
+            gap: wp(12),
+            transform: [{ scale: state.pressed ? 0.97 : 1 }],
+          }; }}>
+          <View style={{ width: wp(40), height: wp(40), borderRadius: wp(10), backgroundColor: '#00D98415', justifyContent: 'center', alignItems: 'center' }}>
+            <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
               <Line x1="18" y1="20" x2="18" y2="10" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
               <Line x1="12" y1="20" x2="12" y2="4" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
               <Line x1="6" y1="20" x2="6" y2="14" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
             </Svg>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#2D3436' }}>Mes Stats</Text>
-              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)' }}>Graphiques et évolution santé</Text>
-            </View>
-            <Text style={{ fontSize: fp(16), color: 'rgba(0,0,0,0.2)' }}>{">"}</Text>
           </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Mes Stats</Text>
+            <Text style={{ fontSize: fp(11), color: '#888' }}>Graphiques et évolution santé</Text>
+          </View>
+          <Text style={{ fontSize: fp(14), color: '#555' }}>{">"}</Text>
         </Pressable>
 
         {/* Section info en bas du landing */}
         <View style={{ marginTop: wp(20), paddingHorizontal: wp(4) }}>
-          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#2D3436', marginBottom: wp(12) }}>
+          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>
             Comment ça marche ?
           </Text>
 
@@ -1257,10 +1267,10 @@ export const MediBookContent = (props) => {
               <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '700' }}>1</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436', marginBottom: wp(2) }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>
                 Photographiez ou importez
               </Text>
-              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', lineHeight: fp(16) }}>
+              <Text style={{ fontSize: fp(11), color: '#888', lineHeight: fp(16) }}>
                 Votre carnet de santé, bilans, ordonnances, résultats d'analyses...
               </Text>
             </View>
@@ -1275,10 +1285,10 @@ export const MediBookContent = (props) => {
               <Text style={{ color: '#4DA6FF', fontSize: fp(13), fontWeight: '700' }}>2</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436', marginBottom: wp(2) }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>
                 ALIXEN analyse tout
               </Text>
-              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', lineHeight: fp(16) }}>
+              <Text style={{ fontSize: fp(11), color: '#888', lineHeight: fp(16) }}>
                 Vaccins, médicaments, diagnostics, allergies — chaque info va dans la bonne section.
               </Text>
             </View>
@@ -1293,10 +1303,10 @@ export const MediBookContent = (props) => {
               <Text style={{ color: '#D4AF37', fontSize: fp(13), fontWeight: '700' }}>3</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436', marginBottom: wp(2) }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>
                 Générez votre MediBook
               </Text>
-              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', lineHeight: fp(16) }}>
+              <Text style={{ fontSize: fp(11), color: '#888', lineHeight: fp(16) }}>
                 Un rapport PDF complet à imprimer pour votre médecin. 500 Lix.
               </Text>
             </View>
@@ -1499,10 +1509,10 @@ export const MediBookContent = (props) => {
     var familyMemberId = activeProfile !== 'self' ? activeProfile : null;
     var TAB_ITEMS = [
       { key: 'nutrition', emoji: '🥗', label: 'Nutrition', top: 0, leftPct: 50, anchor: 'center' },
-      { key: 'vitalite', emoji: '💚', label: 'Vitalité', top: wp(38), leftPct: 8, anchor: 'left' },
-      { key: 'humeur', emoji: '😊', label: 'Humeur', top: wp(38), leftPct: 92, anchor: 'right' },
-      { key: 'activite', emoji: '🏃', label: 'Activité', top: wp(78), leftPct: 22, anchor: 'left' },
-      { key: 'sante', emoji: '🏥', label: 'Santé', top: wp(78), leftPct: 78, anchor: 'right' }
+      { key: 'vitalite', emoji: '💚', label: 'Vitalité', top: wp(45), leftPct: 12, anchor: 'left' },
+      { key: 'humeur', emoji: '😊', label: 'Humeur', top: wp(45), leftPct: 88, anchor: 'right' },
+      { key: 'activite', emoji: '🏃', label: 'Activité', top: wp(90), leftPct: 28, anchor: 'left' },
+      { key: 'sante', emoji: '🏥', label: 'Santé', top: wp(90), leftPct: 72, anchor: 'right' }
     ];
     var TIME_RANGES = [
       { key: '7d', label: '7J', days: 7 },
@@ -1601,20 +1611,68 @@ export const MediBookContent = (props) => {
       var areaPoints = '0,' + chartH + ' ' + points + ' ' + chartW + ',' + chartH;
       var objY = chartH - (objectifCal / maxCal) * (chartH - wp(10));
 
+      // Animations
+      var calBarAnim = useRef(new Animated.Value(0)).current;
+      var protBarAnim = useRef(new Animated.Value(0)).current;
+      var carbBarAnim = useRef(new Animated.Value(0)).current;
+      var fatBarAnim = useRef(new Animated.Value(0)).current;
+      var curveOpacity = useRef(new Animated.Value(0)).current;
+      var hydBarAnim = useRef(new Animated.Value(0)).current;
+      var _dispCalRef = useRef({ val: 0 });
+      var _dispCal = useState(0);
+      var displayCal = _dispCal[0]; var setDisplayCal = _dispCal[1];
+
+      useEffect(function() {
+        // Counter animation
+        var target = avgCalories;
+        var steps = 30;
+        var stepVal = target / steps;
+        var stepDelay = 600 / steps;
+        var cur = 0;
+        var iv = setInterval(function() {
+          cur += stepVal;
+          if (cur >= target) { setDisplayCal(target); clearInterval(iv); }
+          else { setDisplayCal(Math.round(cur)); }
+        }, stepDelay);
+        // Bars stagger
+        Animated.stagger(100, [
+          Animated.timing(calBarAnim, { toValue: calPct, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+          Animated.timing(protBarAnim, { toValue: pctProtein, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+          Animated.timing(carbBarAnim, { toValue: pctCarbs, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+          Animated.timing(fatBarAnim, { toValue: pctFat, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+        ]).start();
+        // Curve fade
+        Animated.timing(curveOpacity, { toValue: 1, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+        // Hydration bar
+        Animated.timing(hydBarAnim, { toValue: hydPct, duration: 600, delay: 400, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+        return function() { clearInterval(iv); };
+      }, []);
+
+      var calBarWidth = calBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var protBarWidth = protBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var carbBarWidth = carbBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var fatBarWidth = fatBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var hydBarWidth = hydBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var macroBarWidths = [protBarWidth, carbBarWidth, fatBarWidth];
+
+      var _selPt = useState(null);
+      var selectedPoint = _selPt[0]; var setSelectedPoint = _selPt[1];
+
       return (
+        <Pressable onPress={function() { setSelectedPoint(null); }} style={{ flex: 1 }}>
         <View>
           {/* Hero — Calories */}
           <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
             <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#888', letterSpacing: 1 }}>CALORIES MOY. / JOUR</Text>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: wp(6) }}>
-              <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#FFF' }}>{avgCalories}</Text>
+              <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#FFF' }}>{displayCal}</Text>
               <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#888', marginLeft: wp(4) }}>kcal</Text>
               <View style={{ flex: 1 }} />
               <Text style={{ fontSize: fp(13), fontWeight: '600', color: deltaVsObj < 0 ? '#FF6B8A' : '#00D984' }}>{(deltaVsObj > 0 ? '+' : '') + deltaVsObj + '% vs obj'}</Text>
             </View>
             <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(2) }}>{'Objectif : ' + objectifCal + ' kcal'}</Text>
             <View style={{ height: wp(6), backgroundColor: '#1E2530', borderRadius: wp(3), marginTop: wp(10) }}>
-              <View style={{ width: calPct + '%', height: '100%', backgroundColor: '#00D984', borderRadius: wp(3) }} />
+              <Animated.View style={{ width: calBarWidth, height: '100%', backgroundColor: '#00D984', borderRadius: wp(3) }} />
             </View>
             <Text style={{ fontSize: fp(10), color: '#00D984', textAlign: 'right', marginTop: wp(4) }}>{calPct + '%'}</Text>
           </View>
@@ -1632,7 +1690,7 @@ export const MediBookContent = (props) => {
                   <Text style={{ fontSize: fp(16), fontWeight: '700', color: m.color, marginTop: wp(4) }}>{m.value}</Text>
                   <Text style={{ fontSize: fp(10), color: '#888', marginTop: wp(2) }}>{m.pct + '%'}</Text>
                   <View style={{ height: wp(4), backgroundColor: '#1E2530', borderRadius: wp(2), marginTop: wp(6) }}>
-                    <View style={{ width: m.pct + '%', height: '100%', backgroundColor: m.color, borderRadius: wp(2) }} />
+                    <Animated.View style={{ width: macroBarWidths[i], height: '100%', backgroundColor: m.color, borderRadius: wp(2) }} />
                   </View>
                 </View>
               );
@@ -1642,6 +1700,7 @@ export const MediBookContent = (props) => {
           {/* Courbe Calories */}
           <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
             <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Évolution calories</Text>
+            <Animated.View style={{ opacity: curveOpacity }}>
             <Svg width={chartW} height={chartH}>
               <Defs>
                 <SvgLinearGradient id="calAreaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1655,9 +1714,32 @@ export const MediBookContent = (props) => {
               {data.map(function(d, i) {
                 var x = data.length > 1 ? (i / (data.length - 1)) * chartW : chartW / 2;
                 var y = chartH - ((d.total_kcal || 0) / maxCal) * (chartH - wp(10));
-                return <Circle key={i} cx={x} cy={y} r="3.5" fill="#00D984" />;
+                return <Circle key={i} cx={x} cy={y} r={selectedPoint && selectedPoint.idx === i ? 6 : 3.5} fill="#00D984" />;
               })}
             </Svg>
+            {/* Pressable overlays for chart points */}
+            {data.map(function(d, i) {
+              var x = data.length > 1 ? (i / (data.length - 1)) * chartW : chartW / 2;
+              var y = chartH - ((d.total_kcal || 0) / maxCal) * (chartH - wp(10));
+              return (
+                <Pressable key={'pt' + i}
+                  onPress={function(e) { e.stopPropagation(); setSelectedPoint({ idx: i, value: d.total_kcal || 0, date: d.stat_date, x: x, y: y }); }}
+                  style={{ position: 'absolute', left: x - wp(12), top: y - wp(12), width: wp(24), height: wp(24) }} />
+              );
+            })}
+            {/* Tooltip */}
+            {selectedPoint ? (
+              <View style={{
+                position: 'absolute', left: Math.max(0, Math.min(selectedPoint.x - wp(35), chartW - wp(70))),
+                top: Math.max(0, selectedPoint.y - wp(40)),
+                backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#00D984',
+                borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4), alignItems: 'center',
+              }}>
+                <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '700' }}>{selectedPoint.value + ' kcal'}</Text>
+                <Text style={{ color: '#888', fontSize: fp(9) }}>{selectedPoint.date ? new Date(selectedPoint.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}</Text>
+              </View>
+            ) : null}
+            </Animated.View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6) }}>
               {data.length <= 10 ? data.map(function(d, i) {
                 var dt = new Date(d.stat_date);
@@ -1682,7 +1764,7 @@ export const MediBookContent = (props) => {
                   <Text style={{ fontSize: fp(12), color: '#888', marginLeft: wp(4) }}>{'/ ' + hydObjectif + ' ml'}</Text>
                 </View>
                 <View style={{ height: wp(6), backgroundColor: '#1E2530', borderRadius: wp(3), marginTop: wp(8) }}>
-                  <View style={{ width: hydPct + '%', height: '100%', backgroundColor: '#4DA6FF', borderRadius: wp(3) }} />
+                  <Animated.View style={{ width: hydBarWidth, height: '100%', backgroundColor: '#4DA6FF', borderRadius: wp(3) }} />
                 </View>
               </View>
               <View style={{ width: wp(50), height: wp(50), justifyContent: 'center', alignItems: 'center' }}>
@@ -1710,10 +1792,11 @@ export const MediBookContent = (props) => {
             </View>
           </View>
         </View>
+        </Pressable>
       );
     };
 
-    // ── PLACEHOLDER TABS (à compléter) ──
+    // ── VITALITÉ TAB ──
     var renderVitaliteContent = function() {
       var vScore = medicalData.vitalityScore || 0;
       var circumference = 2 * Math.PI * 42;
@@ -2391,7 +2474,7 @@ export const MediBookContent = (props) => {
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
           {/* Semi-arc navigation */}
-          <View style={{ position: 'relative', height: wp(140), marginTop: wp(10), marginBottom: wp(20) }}>
+          <View style={{ position: 'relative', height: wp(155), marginTop: wp(10), marginBottom: wp(20) }}>
             {TAB_ITEMS.map(function(tab) { return renderBubble(tab); })}
           </View>
 
@@ -2476,11 +2559,12 @@ export const MediBookContent = (props) => {
                       .catch(function() { Alert.alert('Erreur', 'Impossible de débloquer cette plage'); });
                   }}
                   style={function(state) { return {
-                    backgroundColor: '#00D984', borderRadius: wp(14), paddingVertical: wp(14),
-                    marginTop: wp(14), alignItems: 'center',
+                    borderWidth: 1.5, borderColor: '#00D984', backgroundColor: 'transparent',
+                    borderRadius: wp(12), paddingVertical: wp(14), paddingHorizontal: wp(20),
+                    marginTop: wp(14), alignItems: 'center', justifyContent: 'center',
                     transform: [{ scale: state.pressed ? 0.96 : 1 }],
                   }; }}>
-                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#000' }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#00D984' }}>
                     {'💎 Débloquer 24h — ' + (unlockTarget ? (rangeAccess[unlockTarget.key] ? rangeAccess[unlockTarget.key].lix_cost : 0) : 0) + ' Lix'}
                   </Text>
                 </Pressable>
