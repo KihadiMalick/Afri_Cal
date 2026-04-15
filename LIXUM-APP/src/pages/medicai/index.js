@@ -39,7 +39,7 @@ var NotificationService = require('../../services/NotificationService');
 
 
 
-export default function MedicAiPage({ navigation }) {
+export default function MedicAiPage({ navigation, route }) {
   var insets = useSafeAreaInsets();
   var auth = useAuth();
   var userId = auth.userId;
@@ -188,6 +188,17 @@ export default function MedicAiPage({ navigation }) {
   // Navigation interne MediBook
   const [mediBookView, setMediBookView] = useState('landing');
   const [reportSection, setReportSection] = useState('hub');
+
+  // ── Handle deep navigation from Dashboard "Mes Stats" ──
+  useEffect(function() {
+    var params = route && route.params ? route.params : {};
+    if (params.openSection === 'stats') {
+      setCurrentSubPage('medibook');
+      setMediBookView('stats');
+      // Clear param to avoid re-triggering on re-focus
+      if (navigation.setParams) navigation.setParams({ openSection: undefined });
+    }
+  }, [route && route.params && route.params.openSection]);
   const [analysesTab, setAnalysesTab] = useState('done');
   const [medsTab, setMedsTab] = useState('active');
   const [showAddMedSheet, setShowAddMedSheet] = useState(false);
@@ -2865,6 +2876,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           showProfileSwitcher={showProfileSwitcher} setShowProfileSwitcher={setShowProfileSwitcher}
           loadMedicalData={loadMedicalData}
           startMedicalScan={startMedicalScan}
+          startBatchScan={startBatchScan}
           handleTransferToSecretPocket={handleTransferToSecretPocket}
           toggleMedicationReminder={toggleMedicationReminder}
           toggleMedicationTaken={toggleMedicationTaken}

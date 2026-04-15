@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import Svg, {
   Defs, Rect, Path, Circle, Ellipse, Line, Polyline, Polygon, G,
+  Text as SvgText,
   LinearGradient as SvgLinearGradient, Stop,
 } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -206,6 +207,7 @@ export const MediBookContent = (props) => {
     // Fonctions
     loadMedicalData,
     startMedicalScan,
+    startBatchScan,
     handleTransferToSecretPocket,
     toggleMedicationReminder,
     toggleMedicationTaken,
@@ -1161,7 +1163,7 @@ export const MediBookContent = (props) => {
         </View>
         {renderProfileSwitchButton()}
         <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(8), paddingVertical: wp(4), marginLeft: wp(6) }}>
-          <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
+          <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>{(auth.lixBalance || 0) + ' Lix'}</Text>
         </View>
       </LinearGradient>
 
@@ -1380,7 +1382,7 @@ export const MediBookContent = (props) => {
 
   // ── RENDER CARNET CAPTURE ──────────────────────────────────────────────────
   const renderCarnetCapture = () => {
-    const caseSize = (Dimensions.get('window').width - wp(16) * 2 - wp(8) * 3) / 4;
+    const caseSize = (Dimensions.get('window').width - wp(16) * 2 - wp(8) * 2) / 3;
     const capturedCount = carnetPhotos.filter(p => p).length;
 
     return (
@@ -1409,14 +1411,14 @@ export const MediBookContent = (props) => {
           </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>Carnet de santé</Text>
-            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>25 emplacements disponibles</Text>
+            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>10 pages maximum</Text>
           </View>
           {renderProfileSwitchButton()}
         </LinearGradient>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(50) }}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8) }}>
-            {Array.from({ length: 25 }, (_, index) => (
+            {Array.from({ length: 10 }, (_, index) => (
               carnetPhotos[index] ? (
                 <Pressable
                   key={index}
@@ -1481,17 +1483,25 @@ export const MediBookContent = (props) => {
           </View>
 
           <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginTop: wp(12) }}>
-            {capturedCount} page{capturedCount > 1 ? 's' : ''} capturée{capturedCount > 1 ? 's' : ''} sur 25
+            {capturedCount} page{capturedCount > 1 ? 's' : ''} capturée{capturedCount > 1 ? 's' : ''} sur 10
           </Text>
 
           {capturedCount > 0 && (
             <View style={{ marginTop: wp(20), paddingHorizontal: wp(8) }}>
               <Pressable
                 delayPressIn={120}
-                onPress={() => {
-                  const photos = carnetPhotos.filter(p => p);
+                onPress={function() {
+                  var photos = carnetPhotos.filter(function(p) { return p; });
                   if (photos.length === 0) return;
-                  setShowAnalyzeSheet(true);
+                  if (photos.length > 10) {
+                    showMbModal('info', 'Limite atteinte', 'Maximum 10 photos par analyse. Vous avez ' + photos.length + ' pages. Veuillez en retirer pour continuer.');
+                    return;
+                  }
+                  // Use batch scan to send ALL photos (groups of 5, same as "Plusieurs photos")
+                  if (startBatchScan) {
+                    var batchReady = photos.map(function(p) { return { uri: p.uri, base64: p.base64 }; });
+                    startBatchScan(batchReady, 'carnet');
+                  }
                 }}
               >
                 <LinearGradient
@@ -1520,12 +1530,21 @@ export const MediBookContent = (props) => {
   // ── RENDER MEDIBOOK STATS (PREMIUM DARK REDESIGN) ──────────────────────────
   var renderMediBookStats = function() {
     var familyMemberId = activeProfile !== 'self' ? activeProfile : null;
+    // ── Progress percentages (real data) ──
+    var nutAvg = nutritionStats.length > 0 ? Math.round(nutritionStats.reduce(function(s, d) { return s + (d.total_kcal || 0); }, 0) / nutritionStats.length) : 0;
+    var nutritionPercent = Math.min(100, Math.round((nutAvg / 2100) * 100));
+    var vitalitePercent = medicalData.vitalityScore || 0;
+    var humeurPercent = moodStats.length > 0 ? Math.round(moodStats.reduce(function(s, d) { return s + (d.max_gauge_percent || 0); }, 0) / moodStats.length) : 0;
+    var actAvgBurned = activityStats.length > 0 ? Math.round(activityStats.reduce(function(s, d) { return s + (d.total_calories_burned || 0); }, 0) / activityStats.length) : 0;
+    var activitePercent = Math.min(100, Math.round((actAvgBurned / 500) * 100));
+    var santePercent = statsVaccData ? Math.round(statsVaccData.completion_percent || 0) : 0;
+
     var TAB_ITEMS = [
-      { key: 'nutrition', emoji: '🥗', label: 'Nutrition', top: 0, leftPct: 50, anchor: 'center' },
-      { key: 'vitalite', emoji: '💚', label: 'Vitalité', top: wp(45), leftPct: 12, anchor: 'left' },
-      { key: 'humeur', emoji: '😊', label: 'Humeur', top: wp(45), leftPct: 88, anchor: 'right' },
-      { key: 'activite', emoji: '🏃', label: 'Activité', top: wp(90), leftPct: 28, anchor: 'left' },
-      { key: 'sante', emoji: '🏥', label: 'Santé', top: wp(90), leftPct: 72, anchor: 'right' }
+      { key: 'nutrition', emoji: '🥗', label: 'NUTRITION', color: '#00D984', pct: nutritionPercent, top: 0, leftPct: 50, anchor: 'center', big: true },
+      { key: 'vitalite', emoji: '💚', label: 'VITALITE', color: '#9B8ACF', pct: vitalitePercent, top: wp(40), leftPct: 8, anchor: 'left', big: false },
+      { key: 'humeur', emoji: '😊', label: 'HUMEUR', color: '#FFD93D', pct: humeurPercent, top: wp(40), leftPct: 92, anchor: 'right', big: false },
+      { key: 'activite', emoji: '🏃', label: 'ACTIVITE', color: '#4DA6FF', pct: activitePercent, top: wp(88), leftPct: 22, anchor: 'left', big: false },
+      { key: 'sante', emoji: '🏥', label: 'SANTE', color: '#FF6B8A', pct: santePercent, top: wp(88), leftPct: 78, anchor: 'right', big: false }
     ];
     var TIME_RANGES = [
       { key: '7d', label: '7J', days: 7 },
@@ -1547,13 +1566,22 @@ export const MediBookContent = (props) => {
       loadAllStats(range.days);
     };
 
-    // ── Render semi-arc bubble ──
+    // ── Render progress ring bubble ──
     var renderBubble = function(tab) {
       var isActive = statsTab === tab.key;
-      var sz = isActive ? wp(62) : wp(54);
+      var trackR = tab.big ? wp(42) : wp(35);
+      var innerR = tab.big ? wp(34) : wp(28);
+      var svgSize = (trackR + 4) * 2;
+      var half = svgSize / 2;
+      var sw = isActive ? 3 : 2.5;
+      var circ = 2 * Math.PI * trackR;
+      var offset = circ - (tab.pct / 100) * circ;
+      var emojiSz = tab.big ? fp(22) : fp(18);
+      var labelSz = tab.big ? fp(8) : fp(7);
+
       var posStyle = {};
       if (tab.anchor === 'center') {
-        posStyle = { left: (containerW - sz) / 2 };
+        posStyle = { left: (containerW - svgSize) / 2 };
       } else if (tab.anchor === 'left') {
         posStyle = { left: containerW * (tab.leftPct / 100) };
       } else {
@@ -1561,22 +1589,23 @@ export const MediBookContent = (props) => {
       }
       return (
         <Pressable key={tab.key} delayPressIn={120}
-          onPress={function() { setStatsTab(tab.key); }}
+          onPress={function() { _nutAnimRan.current = false; setStatsTab(tab.key); }}
           style={function(state) { return Object.assign({
             position: 'absolute', top: tab.top,
-            width: sz, height: sz, borderRadius: sz / 2,
-            backgroundColor: isActive ? '#00D98425' : '#2A303B',
-            borderWidth: isActive ? 2 : 1.5,
-            borderColor: isActive ? '#00D984' : '#3A3F46',
-            justifyContent: 'center', alignItems: 'center',
-            transform: [{ scale: state.pressed ? 0.92 : 1 }],
+            width: svgSize, height: svgSize,
+            transform: [{ scale: state.pressed ? 0.9 : (isActive ? 1.05 : 1) }],
           }, posStyle); }}>
-          <Text style={{ fontSize: isActive ? fp(22) : fp(18) }}>{tab.emoji}</Text>
-          <Text style={{
-            position: 'absolute', bottom: -wp(16),
-            fontSize: fp(10), fontWeight: isActive ? '600' : '400',
-            color: isActive ? '#00D984' : '#888',
-          }}>{tab.label}</Text>
+          <Svg width={svgSize} height={svgSize}>
+            <Circle cx={half} cy={half} r={trackR} stroke="#3A3F46" strokeWidth={sw} fill="none" />
+            <Circle cx={half} cy={half} r={trackR} stroke={tab.color} strokeWidth={sw} fill="none"
+              strokeDasharray={String(circ)} strokeDashoffset={String(offset)}
+              strokeLinecap="round" rotation="-90" origin={half + ',' + half} />
+            <Circle cx={half} cy={half} r={innerR} fill={isActive ? '#252A30' : '#2A303B'} />
+            <SvgText x={half} y={half - 2} textAnchor="middle" fontSize={emojiSz} fill="white">{tab.emoji}</SvgText>
+            <SvgText x={half} y={half + (tab.big ? 14 : 12)} textAnchor="middle"
+              fontSize={labelSz} fontWeight={isActive ? '600' : '400'}
+              fill={isActive ? tab.color : '#888'}>{tab.label}</SvgText>
+          </Svg>
         </Pressable>
       );
     };
@@ -2474,7 +2503,7 @@ export const MediBookContent = (props) => {
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
           {/* Semi-arc navigation */}
-          <View style={{ position: 'relative', height: wp(155), marginTop: wp(10), marginBottom: wp(20) }}>
+          <View style={{ position: 'relative', height: wp(168), marginTop: wp(10), marginBottom: wp(16) }}>
             {TAB_ITEMS.map(function(tab) { return renderBubble(tab); })}
           </View>
 
@@ -3278,7 +3307,7 @@ export const MediBookContent = (props) => {
         </View>
         {renderProfileSwitchButton()}
         <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(8), paddingVertical: wp(4), marginLeft: wp(6) }}>
-          <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
+          <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>{(auth.lixBalance || 0) + ' Lix'}</Text>
         </View>
       </LinearGradient>
 
