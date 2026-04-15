@@ -974,6 +974,7 @@ export default function LixVersePage({ navigation }) {
 
       <BottomTabs
         activeTab="lixverse"
+        medicaiNotifCount={auth.notifCount}
         onTabPress={(key) => {
           if (key === 'lixverse') return;
           const pageMap = { home: 'Accueil', meals: 'Repas', medicai: 'MedicAi', activity: 'Activite' };
