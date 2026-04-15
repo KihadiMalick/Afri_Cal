@@ -301,6 +301,43 @@ export const MediBookContent = (props) => {
   var nutSelectedPoint = _nutSelectedPoint[0]; var setNutSelectedPoint = _nutSelectedPoint[1];
   var _nutAnimRan = useRef(false);
 
+  // ── ASSISTANCE MÉDICALE STATES ────────────────────────────────────────────
+  var _showQrModal = useState(false);
+  var showQrModal = _showQrModal[0]; var setShowQrModal = _showQrModal[1];
+  var _qrShareToken = useState(null);
+  var qrShareToken = _qrShareToken[0]; var setQrShareToken = _qrShareToken[1];
+  var _qrExpiresAt = useState(null);
+  var qrExpiresAt = _qrExpiresAt[0]; var setQrExpiresAt = _qrExpiresAt[1];
+  var _qrLoading = useState(false);
+  var qrLoading = _qrLoading[0]; var setQrLoading = _qrLoading[1];
+  // Live consultation states
+  var _liveMeds = useState([]);
+  var liveMeds = _liveMeds[0]; var setLiveMeds = _liveMeds[1];
+  var _liveMedSearch = useState('');
+  var liveMedSearch = _liveMedSearch[0]; var setLiveMedSearch = _liveMedSearch[1];
+  var _liveMedResults = useState([]);
+  var liveMedResults = _liveMedResults[0]; var setLiveMedResults = _liveMedResults[1];
+  var _liveWeight = useState('');
+  var liveWeight = _liveWeight[0]; var setLiveWeight = _liveWeight[1];
+  var _liveTemp = useState('');
+  var liveTemp = _liveTemp[0]; var setLiveTemp = _liveTemp[1];
+  var _liveTensionH = useState('');
+  var liveTensionH = _liveTensionH[0]; var setLiveTensionH = _liveTensionH[1];
+  var _liveTensionL = useState('');
+  var liveTensionL = _liveTensionL[0]; var setLiveTensionL = _liveTensionL[1];
+  var _liveHeight = useState('');
+  var liveHeight = _liveHeight[0]; var setLiveHeight = _liveHeight[1];
+  var _liveDiag = useState('');
+  var liveDiag = _liveDiag[0]; var setLiveDiag = _liveDiag[1];
+  var _liveSeverity = useState('moderate');
+  var liveSeverity = _liveSeverity[0]; var setLiveSeverity = _liveSeverity[1];
+  var _liveNotes = useState('');
+  var liveNotes = _liveNotes[0]; var setLiveNotes = _liveNotes[1];
+  var _liveDoctor = useState('');
+  var liveDoctor = _liveDoctor[0]; var setLiveDoctor = _liveDoctor[1];
+  var _liveSaving = useState(false);
+  var liveSaving = _liveSaving[0]; var setLiveSaving = _liveSaving[1];
+
   var getAuthHeaders = async function() {
     var result = await supabase.auth.getSession();
     var token = result.data.session ? result.data.session.access_token : SUPABASE_ANON_KEY;
@@ -1225,8 +1262,8 @@ export const MediBookContent = (props) => {
           </LinearGradient>
         </Pressable>
 
-        {/* Carte 2 : Continuer avec mes données */}
-        <Pressable delayPressIn={120} onPress={() => setMediBookView('report')}>
+        {/* Carte 2 : Assistance médicale */}
+        <Pressable delayPressIn={120} onPress={function() { setMediBookView('assistance'); }}>
           <LinearGradient
             colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']}
             style={{
@@ -1236,14 +1273,17 @@ export const MediBookContent = (props) => {
           >
             <View style={{ alignItems: 'center', marginBottom: wp(10) }}>
               <Svg width={wp(36)} height={wp(36)} viewBox="0 0 24 24" fill="none">
-                <Path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <Path d="M4.8 2.3A.3.3 0 015 2h14a.3.3 0 01.3.3v19.4a.3.3 0 01-.3.3H5a.3.3 0 01-.2-.3V2.3z" stroke="#9B8ACF" strokeWidth="1.5" />
+                <Path d="M12 6v4m-2-2h4" stroke="#9B8ACF" strokeWidth="1.5" strokeLinecap="round" />
+                <Circle cx="12" cy="15" r="2.5" stroke="#9B8ACF" strokeWidth="1.5" />
+                <Path d="M9.5 17.5L8 22m5-4.5L14.5 22" stroke="#9B8ACF" strokeWidth="1.2" strokeLinecap="round" />
               </Svg>
             </View>
             <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', textAlign: 'center', marginBottom: wp(4) }}>
-              Continuer avec mes données
+              Assistance médicale
             </Text>
             <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: fp(15) }}>
-              Données de l'app pour générer votre rapport.
+              QR code, PDF, consultation live
             </Text>
           </LinearGradient>
         </Pressable>
@@ -5109,11 +5149,360 @@ export const MediBookContent = (props) => {
     return renderReportHub();
   };
 
+  // ── RENDER ASSISTANCE MÉDICALE ─────────────────────────────────────────────
+  var renderAssistanceMedicale = function() {
+    var generateQrShare = async function() {
+      setQrLoading(true);
+      try {
+        var result = await fetchRPC('generate_medical_share', { p_user_id: userId, p_doctor_name: null, p_duration_minutes: 30 });
+        if (result && result[0]) {
+          setQrShareToken(result[0].share_token);
+          setQrExpiresAt(result[0].expires_at);
+          setShowQrModal(true);
+        } else {
+          showMbModal('error', 'Erreur', 'Impossible de générer le QR code.');
+        }
+      } catch(err) { console.log('QR error:', err); showMbModal('error', 'Erreur', 'Échec de la génération.'); }
+      setQrLoading(false);
+    };
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#1A2029' }}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient colors={['#3A3F46', '#252A30']}
+          style={{ paddingTop: Platform.OS === 'android' ? 35 : 50, paddingBottom: wp(12), paddingHorizontal: wp(12), flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#4A4F55' }}>
+          <Pressable delayPressIn={120} onPress={function() { setMediBookView('landing'); }}
+            style={function(state) { return { width: wp(36), height: wp(36), borderRadius: wp(18), backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10), transform: [{ scale: state.pressed ? 0.92 : 1 }] }; }}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Assistance médicale</Text>
+            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>Partage, rapports et consultation</Text>
+          </View>
+        </LinearGradient>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(50) }}>
+
+          {/* 1. Consulter mes données */}
+          <Pressable delayPressIn={120} onPress={function() { setMediBookView('report'); }}
+            style={function(state) { return {
+              backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14),
+              padding: wp(16), flexDirection: 'row', alignItems: 'center', gap: wp(12), marginBottom: wp(16),
+              transform: [{ scale: state.pressed ? 0.97 : 1 }],
+            }; }}>
+            <View style={{ width: wp(40), height: wp(40), borderRadius: wp(10), backgroundColor: '#4DA6FF15', justifyContent: 'center', alignItems: 'center' }}>
+              <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
+                <Path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="#4DA6FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </Svg>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Consulter mes données</Text>
+              <Text style={{ fontSize: fp(11), color: '#888' }}>Vaccins, médicaments, analyses...</Text>
+            </View>
+            <Text style={{ fontSize: fp(14), color: '#555' }}>{">"}</Text>
+          </Pressable>
+
+          {/* 2. QR Code + PDF côte à côte */}
+          <View style={{ flexDirection: 'row', gap: wp(12), marginBottom: wp(16) }}>
+            {/* QR Code */}
+            <Pressable delayPressIn={120} onPress={function() { generateQrShare(); }}
+              style={function(state) { return {
+                flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#00D98440', borderRadius: wp(14),
+                padding: wp(16), alignItems: 'center',
+                transform: [{ scale: state.pressed ? 0.96 : 1 }],
+              }; }}>
+              {qrLoading ? <ActivityIndicator size="small" color="#00D984" /> : (
+                <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: '#00D98415', justifyContent: 'center', alignItems: 'center', marginBottom: wp(8) }}>
+                  <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
+                    <Rect x="3" y="3" width="7" height="7" rx="1" stroke="#00D984" strokeWidth="1.5" />
+                    <Rect x="14" y="3" width="7" height="7" rx="1" stroke="#00D984" strokeWidth="1.5" />
+                    <Rect x="3" y="14" width="7" height="7" rx="1" stroke="#00D984" strokeWidth="1.5" />
+                    <Rect x="14" y="14" width="3" height="3" fill="#00D984" />
+                    <Rect x="18" y="18" width="3" height="3" fill="#00D984" />
+                    <Rect x="14" y="18" width="3" height="3" fill="#00D984" />
+                  </Svg>
+                </View>
+              )}
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>QR Code</Text>
+              <Text style={{ fontSize: fp(10), color: '#00D984', marginTop: wp(2) }}>Partage 30 min</Text>
+            </Pressable>
+
+            {/* PDF */}
+            <Pressable delayPressIn={120} onPress={function() { setReportSection('pdf-preview'); setMediBookView('report'); }}
+              style={function(state) { return {
+                flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#9B8ACF40', borderRadius: wp(14),
+                padding: wp(16), alignItems: 'center',
+                transform: [{ scale: state.pressed ? 0.96 : 1 }],
+              }; }}>
+              <View style={{ width: wp(44), height: wp(44), borderRadius: wp(12), backgroundColor: '#9B8ACF15', justifyContent: 'center', alignItems: 'center', marginBottom: wp(8) }}>
+                <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none">
+                  <Rect x="4" y="2" width="12" height="18" rx="2" stroke="#9B8ACF" strokeWidth="1.5" />
+                  <Line x1="8" y1="7" x2="12" y2="7" stroke="#9B8ACF" strokeWidth="1.5" strokeLinecap="round" />
+                  <Path d="M16 8l4 4-4 4" stroke="#9B8ACF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+              </View>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>PDF</Text>
+              <Text style={{ fontSize: fp(10), color: '#9B8ACF', marginTop: wp(2) }}>Rapport complet</Text>
+            </Pressable>
+          </View>
+
+          {/* 3. Mode consultation live */}
+          <Pressable delayPressIn={120} onPress={function() { setMediBookView('live'); }}
+            style={function(state) { return {
+              backgroundColor: '#00D98408', borderWidth: 1.5, borderColor: '#00D98440', borderRadius: wp(12),
+              padding: wp(16), flexDirection: 'row', alignItems: 'center', gap: wp(12), marginBottom: wp(20),
+              transform: [{ scale: state.pressed ? 0.97 : 1 }],
+            }; }}>
+            <View style={{ width: wp(12), height: wp(12), borderRadius: wp(6), backgroundColor: '#00D984' }} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#00D984' }}>Mode consultation live</Text>
+              <Text style={{ fontSize: fp(11), color: '#aaa', marginTop: wp(2) }}>Saisissez les données pendant votre consultation</Text>
+            </View>
+            <Text style={{ fontSize: fp(14), color: '#00D984' }}>{"›"}</Text>
+          </Pressable>
+
+          {/* 4. Info gratuit */}
+          <View style={{ backgroundColor: '#2A303B', borderRadius: wp(12), padding: wp(14), borderWidth: 1, borderColor: '#3A3F46' }}>
+            <Text style={{ fontSize: fp(11), color: '#888', textAlign: 'center', lineHeight: fp(16) }}>
+              Toutes les fonctionnalités d'assistance médicale sont gratuites. Vos données sont partagées de manière sécurisée et temporaire.
+            </Text>
+          </View>
+
+          <BottomSpacer />
+        </ScrollView>
+
+        {/* QR Modal */}
+        <Modal visible={showQrModal} transparent animationType="fade" onRequestClose={function() { setShowQrModal(false); }}>
+          <Pressable onPress={function() { setShowQrModal(false); }} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: wp(24) }}>
+            <Pressable onPress={function(e) { e.stopPropagation(); }} style={{ width: '100%' }}>
+              <LinearGradient colors={['#2A2F36', '#1E2328', '#252A30']} style={{ borderRadius: wp(20), padding: wp(24), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', marginBottom: wp(4) }}>Partage médical</Text>
+                <Text style={{ fontSize: fp(12), color: '#888', marginBottom: wp(20), textAlign: 'center' }}>Montrez ce QR code à votre médecin</Text>
+
+                {/* QR placeholder — requires react-native-qrcode-svg */}
+                <View style={{ width: wp(200), height: wp(200), backgroundColor: '#FFF', borderRadius: wp(12), justifyContent: 'center', alignItems: 'center', marginBottom: wp(16) }}>
+                  <Text style={{ fontSize: fp(10), color: '#333', textAlign: 'center', padding: wp(10) }}>
+                    {'lixum.com/share/' + (qrShareToken || '...')}
+                  </Text>
+                  <Text style={{ fontSize: fp(8), color: '#888' }}>QR code (installer react-native-qrcode-svg)</Text>
+                </View>
+
+                {qrExpiresAt ? (
+                  <Text style={{ fontSize: fp(12), color: '#00D984', fontWeight: '600', marginBottom: wp(16) }}>
+                    {'Expire à ' + new Date(qrExpiresAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                ) : null}
+
+                <Pressable onPress={function() { setShowQrModal(false); }}
+                  style={{ paddingVertical: wp(12), paddingHorizontal: wp(40), borderRadius: wp(12), borderWidth: 1, borderColor: '#3A3F46' }}>
+                  <Text style={{ fontSize: fp(14), color: '#888' }}>Fermer</Text>
+                </Pressable>
+              </LinearGradient>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      </View>
+    );
+  };
+
+  // ── RENDER LIVE CONSULTATION ──────────────────────────────────────────────
+  var renderLiveConsultation = function() {
+    var saveLiveConsultation = async function() {
+      if (liveMeds.length === 0 && !liveDiag.trim()) {
+        showMbModal('info', 'Données requises', 'Ajoutez au moins un médicament ou un diagnostic.');
+        return;
+      }
+      setLiveSaving(true);
+      try {
+        var headers = await getAuthHeaders();
+        headers['Prefer'] = 'return=minimal';
+        var fmId = activeProfile === 'self' ? null : activeProfile;
+        var today = new Date().toISOString().split('T')[0];
+
+        // Sauvegarder les médicaments prescrits
+        if (liveMeds.length > 0) {
+          await fetch(SUPABASE_URL + '/rest/v1/medications', {
+            method: 'POST', headers: headers,
+            body: JSON.stringify(liveMeds.map(function(m) {
+              return { user_id: userId, family_member_id: fmId, name: m.name, dosage: m.dosage || null, status: 'active', start_date: today, source: 'live_consultation' };
+            })),
+          });
+        }
+
+        // Sauvegarder le diagnostic
+        if (liveDiag.trim()) {
+          await fetch(SUPABASE_URL + '/rest/v1/diagnostics', {
+            method: 'POST', headers: headers,
+            body: JSON.stringify({
+              user_id: userId, family_member_id: fmId, condition_name: liveDiag.trim(),
+              severity: liveSeverity, status: 'active', diagnosed_date: today,
+              diagnosed_by: liveDoctor.trim() || null, notes: liveNotes.trim() || null, source: 'live_consultation',
+            }),
+          });
+        }
+
+        // Mettre à jour poids/taille dans users_profile
+        var profileUpdate = {};
+        if (liveWeight.trim()) profileUpdate.weight = parseFloat(liveWeight);
+        if (liveHeight.trim()) profileUpdate.height = parseFloat(liveHeight);
+        if (Object.keys(profileUpdate).length > 0) {
+          await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId, {
+            method: 'PATCH', headers: headers,
+            body: JSON.stringify(profileUpdate),
+          });
+        }
+
+        setLiveSaving(false);
+        // Reset
+        setLiveMeds([]); setLiveMedSearch(''); setLiveDiag(''); setLiveNotes('');
+        setLiveTemp(''); setLiveTensionH(''); setLiveTensionL(''); setLiveSeverity('moderate'); setLiveDoctor('');
+        loadMedicalData();
+        showMbModal('success', 'Consultation sauvegardée ✓', 'Les données ont été ajoutées à votre MediBook.');
+        setMediBookView('assistance');
+      } catch(err) {
+        console.log('Live save error:', err);
+        setLiveSaving(false);
+        showMbModal('error', 'Erreur', 'La sauvegarde a échoué. Réessayez.');
+      }
+    };
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#1A2029' }}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient colors={['#3A3F46', '#252A30']}
+          style={{ paddingTop: Platform.OS === 'android' ? 35 : 50, paddingBottom: wp(12), paddingHorizontal: wp(12), flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#4A4F55' }}>
+          <Pressable delayPressIn={120} onPress={function() { setMediBookView('assistance'); }}
+            style={function(state) { return { width: wp(36), height: wp(36), borderRadius: wp(18), backgroundColor: 'rgba(255,255,255,0.08)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10), transform: [{ scale: state.pressed ? 0.92 : 1 }] }; }}>
+            <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 19l-7-7 7-7" stroke="#00D984" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+              <View style={{ width: wp(10), height: wp(10), borderRadius: wp(5), backgroundColor: '#00D984' }} />
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Consultation live</Text>
+            </View>
+          </View>
+        </LinearGradient>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(50) }}>
+
+          {/* Nom du médecin */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(14), marginBottom: wp(16) }}>
+            <Text style={{ fontSize: fp(10), color: '#888', marginBottom: wp(6) }}>MÉDECIN (optionnel)</Text>
+            <TextInput value={liveDoctor} onChangeText={setLiveDoctor} placeholder="Dr. Nom" placeholderTextColor="#555"
+              style={{ fontSize: fp(14), color: '#FFF', padding: 0 }} />
+          </View>
+
+          {/* Section 1 — Médicaments prescrits */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#FF6B8A40', borderRadius: wp(14), padding: wp(16), marginBottom: wp(16) }}>
+            <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FF6B8A', marginBottom: wp(12) }}>Médicaments prescrits</Text>
+            {liveMeds.map(function(m, i) {
+              return (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E2530', borderRadius: wp(8), padding: wp(10), marginBottom: wp(6), gap: wp(8) }}>
+                  <Text style={{ fontSize: fp(13), color: '#FFF', flex: 1 }}>{m.name}</Text>
+                  <View style={{ backgroundColor: m.conflict ? '#FFD93D20' : '#00D98420', paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4) }}>
+                    <Text style={{ fontSize: fp(9), color: m.conflict ? '#FFD93D' : '#00D984', fontWeight: '600' }}>{m.conflict ? '⚠' : '✓'}</Text>
+                  </View>
+                  <Pressable onPress={function() { setLiveMeds(function(prev) { return prev.filter(function(_, j) { return j !== i; }); }); }}>
+                    <Text style={{ fontSize: fp(14), color: '#FF6B8A' }}>✕</Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+            <TextInput value={liveMedSearch} onChangeText={setLiveMedSearch} placeholder="Ajouter un médicament..."
+              placeholderTextColor="#555" style={{ fontSize: fp(13), color: '#FFF', backgroundColor: '#1E2530', borderRadius: wp(8), padding: wp(10), marginTop: wp(4) }}
+              onSubmitEditing={function() {
+                if (liveMedSearch.trim()) {
+                  setLiveMeds(function(prev) { return prev.concat([{ name: liveMedSearch.trim(), dosage: null, conflict: false }]); });
+                  setLiveMedSearch('');
+                }
+              }} returnKeyType="done" />
+          </View>
+
+          {/* Section 2 — Mesures vitales */}
+          <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#888', marginBottom: wp(8) }}>MESURES VITALES</Text>
+          <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(8) }}>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12) }}>
+              <Text style={{ fontSize: fp(10), color: '#888', marginBottom: wp(4) }}>Poids (kg)</Text>
+              <TextInput value={liveWeight} onChangeText={setLiveWeight} placeholder="--" placeholderTextColor="#555"
+                keyboardType="numeric" style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', padding: 0 }} />
+            </View>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12) }}>
+              <Text style={{ fontSize: fp(10), color: '#888', marginBottom: wp(4) }}>Température (°C)</Text>
+              <TextInput value={liveTemp} onChangeText={setLiveTemp} placeholder="37.0" placeholderTextColor="#555"
+                keyboardType="numeric" style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', padding: 0 }} />
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(16) }}>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12) }}>
+              <Text style={{ fontSize: fp(10), color: '#888', marginBottom: wp(4) }}>Tension</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TextInput value={liveTensionH} onChangeText={setLiveTensionH} placeholder="12" placeholderTextColor="#555"
+                  keyboardType="numeric" style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', padding: 0, width: wp(30) }} />
+                <Text style={{ fontSize: fp(18), color: '#555', marginHorizontal: wp(4) }}>/</Text>
+                <TextInput value={liveTensionL} onChangeText={setLiveTensionL} placeholder="8" placeholderTextColor="#555"
+                  keyboardType="numeric" style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', padding: 0, width: wp(30) }} />
+              </View>
+            </View>
+            <View style={{ flex: 1, backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), padding: wp(12) }}>
+              <Text style={{ fontSize: fp(10), color: '#888', marginBottom: wp(4) }}>Taille (cm)</Text>
+              <TextInput value={liveHeight} onChangeText={setLiveHeight} placeholder="--" placeholderTextColor="#555"
+                keyboardType="numeric" style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', padding: 0 }} />
+            </View>
+          </View>
+
+          {/* Section 3 — Diagnostic */}
+          <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(16) }}>
+            <Text style={{ fontSize: fp(12), fontWeight: '600', color: '#888', marginBottom: wp(8) }}>DIAGNOSTIC</Text>
+            <TextInput value={liveDiag} onChangeText={setLiveDiag} placeholder="Diagnostic (optionnel)"
+              placeholderTextColor="#555" style={{ fontSize: fp(14), color: '#FFF', backgroundColor: '#1E2530', borderRadius: wp(8), padding: wp(10), marginBottom: wp(10) }} />
+            <View style={{ flexDirection: 'row', gap: wp(8), marginBottom: wp(10) }}>
+              {[
+                { key: 'mild', label: 'Léger', color: '#00D984' },
+                { key: 'moderate', label: 'Modéré', color: '#FFD93D' },
+                { key: 'severe', label: 'Sévère', color: '#FF6B8A' },
+              ].map(function(sev) {
+                var isSel = liveSeverity === sev.key;
+                return (
+                  <Pressable key={sev.key} onPress={function() { setLiveSeverity(sev.key); }}
+                    style={{ flex: 1, paddingVertical: wp(8), borderRadius: wp(8), alignItems: 'center',
+                      backgroundColor: isSel ? sev.color + '20' : '#1E2530', borderWidth: 1, borderColor: isSel ? sev.color : '#3A3F46' }}>
+                    <Text style={{ fontSize: fp(11), fontWeight: '600', color: isSel ? sev.color : '#888' }}>{sev.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <TextInput value={liveNotes} onChangeText={setLiveNotes} placeholder="Notes (optionnel)"
+              placeholderTextColor="#555" multiline numberOfLines={3}
+              style={{ fontSize: fp(12), color: '#FFF', backgroundColor: '#1E2530', borderRadius: wp(8), padding: wp(10), minHeight: wp(60), textAlignVertical: 'top' }} />
+          </View>
+
+          {/* Section 4 — Bouton validation */}
+          <Pressable delayPressIn={120} onPress={function() { saveLiveConsultation(); }}
+            style={function(state) { return {
+              backgroundColor: '#00D984', borderRadius: wp(14), paddingVertical: wp(16), alignItems: 'center', marginBottom: wp(16),
+              transform: [{ scale: state.pressed ? 0.96 : 1 }], opacity: liveSaving ? 0.6 : 1,
+            }; }}>
+            {liveSaving ? <ActivityIndicator size="small" color="#000" /> :
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#000' }}>Tout valider et sauvegarder</Text>}
+          </Pressable>
+
+          <BottomSpacer />
+        </ScrollView>
+      </View>
+    );
+  };
+
   // ── RENDER MEDIBOOK (ROUTER) ───────────────────────────────────────────────
   const renderMediBook = () => {
     if (mediBookView === 'carnet') return renderCarnetCapture();
     if (mediBookView === 'stats') return renderMediBookStats();
     if (mediBookView === 'report') return renderMediBookReport();
+    if (mediBookView === 'assistance') return renderAssistanceMedicale();
+    if (mediBookView === 'live') return renderLiveConsultation();
     return renderMediBookLanding();
   };
 
@@ -5138,5 +5527,7 @@ export const MediBookContent = (props) => {
   if (mediBookView === 'carnet') return React.createElement(View, { style: { flex: 1 } }, renderCarnetCapture(), mbModalEl);
   if (mediBookView === 'stats') return React.createElement(View, { style: { flex: 1 } }, renderMediBookStats(), mbModalEl);
   if (mediBookView === 'report') return React.createElement(View, { style: { flex: 1 } }, renderMediBookReport(), mbModalEl);
+  if (mediBookView === 'assistance') return React.createElement(View, { style: { flex: 1 } }, renderAssistanceMedicale(), mbModalEl);
+  if (mediBookView === 'live') return React.createElement(View, { style: { flex: 1 } }, renderLiveConsultation(), mbModalEl);
   return React.createElement(View, { style: { flex: 1 } }, renderMediBookLanding(), mbModalEl);
 };
