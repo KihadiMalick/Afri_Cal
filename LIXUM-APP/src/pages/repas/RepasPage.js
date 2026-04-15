@@ -1007,7 +1007,7 @@ export default function RepasPage({ navigation }) {
                           </Pressable>
                         ) : (
                           <View style={{ paddingVertical: wp(8), borderRadius: wp(8), backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', alignItems: 'center' }}>
-                            <Text style={{ color: '#555E6C', fontSize: fp(9) }}>🔒 Débloque avec {activeChar?.name || 'personnage'} Niv{power.level_required}{power.lix_cost_non_owner > 0 ? ' ou ' + power.lix_cost_non_owner + ' Lix' : ''}</Text>
+                            <Text style={{ color: '#555E6C', fontSize: fp(9) }}>🔒 Obtenez {activeChar?.name || 'cette carte'} Niv{power.level_required}</Text>
                           </View>
                         )}
                       </LinearGradient>
@@ -1044,7 +1044,7 @@ export default function RepasPage({ navigation }) {
                           </Pressable>
                         ) : (
                           <View style={{ paddingVertical: wp(8), borderRadius: wp(8), backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', alignItems: 'center' }}>
-                            <Text style={{ color: '#555E6C', fontSize: fp(9) }}>🔒 Débloque avec {activeChar?.name || 'personnage'} Niv{power.level_required}{power.lix_cost_non_owner > 0 ? ' ou ' + power.lix_cost_non_owner + ' Lix' : ''}</Text>
+                            <Text style={{ color: '#555E6C', fontSize: fp(9) }}>🔒 Obtenez {activeChar?.name || 'cette carte'} Niv{power.level_required}</Text>
                           </View>
                         )}
                       </LinearGradient>

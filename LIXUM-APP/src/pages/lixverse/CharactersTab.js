@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   ALL_CHARACTERS, TIER_CONFIG, CHAR_NAMES, FRAGS_NIV1,
   CHARACTER_IMAGES, SUPABASE_URL,
-  HEADERS, POST_HEADERS, getCharImage
+  HEADERS, POST_HEADERS, getCharImage, RECHARGE_COST_BY_TIER
 } from './lixverseConstants';
 import { LixGem } from './lixverseComponents';
 import { useAuth } from '../../config/AuthContext';
@@ -363,7 +363,8 @@ export default function CharactersTab({
                                   return;
                                 }
                                 if (own && usesRem === 0) {
-                                  showLixAlert('⚡ Recharge nécessaire', 'Recharge ton ' + name + ' avec ' + (ch.recharge_energy || 10) + ' énergie.', [{ text: 'Recharger', color: '#00D984', onPress: () => onRechargeChar() }, { text: 'Fermer', style: 'cancel' }], '⚡');
+                                  var rechargeCost = ch.recharge_energy || RECHARGE_COST_BY_TIER[ac.tier] || 10;
+                                  showLixAlert('⚡ Recharge nécessaire', 'Recharge ton ' + name + ' avec ' + rechargeCost + ' énergie.', [{ text: 'Recharger', color: '#00D984', onPress: function() { onRechargeChar(); } }, { text: 'Fermer', style: 'cancel' }], '⚡');
                                 } else {
                                   onFlipCard();
                                   if (charPowers.length === 0) onLoadCharPowers(acSlug);
