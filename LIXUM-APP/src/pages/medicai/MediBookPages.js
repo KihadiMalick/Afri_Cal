@@ -207,6 +207,7 @@ export const MediBookContent = (props) => {
     // Fonctions
     loadMedicalData,
     startMedicalScan,
+    startBatchScan,
     handleTransferToSecretPocket,
     toggleMedicationReminder,
     toggleMedicationTaken,
@@ -1381,7 +1382,7 @@ export const MediBookContent = (props) => {
 
   // ── RENDER CARNET CAPTURE ──────────────────────────────────────────────────
   const renderCarnetCapture = () => {
-    const caseSize = (Dimensions.get('window').width - wp(16) * 2 - wp(8) * 3) / 4;
+    const caseSize = (Dimensions.get('window').width - wp(16) * 2 - wp(8) * 2) / 3;
     const capturedCount = carnetPhotos.filter(p => p).length;
 
     return (
@@ -1489,10 +1490,18 @@ export const MediBookContent = (props) => {
             <View style={{ marginTop: wp(20), paddingHorizontal: wp(8) }}>
               <Pressable
                 delayPressIn={120}
-                onPress={() => {
-                  const photos = carnetPhotos.filter(p => p);
+                onPress={function() {
+                  var photos = carnetPhotos.filter(function(p) { return p; });
                   if (photos.length === 0) return;
-                  setShowAnalyzeSheet(true);
+                  if (photos.length > 10) {
+                    showMbModal('info', 'Limite atteinte', 'Maximum 10 photos par analyse. Vous avez ' + photos.length + ' pages. Veuillez en retirer pour continuer.');
+                    return;
+                  }
+                  // Use batch scan to send ALL photos (groups of 5, same as "Plusieurs photos")
+                  if (startBatchScan) {
+                    var batchReady = photos.map(function(p) { return { uri: p.uri, base64: p.base64 }; });
+                    startBatchScan(batchReady, 'carnet');
+                  }
                 }}
               >
                 <LinearGradient

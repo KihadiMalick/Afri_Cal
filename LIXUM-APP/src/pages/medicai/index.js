@@ -2876,6 +2876,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           showProfileSwitcher={showProfileSwitcher} setShowProfileSwitcher={setShowProfileSwitcher}
           loadMedicalData={loadMedicalData}
           startMedicalScan={startMedicalScan}
+          startBatchScan={startBatchScan}
           handleTransferToSecretPocket={handleTransferToSecretPocket}
           toggleMedicationReminder={toggleMedicationReminder}
           toggleMedicationTaken={toggleMedicationTaken}
