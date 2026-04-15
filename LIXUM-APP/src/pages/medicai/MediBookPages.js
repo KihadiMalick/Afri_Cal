@@ -1326,7 +1326,7 @@ export const MediBookContent = (props) => {
                 Générez votre MediBook
               </Text>
               <Text style={{ fontSize: fp(11), color: '#888', lineHeight: fp(16) }}>
-                Un rapport PDF complet à imprimer pour votre médecin. 500 Lix.
+                Un rapport PDF complet à imprimer pour votre médecin. Gratuit.
               </Text>
             </View>
           </View>
@@ -3353,7 +3353,7 @@ export const MediBookContent = (props) => {
               </Svg>
               <View>
                 <Text style={{ color: '#FFFFFF', fontSize: fp(16), fontWeight: '700' }}>Générer mon MediBook</Text>
-                <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: fp(11) }}>500 Lix — Rapport PDF 3 mois</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: fp(11) }}>Gratuit — Rapport PDF complet</Text>
               </View>
             </LinearGradient>
           </Pressable>
