@@ -1162,7 +1162,7 @@ export const MediBookContent = (props) => {
         </View>
         {renderProfileSwitchButton()}
         <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(8), paddingVertical: wp(4), marginLeft: wp(6) }}>
-          <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
+          <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>{(auth.lixBalance || 0) + ' Lix'}</Text>
         </View>
       </LinearGradient>
 
@@ -3298,7 +3298,7 @@ export const MediBookContent = (props) => {
         </View>
         {renderProfileSwitchButton()}
         <View style={{ backgroundColor: 'rgba(212,175,55,0.15)', borderRadius: wp(10), paddingHorizontal: wp(8), paddingVertical: wp(4), marginLeft: wp(6) }}>
-          <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>500 Lix</Text>
+          <Text style={{ color: '#D4AF37', fontSize: fp(10), fontWeight: '700' }}>{(auth.lixBalance || 0) + ' Lix'}</Text>
         </View>
       </LinearGradient>
 
