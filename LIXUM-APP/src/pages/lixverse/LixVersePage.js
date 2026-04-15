@@ -24,6 +24,7 @@ import PageHeader from '../../components/shared/PageHeader';
 import DefiTab from './DefiTab';
 import CharactersTab from './CharactersTab';
 import HumanTab from './HumanTab';
+import LixShopTab from './LixShopTab';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const W = SCREEN_WIDTH;
@@ -874,6 +875,7 @@ export default function LixVersePage({ navigation }) {
             { key: 'defi', label: 'Défi', icon: '🏆' },
             { key: 'human', label: 'Human', icon: '🤝' },
             { key: 'characters', label: 'Caractères', icon: '🃏' },
+            { key: 'lix', label: 'Lix', icon: '💎' },
           ].map(function(tab) {
             var isActive = activeTab === tab.key;
             return (
@@ -963,6 +965,10 @@ export default function LixVersePage({ navigation }) {
             onConsumePower={consumePower} onGoToSpin={() => setActiveTab('defi')}
             onNavigateTo={navigateTo}
           />
+        )}
+
+        {activeTab === 'lix' && (
+          <LixShopTab showLixAlert={showLixAlert} />
         )}
       </LinearGradient>
 
