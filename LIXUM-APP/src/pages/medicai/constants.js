@@ -34,16 +34,22 @@ export var ENERGY_CONFIG = {
     medic: 1,
     cartscan: 5
   },
-  SUBSCRIPTION_DAILY_ENERGY: {
+  SUBSCRIPTION_MONTHLY_ENERGY: {
     free: 0,
-    silver: 60,
-    gold: 150,
-    platinum: 300
+    silver: 200,
+    gold: 400,
+    platinum: 800
+  },
+  DISCOUNT: {
+    free: 0,
+    silver: 0,
+    gold: 0.25,
+    platinum: 0.50
   },
   SUBSCRIPTION_PRICES: {
     silver: 4.99,
     gold: 9.99,
-    platinum: 14.99
+    platinum: 20
   }
 };
 
