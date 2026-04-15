@@ -1112,7 +1112,7 @@ export const MediBookContent = (props) => {
 
   // ── RENDER MEDIBOOK LANDING ────────────────────────────────────────────────
   const renderMediBookLanding = () => (
-    <View style={{ flex: 1, backgroundColor: '#E8ECF0' }}>
+    <View style={{ flex: 1, backgroundColor: '#1A2029' }}>
       <StatusBar barStyle="light-content" />
       <LinearGradient
         colors={['#3A3F46', '#252A30']}
@@ -1223,28 +1223,31 @@ export const MediBookContent = (props) => {
         </Pressable>
 
         {/* Carte 3 : Mes Stats */}
-        <Pressable delayPressIn={120} onPress={() => setMediBookView('stats')}>
-          <View style={{
+        <Pressable delayPressIn={120} onPress={function() { setMediBookView('stats'); }}
+          style={function(state) { return {
             flexDirection: 'row', alignItems: 'center',
-            backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(14),
-            padding: wp(14), borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)',
-          }}>
-            <Svg width={wp(24)} height={wp(24)} viewBox="0 0 24 24" fill="none" style={{ marginRight: wp(12) }}>
+            backgroundColor: '#2A303B', borderRadius: wp(14),
+            padding: wp(16), borderWidth: 1, borderColor: '#3A3F46',
+            gap: wp(12),
+            transform: [{ scale: state.pressed ? 0.97 : 1 }],
+          }; }}>
+          <View style={{ width: wp(40), height: wp(40), borderRadius: wp(10), backgroundColor: '#00D98415', justifyContent: 'center', alignItems: 'center' }}>
+            <Svg width={wp(20)} height={wp(20)} viewBox="0 0 24 24" fill="none">
               <Line x1="18" y1="20" x2="18" y2="10" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
               <Line x1="12" y1="20" x2="12" y2="4" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
               <Line x1="6" y1="20" x2="6" y2="14" stroke="#00D984" strokeWidth="2" strokeLinecap="round"/>
             </Svg>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#2D3436' }}>Mes Stats</Text>
-              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)' }}>Graphiques et évolution santé</Text>
-            </View>
-            <Text style={{ fontSize: fp(16), color: 'rgba(0,0,0,0.2)' }}>{">"}</Text>
           </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Mes Stats</Text>
+            <Text style={{ fontSize: fp(11), color: '#888' }}>Graphiques et évolution santé</Text>
+          </View>
+          <Text style={{ fontSize: fp(14), color: '#555' }}>{">"}</Text>
         </Pressable>
 
         {/* Section info en bas du landing */}
         <View style={{ marginTop: wp(20), paddingHorizontal: wp(4) }}>
-          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#2D3436', marginBottom: wp(12) }}>
+          <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>
             Comment ça marche ?
           </Text>
 
@@ -1257,10 +1260,10 @@ export const MediBookContent = (props) => {
               <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '700' }}>1</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436', marginBottom: wp(2) }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>
                 Photographiez ou importez
               </Text>
-              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', lineHeight: fp(16) }}>
+              <Text style={{ fontSize: fp(11), color: '#888', lineHeight: fp(16) }}>
                 Votre carnet de santé, bilans, ordonnances, résultats d'analyses...
               </Text>
             </View>
@@ -1275,10 +1278,10 @@ export const MediBookContent = (props) => {
               <Text style={{ color: '#4DA6FF', fontSize: fp(13), fontWeight: '700' }}>2</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436', marginBottom: wp(2) }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>
                 ALIXEN analyse tout
               </Text>
-              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', lineHeight: fp(16) }}>
+              <Text style={{ fontSize: fp(11), color: '#888', lineHeight: fp(16) }}>
                 Vaccins, médicaments, diagnostics, allergies — chaque info va dans la bonne section.
               </Text>
             </View>
@@ -1293,10 +1296,10 @@ export const MediBookContent = (props) => {
               <Text style={{ color: '#D4AF37', fontSize: fp(13), fontWeight: '700' }}>3</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#2D3436', marginBottom: wp(2) }}>
+              <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>
                 Générez votre MediBook
               </Text>
-              <Text style={{ fontSize: fp(11), color: 'rgba(0,0,0,0.4)', lineHeight: fp(16) }}>
+              <Text style={{ fontSize: fp(11), color: '#888', lineHeight: fp(16) }}>
                 Un rapport PDF complet à imprimer pour votre médecin. 500 Lix.
               </Text>
             </View>
