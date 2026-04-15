@@ -70,6 +70,27 @@ export default function MedicAiPage({ navigation }) {
     return { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
   };
 
+  // ── CACHED AUTH TOKEN for synchronous header usage ──
+  var _authTokenRef = useRef(SUPABASE_ANON_KEY);
+  useEffect(function() {
+    supabase.auth.getSession().then(function(result) {
+      if (result.data.session) {
+        _authTokenRef.current = result.data.session.access_token;
+        console.log('[Auth] JWT token cached (length: ' + result.data.session.access_token.length + ')');
+      } else {
+        console.log('[Auth] No session — using anon key');
+      }
+    });
+    var sub = supabase.auth.onAuthStateChange(function(event, session) {
+      if (session) { _authTokenRef.current = session.access_token; }
+      else { _authTokenRef.current = SUPABASE_ANON_KEY; }
+    });
+    return function() { if (sub && sub.data && sub.data.subscription) sub.data.subscription.unsubscribe(); };
+  }, []);
+  var authHeaders = function() {
+    return { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current, 'Content-Type': 'application/json' };
+  };
+
   // Sub-page navigation
   const [currentSubPage, setCurrentSubPage] = useState('main');
 
@@ -409,13 +430,13 @@ export default function MedicAiPage({ navigation }) {
     // Avatar profil
     (async () => {
       try {
-        const pRes = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=full_name,lix_balance', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
+        const pRes = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=full_name,lix_balance', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current } });
         const pD = await pRes.json();
         if (pD && pD[0]) {
           setUserNameAvatar(pD[0].full_name || '');
           updateLixBalance(pD[0].lix_balance || 0);
         }
-        const cRes = await fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters?user_id=eq.' + userId + '&is_active=eq.true&select=character_slug', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
+        const cRes = await fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters?user_id=eq.' + userId + '&is_active=eq.true&select=character_slug', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current } });
         const cD = await cRes.json();
         if (cD && cD[0]) setActiveCharAvatar({ slug: cD[0].character_slug });
       } catch (e) {}
@@ -519,7 +540,7 @@ export default function MedicAiPage({ navigation }) {
             }
             // Skip greeting — chat restored
             try {
-              var profileRes2 = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=*', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
+              var profileRes2 = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=*', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current } });
               var pd2 = await profileRes2.json();
               if (pd2.length > 0) setUserProfile(pd2[0]);
             } catch (e) {}
@@ -531,7 +552,7 @@ export default function MedicAiPage({ navigation }) {
     try {
       const profileRes = await fetch(
         `${SUPABASE_URL}/rest/v1/users_profile?user_id=eq.${userId}&select=*`,
-        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current } }
       );
       const profileData = await profileRes.json();
       if (profileData.length > 0) {
@@ -542,7 +563,7 @@ export default function MedicAiPage({ navigation }) {
       const today = new Date().toISOString().split('T')[0];
       const summaryRes = await fetch(
         `${SUPABASE_URL}/rest/v1/daily_summary?user_id=eq.${userId}&date=eq.${today}&select=*`,
-        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current } }
       );
       const summaryData = await summaryRes.json();
       if (summaryData.length > 0) setTodaySummary(summaryData[0]);
@@ -551,7 +572,7 @@ export default function MedicAiPage({ navigation }) {
       const todayStr = new Date().toISOString().split('T')[0];
       const mealsRes = await fetch(
         SUPABASE_URL + '/rest/v1/meals?user_id=eq.' + userId + '&date=eq.' + todayStr + '&select=name,meal_type,calories,protein,carbs,fat&order=created_at.asc',
-        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current } }
       );
       const mealsData = await mealsRes.json();
       if (Array.isArray(mealsData)) setTodayMeals(mealsData);
@@ -567,7 +588,7 @@ export default function MedicAiPage({ navigation }) {
     try {
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/meals_master?select=id,name,category,calories_per_serving&order=name`,
-        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current } }
       );
       const data = await res.json();
       if (Array.isArray(data)) setAvailableMeals(data);
@@ -600,7 +621,7 @@ export default function MedicAiPage({ navigation }) {
     try {
       var headers = {
         'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + _authTokenRef.current,
         'Content-Type': 'application/json',
       };
 
@@ -703,7 +724,7 @@ export default function MedicAiPage({ navigation }) {
     try {
       var res = await fetch(
         SUPABASE_URL + '/rest/v1/family_members?user_id=eq.' + userId + '&is_active=eq.true&relation=eq.child&order=created_at.asc&select=*',
-        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } }
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current } }
       );
       var data = await res.json();
       if (Array.isArray(data)) {
@@ -782,7 +803,7 @@ export default function MedicAiPage({ navigation }) {
       try {
         var headers = {
           'apikey': SUPABASE_ANON_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + _authTokenRef.current,
         };
         var last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
         var yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -837,7 +858,7 @@ export default function MedicAiPage({ navigation }) {
   const loadAlixenContext = async (userId) => {
     const headers = {
       'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Authorization': 'Bearer ' + _authTokenRef.current,
       'Content-Type': 'application/json',
     };
 
@@ -1078,7 +1099,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + _authTokenRef.current,
             'apikey': SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({
@@ -1145,7 +1166,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + _authTokenRef.current,
               'apikey': SUPABASE_ANON_KEY,
             },
             body: JSON.stringify({
@@ -1277,7 +1298,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + _authTokenRef.current,
               'apikey': SUPABASE_ANON_KEY,
             },
             body: JSON.stringify({
@@ -1346,7 +1367,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     try {
       const headers = {
         'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + _authTokenRef.current,
         'Content-Type': 'application/json',
       };
       var fmId = activeProfile === 'self' ? null : activeProfile;
@@ -1768,7 +1789,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + _authTokenRef.current,
             'apikey': SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({
@@ -1881,7 +1902,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         {
           method: 'POST',
           headers: {
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + _authTokenRef.current,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -2122,7 +2143,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           {
             method: 'POST',
             headers: {
-              'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+              'Authorization': 'Bearer ' + _authTokenRef.current,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -2198,7 +2219,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'PATCH',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + _authTokenRef.current,
             'Content-Type': 'application/json',
             'Prefer': 'return=minimal',
           },
@@ -2250,7 +2271,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'PATCH',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + _authTokenRef.current,
             'Content-Type': 'application/json',
             'Prefer': 'return=minimal',
           },
@@ -2287,7 +2308,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         try {
           await fetch(SUPABASE_URL + '/rest/v1/medications?id=eq.' + medicationId, {
             method: 'PATCH',
-            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
             body: JSON.stringify({ status: 'completed' }),
           });
           loadMedicalData();
@@ -2312,7 +2333,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           method: 'POST',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + _authTokenRef.current,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ search_term: query, max_results: 8 }),
@@ -2354,7 +2375,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         method: 'POST',
         headers: {
           'apikey': SUPABASE_ANON_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + _authTokenRef.current,
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal',
         },
@@ -2433,7 +2454,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                   {
                     method: 'POST',
                     headers: {
-                      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                      'Authorization': 'Bearer ' + _authTokenRef.current,
                       'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
@@ -2503,7 +2524,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         method: 'POST',
         headers: {
           'apikey': SUPABASE_ANON_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + _authTokenRef.current,
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal',
         },
@@ -2547,7 +2568,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         SUPABASE_URL + '/rest/v1/rpc/search_diseases_db',
         {
           method: 'POST',
-          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current, 'Content-Type': 'application/json' },
           body: JSON.stringify({ p_query: query, p_limit: 8 }),
         }
       );
@@ -2574,7 +2595,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       }
       await fetch(SUPABASE_URL + '/rest/v1/diagnostics', {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({
           user_id: userId,
           family_member_id: activeProfile === 'self' ? null : activeProfile,
@@ -2605,7 +2626,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     try {
       await fetch(SUPABASE_URL + '/rest/v1/allergies', {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
         body: JSON.stringify({
           user_id: userId,
           family_member_id: activeProfile === 'self' ? null : activeProfile,
@@ -2631,7 +2652,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     if (!userId) return;
     setVaccCalendarLoading(true);
     var memberId = activeProfile !== 'self' ? activeProfile : null;
-    var headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+    var headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current };
     Promise.all([
       fetch(SUPABASE_URL + '/rest/v1/rpc/get_personalized_vaccine_schedule_by_user', {
         method: 'POST', headers: headers,
@@ -2678,7 +2699,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     if (!query || query.length < 2) { setVaccSearchResults([]); return; }
     fetch(SUPABASE_URL + '/rest/v1/rpc/search_vaccines_db', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current },
       body: JSON.stringify({ search_query: query, max_results: 8 }),
     }).then(function(res) { return res.json(); })
       .then(function(data) { if (Array.isArray(data)) setVaccSearchResults(data); })
@@ -2702,7 +2723,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     if (!vaccineId || !doseNumber || !adminDate) return;
     fetch(SUPABASE_URL + '/rest/v1/rpc/get_vaccine_reminder', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current },
       body: JSON.stringify({ p_vaccine_id: vaccineId, p_dose_number: doseNumber, p_administration_date: adminDate }),
     }).then(function(res) { return res.json(); })
       .then(function(data) {
@@ -2752,7 +2773,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       console.log('[Vacc INSERT] body:', JSON.stringify(vaccBody));
       var vaccRes = await fetch(SUPABASE_URL + '/rest/v1/vaccinations', {
         method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
         body: JSON.stringify(vaccBody),
       });
       var vaccResBody = await vaccRes.text();
