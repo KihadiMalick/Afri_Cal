@@ -1411,14 +1411,14 @@ export const MediBookContent = (props) => {
           </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }} numberOfLines={1}>Carnet de santé</Text>
-            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>25 emplacements disponibles</Text>
+            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.5)' }}>10 pages maximum</Text>
           </View>
           {renderProfileSwitchButton()}
         </LinearGradient>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingTop: wp(16), paddingBottom: wp(50) }}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8) }}>
-            {Array.from({ length: 25 }, (_, index) => (
+            {Array.from({ length: 10 }, (_, index) => (
               carnetPhotos[index] ? (
                 <Pressable
                   key={index}
@@ -1483,7 +1483,7 @@ export const MediBookContent = (props) => {
           </View>
 
           <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginTop: wp(12) }}>
-            {capturedCount} page{capturedCount > 1 ? 's' : ''} capturée{capturedCount > 1 ? 's' : ''} sur 25
+            {capturedCount} page{capturedCount > 1 ? 's' : ''} capturée{capturedCount > 1 ? 's' : ''} sur 10
           </Text>
 
           {capturedCount > 0 && (
