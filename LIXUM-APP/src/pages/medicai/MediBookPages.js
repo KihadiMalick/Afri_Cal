@@ -1655,7 +1655,11 @@ export const MediBookContent = (props) => {
       var hydBarWidth = hydBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
       var macroBarWidths = [protBarWidth, carbBarWidth, fatBarWidth];
 
+      var _selPt = useState(null);
+      var selectedPoint = _selPt[0]; var setSelectedPoint = _selPt[1];
+
       return (
+        <Pressable onPress={function() { setSelectedPoint(null); }} style={{ flex: 1 }}>
         <View>
           {/* Hero — Calories */}
           <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
@@ -1710,9 +1714,31 @@ export const MediBookContent = (props) => {
               {data.map(function(d, i) {
                 var x = data.length > 1 ? (i / (data.length - 1)) * chartW : chartW / 2;
                 var y = chartH - ((d.total_kcal || 0) / maxCal) * (chartH - wp(10));
-                return <Circle key={i} cx={x} cy={y} r="3.5" fill="#00D984" />;
+                return <Circle key={i} cx={x} cy={y} r={selectedPoint && selectedPoint.idx === i ? 6 : 3.5} fill="#00D984" />;
               })}
             </Svg>
+            {/* Pressable overlays for chart points */}
+            {data.map(function(d, i) {
+              var x = data.length > 1 ? (i / (data.length - 1)) * chartW : chartW / 2;
+              var y = chartH - ((d.total_kcal || 0) / maxCal) * (chartH - wp(10));
+              return (
+                <Pressable key={'pt' + i}
+                  onPress={function(e) { e.stopPropagation(); setSelectedPoint({ idx: i, value: d.total_kcal || 0, date: d.stat_date, x: x, y: y }); }}
+                  style={{ position: 'absolute', left: x - wp(12), top: y - wp(12), width: wp(24), height: wp(24) }} />
+              );
+            })}
+            {/* Tooltip */}
+            {selectedPoint ? (
+              <View style={{
+                position: 'absolute', left: Math.max(0, Math.min(selectedPoint.x - wp(35), chartW - wp(70))),
+                top: Math.max(0, selectedPoint.y - wp(40)),
+                backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#00D984',
+                borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(4), alignItems: 'center',
+              }}>
+                <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '700' }}>{selectedPoint.value + ' kcal'}</Text>
+                <Text style={{ color: '#888', fontSize: fp(9) }}>{selectedPoint.date ? new Date(selectedPoint.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}</Text>
+              </View>
+            ) : null}
             </Animated.View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: wp(6) }}>
               {data.length <= 10 ? data.map(function(d, i) {
@@ -1766,10 +1792,11 @@ export const MediBookContent = (props) => {
             </View>
           </View>
         </View>
+        </Pressable>
       );
     };
 
-    // ── PLACEHOLDER TABS (à compléter) ──
+    // ── VITALITÉ TAB ──
     var renderVitaliteContent = function() {
       var vScore = medicalData.vitalityScore || 0;
       var circumference = 2 * Math.PI * 42;
