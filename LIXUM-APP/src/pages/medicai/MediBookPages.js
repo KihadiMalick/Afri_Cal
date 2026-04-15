@@ -267,8 +267,8 @@ export const MediBookContent = (props) => {
   var healthTimeline = _healthTimeline[0]; var setHealthTimeline = _healthTimeline[1];
   var _healthInsights = useState([]);
   var healthInsights = _healthInsights[0]; var setHealthInsights = _healthInsights[1];
-  var _vaccStats = useState(null);
-  var vaccStats = _vaccStats[0]; var setVaccStats = _vaccStats[1];
+  var _statsVaccData = useState(null);
+  var statsVaccData = _statsVaccData[0]; var setStatsVaccData = _statsVaccData[1];
   var _rangeAccess = useState({ '7d': { has_access: true }, '30d': { has_access: false, lix_cost: 500 }, '365d': { has_access: false, lix_cost: 5000 }, 'all': { has_access: false, lix_cost: 10000 } });
   var rangeAccess = _rangeAccess[0]; var setRangeAccess = _rangeAccess[1];
   var _selectedRange = useState({ key: '7d', label: '7J', days: 7 });
@@ -313,7 +313,7 @@ export const MediBookContent = (props) => {
       setHydrationStats(Array.isArray(results[3]) ? results[3] : []);
       setHealthTimeline(Array.isArray(results[4]) ? results[4] : []);
       setHealthInsights(Array.isArray(results[5]) ? results[5] : []);
-      setVaccStats(results[6] && results[6][0] ? results[6][0] : null);
+      setStatsVaccData(results[6] && results[6][0] ? results[6][0] : null);
     } catch(err) { console.log('Erreur stats:', err); }
     setStatsLoading(false);
   };
@@ -2133,7 +2133,7 @@ export const MediBookContent = (props) => {
     var renderSanteContent = function() {
       var tl = healthTimeline || [];
       var ins = healthInsights || [];
-      var vs = vaccStats;
+      var vs = statsVaccData;
       var EVENT_ICONS = { 'diagnostic': '🤒', 'vaccination': '💉', 'allergie': '⚠️', 'medicament': '💊', 'analyse': '🔬' };
 
       // Counts
