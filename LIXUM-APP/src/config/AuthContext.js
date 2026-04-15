@@ -41,6 +41,49 @@ export function AuthProvider(props) {
   var _pushToken = useState(null);
   var pushToken = _pushToken[0], setPushToken = _pushToken[1];
 
+  // === ALIXEN NOTIFICATIONS STATE ===
+  var _alixenNotifications = useState([]);
+  var alixenNotifications = _alixenNotifications[0], setAlixenNotifications = _alixenNotifications[1];
+  var _notifCount = useState(0);
+  var notifCount = _notifCount[0], setNotifCount = _notifCount[1];
+
+  var fetchAlixenNotifications = useCallback(async function() {
+    if (!userId) { setAlixenNotifications([]); setNotifCount(0); return; }
+    try {
+      var { data, error } = await supabase.rpc('get_unread_notifications', { p_user_id: userId });
+      if (!error && Array.isArray(data)) {
+        var sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        var filtered = data.filter(function(n) {
+          return !n.created_at || new Date(n.created_at) > sevenDaysAgo;
+        }).slice(0, 20);
+        setAlixenNotifications(filtered);
+        setNotifCount(filtered.length);
+      }
+    } catch (e) {
+      console.warn('fetchAlixenNotifications error:', e);
+    }
+  }, [userId]);
+
+  var markNotificationRead = useCallback(async function(notifId) {
+    try {
+      await supabase.rpc('mark_notification_read', { p_user_id: userId, p_notification_id: notifId });
+      setAlixenNotifications(function(prev) { return prev.filter(function(n) { return n.id !== notifId; }); });
+      setNotifCount(function(prev) { return Math.max(0, prev - 1); });
+    } catch (e) {
+      console.warn('markNotificationRead error:', e);
+    }
+  }, [userId]);
+
+  var markAllNotificationsRead = useCallback(async function() {
+    try {
+      await supabase.rpc('mark_all_notifications_read', { p_user_id: userId });
+      setAlixenNotifications([]);
+      setNotifCount(0);
+    } catch (e) {
+      console.warn('markAllNotificationsRead error:', e);
+    }
+  }, [userId]);
+
   var updateLixBalance = useCallback(function(newBalance) {
     setLixBalance(newBalance);
   }, []);
@@ -78,15 +121,19 @@ export function AuthProvider(props) {
     }
   }, [userId]);
 
-  // Load initial balance when userId is set + register push notifications
+  // Load initial balance when userId is set + register push notifications + ALIXEN notifs
   useEffect(function() {
     if (userId) {
       refreshLixFromServer();
       NotificationService.registerForPushNotifications(userId).then(function(token) {
         if (token) setPushToken(token);
       });
+      // Fire-and-forget: generate ALIXEN notifications server-side
+      supabase.rpc('check_and_generate_notifications', { p_user_id: userId }).catch(function() {});
+      // Fetch existing notifications
+      fetchAlixenNotifications();
     }
-  }, [userId, refreshLixFromServer]);
+  }, [userId, refreshLixFromServer, fetchAlixenNotifications]);
 
   useEffect(function() {
     // 1. Verifier la session existante au demarrage
@@ -165,6 +212,11 @@ export function AuthProvider(props) {
         onboardingUsage: onboardingUsage,
         setOnboardingUsage: setOnboardingUsage,
         pushToken: pushToken,
+        alixenNotifications: alixenNotifications,
+        notifCount: notifCount,
+        fetchAlixenNotifications: fetchAlixenNotifications,
+        markNotificationRead: markNotificationRead,
+        markAllNotificationsRead: markAllNotificationsRead,
       }
     }, props.children)
   );

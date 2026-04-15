@@ -26,7 +26,7 @@ const AvatarButton = ({ activeChar, userName, onPress, size = 30 }) => {
   );
 };
 
-const BottomTabs = ({ activeTab, onTabPress }) => {
+const BottomTabs = ({ activeTab, onTabPress, medicaiNotifCount }) => {
   var insets = useSafeAreaInsets();
   var bottomPad = Math.max(insets.bottom, 10);
   return (
@@ -112,6 +112,18 @@ const BottomTabs = ({ activeTab, onTabPress }) => {
                 width: 12, height: 12, justifyContent: 'center', alignItems: 'center',
               }}>
                 <LockIcon size={10} />
+              </View>
+            )}
+            {tab.isMedicAi && medicaiNotifCount > 0 && (
+              <View style={{
+                position: 'absolute', top: -4, right: -8,
+                backgroundColor: '#FF3B5C', borderRadius: 8,
+                minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center',
+                paddingHorizontal: 3, borderWidth: 1.5, borderColor: '#1E2530',
+              }}>
+                <Text style={{ color: '#FFF', fontSize: 9, fontWeight: '800' }}>
+                  {medicaiNotifCount > 9 ? '9+' : medicaiNotifCount}
+                </Text>
               </View>
             )}
           </View>

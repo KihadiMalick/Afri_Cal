@@ -1025,6 +1025,7 @@ export default function ActivityPage({ navigation }) {
           activeTab={activeTab}
           onTabPress={handleTabPress}
           lang={lang}
+          medicaiNotifCount={auth.notifCount}
         />
 
       </View>

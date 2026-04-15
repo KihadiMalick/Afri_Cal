@@ -28,6 +28,10 @@ export default function DashboardPage({ navigation }) {
   var realLixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
   var userEnergy = auth.energy; var updateEnergy = auth.updateEnergy;
   var refreshLixFromServer = auth.refreshLixFromServer;
+  var alixenNotifications = auth.alixenNotifications;
+  var notifCount = auth.notifCount;
+  var markNotificationRead = auth.markNotificationRead;
+  var markAllNotificationsRead = auth.markAllNotificationsRead;
   const [realConsumed, setRealConsumed] = useState(0);
   var _dailyMacros = useState({ protein: 0, carbs: 0, fat: 0 }); var dailyMacros = _dailyMacros[0]; var setDailyMacros = _dailyMacros[1];
   const [realDailyTarget, setRealDailyTarget] = useState(2330);
@@ -408,6 +412,8 @@ export default function DashboardPage({ navigation }) {
           toggleStates={toggleStates} setToggleStates={setToggleStates}
           consumePower={consumePower} userName={userName}
           refreshing={refreshing} onRefresh={onRefresh}
+          alixenNotifications={alixenNotifications} notifCount={notifCount}
+          onDismissNotif={markNotificationRead} onDismissAllNotifs={markAllNotificationsRead}
           onAvatarPress={function() {}}
           onNavigate={function(tab) {
             var routes = { meals: 'Repas', activity: 'Activite', medicai: 'MedicAi', lixverse: 'LixVerse' };
@@ -509,7 +515,7 @@ export default function DashboardPage({ navigation }) {
 
       <TooltipOverlay tooltipStep={tooltipStep} setTooltipStep={setTooltipStepPersist} scrollRef={scrollRef} />
 
-      <BottomTabs activeTab="home" onTabPress={function(key) {
+      <BottomTabs activeTab="home" medicaiNotifCount={notifCount} onTabPress={function(key) {
         if (key === 'home') return;
         var routes = { meals: 'Repas', medicai: 'MedicAi', activity: 'Activite', lixverse: 'LixVerse' };
         if (routes[key] && navigation) navigation.navigate(routes[key]);
