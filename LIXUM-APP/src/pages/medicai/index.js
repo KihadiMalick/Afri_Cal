@@ -218,6 +218,17 @@ export default function MedicAiPage({ navigation }) {
   var vaccReminderNote = _vaccReminderNote[0]; var setVaccReminderNote = _vaccReminderNote[1];
   var _vaccReminderAutoFilled = useState(false);
   var vaccReminderAutoFilled = _vaccReminderAutoFilled[0]; var setVaccReminderAutoFilled = _vaccReminderAutoFilled[1];
+  // Vaccine calendar dashboard
+  var _vaccCalView = useState('calendar');
+  var vaccCalendarView = _vaccCalView[0]; var setVaccCalendarView = _vaccCalView[1];
+  var _vaccSchedule = useState([]);
+  var vaccSchedule = _vaccSchedule[0]; var setVaccSchedule = _vaccSchedule[1];
+  var _vaccStats = useState(null);
+  var vaccStats = _vaccStats[0]; var setVaccStats = _vaccStats[1];
+  var _vaccPriorityFilter = useState(null);
+  var vaccPriorityFilter = _vaccPriorityFilter[0]; var setVaccPriorityFilter = _vaccPriorityFilter[1];
+  var _vaccCalLoading = useState(false);
+  var vaccCalendarLoading = _vaccCalLoading[0]; var setVaccCalendarLoading = _vaccCalLoading[1];
   const [activeProfile, setActiveProfile] = useState('self');
   const [children, setChildren] = useState([]);
   const [carnetPhotos, setCarnetPhotos] = useState([]);
@@ -394,6 +405,7 @@ export default function MedicAiPage({ navigation }) {
     loadAvailableMeals();
     loadMedicalData();
     loadFamilyMembers();
+    loadVaccineSchedule();
     // Avatar profil
     (async () => {
       try {
@@ -2614,6 +2626,53 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     }
   };
 
+  // ── VACCINE CALENDAR DASHBOARD ──────────────────────────────────────────
+  var loadVaccineSchedule = function() {
+    if (!userId) return;
+    setVaccCalendarLoading(true);
+    var memberId = activeProfile !== 'self' ? activeProfile : null;
+    var headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+    Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/rpc/get_personalized_vaccine_schedule', {
+        method: 'POST', headers: headers,
+        body: JSON.stringify({ p_user_id: userId, p_family_member_id: memberId }),
+      }).then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
+      fetch(SUPABASE_URL + '/rest/v1/rpc/get_vaccine_completion_stats', {
+        method: 'POST', headers: headers,
+        body: JSON.stringify({ p_user_id: userId, p_family_member_id: memberId, p_priority_filter: null }),
+      }).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+    ]).then(function(results) {
+      if (Array.isArray(results[0])) setVaccSchedule(results[0]);
+      if (results[1]) {
+        var stats = Array.isArray(results[1]) ? results[1][0] : results[1];
+        if (stats) setVaccStats(stats);
+      }
+      setVaccCalendarLoading(false);
+    }).catch(function() { setVaccCalendarLoading(false); });
+  };
+
+  var getOverdueText = function(nextDueDate) {
+    if (!nextDueDate) return '';
+    var due = new Date(nextDueDate);
+    var now = new Date();
+    var diffMs = now - due;
+    if (diffMs <= 0) return '';
+    var diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays < 30) return diffDays + ' jour' + (diffDays > 1 ? 's' : '');
+    var diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) return diffMonths + ' mois';
+    var diffYears = Math.floor(diffMonths / 12);
+    return diffYears + ' an' + (diffYears > 1 ? 's' : '');
+  };
+
+  var openAddVaccFromCalendar = function(vaccine) {
+    selectVaccineFromDb(vaccine);
+    var nextDose = (vaccine.doses_done || 0) + 1;
+    if (nextDose > (vaccine.total_doses || 1)) nextDose = vaccine.total_doses || 1;
+    setNewVaccDose(nextDose);
+    setShowAddVaccSheet(true);
+  };
+
   // ── VACCINE SEARCH + AUTO-REMINDER ─────────────────────────────────────
   var searchVaccinesDb = function(query) {
     if (!query || query.length < 2) { setVaccSearchResults([]); return; }
@@ -2706,6 +2765,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
       setNewVaccName(''); setNewVaccDate(''); setNewVaccDose(1); setNewVaccNextDue(''); setNewVaccDoctor(''); setNewVaccBatch('');
       setSelectedVaccineFromDb(null); setVaccSearchResults([]); setVaccReminderNote(''); setVaccReminderAutoFilled(false);
       await loadMedicalData();
+      loadVaccineSchedule();
       showMModal('success', 'Vaccin ajouté ✓', newVaccName.trim() + ' a été ajouté à votre carnet vaccinal.');
     } catch (error) {
       console.error('Erreur ajout vaccination:', error);
@@ -2789,6 +2849,11 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           showAddAnalysisSheet={showAddAnalysisSheet} setShowAddAnalysisSheet={setShowAddAnalysisSheet}
           showAddDiagSheet={showAddDiagSheet} setShowAddDiagSheet={setShowAddDiagSheet}
           showAddAllergySheet={showAddAllergySheet} setShowAddAllergySheet={setShowAddAllergySheet}
+          vaccCalendarView={vaccCalendarView} setVaccCalendarView={setVaccCalendarView}
+          vaccSchedule={vaccSchedule} vaccStats={vaccStats}
+          vaccPriorityFilter={vaccPriorityFilter} setVaccPriorityFilter={setVaccPriorityFilter}
+          vaccCalendarLoading={vaccCalendarLoading} openAddVaccFromCalendar={openAddVaccFromCalendar}
+          getOverdueText={getOverdueText}
           showAddVaccSheet={showAddVaccSheet} setShowAddVaccSheet={setShowAddVaccSheet}
           mbGenerateScale={mbGenerateScale}
         />
