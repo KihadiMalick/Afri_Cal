@@ -282,6 +282,19 @@ export const MediBookContent = (props) => {
   var _unlockTarget = useState(null);
   var unlockTarget = _unlockTarget[0]; var setUnlockTarget = _unlockTarget[1];
 
+  // ── NUTRITION ANIMATION STATES (top level — hooks cannot be inside nested functions) ──
+  var _nutCalBarAnim = useRef(new Animated.Value(0)).current;
+  var _nutProtBarAnim = useRef(new Animated.Value(0)).current;
+  var _nutCarbBarAnim = useRef(new Animated.Value(0)).current;
+  var _nutFatBarAnim = useRef(new Animated.Value(0)).current;
+  var _nutCurveOpacity = useRef(new Animated.Value(0)).current;
+  var _nutHydBarAnim = useRef(new Animated.Value(0)).current;
+  var _nutDisplayCal = useState(0);
+  var nutDisplayCal = _nutDisplayCal[0]; var setNutDisplayCal = _nutDisplayCal[1];
+  var _nutSelectedPoint = useState(null);
+  var nutSelectedPoint = _nutSelectedPoint[0]; var setNutSelectedPoint = _nutSelectedPoint[1];
+  var _nutAnimRan = useRef(false);
+
   var getAuthHeaders = async function() {
     var result = await supabase.auth.getSession();
     var token = result.data.session ? result.data.session.access_token : SUPABASE_ANON_KEY;
@@ -1611,52 +1624,39 @@ export const MediBookContent = (props) => {
       var areaPoints = '0,' + chartH + ' ' + points + ' ' + chartW + ',' + chartH;
       var objY = chartH - (objectifCal / maxCal) * (chartH - wp(10));
 
-      // Animations
-      var calBarAnim = useRef(new Animated.Value(0)).current;
-      var protBarAnim = useRef(new Animated.Value(0)).current;
-      var carbBarAnim = useRef(new Animated.Value(0)).current;
-      var fatBarAnim = useRef(new Animated.Value(0)).current;
-      var curveOpacity = useRef(new Animated.Value(0)).current;
-      var hydBarAnim = useRef(new Animated.Value(0)).current;
-      var _dispCalRef = useRef({ val: 0 });
-      var _dispCal = useState(0);
-      var displayCal = _dispCal[0]; var setDisplayCal = _dispCal[1];
-
-      useEffect(function() {
+      // Animations — use top-level refs, trigger imperatively
+      if (!_nutAnimRan.current) {
+        _nutAnimRan.current = true;
+        // Reset animated values
+        _nutCalBarAnim.setValue(0); _nutProtBarAnim.setValue(0);
+        _nutCarbBarAnim.setValue(0); _nutFatBarAnim.setValue(0);
+        _nutCurveOpacity.setValue(0); _nutHydBarAnim.setValue(0);
         // Counter animation
-        var target = avgCalories;
-        var steps = 30;
-        var stepVal = target / steps;
-        var stepDelay = 600 / steps;
-        var cur = 0;
+        var target = avgCalories; var steps = 30;
+        var stepVal = target / steps; var stepDelay = 600 / steps; var cur = 0;
         var iv = setInterval(function() {
           cur += stepVal;
-          if (cur >= target) { setDisplayCal(target); clearInterval(iv); }
-          else { setDisplayCal(Math.round(cur)); }
+          if (cur >= target) { setNutDisplayCal(target); clearInterval(iv); }
+          else { setNutDisplayCal(Math.round(cur)); }
         }, stepDelay);
         // Bars stagger
         Animated.stagger(100, [
-          Animated.timing(calBarAnim, { toValue: calPct, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
-          Animated.timing(protBarAnim, { toValue: pctProtein, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
-          Animated.timing(carbBarAnim, { toValue: pctCarbs, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
-          Animated.timing(fatBarAnim, { toValue: pctFat, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+          Animated.timing(_nutCalBarAnim, { toValue: calPct, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+          Animated.timing(_nutProtBarAnim, { toValue: pctProtein, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+          Animated.timing(_nutCarbBarAnim, { toValue: pctCarbs, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+          Animated.timing(_nutFatBarAnim, { toValue: pctFat, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
         ]).start();
-        // Curve fade
-        Animated.timing(curveOpacity, { toValue: 1, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-        // Hydration bar
-        Animated.timing(hydBarAnim, { toValue: hydPct, duration: 600, delay: 400, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
-        return function() { clearInterval(iv); };
-      }, []);
+        Animated.timing(_nutCurveOpacity, { toValue: 1, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+        Animated.timing(_nutHydBarAnim, { toValue: hydPct, duration: 600, delay: 400, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+      }
 
-      var calBarWidth = calBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
-      var protBarWidth = protBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
-      var carbBarWidth = carbBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
-      var fatBarWidth = fatBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
-      var hydBarWidth = hydBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var calBarWidth = _nutCalBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var protBarWidth = _nutProtBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var carbBarWidth = _nutCarbBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var fatBarWidth = _nutFatBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
+      var hydBarWidth = _nutHydBarAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
       var macroBarWidths = [protBarWidth, carbBarWidth, fatBarWidth];
-
-      var _selPt = useState(null);
-      var selectedPoint = _selPt[0]; var setSelectedPoint = _selPt[1];
+      var selectedPoint = nutSelectedPoint; var setSelectedPoint = setNutSelectedPoint;
 
       return (
         <Pressable onPress={function() { setSelectedPoint(null); }} style={{ flex: 1 }}>
@@ -1665,7 +1665,7 @@ export const MediBookContent = (props) => {
           <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
             <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#888', letterSpacing: 1 }}>CALORIES MOY. / JOUR</Text>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: wp(6) }}>
-              <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#FFF' }}>{displayCal}</Text>
+              <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#FFF' }}>{nutDisplayCal}</Text>
               <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#888', marginLeft: wp(4) }}>kcal</Text>
               <View style={{ flex: 1 }} />
               <Text style={{ fontSize: fp(13), fontWeight: '600', color: deltaVsObj < 0 ? '#FF6B8A' : '#00D984' }}>{(deltaVsObj > 0 ? '+' : '') + deltaVsObj + '% vs obj'}</Text>
@@ -1700,7 +1700,7 @@ export const MediBookContent = (props) => {
           {/* Courbe Calories */}
           <View style={{ backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(14), padding: wp(16), marginBottom: wp(12) }}>
             <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#FFF', marginBottom: wp(12) }}>Évolution calories</Text>
-            <Animated.View style={{ opacity: curveOpacity }}>
+            <Animated.View style={{ opacity: _nutCurveOpacity }}>
             <Svg width={chartW} height={chartH}>
               <Defs>
                 <SvgLinearGradient id="calAreaGrad" x1="0" y1="0" x2="0" y2="1">
