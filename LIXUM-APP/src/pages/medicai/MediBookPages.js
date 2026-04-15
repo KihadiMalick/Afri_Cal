@@ -309,7 +309,7 @@ export const MediBookContent = (props) => {
         fetchRPC('get_hydration_stats', { p_user_id: userId, p_days_back: daysBack }),
         fetchRPC('get_health_timeline', { p_user_id: userId, p_family_member_id: fmId, p_days_back: daysBack }),
         fetchRPC('get_health_insights', { p_user_id: userId, p_family_member_id: fmId, p_days_back: daysBack }),
-        fetchRPC('get_vaccine_completion_stats', { p_user_id: userId, p_family_member_id: fmId })
+        fetchRPC('get_vaccine_completion_stats_by_user', { p_user_id: userId, p_family_member_id: fmId })
       ]);
       console.log('[Stats] nutrition:', Array.isArray(results[0]) ? results[0].length + ' rows' : 'error', results[0] && results[0].error ? results[0].error : '');
       console.log('[Stats] activity:', Array.isArray(results[1]) ? results[1].length + ' rows' : 'error', results[1] && results[1].error ? results[1].error : '');
