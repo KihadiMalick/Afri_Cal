@@ -2024,14 +2024,59 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
     }
   };
 
-  const pickDocument = async (context) => {
+  var pickDocument = async function(context) {
     try {
-      showMModal('confirm', 'Importer un document', 'Prenez une photo du document ou importez depuis la galerie.', {
-        confirmText: 'Prendre une photo', cancelText: 'Depuis la galerie',
-        onConfirm: function() { closeMModal(); takePhoto(context); },
-        onClose: function() { closeMModal(); pickImage(context); },
+      var result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
       });
+      if (result.canceled || !result.assets || result.assets.length === 0) return;
+      var file = result.assets[0];
+      var fileSizeKb = (file.size || 0) / 1024;
+      // Estimate pages: ~80KB per page (rough average for scanned PDFs)
+      var estimatedPages = Math.max(1, Math.round(fileSizeKb / 80));
+
+      if (estimatedPages > 10) {
+        Alert.alert(
+          'Document trop volumineux',
+          'Ce document fait environ ' + estimatedPages + ' pages (taille : ' + Math.round(fileSizeKb) + ' Ko).\nMaximum 10 pages autorisées.\n\nConseil : Divisez votre PDF ou photographiez les pages importantes.',
+          [{ text: 'Compris' }]
+        );
+        return;
+      }
+
+      var cost = estimatedPages <= 5 ? 50 : 80;
+      Alert.alert(
+        'Importer ce PDF ?',
+        file.name + '\n~' + estimatedPages + ' page' + (estimatedPages > 1 ? 's' : '') + ' détectée' + (estimatedPages > 1 ? 's' : '') + '\nCoût : ' + cost + ' énergie',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Analyser', onPress: async function() {
+            try {
+              // Read file as base64 via fetch
+              var fileResponse = await fetch(file.uri);
+              var blob = await fileResponse.blob();
+              var base64 = await new Promise(function(resolve, reject) {
+                var reader = new FileReader();
+                reader.onloadend = function() {
+                  var b64 = reader.result;
+                  if (b64 && b64.indexOf(',') !== -1) b64 = b64.split(',')[1];
+                  resolve(b64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+              if (!base64) { showMModal('error', 'Erreur', 'Impossible de lire le fichier.'); return; }
+              startMedicalScan(base64, file.name || 'Document PDF', context || 'medibook');
+            } catch (readErr) {
+              console.warn('Erreur lecture PDF:', readErr);
+              showMModal('error', 'Erreur', 'Impossible de lire ce fichier PDF.');
+            }
+          }},
+        ]
+      );
     } catch (error) {
+      console.warn('Erreur DocumentPicker:', error);
     }
   };
 

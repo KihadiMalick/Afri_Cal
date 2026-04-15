@@ -231,8 +231,8 @@ export const AllModals = (props) => {
                   </Svg>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Importer un document</Text>
-                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>PDF ou fichier</Text>
+                  <Text style={{ fontSize: fp(15), fontWeight: '600', color: '#FFF', marginBottom: wp(2) }}>Importer un PDF (10 pages max)</Text>
+                  <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.4)' }}>Ordonnance, bilan, résultats...</Text>
                 </View>
                 <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.25)' }}>{">"}</Text>
               </Pressable>
