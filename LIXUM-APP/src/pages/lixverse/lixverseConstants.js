@@ -2,6 +2,14 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 const HEADERS = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 const POST_HEADERS = { ...HEADERS, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
+var RECHARGE_COST_BY_TIER = {
+  standard: 5,
+  rare: 10,
+  elite: 15,
+  mythique: 20,
+  ultimate: 25
+};
+
 const ALL_CHARACTERS = [
   { id: 'emerald_owl', name: 'EMERALD OWL', tier: 'standard', color: '#00D984', emoji: '🦉', image: null, desc: '3 recettes perso gratuites', uses: 3, unlock_hours: 0 },
   { id: 'hawk_eye', name: 'HAWK EYE', tier: 'standard', color: '#4DA6FF', emoji: '🦅', desc: '2 Xscans gratuits', uses: 2, unlock_hours: 0 },
@@ -226,4 +234,5 @@ export {
   NAV_TABS,
   getCharImage,
   randomSlugFromTier,
+  RECHARGE_COST_BY_TIER,
 };
