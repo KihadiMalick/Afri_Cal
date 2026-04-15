@@ -16,6 +16,7 @@ import { useAuth } from '../../config/AuthContext';
 import { supabase } from '../../config/supabase';
 import { BottomSpacer } from './shared';
 import LixumModal from '../../components/shared/LixumModal';
+import QRCode from 'react-native-qrcode-svg';
 var NotificationService = require('../../services/NotificationService');
 
 export const mbDataStatus = [
@@ -225,6 +226,9 @@ export const MediBookContent = (props) => {
     showAddVaccSheet, setShowAddVaccSheet,
     // Animation
     mbGenerateScale,
+    // Medical share
+    shareToken, shareLoading, shareError, shareExpiry,
+    generateMedicalShare,
   } = props;
 
   var auth = useAuth();
@@ -3253,6 +3257,90 @@ export const MediBookContent = (props) => {
                 </Text>
               </View>
             ) : null}
+          </View>
+
+          {/* ── Partage médical — QR Code ── */}
+          <View style={{
+            backgroundColor: '#2A303B', borderRadius: wp(14), padding: wp(16),
+            marginTop: wp(12), borderWidth: 1, borderColor: '#3A3F46',
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(12) }}>
+              <View style={{
+                width: wp(36), height: wp(36), borderRadius: wp(10),
+                backgroundColor: 'rgba(212,175,55,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: wp(10),
+              }}>
+                <Svg width={wp(18)} height={wp(18)} viewBox="0 0 24 24" fill="none">
+                  <Rect x="3" y="3" width="7" height="7" rx="1" stroke="#D4AF37" strokeWidth="1.5" />
+                  <Rect x="14" y="3" width="7" height="7" rx="1" stroke="#D4AF37" strokeWidth="1.5" />
+                  <Rect x="3" y="14" width="7" height="7" rx="1" stroke="#D4AF37" strokeWidth="1.5" />
+                  <Rect x="14" y="14" width="4" height="4" rx="0.5" stroke="#D4AF37" strokeWidth="1.5" />
+                  <Line x1="21" y1="14" x2="21" y2="21" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
+                  <Line x1="14" y1="21" x2="21" y2="21" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" />
+                </Svg>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Partage médical</Text>
+                <Text style={{ fontSize: fp(11), color: '#888', marginTop: wp(2) }}>QR Code temporaire pour votre médecin</Text>
+              </View>
+            </View>
+
+            {shareToken && shareExpiry && new Date() < shareExpiry ? (
+              <View style={{ alignItems: 'center' }}>
+                <View style={{
+                  backgroundColor: '#FFFFFF', borderRadius: wp(12), padding: wp(12),
+                  marginBottom: wp(12),
+                }}>
+                  <QRCode
+                    value={'https://yuhordnzfpcswztujovi.supabase.co/functions/v1/medical-share?token=' + shareToken}
+                    size={wp(180)}
+                    backgroundColor="#FFFFFF"
+                    color="#1A2029"
+                  />
+                </View>
+                <View style={{
+                  backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(8),
+                  paddingHorizontal: wp(12), paddingVertical: wp(6), marginBottom: wp(8),
+                }}>
+                  <Text style={{ fontSize: fp(11), color: '#D4AF37', fontWeight: '600', textAlign: 'center' }}>
+                    Valide pendant 30 minutes
+                  </Text>
+                </View>
+                <Text style={{ fontSize: fp(10), color: '#666', textAlign: 'center', lineHeight: fp(15) }}>
+                  Montrez ce QR code à votre médecin.{'\n'}Il pourra consulter votre MediBook complet.
+                </Text>
+              </View>
+            ) : (
+              <View style={{ alignItems: 'center' }}>
+                {shareError ? (
+                  <Text style={{ fontSize: fp(11), color: '#FF6B6B', marginBottom: wp(10), textAlign: 'center' }}>{shareError}</Text>
+                ) : null}
+                <Pressable delayPressIn={120} onPress={generateMedicalShare}
+                  style={function(state) { return {
+                    backgroundColor: shareLoading ? '#3A3F46' : '#D4AF37',
+                    borderRadius: wp(10), paddingVertical: wp(12), paddingHorizontal: wp(24),
+                    flexDirection: 'row', alignItems: 'center', gap: wp(8),
+                    opacity: shareLoading ? 0.7 : 1,
+                    transform: [{ scale: state.pressed ? 0.96 : 1 }],
+                  }; }}>
+                  {shareLoading ? (
+                    <ActivityIndicator size="small" color="#D4AF37" />
+                  ) : (
+                    <Svg width={wp(16)} height={wp(16)} viewBox="0 0 24 24" fill="none">
+                      <Rect x="3" y="3" width="7" height="7" rx="1" stroke="#1A2029" strokeWidth="2" />
+                      <Rect x="14" y="3" width="7" height="7" rx="1" stroke="#1A2029" strokeWidth="2" />
+                      <Rect x="3" y="14" width="7" height="7" rx="1" stroke="#1A2029" strokeWidth="2" />
+                      <Rect x="14" y="14" width="4" height="4" rx="0.5" stroke="#1A2029" strokeWidth="2" />
+                    </Svg>
+                  )}
+                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: shareLoading ? '#D4AF37' : '#1A2029' }}>
+                    {shareLoading ? 'Génération...' : 'Générer un QR Code'}
+                  </Text>
+                </Pressable>
+                <Text style={{ fontSize: fp(10), color: '#666', textAlign: 'center', marginTop: wp(8), lineHeight: fp(15) }}>
+                  Votre médecin pourra consulter{'\n'}vos données de santé pendant 30 min
+                </Text>
+              </View>
+            )}
           </View>
 
           <Pressable delayPressIn={120} onPress={() => setReportSection('pdf-preview')} style={{ marginTop: wp(12), marginBottom: wp(16) }}>
