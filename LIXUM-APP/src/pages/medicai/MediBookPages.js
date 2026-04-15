@@ -1509,10 +1509,10 @@ export const MediBookContent = (props) => {
     var familyMemberId = activeProfile !== 'self' ? activeProfile : null;
     var TAB_ITEMS = [
       { key: 'nutrition', emoji: '🥗', label: 'Nutrition', top: 0, leftPct: 50, anchor: 'center' },
-      { key: 'vitalite', emoji: '💚', label: 'Vitalité', top: wp(38), leftPct: 8, anchor: 'left' },
-      { key: 'humeur', emoji: '😊', label: 'Humeur', top: wp(38), leftPct: 92, anchor: 'right' },
-      { key: 'activite', emoji: '🏃', label: 'Activité', top: wp(78), leftPct: 22, anchor: 'left' },
-      { key: 'sante', emoji: '🏥', label: 'Santé', top: wp(78), leftPct: 78, anchor: 'right' }
+      { key: 'vitalite', emoji: '💚', label: 'Vitalité', top: wp(45), leftPct: 12, anchor: 'left' },
+      { key: 'humeur', emoji: '😊', label: 'Humeur', top: wp(45), leftPct: 88, anchor: 'right' },
+      { key: 'activite', emoji: '🏃', label: 'Activité', top: wp(90), leftPct: 28, anchor: 'left' },
+      { key: 'sante', emoji: '🏥', label: 'Santé', top: wp(90), leftPct: 72, anchor: 'right' }
     ];
     var TIME_RANGES = [
       { key: '7d', label: '7J', days: 7 },
@@ -2474,7 +2474,7 @@ export const MediBookContent = (props) => {
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(50) }}>
           {/* Semi-arc navigation */}
-          <View style={{ position: 'relative', height: wp(140), marginTop: wp(10), marginBottom: wp(20) }}>
+          <View style={{ position: 'relative', height: wp(155), marginTop: wp(10), marginBottom: wp(20) }}>
             {TAB_ITEMS.map(function(tab) { return renderBubble(tab); })}
           </View>
 
