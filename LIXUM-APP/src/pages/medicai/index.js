@@ -638,11 +638,11 @@ export default function MedicAiPage({ navigation }) {
       var allergiesData = await allergiesRes.json();
 
       // Charger les vaccinations
-      var vaccRes = await fetch(
-        SUPABASE_URL + '/rest/v1/vaccinations?user_id=eq.' + userId + fmFilter + '&order=administration_date.desc',
-        { headers: headers }
-      );
-      var vaccinations = await vaccRes.json();
+      var vaccLoadUrl = SUPABASE_URL + '/rest/v1/vaccinations?user_id=eq.' + userId + fmFilter + '&order=administration_date.desc';
+      console.log('[loadMedicalData] vaccinations URL:', vaccLoadUrl);
+      var vaccRes2 = await fetch(vaccLoadUrl, { headers: headers });
+      var vaccinations = await vaccRes2.json();
+      console.log('[loadMedicalData] vaccinations status:', vaccRes2.status, 'count:', Array.isArray(vaccinations) ? vaccinations.length : 'NOT_ARRAY', vaccinations && vaccinations.message ? vaccinations.message : '');
 
       // Charger les diagnostics
       var diagRes = await fetch(
@@ -2736,10 +2736,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         var ndParts = newVaccNextDue.split('/');
         nextDue = ndParts.length === 3 ? ndParts[2] + '-' + ndParts[1] + '-' + ndParts[0] : newVaccNextDue;
       }
-      await fetch(SUPABASE_URL + '/rest/v1/vaccinations', {
-        method: 'POST',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify({
+      var vaccBody = {
           user_id: userId,
           family_member_id: activeProfile === 'self' ? null : activeProfile,
           vaccine_name: newVaccName.trim(),
@@ -2751,8 +2748,15 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           vaccine_master_id: selectedVaccineFromDb ? selectedVaccineFromDb.id : null,
           status: 'completed',
           source: 'manual',
-        }),
+      };
+      console.log('[Vacc INSERT] body:', JSON.stringify(vaccBody));
+      var vaccRes = await fetch(SUPABASE_URL + '/rest/v1/vaccinations', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify(vaccBody),
       });
+      var vaccResBody = await vaccRes.text();
+      console.log('[Vacc INSERT] status:', vaccRes.status, 'response:', vaccResBody);
       // Schedule vaccine reminder if next_due_date provided
       if (nextDue) {
         NotificationService.scheduleVaccineReminder({
