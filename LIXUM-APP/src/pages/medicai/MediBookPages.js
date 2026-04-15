@@ -311,6 +311,13 @@ export const MediBookContent = (props) => {
         fetchRPC('get_health_insights', { p_user_id: userId, p_family_member_id: fmId, p_days_back: daysBack }),
         fetchRPC('get_vaccine_completion_stats', { p_user_id: userId, p_family_member_id: fmId })
       ]);
+      console.log('[Stats] nutrition:', Array.isArray(results[0]) ? results[0].length + ' rows' : 'error', results[0] && results[0].error ? results[0].error : '');
+      console.log('[Stats] activity:', Array.isArray(results[1]) ? results[1].length + ' rows' : 'error', results[1] && results[1].error ? results[1].error : '');
+      console.log('[Stats] mood:', Array.isArray(results[2]) ? results[2].length + ' rows' : 'error', results[2] && results[2].error ? results[2].error : '');
+      console.log('[Stats] hydration:', Array.isArray(results[3]) ? results[3].length + ' rows' : 'error', results[3] && results[3].error ? results[3].error : '');
+      console.log('[Stats] timeline:', Array.isArray(results[4]) ? results[4].length + ' rows' : 'error', results[4] && results[4].error ? results[4].error : '');
+      console.log('[Stats] insights:', Array.isArray(results[5]) ? results[5].length + ' rows' : 'error', results[5] && results[5].error ? results[5].error : '');
+      console.log('[Stats] vaccStats:', results[6]);
       setNutritionStats(Array.isArray(results[0]) ? results[0] : []);
       setActivityStats(Array.isArray(results[1]) ? results[1] : []);
       setMoodStats(Array.isArray(results[2]) ? results[2] : []);
@@ -318,7 +325,7 @@ export const MediBookContent = (props) => {
       setHealthTimeline(Array.isArray(results[4]) ? results[4] : []);
       setHealthInsights(Array.isArray(results[5]) ? results[5] : []);
       setStatsVaccData(results[6] && results[6][0] ? results[6][0] : null);
-    } catch(err) { console.log('Erreur stats:', err); }
+    } catch(err) { console.log('[Stats] Erreur:', err); }
     setStatsLoading(false);
   };
 
@@ -2479,11 +2486,12 @@ export const MediBookContent = (props) => {
                       .catch(function() { Alert.alert('Erreur', 'Impossible de débloquer cette plage'); });
                   }}
                   style={function(state) { return {
-                    backgroundColor: '#00D984', borderRadius: wp(14), paddingVertical: wp(14),
-                    marginTop: wp(14), alignItems: 'center',
+                    borderWidth: 1.5, borderColor: '#00D984', backgroundColor: 'transparent',
+                    borderRadius: wp(12), paddingVertical: wp(14), paddingHorizontal: wp(20),
+                    marginTop: wp(14), alignItems: 'center', justifyContent: 'center',
                     transform: [{ scale: state.pressed ? 0.96 : 1 }],
                   }; }}>
-                  <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#000' }}>
+                  <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#00D984' }}>
                     {'💎 Débloquer 24h — ' + (unlockTarget ? (rangeAccess[unlockTarget.key] ? rangeAccess[unlockTarget.key].lix_cost : 0) : 0) + ' Lix'}
                   </Text>
                 </Pressable>
