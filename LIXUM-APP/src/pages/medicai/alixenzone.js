@@ -101,7 +101,7 @@ function getBrainTarget(p, t) {
 var membraneImpacts = [];
 
 function getListenTarget(p, t) {
-  var idx = p.id;
+  var idx = p.id; var r;
   if (idx < 100) {
     var ringLayers = 3;
     var layer = idx % ringLayers;
@@ -109,7 +109,7 @@ function getListenTarget(p, t) {
     var totalInLayer = Math.ceil(100 / ringLayers);
     var angle = (posInLayer / totalInLayer) * Math.PI * 2 + t * 0.3 + layer * 0.3;
     var baseR = HEX_W * 0.28 + layer * 5;
-    var r = baseR + Math.sin(t * 2 + posInLayer * 0.2) * 3;
+    r = baseR + Math.sin(t * 2 + posInLayer * 0.2) * 3;
     var splashY = 0;
     var now = Date.now() / 1000;
     for (var k = 0; k < membraneImpacts.length; k++) {
@@ -131,7 +131,7 @@ function getListenTarget(p, t) {
   var progress = fIdx / (NUM_PARTICLES - 100);
   var funnelY = -18 + progress * 58;
   var widthAtY = HEX_W * 0.35 * (1 - progress * 0.92);
-  var r = Math.max(2, widthAtY - Math.sin(t * 2 + progress * 3) * 3);
+  r = Math.max(2, widthAtY - Math.sin(t * 2 + progress * 3) * 3);
   return { x: Math.cos(sr(idx * 4.4) * Math.PI * 2 + t * 0.3) * r, y: funnelY };
 }
 function getEyeTarget(p, t) {
