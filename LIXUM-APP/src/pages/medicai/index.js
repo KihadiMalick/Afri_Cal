@@ -45,10 +45,6 @@ export default function MedicAiPage({ navigation, route }) {
   var userId = auth.userId;
   var lixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
   var userEnergy = auth.energy; var updateEnergy = auth.updateEnergy; var refreshLixFromServer = auth.refreshLixFromServer;
-  var alixenNotifications = auth.alixenNotifications || [];
-  var notifCount = auth.notifCount || 0;
-  var markNotificationRead = auth.markNotificationRead;
-  var markAllNotificationsRead = auth.markAllNotificationsRead;
 
   // Energy gate state (server-side 402)
   var _energyGateData = useState(null); var energyGateData = _energyGateData[0]; var setEnergyGateData = _energyGateData[1];
@@ -3011,52 +3007,6 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '600' }}>✕</Text>
         </Pressable>
       </View>
-
-      {/* ===== NOTIFICATIONS ALIXEN ===== */}
-      {alixenNotifications.length > 0 ? (
-        <View style={{ backgroundColor: '#1E2530', paddingHorizontal: 16, paddingBottom: 8 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(6) }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
-              <Text style={{ fontSize: fp(11), fontWeight: '700', color: '#00D984' }}>ALIXEN</Text>
-              <View style={{ backgroundColor: '#FF6B6B20', borderRadius: wp(6), paddingHorizontal: wp(5), paddingVertical: wp(1) }}>
-                <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF6B6B' }}>{notifCount}</Text>
-              </View>
-            </View>
-            {notifCount > 1 ? (
-              <Pressable onPress={markAllNotificationsRead} hitSlop={8}>
-                <Text style={{ fontSize: fp(10), color: '#00D984', fontWeight: '600' }}>Tout lu</Text>
-              </Pressable>
-            ) : null}
-          </View>
-          {alixenNotifications.slice(0, 2).map(function(notif) {
-            var CHAR_EMOJIS = { 'emerald_owl': '🦉', 'hawk_eye': '🦅', 'ruby_tiger': '🐯', 'amber_fox': '🦊', 'gipsy': '🕷️', 'jade_phoenix': '🔥', 'silver_wolf': '🐺', 'boukki': '🦴', 'iron_rhino': '🦏', 'coral_dolphin': '🐬' };
-            var emoji = notif.character_slug ? (CHAR_EMOJIS[notif.character_slug] || '🧠') : '🧠';
-            return (
-              <Pressable key={notif.id} delayPressIn={120}
-                onPress={function() { markNotificationRead(notif.id); }}
-                style={function(state) { return {
-                  backgroundColor: '#2A303B', borderWidth: 1,
-                  borderColor: notif.color || '#3A3F46',
-                  borderRadius: wp(10), padding: wp(10), marginBottom: wp(6),
-                  flexDirection: 'row', gap: wp(8),
-                  opacity: state.pressed ? 0.7 : 1,
-                }; }}>
-                <View style={{
-                  width: wp(28), height: wp(28), borderRadius: wp(14),
-                  backgroundColor: ((notif.color || '#00D984') + '15'),
-                  justifyContent: 'center', alignItems: 'center',
-                }}>
-                  <Text style={{ fontSize: fp(13) }}>{emoji}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fp(11), fontWeight: '600', color: '#FFF' }} numberOfLines={1}>{notif.title || 'Notification'}</Text>
-                  <Text style={{ fontSize: fp(10), color: '#aaa', marginTop: wp(1) }} numberOfLines={1}>{notif.message || ''}</Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : null}
 
       {/* ===== ZONE DE CONTENU ===== */}
       <KeyboardAvoidingView
