@@ -92,6 +92,8 @@ export default function DashboardPage({ navigation }) {
   const [surplusAlertVisible, setSurplusAlertVisible] = useState(false);
   var _statsLoading = useState(false);
   var statsLoading = _statsLoading[0]; var setStatsLoading = _statsLoading[1];
+  var _weeklyStats = useState(null);
+  var weeklyStats = _weeklyStats[0]; var setWeeklyStats = _weeklyStats[1];
   var _statsUnlockedUntil = useState(null);
   var statsUnlockedUntil = _statsUnlockedUntil[0]; var setStatsUnlockedUntil = _statsUnlockedUntil[1];
   const [showBeverageModal, setShowBeverageModal] = useState(false);

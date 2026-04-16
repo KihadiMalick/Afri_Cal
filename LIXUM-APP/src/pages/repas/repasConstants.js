@@ -59,7 +59,7 @@ const MEAL_SLOTS = [
 const COUNTRY_FLAGS = {
   // ── Afrique de l'Ouest ──
   'Sénégal': '🇸🇳', 'Nigeria': '🇳🇬', 'Ghana': '🇬🇭', 'Mali': '🇲🇱',
-  'Côte d\'Ivoire': '🇨🇮', "Côte d'Ivoire": '🇨🇮', 'Burkina Faso': '🇧🇫',
+  "Côte d'Ivoire": '🇨🇮', 'Burkina Faso': '🇧🇫',
   'Guinée': '🇬🇳', 'Bénin': '🇧🇯', 'Togo': '🇹🇬', 'Niger': '🇳🇪',
   'Sierra Leone': '🇸🇱', 'Liberia': '🇱🇷', 'Gambie': '🇬🇲',
   'Guinée-Bissau': '🇬🇼', 'Cap-Vert': '🇨🇻', 'Mauritanie': '🇲🇷',
@@ -108,8 +108,8 @@ const COUNTRY_FLAGS = {
   'Sri Lanka': '🇱🇰', 'Malaisie': '🇲🇾',
 
   // ── Fallback régions ──
-  'Panafricain': '🌍', 'Afrique de l\'Ouest': '🌍', "Afrique de l'Ouest": '🌍',
-  'Afrique de l\'Est': '🌍', "Afrique de l'Est": '🌍',
+  'Panafricain': '🌍', "Afrique de l'Ouest": '🌍',
+  "Afrique de l'Est": '🌍',
   'Afrique Centrale': '🌍', 'Afrique Australe': '🌍',
   'Afrique du Nord': '🌍', 'International': '🌐',
 };

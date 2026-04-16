@@ -339,7 +339,7 @@ export default function LixVersePage({ navigation }) {
       ]);
       const [aD,bD,cD,dD,eD] = await Promise.all([a.json(),b.json(),c.json(),d.json(),e.json()]);
       if(aD[0]?.lix_balance!=null)updateLixBalance(aD[0].lix_balance);
-      if(aD[0]?.energy!=null)setUserEnergy(aD[0].energy);
+      if(aD[0]?.energy!=null&&auth.updateEnergy)auth.updateEnergy(aD[0].energy);
       if(Array.isArray(bD))setOwnedCharacters(bD.map(x=>x.character_id));
       if(Array.isArray(cD))setChallenges(cD);
       if(Array.isArray(dD))setNotifications(dD);
