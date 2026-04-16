@@ -51,16 +51,28 @@ export function AuthProvider(props) {
     if (!userId) { setAlixenNotifications([]); setNotifCount(0); return; }
     try {
       var { data, error } = await supabase.rpc('get_unread_notifications', { p_user_id: userId });
-      if (!error && Array.isArray(data)) {
-        var sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        var filtered = data.filter(function(n) {
-          return !n.created_at || new Date(n.created_at) > sevenDaysAgo;
-        }).slice(0, 20);
-        setAlixenNotifications(filtered);
-        setNotifCount(filtered.length);
+      if (error) {
+        console.warn('[LIXUM Notifications] RPC error:', error.message || error);
+        setAlixenNotifications([]);
+        setNotifCount(0);
+        return;
       }
+      if (!Array.isArray(data)) {
+        console.warn('[LIXUM Notifications] RPC returned non-array:', typeof data);
+        setAlixenNotifications([]);
+        setNotifCount(0);
+        return;
+      }
+      var sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      var filtered = data.filter(function(n) {
+        return n && typeof n === 'object' && n.id && (!n.created_at || new Date(n.created_at) > sevenDaysAgo);
+      }).slice(0, 20);
+      setAlixenNotifications(filtered);
+      setNotifCount(filtered.length);
     } catch (e) {
-      console.warn('fetchAlixenNotifications error:', e);
+      console.warn('[LIXUM Notifications] fetch error:', e);
+      setAlixenNotifications([]);
+      setNotifCount(0);
     }
   }, [userId]);
 

@@ -110,24 +110,29 @@ const DashboardContent = ({
       </View>
 
       {/* ── ALIXEN NOTIFICATIONS ── */}
-      {alixenNotifications && alixenNotifications.length > 0 ? (
+      {(function() {
+        var safeNotifications = Array.isArray(alixenNotifications)
+          ? alixenNotifications.filter(function(n) { return n && typeof n === 'object' && n.id; })
+          : [];
+        if (safeNotifications.length === 0) return null;
+        return (
         <View style={{ marginBottom: wp(12) }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(8) }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
               <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#EAEEF3' }}>ALIXEN</Text>
               <View style={{ backgroundColor: '#FF6B6B20', borderRadius: wp(8), paddingHorizontal: wp(6), paddingVertical: wp(2) }}>
-                <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF6B6B' }}>{notifCount}</Text>
+                <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF6B6B' }}>{safeNotifications.length}</Text>
               </View>
             </View>
-            {notifCount > 1 ? (
+            {safeNotifications.length > 1 ? (
               <Pressable onPress={onDismissAllNotifs} hitSlop={8}>
                 <Text style={{ fontSize: fp(10), color: '#00D984', fontWeight: '600' }}>Tout lu</Text>
               </Pressable>
             ) : null}
           </View>
-          {alixenNotifications.slice(0, 3).map(function(notif) {
+          {safeNotifications.slice(0, 3).map(function(notif) {
             var borderColor = notif.color || '#3A3F46';
-            var emoji = notif.character_slug
+            var emoji = (notif.character_slug || null)
               ? ({ 'emerald_owl': '🦉', 'hawk_eye': '🦅', 'ruby_tiger': '🐯', 'amber_fox': '🦊', 'gipsy': '🕷️', 'jade_phoenix': '🔥', 'silver_wolf': '🐺', 'boukki': '🦴', 'iron_rhino': '🦏', 'coral_dolphin': '🐬' }[notif.character_slug] || '🧠')
               : '🧠';
             var dateStr = '';
@@ -135,7 +140,7 @@ const DashboardContent = ({
               try { dateStr = new Date(notif.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); } catch (e) {}
             }
             return (
-              <Pressable key={notif.id} delayPressIn={120}
+              <Pressable key={String(notif.id)} delayPressIn={120}
                 onPress={function() { if (onDismissNotif) onDismissNotif(notif.id); }}
                 style={function(state) { return {
                   backgroundColor: '#2A303B', borderWidth: 1, borderColor: borderColor,
@@ -162,7 +167,8 @@ const DashboardContent = ({
             );
           })}
         </View>
-      ) : null}
+        );
+      })()}
 
       <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...([2, 3, 4].includes(tooltipStep) && { borderColor: tooltipStep === 2 ? '#FF8C42' : tooltipStep === 3 ? '#00D984' : '#4DA6FF', borderWidth: 2, zIndex: 10001 }) }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(10) }}>
