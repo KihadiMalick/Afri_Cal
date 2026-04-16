@@ -48,7 +48,6 @@ const DashboardContent = ({
   toggleStates, setToggleStates, consumePower,
   userName, onAvatarPress, onNavigate, showToast, onOpenStats,
   refreshing, onRefresh,
-  alixenNotifications, notifCount, onDismissNotif, onDismissAllNotifs,
 }) => {
   const OBJECTIVE = dailyTarget || DAILY_OBJECTIVE;
   const [showInfoLeft, setShowInfoLeft] = useState(false);
@@ -108,67 +107,6 @@ const DashboardContent = ({
           {!lastMeal ? 'Commencez par scanner votre premier repas' : consumedTotal + ' kcal consommées aujourd\'hui'}
         </Text>
       </View>
-
-      {/* ── ALIXEN NOTIFICATIONS ── */}
-      {(function() {
-        var safeNotifications = Array.isArray(alixenNotifications)
-          ? alixenNotifications.filter(function(n) { return n && typeof n === 'object' && n.id; })
-          : [];
-        if (safeNotifications.length === 0) return null;
-        return (
-        <View style={{ marginBottom: wp(12) }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(8) }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
-              <Text style={{ fontSize: fp(13), fontWeight: '700', color: '#EAEEF3' }}>ALIXEN</Text>
-              <View style={{ backgroundColor: '#FF6B6B20', borderRadius: wp(8), paddingHorizontal: wp(6), paddingVertical: wp(2) }}>
-                <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#FF6B6B' }}>{safeNotifications.length}</Text>
-              </View>
-            </View>
-            {safeNotifications.length > 1 ? (
-              <Pressable onPress={onDismissAllNotifs} hitSlop={8}>
-                <Text style={{ fontSize: fp(10), color: '#00D984', fontWeight: '600' }}>Tout lu</Text>
-              </Pressable>
-            ) : null}
-          </View>
-          {safeNotifications.slice(0, 3).map(function(notif) {
-            var borderColor = notif.color || '#3A3F46';
-            var emoji = (notif.character_slug || null)
-              ? ({ 'emerald_owl': '🦉', 'hawk_eye': '🦅', 'ruby_tiger': '🐯', 'amber_fox': '🦊', 'gipsy': '🕷️', 'jade_phoenix': '🔥', 'silver_wolf': '🐺', 'boukki': '🦴', 'iron_rhino': '🦏', 'coral_dolphin': '🐬' }[notif.character_slug] || '🧠')
-              : '🧠';
-            var dateStr = '';
-            if (notif.created_at) {
-              try { dateStr = new Date(notif.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); } catch (e) {}
-            }
-            return (
-              <Pressable key={String(notif.id)} delayPressIn={120}
-                onPress={function() { if (onDismissNotif) onDismissNotif(notif.id); }}
-                style={function(state) { return {
-                  backgroundColor: '#2A303B', borderWidth: 1, borderColor: borderColor,
-                  borderRadius: wp(12), padding: wp(14), marginBottom: wp(8),
-                  flexDirection: 'row', gap: wp(10),
-                  opacity: state.pressed ? 0.7 : 1,
-                }; }}>
-                <View style={{
-                  width: wp(36), height: wp(36), borderRadius: wp(18),
-                  backgroundColor: (borderColor !== '#3A3F46' ? borderColor : '#00D984') + '15',
-                  justifyContent: 'center', alignItems: 'center',
-                }}>
-                  <Text style={{ fontSize: fp(16) }}>{emoji}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(2) }}>
-                    <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF', flex: 1 }} numberOfLines={1}>{notif.title || 'Notification'}</Text>
-                    <Text style={{ fontSize: fp(9), color: '#00D984', fontWeight: '600', marginLeft: wp(6) }}>ALIXEN</Text>
-                  </View>
-                  <Text style={{ fontSize: fp(11), color: '#aaa', lineHeight: fp(16) }} numberOfLines={2}>{notif.message || ''}</Text>
-                  {dateStr ? <Text style={{ fontSize: fp(9), color: '#666', marginTop: wp(4) }}>{dateStr}</Text> : null}
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-        );
-      })()}
 
       <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...([2, 3, 4].includes(tooltipStep) && { borderColor: tooltipStep === 2 ? '#FF8C42' : tooltipStep === 3 ? '#00D984' : '#4DA6FF', borderWidth: 2, zIndex: 10001 }) }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(10) }}>
