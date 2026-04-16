@@ -50,9 +50,11 @@ export default function DashboardPage({ navigation }) {
       supabase.from('daily_summary').select('id').eq('user_id', userId).limit(1).then(function(res) {
         var hasData = res.data && res.data.length > 0;
         if (!hasData) {
-          // Nouveau user sans historique → montrer le tooltip
-          console.log('[LIXUM Tooltip] New user detected — showing onboarding');
-          _rawSetTooltipStep(1);
+          // Nouveau user sans historique → montrer le tooltip après délai
+          // Le délai de 1500ms permet au context React d'être ready
+          // et évite le conflit avec les popups système Android (Samsung Pass, etc.)
+          console.log('[LIXUM Tooltip] New user detected — showing onboarding in 1.5s');
+          setTimeout(function() { _rawSetTooltipStep(1); }, 1500);
         } else {
           // User existant sur nouveau build → marquer comme vu
           console.log('[LIXUM Tooltip] Existing user on new build — skipping tooltip');
