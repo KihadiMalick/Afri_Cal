@@ -43,10 +43,28 @@ export default function DashboardPage({ navigation }) {
     if (val === 0) AsyncStorage.setItem('dashboard_tooltip_seen', 'true').catch(function() {});
   };
   useEffect(function() {
+    if (!userId) return;
     AsyncStorage.getItem('dashboard_tooltip_seen').then(function(v) {
-      if (!v) _rawSetTooltipStep(1);
+      if (v) return; // déjà vu
+      // Vérifier si c'est un vrai nouveau user (pas de données existantes)
+      supabase.from('daily_summary').select('id').eq('user_id', userId).limit(1).then(function(res) {
+        var hasData = res.data && res.data.length > 0;
+        if (!hasData) {
+          // Nouveau user sans historique → montrer le tooltip
+          console.log('[LIXUM Tooltip] New user detected — showing onboarding');
+          _rawSetTooltipStep(1);
+        } else {
+          // User existant sur nouveau build → marquer comme vu
+          console.log('[LIXUM Tooltip] Existing user on new build — skipping tooltip');
+          AsyncStorage.setItem('dashboard_tooltip_seen', 'true').catch(function() {});
+        }
+      }).catch(function() {
+        // En cas d'erreur réseau, ne pas bloquer avec le tooltip
+        console.log('[LIXUM Tooltip] Check failed — skipping tooltip');
+        AsyncStorage.setItem('dashboard_tooltip_seen', 'true').catch(function() {});
+      });
     }).catch(function() {});
-  }, []);
+  }, [userId]);
   const scrollRef = useRef(null);
   const [toastMsg, setToastMsg] = useState(null);
   const [moodFilled, setMoodFilled] = useState(false);
