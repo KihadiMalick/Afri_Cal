@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "scheme": "lixum",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -84,6 +84,11 @@
     "owner": "alixir2977",
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2303bd63-dc83-43d1-b248-b6660299d940"
+      }
     }
   }
 }
