@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Pressable, RefreshControl,
-  Animated as RNAnimated, Image, Platform, Easing, StyleSheet, Modal,
+  Animated as RNAnimated, Image, Platform, Easing, StyleSheet, Modal, Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Ellipse, Circle as SvgCircle, Line as SvgLine, G, Rect } from 'react-native-svg';
@@ -727,48 +727,107 @@ const DashboardContent = ({
   );
 };
 
-const TooltipOverlay = ({ tooltipStep, setTooltipStep, scrollRef }) => {
+var TooltipOverlay = function(props) {
+  var tooltipStep = props.tooltipStep;
+  var setTooltipStep = props.setTooltipStep;
+  var scrollRef = props.scrollRef;
+
   if (tooltipStep === 0) return null;
-  const steps = [
+
+  var dims = Dimensions.get('window');
+  var screenW = dims.width;
+  var screenH = dims.height;
+
+  console.log('[LIXUM Tooltip] step:', tooltipStep, 'screen:', Math.round(screenW) + 'x' + Math.round(screenH), 'wp(90):', Math.round((screenW / 320) * 90));
+
+  // Fallback : écran trop petit ou dimensions invalides
+  var canShow = screenW >= 320 && screenH >= 500;
+  if (!canShow) {
+    console.log('[LIXUM Tooltip] Screen too small — skip tooltip, marking as seen');
+    setTooltipStep(0);
+    return null;
+  }
+
+  var steps = [
     { title: 'Votre Humeur', description: 'Tapez sur ce visage chaque jour pour enregistrer votre humeur. Cela personnalise vos recettes et vos recommandations d\'activité.', icon: '😊', color: '#FF8C42' },
     { title: 'Calories Consommées', description: 'Ce réacteur orange montre tout ce que vous avez mangé aujourd\'hui. Plus vous mangez, plus le glow s\'étend. Le satellite vert représente votre objectif.', icon: '🔥', color: '#FF8C42' },
     { title: 'Score Vitalité', description: 'L\'ADN central calcule votre score de santé sur 100. Il combine nutrition, hydratation, activité physique et régularité. Visez au-dessus de 80 !', icon: '🧬', color: '#00D984' },
     { title: 'Calories Restantes', description: 'Ce réacteur bleu montre combien vous pouvez encore manger. Le sport augmente ce nombre — c\'est votre bonus activité !', icon: '💪', color: '#4DA6FF' },
   ];
-  const currentStep = steps[tooltipStep - 1];
+  var currentStep = steps[tooltipStep - 1];
   if (!currentStep) return null;
-  const isLast = tooltipStep === steps.length;
+  var isLast = tooltipStep === steps.length;
+
+  // Position safe : utiliser le MINIMUM entre wp(90) et 15% de la hauteur écran
+  // Sur un phone normal (390x844) : min(wp(90)=110, 844*0.15=127) = 110 → OK
+  // Sur Z Fold 5 déplié (904x1296) : min(wp(90)=254, 1296*0.15=194) = 194 → safe
+  // Sur Z Fold 5 plié (412x938) : min(wp(90)=116, 938*0.15=141) = 116 → OK
+  var cardBottom = Math.min((screenW / 320) * 90, screenH * 0.15);
+  var cardMaxH = screenH * 0.55;
+
+  console.log('[LIXUM Tooltip] cardBottom:', Math.round(cardBottom), 'cardMaxH:', Math.round(cardMaxH));
 
   return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)' }} />
-      <View style={{ position: 'absolute', bottom: wp(90), left: wp(16), right: wp(16), backgroundColor: '#1E2530', borderRadius: wp(18), padding: wp(18), borderWidth: 1.5, borderColor: currentStep.color + '40', shadowColor: currentStep.color, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 15, elevation: 10, zIndex: 10000 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: wp(10), gap: wp(5) }}>
-          {steps.map(function(_, i) {
-            return (
-              <View key={i} style={{ width: i + 1 === tooltipStep ? wp(18) : wp(6), height: wp(5), borderRadius: wp(3), backgroundColor: i + 1 === tooltipStep ? currentStep.color : 'rgba(255,255,255,0.15)' }} />
-            );
-          })}
-        </View>
-        <Text style={{ color: currentStep.color, fontSize: fp(9), fontWeight: '700', letterSpacing: 2, textAlign: 'center', marginBottom: wp(5) }}>{tooltipStep} / {steps.length}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: wp(6) }}>
-          <Text style={{ fontSize: fp(20), marginRight: wp(6) }}>{currentStep.icon}</Text>
-          <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '800' }}>{currentStep.title}</Text>
-        </View>
-        <Text style={{ color: '#8892A0', fontSize: fp(12), lineHeight: fp(18), textAlign: 'center', marginBottom: wp(14) }}>{currentStep.description}</Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <TouchableOpacity onPress={function() { setTooltipStep(0); }}>
-            <Text style={{ color: '#8892A0', fontSize: fp(12), fontWeight: '500' }}>Passer</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={function() {
-            if (isLast) { setTooltipStep(0); }
-            else { setTooltipStep(tooltipStep + 1); scrollRef.current?.scrollTo({ y: 0, animated: true }); }
-          }} style={{ backgroundColor: currentStep.color, borderRadius: wp(10), paddingHorizontal: wp(18), paddingVertical: wp(8) }}>
-            <Text style={{ color: '#0D1117', fontSize: fp(13), fontWeight: '800' }}>{isLast ? 'Commencer !' : 'Suivant →'}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
+    React.createElement(View, { style: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 } },
+      React.createElement(View, { style: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)' } }),
+      React.createElement(View, {
+        style: {
+          position: 'absolute', bottom: cardBottom,
+          left: wp(16), right: wp(16),
+          maxHeight: cardMaxH,
+          backgroundColor: '#1E2530', borderRadius: wp(18), padding: wp(18),
+          borderWidth: 1.5, borderColor: currentStep.color + '40',
+          shadowColor: currentStep.color,
+          shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 15,
+          elevation: 10, zIndex: 10000,
+        }
+      },
+        React.createElement(ScrollView, { bounces: false, showsVerticalScrollIndicator: false },
+          React.createElement(View, { style: { flexDirection: 'row', justifyContent: 'center', marginBottom: wp(10), gap: wp(5) } },
+            steps.map(function(_, i) {
+              return React.createElement(View, {
+                key: i,
+                style: {
+                  width: i + 1 === tooltipStep ? wp(18) : wp(6),
+                  height: wp(5), borderRadius: wp(3),
+                  backgroundColor: i + 1 === tooltipStep ? currentStep.color : 'rgba(255,255,255,0.15)',
+                }
+              });
+            })
+          ),
+          React.createElement(Text, {
+            style: { color: currentStep.color, fontSize: fp(9), fontWeight: '700', letterSpacing: 2, textAlign: 'center', marginBottom: wp(5) }
+          }, tooltipStep + ' / ' + steps.length),
+          React.createElement(View, {
+            style: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: wp(6) }
+          },
+            React.createElement(Text, { style: { fontSize: fp(20), marginRight: wp(6) } }, currentStep.icon),
+            React.createElement(Text, { style: { color: '#EAEEF3', fontSize: fp(16), fontWeight: '800' } }, currentStep.title)
+          ),
+          React.createElement(Text, {
+            style: { color: '#8892A0', fontSize: fp(12), lineHeight: fp(18), textAlign: 'center', marginBottom: wp(14) }
+          }, currentStep.description),
+          React.createElement(View, {
+            style: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }
+          },
+            React.createElement(TouchableOpacity, {
+              onPress: function() { setTooltipStep(0); }
+            },
+              React.createElement(Text, { style: { color: '#8892A0', fontSize: fp(12), fontWeight: '500' } }, 'Passer')
+            ),
+            React.createElement(TouchableOpacity, {
+              onPress: function() {
+                if (isLast) { setTooltipStep(0); }
+                else { setTooltipStep(tooltipStep + 1); if (scrollRef && scrollRef.current) scrollRef.current.scrollTo({ y: 0, animated: true }); }
+              },
+              style: { backgroundColor: currentStep.color, borderRadius: wp(10), paddingHorizontal: wp(18), paddingVertical: wp(8) }
+            },
+              React.createElement(Text, { style: { color: '#0D1117', fontSize: fp(13), fontWeight: '800' } }, isLast ? 'Commencer !' : 'Suivant →')
+            )
+          )
+        )
+      )
+    )
   );
 };
 
