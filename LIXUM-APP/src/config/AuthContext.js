@@ -133,13 +133,12 @@ export function AuthProvider(props) {
     }
   }, [userId]);
 
-  // Load initial balance when userId is set + register push notifications + ALIXEN notifs
+  // Load initial balance when userId is set + ALIXEN notifs
   useEffect(function() {
     if (userId) {
       refreshLixFromServer();
-      NotificationService.registerForPushNotifications(userId).then(function(token) {
-        if (token) setPushToken(token);
-      });
+      // [DÉSACTIVÉ TEMPORAIREMENT - Push notifications V2]
+      // NotificationService.registerForPushNotifications(userId) — no-op stub
       // Fire-and-forget: generate ALIXEN notifications server-side
       supabase.rpc('check_and_generate_notifications', { p_user_id: userId }).catch(function() {});
       // Fetch existing notifications
