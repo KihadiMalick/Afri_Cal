@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, ScrollView, Pressable, Modal, ActivityIndicator,
+  View, Text, TextInput, ScrollView, Pressable, Modal, ActivityIndicator, Image,
 } from 'react-native';
 import Svg, {
   Rect, Path, Circle, Line,
@@ -50,7 +50,7 @@ export const AllModals = (props) => {
     // Add Medication
     showAddMedSheet, setShowAddMedSheet,
     addMedStep, setAddMedStep,
-    medSearchQuery,
+    medSearchQuery, setMedSearchQuery,
     medSearchResults, setMedSearchResults,
     selectedMedFromDb, setSelectedMedFromDb,
     searchMedications, selectMedFromDb,

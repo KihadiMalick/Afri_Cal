@@ -6,7 +6,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   Image, Platform, Animated, KeyboardAvoidingView,
-  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Modal, ActivityIndicator, BackHandler,
+  Dimensions, StatusBar, PixelRatio, Keyboard, Pressable, Modal, ActivityIndicator, BackHandler, Alert,
 } from 'react-native';
 import Svg, {
   Defs, Rect, Path, Circle, Ellipse, Line,
@@ -2948,7 +2948,8 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           statsTab={statsTab} setStatsTab={setStatsTab}
           analysesTab={analysesTab} setAnalysesTab={setAnalysesTab}
           medsTab={medsTab} setMedsTab={setMedsTab}
-          activeProfile={activeProfile} children={children}
+          activeProfile={activeProfile}
+          children={children} // eslint-disable-line react/no-children-prop
           showProfileSwitcher={showProfileSwitcher} setShowProfileSwitcher={setShowProfileSwitcher}
           loadMedicalData={loadMedicalData}
           startMedicalScan={startMedicalScan}
@@ -3639,7 +3640,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         showRechargeSheet={showRechargeSheet} setShowRechargeSheet={setShowRechargeSheet}
         showProfileSwitcher={showProfileSwitcher} setShowProfileSwitcher={setShowProfileSwitcher}
         activeProfile={activeProfile} setActiveProfile={setActiveProfile}
-        children={children} setChildren={setChildren}
+        children={children} setChildren={setChildren} // eslint-disable-line react/no-children-prop
         loadFamilyMembers={loadFamilyMembers}
         lixBalance={lixBalance} refreshLixFromServer={refreshLixFromServer}
         editingChildId={editingChildId} setEditingChildId={setEditingChildId}
@@ -3658,7 +3659,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         startBatchScan={startBatchScan}
         showAddMedSheet={showAddMedSheet} setShowAddMedSheet={setShowAddMedSheet}
         addMedStep={addMedStep} setAddMedStep={setAddMedStep}
-        medSearchQuery={medSearchQuery}
+        medSearchQuery={medSearchQuery} setMedSearchQuery={setMedSearchQuery}
         medSearchResults={medSearchResults} setMedSearchResults={setMedSearchResults}
         selectedMedFromDb={selectedMedFromDb} setSelectedMedFromDb={setSelectedMedFromDb}
         searchMedications={searchMedications} selectMedFromDb={selectMedFromDb}

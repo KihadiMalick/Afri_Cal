@@ -386,9 +386,9 @@ var AlixenParticlesSkia = React.memo(function AlixenParticlesSkia(props) {
   var nebulaOp = 1 - fd.morph;
   // Build connection elements only up to connCount (skip unused pool slots)
   var connElements = [];
-  for (var ci = 0; ci < fd.connCount; ci++) {
-    var c = fd.c[ci];
-    connElements.push(React.createElement(Line, { key: 'c' + ci, p1: vec(c.x1, c.y1), p2: vec(c.x2, c.y2), color: '#4DA6FF', strokeWidth: 0.7 * P_SCALE, opacity: c.op, style: 'stroke' }));
+  for (var cj = 0; cj < fd.connCount; cj++) {
+    var c = fd.c[cj];
+    connElements.push(React.createElement(Line, { key: 'c' + cj, p1: vec(c.x1, c.y1), p2: vec(c.x2, c.y2), color: '#4DA6FF', strokeWidth: 0.7 * P_SCALE, opacity: c.op, style: 'stroke' }));
   }
 
   return (

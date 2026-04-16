@@ -135,9 +135,9 @@ function getListenTarget(p, t) {
   return { x: Math.cos(sr(idx * 4.4) * Math.PI * 2 + t * 0.3) * r, y: funnelY };
 }
 function getEyeTarget(p, t) {
-  var idx = p.id;
-  if (idx < 40) { var a = (idx / 40) * Math.PI * 2; var r = 3 + sr(idx * 3.3) * (6 - 2 - Math.sin(t * 2.5) * 2); return { x: Math.cos(a) * r, y: Math.sin(a) * r * 0.9 }; }
-  if (idx < 140) { var a = ((idx - 40) / 100) * Math.PI * 2 + t * 0.12; var r = 18 + sr(idx * 4.7) * 5; return { x: Math.cos(a) * r, y: Math.sin(a) * r * 0.75 }; }
+  var idx = p.id; var a; var r;
+  if (idx < 40) { a = (idx / 40) * Math.PI * 2; r = 3 + sr(idx * 3.3) * (6 - 2 - Math.sin(t * 2.5) * 2); return { x: Math.cos(a) * r, y: Math.sin(a) * r * 0.9 }; }
+  if (idx < 140) { a = ((idx - 40) / 100) * Math.PI * 2 + t * 0.12; r = 18 + sr(idx * 4.7) * 5; return { x: Math.cos(a) * r, y: Math.sin(a) * r * 0.75 }; }
   if (idx < 240) { var eIdx = idx - 140; var t2 = eIdx / 99; var angle = (t2 * 2 - 1) * Math.PI * 0.85; var rx = 55; var ry = 18; var x = Math.cos(angle) * rx; var isTop = eIdx < 50; var y = isTop ? -Math.sqrt(Math.max(0, 1 - (x * x) / (rx * rx))) * ry : Math.sqrt(Math.max(0, 1 - (x * x) / (rx * rx))) * ry * 0.7; return { x: x, y: y + (isTop ? -Math.sin(t * 1.2) * 2 : Math.sin(t * 1.2) * 2) }; }
   if (idx < 270) { var cIdx = idx - 240; var isRight = cIdx >= 15; var ci = cIdx % 15; var cornerX = isRight ? 52 : -52; var cAngle = isRight ? (-0.3 + ci * 0.04) : (Math.PI + 0.3 - ci * 0.04); return { x: cornerX + Math.cos(cAngle) * (8 + ci * 0.8), y: Math.sin(cAngle) * (8 + ci * 0.8) }; }
   return { x: Math.sin(t * 3.5) * 50 + sr(idx * 2.1) * 4, y: ((idx - 270) / (NUM_PARTICLES - 270)) * 30 - 15 };
@@ -153,19 +153,19 @@ function isMemoryFlash(pid, el) {
 }
 
 function getSadTarget(p, t) {
-  var idx = p.id;
-  if (idx < 160) { var a = (idx / 160) * Math.PI * 2; var r = 38 + (sr(idx * 3.3) - 0.5) * 3; return { x: Math.cos(a) * r, y: Math.sin(a) * r * 0.85 + Math.sin(t * 1.2) * 0.5 }; }
-  if (idx < 185) { var a = ((idx - 160) / 25) * Math.PI * 2; var r = 4 + sr(idx * 4.4) * 2; return { x: -14 + Math.cos(a) * r, y: -12 + Math.sin(a) * r }; }
-  if (idx < 210) { var a = ((idx - 185) / 25) * Math.PI * 2; var r = 4 + sr(idx * 5.5) * 2; return { x: 14 + Math.cos(a) * r, y: -12 + Math.sin(a) * r }; }
+  var idx = p.id; var a; var r;
+  if (idx < 160) { a = (idx / 160) * Math.PI * 2; r = 38 + (sr(idx * 3.3) - 0.5) * 3; return { x: Math.cos(a) * r, y: Math.sin(a) * r * 0.85 + Math.sin(t * 1.2) * 0.5 }; }
+  if (idx < 185) { a = ((idx - 160) / 25) * Math.PI * 2; r = 4 + sr(idx * 4.4) * 2; return { x: -14 + Math.cos(a) * r, y: -12 + Math.sin(a) * r }; }
+  if (idx < 210) { a = ((idx - 185) / 25) * Math.PI * 2; r = 4 + sr(idx * 5.5) * 2; return { x: 14 + Math.cos(a) * r, y: -12 + Math.sin(a) * r }; }
   if (idx < 310) { var s = ((idx - 210) / 99); var x = (s - 0.5) * 40; var curve = -Math.sin(s * Math.PI) * 12; return { x: x, y: 14 + curve + (sr(idx * 6.6) - 0.5) * 2.5 + Math.sin(t * 1.5) * 0.8 }; }
-  var a = sr(idx * 7.7) * Math.PI * 2; var r = 45 + sr(idx * 8.8) * 15;
+  a = sr(idx * 7.7) * Math.PI * 2; r = 45 + sr(idx * 8.8) * 15;
   return { x: Math.cos(a) * r, y: Math.sin(a) * r * 0.5 + Math.sin(t * 0.3 + idx) * 3 };
 }
 function getHappyTarget(p, t) {
-  var idx = p.id;
-  if (idx < 160) { var a = (idx / 160) * Math.PI * 2; var r = 38 + (sr(idx * 3.3) - 0.5) * 3; return { x: Math.cos(a) * r, y: Math.sin(a) * r * 0.85 + Math.sin(t * 2) * 0.8 }; }
-  if (idx < 185) { var a = ((idx - 160) / 25) * Math.PI * 2; var r = 4 + sr(idx * 4.4) * 2; return { x: -14 + Math.cos(a) * r, y: -12 + Math.sin(a) * r }; }
-  if (idx < 210) { var a = ((idx - 185) / 25) * Math.PI * 2; var r = 4 + sr(idx * 5.5) * 2; return { x: 14 + Math.cos(a) * r, y: -12 + Math.sin(a) * r }; }
+  var idx = p.id; var a; var r;
+  if (idx < 160) { a = (idx / 160) * Math.PI * 2; r = 38 + (sr(idx * 3.3) - 0.5) * 3; return { x: Math.cos(a) * r, y: Math.sin(a) * r * 0.85 + Math.sin(t * 2) * 0.8 }; }
+  if (idx < 185) { a = ((idx - 160) / 25) * Math.PI * 2; r = 4 + sr(idx * 4.4) * 2; return { x: -14 + Math.cos(a) * r, y: -12 + Math.sin(a) * r }; }
+  if (idx < 210) { a = ((idx - 185) / 25) * Math.PI * 2; r = 4 + sr(idx * 5.5) * 2; return { x: 14 + Math.cos(a) * r, y: -12 + Math.sin(a) * r }; }
   if (idx < 310) { var s = ((idx - 210) / 99); var x = (s - 0.5) * 40; var curve = Math.sin(s * Math.PI) * 12; return { x: x, y: 14 + curve + (sr(idx * 6.6) - 0.5) * 2.5 + Math.sin(t * 2) * 0.8 }; }
   var risePhase = (t * 0.4 + sr(idx * 7.7)) % 1;
   return { x: (sr(idx * 2.2) - 0.5) * 80 + Math.sin(t * 2 + idx * 0.2) * 2, y: 35 - risePhase * 65 };
@@ -197,21 +197,21 @@ function gpsPathPoint(progress) {
 }
 
 function getGpsTarget(p, t) {
-  var idx = p.id;
+  var idx = p.id; var a; var r;
   var cycle = 5.0;
   var phase = (t % cycle) / cycle;
   if (idx < 30) {
     var pinCenter = gpsPathPoint(0);
-    var a = (idx / 30) * Math.PI * 2 + t * 0.5;
-    var r = 4 + sr(idx * 3.3) * 6;
+    a = (idx / 30) * Math.PI * 2 + t * 0.5;
+    r = 4 + sr(idx * 3.3) * 6;
     var pulse = 1 + Math.sin(t * 2) * 0.15;
     return { x: pinCenter.x + Math.cos(a) * r * pulse, y: pinCenter.y + Math.sin(a) * r * 0.7 * pulse };
   }
   if (idx >= NUM_PARTICLES - 50) {
     var arrIdx = idx - (NUM_PARTICLES - 50);
     var pinEnd = gpsPathPoint(1);
-    var a = (arrIdx / 50) * Math.PI * 2 + t * 0.8;
-    var r = 5 + sr(idx * 4.4) * 7;
+    a = (arrIdx / 50) * Math.PI * 2 + t * 0.8;
+    r = 5 + sr(idx * 4.4) * 7;
     var arrived = phase > 0.75;
     var sparkle = arrived ? (1 + Math.sin(t * 8 + arrIdx * 1.5) * 0.3) : 1;
     return { x: pinEnd.x + Math.cos(a) * r * sparkle, y: pinEnd.y + Math.sin(a) * r * 0.7 * sparkle };
