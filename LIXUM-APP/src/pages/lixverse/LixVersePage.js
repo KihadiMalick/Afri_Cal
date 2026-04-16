@@ -33,6 +33,10 @@ export default function LixVersePage({ navigation }) {
   var auth = useAuth(); var userId = auth.userId;
   var lixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
   var userEnergy = auth.energy; var refreshLixFromServer = auth.refreshLixFromServer;
+  var alixenNotifications = auth.alixenNotifications || [];
+  var alixenNotifCount = auth.notifCount || 0;
+  var markNotificationRead = auth.markNotificationRead;
+  var markAllNotificationsRead = auth.markAllNotificationsRead;
   const [activeTab, setActiveTab] = useState('defi');
   const [ownedCharacters, setOwnedCharacters] = useState([]);
   const [challenges, setChallenges] = useState([]);
@@ -83,7 +87,8 @@ export default function LixVersePage({ navigation }) {
   const [lixAlert, setLixAlert] = useState({ visible: false, title: '', message: '', emoji: '', buttons: [] });
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [notifList, setNotifList] = useState([]);
-  const unreadCount = notifList.filter(n => !n.read).length;
+  var lixverseUnread = notifList.filter(function(n) { return !n.read; }).length;
+  var unreadCount = lixverseUnread + alixenNotifCount;
   const [stickerCatalog, setStickerCatalog] = useState([]);
   const [myCertification, setMyCertification] = useState(null);
   const [showCertificationModal, setShowCertificationModal] = useState(false);
@@ -981,6 +986,108 @@ export default function LixVersePage({ navigation }) {
           if (pageMap[key] && navigation) navigation.navigate(pageMap[key]);
         }}
       />
+
+      {/* ── ALIXEN NOTIFICATIONS BOTTOM SHEET ── */}
+      <Modal visible={showNotifPanel} transparent animationType="slide" onRequestClose={function() { setShowNotifPanel(false); }}>
+        <Pressable onPress={function() { setShowNotifPanel(false); }} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '75%' }}>
+            <Pressable onPress={function() {}} style={{ backgroundColor: '#1A2029', borderTopLeftRadius: wp(20), borderTopRightRadius: wp(20), paddingBottom: wp(30) }}>
+              <View style={{ alignItems: 'center', paddingVertical: wp(10) }}>
+                <View style={{ width: wp(36), height: wp(4), borderRadius: wp(2), backgroundColor: '#3A3F46' }} />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: wp(20), marginBottom: wp(14) }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
+                  <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF' }}>Notifications</Text>
+                  {unreadCount > 0 ? (
+                    <View style={{ backgroundColor: '#FF3B5C20', borderRadius: wp(8), paddingHorizontal: wp(7), paddingVertical: wp(2) }}>
+                      <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FF3B5C' }}>{unreadCount}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                {unreadCount > 1 ? (
+                  <Pressable onPress={function() { if (markAllNotificationsRead) markAllNotificationsRead(); }} hitSlop={8}>
+                    <Text style={{ fontSize: fp(11), color: '#00D984', fontWeight: '600' }}>Tout marquer comme lu</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              <ScrollView style={{ maxHeight: wp(400) }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(16) }}>
+                {(function() {
+                  var safeAlixen = Array.isArray(alixenNotifications)
+                    ? alixenNotifications.filter(function(n) { return n && n.id; })
+                    : [];
+                  var safeLixverse = Array.isArray(notifList) ? notifList : [];
+                  var allNotifs = safeAlixen.map(function(n) {
+                    var CHAR_EMOJIS = { 'emerald_owl': '🦉', 'hawk_eye': '🦅', 'ruby_tiger': '🐯', 'amber_fox': '🦊', 'gipsy': '🕷️', 'jade_phoenix': '🔥', 'silver_wolf': '🐺', 'boukki': '🦴', 'iron_rhino': '🦏', 'coral_dolphin': '🐬' };
+                    return {
+                      id: 'alixen_' + n.id,
+                      rawId: n.id,
+                      title: n.title || 'Notification',
+                      message: n.message || '',
+                      emoji: (n.character_slug || null) ? (CHAR_EMOJIS[n.character_slug] || '🧠') : '🧠',
+                      color: n.color || '#00D984',
+                      time: n.created_at ? (function() { var d = new Date(n.created_at); var now = new Date(); var diff = now - d; if (diff < 3600000) return 'il y a ' + Math.max(1, Math.floor(diff / 60000)) + ' min'; if (diff < 86400000) return 'il y a ' + Math.floor(diff / 3600000) + 'h'; if (diff < 172800000) return 'hier'; return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); })() : '',
+                      read: false,
+                      source: 'alixen',
+                    };
+                  }).concat(safeLixverse.map(function(n) {
+                    return {
+                      id: 'lv_' + (n.id || Math.random()),
+                      rawId: n.id,
+                      title: n.title || 'Notification',
+                      message: n.message || '',
+                      emoji: n.emoji || '📬',
+                      color: n.color || '#D4AF37',
+                      time: n.time || '',
+                      read: n.read || false,
+                      source: 'lixverse',
+                    };
+                  }));
+                  if (allNotifs.length === 0) return (
+                    <View style={{ padding: wp(30), alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(32), marginBottom: wp(8) }}>🔔</Text>
+                      <Text style={{ fontSize: fp(13), color: '#888', fontStyle: 'italic' }}>Aucune notification</Text>
+                    </View>
+                  );
+                  return allNotifs.map(function(notif) {
+                    return (
+                      <Pressable key={notif.id} delayPressIn={120}
+                        onPress={function() {
+                          if (notif.source === 'alixen' && markNotificationRead) {
+                            markNotificationRead(notif.rawId);
+                          }
+                        }}
+                        style={function(state) { return {
+                          backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46',
+                          borderLeftWidth: notif.read ? 1 : 3,
+                          borderLeftColor: notif.read ? '#3A3F46' : '#00D984',
+                          borderRadius: wp(12), padding: wp(14), marginBottom: wp(8),
+                          flexDirection: 'row', gap: wp(10),
+                          opacity: state.pressed ? 0.7 : (notif.read ? 0.6 : 1),
+                        }; }}>
+                        <View style={{
+                          width: wp(36), height: wp(36), borderRadius: wp(18),
+                          backgroundColor: notif.color + '15',
+                          justifyContent: 'center', alignItems: 'center',
+                        }}>
+                          <Text style={{ fontSize: fp(16) }}>{notif.emoji}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(2) }}>
+                            <Text style={{ fontSize: fp(13), fontWeight: '600', color: notif.read ? '#888' : '#FFF', flex: 1 }} numberOfLines={1}>{notif.title}</Text>
+                            <Text style={{ fontSize: fp(9), color: notif.source === 'alixen' ? '#00D984' : '#D4AF37', fontWeight: '600', marginLeft: wp(6) }}>{notif.source === 'alixen' ? 'ALIXEN' : 'LIXVERSE'}</Text>
+                          </View>
+                          <Text style={{ fontSize: fp(11), color: '#aaa', lineHeight: fp(16) }} numberOfLines={2}>{notif.message}</Text>
+                          {notif.time ? <Text style={{ fontSize: fp(9), color: '#666', marginTop: wp(4) }}>{notif.time}</Text> : null}
+                        </View>
+                      </Pressable>
+                    );
+                  });
+                })()}
+              </ScrollView>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
 
       <Modal visible={lixAlert.visible} transparent animationType="fade" onRequestClose={hideLixAlert}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
