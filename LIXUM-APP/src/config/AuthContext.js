@@ -135,12 +135,12 @@ export function AuthProvider(props) {
 
   // Load initial balance when userId is set + ALIXEN notifs
   // [PARTIELLEMENT RÉACTIVÉ - 17 Avril 2026]
-  // refreshLixFromServer() + fetchAlixenNotifications() réactivés après validation Supabase et audit code défensif.
-  // check_and_generate_notifications reste commenté (fire-and-forget, faible priorité).
+  // Système ALIXEN notifications complet : refresh balance + génération auto + fetch unread.
+  // RPC check_and_generate_notifications inspectée (245 lignes, 10 triggers métier, fire-and-forget avec .catch()).
   useEffect(function() {
     if (userId) {
       refreshLixFromServer();
-      // supabase.rpc('check_and_generate_notifications', { p_user_id: userId }).catch(function(e) { console.warn('check_and_generate_notifications error:', e); });
+      supabase.rpc('check_and_generate_notifications', { p_user_id: userId }).catch(function(e) { console.warn('check_and_generate_notifications error:', e); });
       fetchAlixenNotifications();
     }
   }, [userId, refreshLixFromServer, fetchAlixenNotifications]);
