@@ -135,15 +135,15 @@ export function AuthProvider(props) {
 
   // Load initial balance when userId is set + ALIXEN notifs
   // [PARTIELLEMENT RÉACTIVÉ - 17 Avril 2026]
-  // refreshLixFromServer() réactivé après validation diagnostic Supabase (colonnes OK).
-  // Les 2 appels ALIXEN notifs restent commentés pour isoler le coupable du crash.
+  // refreshLixFromServer() + fetchAlixenNotifications() réactivés après validation Supabase et audit code défensif.
+  // check_and_generate_notifications reste commenté (fire-and-forget, faible priorité).
   useEffect(function() {
     if (userId) {
       refreshLixFromServer();
       // supabase.rpc('check_and_generate_notifications', { p_user_id: userId }).catch(function(e) { console.warn('check_and_generate_notifications error:', e); });
-      // fetchAlixenNotifications();
+      fetchAlixenNotifications();
     }
-  }, [userId, refreshLixFromServer]);
+  }, [userId, refreshLixFromServer, fetchAlixenNotifications]);
 
   useEffect(function() {
     // 1. Verifier la session existante au demarrage

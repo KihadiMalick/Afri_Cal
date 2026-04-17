@@ -297,7 +297,6 @@ export default function DashboardPage({ navigation }) {
       var profile = profileRes.data;
       if (profile) {
         setUserName(profile.full_name || ''); setRealDailyTarget(profile.daily_calorie_target || 2330);
-        updateLixBalance(profile.lix_balance || 0); updateEnergy(profile.energy || 20);
         setRealGender(profile.gender === 'female' || profile.gender === 'femme' ? 'femme' : 'homme');
         setHistoryUnlockedUntil(profile.hydration_history_unlocked_until || null);
         setStatsUnlockedUntil(profile.stats_unlocked_until || null);
