@@ -37,6 +37,9 @@ export default function LixVersePage({ navigation }) {
   var alixenNotifCount = auth.alixenNotifCount || 0;
   var markNotificationRead = auth.markNotificationRead;
   var markAllNotificationsRead = auth.markAllNotificationsRead;
+  var lixverseNotifications = auth.lixverseNotifications || [];
+  var markLixverseNotificationRead = auth.markLixverseNotificationRead;
+  var markAllLixverseNotificationsRead = auth.markAllLixverseNotificationsRead;
   const [activeTab, setActiveTab] = useState('defi');
   const [ownedCharacters, setOwnedCharacters] = useState([]);
   const [challenges, setChallenges] = useState([]);
@@ -86,9 +89,8 @@ export default function LixVersePage({ navigation }) {
   const stickerShakeAnims = useRef({}).current;
   const [lixAlert, setLixAlert] = useState({ visible: false, title: '', message: '', emoji: '', buttons: [] });
   const [showNotifPanel, setShowNotifPanel] = useState(false);
-  const [notifList, setNotifList] = useState([]);
-  var lixverseUnread = notifList.filter(function(n) { return !n.read; }).length;
-  var unreadCount = lixverseUnread + alixenNotifCount;
+  var lixverseUnread = auth.lixverseNotifCount || 0;
+  var unreadCount = lixverseUnread;
   const [stickerCatalog, setStickerCatalog] = useState([]);
   const [myCertification, setMyCertification] = useState(null);
   const [showCertificationModal, setShowCertificationModal] = useState(false);
@@ -343,23 +345,6 @@ export default function LixVersePage({ navigation }) {
       if(Array.isArray(bD))setOwnedCharacters(bD.map(x=>x.character_id));
       if(Array.isArray(cD))setChallenges(cD);
       if(Array.isArray(dD))setNotifications(dD);
-      if (Array.isArray(dD) && dD.length > 0) {
-        setNotifList(dD.map(n => ({
-          id: n.id || String(Math.random()),
-          title: n.notification_type === 'character_won' ? 'Carte gagnée !'
-               : n.notification_type === 'wall_sticker' ? 'Wall of Health'
-               : n.notification_type === 'challenge_end' ? 'Défi terminé'
-               : n.notification_type === 'poke' ? 'Poke reçu'
-               : n.notification_type === 'group_join' ? 'Nouveau membre'
-               : n.notification_type === 'binome_request' ? 'Demande Binôme'
-               : 'Notification',
-          message: n.message || '',
-          emoji: n.notification_type === 'character_won' ? '🎉' : n.notification_type === 'wall_sticker' ? '🏆' : n.notification_type === 'poke' ? '📢' : n.notification_type === 'group_join' ? '🤝' : n.notification_type === 'binome_request' ? '💛' : '📬',
-          color: n.color || '#D4AF37',
-          time: n.created_at ? new Date(n.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '',
-          read: n.read || false, type: n.notification_type,
-        })));
-      }
       if(Array.isArray(eD))setMyGroups(eD);
       const wallRes = await fetch(SUPABASE_URL + '/rest/v1/wall_stickers?is_visible=eq.true&order=like_count.desc&limit=30', { headers: hdrs });
       const wallData = await wallRes.json();
@@ -999,49 +984,36 @@ export default function LixVersePage({ navigation }) {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(8) }}>
                   <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF' }}>Notifications</Text>
                   {unreadCount > 0 ? (
-                    <View style={{ backgroundColor: '#FF3B5C20', borderRadius: wp(8), paddingHorizontal: wp(7), paddingVertical: wp(2) }}>
-                      <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#FF3B5C' }}>{unreadCount}</Text>
+                    <View style={{ backgroundColor: '#00D98420', borderRadius: wp(8), paddingHorizontal: wp(7), paddingVertical: wp(2) }}>
+                      <Text style={{ fontSize: fp(10), fontWeight: '700', color: '#00D984' }}>{unreadCount}</Text>
                     </View>
                   ) : null}
                 </View>
                 {unreadCount > 1 ? (
-                  <Pressable onPress={function() { if (markAllNotificationsRead) markAllNotificationsRead(); }} hitSlop={8}>
+                  <Pressable onPress={function() { if (markAllLixverseNotificationsRead) markAllLixverseNotificationsRead(); }} hitSlop={8}>
                     <Text style={{ fontSize: fp(11), color: '#00D984', fontWeight: '600' }}>Tout marquer comme lu</Text>
                   </Pressable>
                 ) : null}
               </View>
               <ScrollView style={{ maxHeight: wp(400) }} contentContainerStyle={{ paddingHorizontal: wp(16), paddingBottom: wp(16) }}>
                 {(function() {
-                  var safeAlixen = Array.isArray(alixenNotifications)
-                    ? alixenNotifications.filter(function(n) { return n && n.id; })
+                  var safeLixverse = Array.isArray(lixverseNotifications)
+                    ? lixverseNotifications.filter(function(n) { return n && n.id; })
                     : [];
-                  var safeLixverse = Array.isArray(notifList) ? notifList : [];
-                  var allNotifs = safeAlixen.map(function(n) {
-                    var CHAR_EMOJIS = { 'emerald_owl': '🦉', 'hawk_eye': '🦅', 'ruby_tiger': '🐯', 'amber_fox': '🦊', 'gipsy': '🕷️', 'jade_phoenix': '🔥', 'silver_wolf': '🐺', 'boukki': '🦴', 'iron_rhino': '🦏', 'coral_dolphin': '🐬' };
+                  var CHAR_EMOJIS = { 'emerald_owl': '🦉', 'hawk_eye': '🦅', 'ruby_tiger': '🐯', 'amber_fox': '🦊', 'gipsy': '🕷️', 'jade_phoenix': '🔥', 'silver_wolf': '🐺', 'boukki': '🦴', 'iron_rhino': '🦏', 'coral_dolphin': '🐬' };
+                  var allNotifs = safeLixverse.map(function(n) {
                     return {
-                      id: 'alixen_' + n.id,
+                      id: 'lv_' + n.id,
                       rawId: n.id,
                       title: n.title || 'Notification',
                       message: n.message || '',
-                      emoji: (n.character_slug || null) ? (CHAR_EMOJIS[n.character_slug] || '🧠') : '🧠',
+                      emoji: (n.character_slug || null) ? (CHAR_EMOJIS[n.character_slug] || '📬') : (n.emoji || '📬'),
                       color: n.color || '#00D984',
                       time: n.created_at ? (function() { var d = new Date(n.created_at); var now = new Date(); var diff = now - d; if (diff < 3600000) return 'il y a ' + Math.max(1, Math.floor(diff / 60000)) + ' min'; if (diff < 86400000) return 'il y a ' + Math.floor(diff / 3600000) + 'h'; if (diff < 172800000) return 'hier'; return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); })() : '',
-                      read: false,
-                      source: 'alixen',
-                    };
-                  }).concat(safeLixverse.map(function(n) {
-                    return {
-                      id: 'lv_' + (n.id || Math.random()),
-                      rawId: n.id,
-                      title: n.title || 'Notification',
-                      message: n.message || '',
-                      emoji: n.emoji || '📬',
-                      color: n.color || '#D4AF37',
-                      time: n.time || '',
-                      read: n.read || false,
+                      read: !!n.read_at,
                       source: 'lixverse',
                     };
-                  }));
+                  });
                   if (allNotifs.length === 0) return (
                     <View style={{ padding: wp(30), alignItems: 'center' }}>
                       <Text style={{ fontSize: fp(32), marginBottom: wp(8) }}>🔔</Text>
@@ -1052,8 +1024,8 @@ export default function LixVersePage({ navigation }) {
                     return (
                       <Pressable key={notif.id} delayPressIn={120}
                         onPress={function() {
-                          if (notif.source === 'alixen' && markNotificationRead) {
-                            markNotificationRead(notif.rawId);
+                          if (!notif.read && markLixverseNotificationRead) {
+                            markLixverseNotificationRead(notif.rawId);
                           }
                         }}
                         style={function(state) { return {
@@ -1074,7 +1046,7 @@ export default function LixVersePage({ navigation }) {
                         <View style={{ flex: 1 }}>
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(2) }}>
                             <Text style={{ fontSize: fp(13), fontWeight: '600', color: notif.read ? '#888' : '#FFF', flex: 1 }} numberOfLines={1}>{notif.title}</Text>
-                            <Text style={{ fontSize: fp(9), color: notif.source === 'alixen' ? '#00D984' : '#D4AF37', fontWeight: '600', marginLeft: wp(6) }}>{notif.source === 'alixen' ? 'ALIXEN' : 'LIXVERSE'}</Text>
+                            <Text style={{ fontSize: fp(9), color: '#00D984', fontWeight: '600', marginLeft: wp(6) }}>LIXVERSE</Text>
                           </View>
                           <Text style={{ fontSize: fp(11), color: '#aaa', lineHeight: fp(16) }} numberOfLines={2}>{notif.message}</Text>
                           {notif.time ? <Text style={{ fontSize: fp(9), color: '#666', marginTop: wp(4) }}>{notif.time}</Text> : null}
