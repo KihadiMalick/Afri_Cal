@@ -134,17 +134,16 @@ export function AuthProvider(props) {
   }, [userId]);
 
   // Load initial balance when userId is set + ALIXEN notifs
-  // [DÉSACTIVÉ TEMPORAIREMENT - Debug crash écran gris 16 Avril 2026]
-  // Les notifications ALIXEN et refreshLixFromServer sont désactivées au mount
-  // pour isoler la cause du crash "undefined is not a function" dans AuthProvider.
-  // Réactiver bloc par bloc après résolution du bug.
+  // [PARTIELLEMENT RÉACTIVÉ - 17 Avril 2026]
+  // refreshLixFromServer() réactivé après validation diagnostic Supabase (colonnes OK).
+  // Les 2 appels ALIXEN notifs restent commentés pour isoler le coupable du crash.
   useEffect(function() {
     if (userId) {
-      // refreshLixFromServer();
+      refreshLixFromServer();
       // supabase.rpc('check_and_generate_notifications', { p_user_id: userId }).catch(function(e) { console.warn('check_and_generate_notifications error:', e); });
       // fetchAlixenNotifications();
     }
-  }, [userId]);
+  }, [userId, refreshLixFromServer]);
 
   useEffect(function() {
     // 1. Verifier la session existante au demarrage
