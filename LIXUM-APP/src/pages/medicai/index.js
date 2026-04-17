@@ -55,6 +55,10 @@ export default function MedicAiPage({ navigation, route }) {
   var closeMModal = function() { setMModal(function(p) { return Object.assign({}, p, { visible: false }); }); };
   var showMModal = function(type, title, message, extra) { setMModal(Object.assign({ visible: true, type: type, title: title, message: message, onClose: closeMModal, onConfirm: null, confirmText: 'Confirmer', cancelText: 'Annuler' }, extra || {})); };
 
+  var _showAlixenNotifs = useState(false);
+  var showAlixenNotifs = _showAlixenNotifs[0];
+  var setShowAlixenNotifs = _showAlixenNotifs[1];
+
   var getAlixenErrorMessage = function(status, error) {
     if (status === 429) return '⚠️ ALIXEN reçoit beaucoup de demandes. Réessayez dans quelques secondes.';
     if (status === 500 || status === 502 || status === 503) return '⚠️ ALIXEN est en mise à jour. Réessayez dans quelques instants.';
@@ -2997,16 +3001,37 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           <Text style={{ fontSize: fp(22), fontWeight: '900', color: '#FFFFFF', letterSpacing: 1 }}>Medic</Text>
           <Text style={{ fontSize: fp(22), fontWeight: '900', color: '#4DA6FF', letterSpacing: 1 }}>Ai</Text>
         </View>
-        <Pressable onPress={closeMedicAi} style={function(state) {
-          return {
-            width: 36, height: 36, borderRadius: 20,
-            backgroundColor: 'rgba(255,255,255,0.1)',
-            justifyContent: 'center', alignItems: 'center',
-            opacity: state.pressed ? 0.7 : 1,
-          };
-        }}>
-          <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '600' }}>✕</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={function() { setShowAlixenNotifs(true); }}
+            style={{ position: 'relative', marginRight: 12, padding: 6 }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="notifications-outline" size={24} color="#EAEEF3" />
+            {auth.alixenNotifCount > 0 && (
+              <View style={{
+                position: 'absolute', top: 0, right: 0,
+                backgroundColor: '#FF3B5C', borderRadius: 8,
+                minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center',
+                paddingHorizontal: 3, borderWidth: 1.5, borderColor: '#1E2530',
+              }}>
+                <Text style={{ color: '#FFF', fontSize: 9, fontWeight: '800' }}>
+                  {auth.alixenNotifCount > 9 ? '9+' : auth.alixenNotifCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <Pressable onPress={closeMedicAi} style={function(state) {
+            return {
+              width: 36, height: 36, borderRadius: 20,
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              justifyContent: 'center', alignItems: 'center',
+              opacity: state.pressed ? 0.7 : 1,
+            };
+          }}>
+            <Text style={{ color: '#EAEEF3', fontSize: fp(16), fontWeight: '600' }}>✕</Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* ===== ZONE DE CONTENU ===== */}
@@ -3718,6 +3743,72 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         onRecharge={function() { setEnergyGateData(null); refreshLixFromServer(); }}
         onViewPlans={function() { setEnergyGateData(null); console.log('Navigate to subscription plans'); }}
       />
+
+      {showAlixenNotifs && (
+        <Modal visible={showAlixenNotifs} transparent animationType="slide" onRequestClose={function() { setShowAlixenNotifs(false); }}>
+          <Pressable onPress={function() { setShowAlixenNotifs(false); }} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+            <Pressable onPress={function() {}} style={{ backgroundColor: '#1E2530', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '75%', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 30 }}>
+              <View style={{ width: 40, height: 4, backgroundColor: '#4A4F55', borderRadius: 2, alignSelf: 'center', marginBottom: 12 }} />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ color: '#EAEEF3', fontSize: 20, fontWeight: '800' }}>Notifications santé</Text>
+                  {auth.alixenNotifCount > 0 && (
+                    <View style={{ backgroundColor: '#FF3B5C', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, marginLeft: 8 }}>
+                      <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '700' }}>{auth.alixenNotifCount}</Text>
+                    </View>
+                  )}
+                </View>
+                {auth.alixenNotifCount > 0 && (
+                  <TouchableOpacity onPress={function() { auth.markAllNotificationsRead(); }}>
+                    <Text style={{ color: '#00D984', fontSize: 13, fontWeight: '600' }}>Tout marquer comme lu</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {(!auth.alixenNotifications || auth.alixenNotifications.length === 0) ? (
+                  <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                    <Text style={{ fontSize: 40, marginBottom: 8 }}>📭</Text>
+                    <Text style={{ color: '#8892A0', fontSize: 14 }}>Aucune notification santé</Text>
+                  </View>
+                ) : (
+                  auth.alixenNotifications.map(function(notif) {
+                    var isRead = !!notif.read_at;
+                    return (
+                      <TouchableOpacity
+                        key={notif.id}
+                        onPress={function() { if (!isRead) auth.markNotificationRead(notif.id); }}
+                        activeOpacity={0.7}
+                        style={{
+                          backgroundColor: isRead ? 'rgba(42,48,59,0.5)' : '#2A303B',
+                          borderLeftWidth: 3, borderLeftColor: isRead ? '#4A4F55' : (notif.color || '#00D984'),
+                          borderRadius: 10, padding: 12, marginBottom: 8,
+                          opacity: isRead ? 0.6 : 1,
+                        }}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: isRead ? 'transparent' : '#FF3B5C', marginTop: 5, marginRight: 10, borderWidth: isRead ? 1 : 0, borderColor: '#4A4F55' }} />
+                          <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <Text style={{ color: '#EAEEF3', fontSize: 14, fontWeight: '700', flex: 1 }}>{notif.title}</Text>
+                              <Text style={{ color: '#00D984', fontSize: 10, fontWeight: '800', letterSpacing: 1, marginLeft: 8 }}>ALIXEN</Text>
+                            </View>
+                            <Text style={{ color: '#8892A0', fontSize: 12, lineHeight: 17 }}>{notif.message}</Text>
+                            {notif.created_at && (
+                              <Text style={{ color: '#6B7280', fontSize: 10, marginTop: 6 }}>
+                                {new Date(notif.created_at).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      )}
     </View>
   );
 }

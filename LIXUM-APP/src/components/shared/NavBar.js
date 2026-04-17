@@ -26,7 +26,7 @@ const AvatarButton = ({ activeChar, userName, onPress, size = 30 }) => {
   );
 };
 
-const BottomTabs = ({ activeTab, onTabPress, medicaiNotifCount }) => {
+const BottomTabs = ({ activeTab, onTabPress, medicaiNotifCount, lixverseNotifCount }) => {
   var insets = useSafeAreaInsets();
   var bottomPad = Math.max(insets.bottom, 10);
   return (
@@ -123,6 +123,18 @@ const BottomTabs = ({ activeTab, onTabPress, medicaiNotifCount }) => {
               }}>
                 <Text style={{ color: '#FFF', fontSize: 9, fontWeight: '800' }}>
                   {medicaiNotifCount > 9 ? '9+' : medicaiNotifCount}
+                </Text>
+              </View>
+            )}
+            {tab.isLixVerse && lixverseNotifCount > 0 && (
+              <View style={{
+                position: 'absolute', top: -4, right: -8,
+                backgroundColor: '#00D984', borderRadius: 8,
+                minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center',
+                paddingHorizontal: 3, borderWidth: 1.5, borderColor: '#1E2530',
+              }}>
+                <Text style={{ color: '#FFF', fontSize: 9, fontWeight: '800' }}>
+                  {lixverseNotifCount > 9 ? '9+' : lixverseNotifCount}
                 </Text>
               </View>
             )}
